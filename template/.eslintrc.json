@@ -1,4 +1,4 @@
 {
   "root": true,
-  "extends": "@heewon.dev/eslint-config"
+  "extends": "@croco.space/eslint-config"
 }

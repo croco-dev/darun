@@ -11,7 +11,7 @@
   "dependencies": {
   },
   "devDependencies": {
-    "@heewon.dev/eslint-config": "workspace:*",
-    "@heewon.dev/utils-tsconfig": "workspace:*"
+    "@croco.space/eslint-config": "workspace:*",
+    "@croco.space/utils-tsconfig": "workspace:*"
   }
 }

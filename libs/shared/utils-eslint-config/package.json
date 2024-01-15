@@ -1,5 +1,5 @@
 {
-  "name": "@heewon.dev/eslint-config",
+  "name": "@croco.space/eslint-config",
   "version": "0.0.0",
   "private": true,
   "main": ".eslintrc.js",

@@ -1,5 +1,5 @@
 {
-  "name": "heewon.dev",
+  "name": "darun",
   "private": true,
   "scripts": {
     "build": "turbo build",
@@ -10,8 +10,8 @@
   "devDependencies": {
     "typescript": "5.3.3",
     "eslint": "8.56.0",
-    "@heewon.dev/eslint-config": "workspace:*",
-    "@heewon.dev/utils-tsconfig": "workspace:*",
+    "@croco.space/eslint-config": "workspace:*",
+    "@croco.space/utils-tsconfig": "workspace:*",
     "prettier": "3.1.1",
     "turbo": "latest"
   },
