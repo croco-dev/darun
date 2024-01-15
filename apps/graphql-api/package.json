@@ -1,0 +1,26 @@
+{
+  "name": "@darun/graphql-api",
+  "version": "0.0.0",
+  "type": "commonjs",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "dev": "serverless offline --stage dev",
+    "build": "serverless build",
+    "deploy": "serverless deploy",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint **/*.ts*"
+  },
+  "dependencies": {
+    "reflect-metadata": "0.2.1",
+    "drizzle-orm": "0.29.3",
+    "mysql2": "3.7.0"
+  },
+  "devDependencies": {
+    "serverless": "3.38.0",
+    "serverless-offline": "13.3.2",
+    "serverless-esbuild": "1.50.1",
+    "esbuild": "0.19.11",
+    "@types/aws-lambda": "8.10.131"
+  }
+}

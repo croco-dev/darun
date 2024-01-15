@@ -1,0 +1,22 @@
+service: graphql-api
+frameworkVersion: '3'
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-2
+  stackName: ${self:service}-${self:provider.stage}
+  stage: ${opt:stage, 'dev'}
+  profile: darun
+
+functions:
+  graphql:
+    handler: src/functions/graphql.handler
+    events:
+      - httpApi:
+          path: /graphql
+          method: post
