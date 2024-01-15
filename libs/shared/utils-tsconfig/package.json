@@ -1,0 +1,12 @@
+{
+  "name": "@heewon.dev/utils-tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "files": [
+    "tsconfig.base.json",
+    "tsconfig.react.json",
+    "tsconfig.next.json",
+    "tsconfig.node.json"
+  ]
+}

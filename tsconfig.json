@@ -1,0 +1,3 @@
+{
+  "extends": "@heewon.dev/utils-tsconfig/tsconfig.base.json"
+}
