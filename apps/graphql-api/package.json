@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "serverless offline --stage dev",
     "build": "serverless build",
+    "test": "echo 1",
     "deploy": "serverless deploy",
     "typecheck": "tsc --noEmit",
     "lint": "eslint **/*.ts*"
