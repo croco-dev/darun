@@ -1,0 +1,1 @@
+export { createLambdaHandler } from './createLambdaHandler';

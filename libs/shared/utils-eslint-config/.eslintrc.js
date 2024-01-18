@@ -56,6 +56,7 @@ module.exports = {
         prefer: 'no-type-imports',
       },
     ],
+    'turbo/no-undeclared-env-vars': ['warn'],
   },
   settings: {
     'import/parsers': {
