@@ -1,3 +1,4 @@
-package.json @darun-maintainer
-pnpm-lock.yaml @darun-maintainer
-pnpm-workspace.yaml @darun-maintainer
+package.json @croco-dev/darun-maintainer
+pnpm-lock.yaml @croco-dev/darun-maintainer
+pnpm-workspace.yaml @croco-dev/darun-maintainer
+.github/* @croco-dev/darun-maintainer
