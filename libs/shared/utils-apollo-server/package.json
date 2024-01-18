@@ -1,16 +1,21 @@
 {
-  "name": "@aaa/aaa",
+  "name": "@croco/utils-apollo-server",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "echo 1",
     "lint": "eslint **/*.ts*"
   },
-  "dependencies": {},
+  "peerDependencies": {
+    "@apollo/server": "4.10.0",
+    "@as-integrations/aws-lambda": "3.1.0",
+    "type-graphql": "2.0.0-beta.6",
+    "graphql": "16.8.1"
+  },
   "devDependencies": {
+    "@types/aws-lambda": "8.10.131",
     "@croco.space/eslint-config": "workspace:*",
     "@croco.space/utils-tsconfig": "workspace:*"
   }

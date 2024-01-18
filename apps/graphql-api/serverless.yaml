@@ -4,6 +4,12 @@ frameworkVersion: '3'
 plugins:
   - serverless-esbuild
   - serverless-offline
+  - serverless-dotenv-plugin
+
+custom:
+  esbuild:
+    exclude: ['class-validator']
+
 
 provider:
   name: aws
@@ -21,3 +27,6 @@ functions:
       - httpApi:
           path: /graphql
           method: post
+      - httpApi:
+          path: /graphql
+          method: get

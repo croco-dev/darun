@@ -9,19 +9,29 @@
     "build": "serverless build",
     "deploy": "serverless deploy --stage dev",
     "deploy:prod": "serverless deploy --stage prod",
+    "test": "echo 1",
     "typecheck": "tsc --noEmit",
     "lint": "eslint **/*.ts*"
   },
   "dependencies": {
-    "reflect-metadata": "0.2.1",
+    "@apollo/server": "4.10.0",
+    "@as-integrations/aws-lambda": "3.1.0",
     "drizzle-orm": "0.29.3",
-    "mysql2": "3.7.0"
+    "graphql": "16.8.1",
+    "graphql-helix": "1.13.0",
+    "graphql-scalars": "1.22.4",
+    "@planetscale/database": "1.13.0",
+    "reflect-metadata": "0.2.1",
+    "type-graphql": "2.0.0-beta.6",
+    "typedi": "0.10.0",
+    "@croco/utils-apollo-server": "workspace:*"
   },
   "devDependencies": {
-    "serverless": "3.38.0",
-    "serverless-offline": "13.3.2",
-    "serverless-esbuild": "1.50.1",
+    "@types/aws-lambda": "8.10.131",
     "esbuild": "0.19.11",
-    "@types/aws-lambda": "8.10.131"
+    "serverless": "3.38.0",
+    "serverless-esbuild": "1.50.1",
+    "serverless-offline": "13.3.2",
+    "serverless-dotenv-plugin": "6.0.0"
   }
 }
