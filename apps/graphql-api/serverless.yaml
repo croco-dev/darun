@@ -15,9 +15,10 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: ap-northeast-2
-  stackName: ${self:service}-${self:provider.stage}
+  stackName: ${self:provider.stage}-${self:service}
   stage: ${opt:stage, 'dev'}
   profile: darun
+  deploymentBucket: ${self:provider.stage}-${self:service}-deploy-bucket
 
 functions:
   graphql:

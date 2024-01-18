@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "serverless offline --stage dev",
     "build": "serverless build",
+    "deploy": "serverless deploy --stage dev",
+    "deploy:prod": "serverless deploy --stage prod",
     "test": "echo 1",
-    "deploy": "serverless deploy",
     "typecheck": "tsc --noEmit",
     "lint": "eslint **/*.ts*"
   },
