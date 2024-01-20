@@ -58,6 +58,16 @@ module.exports = {
     ],
     'turbo/no-undeclared-env-vars': ['warn'],
   },
+  overrides: [
+    {
+      files: ['package.json'],
+      parser: 'jsonc-eslint-parser',
+      plugins: ['package-json'],
+      rules: {
+        'package-json/sort-collections': 'error',
+      },
+    },
+  ],
   settings: {
     'import/parsers': {
       '@typescript-eslint/parser': ['.ts'],
