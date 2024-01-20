@@ -23,7 +23,8 @@
     "graphql-scalars": "1.22.4",
     "reflect-metadata": "0.2.1",
     "type-graphql": "2.0.0-beta.6",
-    "typedi": "0.10.0"
+    "typedi": "0.10.0",
+    "@darun/utils-apollo-server": "workspace:*"
   },
   "devDependencies": {
     "@types/aws-lambda": "8.10.131",

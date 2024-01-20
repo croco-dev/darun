@@ -10,8 +10,8 @@
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
-    "@croco.space/eslint-config": "workspace:*",
-    "@croco.space/utils-tsconfig": "workspace:*",
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*",
     "@types/node": "^20",
     "eslint": "8.56.0",
     "prettier": "3.2.4",

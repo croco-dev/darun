@@ -11,7 +11,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@croco.space/eslint-config": "workspace:*",
-    "@croco.space/utils-tsconfig": "workspace:*"
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*"
   }
 }

@@ -8,10 +8,10 @@ importers:
 
   .:
     devDependencies:
-      '@croco.space/eslint-config':
+      '@darun/eslint-config':
         specifier: workspace:*
         version: link:libs/shared/utils-eslint-config
-      '@croco.space/utils-tsconfig':
+      '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:libs/shared/utils-tsconfig
       '@types/node':
@@ -38,7 +38,7 @@ importers:
       '@as-integrations/aws-lambda':
         specifier: 3.1.0
         version: 3.1.0(@apollo/server@4.10.0)
-      '@croco/utils-apollo-server':
+      '@darun/utils-apollo-server':
         specifier: workspace:*
         version: link:../../libs/shared/utils-apollo-server
       '@planetscale/database':
@@ -172,10 +172,10 @@ importers:
         specifier: 2.0.0-beta.6
         version: 2.0.0-beta.6(graphql-scalars@1.22.4)(graphql@16.8.1)
     devDependencies:
-      '@croco.space/eslint-config':
+      '@darun/eslint-config':
         specifier: workspace:*
         version: link:../utils-eslint-config
-      '@croco.space/utils-tsconfig':
+      '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../utils-tsconfig
       '@types/aws-lambda':

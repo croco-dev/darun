@@ -1,5 +1,5 @@
 {
-  "name": "@croco/utils-apollo-server",
+  "name": "@darun/utils-apollo-server",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
