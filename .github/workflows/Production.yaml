@@ -29,7 +29,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Configure AWS Profile iam
-        uses: croco-dev/aws-profile-action@v1.1
+        uses: croco-dev/aws-profile-action@v1.2
         with:
           profile: darun
           region: ap-northeast-2
