@@ -15,8 +15,8 @@
     "type-graphql": "2.0.0-beta.6"
   },
   "devDependencies": {
-    "@croco.space/eslint-config": "workspace:*",
-    "@croco.space/utils-tsconfig": "workspace:*",
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*",
     "@types/aws-lambda": "8.10.131"
   }
 }
