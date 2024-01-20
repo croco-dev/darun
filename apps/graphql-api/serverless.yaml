@@ -30,3 +30,8 @@ functions:
       - httpApi:
           path: /graphql
           method: get
+    environment:
+      INFRA_ENV: ${env:INFRA_ENV}
+      DATABASE_URL: ${env:DATABASE_URL}
+      DATABASE_USERNAME: ${env:DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${env:DATABASE_PASSWORD}
