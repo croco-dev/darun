@@ -1,3 +1,3 @@
 {
-  "extends": "@croco.space/utils-tsconfig/tsconfig.base.json"
+  "extends": "@darun/utils-tsconfig/tsconfig.base.json"
 }

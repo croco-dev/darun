@@ -1,5 +1,5 @@
 {
-  "extends": "@croco.space/utils-tsconfig/tsconfig.next.json",
+  "extends": "@darun/utils-tsconfig/tsconfig.next.json",
   "compilerOptions": {
     "plugins": [
       {

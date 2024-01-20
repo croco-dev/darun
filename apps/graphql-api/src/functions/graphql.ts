@@ -1,5 +1,5 @@
 import '../config';
-import { createLambdaHandler, createServer } from '@croco/utils-apollo-server';
+import { createLambdaHandler, createServer } from '@darun/utils-apollo-server';
 import { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { Container } from 'typedi';
 import { resolvers } from '../app/resolvers';

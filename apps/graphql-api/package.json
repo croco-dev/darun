@@ -16,14 +16,15 @@
   "dependencies": {
     "@apollo/server": "4.10.0",
     "@as-integrations/aws-lambda": "3.1.0",
-    "@croco/utils-apollo-server": "workspace:*",
+    "@darun/utils-apollo-server": "workspace:*",
     "@planetscale/database": "1.13.0",
     "drizzle-orm": "0.29.3",
     "graphql": "16.8.1",
     "graphql-scalars": "1.22.4",
     "reflect-metadata": "0.2.1",
     "type-graphql": "2.0.0-beta.6",
-    "typedi": "0.10.0"
+    "typedi": "0.10.0",
+    "@darun/utils-apollo-server": "workspace:*"
   },
   "devDependencies": {
     "@types/aws-lambda": "8.10.131",
