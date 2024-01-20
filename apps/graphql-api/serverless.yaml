@@ -1,15 +1,18 @@
 service: darun
 frameworkVersion: '3'
 
+useDotenv: true
+
 plugins:
   - serverless-esbuild
   - serverless-offline
-  - serverless-dotenv-plugin
 
 custom:
   esbuild:
     exclude: ['class-validator']
-
+  serverless-offline:
+    reloadHandler: true
+    httpPort: 4000
 
 provider:
   name: aws

@@ -50,9 +50,6 @@ importers:
       graphql:
         specifier: 16.8.1
         version: 16.8.1
-      graphql-helix:
-        specifier: 1.13.0
-        version: 1.13.0(graphql@16.8.1)
       graphql-scalars:
         specifier: 1.22.4
         version: 1.22.4(graphql@16.8.1)
@@ -75,9 +72,6 @@ importers:
       serverless:
         specifier: 3.38.0
         version: 3.38.0
-      serverless-dotenv-plugin:
-        specifier: 6.0.0
-        version: 6.0.0(serverless@3.38.0)
       serverless-esbuild:
         specifier: 1.50.1
         version: 1.50.1(esbuild@0.19.11)
@@ -4884,14 +4878,6 @@ packages:
       lodash: 4.17.21
     dev: true
 
-  /graphql-helix@1.13.0(graphql@16.8.1):
-    resolution: {integrity: sha512-cqDKMoRywKjnL0ZWCTB0GOiBgsH6d3nU4JGDF6RuzAyd35tmalzKpSxkx3NNp4H5RvnKWnrukWzR51wUq277ng==}
-    peerDependencies:
-      graphql: ^15.3.0 || ^16.0.0
-    dependencies:
-      graphql: 16.8.1
-    dev: false
-
   /graphql-query-complexity@0.12.0(graphql@16.8.1):
     resolution: {integrity: sha512-fWEyuSL6g/+nSiIRgIipfI6UXTI7bAxrpPlCY1c0+V3pAEUo1ybaKmSBgNr1ed2r+agm1plJww8Loig9y6s2dw==}
     peerDependencies:
@@ -6711,17 +6697,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: false
-
-  /serverless-dotenv-plugin@6.0.0(serverless@3.38.0):
-    resolution: {integrity: sha512-8tLVNwHfDO0sBz6+m+DLTZquRk0AZq9rzqk3kphm1iIWKfan9R7RKt4hdq3eQ0kmDoqzudjPYBEXAJ5bUNKeGQ==}
-    peerDependencies:
-      serverless: 1 || 2 || pre-3 || 3
-    dependencies:
-      chalk: 4.1.2
-      dotenv: 16.3.1
-      dotenv-expand: 10.0.0
-      serverless: 3.38.0
-    dev: true
 
   /serverless-esbuild@1.50.1(esbuild@0.19.11):
     resolution: {integrity: sha512-UfHBghC2EvpfuclAPbdx1CQXpj/wgYvdqAtZqyTPCeDBc/wQt3b/qxwMnJk5gqPSpxdYU83jSdV0QEd3BRtvKw==}
