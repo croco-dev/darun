@@ -1,3 +1,7 @@
 packages:
   - "apps/**/*"
+  - "!apps/**/node_modules/**/*"
+  - "!apps/**/.next/**/*"
   - "libs/**/*"
+  - "!libs/**/node_modules/**/*"
+
