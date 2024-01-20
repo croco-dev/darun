@@ -23,14 +23,15 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install
-      - name: Configure AWS Credentials 2
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS Profile iam
+        uses: croco-dev/aws-profile-action@v1.1
         with:
-          aws-region: ap-northeast-2
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          profile: darun
+          region: ap-northeast-2
+          access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Deploy
-        run: pnpm run --F graphql-api deploy --aws-profile default
+        run: pnpm run --F graphql-api deploy
         env:
           INFRA_ENV: prod
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
