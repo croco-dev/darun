@@ -7,7 +7,7 @@ type ButtonProps = {
 
 export const TextButton = ({ children }: ButtonProps) => {
   return (
-    <BaseButton px={16} py={10} bg="transparent" color="black" borderRadius={14} border="none">
+    <BaseButton px={14} py={8} bg="transparent" color="black" fontSize={13} borderRadius={14} border="none">
       {children}
     </BaseButton>
   );

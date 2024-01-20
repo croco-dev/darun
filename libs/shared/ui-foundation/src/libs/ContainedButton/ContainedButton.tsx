@@ -8,7 +8,7 @@ type ButtonProps = {
 
 export const ContainedButton = ({ children, kind }: ButtonProps) => {
   return (
-    <BaseButton px={16} py={10} bg="black" color="white" borderRadius={14} border="none">
+    <BaseButton px={14} py={8} bg="black" color="white" fontSize={13} borderRadius={14} border="none">
       {children}
     </BaseButton>
   );
