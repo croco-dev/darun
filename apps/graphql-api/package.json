@@ -17,7 +17,7 @@
     "@apollo/server": "4.10.0",
     "@as-integrations/aws-lambda": "3.1.0",
     "@darun/utils-apollo-server": "workspace:*",
-    "@planetscale/database": "1.13.0",
+    "@planetscale/database": "1.14.0",
     "drizzle-orm": "0.29.3",
     "graphql": "16.8.1",
     "graphql-scalars": "1.22.4",
