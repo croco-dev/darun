@@ -12,6 +12,7 @@
   "dependencies": {
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-layout": "workspace:*",
+    "@darun/utils-next-fonts": "workspace:*",
     "@kuma-ui/core": "1.5.6",
     "next": "14.1.0",
     "normalize.css": "8.0.1",

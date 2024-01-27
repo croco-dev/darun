@@ -1,0 +1,1 @@
+export { pretendardFont } from './pretendard';
