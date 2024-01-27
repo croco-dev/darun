@@ -81,6 +81,9 @@ importers:
 
   apps/service-web:
     dependencies:
+      '@croco/utils-next-font-pretendard':
+        specifier: 0.0.1
+        version: 0.0.1(next@14.1.0)
       '@darun/ui-foundation':
         specifier: workspace:*
         version: link:../../libs/shared/ui-foundation
@@ -2195,6 +2198,14 @@ packages:
       '@babel/helper-string-parser': 7.23.4
       '@babel/helper-validator-identifier': 7.22.20
       to-fast-properties: 2.0.0
+
+  /@croco/utils-next-font-pretendard@0.0.1(next@14.1.0):
+    resolution: {integrity: sha512-/sUK3OhT1CrAIXTP3//i/SIJs2ePkebK/t+NF1CjGwt/Ya//bFceVYN96Or4o6VEf1v3AzSvJe5sTP8L01GTJw==}
+    peerDependencies:
+      next: ^14.0.0
+    dependencies:
+      next: 14.1.0(@babel/core@7.23.7)(react-dom@18.2.0)(react@18.2.0)
+    dev: false
 
   /@croco/utils-structure-react@0.0.1:
     resolution: {integrity: sha512-KmlIpcvvLVplZ9bIhLCvI7kGtg4JTzOFxTUkheX8VPTlAl4+nUrdFhKeFQrT46kk1B80UNMis0SdrLfPDCAfoQ==}
