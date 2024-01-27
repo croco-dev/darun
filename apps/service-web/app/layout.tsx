@@ -1,7 +1,7 @@
 import 'normalize.css/normalize.css';
 import './globals.css';
 
-import { pretendardFont } from '@darun/utils-next-fonts';
+import { pretendardFont } from '@croco/utils-next-font-pretendard';
 import { KumaRegistry } from '@kuma-ui/next-plugin/registry';
 import { Metadata } from 'next';
 

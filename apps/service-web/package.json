@@ -10,6 +10,7 @@
     "test": "echo 1"
   },
   "dependencies": {
+    "@croco/utils-next-font-pretendard": "0.0.1",
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-layout": "workspace:*",
     "@kuma-ui/core": "1.5.6",
