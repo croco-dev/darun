@@ -1,7 +1,7 @@
 'use client';
 
 import { AuthUser } from '@darun/utils-auth-service-core';
-import { createContext, ReactNode, useEffect, useMemo, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuthService } from '../AuthServiceProvider';
 
 export type AuthStateProviderProps = {
@@ -13,36 +13,37 @@ type AuthState = 'Uninitialized' | 'Pending' | 'Authorized' | 'UnAuthorized';
 const AuthStateContext = createContext<{
   isLoggedIn: boolean;
   authState: AuthState;
-  isInitialized: boolean;
+  isLoading: boolean;
 }>({
   isLoggedIn: false,
   authState: 'Uninitialized',
-  isInitialized: false,
+  isLoading: true,
 });
 
 export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
   const authService = useAuthService();
   const [authUser, setAuthUser] = useState<AuthUser | null>();
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const authState: AuthState = useMemo(() => {
     if (authUser) {
       return 'Authorized';
     }
-    if (isInitialized && !authUser) {
+    if (!isLoading && !authUser) {
       return 'UnAuthorized';
     }
 
     return 'Uninitialized';
-  }, []);
+  }, [authUser, isLoading]);
 
   useEffect(() => {
     const unsubscribe = authService.onIdTokenChanged(user => {
       setAuthUser(user ? user : null);
-      setIsInitialized(true);
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -50,10 +51,14 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
       value={{
         isLoggedIn: authState === 'Authorized',
         authState,
-        isInitialized,
+        isLoading,
       }}
     >
       {children}
     </AuthStateContext.Provider>
   );
+};
+
+export const useAuthState = () => {
+  return useContext(AuthStateContext);
 };

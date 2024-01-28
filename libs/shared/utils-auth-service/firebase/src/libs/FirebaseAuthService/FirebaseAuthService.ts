@@ -13,7 +13,7 @@ type FirebaseAuthConfig = {
 
 export class FirebaseAuthService implements AuthService {
   private authMethods: ReturnType<typeof getFirebaseAuth>;
-  private authStorage: AuthStorage;
+  private authStorage?: AuthStorage;
 
   constructor({ projectId, privateKey, clientEmail, authDomain, apiKey }: FirebaseAuthConfig) {
     this.authMethods = getFirebaseAuth(
@@ -33,13 +33,18 @@ export class FirebaseAuthService implements AuthService {
     }
   }
 
+  async signOut() {
+    this.authStorage?.clear();
+    await getAuth().signOut();
+  }
+
   setAuthStorage(storage: AuthStorage): void {
     this.authStorage = storage;
   }
 
   public async getUser() {
-    const idToken = this.authStorage.get('idToken');
-    const refreshToken = this.authStorage.get('refreshToken');
+    const idToken = this.authStorage?.get('idToken');
+    const refreshToken = this.authStorage?.get('refreshToken');
     if (!idToken || !refreshToken) {
       return null;
     }
@@ -48,7 +53,7 @@ export class FirebaseAuthService implements AuthService {
       return null;
     }
 
-    this.authStorage.set({
+    this.authStorage?.set({
       idToken: result.token,
     });
 
@@ -61,13 +66,14 @@ export class FirebaseAuthService implements AuthService {
   public onIdTokenChanged(handler: (user?: AuthUser) => void) {
     const unsubscribe = onIdTokenChanged(getAuth(), user => {
       if (!user) {
-        this.authStorage.clear();
+        this.authStorage?.clear();
         handler(undefined);
         return;
       }
 
+      handler({ id: user.uid, email: user.email ?? '' });
       user.getIdToken().then(idToken => {
-        this.authStorage.set({
+        this.authStorage?.set({
           idToken,
           refreshToken: user.refreshToken,
         });

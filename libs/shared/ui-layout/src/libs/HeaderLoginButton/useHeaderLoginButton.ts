@@ -1,13 +1,20 @@
-import { useAuthService } from '@darun/provider-auth';
+import { useAuthService, useAuthState } from '@darun/provider-auth';
 
 export function useHeaderLoginButton() {
   const authService = useAuthService();
-
+  const { isLoggedIn, isLoading } = useAuthState();
   const login = () => {
     authService.signInWithGoogle();
   };
 
+  const logout = async () => {
+    await authService.signOut();
+  };
+
   return {
+    isLoggedIn,
+    isLoading,
     login,
+    logout,
   };
 }
