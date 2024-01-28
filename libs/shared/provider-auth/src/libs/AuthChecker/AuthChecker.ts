@@ -1,4 +1,5 @@
 import { AuthService } from '@darun/utils-auth-service-core';
+import { Cookies } from 'next-client-cookies';
 
 class AuthChecker {
   private static instance: AuthChecker;
@@ -12,12 +13,22 @@ class AuthChecker {
     this.authService = authService;
   }
 
-  async getUser() {
+  async getUser(cookies: Cookies) {
+    this.setAuthStorage(cookies);
     return this.authService.getUser();
   }
 
-  async getIsLoggedIn() {
-    return this.getUser().then(user => !!user);
+  async getIsLoggedIn(cookies: Cookies) {
+    this.setAuthStorage(cookies);
+    return this.authService.getUser().then(user => !!user);
+  }
+
+  private setAuthStorage(cookies: Cookies) {
+    this.authService.setAuthStorage({
+      get: (key: string) => cookies.get(key) ?? null,
+      clear() {},
+      set() {},
+    });
   }
 }
 
