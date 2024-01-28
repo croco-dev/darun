@@ -1,5 +1,5 @@
 {
-  "name": "@aa/aaa",
+  "name": "@darun/utils-auth-service-core",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
@@ -9,15 +9,9 @@
     "test": "echo 1",
     "typecheck": "tsc --noEmit"
   },
-  "peerDependencies": {
-    "@croco/utils-structure-react": "*",
-    "@darun/ui-foundation": "workspace:*",
-    "@kuma-ui/core": "*"
-  },
+  "peerDependencies": {},
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
-    "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "*",
-    "@types/react-dom": "*"
+    "@darun/utils-tsconfig": "workspace:*"
   }
 }

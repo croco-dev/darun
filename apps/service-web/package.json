@@ -10,9 +10,11 @@
     "test": "echo 1"
   },
   "dependencies": {
+    "@darun/provider-auth": "workspace:*",
     "@croco/utils-next-font-pretendard": "0.0.1",
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-layout": "workspace:*",
+    "@darun/utils-auth-service-firebase": "workspace:*",
     "@kuma-ui/core": "1.5.6",
     "next": "14.1.0",
     "normalize.css": "8.0.1",
