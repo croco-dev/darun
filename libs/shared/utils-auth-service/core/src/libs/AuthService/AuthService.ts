@@ -6,4 +6,5 @@ export interface AuthService {
   onIdTokenChanged(handler: (user?: AuthUser) => void): () => void;
   signInWithGoogle(): void;
   getUser(): Promise<AuthUser | null>;
+  signOut(): Promise<void>;
 }

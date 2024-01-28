@@ -1,4 +1,4 @@
 {
   "root": true,
-  "extends": "@darun/eslint-config"
+  "extends": "@darun/eslint-config/react"
 }

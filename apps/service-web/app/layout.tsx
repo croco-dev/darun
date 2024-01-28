@@ -4,7 +4,9 @@ import './globals.css';
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
 import { KumaRegistry } from '@kuma-ui/next-plugin/registry';
 import { Metadata } from 'next';
+import { CookiesProvider } from 'next-client-cookies/server';
 import { ClientRootProvider } from './client';
+import { ServerRootProvider } from './server';
 
 export const metadata: Metadata = {
   title: 'darun',
@@ -16,7 +18,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body className={pretendardFont.className}>
         <KumaRegistry>
-          <ClientRootProvider>{children}</ClientRootProvider>
+          <CookiesProvider>
+            <ServerRootProvider>
+              <ClientRootProvider>{children}</ClientRootProvider>
+            </ServerRootProvider>
+          </CookiesProvider>
         </KumaRegistry>
       </body>
     </html>
