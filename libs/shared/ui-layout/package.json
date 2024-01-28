@@ -11,6 +11,7 @@
   },
   "peerDependencies": {
     "@croco/utils-structure-react": "*",
+    "@darun/provider-auth": "workspace:*",
     "@darun/ui-foundation": "workspace:*",
     "@kuma-ui/core": "*"
   },

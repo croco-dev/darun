@@ -1,5 +1,5 @@
 {
-  "name": "@aa/aaa",
+  "name": "@darun/utils-auth-service-firebase",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
@@ -9,10 +9,13 @@
     "test": "echo 1",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "firebase": "10.7.2",
+    "next-firebase-auth-edge": "1.0.1",
+    "@darun/utils-auth-service-core": "workspace:*"
+  },
   "peerDependencies": {
-    "@croco/utils-structure-react": "*",
-    "@darun/ui-foundation": "workspace:*",
-    "@kuma-ui/core": "*"
+    "next": "*"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
