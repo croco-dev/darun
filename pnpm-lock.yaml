@@ -274,8 +274,8 @@ importers:
         specifier: 2.29.1
         version: 2.29.1(@typescript-eslint/parser@6.19.0)(eslint@8.56.0)
       eslint-plugin-package-json:
-        specifier: 0.10.0
-        version: 0.10.0(eslint@8.56.0)(jsonc-eslint-parser@2.4.0)
+        specifier: 0.10.1
+        version: 0.10.1(eslint@8.56.0)(jsonc-eslint-parser@2.4.0)
       eslint-plugin-prettier:
         specifier: 5.1.3
         version: 5.1.3(eslint@8.56.0)(prettier@3.2.4)
@@ -6931,8 +6931,8 @@ packages:
       object.fromentries: 2.0.7
     dev: true
 
-  /eslint-plugin-package-json@0.10.0(eslint@8.56.0)(jsonc-eslint-parser@2.4.0):
-    resolution: {integrity: sha512-vUEfGptdpaEw0DTzN8Yl4cjZ2XZosuzAbZ+kOKJN+tJRe2hZDogesMhNYT8FI26QZ1rYUnfQ0wwzBTjswGr04g==}
+  /eslint-plugin-package-json@0.10.1(eslint@8.56.0)(jsonc-eslint-parser@2.4.0):
+    resolution: {integrity: sha512-YEiw8Mxjt5UIwefSVW9b7NgkGU6fDFMNm51r3eTrdPMn9hY1ZEYVwrnEAlQ6s57JBk8HBFVhjkyhsQ0KsCf4Pg==}
     engines: {node: '>=18'}
     peerDependencies:
       eslint: '>=8.0.0'
