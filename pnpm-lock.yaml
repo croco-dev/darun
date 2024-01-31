@@ -38,9 +38,21 @@ importers:
       '@as-integrations/aws-lambda':
         specifier: 3.1.0
         version: 3.1.0(@apollo/server@4.10.0)
+      '@darun/products-datasource':
+        specifier: workspace:*
+        version: link:../../libs/products/datasource
+      '@darun/products-domain':
+        specifier: workspace:*
+        version: link:../../libs/products/domain
+      '@darun/provider-database':
+        specifier: workspace:*
+        version: link:../../libs/shared/provider-database
       '@darun/utils-apollo-server':
         specifier: workspace:*
         version: link:../../libs/shared/utils-apollo-server
+      '@kang-heewon/esbuild-plugin-typescript-decorators':
+        specifier: 0.1.0
+        version: 0.1.0
       '@planetscale/database':
         specifier: 1.14.0
         version: 1.14.0
@@ -128,6 +140,44 @@ importers:
         specifier: 14.1.0
         version: 14.1.0(eslint@8.56.0)(typescript@5.3.3)
 
+  libs/products/datasource:
+    dependencies:
+      '@darun/products-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@darun/provider-database':
+        specifier: workspace:*
+        version: link:../../shared/provider-database
+      drizzle-orm:
+        specifier: '*'
+        version: 0.29.3(@planetscale/database@1.14.0)
+      typedi:
+        specifier: '*'
+        version: 0.10.0
+      ulid:
+        specifier: 2.3.0
+        version: 2.3.0
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../../shared/utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../../shared/utils-tsconfig
+
+  libs/products/domain:
+    dependencies:
+      typedi:
+        specifier: '*'
+        version: 0.10.0
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../../shared/utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../../shared/utils-tsconfig
+
   libs/shared/provider-auth:
     dependencies:
       '@darun/utils-auth-service-core':
@@ -149,6 +199,22 @@ importers:
       '@types/react':
         specifier: '*'
         version: 18.2.48
+
+  libs/shared/provider-database:
+    dependencies:
+      drizzle-orm:
+        specifier: '*'
+        version: 0.29.3(@planetscale/database@1.14.0)
+      typedi:
+        specifier: '*'
+        version: 0.10.0
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../utils-tsconfig
 
   libs/shared/ui-foundation:
     dependencies:
@@ -3736,6 +3802,12 @@ packages:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.1
       '@jridgewell/sourcemap-codec': 1.4.15
+
+  /@kang-heewon/esbuild-plugin-typescript-decorators@0.1.0:
+    resolution: {integrity: sha512-AAAPNJpLKS+MNbHGO4eiQnlsh6vb7mjRtZL3Nu6cTWiP+eiyb26St/UZxxSpzxmxFLHjxOyJ2w8v1u+14tCjeg==}
+    dependencies:
+      typescript: 4.9.5
+    dev: false
 
   /@kuma-ui/babel-plugin@1.1.15(@types/react@18.2.48)(next@14.1.0)(react@18.2.0):
     resolution: {integrity: sha512-H+hiyFI8BOwjvdI0VHPqpIuslh2vZu1lYX9SyUiKVrha/nDDd3LdL4ykukIkLmvekGMYpO5R9+teTkuhxTk+wA==}
@@ -11111,11 +11183,22 @@ packages:
     resolution: {integrity: sha512-v3UJF8xm68BBj6AF4oQML3ikrfK2c9EmZUyLOfShpJuItAqVBHWP/KtpGinkSsIiP6EZyyb6Z3NXyW9dgS9X1w==}
     dev: false
 
+  /typescript@4.9.5:
+    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
+    engines: {node: '>=4.2.0'}
+    hasBin: true
+    dev: false
+
   /typescript@5.3.3:
     resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}
     engines: {node: '>=14.17'}
     hasBin: true
     dev: true
+
+  /ulid@2.3.0:
+    resolution: {integrity: sha512-keqHubrlpvT6G2wH0OEfSW4mquYRcbe/J8NMmveoQOjUqmo+hXtO+ORCpWhdbZ7k72UtY61BL7haGxW6enBnjw==}
+    hasBin: true
+    dev: false
 
   /unbox-primitive@1.0.2:
     resolution: {integrity: sha512-61pPlCD9h51VoreyJ0BReideM3MDKMKnh6+V9L08331ipq6Q8OFXZYiqP6n/tbHx4s5I9uRhcye6BrbkizkBDw==}

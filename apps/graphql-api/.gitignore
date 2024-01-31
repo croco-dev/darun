@@ -6,4 +6,5 @@ node_modules
 
 .esbuild
 
-.env.*local
+.env.dev
+.env.prod
