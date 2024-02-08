@@ -1,6 +1,5 @@
 import { ApolloLink, HttpLink, InMemoryCache } from '@apollo/client';
 import {
-  ApolloNextAppProvider,
   NextSSRInMemoryCache,
   NextSSRApolloClient,
   SSRMultipartLink,

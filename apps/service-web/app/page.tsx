@@ -13,14 +13,14 @@ const userQuery = gql`
 `;
 
 export default async function Home() {
-  const { data } = await getClient().query({ query: userQuery });
+  const { data } = await getClient().query<{ recentProducts?: { id: string; name: string }[] }>({ query: userQuery });
 
   return (
     <main>
       <VStack mt={8}>
         <Header />
       </VStack>
-      {data.recentProducts?.map((product: any) => <div key={product.id}>{product.name}</div>)}
+      {data.recentProducts?.map(product => <div key={product.id}>{product.name}</div>)}
     </main>
   );
 }
