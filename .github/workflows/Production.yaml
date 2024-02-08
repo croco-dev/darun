@@ -15,7 +15,7 @@ jobs:
     name: deploy
     runs-on: ubuntu-latest
     environment:
-      name: dev-graphql
+      name: prod-graphql
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
