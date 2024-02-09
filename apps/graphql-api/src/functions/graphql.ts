@@ -12,6 +12,7 @@ export const handler: APIGatewayProxyHandlerV2 = createLambdaHandler(
     options: {
       resolvers,
       container: Container,
+      emitSchemaFile: IS_LOCAL ? 'schema.graphql' : false,
     },
     config: {
       playground: IS_LOCAL,

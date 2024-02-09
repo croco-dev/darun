@@ -1,5 +1,5 @@
 {
-  "name": "@aa/aaa",
+  "name": "@darun/product-shell-home",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
