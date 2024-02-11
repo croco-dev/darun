@@ -1,14 +1,36 @@
 import { Button as BaseButton } from '@kuma-ui/core';
-import { ReactNode } from 'react';
+import { ButtonHTMLAttributes, ReactNode } from 'react';
 
-type ButtonProps = {
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode;
-  kind: 'primary' | 'secondary' | 'tertiary';
+  kind: keyof typeof kindPreset;
 };
 
-export const ContainedButton = ({ children, kind }: ButtonProps) => {
+const kindPreset = {
+  text: {
+    bgColor: 'transparent',
+    textColor: 'colors.dark.900',
+  },
+  dark: {
+    bgColor: 'colors.dark.900',
+    textColor: '#fff',
+  },
+};
+
+export const ContainedButton = ({ children, kind, ...props }: ButtonProps) => {
   return (
-    <BaseButton px={14} py={8} bg="black" color="white" fontSize={13} borderRadius={14} border="none">
+    <BaseButton
+      px={14}
+      py={8}
+      bg={kindPreset[kind].bgColor ?? '#ff0000'}
+      color={kindPreset[kind].textColor ?? '#fff'}
+      fontSize={14}
+      fontWeight={'fontWeights.medium'}
+      borderRadius={12}
+      border="1px solid"
+      borderColor={kindPreset[kind].bgColor ?? '#ff0000'}
+      {...props}
+    >
       {children}
     </BaseButton>
   );
