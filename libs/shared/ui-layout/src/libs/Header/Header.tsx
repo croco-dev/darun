@@ -1,8 +1,7 @@
 import { bind } from '@croco/utils-structure-react';
-import { ContainedButton, Logo, TextButton } from '@darun/ui-foundation';
+import { ContainedButton, Container, Logo, TextButton } from '@darun/ui-foundation';
 import { Box, HStack, Input } from '@kuma-ui/core';
 import { ReactNode } from 'react';
-import { Container } from '../Container';
 import { SearchIcon } from './SearchIcon';
 import { useHeader } from './useHeader';
 
