@@ -1,5 +1,5 @@
-import { Product, ProductRepository, ProductRepositoryToken } from '@darun/products-domain';
 import { Database, DatabaseToken } from '@darun/provider-database';
+import { Product, ProductRepository, ProductRepositoryToken } from '@products/domain';
 import { desc } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';

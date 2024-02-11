@@ -1,9 +1,13 @@
 {
-  "name": "@darun/products-datasource",
+  "name": "@darun/backend",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./graphql-api": "./src/graphql-api.ts"
+  },
   "scripts": {
     "lint": "eslint **/*.ts*",
     "test": "echo 1",
@@ -13,10 +17,11 @@
     "ulid": "2.3.0"
   },
   "peerDependencies": {
-    "typedi": "*",
-    "@darun/products-domain": "workspace:*",
     "@darun/provider-database": "workspace:*",
-    "drizzle-orm": "*"
+    "drizzle-orm": "*",
+    "reflect-metadata": "*",
+    "type-graphql": "*",
+    "typedi": "*"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

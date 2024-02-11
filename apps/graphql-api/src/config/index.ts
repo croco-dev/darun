@@ -1,3 +1,3 @@
 import 'reflect-metadata';
 
-import '@darun/products-datasource';
+import '@darun/backend/graphql-api';

@@ -11,6 +11,7 @@
   },
   "peerDependencies": {
     "@apollo/client": "*",
+    "@apollo/experimental-nextjs-app-support": "*",
     "@croco/utils-structure-react": "*",
     "@darun/provider-graphql": "workspace:*",
     "@darun/ui-foundation": "workspace:*",

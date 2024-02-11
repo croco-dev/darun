@@ -3,7 +3,7 @@ import { Service } from 'typedi';
 
 @Resolver()
 @Service()
-export class HelloResolver {
+export class HealthResolver {
   @Query(() => String)
   hello() {
     return 'Hello World!';
