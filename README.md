@@ -12,14 +12,14 @@
 |       |           \---[domain]
 |       |               \---datasource
 |       |               \---domain
-|       |               \---presentation
 |       |       \---index.ts
 |   +---frontend
 |       |   \---src
 |       |       \---libs
+|       |           \---pages
 |       |           \---[domain]
-|       |               \---feature-list
-|       |               \---shell-home
+|       |               \---components
+|       |               \---shells
 |   +---shared
 |       |   \---provider-*
 |       |   \---utils-*
