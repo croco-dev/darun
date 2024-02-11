@@ -5,14 +5,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "default": "./src/index.ts",
-      "types": "./src/index.ts"
-    },
-    "./server": {
-      "default": "./src/server.ts",
-      "types": "./src/server.ts"
-    }
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts"
   },
   "scripts": {
     "lint": "eslint **/*.ts*",

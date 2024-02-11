@@ -18,8 +18,8 @@
 |       |   \---src
 |       |       \---libs
 |       |           \---[domain]
-|       |               \---components
-|       |               \---pages
+|       |               \---feature-list
+|       |               \---shell-home
 |   +---shared
 |       |   \---provider-*
 |       |   \---utils-*

@@ -1,5 +1,5 @@
 {
-  "name": "@darun/product-shell-home",
+  "name": "@darun/frontend",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
@@ -15,11 +15,11 @@
     "@croco/utils-structure-react": "*",
     "@darun/provider-graphql": "workspace:*",
     "@darun/ui-foundation": "workspace:*",
+    "@darun/ui-layout": "workspace:*",
     "@kuma-ui/core": "*"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
-    "@darun/utils-apollo-client": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@types/react": "*",
     "@types/react-dom": "*"

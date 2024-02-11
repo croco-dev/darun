@@ -1,5 +1,5 @@
 {
-  "extends": "@darun/utils-tsconfig/tsconfig.next.json",
+  "extends": ["@darun/utils-tsconfig/tsconfig.next.json", "@darun/frontend/tsconfig.json"],
   "compilerOptions": {
     "plugins": [
       {

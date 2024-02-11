@@ -102,9 +102,9 @@ importers:
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
-      '@darun/product-shell-home':
+      '@darun/frontend':
         specifier: workspace:*
-        version: link:../../libs/products/shell-home
+        version: link:../../libs/frontend
       '@darun/provider-auth':
         specifier: workspace:*
         version: link:../../libs/shared/provider-auth
@@ -180,7 +180,7 @@ importers:
         specifier: workspace:*
         version: link:../shared/utils-tsconfig
 
-  libs/products/shell-home:
+  libs/frontend:
     dependencies:
       '@apollo/client':
         specifier: '*'
@@ -193,23 +193,23 @@ importers:
         version: 0.0.1
       '@darun/provider-graphql':
         specifier: workspace:*
-        version: link:../../shared/provider-graphql
+        version: link:../shared/provider-graphql
       '@darun/ui-foundation':
         specifier: workspace:*
-        version: link:../../shared/ui-foundation
+        version: link:../shared/ui-foundation
+      '@darun/ui-layout':
+        specifier: workspace:*
+        version: link:../shared/ui-layout
       '@kuma-ui/core':
         specifier: '*'
         version: 1.5.6(@types/react@18.2.48)(next@14.1.0)(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
-        version: link:../../shared/utils-eslint-config
-      '@darun/utils-apollo-client':
-        specifier: workspace:*
-        version: link:../../shared/utils-apollo-client
+        version: link:../shared/utils-eslint-config
       '@darun/utils-tsconfig':
         specifier: workspace:*
-        version: link:../../shared/utils-tsconfig
+        version: link:../shared/utils-tsconfig
       '@types/react':
         specifier: '*'
         version: 18.2.48
