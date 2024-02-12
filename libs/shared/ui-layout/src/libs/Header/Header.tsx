@@ -1,6 +1,7 @@
 import { bind } from '@croco/utils-structure-react';
 import { ContainedButton, TextButton } from '@darun/ui-foundation';
-import { Box, Flex, HStack, Input } from '@kuma-ui/core';
+import { Box, HStack, Input } from '@kuma-ui/core';
+import { HeaderLoginButton } from '../HeaderLoginButton';
 import { SearchIcon } from './SearchIcon';
 import { useHeader } from './useHeader';
 
@@ -34,7 +35,7 @@ export const Header = bind(useHeader, () => (
       />
     </HStack>
     <HStack height="max-content" gap={8}>
-      <TextButton>로그인</TextButton>
+      <HeaderLoginButton />
       <ContainedButton kind="primary">제보하기</ContainedButton>
     </HStack>
   </HStack>

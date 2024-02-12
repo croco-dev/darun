@@ -1,0 +1,1 @@
+export { initAuthProvider } from './AuthServerProvider';

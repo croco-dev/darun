@@ -1,15 +1,17 @@
 {
-  "extends": "@darun/utils-tsconfig/tsconfig.next.json",
+  "extends": ["@darun/frontend/tsconfig.json", "@darun/utils-tsconfig/tsconfig.next.json"],
   "compilerOptions": {
     "plugins": [
       {
-        "name": "next"
-      }
+        "name": "next",
+      },
     ],
     "lib": ["dom", "dom.iterable", "esnext"],
     "incremental": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "jsx": "preserve",
   },
   "include": ["next-env.d.ts", "next.config.js", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
 }

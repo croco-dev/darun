@@ -1,0 +1,12 @@
+{
+  "extends": "@darun/utils-tsconfig/tsconfig.react.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/*.ts"],
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@products/components": ["src/libs/products/components/index.ts"],
+      "@products/shells": ["src/libs/products/shells/index.ts"],
+    },
+  },
+}
