@@ -1,11 +1,5 @@
-import { ReactNode } from 'react';
-import { ContainedButton } from '../ContainedButton';
-
-type ButtonProps = {
-  onClick?: () => void;
-  children: ReactNode;
-};
+import { BaseButton, ButtonProps } from '../BaseButton';
 
 export const TextButton = ({ children }: ButtonProps) => {
-  return <ContainedButton kind={'text'}>{children}</ContainedButton>;
+  return <BaseButton kind={'text'}>{children}</BaseButton>;
 };
