@@ -9,9 +9,16 @@ plugins:
 
 custom:
   esbuild:
+    bundle: true
     exclude: ['class-validator']
+    minify: false
+    keepNames: true
+    sourcemap: true
+    sourcesContent: false
+    treeShaking: false
+    ignoreAnnotations: true
+    plugins: esbuild.plugins.js
   serverless-offline:
-    reloadHandler: true
     httpPort: 4000
 
 provider:

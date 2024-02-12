@@ -16,21 +16,23 @@
   "dependencies": {
     "@apollo/server": "4.10.0",
     "@as-integrations/aws-lambda": "3.1.0",
+    "@darun/backend": "workspace:*",
+    "@darun/provider-database": "workspace:*",
     "@darun/utils-apollo-server": "workspace:*",
+    "@kang-heewon/esbuild-plugin-typescript-decorators": "0.1.0",
     "@planetscale/database": "1.14.0",
     "drizzle-orm": "0.29.3",
     "graphql": "16.8.1",
     "graphql-scalars": "1.22.4",
     "reflect-metadata": "0.2.1",
     "type-graphql": "2.0.0-beta.6",
-    "typedi": "0.10.0",
-    "@darun/utils-apollo-server": "workspace:*"
+    "typedi": "0.10.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "8.10.131",
-    "esbuild": "0.19.11",
+    "esbuild": "0.20.0",
     "serverless": "3.38.0",
     "serverless-esbuild": "1.50.1",
-    "serverless-offline": "13.3.2"
+    "serverless-offline": "13.3.3"
   }
 }

@@ -1,0 +1,24 @@
+{
+  "name": "@darun/provider-graphql",
+  "version": "0.0.0",
+  "type": "commonjs",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "codegen": "graphql-codegen --config ./codegen.ts",
+    "lint": "eslint **/*.ts*",
+    "test": "echo 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@graphql-codegen/cli": "5.0.2",
+    "@graphql-codegen/near-operation-file-preset": "3.0.0",
+    "@graphql-codegen/typescript": "4.0.4",
+    "@graphql-codegen/typescript-operations": "4.1.2",
+    "@graphql-codegen/typescript-react-apollo": "4.3.0"
+  },
+  "devDependencies": {
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*"
+  }
+}

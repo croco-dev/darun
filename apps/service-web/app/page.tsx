@@ -1,9 +1,3 @@
-import { VStack } from '@kuma-ui/core';
+import { HomePage } from '@darun/frontend';
 
-export default function Home() {
-  return (
-    <main>
-      <VStack>a</VStack>
-    </main>
-  );
-}
+export default HomePage;
