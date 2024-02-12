@@ -14,6 +14,7 @@
     "@apollo/experimental-nextjs-app-support": "0.8.0",
     "@croco/utils-next-font-pretendard": "0.0.1",
     "@croco/utils-structure-react": "0.0.1",
+    "@darun/frontend": "workspace:*",
     "@darun/provider-auth": "workspace:*",
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-layout": "workspace:*",

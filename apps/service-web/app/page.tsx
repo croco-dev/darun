@@ -1,26 +1,3 @@
-import { gql } from '@apollo/client';
-import { Header } from '@darun/ui-layout';
-import { getClient } from '@darun/utils-apollo-client/server';
-import { VStack } from '@kuma-ui/core';
+import { HomePage } from '@darun/frontend';
 
-const userQuery = gql`
-  query {
-    recentProducts {
-      id
-      name
-    }
-  }
-`;
-
-export default async function Home() {
-  const { data } = await getClient().query<{ recentProducts?: { id: string; name: string }[] }>({ query: userQuery });
-
-  return (
-    <main>
-      <VStack mt={8}>
-        <Header />
-      </VStack>
-      {data.recentProducts?.map(product => <div key={product.id}>{product.name}</div>)}
-    </main>
-  );
-}
+export default HomePage;

@@ -16,8 +16,7 @@
   "dependencies": {
     "@apollo/server": "4.10.0",
     "@as-integrations/aws-lambda": "3.1.0",
-    "@darun/products-datasource": "workspace:*",
-    "@darun/products-domain": "workspace:*",
+    "@darun/backend": "workspace:*",
     "@darun/provider-database": "workspace:*",
     "@darun/utils-apollo-server": "workspace:*",
     "@kang-heewon/esbuild-plugin-typescript-decorators": "0.1.0",
