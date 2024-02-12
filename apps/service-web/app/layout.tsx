@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <CookiesProvider>
             <ServerRootProvider>
               <ClientRootProvider>
-                 <Layout>{children}</Layout>
+                <Layout>{children}</Layout>
               </ClientRootProvider>
             </ServerRootProvider>
           </CookiesProvider>
