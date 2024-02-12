@@ -1,7 +1,6 @@
 import { bind } from '@croco/utils-structure-react';
 import { ContentArea } from '@darun/ui-foundation';
-import { Box, HStack, VStack } from '@kuma-ui/core';
-import { ReactNode } from 'react';
+import { Box, HStack, VStack, Text } from '@kuma-ui/core';
 import { useFooter } from './useFooter';
 
 export const Footer = bind(useFooter, () => (
@@ -10,13 +9,27 @@ export const Footer = bind(useFooter, () => (
       <HStack justifyContent={'space-between'}>
         <VStack gap={4}>
           <HStack gap={6}>
-            <LinkText>&copy; 2024 Croco</LinkText>
-            <Dot />
-            <LinkText>개인정보처리방침</LinkText>
-            <Dot />
-            <LinkText>서비스 약관</LinkText>
-            <Dot />
-            <LinkText>문의</LinkText>
+            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.600'}>
+              &copy; 2024 Croco
+            </Text>
+            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.400'}>
+              •
+            </Text>
+            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.600'}>
+              개인정보처리방침
+            </Text>
+            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.400'}>
+              •
+            </Text>
+            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.600'}>
+              서비스 약관
+            </Text>
+            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.400'}>
+              •
+            </Text>
+            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.600'}>
+              문의
+            </Text>
           </HStack>
           <HStack>
             <Box as={'p'} fontSize={13} fontWeight={'fontWeights.normal'} color={'colors.dark.500'}>
@@ -30,16 +43,3 @@ export const Footer = bind(useFooter, () => (
     </ContentArea>
   </Box>
 ));
-
-const LinkText = ({ children, type = 'default' }: { children: ReactNode; type?: 'default' | 'dot' }) => (
-  <Box
-    as={'span'}
-    fontSize={14}
-    fontWeight={'fontWeights.medium'}
-    color={type === 'default' ? 'colors.dark.600' : 'colors.dark.400'}
-  >
-    {children}
-  </Box>
-);
-
-const Dot = () => <LinkText type={'dot'}>•</LinkText>;

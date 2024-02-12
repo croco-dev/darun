@@ -1,8 +1,8 @@
 import { bind } from '@croco/utils-structure-react';
 import { ContainedButton, ContentArea, Logo } from '@darun/ui-foundation';
 import { Box, HStack, Input } from '@kuma-ui/core';
-import { ReactNode } from 'react';
 import { HeaderLoginButton } from '../HeaderLoginButton';
+import { HeaderQuickItem } from '../HeaderQuickItem';
 import { SearchIcon } from './SearchIcon';
 import { useHeader } from './useHeader';
 
@@ -15,8 +15,8 @@ export const Header = bind(useHeader, () => (
             <Logo size={36} />
           </Box>
           <HStack alignItems="center" gap={12}>
-            <LinkItem>랭킹</LinkItem>
-            <LinkItem>둘러보기</LinkItem>
+            <HeaderQuickItem>랭킹</HeaderQuickItem>
+            <HeaderQuickItem>둘러보기</HeaderQuickItem>
           </HStack>
         </HStack>
         <HStack
@@ -48,16 +48,3 @@ export const Header = bind(useHeader, () => (
     </ContentArea>
   </Box>
 ));
-
-const LinkItem = ({ href, children }: { href?: string; children: ReactNode }) => (
-  <Box
-    as={'a'}
-    href={href ?? '#'}
-    fontSize={15}
-    fontWeight={'fontWeights.medium'}
-    color={'colors.dark.700'}
-    textDecoration={'none'}
-  >
-    {children}
-  </Box>
-);
