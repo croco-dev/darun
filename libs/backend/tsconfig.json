@@ -1,0 +1,12 @@
+{
+  "extends": "@darun/utils-tsconfig/tsconfig.node.json",
+  "include": ["src/**/*.ts", "src/*.ts"],
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@products/domain": ["src/libs/products/domain/index.ts"],
+      "@products/datasource": ["src/libs/products/datasource/index.ts"],
+    },
+  },
+}

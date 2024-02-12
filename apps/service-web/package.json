@@ -10,14 +10,19 @@
     "test": "echo 1"
   },
   "dependencies": {
-    "@darun/provider-auth": "workspace:*",
+    "@apollo/client": "3.9.4",
+    "@apollo/experimental-nextjs-app-support": "0.8.0",
     "@croco/utils-next-font-pretendard": "0.0.1",
+    "@croco/utils-structure-react": "0.0.1",
+    "@darun/frontend": "workspace:*",
+    "@darun/provider-auth": "workspace:*",
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-layout": "workspace:*",
+    "@darun/utils-apollo-client": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@kuma-ui/core": "1.5.6",
-    "next-client-cookies": "1.1.0",
     "next": "14.1.0",
+    "next-client-cookies": "1.1.0",
     "normalize.css": "8.0.1",
     "react": "^18",
     "react-dom": "^18"

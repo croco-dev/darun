@@ -1,12 +1,3 @@
-import { Header } from '@darun/ui-layout';
-import { VStack } from '@kuma-ui/core';
+import { HomePage } from '@darun/frontend';
 
-export default function Home() {
-  return (
-    <main>
-      <VStack mt={8}>
-        <Header />
-      </VStack>
-    </main>
-  );
-}
+export default HomePage;

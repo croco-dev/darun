@@ -5,6 +5,7 @@ import { pretendardFont } from '@croco/utils-next-font-pretendard';
 import { KumaRegistry } from '@kuma-ui/next-plugin/registry';
 import { Metadata } from 'next';
 import { CookiesProvider } from 'next-client-cookies/server';
+import { ReactNode } from 'react';
 import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   description: 'darun.io',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
       <body className={pretendardFont.className}>

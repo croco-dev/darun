@@ -1,5 +1,11 @@
+import { ApolloLink, HttpLink, InMemoryCache } from '@apollo/client';
+import {
+  NextSSRInMemoryCache,
+  NextSSRApolloClient,
+  SSRMultipartLink,
+} from '@apollo/experimental-nextjs-app-support/ssr';
+import { createApolloClient } from '@darun/utils-apollo-client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
-
 class Container {
   private static instance: Container;
   public static getInstance() {
@@ -15,6 +21,31 @@ class Container {
       privateKey: process.env['FIREBASE_PRIVATE_KEY'] ?? '',
       clientEmail: process.env['FIREBASE_CLIENT_EMAIL'] ?? '',
       apiKey: process.env['NEXT_PUBLIC_FIREBASE_API_KEY'] ?? '',
+    });
+  }
+
+  get httpLink() {
+    return new HttpLink({
+      uri: process.env['NEXT_PUBLIC_GRAPHQL_URL'] ?? '',
+      fetchOptions: { cache: 'no-store' },
+    });
+  }
+  get serverApolloClient() {
+    return createApolloClient([this.httpLink], new InMemoryCache());
+  }
+
+  get apolloClient() {
+    return new NextSSRApolloClient({
+      cache: new NextSSRInMemoryCache(),
+      link:
+        typeof window === 'undefined'
+          ? ApolloLink.from([
+              new SSRMultipartLink({
+                stripDefer: true,
+              }),
+              this.httpLink,
+            ])
+          : this.httpLink,
     });
   }
 }

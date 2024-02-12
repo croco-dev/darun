@@ -73,4 +73,5 @@ module.exports = {
       '@typescript-eslint/parser': ['.ts'],
     },
   },
+  ignorePatterns: ['__generated__'],
 };
