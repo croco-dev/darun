@@ -1,5 +1,5 @@
 import { bind } from '@croco/utils-structure-react';
-import { ContainedButton, Container, Logo } from '@darun/ui-foundation';
+import { ContainedButton, ContentArea, Logo } from '@darun/ui-foundation';
 import { Box, HStack, Input } from '@kuma-ui/core';
 import { ReactNode } from 'react';
 import { HeaderLoginButton } from '../HeaderLoginButton';
@@ -8,7 +8,7 @@ import { useHeader } from './useHeader';
 
 export const Header = bind(useHeader, () => (
   <Box as={'nav'} display={'flex'} width={'100%'}>
-    <Container>
+    <ContentArea>
       <HStack width="100%" justify="space-between" alignItems="center" gap={24} paddingY={'14px'}>
         <HStack gap={24}>
           <Box>
@@ -45,7 +45,7 @@ export const Header = bind(useHeader, () => (
           <ContainedButton kind="dark">제보하기</ContainedButton>
         </HStack>
       </HStack>
-    </Container>
+    </ContentArea>
   </Box>
 ));
 

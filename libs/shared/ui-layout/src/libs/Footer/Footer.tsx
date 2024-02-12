@@ -1,12 +1,12 @@
 import { bind } from '@croco/utils-structure-react';
-import { Container } from '@darun/ui-foundation';
+import { ContentArea } from '@darun/ui-foundation';
 import { Box, HStack, VStack } from '@kuma-ui/core';
 import { ReactNode } from 'react';
 import { useFooter } from './useFooter';
 
 export const Footer = bind(useFooter, () => (
   <Box as={'footer'} py={28}>
-    <Container>
+    <ContentArea>
       <HStack justifyContent={'space-between'}>
         <VStack gap={4}>
           <HStack gap={6}>
@@ -27,7 +27,7 @@ export const Footer = bind(useFooter, () => (
         </VStack>
         <HStack gap={8}></HStack>
       </HStack>
-    </Container>
+    </ContentArea>
   </Box>
 ));
 

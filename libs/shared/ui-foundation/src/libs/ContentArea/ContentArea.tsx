@@ -1,7 +1,7 @@
 import { styled } from '@kuma-ui/core';
 import { ReactNode } from 'react';
 
-export function Container({ children }: { children: ReactNode }) {
+export function ContentArea({ children }: { children: ReactNode }) {
   return <Component>{children}</Component>;
 }
 
