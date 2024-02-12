@@ -11,9 +11,9 @@ export const Header = bind(useHeader, () => (
     <ContentArea>
       <HStack width="100%" justify="space-between" alignItems="center" gap={24} paddingY={'14px'}>
         <HStack gap={24}>
-          <Box>
+          <HStack alignItems="center">
             <Logo size={36} />
-          </Box>
+          </HStack>
           <HStack alignItems="center" gap={12}>
             <HeaderQuickItem>랭킹</HeaderQuickItem>
             <HeaderQuickItem>둘러보기</HeaderQuickItem>
