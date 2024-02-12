@@ -51,11 +51,11 @@ importers:
         specifier: 0.1.0
         version: 0.1.0
       '@planetscale/database':
-        specifier: 1.14.0
-        version: 1.14.0
+        specifier: 1.16.0
+        version: 1.16.0
       drizzle-orm:
         specifier: 0.29.3
-        version: 0.29.3(@planetscale/database@1.14.0)
+        version: 0.29.3(@planetscale/database@1.16.0)
       graphql:
         specifier: 16.8.1
         version: 16.8.1
@@ -159,7 +159,7 @@ importers:
         version: link:../shared/provider-database
       drizzle-orm:
         specifier: '*'
-        version: 0.29.3(@planetscale/database@1.14.0)
+        version: 0.29.3(@planetscale/database@1.16.0)
       reflect-metadata:
         specifier: '*'
         version: 0.2.1
@@ -243,7 +243,7 @@ importers:
     dependencies:
       drizzle-orm:
         specifier: '*'
-        version: 0.29.3(@planetscale/database@1.14.0)
+        version: 0.29.3(@planetscale/database@1.16.0)
       typedi:
         specifier: '*'
         version: 0.10.0
@@ -5391,8 +5391,8 @@ packages:
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
     dev: true
 
-  /@planetscale/database@1.14.0:
-    resolution: {integrity: sha512-7BB+iH6EH4YJuDeVeEbxpo60BFz3wIXJNXCmBGl40eC4HStRMGZ1COxKfiuPcINWwwrJhAhI9AEI97AOZYT7JQ==}
+  /@planetscale/database@1.16.0:
+    resolution: {integrity: sha512-HNUrTqrd8aTRZYMDcsoZ62s36sIWkMMmKZBOehoCWR2WrfNPKq+Q1yQef5okl3pSVlldFnu2h/dbHjOsDTHXug==}
     engines: {node: '>=16'}
     dev: false
 
@@ -8107,7 +8107,7 @@ packages:
     resolution: {integrity: sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==}
     engines: {node: '>=12'}
 
-  /drizzle-orm@0.29.3(@planetscale/database@1.14.0):
+  /drizzle-orm@0.29.3(@planetscale/database@1.16.0):
     resolution: {integrity: sha512-uSE027csliGSGYD0pqtM+SAQATMREb3eSM/U8s6r+Y0RFwTKwftnwwSkqx3oS65UBgqDOM0gMTl5UGNpt6lW0A==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
@@ -8178,7 +8178,7 @@ packages:
       sqlite3:
         optional: true
     dependencies:
-      '@planetscale/database': 1.14.0
+      '@planetscale/database': 1.16.0
     dev: false
 
   /dset@3.1.3:
