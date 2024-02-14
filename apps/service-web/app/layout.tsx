@@ -22,9 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <KumaRegistry>
           <CookiesProvider>
             <ServerRootProvider>
-              <ClientRootProvider>
-                <Layout>{children}</Layout>
-              </ClientRootProvider>
+              <ClientRootProvider>{children}</ClientRootProvider>
             </ServerRootProvider>
           </CookiesProvider>
         </KumaRegistry>
