@@ -16,12 +16,21 @@ export type Scalars = {
 
 export type Product = {
   readonly __typename?: 'Product';
+  readonly description?: Maybe<Scalars['String']['output']>;
   readonly id: Scalars['ID']['output'];
+  readonly logoUrl: Scalars['String']['output'];
   readonly name: Scalars['String']['output'];
+  readonly summary: Scalars['String']['output'];
 };
 
 export type Query = {
   readonly __typename?: 'Query';
   readonly hello: Scalars['String']['output'];
+  readonly product: Product;
   readonly recentProducts: ReadonlyArray<Product>;
+};
+
+
+export type QueryproductArgs = {
+  id: Scalars['ID']['input'];
 };
