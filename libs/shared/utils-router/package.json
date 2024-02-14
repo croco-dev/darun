@@ -14,5 +14,8 @@
     "@darun/utils-tsconfig": "workspace:*",
     "@types/react": "*",
     "@types/react-dom": "*"
+  },
+  "peerDependencies": {
+    "next": "*"
   }
 }

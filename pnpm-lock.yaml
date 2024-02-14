@@ -448,6 +448,10 @@ importers:
         version: 3.2.4
 
   libs/shared/utils-router:
+    dependencies:
+      next:
+        specifier: 14.1.0
+        version: 14.1.0(@babel/core@7.23.7)(react-dom@18.2.0)(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -1231,26 +1235,6 @@ packages:
       '@smithy/types': 2.9.1
       tslib: 2.6.2
     transitivePeerDependencies:
-      - aws-crt
-    dev: true
-
-  /@aws-sdk/credential-provider-ini@3.503.1(@aws-sdk/credential-provider-node@3.503.1):
-    resolution: {integrity: sha512-1RiC72NdWJ5w2IaX/91Fku+FrrChzaHuMCD5wbjk5TMHjwiDZ622wvMKYVmn30biW0RbJidaw38Y9PAGivdZxw==}
-    engines: {node: '>=14.0.0'}
-    dependencies:
-      '@aws-sdk/client-sts': 3.502.0(@aws-sdk/credential-provider-node@3.503.1)
-      '@aws-sdk/credential-provider-env': 3.502.0
-      '@aws-sdk/credential-provider-process': 3.502.0
-      '@aws-sdk/credential-provider-sso': 3.503.1(@aws-sdk/credential-provider-node@3.503.1)
-      '@aws-sdk/credential-provider-web-identity': 3.502.0(@aws-sdk/credential-provider-node@3.503.1)
-      '@aws-sdk/types': 3.502.0
-      '@smithy/credential-provider-imds': 2.2.1
-      '@smithy/property-provider': 2.1.1
-      '@smithy/shared-ini-file-loader': 2.3.1
-      '@smithy/types': 2.9.1
-      tslib: 2.6.2
-    transitivePeerDependencies:
-      - '@aws-sdk/credential-provider-node'
       - aws-crt
     dev: true
 
@@ -6168,6 +6152,15 @@ packages:
       '@types/node': 20.11.17
       form-data: 4.0.0
     dev: false
+
+  /@types/node@12.20.55:
+    resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
+    dev: false
+
+  /@types/node@20.11.17:
+    resolution: {integrity: sha512-QmgQZGWu1Yw9TDyAP9ZzpFJKynYNeOvwMJmaxABfieQoVoiVOS6MN1WSpqpRcbeA5+RW82kraAVxCCJg+780Qw==}
+    dependencies:
+      undici-types: 5.26.5
 
   /@types/node@20.11.5:
     resolution: {integrity: sha512-g557vgQjUUfN76MZAN/dt1z3dzcUsimuysco0KeluHgrPdJXkP/XdAURgyO2W9fZWHRtRBiVKzKn8vyOAwlG+w==}
