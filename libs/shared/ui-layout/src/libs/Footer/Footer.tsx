@@ -1,10 +1,10 @@
 import { bind } from '@croco/utils-structure-react';
 import { ContentArea } from '@darun/ui-foundation';
-import { Box, HStack, VStack, Text } from '@kuma-ui/core';
+import { HStack, VStack, Text, Flex } from '@kuma-ui/core';
 import { useFooter } from './useFooter';
 
 export const Footer = bind(useFooter, () => (
-  <Box as={'footer'} py={28}>
+  <Flex as={'footer'} py={28}>
     <ContentArea>
       <HStack justifyContent={'space-between'}>
         <VStack gap={4}>
@@ -32,14 +32,14 @@ export const Footer = bind(useFooter, () => (
             </Text>
           </HStack>
           <HStack>
-            <Box as={'p'} fontSize={13} fontWeight={'fontWeights.normal'} color={'colors.dark.500'}>
+            <Text fontSize={13} fontWeight={'fontWeights.normal'} color={'colors.dark.500'}>
               ‘다른’ 서비스는 단순 정보를 제공하며, 각 개별 컨텐츠의 저작권과 소유권을 보유하고 있지 않습니다. <br />
               ‘다른’ 서비스는 공신력 있는 매체가 아닙니다. 사이트에 있는 내용을 맹신하지 마세요.
-            </Box>
+            </Text>
           </HStack>
         </VStack>
         <HStack gap={8}></HStack>
       </HStack>
     </ContentArea>
-  </Box>
+  </Flex>
 ));

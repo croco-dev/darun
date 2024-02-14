@@ -1,13 +1,12 @@
 import { bind } from '@croco/utils-structure-react';
 import { ContainedButton, ContentArea, Logo } from '@darun/ui-foundation';
-import { Box, HStack, Input } from '@kuma-ui/core';
+import { Flex, HStack, Input, Link } from '@kuma-ui/core';
 import { HeaderLoginButton } from '../HeaderLoginButton';
-import { HeaderQuickItem } from '../HeaderQuickItem';
 import { SearchIcon } from './SearchIcon';
 import { useHeader } from './useHeader';
 
 export const Header = bind(useHeader, () => (
-  <Box as={'nav'} display={'flex'} width={'100%'}>
+  <Flex as={'nav'} display={'flex'} width={'100%'}>
     <ContentArea>
       <HStack width="100%" justify="space-between" alignItems="center" gap={24} paddingY={'14px'}>
         <HStack gap={24}>
@@ -15,8 +14,24 @@ export const Header = bind(useHeader, () => (
             <Logo size={36} />
           </HStack>
           <HStack alignItems="center" gap={12}>
-            <HeaderQuickItem>랭킹</HeaderQuickItem>
-            <HeaderQuickItem>둘러보기</HeaderQuickItem>
+            <Link
+              href={'#'}
+              fontSize={15}
+              fontWeight={'fontWeights.medium'}
+              color={'colors.dark.700'}
+              textDecoration={'none'}
+            >
+              랭킹
+            </Link>
+            <Link
+              href={'#'}
+              fontSize={15}
+              fontWeight={'fontWeights.medium'}
+              color={'colors.dark.700'}
+              textDecoration={'none'}
+            >
+              둘러보기
+            </Link>
           </HStack>
         </HStack>
         <HStack
@@ -42,9 +57,9 @@ export const Header = bind(useHeader, () => (
         </HStack>
         <HStack height="max-content" gap={8}>
           <HeaderLoginButton />
-          <ContainedButton kind="dark">제보하기</ContainedButton>
+          <ContainedButton kind="primary">제보하기</ContainedButton>
         </HStack>
       </HStack>
     </ContentArea>
-  </Box>
+  </Flex>
 ));

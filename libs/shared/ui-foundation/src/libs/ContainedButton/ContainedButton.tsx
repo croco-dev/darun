@@ -4,7 +4,7 @@ type ContainedButtonProps = ButtonProps & {
   kind?: Exclude<BaseButtonKind, 'text'>;
 };
 
-export const ContainedButton = ({ children, kind = 'dark', ...props }: ContainedButtonProps) => {
+export const ContainedButton = ({ children, kind = 'primary', ...props }: ContainedButtonProps) => {
   return (
     <BaseButton kind={kind} {...props}>
       {children}

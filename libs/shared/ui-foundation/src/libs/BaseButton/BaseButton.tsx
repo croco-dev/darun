@@ -16,7 +16,7 @@ const kindPreset = {
     bgColor: 'transparent',
     textColor: 'colors.dark.900',
   },
-  dark: {
+  primary: {
     bgColor: 'colors.dark.900',
     textColor: '#fff',
   },
