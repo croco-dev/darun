@@ -1,14 +1,12 @@
-import { Button as BaseButton } from '@kuma-ui/core';
-import { ReactNode } from 'react';
+import { BaseButton, BaseButtonKind, ButtonProps } from '../BaseButton';
 
-type ButtonProps = {
-  children: ReactNode;
-  kind: 'primary' | 'secondary' | 'tertiary';
+type ContainedButtonProps = ButtonProps & {
+  kind?: Exclude<BaseButtonKind, 'text'>;
 };
 
-export const ContainedButton = ({ children, kind }: ButtonProps) => {
+export const ContainedButton = ({ children, kind = 'primary', ...props }: ContainedButtonProps) => {
   return (
-    <BaseButton px={14} py={8} bg="black" color="white" fontSize={13} borderRadius={14} border="none">
+    <BaseButton kind={kind} {...props}>
       {children}
     </BaseButton>
   );

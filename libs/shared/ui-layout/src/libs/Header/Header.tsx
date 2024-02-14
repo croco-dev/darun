@@ -1,42 +1,65 @@
 import { bind } from '@croco/utils-structure-react';
-import { ContainedButton, TextButton } from '@darun/ui-foundation';
-import { Box, HStack, Input } from '@kuma-ui/core';
+import { ContainedButton, ContentArea, Logo } from '@darun/ui-foundation';
+import { Flex, HStack, Input, Link } from '@kuma-ui/core';
 import { HeaderLoginButton } from '../HeaderLoginButton';
 import { SearchIcon } from './SearchIcon';
 import { useHeader } from './useHeader';
 
 export const Header = bind(useHeader, () => (
-  <HStack width="100%" maxWidth={1130} justify="space-between" alignItems="center" gap={24} margin="auto">
-    <HStack gap={20}>
-      <Box>logo</Box>
-      <HStack gap={8}>
-        <Box>랭킹</Box>
-        <Box>둘러보기</Box>
+  <Flex as={'nav'} display={'flex'} width={'100%'}>
+    <ContentArea>
+      <HStack width="100%" justify="space-between" alignItems="center" gap={24} paddingY={'14px'}>
+        <HStack gap={24}>
+          <HStack alignItems="center">
+            <Logo size={36} />
+          </HStack>
+          <HStack alignItems="center" gap={12}>
+            <Link
+              href={'#'}
+              fontSize={15}
+              fontWeight={'fontWeights.medium'}
+              color={'colors.dark.700'}
+              textDecoration={'none'}
+            >
+              랭킹
+            </Link>
+            <Link
+              href={'#'}
+              fontSize={15}
+              fontWeight={'fontWeights.medium'}
+              color={'colors.dark.700'}
+              textDecoration={'none'}
+            >
+              둘러보기
+            </Link>
+          </HStack>
+        </HStack>
+        <HStack
+          flexGrow={1}
+          borderRadius={14}
+          border="1px solid rgba(0, 0, 0, 0.15)"
+          px={16}
+          py={11}
+          borderStyle="solid"
+          gap={8}
+          boxShadow="0px 2px 4px 0px rgba(0, 0, 0, 0.08)"
+        >
+          <SearchIcon size={18} />
+          <Input
+            width="100%"
+            border="none"
+            outline="none"
+            placeholder="현재 사용 중인 서비스를 찾아보세요!"
+            color="#555"
+            fontSize={14}
+            letterSpacing={-0.1}
+          />
+        </HStack>
+        <HStack height="max-content" gap={8}>
+          <HeaderLoginButton />
+          <ContainedButton kind="primary">제보하기</ContainedButton>
+        </HStack>
       </HStack>
-    </HStack>
-    <HStack
-      flexGrow={1}
-      borderRadius={14}
-      borderWidth={1}
-      borderColor="rgba(0, 0, 0, 0.15)"
-      px={16}
-      py={11}
-      borderStyle="solid"
-      gap={8}
-    >
-      <SearchIcon size={18} />
-      <Input
-        width="100%"
-        border="none"
-        outline="none"
-        placeholder="현재 사용 중인 서비스를 찾아보세요!"
-        color="#555"
-        fontSize={14}
-      />
-    </HStack>
-    <HStack height="max-content" gap={8}>
-      <HeaderLoginButton />
-      <ContainedButton kind="primary">제보하기</ContainedButton>
-    </HStack>
-  </HStack>
+    </ContentArea>
+  </Flex>
 ));
