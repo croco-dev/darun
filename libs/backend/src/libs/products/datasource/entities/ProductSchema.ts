@@ -6,7 +6,7 @@ export const products = mysqlTable('products', {
   name: varchar('name', { length: 255 }).notNull(),
   summary: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
-  logoUrl: varchar('logo_url', { length: 255 }),
+  logoUrl: varchar('logo_url', { length: 255 }).notNull(),
   createdAt: datetime('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

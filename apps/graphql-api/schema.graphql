@@ -3,9 +3,19 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+type Link {
+  displayLink: String!
+  id: ID!
+  isPrimary: Boolean!
+  link: String!
+  logoUrl: String!
+  title: String!
+}
+
 type Product {
   description: String
   id: ID!
+  links: [Link!]!
   logoUrl: String!
   name: String!
   summary: String!
