@@ -5,12 +5,10 @@ import { RecentProductSection } from '@products/shells';
 
 export const HomePage = () => (
   <Layout>
-    <main>
-      <ContentArea>
-        <VStack mt={8}>
-          <RecentProductSection />
-        </VStack>
-      </ContentArea>
-    </main>
+    <ContentArea as="main">
+      <VStack mt={8}>
+        <RecentProductSection />
+      </VStack>
+    </ContentArea>
   </Layout>
 );

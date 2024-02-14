@@ -1,20 +1,14 @@
-import { styled } from '@kuma-ui/core';
-import { ReactNode } from 'react';
+import { Flex } from '@kuma-ui/core';
+import { ElementType, ReactNode } from 'react';
 
-export function ContentArea({ children }: { children: ReactNode }) {
-  return <Component>{children}</Component>;
+type ContentAreaProps = {
+  children: ReactNode;
+  as?: ElementType;
+};
+export function ContentArea({ children, as }: ContentAreaProps) {
+  return (
+    <Flex as={as} w="100%" mr="auto" ml="auto" maxW={1120} pr={['1rem', '1rem', '2rem']}>
+      {children}
+    </Flex>
+  );
 }
-
-const Component = styled.div`
-  width: 100%;
-  margin-right: auto;
-  margin-left: auto;
-  max-width: 1120px;
-  padding-right: 1rem;
-  padding-left: 1rem;
-
-  @media (min-width: t('breakpoints.md')) {
-    padding-right: 2rem;
-    padding-left: 2rem;
-  }
-`;
