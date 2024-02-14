@@ -6,7 +6,7 @@ const defaultOptions = {} as const;
 export type RecentProductsOnRecentProductListQueryVariables = Types.Exact<{ [key: string]: never; }>;
 
 
-export type RecentProductsOnRecentProductListQuery = { __typename?: 'Query', recentProducts: Array<{ __typename?: 'Product', id: string, name: string }> };
+export type RecentProductsOnRecentProductListQuery = { __typename?: 'Query', recentProducts: Array<{ __typename?: 'Product', id: string, name: string, logoUrl: string, summary: string }> };
 
 
 export const RecentProductsOnRecentProductListDocument = gql`
@@ -14,6 +14,8 @@ export const RecentProductsOnRecentProductListDocument = gql`
   recentProducts {
     id
     name
+    logoUrl
+    summary
   }
 }
     `;

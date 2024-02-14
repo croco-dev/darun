@@ -6,8 +6,9 @@
 type Product {
   description: String
   id: ID!
-  logoUrl: String
+  logoUrl: String!
   name: String!
+  summary: String!
 }
 
 type Query {

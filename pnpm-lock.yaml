@@ -203,6 +203,9 @@ importers:
       '@kuma-ui/core':
         specifier: '*'
         version: 1.5.6(@types/react@18.2.48)(next@14.1.0)(react@18.2.0)
+      next:
+        specifier: '*'
+        version: 14.1.0(@babel/core@7.23.7)(react-dom@18.2.0)(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*

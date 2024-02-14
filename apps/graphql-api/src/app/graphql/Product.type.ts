@@ -9,9 +9,12 @@ export class Product {
   @Field(() => String)
   name: string;
 
+  @Field(() => String)
+  summary: string;
+
   @Field(() => String, { nullable: true })
   description: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   logoUrl: string;
 }

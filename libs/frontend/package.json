@@ -16,7 +16,8 @@
     "@darun/provider-graphql": "workspace:*",
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-layout": "workspace:*",
-    "@kuma-ui/core": "*"
+    "@kuma-ui/core": "*",
+    "next": "*"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
