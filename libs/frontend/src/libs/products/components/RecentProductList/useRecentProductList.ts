@@ -6,6 +6,8 @@ gql`
     recentProducts {
       id
       name
+      logoUrl
+      summary
     }
   }
 `;

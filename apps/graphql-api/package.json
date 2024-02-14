@@ -20,7 +20,7 @@
     "@darun/provider-database": "workspace:*",
     "@darun/utils-apollo-server": "workspace:*",
     "@kang-heewon/esbuild-plugin-typescript-decorators": "0.1.0",
-    "@planetscale/database": "1.14.0",
+    "@planetscale/database": "1.16.0",
     "drizzle-orm": "0.29.3",
     "graphql": "16.8.1",
     "graphql-scalars": "1.22.4",

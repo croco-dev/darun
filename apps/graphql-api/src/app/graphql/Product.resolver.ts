@@ -1,15 +1,30 @@
-import { GetRecentProducts } from '@darun/backend';
-import { Query, Resolver } from 'type-graphql';
+import { GetProduct, GetProductLinks, GetRecentProducts } from '@darun/backend';
+import { Arg, FieldResolver, ID, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
-import { Product } from './Product.type';
+import { Link } from './types/Link';
+import { Product } from './types/Product';
 
 @Resolver(() => Product)
 @Service()
 export class ProductResolver {
-  constructor(private readonly getRecentProducts: GetRecentProducts) {}
+  constructor(
+    private readonly getRecentProducts: GetRecentProducts,
+    private readonly getProduct: GetProduct,
+    private readonly getProductLinks: GetProductLinks
+  ) {}
 
   @Query(() => [Product])
-  recentProducts() {
+  public recentProducts() {
     return this.getRecentProducts.execute();
+  }
+
+  @Query(() => Product)
+  public product(@Arg('id', () => ID) id: string) {
+    return this.getProduct.execute({ id });
+  }
+
+  @FieldResolver(() => [Link])
+  public links(@Root() product: Product) {
+    return this.getProductLinks.execute({ productId: product.id });
   }
 }

@@ -20,6 +20,7 @@ custom:
     plugins: esbuild.plugins.js
   serverless-offline:
     httpPort: 4000
+    reloadHandler: true
 
 provider:
   name: aws
