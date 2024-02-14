@@ -2,6 +2,7 @@ import 'normalize.css/normalize.css';
 import './globals.css';
 
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
+import { Layout } from '@darun/ui-layout';
 import { KumaRegistry } from '@kuma-ui/next-plugin/registry';
 import { Metadata } from 'next';
 import { CookiesProvider } from 'next-client-cookies/server';
@@ -21,7 +22,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <KumaRegistry>
           <CookiesProvider>
             <ServerRootProvider>
-              <ClientRootProvider>{children}</ClientRootProvider>
+              <ClientRootProvider>
+                <Layout>{children}</Layout>
+              </ClientRootProvider>
             </ServerRootProvider>
           </CookiesProvider>
         </KumaRegistry>
