@@ -4,11 +4,14 @@
 # -----------------------------------------------
 
 type Product {
+  description: String
   id: ID!
+  logoUrl: String
   name: String!
 }
 
 type Query {
   hello: String!
+  product(id: ID!): Product!
   recentProducts: [Product!]!
 }

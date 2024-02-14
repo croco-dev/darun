@@ -3,6 +3,8 @@ import { Product } from '../entities/Product';
 
 export interface ProductRepository {
   findTop4SortByCreatedAtDesc(): Promise<Product[]>;
+
+  findOneById(id: string): Promise<Product | null>;
 }
 
 export const ProductRepositoryToken = new Token<ProductRepository>('ProductRepository');

@@ -8,4 +8,10 @@ export class Product {
 
   @Field(() => String)
   name: string;
+
+  @Field(() => String, { nullable: true })
+  description: string;
+
+  @Field(() => String, { nullable: true })
+  logoUrl: string;
 }
