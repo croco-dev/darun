@@ -1,0 +1,1 @@
+export { MainHeroBanner } from './MainHeroBanner';

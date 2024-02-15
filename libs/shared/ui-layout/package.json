@@ -13,6 +13,7 @@
     "@croco/utils-structure-react": "*",
     "@darun/provider-auth/client": "workspace:*",
     "@darun/ui-foundation": "workspace:*",
+    "@darun/ui-icons": "workspace:*",
     "@kuma-ui/core": "*"
   },
   "devDependencies": {

@@ -208,6 +208,9 @@ importers:
       '@darun/ui-foundation':
         specifier: workspace:*
         version: link:../shared/ui-foundation
+      '@darun/ui-icons':
+        specifier: workspace:*
+        version: link:../shared/ui-icons
       '@darun/ui-layout':
         specifier: workspace:*
         version: link:../shared/ui-layout
@@ -335,6 +338,25 @@ importers:
         specifier: '*'
         version: 18.2.48
 
+  libs/shared/ui-icons:
+    dependencies:
+      '@kuma-ui/core':
+        specifier: '*'
+        version: 1.5.6(@types/react@18.2.48)(next@14.1.0)(react@18.2.0)
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../utils-tsconfig
+      '@types/react':
+        specifier: '*'
+        version: 18.2.48
+      '@types/react-dom':
+        specifier: '*'
+        version: 18.2.18
+
   libs/shared/ui-layout:
     dependencies:
       '@croco/utils-structure-react':
@@ -346,6 +368,9 @@ importers:
       '@darun/ui-foundation':
         specifier: workspace:*
         version: link:../ui-foundation
+      '@darun/ui-icons':
+        specifier: workspace:*
+        version: link:../ui-icons
       '@kuma-ui/core':
         specifier: '*'
         version: 1.5.6(@types/react@18.2.48)(next@14.1.0)(react@18.2.0)
