@@ -23,6 +23,7 @@ type Product {
 
 type Query {
   hello: String!
-  product(id: ID!): Product!
+  product(id: ID!): Product
+  productBySlug(slug: String!): Product
   recentProducts: [Product!]!
 }

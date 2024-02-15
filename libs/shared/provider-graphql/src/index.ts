@@ -37,11 +37,17 @@ export type Product = {
 export type Query = {
   readonly __typename?: 'Query';
   readonly hello: Scalars['String']['output'];
-  readonly product: Product;
+  readonly product?: Maybe<Product>;
+  readonly productBySlug?: Maybe<Product>;
   readonly recentProducts: ReadonlyArray<Product>;
 };
 
 
 export type QueryproductArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryproductBySlugArgs = {
+  slug: Scalars['String']['input'];
 };

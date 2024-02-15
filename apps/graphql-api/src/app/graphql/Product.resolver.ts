@@ -24,7 +24,7 @@ export class ProductResolver {
   }
 
   @Query(() => Product, { nullable: true })
-  public productBySlug(@Arg('slug', () => ID) slug: string) {
+  public productBySlug(@Arg('slug', () => String) slug: string) {
     return this.getProduct.execute({ slug });
   }
 
