@@ -8,6 +8,15 @@ import { products } from '../entities/ProductSchema';
 export class MysqlProductRepository implements ProductRepository {
   constructor(@Inject(DatabaseToken) private readonly db: Database) {}
 
+  async findOneBySlug(slug: string): Promise<Product | null> {
+    return this.db
+      .select()
+      .from(products)
+      .where(eq(products.slug, slug))
+      .limit(1)
+      .then(rows => rows[0] ?? null);
+  }
+
   async findOneById(id: string): Promise<Product | null> {
     return this.db
       .select()
