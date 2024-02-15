@@ -1,7 +1,7 @@
 'use client';
 
-import { AuthProvider } from '@darun/provider-auth';
-import { ApolloProvider } from '@darun/utils-apollo-client';
+import { AuthProvider } from '@darun/provider-auth/client';
+import { ApolloProvider } from '@darun/utils-apollo-client/client';
 import { ReactNode } from 'react';
 import { container } from './container';
 

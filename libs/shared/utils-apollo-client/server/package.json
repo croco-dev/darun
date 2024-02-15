@@ -1,13 +1,9 @@
 {
-  "name": "@darun/utils-apollo-client",
+  "name": "@darun/utils-apollo-client/server",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts",
-    "./server": "./src/server.ts"
-  },
   "scripts": {
     "lint": "eslint **/*.ts*",
     "test": "echo 1",

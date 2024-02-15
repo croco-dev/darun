@@ -22,5 +22,10 @@
   "packageManager": "pnpm@8.9.0",
   "engines": {
     "node": ">=18"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@graphql-codegen/typescript-react-apollo@4.3.0": "patches/@graphql-codegen__typescript-react-apollo@4.3.0.patch"
+    }
   }
 }

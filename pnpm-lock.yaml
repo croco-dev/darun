@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@graphql-codegen/typescript-react-apollo@4.3.0':
+    hash: eicpflct3bcoudxmnyq5s25gzi
+    path: patches/@graphql-codegen__typescript-react-apollo@4.3.0.patch
+
 importers:
 
   .:
@@ -105,18 +110,24 @@ importers:
       '@darun/frontend':
         specifier: workspace:*
         version: link:../../libs/frontend
-      '@darun/provider-auth':
+      '@darun/provider-auth/client':
         specifier: workspace:*
-        version: link:../../libs/shared/provider-auth
+        version: link:../../libs/shared/provider-auth/client
+      '@darun/provider-auth/server':
+        specifier: workspace:*
+        version: link:../../libs/shared/provider-auth/server
       '@darun/ui-foundation':
         specifier: workspace:*
         version: link:../../libs/shared/ui-foundation
       '@darun/ui-layout':
         specifier: workspace:*
         version: link:../../libs/shared/ui-layout
-      '@darun/utils-apollo-client':
+      '@darun/utils-apollo-client/client':
         specifier: workspace:*
-        version: link:../../libs/shared/utils-apollo-client
+        version: link:../../libs/shared/utils-apollo-client/client
+      '@darun/utils-apollo-client/server':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-apollo-client/server
       '@darun/utils-auth-service-firebase':
         specifier: workspace:*
         version: link:../../libs/shared/utils-auth-service/firebase
@@ -200,6 +211,9 @@ importers:
       '@darun/ui-layout':
         specifier: workspace:*
         version: link:../shared/ui-layout
+      '@darun/utils-apollo-client/server':
+        specifier: workspace:*
+        version: link:../shared/utils-apollo-client/server
       '@kuma-ui/core':
         specifier: '*'
         version: 1.5.6(@types/react@18.2.48)(next@14.1.0)(react@18.2.0)
@@ -220,11 +234,11 @@ importers:
         specifier: '*'
         version: 18.2.18
 
-  libs/shared/provider-auth:
+  libs/shared/provider-auth/client:
     dependencies:
       '@darun/utils-auth-service-core':
         specifier: workspace:*
-        version: link:../utils-auth-service/core
+        version: link:../../utils-auth-service/core
       next:
         specifier: '*'
         version: 14.1.0(@babel/core@7.23.7)(react-dom@18.2.0)(react@18.2.0)
@@ -234,10 +248,32 @@ importers:
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
-        version: link:../utils-eslint-config
+        version: link:../../utils-eslint-config
       '@darun/utils-tsconfig':
         specifier: workspace:*
-        version: link:../utils-tsconfig
+        version: link:../../utils-tsconfig
+      '@types/react':
+        specifier: '*'
+        version: 18.2.48
+
+  libs/shared/provider-auth/server:
+    dependencies:
+      '@darun/utils-auth-service-core':
+        specifier: workspace:*
+        version: link:../../utils-auth-service/core
+      next:
+        specifier: '*'
+        version: 14.1.0(@babel/core@7.23.7)(react-dom@18.2.0)(react@18.2.0)
+      next-client-cookies:
+        specifier: '*'
+        version: 1.1.0(next@14.1.0)(react@18.2.0)
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../../utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../../utils-tsconfig
       '@types/react':
         specifier: '*'
         version: 18.2.48
@@ -274,7 +310,7 @@ importers:
         version: 4.1.2(graphql@16.8.1)
       '@graphql-codegen/typescript-react-apollo':
         specifier: 4.3.0
-        version: 4.3.0(graphql-tag@2.12.6)(graphql@16.8.1)
+        version: 4.3.0(patch_hash=eicpflct3bcoudxmnyq5s25gzi)(graphql-tag@2.12.6)(graphql@16.8.1)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -304,9 +340,9 @@ importers:
       '@croco/utils-structure-react':
         specifier: '*'
         version: 0.0.1
-      '@darun/provider-auth':
+      '@darun/provider-auth/client':
         specifier: workspace:*
-        version: link:../provider-auth
+        version: link:../provider-auth/client
       '@darun/ui-foundation':
         specifier: workspace:*
         version: link:../ui-foundation
@@ -327,7 +363,7 @@ importers:
         specifier: '*'
         version: 18.2.18
 
-  libs/shared/utils-apollo-client:
+  libs/shared/utils-apollo-client/client:
     dependencies:
       '@apollo/client':
         specifier: '*'
@@ -341,10 +377,35 @@ importers:
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
-        version: link:../utils-eslint-config
+        version: link:../../utils-eslint-config
       '@darun/utils-tsconfig':
         specifier: workspace:*
-        version: link:../utils-tsconfig
+        version: link:../../utils-tsconfig
+      '@types/react':
+        specifier: '*'
+        version: 18.2.48
+      '@types/react-dom':
+        specifier: '*'
+        version: 18.2.18
+
+  libs/shared/utils-apollo-client/server:
+    dependencies:
+      '@apollo/client':
+        specifier: '*'
+        version: 3.9.4(@types/react@18.2.48)(graphql@16.8.1)(react-dom@18.2.0)(react@18.2.0)
+      '@apollo/experimental-nextjs-app-support':
+        specifier: '*'
+        version: 0.8.0(@apollo/client@3.9.4)(next@14.1.0)(react@18.2.0)
+      '@croco/utils-structure-react':
+        specifier: '*'
+        version: 0.0.1
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../../utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../../utils-tsconfig
       '@types/react':
         specifier: '*'
         version: 18.2.48
@@ -4261,7 +4322,7 @@ packages:
       - supports-color
     dev: false
 
-  /@graphql-codegen/typescript-react-apollo@4.3.0(graphql-tag@2.12.6)(graphql@16.8.1):
+  /@graphql-codegen/typescript-react-apollo@4.3.0(patch_hash=eicpflct3bcoudxmnyq5s25gzi)(graphql-tag@2.12.6)(graphql@16.8.1):
     resolution: {integrity: sha512-h+IxCGrOTDD60/6ztYDQs81yKDZZq/8aHqM9HHrZ9FiZn145O48VnQNCmGm88I619G9rEET8cCOrtYkCt+ZSzA==}
     engines: {node: '>= 16.0.0'}
     peerDependencies:
@@ -4279,6 +4340,7 @@ packages:
       - encoding
       - supports-color
     dev: false
+    patched: true
 
   /@graphql-codegen/typescript@4.0.4(graphql@16.8.1):
     resolution: {integrity: sha512-x79CKLfP9UQCX+/I78qxQlMs2Mmq3pF1lKafZo7lAno0f/fvJ+qWUduzdgjRNz+YL+5blGeWcC0pWEDxniO7hw==}

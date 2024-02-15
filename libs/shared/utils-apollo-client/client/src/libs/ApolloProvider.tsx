@@ -8,6 +8,7 @@ type ApolloProviderProps = {
   children: ReactNode;
   makeClient: () => NextSSRApolloClient<NormalizedCacheObject>;
 };
+
 export function ApolloProvider({ children, makeClient }: ApolloProviderProps) {
   return <ApolloNextAppProvider makeClient={makeClient}>{children}</ApolloNextAppProvider>;
 }

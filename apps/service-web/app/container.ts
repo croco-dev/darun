@@ -4,7 +4,7 @@ import {
   NextSSRApolloClient,
   SSRMultipartLink,
 } from '@apollo/experimental-nextjs-app-support/ssr';
-import { createApolloClient } from '@darun/utils-apollo-client';
+import { createApolloClient } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 class Container {
   private static instance: Container;

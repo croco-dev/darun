@@ -1,5 +1,5 @@
 {
-  "name": "@darun/frontend",
+  "name": "@darun/utils-apollo-client/client",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
@@ -12,13 +12,7 @@
   "peerDependencies": {
     "@apollo/client": "*",
     "@apollo/experimental-nextjs-app-support": "*",
-    "@croco/utils-structure-react": "*",
-    "@darun/utils-apollo-client/server": "workspace:*",
-    "@darun/provider-graphql": "workspace:*",
-    "@darun/ui-foundation": "workspace:*",
-    "@darun/ui-layout": "workspace:*",
-    "@kuma-ui/core": "*",
-    "next": "*"
+    "@croco/utils-structure-react": "*"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

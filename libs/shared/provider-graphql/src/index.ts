@@ -14,10 +14,21 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
+export type Link = {
+  readonly __typename?: 'Link';
+  readonly displayLink: Scalars['String']['output'];
+  readonly id: Scalars['ID']['output'];
+  readonly isPrimary: Scalars['Boolean']['output'];
+  readonly link: Scalars['String']['output'];
+  readonly logoUrl: Scalars['String']['output'];
+  readonly title: Scalars['String']['output'];
+};
+
 export type Product = {
   readonly __typename?: 'Product';
   readonly description?: Maybe<Scalars['String']['output']>;
   readonly id: Scalars['ID']['output'];
+  readonly links: ReadonlyArray<Link>;
   readonly logoUrl: Scalars['String']['output'];
   readonly name: Scalars['String']['output'];
   readonly summary: Scalars['String']['output'];

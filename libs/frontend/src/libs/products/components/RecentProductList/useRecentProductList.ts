@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { useRecentProductsOnRecentProductListQuery } from './__generated__/useRecentProductList';
+import { useRecentProductsOnRecentProductListSuspenseQuery } from './__generated__/useRecentProductList';
 
 gql`
   query RecentProductsOnRecentProductList {
@@ -12,7 +12,7 @@ gql`
   }
 `;
 export function useRecentProductList() {
-  const { data } = useRecentProductsOnRecentProductListQuery();
+  const { data } = useRecentProductsOnRecentProductListSuspenseQuery();
   return {
     products: data?.recentProducts ?? [],
   };

@@ -1,4 +1,4 @@
-import { useAuthService, useAuthState } from '@darun/provider-auth';
+import { useAuthService, useAuthState } from '@darun/provider-auth/client';
 
 export function useHeaderLoginButton() {
   const authService = useAuthService();
