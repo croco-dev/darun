@@ -9,8 +9,17 @@ gql`
     }
   }
 `;
-export function useProductSummary() {
-  const { data } = useProductBySlugOnProductSummarySuspenseQuery();
+
+type ProductSummaryProps = {
+  slug: string;
+};
+
+export function useProductSummary({ slug }: ProductSummaryProps) {
+  const { data } = useProductBySlugOnProductSummarySuspenseQuery({
+    variables: {
+      slug,
+    },
+  });
   return {
     name: data.productBySlug?.name,
   };
