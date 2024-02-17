@@ -8,7 +8,7 @@ export function MainHeroBanner() {
       <Flex position={'absolute'} top={0} bottom={0} right={-140} zIndex={20}>
         <img src={'/images/main-hero-banner.png'} />
       </Flex>
-      <Flex zIndex={40}>
+      <Flex zIndex={40} width={'100%'}>
         <ContentArea>
           <VStack py={'60px'} px={'12px'} gap={'24px'}>
             <VStack gap={'8px'}>
