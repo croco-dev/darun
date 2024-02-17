@@ -18,9 +18,14 @@ export class ProductResolver {
     return this.getRecentProducts.execute();
   }
 
-  @Query(() => Product)
+  @Query(() => Product, { nullable: true })
   public product(@Arg('id', () => ID) id: string) {
     return this.getProduct.execute({ id });
+  }
+
+  @Query(() => Product, { nullable: true })
+  public productBySlug(@Arg('slug', () => String) slug: string) {
+    return this.getProduct.execute({ slug });
   }
 
   @FieldResolver(() => [Link])
