@@ -1,5 +1,5 @@
 import { Chip } from '@darun/ui-foundation';
-import { HStack, VStack, Text, Flex } from '@kuma-ui/core';
+import { HStack, VStack, Text } from '@kuma-ui/core';
 import Image from 'next/image';
 import React from 'react';
 
