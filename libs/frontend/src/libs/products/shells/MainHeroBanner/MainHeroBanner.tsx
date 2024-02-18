@@ -1,6 +1,7 @@
 import { ContentArea } from '@darun/ui-foundation';
 import { SearchIcon } from '@darun/ui-icons';
 import { Flex, HStack, Input, Text, VStack } from '@kuma-ui/core';
+import { ProductsCount } from '../../components/ProductsCount';
 
 export function MainHeroBanner() {
   return (
@@ -21,9 +22,7 @@ export function MainHeroBanner() {
                 다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다
               </Text>
               <Text fontSize={'32px'} fontWeight={'fontWeights.bold'} letterSpacing={'-.8px'} color={'colors.dark.100'}>
-                <Text as={'span'} color={'colors.brown.600'}>
-                  139
-                </Text>
+                <ProductsCount />
                 개의{' '}
                 <Text as={'span'} color={'colors.brown.600'}>
                   다른

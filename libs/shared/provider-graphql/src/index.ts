@@ -39,6 +39,7 @@ export type Query = {
   readonly hello: Scalars['String']['output'];
   readonly product?: Maybe<Product>;
   readonly productBySlug?: Maybe<Product>;
+  readonly productsCount: Scalars['Int']['output'];
   readonly recentProducts: ReadonlyArray<Product>;
 };
 

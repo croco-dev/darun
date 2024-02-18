@@ -25,5 +25,6 @@ type Query {
   hello: String!
   product(id: ID!): Product
   productBySlug(slug: String!): Product
+  productsCount: Int!
   recentProducts: [Product!]!
 }
