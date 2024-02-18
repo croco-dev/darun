@@ -1,4 +1,4 @@
-import { Box } from '@kuma-ui/core';
+import { Flex } from '@kuma-ui/core';
 import { ReactNode } from 'react';
 
 type ChipProps = {
@@ -13,10 +13,12 @@ const chipVariants = {
   square: {
     padding: '3px 5px',
     borderRadius: 4,
+    fontSize: '12px',
   },
   circle: {
     padding: '6px 10px',
     borderRadius: 16,
+    fontSize: '12px',
   },
 };
 
@@ -60,16 +62,18 @@ const chipColors = {
 
 export function Chip({ as = 'div', color = 'filledGray', variant = 'square', onClick, children }: ChipProps) {
   return (
-    <Box
+    <Flex
       as={as}
       onClick={onClick}
       padding={chipVariants[variant].padding}
       borderRadius={chipVariants[variant].borderRadius}
       backgroundColor={chipColors[color].backgroundColor}
       color={chipColors[color].textColor}
-      border={`1px solid ${chipColors[color].borderColor}`}
+      border={`1px solid`}
+      borderColor={chipColors[color].borderColor}
+      fontSize={chipVariants[variant].fontSize}
     >
       {children}
-    </Box>
+    </Flex>
   );
 }

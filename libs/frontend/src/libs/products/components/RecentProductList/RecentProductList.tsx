@@ -1,26 +1,22 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
-import { VStack, Text, HStack, Flex } from '@kuma-ui/core';
-import Image from 'next/image';
+import { Grid } from '@kuma-ui/core';
+import { ProductItem } from '../ProductItem/ProductItem';
 import { useRecentProductList } from './useRecentProductList';
 
 export const RecentProductList = bind(useRecentProductList, ({ products }) => (
-  <VStack>
+  <Grid width={'100%'} gap={'20px'} gridTemplateColumns="repeat(2, 1fr)">
     {products.map(product => (
-      <HStack key={product.id} gap={12}>
-        <Flex w="max-content" h="max-content" border="1px solid rgba(0, 0, 0, 0.15)" borderRadius={12}>
-          <Image src={product.logoUrl} alt={`${product.name} logo`} width={72} height={72} />
-        </Flex>
-        <VStack gap={4}>
-          <Text fontSize={18} m={0}>
-            {product.name}
-          </Text>
-          <Text fontSize={14} m={0}>
-            {product.name}
-          </Text>
-        </VStack>
-      </HStack>
+      <ProductItem
+        key={product.id}
+        name={product.name}
+        logoUrl={product.logoUrl}
+        logoSize={'medium'}
+        summary={product.summary}
+        tags={['asd']}
+        specialTags={['🎖️ ‘다른’ 추천 등재']}
+      />
     ))}
-  </VStack>
+  </Grid>
 ));
