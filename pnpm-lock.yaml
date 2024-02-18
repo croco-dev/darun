@@ -26,8 +26,8 @@ importers:
         specifier: 8.56.0
         version: 8.56.0
       prettier:
-        specifier: 3.2.4
-        version: 3.2.4
+        specifier: 3.2.5
+        version: 3.2.5
       turbo:
         specifier: latest
         version: 1.11.3
@@ -78,8 +78,8 @@ importers:
         version: 0.10.0
     devDependencies:
       '@types/aws-lambda':
-        specifier: 8.10.131
-        version: 8.10.131
+        specifier: 8.10.134
+        version: 8.10.134
       esbuild:
         specifier: 0.20.0
         version: 0.20.0
@@ -87,8 +87,8 @@ importers:
         specifier: 3.38.0
         version: 3.38.0(@aws-sdk/credential-provider-node@3.503.1)
       serverless-esbuild:
-        specifier: 1.50.1
-        version: 1.50.1(esbuild@0.20.0)
+        specifier: 1.51.0
+        version: 1.51.0(esbuild@0.20.0)
       serverless-offline:
         specifier: 13.3.3
         version: 13.3.3(serverless@3.38.0)
@@ -853,7 +853,7 @@ packages:
       '@apollo/server': ^4.0.0
     dependencies:
       '@apollo/server': 4.10.0(graphql@16.8.1)
-      '@types/aws-lambda': 8.10.131
+      '@types/aws-lambda': 8.10.134
     dev: false
 
   /@aws-crypto/crc32@3.0.0:
@@ -6115,6 +6115,10 @@ packages:
 
   /@types/aws-lambda@8.10.131:
     resolution: {integrity: sha512-IWmFpqnVDvskYWnNSiu/qlRn80XlIOU0Gy5rKCl/NjhnI95pV8qIHs6L5b+bpHhyzuOSzjLgBcwgFSXrC1nZWA==}
+    dev: true
+
+  /@types/aws-lambda@8.10.134:
+    resolution: {integrity: sha512-cfv422ivDMO+EeA3N4YcshbTHBL+5lLXe+Uz+4HXvIcsCuWvqNFpOs28ZprL8NA3qRCzt95ETiNAJDn4IcC/PA==}
 
   /@types/body-parser@1.19.5:
     resolution: {integrity: sha512-fB3Zu92ucau0iQ0JMCFQE7b/dv8Ot07NI3KaZIkIUNXq82k4eBAqUaneXfleGY9JWskeS9y+u0nXMyspcuQrCg==}
@@ -11890,6 +11894,12 @@ packages:
     hasBin: true
     dev: true
 
+  /prettier@3.2.5:
+    resolution: {integrity: sha512-3/GWa9aOC0YeD7LUfvOG2NiDyhOWRvt1k+rcKhOuYnMY24iiCphgneUfJDyFXd6rZCAnuLBv6UeAULtrhT/F4A==}
+    engines: {node: '>=14'}
+    hasBin: true
+    dev: true
+
   /process-nextick-args@2.0.1:
     resolution: {integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==}
     dev: true
@@ -12481,11 +12491,11 @@ packages:
     resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
     dev: false
 
-  /serverless-esbuild@1.50.1(esbuild@0.20.0):
-    resolution: {integrity: sha512-UfHBghC2EvpfuclAPbdx1CQXpj/wgYvdqAtZqyTPCeDBc/wQt3b/qxwMnJk5gqPSpxdYU83jSdV0QEd3BRtvKw==}
+  /serverless-esbuild@1.51.0(esbuild@0.20.0):
+    resolution: {integrity: sha512-/Jh+RARciyoSJulU96XasT4X+wT8qQjFmbSY0rtOtkyhKCP46KUKEKEFDFjLZKxLmnGF03QK+T51XbblZKgNJA==}
     engines: {node: '>=14.18.0'}
     peerDependencies:
-      esbuild: '>=0.8 <0.20'
+      esbuild: '>=0.8 <0.21'
       esbuild-node-externals: ^1.0.0
     peerDependenciesMeta:
       esbuild-node-externals:

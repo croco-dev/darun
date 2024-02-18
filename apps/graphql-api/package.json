@@ -29,10 +29,10 @@
     "typedi": "0.10.0"
   },
   "devDependencies": {
-    "@types/aws-lambda": "8.10.131",
+    "@types/aws-lambda": "8.10.134",
     "esbuild": "0.20.0",
     "serverless": "3.38.0",
-    "serverless-esbuild": "1.50.1",
+    "serverless-esbuild": "1.51.0",
     "serverless-offline": "13.3.3"
   }
 }
