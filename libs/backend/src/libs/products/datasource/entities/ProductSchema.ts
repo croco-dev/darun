@@ -5,7 +5,7 @@ export const products = mysqlTable('products', {
   id: varchar('id', { length: 26 }).primaryKey().$default(ulid),
   name: varchar('name', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 100 }).notNull().unique(),
-  summary: varchar('name', { length: 255 }).notNull(),
+  summary: varchar('summary', { length: 255 }).notNull(),
   description: text('description'),
   logoUrl: varchar('logo_url', { length: 255 }).notNull(),
   createdAt: datetime('created_at')
