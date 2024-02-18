@@ -1,5 +1,5 @@
 {
-  "name": "@darun/ui-layout",
+  "name": "@darun/ui-icons",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
@@ -10,10 +10,6 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@croco/utils-structure-react": "*",
-    "@darun/provider-auth/client": "workspace:*",
-    "@darun/ui-foundation": "workspace:*",
-    "@darun/ui-icons": "workspace:*",
     "@kuma-ui/core": "*"
   },
   "devDependencies": {

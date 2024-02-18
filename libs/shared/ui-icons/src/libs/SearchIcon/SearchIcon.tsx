@@ -1,6 +1,4 @@
-type IconProps = {
-  size: number;
-};
+import { IconProps } from '../../types';
 
 export const SearchIcon = ({ size }: IconProps) => {
   return (

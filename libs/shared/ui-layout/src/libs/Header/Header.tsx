@@ -1,8 +1,8 @@
 import { bind } from '@croco/utils-structure-react';
 import { ContainedButton, ContentArea, Logo } from '@darun/ui-foundation';
+import { SearchIcon } from '@darun/ui-icons';
 import { Flex, HStack, Input, Link } from '@kuma-ui/core';
 import { HeaderLoginButton } from '../HeaderLoginButton';
-import { SearchIcon } from './SearchIcon';
 import { useHeader } from './useHeader';
 
 export const Header = bind(useHeader, () => (
