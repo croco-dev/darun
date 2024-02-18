@@ -11,6 +11,7 @@ gql`
     }
   }
 `;
+
 export function useRecentProductList() {
   const { data } = useRecentProductsOnRecentProductListSuspenseQuery();
   return {

@@ -7,3 +7,4 @@ export { ProductLink } from './entities/ProductLink';
 export { GetRecentProducts } from './usecases/GetRecentProducts';
 export { GetProduct } from './usecases/GetProduct';
 export { GetProductLinks } from './usecases/GetProductLinks';
+export { GetProductsCount } from './usecases/GetProductsCount';

@@ -1,1 +1,1 @@
-export { GetRecentProducts, GetProduct, GetProductLinks } from './libs/products/domain';
+export { GetRecentProducts, GetProduct, GetProductLinks, GetProductsCount } from './libs/products/domain';

@@ -7,6 +7,8 @@ export interface ProductRepository {
   findOneById(id: string): Promise<Product | null>;
 
   findOneBySlug(slug: string): Promise<Product | null>;
+
+  countAll(): Promise<number>;
 }
 
 export const ProductRepositoryToken = new Token<ProductRepository>('ProductRepository');
