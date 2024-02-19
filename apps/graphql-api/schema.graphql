@@ -18,6 +18,8 @@ type Product {
   links: [Link!]!
   logoUrl: String!
   name: String!
+  screenshots: [Screenshot!]!
+  slug: String!
   summary: String!
   tags: [Tag!]!
 }
@@ -28,6 +30,12 @@ type Query {
   productBySlug(slug: String!): Product
   productsCount: Int!
   recentProducts: [Product!]!
+}
+
+type Screenshot {
+  id: ID!
+  imageAlt: String!
+  imageUrl: String!
 }
 
 type Tag {

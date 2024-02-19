@@ -9,6 +9,9 @@ export class Product {
   name: string;
 
   @Field(() => String)
+  slug: string;
+
+  @Field(() => String)
   summary: string;
 
   @Field(() => String, { nullable: true })
