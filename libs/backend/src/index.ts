@@ -4,4 +4,5 @@ export {
   GetProductLinks,
   GetProductsCount,
   GetProductTags,
+  GetProductScreenshots,
 } from './libs/products/domain';
