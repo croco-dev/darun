@@ -32,6 +32,7 @@ export type Product = {
   readonly logoUrl: Scalars['String']['output'];
   readonly name: Scalars['String']['output'];
   readonly summary: Scalars['String']['output'];
+  readonly tags: ReadonlyArray<Tag>;
 };
 
 export type Query = {
@@ -51,4 +52,10 @@ export type QueryproductArgs = {
 
 export type QueryproductBySlugArgs = {
   slug: Scalars['String']['input'];
+};
+
+export type Tag = {
+  readonly __typename?: 'Tag';
+  readonly id: Scalars['ID']['output'];
+  readonly name: Scalars['String']['output'];
 };

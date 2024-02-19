@@ -8,6 +8,10 @@ gql`
       name
       logoUrl
       summary
+      tags {
+        id
+        name
+      }
     }
   }
 `;

@@ -14,7 +14,7 @@ export const RecentProductList = bind(useRecentProductList, ({ products }) => (
         logoUrl={product.logoUrl}
         logoSize={'medium'}
         summary={product.summary}
-        tags={['asd']}
+        tags={product.tags.map(tag => tag.name)}
         specialTags={['🎖️ ‘다른’ 추천 등재']}
       />
     ))}
