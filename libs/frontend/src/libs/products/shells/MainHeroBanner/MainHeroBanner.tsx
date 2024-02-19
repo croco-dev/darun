@@ -5,7 +5,7 @@ import { ProductsCount } from '../../components/ProductsCount';
 
 export function MainHeroBanner() {
   return (
-    <Flex background={'colors.dark.900'} position={'relative'} width={'100%'} py={'40px'}>
+    <Flex background={'colors.dark.900'} position={'relative'} width={'100%'} overflow={'hidden'} py={'40px'}>
       <Flex position={'absolute'} top={0} bottom={0} right={-140} zIndex={20}>
         <img src={'/images/main-hero-banner.png'} />
       </Flex>
