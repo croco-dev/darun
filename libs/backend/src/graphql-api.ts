@@ -1,1 +1,5 @@
-export { MysqlProductRepository } from './libs/products/datasource';
+export {
+  MysqlProductRepository,
+  MysqlProductLinkRepository,
+  MysqlProductTagRepository,
+} from './libs/products/datasource';

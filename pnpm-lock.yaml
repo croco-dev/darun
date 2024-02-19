@@ -168,9 +168,15 @@ importers:
       '@darun/provider-database':
         specifier: workspace:*
         version: link:../shared/provider-database
+      dataloader:
+        specifier: 2.2.2
+        version: 2.2.2
       drizzle-orm:
         specifier: '*'
         version: 0.29.3(@planetscale/database@1.16.0)
+      lodash:
+        specifier: 4.17.21
+        version: 4.17.21
       reflect-metadata:
         specifier: '*'
         version: 0.2.1
@@ -190,6 +196,9 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../shared/utils-tsconfig
+      '@types/lodash':
+        specifier: 4.14.202
+        version: 4.14.202
 
   libs/frontend:
     dependencies:
