@@ -20,10 +20,11 @@
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
-    "drizzle-orm": "*",
-    "reflect-metadata": "*",
-    "type-graphql": "*",
-    "typedi": "*"
+    "drizzle-orm": "0.29.3",
+    "firebase-admin": "12.0.0",
+    "reflect-metadata": "0.2.1",
+    "type-graphql": "2.0.0-beta.6",
+    "typedi": "0.10.0"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

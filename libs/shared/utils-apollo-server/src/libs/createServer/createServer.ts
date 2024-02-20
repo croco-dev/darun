@@ -27,15 +27,8 @@ export function createServer({ options, config }: CreateApolloServerParams) {
     introspection: config.playground,
     plugins: [
       config.playground
-        ? ApolloServerPluginLandingPageLocalDefault({
-            footer: false,
-            embed: {
-              initialState: {
-                pollForSchemaUpdates: false,
-              },
-            },
-          })
-        : ApolloServerPluginLandingPageProductionDefault({ footer: false }),
+        ? ApolloServerPluginLandingPageLocalDefault()
+        : ApolloServerPluginLandingPageProductionDefault(),
       ...(config.plugins ?? []),
     ],
   });
