@@ -2,7 +2,7 @@ import { Token } from 'typedi';
 import { Product } from '../entities/Product';
 
 export interface ProductRepository {
-  findTop4SortByCreatedAtDesc(): Promise<Product[]>;
+  findTop4SortByPublishedAtDesc(): Promise<Product[]>;
 
   findOneById(id: string): Promise<Product | null>;
 
