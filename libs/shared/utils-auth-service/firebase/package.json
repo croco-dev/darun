@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "firebase": "10.7.2",
+    "firebase": "10.8.0",
     "next-firebase-auth-edge": "1.0.1",
     "@darun/utils-auth-service-core": "workspace:*"
   },
