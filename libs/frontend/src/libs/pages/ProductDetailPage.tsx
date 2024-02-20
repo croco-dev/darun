@@ -7,7 +7,7 @@ import { ProductSummarySection } from '../products/shells/ProductSummarySection'
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
   <Layout>
     <ContentArea as="main">
-      <VStack>
+      <VStack width={'100%'}>
         <ProductDetailHeader slug={slug} />
         <ProductSummarySection slug={slug} />
       </VStack>

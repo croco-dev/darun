@@ -7,6 +7,8 @@ export type BaseButtonKind = keyof typeof kindPreset;
 
 type InternalBaseButtonProps = {
   kind: keyof typeof kindPreset;
+  borderColor?: string;
+  boxShadow?: string;
 };
 
 type BaseButtonProps = ButtonProps & InternalBaseButtonProps;
@@ -22,7 +24,7 @@ const kindPreset = {
   },
 };
 
-export const BaseButton = ({ children, kind, ...props }: BaseButtonProps) => {
+export const BaseButton = ({ children, kind, borderColor, ...props }: BaseButtonProps) => {
   return (
     <Button
       px={14}
@@ -33,7 +35,8 @@ export const BaseButton = ({ children, kind, ...props }: BaseButtonProps) => {
       fontWeight={'fontWeights.medium'}
       borderRadius={12}
       border="1px solid"
-      borderColor={kindPreset[kind].bgColor ?? '#ff0000'}
+      borderColor={borderColor ?? kindPreset[kind].bgColor ?? '#ff0000'}
+      height={'fit-content'}
       {...props}
     >
       {children}

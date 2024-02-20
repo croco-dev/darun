@@ -4,10 +4,12 @@ import Image from 'next/image';
 import React from 'react';
 
 type ProductProps = {
+  as?: 'div' | 'a' | 'button';
   logoUrl?: string;
   logoSize?: keyof typeof logoSizes;
   name: string;
   summary?: string;
+  tagVariant?: 'square' | 'circle';
   tags?: string[];
   specialTags?: string[];
 };
@@ -23,11 +25,20 @@ const logoSizes = {
   },
 };
 
-export function Product({ logoUrl, logoSize = 'medium', name, summary, tags, specialTags }: ProductProps) {
+export function Product({
+  as = 'div',
+  logoUrl,
+  logoSize = 'medium',
+  name,
+  summary,
+  tagVariant = 'square',
+  tags,
+  specialTags,
+}: ProductProps) {
   return (
-    <HStack width={'100%'} gap={'12px'} alignItems={'center'}>
+    <HStack as={as} width={'100%'} gap={'12px'} alignItems={'center'}>
       <Image
-        src={logoUrl ?? 'https://via.placeholder.com/72'}
+        src={logoUrl ?? '/images/default-product-icon.svg'}
         unoptimized={!logoUrl}
         alt={`${name} 서비스 로고`}
         width={logoSizes[logoSize].imageSize}
@@ -54,12 +65,17 @@ export function Product({ logoUrl, logoSize = 'medium', name, summary, tags, spe
           </Text>
         </VStack>
         <HStack gap="4px" alignItems={'center'}>
-          {tags && tags.map((tag, i) => <Chip key={i}>{tag}</Chip>)}
+          {tags &&
+            tags.map((tag, i) => (
+              <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
+                {tag}
+              </Chip>
+            ))}
           {specialTags && (
             <>
               <Text color={'colors.dark.500'}>•</Text>
               {specialTags.map((tag, i) => (
-                <Chip key={i} variant="square" color="filledDark">
+                <Chip key={i} variant={tagVariant} color="filledDark">
                   {tag}
                 </Chip>
               ))}
