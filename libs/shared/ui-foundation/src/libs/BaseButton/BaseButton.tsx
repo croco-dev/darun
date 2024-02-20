@@ -18,6 +18,10 @@ const kindPreset = {
     bgColor: 'transparent',
     textColor: 'colors.dark.900',
   },
+  textActive: {
+    bgColor: 'colors.dark.100',
+    textColor: 'colors.dark.900',
+  },
   primary: {
     bgColor: 'colors.dark.900',
     textColor: '#fff',

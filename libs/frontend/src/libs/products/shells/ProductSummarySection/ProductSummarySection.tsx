@@ -1,5 +1,5 @@
 import { VStack } from '@kuma-ui/core';
-import { ProductSummary } from '../../components/ProductSummary';
+import { ProductSummary } from '@products/components';
 
 type ProductSummarySectionProps = {
   slug: string;
