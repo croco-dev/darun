@@ -6,6 +6,7 @@ gql`
     recentProducts {
       id
       name
+      slug
       logoUrl
       summary
       tags {
