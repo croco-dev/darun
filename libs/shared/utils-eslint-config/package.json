@@ -8,7 +8,7 @@
     "./react": "./react.js"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "7.0.1",
+    "@typescript-eslint/eslint-plugin": "7.0.2",
     "@typescript-eslint/parser": "7.0.1",
     "@typescript-eslint/utils": "7.0.1",
     "eslint-config-turbo": "1.12.3",
