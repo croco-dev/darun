@@ -19,3 +19,4 @@ export { GetProductLinks } from './usecases/GetProductLinks';
 export { GetProductsCount } from './usecases/GetProductsCount';
 export { GetProductTags } from './usecases/GetProductTags';
 export { GetProductScreenshots } from './usecases/GetProductScreenshots';
+export { CreateProduct } from './usecases/CreateProduct';

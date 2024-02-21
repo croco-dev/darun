@@ -3,6 +3,17 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+input CreateProductInput {
+  logoUrl: String!
+  name: String!
+  slug: String!
+  summary: String!
+}
+
+type CreateProductPayload {
+  product: Product!
+}
+
 type Link {
   displayLink: String!
   id: ID!
@@ -10,6 +21,10 @@ type Link {
   link: String!
   logoUrl: String!
   title: String!
+}
+
+type Mutation {
+  createProduct(input: CreateProductInput!): CreateProductPayload!
 }
 
 type Product {
