@@ -21,5 +21,8 @@
     "@darun/utils-tsconfig": "workspace:*",
     "@types/react": "*",
     "@types/react-dom": "*"
+  },
+  "dependencies": {
+    "@darun/utils-router": "workspace:*"
   }
 }
