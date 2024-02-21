@@ -6,6 +6,6 @@ export class GetProductsCount {
   constructor(@Inject(ProductRepositoryToken) private readonly productRepository: ProductRepository) {}
 
   async execute() {
-    return this.productRepository.countAll();
+    return this.productRepository.countPublishedAll();
   }
 }

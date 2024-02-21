@@ -8,7 +8,13 @@ import { products } from '../entities/ProductSchema';
 export class MysqlProductRepository implements ProductRepository {
   constructor(@Inject(DatabaseToken) private readonly db: Database) {}
 
-  async countAll(): Promise<number> {
+  async insert(values: Product): Promise<boolean> {
+    const inserted = await this.db.insert(products).values({ ...values });
+
+    return inserted.rowsAffected > 0;
+  }
+
+  async countPublishedAll(): Promise<number> {
     return this.db
       .select({ value: count() })
       .from(products)
@@ -20,12 +26,21 @@ export class MysqlProductRepository implements ProductRepository {
     return this.db
       .select()
       .from(products)
+      .where(eq(products.slug, slug))
+      .limit(1)
+      .then(rows => rows[0] ?? null);
+  }
+
+  async findPublishedOneBySlug(slug: string): Promise<Product | null> {
+    return this.db
+      .select()
+      .from(products)
       .where(and(eq(products.slug, slug), isNotNull(products.publishedAt)))
       .limit(1)
       .then(rows => rows[0] ?? null);
   }
 
-  async findOneById(id: string): Promise<Product | null> {
+  async findPublishedOneById(id: string): Promise<Product | null> {
     return this.db
       .select()
       .from(products)

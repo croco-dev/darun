@@ -4,11 +4,15 @@ import { Product } from '../entities/Product';
 export interface ProductRepository {
   findTop4SortByPublishedAtDesc(): Promise<Product[]>;
 
-  findOneById(id: string): Promise<Product | null>;
+  findPublishedOneById(id: string): Promise<Product | null>;
 
   findOneBySlug(slug: string): Promise<Product | null>;
 
-  countAll(): Promise<number>;
+  findPublishedOneBySlug(slug: string): Promise<Product | null>;
+
+  countPublishedAll(): Promise<number>;
+
+  insert(values: Product): Promise<boolean>;
 }
 
 export const ProductRepositoryToken = new Token<ProductRepository>('ProductRepository');
