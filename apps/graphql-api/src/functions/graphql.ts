@@ -1,3 +1,5 @@
+require('reflect-metadata');
+
 import '../config';
 import { GetAccount } from '@darun/backend';
 import { createAuthChecker, createLambdaHandler, createServer } from '@darun/utils-apollo-server';
@@ -13,7 +15,7 @@ export const handler: APIGatewayProxyHandlerV2 = createLambdaHandler(
     options: {
       resolvers,
       container: Container,
-      emitSchemaFile: IS_LOCAL ? 'schema.graphql' : false,
+      emitSchemaFile: 'schema.graphql',
       authChecker: createAuthChecker(),
     },
     config: {
