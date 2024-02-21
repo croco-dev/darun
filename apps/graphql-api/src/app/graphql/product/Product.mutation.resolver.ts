@@ -1,6 +1,5 @@
 import { CreateProduct } from '@darun/backend';
-import { AuthRole } from '@darun/utils-apollo-server';
-import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
+import { Arg, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
 import { Product } from './graphs/Product';
@@ -13,6 +12,10 @@ export class ProductMutationResolver {
   @Mutation(() => CreateProductPayload)
   async createProduct(@Arg('input') input: CreateProductInput): Promise<CreateProductPayload> {
     const product = await this.createProductUseCase.execute(input);
+
+    if (!product) {
+      throw new Error('Product not created'); // TODO: GraphQL error
+    }
 
     return {
       product,
