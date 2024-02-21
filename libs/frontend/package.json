@@ -18,6 +18,7 @@
     "@darun/ui-icons": "workspace:*",
     "@darun/ui-layout": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
+    "@darun/utils-router": "workspace:*",
     "@kuma-ui/core": "*",
     "next": "*"
   },
@@ -26,8 +27,5 @@
     "@darun/utils-tsconfig": "workspace:*",
     "@types/react": "*",
     "@types/react-dom": "*"
-  },
-  "dependencies": {
-    "@darun/utils-router": "workspace:*"
   }
 }

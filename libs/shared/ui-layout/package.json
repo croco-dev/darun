@@ -14,6 +14,7 @@
     "@darun/provider-auth/client": "workspace:*",
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-icons": "workspace:*",
+    "@darun/utils-router": "workspace:*",
     "@kuma-ui/core": "*"
   },
   "devDependencies": {
@@ -21,8 +22,5 @@
     "@darun/utils-tsconfig": "workspace:*",
     "@types/react": "*",
     "@types/react-dom": "*"
-  },
-  "dependencies": {
-    "@darun/utils-router": "workspace:*"
   }
 }
