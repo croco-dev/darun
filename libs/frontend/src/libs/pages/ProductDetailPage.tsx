@@ -1,7 +1,7 @@
 import { ContentArea } from '@darun/ui-foundation';
 import { Layout } from '@darun/ui-layout';
 import { VStack } from '@kuma-ui/core';
-import { ProductDetailHeader, ProductSummarySection } from '@products/shells';
+import { ProductAlternativeSection, ProductDetailHeader, ProductSummarySection } from '@products/shells';
 import { ProductPhotoSection } from '../products/shells/ProductPhotoSection/ProductPhotoSection';
 
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
@@ -12,6 +12,7 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
         <VStack>
           <ProductSummarySection slug={slug} />
           <ProductPhotoSection slug={slug} />
+          <ProductAlternativeSection />
         </VStack>
       </ContentArea>
     </VStack>

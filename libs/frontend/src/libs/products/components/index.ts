@@ -1,3 +1,4 @@
+export { ProductAlternative } from './ProductAlternative';
 export { ProductSingle } from './ProductSingle';
 export { ProductSummary } from './ProductSummary';
 export { ProductTableOfContent } from './ProductTableOfContent';

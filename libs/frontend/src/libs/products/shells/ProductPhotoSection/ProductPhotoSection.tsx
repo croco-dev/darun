@@ -7,7 +7,7 @@ export const ProductPhotoSection = ({ slug }: ProductPhotoSectionProps) => (
   <VStack as="section" gap={'8px'} py={'16px'}>
     <Text
       as={'h2'}
-      id={'description'}
+      id={'screenshot'}
       fontWeight={'fontWeights.semibold'}
       fontSize={24}
       color={'colors.dark.900'}
