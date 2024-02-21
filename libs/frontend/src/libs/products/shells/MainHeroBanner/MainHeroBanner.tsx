@@ -11,7 +11,7 @@ export function MainHeroBanner() {
       </Flex>
       <Flex zIndex={40} width={'100%'}>
         <ContentArea>
-          <VStack py={'60px'} px={'12px'} gap={'24px'}>
+          <VStack py={'60px'} px={'12px'} gap={'24px'} width={'fit-content'}>
             <VStack gap={'8px'}>
               <Text
                 fontSize={'18px'}
