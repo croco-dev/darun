@@ -3,14 +3,14 @@
 import { bind } from '@croco/utils-structure-react';
 import { Link } from '@darun/utils-router';
 import { Grid } from '@kuma-ui/core';
-import { Product } from '@products/uis';
+import { ProductItem } from '@products/uis';
 import { useRecentProductList } from './useRecentProductList';
 
 export const RecentProductList = bind(useRecentProductList, ({ products }) => (
   <Grid width={'100%'} gap={'20px'} gridTemplateColumns="repeat(2, 1fr)">
     {products.map(product => (
       <Link key={product.id} href={`/products/${product.slug}`}>
-        <Product
+        <ProductItem
           name={product.name}
           logoUrl={product.logoUrl}
           logoSize={'medium'}
