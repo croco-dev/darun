@@ -3,7 +3,7 @@
 import { ContentArea, ShadowButton } from '@darun/ui-foundation';
 import { InternetIcon } from '@darun/ui-icons';
 import { HStack, VStack, Text, Flex } from '@kuma-ui/core';
-import { ProductSingle, ProductUserAction, ProductTableOfContent } from '@products/components';
+import { ProductInformation, ProductUserAction, ProductTableOfContent } from '@products/components';
 
 type ProductDetailHeaderProps = {
   slug: string;
@@ -15,7 +15,7 @@ export const ProductDetailHeader = ({ slug }: ProductDetailHeaderProps) => {
       <ContentArea>
         <VStack gap={'8px'}>
           <HStack py="16px" justifyContent={'space-between'} alignItems={'center'}>
-            <ProductSingle slug={slug} />
+            <ProductInformation slug={slug} />
             <ProductUserAction />
           </HStack>
           <HStack gap={'12px'} pb={'12px'}>

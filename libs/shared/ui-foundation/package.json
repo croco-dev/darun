@@ -15,7 +15,7 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^18",
-    "@types/react-dom": "^18"
+    "@types/react": "*",
+    "@types/react-dom": "*"
   }
 }
