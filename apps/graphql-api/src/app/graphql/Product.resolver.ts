@@ -8,10 +8,10 @@ import {
 } from '@darun/backend';
 import { Arg, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
-import { Link } from './graphs/Link';
-import { Product } from './graphs/Product';
-import { Screenshot } from './graphs/Screenshot';
-import { Tag } from './graphs/Tag';
+import { Link } from './types/Link';
+import { Product } from './types/Product';
+import { Screenshot } from './types/Screenshot';
+import { Tag } from './types/Tag';
 
 @Resolver(() => Product)
 @Service()

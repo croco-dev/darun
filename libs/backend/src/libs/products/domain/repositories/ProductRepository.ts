@@ -2,17 +2,13 @@ import { Token } from 'typedi';
 import { Product } from '../entities/Product';
 
 export interface ProductRepository {
-  findTop4SortByPublishedAtDesc(): Promise<Product[]>;
+  findTop4SortByCreatedAtDesc(): Promise<Product[]>;
 
-  findPublishedOneById(id: string): Promise<Product | null>;
+  findOneById(id: string): Promise<Product | null>;
 
   findOneBySlug(slug: string): Promise<Product | null>;
 
-  findPublishedOneBySlug(slug: string): Promise<Product | null>;
-
-  countPublishedAll(): Promise<number>;
-
-  insert(values: Product): Promise<boolean>;
+  countAll(): Promise<number>;
 }
 
 export const ProductRepositoryToken = new Token<ProductRepository>('ProductRepository');

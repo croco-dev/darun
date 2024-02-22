@@ -1,3 +1,5 @@
+'use client';
+
 import { ContentArea, ShadowButton } from '@darun/ui-foundation';
 import { InternetIcon } from '@darun/ui-icons';
 import { HStack, VStack, Text, Flex } from '@kuma-ui/core';

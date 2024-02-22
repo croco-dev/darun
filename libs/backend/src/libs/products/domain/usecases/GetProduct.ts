@@ -7,12 +7,12 @@ export class GetProduct {
 
   async execute({ id, slug }: { id?: string; slug?: string }) {
     if (slug) {
-      return this.productRepository.findPublishedOneBySlug(slug);
+      return this.productRepository.findOneBySlug(slug);
     }
 
     if (!id) {
       throw new Error('id or slug is required to get a product.');
     }
-    return this.productRepository.findPublishedOneById(id);
+    return this.productRepository.findOneById(id);
   }
 }

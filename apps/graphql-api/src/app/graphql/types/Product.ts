@@ -15,7 +15,7 @@ export class Product {
   summary: string;
 
   @Field(() => String, { nullable: true })
-  description: string | null;
+  description: string;
 
   @Field(() => String)
   logoUrl: string;

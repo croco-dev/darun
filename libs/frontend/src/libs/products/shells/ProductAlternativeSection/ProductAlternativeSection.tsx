@@ -12,7 +12,7 @@ export const ProductAlternativeSection = () => (
         fontWeight={'fontWeights.semibold'}
         fontSize={'24px'}
         color={'colors.dark.900'}
-        letterSpacing={'-.4px'}
+        letterSpacing={'-.4px'} 
       >
         다른 서비스
       </Text>

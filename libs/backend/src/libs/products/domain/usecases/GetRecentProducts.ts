@@ -6,6 +6,6 @@ export class GetRecentProducts {
   constructor(@Inject(ProductRepositoryToken) private readonly productRepository: ProductRepository) {}
 
   async execute() {
-    return this.productRepository.findTop4SortByPublishedAtDesc();
+    return this.productRepository.findTop4SortByCreatedAtDesc();
   }
 }
