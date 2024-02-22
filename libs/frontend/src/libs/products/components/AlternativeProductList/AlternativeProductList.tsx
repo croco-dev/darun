@@ -4,9 +4,9 @@ import { bind } from '@croco/utils-structure-react';
 import { Link } from '@darun/utils-router';
 import { Grid } from '@kuma-ui/core';
 import { Product } from '@products/uis';
-import { useProductAlternative } from './useProductAlternative';
+import { useAlternativeProductList } from './useAlternativeProductList';
 
-export const ProductAlternative = bind(useProductAlternative, ({ products }) => {
+export const AlternativeProductList = bind(useAlternativeProductList, ({ products }) => {
   if (!products) return <></>;
   return (
     <Grid width={'100%'} gap={'20px'} gridTemplateColumns="repeat(2, 1fr)">

@@ -1,4 +1,4 @@
-export function useProductAlternative(): {
+export function useAlternativeProductList(): {
   products: {
     id: string;
     name: string;
