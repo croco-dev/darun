@@ -232,6 +232,9 @@ importers:
       '@darun/utils-apollo-client/server':
         specifier: workspace:*
         version: link:../shared/utils-apollo-client/server
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../shared/utils-router
       '@kuma-ui/core':
         specifier: '*'
         version: 1.5.6(@types/react@18.2.48)(next@14.1.0)(react@18.2.0)
