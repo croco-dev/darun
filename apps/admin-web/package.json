@@ -3,24 +3,35 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
+    "dev": "next dev",
+    "lint": "next lint",
     "start": "next start",
-    "lint": "next lint"
+    "test": "echo 1"
   },
   "dependencies": {
-    "react": "^18",
-    "react-dom": "^18",
+    "@mantine/core":  "7.5.3",
+    "@apollo/client": "3.9.4",
+    "@apollo/experimental-nextjs-app-support": "0.8.0",
+    "@croco/utils-structure-react": "0.0.1",
+    "@darun/admin": "workspace:*",
+    "@darun/provider-auth/client": "workspace:*",
+    "@darun/provider-auth/server": "workspace:*",
+    "@darun/ui-foundation": "workspace:*",
+    "@darun/ui-layout": "workspace:*",
+    "@darun/utils-apollo-client/client": "workspace:*",
+    "@darun/utils-apollo-client/server": "workspace:*",
+    "@darun/utils-auth-service-firebase": "workspace:*",
     "next": "14.1.0",
-    "antd": "5.14.1",
-    "@ant-design/nextjs-registry": "1.0.0"
+    "@croco/utils-next-font-pretendard": "0.0.1",
+    "next-client-cookies": "1.1.0"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "eslint": "^8",
-    "eslint-config-next": "14.1.0"
+    "eslint-config-next": "14.1.0",
+    "postcss": "8.4.35",
+    "postcss-preset-mantine": "1.13.0",
+    "postcss-simple-vars": "7.0.1"
   }
 }
