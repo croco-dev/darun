@@ -1,7 +1,7 @@
 'use client';
 
 import { Text, VStack } from '@kuma-ui/core';
-import { ProductAlternative } from '@products/components';
+import { AlternativeProductList } from '@products/components';
 
 export const ProductAlternativeSection = () => (
   <VStack as="section" gap={'20px'} py={'16px'}>
@@ -26,6 +26,6 @@ export const ProductAlternativeSection = () => (
         비슷한 기능을 제공하는 서비스들을 보여드립니다.
       </Text>
     </VStack>
-    <ProductAlternative />
+    <AlternativeProductList />
   </VStack>
 );
