@@ -14,6 +14,18 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
+export type CreateProductInput = {
+  readonly logoUrl: Scalars['String']['input'];
+  readonly name: Scalars['String']['input'];
+  readonly slug: Scalars['String']['input'];
+  readonly summary: Scalars['String']['input'];
+};
+
+export type CreateProductPayload = {
+  readonly __typename?: 'CreateProductPayload';
+  readonly product: Product;
+};
+
 export type Link = {
   readonly __typename?: 'Link';
   readonly displayLink: Scalars['String']['output'];
@@ -22,6 +34,16 @@ export type Link = {
   readonly link: Scalars['String']['output'];
   readonly logoUrl: Scalars['String']['output'];
   readonly title: Scalars['String']['output'];
+};
+
+export type Mutation = {
+  readonly __typename?: 'Mutation';
+  readonly createProduct: CreateProductPayload;
+};
+
+
+export type MutationcreateProductArgs = {
+  input: CreateProductInput;
 };
 
 export type Product = {

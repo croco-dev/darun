@@ -9,12 +9,13 @@ export type GetPhotosOnProductPhotosQueryVariables = Types.Exact<{
 }>;
 
 
-export type GetPhotosOnProductPhotosQuery = { __typename?: 'Query', productBySlug?: { __typename?: 'Product', screenshots: Array<{ __typename?: 'Screenshot', imageUrl: string, imageAlt: string }> } | null };
+export type GetPhotosOnProductPhotosQuery = { __typename?: 'Query', productBySlug?: { __typename?: 'Product', id: string, screenshots: Array<{ __typename?: 'Screenshot', imageUrl: string, imageAlt: string }> } | null };
 
 
 export const GetPhotosOnProductPhotosDocument = gql`
     query GetPhotosOnProductPhotos($slug: String!) {
   productBySlug(slug: $slug) {
+    id
     screenshots {
       imageUrl
       imageAlt

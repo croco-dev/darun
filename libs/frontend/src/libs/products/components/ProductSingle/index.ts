@@ -1,1 +1,0 @@
-export { ProductSingle } from './ProductSingle';
