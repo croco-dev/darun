@@ -6,12 +6,18 @@ export type { ProductTagRepository } from './repositories/ProductTagRepository';
 export { ProductTagRepositoryToken } from './repositories/ProductTagRepository';
 export type { ProductScreenshotRepository } from './repositories/ProductScreenshotRepository';
 export { ProductScreenshotRepositoryToken } from './repositories/ProductScreenshotRepository';
+export type { ProductFeatureScreenshotRepository } from './repositories/ProductFeatureScreenshotRepository';
+export { ProductFeatureScreenshotRepositoryToken } from './repositories/ProductFeatureScreenshotRepository';
+export type { ProductFeatureRepository } from './repositories/ProductFeatureRepository';
+export { ProductFeatureRepositoryToken } from './repositories/ProductFeatureRepository';
 
 export { Product } from './entities/Product';
 export { ProductLink } from './entities/ProductLink';
 export { ProductTag } from './entities/ProductTag';
 export { ProductTagType } from './entities/ProductTagType';
 export { ProductScreenshot } from './entities/ProductScreenshot';
+export { ProductFeatureScreenshot } from './entities/ProductFeatureScreenshot';
+export { ProductFeature } from './entities/ProductFeature';
 
 export { GetRecentProducts } from './usecases/GetRecentProducts';
 export { GetProduct } from './usecases/GetProduct';
@@ -20,3 +26,5 @@ export { GetProductsCount } from './usecases/GetProductsCount';
 export { GetProductTags } from './usecases/GetProductTags';
 export { GetProductScreenshots } from './usecases/GetProductScreenshots';
 export { CreateProduct } from './usecases/CreateProduct';
+export { GetProductFeatureScreenshots } from './usecases/GetProductFeatureScreenshots';
+export { GetProductFeatures } from './usecases/GetProductFeatures';

@@ -14,6 +14,18 @@ type CreateProductPayload {
   product: Product!
 }
 
+type Feature {
+  id: ID!
+  name: String!
+  screenshots: [FeatureScreenshot!]!
+}
+
+type FeatureScreenshot {
+  id: ID!
+  imageAlt: String!
+  imageUrl: String!
+}
+
 type Link {
   displayLink: String!
   id: ID!
@@ -29,6 +41,7 @@ type Mutation {
 
 type Product {
   description: String
+  features: [Feature!]!
   id: ID!
   links: [Link!]!
   logoUrl: String!
