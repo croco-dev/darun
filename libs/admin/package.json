@@ -15,6 +15,8 @@
     "@croco/utils-structure-react": "0.0.1",
     "@darun/provider-graphql": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
+    "@mantine/core": "7.5.3",
+    "@mantine/hooks": "7.5.3",
     "next": "14.1.0"
   },
   "devDependencies": {

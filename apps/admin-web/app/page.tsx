@@ -1,3 +1,3 @@
-export default function Home() {
-  return <main></main>;
-}
+import { HomePage } from '@darun/admin';
+
+export default HomePage;

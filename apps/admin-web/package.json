@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev",
+    "dev": "next dev --port 3001",
     "lint": "next lint",
     "start": "next start",
     "test": "echo 1"
   },
   "dependencies": {
     "@mantine/core":  "7.5.3",
+    "@mantine/hooks":  "7.5.3",
     "@apollo/client": "3.9.4",
     "@apollo/experimental-nextjs-app-support": "0.8.0",
     "@croco/utils-structure-react": "0.0.1",
