@@ -1,5 +1,9 @@
 import { BaseButton, ButtonProps } from '../BaseButton';
 
-export const TextButton = ({ children }: ButtonProps) => {
-  return <BaseButton kind={'text'}>{children}</BaseButton>;
+type TextButtonProps = ButtonProps & {
+  isActive?: boolean;
+};
+
+export const TextButton = ({ children, isActive }: TextButtonProps) => {
+  return <BaseButton kind={isActive ? 'textActive' : 'text'}>{children}</BaseButton>;
 };

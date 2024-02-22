@@ -14,6 +14,18 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
+export type CreateProductInput = {
+  readonly logoUrl: Scalars['String']['input'];
+  readonly name: Scalars['String']['input'];
+  readonly slug: Scalars['String']['input'];
+  readonly summary: Scalars['String']['input'];
+};
+
+export type CreateProductPayload = {
+  readonly __typename?: 'CreateProductPayload';
+  readonly product: Product;
+};
+
 export type Link = {
   readonly __typename?: 'Link';
   readonly displayLink: Scalars['String']['output'];
@@ -24,6 +36,16 @@ export type Link = {
   readonly title: Scalars['String']['output'];
 };
 
+export type Mutation = {
+  readonly __typename?: 'Mutation';
+  readonly createProduct: CreateProductPayload;
+};
+
+
+export type MutationcreateProductArgs = {
+  input: CreateProductInput;
+};
+
 export type Product = {
   readonly __typename?: 'Product';
   readonly description?: Maybe<Scalars['String']['output']>;
@@ -31,6 +53,8 @@ export type Product = {
   readonly links: ReadonlyArray<Link>;
   readonly logoUrl: Scalars['String']['output'];
   readonly name: Scalars['String']['output'];
+  readonly screenshots: ReadonlyArray<Screenshot>;
+  readonly slug: Scalars['String']['output'];
   readonly summary: Scalars['String']['output'];
   readonly tags: ReadonlyArray<Tag>;
 };
@@ -52,6 +76,13 @@ export type QueryproductArgs = {
 
 export type QueryproductBySlugArgs = {
   slug: Scalars['String']['input'];
+};
+
+export type Screenshot = {
+  readonly __typename?: 'Screenshot';
+  readonly id: Scalars['ID']['output'];
+  readonly imageAlt: Scalars['String']['output'];
+  readonly imageUrl: Scalars['String']['output'];
 };
 
 export type Tag = {

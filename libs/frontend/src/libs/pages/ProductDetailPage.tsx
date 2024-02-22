@@ -1,11 +1,24 @@
 import { ContentArea } from '@darun/ui-foundation';
 import { Layout } from '@darun/ui-layout';
-import { ProductSummarySection } from '../products/shells/ProductSummarySection';
+import { VStack } from '@kuma-ui/core';
+import {
+  ProductAlternativeSection,
+  ProductDetailHeader,
+  ProductSummarySection,
+  ProductPhotoSection,
+} from '@products/shells';
 
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
   <Layout>
-    <ContentArea as="main">
-      <ProductSummarySection slug={slug} />
-    </ContentArea>
+    <VStack as={'main'} width={'100%'}>
+      <ProductDetailHeader slug={slug} />
+      <ContentArea>
+        <VStack>
+          <ProductSummarySection slug={slug} />
+          <ProductPhotoSection slug={slug} />
+          <ProductAlternativeSection />
+        </VStack>
+      </ContentArea>
+    </VStack>
   </Layout>
 );

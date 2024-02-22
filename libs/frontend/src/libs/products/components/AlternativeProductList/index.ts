@@ -1,0 +1,1 @@
+export { AlternativeProductList } from './AlternativeProductList';
