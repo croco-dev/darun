@@ -1,13 +1,20 @@
 import { ContentArea } from '@darun/ui-foundation';
 import { SearchIcon } from '@darun/ui-icons';
 import { Flex, HStack, Input, Text, VStack } from '@kuma-ui/core';
+import Image from 'next/image';
 import { ProductsCount } from '../../components/ProductsCount';
 
 export function MainHeroBanner() {
   return (
     <Flex background={'colors.dark.900'} position={'relative'} width={'100%'} overflow={'hidden'} py={'40px'}>
-      <Flex position={'absolute'} top={0} bottom={0} right={-140} zIndex={20}>
-        <img src={'/images/main-hero-banner.png'} />
+      <Flex position={'absolute'} top={0} bottom={0} right={-140} zIndex={20} width="100%">
+        <Image
+          fill={true}
+          src={'/images/main-hero-banner.png'}
+          alt="hero banner"
+          objectFit="contain"
+          objectPosition="right"
+        />
       </Flex>
       <Flex zIndex={40} width={'100%'}>
         <ContentArea>
