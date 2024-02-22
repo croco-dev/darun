@@ -9,19 +9,20 @@
     "./server": "./src/server.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint **/*.ts*"
+    "lint": "eslint **/*.ts*",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@darun/utils-auth-service-core": "workspace:*"
   },
   "peerDependencies": {
-    "next": "*",
-    "next-client-cookies": "*"
+    "next": "14.1.0",
+    "next-client-cookies": "1.1.0"
   },
   "devDependencies": {
-    "@types/react": "*",
     "@darun/eslint-config": "workspace:*",
-    "@darun/utils-tsconfig": "workspace:*"
+    "@darun/utils-tsconfig": "workspace:*",
+    "@types/react": "^18",
+    "@types/react-dom": "^18"
   }
 }

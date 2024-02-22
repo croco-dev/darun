@@ -10,16 +10,16 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@croco/utils-structure-react": "*",
+    "@croco/utils-structure-react": "0.0.1",
     "@darun/provider-auth/client": "workspace:*",
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-icons": "workspace:*",
-    "@kuma-ui/core": "*"
+    "@kuma-ui/core": "1.5.6"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "*",
-    "@types/react-dom": "*"
+    "@types/react": "^18",
+    "@types/react-dom": "^18"
   }
 }

@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "typedi": "*",
-    "drizzle-orm": "*"
+    "typedi": "0.10.0",
+    "drizzle-orm": "0.29.4"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
