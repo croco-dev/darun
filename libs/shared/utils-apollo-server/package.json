@@ -17,6 +17,6 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/aws-lambda": "*"
+    "@types/aws-lambda": "8.10.134"
   }
 }

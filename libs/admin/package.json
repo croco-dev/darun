@@ -1,5 +1,5 @@
 {
-  "name": "@darun/ui-foundation",
+  "name": "@darun/admin",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
@@ -10,7 +10,12 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@kuma-ui/core": "1.5.6"
+    "@apollo/client": "3.9.5",
+    "@apollo/experimental-nextjs-app-support": "0.8.0",
+    "@croco/utils-structure-react": "0.0.1",
+    "@darun/provider-graphql": "workspace:*",
+    "@darun/utils-apollo-client/server": "workspace:*",
+    "next": "14.1.0"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
