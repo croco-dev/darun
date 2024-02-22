@@ -6,6 +6,9 @@ gql`
     productBySlug(slug: $slug) {
       id
       name
+      summary
+      description
+      logoUrl
     }
   }
 `;
@@ -22,5 +25,8 @@ export function useProductSummary({ slug }: ProductSummaryProps) {
   });
   return {
     name: data.productBySlug?.name,
+    summary: data.productBySlug?.summary,
+    description: data.productBySlug?.description,
+    logoUrl: data.productBySlug?.logoUrl,
   };
 }

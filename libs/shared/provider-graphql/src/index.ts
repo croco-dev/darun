@@ -31,6 +31,8 @@ export type Product = {
   readonly links: ReadonlyArray<Link>;
   readonly logoUrl: Scalars['String']['output'];
   readonly name: Scalars['String']['output'];
+  readonly screenshots: ReadonlyArray<Screenshot>;
+  readonly slug: Scalars['String']['output'];
   readonly summary: Scalars['String']['output'];
   readonly tags: ReadonlyArray<Tag>;
 };
@@ -52,6 +54,13 @@ export type QueryproductArgs = {
 
 export type QueryproductBySlugArgs = {
   slug: Scalars['String']['input'];
+};
+
+export type Screenshot = {
+  readonly __typename?: 'Screenshot';
+  readonly id: Scalars['ID']['output'];
+  readonly imageAlt: Scalars['String']['output'];
+  readonly imageUrl: Scalars['String']['output'];
 };
 
 export type Tag = {
