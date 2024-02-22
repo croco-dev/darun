@@ -7,7 +7,17 @@ import { ProductRepository, ProductRepositoryToken } from '../repositories/Produ
 export class CreateProduct {
   constructor(@Inject(ProductRepositoryToken) private readonly productRepository: ProductRepository) {}
 
-  async execute({ name, slug, logoUrl, summary }: { name: string; slug: string; logoUrl: string; summary: string }) {
+  async execute({
+    name,
+    slug,
+    logoUrl,
+    summary,
+  }: {
+    name: string;
+    slug: string;
+    logoUrl: string;
+    summary: string;
+  }): Promise<Product> {
     const exists = await this.productRepository.findOneBySlug(slug);
     if (exists) {
       throw productSlugAlreadyExists();
@@ -21,6 +31,12 @@ export class CreateProduct {
       throw productCreateFailed();
     }
 
-    return this.productRepository.findOneBySlug(slug);
+    const product = await this.productRepository.findOneBySlug(slug);
+
+    if (!product) {
+      throw productCreateFailed();
+    }
+
+    return product;
   }
 }
