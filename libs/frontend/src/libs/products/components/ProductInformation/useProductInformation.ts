@@ -1,5 +1,5 @@
-import { gql } from "@apollo/client";
-import { useProductBySlugOnProductInformationSuspenseQuery } from "./__generated__/useProductInformation";
+import { gql } from '@apollo/client';
+import { useProductBySlugOnProductInformationSuspenseQuery } from './__generated__/useProductInformation';
 
 gql`
   query ProductBySlugOnProductInformation($slug: String!) {

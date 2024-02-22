@@ -3,7 +3,7 @@ import { HStack, VStack, Text } from '@kuma-ui/core';
 import Image from 'next/image';
 import React from 'react';
 
-type ProductProps = {
+type ProductItemProps = {
   as?: 'div' | 'a' | 'button';
   logoUrl?: string;
   logoSize?: keyof typeof logoSizes;
@@ -25,7 +25,7 @@ const logoSizes = {
   },
 };
 
-export function Product({
+export function ProductItem({
   as = 'div',
   logoUrl,
   logoSize = 'medium',
@@ -34,7 +34,7 @@ export function Product({
   tagVariant = 'square',
   tags,
   specialTags,
-}: ProductProps) {
+}: ProductItemProps) {
   return (
     <HStack as={as} width={'100%'} gap={'12px'} alignItems={'center'}>
       <Image
