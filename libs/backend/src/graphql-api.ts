@@ -7,3 +7,4 @@ export {
   MysqlProductFeatureScreenshotRepository,
 } from './libs/products/datasource';
 export { FirebaseAccountRepository } from './libs/accounts/datasource';
+export { MysqlCompanyRepository } from './libs/companies/datasource';

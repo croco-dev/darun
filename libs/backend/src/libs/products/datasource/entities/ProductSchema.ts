@@ -8,6 +8,7 @@ export const products = mysqlTable('products', {
   summary: varchar('summary', { length: 255 }).notNull(),
   description: text('description'),
   logoUrl: varchar('logo_url', { length: 255 }).notNull(),
+  ownedCompanyId: varchar('owned_company_id', { length: 26 }),
   publishedAt: datetime('published_at'),
   createdAt: datetime('created_at')
     .notNull()

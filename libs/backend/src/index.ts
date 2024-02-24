@@ -10,3 +10,4 @@ export {
   GetProductFeatureScreenshots,
 } from './libs/products/domain';
 export { GetAccount } from './libs/accounts/domain';
+export { GetCompany } from './libs/companies/domain';

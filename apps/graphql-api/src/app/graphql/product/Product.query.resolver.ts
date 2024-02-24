@@ -1,4 +1,5 @@
 import {
+  GetCompany,
   GetProduct,
   GetProductFeatures,
   GetProductLinks,
@@ -9,6 +10,7 @@ import {
 } from '@darun/backend';
 import { Arg, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
+import { Company } from '../company/graphs/Company';
 import { Feature } from '../feature/graphs/Feature';
 import { Link } from './graphs/Link';
 import { Product } from './graphs/Product';
@@ -25,7 +27,8 @@ export class ProductQueryResolver {
     private readonly getProductTags: GetProductTags,
     private readonly getProductScreenshots: GetProductScreenshots,
     private readonly getProductsCount: GetProductsCount,
-    private readonly getProductFeatures: GetProductFeatures
+    private readonly getProductFeatures: GetProductFeatures,
+    private readonly getCompany: GetCompany
   ) {}
 
   @Query(() => [Product])
@@ -66,5 +69,13 @@ export class ProductQueryResolver {
   @FieldResolver(() => [Feature])
   public features(@Root() product: Product) {
     return this.getProductFeatures.execute({ productId: product.id });
+  }
+
+  @FieldResolver(() => Company, { nullable: true })
+  public ownedCompany(@Root() product: Product) {
+    if (!product.ownedCompanyId) {
+      return null;
+    }
+    return this.getCompany.execute({ id: product.ownedCompanyId });
   }
 }

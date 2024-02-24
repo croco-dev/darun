@@ -19,4 +19,7 @@ export class Product {
 
   @Field(() => String)
   logoUrl: string;
+
+  @Field(() => String, { nullable: true })
+  ownedCompanyId?: string;
 }
