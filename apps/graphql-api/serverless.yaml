@@ -30,6 +30,7 @@ provider:
   stage: ${opt:stage, 'dev'}
   profile: darun
   deploymentBucket: ${self:provider.stage}-${self:service}-deploy-bucket
+  architecture: arm64
 
 functions:
   graphql:
