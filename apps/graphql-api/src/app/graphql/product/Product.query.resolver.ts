@@ -7,7 +7,6 @@ import {
   GetProductScreenshots,
   GetProductTags,
   GetRecentProducts,
-  IndexProduct,
 } from '@darun/backend';
 import { Arg, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';

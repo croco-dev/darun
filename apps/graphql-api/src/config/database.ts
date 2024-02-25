@@ -1,4 +1,4 @@
-import { DrizzleToken, MongooseToken } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
 import { connect, Connection } from '@planetscale/database';
 import { drizzle } from 'drizzle-orm/planetscale-serverless';
 import * as mongoose from 'mongoose';
