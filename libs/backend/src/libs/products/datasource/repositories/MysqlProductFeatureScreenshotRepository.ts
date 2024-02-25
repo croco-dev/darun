@@ -1,4 +1,4 @@
-import { Database, DatabaseToken } from '@darun/provider-database';
+import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import {
   ProductFeatureScreenshot,
   ProductFeatureScreenshotRepository,
@@ -13,7 +13,7 @@ import { productFeatureScreenshots } from '../entities/ProductFeatureScreenshots
 @Service(ProductFeatureScreenshotRepositoryToken)
 export class MysqlProductFeatureScreenshotRepository implements ProductFeatureScreenshotRepository {
   private featureIdLoader: DataLoader<string, ProductFeatureScreenshot[]>;
-  constructor(@Inject(DatabaseToken) private readonly db: Database) {
+  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.featureIdLoader = new DataLoader(
       async (featureIds: readonly string[]) => {
         const docs = await this.db

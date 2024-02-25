@@ -1,18 +1,34 @@
-import { DatabaseToken } from '@darun/provider-database';
+import { DrizzleToken, MongooseToken } from '@darun/provider-database';
 import { connect, Connection } from '@planetscale/database';
 import { drizzle } from 'drizzle-orm/planetscale-serverless';
+import * as mongoose from 'mongoose';
 import { Container } from 'typedi';
-import { DATABASE_URL, DATABASE_PASSWORD, DATABASE_USERNAME } from './environment';
+import { DATABASE_URL, DATABASE_PASSWORD, DATABASE_USERNAME, MONGODB_URI } from './environment';
 
-let connection: Connection;
-let db: ReturnType<typeof drizzle>;
-export function createDatabase() {
-  connection ??= connect({
+let mySqlConnection: Connection;
+let drizzleInstance: ReturnType<typeof drizzle>;
+let mongooseConnection: mongoose.Mongoose;
+
+export function createMysqlConnection() {
+  mySqlConnection ??= connect({
     host: DATABASE_URL,
     username: DATABASE_USERNAME,
     password: DATABASE_PASSWORD,
   });
-  db ??= drizzle(connection);
-  Container.set(DatabaseToken, db);
-  return db;
+  drizzleInstance ??= drizzle(mySqlConnection);
+  Container.set(DrizzleToken, drizzleInstance);
+}
+
+export function createMongodbConnection() {
+  if (!mongooseConnection) {
+    mongoose
+      .connect(MONGODB_URI, {
+        dbName: 'darun',
+        autoIndex: true,
+        maxPoolSize: 5,
+      })
+      .then(connection => {
+        mongooseConnection = connection;
+      });
+  }
 }

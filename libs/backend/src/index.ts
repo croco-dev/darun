@@ -11,3 +11,4 @@ export {
 } from './libs/products/domain';
 export { GetAccount } from './libs/accounts/domain';
 export { GetCompany } from './libs/companies/domain';
+export { IndexProduct } from './libs/search/domain';

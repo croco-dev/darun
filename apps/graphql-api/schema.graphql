@@ -41,6 +41,14 @@ type FeatureScreenshot {
   imageUrl: String!
 }
 
+input IndexProductInput {
+  slug: String!
+}
+
+type IndexProductPayload {
+  indexed: Boolean!
+}
+
 type Link {
   displayLink: String!
   id: ID!
@@ -52,6 +60,7 @@ type Link {
 
 type Mutation {
   createProduct(input: CreateProductInput!): CreateProductPayload!
+  indexProduct(input: IndexProductInput!): IndexProductPayload!
 }
 
 type Product {

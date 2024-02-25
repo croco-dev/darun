@@ -1,17 +1,15 @@
-export class Product {
+export class SearchableProduct {
   public id: string;
-  public name: string;
   public slug: string;
+  public name: string;
   public summary: string;
   public description?: string;
-  public logoUrl: string;
 
   constructor({
     id,
     slug,
     name,
     summary,
-    logoUrl,
     description,
   }: {
     id?: string;
@@ -19,13 +17,11 @@ export class Product {
     name: string;
     summary: string;
     description?: string;
-    logoUrl: string;
   }) {
     this.slug = slug;
     this.name = name;
     this.summary = summary;
     this.description = description;
-    this.logoUrl = logoUrl;
 
     if (id) {
       this.id = id;

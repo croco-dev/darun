@@ -9,6 +9,8 @@
       "@companies/datasource": ["src/libs/companies/datasource/index.ts"],
       "@products/domain": ["src/libs/products/domain/index.ts"],
       "@products/datasource": ["src/libs/products/datasource/index.ts"],
+      "@search/domain": ["src/libs/search/domain/index.ts"],
+      "@search/datasource": ["src/libs/search/datasource/index.ts"],
     },
   },
 }

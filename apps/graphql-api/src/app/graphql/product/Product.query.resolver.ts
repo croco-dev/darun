@@ -7,6 +7,7 @@ import {
   GetProductScreenshots,
   GetProductTags,
   GetRecentProducts,
+  IndexProduct,
 } from '@darun/backend';
 import { Arg, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
@@ -21,54 +22,54 @@ import { Tag } from './graphs/Tag';
 @Service()
 export class ProductQueryResolver {
   constructor(
-    private readonly getRecentProducts: GetRecentProducts,
-    private readonly getProduct: GetProduct,
-    private readonly getProductLinks: GetProductLinks,
-    private readonly getProductTags: GetProductTags,
-    private readonly getProductScreenshots: GetProductScreenshots,
-    private readonly getProductsCount: GetProductsCount,
-    private readonly getProductFeatures: GetProductFeatures,
-    private readonly getCompany: GetCompany
+    private readonly getRecentProductsUseCase: GetRecentProducts,
+    private readonly getProductUseCase: GetProduct,
+    private readonly getProductLinksUseCase: GetProductLinks,
+    private readonly getProductTagsUseCase: GetProductTags,
+    private readonly getProductScreenshotsUseCase: GetProductScreenshots,
+    private readonly getProductsCountUseCase: GetProductsCount,
+    private readonly getProductFeaturesUseCase: GetProductFeatures,
+    private readonly getCompanyUseCase: GetCompany
   ) {}
 
   @Query(() => [Product])
   public recentProducts() {
-    return this.getRecentProducts.execute();
+    return this.getRecentProductsUseCase.execute();
   }
 
   @Query(() => Product, { nullable: true })
   public product(@Arg('id', () => ID) id: string) {
-    return this.getProduct.execute({ id });
+    return this.getProductUseCase.execute({ id });
   }
 
   @Query(() => Product, { nullable: true })
   public productBySlug(@Arg('slug', () => String) slug: string) {
-    return this.getProduct.execute({ slug });
+    return this.getProductUseCase.execute({ slug });
   }
 
   @Query(() => Int)
   public productsCount() {
-    return this.getProductsCount.execute();
+    return this.getProductsCountUseCase.execute();
   }
 
   @FieldResolver(() => [Link])
   public links(@Root() product: Product) {
-    return this.getProductLinks.execute({ productId: product.id });
+    return this.getProductLinksUseCase.execute({ productId: product.id });
   }
 
   @FieldResolver(() => [Tag])
   public tags(@Root() product: Product) {
-    return this.getProductTags.execute({ productId: product.id });
+    return this.getProductTagsUseCase.execute({ productId: product.id });
   }
 
   @FieldResolver(() => [Screenshot])
   public screenshots(@Root() product: Product) {
-    return this.getProductScreenshots.execute({ productId: product.id });
+    return this.getProductScreenshotsUseCase.execute({ productId: product.id });
   }
 
   @FieldResolver(() => [Feature])
   public features(@Root() product: Product) {
-    return this.getProductFeatures.execute({ productId: product.id });
+    return this.getProductFeaturesUseCase.execute({ productId: product.id });
   }
 
   @FieldResolver(() => Company, { nullable: true })
@@ -76,6 +77,6 @@ export class ProductQueryResolver {
     if (!product.ownedCompanyId) {
       return null;
     }
-    return this.getCompany.execute({ id: product.ownedCompanyId });
+    return this.getCompanyUseCase.execute({ id: product.ownedCompanyId });
   }
 }

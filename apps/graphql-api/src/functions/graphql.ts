@@ -5,11 +5,11 @@ import { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { GraphQLISODateTime } from 'type-graphql';
 import { Container } from 'typedi';
 import { resolvers } from '../app/resolvers';
-import { createDatabase } from '../config/database';
+import { createMongodbConnection, createMysqlConnection } from '../config/database';
 import { IS_LOCAL } from '../config/environment';
 
 export const handler: APIGatewayProxyHandlerV2 = createLambdaHandler(
-  [createDatabase],
+  [createMysqlConnection, createMongodbConnection],
   createServer({
     options: {
       resolvers,

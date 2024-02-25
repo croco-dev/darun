@@ -1,5 +1,5 @@
 import { Company, CompanyRepository, CompanyRepositoryToken } from '@companies/domain';
-import { Database, DatabaseToken } from '@darun/provider-database';
+import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
 import { keyBy } from 'lodash';
@@ -10,7 +10,7 @@ import { companies } from '../entities/CompanySchema';
 export class MysqlCompanyRepository implements CompanyRepository {
   private companyIdLoader: DataLoader<string, Company>;
 
-  constructor(@Inject(DatabaseToken) private readonly db: Database) {
+  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.companyIdLoader = new DataLoader(
       async (companyIds: readonly string[]) => {
         const docs = await this.db

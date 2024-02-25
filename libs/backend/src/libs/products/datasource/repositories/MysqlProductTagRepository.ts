@@ -1,4 +1,4 @@
-import { Database, DatabaseToken } from '@darun/provider-database';
+import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { ProductTagRepositoryToken, ProductTagRepository, ProductTag, ProductTagType } from '@products/domain';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
@@ -9,7 +9,7 @@ import { productTags } from '../entities/ProductTagsSchema';
 @Service(ProductTagRepositoryToken)
 export class MysqlProductTagRepository implements ProductTagRepository {
   private productIdLoader: DataLoader<string, ProductTag[]>;
-  constructor(@Inject(DatabaseToken) private readonly db: Database) {
+  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.productIdLoader = new DataLoader(
       async (productIds: readonly string[]) => {
         const docs = await this.db

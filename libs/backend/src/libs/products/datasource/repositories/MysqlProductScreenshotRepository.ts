@@ -1,4 +1,4 @@
-import { Database, DatabaseToken } from '@darun/provider-database';
+import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { ProductScreenshot, ProductScreenshotRepository, ProductScreenshotRepositoryToken } from '@products/domain';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
@@ -9,7 +9,7 @@ import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 @Service(ProductScreenshotRepositoryToken)
 export class MysqlProductScreenshotRepository implements ProductScreenshotRepository {
   private productIdLoader: DataLoader<string, ProductScreenshot[]>;
-  constructor(@Inject(DatabaseToken) private readonly db: Database) {
+  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.productIdLoader = new DataLoader(
       async (productIds: readonly string[]) => {
         const docs = await this.db

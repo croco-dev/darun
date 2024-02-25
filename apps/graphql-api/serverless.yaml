@@ -20,7 +20,6 @@ custom:
     plugins: esbuild.plugins.js
   serverless-offline:
     httpPort: 4000
-    reloadHandler: true
 
 provider:
   name: aws
@@ -50,3 +49,4 @@ functions:
       FIREBASE_PROJECT_ID: ${env:FIREBASE_PROJECT_ID}
       FIREBASE_PRIVATE_KEY: ${env:FIREBASE_PRIVATE_KEY}
       FIREBASE_CLIENT_EMAIL: ${env:FIREBASE_CLIENT_EMAIL}
+      MONGODB_URI: ${env:MONGODB_URI}
