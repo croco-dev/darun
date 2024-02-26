@@ -1,3 +1,5 @@
+'use client';
+
 import { bind } from '@croco/utils-structure-react';
 import { Chip } from '@darun/ui-foundation';
 import { Grid, VStack, Text, Flex, HStack } from '@kuma-ui/core';
