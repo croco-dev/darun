@@ -1,10 +1,9 @@
 import { bind } from '@croco/utils-structure-react';
 import { Chip } from '@darun/ui-foundation';
 import { Grid, VStack, Text, Flex, HStack } from '@kuma-ui/core';
-import React from 'react';
-import { useProductCompany } from './useProductComany';
+import { useProductCompany } from './useProductCompany';
 
-export const ProductCompany = bind(useProductCompany, ({}) => (
+export const ProductCompany = bind(useProductCompany, ({ company }) => (
   <VStack>
     <Grid gridTemplateColumns="repeat(2, 1fr)" gap="8px">
       <VStack gap="12px">
@@ -22,17 +21,47 @@ export const ProductCompany = bind(useProductCompany, ({}) => (
               </Text>
             </Flex>
             <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
-              대한민국
+              {company?.region}
             </Text>
           </HStack>
           <HStack>
             <Flex width="64px">
               <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
-                국적
+                상태
               </Text>
             </Flex>
             <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
-              대한민국
+              {company?.type}
+            </Text>
+          </HStack>
+          <HStack>
+            <Flex width="64px">
+              <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
+                주소
+              </Text>
+            </Flex>
+            <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
+              {company?.address}
+            </Text>
+          </HStack>
+          <HStack>
+            <Flex width="64px">
+              <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
+                고용 인원
+              </Text>
+            </Flex>
+            <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
+              {company?.size} (명)
+            </Text>
+          </HStack>
+          <HStack>
+            <Flex width="64px">
+              <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
+                설립일
+              </Text>
+            </Flex>
+            <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
+              {company?.startAt}
             </Text>
           </HStack>
         </VStack>
