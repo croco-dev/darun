@@ -1,5 +1,5 @@
 import { Text, VStack } from '@kuma-ui/core';
-import { ProductPhotos } from '../../components/ProductPhotos';
+import { ProductPhotos } from '@products/components';
 
 type ProductPhotoSectionProps = { slug: string };
 
