@@ -8,7 +8,7 @@ import { ObjectId } from 'mongoose';
     collection: 'searchableProducts',
   },
 })
-class SearchableProductSchema {
+export class SearchableProductSchema {
   public _id: ObjectId;
 
   @prop()

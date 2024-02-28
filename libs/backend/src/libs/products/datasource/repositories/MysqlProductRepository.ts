@@ -1,12 +1,31 @@
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { Product, ProductRepository, ProductRepositoryToken } from '@products/domain';
-import { and, count, desc, eq, isNotNull } from 'drizzle-orm';
+import DataLoader from 'dataloader';
+import { and, count, desc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { groupBy, keyBy } from 'lodash';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
+import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 
 @Service(ProductRepositoryToken)
 export class MysqlProductRepository implements ProductRepository {
-  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
+  private publishedIdLoader: DataLoader<string, Product>;
+  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
+    this.publishedIdLoader = new DataLoader(
+      async (ids: readonly string[]) => {
+        const docs = await this.db
+          .select()
+          .from(products)
+          .where(and(inArray(products.id, [...ids]), isNotNull(products.publishedAt)));
+
+        const groupByDocs = keyBy(docs, 'id');
+        return ids.map(id => ({ ...groupByDocs[id], description: groupByDocs[id]?.description ?? undefined }));
+      },
+      {
+        cache: false,
+      }
+    );
+  }
 
   async insert(values: Product): Promise<boolean> {
     const inserted = await this.db.insert(products).values({ ...values });
@@ -41,12 +60,7 @@ export class MysqlProductRepository implements ProductRepository {
   }
 
   async findPublishedOneById(id: string): Promise<Product | null> {
-    return this.db
-      .select()
-      .from(products)
-      .where(and(eq(products.id, id), isNotNull(products.publishedAt)))
-      .limit(1)
-      .then(rows => ({ ...rows[0], description: rows[0].description ?? undefined }) ?? null);
+    return this.publishedIdLoader.load(id);
   }
 
   async findTop4SortByPublishedAtDesc(): Promise<Product[]> {

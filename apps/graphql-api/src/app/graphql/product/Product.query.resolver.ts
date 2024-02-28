@@ -7,6 +7,7 @@ import {
   GetProductScreenshots,
   GetProductTags,
   GetRecentProducts,
+  SearchProduct,
 } from '@darun/backend';
 import { Arg, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
@@ -28,7 +29,8 @@ export class ProductQueryResolver {
     private readonly getProductScreenshotsUseCase: GetProductScreenshots,
     private readonly getProductsCountUseCase: GetProductsCount,
     private readonly getProductFeaturesUseCase: GetProductFeatures,
-    private readonly getCompanyUseCase: GetCompany
+    private readonly getCompanyUseCase: GetCompany,
+    private readonly searchProductUseCase: SearchProduct
   ) {}
 
   @Query(() => [Product])
@@ -49,6 +51,12 @@ export class ProductQueryResolver {
   @Query(() => Int)
   public productsCount() {
     return this.getProductsCountUseCase.execute();
+  }
+
+  @Query(() => [Product])
+  public async searchProducts(@Arg('query', () => String) query: string) {
+    const searchableProducts = await this.searchProductUseCase.execute({ query });
+    return searchableProducts.map(searchableProduct => this.getProductUseCase.execute({ id: searchableProduct.id }));
   }
 
   @FieldResolver(() => [Link])
