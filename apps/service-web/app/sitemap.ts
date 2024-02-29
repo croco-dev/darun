@@ -15,11 +15,11 @@ const productQuery = gql`
 `;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const { data } = await getClient().query<{ products: { slug: string; updatedAt: string }[] }>({
+  const { data } = await getClient().query<{ recentProducts: { slug: string; updatedAt: string }[] }>({
     query: productQuery,
   });
 
-  return data.products.map(product => ({
+  return (data.recentProducts ?? []).map(product => ({
     url: `${container.baseUrl}/products/${product.slug}`,
     lastModified: product.updatedAt ?? new Date(),
   }));
