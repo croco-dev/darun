@@ -48,6 +48,10 @@ class Container {
           : this.httpLink,
     });
   }
+
+  get baseUrl() {
+    return process.env['NEXT_PUBLIC_BASE_URL'] ?? 'localhost:3000';
+  }
 }
 
 export const container = Container.getInstance();
