@@ -63,13 +63,13 @@ export class MysqlProductRepository implements ProductRepository {
     return this.publishedIdLoader.load(id);
   }
 
-  async findTop4SortByPublishedAtDesc(): Promise<Product[]> {
+  async findTopNSortByPublishedAtDesc(n: number): Promise<Product[]> {
     return this.db
       .select()
       .from(products)
       .where(isNotNull(products.publishedAt))
       .orderBy(desc(products.publishedAt))
-      .limit(4)
+      .limit(n)
       .then(rows => rows.map(row => ({ ...row, description: row.description ?? undefined })));
   }
 }

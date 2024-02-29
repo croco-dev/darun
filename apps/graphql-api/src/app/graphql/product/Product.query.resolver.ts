@@ -34,8 +34,8 @@ export class ProductQueryResolver {
   ) {}
 
   @Query(() => [Product])
-  public recentProducts() {
-    return this.getRecentProductsUseCase.execute();
+  public recentProducts(@Arg('first', () => Int) first: number) {
+    return this.getRecentProductsUseCase.execute({ limit: first });
   }
 
   @Query(() => Product, { nullable: true })

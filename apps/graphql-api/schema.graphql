@@ -76,6 +76,7 @@ type Product {
   slug: String!
   summary: String!
   tags: [Tag!]!
+  updatedAt: DateTimeISO
 }
 
 type Query {
@@ -83,7 +84,7 @@ type Query {
   product(id: ID!): Product
   productBySlug(slug: String!): Product
   productsCount: Int!
-  recentProducts: [Product!]!
+  recentProducts(first: Int!): [Product!]!
   searchProducts(query: String!): [Product!]!
 }
 

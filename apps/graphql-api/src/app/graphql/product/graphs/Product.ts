@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from 'type-graphql';
+import { Field, GraphQLISODateTime, ID, ObjectType } from 'type-graphql';
 
 @ObjectType()
 export class Product {
@@ -22,4 +22,7 @@ export class Product {
 
   @Field(() => String, { nullable: true })
   ownedCompanyId?: string;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  updatedAt?: Date;
 }

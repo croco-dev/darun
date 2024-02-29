@@ -10,6 +10,7 @@ export const products = mysqlTable('products', {
   logoUrl: varchar('logo_url', { length: 255 }).notNull(),
   ownedCompanyId: varchar('owned_company_id', { length: 26 }),
   publishedAt: datetime('published_at'),
+  updatedAt: datetime('updated_at'),
   createdAt: datetime('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
