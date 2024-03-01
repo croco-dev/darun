@@ -25,7 +25,7 @@ const logoSizes = {
   },
 };
 
-export function ProductItem({
+export const ProductItem = ({
   as = 'div',
   logoUrl,
   logoSize = 'medium',
@@ -34,7 +34,7 @@ export function ProductItem({
   tagVariant = 'square',
   tags,
   specialTags,
-}: ProductItemProps) {
+}: ProductItemProps) => {
   return (
     <HStack as={as} width={'100%'} gap={'12px'} alignItems={'center'}>
       <Image
@@ -85,4 +85,4 @@ export function ProductItem({
       </VStack>
     </HStack>
   );
-}
+};

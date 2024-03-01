@@ -17,10 +17,11 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }) => (
       <HStack gap={'8px'} width={'max-content'} overflow={'auto'}>
         {photos.map(photo => (
           <Image
+            key={photo.imageUrl}
             src={photo.imageUrl}
             alt={photo.imageAlt}
             sizes="240px"
-            fill
+            fill={true}
             className={css`
               border-radius: 4px;
               border: 1px solid rgba(0, 0, 0, 0.04);

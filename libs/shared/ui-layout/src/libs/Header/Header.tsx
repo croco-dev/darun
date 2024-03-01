@@ -1,6 +1,7 @@
 import { bind } from '@croco/utils-structure-react';
 import { ContainedButton, ContentArea, Logo } from '@darun/ui-foundation';
 import { SearchIcon } from '@darun/ui-icons';
+import { Link as RouterLink } from '@darun/utils-router';
 import { Flex, HStack, Input, Link } from '@kuma-ui/core';
 import { HeaderLoginButton } from '../HeaderLoginButton';
 import { useHeader } from './useHeader';
@@ -11,11 +12,14 @@ export const Header = bind(useHeader, () => (
       <HStack width="100%" justify="space-between" alignItems="center" gap={24} paddingY={'14px'}>
         <HStack gap={24}>
           <HStack alignItems="center">
-            <Logo size={36} />
+            <Link href="/" as={RouterLink}>
+              <Logo size={36} />
+            </Link>
           </HStack>
           <HStack alignItems="center" gap={12}>
             <Link
               href={'#'}
+              as={RouterLink}
               fontSize={15}
               fontWeight={'fontWeights.medium'}
               color={'colors.dark.700'}
@@ -25,6 +29,7 @@ export const Header = bind(useHeader, () => (
             </Link>
             <Link
               href={'#'}
+              as={RouterLink}
               fontSize={15}
               fontWeight={'fontWeights.medium'}
               color={'colors.dark.700'}
