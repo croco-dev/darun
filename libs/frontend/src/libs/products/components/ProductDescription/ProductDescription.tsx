@@ -6,6 +6,6 @@ import { useProductDescription } from './useProductDescription';
 
 export const ProductDescription = bind(useProductDescription, ({ description }) => (
   <VStack>
-    <Text>{description}</Text>
+    <Text whiteSpace="pre-wrap">{description}</Text>
   </VStack>
 ));

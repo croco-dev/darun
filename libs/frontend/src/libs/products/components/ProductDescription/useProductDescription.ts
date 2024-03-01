@@ -20,7 +20,8 @@ export function useProductDescription({ slug }: ProductSummaryProps) {
       slug,
     },
   });
+
   return {
-    description: data.productBySlug?.description,
+    description: data.productBySlug?.description ?? '',
   };
 }
