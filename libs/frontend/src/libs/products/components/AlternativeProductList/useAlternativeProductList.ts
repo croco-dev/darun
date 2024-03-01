@@ -1,22 +1,28 @@
-export function useAlternativeProductList(): {
-  products: {
-    id: string;
-    name: string;
-    slug: string;
-    logoUrl?: string;
-    summary: string;
-    tags: { name: string }[];
-  }[];
-} {
+import { gql } from '@apollo/client';
+import { useProductBySlugOnAlternativeProductListSuspenseQuery } from './__generated__/useAlternativeProductList';
+
+gql`
+  query ProductBySlugOnAlternativeProductList($slug: String!) {
+    productBySlug(slug: $slug) {
+      id
+      alternatives {
+        id
+        name
+        slug
+        summary
+        logoUrl
+      }
+    }
+  }
+`;
+
+type AlternativeProductListProps = {
+  slug: string;
+};
+export function useAlternativeProductList({ slug }: AlternativeProductListProps) {
+  const { data } = useProductBySlugOnAlternativeProductListSuspenseQuery({ variables: { slug } });
+
   return {
-    products: [
-      {
-        id: 'asdasd',
-        name: 'asd',
-        slug: 'asd',
-        summary: 'asd',
-        tags: [{ name: 'asd' }],
-      },
-    ],
+    alternatives: data.productBySlug?.alternatives ?? [],
   };
 }
