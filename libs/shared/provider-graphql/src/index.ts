@@ -90,6 +90,7 @@ export type MutationindexProductArgs = {
 
 export type Product = {
   readonly __typename?: 'Product';
+  readonly alternatives: ReadonlyArray<Product>;
   readonly description?: Maybe<Scalars['String']['output']>;
   readonly features: ReadonlyArray<Feature>;
   readonly id: Scalars['ID']['output'];
