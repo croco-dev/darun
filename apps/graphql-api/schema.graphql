@@ -64,6 +64,7 @@ type Mutation {
 }
 
 type Product {
+  alternatives: [Product!]!
   description: String
   features: [Feature!]!
   id: ID!

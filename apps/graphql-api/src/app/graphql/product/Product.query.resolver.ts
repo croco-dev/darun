@@ -1,4 +1,5 @@
 import {
+  GetAlternativeProducts,
   GetCompany,
   GetProduct,
   GetProductFeatures,
@@ -30,7 +31,8 @@ export class ProductQueryResolver {
     private readonly getProductsCountUseCase: GetProductsCount,
     private readonly getProductFeaturesUseCase: GetProductFeatures,
     private readonly getCompanyUseCase: GetCompany,
-    private readonly searchProductUseCase: SearchProduct
+    private readonly searchProductUseCase: SearchProduct,
+    private readonly getAlternativeProductsUseCase: GetAlternativeProducts
   ) {}
 
   @Query(() => [Product])
@@ -87,5 +89,17 @@ export class ProductQueryResolver {
       return null;
     }
     return this.getCompanyUseCase.execute({ id: product.ownedCompanyId });
+  }
+
+  @FieldResolver(() => [Product])
+  public async alternatives(@Root() product: Product) {
+    const alternativeProducts = await this.getAlternativeProductsUseCase.execute({ productId: product.id });
+    const products = await Promise.all(
+      alternativeProducts.map(alternativeProduct =>
+        this.getProductUseCase.execute({ id: alternativeProduct.alternativeProductId })
+      )
+    );
+
+    return products.filter(product => Boolean(product));
   }
 }

@@ -9,7 +9,7 @@ import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 
 @Service(ProductRepositoryToken)
 export class MysqlProductRepository implements ProductRepository {
-  private publishedIdLoader: DataLoader<string, Product>;
+  private publishedIdLoader: DataLoader<string, Product | null>;
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.publishedIdLoader = new DataLoader(
       async (ids: readonly string[]) => {
@@ -19,7 +19,9 @@ export class MysqlProductRepository implements ProductRepository {
           .where(and(inArray(products.id, [...ids]), isNotNull(products.publishedAt)));
 
         const groupByDocs = keyBy(docs, 'id');
-        return ids.map(id => ({ ...groupByDocs[id], description: groupByDocs[id]?.description ?? undefined }));
+        return ids.map(id =>
+          groupByDocs[id] ? { ...groupByDocs[id], description: groupByDocs[id]?.description ?? undefined } : null
+        );
       },
       {
         cache: false,
@@ -47,7 +49,7 @@ export class MysqlProductRepository implements ProductRepository {
       .from(products)
       .where(eq(products.slug, slug))
       .limit(1)
-      .then(rows => ({ ...rows[0], description: rows[0].description ?? undefined }) ?? null);
+      .then(rows => (rows[0] ? { ...rows[0], description: rows[0].description ?? undefined } : null));
   }
 
   async findPublishedOneBySlug(slug: string): Promise<Product | null> {
@@ -56,7 +58,7 @@ export class MysqlProductRepository implements ProductRepository {
       .from(products)
       .where(and(eq(products.slug, slug), isNotNull(products.publishedAt)))
       .limit(1)
-      .then(rows => ({ ...rows[0], description: rows[0].description ?? undefined }) ?? null);
+      .then(rows => (rows[0] ? { ...rows[0], description: rows[0].description ?? undefined } : null));
   }
 
   async findPublishedOneById(id: string): Promise<Product | null> {
