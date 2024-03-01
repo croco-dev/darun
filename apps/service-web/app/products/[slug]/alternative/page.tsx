@@ -4,7 +4,7 @@ import { getClient } from '@darun/utils-apollo-client/server';
 import { Metadata } from 'next';
 
 const productQuery = gql`
-  query ProductBySlugOnProductDetailPageMetadata($slug: String!) {
+  query ProductBySlugOnProductAlternativePageMetadata($slug: String!) {
     productBySlug(slug: $slug) {
       name
     }
