@@ -2,10 +2,9 @@ import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { Product, ProductRepository, ProductRepositoryToken } from '@products/domain';
 import DataLoader from 'dataloader';
 import { and, count, desc, eq, inArray, isNotNull } from 'drizzle-orm';
-import { groupBy, keyBy } from 'lodash';
+import { keyBy } from 'lodash';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
-import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 
 @Service(ProductRepositoryToken)
 export class MysqlProductRepository implements ProductRepository {
