@@ -9,7 +9,7 @@ export class Link {
   title: string;
 
   @Field(() => String)
-  logoUrl: string;
+  iconUrl: string;
 
   @Field(() => String)
   link: string;

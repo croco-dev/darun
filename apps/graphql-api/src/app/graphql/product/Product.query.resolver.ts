@@ -61,7 +61,9 @@ export class ProductQueryResolver {
 
   @FieldResolver(() => [Link])
   public links(@Root() product: Product) {
-    return this.getProductLinksUseCase.execute({ productId: product.id });
+    return this.getProductLinksUseCase
+      .execute({ productId: product.id })
+      .then(links => links.map((link, index) => ({ ...link, isPrimary: index === 0 })));
   }
 
   @FieldResolver(() => [Tag])

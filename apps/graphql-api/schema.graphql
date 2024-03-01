@@ -51,10 +51,10 @@ type IndexProductPayload {
 
 type Link {
   displayLink: String!
+  iconUrl: String!
   id: ID!
   isPrimary: Boolean!
   link: String!
-  logoUrl: String!
   title: String!
 }
 

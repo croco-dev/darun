@@ -65,10 +65,10 @@ export type IndexProductPayload = {
 export type Link = {
   readonly __typename?: 'Link';
   readonly displayLink: Scalars['String']['output'];
+  readonly iconUrl: Scalars['String']['output'];
   readonly id: Scalars['ID']['output'];
   readonly isPrimary: Scalars['Boolean']['output'];
   readonly link: Scalars['String']['output'];
-  readonly logoUrl: Scalars['String']['output'];
   readonly title: Scalars['String']['output'];
 };
 
