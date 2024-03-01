@@ -1,0 +1,1 @@
+export { ProductTocSection } from './ProductTocSection';

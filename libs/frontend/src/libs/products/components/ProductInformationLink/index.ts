@@ -1,0 +1,1 @@
+export { ProductInformationLink } from './ProductInformationLink';
