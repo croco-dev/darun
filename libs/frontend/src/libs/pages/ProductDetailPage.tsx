@@ -6,6 +6,8 @@ import {
   ProductDetailHeader,
   ProductDescriptionSection,
   ProductPhotoSection,
+  ProductDetailFeatureSection,
+  ProductDetailCompanySection,
 } from '@products/shells';
 
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
@@ -16,7 +18,9 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
         <VStack>
           <ProductDescriptionSection slug={slug} />
           <ProductPhotoSection slug={slug} />
+          <ProductDetailFeatureSection />
           <ProductAlternativeSection slug={slug} />
+          <ProductDetailCompanySection slug={slug} />
         </VStack>
       </ContentArea>
     </VStack>

@@ -1,10 +1,10 @@
 import { Text, VStack } from '@kuma-ui/core';
-import { ProductPhotos } from '../../components/ProductPhotos';
+import { ProductPhotos } from '@products/components';
 
 type ProductPhotoSectionProps = { slug: string };
 
 export const ProductPhotoSection = ({ slug }: ProductPhotoSectionProps) => (
-  <VStack as="section" gap={'8px'} py={'16px'}>
+  <VStack as="section" gap={'20px'} py={'16px'}>
     <Text
       as={'h2'}
       id={'screenshot'}

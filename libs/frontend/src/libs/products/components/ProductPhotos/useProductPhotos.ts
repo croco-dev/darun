@@ -4,7 +4,7 @@ import { useGetPhotosOnProductPhotosSuspenseQuery } from './__generated__/usePro
 gql`
   query GetPhotosOnProductPhotos($slug: String!) {
     productBySlug(slug: $slug) {
-     id
+      id
       screenshots {
         imageUrl
         imageAlt

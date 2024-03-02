@@ -1,0 +1,1 @@
+export { ProductCompany } from './ProductCompany';
