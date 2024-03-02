@@ -6,22 +6,21 @@ import { Grid } from '@kuma-ui/core';
 import { ProductItem } from '@products/uis';
 import { useAlternativeProductList } from './useAlternativeProductList';
 
-export const AlternativeProductList = bind(useAlternativeProductList, ({ products }) => {
-  if (!products) return <></>;
-  return (
+export const AlternativeProductList = bind(useAlternativeProductList, ({ alternatives }) => {
+  return alternatives.length > 0 ? (
     <Grid width={'100%'} gap={'20px'} gridTemplateColumns="repeat(2, 1fr)">
-      {products.map(product => (
-        <Link key={product.id} href={`/products/${product.slug}`}>
+      {alternatives.map(alternative => (
+        <Link key={alternative.id} href={`/products/${alternative.slug}`}>
           <ProductItem
-            name={product.name}
-            logoUrl={product.logoUrl}
+            name={alternative.name}
+            logoUrl={alternative.logoUrl}
             logoSize={'medium'}
-            summary={product.summary}
-            tags={product.tags.map(tag => tag.name)}
+            summary={alternative.summary}
+            tags={['asd']}
             specialTags={['🎖️ ‘다른’ 추천 등재']}
           />
         </Link>
       ))}
     </Grid>
-  );
+  ) : null;
 });
