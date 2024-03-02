@@ -5,5 +5,6 @@ export { ProductTableOfContent } from './ProductTableOfContent';
 export { ProductUserAction } from './ProductUserAction';
 export { RecentProductList } from './RecentProductList';
 export { AlternativeProductList } from './AlternativeProductList';
+export { ProductLinks } from './ProductLinks';
 export { ProductFeatureList } from './ProductFeatureList';
 export { ProductCompany } from './ProductCompany';
