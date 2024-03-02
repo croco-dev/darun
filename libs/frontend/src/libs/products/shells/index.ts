@@ -6,3 +6,5 @@ export { RecentProductSection } from './RecentProductSection';
 export { ProductTocSection } from './ProductTocSection';
 export { ProductSummary } from './ProductSummary';
 export { ProductSummaryLink } from './ProductSummaryLink';
+export { ProductDetailFeatureSection } from './ProductDetailFeatureSection';
+export { ProductDetailCompanySection } from './ProductDetailCompanySection';
