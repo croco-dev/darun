@@ -5,9 +5,9 @@ import { ShadowButton } from '@darun/ui-foundation';
 import { HStack, Text, VStack } from '@kuma-ui/core';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useProductInformationLink } from './useProductInformationLink';
+import { useProductLinks } from './useProductLinks';
 
-export const ProductInformationLink = bind(useProductInformationLink, ({ links }) => (
+export const ProductLinks = bind(useProductLinks, ({ links }) => (
   <>
     {links.map((link, index) => (
       <Link key={link.id} href={link.link}>

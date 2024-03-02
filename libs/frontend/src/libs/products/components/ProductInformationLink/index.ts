@@ -1,1 +1,0 @@
-export { ProductInformationLink } from './ProductInformationLink';
