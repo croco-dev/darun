@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 import { useGetCompaniesInfoOnProductCompanySuspenseQuery } from './__generated__/useProductCompany';
 
 gql`
-  query GetCompaniesInfoOnProductCompany($slug: String!) {
+  query ProductBySlugOnProductCompany($slug: String!) {
     productBySlug(slug: $slug) {
       id
       ownedCompany {
