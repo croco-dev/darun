@@ -5,4 +5,4 @@ export { ProductTableOfContent } from './ProductTableOfContent';
 export { ProductUserAction } from './ProductUserAction';
 export { RecentProductList } from './RecentProductList';
 export { AlternativeProductList } from './AlternativeProductList';
-export { ProductInformationLink } from './ProductInformationLink';
+export { ProductLinks } from './ProductLinks';
