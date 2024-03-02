@@ -3,5 +3,5 @@ export class ProductLink {
   public title: string;
   public link: string;
   public displayLink: string;
-  public iconUrl: string | null;
+  public iconUrl: string;
 }

@@ -4,8 +4,10 @@ import { VStack } from '@kuma-ui/core';
 import {
   ProductAlternativeSection,
   ProductDetailHeader,
-  ProductSummarySection,
+  ProductDescriptionSection,
   ProductPhotoSection,
+  ProductDetailFeatureSection,
+  ProductDetailCompanySection,
 } from '@products/shells';
 
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
@@ -14,9 +16,11 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
       <ProductDetailHeader slug={slug} />
       <ContentArea>
         <VStack>
-          <ProductSummarySection slug={slug} />
+          <ProductDescriptionSection slug={slug} />
           <ProductPhotoSection slug={slug} />
-          <ProductAlternativeSection />
+          <ProductDetailFeatureSection />
+          <ProductAlternativeSection slug={slug} />
+          <ProductDetailCompanySection slug={slug} />
         </VStack>
       </ContentArea>
     </VStack>

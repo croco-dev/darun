@@ -1,11 +1,11 @@
 import { VStack, Text } from '@kuma-ui/core';
-import { ProductSummary } from '@products/components';
+import { ProductDescription } from '@products/components';
 
-type ProductSummarySectionProps = {
+type ProductDescriptionSectionProps = {
   slug: string;
 };
-export const ProductSummarySection = ({ slug }: ProductSummarySectionProps) => (
-  <VStack as="section" gap={'8px'} py={'16px'}>
+export const ProductDescriptionSection = ({ slug }: ProductDescriptionSectionProps) => (
+  <VStack as="section" gap={'20px'} py={'16px'}>
     <Text
       as={'h2'}
       id={'description'}
@@ -16,6 +16,6 @@ export const ProductSummarySection = ({ slug }: ProductSummarySectionProps) => (
     >
       소개
     </Text>
-    <ProductSummary slug={slug} />
+    <ProductDescription slug={slug} />
   </VStack>
 );

@@ -5,7 +5,10 @@ const { withKumaUI } = require('@kuma-ui/next-plugin');
 const nextConfig = {
   compiler: {},
   images: {
-    domains: ['res.cloudinary.com'],
+    domains: [
+      'res.cloudinary.com',
+      'via.placeholder.com', // memo(@ddarkr): 개발 목적의 이미지 도메인 등록
+    ],
   },
 };
 

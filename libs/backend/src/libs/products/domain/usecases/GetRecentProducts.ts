@@ -5,7 +5,7 @@ import { ProductRepository, ProductRepositoryToken } from '../repositories/Produ
 export class GetRecentProducts {
   constructor(@Inject(ProductRepositoryToken) private readonly productRepository: ProductRepository) {}
 
-  async execute() {
-    return this.productRepository.findTop4SortByPublishedAtDesc();
+  async execute({ limit }: { limit: number }) {
+    return this.productRepository.findTopNSortByPublishedAtDesc(limit);
   }
 }

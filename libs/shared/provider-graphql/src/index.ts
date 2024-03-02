@@ -12,6 +12,19 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.This scalar is serialized to a string in ISO 8601 format and parsed from a string in ISO 8601 format. */
+  DateTimeISO: { input: unknown; output: unknown; }
+};
+
+export type Company = {
+  readonly __typename?: 'Company';
+  readonly address: Scalars['String']['output'];
+  readonly id: Scalars['ID']['output'];
+  readonly name: Scalars['String']['output'];
+  readonly region: Scalars['String']['output'];
+  readonly size: Scalars['String']['output'];
+  readonly startAt: Scalars['DateTimeISO']['output'];
+  readonly type: Scalars['String']['output'];
 };
 
 export type CreateProductInput = {
@@ -26,19 +39,43 @@ export type CreateProductPayload = {
   readonly product: Product;
 };
 
+export type Feature = {
+  readonly __typename?: 'Feature';
+  readonly id: Scalars['ID']['output'];
+  readonly name: Scalars['String']['output'];
+  readonly screenshots: ReadonlyArray<FeatureScreenshot>;
+};
+
+export type FeatureScreenshot = {
+  readonly __typename?: 'FeatureScreenshot';
+  readonly id: Scalars['ID']['output'];
+  readonly imageAlt: Scalars['String']['output'];
+  readonly imageUrl: Scalars['String']['output'];
+};
+
+export type IndexProductInput = {
+  readonly slug: Scalars['String']['input'];
+};
+
+export type IndexProductPayload = {
+  readonly __typename?: 'IndexProductPayload';
+  readonly indexed: Scalars['Boolean']['output'];
+};
+
 export type Link = {
   readonly __typename?: 'Link';
   readonly displayLink: Scalars['String']['output'];
+  readonly iconUrl: Scalars['String']['output'];
   readonly id: Scalars['ID']['output'];
   readonly isPrimary: Scalars['Boolean']['output'];
   readonly link: Scalars['String']['output'];
-  readonly logoUrl: Scalars['String']['output'];
   readonly title: Scalars['String']['output'];
 };
 
 export type Mutation = {
   readonly __typename?: 'Mutation';
   readonly createProduct: CreateProductPayload;
+  readonly indexProduct: IndexProductPayload;
 };
 
 
@@ -46,17 +83,27 @@ export type MutationcreateProductArgs = {
   input: CreateProductInput;
 };
 
+
+export type MutationindexProductArgs = {
+  input: IndexProductInput;
+};
+
 export type Product = {
   readonly __typename?: 'Product';
+  readonly alternatives: ReadonlyArray<Product>;
   readonly description?: Maybe<Scalars['String']['output']>;
+  readonly features: ReadonlyArray<Feature>;
   readonly id: Scalars['ID']['output'];
   readonly links: ReadonlyArray<Link>;
   readonly logoUrl: Scalars['String']['output'];
   readonly name: Scalars['String']['output'];
+  readonly ownedCompany?: Maybe<Company>;
+  readonly ownedCompanyId?: Maybe<Scalars['String']['output']>;
   readonly screenshots: ReadonlyArray<Screenshot>;
   readonly slug: Scalars['String']['output'];
   readonly summary: Scalars['String']['output'];
   readonly tags: ReadonlyArray<Tag>;
+  readonly updatedAt?: Maybe<Scalars['DateTimeISO']['output']>;
 };
 
 export type Query = {
@@ -66,6 +113,7 @@ export type Query = {
   readonly productBySlug?: Maybe<Product>;
   readonly productsCount: Scalars['Int']['output'];
   readonly recentProducts: ReadonlyArray<Product>;
+  readonly searchProducts: ReadonlyArray<Product>;
 };
 
 
@@ -76,6 +124,16 @@ export type QueryproductArgs = {
 
 export type QueryproductBySlugArgs = {
   slug: Scalars['String']['input'];
+};
+
+
+export type QueryrecentProductsArgs = {
+  first: Scalars['Int']['input'];
+};
+
+
+export type QuerysearchProductsArgs = {
+  query: Scalars['String']['input'];
 };
 
 export type Screenshot = {

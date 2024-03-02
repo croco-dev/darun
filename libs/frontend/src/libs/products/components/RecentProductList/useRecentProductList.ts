@@ -3,7 +3,7 @@ import { useRecentProductsOnRecentProductListSuspenseQuery } from './__generated
 
 gql`
   query RecentProductsOnRecentProductList {
-    recentProducts {
+    recentProducts(first: 4) {
       id
       name
       slug
@@ -18,7 +18,7 @@ gql`
 `;
 
 export function useRecentProductList() {
-  const { data } = useRecentProductsOnRecentProductListSuspenseQuery();
+  const { data, error } = useRecentProductsOnRecentProductListSuspenseQuery();
   return {
     products: data?.recentProducts ?? [],
   };

@@ -1,7 +1,9 @@
 export { ProductInformation } from './ProductInformation';
 export { ProductPhotos } from './ProductPhotos';
-export { ProductSummary } from './ProductSummary';
+export { ProductDescription } from './ProductDescription';
 export { ProductTableOfContent } from './ProductTableOfContent';
 export { ProductUserAction } from './ProductUserAction';
 export { RecentProductList } from './RecentProductList';
 export { AlternativeProductList } from './AlternativeProductList';
+export { ProductFeatureList } from './ProductFeatureList';
+export { ProductCompany } from './ProductCompany';

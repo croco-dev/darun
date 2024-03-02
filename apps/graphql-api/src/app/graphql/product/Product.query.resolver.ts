@@ -1,4 +1,5 @@
 import {
+  GetAlternativeProducts,
   GetCompany,
   GetProduct,
   GetProductFeatures,
@@ -7,6 +8,7 @@ import {
   GetProductScreenshots,
   GetProductTags,
   GetRecentProducts,
+  SearchProduct,
 } from '@darun/backend';
 import { Arg, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
@@ -28,12 +30,14 @@ export class ProductQueryResolver {
     private readonly getProductScreenshotsUseCase: GetProductScreenshots,
     private readonly getProductsCountUseCase: GetProductsCount,
     private readonly getProductFeaturesUseCase: GetProductFeatures,
-    private readonly getCompanyUseCase: GetCompany
+    private readonly getCompanyUseCase: GetCompany,
+    private readonly searchProductUseCase: SearchProduct,
+    private readonly getAlternativeProductsUseCase: GetAlternativeProducts
   ) {}
 
   @Query(() => [Product])
-  public recentProducts() {
-    return this.getRecentProductsUseCase.execute();
+  public recentProducts(@Arg('first', () => Int) first: number) {
+    return this.getRecentProductsUseCase.execute({ limit: first });
   }
 
   @Query(() => Product, { nullable: true })
@@ -51,9 +55,17 @@ export class ProductQueryResolver {
     return this.getProductsCountUseCase.execute();
   }
 
+  @Query(() => [Product])
+  public async searchProducts(@Arg('query', () => String) query: string) {
+    const searchableProducts = await this.searchProductUseCase.execute({ query });
+    return searchableProducts.map(searchableProduct => this.getProductUseCase.execute({ id: searchableProduct.id }));
+  }
+
   @FieldResolver(() => [Link])
   public links(@Root() product: Product) {
-    return this.getProductLinksUseCase.execute({ productId: product.id });
+    return this.getProductLinksUseCase
+      .execute({ productId: product.id })
+      .then(links => links.map((link, index) => ({ ...link, isPrimary: index === 0 })));
   }
 
   @FieldResolver(() => [Tag])
@@ -77,5 +89,17 @@ export class ProductQueryResolver {
       return null;
     }
     return this.getCompanyUseCase.execute({ id: product.ownedCompanyId });
+  }
+
+  @FieldResolver(() => [Product])
+  public async alternatives(@Root() product: Product) {
+    const alternativeProducts = await this.getAlternativeProductsUseCase.execute({ productId: product.id });
+    const products = await Promise.all(
+      alternativeProducts.map(alternativeProduct =>
+        this.getProductUseCase.execute({ id: alternativeProduct.alternativeProductId })
+      )
+    );
+
+    return products.filter(product => Boolean(product));
   }
 }

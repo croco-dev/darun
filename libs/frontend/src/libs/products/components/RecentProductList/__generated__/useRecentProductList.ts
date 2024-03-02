@@ -12,7 +12,7 @@ export type RecentProductsOnRecentProductListQuery = { __typename?: 'Query', rec
 
 export const RecentProductsOnRecentProductListDocument = gql`
     query RecentProductsOnRecentProductList {
-  recentProducts {
+  recentProducts(first: 4) {
     id
     name
     slug

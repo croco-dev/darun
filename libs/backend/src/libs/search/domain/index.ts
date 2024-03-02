@@ -3,3 +3,4 @@ export { SearchableProductRepositoryToken } from './repositories/SearchableProdu
 
 export { SearchableProduct } from './entities/SearchableProduct';
 export { IndexProduct } from './usecases/IndexProduct';
+export { SearchProduct } from './usecases/SearchProduct';

@@ -1,11 +1,12 @@
 import { ApolloLink, HttpLink, InMemoryCache } from '@apollo/client';
 import {
-  NextSSRInMemoryCache,
   NextSSRApolloClient,
+  NextSSRInMemoryCache,
   SSRMultipartLink,
 } from '@apollo/experimental-nextjs-app-support/ssr';
 import { createApolloClient } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
+
 class Container {
   private static instance: Container;
   public static getInstance() {
@@ -47,6 +48,10 @@ class Container {
             ])
           : this.httpLink,
     });
+  }
+
+  get baseUrl() {
+    return process.env['NEXT_PUBLIC_BASE_URL'] ?? 'localhost:3000';
   }
 }
 

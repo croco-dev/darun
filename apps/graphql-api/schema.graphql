@@ -51,10 +51,10 @@ type IndexProductPayload {
 
 type Link {
   displayLink: String!
+  iconUrl: String!
   id: ID!
   isPrimary: Boolean!
   link: String!
-  logoUrl: String!
   title: String!
 }
 
@@ -64,6 +64,7 @@ type Mutation {
 }
 
 type Product {
+  alternatives: [Product!]!
   description: String
   features: [Feature!]!
   id: ID!
@@ -76,6 +77,7 @@ type Product {
   slug: String!
   summary: String!
   tags: [Tag!]!
+  updatedAt: DateTimeISO
 }
 
 type Query {
@@ -83,7 +85,8 @@ type Query {
   product(id: ID!): Product
   productBySlug(slug: String!): Product
   productsCount: Int!
-  recentProducts: [Product!]!
+  recentProducts(first: Int!): [Product!]!
+  searchProducts(query: String!): [Product!]!
 }
 
 type Screenshot {

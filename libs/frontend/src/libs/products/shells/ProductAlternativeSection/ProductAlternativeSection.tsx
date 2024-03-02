@@ -3,7 +3,10 @@
 import { Text, VStack } from '@kuma-ui/core';
 import { AlternativeProductList } from '@products/components';
 
-export const ProductAlternativeSection = () => (
+type ProductAlternativeSectionProps = {
+  slug: string;
+};
+export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionProps) => (
   <VStack as="section" gap={'20px'} py={'16px'}>
     <VStack gap={'6px'}>
       <Text
@@ -20,12 +23,12 @@ export const ProductAlternativeSection = () => (
         as={'p'}
         fontWeight={'fontWeights.medium'}
         fontSize={'15px'}
-        color={'colors.dark.700'}
+        color={'colors.dark.600'}
         letterSpacing={'-.06px'}
       >
         비슷한 기능을 제공하는 서비스들을 보여드립니다.
       </Text>
     </VStack>
-    <AlternativeProductList />
+    <AlternativeProductList slug={slug} />
   </VStack>
 );
