@@ -33,6 +33,7 @@ type Feature {
   id: ID!
   name: String!
   screenshots: [FeatureScreenshot!]!
+  summary: String
 }
 
 type FeatureScreenshot {
