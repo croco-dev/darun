@@ -34,7 +34,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
           borderColor={'rgba(0, 0, 0, 0.1)'}
           borderRadius={'8px'}
         >
-          <Text fontSize={'22px'}>{emoji ?? '❇️'}</Text>
+          <Text fontSize={'22px'}>{emoji ?? '💎'}</Text>
         </Flex>
         <VStack>
           <Text color={'colors.dark.900'} fontWeight={'fontWeights.bold'} fontSize={'18px'} letterSpacing={'-.072px'}>

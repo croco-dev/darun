@@ -44,6 +44,7 @@ export type Feature = {
   readonly id: Scalars['ID']['output'];
   readonly name: Scalars['String']['output'];
   readonly screenshots: ReadonlyArray<FeatureScreenshot>;
+  readonly summary?: Maybe<Scalars['String']['output']>;
 };
 
 export type FeatureScreenshot = {

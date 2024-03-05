@@ -8,6 +8,7 @@ gql`
       features {
         id
         name
+        summary
         screenshots {
           id
           imageAlt

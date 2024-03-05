@@ -9,7 +9,7 @@ export type ProductWithFeaturesOnProductFeatureListQueryVariables = Types.Exact<
 }>;
 
 
-export type ProductWithFeaturesOnProductFeatureListQuery = { __typename?: 'Query', productBySlug?: { __typename?: 'Product', id: string, features: Array<{ __typename?: 'Feature', id: string, name: string, screenshots: Array<{ __typename?: 'FeatureScreenshot', id: string, imageAlt: string, imageUrl: string }> }> } | null };
+export type ProductWithFeaturesOnProductFeatureListQuery = { __typename?: 'Query', productBySlug?: { __typename?: 'Product', id: string, features: Array<{ __typename?: 'Feature', id: string, name: string, summary?: string | null, screenshots: Array<{ __typename?: 'FeatureScreenshot', id: string, imageAlt: string, imageUrl: string }> }> } | null };
 
 
 export const ProductWithFeaturesOnProductFeatureListDocument = gql`
@@ -19,6 +19,7 @@ export const ProductWithFeaturesOnProductFeatureListDocument = gql`
     features {
       id
       name
+      summary
       screenshots {
         id
         imageAlt
