@@ -4,6 +4,8 @@
   "exclude": ["node_modules"],
   "compilerOptions": {
     "baseUrl": "./",
-    "paths": {},
-  },
+    "paths": {
+      "@accounts/shells": ["src/libs/accounts/shells/index.ts"]
+    }
+  }
 }
