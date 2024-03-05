@@ -23,7 +23,7 @@
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@kuma-ui/core": "1.5.6",
-    "next": "14.1.0",
+    "next": "14.1.2",
     "next-client-cookies": "1.1.0",
     "normalize.css": "8.0.1",
     "react": "^18",
