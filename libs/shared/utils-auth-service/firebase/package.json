@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@darun/utils-auth-service-core": "workspace:*",
-    "firebase": "10.8.0",
+    "firebase": "10.8.1",
     "next-firebase-auth-edge": "1.0.1"
   },
   "peerDependencies": {

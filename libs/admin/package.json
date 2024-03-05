@@ -13,10 +13,11 @@
     "@apollo/client": "3.9.5",
     "@apollo/experimental-nextjs-app-support": "0.8.0",
     "@croco/utils-structure-react": "0.0.1",
+    "@darun/provider-auth/client": "workspace:*",
     "@darun/provider-graphql": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
-    "@mantine/core": "7.5.3",
-    "@mantine/hooks": "7.5.3",
+    "@mantine/core": "7.6.1",
+    "@mantine/hooks": "7.6.1",
     "next": "14.1.0"
   },
   "devDependencies": {
