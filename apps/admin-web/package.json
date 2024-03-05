@@ -10,7 +10,7 @@
     "test": "echo 1"
   },
   "dependencies": {
-    "@mantine/core":  "7.5.3",
+    "@mantine/core":  "7.6.1",
     "@mantine/hooks":  "7.5.3",
     "@apollo/client": "3.9.5",
     "@apollo/experimental-nextjs-app-support": "0.8.0",
