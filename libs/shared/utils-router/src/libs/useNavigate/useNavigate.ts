@@ -8,11 +8,11 @@ interface NavigateOptions {
 export function useNavigate() {
   const { push, replace } = useRouter();
 
-  return (to: string, options: NavigateOptions) => {
-    if (options.replace) {
+  return (to: string, options?: NavigateOptions) => {
+    if (options?.replace) {
       replace(to, { scroll: !options.preventScrollReset });
     } else {
-      push(to, { scroll: !options.preventScrollReset });
+      push(to, { scroll: !options?.preventScrollReset });
     }
   };
 }

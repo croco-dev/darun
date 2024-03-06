@@ -8,6 +8,9 @@ export class Feature {
   @Field(() => String)
   name: string;
 
+  @Field(() => String)
+  emoji: string;
+
   @Field(() => String, { nullable: true })
   summary?: string;
 }
