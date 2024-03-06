@@ -33,6 +33,17 @@ export class FirebaseAuthService implements AuthService {
     }
   }
 
+  setRedirectUrl(url: string): void {
+    this.authStorage?.set({ redirectUrl: url });
+  }
+
+  getRedirectUrl(): string | undefined {
+    return this.authStorage?.get('redirectUrl') ?? undefined;
+  }
+  clearRedirectUrl() {
+    this.authStorage?.set({ redirectUrl: undefined });
+  }
+
   async signOut() {
     this.authStorage?.clear();
     await getAuth().signOut();

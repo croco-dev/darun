@@ -7,4 +7,7 @@ export interface AuthService {
   signInWithGoogle(): void;
   getUser(): Promise<AuthUser | null>;
   signOut(): Promise<void>;
+  setRedirectUrl(url: string): void;
+  getRedirectUrl(): string | undefined;
+  clearRedirectUrl(): void;
 }

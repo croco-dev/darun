@@ -1,7 +1,8 @@
-type AuthTokens = { idToken: string; refreshToken: string };
+type AuthStorageType = { idToken: string; refreshToken: string; redirectUrl: string };
+type AuthStorageKey = keyof AuthStorageType;
 
 export type AuthStorage = {
-  get: (key: keyof AuthTokens) => string | null;
-  set: (token: Partial<AuthTokens>) => void;
+  get: (key: AuthStorageKey) => string | null;
+  set: (values: Partial<AuthStorageType>) => void;
   clear: () => void;
 };

@@ -73,6 +73,9 @@ importers:
       '@darun/utils-auth-service-firebase':
         specifier: workspace:*
         version: link:../../libs/shared/utils-auth-service/firebase
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-router
       '@mantine/core':
         specifier: 7.6.1
         version: 7.6.1(@mantine/hooks@7.6.1)(@types/react@18.2.57)(react-dom@18.2.0)(react@18.2.0)
@@ -385,6 +388,9 @@ importers:
       '@darun/utils-auth-service-core':
         specifier: workspace:*
         version: link:../../utils-auth-service/core
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../../utils-router
       next:
         specifier: 14.1.0
         version: 14.1.0(react-dom@18.2.0)(react@18.2.0)

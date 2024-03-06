@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthUser } from '@darun/utils-auth-service-core';
+import { useNavigate } from '@darun/utils-router';
 import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuthService } from '../AuthServiceProvider';
 
@@ -24,6 +25,7 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
   const authService = useAuthService();
   const [authUser, setAuthUser] = useState<AuthUser | null>();
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   const authState: AuthState = useMemo(() => {
     if (authUser) {
@@ -38,7 +40,15 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
 
   useEffect(() => {
     const unsubscribe = authService.onIdTokenChanged(user => {
-      setAuthUser(user ? user : null);
+      if (user) {
+        setAuthUser(user);
+        const redirectUrl = authService.getRedirectUrl();
+        authService.clearRedirectUrl();
+        if (redirectUrl) {
+          navigate(redirectUrl);
+        }
+      }
+      setAuthUser(null);
       setIsLoading(false);
     });
 

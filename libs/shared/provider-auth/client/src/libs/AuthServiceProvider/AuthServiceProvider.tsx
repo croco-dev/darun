@@ -21,13 +21,18 @@ export const AuthServiceProvider = ({ children, authService }: AuthServiceProvid
     clear() {
       cookies.remove('idToken');
       cookies.remove('refreshToken');
+      cookies.remove('redirectUrl');
     },
-    set: token => {
-      if (token.idToken) {
-        cookies.set('idToken', token.idToken);
-      }
-      if (token.refreshToken) {
-        cookies.set('refreshToken', token.refreshToken);
+    set: storage => {
+      const keys = Object.keys(storage) as (keyof typeof storage)[];
+
+      for (const key of keys) {
+        const value = storage[key];
+        if (value) {
+          cookies.set(key, value);
+        } else {
+          cookies.remove(key);
+        }
       }
     },
   });
