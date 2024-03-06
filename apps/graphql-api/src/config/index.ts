@@ -1,4 +1,4 @@
-require('reflect-metadata');
+import 'reflect-metadata';
 
 import './firebase';
 import '@darun/backend/graphql-api';
