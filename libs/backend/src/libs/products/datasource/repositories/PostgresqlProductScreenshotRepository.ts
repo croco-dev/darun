@@ -1,21 +1,21 @@
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
+import { ProductScreenshot, ProductScreenshotRepository, ProductScreenshotRepositoryToken } from '@products/domain';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
 import { groupBy } from 'lodash';
 import { Inject, Service } from 'typedi';
-import { AlternativeProduct, AlternativeProductRepository, AlternativeProductRepositoryToken } from '../../domain';
-import { alternativeProducts } from '../entities/AlternativeProductSchema';
+import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 
-@Service(AlternativeProductRepositoryToken)
-export class MysqlAlternativeProductRepository implements AlternativeProductRepository {
-  private productIdLoader: DataLoader<string, AlternativeProduct[]>;
+@Service(ProductScreenshotRepositoryToken)
+export class PostgresqlProductScreenshotRepository implements ProductScreenshotRepository {
+  private productIdLoader: DataLoader<string, ProductScreenshot[]>;
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.productIdLoader = new DataLoader(
       async (productIds: readonly string[]) => {
         const docs = await this.db
           .select()
-          .from(alternativeProducts)
-          .where(inArray(alternativeProducts.productId, [...productIds]));
+          .from(productScreenshots)
+          .where(inArray(productScreenshots.productId, [...productIds]));
 
         const groupByDocs = groupBy(docs, 'productId');
         return productIds.map(productId => groupByDocs[productId] || []);
@@ -26,7 +26,7 @@ export class MysqlAlternativeProductRepository implements AlternativeProductRepo
     );
   }
 
-  async findManyByProductId(productId: string): Promise<AlternativeProduct[]> {
+  async findManyByProductIdSortByPriorityDesc(productId: string): Promise<ProductScreenshot[]> {
     return this.productIdLoader.load(productId);
   }
 }

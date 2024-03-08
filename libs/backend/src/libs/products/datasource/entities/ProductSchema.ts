@@ -1,7 +1,8 @@
 import { sql } from 'drizzle-orm';
-import { datetime, mysqlTable, text, varchar } from 'drizzle-orm/mysql-core';
+import { pgTable, varchar, timestamp, text } from 'drizzle-orm/pg-core';
+
 import { ulid } from 'ulid';
-export const products = mysqlTable('products', {
+export const products = pgTable('products', {
   id: varchar('id', { length: 26 }).primaryKey().$default(ulid),
   name: varchar('name', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 100 }).notNull().unique(),
@@ -9,9 +10,9 @@ export const products = mysqlTable('products', {
   description: text('description'),
   logoUrl: varchar('logo_url', { length: 255 }).notNull(),
   ownedCompanyId: varchar('owned_company_id', { length: 26 }),
-  publishedAt: datetime('published_at'),
-  updatedAt: datetime('updated_at'),
-  createdAt: datetime('created_at')
+  publishedAt: timestamp('published_at'),
+  updatedAt: timestamp('updated_at'),
+  createdAt: timestamp('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 });

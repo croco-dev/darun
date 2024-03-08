@@ -1,4 +1,4 @@
-import { drizzle } from 'drizzle-orm/planetscale-serverless';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { Token } from 'typedi';
 
 export type Drizzle = ReturnType<typeof drizzle>;

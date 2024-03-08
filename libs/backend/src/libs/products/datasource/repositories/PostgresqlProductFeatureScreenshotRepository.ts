@@ -11,7 +11,7 @@ import { Inject, Service } from 'typedi';
 import { productFeatureScreenshots } from '../entities/ProductFeatureScreenshotsSchema';
 
 @Service(ProductFeatureScreenshotRepositoryToken)
-export class MysqlProductFeatureScreenshotRepository implements ProductFeatureScreenshotRepository {
+export class PostgresqlProductFeatureScreenshotRepository implements ProductFeatureScreenshotRepository {
   private featureIdLoader: DataLoader<string, ProductFeatureScreenshot[]>;
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.featureIdLoader = new DataLoader(

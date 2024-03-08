@@ -1,21 +1,18 @@
 import { DrizzleToken } from '@darun/provider-database';
-import { Client } from '@planetscale/database';
-import { drizzle } from 'drizzle-orm/planetscale-serverless';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import * as mongoose from 'mongoose';
-import { Container } from 'typedi';
-import { DATABASE_URL, DATABASE_PASSWORD, DATABASE_USERNAME, MONGODB_URI } from './environment';
+import postgres from 'postgres';
 
-let mySqlConnection: Client;
+import { Container } from 'typedi';
+import { DATABASE_URL, MONGODB_URI } from './environment';
+
+let postgresqlConnection: ReturnType<typeof postgres>;
 let drizzleInstance: ReturnType<typeof drizzle>;
 let mongooseConnection: mongoose.Mongoose;
 
 export function createMysqlConnection() {
-  mySqlConnection ??= new Client({
-    host: DATABASE_URL,
-    username: DATABASE_USERNAME,
-    password: DATABASE_PASSWORD,
-  });
-  drizzleInstance ??= drizzle(mySqlConnection);
+  postgresqlConnection ??= postgres(DATABASE_URL, { prepare: false });
+  drizzleInstance ??= drizzle(postgresqlConnection);
   Container.set(DrizzleToken, drizzleInstance);
 }
 
@@ -25,7 +22,7 @@ export function createMongodbConnection() {
       .connect(MONGODB_URI, {
         dbName: 'darun',
         autoIndex: true,
-        maxPoolSize: 5,
+        maxPoolSize: 3,
       })
       .then(connection => {
         mongooseConnection = connection;

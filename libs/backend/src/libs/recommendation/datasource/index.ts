@@ -1,1 +1,1 @@
-export { MysqlAlternativeProductRepository } from './repositories/MysqlAlternativeProductRepository';
+export { PostgresqlAlternativeProductRepository } from './repositories/PostgresqlAlternativeProductRepository';
