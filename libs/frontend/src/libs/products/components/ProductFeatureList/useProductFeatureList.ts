@@ -8,6 +8,7 @@ gql`
       features {
         id
         name
+        emoji
         summary
         screenshots {
           id
