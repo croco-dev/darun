@@ -41,6 +41,7 @@ export type CreateProductPayload = {
 
 export type Feature = {
   readonly __typename?: 'Feature';
+  readonly emoji: Scalars['String']['output'];
   readonly id: Scalars['ID']['output'];
   readonly name: Scalars['String']['output'];
   readonly screenshots: ReadonlyArray<FeatureScreenshot>;

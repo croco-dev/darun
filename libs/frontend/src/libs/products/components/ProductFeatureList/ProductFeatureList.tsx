@@ -11,6 +11,7 @@ export const ProductFeatureList = bind(useProductFeatureList, ({ features }) => 
       <FeatureItem
         key={feature.id}
         name={feature.name}
+        emoji={feature.emoji || undefined}
         description={feature.summary ?? undefined}
         screenshots={feature.screenshots.map(item => ({
           id: item.id,
