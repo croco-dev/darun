@@ -28,7 +28,7 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
         <VStack>
           <ProductDescriptionSection slug={slug} />
           <ProductPhotoSection slug={slug} />
-          <ProductDetailFeatureSection />
+          <ProductDetailFeatureSection slug={slug} />
           <ProductAlternativeSection slug={slug} />
           <ProductDetailCompanySection slug={slug} />
         </VStack>
