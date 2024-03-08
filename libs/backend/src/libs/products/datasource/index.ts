@@ -1,6 +1,6 @@
-export { MysqlProductRepository } from './repositories/MysqlProductRepository';
-export { MysqlProductLinkRepository } from './repositories/MysqlProductLinkRepository';
-export { MysqlProductTagRepository } from './repositories/MysqlProductTagRepository';
-export { MysqlProductScreenshotRepository } from './repositories/MysqlProductScreenshotRepository';
-export { MysqlProductFeatureRepository } from './repositories/MysqlProductFeatureRepository';
-export { MysqlProductFeatureScreenshotRepository } from './repositories/MysqlProductFeatureScreenshotRepository';
+export { PostgresqlProductRepository } from './repositories/PostgresqlProductRepository';
+export { PostgresqlProductLinkRepository } from './repositories/PostgresqlProductLinkRepository';
+export { PostgresqlProductTagRepository } from './repositories/PostgresqlProductTagRepository';
+export { PostgresqlProductScreenshotRepository } from './repositories/PostgresqlProductScreenshotRepository';
+export { PostgresqlProductFeatureRepository } from './repositories/PostgresqlProductFeatureRepository';
+export { PostgresqlProductFeatureScreenshotRepository } from './repositories/PostgresqlProductFeatureScreenshotRepository';

@@ -7,7 +7,7 @@ import { Inject, Service } from 'typedi';
 import { companies } from '../entities/CompanySchema';
 
 @Service(CompanyRepositoryToken)
-export class MysqlCompanyRepository implements CompanyRepository {
+export class PostgresqlCompanyRepository implements CompanyRepository {
   private companyIdLoader: DataLoader<string, Company>;
 
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {

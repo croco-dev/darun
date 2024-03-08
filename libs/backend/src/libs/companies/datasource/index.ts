@@ -1,1 +1,1 @@
-export { MysqlCompanyRepository } from './repositories/MysqlCompanyRepository';
+export { PostgresqlCompanyRepository } from './repositories/PostgresqlCompanyRepository';
