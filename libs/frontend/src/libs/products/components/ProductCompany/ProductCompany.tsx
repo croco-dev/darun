@@ -68,19 +68,6 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
           </HStack>
         </VStack>
       </VStack>
-      <VStack gap="12px">
-        <VStack gap="4px" width={'fit-content'}>
-          <Text color="colors.dark.500" fontWeight="fontWeights.bold" fontSize="16px" letterSpacing="-2.4%">
-            기업 타겟
-          </Text>
-          <Flex height="2px" bg="colors.dark.400" />
-        </VStack>
-        <HStack gap="4px">
-          <Chip variant="square" color="filledGray">
-            asasd
-          </Chip>
-        </HStack>
-      </VStack>
     </Grid>
   </VStack>
 ));
