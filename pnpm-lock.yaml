@@ -265,6 +265,9 @@ importers:
       '@darun/utils-apollo-client/server':
         specifier: workspace:*
         version: link:../shared/utils-apollo-client/server
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../shared/utils-router
       '@mantine/core':
         specifier: 7.6.1
         version: 7.6.1(@mantine/hooks@7.6.1)(@types/react@18.2.57)(react-dom@18.2.0)(react@18.2.0)

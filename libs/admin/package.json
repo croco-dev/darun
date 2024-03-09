@@ -16,6 +16,7 @@
     "@darun/provider-auth/client": "workspace:*",
     "@darun/provider-graphql": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
+    "@darun/utils-router": "workspace:*",
     "@mantine/core": "7.6.1",
     "@mantine/hooks": "7.6.1",
     "next": "14.1.2"
