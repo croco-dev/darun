@@ -18,6 +18,11 @@ class AuthChecker {
     return this.authService.getUser();
   }
 
+  async getIsAdmin(cookies: Cookies) {
+    this.setAuthStorage(cookies);
+    return this.authService.getUser().then(user => Boolean(user?.isAdmin));
+  }
+
   async getIsLoggedIn(cookies: Cookies) {
     this.setAuthStorage(cookies);
     return this.authService.getUser().then(user => !!user);

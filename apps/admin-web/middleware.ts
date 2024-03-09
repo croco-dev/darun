@@ -6,9 +6,9 @@ import { container } from './app/container';
 initAuthProvider({ authService: container.authService });
 
 export async function middleware(request: NextRequest) {
-  const isLoggedIn = await authChecker.getIsLoggedIn(getCookies());
+  const isAdmin = await authChecker.getIsAdmin(getCookies());
 
-  if (!isLoggedIn) {
+  if (!isAdmin) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
   return;

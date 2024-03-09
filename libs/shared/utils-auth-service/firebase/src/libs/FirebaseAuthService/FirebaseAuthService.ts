@@ -71,23 +71,25 @@ export class FirebaseAuthService implements AuthService {
     return {
       id: result.decodedToken.uid,
       email: result.decodedToken.email ?? '',
+      isAdmin: result.decodedToken.roles?.includes('admin') ?? false,
     };
   }
 
   public onIdTokenChanged(handler: (user?: AuthUser) => void) {
-    const unsubscribe = onIdTokenChanged(getAuth(), user => {
+    const unsubscribe = onIdTokenChanged(getAuth(), async user => {
       if (!user) {
         this.authStorage?.clear();
         handler(undefined);
         return;
       }
 
-      handler({ id: user.uid, email: user.email ?? '' });
-      user.getIdToken().then(idToken => {
-        this.authStorage?.set({
-          idToken,
-          refreshToken: user.refreshToken,
-        });
+      const idToken = await user.getIdTokenResult(false);
+      const roles = (idToken.claims.roles ?? []) as string[];
+      handler({ id: user.uid, email: user.email ?? '', isAdmin: roles.includes('admin') ?? false });
+
+      this.authStorage?.set({
+        idToken: idToken.token,
+        refreshToken: user.refreshToken,
       });
     });
 
