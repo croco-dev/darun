@@ -18,10 +18,13 @@ export class Cursor {
   }
 
   static decode<Keys extends readonly string[]>(cursor: string, keys: Keys): { [K in Keys[number]]: string } {
-    const parsedCursor = cursor.split(CURSOR_DELIMITER).reduce((acc, key) => {
-      const [cursorKey, value] = key.split(KEY_DELIMITER);
-      return { ...acc, [cursorKey]: value };
-    }, {});
+    const parsedCursor = Buffer.from(cursor, 'base64')
+      .toString('utf8')
+      .split(CURSOR_DELIMITER)
+      .reduce((acc, key) => {
+        const [cursorKey, value] = key.split(KEY_DELIMITER);
+        return { ...acc, [cursorKey]: value };
+      }, {});
 
     return keys.reduce((acc, key) => ({ ...acc, [key]: parsedCursor[key as keyof typeof parsedCursor] }), {}) as {
       [K in Keys[number]]: string;
