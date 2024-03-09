@@ -29,7 +29,7 @@ importers:
         specifier: 3.2.5
         version: 3.2.5
       turbo:
-        specifier: latest
+        specifier: 1.12.4
         version: 1.12.4
       typescript:
         specifier: 5.3.3
