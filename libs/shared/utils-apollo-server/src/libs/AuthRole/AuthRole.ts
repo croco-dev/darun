@@ -1,3 +1,3 @@
 export enum AuthRole {
-  Admin = 'Admin',
+  Admin = 'admin',
 }

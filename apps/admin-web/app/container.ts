@@ -27,7 +27,7 @@ class Container {
   get httpLink() {
     return new HttpLink({
       uri: process.env['NEXT_PUBLIC_GRAPHQL_URL'] ?? '',
-      fetchOptions: { cache: 'no-store' },
+      credentials: 'include',
     });
   }
   get serverApolloClient() {

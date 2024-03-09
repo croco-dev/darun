@@ -388,6 +388,9 @@ importers:
 
   libs/shared/provider-auth/client:
     dependencies:
+      '@apollo/client':
+        specifier: 3.9.5
+        version: 3.9.5(@types/react@18.2.57)(graphql@16.8.1)(react-dom@18.2.0)(react@18.2.0)
       '@darun/utils-auth-service-core':
         specifier: workspace:*
         version: link:../../utils-auth-service/core
@@ -566,6 +569,9 @@ importers:
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
+      next-client-cookies:
+        specifier: 1.1.0
+        version: 1.1.0(next@14.1.2)(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -591,6 +597,9 @@ importers:
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
+      next-client-cookies:
+        specifier: 1.1.0
+        version: 1.1.0(next@14.1.2)(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*

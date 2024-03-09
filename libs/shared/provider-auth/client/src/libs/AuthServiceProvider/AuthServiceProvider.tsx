@@ -1,5 +1,6 @@
 'use client';
 
+import { useApolloClient } from '@apollo/client';
 import { AuthService } from '@darun/utils-auth-service-core';
 import { useCookies } from 'next-client-cookies';
 import { createContext, ReactNode, useContext } from 'react';
@@ -15,6 +16,7 @@ const AuthServiceContext = createContext<{ authService?: AuthService }>({
 
 export const AuthServiceProvider = ({ children, authService }: AuthServiceProviderProps) => {
   const cookies = useCookies();
+  const client = useApolloClient();
 
   authService.setAuthStorage({
     get: key => cookies.get(key) ?? null,
@@ -22,6 +24,7 @@ export const AuthServiceProvider = ({ children, authService }: AuthServiceProvid
       cookies.remove('idToken');
       cookies.remove('refreshToken');
       cookies.remove('redirectUrl');
+      client.resetStore();
     },
     set: storage => {
       const keys = Object.keys(storage) as (keyof typeof storage)[];

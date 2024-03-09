@@ -90,6 +90,14 @@ export type MutationindexProductArgs = {
   input: IndexProductInput;
 };
 
+export type PageInfo = {
+  readonly __typename?: 'PageInfo';
+  readonly endCursor?: Maybe<Scalars['String']['output']>;
+  readonly hasNextPage: Scalars['Boolean']['output'];
+  readonly hasPreviousPage: Scalars['Boolean']['output'];
+  readonly startCursor?: Maybe<Scalars['String']['output']>;
+};
+
 export type Product = {
   readonly __typename?: 'Product';
   readonly alternatives: ReadonlyArray<Product>;
@@ -108,14 +116,36 @@ export type Product = {
   readonly updatedAt?: Maybe<Scalars['DateTimeISO']['output']>;
 };
 
+export type ProductConnection = {
+  readonly __typename?: 'ProductConnection';
+  readonly edges: ReadonlyArray<ProductEdge>;
+  readonly pageInfo: PageInfo;
+  readonly totalCount: Scalars['Int']['output'];
+};
+
+export type ProductEdge = {
+  readonly __typename?: 'ProductEdge';
+  readonly cursor: Scalars['String']['output'];
+  readonly node: Product;
+};
+
 export type Query = {
   readonly __typename?: 'Query';
+  readonly allProducts: ProductConnection;
   readonly hello: Scalars['String']['output'];
   readonly product?: Maybe<Product>;
   readonly productBySlug?: Maybe<Product>;
   readonly productsCount: Scalars['Int']['output'];
   readonly recentProducts: ReadonlyArray<Product>;
   readonly searchProducts: ReadonlyArray<Product>;
+};
+
+
+export type QueryallProductsArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Float']['input']>;
+  last?: InputMaybe<Scalars['Float']['input']>;
 };
 
 
