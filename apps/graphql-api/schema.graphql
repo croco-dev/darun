@@ -65,6 +65,13 @@ type Mutation {
   indexProduct(input: IndexProductInput!): IndexProductPayload!
 }
 
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
 type Product {
   alternatives: [Product!]!
   description: String
@@ -82,7 +89,19 @@ type Product {
   updatedAt: DateTimeISO
 }
 
+type ProductConnection {
+  edges: [ProductEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ProductEdge {
+  cursor: String!
+  node: Product!
+}
+
 type Query {
+  allProducts(after: String, before: String, first: Float, last: Float): ProductConnection!
   hello: String!
   product(id: ID!): Product
   productBySlug(slug: String!): Product

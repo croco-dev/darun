@@ -1,7 +1,7 @@
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { Product, ProductRepository, ProductRepositoryToken } from '@products/domain';
 import DataLoader from 'dataloader';
-import { and, count, desc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, count, desc, eq, gt, inArray, isNotNull } from 'drizzle-orm';
 import { keyBy } from 'lodash';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
@@ -28,10 +28,25 @@ export class PostgresqlProductRepository implements ProductRepository {
     );
   }
 
+  async findAllByGtIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+    return this.db
+      .select()
+      .from(products)
+      .where(id ? and(gt(products.id, id)) : undefined)
+      .limit(limit)
+      .then(rows => rows.map(row => ({ ...row, description: row.description ?? undefined })));
+  }
+  async countAll(): Promise<number> {
+    return this.db
+      .select({ value: count() })
+      .from(products)
+      .then(rows => rows[0].value);
+  }
+
   async insert(values: Product): Promise<boolean> {
     const inserted = await this.db.insert(products).values({ ...values });
 
-    return inserted.rowsAffected > 0;
+    return inserted.length > 0;
   }
 
   async countPublishedAll(): Promise<number> {

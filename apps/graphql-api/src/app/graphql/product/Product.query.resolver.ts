@@ -9,13 +9,19 @@ import {
   GetProductTags,
   GetRecentProducts,
   SearchProduct,
+  GetAllProducts,
 } from '@darun/backend';
-import { Arg, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
+import { AuthRole } from '@darun/utils-apollo-server';
+import { Arg, Args, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
+import { Connection } from '../common/Connection';
+import { ConnectionArgs } from '../common/ConnectionArgs';
+import { Cursor } from '../common/Cursor';
 import { Company } from '../company/graphs/Company';
 import { Feature } from '../feature/graphs/Feature';
 import { Link } from './graphs/Link';
 import { Product } from './graphs/Product';
+import { ProductConnection } from './graphs/ProductPagination';
 import { Screenshot } from './graphs/Screenshot';
 import { Tag } from './graphs/Tag';
 
@@ -24,6 +30,7 @@ import { Tag } from './graphs/Tag';
 export class ProductQueryResolver {
   constructor(
     private readonly getRecentProductsUseCase: GetRecentProducts,
+    private readonly getAllProductsUseCase: GetAllProducts,
     private readonly getProductUseCase: GetProduct,
     private readonly getProductLinksUseCase: GetProductLinks,
     private readonly getProductTagsUseCase: GetProductTags,
@@ -59,6 +66,28 @@ export class ProductQueryResolver {
   public async searchProducts(@Arg('query', () => String) query: string) {
     const searchableProducts = await this.searchProductUseCase.execute({ query });
     return searchableProducts.map(searchableProduct => this.getProductUseCase.execute({ id: searchableProduct.id }));
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Query(() => ProductConnection)
+  public async allProducts(@Args() connectionArgs: ConnectionArgs): Promise<ProductConnection> {
+    const { cursor, limit } = Connection.verifyArgs(connectionArgs);
+    const decoded = cursor ? Cursor.decode(cursor, ['id'] as const) : undefined;
+
+    const { products, total } = await this.getAllProductsUseCase.execute({
+      cursor: decoded,
+      limit,
+    });
+
+    return Connection.create({
+      totalCount: total,
+      nodes: products,
+      cursorKeys: ['id'],
+      previous: {
+        cursor,
+        limit,
+      },
+    });
   }
 
   @FieldResolver(() => [Link])

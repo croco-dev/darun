@@ -8,6 +8,7 @@ export {
   CreateProduct,
   GetProductFeatures,
   GetProductFeatureScreenshots,
+  GetAllProducts,
 } from './libs/products/domain';
 export { GetAccount } from './libs/accounts/domain';
 export { GetCompany } from './libs/companies/domain';
