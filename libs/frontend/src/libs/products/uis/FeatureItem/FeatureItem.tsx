@@ -47,8 +47,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
               fontSize={'14px'}
               letterSpacing={'-.05px'}
             >
-              토스의 핵심 기능입니다. 몇 번의 터치만으로 원하는 사용자에게 간단히 송금할 수 있습니다. <br />
-              토스를 사용하는 사용자끼리는 계좌번호 없이도 간단히 돈을 주고 받을 수 있습니다.
+              {description}
             </Text>
           )}
         </VStack>

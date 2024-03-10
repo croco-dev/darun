@@ -8,3 +8,4 @@ export { ProductSummary } from './ProductSummary';
 export { ProductSummaryLink } from './ProductSummaryLink';
 export { ProductDetailFeatureSection } from './ProductDetailFeatureSection';
 export { ProductDetailCompanySection } from './ProductDetailCompanySection';
+export { AlternativeProductSection } from './AlternativeProductSection';

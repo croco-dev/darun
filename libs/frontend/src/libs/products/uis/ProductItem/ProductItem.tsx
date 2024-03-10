@@ -49,7 +49,7 @@ export const ProductItem = ({
           border: '1px solid rgba(0, 0, 0, 0.15)',
         }}
       />
-      <VStack gap={'6px'}>
+      <VStack gap={'8px'}>
         <VStack gap="4px">
           <Text
             as="h3"
