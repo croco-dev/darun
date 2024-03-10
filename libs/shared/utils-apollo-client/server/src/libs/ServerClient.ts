@@ -21,7 +21,7 @@ export const getClient = () => {
     return {
       headers: {
         ...headers,
-        authorization: token ? `Bearer ${token}` : undefined,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     };
   });

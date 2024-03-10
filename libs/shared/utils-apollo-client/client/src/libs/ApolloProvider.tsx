@@ -23,7 +23,7 @@ export function ApolloProvider({ children, makeClient }: ApolloProviderProps) {
       return {
         headers: {
           ...headers,
-          authorization: token ? `Bearer ${token}` : undefined,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       };
     });
