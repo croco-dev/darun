@@ -15,7 +15,7 @@ const productQuery = gql`
 `;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const { data } = await getClient().query<{ recentProducts: { slug: string; updatedAt: string }[] }>({
+  const { data } = await getClient({ static: true }).query<{ recentProducts: { slug: string; updatedAt: string }[] }>({
     query: productQuery,
   });
 

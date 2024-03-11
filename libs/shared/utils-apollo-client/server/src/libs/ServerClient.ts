@@ -10,14 +10,15 @@ export const initApolloClient = (makeClient: () => ApolloClient<NormalizedCacheO
   clientFactory = registerApolloClient(makeClient);
 };
 
-export const getClient = () => {
+export const getClient = (options?: { static?: boolean }) => {
   if (!clientFactory) {
     throw new Error('Apollo client not initialized');
   }
   const client = clientFactory.getClient();
 
   const authLink = setContext((_, { headers }) => {
-    const token = getCookies().get('idToken');
+    const canUseCookies = !options?.static;
+    const token = canUseCookies ? getCookies().get('idToken') : undefined;
     return {
       headers: {
         ...headers,
