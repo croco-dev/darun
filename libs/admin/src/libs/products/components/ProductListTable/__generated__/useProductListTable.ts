@@ -7,7 +7,7 @@ const defaultOptions = {} as const;
 export type AllProductsOnProductListTableQueryVariables = Types.Exact<{ [key: string]: never; }>;
 
 
-export type AllProductsOnProductListTableQuery = { __typename?: 'Query', allProducts: { __typename?: 'ProductConnection', edges: Array<{ __typename?: 'ProductEdge', cursor: string }> } };
+export type AllProductsOnProductListTableQuery = { __typename?: 'Query', allProducts: { __typename?: 'ProductConnection', edges: Array<{ __typename?: 'ProductEdge', cursor: string, node: { __typename?: 'Product', id: string, slug: string, name: string, summary: string } }> } };
 
 
 export const AllProductsOnProductListTableDocument = gql`
@@ -15,6 +15,12 @@ export const AllProductsOnProductListTableDocument = gql`
   allProducts(first: 10) {
     edges {
       cursor
+      node {
+        id
+        slug
+        name
+        summary
+      }
     }
   }
 }

@@ -1,26 +1,27 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
+import { Link } from '@darun/utils-router';
 import { Table } from '@mantine/core';
 import { useProductListTable } from './useProductListTable';
 
-export const ProductListTable = bind(useProductListTable, () => (
+export const ProductListTable = bind(useProductListTable, ({ products }) => (
   <Table>
     <Table.Thead>
       <Table.Tr>
-        <Table.Th>Element position</Table.Th>
-        <Table.Th>Element name</Table.Th>
-        <Table.Th>Symbol</Table.Th>
-        <Table.Th>Atomic mass</Table.Th>
+        <Table.Th>slug</Table.Th>
+        <Table.Th>name</Table.Th>
+        <Table.Th>summary</Table.Th>
       </Table.Tr>
     </Table.Thead>
     <Table.Tbody>
-      {Array.from({ length: 10 }).map((_, index) => (
-        <Table.Tr key={index}>
-          <Table.Td>{index}</Table.Td>
-          <Table.Td>{index}</Table.Td>
-          <Table.Td>{index}</Table.Td>
-          <Table.Td>{index}</Table.Td>
+      {products.map(product => (
+        <Table.Tr key={product.cursor}>
+          <Table.Td>
+            <Link href={`/products/${product.node.slug}`}>{product.node.slug}</Link>
+          </Table.Td>
+          <Table.Td>{product.node.name}</Table.Td>
+          <Table.Td>{product.node.summary}</Table.Td>
         </Table.Tr>
       ))}
     </Table.Tbody>

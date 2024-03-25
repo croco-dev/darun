@@ -6,11 +6,17 @@ gql`
     allProducts(first: 10) {
       edges {
         cursor
+        node {
+          id
+          slug
+          name
+          summary
+        }
       }
     }
   }
 `;
 export function useProductListTable() {
   const { data } = useAllProductsOnProductListTableSuspenseQuery();
-  return {};
+  return { products: data.allProducts.edges };
 }
