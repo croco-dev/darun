@@ -23,8 +23,9 @@
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@darun/utils-router": "workspace:*",
-    "@mantine/core": "7.6.1",
-    "@mantine/hooks": "7.6.1",
+    "@mantine/core": "7.7.1",
+    "@mantine/hooks": "7.7.1",
+    "@mantine/notifications": "7.7.1",
     "next": "14.1.2",
     "next-client-cookies": "1.1.0"
   },
