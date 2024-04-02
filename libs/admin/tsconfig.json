@@ -1,6 +1,6 @@
 {
   "extends": "@darun/utils-tsconfig/tsconfig.react.json",
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/*.ts", "typed.d.ts"],
   "exclude": ["node_modules"],
   "compilerOptions": {
     "baseUrl": "./",
