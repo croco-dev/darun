@@ -5,7 +5,11 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "@accounts/shells": ["src/libs/accounts/shells/index.ts"]
+      "@accounts/shells": ["src/libs/accounts/shells/index.ts"],
+      "@products/shells": ["src/libs/products/shells/index.ts"],
+      "@products/components": ["src/libs/products/components/index.ts"],
+      "@pages": ["src/libs/pages/index.ts"],
+      "@uis": ["src/libs/uis/index.ts"]
     }
   }
 }

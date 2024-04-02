@@ -1,0 +1,1 @@
+export { ProductListTable } from './ProductListTable';

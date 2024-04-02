@@ -26,7 +26,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ColorSchemeScript />
       </head>
       <body className={pretendardFont.className}>
-        <MantineProvider>
+        <MantineProvider
+          theme={{
+            fontFamily: 'Pretendard, sans-serif',
+            fontFamilyMonospace: 'Monaco, Courier, monospace',
+            headings: { fontFamily: 'Pretendard, sans-serif' },
+          }}
+        >
           <CookiesProvider>
             <ServerRootProvider>
               <ClientRootProvider>{children}</ClientRootProvider>

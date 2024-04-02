@@ -1,3 +1,5 @@
+'use client';
+
 import { Group, Code, Flex, Text } from '@mantine/core';
 import { IconSettings, IconSwitchHorizontal, IconLogout, IconUser, IconArchive } from '@tabler/icons-react';
 import { useState } from 'react';
