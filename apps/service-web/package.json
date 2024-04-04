@@ -10,7 +10,7 @@
     "test": "echo 1"
   },
   "dependencies": {
-    "@apollo/client": "3.9.5",
+    "@apollo/client": "3.9.10",
     "@apollo/experimental-nextjs-app-support": "0.8.0",
     "@croco/utils-next-font-pretendard": "0.0.1",
     "@croco/utils-structure-react": "0.0.1",
