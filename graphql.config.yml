@@ -1,0 +1,12 @@
+schema: apps/graphql-api/schema.graphql
+documents: '**/*.{graphql,js,ts}'
+extensions:
+  endpoints:
+    dev:
+      url: https://api.dev.darun.io/graphql
+      headers:
+        Authorization: Bearer ${TOKEN}
+    prod:
+       url: https://api.darun.io/graphql
+       headers:
+         Authorization: Bearer ${TOKEN}
