@@ -7,7 +7,10 @@
     "paths": {
       "@products/components": ["src/libs/products/components/index.ts"],
       "@products/shells": ["src/libs/products/shells/index.ts"],
-      "@products/uis": ["src/libs/products/uis/index.ts"]
+      "@products/uis": ["src/libs/products/uis/index.ts"],
+      "@search/components": ["src/libs/search/components/index.ts"],
+      "@search/shells": ["src/libs/search/shells/index.ts"],
+      "@search/uis": ["src/libs/search/uis/index.ts"],
     }
   }
 }
