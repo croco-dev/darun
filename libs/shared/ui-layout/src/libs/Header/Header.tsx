@@ -1,9 +1,10 @@
 import { bind } from '@croco/utils-structure-react';
 import { ContainedButton, ContentArea, Logo } from '@darun/ui-foundation';
-import { SearchIcon } from '@darun/ui-icons';
 import { Link as RouterLink } from '@darun/utils-router';
-import { Flex, HStack, Input, Link } from '@kuma-ui/core';
+import { Flex, HStack, Link } from '@kuma-ui/core';
+import { Suspense } from 'react';
 import { HeaderLoginButton } from '../HeaderLoginButton';
+import { HeaderSearchForm } from '../HeaderSearchForm';
 import { useHeader } from './useHeader';
 
 export const Header = bind(useHeader, () => (
@@ -39,27 +40,9 @@ export const Header = bind(useHeader, () => (
             </Link>
           </HStack>
         </HStack>
-        <HStack
-          flexGrow={1}
-          borderRadius={14}
-          border="1px solid rgba(0, 0, 0, 0.15)"
-          px={16}
-          py={11}
-          borderStyle="solid"
-          gap={8}
-          boxShadow="0px 2px 4px 0px rgba(0, 0, 0, 0.08)"
-        >
-          <SearchIcon size={18} />
-          <Input
-            width="100%"
-            border="none"
-            outline="none"
-            placeholder="현재 사용 중인 서비스를 찾아보세요!"
-            color="#555"
-            fontSize={14}
-            letterSpacing={-0.1}
-          />
-        </HStack>
+        <Suspense fallback={<></>}>
+          <HeaderSearchForm />
+        </Suspense>
         <HStack height="max-content" gap={8}>
           <HeaderLoginButton />
           <ContainedButton kind="primary">제보하기</ContainedButton>
