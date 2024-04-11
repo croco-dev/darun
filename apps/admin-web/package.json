@@ -32,7 +32,7 @@
   "devDependencies": {
     "@types/react": "*",
     "@types/react-dom": "*",
-    "eslint-config-next": "14.1.2",
+    "eslint-config-next": "14.1.4",
     "postcss": "8.4.38",
     "postcss-preset-mantine": "1.13.0",
     "postcss-simple-vars": "7.0.1"
