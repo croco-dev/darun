@@ -697,8 +697,8 @@ importers:
         specifier: 7.0.1
         version: 7.0.1(eslint@8.57.0)(typescript@5.4.4)
       eslint-config-turbo:
-        specifier: 1.12.3
-        version: 1.12.3(eslint@8.57.0)
+        specifier: 1.13.2
+        version: 1.13.2(eslint@8.57.0)
       eslint-plugin-import:
         specifier: 2.29.1
         version: 2.29.1(@typescript-eslint/parser@7.3.0)(eslint@8.57.0)
@@ -9253,13 +9253,13 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-config-turbo@1.12.3(eslint@8.57.0):
-    resolution: {integrity: sha512-Q46MEOiNJpJWC3Et5/YEuIYYhbOieS04yZwQOinO2hpZw3folEXV+hbwVo8M+ap/q8gtpjIWiRMZ1A4QxmhEqQ==}
+  /eslint-config-turbo@1.13.2(eslint@8.57.0):
+    resolution: {integrity: sha512-TzvsMwNJx/P4JYw79iFqbyQApnyT050gW7dBxnNeNVl3pVMnT2rwaFo9Q3Hc49Tp5NANxEwYN9RStF50P/IwGA==}
     peerDependencies:
       eslint: '>6.6.0'
     dependencies:
       eslint: 8.57.0
-      eslint-plugin-turbo: 1.12.3(eslint@8.57.0)
+      eslint-plugin-turbo: 1.13.2(eslint@8.57.0)
     dev: true
 
   /eslint-import-resolver-node@0.3.9:
@@ -9518,8 +9518,8 @@ packages:
       string.prototype.matchall: 4.0.10
     dev: true
 
-  /eslint-plugin-turbo@1.12.3(eslint@8.57.0):
-    resolution: {integrity: sha512-7hEyxa+oP898EFNoxVenHlH8jtBwV1hbbIkdQWgqDcB0EmVNGVEZkYRo5Hm6BuMAjR433B+NISBJdj0bQo4/Lg==}
+  /eslint-plugin-turbo@1.13.2(eslint@8.57.0):
+    resolution: {integrity: sha512-QNaihF0hTRjfOBd1SLHrftm8V3pOU35CNS/C0/Z6qY1xxdL1PSv4IctEIldSMX7/A1jOPYwMPO7wYwPXgjgp/g==}
     peerDependencies:
       eslint: '>6.6.0'
     dependencies:
