@@ -18,7 +18,7 @@
   "peerDependencies": {
     "@apollo/client": "3.9.10",
     "@darun/utils-router": "workspace:*",
-    "next": "14.1.2",
+    "next": "14.1.4",
     "next-client-cookies": "1.1.0"
   },
   "devDependencies": {

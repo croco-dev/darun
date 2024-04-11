@@ -20,7 +20,7 @@
     "@mantine/core": "^7",
     "@mantine/hooks": "^7",
     "@mantine/notifications": "^7",
-    "next": "14.1.2"
+    "next": "14.1.4"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

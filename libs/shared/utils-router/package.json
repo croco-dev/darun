@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "next": "14.1.2"
+    "next": "14.1.4"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

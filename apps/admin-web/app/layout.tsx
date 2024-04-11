@@ -4,11 +4,10 @@ import '@mantine/notifications/styles.css';
 import './globals.css';
 
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
-import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import { ColorSchemeScript } from '@mantine/core';
 import { Metadata } from 'next';
 import { CookiesProvider } from 'next-client-cookies/server';
 import { ReactNode } from 'react';
-import { AdditionalMantineProvider } from './_mantine';
 import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
 
@@ -28,21 +27,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ColorSchemeScript />
       </head>
       <body className={pretendardFont.className}>
-        <MantineProvider
-          theme={{
-            fontFamily: 'Pretendard, sans-serif',
-            fontFamilyMonospace: 'Monaco, Courier, monospace',
-            headings: { fontFamily: 'Pretendard, sans-serif' },
-          }}
-        >
-          <AdditionalMantineProvider>
-            <CookiesProvider>
-              <ServerRootProvider>
-                <ClientRootProvider>{children}</ClientRootProvider>
-              </ServerRootProvider>
-            </CookiesProvider>
-          </AdditionalMantineProvider>
-        </MantineProvider>
+        <CookiesProvider>
+          <ServerRootProvider>
+            <ClientRootProvider>{children}</ClientRootProvider>
+          </ServerRootProvider>
+        </CookiesProvider>
       </body>
     </html>
   );

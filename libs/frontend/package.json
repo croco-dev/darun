@@ -19,7 +19,7 @@
     "@darun/ui-layout": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
     "@kuma-ui/core": "1.5.6",
-    "next": "14.1.2"
+    "next": "14.1.4"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

@@ -18,13 +18,10 @@ export function Navbar() {
   const pathname = usePathname();
   const links = data.map(item => (
     <Link
+      key={item.link}
       className={classes.link}
       data-active={pathname.startsWith(item.link) || undefined}
       href={item.link}
-      key={item.label}
-      onClick={event => {
-        event.preventDefault();
-      }}
     >
       <item.icon className={classes.linkIcon} stroke={1.5} />
       <span>{item.label}</span>
@@ -35,14 +32,16 @@ export function Navbar() {
     <nav className={classes.navbar}>
       <div className={classes.navbarMain}>
         <Group className={classes.header} justify="space-between">
-          <Anchor>
-            <Flex align={'center'} gap={8} px={'4px'}>
-              <Logo size={32} />
-              <Text fz="lg" fw="bold" c={'dark.7'}>
-                다른 관리자
-              </Text>
-            </Flex>
-          </Anchor>
+          <Link href="/">
+            <Anchor>
+              <Flex align={'center'} gap={8} px={'4px'}>
+                <Logo size={32} />
+                <Text fz="lg" fw="bold" c={'dark.7'}>
+                  다른 관리자
+                </Text>
+              </Flex>
+            </Anchor>
+          </Link>
           <Code fw={700}>{process.env['NODE_ENV'] === 'development' ? 'dev' : 'prod'}</Code>
         </Group>
         {links}
