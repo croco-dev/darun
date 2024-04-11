@@ -1,8 +1,8 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
-import { Flex, Grid, HStack, Text, VStack } from '@kuma-ui/core';
-import { ProductItem } from '@products/uis';
+import { Flex, HStack, Text, VStack } from '@kuma-ui/core';
+import { ProductFeatureGridList, ProductItem } from '@products/uis';
 import { useProductAlternativeList } from './useProductAlternativeList';
 
 export const ProductAlternativeList = bind(useProductAlternativeList, ({ products }) => {
@@ -52,45 +52,9 @@ export const ProductAlternativeList = bind(useProductAlternativeList, ({ product
                       </Text>
                       <Flex height="2px" bg="colors.dark.400" />
                     </VStack>
-                    <Grid gridTemplateColumns="repeat(3, 1fr)" gap={6}>
-                      {product.features.map((feature, index) => (
-                        <HStack alignItems={'center'} gap={'12px'} w={'100%'} key={index}>
-                          <Flex
-                            width={'42px'}
-                            height={'42px'}
-                            alignItems={'center'}
-                            justifyContent={'center'}
-                            bg={'colors.dark.100'}
-                            borderStyle={'solid'}
-                            borderWidth={'1px'}
-                            borderColor={'rgba(0, 0, 0, 0.1)'}
-                            borderRadius={'8px'}
-                            flexShrink={0}
-                          >
-                            <Text fontSize={'20px'}>{feature.emoji}</Text>
-                          </Flex>
-                          <VStack>
-                            <Text
-                              color={'colors.dark.800'}
-                              fontWeight={'fontWeights.semibold'}
-                              fontSize={'15px'}
-                              letterSpacing={'-.072px'}
-                            >
-                              {feature.name}
-                            </Text>
-                            <Text
-                              color={'colors.dark.600'}
-                              fontWeight={'fontWeights.normal'}
-                              fontSize={'13px'}
-                              letterSpacing={'-.05px'}
-                              lineBreak={'anywhere'}
-                            >
-                              {feature.summary}
-                            </Text>
-                          </VStack>
-                        </HStack>
-                      ))}
-                    </Grid>
+                    <ProductFeatureGridList
+                      features={product.features.map(item => ({ ...item, summary: item.summary ?? undefined }))}
+                    />
                   </VStack>
                 </>
               )}
