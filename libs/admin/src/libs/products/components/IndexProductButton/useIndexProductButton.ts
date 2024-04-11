@@ -9,14 +9,18 @@ gql`
   }
 `;
 
-export function useIndexProductButton() {
+type IndexProductButtonProps = {
+  slug: string;
+};
+
+export function useIndexProductButton({ slug }: IndexProductButtonProps) {
   const [indexProductMutation] = useIndexProductOnIndexProductButtonMutation({});
 
   const indexProduct = async () => {
     await indexProductMutation({
       variables: {
         input: {
-          slug: 'toss',
+          slug,
         },
       },
     });
