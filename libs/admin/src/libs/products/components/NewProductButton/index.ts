@@ -1,0 +1,1 @@
+export { NewProductButton } from './NewProductButton';

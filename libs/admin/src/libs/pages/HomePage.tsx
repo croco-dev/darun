@@ -1,4 +1,4 @@
-import { AppShell } from '../uis/AppShell';
+import { AppShell } from '@uis';
 
 export const HomePage = () => {
   return (
