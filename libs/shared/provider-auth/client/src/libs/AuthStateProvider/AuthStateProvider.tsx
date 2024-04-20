@@ -40,16 +40,14 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
 
   useEffect(() => {
     const unsubscribe = authService.onIdTokenChanged(user => {
-      if (user) {
-        setAuthUser(user);
-        const redirectUrl = authService.getRedirectUrl();
-        authService.clearRedirectUrl();
-        if (redirectUrl) {
-          navigate(redirectUrl);
-        }
-      }
-      setAuthUser(null);
+      setAuthUser(user ?? null);
       setIsLoading(false);
+
+      const redirectUrl = authService.getRedirectUrl();
+      authService.clearRedirectUrl();
+      if (user && redirectUrl) {
+        navigate(redirectUrl);
+      }
     });
 
     return () => unsubscribe();

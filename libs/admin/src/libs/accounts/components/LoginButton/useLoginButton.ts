@@ -1,6 +1,7 @@
-import { useAuthService } from '@darun/provider-auth/client';
+import { useAuthService, useAuthState } from '@darun/provider-auth/client';
 
 export function useLoginButton() {
+  const { isLoading } = useAuthState();
   const authService = useAuthService();
   const login = () => {
     authService.setRedirectUrl('/');
@@ -9,5 +10,6 @@ export function useLoginButton() {
 
   return {
     login,
+    isLoading,
   };
 }
