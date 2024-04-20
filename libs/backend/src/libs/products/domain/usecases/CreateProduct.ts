@@ -25,18 +25,12 @@ export class CreateProduct {
 
     const newProduct = new Product({ name, slug, logoUrl, summary });
 
-    const inserted = await this.productRepository.insert(newProduct);
+    const insertedProduct = await this.productRepository.insert(newProduct);
 
-    if (!inserted) {
+    if (!insertedProduct) {
       throw productCreateFailed();
     }
 
-    const product = await this.productRepository.findOneBySlug(slug);
-
-    if (!product) {
-      throw productCreateFailed();
-    }
-
-    return product;
+    return insertedProduct;
   }
 }

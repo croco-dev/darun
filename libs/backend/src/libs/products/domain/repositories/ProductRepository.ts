@@ -9,7 +9,7 @@ export interface ProductRepository {
   findPublishedOneBySlug(slug: string): Promise<Product | null>;
   countPublishedAll(): Promise<number>;
   countAll(): Promise<number>;
-  insert(values: Product): Promise<boolean>;
+  insert(values: Product): Promise<Product | null>;
 }
 
 export const ProductRepositoryToken = new Token<ProductRepository>('ProductRepository');

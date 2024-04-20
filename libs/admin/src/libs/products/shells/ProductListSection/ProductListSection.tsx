@@ -1,3 +1,3 @@
-import { ProductListTable } from '../../components/ProductListTable';
+import { ProductListTable } from '@products/components';
 
 export const ProductListSection = () => <ProductListTable />;

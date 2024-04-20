@@ -1,1 +1,8 @@
-export const NewProductPage = () => <div>new</div>;
+import { AppShell } from '@uis';
+import { NewProductFormSection } from '../products/shells/NewProductFormSection';
+
+export const NewProductPage = () => (
+  <AppShell>
+    <NewProductFormSection />
+  </AppShell>
+);

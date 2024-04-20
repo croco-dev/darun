@@ -43,10 +43,17 @@ export class PostgresqlProductRepository implements ProductRepository {
       .then(rows => rows[0].value);
   }
 
-  async insert(values: Product): Promise<boolean> {
-    const inserted = await this.db.insert(products).values({ ...values });
+  async insert(values: Product): Promise<Product | null> {
+    return this.db.transaction(async tx => {
+      await tx.insert(products).values({ ...values });
 
-    return inserted.length > 0;
+      return tx
+        .select()
+        .from(products)
+        .where(eq(products.slug, values.slug))
+        .limit(1)
+        .then(rows => (rows[0] ? { ...rows[0], description: rows[0].description ?? undefined } : null));
+    });
   }
 
   async countPublishedAll(): Promise<number> {
