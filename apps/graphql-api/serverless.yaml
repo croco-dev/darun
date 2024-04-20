@@ -30,6 +30,7 @@ provider:
   profile: darun
   deploymentBucket: ${self:provider.stage}-${self:service}-deploy-bucket
   architecture: arm64
+  logRetentionInDays: 7
 
 functions:
   graphql:
