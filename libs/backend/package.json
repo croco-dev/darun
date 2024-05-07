@@ -21,9 +21,9 @@
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
     "@typegoose/typegoose": "12.2.0",
-    "drizzle-orm": "0.29.4",
+    "drizzle-orm": "0.30.10",
     "firebase-admin": "12.0.0",
-    "mongoose": "8.2.4",
+    "mongoose": "8.3.4",
     "reflect-metadata": "0.2.1",
     "type-graphql": "2.0.0-beta.6",
     "typedi": "0.10.0"
