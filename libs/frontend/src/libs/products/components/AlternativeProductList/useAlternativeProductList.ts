@@ -11,6 +11,10 @@ gql`
         slug
         summary
         logoUrl
+        tags {
+          id
+          name
+        }
       }
     }
   }

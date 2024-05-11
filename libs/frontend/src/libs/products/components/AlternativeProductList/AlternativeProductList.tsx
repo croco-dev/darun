@@ -16,8 +16,7 @@ export const AlternativeProductList = bind(useAlternativeProductList, ({ alterna
             logoUrl={alternative.logoUrl}
             logoSize={'medium'}
             summary={alternative.summary}
-            tags={['asd']}
-            specialTags={['🎖️ ‘다른’ 추천 등재']}
+            tags={alternative.tags.map(tag => tag.name)}
           />
         </Link>
       ))}

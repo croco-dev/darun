@@ -9,7 +9,7 @@ export type ProductBySlugOnAlternativeProductListQueryVariables = Types.Exact<{
 }>;
 
 
-export type ProductBySlugOnAlternativeProductListQuery = { __typename?: 'Query', productBySlug?: { __typename?: 'Product', id: string, alternatives: Array<{ __typename?: 'Product', id: string, name: string, slug: string, summary: string, logoUrl: string }> } | null };
+export type ProductBySlugOnAlternativeProductListQuery = { __typename?: 'Query', productBySlug?: { __typename?: 'Product', id: string, alternatives: Array<{ __typename?: 'Product', id: string, name: string, slug: string, summary: string, logoUrl: string, tags: Array<{ __typename?: 'Tag', id: string, name: string }> }> } | null };
 
 
 export const ProductBySlugOnAlternativeProductListDocument = gql`
@@ -22,6 +22,10 @@ export const ProductBySlugOnAlternativeProductListDocument = gql`
       slug
       summary
       logoUrl
+      tags {
+        id
+        name
+      }
     }
   }
 }
