@@ -12,7 +12,7 @@ export type AllProductsOnProductListTableQuery = { __typename?: 'Query', allProd
 
 export const AllProductsOnProductListTableDocument = gql`
     query AllProductsOnProductListTable {
-  allProducts(first: 10) {
+  allProducts(first: 50) {
     edges {
       cursor
       node {
