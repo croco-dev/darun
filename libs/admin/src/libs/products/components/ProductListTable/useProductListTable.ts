@@ -3,7 +3,7 @@ import { useAllProductsOnProductListTableSuspenseQuery } from './__generated__/u
 
 gql`
   query AllProductsOnProductListTable {
-    allProducts(first: 10) {
+    allProducts(first: 50) {
       edges {
         cursor
         node {
