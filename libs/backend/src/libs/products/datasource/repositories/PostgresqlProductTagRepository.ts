@@ -1,9 +1,10 @@
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { ProductTagRepositoryToken, ProductTagRepository, ProductTag, ProductTagType } from '@products/domain';
 import DataLoader from 'dataloader';
-import { inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { groupBy } from 'lodash';
 import { Inject, Service } from 'typedi';
+import { products } from '../entities/ProductSchema';
 import { productTags } from '../entities/ProductTagsSchema';
 
 @Service(ProductTagRepositoryToken)
@@ -25,6 +26,14 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
         cache: false,
       }
     );
+  }
+
+  addTagsToProduct(productId: string, tags: ProductTag[]): Promise<void> {
+    return this.db.transaction(async tx => {
+      const existingTags = await tx.select().from(productTags).where(eq(productTags.productId, productId));
+      const newTags = tags.filter(tag => !existingTags.some(existingTag => existingTag.name === tag.name));
+      await tx.insert(productTags).values(newTags).returning();
+    });
   }
 
   async findManyByProductId(productId: string): Promise<ProductTag[]> {

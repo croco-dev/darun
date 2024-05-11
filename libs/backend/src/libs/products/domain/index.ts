@@ -30,3 +30,4 @@ export { GetProductFeatureScreenshots } from './usecases/GetProductFeatureScreen
 export { GetProductFeatures } from './usecases/GetProductFeatures';
 export { GetAllProducts } from './usecases/GetAllProducts';
 export { GetPublishedProduct } from './usecases/GetPublishedProduct';
+export { AddProductTag } from './usecases/AddProductTag';

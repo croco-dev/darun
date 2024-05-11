@@ -1,7 +1,8 @@
-import { CreateProduct, GetPublishedProduct, IndexProduct } from '@darun/backend';
+import { AddProductTag, CreateProduct, GetPublishedProduct, IndexProduct } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
+import { AddProductTagsInput, AddProductTagsPayload } from './graphs/AddProductTags';
 import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
 import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
@@ -12,6 +13,7 @@ export class ProductMutationResolver {
   constructor(
     private readonly createProductUseCase: CreateProduct,
     private readonly indexProductUseCase: IndexProduct,
+    private readonly addProductTagUseCase: AddProductTag,
     private readonly getPublishedProductUseCase: GetPublishedProduct
   ) {}
 
@@ -44,6 +46,28 @@ export class ProductMutationResolver {
 
     return {
       indexed,
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => AddProductTagsPayload)
+  async addProductTags(
+    @Arg('slug') slug: string,
+    @Arg('input') input: AddProductTagsInput
+  ): Promise<AddProductTagsPayload> {
+    const product = await this.getPublishedProductUseCase.execute({ slug });
+
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    await this.addProductTagUseCase.execute({
+      productId: product.id,
+      tagNames: input.tagNames,
+    });
+
+    return {
+      product: await this.getPublishedProductUseCase.execute({ slug }),
     };
   }
 }

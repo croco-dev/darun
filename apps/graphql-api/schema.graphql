@@ -3,6 +3,14 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+input AddProductTagsInput {
+  tagNames: [String!]!
+}
+
+type AddProductTagsPayload {
+  product: Product
+}
+
 type Company {
   address: String!
   id: ID!
@@ -73,6 +81,7 @@ type Link {
 }
 
 type Mutation {
+  addProductTags(input: AddProductTagsInput!, slug: String!): AddProductTagsPayload!
   createCompany(input: CreateCompanyInput!): CreateCompanyPayload!
   createProduct(input: CreateProductInput!): CreateProductPayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
