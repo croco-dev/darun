@@ -1,8 +1,12 @@
-import { IndexProductButton } from '@products/components';
+import { Stack } from '@mantine/core';
+import { IndexProductButton, ProductInfo } from '@products/components';
 import { AppShell } from '@uis';
 
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
   <AppShell>
-    <IndexProductButton slug={slug} />
+    <Stack gap={16}>
+      <ProductInfo slug={slug} />
+      <IndexProductButton slug={slug} />
+    </Stack>
   </AppShell>
 );
