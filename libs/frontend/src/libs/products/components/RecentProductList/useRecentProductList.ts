@@ -18,7 +18,7 @@ gql`
 `;
 
 export function useRecentProductList() {
-  const { data, error } = useRecentProductsOnRecentProductListSuspenseQuery();
+  const { data } = useRecentProductsOnRecentProductListSuspenseQuery();
   return {
     products: data?.recentProducts ?? [],
   };

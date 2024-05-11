@@ -6,7 +6,6 @@ import './globals.css';
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
 import { ColorSchemeScript } from '@mantine/core';
 import { Metadata } from 'next';
-import { CookiesProvider } from 'next-client-cookies/server';
 import { ReactNode } from 'react';
 import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
@@ -27,11 +26,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ColorSchemeScript />
       </head>
       <body className={pretendardFont.className}>
-        <CookiesProvider>
-          <ServerRootProvider>
-            <ClientRootProvider>{children}</ClientRootProvider>
-          </ServerRootProvider>
-        </CookiesProvider>
+        <ServerRootProvider>
+          <ClientRootProvider>{children}</ClientRootProvider>
+        </ServerRootProvider>
       </body>
     </html>
   );

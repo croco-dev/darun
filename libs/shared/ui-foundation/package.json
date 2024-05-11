@@ -10,12 +10,13 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@kuma-ui/core": "1.5.6"
+    "@kuma-ui/core": ">=1",
+    "react-dom": ">=18.2.0"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "*",
-    "@types/react-dom": "*"
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0"
   }
 }

@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 import { getClient, initApolloClient } from '@darun/utils-apollo-client/server';
 import { MetadataRoute } from 'next';
-import { container } from './container';
+import { container } from './serverContainer';
 
 initApolloClient(() => container.serverApolloClient);
 

@@ -1,15 +1,15 @@
 import { useAuthService } from '@darun/provider-auth/client';
+import { useNavigate } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
-import { useRouter } from 'next/navigation';
 
 export function useLogoutButton() {
   const authService = useAuthService();
-  const { push } = useRouter();
+  const navigate = useNavigate();
 
   const logout = async () => {
     await authService.signOut();
     notifications.show({ message: '로그아웃되었습니다.', color: 'teal' });
-    push('/');
+    navigate('/');
   };
 
   return {

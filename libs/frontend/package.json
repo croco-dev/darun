@@ -10,22 +10,22 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@apollo/client": "3.9.10",
-    "@apollo/experimental-nextjs-app-support": "0.8.0",
+    "@apollo/client": "3.10.3",
+    "@apollo/experimental-nextjs-app-support": "0.10.1",
     "@croco/utils-structure-react": "0.0.1",
     "@darun/provider-graphql": "workspace:*",
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-icons": "workspace:*",
     "@darun/ui-layout": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
-    "@kuma-ui/core": "1.5.6",
-    "next": "14.1.4"
+    "@kuma-ui/core": "1.5.7",
+    "next": "14.2.3"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "*",
-    "@types/react-dom": "*"
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0"
   },
   "dependencies": {
     "@darun/utils-router": "workspace:*"
