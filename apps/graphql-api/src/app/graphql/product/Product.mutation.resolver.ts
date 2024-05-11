@@ -1,5 +1,6 @@
-import { CreateProduct, GetProduct, IndexProduct } from '@darun/backend';
-import { Arg, Mutation, Resolver } from 'type-graphql';
+import { CreateProduct, GetPublishedProduct, IndexProduct } from '@darun/backend';
+import { AuthRole } from '@darun/utils-apollo-server';
+import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
 import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
@@ -11,9 +12,10 @@ export class ProductMutationResolver {
   constructor(
     private readonly createProductUseCase: CreateProduct,
     private readonly indexProductUseCase: IndexProduct,
-    private readonly getProductUseCase: GetProduct
+    private readonly getPublishedProductUseCase: GetPublishedProduct
   ) {}
 
+  @Authorized([AuthRole.Admin])
   @Mutation(() => CreateProductPayload)
   async createProduct(@Arg('input') input: CreateProductInput): Promise<CreateProductPayload> {
     const product = await this.createProductUseCase.execute(input);
@@ -23,9 +25,10 @@ export class ProductMutationResolver {
     };
   }
 
+  @Authorized([AuthRole.Admin])
   @Mutation(() => IndexProductPayload)
   async indexProduct(@Arg('input') input: IndexProductInput): Promise<IndexProductPayload> {
-    const product = await this.getProductUseCase.execute({ slug: input.slug });
+    const product = await this.getPublishedProductUseCase.execute({ slug: input.slug });
 
     if (!product) {
       throw new Error('Product not found');

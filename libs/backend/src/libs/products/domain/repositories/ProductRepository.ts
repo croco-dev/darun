@@ -6,6 +6,7 @@ export interface ProductRepository {
   findTopNSortByPublishedAtDesc(n: number): Promise<Product[]>;
   findPublishedOneById(id: string): Promise<Product | null>;
   findOneBySlug(slug: string): Promise<Product | null>;
+  findOneById(id: string): Promise<Product | null>;
   findPublishedOneBySlug(slug: string): Promise<Product | null>;
   countPublishedAll(): Promise<number>;
   countAll(): Promise<number>;

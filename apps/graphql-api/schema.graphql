@@ -13,6 +13,18 @@ type Company {
   type: String!
 }
 
+input CreateCompanyInput {
+  address: String!
+  name: String!
+  size: String!
+  startAt: DateTimeISO!
+  type: String!
+}
+
+type CreateCompanyPayload {
+  company: Company!
+}
+
 input CreateProductInput {
   logoUrl: String!
   name: String!
@@ -61,6 +73,7 @@ type Link {
 }
 
 type Mutation {
+  createCompany(input: CreateCompanyInput!): CreateCompanyPayload!
   createProduct(input: CreateProductInput!): CreateProductPayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
 }
@@ -108,6 +121,7 @@ type Query {
   productsCount: Int!
   recentProducts(first: Int!): [Product!]!
   searchProducts(query: String!): [Product!]!
+  tempProductBySlug(slug: String!): Product
 }
 
 type Screenshot {

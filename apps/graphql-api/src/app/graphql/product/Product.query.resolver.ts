@@ -1,7 +1,7 @@
 import {
   GetAlternativeProducts,
   GetCompany,
-  GetProduct,
+  GetPublishedProduct,
   GetProductFeatures,
   GetProductLinks,
   GetProductsCount,
@@ -10,6 +10,7 @@ import {
   GetRecentProducts,
   SearchProduct,
   GetAllProducts,
+  GetProduct,
 } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Args, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
@@ -32,6 +33,7 @@ export class ProductQueryResolver {
     private readonly getRecentProductsUseCase: GetRecentProducts,
     private readonly getAllProductsUseCase: GetAllProducts,
     private readonly getProductUseCase: GetProduct,
+    private readonly getPublishedProductUseCase: GetPublishedProduct,
     private readonly getProductLinksUseCase: GetProductLinks,
     private readonly getProductTagsUseCase: GetProductTags,
     private readonly getProductScreenshotsUseCase: GetProductScreenshots,
@@ -49,12 +51,12 @@ export class ProductQueryResolver {
 
   @Query(() => Product, { nullable: true })
   public product(@Arg('id', () => ID) id: string) {
-    return this.getProductUseCase.execute({ id });
+    return this.getPublishedProductUseCase.execute({ id });
   }
 
   @Query(() => Product, { nullable: true })
   public productBySlug(@Arg('slug', () => String) slug: string) {
-    return this.getProductUseCase.execute({ slug });
+    return this.getPublishedProductUseCase.execute({ slug });
   }
 
   @Query(() => Int)
@@ -65,7 +67,9 @@ export class ProductQueryResolver {
   @Query(() => [Product])
   public async searchProducts(@Arg('query', () => String) query: string) {
     const searchableProducts = await this.searchProductUseCase.execute({ query });
-    return searchableProducts.map(searchableProduct => this.getProductUseCase.execute({ id: searchableProduct.id }));
+    return searchableProducts.map(searchableProduct =>
+      this.getPublishedProductUseCase.execute({ id: searchableProduct.id })
+    );
   }
 
   @Authorized([AuthRole.Admin])
@@ -125,10 +129,16 @@ export class ProductQueryResolver {
     const alternativeProducts = await this.getAlternativeProductsUseCase.execute({ productId: product.id });
     const products = await Promise.all(
       alternativeProducts.map(alternativeProduct =>
-        this.getProductUseCase.execute({ id: alternativeProduct.alternativeProductId })
+        this.getPublishedProductUseCase.execute({ id: alternativeProduct.alternativeProductId })
       )
     );
 
     return products.filter(product => Boolean(product));
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Query(() => Product, { nullable: true })
+  public tempProductBySlug(@Arg('slug', () => String) slug: string) {
+    return this.getProductUseCase.execute({ slug });
   }
 }

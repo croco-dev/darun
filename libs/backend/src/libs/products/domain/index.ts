@@ -29,3 +29,4 @@ export { CreateProduct } from './usecases/CreateProduct';
 export { GetProductFeatureScreenshots } from './usecases/GetProductFeatureScreenshots';
 export { GetProductFeatures } from './usecases/GetProductFeatures';
 export { GetAllProducts } from './usecases/GetAllProducts';
+export { GetPublishedProduct } from './usecases/GetPublishedProduct';

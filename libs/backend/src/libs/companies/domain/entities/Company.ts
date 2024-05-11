@@ -6,4 +6,30 @@ export class Company {
   public size: string;
   public region: string;
   public startAt: Date;
+
+  constructor({
+    id,
+    name,
+    address,
+    type,
+    size,
+    startAt,
+  }: {
+    id?: string;
+    name: string;
+    address: string;
+    type: string;
+    size: string;
+    startAt: Date;
+  }) {
+    this.name = name;
+    this.address = address;
+    this.type = type;
+    this.size = size;
+    this.startAt = startAt;
+
+    if (id) {
+      this.id = id;
+    }
+  }
 }

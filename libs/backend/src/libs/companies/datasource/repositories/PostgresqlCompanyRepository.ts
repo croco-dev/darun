@@ -27,6 +27,17 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
     );
   }
 
+  async insert(values: Company): Promise<Company | null> {
+    return this.db.transaction(async tx => {
+      const inserted = await tx
+        .insert(companies)
+        .values({ ...values })
+        .returning();
+
+      return inserted[0];
+    });
+  }
+
   async findById(id: string): Promise<Company | null> {
     return this.companyIdLoader.load(id);
   }

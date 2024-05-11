@@ -45,14 +45,12 @@ export class PostgresqlProductRepository implements ProductRepository {
 
   async insert(values: Product): Promise<Product | null> {
     return this.db.transaction(async tx => {
-      await tx.insert(products).values({ ...values });
+      const inserted = await tx
+        .insert(products)
+        .values({ ...values })
+        .returning();
 
-      return tx
-        .select()
-        .from(products)
-        .where(eq(products.slug, values.slug))
-        .limit(1)
-        .then(rows => (rows[0] ? { ...rows[0], description: rows[0].description ?? undefined } : null));
+      return inserted[0] ? { ...inserted[0], description: inserted[0].description ?? undefined } : null;
     });
   }
 
@@ -69,6 +67,15 @@ export class PostgresqlProductRepository implements ProductRepository {
       .select()
       .from(products)
       .where(eq(products.slug, slug))
+      .limit(1)
+      .then(rows => (rows[0] ? { ...rows[0], description: rows[0].description ?? undefined } : null));
+  }
+
+  async findOneById(id: string): Promise<Product | null> {
+    return this.db
+      .select()
+      .from(products)
+      .where(eq(products.id, id))
       .limit(1)
       .then(rows => (rows[0] ? { ...rows[0], description: rows[0].description ?? undefined } : null));
   }
