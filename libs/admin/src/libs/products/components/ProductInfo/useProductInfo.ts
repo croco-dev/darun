@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
-import { useProductBySlugOnProductInfoQuery } from './__generated__/useProductInfo';
+import { useTempProductBySlugOnProductInfoQuery } from './__generated__/useProductInfo';
 
 gql`
-  query ProductBySlugOnProductInfo($slug: String!) {
+  query TempProductBySlugOnProductInfo($slug: String!) {
     tempProductBySlug(slug: $slug) {
       id
       name
@@ -16,13 +16,13 @@ type ProductInfoProps = {
 };
 
 export function useProductInfo({ slug }: ProductInfoProps) {
-  const { data } = useProductBySlugOnProductInfoQuery({
+  const { data } = useTempProductBySlugOnProductInfoQuery({
     variables: {
       slug,
     },
   });
   return {
-    name: data?.productBySlug?.name ?? '',
-    logoUrl: data?.productBySlug?.logoUrl,
+    name: data?.tempProductBySlug?.name ?? '',
+    logoUrl: data?.tempProductBySlug?.logoUrl,
   };
 }

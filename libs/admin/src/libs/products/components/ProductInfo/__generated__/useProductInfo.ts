@@ -4,16 +4,16 @@ import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
 import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
-export type ProductBySlugOnProductInfoQueryVariables = Types.Exact<{
+export type TempProductBySlugOnProductInfoQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
 }>;
 
 
-export type ProductBySlugOnProductInfoQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, name: string, logoUrl: string } | null };
+export type TempProductBySlugOnProductInfoQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, name: string, logoUrl: string } | null };
 
 
-export const ProductBySlugOnProductInfoDocument = gql`
-    query ProductBySlugOnProductInfo($slug: String!) {
+export const TempProductBySlugOnProductInfoDocument = gql`
+    query TempProductBySlugOnProductInfo($slug: String!) {
   tempProductBySlug(slug: $slug) {
     id
     name
@@ -23,34 +23,34 @@ export const ProductBySlugOnProductInfoDocument = gql`
     `;
 
 /**
- * __useProductBySlugOnProductInfoQuery__
+ * __useTempProductBySlugOnProductInfoQuery__
  *
- * To run a query within a React component, call `useProductBySlugOnProductInfoQuery` and pass it any options that fit your needs.
- * When your component renders, `useProductBySlugOnProductInfoQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useTempProductBySlugOnProductInfoQuery` and pass it any options that fit your needs.
+ * When your component renders, `useTempProductBySlugOnProductInfoQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useProductBySlugOnProductInfoQuery({
+ * const { data, loading, error } = useTempProductBySlugOnProductInfoQuery({
  *   variables: {
  *      slug: // value for 'slug'
  *   },
  * });
  */
-export function useProductBySlugOnProductInfoQuery(baseOptions: Apollo.QueryHookOptions<ProductBySlugOnProductInfoQuery, ProductBySlugOnProductInfoQueryVariables> & ({ variables: ProductBySlugOnProductInfoQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+export function useTempProductBySlugOnProductInfoQuery(baseOptions: Apollo.QueryHookOptions<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables> & ({ variables: TempProductBySlugOnProductInfoQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<ProductBySlugOnProductInfoQuery, ProductBySlugOnProductInfoQueryVariables>(ProductBySlugOnProductInfoDocument, options);
+        return ApolloSSRHooks.useQuery<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>(TempProductBySlugOnProductInfoDocument, options);
       }
-export function useProductBySlugOnProductInfoLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ProductBySlugOnProductInfoQuery, ProductBySlugOnProductInfoQueryVariables>) {
+export function useTempProductBySlugOnProductInfoLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<ProductBySlugOnProductInfoQuery, ProductBySlugOnProductInfoQueryVariables>(ProductBySlugOnProductInfoDocument, options);
+          return Apollo.useLazyQuery<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>(TempProductBySlugOnProductInfoDocument, options);
         }
-export function useProductBySlugOnProductInfoSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ProductBySlugOnProductInfoQuery, ProductBySlugOnProductInfoQueryVariables>) {
+export function useTempProductBySlugOnProductInfoSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<ProductBySlugOnProductInfoQuery, ProductBySlugOnProductInfoQueryVariables>(ProductBySlugOnProductInfoDocument, options);
+          return ApolloSSRHooks.useSuspenseQuery<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>(TempProductBySlugOnProductInfoDocument, options);
         }
-export type ProductBySlugOnProductInfoQueryHookResult = ReturnType<typeof useProductBySlugOnProductInfoQuery>;
-export type ProductBySlugOnProductInfoLazyQueryHookResult = ReturnType<typeof useProductBySlugOnProductInfoLazyQuery>;
-export type ProductBySlugOnProductInfoSuspenseQueryHookResult = ReturnType<typeof useProductBySlugOnProductInfoSuspenseQuery>;
-export type ProductBySlugOnProductInfoQueryResult = Apollo.QueryResult<ProductBySlugOnProductInfoQuery, ProductBySlugOnProductInfoQueryVariables>;
+export type TempProductBySlugOnProductInfoQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductInfoQuery>;
+export type TempProductBySlugOnProductInfoLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductInfoLazyQuery>;
+export type TempProductBySlugOnProductInfoSuspenseQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductInfoSuspenseQuery>;
+export type TempProductBySlugOnProductInfoQueryResult = Apollo.QueryResult<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>;
