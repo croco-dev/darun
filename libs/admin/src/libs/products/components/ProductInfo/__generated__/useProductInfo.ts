@@ -9,12 +9,12 @@ export type ProductBySlugOnProductInfoQueryVariables = Types.Exact<{
 }>;
 
 
-export type ProductBySlugOnProductInfoQuery = { __typename?: 'Query', productBySlug?: { __typename?: 'Product', id: string, name: string, logoUrl: string } | null };
+export type ProductBySlugOnProductInfoQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, name: string, logoUrl: string } | null };
 
 
 export const ProductBySlugOnProductInfoDocument = gql`
     query ProductBySlugOnProductInfo($slug: String!) {
-  productBySlug(slug: $slug) {
+  tempProductBySlug(slug: $slug) {
     id
     name
     logoUrl

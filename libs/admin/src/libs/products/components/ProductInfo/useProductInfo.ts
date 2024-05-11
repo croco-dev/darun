@@ -3,7 +3,7 @@ import { useProductBySlugOnProductInfoQuery } from './__generated__/useProductIn
 
 gql`
   query ProductBySlugOnProductInfo($slug: String!) {
-    productBySlug(slug: $slug) {
+    tempProductBySlug(slug: $slug) {
       id
       name
       logoUrl
