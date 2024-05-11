@@ -1,0 +1,1 @@
+export { ProductTagsForm } from './ProductTagsForm';

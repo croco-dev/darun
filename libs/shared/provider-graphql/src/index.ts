@@ -16,6 +16,15 @@ export type Scalars = {
   DateTimeISO: { input: unknown; output: unknown; }
 };
 
+export type AddProductTagsInput = {
+  readonly tagNames: ReadonlyArray<Scalars['String']['input']>;
+};
+
+export type AddProductTagsPayload = {
+  readonly __typename?: 'AddProductTagsPayload';
+  readonly product?: Maybe<Product>;
+};
+
 export type Company = {
   readonly __typename?: 'Company';
   readonly address: Scalars['String']['output'];
@@ -89,9 +98,16 @@ export type Link = {
 
 export type Mutation = {
   readonly __typename?: 'Mutation';
+  readonly addProductTags: AddProductTagsPayload;
   readonly createCompany: CreateCompanyPayload;
   readonly createProduct: CreateProductPayload;
   readonly indexProduct: IndexProductPayload;
+};
+
+
+export type MutationaddProductTagsArgs = {
+  input: AddProductTagsInput;
+  slug: Scalars['String']['input'];
 };
 
 
