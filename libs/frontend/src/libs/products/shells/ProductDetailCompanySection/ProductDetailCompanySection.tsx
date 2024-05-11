@@ -8,7 +8,7 @@ export const ProductDetailCompanySection = ({ slug }: ProductDetailCompanySectio
     <VStack gap={'6px'}>
       <Text
         as={'h2'}
-        id={'darun'}
+        id={'company-info'}
         fontWeight={'fontWeights.semibold'}
         fontSize={'24px'}
         color={'colors.dark.900'}
