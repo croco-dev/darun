@@ -3,7 +3,7 @@ import { createTheme } from '@kuma-ui/core';
 const theme = createTheme({
   colors: {
     dark: {
-      0o0: '#ffffff',
+      '000': '#ffffff',
       100: '#e5e5e5',
       200: '#cacaca',
       300: '#b0b0b0',
