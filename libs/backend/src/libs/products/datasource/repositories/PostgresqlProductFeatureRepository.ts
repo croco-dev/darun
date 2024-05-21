@@ -26,6 +26,17 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
     );
   }
 
+  insert(newFeature: ProductFeature): Promise<ProductFeature> {
+    return this.db.transaction(async tx => {
+      const inserted = await tx
+        .insert(productFeatures)
+        .values({ ...newFeature })
+        .returning();
+
+      return inserted[0] ?? null;
+    });
+  }
+
   async findManyByProductId(productId: string): Promise<ProductFeature[]> {
     return this.productIdLoader.load(productId);
   }
