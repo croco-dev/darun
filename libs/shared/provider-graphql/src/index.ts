@@ -49,6 +49,18 @@ export type CreateCompanyPayload = {
   readonly company: Company;
 };
 
+export type CreateProductFeatureInput = {
+  readonly emoji: Scalars['String']['input'];
+  readonly name: Scalars['String']['input'];
+  readonly productSlug: Scalars['String']['input'];
+  readonly summary: Scalars['String']['input'];
+};
+
+export type CreateProductFeaturePayload = {
+  readonly __typename?: 'CreateProductFeaturePayload';
+  readonly feature: Feature;
+};
+
 export type CreateProductInput = {
   readonly logoUrl: Scalars['String']['input'];
   readonly name: Scalars['String']['input'];
@@ -101,6 +113,7 @@ export type Mutation = {
   readonly addProductTags: AddProductTagsPayload;
   readonly createCompany: CreateCompanyPayload;
   readonly createProduct: CreateProductPayload;
+  readonly createProductFeature: CreateProductFeaturePayload;
   readonly indexProduct: IndexProductPayload;
 };
 
@@ -118,6 +131,11 @@ export type MutationcreateCompanyArgs = {
 
 export type MutationcreateProductArgs = {
   input: CreateProductInput;
+};
+
+
+export type MutationcreateProductFeatureArgs = {
+  input: CreateProductFeatureInput;
 };
 
 
@@ -180,8 +198,8 @@ export type Query = {
 export type QueryallProductsArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   before?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Float']['input']>;
-  last?: InputMaybe<Scalars['Float']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
