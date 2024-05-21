@@ -9,7 +9,7 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
   <VStack as="section" gap={'20px'} py={'16px'}>
     <Text
       as={'h2'}
-      id={'darun'}
+      id={'features'}
       fontWeight={'fontWeights.semibold'}
       fontSize={'24px'}
       color={'colors.dark.900'}
