@@ -1,7 +1,7 @@
 module.exports = {
   root: true,
   extends: ['plugin:@typescript-eslint/recommended', 'plugin:react-hooks/recommended', 'turbo'],
-  plugins: ['prettier', 'import', 'react'],
+  plugins: ['prettier', 'import', 'react', 'unused-imports'],
   parserOptions: {
     ecmaFeatures: {
       jsx: true,
@@ -63,6 +63,9 @@ module.exports = {
       },
     ],
     'turbo/no-undeclared-env-vars': ['warn'],
+    'no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
+    'unused-imports/no-unused-imports': 'error',
   },
   overrides: [
     {

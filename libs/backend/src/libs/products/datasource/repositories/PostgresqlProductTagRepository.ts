@@ -4,7 +4,6 @@ import DataLoader from 'dataloader';
 import { eq, inArray } from 'drizzle-orm';
 import { groupBy } from 'lodash';
 import { Inject, Service } from 'typedi';
-import { products } from '../entities/ProductSchema';
 import { productTags } from '../entities/ProductTagsSchema';
 
 @Service(ProductTagRepositoryToken)
