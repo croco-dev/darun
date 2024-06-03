@@ -12,6 +12,7 @@ export {
   GetPublishedProduct,
   AddProductTag,
   CreateProductFeature,
+  AddProductScreenshot,
 } from './libs/products/domain';
 export { GetAccount } from './libs/accounts/domain';
 export { GetCompany, CreateCompany } from './libs/companies/domain';

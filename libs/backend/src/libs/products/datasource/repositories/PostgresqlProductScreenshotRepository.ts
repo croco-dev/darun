@@ -26,6 +26,17 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
     );
   }
 
+  insert(productScreenshot: ProductScreenshot): Promise<ProductScreenshot> {
+    return this.db.transaction(async tx => {
+      const inserted = await tx.insert(productScreenshots).values(productScreenshot).returning();
+
+      if (inserted[0]) {
+        throw new Error('Failed to insert product screenshot');
+      }
+      return inserted[0];
+    });
+  }
+
   async findManyByProductIdSortByPriorityDesc(productId: string): Promise<ProductScreenshot[]> {
     return this.productIdLoader.load(productId);
   }

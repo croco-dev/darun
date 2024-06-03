@@ -32,3 +32,4 @@ export { GetAllProducts } from './usecases/GetAllProducts';
 export { GetPublishedProduct } from './usecases/GetPublishedProduct';
 export { AddProductTag } from './usecases/AddProductTag';
 export { CreateProductFeature } from './usecases/CreateProductFeature';
+export { AddProductScreenshot } from './usecases/AddProductScreenshot';

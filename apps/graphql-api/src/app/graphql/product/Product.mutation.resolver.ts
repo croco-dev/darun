@@ -1,7 +1,15 @@
-import { AddProductTag, CreateProduct, GetProduct, GetPublishedProduct, IndexProduct } from '@darun/backend';
+import {
+  AddProductScreenshot,
+  AddProductTag,
+  CreateProduct,
+  GetProduct,
+  GetPublishedProduct,
+  IndexProduct,
+} from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
+import { AddProductScreenshotInput, AddProductScreenshotPayload } from './graphs/AddProductScreenshot';
 import { AddProductTagsInput, AddProductTagsPayload } from './graphs/AddProductTags';
 import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
 import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
@@ -15,7 +23,8 @@ export class ProductMutationResolver {
     private readonly indexProductUseCase: IndexProduct,
     private readonly addProductTagUseCase: AddProductTag,
     private readonly getPublishedProductUseCase: GetPublishedProduct,
-    private readonly getProductUseCase: GetProduct
+    private readonly getProductUseCase: GetProduct,
+    private readonly addProductScreenshotUseCase: AddProductScreenshot
   ) {}
 
   @Authorized([AuthRole.Admin])
@@ -65,6 +74,29 @@ export class ProductMutationResolver {
     await this.addProductTagUseCase.execute({
       productId: product.id,
       tagNames: input.tagNames,
+    });
+
+    return {
+      product: await this.getPublishedProductUseCase.execute({ slug }),
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => AddProductScreenshotPayload)
+  async addProductScreenshot(
+    @Arg('slug') slug: string,
+    @Arg('input') input: AddProductScreenshotInput
+  ): Promise<AddProductScreenshotPayload> {
+    const product = await this.getProductUseCase.execute({ slug });
+
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    await this.addProductScreenshotUseCase.execute({
+      productId: product.id,
+      imageUrl: input.imageUrl,
+      imageAlt: input.imageAlt,
     });
 
     return {
