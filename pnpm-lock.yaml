@@ -165,8 +165,8 @@ importers:
         specifier: 0.2.2
         version: 0.2.2
       type-graphql:
-        specifier: 2.0.0-beta.6
-        version: 2.0.0-beta.6(graphql-scalars@1.22.5(graphql@16.8.1))(graphql@16.8.1)
+        specifier: 2.0.0-rc.1
+        version: 2.0.0-rc.1(graphql-scalars@1.22.5(graphql@16.8.1))(graphql@16.8.1)
       typedi:
         specifier: 0.10.0
         version: 0.10.0
@@ -342,8 +342,8 @@ importers:
         specifier: 0.2.2
         version: 0.2.2
       type-graphql:
-        specifier: 2.0.0-beta.6
-        version: 2.0.0-beta.6(graphql-scalars@1.23.0(graphql@16.8.1))(graphql@16.8.1)
+        specifier: ^2.0.0-rc.1
+        version: 2.0.0-rc.1(graphql-scalars@1.23.0(graphql@16.8.1))(graphql@16.8.1)
       typedi:
         specifier: 0.10.0
         version: 0.10.0
@@ -659,8 +659,8 @@ importers:
         specifier: 16.8.1
         version: 16.8.1
       type-graphql:
-        specifier: 2.0.0-beta.6
-        version: 2.0.0-beta.6(graphql-scalars@1.23.0(graphql@16.8.1))(graphql@16.8.1)
+        specifier: ^2.0.0-rc.1
+        version: 2.0.0-rc.1(graphql-scalars@1.23.0(graphql@16.8.1))(graphql@16.8.1)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -7594,9 +7594,9 @@ packages:
     resolution: {integrity: sha512-on5/Cw89wwqGZQu+yWO0gGMGu8VNxsaW9SB2HE8yJjllEk7IDTwnSN1dUVldYILhYPN5HzD7WAaw2cc/jBfn0Q==}
     engines: {node: '>=16'}
 
-  type-graphql@2.0.0-beta.6:
-    resolution: {integrity: sha512-uSp42MLWzuR0+wiQmHUdsmenSEs8O+vC+dSa1ZlYPBo1oRe6+EVPYTwm2iCnSxN4nxt2v4Qpt0+mBqnE92sVRw==}
-    engines: {node: '>= 16.16.0'}
+  type-graphql@2.0.0-rc.1:
+    resolution: {integrity: sha512-HCu4j3jR0tZvAAoO7DMBT3MRmah0DFRe5APymm9lXUghXA0sbhiMf6SLRafRYfk0R0KiUQYRduuGP3ap1RnF1Q==}
+    engines: {node: '>= 18.12.0'}
     peerDependencies:
       class-validator: '>=0.14.0'
       graphql: ^16.8.1
@@ -17025,7 +17025,7 @@ snapshots:
 
   type-fest@4.14.0: {}
 
-  type-graphql@2.0.0-beta.6(graphql-scalars@1.22.5(graphql@16.8.1))(graphql@16.8.1):
+  type-graphql@2.0.0-rc.1(graphql-scalars@1.22.5(graphql@16.8.1))(graphql@16.8.1):
     dependencies:
       '@graphql-yoga/subscription': 5.0.0
       '@types/node': 20.12.7
@@ -17036,7 +17036,7 @@ snapshots:
       semver: 7.6.0
       tslib: 2.6.2
 
-  type-graphql@2.0.0-beta.6(graphql-scalars@1.23.0(graphql@16.8.1))(graphql@16.8.1):
+  type-graphql@2.0.0-rc.1(graphql-scalars@1.23.0(graphql@16.8.1))(graphql@16.8.1):
     dependencies:
       '@graphql-yoga/subscription': 5.0.0
       '@types/node': 20.12.7
