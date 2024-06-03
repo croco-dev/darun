@@ -11,6 +11,7 @@ export class CreateCompany {
     name,
     type,
     size,
+    region,
     startAt,
     address,
   }: {
@@ -18,9 +19,10 @@ export class CreateCompany {
     address: string;
     type: string;
     size: string;
+    region: string;
     startAt: Date;
   }): Promise<Company> {
-    const newCompany = new Company({ name, type, size, startAt, address });
+    const newCompany = new Company({ name, type, size, startAt, region, address });
 
     const insertedCompany = await this.companyRepository.insert(newCompany);
 

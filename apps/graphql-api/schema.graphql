@@ -33,6 +33,7 @@ type Company {
 input CreateCompanyInput {
   address: String!
   name: String!
+  region: String!
   size: String!
   startAt: DateTimeISO!
   type: String!

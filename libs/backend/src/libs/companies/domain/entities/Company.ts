@@ -13,6 +13,7 @@ export class Company {
     address,
     type,
     size,
+    region,
     startAt,
   }: {
     id?: string;
@@ -20,12 +21,14 @@ export class Company {
     address: string;
     type: string;
     size: string;
+    region: string;
     startAt: Date;
   }) {
     this.name = name;
     this.address = address;
     this.type = type;
     this.size = size;
+    this.region = region;
     this.startAt = startAt;
 
     if (id) {
