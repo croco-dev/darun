@@ -30,7 +30,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
     return this.db.transaction(async tx => {
       const inserted = await tx.insert(productScreenshots).values(productScreenshot).returning();
 
-      if (inserted[0]) {
+      if (!inserted[0]) {
         throw new Error('Failed to insert product screenshot');
       }
       return inserted[0];

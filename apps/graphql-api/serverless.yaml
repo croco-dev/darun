@@ -18,8 +18,13 @@ custom:
     treeShaking: false
     ignoreAnnotations: true
     plugins: esbuild.plugins.js
+    watch:
+      patterns:
+        - 'src/**/*.ts'
+        - '../../libs/**/*.ts'
   serverless-offline:
     httpPort: 4000
+    reloadHandler: true
 
 provider:
   name: aws
