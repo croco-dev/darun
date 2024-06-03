@@ -2,6 +2,7 @@
 
 import { bind } from '@croco/utils-structure-react';
 import { Grid, VStack, Text, Flex, HStack } from '@kuma-ui/core';
+import { format } from 'date-fns';
 import { useProductCompany } from './useProductCompany';
 
 export const ProductCompany = bind(useProductCompany, ({ company }) => (
@@ -15,56 +16,78 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
           <Flex height="2px" bg="colors.dark.400" />
         </VStack>
         <VStack gap="6px">
-          <HStack>
-            <Flex width="64px">
-              <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
-                국적
+          {company?.name && (
+            <HStack>
+              <Flex width="64px">
+                <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
+                  이름
+                </Text>
+              </Flex>
+              <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
+                {company.name}
               </Text>
-            </Flex>
-            <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
-              {company?.region}
-            </Text>
-          </HStack>
-          <HStack>
-            <Flex width="64px">
-              <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
-                상태
+            </HStack>
+          )}
+          {company?.region && (
+            <HStack>
+              <Flex width="64px">
+                <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
+                  국적
+                </Text>
+              </Flex>
+              <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
+                {company.region}
               </Text>
-            </Flex>
-            <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
-              {company?.type}
-            </Text>
-          </HStack>
-          <HStack>
-            <Flex width="64px">
-              <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
-                주소
+            </HStack>
+          )}
+          {company?.type && (
+            <HStack>
+              <Flex width="64px">
+                <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
+                  상태
+                </Text>
+              </Flex>
+              <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
+                {company.type}
               </Text>
-            </Flex>
-            <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
-              {company?.address}
-            </Text>
-          </HStack>
-          <HStack>
-            <Flex width="64px">
-              <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
-                고용 인원
+            </HStack>
+          )}
+          {company?.address && (
+            <HStack>
+              <Flex width="64px">
+                <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
+                  주소
+                </Text>
+              </Flex>
+              <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
+                {company.address}
               </Text>
-            </Flex>
-            <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
-              {company?.size} (명)
-            </Text>
-          </HStack>
-          <HStack>
-            <Flex width="64px">
-              <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
-                설립일
+            </HStack>
+          )}
+          {company?.size && (
+            <HStack>
+              <Flex width="64px">
+                <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
+                  고용 인원
+                </Text>
+              </Flex>
+              <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
+                {company.size} (명)
               </Text>
-            </Flex>
-            <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
-              {company?.startAt}
-            </Text>
-          </HStack>
+            </HStack>
+          )}
+          {company?.startAt && (
+            <HStack>
+              <Flex width="64px">
+                <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
+                  설립일
+                </Text>
+              </Flex>
+              <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
+                {format(company.startAt, 'yyyy. MM. dd')}
+              </Text>
+            </HStack>
+          )}
         </VStack>
       </VStack>
     </Grid>
