@@ -10,6 +10,9 @@ const productQuery = gql`
     recentProducts(first: 100) {
       slug
       updatedAt
+      alternatives {
+        slug
+      }
     }
   }
 `;
@@ -19,8 +22,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     query: productQuery,
   });
 
-  return (data.recentProducts ?? []).map(product => ({
-    url: `${container.baseUrl}/products/${product.slug}`,
-    lastModified: product.updatedAt ?? new Date(),
-  }));
+  return (data.recentProducts ?? []).flatMap(product => [
+    {
+      url: `${container.baseUrl}/products/${product.slug}`,
+      lastModified: product.updatedAt ?? new Date(),
+    },
+    {
+      url: `${container.baseUrl}/products/${product.slug}/alternatives`,
+      lastModified: product.updatedAt ?? new Date(),
+    },
+  ]);
 }
