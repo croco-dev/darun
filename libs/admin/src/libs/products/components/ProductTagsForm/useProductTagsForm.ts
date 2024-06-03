@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import {
   useAddProductTagsOnProductTagFormMutation,
@@ -43,7 +44,16 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
       setTags(data.tempProductBySlug?.tags.map(tag => tag.name) ?? []);
     },
   });
-  const [addProductTags] = useAddProductTagsOnProductTagFormMutation();
+  const [addProductTags] = useAddProductTagsOnProductTagFormMutation({
+    onError: error => {
+      notifications.show({ message: error.message, color: 'red' });
+    },
+    onCompleted: data => {
+      if (data.addProductTags.product?.tags) {
+        notifications.show({ message: '태그가 추가되었습니다.', color: 'teal' });
+      }
+    },
+  });
 
   const updateTags = (newTags: string[]) => {
     setTags(newTags);

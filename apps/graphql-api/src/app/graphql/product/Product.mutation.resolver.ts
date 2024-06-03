@@ -1,4 +1,4 @@
-import { AddProductTag, CreateProduct, GetPublishedProduct, IndexProduct } from '@darun/backend';
+import { AddProductTag, CreateProduct, GetProduct, GetPublishedProduct, IndexProduct } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
@@ -14,7 +14,8 @@ export class ProductMutationResolver {
     private readonly createProductUseCase: CreateProduct,
     private readonly indexProductUseCase: IndexProduct,
     private readonly addProductTagUseCase: AddProductTag,
-    private readonly getPublishedProductUseCase: GetPublishedProduct
+    private readonly getPublishedProductUseCase: GetPublishedProduct,
+    private readonly getProductUseCase: GetProduct
   ) {}
 
   @Authorized([AuthRole.Admin])
@@ -33,7 +34,7 @@ export class ProductMutationResolver {
     const product = await this.getPublishedProductUseCase.execute({ slug: input.slug });
 
     if (!product) {
-      throw new Error('Product not found');
+      throw new Error('publish된 Product가 존재하지 않습니다.');
     }
 
     const indexed = await this.indexProductUseCase.execute({
@@ -55,7 +56,7 @@ export class ProductMutationResolver {
     @Arg('slug') slug: string,
     @Arg('input') input: AddProductTagsInput
   ): Promise<AddProductTagsPayload> {
-    const product = await this.getPublishedProductUseCase.execute({ slug });
+    const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
       throw new Error('Product not found');
