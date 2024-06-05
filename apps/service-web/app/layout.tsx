@@ -22,6 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="icon" href="/images/favicon.svg" />
         <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
+        <meta name="naver-site-verification" content="649166a0539cdb75cfb0f15a22f5444c9f9d4f19" />
       </head>
       <body className={pretendardFont.className}>
         <KumaRegistry>

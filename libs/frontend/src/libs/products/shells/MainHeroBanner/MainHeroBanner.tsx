@@ -27,10 +27,17 @@ export const MainHeroBanner = () => {
                 fontWeight={'fontWeights.medium'}
                 letterSpacing={'-.8px'}
                 color={'colors.dark.300'}
+                as="h1"
               >
                 다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다
               </Text>
-              <Text fontSize={'32px'} fontWeight={'fontWeights.bold'} letterSpacing={'-.8px'} color={'colors.dark.100'}>
+              <Text
+                fontSize={'32px'}
+                fontWeight={'fontWeights.bold'}
+                letterSpacing={'-.8px'}
+                color={'colors.dark.100'}
+                as="h1"
+              >
                 <ProductsCount />
                 개의{' '}
                 <Text as={'span'} color={'colors.brown.600'}>
