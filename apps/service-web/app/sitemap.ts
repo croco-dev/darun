@@ -31,5 +31,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${container.baseUrl}/products/${product.slug}/alternatives`,
       lastModified: product.updatedAt ?? new Date(),
     },
+    {
+      url: `${container.baseUrl}/search/product?query=${product.slug}`,
+      lastModified: product.updatedAt ?? new Date(),
+    },
   ]);
 }
