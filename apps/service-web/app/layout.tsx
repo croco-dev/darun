@@ -12,6 +12,10 @@ import { ServerRootProvider } from './server';
 export const metadata: Metadata = {
   title: '다른(darun)',
   description: '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 서비스들을 검색해보세요.',
+  openGraph: {
+    title: '다른(darun)',
+    description: '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 서비스들을 검색해보세요.',
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
