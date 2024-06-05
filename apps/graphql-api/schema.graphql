@@ -3,6 +3,17 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+input AddProductLinkInput {
+  displayLink: String!
+  iconUrl: String!
+  link: String!
+  title: String!
+}
+
+type AddProductLinkPayload {
+  product: Product
+}
+
 input AddProductScreenshotInput {
   imageAlt: String!
   imageUrl: String!
@@ -102,6 +113,7 @@ type Link {
 }
 
 type Mutation {
+  addProductLink(input: AddProductLinkInput!, slug: String!): AddProductLinkPayload!
   addProductScreenshot(input: AddProductScreenshotInput!, slug: String!): AddProductScreenshotPayload!
   addProductTags(input: AddProductTagsInput!, slug: String!): AddProductTagsPayload!
   createCompany(input: CreateCompanyInput!): CreateCompanyPayload!
