@@ -60,7 +60,7 @@ export const ProductItem = ({
           >
             {name}
           </Text>
-          <Text fontSize={'14px'} color={'colors.dark.500'}>
+          <Text fontSize={'14px'} lineHeight={'1.3'} color={'colors.dark.500'}>
             {summary}
           </Text>
         </VStack>
