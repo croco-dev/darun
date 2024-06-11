@@ -41,12 +41,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
             {name}
           </Text>
           {description && (
-            <Text
-              color={'colors.dark.600'}
-              fontWeight={'fontWeights.normal'}
-              fontSize={'14px'}
-              letterSpacing={'-.05px'}
-            >
+            <Text color={'colors.dark.600'} fontWeight={'fontWeights.normal'} fontSize={'14px'}>
               {description}
             </Text>
           )}
