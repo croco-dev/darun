@@ -13,7 +13,7 @@ export const ProductFeatureGridList = ({ features }: ProductFeatureGridListProps
   return (
     <Grid gap="6px" gridTemplateColumns={['repeat(1, 1fr)', 'repeat(2, 1fr)', 'repeat(3, 1fr)']}>
       {features.map((feature, index) => (
-        <HStack alignItems={'center'} gap={'12px'} w={'100%'} key={index}>
+        <HStack alignItems={'flex-start'} gap={'12px'} w={'100%'} key={index}>
           <Flex
             width={'42px'}
             height={'42px'}
