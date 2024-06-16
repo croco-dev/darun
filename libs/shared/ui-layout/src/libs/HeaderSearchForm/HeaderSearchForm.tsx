@@ -27,7 +27,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
       outline="none"
       placeholder="현재 사용 중인 서비스를 찾아보세요!"
       color="#555"
-      fontSize={14}
+      fontSize={16}
       letterSpacing={-0.1}
       value={query}
       onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}

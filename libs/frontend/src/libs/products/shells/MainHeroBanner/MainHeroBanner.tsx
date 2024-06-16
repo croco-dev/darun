@@ -64,7 +64,7 @@ export const MainHeroBanner = () => {
                 outline="none"
                 placeholder="이곳을 눌러 빠르게 검색하세요."
                 color="colors.dark.700"
-                fontSize={15}
+                fontSize={16}
                 letterSpacing={-0.1}
               />
             </HStack>
