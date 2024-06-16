@@ -23,7 +23,7 @@ export const MainHeroBanner = () => {
           <VStack py={'60px'} px={'12px'} gap={'24px'}>
             <VStack gap={'8px'}>
               <Text
-                fontSize={['16px', '18px']}
+                fontSize={['14px', '18px']}
                 fontWeight={'fontWeights.medium'}
                 letterSpacing={'-.4px'}
                 color={'colors.dark.300'}
@@ -32,7 +32,7 @@ export const MainHeroBanner = () => {
                 다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다
               </Text>
               <Text
-                fontSize={['28px', '32px']}
+                fontSize={['26px', '32px']}
                 fontWeight={'fontWeights.bold'}
                 letterSpacing={'-.8px'}
                 color={'colors.dark.100'}
