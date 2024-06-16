@@ -7,7 +7,15 @@ type ContentAreaProps = {
 };
 export function ContentArea({ children, as }: ContentAreaProps) {
   return (
-    <Box as={as} w="100%" mr="auto" ml="auto" maxW={1120} px={['1rem', '1rem', '2rem']}>
+    <Box
+      as={as ?? 'section'}
+      w="100%"
+      mr="auto"
+      ml="auto"
+      maxW={1120}
+      px={['1rem', '1rem', '2rem']}
+      boxSizing="border-box"
+    >
       {children}
     </Box>
   );

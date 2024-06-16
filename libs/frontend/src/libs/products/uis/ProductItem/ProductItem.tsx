@@ -36,7 +36,7 @@ export const ProductItem = ({
   specialTags,
 }: ProductItemProps) => {
   return (
-    <HStack as={as} width={'100%'} gap={'12px'} alignItems={'center'}>
+    <HStack as={as} width={'100%'} gap={'12px'} alignItems={'flex-start'}>
       <Image
         src={logoUrl ?? '/images/default-product-icon.svg'}
         unoptimized={!logoUrl}
@@ -53,14 +53,14 @@ export const ProductItem = ({
         <VStack gap="4px">
           <Text
             as="h3"
-            fontSize={'20px'}
+            fontSize={['18px', '20px']}
             fontWeight={'fontWeights.bold'}
             letterSpacing={'-.4px'}
             color={'colors.dark.900'}
           >
             {name}
           </Text>
-          <Text fontSize={'14px'} lineHeight={'1.3'} color={'colors.dark.500'}>
+          <Text fontSize={['12px', '14px']} lineHeight={'1.3'} color={'colors.dark.500'}>
             {summary}
           </Text>
         </VStack>

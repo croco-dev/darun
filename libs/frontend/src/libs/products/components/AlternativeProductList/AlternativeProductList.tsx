@@ -8,7 +8,7 @@ import { useAlternativeProductList } from './useAlternativeProductList';
 
 export const AlternativeProductList = bind(useAlternativeProductList, ({ alternatives }) => {
   return alternatives.length > 0 ? (
-    <Grid width={'100%'} gap={'20px'} gridTemplateColumns="repeat(2, 1fr)">
+    <Grid width={'100%'} gap={'20px'} gridTemplateColumns={['repeat(1, 1fr)', 'repeat(2, 1fr)']}>
       {alternatives.map(alternative => (
         <Link key={alternative.id} href={`/products/${alternative.slug}`}>
           <ProductItem

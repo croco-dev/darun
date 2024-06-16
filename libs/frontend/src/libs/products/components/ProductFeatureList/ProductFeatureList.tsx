@@ -6,7 +6,7 @@ import { FeatureItem } from '@products/uis';
 import { useProductFeatureList } from './useProductFeatureList';
 
 export const ProductFeatureList = bind(useProductFeatureList, ({ features }) => (
-  <VStack>
+  <VStack gap={8}>
     {features.map(feature => (
       <FeatureItem
         key={feature.id}

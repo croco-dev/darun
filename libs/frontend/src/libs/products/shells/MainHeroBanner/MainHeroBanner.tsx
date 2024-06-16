@@ -1,6 +1,6 @@
 import { ContentArea } from '@darun/ui-foundation';
 import { SearchIcon } from '@darun/ui-icons';
-import { css, Flex, HStack, Input, Text, VStack } from '@kuma-ui/core';
+import { Box, Flex, HStack, Input, Text, VStack } from '@kuma-ui/core';
 import Image from 'next/image';
 import { ProductsCount } from '../../components/ProductsCount';
 
@@ -8,14 +8,14 @@ export const MainHeroBanner = () => {
   return (
     <Flex background={'colors.dark.900'} position={'relative'} width={'100%'} overflow={'hidden'} py={'40px'}>
       <Flex position={'absolute'} top={0} bottom={0} right={-140} zIndex={20} width="100%">
-        <Image
+        <Box
+          as={Image}
           fill={true}
           src={'/images/main-hero-banner.png'}
           alt="hero banner"
-          className={css`
-            object-fit: contain;
-            object-position: right;
-          `}
+          objectFit="contain"
+          objectPosition="right"
+          priority={true}
         />
       </Flex>
       <Flex zIndex={40} width={'100%'}>
@@ -23,16 +23,16 @@ export const MainHeroBanner = () => {
           <VStack py={'60px'} px={'12px'} gap={'24px'}>
             <VStack gap={'8px'}>
               <Text
-                fontSize={'18px'}
+                fontSize={['16px', '18px']}
                 fontWeight={'fontWeights.medium'}
-                letterSpacing={'-.8px'}
+                letterSpacing={'-.4px'}
                 color={'colors.dark.300'}
                 as="h1"
               >
                 다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다
               </Text>
               <Text
-                fontSize={'32px'}
+                fontSize={['28px', '32px']}
                 fontWeight={'fontWeights.bold'}
                 letterSpacing={'-.8px'}
                 color={'colors.dark.100'}

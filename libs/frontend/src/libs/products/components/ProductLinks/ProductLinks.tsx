@@ -16,6 +16,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => (
             <Image src={link.iconUrl} alt={link.title} width={24} height={24} />
             <VStack alignItems={'flex-start'} gap={'2px'}>
               <Text
+                width="max-content"
                 as={'span'}
                 fontWeight={'fontWeights.medium'}
                 fontSize={'15px'}

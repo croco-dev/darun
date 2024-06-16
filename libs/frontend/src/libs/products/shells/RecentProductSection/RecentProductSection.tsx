@@ -6,7 +6,7 @@ export const RecentProductSection = () => (
     <VStack gap={'4px'}>
       <Text
         fontWeight={'fontWeights.semibold'}
-        fontSize={'24px'}
+        fontSize={['20px', '24px']}
         color={'colors.dark.900'}
         letterSpacing={'-.4px'}
         as="h2"
@@ -15,7 +15,7 @@ export const RecentProductSection = () => (
       </Text>
       <Text
         fontWeight={'fontWeights.medium'}
-        fontSize={'16px'}
+        fontSize={['14px', '16px']}
         color={'colors.dark.600'}
         letterSpacing={'-.4px'}
         as="h2"

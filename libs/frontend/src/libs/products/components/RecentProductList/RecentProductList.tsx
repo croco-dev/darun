@@ -7,7 +7,7 @@ import { ProductItem } from '@products/uis';
 import { useRecentProductList } from './useRecentProductList';
 
 export const RecentProductList = bind(useRecentProductList, ({ products }) => (
-  <Grid width={'100%'} gap={'20px'} gridTemplateColumns="repeat(2, 1fr)">
+  <Grid width={'100%'} gap={'20px'} gridTemplateColumns={['repeat(1, 1fr)', 'repeat(2, 1fr)']}>
     {products.map(product => (
       <Link key={product.id} href={`/products/${product.slug}`}>
         <ProductItem

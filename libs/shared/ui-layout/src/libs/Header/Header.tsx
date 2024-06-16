@@ -17,7 +17,7 @@ export const Header = bind(useHeader, () => (
               <Logo size={36} />
             </Link>
           </HStack>
-          <HStack alignItems="center" gap={12}>
+          <HStack alignItems="center" gap={12} display={['none', 'flex']}>
             <Link
               href={'#'}
               as={RouterLink}
@@ -43,7 +43,7 @@ export const Header = bind(useHeader, () => (
         <Suspense fallback={<></>}>
           <HeaderSearchForm />
         </Suspense>
-        <HStack height="max-content" gap={8}>
+        <HStack height="max-content" gap={8} display={['none', 'flex']}>
           <HeaderLoginButton />
           <ContainedButton kind="primary">제보하기</ContainedButton>
         </HStack>

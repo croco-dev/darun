@@ -31,8 +31,8 @@ const kindPreset = {
 export const BaseButton = ({ children, kind, borderColor, ...props }: BaseButtonProps) => {
   return (
     <Button
-      px={14}
-      py={8}
+      px={[12, 14]}
+      py={[6, 8]}
       bg={kindPreset[kind].bgColor ?? '#ff0000'}
       color={kindPreset[kind].textColor ?? '#fff'}
       fontSize={14}

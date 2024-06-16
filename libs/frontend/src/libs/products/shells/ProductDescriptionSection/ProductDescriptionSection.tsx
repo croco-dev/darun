@@ -5,7 +5,7 @@ type ProductDescriptionSectionProps = {
   slug: string;
 };
 export const ProductDescriptionSection = ({ slug }: ProductDescriptionSectionProps) => (
-  <VStack as="section" gap={'20px'} py={'16px'}>
+  <VStack as="section" gap={'20px'} py={['24px', '16px']}>
     <Text
       as={'h2'}
       id={'description'}

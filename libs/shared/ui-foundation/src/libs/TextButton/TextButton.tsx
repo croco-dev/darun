@@ -1,3 +1,4 @@
+import { Box } from '@kuma-ui/core';
 import { BaseButton, ButtonProps } from '../BaseButton';
 
 type TextButtonProps = ButtonProps & {
@@ -5,5 +6,9 @@ type TextButtonProps = ButtonProps & {
 };
 
 export const TextButton = ({ children, isActive }: TextButtonProps) => {
-  return <BaseButton kind={isActive ? 'textActive' : 'text'}>{children}</BaseButton>;
+  return (
+    <BaseButton kind={isActive ? 'textActive' : 'text'}>
+      <Box width="max-content">{children}</Box>
+    </BaseButton>
+  );
 };
