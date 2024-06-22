@@ -181,6 +181,7 @@ input SignImageUploadInput {
 }
 
 type SignImageUploadPayload {
+  folder: String!
   signature: String!
   timestamp: Float!
 }

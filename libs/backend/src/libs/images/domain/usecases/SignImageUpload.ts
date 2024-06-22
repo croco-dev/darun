@@ -5,7 +5,11 @@ import { ImageRepository, ImageRepositoryToken } from '../repositories/ImageRepo
 export class SignImageUpload {
   constructor(@Inject(ImageRepositoryToken) private readonly imageRepository: ImageRepository) {}
 
-  execute({ folder, displayName }: { folder: string; displayName: string }): { signature: string; timestamp: number } {
-    return this.imageRepository.signImageUpload({ folder, displayName });
+  execute({ folder, displayName }: { folder: string; displayName: string }): {
+    signature: string;
+    timestamp: number;
+    folder: string;
+  } {
+    return this.imageRepository.signImageUpload({ uploadFolder: folder, displayName });
   }
 }
