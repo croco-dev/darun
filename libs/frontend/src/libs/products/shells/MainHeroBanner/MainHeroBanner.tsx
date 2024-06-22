@@ -20,13 +20,14 @@ export const MainHeroBanner = () => {
       </Flex>
       <Flex zIndex={40} width={'100%'}>
         <ContentArea>
-          <VStack py={'60px'} px={'12px'} gap={'24px'}>
+          <VStack display={'inline-flex'} py={'60px'} px={'12px'} gap={'24px'}>
             <VStack gap={'8px'}>
               <Text
                 fontSize={['14px', '18px']}
                 fontWeight={'fontWeights.medium'}
                 letterSpacing={'-.4px'}
                 color={'colors.dark.300'}
+                margin={0}
                 as="h1"
               >
                 다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다
@@ -37,6 +38,7 @@ export const MainHeroBanner = () => {
                 letterSpacing={'-.8px'}
                 color={'colors.dark.100'}
                 as="h1"
+                margin={0}
               >
                 <ProductsCount />
                 개의{' '}
