@@ -1,4 +1,4 @@
 {
-  "extends": ["@darun/backend/tsconfig.json", "@darun/utils-tsconfig/tsconfig.node.json"],
+  "extends": "@darun/utils-tsconfig/tsconfig.node.json",
   "include": ["src/**/*.ts"],
 }
