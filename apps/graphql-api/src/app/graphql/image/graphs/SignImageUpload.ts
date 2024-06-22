@@ -7,6 +7,9 @@ export class SignImageUploadPayload {
 
   @Field()
   signature: string;
+
+  @Field()
+  folder: string;
 }
 
 @InputType()

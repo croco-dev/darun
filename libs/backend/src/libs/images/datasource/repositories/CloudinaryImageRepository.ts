@@ -17,21 +17,22 @@ export class CloudinaryImageRepository implements ImageRepository {
     }
   }
 
-  signImageUpload({ folder, displayName }: { folder: string; displayName: string }): {
+  signImageUpload({ uploadFolder, displayName }: { uploadFolder: string; displayName: string }): {
     signature: string;
     timestamp: number;
+    folder: string;
   } {
     const timestamp = Math.round(new Date().getTime() / 1000);
-
+    const folder = this.config.environment + '/' + uploadFolder;
     const signature = cloudinary.v2.utils.api_sign_request(
       {
         timestamp,
         displayName,
-        folder: this.config.environment + '/' + folder,
+        folder,
         resource_type: 'image',
       },
       this.apiSecret
     );
-    return { timestamp, signature };
+    return { timestamp, signature, folder };
   }
 }

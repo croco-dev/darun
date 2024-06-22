@@ -1,9 +1,10 @@
 import { Token } from 'typedi';
 
 export interface ImageRepository {
-  signImageUpload(image: { folder: string; displayName: string }): {
+  signImageUpload(image: { uploadFolder: string; displayName: string }): {
     signature: string;
     timestamp: number;
+    folder: string;
   };
 }
 
