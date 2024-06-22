@@ -10,12 +10,14 @@ export class AddProductLink {
     link,
     displayLink,
     title,
+    productId,
   }: {
     title: string;
     link: string;
     displayLink: string;
     iconUrl: string;
+    productId: string;
   }) {
-    await this.productLinkRepository.insert(new ProductLink({ iconUrl, link, displayLink, title }));
+    await this.productLinkRepository.insert(new ProductLink({ iconUrl, link, displayLink, title, productId }));
   }
 }

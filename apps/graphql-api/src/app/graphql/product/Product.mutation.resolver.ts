@@ -119,7 +119,7 @@ export class ProductMutationResolver {
       throw new Error('Product not found');
     }
 
-    await this.addProductLinkUseCase.execute(input);
+    await this.addProductLinkUseCase.execute({ ...input, productId: product.id });
 
     return {
       product: await this.getPublishedProductUseCase.execute({ slug }),

@@ -26,6 +26,17 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
     );
   }
 
+  insert(link: ProductLink): Promise<ProductLink> {
+    return this.db.transaction(async tx => {
+      const inserted = await tx.insert(productLinks).values(link).returning();
+
+      if (!inserted[0]) {
+        throw new Error('Failed to insert product screenshot');
+      }
+      return inserted[0];
+    });
+  }
+
   async findManyByProductId(productId: string): Promise<ProductLink[]> {
     return this.productIdLoader.load(productId);
   }

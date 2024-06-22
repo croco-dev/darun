@@ -469,11 +469,11 @@ importers:
   libs/shared/provider-database:
     dependencies:
       drizzle-orm:
-        specifier: 0.30.10
-        version: 0.30.10(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0)
+        specifier: 0.31.2
+        version: 0.31.2(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0)
       mongoose:
-        specifier: 8.3.4
-        version: 8.3.4
+        specifier: 8.4.3
+        version: 8.4.3
       typedi:
         specifier: 0.10.0
         version: 0.10.0
@@ -4664,86 +4664,6 @@ packages:
     resolution: {integrity: sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==}
     engines: {node: '>=12'}
 
-  drizzle-orm@0.30.10:
-    resolution: {integrity: sha512-IRy/QmMWw9lAQHpwbUh1b8fcn27S/a9zMIzqea1WNOxK9/4EB8gIo+FZWLiPXzl2n9ixGSv8BhsLZiOppWEwBw==}
-    peerDependencies:
-      '@aws-sdk/client-rds-data': '>=3'
-      '@cloudflare/workers-types': '>=3'
-      '@electric-sql/pglite': '>=0.1.1'
-      '@libsql/client': '*'
-      '@neondatabase/serverless': '>=0.1'
-      '@op-engineering/op-sqlite': '>=2'
-      '@opentelemetry/api': ^1.4.1
-      '@planetscale/database': '>=1'
-      '@types/better-sqlite3': '*'
-      '@types/pg': '*'
-      '@types/react': '>=18'
-      '@types/sql.js': '*'
-      '@vercel/postgres': '>=0.8.0'
-      '@xata.io/client': '*'
-      better-sqlite3: '>=7'
-      bun-types: '*'
-      expo-sqlite: '>=13.2.0'
-      knex: '*'
-      kysely: '*'
-      mysql2: '>=2'
-      pg: '>=8'
-      postgres: '>=3'
-      react: '>=18'
-      sql.js: '>=1'
-      sqlite3: '>=5'
-    peerDependenciesMeta:
-      '@aws-sdk/client-rds-data':
-        optional: true
-      '@cloudflare/workers-types':
-        optional: true
-      '@electric-sql/pglite':
-        optional: true
-      '@libsql/client':
-        optional: true
-      '@neondatabase/serverless':
-        optional: true
-      '@op-engineering/op-sqlite':
-        optional: true
-      '@opentelemetry/api':
-        optional: true
-      '@planetscale/database':
-        optional: true
-      '@types/better-sqlite3':
-        optional: true
-      '@types/pg':
-        optional: true
-      '@types/react':
-        optional: true
-      '@types/sql.js':
-        optional: true
-      '@vercel/postgres':
-        optional: true
-      '@xata.io/client':
-        optional: true
-      better-sqlite3:
-        optional: true
-      bun-types:
-        optional: true
-      expo-sqlite:
-        optional: true
-      knex:
-        optional: true
-      kysely:
-        optional: true
-      mysql2:
-        optional: true
-      pg:
-        optional: true
-      postgres:
-        optional: true
-      react:
-        optional: true
-      sql.js:
-        optional: true
-      sqlite3:
-        optional: true
-
   drizzle-orm@0.31.2:
     resolution: {integrity: sha512-QnenevbnnAzmbNzQwbhklvIYrDE8YER8K7kSrAWQSV1YvFCdSQPzj+jzqRdTSsV2cDqSpQ0NXGyL1G9I43LDLg==}
     peerDependencies:
@@ -6465,33 +6385,6 @@ packages:
   mongodb-connection-string-url@3.0.0:
     resolution: {integrity: sha512-t1Vf+m1I5hC2M5RJx/7AtxgABy1cZmIPQRMXw+gEIPn/cZNF3Oiy+l0UIypUwVB5trcWHq3crg2g3uAR9aAwsQ==}
 
-  mongodb@6.5.0:
-    resolution: {integrity: sha512-Fozq68InT+JKABGLqctgtb8P56pRrJFkbhW0ux+x1mdHeyinor8oNzJqwLjV/t5X5nJGfTlluxfyMnOXNggIUA==}
-    engines: {node: '>=16.20.1'}
-    peerDependencies:
-      '@aws-sdk/credential-providers': ^3.188.0
-      '@mongodb-js/zstd': ^1.1.0
-      gcp-metadata: ^5.2.0
-      kerberos: ^2.0.1
-      mongodb-client-encryption: '>=6.0.0 <7'
-      snappy: ^7.2.2
-      socks: ^2.7.1
-    peerDependenciesMeta:
-      '@aws-sdk/credential-providers':
-        optional: true
-      '@mongodb-js/zstd':
-        optional: true
-      gcp-metadata:
-        optional: true
-      kerberos:
-        optional: true
-      mongodb-client-encryption:
-        optional: true
-      snappy:
-        optional: true
-      socks:
-        optional: true
-
   mongodb@6.6.2:
     resolution: {integrity: sha512-ZF9Ugo2JCG/GfR7DEb4ypfyJJyiKbg5qBYKRintebj8+DNS33CyGMkWbrS9lara+u+h+yEOGSRiLhFO/g1s1aw==}
     engines: {node: '>=16.20.1'}
@@ -6518,10 +6411,6 @@ packages:
         optional: true
       socks:
         optional: true
-
-  mongoose@8.3.4:
-    resolution: {integrity: sha512-ckBaBzKgtWgCalW/LPkcBsR3wKCOYEJ9jLFPmYCYV7TLStpETY757ELx8/1stL11+6HxLLVffawBffXzd0Y7YA==}
-    engines: {node: '>=16.20.1'}
 
   mongoose@8.4.3:
     resolution: {integrity: sha512-GxPVLD+I/dxVkgcts2r2QmJJvS62/++btVj3RFt8YnHt+DSOp1Qjj62YEvgZaElwIOTcc4KGJM95X5LlrU1qQg==}
@@ -14146,12 +14035,6 @@ snapshots:
 
   dotenv@16.3.1: {}
 
-  drizzle-orm@0.30.10(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0):
-    optionalDependencies:
-      '@types/react': 18.2.57
-      postgres: 3.4.4
-      react: 18.2.0
-
   drizzle-orm@0.31.2(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0):
     optionalDependencies:
       '@types/react': 18.2.57
@@ -16180,36 +16063,11 @@ snapshots:
       '@types/whatwg-url': 11.0.4
       whatwg-url: 13.0.0
 
-  mongodb@6.5.0:
-    dependencies:
-      '@mongodb-js/saslprep': 1.1.6
-      bson: 6.7.0
-      mongodb-connection-string-url: 3.0.0
-
   mongodb@6.6.2:
     dependencies:
       '@mongodb-js/saslprep': 1.1.6
       bson: 6.7.0
       mongodb-connection-string-url: 3.0.0
-
-  mongoose@8.3.4:
-    dependencies:
-      bson: 6.7.0
-      kareem: 2.6.3
-      mongodb: 6.5.0
-      mpath: 0.9.0
-      mquery: 5.0.0
-      ms: 2.1.3
-      sift: 17.1.3
-    transitivePeerDependencies:
-      - '@aws-sdk/credential-providers'
-      - '@mongodb-js/zstd'
-      - gcp-metadata
-      - kerberos
-      - mongodb-client-encryption
-      - snappy
-      - socks
-      - supports-color
 
   mongoose@8.4.3:
     dependencies:
