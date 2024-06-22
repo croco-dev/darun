@@ -12,6 +12,7 @@ type ProductItemProps = {
   tagVariant?: 'square' | 'circle';
   tags?: string[];
   specialTags?: string[];
+  isAlignCenter?: boolean;
 };
 
 const logoSizes = {
@@ -34,9 +35,10 @@ export const ProductItem = ({
   tagVariant = 'square',
   tags,
   specialTags,
+  isAlignCenter,
 }: ProductItemProps) => {
   return (
-    <HStack as={as} width={'100%'} gap={'12px'} alignItems={'center'}>
+    <HStack as={as} width={'100%'} gap={'12px'} alignItems={isAlignCenter ? 'center' : 'flex-start'}>
       <Image
         src={logoUrl ?? '/images/default-product-icon.svg'}
         unoptimized={!logoUrl}
