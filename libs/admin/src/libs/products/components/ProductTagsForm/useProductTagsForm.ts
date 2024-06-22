@@ -49,8 +49,8 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
       notifications.show({ message: error.message, color: 'red' });
     },
     onCompleted: data => {
-      if (data.addProductTags.product?.tags) {
-        notifications.show({ message: '태그가 추가되었습니다.', color: 'teal' });
+      if (data.addProductTags) {
+        notifications.show({ message: '태그 수정이 반영되었어요.', color: 'teal' });
       }
     },
   });
