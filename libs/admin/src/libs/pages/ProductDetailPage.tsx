@@ -14,9 +14,9 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
             <Group justify={'space-between'}>
               <ProductInfo slug={slug} />
               <Stack gap={4}>
-                <Group gap={8}></Group>
-
-                <IndexProductButton slug={slug} />
+                <Group gap={8}>
+                  <IndexProductButton slug={slug} />
+                </Group>
               </Stack>
             </Group>
           </Card.Section>
