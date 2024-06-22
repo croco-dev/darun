@@ -20,17 +20,17 @@
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
-    "@typegoose/typegoose": "12.4.0",
-    "drizzle-orm": "0.30.10",
-    "firebase-admin": "12.0.0",
-    "mongoose": "8.3.4",
+    "@typegoose/typegoose": "12.5.0",
+    "drizzle-orm": "0.31.2",
+    "firebase-admin": "12.2.0",
+    "mongoose": "8.4.3",
     "reflect-metadata": "0.2.2",
-    "type-graphql": "^2.0.0-rc.1",
+    "type-graphql": "2.0.0-rc.2",
     "typedi": "0.10.0"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/lodash": "4.14.202"
+    "@types/lodash": "4.17.5"
   }
 }
