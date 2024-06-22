@@ -3,6 +3,7 @@ import { useNavigate } from '@darun/utils-router';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
+import { useImageUpload } from '../../../utils/useImageUplaod';
 import { useCreateProductOnNewProductFormMutation } from './__generated__/useNewProductForm';
 
 gql`
@@ -20,7 +21,8 @@ type FormValues = {
   name?: string;
   slug?: string;
   summary?: string;
-  logoUrl?: string;
+  logoName?: string;
+  file?: File;
 };
 type NewProductFormProps = {
   children: (props: { form: ReturnType<typeof useForm<FormValues>> }) => ReactNode;
@@ -32,10 +34,12 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       name: '',
       slug: '',
       summary: '',
-      logoUrl: '',
+      logoName: '',
+      file: undefined,
     },
   });
   const navigate = useNavigate();
+  const { upload } = useImageUpload();
   const [createProduct] = useCreateProductOnNewProductFormMutation({
     onCompleted: ({ createProduct }) => {
       if (createProduct.product.slug) {
@@ -47,15 +51,21 @@ export function useNewProductForm({ children }: NewProductFormProps) {
   });
 
   const submit = async (values: FormValues) => {
-    if (!values.name || !values.slug || !values.summary || !values.logoUrl) return;
+    if (!values.name || !values.slug || !values.summary || !values.file || !values.logoName) return;
 
+    const url = await upload('images/logos', values.file, values.logoName);
+
+    if (!url) {
+      notifications.show({ message: '이미지 업로드에 실패했어요.', color: 'red' });
+      return;
+    }
     await createProduct({
       variables: {
         input: {
           name: values.name,
           slug: values.slug,
           summary: values.summary,
-          logoUrl: values.logoUrl,
+          logoUrl: url,
         },
       },
     });

@@ -140,6 +140,7 @@ export type Mutation = {
   readonly createProduct: CreateProductPayload;
   readonly createProductFeature: CreateProductFeaturePayload;
   readonly indexProduct: IndexProductPayload;
+  readonly signImageUpload: SignImageUploadPayload;
 };
 
 
@@ -178,6 +179,11 @@ export type MutationcreateProductFeatureArgs = {
 
 export type MutationindexProductArgs = {
   input: IndexProductInput;
+};
+
+
+export type MutationsignImageUploadArgs = {
+  input: SignImageUploadInput;
 };
 
 export type PageInfo = {
@@ -269,6 +275,18 @@ export type Screenshot = {
   readonly id: Scalars['ID']['output'];
   readonly imageAlt: Scalars['String']['output'];
   readonly imageUrl: Scalars['String']['output'];
+};
+
+export type SignImageUploadInput = {
+  readonly displayName: Scalars['String']['input'];
+  readonly folder: Scalars['String']['input'];
+};
+
+export type SignImageUploadPayload = {
+  readonly __typename?: 'SignImageUploadPayload';
+  readonly folder: Scalars['String']['output'];
+  readonly signature: Scalars['String']['output'];
+  readonly timestamp: Scalars['Float']['output'];
 };
 
 export type Tag = {

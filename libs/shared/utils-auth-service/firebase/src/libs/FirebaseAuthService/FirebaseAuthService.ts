@@ -1,6 +1,6 @@
 import { AuthService, AuthStorage, AuthUser } from '@darun/utils-auth-service-core';
 import { getApps, initializeApp } from 'firebase/app';
-import { GoogleAuthProvider, getAuth, onIdTokenChanged, signInWithRedirect } from 'firebase/auth';
+import { GoogleAuthProvider, getAuth, onIdTokenChanged, signInWithPopup } from 'firebase/auth';
 import { getFirebaseAuth } from 'next-firebase-auth-edge';
 
 type FirebaseAuthConfig = {
@@ -101,6 +101,6 @@ export class FirebaseAuthService implements AuthService {
     provider.addScope('profile');
     provider.addScope('email');
 
-    return signInWithRedirect(getAuth(), provider);
+    return signInWithPopup(getAuth(), provider);
   }
 }
