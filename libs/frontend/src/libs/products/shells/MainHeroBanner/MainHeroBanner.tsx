@@ -7,7 +7,7 @@ import { ProductsCount } from '../../components/ProductsCount';
 export const MainHeroBanner = () => {
   return (
     <Flex background={'colors.dark.900'} position={'relative'} width={'100%'} overflow={'hidden'} py={'40px'}>
-      <Flex position={'absolute'} top={0} bottom={0} right={-140} zIndex={20} width="100%">
+      <Flex position={'absolute'} top={['140px', 0]} bottom={0} right={-140} zIndex={20} width={['120%', '100%']}>
         <Box
           as={Image}
           fill={true}
@@ -20,13 +20,14 @@ export const MainHeroBanner = () => {
       </Flex>
       <Flex zIndex={40} width={'100%'}>
         <ContentArea>
-          <VStack py={'60px'} px={'12px'} gap={'24px'}>
+          <VStack display={'inline-flex'} py={'60px'} px={'12px'} gap={'24px'} textAlign={['center', 'left']}>
             <VStack gap={'8px'}>
               <Text
                 fontSize={['14px', '18px']}
                 fontWeight={'fontWeights.medium'}
                 letterSpacing={'-.4px'}
                 color={'colors.dark.300'}
+                margin={0}
                 as="h1"
               >
                 다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다
@@ -37,6 +38,7 @@ export const MainHeroBanner = () => {
                 letterSpacing={'-.8px'}
                 color={'colors.dark.100'}
                 as="h1"
+                margin={0}
               >
                 <ProductsCount />
                 개의{' '}

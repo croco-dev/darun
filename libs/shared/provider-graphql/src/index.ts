@@ -284,6 +284,7 @@ export type SignImageUploadInput = {
 
 export type SignImageUploadPayload = {
   readonly __typename?: 'SignImageUploadPayload';
+  readonly folder: Scalars['String']['output'];
   readonly signature: Scalars['String']['output'];
   readonly timestamp: Scalars['Float']['output'];
 };

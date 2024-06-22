@@ -24,12 +24,12 @@ export class CloudinaryImageRepository implements ImageRepository {
   } {
     const timestamp = Math.round(new Date().getTime() / 1000);
     const folder = this.config.environment + '/' + uploadFolder;
+
     const signature = cloudinary.v2.utils.api_sign_request(
       {
         timestamp,
-        displayName,
+        public_id: displayName,
         folder,
-        resource_type: 'image',
       },
       this.apiSecret
     );

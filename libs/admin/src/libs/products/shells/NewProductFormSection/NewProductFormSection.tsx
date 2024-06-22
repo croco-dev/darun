@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, Stack, TextInput, Text, Textarea } from '@mantine/core';
+import { Button, Card, Stack, TextInput, Text, Textarea, FileInput } from '@mantine/core';
 import { NewProductForm } from '../../components/NewProductForm';
 
 export const NewProductFormSection = () => (
@@ -31,11 +31,18 @@ export const NewProductFormSection = () => (
               {...form.getInputProps('summary')}
             />
             <TextInput
-              name="logoUrl"
+              name="logoName"
               size="md"
-              label="로고 주소"
-              placeholder="ex) https://example.com/logo.png"
-              {...form.getInputProps('logoUrl')}
+              label="파일 이름"
+              placeholder="naver.png"
+              {...form.getInputProps('logoName')}
+            />
+            <FileInput
+              name="file"
+              size="md"
+              label="로고"
+              accept="image/png,image/jpeg"
+              {...form.getInputProps('file')}
             />
             <Button type="submit" size={'md'} color={'dark'}>
               등록

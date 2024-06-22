@@ -36,7 +36,7 @@ export const ProductItem = ({
   specialTags,
 }: ProductItemProps) => {
   return (
-    <HStack as={as} width={'100%'} gap={'12px'} alignItems={'flex-start'}>
+    <HStack as={as} width={'100%'} gap={'12px'} alignItems={'center'}>
       <Image
         src={logoUrl ?? '/images/default-product-icon.svg'}
         unoptimized={!logoUrl}
@@ -60,28 +60,30 @@ export const ProductItem = ({
           >
             {name}
           </Text>
-          <Text fontSize={['12px', '14px']} lineHeight={'1.3'} color={'colors.dark.500'}>
+          <Text fontSize={['12px', '14px']} lineHeight={'1.5'} color={'colors.dark.500'}>
             {summary}
           </Text>
         </VStack>
-        <HStack gap="4px" alignItems={'center'}>
-          {tags &&
-            tags.map((tag, i) => (
-              <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
-                {tag}
-              </Chip>
-            ))}
-          {specialTags && (
-            <>
-              <Text color={'colors.dark.500'}>•</Text>
-              {specialTags.map((tag, i) => (
-                <Chip key={i} variant={tagVariant} color="filledDark">
+        {(tags || specialTags) && (
+          <HStack gap="4px" alignItems={'center'}>
+            {tags &&
+              tags.map((tag, i) => (
+                <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
                   {tag}
                 </Chip>
               ))}
-            </>
-          )}
-        </HStack>
+            {specialTags && (
+              <>
+                <Text color={'colors.dark.500'}>•</Text>
+                {specialTags.map((tag, i) => (
+                  <Chip key={i} variant={tagVariant} color="filledDark">
+                    {tag}
+                  </Chip>
+                ))}
+              </>
+            )}
+          </HStack>
+        )}
       </VStack>
     </HStack>
   );
