@@ -1,20 +1,24 @@
 import { Link } from '@darun/utils-router';
-import { Button, Flex, Stack, Title } from '@mantine/core';
+import { Button } from '@mantine/core';
 import { ProductListSection } from '@products/shells';
-import { AppShell } from '@uis';
+import { IconPlus } from '@tabler/icons-react';
+import { AppShell, PageShell } from '@uis';
 
 export const ProductListPage = () => {
   return (
     <AppShell>
-      <Stack w="100%" p={16}>
-        <Flex direction="row" justify="space-between">
-          <Title>서비스 목록</Title>
+      <PageShell
+        title={'서비스 목록'}
+        rightSide={
           <Link href="/products/new">
-            <Button>추가하기</Button>
+            <Button rightSection={<IconPlus size={16} />} color={'dark'}>
+              추가하기
+            </Button>
           </Link>
-        </Flex>
+        }
+      >
         <ProductListSection />
-      </Stack>
+      </PageShell>
     </AppShell>
   );
 };

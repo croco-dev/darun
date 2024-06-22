@@ -32,16 +32,15 @@ export function Navbar() {
     <nav className={classes.navbar}>
       <div className={classes.navbarMain}>
         <Group className={classes.header} justify="space-between">
-          <Link href="/">
-            <Anchor>
-              <Flex align={'center'} gap={8} px={'4px'}>
-                <Logo size={32} />
-                <Text fz="lg" fw="bold" c={'dark.7'}>
-                  다른 관리자
-                </Text>
-              </Flex>
-            </Anchor>
-          </Link>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          <Anchor href={'/'} component={Link as any}>
+            <Flex align={'center'} gap={8} px={'4px'}>
+              <Logo size={32} />
+              <Text span fz="lg" fw="bold" c={'dark.7'} style={{ textDecoration: 'none' }}>
+                다른 관리자
+              </Text>
+            </Flex>
+          </Anchor>
           <Code fw={700}>{process.env['NODE_ENV'] === 'development' ? 'dev' : 'prod'}</Code>
         </Group>
         {links}

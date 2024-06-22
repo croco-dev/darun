@@ -1,6 +1,8 @@
 'use client';
 
-import { Button, Stack, TextInput } from '@mantine/core';
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
+import { Button, HoverCard, Stack, Textarea, TextInput } from '@mantine/core';
 import { NewProductFeatureForm } from '../../components/NewProductFeatureForm';
 
 type NewProductFeatureFormSectionProps = {
@@ -8,19 +10,46 @@ type NewProductFeatureFormSectionProps = {
 };
 export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureFormSectionProps) => (
   <NewProductFeatureForm productSlug={productSlug}>
-    {({ form }) => (
+    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+    {({ form, pickEmoji }: any) => (
       <Stack>
         <TextInput
           name="name"
           size="md"
-          radius="xl"
           label="이름"
           form="new-product-form"
+          placeholder={'ex) 검색'}
           {...form.getInputProps('name')}
         />
-        <TextInput name="emoji" size="md" radius="xl" label="emoji" {...form.getInputProps('emoji')} />
-        <TextInput name="summary" size="md" radius="xl" label="짧은 설명" {...form.getInputProps('summary')} />
-        <Button type="submit">등록</Button>
+        <TextInput
+          name="emoji"
+          size="md"
+          label="이모지"
+          rightSection={
+            <HoverCard width={360} shadow="md" withArrow openDelay={200} closeDelay={400}>
+              <HoverCard.Target>
+                <Button color={'dark'}>뭐쓸까?</Button>
+              </HoverCard.Target>
+              <HoverCard.Dropdown p={0}>
+                <Picker data={data} onEmojiSelect={pickEmoji} />
+              </HoverCard.Dropdown>
+            </HoverCard>
+          }
+          rightSectionWidth={92}
+          {...form.getInputProps('emoji')}
+        />
+        <Textarea
+          name="summary"
+          size="md"
+          label="짧은 설명"
+          placeholder={'ex) 이러이러해서 이러이러한 기능'}
+          autosize
+          minRows={4}
+          {...form.getInputProps('summary')}
+        />
+        <Button type="submit" size={'md'} color={'dark'}>
+          등록
+        </Button>
       </Stack>
     )}
   </NewProductFeatureForm>

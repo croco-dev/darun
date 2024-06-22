@@ -7,6 +7,8 @@ import { useProductTagsForm } from './useProductTagsForm';
 export const ProductTagsForm = bind(useProductTagsForm, ({ tags, updateTags, applyTags }) => (
   <Flex direction="row">
     <TagsInput value={tags} onChange={updateTags} />
-    <Button onClick={applyTags}>저장</Button>
+    <Button onClick={applyTags} color={'dark'}>
+      저장
+    </Button>
   </Flex>
 ));
