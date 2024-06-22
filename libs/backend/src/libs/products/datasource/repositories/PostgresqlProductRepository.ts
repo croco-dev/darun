@@ -18,14 +18,34 @@ export class PostgresqlProductRepository implements ProductRepository {
           .where(and(inArray(products.id, [...ids]), isNotNull(products.publishedAt)));
 
         const groupByDocs = keyBy(docs, 'id');
-        return ids.map(id =>
-          groupByDocs[id] ? { ...groupByDocs[id], description: groupByDocs[id]?.description ?? undefined } : null
-        );
+        return ids.map(id => (groupByDocs[id] ? this.mapper(groupByDocs[id]) : null));
       },
       {
         cache: false,
       }
     );
+  }
+
+  updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {
+    return this.db.transaction(async tx => {
+      const prevProduct = await tx
+        .select()
+        .from(products)
+        .where(eq(products.id, id))
+        .limit(1)
+        .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+
+      if (!prevProduct) {
+        throw new Error('Product not found');
+      }
+
+      const updated = await tx.update(products).set(modifier(prevProduct)).where(eq(products.id, id)).returning();
+      if (!updated[0]) {
+        throw new Error('Product update failed');
+      }
+
+      return this.mapper(updated[0]);
+    });
   }
 
   async findAllByGtIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
@@ -34,7 +54,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(id ? and(gt(products.id, id)) : undefined)
       .limit(limit)
-      .then(rows => rows.map(row => ({ ...row, description: row.description ?? undefined })));
+      .then(rows => rows.map(row => this.mapper(row)));
   }
   async countAll(): Promise<number> {
     return this.db
@@ -50,7 +70,7 @@ export class PostgresqlProductRepository implements ProductRepository {
         .values({ ...values })
         .returning();
 
-      return inserted[0] ? { ...inserted[0], description: inserted[0].description ?? undefined } : null;
+      return inserted[0] ? this.mapper(inserted[0]) : null;
     });
   }
 
@@ -68,7 +88,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(eq(products.slug, slug))
       .limit(1)
-      .then(rows => (rows[0] ? { ...rows[0], description: rows[0].description ?? undefined } : null));
+      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findOneById(id: string): Promise<Product | null> {
@@ -77,7 +97,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(eq(products.id, id))
       .limit(1)
-      .then(rows => (rows[0] ? { ...rows[0], description: rows[0].description ?? undefined } : null));
+      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findPublishedOneBySlug(slug: string): Promise<Product | null> {
@@ -86,7 +106,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(and(eq(products.slug, slug), isNotNull(products.publishedAt)))
       .limit(1)
-      .then(rows => (rows[0] ? { ...rows[0], description: rows[0].description ?? undefined } : null));
+      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findPublishedOneById(id: string): Promise<Product | null> {
@@ -100,6 +120,14 @@ export class PostgresqlProductRepository implements ProductRepository {
       .where(isNotNull(products.publishedAt))
       .orderBy(desc(products.publishedAt))
       .limit(n)
-      .then(rows => rows.map(row => ({ ...row, description: row.description ?? undefined })));
+      .then(rows => rows.map(row => this.mapper(row)));
+  }
+
+  private mapper(schema: typeof products.$inferSelect | typeof products.$inferInsert): Product {
+    return new Product({
+      ...schema,
+      description: schema.description ?? undefined,
+      publishedAt: schema.publishedAt ?? undefined,
+    });
   }
 }

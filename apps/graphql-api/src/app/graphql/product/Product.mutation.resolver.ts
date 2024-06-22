@@ -6,6 +6,7 @@ import {
   GetPublishedProduct,
   IndexProduct,
   AddProductLink,
+  PublishProduct,
 } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
@@ -15,6 +16,7 @@ import { AddProductScreenshotInput, AddProductScreenshotPayload } from './graphs
 import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
 import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
+import { PublishProductInput, PublishProductPayload } from './graphs/PublishProduct';
 import { UpdateProductTagsInput, UpdateProductTagsPayload } from './graphs/UpdateProductTags';
 
 @Resolver(() => Product)
@@ -23,6 +25,7 @@ export class ProductMutationResolver {
   constructor(
     private readonly createProductUseCase: CreateProduct,
     private readonly indexProductUseCase: IndexProduct,
+    private readonly publishProductUseCase: PublishProduct,
     private readonly updateProductTagUseCase: UpdateProductTag,
     private readonly getPublishedProductUseCase: GetPublishedProduct,
     private readonly getProductUseCase: GetProduct,
@@ -37,6 +40,32 @@ export class ProductMutationResolver {
 
     return {
       product,
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => PublishProductPayload)
+  async publishProduct(@Arg('input') input: PublishProductInput): Promise<PublishProductPayload> {
+    const product = await this.getProductUseCase.execute({ slug: input.slug });
+
+    if (!product) {
+      throw new Error('Product가 존재하지 않습니다.');
+    }
+
+    const updatedProduct = await this.publishProductUseCase.execute({
+      id: product.id,
+    });
+
+    await this.indexProductUseCase.execute({
+      id: updatedProduct.id,
+      name: updatedProduct.name,
+      slug: updatedProduct.slug,
+      summary: updatedProduct.summary,
+      description: updatedProduct.description,
+    });
+
+    return {
+      product: updatedProduct,
     };
   }
 

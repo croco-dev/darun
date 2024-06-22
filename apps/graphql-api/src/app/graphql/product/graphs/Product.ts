@@ -25,4 +25,7 @@ export class Product {
 
   @Field(() => GraphQLISODateTime, { nullable: true })
   updatedAt?: Date;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  publishedAt?: Date;
 }

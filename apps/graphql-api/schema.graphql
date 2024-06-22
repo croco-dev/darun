@@ -111,6 +111,7 @@ type Mutation {
   createProduct(input: CreateProductInput!): CreateProductPayload!
   createProductFeature(input: CreateProductFeatureInput!): CreateProductFeaturePayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
+  publishProduct(input: PublishProductInput!): PublishProductPayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
 }
@@ -132,6 +133,7 @@ type Product {
   name: String!
   ownedCompany: Company
   ownedCompanyId: String
+  publishedAt: DateTimeISO
   screenshots: [Screenshot!]!
   slug: String!
   summary: String!
@@ -148,6 +150,14 @@ type ProductConnection {
 type ProductEdge {
   cursor: String!
   node: Product!
+}
+
+input PublishProductInput {
+  slug: String!
+}
+
+type PublishProductPayload {
+  product: Product!
 }
 
 type Query {

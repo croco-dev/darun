@@ -34,3 +34,4 @@ export { UpdateProductTag } from './usecases/UpdateProductTag';
 export { CreateProductFeature } from './usecases/CreateProductFeature';
 export { AddProductScreenshot } from './usecases/AddProductScreenshot';
 export { AddProductLink } from './usecases/AddProductLink';
+export { PublishProduct } from './usecases/PublishProduct';

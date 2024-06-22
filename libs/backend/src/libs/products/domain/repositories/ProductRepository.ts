@@ -2,6 +2,7 @@ import { Token } from 'typedi';
 import { Product } from '../entities/Product';
 
 export interface ProductRepository {
+  updateById(id: string, modifier: (product: Product) => Product): Promise<Product>;
   findAllByGtIdAndLimit(limit: number, id?: string): Promise<Product[]>;
   findTopNSortByPublishedAtDesc(n: number): Promise<Product[]>;
   findPublishedOneById(id: string): Promise<Product | null>;

@@ -5,6 +5,7 @@ export class Product {
   public summary: string;
   public description?: string;
   public logoUrl: string;
+  public publishedAt?: Date;
 
   constructor({
     id,
@@ -13,6 +14,7 @@ export class Product {
     summary,
     logoUrl,
     description,
+    publishedAt,
   }: {
     id?: string;
     slug: string;
@@ -20,15 +22,21 @@ export class Product {
     summary: string;
     description?: string;
     logoUrl: string;
+    publishedAt?: Date;
   }) {
     this.slug = slug;
     this.name = name;
     this.summary = summary;
     this.description = description;
     this.logoUrl = logoUrl;
+    this.publishedAt = publishedAt;
 
     if (id) {
       this.id = id;
     }
+  }
+
+  public publish() {
+    this.publishedAt = new Date();
   }
 }
