@@ -7,7 +7,7 @@ import { useProductCompany } from './useProductCompany';
 
 export const ProductCompany = bind(useProductCompany, ({ company }) => (
   <VStack>
-    <Grid gridTemplateColumns="repeat(2, 1fr)" gap="8px">
+    <Grid gridTemplateColumns={['1fr', 'repeat(2, 1fr)']} gap="8px">
       <VStack gap="12px">
         <VStack gap="4px" width={'fit-content'}>
           <Text color="colors.dark.500" fontWeight="fontWeights.bold" fontSize="16px" letterSpacing="-2.4%">
@@ -18,7 +18,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
         <VStack gap="6px">
           {company?.name && (
             <HStack>
-              <Flex width="64px">
+              <Flex width="70px">
                 <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
                   이름
                 </Text>
@@ -30,7 +30,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
           )}
           {company?.region && (
             <HStack>
-              <Flex width="64px">
+              <Flex width="70px">
                 <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
                   국적
                 </Text>
@@ -42,7 +42,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
           )}
           {company?.type && (
             <HStack>
-              <Flex width="64px">
+              <Flex width="70px">
                 <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
                   상태
                 </Text>
@@ -54,7 +54,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
           )}
           {company?.address && (
             <HStack>
-              <Flex width="64px">
+              <Flex width="70px">
                 <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
                   주소
                 </Text>
@@ -66,7 +66,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
           )}
           {company?.size && (
             <HStack>
-              <Flex width="64px">
+              <Flex width="70px">
                 <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
                   고용 인원
                 </Text>
@@ -78,7 +78,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
           )}
           {company?.startAt && (
             <HStack>
-              <Flex width="64px">
+              <Flex width="70px">
                 <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
                   설립일
                 </Text>
