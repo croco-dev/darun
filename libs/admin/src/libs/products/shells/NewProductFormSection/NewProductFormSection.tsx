@@ -31,9 +31,9 @@ export const NewProductFormSection = () => (
               {...form.getInputProps('summary')}
             />
             <TextInput
-              name="로고 주소"
+              name="logoUrl"
               size="md"
-              label="logo Url"
+              label="로고 주소"
               placeholder="ex) https://example.com/logo.png"
               {...form.getInputProps('logoUrl')}
             />

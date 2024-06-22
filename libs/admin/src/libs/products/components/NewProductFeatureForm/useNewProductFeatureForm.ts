@@ -42,6 +42,10 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
     },
   });
 
+  const pickEmoji = (emoji: object) => {
+    form.setFieldValue('emoji', emoji.native as string);
+  };
+
   const submit = async (values: FormValues) => {
     if (!values.name || !values.emoji || !values.summary) return;
 
@@ -57,5 +61,5 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
     });
   };
 
-  return { form, children, submit };
+  return { form, children, submit, pickEmoji };
 }
