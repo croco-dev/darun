@@ -11,13 +11,13 @@ export type TempProductBySlugOnProductTagsFormQueryVariables = Types.Exact<{
 
 export type TempProductBySlugOnProductTagsFormQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, tags: Array<{ __typename?: 'Tag', id: string, name: string }> } | null };
 
-export type AddProductTagsOnProductTagFormMutationVariables = Types.Exact<{
+export type UpdateProductTagsOnProductTagFormMutationVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
-  input: Types.AddProductTagsInput;
+  input: Types.UpdateProductTagsInput;
 }>;
 
 
-export type AddProductTagsOnProductTagFormMutation = { __typename?: 'Mutation', addProductTags: { __typename?: 'AddProductTagsPayload', product?: { __typename?: 'Product', id: string, tags: Array<{ __typename?: 'Tag', id: string, name: string }> } | null } };
+export type UpdateProductTagsOnProductTagFormMutation = { __typename?: 'Mutation', updateProductTags: { __typename?: 'UpdateProductTagsPayload', product?: { __typename?: 'Product', id: string, tags: Array<{ __typename?: 'Tag', id: string, name: string }> } | null } };
 
 
 export const TempProductBySlugOnProductTagsFormDocument = gql`
@@ -64,9 +64,9 @@ export type TempProductBySlugOnProductTagsFormQueryHookResult = ReturnType<typeo
 export type TempProductBySlugOnProductTagsFormLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductTagsFormLazyQuery>;
 export type TempProductBySlugOnProductTagsFormSuspenseQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductTagsFormSuspenseQuery>;
 export type TempProductBySlugOnProductTagsFormQueryResult = Apollo.QueryResult<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>;
-export const AddProductTagsOnProductTagFormDocument = gql`
-    mutation AddProductTagsOnProductTagForm($slug: String!, $input: AddProductTagsInput!) {
-  addProductTags(slug: $slug, input: $input) {
+export const UpdateProductTagsOnProductTagFormDocument = gql`
+    mutation UpdateProductTagsOnProductTagForm($slug: String!, $input: UpdateProductTagsInput!) {
+  updateProductTags(slug: $slug, input: $input) {
     product {
       id
       tags {
@@ -77,30 +77,30 @@ export const AddProductTagsOnProductTagFormDocument = gql`
   }
 }
     `;
-export type AddProductTagsOnProductTagFormMutationFn = Apollo.MutationFunction<AddProductTagsOnProductTagFormMutation, AddProductTagsOnProductTagFormMutationVariables>;
+export type UpdateProductTagsOnProductTagFormMutationFn = Apollo.MutationFunction<UpdateProductTagsOnProductTagFormMutation, UpdateProductTagsOnProductTagFormMutationVariables>;
 
 /**
- * __useAddProductTagsOnProductTagFormMutation__
+ * __useUpdateProductTagsOnProductTagFormMutation__
  *
- * To run a mutation, you first call `useAddProductTagsOnProductTagFormMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useAddProductTagsOnProductTagFormMutation` returns a tuple that includes:
+ * To run a mutation, you first call `useUpdateProductTagsOnProductTagFormMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateProductTagsOnProductTagFormMutation` returns a tuple that includes:
  * - A mutate function that you can call at any time to execute the mutation
  * - An object with fields that represent the current status of the mutation's execution
  *
  * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
  *
  * @example
- * const [addProductTagsOnProductTagFormMutation, { data, loading, error }] = useAddProductTagsOnProductTagFormMutation({
+ * const [updateProductTagsOnProductTagFormMutation, { data, loading, error }] = useUpdateProductTagsOnProductTagFormMutation({
  *   variables: {
  *      slug: // value for 'slug'
  *      input: // value for 'input'
  *   },
  * });
  */
-export function useAddProductTagsOnProductTagFormMutation(baseOptions?: Apollo.MutationHookOptions<AddProductTagsOnProductTagFormMutation, AddProductTagsOnProductTagFormMutationVariables>) {
+export function useUpdateProductTagsOnProductTagFormMutation(baseOptions?: Apollo.MutationHookOptions<UpdateProductTagsOnProductTagFormMutation, UpdateProductTagsOnProductTagFormMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<AddProductTagsOnProductTagFormMutation, AddProductTagsOnProductTagFormMutationVariables>(AddProductTagsOnProductTagFormDocument, options);
+        return Apollo.useMutation<UpdateProductTagsOnProductTagFormMutation, UpdateProductTagsOnProductTagFormMutationVariables>(UpdateProductTagsOnProductTagFormDocument, options);
       }
-export type AddProductTagsOnProductTagFormMutationHookResult = ReturnType<typeof useAddProductTagsOnProductTagFormMutation>;
-export type AddProductTagsOnProductTagFormMutationResult = Apollo.MutationResult<AddProductTagsOnProductTagFormMutation>;
-export type AddProductTagsOnProductTagFormMutationOptions = Apollo.BaseMutationOptions<AddProductTagsOnProductTagFormMutation, AddProductTagsOnProductTagFormMutationVariables>;
+export type UpdateProductTagsOnProductTagFormMutationHookResult = ReturnType<typeof useUpdateProductTagsOnProductTagFormMutation>;
+export type UpdateProductTagsOnProductTagFormMutationResult = Apollo.MutationResult<UpdateProductTagsOnProductTagFormMutation>;
+export type UpdateProductTagsOnProductTagFormMutationOptions = Apollo.BaseMutationOptions<UpdateProductTagsOnProductTagFormMutation, UpdateProductTagsOnProductTagFormMutationVariables>;

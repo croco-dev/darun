@@ -27,9 +27,15 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
     );
   }
 
-  addTagsToProduct(productId: string, tags: ProductTag[]): Promise<void> {
+  updateTagsToProduct(productId: string, tags: ProductTag[]): Promise<void> {
     return this.db.transaction(async tx => {
       const existingTags = await tx.select().from(productTags).where(eq(productTags.productId, productId));
+      await tx.delete(productTags).where(
+        inArray(
+          productTags.id,
+          existingTags.filter(tag => !tags.some(t => t.name === tag.name)).map(tag => tag.id)
+        )
+      );
       const newTags = tags.filter(tag => !existingTags.some(existingTag => existingTag.name === tag.name));
       await tx.insert(productTags).values(newTags).returning();
     });

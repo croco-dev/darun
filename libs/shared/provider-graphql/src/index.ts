@@ -38,15 +38,6 @@ export type AddProductScreenshotPayload = {
   readonly product?: Maybe<Product>;
 };
 
-export type AddProductTagsInput = {
-  readonly tagNames: ReadonlyArray<Scalars['String']['input']>;
-};
-
-export type AddProductTagsPayload = {
-  readonly __typename?: 'AddProductTagsPayload';
-  readonly product?: Maybe<Product>;
-};
-
 export type Company = {
   readonly __typename?: 'Company';
   readonly address: Scalars['String']['output'];
@@ -135,12 +126,12 @@ export type Mutation = {
   readonly __typename?: 'Mutation';
   readonly addProductLink: AddProductLinkPayload;
   readonly addProductScreenshot: AddProductScreenshotPayload;
-  readonly addProductTags: AddProductTagsPayload;
   readonly createCompany: CreateCompanyPayload;
   readonly createProduct: CreateProductPayload;
   readonly createProductFeature: CreateProductFeaturePayload;
   readonly indexProduct: IndexProductPayload;
   readonly signImageUpload: SignImageUploadPayload;
+  readonly updateProductTags: UpdateProductTagsPayload;
 };
 
 
@@ -152,12 +143,6 @@ export type MutationaddProductLinkArgs = {
 
 export type MutationaddProductScreenshotArgs = {
   input: AddProductScreenshotInput;
-  slug: Scalars['String']['input'];
-};
-
-
-export type MutationaddProductTagsArgs = {
-  input: AddProductTagsInput;
   slug: Scalars['String']['input'];
 };
 
@@ -184,6 +169,12 @@ export type MutationindexProductArgs = {
 
 export type MutationsignImageUploadArgs = {
   input: SignImageUploadInput;
+};
+
+
+export type MutationupdateProductTagsArgs = {
+  input: UpdateProductTagsInput;
+  slug: Scalars['String']['input'];
 };
 
 export type PageInfo = {
@@ -293,4 +284,13 @@ export type Tag = {
   readonly __typename?: 'Tag';
   readonly id: Scalars['ID']['output'];
   readonly name: Scalars['String']['output'];
+};
+
+export type UpdateProductTagsInput = {
+  readonly tagNames: ReadonlyArray<Scalars['String']['input']>;
+};
+
+export type UpdateProductTagsPayload = {
+  readonly __typename?: 'UpdateProductTagsPayload';
+  readonly product?: Maybe<Product>;
 };

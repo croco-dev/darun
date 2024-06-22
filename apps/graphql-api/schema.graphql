@@ -23,14 +23,6 @@ type AddProductScreenshotPayload {
   product: Product
 }
 
-input AddProductTagsInput {
-  tagNames: [String!]!
-}
-
-type AddProductTagsPayload {
-  product: Product
-}
-
 type Company {
   address: String!
   id: ID!
@@ -115,12 +107,12 @@ type Link {
 type Mutation {
   addProductLink(input: AddProductLinkInput!, slug: String!): AddProductLinkPayload!
   addProductScreenshot(input: AddProductScreenshotInput!, slug: String!): AddProductScreenshotPayload!
-  addProductTags(input: AddProductTagsInput!, slug: String!): AddProductTagsPayload!
   createCompany(input: CreateCompanyInput!): CreateCompanyPayload!
   createProduct(input: CreateProductInput!): CreateProductPayload!
   createProductFeature(input: CreateProductFeatureInput!): CreateProductFeaturePayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
+  updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
 }
 
 type PageInfo {
@@ -189,4 +181,12 @@ type SignImageUploadPayload {
 type Tag {
   id: ID!
   name: String!
+}
+
+input UpdateProductTagsInput {
+  tagNames: [String!]!
+}
+
+type UpdateProductTagsPayload {
+  product: Product
 }

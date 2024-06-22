@@ -10,7 +10,7 @@ export {
   GetProductFeatureScreenshots,
   GetAllProducts,
   GetPublishedProduct,
-  AddProductTag,
+  UpdateProductTag,
   CreateProductFeature,
   AddProductScreenshot,
   AddProductLink,

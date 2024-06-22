@@ -1,6 +1,6 @@
 import {
   AddProductScreenshot,
-  AddProductTag,
+  UpdateProductTag,
   CreateProduct,
   GetProduct,
   GetPublishedProduct,
@@ -12,10 +12,10 @@ import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { AddProductLinkInput, AddProductLinkPayload } from './graphs/AddProductLink';
 import { AddProductScreenshotInput, AddProductScreenshotPayload } from './graphs/AddProductScreenshot';
-import { AddProductTagsInput, AddProductTagsPayload } from './graphs/AddProductTags';
 import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
 import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
+import { UpdateProductTagsInput, UpdateProductTagsPayload } from './graphs/UpdateProductTags';
 
 @Resolver(() => Product)
 @Service()
@@ -23,7 +23,7 @@ export class ProductMutationResolver {
   constructor(
     private readonly createProductUseCase: CreateProduct,
     private readonly indexProductUseCase: IndexProduct,
-    private readonly addProductTagUseCase: AddProductTag,
+    private readonly updateProductTagUseCase: UpdateProductTag,
     private readonly getPublishedProductUseCase: GetPublishedProduct,
     private readonly getProductUseCase: GetProduct,
     private readonly addProductScreenshotUseCase: AddProductScreenshot,
@@ -63,18 +63,18 @@ export class ProductMutationResolver {
   }
 
   @Authorized([AuthRole.Admin])
-  @Mutation(() => AddProductTagsPayload)
-  async addProductTags(
+  @Mutation(() => UpdateProductTagsPayload)
+  async updateProductTags(
     @Arg('slug') slug: string,
-    @Arg('input') input: AddProductTagsInput
-  ): Promise<AddProductTagsPayload> {
+    @Arg('input') input: UpdateProductTagsInput
+  ): Promise<UpdateProductTagsPayload> {
     const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
       throw new Error('Product not found');
     }
 
-    await this.addProductTagUseCase.execute({
+    await this.updateProductTagUseCase.execute({
       productId: product.id,
       tagNames: input.tagNames,
     });

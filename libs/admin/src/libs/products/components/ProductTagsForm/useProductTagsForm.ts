@@ -2,8 +2,8 @@ import { gql } from '@apollo/client';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import {
-  useAddProductTagsOnProductTagFormMutation,
   useTempProductBySlugOnProductTagsFormQuery,
+  useUpdateProductTagsOnProductTagFormMutation,
 } from './__generated__/useProductTagsForm';
 
 gql`
@@ -17,8 +17,8 @@ gql`
     }
   }
 
-  mutation AddProductTagsOnProductTagForm($slug: String!, $input: AddProductTagsInput!) {
-    addProductTags(slug: $slug, input: $input) {
+  mutation UpdateProductTagsOnProductTagForm($slug: String!, $input: UpdateProductTagsInput!) {
+    updateProductTags(slug: $slug, input: $input) {
       product {
         id
         tags {
@@ -44,12 +44,12 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
       setTags(data.tempProductBySlug?.tags.map(tag => tag.name) ?? []);
     },
   });
-  const [addProductTags] = useAddProductTagsOnProductTagFormMutation({
+  const [updateProductTags] = useUpdateProductTagsOnProductTagFormMutation({
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },
     onCompleted: data => {
-      if (data.addProductTags) {
+      if (data.updateProductTags.product?.id) {
         notifications.show({ message: '태그 수정이 반영되었어요.', color: 'teal' });
       }
     },
@@ -60,7 +60,7 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
   };
 
   const applyTags = async () => {
-    await addProductTags({
+    await updateProductTags({
       variables: {
         slug,
         input: {
