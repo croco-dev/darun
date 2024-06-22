@@ -3,8 +3,8 @@
 import { AuthProvider } from '@darun/provider-auth/client';
 import { ApolloProvider } from '@darun/utils-apollo-client/client';
 import { MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
-import { AdditionalMantineProvider } from './_mantine';
 import { container } from './container';
 
 export const ClientRootProvider = ({ children }: { children: ReactNode }) => {
@@ -18,7 +18,8 @@ export const ClientRootProvider = ({ children }: { children: ReactNode }) => {
             headings: { fontFamily: 'Pretendard, sans-serif' },
           }}
         >
-          <AdditionalMantineProvider>{children}</AdditionalMantineProvider>
+          <Notifications position={'bottom-right'} limit={5} />
+          {children}
         </MantineProvider>
       </AuthProvider>
     </ApolloProvider>

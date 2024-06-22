@@ -5,5 +5,5 @@ import { Button } from '@mantine/core';
 import { useIndexProductButton } from './useIndexProductButton';
 
 export const IndexProductButton = bind(useIndexProductButton, ({ indexProduct }) => (
-  <Button onClick={indexProduct}>index</Button>
+  <Button onClick={indexProduct}>검색 인덱싱</Button>
 ));
