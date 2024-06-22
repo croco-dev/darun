@@ -6,6 +6,7 @@ import { useNewProductFeatureForm } from './useNewProductFeatureForm';
 
 export const NewProductFeatureForm = bind(useNewProductFeatureForm, ({ form, submit, children, pickEmoji }) => (
   <Form form={form} onSubmit={submit}>
-    {children({ form, pickEmoji })}
+    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+    {children({ form, pickEmoji } as any)}
   </Form>
 ));

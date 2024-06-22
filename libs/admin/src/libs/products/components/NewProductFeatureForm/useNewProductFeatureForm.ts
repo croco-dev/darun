@@ -42,8 +42,8 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
     },
   });
 
-  const pickEmoji = (emoji: object) => {
-    form.setFieldValue('emoji', emoji.native as string);
+  const pickEmoji = (emoji: { native: string }) => {
+    form.setFieldValue('emoji', emoji.native);
   };
 
   const submit = async (values: FormValues) => {
