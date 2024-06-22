@@ -47,7 +47,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
           )}
         </VStack>
       </HStack>
-      {screenshots && (
+      {screenshots && screenshots.length > 0 && (
         <HStack gap={'8px'} width={'100%'} overflow={'auto'}>
           {screenshots.map(screenshot => (
             <Image
