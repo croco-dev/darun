@@ -4,6 +4,7 @@ import { Button, Card, Group, Stack, Title } from '@mantine/core';
 import { IndexProductButton, ProductInfo, ProductTagsForm } from '@products/components';
 import { AppShell, PageShell } from '@uis';
 import Link from 'next/link';
+import { PublishProductButton } from '../products/components/PublishProductButton';
 
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
   <AppShell>
@@ -16,6 +17,7 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
               <Stack gap={4}>
                 <Group gap={8}>
                   <IndexProductButton slug={slug} />
+                  <PublishProductButton slug={slug} />
                 </Group>
               </Stack>
             </Group>

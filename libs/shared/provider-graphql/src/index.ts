@@ -130,6 +130,7 @@ export type Mutation = {
   readonly createProduct: CreateProductPayload;
   readonly createProductFeature: CreateProductFeaturePayload;
   readonly indexProduct: IndexProductPayload;
+  readonly publishProduct: PublishProductPayload;
   readonly signImageUpload: SignImageUploadPayload;
   readonly updateProductTags: UpdateProductTagsPayload;
 };
@@ -167,6 +168,11 @@ export type MutationindexProductArgs = {
 };
 
 
+export type MutationpublishProductArgs = {
+  input: PublishProductInput;
+};
+
+
 export type MutationsignImageUploadArgs = {
   input: SignImageUploadInput;
 };
@@ -196,6 +202,7 @@ export type Product = {
   readonly name: Scalars['String']['output'];
   readonly ownedCompany?: Maybe<Company>;
   readonly ownedCompanyId?: Maybe<Scalars['String']['output']>;
+  readonly publishedAt?: Maybe<Scalars['DateTimeISO']['output']>;
   readonly screenshots: ReadonlyArray<Screenshot>;
   readonly slug: Scalars['String']['output'];
   readonly summary: Scalars['String']['output'];
@@ -214,6 +221,15 @@ export type ProductEdge = {
   readonly __typename?: 'ProductEdge';
   readonly cursor: Scalars['String']['output'];
   readonly node: Product;
+};
+
+export type PublishProductInput = {
+  readonly slug: Scalars['String']['input'];
+};
+
+export type PublishProductPayload = {
+  readonly __typename?: 'PublishProductPayload';
+  readonly product: Product;
 };
 
 export type Query = {
