@@ -10,7 +10,8 @@ type NewProductFeatureFormSectionProps = {
 };
 export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureFormSectionProps) => (
   <NewProductFeatureForm productSlug={productSlug}>
-    {({ form, pickEmoji }) => (
+    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+    {({ form, pickEmoji }: any) => (
       <Stack>
         <TextInput
           name="name"
