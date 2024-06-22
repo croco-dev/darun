@@ -120,6 +120,7 @@ type Mutation {
   createProduct(input: CreateProductInput!): CreateProductPayload!
   createProductFeature(input: CreateProductFeatureInput!): CreateProductFeaturePayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
+  signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
 }
 
 type PageInfo {
@@ -172,6 +173,16 @@ type Screenshot {
   id: ID!
   imageAlt: String!
   imageUrl: String!
+}
+
+input SignImageUploadInput {
+  displayName: String!
+  folder: String!
+}
+
+type SignImageUploadPayload {
+  signature: String!
+  timestamp: Float!
 }
 
 type Tag {

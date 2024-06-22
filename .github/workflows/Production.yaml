@@ -37,8 +37,12 @@ jobs:
         run: pnpm run --F graphql-api deploy:prod
         env:
           INFRA_ENV: prod
+          RUNNING_ENV: ${{ secrets.RUNNING_ENV }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}

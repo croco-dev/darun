@@ -28,7 +28,8 @@
     "postgres": "3.4.4",
     "reflect-metadata": "0.2.2",
     "type-graphql": "2.0.0-rc.2",
-    "typedi": "0.10.0"
+    "typedi": "0.10.0",
+    "cloudinary": "2.2.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "8.10.134",
