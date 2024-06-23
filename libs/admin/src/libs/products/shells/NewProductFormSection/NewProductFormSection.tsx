@@ -41,7 +41,7 @@ export const NewProductFormSection = () => (
               name="file"
               size="md"
               label="로고"
-              accept="image/png,image/jpeg"
+              accept="image/png,image/jpeg,image/webp"
               {...form.getInputProps('file')}
             />
             <Button type="submit" size={'md'} color={'dark'}>
