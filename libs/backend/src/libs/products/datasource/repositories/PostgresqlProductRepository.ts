@@ -58,6 +58,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(id ? and(gt(products.id, id)) : undefined)
       .limit(limit)
+      .orderBy(desc(products.id))
       .then(rows => rows.map(row => this.mapper(row)));
   }
   async countAll(): Promise<number> {
