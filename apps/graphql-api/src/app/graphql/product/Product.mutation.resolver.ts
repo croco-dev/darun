@@ -109,7 +109,7 @@ export class ProductMutationResolver {
     });
 
     return {
-      product: await this.getPublishedProductUseCase.execute({ slug }),
+      product: await this.getProductUseCase.execute({ slug }),
     };
   }
 
@@ -132,7 +132,7 @@ export class ProductMutationResolver {
     });
 
     return {
-      product: await this.getPublishedProductUseCase.execute({ slug }),
+      product: await this.getProductUseCase.execute({ slug }),
     };
   }
 
@@ -151,7 +151,7 @@ export class ProductMutationResolver {
     await this.addProductLinkUseCase.execute({ ...input, productId: product.id });
 
     return {
-      product: await this.getPublishedProductUseCase.execute({ slug }),
+      product: await this.getProductUseCase.execute({ slug }),
     };
   }
 }
