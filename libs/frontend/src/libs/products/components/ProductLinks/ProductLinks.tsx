@@ -10,7 +10,7 @@ import { useProductLinks } from './useProductLinks';
 export const ProductLinks = bind(useProductLinks, ({ links }) => (
   <>
     {links.map((link, index) => (
-      <Link key={link.id} href={link.link}>
+      <Link key={link.id} href={link.link} target="_blank">
         <ShadowButton kind={index === 0 ? 'primary' : 'text'}>
           <HStack alignItems={'center'} justifyContent={'center'} gap={'8px'} px={'2px'} py={'2px'}>
             <Image src={link.iconUrl} alt={link.title} width={24} height={24} />
