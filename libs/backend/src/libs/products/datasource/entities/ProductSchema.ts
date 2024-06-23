@@ -11,7 +11,7 @@ export const products = pgTable('products', {
   logoUrl: varchar('logo_url', { length: 255 }).notNull(),
   ownedCompanyId: varchar('owned_company_id', { length: 26 }),
   publishedAt: timestamp('published_at'),
-  updatedAt: timestamp('updated_at'),
+  updatedAt: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
   createdAt: timestamp('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

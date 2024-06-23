@@ -39,7 +39,11 @@ export class PostgresqlProductRepository implements ProductRepository {
         throw new Error('Product not found');
       }
 
-      const updated = await tx.update(products).set(modifier(prevProduct)).where(eq(products.id, id)).returning();
+      const updated = await tx
+        .update(products)
+        .set({ ...modifier(prevProduct), updatedAt: new Date() })
+        .where(eq(products.id, id))
+        .returning();
       if (!updated[0]) {
         throw new Error('Product update failed');
       }
@@ -128,6 +132,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       ...schema,
       description: schema.description ?? undefined,
       publishedAt: schema.publishedAt ?? undefined,
+      updatedAt: schema.updatedAt ?? undefined,
     });
   }
 }
