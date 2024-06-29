@@ -8,6 +8,7 @@ initApolloClient(() => container.serverApolloClient);
 const productQuery = gql`
   query GetPublishedProductsOnSitemap {
     recentProducts(first: 100) {
+      name
       slug
       updatedAt
       alternatives {
@@ -18,7 +19,9 @@ const productQuery = gql`
 `;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const { data } = await getClient({ static: true }).query<{ recentProducts: { slug: string; updatedAt: string }[] }>({
+  const { data } = await getClient({ static: true }).query<{
+    recentProducts: { slug: string; updatedAt: string; name: string }[];
+  }>({
     query: productQuery,
   });
 
@@ -33,6 +36,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${container.baseUrl}/search/product?query=${product.slug}`,
+      lastModified: product.updatedAt ?? new Date(),
+    },
+    {
+      url: `${container.baseUrl}/search/product?query=${product.name}`,
       lastModified: product.updatedAt ?? new Date(),
     },
   ]);
