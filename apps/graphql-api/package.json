@@ -24,7 +24,7 @@
     "firebase-admin": "12.2.0",
     "graphql": "16.9.0",
     "graphql-scalars": "1.23.0",
-    "mongoose": "8.4.3",
+    "mongoose": "8.5.0",
     "postgres": "3.4.4",
     "reflect-metadata": "0.2.2",
     "type-graphql": "2.0.0-rc.2",
