@@ -3,18 +3,18 @@
 import { ApolloLink } from '@apollo/client';
 import { NormalizedCacheObject } from '@apollo/client/cache/inmemory/types';
 import { setContext } from '@apollo/client/link/context';
-import { ApolloNextAppProvider, NextSSRApolloClient } from '@apollo/experimental-nextjs-app-support/ssr';
-import { useCookies } from 'next-client-cookies';
+import { ApolloClient } from '@apollo/experimental-nextjs-app-support';
+import { ApolloNextAppProvider } from '@apollo/experimental-nextjs-app-support/ssr';
+import { Cookies } from 'next-client-cookies';
 import { ReactNode } from 'react';
 
 type ApolloProviderProps = {
+  cookies: Cookies;
   children: ReactNode;
-  makeClient: () => NextSSRApolloClient<NormalizedCacheObject>;
+  makeClient: () => ApolloClient<NormalizedCacheObject>;
 };
 
-export function ApolloProvider({ children, makeClient }: ApolloProviderProps) {
-  const cookies = useCookies();
-
+export function ApolloProvider({ cookies, children, makeClient }: ApolloProviderProps) {
   const clientFactory = () => {
     const client = makeClient();
 

@@ -16,7 +16,7 @@
     "@darun/utils-auth-service-core": "workspace:*"
   },
   "peerDependencies": {
-    "next": "14.2.3",
+    "next": "14.2.5",
     "next-client-cookies": "1.1.1"
   },
   "devDependencies": {

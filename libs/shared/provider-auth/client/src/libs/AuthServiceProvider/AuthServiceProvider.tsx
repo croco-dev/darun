@@ -2,10 +2,11 @@
 
 import { useApolloClient } from '@apollo/client';
 import { AuthService } from '@darun/utils-auth-service-core';
-import { useCookies } from 'next-client-cookies';
+import { Cookies } from 'next-client-cookies';
 import { createContext, ReactNode, useContext } from 'react';
 
 export type AuthServiceProviderProps = {
+  cookies: Cookies;
   children: ReactNode;
   authService: AuthService;
 };
@@ -14,8 +15,7 @@ const AuthServiceContext = createContext<{ authService?: AuthService }>({
   authService: undefined,
 });
 
-export const AuthServiceProvider = ({ children, authService }: AuthServiceProviderProps) => {
-  const cookies = useCookies();
+export const AuthServiceProvider = ({ cookies, children, authService }: AuthServiceProviderProps) => {
   const client = useApolloClient();
 
   authService.setAuthStorage({

@@ -10,8 +10,8 @@
     "test": "echo 1"
   },
   "dependencies": {
-    "@apollo/client": "3.10.3",
-    "@apollo/experimental-nextjs-app-support": "0.10.1",
+    "@apollo/client": "3.11.1",
+    "@apollo/experimental-nextjs-app-support": "0.11.2",
     "@croco/utils-next-font-pretendard": "0.0.2",
     "@croco/utils-structure-react": "0.0.1",
     "@darun/frontend": "workspace:*",
@@ -23,17 +23,17 @@
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@kuma-ui/core": "1.5.7",
-    "next": "14.2.3",
+    "date-fns": "3.6.0",
+    "next": "14.2.5",
     "next-client-cookies": "1.1.1",
     "normalize.css": "8.0.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "date-fns": "3.6.0"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@kuma-ui/next-plugin": "1.3.1",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "eslint-config-next": "14.2.3"
+    "eslint-config-next": "14.2.5"
   }
 }

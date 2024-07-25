@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@apollo/client": "3.10.3",
-    "@apollo/experimental-nextjs-app-support": "0.10.1",
+    "@apollo/client": "3.11.1",
+    "@apollo/experimental-nextjs-app-support": "0.11.2",
     "@croco/utils-structure-react": "0.0.1",
     "next-client-cookies": "1.1.1"
   },
