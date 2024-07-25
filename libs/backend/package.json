@@ -21,13 +21,13 @@
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
     "@typegoose/typegoose": "12.5.0",
+    "cloudinary": "2.2.0",
     "drizzle-orm": "0.31.2",
     "firebase-admin": "12.2.0",
-    "mongoose": "8.4.3",
+    "mongoose": "8.5.0",
     "reflect-metadata": "0.2.2",
     "type-graphql": "2.0.0-rc.2",
-    "typedi": "0.10.0",
-    "cloudinary": "2.2.0"
+    "typedi": "0.10.0"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
