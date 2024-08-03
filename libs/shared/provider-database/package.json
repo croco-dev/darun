@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "drizzle-orm": "0.31.2",
+    "drizzle-orm": "0.32.1",
     "mongoose": "8.5.0",
     "typedi": "0.10.0"
   },
