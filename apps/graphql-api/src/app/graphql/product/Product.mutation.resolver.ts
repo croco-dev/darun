@@ -7,10 +7,12 @@ import {
   IndexProduct,
   AddProductLink,
   PublishProduct,
+  AddAlternativeProduct,
 } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
+import { AddAlternativeProductInput, AddAlternativeProductPayload } from './graphs/AddAlternativeProduct';
 import { AddProductLinkInput, AddProductLinkPayload } from './graphs/AddProductLink';
 import { AddProductScreenshotInput, AddProductScreenshotPayload } from './graphs/AddProductScreenshot';
 import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
@@ -30,7 +32,8 @@ export class ProductMutationResolver {
     private readonly getPublishedProductUseCase: GetPublishedProduct,
     private readonly getProductUseCase: GetProduct,
     private readonly addProductScreenshotUseCase: AddProductScreenshot,
-    private readonly addProductLinkUseCase: AddProductLink
+    private readonly addProductLinkUseCase: AddProductLink,
+    private readonly addAlternativeProductUseCase: AddAlternativeProduct
   ) {}
 
   @Authorized([AuthRole.Admin])
@@ -149,6 +152,27 @@ export class ProductMutationResolver {
     }
 
     await this.addProductLinkUseCase.execute({ ...input, productId: product.id });
+
+    return {
+      product: await this.getProductUseCase.execute({ slug }),
+    };
+  }
+
+  @Mutation(() => AddAlternativeProductPayload)
+  async addAlternativeProduct(
+    @Arg('slug') slug: string,
+    @Arg('input') input: AddAlternativeProductInput
+  ): Promise<AddProductLinkPayload> {
+    const product = await this.getProductUseCase.execute({ slug });
+
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    await this.addAlternativeProductUseCase.execute({
+      alternativeProductId: input.alternativeProductId,
+      productId: product.id,
+    });
 
     return {
       product: await this.getProductUseCase.execute({ slug }),
