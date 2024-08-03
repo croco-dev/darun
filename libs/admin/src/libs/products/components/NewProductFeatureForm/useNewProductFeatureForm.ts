@@ -22,7 +22,10 @@ type FormValues = {
 };
 type NewProductFormProps = {
   productSlug: string;
-  children: (props: { form: ReturnType<typeof useForm<FormValues>> }) => ReactNode;
+  children: (props: {
+    form: ReturnType<typeof useForm<FormValues>>;
+    pickEmoji: (emoji: { native: string }) => void;
+  }) => ReactNode;
 };
 
 export function useNewProductFeatureForm({ productSlug, children }: NewProductFormProps) {

@@ -16,6 +16,15 @@ export type Scalars = {
   DateTimeISO: { input: unknown; output: unknown; }
 };
 
+export type AddAlternativeProductInput = {
+  readonly alternativeProductId: Scalars['String']['input'];
+};
+
+export type AddAlternativeProductPayload = {
+  readonly __typename?: 'AddAlternativeProductPayload';
+  readonly product?: Maybe<Product>;
+};
+
 export type AddProductLinkInput = {
   readonly displayLink: Scalars['String']['input'];
   readonly iconUrl: Scalars['String']['input'];
@@ -124,6 +133,7 @@ export type Link = {
 
 export type Mutation = {
   readonly __typename?: 'Mutation';
+  readonly addAlternativeProduct: AddAlternativeProductPayload;
   readonly addProductLink: AddProductLinkPayload;
   readonly addProductScreenshot: AddProductScreenshotPayload;
   readonly createCompany: CreateCompanyPayload;
@@ -133,6 +143,12 @@ export type Mutation = {
   readonly publishProduct: PublishProductPayload;
   readonly signImageUpload: SignImageUploadPayload;
   readonly updateProductTags: UpdateProductTagsPayload;
+};
+
+
+export type MutationaddAlternativeProductArgs = {
+  input: AddAlternativeProductInput;
+  slug: Scalars['String']['input'];
 };
 
 
