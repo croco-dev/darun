@@ -6,6 +6,6 @@ import { usePublishProductButton } from './usePublishProductButton';
 
 export const PublishProductButton = bind(usePublishProductButton, ({ loading, isPublished, publishProduct }) => (
   <Button onClick={publishProduct} color={'dark'} disabled={isPublished} loading={loading}>
-    서비스 노출하기
+    {isPublished ? '노출 중' : '서비스 노출하기'}
   </Button>
 ));

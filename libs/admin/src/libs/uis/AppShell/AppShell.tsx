@@ -1,12 +1,14 @@
 'use client';
 
-import { Flex } from '@mantine/core';
+import { Box, Flex } from '@mantine/core';
 import { ReactNode } from 'react';
 import { Navbar } from '../Navbar';
 
 export const AppShell = ({ children }: { children: ReactNode }) => (
-  <Flex>
+  <Flex style={{ overflow: 'hidden' }}>
     <Navbar />
-    {children}
+    <Box w={'100%'} h={'100vh'} style={{ overflow: 'auto' }}>
+      {children}
+    </Box>
   </Flex>
 );
