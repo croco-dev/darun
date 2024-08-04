@@ -38,14 +38,14 @@ importers:
   apps/admin-web:
     dependencies:
       '@apollo/client':
-        specifier: 3.10.3
-        version: 3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        specifier: 3.11.2
+        version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
-        specifier: 0.10.1
-        version: 0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        specifier: 0.11.2
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-next-font-pretendard':
         specifier: 0.0.2
-        version: 0.0.2(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))
+        version: 0.0.2(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
@@ -89,11 +89,11 @@ importers:
         specifier: 7.10.2
         version: 7.10.2(@mantine/core@7.10.2(@mantine/hooks@7.10.2(react@18.2.0))(@types/react@18.2.57)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@mantine/hooks@7.10.2(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       next:
-        specifier: 14.2.3
-        version: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        specifier: 14.2.5
+        version: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -108,8 +108,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.19
       eslint-config-next:
-        specifier: 14.2.3
-        version: 14.2.3(eslint@8.57.0)(typescript@5.5.2)
+        specifier: 14.2.5
+        version: 14.2.5(eslint@8.57.0)(typescript@5.5.2)
       postcss:
         specifier: 8.4.38
         version: 8.4.38
@@ -144,14 +144,14 @@ importers:
         specifier: 12.5.0
         version: 12.5.0(mongoose@8.5.0)
       cloudinary:
-        specifier: 2.2.0
-        version: 2.2.0
+        specifier: 2.4.0
+        version: 2.4.0
       drizzle-orm:
-        specifier: 0.31.2
-        version: 0.31.2(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0)
+        specifier: 0.32.1
+        version: 0.32.1(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0)
       firebase-admin:
-        specifier: 12.2.0
-        version: 12.2.0(encoding@0.1.13)
+        specifier: 12.3.0
+        version: 12.3.0(encoding@0.1.13)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -182,25 +182,25 @@ importers:
         version: 0.20.1
       serverless:
         specifier: 3.38.0
-        version: 3.38.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)))(encoding@0.1.13)
+        version: 3.38.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0(@aws-sdk/client-sts@3.600.0))(@aws-sdk/client-sts@3.600.0))(encoding@0.1.13)
       serverless-esbuild:
         specifier: 1.52.1
         version: 1.52.1(esbuild@0.20.1)
       serverless-offline:
         specifier: 13.6.0
-        version: 13.6.0(serverless@3.38.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)))(encoding@0.1.13))
+        version: 13.6.0(serverless@3.38.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0(@aws-sdk/client-sts@3.600.0))(@aws-sdk/client-sts@3.600.0))(encoding@0.1.13))
 
   apps/service-web:
     dependencies:
       '@apollo/client':
-        specifier: 3.10.3
-        version: 3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        specifier: 3.11.2
+        version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
-        specifier: 0.10.1
-        version: 0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        specifier: 0.11.2
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-next-font-pretendard':
         specifier: 0.0.2
-        version: 0.0.2(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))
+        version: 0.0.2(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
@@ -230,16 +230,16 @@ importers:
         version: link:../../libs/shared/utils-auth-service/firebase
       '@kuma-ui/core':
         specifier: 1.5.7
-        version: 1.5.7(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.5.7(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       date-fns:
         specifier: 3.6.0
         version: 3.6.0
       next:
-        specifier: 14.2.3
-        version: 14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        specifier: 14.2.5
+        version: 14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       normalize.css:
         specifier: 8.0.1
         version: 8.0.1
@@ -252,7 +252,7 @@ importers:
     devDependencies:
       '@kuma-ui/next-plugin':
         specifier: 1.3.1
-        version: 1.3.1(@babel/core@7.23.7)(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)
+        version: 1.3.1(@babel/core@7.23.7)(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)
       '@types/react':
         specifier: ^18.2.0
         version: 18.2.57
@@ -260,17 +260,17 @@ importers:
         specifier: ^18.2.0
         version: 18.2.19
       eslint-config-next:
-        specifier: 14.2.3
-        version: 14.2.3(eslint@8.57.0)(typescript@5.5.2)
+        specifier: 14.2.5
+        version: 14.2.5(eslint@8.57.0)(typescript@5.5.2)
 
   libs/admin:
     dependencies:
       '@apollo/client':
-        specifier: 3.10.3
-        version: 3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        specifier: 3.11.2
+        version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
-        specifier: 0.10.1
-        version: 0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        specifier: 0.11.2
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
@@ -311,8 +311,8 @@ importers:
         specifier: 5.6.0
         version: 5.6.0
       next:
-        specifier: 14.2.3
-        version: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        specifier: 14.2.5
+        version: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -334,25 +334,25 @@ importers:
         version: link:../shared/provider-database
       '@typegoose/typegoose':
         specifier: 12.5.0
-        version: 12.5.0(mongoose@8.4.3)
+        version: 12.5.0(mongoose@8.5.0)
       cloudinary:
-        specifier: 2.2.0
-        version: 2.2.0
+        specifier: 2.4.0
+        version: 2.4.0
       dataloader:
         specifier: 2.2.2
         version: 2.2.2
       drizzle-orm:
-        specifier: 0.31.2
-        version: 0.31.2(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0)
+        specifier: 0.32.1
+        version: 0.32.1(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0)
       firebase-admin:
-        specifier: 12.2.0
-        version: 12.2.0(encoding@0.1.13)
+        specifier: 12.3.0
+        version: 12.3.0(encoding@0.1.13)
       lodash:
         specifier: 4.17.21
         version: 4.17.21
       mongoose:
-        specifier: 8.4.3
-        version: 8.4.3
+        specifier: 8.5.0
+        version: 8.5.0
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
@@ -379,11 +379,11 @@ importers:
   libs/frontend:
     dependencies:
       '@apollo/client':
-        specifier: 3.10.3
-        version: 3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        specifier: 3.11.2
+        version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
-        specifier: 0.10.1
-        version: 0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        specifier: 0.11.2
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
@@ -407,10 +407,10 @@ importers:
         version: link:../shared/utils-router
       '@kuma-ui/core':
         specifier: 1.5.7
-        version: 1.5.7(@types/react@18.2.57)(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
+        version: 1.5.7(@types/react@18.2.57)(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
       next:
-        specifier: 14.2.3
-        version: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        specifier: 14.2.5
+        version: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -428,8 +428,8 @@ importers:
   libs/shared/provider-auth/client:
     dependencies:
       '@apollo/client':
-        specifier: 3.10.3
-        version: 3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        specifier: 3.11.2
+        version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@darun/utils-auth-service-core':
         specifier: workspace:*
         version: link:../../utils-auth-service/core
@@ -437,11 +437,11 @@ importers:
         specifier: workspace:*
         version: link:../../utils-router
       next:
-        specifier: 14.2.3
-        version: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        specifier: 14.2.5
+        version: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -462,11 +462,11 @@ importers:
         specifier: workspace:*
         version: link:../../utils-auth-service/core
       next:
-        specifier: 14.2.3
-        version: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        specifier: 14.2.5
+        version: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -484,11 +484,11 @@ importers:
   libs/shared/provider-database:
     dependencies:
       drizzle-orm:
-        specifier: 0.31.2
-        version: 0.31.2(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0)
+        specifier: 0.32.1
+        version: 0.32.1(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0)
       mongoose:
-        specifier: 8.4.3
-        version: 8.4.3
+        specifier: 8.5.0
+        version: 8.5.0
       typedi:
         specifier: 0.10.0
         version: 0.10.0
@@ -529,7 +529,7 @@ importers:
     dependencies:
       '@kuma-ui/core':
         specifier: '>=1'
-        version: 1.5.7(@types/react@18.2.57)(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
+        version: 1.5.7(@types/react@18.2.57)(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
       react-dom:
         specifier: '>=18.2.0'
         version: 18.2.0(react@18.2.0)
@@ -551,7 +551,7 @@ importers:
     dependencies:
       '@kuma-ui/core':
         specifier: '>=1'
-        version: 1.5.7(@types/react@18.2.57)(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
+        version: 1.5.7(@types/react@18.2.57)(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
       react-dom:
         specifier: '>=18.2.0'
         version: 18.2.0(react@18.2.0)
@@ -588,7 +588,7 @@ importers:
         version: link:../utils-router
       '@kuma-ui/core':
         specifier: '>=1'
-        version: 1.5.7(@types/react@18.2.57)(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
+        version: 1.5.7(@types/react@18.2.57)(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
       react-dom:
         specifier: '>=18.2.0'
         version: 18.2.0(react@18.2.0)
@@ -609,17 +609,17 @@ importers:
   libs/shared/utils-apollo-client/client:
     dependencies:
       '@apollo/client':
-        specifier: 3.10.3
-        version: 3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        specifier: 3.11.2
+        version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
-        specifier: 0.10.1
-        version: 0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        specifier: 0.11.2
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -637,17 +637,17 @@ importers:
   libs/shared/utils-apollo-client/server:
     dependencies:
       '@apollo/client':
-        specifier: 3.10.3
-        version: 3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        specifier: 3.11.2
+        version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
-        specifier: 0.10.1
-        version: 0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        specifier: 0.11.2
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -705,11 +705,11 @@ importers:
         specifier: 10.8.1
         version: 10.8.1
       next:
-        specifier: 14.2.3
-        version: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        specifier: 14.2.5
+        version: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       next-firebase-auth-edge:
         specifier: 1.0.1
-        version: 1.0.1(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))
+        version: 1.0.1(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -763,8 +763,8 @@ importers:
   libs/shared/utils-router:
     dependencies:
       next:
-        specifier: 14.2.3
-        version: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        specifier: 14.2.5
+        version: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -799,19 +799,19 @@ packages:
     peerDependencies:
       graphql: 14.x || 15.x || 16.x
 
-  '@apollo/client-react-streaming@0.10.1':
-    resolution: {integrity: sha512-8wM4y2Q1sSo4BTsemsI5G/G4U2pTM1r0BbwrCL/R2xMF4nSdJBTFO69fDGV+gaGt52bmNtV+MGbV2nJdURH2OQ==}
+  '@apollo/client-react-streaming@0.11.2':
+    resolution: {integrity: sha512-rRA/dIA09/Y6+jtGGBnXHQfPOv6BYYVZwQP8OzQtWrWbSgDEI6uAhqULssU5f0ZhQJVzKDuslqGE9QAX0gdfRQ==}
     peerDependencies:
-      '@apollo/client': ^3.9.6
+      '@apollo/client': ^3.10.4
       react: ^18
 
-  '@apollo/client@3.10.3':
-    resolution: {integrity: sha512-4EIgZnFmRO1laWv3NCxlVIxcvimG63djuAXvyXhpQH3wkNMv9SykrasKRN08+z+cn/fVisBOLmkSRdyNyP9f4A==}
+  '@apollo/client@3.11.2':
+    resolution: {integrity: sha512-HVcsJChOVut6gmmf5YukTG52EXg0cxq0LU7I/0yZPcfcJOPW2cpVqveaxZt+B1fL6ZKrYVdSa2nfuK0oSpv0Yw==}
     peerDependencies:
       graphql: ^15.0.0 || ^16.0.0
       graphql-ws: ^5.5.5
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
-      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || >=19.0.0-rc <19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || >=19.0.0-rc <19.0.0
       subscriptions-transport-ws: ^0.9.0 || ^0.11.0
     peerDependenciesMeta:
       graphql-ws:
@@ -823,11 +823,11 @@ packages:
       subscriptions-transport-ws:
         optional: true
 
-  '@apollo/experimental-nextjs-app-support@0.10.1':
-    resolution: {integrity: sha512-oPDHqSq+cxpE+vm5GsQCYWnj68nTul0wQx/i8MHdjhSBcwmCbOO6oJtfZpXGX8FTzY8Hvb85FrMqIeqQtFTsMw==}
+  '@apollo/experimental-nextjs-app-support@0.11.2':
+    resolution: {integrity: sha512-HRQ8/Ux/tM2pezrhZeoHsJs55+nJvJZRV1B21QwEVtWhslQXjT5gqs5nKw86KURF0xR7gX18Nyy659NzJ09Pmw==}
     peerDependencies:
-      '@apollo/client': ^3.9.6
-      next: ^13.4.1 || ^14.0.0
+      '@apollo/client': ^3.10.4
+      next: ^13.4.1 || ^14.0.0 || 15.0.0-rc.0
       react: ^18
 
   '@apollo/protobufjs@1.2.7':
@@ -2218,6 +2218,9 @@ packages:
     resolution: {integrity: sha512-+KpH+QxZU7O4675t3mnkQKcZZg56u+K/Ct2K+N2AZYNVK8kyeo/bI18tI8aPm3tvNNRyTWfj6s5tnGNlcbQRsA==}
     engines: {node: '>=14'}
 
+  '@fastify/busboy@3.0.0':
+    resolution: {integrity: sha512-83rnH2nCvclWaPQQKvkJ2pdOjG4TZyEVuFDnlOF6KP08lDaaceVyw/W63mDuafQT+MKHCvXIPpE5uYWeM0rT4w==}
+
   '@firebase/analytics-compat@0.2.7':
     resolution: {integrity: sha512-17VCly4P0VFBDqaaal7m1nhyYQwsygtaTpSsnc51sFPRrr9XIYtnD8ficon9fneEGEoJQ2g7OtASvhwX9EbK8g==}
     peerDependencies:
@@ -2987,62 +2990,62 @@ packages:
   '@mongodb-js/saslprep@1.1.6':
     resolution: {integrity: sha512-jqTTXQ46H8cAxmXBu8wm1HTSIMBMrIcoVrsjdQkKdMBj3il/fSCgWyya4P2I1xjPBl69mw+nRphrPlcIqBd20Q==}
 
-  '@next/env@14.2.3':
-    resolution: {integrity: sha512-W7fd7IbkfmeeY2gXrzJYDx8D2lWKbVoTIj1o1ScPHNzvp30s1AuoEFSdr39bC5sjxJaxTtq3OTCZboNp0lNWHA==}
+  '@next/env@14.2.5':
+    resolution: {integrity: sha512-/zZGkrTOsraVfYjGP8uM0p6r0BDT6xWpkjdVbcz66PJVSpwXX3yNiRycxAuDfBKGWBrZBXRuK/YVlkNgxHGwmA==}
 
-  '@next/eslint-plugin-next@14.2.3':
-    resolution: {integrity: sha512-L3oDricIIjgj1AVnRdRor21gI7mShlSwU/1ZGHmqM3LzHhXXhdkrfeNY5zif25Bi5Dd7fiJHsbhoZCHfXYvlAw==}
+  '@next/eslint-plugin-next@14.2.5':
+    resolution: {integrity: sha512-LY3btOpPh+OTIpviNojDpUdIbHW9j0JBYBjsIp8IxtDFfYFyORvw3yNq6N231FVqQA7n7lwaf7xHbVJlA1ED7g==}
 
-  '@next/swc-darwin-arm64@14.2.3':
-    resolution: {integrity: sha512-3pEYo/RaGqPP0YzwnlmPN2puaF2WMLM3apt5jLW2fFdXD9+pqcoTzRk+iZsf8ta7+quAe4Q6Ms0nR0SFGFdS1A==}
+  '@next/swc-darwin-arm64@14.2.5':
+    resolution: {integrity: sha512-/9zVxJ+K9lrzSGli1///ujyRfon/ZneeZ+v4ptpiPoOU+GKZnm8Wj8ELWU1Pm7GHltYRBklmXMTUqM/DqQ99FQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@next/swc-darwin-x64@14.2.3':
-    resolution: {integrity: sha512-6adp7waE6P1TYFSXpY366xwsOnEXM+y1kgRpjSRVI2CBDOcbRjsJ67Z6EgKIqWIue52d2q/Mx8g9MszARj8IEA==}
+  '@next/swc-darwin-x64@14.2.5':
+    resolution: {integrity: sha512-vXHOPCwfDe9qLDuq7U1OYM2wUY+KQ4Ex6ozwsKxp26BlJ6XXbHleOUldenM67JRyBfVjv371oneEvYd3H2gNSA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@next/swc-linux-arm64-gnu@14.2.3':
-    resolution: {integrity: sha512-cuzCE/1G0ZSnTAHJPUT1rPgQx1w5tzSX7POXSLaS7w2nIUJUD+e25QoXD/hMfxbsT9rslEXugWypJMILBj/QsA==}
+  '@next/swc-linux-arm64-gnu@14.2.5':
+    resolution: {integrity: sha512-vlhB8wI+lj8q1ExFW8lbWutA4M2ZazQNvMWuEDqZcuJJc78iUnLdPPunBPX8rC4IgT6lIx/adB+Cwrl99MzNaA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@next/swc-linux-arm64-musl@14.2.3':
-    resolution: {integrity: sha512-0D4/oMM2Y9Ta3nGuCcQN8jjJjmDPYpHX9OJzqk42NZGJocU2MqhBq5tWkJrUQOQY9N+In9xOdymzapM09GeiZw==}
+  '@next/swc-linux-arm64-musl@14.2.5':
+    resolution: {integrity: sha512-NpDB9NUR2t0hXzJJwQSGu1IAOYybsfeB+LxpGsXrRIb7QOrYmidJz3shzY8cM6+rO4Aojuef0N/PEaX18pi9OA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@next/swc-linux-x64-gnu@14.2.3':
-    resolution: {integrity: sha512-ENPiNnBNDInBLyUU5ii8PMQh+4XLr4pG51tOp6aJ9xqFQ2iRI6IH0Ds2yJkAzNV1CfyagcyzPfROMViS2wOZ9w==}
+  '@next/swc-linux-x64-gnu@14.2.5':
+    resolution: {integrity: sha512-8XFikMSxWleYNryWIjiCX+gU201YS+erTUidKdyOVYi5qUQo/gRxv/3N1oZFCgqpesN6FPeqGM72Zve+nReVXQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-linux-x64-musl@14.2.3':
-    resolution: {integrity: sha512-BTAbq0LnCbF5MtoM7I/9UeUu/8ZBY0i8SFjUMCbPDOLv+un67e2JgyN4pmgfXBwy/I+RHu8q+k+MCkDN6P9ViQ==}
+  '@next/swc-linux-x64-musl@14.2.5':
+    resolution: {integrity: sha512-6QLwi7RaYiQDcRDSU/os40r5o06b5ue7Jsk5JgdRBGGp8l37RZEh9JsLSM8QF0YDsgcosSeHjglgqi25+m04IQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-win32-arm64-msvc@14.2.3':
-    resolution: {integrity: sha512-AEHIw/dhAMLNFJFJIJIyOFDzrzI5bAjI9J26gbO5xhAKHYTZ9Or04BesFPXiAYXDNdrwTP2dQceYA4dL1geu8A==}
+  '@next/swc-win32-arm64-msvc@14.2.5':
+    resolution: {integrity: sha512-1GpG2VhbspO+aYoMOQPQiqc/tG3LzmsdBH0LhnDS3JrtDx2QmzXe0B6mSZZiN3Bq7IOMXxv1nlsjzoS1+9mzZw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@next/swc-win32-ia32-msvc@14.2.3':
-    resolution: {integrity: sha512-vga40n1q6aYb0CLrM+eEmisfKCR45ixQYXuBXxOOmmoV8sYST9k7E3US32FsY+CkkF7NtzdcebiFT4CHuMSyZw==}
+  '@next/swc-win32-ia32-msvc@14.2.5':
+    resolution: {integrity: sha512-Igh9ZlxwvCDsu6438FXlQTHlRno4gFpJzqPjSIBZooD22tKeI4fE/YMRoHVJHmrQ2P5YL1DoZ0qaOKkbeFWeMg==}
     engines: {node: '>= 10'}
     cpu: [ia32]
     os: [win32]
 
-  '@next/swc-win32-x64-msvc@14.2.3':
-    resolution: {integrity: sha512-Q1/zm43RWynxrO7lW4ehciQVj+5ePBhOK+/K2P7pLFX3JaJ/IZVC69SHidrmZSOkqz7ECIOhhy7XhAFG4JYyHA==}
+  '@next/swc-win32-x64-msvc@14.2.5':
+    resolution: {integrity: sha512-tEQ7oinq1/CjSG9uSTerca3v4AZ+dFa+4Yu6ihaG8Ud8ddqLQgFGcnwYls13H5X5CPDPZJdYxyeMui6muOLd4g==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -4386,8 +4389,8 @@ packages:
     resolution: {integrity: sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==}
     engines: {node: '>=0.8'}
 
-  cloudinary@2.2.0:
-    resolution: {integrity: sha512-akbLTZcNegGSkl07Frnt9fyiK9KZ2zPS+a+j7uLrjNYxVhDpDdIBz9G6snPCYqgk+WLVMRPfXTObalLr5L6g0Q==}
+  cloudinary@2.4.0:
+    resolution: {integrity: sha512-5HA9VffeaR3MKiHpRo9A5SWgZFPxzlEDep0O4KzL3TIDi1hmQC9gjA4dHpVmdeFC0ZD1Xr5fGsWRKVDK9Ay9PQ==}
     engines: {node: '>=9'}
 
   clsx@2.1.1:
@@ -4464,10 +4467,6 @@ packages:
 
   cookiejar@2.1.4:
     resolution: {integrity: sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==}
-
-  copy-anything@3.0.5:
-    resolution: {integrity: sha512-yCEafptTtb4bk7GLEQoM8KVJpxAfdBJYaXyzQEgQQQgYrZiDp8SJmGKlYza6CYjEDNstAdNdKA3UuoULlEbS6w==}
-    engines: {node: '>=12.13'}
 
   core-js-compat@3.35.0:
     resolution: {integrity: sha512-5blwFAddknKeNgsjBzilkdQ0+YK8L1PfqPYq40NOYMYFSS38qj+hpTcLLWwpIwA2A5bje/x5jmVn2tzUMg9IVw==}
@@ -4707,8 +4706,8 @@ packages:
     resolution: {integrity: sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==}
     engines: {node: '>=12'}
 
-  drizzle-orm@0.31.2:
-    resolution: {integrity: sha512-QnenevbnnAzmbNzQwbhklvIYrDE8YER8K7kSrAWQSV1YvFCdSQPzj+jzqRdTSsV2cDqSpQ0NXGyL1G9I43LDLg==}
+  drizzle-orm@0.32.1:
+    resolution: {integrity: sha512-Wq1J+lL8PzwR5K3a1FfoWsbs8powjr3pGA4+5+2ueN1VTLDNFYEolUyUWFtqy8DVRvYbL2n7sXZkgVmK9dQkng==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=3'
@@ -4718,6 +4717,7 @@ packages:
       '@op-engineering/op-sqlite': '>=2'
       '@opentelemetry/api': ^1.4.1
       '@planetscale/database': '>=1'
+      '@prisma/client': '*'
       '@tidbcloud/serverless': '*'
       '@types/better-sqlite3': '*'
       '@types/pg': '*'
@@ -4733,6 +4733,7 @@ packages:
       mysql2: '>=2'
       pg: '>=8'
       postgres: '>=3'
+      prisma: '*'
       react: '>=18'
       sql.js: '>=1'
       sqlite3: '>=5'
@@ -4752,6 +4753,8 @@ packages:
       '@opentelemetry/api':
         optional: true
       '@planetscale/database':
+        optional: true
+      '@prisma/client':
         optional: true
       '@tidbcloud/serverless':
         optional: true
@@ -4782,6 +4785,8 @@ packages:
       pg:
         optional: true
       postgres:
+        optional: true
+      prisma:
         optional: true
       react:
         optional: true
@@ -4908,8 +4913,8 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  eslint-config-next@14.2.3:
-    resolution: {integrity: sha512-ZkNztm3Q7hjqvB1rRlOX8P9E/cXRL9ajRcs8jufEtwMfTVYRqnmtnaSu57QqHyBlovMuiB8LEzfLBkh5RYV6Fg==}
+  eslint-config-next@14.2.5:
+    resolution: {integrity: sha512-zogs9zlOiZ7ka+wgUnmcM0KBEDjo4Jis7kxN1jvC0N4wynQ2MIx/KBkg4mVF63J5EK4W0QMCn7xO3vNisjaAoA==}
     peerDependencies:
       eslint: ^7.23.0 || ^8.0.0
       typescript: '>=3.3.1'
@@ -5268,8 +5273,8 @@ packages:
   find-yarn-workspace-root2@1.2.16:
     resolution: {integrity: sha512-hr6hb1w8ePMpPVUK39S4RlwJzi+xPLuVuG8XlwXU3KD5Yn3qgBWVfy3AzNlDhWvE1EORCE65/Qm26rFQt3VLVA==}
 
-  firebase-admin@12.2.0:
-    resolution: {integrity: sha512-R9xxENvPA/19XJ3mv0Kxfbz9kPXd9/HrM4083LZWOO0qAQGheRzcCQamYRe+JSrV2cdKXP3ZsfFGTYMrFM0pJg==}
+  firebase-admin@12.3.0:
+    resolution: {integrity: sha512-AKJcFbOZ7W8Fwcqh6Ba7FThXVoXwPdsf+E9vyjk5Z1vN1Z9mnTw88EQWfIsR91YglQ0KvWu1rvMhW65bcB4sog==}
     engines: {node: '>=14'}
 
   firebase@10.8.1:
@@ -5875,10 +5880,6 @@ packages:
   is-weakset@2.0.2:
     resolution: {integrity: sha512-t2yVvttHkQktwnNNmBQ98AhENLdPUTDTE21uPqAQ0ARwQfGeQKRVS0NNurH7bTf7RrvcVn1OOge45CnBeHCSmg==}
 
-  is-what@4.1.16:
-    resolution: {integrity: sha512-ZhMwEosbFJkA0YhFnNDgTM4ZxDRsS6HqTo7qsZM08fehyRYIYa0yHu5R6mgo1n/8MgaPBXiPimPD77baVFYg+A==}
-    engines: {node: '>=12.13'}
-
   is-windows@1.0.2:
     resolution: {integrity: sha512-eXK1UInq2bPmjyX6e3VHIzMLobc4J94i4AWn+Hpq3OU5KkrRC96OAcR3PRJ/pGu6m8TRnBHP9dkXQVsT/COVIA==}
     engines: {node: '>=0.10.0'}
@@ -6436,33 +6437,6 @@ packages:
   mongodb-connection-string-url@3.0.0:
     resolution: {integrity: sha512-t1Vf+m1I5hC2M5RJx/7AtxgABy1cZmIPQRMXw+gEIPn/cZNF3Oiy+l0UIypUwVB5trcWHq3crg2g3uAR9aAwsQ==}
 
-  mongodb@6.6.2:
-    resolution: {integrity: sha512-ZF9Ugo2JCG/GfR7DEb4ypfyJJyiKbg5qBYKRintebj8+DNS33CyGMkWbrS9lara+u+h+yEOGSRiLhFO/g1s1aw==}
-    engines: {node: '>=16.20.1'}
-    peerDependencies:
-      '@aws-sdk/credential-providers': ^3.188.0
-      '@mongodb-js/zstd': ^1.1.0
-      gcp-metadata: ^5.2.0
-      kerberos: ^2.0.1
-      mongodb-client-encryption: '>=6.0.0 <7'
-      snappy: ^7.2.2
-      socks: ^2.7.1
-    peerDependenciesMeta:
-      '@aws-sdk/credential-providers':
-        optional: true
-      '@mongodb-js/zstd':
-        optional: true
-      gcp-metadata:
-        optional: true
-      kerberos:
-        optional: true
-      mongodb-client-encryption:
-        optional: true
-      snappy:
-        optional: true
-      socks:
-        optional: true
-
   mongodb@6.7.0:
     resolution: {integrity: sha512-TMKyHdtMcO0fYBNORiYdmM25ijsHs+Njs963r4Tro4OQZzqYigAzYQouwWRg4OIaiLRUEGUh/1UAcH5lxdSLIA==}
     engines: {node: '>=16.20.1'}
@@ -6489,10 +6463,6 @@ packages:
         optional: true
       socks:
         optional: true
-
-  mongoose@8.4.3:
-    resolution: {integrity: sha512-GxPVLD+I/dxVkgcts2r2QmJJvS62/++btVj3RFt8YnHt+DSOp1Qjj62YEvgZaElwIOTcc4KGJM95X5LlrU1qQg==}
-    engines: {node: '>=16.20.1'}
 
   mongoose@8.5.0:
     resolution: {integrity: sha512-iGgZvgO+fIgX1AQMehkG+Wj8qrWc9it8vUZrSKWjrebgfwHTqUcIdTgWK8mT1us1xd83NOQxiuGbg9ZJtLxs2Q==}
@@ -6554,8 +6524,8 @@ packages:
   next-tick@1.1.0:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
 
-  next@14.2.3:
-    resolution: {integrity: sha512-dowFkFTR8v79NPJO4QsBUtxv0g9BrS/phluVpMAt2ku7H+cbcBJlopXjkWlwxrk/xGqMemr7JkGPGemPrLLX7A==}
+  next@14.2.5:
+    resolution: {integrity: sha512-0f8aRfBVL+mpzfBjYfQuLWh2WyAwtJXCRfkPF4UJ5qd2YwrHczsrSzXU4tRMV0OAxR8ZJZWPFn6uhSC56UTsLA==}
     engines: {node: '>=18.17.0'}
     hasBin: true
     peerDependencies:
@@ -7674,10 +7644,6 @@ packages:
     engines: {node: '>=6.4.0 <13 || >=14'}
     deprecated: Please upgrade to v9.0.0+ as we have fixed a public vulnerability with formidable dependency. Note that v9.0.0+ requires Node.js v14.18.0+. See https://github.com/ladjs/superagent/pull/1800 for insight. This project is supported and maintained by the team at Forward Email @ https://forwardemail.net
 
-  superjson@2.2.1:
-    resolution: {integrity: sha512-8iGv75BYOa0xRJHK5vRLEjE2H/i4lulTjzpUXic3Eg8akftYjkmQDa8JARQ42rlczXyFR3IeRoeFCc7RxHsYZA==}
-    engines: {node: '>=16'}
-
   supports-color@5.5.0:
     resolution: {integrity: sha512-QjVjwdXIt408MIiAqCX4oUKsgU2EqAGzs2Ppkm4aQYbjm+ZEWEcW4SfFNTr4uMNZma0ey4f5lgLrkB0aX0QMow==}
     engines: {node: '>=4'}
@@ -8382,14 +8348,13 @@ snapshots:
     dependencies:
       graphql: 16.9.0
 
-  '@apollo/client-react-streaming@0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+  '@apollo/client-react-streaming@0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)':
     dependencies:
-      '@apollo/client': 3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@apollo/client': 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react: 18.2.0
-      superjson: 2.2.1
       ts-invariant: 0.10.3
 
-  '@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+  '@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.9.0)
       '@wry/caches': 1.0.1
@@ -8413,18 +8378,18 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
-  '@apollo/experimental-nextjs-app-support@0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
+  '@apollo/experimental-nextjs-app-support@0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
     dependencies:
-      '@apollo/client': 3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@apollo/client-react-streaming': 0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
-      next: 14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      '@apollo/client': 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@apollo/client-react-streaming': 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      next: 14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       react: 18.2.0
 
-  '@apollo/experimental-nextjs-app-support@0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
+  '@apollo/experimental-nextjs-app-support@0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
     dependencies:
-      '@apollo/client': 3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@apollo/client-react-streaming': 0.10.1(@apollo/client@3.10.3(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
-      next: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      '@apollo/client': 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@apollo/client-react-streaming': 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      next: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       react: 18.2.0
 
   '@apollo/protobufjs@1.2.7':
@@ -8691,8 +8656,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 5.2.0
       '@aws-crypto/sha256-js': 5.2.0
-      '@aws-sdk/client-sso-oidc': 3.600.0
-      '@aws-sdk/client-sts': 3.600.0(@aws-sdk/client-sso-oidc@3.600.0)
+      '@aws-sdk/client-sso-oidc': 3.600.0(@aws-sdk/client-sts@3.600.0)
+      '@aws-sdk/client-sts': 3.600.0
       '@aws-sdk/core': 3.598.0
       '@aws-sdk/credential-provider-node': 3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0)
       '@aws-sdk/middleware-host-header': 3.598.0
@@ -8738,11 +8703,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.600.0':
+  '@aws-sdk/client-sso-oidc@3.600.0(@aws-sdk/client-sts@3.600.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 5.2.0
       '@aws-crypto/sha256-js': 5.2.0
-      '@aws-sdk/client-sts': 3.600.0(@aws-sdk/client-sso-oidc@3.600.0)
+      '@aws-sdk/client-sts': 3.600.0
       '@aws-sdk/core': 3.598.0
       '@aws-sdk/credential-provider-node': 3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0)
       '@aws-sdk/middleware-host-header': 3.598.0
@@ -8781,6 +8746,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.6.2
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso@3.490.0':
@@ -8913,7 +8879,7 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.502.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)))':
+  '@aws-sdk/client-sts@3.502.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0(@aws-sdk/client-sts@3.600.0))(@aws-sdk/client-sts@3.600.0))':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
@@ -8958,11 +8924,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)':
+  '@aws-sdk/client-sts@3.600.0':
     dependencies:
       '@aws-crypto/sha256-browser': 5.2.0
       '@aws-crypto/sha256-js': 5.2.0
-      '@aws-sdk/client-sso-oidc': 3.600.0
+      '@aws-sdk/client-sso-oidc': 3.600.0(@aws-sdk/client-sts@3.600.0)
       '@aws-sdk/core': 3.598.0
       '@aws-sdk/credential-provider-node': 3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0)
       '@aws-sdk/middleware-host-header': 3.598.0
@@ -9001,7 +8967,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.6.2
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/core@3.490.0':
@@ -9075,7 +9040,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.598.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.600.0(@aws-sdk/client-sso-oidc@3.600.0)
+      '@aws-sdk/client-sts': 3.600.0
       '@aws-sdk/credential-provider-env': 3.598.0
       '@aws-sdk/credential-provider-http': 3.598.0
       '@aws-sdk/credential-provider-process': 3.598.0
@@ -9176,7 +9141,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.598.0(@aws-sdk/client-sts@3.600.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.600.0(@aws-sdk/client-sso-oidc@3.600.0)
+      '@aws-sdk/client-sts': 3.600.0
       '@aws-sdk/types': 3.598.0
       '@smithy/property-provider': 3.1.2
       '@smithy/types': 3.2.0
@@ -9347,7 +9312,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.598.0(@aws-sdk/client-sso-oidc@3.600.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.600.0
+      '@aws-sdk/client-sso-oidc': 3.600.0(@aws-sdk/client-sts@3.600.0)
       '@aws-sdk/types': 3.598.0
       '@smithy/property-provider': 3.1.2
       '@smithy/shared-ini-file-loader': 3.1.2
@@ -10389,13 +10354,13 @@ snapshots:
       human-id: 1.0.2
       prettier: 2.8.8
 
-  '@croco/utils-next-font-pretendard@0.0.2(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))':
+  '@croco/utils-next-font-pretendard@0.0.2(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))':
     dependencies:
-      next: 14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      next: 14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
 
-  '@croco/utils-next-font-pretendard@0.0.2(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))':
+  '@croco/utils-next-font-pretendard@0.0.2(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))':
     dependencies:
-      next: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      next: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
 
   '@croco/utils-structure-react@0.0.1': {}
 
@@ -10565,6 +10530,8 @@ snapshots:
   '@eslint/js@8.57.0': {}
 
   '@fastify/busboy@2.1.0': {}
+
+  '@fastify/busboy@3.0.0': {}
 
   '@firebase/analytics-compat@0.2.7(@firebase/app-compat@0.2.28)(@firebase/app@0.9.28)':
     dependencies:
@@ -10899,7 +10866,7 @@ snapshots:
       fast-deep-equal: 3.1.3
       functional-red-black-tree: 1.0.1
       google-gax: 4.3.7(encoding@0.1.13)
-      protobufjs: 7.2.6
+      protobufjs: 7.3.2
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -11782,10 +11749,10 @@ snapshots:
     dependencies:
       typescript: 4.9.5
 
-  '@kuma-ui/babel-plugin@1.2.1(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
+  '@kuma-ui/babel-plugin@1.2.1(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
     dependencies:
       '@babel/core': 7.23.7
-      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@kuma-ui/sheet': 1.3.1
       '@kuma-ui/system': 1.7.4
     transitivePeerDependencies:
@@ -11794,11 +11761,11 @@ snapshots:
       - react
       - supports-color
 
-  '@kuma-ui/compiler@1.3.1(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
+  '@kuma-ui/compiler@1.3.1(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
     dependencies:
       '@babel/core': 7.23.7
-      '@kuma-ui/babel-plugin': 1.2.1(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
-      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+      '@kuma-ui/babel-plugin': 1.2.1(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@kuma-ui/sheet': 1.3.1
       '@kuma-ui/system': 1.7.4
       '@kuma-ui/wasm': 1.0.2
@@ -11809,7 +11776,7 @@ snapshots:
       - react
       - supports-color
 
-  '@kuma-ui/core@1.5.7(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
+  '@kuma-ui/core@1.5.7(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
     dependencies:
       '@kuma-ui/sheet': 1.3.1
       '@kuma-ui/system': 1.7.4
@@ -11818,9 +11785,9 @@ snapshots:
       stylis: 4.3.1
     optionalDependencies:
       '@types/react': 18.2.57
-      next: 14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      next: 14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
 
-  '@kuma-ui/core@1.5.7(@types/react@18.2.57)(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+  '@kuma-ui/core@1.5.7(@types/react@18.2.57)(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@kuma-ui/sheet': 1.3.1
       '@kuma-ui/system': 1.7.4
@@ -11829,18 +11796,18 @@ snapshots:
       stylis: 4.3.1
     optionalDependencies:
       '@types/react': 18.2.57
-      next: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      next: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
 
-  '@kuma-ui/next-plugin@1.3.1(@babel/core@7.23.7)(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)':
+  '@kuma-ui/next-plugin@1.3.1(@babel/core@7.23.7)(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)':
     dependencies:
       '@babel/preset-env': 7.23.8(@babel/core@7.23.7)
       '@babel/preset-react': 7.23.3(@babel/core@7.23.7)
       '@babel/preset-typescript': 7.23.3(@babel/core@7.23.7)
-      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
-      '@kuma-ui/webpack-plugin': 1.4.1(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)
+      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+      '@kuma-ui/webpack-plugin': 1.4.1(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)
       babel-loader: 9.1.3(@babel/core@7.23.7)(webpack@5.91.0)
       browserslist: 4.21.5
-      next: 14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      next: 14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       react: 18.2.0
       webpack: 5.91.0
     optionalDependencies:
@@ -11860,9 +11827,9 @@ snapshots:
 
   '@kuma-ui/wasm@1.0.2': {}
 
-  '@kuma-ui/webpack-plugin@1.4.1(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)':
+  '@kuma-ui/webpack-plugin@1.4.1(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)':
     dependencies:
-      '@kuma-ui/compiler': 1.3.1(@types/react@18.2.57)(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+      '@kuma-ui/compiler': 1.3.1(@types/react@18.2.57)(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@kuma-ui/sheet': 1.3.1
       '@kuma-ui/system': 1.7.4
       esbuild: 0.18.20
@@ -11939,37 +11906,37 @@ snapshots:
     dependencies:
       sparse-bitfield: 3.0.3
 
-  '@next/env@14.2.3': {}
+  '@next/env@14.2.5': {}
 
-  '@next/eslint-plugin-next@14.2.3':
+  '@next/eslint-plugin-next@14.2.5':
     dependencies:
       glob: 10.3.10
 
-  '@next/swc-darwin-arm64@14.2.3':
+  '@next/swc-darwin-arm64@14.2.5':
     optional: true
 
-  '@next/swc-darwin-x64@14.2.3':
+  '@next/swc-darwin-x64@14.2.5':
     optional: true
 
-  '@next/swc-linux-arm64-gnu@14.2.3':
+  '@next/swc-linux-arm64-gnu@14.2.5':
     optional: true
 
-  '@next/swc-linux-arm64-musl@14.2.3':
+  '@next/swc-linux-arm64-musl@14.2.5':
     optional: true
 
-  '@next/swc-linux-x64-gnu@14.2.3':
+  '@next/swc-linux-x64-gnu@14.2.5':
     optional: true
 
-  '@next/swc-linux-x64-musl@14.2.3':
+  '@next/swc-linux-x64-musl@14.2.5':
     optional: true
 
-  '@next/swc-win32-arm64-msvc@14.2.3':
+  '@next/swc-win32-arm64-msvc@14.2.5':
     optional: true
 
-  '@next/swc-win32-ia32-msvc@14.2.3':
+  '@next/swc-win32-ia32-msvc@14.2.5':
     optional: true
 
-  '@next/swc-win32-x64-msvc@14.2.3':
+  '@next/swc-win32-x64-msvc@14.2.5':
     optional: true
 
   '@nodelib/fs.scandir@2.1.5':
@@ -12034,10 +12001,10 @@ snapshots:
 
   '@rushstack/eslint-patch@1.6.1': {}
 
-  '@serverless/dashboard-plugin@7.2.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)))(encoding@0.1.13)(supports-color@8.1.1)':
+  '@serverless/dashboard-plugin@7.2.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0(@aws-sdk/client-sts@3.600.0))(@aws-sdk/client-sts@3.600.0))(encoding@0.1.13)(supports-color@8.1.1)':
     dependencies:
       '@aws-sdk/client-cloudformation': 3.490.0
-      '@aws-sdk/client-sts': 3.502.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)))
+      '@aws-sdk/client-sts': 3.502.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0(@aws-sdk/client-sts@3.600.0))(@aws-sdk/client-sts@3.600.0))
       '@serverless/event-mocks': 1.1.1
       '@serverless/platform-client': 4.5.1(supports-color@8.1.1)
       '@serverless/utils': 6.15.0(encoding@0.1.13)
@@ -12715,15 +12682,6 @@ snapshots:
       mkdirp: 2.1.6
       path-browserify: 1.0.1
 
-  '@typegoose/typegoose@12.5.0(mongoose@8.4.3)':
-    dependencies:
-      lodash: 4.17.21
-      loglevel: 1.9.1
-      mongoose: 8.4.3
-      reflect-metadata: 0.2.2
-      semver: 7.6.2
-      tslib: 2.6.2
-
   '@typegoose/typegoose@12.5.0(mongoose@8.5.0)':
     dependencies:
       lodash: 4.17.21
@@ -12799,7 +12757,7 @@ snapshots:
 
   '@types/jsonwebtoken@9.0.5':
     dependencies:
-      '@types/node': 20.14.8
+      '@types/node': 20.14.10
 
   '@types/keyv@3.1.4':
     dependencies:
@@ -12853,7 +12811,7 @@ snapshots:
   '@types/request@2.48.12':
     dependencies:
       '@types/caseless': 0.12.5
-      '@types/node': 20.14.8
+      '@types/node': 20.14.10
       '@types/tough-cookie': 4.0.5
       form-data: 2.5.1
     optional: true
@@ -12986,7 +12944,7 @@ snapshots:
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.3
-      semver: 7.6.0
+      semver: 7.6.2
       ts-api-utils: 1.0.2(typescript@5.5.2)
     optionalDependencies:
       typescript: 5.5.2
@@ -13898,7 +13856,7 @@ snapshots:
 
   clone@1.0.4: {}
 
-  cloudinary@2.2.0:
+  cloudinary@2.4.0:
     dependencies:
       lodash: 4.17.21
       q: 1.5.1
@@ -13963,10 +13921,6 @@ snapshots:
   cookie@0.5.0: {}
 
   cookiejar@2.1.4: {}
-
-  copy-anything@3.0.5:
-    dependencies:
-      is-what: 4.1.16
 
   core-js-compat@3.35.0:
     dependencies:
@@ -14205,7 +14159,7 @@ snapshots:
 
   dotenv@16.3.1: {}
 
-  drizzle-orm@0.31.2(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0):
+  drizzle-orm@0.32.1(@types/react@18.2.57)(postgres@3.4.4)(react@18.2.0):
     optionalDependencies:
       '@types/react': 18.2.57
       postgres: 3.4.4
@@ -14438,9 +14392,9 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-config-next@14.2.3(eslint@8.57.0)(typescript@5.5.2):
+  eslint-config-next@14.2.5(eslint@8.57.0)(typescript@5.5.2):
     dependencies:
-      '@next/eslint-plugin-next': 14.2.3
+      '@next/eslint-plugin-next': 14.2.5
       '@rushstack/eslint-patch': 1.6.1
       '@typescript-eslint/parser': 6.19.0(eslint@8.57.0)(typescript@5.5.2)
       eslint: 8.57.0
@@ -14976,16 +14930,15 @@ snapshots:
       micromatch: 4.0.5
       pkg-dir: 4.2.0
 
-  firebase-admin@12.2.0(encoding@0.1.13):
+  firebase-admin@12.3.0(encoding@0.1.13):
     dependencies:
-      '@fastify/busboy': 2.1.0
+      '@fastify/busboy': 3.0.0
       '@firebase/database-compat': 1.0.3
       '@firebase/database-types': 1.0.1
-      '@types/node': 20.14.8
+      '@types/node': 20.14.10
       farmhash-modern: 1.1.0
       jsonwebtoken: 9.0.2
       jwks-rsa: 3.1.0
-      long: 5.2.3
       node-forge: 1.3.1
       uuid: 10.0.0
     optionalDependencies:
@@ -15688,8 +15641,6 @@ snapshots:
       call-bind: 1.0.5
       get-intrinsic: 1.2.2
 
-  is-what@4.1.16: {}
-
   is-windows@1.0.2: {}
 
   is-wsl@2.2.0:
@@ -15852,7 +15803,7 @@ snapshots:
       lodash.isstring: 4.0.1
       lodash.once: 4.1.1
       ms: 2.1.3
-      semver: 7.6.0
+      semver: 7.6.2
 
   jsx-ast-utils@3.3.5:
     dependencies:
@@ -16238,36 +16189,11 @@ snapshots:
       '@types/whatwg-url': 11.0.4
       whatwg-url: 13.0.0
 
-  mongodb@6.6.2:
-    dependencies:
-      '@mongodb-js/saslprep': 1.1.6
-      bson: 6.7.0
-      mongodb-connection-string-url: 3.0.0
-
   mongodb@6.7.0:
     dependencies:
       '@mongodb-js/saslprep': 1.1.6
       bson: 6.7.0
       mongodb-connection-string-url: 3.0.0
-
-  mongoose@8.4.3:
-    dependencies:
-      bson: 6.7.0
-      kareem: 2.6.3
-      mongodb: 6.6.2
-      mpath: 0.9.0
-      mquery: 5.0.0
-      ms: 2.1.3
-      sift: 17.1.3
-    transitivePeerDependencies:
-      - '@aws-sdk/credential-providers'
-      - '@mongodb-js/zstd'
-      - gcp-metadata
-      - kerberos
-      - mongodb-client-encryption
-      - snappy
-      - socks
-      - supports-color
 
   mongoose@8.5.0:
     dependencies:
@@ -16325,31 +16251,31 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next-client-cookies@1.1.1(next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0):
+  next-client-cookies@1.1.1(next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0):
     dependencies:
       js-cookie: 3.0.5
-      next: 14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      next: 14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       react: 18.2.0
 
-  next-client-cookies@1.1.1(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0):
+  next-client-cookies@1.1.1(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0):
     dependencies:
       js-cookie: 3.0.5
-      next: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      next: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       react: 18.2.0
 
-  next-firebase-auth-edge@1.0.1(next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)):
+  next-firebase-auth-edge@1.0.1(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)):
     dependencies:
       '@changesets/cli': 2.27.1
       cookie: 0.5.0
       encoding: 0.1.13
       jose: 4.15.4
-      next: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      next: 14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
 
   next-tick@1.1.0: {}
 
-  next@14.2.3(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6):
+  next@14.2.5(@babel/core@7.23.7)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6):
     dependencies:
-      '@next/env': 14.2.3
+      '@next/env': 14.2.5
       '@swc/helpers': 0.5.5
       busboy: 1.6.0
       caniuse-lite: 1.0.30001612
@@ -16359,23 +16285,23 @@ snapshots:
       react-dom: 18.2.0(react@18.2.0)
       styled-jsx: 5.1.1(@babel/core@7.23.7)(react@18.2.0)
     optionalDependencies:
-      '@next/swc-darwin-arm64': 14.2.3
-      '@next/swc-darwin-x64': 14.2.3
-      '@next/swc-linux-arm64-gnu': 14.2.3
-      '@next/swc-linux-arm64-musl': 14.2.3
-      '@next/swc-linux-x64-gnu': 14.2.3
-      '@next/swc-linux-x64-musl': 14.2.3
-      '@next/swc-win32-arm64-msvc': 14.2.3
-      '@next/swc-win32-ia32-msvc': 14.2.3
-      '@next/swc-win32-x64-msvc': 14.2.3
+      '@next/swc-darwin-arm64': 14.2.5
+      '@next/swc-darwin-x64': 14.2.5
+      '@next/swc-linux-arm64-gnu': 14.2.5
+      '@next/swc-linux-arm64-musl': 14.2.5
+      '@next/swc-linux-x64-gnu': 14.2.5
+      '@next/swc-linux-x64-musl': 14.2.5
+      '@next/swc-win32-arm64-msvc': 14.2.5
+      '@next/swc-win32-ia32-msvc': 14.2.5
+      '@next/swc-win32-x64-msvc': 14.2.5
       sass: 1.77.6
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
 
-  next@14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6):
+  next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6):
     dependencies:
-      '@next/env': 14.2.3
+      '@next/env': 14.2.5
       '@swc/helpers': 0.5.5
       busboy: 1.6.0
       caniuse-lite: 1.0.30001612
@@ -16385,15 +16311,15 @@ snapshots:
       react-dom: 18.2.0(react@18.2.0)
       styled-jsx: 5.1.1(@babel/core@7.23.7)(react@18.2.0)
     optionalDependencies:
-      '@next/swc-darwin-arm64': 14.2.3
-      '@next/swc-darwin-x64': 14.2.3
-      '@next/swc-linux-arm64-gnu': 14.2.3
-      '@next/swc-linux-arm64-musl': 14.2.3
-      '@next/swc-linux-x64-gnu': 14.2.3
-      '@next/swc-linux-x64-musl': 14.2.3
-      '@next/swc-win32-arm64-msvc': 14.2.3
-      '@next/swc-win32-ia32-msvc': 14.2.3
-      '@next/swc-win32-x64-msvc': 14.2.3
+      '@next/swc-darwin-arm64': 14.2.5
+      '@next/swc-darwin-x64': 14.2.5
+      '@next/swc-linux-arm64-gnu': 14.2.5
+      '@next/swc-linux-arm64-musl': 14.2.5
+      '@next/swc-linux-x64-gnu': 14.2.5
+      '@next/swc-linux-x64-musl': 14.2.5
+      '@next/swc-win32-arm64-msvc': 14.2.5
+      '@next/swc-win32-ia32-msvc': 14.2.5
+      '@next/swc-win32-x64-msvc': 14.2.5
       sass: 1.77.6
     transitivePeerDependencies:
       - '@babel/core'
@@ -16856,7 +16782,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 20.14.8
+      '@types/node': 20.14.10
       long: 5.2.3
     optional: true
 
@@ -17285,7 +17211,7 @@ snapshots:
       ramda: 0.28.0
       semver: 7.6.0
 
-  serverless-offline@13.6.0(serverless@3.38.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)))(encoding@0.1.13)):
+  serverless-offline@13.6.0(serverless@3.38.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0(@aws-sdk/client-sts@3.600.0))(@aws-sdk/client-sts@3.600.0))(encoding@0.1.13)):
     dependencies:
       '@aws-sdk/client-lambda': 3.600.0
       '@hapi/boom': 10.0.1
@@ -17307,7 +17233,7 @@ snapshots:
       luxon: 3.4.4
       node-schedule: 2.1.1
       p-memoize: 7.1.1
-      serverless: 3.38.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)))(encoding@0.1.13)
+      serverless: 3.38.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0(@aws-sdk/client-sts@3.600.0))(@aws-sdk/client-sts@3.600.0))(encoding@0.1.13)
       velocityjs: 2.0.6
       ws: 8.16.0
     transitivePeerDependencies:
@@ -17316,9 +17242,9 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  serverless@3.38.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)))(encoding@0.1.13):
+  serverless@3.38.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0(@aws-sdk/client-sts@3.600.0))(@aws-sdk/client-sts@3.600.0))(encoding@0.1.13):
     dependencies:
-      '@serverless/dashboard-plugin': 7.2.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)(@aws-sdk/client-sts@3.600.0(@aws-sdk/client-sso-oidc@3.600.0)))(encoding@0.1.13)(supports-color@8.1.1)
+      '@serverless/dashboard-plugin': 7.2.0(@aws-sdk/credential-provider-node@3.600.0(@aws-sdk/client-sso-oidc@3.600.0(@aws-sdk/client-sts@3.600.0))(@aws-sdk/client-sts@3.600.0))(encoding@0.1.13)(supports-color@8.1.1)
       '@serverless/platform-client': 4.5.1(supports-color@8.1.1)
       '@serverless/utils': 6.15.0(encoding@0.1.13)
       abort-controller: 3.0.0
@@ -17679,10 +17605,6 @@ snapshots:
       semver: 7.6.0
     transitivePeerDependencies:
       - supports-color
-
-  superjson@2.2.1:
-    dependencies:
-      copy-anything: 3.0.5
 
   supports-color@5.5.0:
     dependencies:

@@ -16,9 +16,9 @@
     "@darun/utils-auth-service-core": "workspace:*"
   },
   "peerDependencies": {
-    "@apollo/client": "3.10.3",
+    "@apollo/client": "3.11.2",
     "@darun/utils-router": "workspace:*",
-    "next": "14.2.3",
+    "next": "14.2.5",
     "next-client-cookies": "1.1.1"
   },
   "devDependencies": {
