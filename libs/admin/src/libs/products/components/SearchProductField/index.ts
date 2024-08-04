@@ -1,0 +1,1 @@
+export { SearchProductField } from './SearchProductField';

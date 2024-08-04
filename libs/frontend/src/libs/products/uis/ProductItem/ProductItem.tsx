@@ -13,6 +13,7 @@ type ProductItemProps = {
   tags?: string[];
   specialTags?: string[];
   isAlignCenter?: boolean;
+  nameAs?: 'h3' | 'h2' | 'h1';
 };
 
 const logoSizes = {
@@ -36,6 +37,7 @@ export const ProductItem = ({
   tags,
   specialTags,
   isAlignCenter,
+  nameAs = 'h3',
 }: ProductItemProps) => {
   return (
     <HStack as={as} width={'100%'} gap={'12px'} alignItems={isAlignCenter ? 'center' : 'flex-start'}>
@@ -54,7 +56,7 @@ export const ProductItem = ({
       <VStack gap={'8px'}>
         <VStack gap="4px">
           <Text
-            as="h3"
+            as={nameAs}
             fontSize={['18px', '20px']}
             fontWeight={'fontWeights.bold'}
             letterSpacing={'-.4px'}

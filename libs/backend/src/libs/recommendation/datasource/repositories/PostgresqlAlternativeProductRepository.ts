@@ -26,6 +26,17 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
     );
   }
 
+  create(data: AlternativeProduct): Promise<AlternativeProduct> {
+    return this.db.transaction(async tx => {
+      const inserted = await tx
+        .insert(alternativeProducts)
+        .values({ ...data })
+        .returning();
+
+      return inserted[0] ?? null;
+    });
+  }
+
   async findManyByProductId(productId: string): Promise<AlternativeProduct[]> {
     return this.productIdLoader.load(productId);
   }

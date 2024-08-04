@@ -67,9 +67,10 @@ export class ProductQueryResolver {
   @Query(() => [Product])
   public async searchProducts(@Arg('query', () => String) query: string) {
     const searchableProducts = await this.searchProductUseCase.execute({ query });
-    return searchableProducts.map(searchableProduct =>
-      this.getPublishedProductUseCase.execute({ id: searchableProduct.id })
-    );
+
+    return Promise.all(
+      searchableProducts.map(searchableProduct => this.getPublishedProductUseCase.execute({ id: searchableProduct.id }))
+    ).then(products => products.filter(product => Boolean(product)));
   }
 
   @Authorized([AuthRole.Admin])
