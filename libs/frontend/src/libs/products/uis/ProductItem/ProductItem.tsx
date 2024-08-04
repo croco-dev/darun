@@ -40,7 +40,13 @@ export const ProductItem = ({
   nameAs = 'h3',
 }: ProductItemProps) => {
   return (
-    <HStack as={as} width={'100%'} gap={'12px'} alignItems={isAlignCenter ? 'center' : 'flex-start'}>
+    <HStack
+      as={as}
+      width={'100%'}
+      gap={'12px'}
+      alignItems={isAlignCenter ? 'center' : 'flex-start'}
+      overflow={'hidden'}
+    >
       <Image
         src={logoUrl ?? '/images/default-product-icon.svg'}
         unoptimized={!logoUrl}
@@ -53,7 +59,7 @@ export const ProductItem = ({
           border: '1px solid rgba(0, 0, 0, 0.15)',
         }}
       />
-      <VStack gap={'8px'}>
+      <VStack gap={'8px'} overflow={'hidden'}>
         <VStack gap="4px">
           <Text
             as={nameAs}
@@ -61,10 +67,19 @@ export const ProductItem = ({
             fontWeight={'fontWeights.bold'}
             letterSpacing={'-.4px'}
             color={'colors.dark.900'}
+            margin={0}
           >
             {name}
           </Text>
-          <Text fontSize={['12px', '14px']} lineHeight={'1.5'} color={'colors.dark.500'}>
+          <Text
+            fontSize={['12px', '14px']}
+            lineHeight={'1.5'}
+            color={'colors.dark.500'}
+            textOverflow={'ellipsis'}
+            overflow={'hidden'}
+            whiteSpace={'nowrap'}
+            width={'100%'}
+          >
             {summary}
           </Text>
         </VStack>
