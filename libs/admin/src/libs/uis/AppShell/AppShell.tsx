@@ -7,7 +7,7 @@ import { Navbar } from '../Navbar';
 export const AppShell = ({ children }: { children: ReactNode }) => (
   <Flex style={{ overflow: 'hidden' }}>
     <Navbar />
-    <Box h={'100vh'} style={{ overflow: 'auto' }}>
+    <Box w={'100%'} h={'100vh'} style={{ overflow: 'auto' }}>
       {children}
     </Box>
   </Flex>
