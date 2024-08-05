@@ -111,14 +111,14 @@ importers:
         specifier: 14.2.5
         version: 14.2.5(eslint@8.57.0)(typescript@5.5.2)
       postcss:
-        specifier: 8.4.38
-        version: 8.4.38
+        specifier: 8.4.40
+        version: 8.4.40
       postcss-preset-mantine:
         specifier: 1.15.0
-        version: 1.15.0(postcss@8.4.38)
+        version: 1.15.0(postcss@8.4.40)
       postcss-simple-vars:
         specifier: 7.0.1
-        version: 7.0.1(postcss@8.4.38)
+        version: 7.0.1(postcss@8.4.40)
 
   apps/graphql-api:
     dependencies:
@@ -6850,8 +6850,8 @@ packages:
   pend@1.2.0:
     resolution: {integrity: sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==}
 
-  picocolors@1.0.0:
-    resolution: {integrity: sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==}
+  picocolors@1.0.1:
+    resolution: {integrity: sha512-anP1Z8qwhkbmu7MFP5iTt+wQKXgwzf7zTyGlcdzabySa9vd0Xt392U0rVmz9poOaBj0uHJKyyo9/upk0HrEQew==}
 
   picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
@@ -6922,8 +6922,8 @@ packages:
     resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
     engines: {node: ^10 || ^12 || >=14}
 
-  postcss@8.4.38:
-    resolution: {integrity: sha512-Wglpdk03BSfXkHoQa3b/oulrotAkwrlLDRSOb9D0bN86FdRyE9lppSp33aHNPgBa0JKCoB+drFLZkQoRRYae5A==}
+  postcss@8.4.40:
+    resolution: {integrity: sha512-YF2kKIUzAofPMpfH6hOi2cGnv/HrUlfucspc7pDyvv7kGdqXrfj8SCl/t8owkEgKEuu8ZcRjSOxFxVLqwChZ2Q==}
     engines: {node: ^10 || ^12 || >=14}
 
   postgres@3.4.4:
@@ -16647,7 +16647,7 @@ snapshots:
 
   pend@1.2.0: {}
 
-  picocolors@1.0.0: {}
+  picocolors@1.0.1: {}
 
   picomatch@2.3.1: {}
 
@@ -16671,49 +16671,49 @@ snapshots:
     dependencies:
       find-up: 6.3.0
 
-  postcss-js@4.0.1(postcss@8.4.38):
+  postcss-js@4.0.1(postcss@8.4.40):
     dependencies:
       camelcase-css: 2.0.1
-      postcss: 8.4.38
+      postcss: 8.4.40
 
-  postcss-mixins@9.0.4(postcss@8.4.38):
+  postcss-mixins@9.0.4(postcss@8.4.40):
     dependencies:
       fast-glob: 3.3.1
-      postcss: 8.4.38
-      postcss-js: 4.0.1(postcss@8.4.38)
-      postcss-simple-vars: 7.0.1(postcss@8.4.38)
-      sugarss: 4.0.1(postcss@8.4.38)
+      postcss: 8.4.40
+      postcss-js: 4.0.1(postcss@8.4.40)
+      postcss-simple-vars: 7.0.1(postcss@8.4.40)
+      sugarss: 4.0.1(postcss@8.4.40)
 
-  postcss-nested@6.0.1(postcss@8.4.38):
+  postcss-nested@6.0.1(postcss@8.4.40):
     dependencies:
-      postcss: 8.4.38
+      postcss: 8.4.40
       postcss-selector-parser: 6.0.15
 
-  postcss-preset-mantine@1.15.0(postcss@8.4.38):
+  postcss-preset-mantine@1.15.0(postcss@8.4.40):
     dependencies:
-      postcss: 8.4.38
-      postcss-mixins: 9.0.4(postcss@8.4.38)
-      postcss-nested: 6.0.1(postcss@8.4.38)
+      postcss: 8.4.40
+      postcss-mixins: 9.0.4(postcss@8.4.40)
+      postcss-nested: 6.0.1(postcss@8.4.40)
 
   postcss-selector-parser@6.0.15:
     dependencies:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
 
-  postcss-simple-vars@7.0.1(postcss@8.4.38):
+  postcss-simple-vars@7.0.1(postcss@8.4.40):
     dependencies:
-      postcss: 8.4.38
+      postcss: 8.4.40
 
   postcss@8.4.31:
     dependencies:
       nanoid: 3.3.7
-      picocolors: 1.0.0
+      picocolors: 1.0.1
       source-map-js: 1.2.0
 
-  postcss@8.4.38:
+  postcss@8.4.40:
     dependencies:
       nanoid: 3.3.7
-      picocolors: 1.0.0
+      picocolors: 1.0.1
       source-map-js: 1.2.0
 
   postgres@3.4.4: {}
@@ -17592,9 +17592,9 @@ snapshots:
 
   stylis@4.3.1: {}
 
-  sugarss@4.0.1(postcss@8.4.38):
+  sugarss@4.0.1(postcss@8.4.40):
     dependencies:
-      postcss: 8.4.38
+      postcss: 8.4.40
 
   superagent@7.1.6(supports-color@8.1.1):
     dependencies:
@@ -17943,13 +17943,13 @@ snapshots:
     dependencies:
       browserslist: 4.21.5
       escalade: 3.1.1
-      picocolors: 1.0.0
+      picocolors: 1.0.1
 
   update-browserslist-db@1.0.13(browserslist@4.23.0):
     dependencies:
       browserslist: 4.23.0
       escalade: 3.1.1
-      picocolors: 1.0.0
+      picocolors: 1.0.1
 
   upper-case-first@2.0.2:
     dependencies:
