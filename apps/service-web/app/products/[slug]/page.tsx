@@ -3,7 +3,7 @@ import { ProductDetailPage } from '@darun/frontend';
 import { getClient } from '@darun/utils-apollo-client/server';
 import { Metadata } from 'next';
 
-const productQuery = gql`
+const productMetadataQuery = gql`
   query ProductBySlugOnProductDetailPageMetadata($slug: String!) {
     productBySlug(slug: $slug) {
       name
@@ -18,7 +18,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { data } = await getClient().query<{ productBySlug?: { name: string } }>({
-    query: productQuery,
+    query: productMetadataQuery,
     variables: { slug: params.slug },
   });
 

@@ -1,5 +1,4 @@
 import { gql } from '@apollo/client';
-import { useProductBySlugOnProductInformationSuspenseQuery } from './__generated__/useProductInformation';
 
 gql`
   query ProductBySlugOnProductInformation($slug: String!) {
@@ -13,15 +12,12 @@ gql`
   }
 `;
 
-type ProductInformationProps = { slug: string };
+type ProductInformationProps = {
+  name: string;
+  summary?: string;
+  logoUrl?: string;
+};
 
-export function useProductInformation({ slug }: ProductInformationProps) {
-  const { data } = useProductBySlugOnProductInformationSuspenseQuery({
-    variables: { slug },
-  });
-  return {
-    name: data.productBySlug?.name,
-    summary: data.productBySlug?.summary,
-    logoUrl: data.productBySlug?.logoUrl,
-  };
+export function useProductInformation(props: ProductInformationProps) {
+  return { ...props };
 }

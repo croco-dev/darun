@@ -1,10 +1,14 @@
 import { HStack } from '@kuma-ui/core';
 import { ProductInformation } from '@products/components';
 
-type ProductSummaryProps = { slug: string };
+type ProductSummaryProps = {
+  name: string;
+  summary?: string;
+  logoUrl?: string;
+};
 
-export const ProductSummary = ({ slug }: ProductSummaryProps) => (
+export const ProductSummary = ({ name, summary, logoUrl }: ProductSummaryProps) => (
   <HStack py="16px" justifyContent={'space-between'} alignItems={'center'}>
-    <ProductInformation slug={slug} />
+    <ProductInformation name={name} summary={summary} logoUrl={logoUrl} />
   </HStack>
 );

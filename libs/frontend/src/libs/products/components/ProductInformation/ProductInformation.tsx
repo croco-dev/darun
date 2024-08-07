@@ -1,5 +1,3 @@
-'use client';
-
 import { bind } from '@croco/utils-structure-react';
 import { ProductItem } from '@products/uis';
 import { useProductInformation } from './useProductInformation';
