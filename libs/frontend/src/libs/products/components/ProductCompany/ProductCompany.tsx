@@ -9,12 +9,14 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
   <VStack>
     <Grid gridTemplateColumns={['1fr', 'repeat(2, 1fr)']} gap="8px">
       <VStack gap="12px">
-        <VStack gap="4px" width={'fit-content'}>
-          <Text color="colors.dark.500" fontWeight="fontWeights.bold" fontSize="16px" letterSpacing="-2.4%">
-            기본 정보
-          </Text>
-          <Flex height="2px" bg="colors.dark.400" />
-        </VStack>
+        {(!company || Object.keys(company).length !== 0) && (
+          <VStack gap="4px" width={'fit-content'}>
+            <Text color="colors.dark.500" fontWeight="fontWeights.bold" fontSize="16px" letterSpacing="-2.4%">
+              기본 정보
+            </Text>
+            <Flex height="2px" bg="colors.dark.400" />
+          </VStack>
+        )}
         <VStack gap="6px">
           {company?.name && (
             <HStack>

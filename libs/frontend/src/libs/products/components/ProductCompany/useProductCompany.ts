@@ -28,5 +28,10 @@ export function useProductCompany({ slug }: ProductCompanyProps) {
       slug,
     },
   });
-  return { company: data.productBySlug?.ownedCompany };
+
+  const company = { ...data.productBySlug?.ownedCompany };
+  delete company['__typename'];
+  delete company['id'];
+
+  return { company };
 }
