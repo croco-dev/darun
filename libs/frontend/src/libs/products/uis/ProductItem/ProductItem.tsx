@@ -14,6 +14,7 @@ type ProductItemProps = {
   specialTags?: string[];
   isAlignCenter?: boolean;
   nameAs?: 'h3' | 'h2' | 'h1';
+  isSummaryNoWrap?: boolean;
 };
 
 const logoSizes = {
@@ -38,6 +39,7 @@ export const ProductItem = ({
   specialTags,
   isAlignCenter,
   nameAs = 'h3',
+  isSummaryNoWrap = false,
 }: ProductItemProps) => {
   return (
     <HStack
@@ -71,17 +73,23 @@ export const ProductItem = ({
           >
             {name}
           </Text>
-          <Text
-            fontSize={['12px', '14px']}
-            lineHeight={'1.5'}
-            color={'colors.dark.500'}
-            textOverflow={'ellipsis'}
-            overflow={'hidden'}
-            whiteSpace={'nowrap'}
-            width={'100%'}
-          >
-            {summary}
-          </Text>
+          {isSummaryNoWrap ? (
+            <Text
+              fontSize={['12px', '14px']}
+              lineHeight={'1.5'}
+              color={'colors.dark.500'}
+              textOverflow={'ellipsis'}
+              overflow={'hidden'}
+              whiteSpace={'nowrap'}
+              width={'100%'}
+            >
+              {summary}
+            </Text>
+          ) : (
+            <Text fontSize={['12px', '14px']} lineHeight={'1.5'} color={'colors.dark.500'}>
+              {summary}
+            </Text>
+          )}
         </VStack>
         {(tags || specialTags) && (
           <HStack gap="4px" alignItems={'center'}>
