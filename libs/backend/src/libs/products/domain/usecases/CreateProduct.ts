@@ -12,18 +12,20 @@ export class CreateProduct {
     slug,
     logoUrl,
     summary,
+    description,
   }: {
     name: string;
     slug: string;
     logoUrl: string;
     summary: string;
+    description?: string;
   }): Promise<Product> {
     const exists = await this.productRepository.findOneBySlug(slug);
     if (exists) {
       throw productSlugAlreadyExists();
     }
 
-    const newProduct = new Product({ name, slug, logoUrl, summary });
+    const newProduct = new Product({ name, slug, logoUrl, summary, description });
 
     const insertedProduct = await this.productRepository.insert(newProduct);
 

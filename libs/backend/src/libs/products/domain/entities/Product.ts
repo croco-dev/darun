@@ -43,4 +43,31 @@ export class Product {
   public publish() {
     this.publishedAt = new Date();
   }
+
+  public update({
+    name,
+    summary,
+    logoUrl,
+    description,
+  }: {
+    name?: string;
+    summary?: string;
+    description?: string;
+    logoUrl?: string;
+  }) {
+    if (name) {
+      this.name = name;
+    }
+    if (summary) {
+      this.summary = summary;
+    }
+    if (description) {
+      this.description = description;
+    }
+    if (logoUrl) {
+      this.logoUrl = logoUrl;
+    }
+
+    this.updatedAt = new Date();
+  }
 }

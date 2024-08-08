@@ -35,3 +35,4 @@ export { CreateProductFeature } from './usecases/CreateProductFeature';
 export { AddProductScreenshot } from './usecases/AddProductScreenshot';
 export { AddProductLink } from './usecases/AddProductLink';
 export { PublishProduct } from './usecases/PublishProduct';
+export { EditProduct } from './usecases/EditProduct';
