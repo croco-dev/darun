@@ -1,31 +1,18 @@
 'use client';
 
 import { Button, Card, Group, Stack, Title } from '@mantine/core';
-import { IndexProductButton, ProductInfo, ProductTagsForm } from '@products/components';
+import { ProductTagsForm, ProductDescription } from '@products/components';
+import { ProductDetailInfoSection } from '@products/shells';
 import { IconPencil } from '@tabler/icons-react';
 import { AppShell, PageShell } from '@uis';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { ProductDescription } from '../products/components/ProductDescription/ProductDescription';
-import { PublishProductButton } from '../products/components/PublishProductButton';
 
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
   <AppShell>
     <PageShell title={'서비스 상세'}>
+      <ProductDetailInfoSection slug={slug} />
       <Stack gap={32}>
-        <Card withBorder shadow="sm" radius="md">
-          <Card.Section withBorder inheritPadding py="xs">
-            <Group justify={'space-between'}>
-              <ProductInfo slug={slug} />
-              <Stack gap={4}>
-                <Group gap={8}>
-                  <IndexProductButton slug={slug} />
-                  <PublishProductButton slug={slug} />
-                </Group>
-              </Stack>
-            </Group>
-          </Card.Section>
-        </Card>
         <Stack gap={8}>
           <Group justify={'space-between'}>
             <Title order={3}>설명</Title>
