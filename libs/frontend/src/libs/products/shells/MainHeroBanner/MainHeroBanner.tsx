@@ -7,7 +7,7 @@ import { ProductsCount } from '../../components/ProductsCount';
 export const MainHeroBanner = () => {
   return (
     <Flex background={'colors.dark.900'} position={'relative'} width={'100%'} overflow={'hidden'} py={'40px'}>
-      <Flex position={'absolute'} top={['140px', 0]} bottom={0} right={-140} zIndex={20} width={['120%', '100%']}>
+      <Flex position={'absolute'} top={[40, 0]} bottom={0} right={[-100, -140]} zIndex={20} width={['120%', '100%']}>
         <Box
           as={Image}
           fill={true}
@@ -20,7 +20,7 @@ export const MainHeroBanner = () => {
       </Flex>
       <Flex zIndex={40} width={'100%'}>
         <ContentArea>
-          <VStack display={'inline-flex'} py={'60px'} px={'12px'} gap={'24px'} textAlign={['center', 'left']}>
+          <VStack display={'inline-flex'} py={[20, 60]} px={'12px'} gap={'24px'} textAlign={['center', 'left']}>
             <VStack gap={'8px'}>
               <Text
                 fontSize={['14px', '18px']}
@@ -58,6 +58,7 @@ export const MainHeroBanner = () => {
               borderStyle="solid"
               gap={8}
               boxShadow="0px 2px 4px 0px rgba(0, 0, 0, 0.08)"
+              display={['none', 'flex']}
             >
               <SearchIcon size={18} />
               <Input
