@@ -8,6 +8,7 @@ export const EditProductDescription = bind(useEditProductDescription, ({ form, s
       <Textarea
         label="서비스 요악 (summary)"
         placeholder="ex) 다른에서 여러가지 서비스를 비교, 분석해보세요."
+        rows={10}
         key={form.key('description')}
         {...form.getInputProps('description')}
       />
