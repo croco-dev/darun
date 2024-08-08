@@ -8,6 +8,9 @@ const productQuery = gql`
   query ProductBySlugOnProductAlternativePageMetadata($slug: String!) {
     productBySlug(slug: $slug) {
       name
+      tags {
+        name
+      }
     }
   }
 `;
@@ -18,7 +21,7 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { data } = await getClient().query<{ productBySlug?: { name: string } }>({
+  const { data } = await getClient().query<{ productBySlug?: { name: string; tags: { name: string }[] } }>({
     query: productQuery,
     variables: { slug: params.slug },
   });
@@ -28,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const name = data.productBySlug.name;
+  const tags = data.productBySlug.tags.map(tag => tag.name);
 
   return {
     title: `${name}의 다른 서비스 - 다른(darun)`,
@@ -39,6 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `${name} 비슷한 앱`,
       `${name} 비슷한`,
       `${name} 말고`,
+      ...tags,
     ],
     openGraph: {
       title: `${name}의 다른 서비스 - 다른(darun)`,

@@ -21,7 +21,6 @@ type FormValues = {
   name?: string;
   slug?: string;
   summary?: string;
-  logoName?: string;
   file?: File;
 };
 type NewProductFormProps = {
@@ -34,7 +33,6 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       name: '',
       slug: '',
       summary: '',
-      logoName: '',
       file: undefined,
     },
   });
@@ -51,9 +49,9 @@ export function useNewProductForm({ children }: NewProductFormProps) {
   });
 
   const submit = async (values: FormValues) => {
-    if (!values.name || !values.slug || !values.summary || !values.file || !values.logoName) return;
+    if (!values.name || !values.slug || !values.summary || !values.file) return;
 
-    const url = await upload('images/logos', values.file, values.logoName);
+    const url = await upload('images/logos', values.file, values.slug);
 
     if (!url) {
       notifications.show({ message: '이미지 업로드에 실패했어요.', color: 'red' });

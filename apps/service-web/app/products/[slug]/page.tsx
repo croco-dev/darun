@@ -8,6 +8,9 @@ const productQuery = gql`
   query ProductBySlugOnProductDetailPageMetadata($slug: String!) {
     productBySlug(slug: $slug) {
       name
+      tags {
+        name
+      }
     }
   }
 `;
@@ -18,7 +21,7 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { data } = await getClient().query<{ productBySlug?: { name: string } }>({
+  const { data } = await getClient().query<{ productBySlug?: { name: string; tags: { name: string }[] } }>({
     query: productQuery,
     variables: { slug: params.slug },
   });
@@ -28,12 +31,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const name = data.productBySlug.name;
+  const tags = data.productBySlug.tags.map(tag => tag.name);
 
   return {
     title: `${name} - 다른(darun)`,
     openGraph: {
       title: `${name} - 다른(darun)`,
     },
+    keywords: tags,
   };
 }
 

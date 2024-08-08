@@ -30,13 +30,6 @@ export const NewProductFormSection = () => (
               placeholder="ex) 국내 검색 엔진 1위 기업. 포털 사이트로도 유명하다. 네이버 검색, 뉴스, 지도, 카페, 블로그 서비스를 제공하고 있으며, 네이버 웨일, 네이버 클라우드, 네이버 페이 등 다양한 서비스를 운영하고 있습니다."
               {...form.getInputProps('summary')}
             />
-            <TextInput
-              name="logoName"
-              size="md"
-              label="파일 이름"
-              placeholder="naver.png"
-              {...form.getInputProps('logoName')}
-            />
             <FileInput
               name="file"
               size="md"

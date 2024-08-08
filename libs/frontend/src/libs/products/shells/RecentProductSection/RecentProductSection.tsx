@@ -11,7 +11,7 @@ export const RecentProductSection = () => (
         letterSpacing={'-.4px'}
         as="h2"
       >
-        새롭게 추가 된 서비스
+        새롭게 추가된 서비스
       </Text>
       <Text
         fontWeight={'fontWeights.medium'}
