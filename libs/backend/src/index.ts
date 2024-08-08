@@ -23,3 +23,4 @@ export { IndexProduct, SearchProduct } from './libs/search/domain';
 export { GetAlternativeProducts, AddAlternativeProduct } from './libs/recommendation/domain';
 export { SignImageUpload } from './libs/images/domain';
 export { CloudinaryImageRepositoryConfig } from './libs/images/datasource/repositories/CloudinaryImageRepository';
+export { UpvoteProduct, GetVoteCount } from './libs/voting/domain';

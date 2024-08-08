@@ -11,6 +11,7 @@ import {
   SearchProduct,
   GetAllProducts,
   GetProduct,
+  GetVoteCount,
 } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Args, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
@@ -41,7 +42,8 @@ export class ProductQueryResolver {
     private readonly getProductFeaturesUseCase: GetProductFeatures,
     private readonly getCompanyUseCase: GetCompany,
     private readonly searchProductUseCase: SearchProduct,
-    private readonly getAlternativeProductsUseCase: GetAlternativeProducts
+    private readonly getAlternativeProductsUseCase: GetAlternativeProducts,
+    private readonly getVoteCountUseCase: GetVoteCount
   ) {}
 
   @Query(() => [Product])
@@ -135,6 +137,11 @@ export class ProductQueryResolver {
     );
 
     return products.filter(product => Boolean(product));
+  }
+
+  @FieldResolver(() => Int)
+  public async voteCount(@Root() product: Product) {
+    return this.getVoteCountUseCase.execute({ productId: product.id });
   }
 
   @Authorized([AuthRole.Admin])

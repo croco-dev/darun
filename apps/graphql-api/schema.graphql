@@ -136,6 +136,7 @@ type Mutation {
   publishProduct(input: PublishProductInput!): PublishProductPayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
+  upvoteProduct(slug: String!): UpvoteProductPayload!
 }
 
 type PageInfo {
@@ -161,6 +162,7 @@ type Product {
   summary: String!
   tags: [Tag!]!
   updatedAt: DateTimeISO
+  voteCount: Int!
 }
 
 type ProductConnection {
@@ -220,5 +222,9 @@ input UpdateProductTagsInput {
 }
 
 type UpdateProductTagsPayload {
+  product: Product
+}
+
+type UpvoteProductPayload {
   product: Product
 }
