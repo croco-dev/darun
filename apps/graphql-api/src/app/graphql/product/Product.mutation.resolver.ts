@@ -8,6 +8,7 @@ import {
   AddProductLink,
   PublishProduct,
   AddAlternativeProduct,
+  EditProduct,
 } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
@@ -16,6 +17,7 @@ import { AddAlternativeProductInput, AddAlternativeProductPayload } from './grap
 import { AddProductLinkInput, AddProductLinkPayload } from './graphs/AddProductLink';
 import { AddProductScreenshotInput, AddProductScreenshotPayload } from './graphs/AddProductScreenshot';
 import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
+import { EditProductInput, EditProductPayload } from './graphs/EditProduct';
 import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
 import { PublishProductInput, PublishProductPayload } from './graphs/PublishProduct';
@@ -26,6 +28,7 @@ import { UpdateProductTagsInput, UpdateProductTagsPayload } from './graphs/Updat
 export class ProductMutationResolver {
   constructor(
     private readonly createProductUseCase: CreateProduct,
+    private readonly editProductUseCase: EditProduct,
     private readonly indexProductUseCase: IndexProduct,
     private readonly publishProductUseCase: PublishProduct,
     private readonly updateProductTagUseCase: UpdateProductTag,
@@ -43,6 +46,20 @@ export class ProductMutationResolver {
 
     return {
       product,
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => EditProductPayload)
+  async editProduct(@Arg('slug') slug: string, @Arg('input') input: EditProductInput): Promise<EditProductPayload> {
+    const product = await this.getProductUseCase.execute({ slug });
+
+    if (!product) {
+      throw new Error('Product가 존재하지 않습니다.');
+    }
+
+    return {
+      product: await this.editProductUseCase.execute({ ...input, id: product.id }),
     };
   }
 
