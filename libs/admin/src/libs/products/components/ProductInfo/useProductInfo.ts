@@ -6,6 +6,8 @@ gql`
     tempProductBySlug(slug: $slug) {
       id
       name
+      summary
+      description
       slug
       logoUrl
     }
@@ -26,5 +28,7 @@ export function useProductInfo({ slug }: ProductInfoProps) {
     name: data?.tempProductBySlug?.name ?? '',
     slug: data?.tempProductBySlug?.slug,
     logoUrl: data?.tempProductBySlug?.logoUrl,
+    summary: data?.tempProductBySlug?.summary,
+    description: data?.tempProductBySlug?.description,
   };
 }

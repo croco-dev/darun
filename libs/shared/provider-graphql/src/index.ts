@@ -85,6 +85,7 @@ export type CreateProductFeaturePayload = {
 };
 
 export type CreateProductInput = {
+  readonly description?: InputMaybe<Scalars['String']['input']>;
   readonly logoUrl: Scalars['String']['input'];
   readonly name: Scalars['String']['input'];
   readonly slug: Scalars['String']['input'];
@@ -93,6 +94,18 @@ export type CreateProductInput = {
 
 export type CreateProductPayload = {
   readonly __typename?: 'CreateProductPayload';
+  readonly product: Product;
+};
+
+export type EditProductInput = {
+  readonly description?: InputMaybe<Scalars['String']['input']>;
+  readonly logoUrl?: InputMaybe<Scalars['String']['input']>;
+  readonly name?: InputMaybe<Scalars['String']['input']>;
+  readonly summary?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type EditProductPayload = {
+  readonly __typename?: 'EditProductPayload';
   readonly product: Product;
 };
 
@@ -139,6 +152,7 @@ export type Mutation = {
   readonly createCompany: CreateCompanyPayload;
   readonly createProduct: CreateProductPayload;
   readonly createProductFeature: CreateProductFeaturePayload;
+  readonly editProduct: EditProductPayload;
   readonly indexProduct: IndexProductPayload;
   readonly publishProduct: PublishProductPayload;
   readonly signImageUpload: SignImageUploadPayload;
@@ -176,6 +190,12 @@ export type MutationcreateProductArgs = {
 
 export type MutationcreateProductFeatureArgs = {
   input: CreateProductFeatureInput;
+};
+
+
+export type MutationeditProductArgs = {
+  input: EditProductInput;
+  slug: Scalars['String']['input'];
 };
 
 

@@ -5,7 +5,7 @@ import { Code, Group, Stack, Title } from '@mantine/core';
 import Image from 'next/image';
 import { useProductInfo } from './useProductInfo';
 
-export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, slug }) => (
+export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, slug, summary, description }) => (
   <Group gap={12}>
     {logoUrl && (
       <Image
@@ -30,6 +30,8 @@ export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, slug }) => (
           {slug}
         </Code>
       )}
+      {summary && <div>{summary}</div>}
+      {description && <div>{description}</div>}
     </Stack>
   </Group>
 ));
