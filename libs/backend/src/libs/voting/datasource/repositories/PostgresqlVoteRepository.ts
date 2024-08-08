@@ -21,24 +21,36 @@ export class PostgresqlVoteRepository implements VoteRepository {
 
   upsertByTargetId(id: string, modifier: (vote: Vote) => Vote): Promise<Vote> {
     return this.db.transaction(async tx => {
-      const prevVote =
-        (await tx
-          .select()
-          .from(votes)
-          .where(eq(votes.targetId, id))
-          .limit(1)
-          .then(rows => (rows[0] ? new Vote(rows[0]) : undefined))) ??
-        (await tx
-          .insert(votes)
-          .values({ targetId: id, count: 0 })
-          .returning()
-          .then(rows => (rows[0] ? new Vote(rows[0]) : undefined)));
+      const prevVote = await tx
+        .select()
+        .from(votes)
+        .where(eq(votes.targetId, id))
+        .limit(1)
+        .then(rows => (rows[0] ? new Vote(rows[0]) : undefined));
+
+      const updatedVote = modifier(prevVote ?? new Vote({ targetId: id }));
 
       if (!prevVote) {
-        throw new Error('Vote not found');
+        const inserted = await tx
+          .insert(votes)
+          .values(updatedVote)
+          .returning()
+          .then(rows => (rows[0] ? new Vote(rows[0]) : undefined));
+
+        if (!inserted) {
+          throw new Error('Vote insert failed');
+        }
+        return inserted;
       }
 
-      const updated = await tx.update(votes).set(modifier(prevVote)).where(eq(votes.id, id)).returning();
+      const updated = await tx
+        .update(votes)
+        .set({
+          count: updatedVote.count,
+        })
+        .where(eq(votes.id, prevVote.id))
+        .returning();
+
       if (!updated[0]) {
         throw new Error('Vote update failed');
       }

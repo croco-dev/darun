@@ -157,6 +157,7 @@ export type Mutation = {
   readonly publishProduct: PublishProductPayload;
   readonly signImageUpload: SignImageUploadPayload;
   readonly updateProductTags: UpdateProductTagsPayload;
+  readonly upvoteProduct: UpvoteProductPayload;
 };
 
 
@@ -219,6 +220,11 @@ export type MutationupdateProductTagsArgs = {
   slug: Scalars['String']['input'];
 };
 
+
+export type MutationupvoteProductArgs = {
+  slug: Scalars['String']['input'];
+};
+
 export type PageInfo = {
   readonly __typename?: 'PageInfo';
   readonly endCursor?: Maybe<Scalars['String']['output']>;
@@ -244,6 +250,7 @@ export type Product = {
   readonly summary: Scalars['String']['output'];
   readonly tags: ReadonlyArray<Tag>;
   readonly updatedAt?: Maybe<Scalars['DateTimeISO']['output']>;
+  readonly voteCount: Scalars['Int']['output'];
 };
 
 export type ProductConnection = {
@@ -344,5 +351,10 @@ export type UpdateProductTagsInput = {
 
 export type UpdateProductTagsPayload = {
   readonly __typename?: 'UpdateProductTagsPayload';
+  readonly product?: Maybe<Product>;
+};
+
+export type UpvoteProductPayload = {
+  readonly __typename?: 'UpvoteProductPayload';
   readonly product?: Maybe<Product>;
 };
