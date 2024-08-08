@@ -2,6 +2,7 @@ import { gql } from '@apollo/client';
 import { ProductDetailPage } from '@darun/frontend';
 import { getClient } from '@darun/utils-apollo-client/server';
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 const productQuery = gql`
   query ProductBySlugOnProductDetailPageMetadata($slug: String!) {
@@ -22,7 +23,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     variables: { slug: params.slug },
   });
 
-  const name = data.productBySlug?.name ?? '';
+  if (!data.productBySlug?.name) {
+    return notFound();
+  }
+
+  const name = data.productBySlug.name;
 
   return {
     title: `${name} - 다른(darun)`,
