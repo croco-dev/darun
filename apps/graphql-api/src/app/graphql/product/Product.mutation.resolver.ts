@@ -9,6 +9,7 @@ import {
   PublishProduct,
   AddAlternativeProduct,
   EditProduct,
+  UpvoteProduct,
 } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
@@ -22,6 +23,7 @@ import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
 import { PublishProductInput, PublishProductPayload } from './graphs/PublishProduct';
 import { UpdateProductTagsInput, UpdateProductTagsPayload } from './graphs/UpdateProductTags';
+import { UpvoteProductPayload } from './graphs/UpvoteProduct';
 
 @Resolver(() => Product)
 @Service()
@@ -36,7 +38,8 @@ export class ProductMutationResolver {
     private readonly getProductUseCase: GetProduct,
     private readonly addProductScreenshotUseCase: AddProductScreenshot,
     private readonly addProductLinkUseCase: AddProductLink,
-    private readonly addAlternativeProductUseCase: AddAlternativeProduct
+    private readonly addAlternativeProductUseCase: AddAlternativeProduct,
+    private readonly upvoteProductUseCase: UpvoteProduct
   ) {}
 
   @Authorized([AuthRole.Admin])
@@ -193,6 +196,23 @@ export class ProductMutationResolver {
 
     return {
       product: await this.getProductUseCase.execute({ slug }),
+    };
+  }
+
+  @Mutation(() => UpvoteProductPayload)
+  async upvoteProduct(@Arg('slug') slug: string): Promise<UpvoteProductPayload> {
+    const product = await this.getPublishedProductUseCase.execute({ slug });
+
+    if (!product) {
+      throw new Error('publish된 Product가 존재하지 않습니다.');
+    }
+
+    await this.upvoteProductUseCase.execute({
+      productId: product.id,
+    });
+
+    return {
+      product: await this.getPublishedProductUseCase.execute({ slug }),
     };
   }
 }
