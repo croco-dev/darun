@@ -1,0 +1,1 @@
+export { EditProductDescription } from './EditProductDescription';

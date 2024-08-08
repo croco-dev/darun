@@ -4,21 +4,19 @@ import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import {
-  useEditProductOnEditProductInfoMutation,
-  useTempProductBySlugOnEditProductInfoSuspenseQuery,
-} from './__generated__/useEditProductInfo';
+  useEditProductOnEditProductDescriptionMutation,
+  useTempProductBySlugOnEditProductDescriptionSuspenseQuery,
+} from './__generated__/useEditProductDescription';
 
 gql`
-  query TempProductBySlugOnEditProductInfo($slug: String!) {
+  query TempProductBySlugOnEditProductDescription($slug: String!) {
     tempProductBySlug(slug: $slug) {
       id
-      name
-      summary
-      logoUrl
+      description
     }
   }
 
-  mutation EditProductOnEditProductInfo($input: EditProductInput!, $slug: String!) {
+  mutation EditProductOnEditProductDescription($input: EditProductInput!, $slug: String!) {
     editProduct(input: $input, slug: $slug) {
       product {
         id
@@ -28,24 +26,22 @@ gql`
 `;
 
 type FormValues = {
-  name?: string;
-  summary?: string;
+  description?: string;
 };
 
-export function useEditProductInfo({ slug }: { slug: string }) {
+export function useEditProductDescription({ slug }: { slug: string }) {
   const { refresh } = useRouter();
   const { cache } = useApolloClient();
 
-  const { data } = useTempProductBySlugOnEditProductInfoSuspenseQuery({ variables: { slug } });
+  const { data } = useTempProductBySlugOnEditProductDescriptionSuspenseQuery({ variables: { slug } });
 
   const form = useForm<FormValues>({
     initialValues: {
-      name: '',
-      summary: '',
+      description: '',
     },
   });
 
-  const [editInformation] = useEditProductOnEditProductInfoMutation({
+  const [editDescription] = useEditProductOnEditProductDescriptionMutation({
     onCompleted: ({ editProduct }) => {
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
@@ -57,16 +53,16 @@ export function useEditProductInfo({ slug }: { slug: string }) {
   });
 
   const submit = async (values: FormValues) => {
-    if (!values.name && !values.summary) {
+    if (!values.description) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
-    await editInformation({
+
+    await editDescription({
       variables: {
         slug,
         input: {
-          name: values.name || undefined,
-          summary: values.summary || undefined,
+          description: values.description || '',
         },
       },
     });
@@ -74,10 +70,7 @@ export function useEditProductInfo({ slug }: { slug: string }) {
 
   useEffect(() => {
     if (data) {
-      form.setValues({
-        name: data.tempProductBySlug?.name,
-        summary: data.tempProductBySlug?.summary,
-      });
+      form.setValues({ description: data.tempProductBySlug?.description || undefined });
     }
   }, [data]);
 
