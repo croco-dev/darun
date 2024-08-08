@@ -1,7 +1,16 @@
 import { gql } from '@apollo/client';
-import { useUpvoteProductOnProductUserActionMutation } from './__generated__/useProductUserAction';
+import {
+  useProductBySlugOnProductUserActionQuery,
+  useUpvoteProductOnProductUserActionMutation,
+} from './__generated__/useProductUserAction';
 
 gql`
+  query ProductBySlugOnProductUserAction($slug: String!) {
+    productBySlug(slug: $slug) {
+      id
+      voteCount
+    }
+  }
   mutation UpvoteProductOnProductUserAction($slug: String!) {
     upvoteProduct(slug: $slug) {
       product {
@@ -17,15 +26,22 @@ type ProductUserActionProps = {
 };
 
 export function useProductUserAction({ slug }: ProductUserActionProps) {
+  const { data } = useProductBySlugOnProductUserActionQuery({
+    variables: {
+      slug,
+    },
+  });
   const [upvoteProductMutation] = useUpvoteProductOnProductUserActionMutation({
     variables: {
       slug,
     },
   });
+
   const upvoteProduct = async () => {
     await upvoteProductMutation();
   };
   return {
     upvoteProduct,
+    voteCount: data?.productBySlug?.voteCount ?? 0,
   };
 }

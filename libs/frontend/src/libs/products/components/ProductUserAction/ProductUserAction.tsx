@@ -6,7 +6,7 @@ import { HeartIcon } from '@darun/ui-icons';
 import { HStack, Text, VStack } from '@kuma-ui/core';
 import { useProductUserAction } from './useProductUserAction';
 
-export const ProductUserAction = bind(useProductUserAction, ({ upvoteProduct }) => (
+export const ProductUserAction = bind(useProductUserAction, ({ voteCount, upvoteProduct }) => (
   <HStack gap={'4px'}>
     <ShadowButton onClick={upvoteProduct}>
       <VStack alignItems={'center'} justifyContent={'center'} gap={'4px'} px={'2px'} py={'2px'}>
@@ -18,7 +18,7 @@ export const ProductUserAction = bind(useProductUserAction, ({ upvoteProduct }) 
           color={'colors.dark.700'}
           wordBreak={'keep-all'}
         >
-          관심
+          {voteCount}
         </Text>
       </VStack>
     </ShadowButton>
