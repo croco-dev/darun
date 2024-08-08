@@ -2,6 +2,7 @@ import { gql } from '@apollo/client';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
+import { useImageUpload } from '../../../utils/useImageUplaod';
 import { useAddProductScreenshotOnNewProductScreenshotFormMutation } from './__generated__/useNewProductScreenshotForm';
 
 gql`
@@ -20,7 +21,7 @@ gql`
 `;
 
 type FormValues = {
-  imageUrl?: string;
+  file?: File;
   imageAlt?: string;
 };
 type NewProductFormProps = {
@@ -31,10 +32,12 @@ type NewProductFormProps = {
 export function useNewProductScreenshotForm({ productSlug, children }: NewProductFormProps) {
   const form = useForm<FormValues>({
     initialValues: {
-      imageUrl: '',
+      file: undefined,
       imageAlt: '',
     },
   });
+  const { upload } = useImageUpload();
+
   const [createProductFeature] = useAddProductScreenshotOnNewProductScreenshotFormMutation({
     onCompleted: ({ addProductScreenshot }) => {
       if (addProductScreenshot.product?.id) {
@@ -45,13 +48,20 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
   });
 
   const submit = async (values: FormValues) => {
-    if (!values.imageUrl || !values.imageAlt) return;
+    if (!values.file || !values.imageAlt) return;
+
+    const url = await upload(`images/screenshots/${productSlug}`, values.file, values.file.name);
+
+    if (!url) {
+      notifications.show({ message: '이미지 업로드에 실패했어요.', color: 'red' });
+      return;
+    }
 
     await createProductFeature({
       variables: {
         slug: productSlug,
         input: {
-          imageUrl: values.imageUrl,
+          imageUrl: url,
           imageAlt: values.imageAlt,
         },
       },

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Stack, TextInput } from '@mantine/core';
+import { Button, FileInput, Stack, TextInput } from '@mantine/core';
 import { NewProductScreenForm } from '@products/components';
 
 type NewProductFeatureFormSectionProps = {
@@ -10,12 +10,12 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductFeatu
   <NewProductScreenForm productSlug={productSlug}>
     {({ form }) => (
       <Stack>
-        <TextInput
-          name="imageUrl"
+        <FileInput
+          name="file"
           size="md"
-          label="이미지 주소"
-          placeholder={'ex) https://example.com/image.png'}
-          {...form.getInputProps('imageUrl')}
+          label="이미지"
+          accept="image/png,image/jpeg,image/webp"
+          {...form.getInputProps('file')}
         />
         <TextInput
           name="imageAlt"
