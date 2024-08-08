@@ -1,11 +1,11 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
-import { Code, Group, Stack, Title } from '@mantine/core';
+import { Code, Group, Stack, Title, Text } from '@mantine/core';
 import Image from 'next/image';
 import { useProductInfo } from './useProductInfo';
 
-export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, slug, summary, description }) => (
+export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, summary, slug }) => (
   <Group gap={12}>
     {logoUrl && (
       <Image
@@ -22,16 +22,19 @@ export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, slug, summary,
       />
     )}
     <Stack gap="4px">
-      <Title order={2} size={'24px'}>
-        {name}
-      </Title>
+      <Stack gap="1px">
+        <Title order={2} size={'24px'}>
+          {name}
+        </Title>
+        <Text c="dimmed" size={'sm'}>
+          {summary}
+        </Text>
+      </Stack>
       {slug && (
         <Code fw={700} display={'inline-flex'} style={{ width: 'fit-content' }}>
           {slug}
         </Code>
       )}
-      {summary && <div>{summary}</div>}
-      {description && <div>{description}</div>}
     </Stack>
   </Group>
 ));

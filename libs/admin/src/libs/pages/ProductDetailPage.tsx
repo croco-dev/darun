@@ -2,8 +2,11 @@
 
 import { Button, Card, Group, Stack, Title } from '@mantine/core';
 import { IndexProductButton, ProductInfo, ProductTagsForm } from '@products/components';
+import { IconPencil } from '@tabler/icons-react';
 import { AppShell, PageShell } from '@uis';
 import Link from 'next/link';
+import { Suspense } from 'react';
+import { ProductDescription } from '../products/components/ProductDescription/ProductDescription';
 import { PublishProductButton } from '../products/components/PublishProductButton';
 
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
@@ -23,6 +26,23 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
             </Group>
           </Card.Section>
         </Card>
+        <Stack gap={8}>
+          <Group justify={'space-between'}>
+            <Title order={3}>설명</Title>
+            <Link href={`/products/${slug}/features/new`}>
+              <Button color={'dark'} leftSection={<IconPencil size={16} />}>
+                수정
+              </Button>
+            </Link>
+          </Group>
+          <Card withBorder shadow="sm" radius="md">
+            <Card.Section withBorder inheritPadding py="xs">
+              <Suspense fallback={<>로딩 중...</>}>
+                <ProductDescription slug={slug} />
+              </Suspense>
+            </Card.Section>
+          </Card>
+        </Stack>
         <Stack gap={8}>
           <Group justify={'space-between'}>
             <Title order={3}>기능 관리</Title>
