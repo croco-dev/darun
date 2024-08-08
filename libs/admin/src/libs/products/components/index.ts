@@ -3,3 +3,4 @@ export { IndexProductButton } from './IndexProductButton';
 export { ProductInfo } from './ProductInfo';
 export { ProductTagsForm } from './ProductTagsForm';
 export { NewProductScreenForm } from './NewProductScreenshotForm';
+export { ProductDescription } from './ProductDescription';
