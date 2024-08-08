@@ -9,7 +9,7 @@ export type TempProductBySlugOnProductInfoQueryVariables = Types.Exact<{
 }>;
 
 
-export type TempProductBySlugOnProductInfoQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, name: string, summary: string, description?: string | null, slug: string, logoUrl: string } | null };
+export type TempProductBySlugOnProductInfoQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, name: string, slug: string, summary: string, logoUrl: string } | null };
 
 
 export const TempProductBySlugOnProductInfoDocument = gql`
@@ -17,9 +17,8 @@ export const TempProductBySlugOnProductInfoDocument = gql`
   tempProductBySlug(slug: $slug) {
     id
     name
-    summary
-    description
     slug
+    summary
     logoUrl
   }
 }
