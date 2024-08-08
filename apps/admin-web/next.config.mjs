@@ -14,6 +14,13 @@ const nextConfig = {
       },
     ],
   },
+  redirects: () => [
+    {
+      source: '/',
+      destination: '/products',
+      permanent: false,
+    },
+  ],
 };
 
 export default nextConfig;
