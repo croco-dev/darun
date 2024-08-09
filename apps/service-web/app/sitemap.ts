@@ -3,6 +3,8 @@ import { getClient, initApolloClient } from '@darun/utils-apollo-client/server';
 import { MetadataRoute } from 'next';
 import { container } from './serverContainer';
 
+export const revalidate = 60 * 60; // 1 hours
+
 initApolloClient(() => container.serverApolloClient);
 
 const productQuery = gql`
