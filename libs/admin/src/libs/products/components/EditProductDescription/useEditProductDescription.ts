@@ -18,6 +18,7 @@ gql`
     editProduct(input: $input, slug: $slug) {
       product {
         id
+        description
       }
     }
   }
@@ -27,7 +28,7 @@ type FormValues = {
   description?: string;
 };
 
-export function useEditProductDescription({ slug }: { slug: string }) {
+export function useEditProductDescription({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
   useTempProductBySlugOnEditProductDescriptionQuery({
     variables: { slug },
     onCompleted: ({ tempProductBySlug }) => {
@@ -64,6 +65,8 @@ export function useEditProductDescription({ slug }: { slug: string }) {
         },
       },
     });
+
+    onSubmit?.();
   };
 
   return { form, submit };

@@ -32,7 +32,7 @@ export const ProductDetailDescriptionSection = bind(
         </Card>
       </Stack>
       <Modal opened={isEditModalOpened} onClose={closeEditModal} title="설명 수정" centered>
-        <EditProductDescription slug={slug} />
+        <EditProductDescription slug={slug} onSubmit={closeEditModal} />
       </Modal>
     </>
   )

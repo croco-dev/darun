@@ -16,7 +16,7 @@ export type EditProductOnEditProductDescriptionMutationVariables = Types.Exact<{
 }>;
 
 
-export type EditProductOnEditProductDescriptionMutation = { __typename?: 'Mutation', editProduct: { __typename?: 'EditProductPayload', product: { __typename?: 'Product', id: string } } };
+export type EditProductOnEditProductDescriptionMutation = { __typename?: 'Mutation', editProduct: { __typename?: 'EditProductPayload', product: { __typename?: 'Product', id: string, description?: string | null } } };
 
 
 export const TempProductBySlugOnEditProductDescriptionDocument = gql`
@@ -65,6 +65,7 @@ export const EditProductOnEditProductDescriptionDocument = gql`
   editProduct(input: $input, slug: $slug) {
     product {
       id
+      description
     }
   }
 }

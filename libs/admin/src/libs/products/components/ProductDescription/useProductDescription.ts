@@ -4,6 +4,7 @@ import { useTempProductBySlugOnProductDescriptionSuspenseQuery } from './__gener
 gql`
   query TempProductBySlugOnProductDescription($slug: String!) {
     tempProductBySlug(slug: $slug) {
+      id
       description
     }
   }
