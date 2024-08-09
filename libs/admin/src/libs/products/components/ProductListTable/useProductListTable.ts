@@ -16,6 +16,7 @@ gql`
     }
   }
 `;
+
 export function useProductListTable() {
   const { data } = useAllProductsOnProductListTableSuspenseQuery();
   return { products: data.allProducts.edges };
