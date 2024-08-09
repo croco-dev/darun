@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type ProductOnProductLinksQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -45,7 +44,7 @@ export const ProductOnProductLinksDocument = gql`
  */
 export function useProductOnProductLinksQuery(baseOptions: Apollo.QueryHookOptions<ProductOnProductLinksQuery, ProductOnProductLinksQueryVariables> & ({ variables: ProductOnProductLinksQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<ProductOnProductLinksQuery, ProductOnProductLinksQueryVariables>(ProductOnProductLinksDocument, options);
+        return Apollo.useQuery<ProductOnProductLinksQuery, ProductOnProductLinksQueryVariables>(ProductOnProductLinksDocument, options);
       }
 export function useProductOnProductLinksLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ProductOnProductLinksQuery, ProductOnProductLinksQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -53,7 +52,7 @@ export function useProductOnProductLinksLazyQuery(baseOptions?: Apollo.LazyQuery
         }
 export function useProductOnProductLinksSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ProductOnProductLinksQuery, ProductOnProductLinksQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<ProductOnProductLinksQuery, ProductOnProductLinksQueryVariables>(ProductOnProductLinksDocument, options);
+          return Apollo.useSuspenseQuery<ProductOnProductLinksQuery, ProductOnProductLinksQueryVariables>(ProductOnProductLinksDocument, options);
         }
 export type ProductOnProductLinksQueryHookResult = ReturnType<typeof useProductOnProductLinksQuery>;
 export type ProductOnProductLinksLazyQueryHookResult = ReturnType<typeof useProductOnProductLinksLazyQuery>;

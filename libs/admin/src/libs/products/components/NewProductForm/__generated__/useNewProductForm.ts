@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type CreateProductOnNewProductFormMutationVariables = Types.Exact<{
   input: Types.CreateProductInput;

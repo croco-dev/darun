@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type GetPhotosOnProductPhotosQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -42,7 +41,7 @@ export const GetPhotosOnProductPhotosDocument = gql`
  */
 export function useGetPhotosOnProductPhotosQuery(baseOptions: Apollo.QueryHookOptions<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables> & ({ variables: GetPhotosOnProductPhotosQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>(GetPhotosOnProductPhotosDocument, options);
+        return Apollo.useQuery<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>(GetPhotosOnProductPhotosDocument, options);
       }
 export function useGetPhotosOnProductPhotosLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -50,7 +49,7 @@ export function useGetPhotosOnProductPhotosLazyQuery(baseOptions?: Apollo.LazyQu
         }
 export function useGetPhotosOnProductPhotosSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>(GetPhotosOnProductPhotosDocument, options);
+          return Apollo.useSuspenseQuery<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>(GetPhotosOnProductPhotosDocument, options);
         }
 export type GetPhotosOnProductPhotosQueryHookResult = ReturnType<typeof useGetPhotosOnProductPhotosQuery>;
 export type GetPhotosOnProductPhotosLazyQueryHookResult = ReturnType<typeof useGetPhotosOnProductPhotosLazyQuery>;

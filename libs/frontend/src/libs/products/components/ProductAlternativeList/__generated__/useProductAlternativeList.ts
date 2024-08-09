@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type ProductWithFeaturesOnProductAlternativeListQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -56,7 +55,7 @@ export const ProductWithFeaturesOnProductAlternativeListDocument = gql`
  */
 export function useProductWithFeaturesOnProductAlternativeListQuery(baseOptions: Apollo.QueryHookOptions<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables> & ({ variables: ProductWithFeaturesOnProductAlternativeListQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>(ProductWithFeaturesOnProductAlternativeListDocument, options);
+        return Apollo.useQuery<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>(ProductWithFeaturesOnProductAlternativeListDocument, options);
       }
 export function useProductWithFeaturesOnProductAlternativeListLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -64,7 +63,7 @@ export function useProductWithFeaturesOnProductAlternativeListLazyQuery(baseOpti
         }
 export function useProductWithFeaturesOnProductAlternativeListSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>(ProductWithFeaturesOnProductAlternativeListDocument, options);
+          return Apollo.useSuspenseQuery<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>(ProductWithFeaturesOnProductAlternativeListDocument, options);
         }
 export type ProductWithFeaturesOnProductAlternativeListQueryHookResult = ReturnType<typeof useProductWithFeaturesOnProductAlternativeListQuery>;
 export type ProductWithFeaturesOnProductAlternativeListLazyQueryHookResult = ReturnType<typeof useProductWithFeaturesOnProductAlternativeListLazyQuery>;

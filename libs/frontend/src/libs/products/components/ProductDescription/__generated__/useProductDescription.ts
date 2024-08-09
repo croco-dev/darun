@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type ProductBySlugOnProductSummaryQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -39,7 +38,7 @@ export const ProductBySlugOnProductSummaryDocument = gql`
  */
 export function useProductBySlugOnProductSummaryQuery(baseOptions: Apollo.QueryHookOptions<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables> & ({ variables: ProductBySlugOnProductSummaryQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables>(ProductBySlugOnProductSummaryDocument, options);
+        return Apollo.useQuery<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables>(ProductBySlugOnProductSummaryDocument, options);
       }
 export function useProductBySlugOnProductSummaryLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -47,7 +46,7 @@ export function useProductBySlugOnProductSummaryLazyQuery(baseOptions?: Apollo.L
         }
 export function useProductBySlugOnProductSummarySuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables>(ProductBySlugOnProductSummaryDocument, options);
+          return Apollo.useSuspenseQuery<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables>(ProductBySlugOnProductSummaryDocument, options);
         }
 export type ProductBySlugOnProductSummaryQueryHookResult = ReturnType<typeof useProductBySlugOnProductSummaryQuery>;
 export type ProductBySlugOnProductSummaryLazyQueryHookResult = ReturnType<typeof useProductBySlugOnProductSummaryLazyQuery>;

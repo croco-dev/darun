@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type ProductBySlugOnProductInformationQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -42,7 +41,7 @@ export const ProductBySlugOnProductInformationDocument = gql`
  */
 export function useProductBySlugOnProductInformationQuery(baseOptions: Apollo.QueryHookOptions<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables> & ({ variables: ProductBySlugOnProductInformationQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables>(ProductBySlugOnProductInformationDocument, options);
+        return Apollo.useQuery<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables>(ProductBySlugOnProductInformationDocument, options);
       }
 export function useProductBySlugOnProductInformationLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -50,7 +49,7 @@ export function useProductBySlugOnProductInformationLazyQuery(baseOptions?: Apol
         }
 export function useProductBySlugOnProductInformationSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables>(ProductBySlugOnProductInformationDocument, options);
+          return Apollo.useSuspenseQuery<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables>(ProductBySlugOnProductInformationDocument, options);
         }
 export type ProductBySlugOnProductInformationQueryHookResult = ReturnType<typeof useProductBySlugOnProductInformationQuery>;
 export type ProductBySlugOnProductInformationLazyQueryHookResult = ReturnType<typeof useProductBySlugOnProductInformationLazyQuery>;

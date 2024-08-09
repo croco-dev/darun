@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type TempProductBySlugOnProductInfoQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -42,7 +41,7 @@ export const TempProductBySlugOnProductInfoDocument = gql`
  */
 export function useTempProductBySlugOnProductInfoQuery(baseOptions: Apollo.QueryHookOptions<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables> & ({ variables: TempProductBySlugOnProductInfoQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>(TempProductBySlugOnProductInfoDocument, options);
+        return Apollo.useQuery<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>(TempProductBySlugOnProductInfoDocument, options);
       }
 export function useTempProductBySlugOnProductInfoLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -50,7 +49,7 @@ export function useTempProductBySlugOnProductInfoLazyQuery(baseOptions?: Apollo.
         }
 export function useTempProductBySlugOnProductInfoSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>(TempProductBySlugOnProductInfoDocument, options);
+          return Apollo.useSuspenseQuery<TempProductBySlugOnProductInfoQuery, TempProductBySlugOnProductInfoQueryVariables>(TempProductBySlugOnProductInfoDocument, options);
         }
 export type TempProductBySlugOnProductInfoQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductInfoQuery>;
 export type TempProductBySlugOnProductInfoLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductInfoLazyQuery>;

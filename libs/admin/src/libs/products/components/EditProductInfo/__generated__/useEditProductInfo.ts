@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type TempProductBySlugOnEditProductInfoQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -49,7 +48,7 @@ export const TempProductBySlugOnEditProductInfoDocument = gql`
  */
 export function useTempProductBySlugOnEditProductInfoQuery(baseOptions: Apollo.QueryHookOptions<TempProductBySlugOnEditProductInfoQuery, TempProductBySlugOnEditProductInfoQueryVariables> & ({ variables: TempProductBySlugOnEditProductInfoQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<TempProductBySlugOnEditProductInfoQuery, TempProductBySlugOnEditProductInfoQueryVariables>(TempProductBySlugOnEditProductInfoDocument, options);
+        return Apollo.useQuery<TempProductBySlugOnEditProductInfoQuery, TempProductBySlugOnEditProductInfoQueryVariables>(TempProductBySlugOnEditProductInfoDocument, options);
       }
 export function useTempProductBySlugOnEditProductInfoLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductBySlugOnEditProductInfoQuery, TempProductBySlugOnEditProductInfoQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -57,7 +56,7 @@ export function useTempProductBySlugOnEditProductInfoLazyQuery(baseOptions?: Apo
         }
 export function useTempProductBySlugOnEditProductInfoSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnEditProductInfoQuery, TempProductBySlugOnEditProductInfoQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<TempProductBySlugOnEditProductInfoQuery, TempProductBySlugOnEditProductInfoQueryVariables>(TempProductBySlugOnEditProductInfoDocument, options);
+          return Apollo.useSuspenseQuery<TempProductBySlugOnEditProductInfoQuery, TempProductBySlugOnEditProductInfoQueryVariables>(TempProductBySlugOnEditProductInfoDocument, options);
         }
 export type TempProductBySlugOnEditProductInfoQueryHookResult = ReturnType<typeof useTempProductBySlugOnEditProductInfoQuery>;
 export type TempProductBySlugOnEditProductInfoLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnEditProductInfoLazyQuery>;

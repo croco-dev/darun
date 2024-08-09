@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type ProductBySlugOnProductUserActionQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -46,7 +45,7 @@ export const ProductBySlugOnProductUserActionDocument = gql`
  */
 export function useProductBySlugOnProductUserActionQuery(baseOptions: Apollo.QueryHookOptions<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables> & ({ variables: ProductBySlugOnProductUserActionQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>(ProductBySlugOnProductUserActionDocument, options);
+        return Apollo.useQuery<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>(ProductBySlugOnProductUserActionDocument, options);
       }
 export function useProductBySlugOnProductUserActionLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -54,7 +53,7 @@ export function useProductBySlugOnProductUserActionLazyQuery(baseOptions?: Apoll
         }
 export function useProductBySlugOnProductUserActionSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>(ProductBySlugOnProductUserActionDocument, options);
+          return Apollo.useSuspenseQuery<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>(ProductBySlugOnProductUserActionDocument, options);
         }
 export type ProductBySlugOnProductUserActionQueryHookResult = ReturnType<typeof useProductBySlugOnProductUserActionQuery>;
 export type ProductBySlugOnProductUserActionLazyQueryHookResult = ReturnType<typeof useProductBySlugOnProductUserActionLazyQuery>;

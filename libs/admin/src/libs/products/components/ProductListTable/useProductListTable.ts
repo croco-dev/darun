@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { useAllProductsOnProductListTableSuspenseQuery } from './__generated__/useProductListTable';
+import { useAllProductsOnProductListTableQuery } from './__generated__/useProductListTable';
 
 gql`
   query AllProductsOnProductListTable {
@@ -18,6 +18,6 @@ gql`
 `;
 
 export function useProductListTable() {
-  const { data } = useAllProductsOnProductListTableSuspenseQuery();
-  return { products: data.allProducts.edges };
+  const { data } = useAllProductsOnProductListTableQuery();
+  return { products: data?.allProducts.edges ?? [] };
 }

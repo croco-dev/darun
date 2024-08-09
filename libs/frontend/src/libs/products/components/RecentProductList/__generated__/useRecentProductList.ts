@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type RecentProductsOnRecentProductListQueryVariables = Types.Exact<{ [key: string]: never; }>;
 
@@ -43,7 +42,7 @@ export const RecentProductsOnRecentProductListDocument = gql`
  */
 export function useRecentProductsOnRecentProductListQuery(baseOptions?: Apollo.QueryHookOptions<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>(RecentProductsOnRecentProductListDocument, options);
+        return Apollo.useQuery<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>(RecentProductsOnRecentProductListDocument, options);
       }
 export function useRecentProductsOnRecentProductListLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -51,7 +50,7 @@ export function useRecentProductsOnRecentProductListLazyQuery(baseOptions?: Apol
         }
 export function useRecentProductsOnRecentProductListSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>(RecentProductsOnRecentProductListDocument, options);
+          return Apollo.useSuspenseQuery<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>(RecentProductsOnRecentProductListDocument, options);
         }
 export type RecentProductsOnRecentProductListQueryHookResult = ReturnType<typeof useRecentProductsOnRecentProductListQuery>;
 export type RecentProductsOnRecentProductListLazyQueryHookResult = ReturnType<typeof useRecentProductsOnRecentProductListLazyQuery>;

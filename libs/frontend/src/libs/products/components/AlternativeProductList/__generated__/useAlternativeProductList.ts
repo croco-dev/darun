@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type ProductBySlugOnAlternativeProductListQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -49,7 +48,7 @@ export const ProductBySlugOnAlternativeProductListDocument = gql`
  */
 export function useProductBySlugOnAlternativeProductListQuery(baseOptions: Apollo.QueryHookOptions<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables> & ({ variables: ProductBySlugOnAlternativeProductListQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables>(ProductBySlugOnAlternativeProductListDocument, options);
+        return Apollo.useQuery<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables>(ProductBySlugOnAlternativeProductListDocument, options);
       }
 export function useProductBySlugOnAlternativeProductListLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -57,7 +56,7 @@ export function useProductBySlugOnAlternativeProductListLazyQuery(baseOptions?: 
         }
 export function useProductBySlugOnAlternativeProductListSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables>(ProductBySlugOnAlternativeProductListDocument, options);
+          return Apollo.useSuspenseQuery<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables>(ProductBySlugOnAlternativeProductListDocument, options);
         }
 export type ProductBySlugOnAlternativeProductListQueryHookResult = ReturnType<typeof useProductBySlugOnAlternativeProductListQuery>;
 export type ProductBySlugOnAlternativeProductListLazyQueryHookResult = ReturnType<typeof useProductBySlugOnAlternativeProductListLazyQuery>;

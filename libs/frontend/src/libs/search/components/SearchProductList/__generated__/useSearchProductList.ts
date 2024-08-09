@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type SearchProductsOnSearchProductListQueryVariables = Types.Exact<{
   query: Types.Scalars['String']['input'];
@@ -52,7 +51,7 @@ export const SearchProductsOnSearchProductListDocument = gql`
  */
 export function useSearchProductsOnSearchProductListQuery(baseOptions: Apollo.QueryHookOptions<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables> & ({ variables: SearchProductsOnSearchProductListQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>(SearchProductsOnSearchProductListDocument, options);
+        return Apollo.useQuery<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>(SearchProductsOnSearchProductListDocument, options);
       }
 export function useSearchProductsOnSearchProductListLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -60,7 +59,7 @@ export function useSearchProductsOnSearchProductListLazyQuery(baseOptions?: Apol
         }
 export function useSearchProductsOnSearchProductListSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>(SearchProductsOnSearchProductListDocument, options);
+          return Apollo.useSuspenseQuery<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>(SearchProductsOnSearchProductListDocument, options);
         }
 export type SearchProductsOnSearchProductListQueryHookResult = ReturnType<typeof useSearchProductsOnSearchProductListQuery>;
 export type SearchProductsOnSearchProductListLazyQueryHookResult = ReturnType<typeof useSearchProductsOnSearchProductListLazyQuery>;

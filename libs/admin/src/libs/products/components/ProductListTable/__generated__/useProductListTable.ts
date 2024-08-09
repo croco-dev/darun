@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type AllProductsOnProductListTableQueryVariables = Types.Exact<{ [key: string]: never; }>;
 
@@ -43,7 +42,7 @@ export const AllProductsOnProductListTableDocument = gql`
  */
 export function useAllProductsOnProductListTableQuery(baseOptions?: Apollo.QueryHookOptions<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>(AllProductsOnProductListTableDocument, options);
+        return Apollo.useQuery<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>(AllProductsOnProductListTableDocument, options);
       }
 export function useAllProductsOnProductListTableLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -51,7 +50,7 @@ export function useAllProductsOnProductListTableLazyQuery(baseOptions?: Apollo.L
         }
 export function useAllProductsOnProductListTableSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>(AllProductsOnProductListTableDocument, options);
+          return Apollo.useSuspenseQuery<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>(AllProductsOnProductListTableDocument, options);
         }
 export type AllProductsOnProductListTableQueryHookResult = ReturnType<typeof useAllProductsOnProductListTableQuery>;
 export type AllProductsOnProductListTableLazyQueryHookResult = ReturnType<typeof useAllProductsOnProductListTableLazyQuery>;

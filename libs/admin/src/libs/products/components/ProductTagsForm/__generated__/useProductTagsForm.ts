@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type TempProductBySlugOnProductTagsFormQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -50,7 +49,7 @@ export const TempProductBySlugOnProductTagsFormDocument = gql`
  */
 export function useTempProductBySlugOnProductTagsFormQuery(baseOptions: Apollo.QueryHookOptions<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables> & ({ variables: TempProductBySlugOnProductTagsFormQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>(TempProductBySlugOnProductTagsFormDocument, options);
+        return Apollo.useQuery<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>(TempProductBySlugOnProductTagsFormDocument, options);
       }
 export function useTempProductBySlugOnProductTagsFormLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -58,7 +57,7 @@ export function useTempProductBySlugOnProductTagsFormLazyQuery(baseOptions?: Apo
         }
 export function useTempProductBySlugOnProductTagsFormSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>(TempProductBySlugOnProductTagsFormDocument, options);
+          return Apollo.useSuspenseQuery<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>(TempProductBySlugOnProductTagsFormDocument, options);
         }
 export type TempProductBySlugOnProductTagsFormQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductTagsFormQuery>;
 export type TempProductBySlugOnProductTagsFormLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductTagsFormLazyQuery>;

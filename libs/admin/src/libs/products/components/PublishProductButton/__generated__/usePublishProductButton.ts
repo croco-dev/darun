@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type TempProductOnPublishProductButtonQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -46,7 +45,7 @@ export const TempProductOnPublishProductButtonDocument = gql`
  */
 export function useTempProductOnPublishProductButtonQuery(baseOptions: Apollo.QueryHookOptions<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables> & ({ variables: TempProductOnPublishProductButtonQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>(TempProductOnPublishProductButtonDocument, options);
+        return Apollo.useQuery<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>(TempProductOnPublishProductButtonDocument, options);
       }
 export function useTempProductOnPublishProductButtonLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -54,7 +53,7 @@ export function useTempProductOnPublishProductButtonLazyQuery(baseOptions?: Apol
         }
 export function useTempProductOnPublishProductButtonSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>(TempProductOnPublishProductButtonDocument, options);
+          return Apollo.useSuspenseQuery<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>(TempProductOnPublishProductButtonDocument, options);
         }
 export type TempProductOnPublishProductButtonQueryHookResult = ReturnType<typeof useTempProductOnPublishProductButtonQuery>;
 export type TempProductOnPublishProductButtonLazyQueryHookResult = ReturnType<typeof useTempProductOnPublishProductButtonLazyQuery>;

@@ -2,7 +2,6 @@ import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
-import * as ApolloSSRHooks from '@apollo/experimental-nextjs-app-support/ssr';
 const defaultOptions = {} as const;
 export type ProductsCountOnProductsCountQueryVariables = Types.Exact<{ [key: string]: never; }>;
 
@@ -33,7 +32,7 @@ export const ProductsCountOnProductsCountDocument = gql`
  */
 export function useProductsCountOnProductsCountQuery(baseOptions?: Apollo.QueryHookOptions<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloSSRHooks.useQuery<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>(ProductsCountOnProductsCountDocument, options);
+        return Apollo.useQuery<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>(ProductsCountOnProductsCountDocument, options);
       }
 export function useProductsCountOnProductsCountLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
@@ -41,7 +40,7 @@ export function useProductsCountOnProductsCountLazyQuery(baseOptions?: Apollo.La
         }
 export function useProductsCountOnProductsCountSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloSSRHooks.useSuspenseQuery<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>(ProductsCountOnProductsCountDocument, options);
+          return Apollo.useSuspenseQuery<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>(ProductsCountOnProductsCountDocument, options);
         }
 export type ProductsCountOnProductsCountQueryHookResult = ReturnType<typeof useProductsCountOnProductsCountQuery>;
 export type ProductsCountOnProductsCountLazyQueryHookResult = ReturnType<typeof useProductsCountOnProductsCountLazyQuery>;
