@@ -79,7 +79,7 @@ export function useEditProductInfo({ slug }: { slug: string }) {
         summary: data.tempProductBySlug?.summary,
       });
     }
-  }, [data]);
+  }, [data, form]);
 
   return { form, submit };
 }

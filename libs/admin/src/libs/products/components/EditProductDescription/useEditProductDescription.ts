@@ -72,7 +72,7 @@ export function useEditProductDescription({ slug }: { slug: string }) {
     if (data) {
       form.setValues({ description: data.tempProductBySlug?.description || undefined });
     }
-  }, [data]);
+  }, [data, form]);
 
   return { form, submit };
 }
