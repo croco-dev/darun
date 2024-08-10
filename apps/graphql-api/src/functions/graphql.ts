@@ -25,6 +25,7 @@ export const handler: APIGatewayProxyHandlerV2 = createLambdaHandler(
   {
     context: async ({ event }) => {
       const authToken = event.headers?.['authorization']?.replace('Bearer ', '');
+
       return {
         requestId: event.requestContext.requestId,
         authToken,

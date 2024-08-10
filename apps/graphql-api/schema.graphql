@@ -135,6 +135,7 @@ type Mutation {
   indexProduct(input: IndexProductInput!): IndexProductPayload!
   publishProduct(input: PublishProductInput!): PublishProductPayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
+  updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
   upvoteProduct(slug: String!): UpvoteProductPayload!
 }
@@ -215,6 +216,16 @@ type SignImageUploadPayload {
 type Tag {
   id: ID!
   name: String!
+}
+
+input UpdateProductFeatureInput {
+  emoji: String
+  name: String
+  summary: String
+}
+
+type UpdateProductFeaturePayload {
+  feature: Feature!
 }
 
 input UpdateProductTagsInput {
