@@ -38,7 +38,7 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
     },
     onCompleted: data => {
       if (data.publishProduct.product.publishedAt) {
-        notifications.show({ message: '서비스가 노출설정되었습니다.', color: 'teal' });
+        notifications.show({ message: '서비스가 노출 설정되었습니다.', color: 'teal' });
       }
     },
   });
