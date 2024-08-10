@@ -35,7 +35,7 @@ export class FeatureMutationResolver {
     };
   }
 
-  // @Authorized([AuthRole.Admin])
+  @Authorized([AuthRole.Admin])
   @Mutation(() => UpdateProductFeaturePayload)
   async updateProductFeature(
     @Arg('id') id: string,
