@@ -1,5 +1,6 @@
 import { CreateProductFeature, GetProduct, GetProductFeature, UpdateProductFeature } from '@darun/backend';
-import { Arg, Mutation, Resolver } from 'type-graphql';
+import { AuthRole } from '@darun/utils-apollo-server';
+import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { CreateProductFeatureInput, CreateProductFeaturePayload } from './graphs/CreateProductFeature';
 import { Feature } from './graphs/Feature';
