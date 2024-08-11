@@ -1,8 +1,6 @@
-import { gql, useApolloClient } from '@apollo/client';
+import { gql } from '@apollo/client';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import {
   useEditProductOnEditProductInfoMutation,
   useTempProductBySlugOnEditProductInfoSuspenseQuery,
@@ -22,6 +20,9 @@ gql`
     editProduct(input: $input, slug: $slug) {
       product {
         id
+        name
+        summary
+        logoUrl
       }
     }
   }
@@ -32,10 +33,7 @@ type FormValues = {
   summary?: string;
 };
 
-export function useEditProductInfo({ slug }: { slug: string }) {
-  const { refresh } = useRouter();
-  const { cache } = useApolloClient();
-
+export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
   const { data } = useTempProductBySlugOnEditProductInfoSuspenseQuery({ variables: { slug } });
 
   const form = useForm<FormValues>({
@@ -50,8 +48,6 @@ export function useEditProductInfo({ slug }: { slug: string }) {
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
         form.reset();
-        refresh();
-        cache.reset();
       }
     },
   });
@@ -70,16 +66,8 @@ export function useEditProductInfo({ slug }: { slug: string }) {
         },
       },
     });
+    onSubmit?.();
   };
-
-  useEffect(() => {
-    if (data) {
-      form.setValues({
-        name: data.tempProductBySlug?.name,
-        summary: data.tempProductBySlug?.summary,
-      });
-    }
-  }, [data, form]);
 
   return { form, submit };
 }

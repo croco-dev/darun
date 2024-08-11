@@ -36,7 +36,7 @@ export const ProductDetailInfoSection = bind(
         </Card.Section>
       </Card>
       <Modal opened={isEditModalOpened} onClose={closeEditModal} title="기본 정보 수정" centered>
-        <EditProductInfo slug={slug} />
+        <EditProductInfo slug={slug} onSubmit={closeEditModal} />
       </Modal>
     </>
   )
