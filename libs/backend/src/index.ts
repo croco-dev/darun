@@ -8,6 +8,8 @@ export {
   CreateProduct,
   GetProductFeatures,
   GetProductFeatureScreenshots,
+  GetProductFeature,
+  UpdateProductFeature,
   GetAllProducts,
   GetPublishedProduct,
   UpdateProductTag,

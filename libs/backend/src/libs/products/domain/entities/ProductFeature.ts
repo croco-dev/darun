@@ -27,4 +27,16 @@ export class ProductFeature {
       this.id = id;
     }
   }
+
+  public update({ name, summary, emoji }: { name?: string; summary?: string | null; emoji?: string }) {
+    if (name) {
+      this.name = name;
+    }
+    if (summary) {
+      this.summary = summary;
+    }
+    if (emoji) {
+      this.emoji = emoji;
+    }
+  }
 }
