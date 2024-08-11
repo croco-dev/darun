@@ -3,7 +3,7 @@ import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import {
   useEditProductOnEditProductInfoMutation,
-  useTempProductBySlugOnEditProductInfoSuspenseQuery,
+  useTempProductBySlugOnEditProductInfoQuery,
 } from './__generated__/useEditProductInfo';
 
 gql`
@@ -12,7 +12,6 @@ gql`
       id
       name
       summary
-      logoUrl
     }
   }
 
@@ -22,7 +21,6 @@ gql`
         id
         name
         summary
-        logoUrl
       }
     }
   }
@@ -34,7 +32,15 @@ type FormValues = {
 };
 
 export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
-  const { data } = useTempProductBySlugOnEditProductInfoSuspenseQuery({ variables: { slug } });
+  useTempProductBySlugOnEditProductInfoQuery({
+    variables: { slug },
+    onCompleted: ({ tempProductBySlug }) => {
+      form.setValues({
+        name: tempProductBySlug?.name ?? '',
+        summary: tempProductBySlug?.summary ?? '',
+      });
+    },
+  });
 
   const form = useForm<FormValues>({
     initialValues: {

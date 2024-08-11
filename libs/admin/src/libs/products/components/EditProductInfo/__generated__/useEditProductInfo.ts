@@ -8,7 +8,7 @@ export type TempProductBySlugOnEditProductInfoQueryVariables = Types.Exact<{
 }>;
 
 
-export type TempProductBySlugOnEditProductInfoQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, name: string, summary: string, logoUrl: string } | null };
+export type TempProductBySlugOnEditProductInfoQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, name: string, summary: string } | null };
 
 export type EditProductOnEditProductInfoMutationVariables = Types.Exact<{
   input: Types.EditProductInput;
@@ -16,7 +16,7 @@ export type EditProductOnEditProductInfoMutationVariables = Types.Exact<{
 }>;
 
 
-export type EditProductOnEditProductInfoMutation = { __typename?: 'Mutation', editProduct: { __typename?: 'EditProductPayload', product: { __typename?: 'Product', id: string } } };
+export type EditProductOnEditProductInfoMutation = { __typename?: 'Mutation', editProduct: { __typename?: 'EditProductPayload', product: { __typename?: 'Product', id: string, name: string, summary: string } } };
 
 
 export const TempProductBySlugOnEditProductInfoDocument = gql`
@@ -25,7 +25,6 @@ export const TempProductBySlugOnEditProductInfoDocument = gql`
     id
     name
     summary
-    logoUrl
   }
 }
     `;
@@ -67,6 +66,8 @@ export const EditProductOnEditProductInfoDocument = gql`
   editProduct(input: $input, slug: $slug) {
     product {
       id
+      name
+      summary
     }
   }
 }
