@@ -11,17 +11,19 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
   private productIdLoader: DataLoader<string, ProductFeature[], string>;
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.productIdLoader = new DataLoader<string, ProductFeature[]>(
-      (async (productIds: readonly string[]) => {
+      async (productIds: readonly string[]) => {
         const docs = await this.db
           .select()
           .from(productFeatures)
           .where(inArray(productFeatures.productId, [...productIds]));
 
-        const groupByDocs = groupBy(docs, 'productId');
-        return productIds.map(productId => groupByDocs[productId] || []);
-        // TODO: dataloader return type error (ProductFeature[]를 명시해도 ProductFeature 반환)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any,
+        const groupByDocs = groupBy(
+          docs.map(doc => this.mapper(doc)),
+          'productId'
+        );
+
+        return productIds.map(productId => groupByDocs[productId] ?? []);
+      },
       {
         cache: false,
       }
