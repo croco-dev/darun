@@ -9,9 +9,7 @@ import { Logo } from '../Logo';
 import classes from './Navbar.module.css';
 
 const data = [
-  { link: '/users', label: '사용자', icon: IconUser },
   { link: '/products', label: '서비스', icon: IconArchive },
-  { link: '/settings', label: '추가 설정', icon: IconSettings },
 ];
 
 export function Navbar() {
