@@ -186,6 +186,7 @@ type PublishProductPayload {
 }
 
 type Query {
+  adminFeatureById(id: String!): Feature
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
   hello: String!
   product(id: ID!): Product
