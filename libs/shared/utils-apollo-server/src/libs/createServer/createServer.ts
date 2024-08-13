@@ -24,6 +24,7 @@ export function createServer({ options, config }: CreateApolloServerParams) {
 
   cachedServer ??= new ApolloServer({
     schema,
+    allowBatchedHttpRequests: true,
     introspection: config.playground,
     plugins: [
       config.playground

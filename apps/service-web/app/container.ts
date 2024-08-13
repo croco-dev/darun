@@ -1,4 +1,5 @@
-import { ApolloLink, HttpLink } from '@apollo/client';
+import { ApolloLink } from '@apollo/client';
+import { BatchHttpLink } from '@apollo/client/link/batch-http';
 import {
   NextSSRApolloClient,
   NextSSRInMemoryCache,
@@ -25,9 +26,11 @@ class Container {
   }
 
   get httpLink() {
-    return new HttpLink({
+    return new BatchHttpLink({
       uri: process.env['NEXT_PUBLIC_GRAPHQL_URL'] ?? '',
       credentials: 'include',
+      batchMax: 10,
+      batchInterval: 20,
     });
   }
 
