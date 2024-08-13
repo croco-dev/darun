@@ -18,6 +18,17 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    swcPlugins: [
+      [
+        'graphql-tag-swc-plugin',
+        {
+          importSources: ['@apollo/client'],
+          gqlTagIdentifiers: ['gql'],
+        },
+      ],
+    ],
+  },
 };
 
 module.exports = withKumaUI(nextConfig);
