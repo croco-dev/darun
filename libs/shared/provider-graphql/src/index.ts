@@ -156,6 +156,7 @@ export type Mutation = {
   readonly indexProduct: IndexProductPayload;
   readonly publishProduct: PublishProductPayload;
   readonly signImageUpload: SignImageUploadPayload;
+  readonly updateProductFeature: UpdateProductFeaturePayload;
   readonly updateProductTags: UpdateProductTagsPayload;
   readonly upvoteProduct: UpvoteProductPayload;
 };
@@ -212,6 +213,12 @@ export type MutationpublishProductArgs = {
 
 export type MutationsignImageUploadArgs = {
   input: SignImageUploadInput;
+};
+
+
+export type MutationupdateProductFeatureArgs = {
+  id: Scalars['String']['input'];
+  input: UpdateProductFeatureInput;
 };
 
 
@@ -278,6 +285,7 @@ export type PublishProductPayload = {
 export type Query = {
   readonly __typename?: 'Query';
   readonly allProducts: ProductConnection;
+  readonly feature?: Maybe<Feature>;
   readonly hello: Scalars['String']['output'];
   readonly product?: Maybe<Product>;
   readonly productBySlug?: Maybe<Product>;
@@ -293,6 +301,11 @@ export type QueryallProductsArgs = {
   before?: InputMaybe<Scalars['String']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
   last?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryfeatureArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -343,6 +356,17 @@ export type Tag = {
   readonly __typename?: 'Tag';
   readonly id: Scalars['ID']['output'];
   readonly name: Scalars['String']['output'];
+};
+
+export type UpdateProductFeatureInput = {
+  readonly emoji?: InputMaybe<Scalars['String']['input']>;
+  readonly name?: InputMaybe<Scalars['String']['input']>;
+  readonly summary?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateProductFeaturePayload = {
+  readonly __typename?: 'UpdateProductFeaturePayload';
+  readonly feature: Feature;
 };
 
 export type UpdateProductTagsInput = {

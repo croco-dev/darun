@@ -187,6 +187,7 @@ type PublishProductPayload {
 
 type Query {
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
+  feature(id: ID!): Feature
   hello: String!
   product(id: ID!): Product
   productBySlug(slug: String!): Product
