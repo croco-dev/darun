@@ -257,6 +257,9 @@ importers:
       eslint-config-next:
         specifier: 14.2.5
         version: 14.2.5(eslint@8.57.0)(typescript@5.5.2)
+      graphql-tag-swc-plugin:
+        specifier: 1.1.0
+        version: 1.1.0
 
   libs/admin:
     dependencies:
@@ -5521,6 +5524,9 @@ packages:
     engines: {node: '>=10'}
     peerDependencies:
       graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+
+  graphql-tag-swc-plugin@1.1.0:
+    resolution: {integrity: sha512-Nbs1WPfiE2dnkgdPFR60ZPSyqOcGjfuXnC21NT6crOKzauANjJw6b7I5DFaTlSyQOEuEqA1B73zmPeeNO3uWBQ==}
 
   graphql-tag@2.12.6:
     resolution: {integrity: sha512-FdSNcu2QQcWnM2VNvSCCDCVS5PpPqpzgFT8+GXzqJuoDd0CBncxCY278u4mhRO7tMgo2JjgJA5aZ+nWSQ/Z+xg==}
@@ -15303,6 +15309,8 @@ snapshots:
     dependencies:
       graphql: 16.9.0
       tslib: 2.6.2
+
+  graphql-tag-swc-plugin@1.1.0: {}
 
   graphql-tag@2.12.6(graphql@16.9.0):
     dependencies:
