@@ -3,12 +3,12 @@ import * as Types from '@darun/provider-graphql';
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
-export type AdminFeatureByIdOnEditProductFeatureItemQueryVariables = Types.Exact<{
-  id: Types.Scalars['String']['input'];
+export type FeatureOnEditProductFeatureItemQueryVariables = Types.Exact<{
+  id: Types.Scalars['ID']['input'];
 }>;
 
 
-export type AdminFeatureByIdOnEditProductFeatureItemQuery = { __typename?: 'Query', adminFeatureById?: { __typename?: 'Feature', id: string, emoji: string, name: string, summary?: string | null } | null };
+export type FeatureOnEditProductFeatureItemQuery = { __typename?: 'Query', feature?: { __typename?: 'Feature', id: string, emoji: string, name: string, summary?: string | null } | null };
 
 export type UpdateProductFeatureOnEditProductFeatureItemMutationVariables = Types.Exact<{
   input: Types.UpdateProductFeatureInput;
@@ -19,9 +19,9 @@ export type UpdateProductFeatureOnEditProductFeatureItemMutationVariables = Type
 export type UpdateProductFeatureOnEditProductFeatureItemMutation = { __typename?: 'Mutation', updateProductFeature: { __typename?: 'UpdateProductFeaturePayload', feature: { __typename?: 'Feature', id: string } } };
 
 
-export const AdminFeatureByIdOnEditProductFeatureItemDocument = gql`
-    query AdminFeatureByIdOnEditProductFeatureItem($id: String!) {
-  adminFeatureById(id: $id) {
+export const FeatureOnEditProductFeatureItemDocument = gql`
+    query FeatureOnEditProductFeatureItem($id: ID!) {
+  feature(id: $id) {
     id
     emoji
     name
@@ -31,37 +31,37 @@ export const AdminFeatureByIdOnEditProductFeatureItemDocument = gql`
     `;
 
 /**
- * __useAdminFeatureByIdOnEditProductFeatureItemQuery__
+ * __useFeatureOnEditProductFeatureItemQuery__
  *
- * To run a query within a React component, call `useAdminFeatureByIdOnEditProductFeatureItemQuery` and pass it any options that fit your needs.
- * When your component renders, `useAdminFeatureByIdOnEditProductFeatureItemQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useFeatureOnEditProductFeatureItemQuery` and pass it any options that fit your needs.
+ * When your component renders, `useFeatureOnEditProductFeatureItemQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useAdminFeatureByIdOnEditProductFeatureItemQuery({
+ * const { data, loading, error } = useFeatureOnEditProductFeatureItemQuery({
  *   variables: {
  *      id: // value for 'id'
  *   },
  * });
  */
-export function useAdminFeatureByIdOnEditProductFeatureItemQuery(baseOptions: Apollo.QueryHookOptions<AdminFeatureByIdOnEditProductFeatureItemQuery, AdminFeatureByIdOnEditProductFeatureItemQueryVariables> & ({ variables: AdminFeatureByIdOnEditProductFeatureItemQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+export function useFeatureOnEditProductFeatureItemQuery(baseOptions: Apollo.QueryHookOptions<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables> & ({ variables: FeatureOnEditProductFeatureItemQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<AdminFeatureByIdOnEditProductFeatureItemQuery, AdminFeatureByIdOnEditProductFeatureItemQueryVariables>(AdminFeatureByIdOnEditProductFeatureItemDocument, options);
+        return Apollo.useQuery<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>(FeatureOnEditProductFeatureItemDocument, options);
       }
-export function useAdminFeatureByIdOnEditProductFeatureItemLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<AdminFeatureByIdOnEditProductFeatureItemQuery, AdminFeatureByIdOnEditProductFeatureItemQueryVariables>) {
+export function useFeatureOnEditProductFeatureItemLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<AdminFeatureByIdOnEditProductFeatureItemQuery, AdminFeatureByIdOnEditProductFeatureItemQueryVariables>(AdminFeatureByIdOnEditProductFeatureItemDocument, options);
+          return Apollo.useLazyQuery<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>(FeatureOnEditProductFeatureItemDocument, options);
         }
-export function useAdminFeatureByIdOnEditProductFeatureItemSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<AdminFeatureByIdOnEditProductFeatureItemQuery, AdminFeatureByIdOnEditProductFeatureItemQueryVariables>) {
+export function useFeatureOnEditProductFeatureItemSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<AdminFeatureByIdOnEditProductFeatureItemQuery, AdminFeatureByIdOnEditProductFeatureItemQueryVariables>(AdminFeatureByIdOnEditProductFeatureItemDocument, options);
+          return Apollo.useSuspenseQuery<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>(FeatureOnEditProductFeatureItemDocument, options);
         }
-export type AdminFeatureByIdOnEditProductFeatureItemQueryHookResult = ReturnType<typeof useAdminFeatureByIdOnEditProductFeatureItemQuery>;
-export type AdminFeatureByIdOnEditProductFeatureItemLazyQueryHookResult = ReturnType<typeof useAdminFeatureByIdOnEditProductFeatureItemLazyQuery>;
-export type AdminFeatureByIdOnEditProductFeatureItemSuspenseQueryHookResult = ReturnType<typeof useAdminFeatureByIdOnEditProductFeatureItemSuspenseQuery>;
-export type AdminFeatureByIdOnEditProductFeatureItemQueryResult = Apollo.QueryResult<AdminFeatureByIdOnEditProductFeatureItemQuery, AdminFeatureByIdOnEditProductFeatureItemQueryVariables>;
+export type FeatureOnEditProductFeatureItemQueryHookResult = ReturnType<typeof useFeatureOnEditProductFeatureItemQuery>;
+export type FeatureOnEditProductFeatureItemLazyQueryHookResult = ReturnType<typeof useFeatureOnEditProductFeatureItemLazyQuery>;
+export type FeatureOnEditProductFeatureItemSuspenseQueryHookResult = ReturnType<typeof useFeatureOnEditProductFeatureItemSuspenseQuery>;
+export type FeatureOnEditProductFeatureItemQueryResult = Apollo.QueryResult<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>;
 export const UpdateProductFeatureOnEditProductFeatureItemDocument = gql`
     mutation UpdateProductFeatureOnEditProductFeatureItem($input: UpdateProductFeatureInput!, $featureId: String!) {
   updateProductFeature(input: $input, id: $featureId) {

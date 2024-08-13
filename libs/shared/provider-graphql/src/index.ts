@@ -284,8 +284,8 @@ export type PublishProductPayload = {
 
 export type Query = {
   readonly __typename?: 'Query';
-  readonly adminFeatureById?: Maybe<Feature>;
   readonly allProducts: ProductConnection;
+  readonly feature?: Maybe<Feature>;
   readonly hello: Scalars['String']['output'];
   readonly product?: Maybe<Product>;
   readonly productBySlug?: Maybe<Product>;
@@ -296,16 +296,16 @@ export type Query = {
 };
 
 
-export type QueryadminFeatureByIdArgs = {
-  id: Scalars['String']['input'];
-};
-
-
 export type QueryallProductsArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   before?: InputMaybe<Scalars['String']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
   last?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryfeatureArgs = {
+  id: Scalars['ID']['input'];
 };
 
 

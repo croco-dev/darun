@@ -1,6 +1,5 @@
 import { GetProductFeature, GetProductFeatureScreenshots } from '@darun/backend';
-import { AuthRole } from '@darun/utils-apollo-server';
-import { Arg, Authorized, FieldResolver, Query, Resolver, Root } from 'type-graphql';
+import { Arg, FieldResolver, ID, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Feature } from './graphs/Feature';
 import { FeatureScreenshot } from './graphs/FeatureScreenshot';
@@ -18,9 +17,8 @@ export class FeatureQueryResolver {
     return this.getProductFeatureScreenshots.execute({ featureId: feature.id });
   }
 
-  @Authorized([AuthRole.Admin])
   @Query(() => Feature, { nullable: true })
-  public adminFeatureById(@Arg('id', () => String) id: string) {
+  public feature(@Arg('id', () => ID) id: string) {
     return this.getProductFeature.execute({ id });
   }
 }

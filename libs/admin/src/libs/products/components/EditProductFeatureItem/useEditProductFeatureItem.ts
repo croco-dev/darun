@@ -3,13 +3,13 @@ import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { TempProductBySlugOnProductFeatureTableDocument } from '../ProductFeatureTable/__generated__/useProductFeatureTable';
 import {
-  useAdminFeatureByIdOnEditProductFeatureItemQuery,
+  useFeatureOnEditProductFeatureItemQuery,
   useUpdateProductFeatureOnEditProductFeatureItemMutation,
 } from './__generated__/useEditProductFeatureItem';
 
 gql`
-  query AdminFeatureByIdOnEditProductFeatureItem($id: String!) {
-    adminFeatureById(id: $id) {
+  query FeatureOnEditProductFeatureItem($id: ID!) {
+    feature(id: $id) {
       id
       emoji
       name
@@ -37,14 +37,14 @@ type FormValues = {
 export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFeatureItemProps) {
   const apolloClient = useApolloClient();
 
-  const { loading: queryLoading } = useAdminFeatureByIdOnEditProductFeatureItemQuery({
+  const { loading: queryLoading } = useFeatureOnEditProductFeatureItemQuery({
     variables: { id: featureId },
-    onCompleted: ({ adminFeatureById }) => {
-      if (adminFeatureById) {
+    onCompleted: ({ feature }) => {
+      if (feature?.id) {
         form.setValues({
-          emoji: adminFeatureById.emoji,
-          name: adminFeatureById.name,
-          summary: adminFeatureById.summary || undefined,
+          emoji: feature.emoji,
+          name: feature.name,
+          summary: feature.summary ?? '',
         });
       }
     },
