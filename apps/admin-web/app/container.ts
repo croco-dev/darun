@@ -1,4 +1,5 @@
 import { ApolloLink, HttpLink } from '@apollo/client';
+import { RetryLink } from '@apollo/client/link/retry';
 import {
   NextSSRInMemoryCache,
   NextSSRApolloClient,
@@ -33,15 +34,25 @@ class Container {
   get apolloClient() {
     return new NextSSRApolloClient({
       cache: new NextSSRInMemoryCache(),
-      link:
-        typeof window === 'undefined'
-          ? ApolloLink.from([
+      link: ApolloLink.from([
+        ...(typeof window === 'undefined'
+          ? [
               new SSRMultipartLink({
                 stripDefer: true,
               }),
-              this.httpLink,
-            ])
-          : this.httpLink,
+            ]
+          : []),
+        new RetryLink({
+          delay: {
+            initial: 100,
+            jitter: true,
+          },
+          attempts: {
+            max: 5,
+          },
+        }),
+        this.httpLink,
+      ]),
     });
   }
 }
