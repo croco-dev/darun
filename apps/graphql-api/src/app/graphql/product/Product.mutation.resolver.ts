@@ -7,14 +7,13 @@ import {
   IndexProduct,
   AddProductLink,
   PublishProduct,
-  AddAlternativeProduct,
+  UpdateAlternativeProduct,
   EditProduct,
   UpvoteProduct,
 } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
-import { AddAlternativeProductInput, AddAlternativeProductPayload } from './graphs/AddAlternativeProduct';
 import { AddProductLinkInput, AddProductLinkPayload } from './graphs/AddProductLink';
 import { AddProductScreenshotInput, AddProductScreenshotPayload } from './graphs/AddProductScreenshot';
 import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
@@ -22,6 +21,7 @@ import { EditProductInput, EditProductPayload } from './graphs/EditProduct';
 import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
 import { PublishProductInput, PublishProductPayload } from './graphs/PublishProduct';
+import { UpdateAlternativeProductInput, UpdateAlternativeProductPayload } from './graphs/UpdateAlternativeProduct';
 import { UpdateProductTagsInput, UpdateProductTagsPayload } from './graphs/UpdateProductTags';
 import { UpvoteProductPayload } from './graphs/UpvoteProduct';
 
@@ -38,7 +38,7 @@ export class ProductMutationResolver {
     private readonly getProductUseCase: GetProduct,
     private readonly addProductScreenshotUseCase: AddProductScreenshot,
     private readonly addProductLinkUseCase: AddProductLink,
-    private readonly addAlternativeProductUseCase: AddAlternativeProduct,
+    private readonly updateAlternativeProductUseCase: UpdateAlternativeProduct,
     private readonly upvoteProductUseCase: UpvoteProduct
   ) {}
 
@@ -178,10 +178,11 @@ export class ProductMutationResolver {
     };
   }
 
-  @Mutation(() => AddAlternativeProductPayload)
-  async addAlternativeProduct(
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => UpdateAlternativeProductPayload)
+  async updateAlternativeProduct(
     @Arg('slug') slug: string,
-    @Arg('input') input: AddAlternativeProductInput
+    @Arg('input') input: UpdateAlternativeProductInput
   ): Promise<AddProductLinkPayload> {
     const product = await this.getProductUseCase.execute({ slug });
 
@@ -189,8 +190,8 @@ export class ProductMutationResolver {
       throw new Error('Product not found');
     }
 
-    await this.addAlternativeProductUseCase.execute({
-      alternativeProductId: input.alternativeProductId,
+    await this.updateAlternativeProductUseCase.execute({
+      alternativeProductIds: input.alternativeProductIds,
       productId: product.id,
     });
 

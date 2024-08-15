@@ -3,14 +3,6 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
-input AddAlternativeProductInput {
-  alternativeProductId: String!
-}
-
-type AddAlternativeProductPayload {
-  product: Product
-}
-
 input AddProductLinkInput {
   displayLink: String!
   iconUrl: String!
@@ -125,7 +117,6 @@ type Link {
 }
 
 type Mutation {
-  addAlternativeProduct(input: AddAlternativeProductInput!, slug: String!): AddAlternativeProductPayload!
   addProductLink(input: AddProductLinkInput!, slug: String!): AddProductLinkPayload!
   addProductScreenshot(input: AddProductScreenshotInput!, slug: String!): AddProductScreenshotPayload!
   createCompany(input: CreateCompanyInput!): CreateCompanyPayload!
@@ -135,6 +126,7 @@ type Mutation {
   indexProduct(input: IndexProductInput!): IndexProductPayload!
   publishProduct(input: PublishProductInput!): PublishProductPayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
+  updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
   upvoteProduct(slug: String!): UpvoteProductPayload!
@@ -217,6 +209,14 @@ type SignImageUploadPayload {
 type Tag {
   id: ID!
   name: String!
+}
+
+input UpdateAlternativeProductInput {
+  alternativeProductIds: [String!]!
+}
+
+type UpdateAlternativeProductPayload {
+  product: Product
 }
 
 input UpdateProductFeatureInput {

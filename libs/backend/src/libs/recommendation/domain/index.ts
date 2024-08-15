@@ -3,4 +3,4 @@ export { AlternativeProductRepositoryToken } from './repositories/AlternativePro
 
 export { AlternativeProduct } from './entities/AlternativeProduct';
 export { GetAlternativeProducts } from './usecases/GetAlternativeProducts';
-export { AddAlternativeProduct } from './usecases/AddAlternativeProduct';
+export { UpdateAlternativeProduct } from './usecases/UpdateAlternativeProduct';
