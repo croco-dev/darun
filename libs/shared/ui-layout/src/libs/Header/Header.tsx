@@ -45,7 +45,9 @@ export const Header = bind(useHeader, () => (
         </Suspense>
         <HStack height="max-content" gap={8} display={['none', 'flex']}>
           <HeaderLoginButton />
-          <ContainedButton kind="primary">제보하기</ContainedButton>
+          <a target="_blank" href="https://forms.gle/nDPFKAYSuoGg2J3MA">
+            <ContainedButton kind="primary">제보하기</ContainedButton>
+          </a>
         </HStack>
       </HStack>
     </ContentArea>
