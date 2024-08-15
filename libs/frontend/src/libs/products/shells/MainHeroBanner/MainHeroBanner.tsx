@@ -28,7 +28,7 @@ export const MainHeroBanner = () => {
                 letterSpacing={'-.4px'}
                 color={'colors.dark.300'}
                 margin={0}
-                as="h1"
+                as="span"
               >
                 다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다
               </Text>
