@@ -1,4 +1,6 @@
-import { ApolloLink, HttpLink } from '@apollo/client';
+import { ApolloLink } from '@apollo/client';
+import { BatchHttpLink } from '@apollo/client/link/batch-http';
+import { RetryLink } from '@apollo/client/link/retry';
 import {
   NextSSRInMemoryCache,
   NextSSRApolloClient,
@@ -24,24 +26,36 @@ class Container {
   }
 
   get httpLink() {
-    return new HttpLink({
+    return new BatchHttpLink({
       uri: process.env['NEXT_PUBLIC_GRAPHQL_URL'] ?? '',
       credentials: 'include',
+      batchMax: 10,
+      batchInterval: 20,
     });
   }
 
   get apolloClient() {
     return new NextSSRApolloClient({
       cache: new NextSSRInMemoryCache(),
-      link:
-        typeof window === 'undefined'
-          ? ApolloLink.from([
+      link: ApolloLink.from([
+        ...(typeof window === 'undefined'
+          ? [
               new SSRMultipartLink({
                 stripDefer: true,
               }),
-              this.httpLink,
-            ])
-          : this.httpLink,
+            ]
+          : []),
+        new RetryLink({
+          delay: {
+            initial: 100,
+            jitter: true,
+          },
+          attempts: {
+            max: 5,
+          },
+        }),
+        this.httpLink,
+      ]),
     });
   }
 }

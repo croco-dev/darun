@@ -16,15 +16,6 @@ export type Scalars = {
   DateTimeISO: { input: unknown; output: unknown; }
 };
 
-export type AddAlternativeProductInput = {
-  readonly alternativeProductId: Scalars['String']['input'];
-};
-
-export type AddAlternativeProductPayload = {
-  readonly __typename?: 'AddAlternativeProductPayload';
-  readonly product?: Maybe<Product>;
-};
-
 export type AddProductLinkInput = {
   readonly displayLink: Scalars['String']['input'];
   readonly iconUrl: Scalars['String']['input'];
@@ -146,7 +137,6 @@ export type Link = {
 
 export type Mutation = {
   readonly __typename?: 'Mutation';
-  readonly addAlternativeProduct: AddAlternativeProductPayload;
   readonly addProductLink: AddProductLinkPayload;
   readonly addProductScreenshot: AddProductScreenshotPayload;
   readonly createCompany: CreateCompanyPayload;
@@ -156,15 +146,10 @@ export type Mutation = {
   readonly indexProduct: IndexProductPayload;
   readonly publishProduct: PublishProductPayload;
   readonly signImageUpload: SignImageUploadPayload;
+  readonly updateAlternativeProduct: UpdateAlternativeProductPayload;
   readonly updateProductFeature: UpdateProductFeaturePayload;
   readonly updateProductTags: UpdateProductTagsPayload;
   readonly upvoteProduct: UpvoteProductPayload;
-};
-
-
-export type MutationaddAlternativeProductArgs = {
-  input: AddAlternativeProductInput;
-  slug: Scalars['String']['input'];
 };
 
 
@@ -213,6 +198,12 @@ export type MutationpublishProductArgs = {
 
 export type MutationsignImageUploadArgs = {
   input: SignImageUploadInput;
+};
+
+
+export type MutationupdateAlternativeProductArgs = {
+  input: UpdateAlternativeProductInput;
+  slug: Scalars['String']['input'];
 };
 
 
@@ -356,6 +347,15 @@ export type Tag = {
   readonly __typename?: 'Tag';
   readonly id: Scalars['ID']['output'];
   readonly name: Scalars['String']['output'];
+};
+
+export type UpdateAlternativeProductInput = {
+  readonly alternativeProductIds: ReadonlyArray<Scalars['String']['input']>;
+};
+
+export type UpdateAlternativeProductPayload = {
+  readonly __typename?: 'UpdateAlternativeProductPayload';
+  readonly product?: Maybe<Product>;
 };
 
 export type UpdateProductFeatureInput = {

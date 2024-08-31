@@ -5,6 +5,7 @@ import { ProductTagsForm } from '@products/components';
 import { ProductDetailInfoSection, ProductDetailDescriptionSection } from '@products/shells';
 import { AppShell, PageShell } from '@uis';
 import Link from 'next/link';
+import { ProductDetailAlternativeSection } from '../products/shells/ProductDetailAlternativeSection';
 import { ProductDetailFeatureSection } from '../products/shells/ProductDetailFeatureSection';
 
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
@@ -27,6 +28,7 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
             </Card.Section>
           </Card>
         </Stack>
+        <ProductDetailAlternativeSection slug={slug} />
         <Stack gap={8}>
           <Title order={3}>태그 관리</Title>
           <ProductTagsForm slug={slug} />

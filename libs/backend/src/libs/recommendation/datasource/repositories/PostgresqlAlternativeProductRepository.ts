@@ -26,6 +26,22 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
     );
   }
 
+  deleteMany(removedAlternatives: AlternativeProduct[]): Promise<boolean> {
+    return this.db.transaction(async tx => {
+      const result = await tx.delete(alternativeProducts).where(
+        inArray(
+          alternativeProducts.id,
+          removedAlternatives.map(p => p.id)
+        )
+      );
+      return result.count === removedAlternatives.length;
+    });
+  }
+  createMany(newAlternatives: AlternativeProduct[]): Promise<AlternativeProduct[]> {
+    return this.db.transaction(async tx => {
+      return tx.insert(alternativeProducts).values(newAlternatives).returning();
+    });
+  }
   create(data: AlternativeProduct): Promise<AlternativeProduct> {
     return this.db.transaction(async tx => {
       const inserted = await tx
