@@ -4,6 +4,10 @@ import { useProductDescription } from './useProductDescription';
 
 export const ProductDescription = bind(useProductDescription, ({ description }) => (
   <>
-    {description ? <Text style={{ whiteSpace: 'pre' }}>{description}</Text> : <Text size={'xs'}>설명이 없습니다.</Text>}
+    {description ? (
+      <Text style={{ whiteSpace: 'pre-wrap' }}>{description}</Text>
+    ) : (
+      <Text size={'xs'}>설명이 없습니다.</Text>
+    )}
   </>
 ));
