@@ -33,6 +33,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
           borderWidth={'1px'}
           borderColor={'rgba(0, 0, 0, 0.1)'}
           borderRadius={'8px'}
+          flexShrink={0}
         >
           <Text fontSize={'22px'}>{emoji ?? '💎'}</Text>
         </Flex>
