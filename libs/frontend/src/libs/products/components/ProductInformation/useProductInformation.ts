@@ -9,6 +9,10 @@ gql`
       summary
       description
       logoUrl
+      tags {
+        id
+        name
+      }
     }
   }
 `;
@@ -23,5 +27,6 @@ export function useProductInformation({ slug }: ProductInformationProps) {
     name: data.productBySlug?.name,
     summary: data.productBySlug?.summary,
     logoUrl: data.productBySlug?.logoUrl,
+    tags: data.productBySlug?.tags,
   };
 }

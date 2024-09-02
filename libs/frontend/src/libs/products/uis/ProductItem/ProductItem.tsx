@@ -94,7 +94,7 @@ export const ProductItem = ({
           )}
         </VStack>
         {(tags || specialTags) && (
-          <HStack gap="4px" alignItems={'center'} overflowX={'auto'}>
+          <HStack gap="4px" alignItems={'center'} overflowX={'auto'} mr={'12px'}>
             {tags &&
               tags.map((tag, i) => (
                 <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
