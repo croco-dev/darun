@@ -11,12 +11,12 @@ type ProductFeatureGridListProps = {
 
 export const ProductFeatureGridList = ({ features }: ProductFeatureGridListProps) => {
   return (
-    <Grid gap="6px" gridTemplateColumns={['repeat(1, 1fr)', 'repeat(2, 1fr)', 'repeat(3, 1fr)']}>
+    <Grid gap="16px" gridTemplateColumns={['repeat(1, 1fr)', 'repeat(2, 1fr)', 'repeat(3, 1fr)']}>
       {features.map((feature, index) => (
-        <HStack alignItems={'flex-start'} gap={'12px'} w={'100%'} key={index}>
+        <HStack alignItems={'flex-start'} gap={['8px', '8px', '12px']} w={'100%'} key={index}>
           <Flex
-            width={'42px'}
-            height={'42px'}
+            width={['36px', '36px', '42px']}
+            height={['36px', '36px', '42px']}
             alignItems={'center'}
             justifyContent={'center'}
             bg={'colors.dark.100'}
@@ -26,9 +26,9 @@ export const ProductFeatureGridList = ({ features }: ProductFeatureGridListProps
             borderRadius={'8px'}
             flexShrink={0}
           >
-            <Text fontSize={'20px'}>{feature.emoji ?? '💎'}</Text>
+            <Text fontSize={['16px', '16px', '20px']}>{feature.emoji ?? '💎'}</Text>
           </Flex>
-          <VStack gap={2}>
+          <VStack gap="4px">
             <Text
               color={'colors.dark.800'}
               fontWeight={'fontWeights.semibold'}
@@ -41,8 +41,10 @@ export const ProductFeatureGridList = ({ features }: ProductFeatureGridListProps
               color={'colors.dark.600'}
               fontWeight={'fontWeights.normal'}
               fontSize={'13px'}
-              letterSpacing={'-.05px'}
+              letterSpacing={'-.1px'}
+              textAlign={'justify'}
               lineBreak={'anywhere'}
+              lineHeight={'1.3'}
             >
               {feature.summary}
             </Text>
