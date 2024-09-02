@@ -96,10 +96,23 @@ export const ProductItem = ({
         {(tags || specialTags) && (
           <HStack gap="4px" alignItems={'center'} overflowX={'auto'} mr={'12px'}>
             {tags &&
-              tags.map((tag, i) => (
-                <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
-                  {tag}
-                </Chip>
+              (maxTagItems && tags.length > maxTagItems ? (
+                <HStack alignItems={'center'} gap="4px">
+                  {tags.slice(0, maxTagItems).map((tag, i) => (
+                    <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
+                      {tag}
+                    </Chip>
+                  ))}
+                  <Text color={'colors.dark.500'} fontSize={'12px'}>
+                    +{tags.length - maxTagItems}
+                  </Text>
+                </HStack>
+              ) : (
+                tags.map((tag, i) => (
+                  <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
+                    {tag}
+                  </Chip>
+                ))
               ))}
             {specialTags && (
               <>

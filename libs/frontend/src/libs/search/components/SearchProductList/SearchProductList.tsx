@@ -44,6 +44,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }) => {
                   logoUrl={product.logoUrl}
                   tagVariant={'circle'}
                   tags={product.tags.map(tag => tag.name)}
+                  maxTagItems={2}
                 />
               </HStack>
               <Flex w={'100%'} h={'1px'} background={'colors.dark.100'} my={'2px'} />
