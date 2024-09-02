@@ -12,6 +12,7 @@ type ProductItemProps = {
   tagVariant?: 'square' | 'circle';
   tags?: string[];
   specialTags?: string[];
+  maxTagItems?: number;
   isAlignCenter?: boolean;
   nameAs?: 'h3' | 'h2' | 'h1';
   isSummaryNoWrap?: boolean;
@@ -37,6 +38,7 @@ export const ProductItem = ({
   tagVariant = 'square',
   tags,
   specialTags,
+  maxTagItems,
   isAlignCenter,
   nameAs = 'h3',
   isSummaryNoWrap = false,
@@ -92,7 +94,7 @@ export const ProductItem = ({
           )}
         </VStack>
         {(tags || specialTags) && (
-          <HStack gap="4px" alignItems={'center'}>
+          <HStack gap="4px" alignItems={'center'} overflowX={'auto'}>
             {tags &&
               tags.map((tag, i) => (
                 <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>

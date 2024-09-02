@@ -72,6 +72,7 @@ export function Chip({ as = 'div', color = 'filledGray', variant = 'square', onC
       border={`1px solid`}
       borderColor={chipColors[color].borderColor}
       fontSize={chipVariants[variant].fontSize}
+      flexShrink={0}
     >
       {children}
     </Flex>

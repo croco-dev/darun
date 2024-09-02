@@ -28,7 +28,7 @@ export const ProductFeatureGridList = ({ features }: ProductFeatureGridListProps
           >
             <Text fontSize={['16px', '16px', '20px']}>{feature.emoji ?? '💎'}</Text>
           </Flex>
-          <VStack gap="4px">
+          <VStack gap="2px">
             <Text
               color={'colors.dark.800'}
               fontWeight={'fontWeights.semibold'}
