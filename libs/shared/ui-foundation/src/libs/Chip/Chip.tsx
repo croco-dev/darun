@@ -16,7 +16,7 @@ const chipVariants = {
     fontSize: '12px',
   },
   circle: {
-    padding: '6px 10px',
+    padding: '4px 8px',
     borderRadius: 16,
     fontSize: '12px',
   },
@@ -72,6 +72,7 @@ export function Chip({ as = 'div', color = 'filledGray', variant = 'square', onC
       border={`1px solid`}
       borderColor={chipColors[color].borderColor}
       fontSize={chipVariants[variant].fontSize}
+      flexShrink={0}
     >
       {children}
     </Flex>

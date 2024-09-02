@@ -12,6 +12,7 @@ type ProductItemProps = {
   tagVariant?: 'square' | 'circle';
   tags?: string[];
   specialTags?: string[];
+  maxTagItems?: number;
   isAlignCenter?: boolean;
   nameAs?: 'h3' | 'h2' | 'h1';
   isSummaryNoWrap?: boolean;
@@ -37,6 +38,7 @@ export const ProductItem = ({
   tagVariant = 'square',
   tags,
   specialTags,
+  maxTagItems,
   isAlignCenter,
   nameAs = 'h3',
   isSummaryNoWrap = false,
@@ -61,7 +63,7 @@ export const ProductItem = ({
           border: '1px solid rgba(0, 0, 0, 0.15)',
         }}
       />
-      <VStack gap={'8px'} overflow={'hidden'}>
+      <VStack gap={'4px'} overflow={'hidden'}>
         <VStack gap="4px">
           <Text
             as={nameAs}
@@ -92,12 +94,25 @@ export const ProductItem = ({
           )}
         </VStack>
         {(tags || specialTags) && (
-          <HStack gap="4px" alignItems={'center'}>
+          <HStack gap="4px" alignItems={'center'} overflowX={'auto'} mr={'12px'}>
             {tags &&
-              tags.map((tag, i) => (
-                <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
-                  {tag}
-                </Chip>
+              (maxTagItems && tags.length > maxTagItems ? (
+                <HStack alignItems={'center'} gap="4px">
+                  {tags.slice(0, maxTagItems).map((tag, i) => (
+                    <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
+                      {tag}
+                    </Chip>
+                  ))}
+                  <Text color={'colors.dark.500'} fontSize={'12px'}>
+                    +{tags.length - maxTagItems}
+                  </Text>
+                </HStack>
+              ) : (
+                tags.map((tag, i) => (
+                  <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
+                    {tag}
+                  </Chip>
+                ))
               ))}
             {specialTags && (
               <>
