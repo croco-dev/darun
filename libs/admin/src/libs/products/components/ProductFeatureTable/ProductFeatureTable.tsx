@@ -4,16 +4,6 @@ import { IconPencil } from '@tabler/icons-react';
 import styles from './ProductFeatureTable.module.css';
 import { useProductFeatureTable } from './useProductFeatureTable';
 
-const data = [
-  {
-    emoji: '👒',
-    name: 'asdads',
-    summary: 'asdads',
-  },
-];
-
-const rolesData = ['Manager', 'Collaborator', 'Contractor'];
-
 export const ProductFeatureTable = bind(useProductFeatureTable, ({ features, loading, editFeature }) => {
   if (loading) {
     return <>로딩 중...</>;
