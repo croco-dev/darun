@@ -2,7 +2,7 @@
 
 import { Button, Card, Group, Stack, Title } from '@mantine/core';
 import { ProductTagsForm } from '@products/components';
-import { ProductDetailInfoSection, ProductDetailDescriptionSection } from '@products/shells';
+import { ProductDetailInfoSection, ProductDetailDescriptionSection, ProductDetailLinkSection } from '@products/shells';
 import { AppShell, PageShell } from '@uis';
 import Link from 'next/link';
 import { ProductDetailAlternativeSection } from '../products/shells/ProductDetailAlternativeSection';
@@ -15,6 +15,7 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
       <Stack gap={32}>
         <ProductDetailDescriptionSection slug={slug} />
         <ProductDetailFeatureSection slug={slug} />
+        <ProductDetailLinkSection slug={slug} />
         <Stack gap={8}>
           <Group justify={'space-between'}>
             <Title order={3}>스크린샷 관리</Title>
