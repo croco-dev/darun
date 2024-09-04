@@ -1,6 +1,8 @@
 'use client';
 
-import { Button, Select, Stack, TextInput } from '@mantine/core';
+import { Button, Group, Select, SelectProps, Stack, TextInput } from '@mantine/core';
+import { IconCheck } from '@tabler/icons-react';
+import React from 'react';
 import { NewProductLinkForm } from '../../components/NewProductLinkForm';
 
 type NewProductLinkSectionProps = {
@@ -41,6 +43,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
             'ex) https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg'
           }
           data={iconData}
+          renderOption={renderSelectOption}
           {...form.getInputProps('iconUrl')}
         />
 
@@ -55,7 +58,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
 const iconData = [
   {
     value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg',
-    label: '지구본 아이콘 (흰색)',
+    label: '지구본 아이콘 (흰색) (주 링크 용도)',
   },
   {
     value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/hdo1rx06frvuhf5q0gio.svg',
@@ -70,3 +73,11 @@ const iconData = [
     label: 'GitHub (검정)',
   },
 ];
+
+const renderSelectOption: SelectProps['renderOption'] = ({ option, checked }) => (
+  <Group flex="1" gap="xs">
+    <img src={option.value} style={{ width: 20, height: 20 }} />
+    {option.label}
+    {checked && <IconCheck style={{ marginInlineStart: 'auto' }} />}
+  </Group>
+);
