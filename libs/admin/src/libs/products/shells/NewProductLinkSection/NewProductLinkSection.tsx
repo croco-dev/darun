@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Stack, TextInput } from '@mantine/core';
+import { Button, Select, Stack, TextInput } from '@mantine/core';
 import { NewProductLinkForm } from '../../components/NewProductLinkForm';
 
 type NewProductLinkSectionProps = {
@@ -33,13 +33,14 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
           placeholder={'ex) 공식 홈페이지'}
           {...form.getInputProps('title')}
         />
-        <TextInput
+        <Select
           name="iconUrl"
           size="md"
           label="링크"
           placeholder={
             'ex) https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg'
           }
+          data={iconData}
           {...form.getInputProps('iconUrl')}
         />
 
@@ -50,3 +51,22 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
     )}
   </NewProductLinkForm>
 );
+
+const iconData = [
+  {
+    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg',
+    label: '지구본 아이콘 (흰색)',
+  },
+  {
+    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/hdo1rx06frvuhf5q0gio.svg',
+    label: '인스타그램 (그레이)',
+  },
+  {
+    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/i9ea1d250oskdzvu7iby.svg',
+    label: 'X(Twitter) (그레이)',
+  },
+  {
+    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304776/images/icons/links/kiezpv3buqv7w8xajhw4.svg',
+    label: 'GitHub (검정)',
+  },
+];
