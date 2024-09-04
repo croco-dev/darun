@@ -19,7 +19,7 @@ export const ProductFeatureTable = bind(useProductFeatureTable, ({ features, loa
     return <>로딩 중...</>;
   }
 
-  if (!features) {
+  if (!features || features.length === 0) {
     return (
       <Text fz="sm" fw={500} c={'gray'}>
         기능이 한 개도 없습니다.

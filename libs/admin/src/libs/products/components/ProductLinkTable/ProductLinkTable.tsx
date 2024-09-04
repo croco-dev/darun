@@ -5,10 +5,10 @@ import styles from './ProductFeatureTable.module.css';
 import { useProductLinkTable } from './useProductLinkTable';
 
 export const ProductLinkTable = bind(useProductLinkTable, ({ links }) => {
-  if (!links) {
+  if (!links || links.length === 0) {
     return (
       <Text fz="sm" fw={500} c={'gray'}>
-        기능이 한 개도 없습니다.
+        등록된 링크가 없습니다. 우측 상단 버튼으로 등록해보세요.
       </Text>
     );
   }
