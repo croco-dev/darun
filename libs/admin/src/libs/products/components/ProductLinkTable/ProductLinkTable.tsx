@@ -5,7 +5,7 @@ import styles from './ProductFeatureTable.module.css';
 import { useProductLinkTable } from './useProductLinkTable';
 
 export const ProductLinkTable = bind(useProductLinkTable, ({ links, loading }) => {
-  if (!loading) {
+  if (loading) {
     return <>로딩 중...</>;
   }
 
