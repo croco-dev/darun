@@ -22,6 +22,6 @@ type ProductLinkTableProps = {
 };
 
 export function useProductLinkTable({ slug }: ProductLinkTableProps) {
-  const { data } = useTempProductBySlugOnProductLinkTableQuery({ variables: { slug } });
-  return { links: data?.tempProductBySlug?.links };
+  const { data, loading } = useTempProductBySlugOnProductLinkTableQuery({ variables: { slug } });
+  return { links: data?.tempProductBySlug?.links, loading };
 }

@@ -4,7 +4,11 @@ import { IconPencil } from '@tabler/icons-react';
 import styles from './ProductFeatureTable.module.css';
 import { useProductLinkTable } from './useProductLinkTable';
 
-export const ProductLinkTable = bind(useProductLinkTable, ({ links }) => {
+export const ProductLinkTable = bind(useProductLinkTable, ({ links, loading }) => {
+  if (!loading) {
+    return <>로딩 중...</>;
+  }
+
   if (!links || links.length === 0) {
     return (
       <Text fz="sm" fw={500} c={'gray'}>
