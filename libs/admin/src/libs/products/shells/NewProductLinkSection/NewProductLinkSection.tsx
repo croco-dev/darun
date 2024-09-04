@@ -2,7 +2,6 @@
 
 import { Button, Group, Select, SelectProps, Stack, TextInput } from '@mantine/core';
 import { IconCheck } from '@tabler/icons-react';
-import React from 'react';
 import { NewProductLinkForm } from '../../components/NewProductLinkForm';
 
 type NewProductLinkSectionProps = {
