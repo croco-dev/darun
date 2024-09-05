@@ -2,17 +2,17 @@ import { bind } from '@croco/utils-structure-react';
 import { Button, Group, rem, Table, Text } from '@mantine/core';
 import { IconPencil } from '@tabler/icons-react';
 import styles from './ProductFeatureTable.module.css';
-import { useProductFeatureTable } from './useProductFeatureTable';
+import { useProductLinkTable } from './useProductLinkTable';
 
-export const ProductFeatureTable = bind(useProductFeatureTable, ({ features, loading, editFeature }) => {
+export const ProductLinkTable = bind(useProductLinkTable, ({ links, loading }) => {
   if (loading) {
     return <>로딩 중...</>;
   }
 
-  if (!features || features.length === 0) {
+  if (!links || links.length === 0) {
     return (
       <Text fz="sm" fw={500} c={'gray'}>
-        기능이 한 개도 없습니다.
+        등록된 링크가 없습니다. 우측 상단 버튼으로 등록해보세요.
       </Text>
     );
   }
@@ -22,29 +22,40 @@ export const ProductFeatureTable = bind(useProductFeatureTable, ({ features, loa
       <Table verticalSpacing="sm">
         <Table.Thead>
           <Table.Tr>
-            <Table.Th style={{ width: '60px' }}>이모지</Table.Th>
+            <Table.Th style={{ width: '80px', textAlign: 'center' }}>아이콘</Table.Th>
             <Table.Th>이름</Table.Th>
-            <Table.Th>설명</Table.Th>
+            <Table.Th>링크</Table.Th>
+            <Table.Th>주 링크 여부</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {features.map((feature, i) => (
-            <Table.Tr key={feature.name} className={styles.table_row}>
+          {links.map(link => (
+            <Table.Tr key={link.id} className={styles.table_row}>
               <Table.Td>
-                <div style={{ textAlign: 'center' }}>
-                  <Text fw={500} p={1}>
-                    {feature.emoji}
-                  </Text>
+                <div
+                  style={{
+                    background: link.isPrimary ? '#000' : '#fff',
+                  }}
+                  className={styles.link_icon_wrapper}
+                >
+                  <img src={link.iconUrl} />
                 </div>
               </Table.Td>
               <Table.Td>
                 <Text fz="sm" fw={500}>
-                  {feature.name}
+                  {link.title}
                 </Text>
               </Table.Td>
               <Table.Td>
                 <Text fz="sm" fw={500}>
-                  {feature.summary}
+                  <a href={link.link} target="_blank">
+                    {link.displayLink} ({link.link})
+                  </a>
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text fz="sm" fw={500}>
+                  {link.isPrimary ? '✅' : '❌'}
                 </Text>
               </Table.Td>
               <Table.Td>
@@ -54,9 +65,9 @@ export const ProductFeatureTable = bind(useProductFeatureTable, ({ features, loa
                     leftSection={<IconPencil style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
                     variant="default"
                     size={'compact-xs'}
-                    onClick={() => editFeature(feature.id)}
+                    disabled
                   >
-                    정보 수정
+                    정보 수정 (준비중)
                   </Button>
                 </Group>
               </Table.Td>

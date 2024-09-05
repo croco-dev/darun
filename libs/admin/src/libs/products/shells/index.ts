@@ -3,3 +3,4 @@ export { NewProductScreenshotFormSection } from './NewProductScreenshotFormSecti
 export { NewProductLinkSection } from './NewProductLinkSection';
 export { ProductDetailInfoSection } from './ProductDetailInfoSection';
 export { ProductDetailDescriptionSection } from './ProductDetailDescriptionSection';
+export { ProductDetailLinkSection } from './ProductDetailLinkSection';
