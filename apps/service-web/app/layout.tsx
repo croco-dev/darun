@@ -4,6 +4,7 @@ import './globals.css';
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
 import { KumaRegistry } from '@kuma-ui/next-plugin/registry';
 import { Metadata } from 'next';
+import Script from 'next/script';
 import { CookiesProvider } from 'next-client-cookies/server';
 import { ReactNode } from 'react';
 import { ClientRootProvider } from './client';
@@ -41,11 +42,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </ServerRootProvider>
           </CookiesProvider>
         </KumaRegistry>
-        <script
+        <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8177584316528588"
           crossOrigin="anonymous"
-        ></script>
+          strategy={'afterInteractive'}
+        ></Script>
       </body>
     </html>
   );
