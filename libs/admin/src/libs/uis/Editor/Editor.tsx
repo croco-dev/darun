@@ -15,7 +15,7 @@ export const Editor = ({ defaultValue, onChange }: EditorProps) => {
   const editor = useEditor(
     {
       extensions: [StarterKit.configure(), Typography],
-      content: defaultValue,
+      content: defaultValue?.replace(/\n/g, '<br />'),
       onUpdate: ({ editor }) => {
         onChange(editor.getHTML());
       },
