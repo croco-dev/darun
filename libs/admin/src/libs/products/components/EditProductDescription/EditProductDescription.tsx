@@ -1,17 +1,12 @@
 import { bind } from '@croco/utils-structure-react';
-import { Button, Group, Stack, Textarea } from '@mantine/core';
+import { Button, Group, Stack } from '@mantine/core';
+import { Editor } from '@uis';
 import { useEditProductDescription } from './useEditProductDescription';
 
-export const EditProductDescription = bind(useEditProductDescription, ({ form, submit }) => (
+export const EditProductDescription = bind(useEditProductDescription, ({ form, submit, defaultValue }) => (
   <form onSubmit={form.onSubmit(submit)}>
     <Stack gap={'8px'}>
-      <Textarea
-        label="서비스 요악 (summary)"
-        placeholder="ex) 다른에서 여러가지 서비스를 비교, 분석해보세요."
-        rows={10}
-        key={form.key('description')}
-        {...form.getInputProps('description')}
-      />
+      <Editor {...form.getInputProps('description')} defaultValue={defaultValue} />
     </Stack>
 
     <Group justify="flex-end" mt="md">

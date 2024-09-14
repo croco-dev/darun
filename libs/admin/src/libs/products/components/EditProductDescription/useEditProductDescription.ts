@@ -29,17 +29,15 @@ type FormValues = {
 };
 
 export function useEditProductDescription({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
-  useTempProductBySlugOnEditProductDescriptionQuery({
+  const { data } = useTempProductBySlugOnEditProductDescriptionQuery({
     variables: { slug },
     onCompleted: ({ tempProductBySlug }) => {
-      form.setValues({ description: tempProductBySlug?.description ?? '' });
+      form.reset();
     },
   });
 
   const form = useForm<FormValues>({
-    initialValues: {
-      description: '',
-    },
+    initialValues: { description: data?.tempProductBySlug?.description ?? '' },
   });
 
   const [editDescription] = useEditProductOnEditProductDescriptionMutation({
@@ -69,5 +67,5 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
     onSubmit?.();
   };
 
-  return { form, submit };
+  return { form, submit, defaultValue: data?.tempProductBySlug?.description ?? '' };
 }
