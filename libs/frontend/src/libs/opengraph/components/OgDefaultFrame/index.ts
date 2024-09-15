@@ -1,0 +1,1 @@
+export { OgDefaultFrame } from './OgDefaultFrame';
