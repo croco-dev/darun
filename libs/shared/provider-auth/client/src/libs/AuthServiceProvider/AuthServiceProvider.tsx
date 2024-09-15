@@ -32,7 +32,7 @@ export const AuthServiceProvider = ({ cookies, children, authService }: AuthServ
       for (const key of keys) {
         const value = storage[key];
         if (value) {
-          cookies.set(key, value, { sameSite: 'strict', expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) });
+          cookies.set(key, value, { sameSite: 'strict', expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) });
         } else {
           cookies.remove(key);
         }
