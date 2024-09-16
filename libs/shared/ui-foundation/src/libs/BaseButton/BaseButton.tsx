@@ -1,7 +1,11 @@
 import { Button } from '@kuma-ui/core';
+import { As } from '@kuma-ui/core/dist/components/types';
 import { ButtonHTMLAttributes } from 'react';
 
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  as?: As<any>;
+  href?: string;
+};
 
 export type BaseButtonKind = keyof typeof kindPreset;
 

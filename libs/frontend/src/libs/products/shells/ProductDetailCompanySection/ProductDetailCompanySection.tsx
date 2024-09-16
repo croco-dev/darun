@@ -12,6 +12,7 @@ export const ProductDetailCompanySection = ({ slug }: ProductDetailCompanySectio
         fontWeight={'fontWeights.semibold'}
         fontSize={'24px'}
         color={'colors.dark.900'}
+        className={'darun-heading'}
         letterSpacing={'-.4px'}
       >
         운영사 정보

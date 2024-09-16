@@ -10,6 +10,7 @@ export const RecentProductSection = () => (
         color={'colors.dark.900'}
         letterSpacing={'-.4px'}
         as="h2"
+        className={'darun-heading'}
       >
         새롭게 추가된 서비스
       </Text>

@@ -10,7 +10,7 @@ export function useProductTableOfContent() {
   const [headings, setHeadings] = useState<HeadingData[]>([]);
 
   useEffect(() => {
-    const headingsFromHTML = Array.from(document.querySelectorAll('#detail-content h2')).map(heading => ({
+    const headingsFromHTML = Array.from(document.querySelectorAll('#detail-content .darun-heading')).map(heading => ({
       id: heading.id,
       text: heading.textContent || '',
     }));

@@ -16,6 +16,7 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
         fontSize={'24px'}
         color={'colors.dark.900'}
         letterSpacing={'-.4px'}
+        className={'darun-heading'}
       >
         다른 서비스
       </Text>

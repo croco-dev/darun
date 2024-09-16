@@ -12,6 +12,7 @@ export const ProductPhotoSection = ({ slug }: ProductPhotoSectionProps) => (
       fontSize={24}
       color={'colors.dark.900'}
       letterSpacing={'-.4px'}
+      className={'darun-heading'}
     >
       스크린샷
     </Text>

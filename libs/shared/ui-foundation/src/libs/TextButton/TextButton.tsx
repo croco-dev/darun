@@ -5,9 +5,9 @@ type TextButtonProps = ButtonProps & {
   isActive?: boolean;
 };
 
-export const TextButton = ({ children, isActive }: TextButtonProps) => {
+export const TextButton = ({ children, isActive, ...props }: TextButtonProps) => {
   return (
-    <BaseButton kind={isActive ? 'textActive' : 'text'}>
+    <BaseButton kind={isActive ? 'textActive' : 'text'} {...props}>
       <Box width="max-content">{children}</Box>
     </BaseButton>
   );
