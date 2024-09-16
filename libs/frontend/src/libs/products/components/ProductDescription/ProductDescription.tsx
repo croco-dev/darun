@@ -49,4 +49,11 @@ const DescriptionContentStyle = css`
   & .blank {
     height: 4px;
   }
+  & code {
+    padding: 2px 4px;
+    background-color: #f7f7f7;
+    border-radius: 4px;
+    margin: 0 2px;
+    font-size: 95%;
+  }
 `;
