@@ -8,6 +8,7 @@ export const ProductDescriptionSection = ({ slug }: ProductDescriptionSectionPro
   <VStack as="section" gap={'20px'} py={['24px', '16px']}>
     <Text
       as={'h2'}
+      className={`darun-heading`}
       id={'description'}
       fontWeight={'fontWeights.semibold'}
       fontSize={24}

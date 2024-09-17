@@ -14,6 +14,7 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
       fontSize={'24px'}
       color={'colors.dark.900'}
       letterSpacing={'-.4px'}
+      className={'darun-heading'}
     >
       기능
     </Text>
