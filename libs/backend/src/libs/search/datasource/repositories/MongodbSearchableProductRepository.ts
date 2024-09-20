@@ -9,13 +9,30 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
       {
         $search: {
           index: 'searchable_products_index',
-          text: {
-            query,
-            path: ['name', 'description', 'summary'],
-            fuzzy: {
-              maxEdits: 2,
-              maxExpansions: 256,
-            },
+          compound: {
+            should: [
+              {
+                text: {
+                  query,
+                  path: 'name',
+                  fuzzy: {
+                    maxEdits: 2,
+                    maxExpansions: 256,
+                  },
+                  score: { boost: { value: 10 } },
+                },
+              },
+              {
+                text: {
+                  query,
+                  path: ['description', 'summary'],
+                  fuzzy: {
+                    maxEdits: 2,
+                    maxExpansions: 256,
+                  },
+                },
+              },
+            ],
           },
         },
       },
