@@ -34,7 +34,7 @@
   "devDependencies": {
     "@types/aws-lambda": "8.10.134",
     "esbuild": "0.20.1",
-    "serverless": "3.38.0",
+    "serverless": "4.4.0",
     "serverless-esbuild": "1.52.1",
     "serverless-offline": "13.6.0"
   }
