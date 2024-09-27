@@ -1,7 +1,7 @@
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { Product, ProductRepository, ProductRepositoryToken } from '@products/domain';
 import DataLoader from 'dataloader';
-import { and, count, desc, eq, gt, inArray, isNotNull } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull, lt } from 'drizzle-orm';
 import { keyBy } from 'lodash';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
@@ -56,7 +56,7 @@ export class PostgresqlProductRepository implements ProductRepository {
     return this.db
       .select()
       .from(products)
-      .where(id ? and(gt(products.id, id)) : undefined)
+      .where(id ? lt(products.id, id) : undefined)
       .limit(limit)
       .orderBy(desc(products.id))
       .then(rows => rows.map(row => this.mapper(row)));
