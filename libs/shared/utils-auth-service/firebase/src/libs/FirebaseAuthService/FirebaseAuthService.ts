@@ -15,6 +15,7 @@ type FirebaseAuthConfig = {
 export class FirebaseAuthService implements AuthService {
   private authMethods: ReturnType<typeof getFirebaseAuth>;
   private authStorage?: AuthStorage;
+  private isInit: boolean = false;
 
   constructor({ projectId, privateKey, clientEmail, authDomain, apiKey }: FirebaseAuthConfig) {
     this.authMethods = getFirebaseAuth(
@@ -79,7 +80,6 @@ export class FirebaseAuthService implements AuthService {
   public onIdTokenChanged(handler: (user?: AuthUser) => void) {
     const unsubscribe = onIdTokenChanged(getAuth(), async user => {
       if (!user) {
-        this.authStorage?.clear();
         handler(undefined);
         return;
       }
