@@ -43,6 +43,7 @@ export const BaseButton = ({ children, kind, borderColor, ...props }: BaseButton
       borderRadius={12}
       border="1px solid"
       borderColor={borderColor ?? kindPreset[kind].bgColor ?? '#ff0000'}
+      width={'fit-content'}
       height={'fit-content'}
       {...props}
     >
