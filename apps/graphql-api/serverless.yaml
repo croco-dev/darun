@@ -10,7 +10,7 @@ plugins:
 custom:
   esbuild:
     bundle: true
-    exclude: ['class-validator', '@sentry/profiling-node']
+    exclude: ['class-validator']
     minify: false
     keepNames: true
     sourcemap: true
