@@ -1,7 +1,7 @@
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { Product, ProductRepository, ProductRepositoryToken } from '@products/domain';
 import DataLoader from 'dataloader';
-import { and, count, desc, eq, inArray, isNotNull, lt } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, lt } from 'drizzle-orm';
 import { keyBy } from 'lodash';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
@@ -52,15 +52,28 @@ export class PostgresqlProductRepository implements ProductRepository {
     });
   }
 
-  async findAllByGtIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+  async findAllByBeforeIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+    return (
+      await this.db
+        .select()
+        .from(products)
+        .where(id ? and(gt(products.id, id)) : undefined)
+        .limit(limit)
+        .orderBy(asc(products.id))
+        .then(rows => rows.map(row => this.mapper(row)))
+    ).reverse();
+  }
+
+  async findAllByAfterIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
     return this.db
       .select()
       .from(products)
-      .where(id ? lt(products.id, id) : undefined)
+      .where(id ? and(lt(products.id, id)) : undefined)
       .limit(limit)
       .orderBy(desc(products.id))
       .then(rows => rows.map(row => this.mapper(row)));
   }
+
   async countAll(): Promise<number> {
     return this.db
       .select({ value: count() })
