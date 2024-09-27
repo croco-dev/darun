@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 
+import './sentry';
 import './firebase';
 import './storage';
 import '@darun/backend/graphql-api';
