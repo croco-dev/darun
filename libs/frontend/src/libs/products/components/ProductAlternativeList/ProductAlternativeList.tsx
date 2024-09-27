@@ -34,17 +34,6 @@ export const ProductAlternativeList = bind(useProductAlternativeList, ({ product
               </HStack>
               <Flex w={'100%'} h={'1px'} background={'colors.dark.100'} my={'2px'} />
               <VStack gap={'24px'}>
-                <VStack gap={'12px'}>
-                  <VStack gap="4px" width={'fit-content'}>
-                    <Text color="colors.dark.500" fontWeight="fontWeights.bold" fontSize="16px" letterSpacing="-2.4%">
-                      기본 정보
-                    </Text>
-                    <Flex height="2px" bg="colors.dark.400" />
-                  </VStack>
-                  <Text color="colors.dark.700" fontSize="14px" lineHeight={'18px'} maxWidth={'800px'}>
-                    {product.description}
-                  </Text>
-                </VStack>
                 {product.features && product.features.length > 0 && (
                   <>
                     <VStack gap={'12px'}>
