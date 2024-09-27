@@ -1,0 +1,1 @@
+export { createSentryApolloLogPlugin } from './SentryApolloLogPlugin';

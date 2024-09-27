@@ -1,6 +1,7 @@
 import '../config';
 import { GetAccount } from '@darun/backend';
 import { createAuthChecker, createLambdaHandler, createServer } from '@darun/utils-apollo-server';
+import { createSentryApolloLogPlugin } from '@darun/utils-sentry';
 import * as Sentry from '@sentry/aws-serverless';
 import { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { GraphQLISODateTime } from 'type-graphql';
@@ -22,6 +23,7 @@ export const handler: APIGatewayProxyHandlerV2 = Sentry.wrapHandler(
       },
       config: {
         playground: IS_LOCAL,
+        plugins: [createSentryApolloLogPlugin()],
       },
     }),
     {

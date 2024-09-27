@@ -1,0 +1,21 @@
+{
+  "name": "@darun/utils-sentry",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint **/*.ts*",
+    "test": "echo 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@apollo/server": "^4",
+    "graphql": "^16"
+  },
+  "devDependencies": {
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*"
+  }
+}

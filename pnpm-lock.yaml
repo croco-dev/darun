@@ -135,6 +135,9 @@ importers:
       '@darun/utils-apollo-server':
         specifier: workspace:*
         version: link:../../libs/shared/utils-apollo-server
+      '@darun/utils-sentry':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-sentry
       '@kang-heewon/esbuild-plugin-typescript-decorators':
         specifier: 0.1.0
         version: 0.1.0
@@ -806,6 +809,22 @@ importers:
       '@types/react-dom':
         specifier: ^18
         version: 18.2.19
+
+  libs/shared/utils-sentry:
+    dependencies:
+      '@apollo/server':
+        specifier: ^4
+        version: 4.10.4(encoding@0.1.13)(graphql@16.9.0)
+      graphql:
+        specifier: ^16
+        version: 16.9.0
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../utils-tsconfig
 
   libs/shared/utils-tsconfig: {}
 

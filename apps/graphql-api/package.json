@@ -18,6 +18,7 @@
     "@darun/backend": "workspace:*",
     "@darun/provider-database": "workspace:*",
     "@darun/utils-apollo-server": "workspace:*",
+    "@darun/utils-sentry": "workspace:*",
     "@kang-heewon/esbuild-plugin-typescript-decorators": "0.1.0",
     "@sentry/aws-serverless": "8.32.0",
     "@sentry/esbuild-plugin": "2.22.4",
