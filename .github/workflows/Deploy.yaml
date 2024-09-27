@@ -33,6 +33,7 @@ jobs:
         env:
           INFRA_ENV: prod
           RUNNING_ENV: ${{ secrets.RUNNING_ENV }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
