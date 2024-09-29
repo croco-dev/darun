@@ -7,6 +7,7 @@ export class Connection {
       return {
         cursor: after,
         limit: Number(first),
+        type: 'after',
       };
     }
 
@@ -14,6 +15,7 @@ export class Connection {
       return {
         cursor: before,
         limit: Number(last),
+        type: 'before',
       };
     }
 

@@ -78,12 +78,13 @@ export class ProductQueryResolver {
   @Authorized([AuthRole.Admin])
   @Query(() => ProductConnection)
   public async allProducts(@Args() connectionArgs: ConnectionArgs): Promise<ProductConnection> {
-    const { cursor, limit } = Connection.verifyArgs(connectionArgs);
+    const { cursor, limit, type } = Connection.verifyArgs(connectionArgs);
     const decoded = cursor ? Cursor.decode(cursor, ['id'] as const) : undefined;
 
     const { products, total } = await this.getAllProductsUseCase.execute({
       cursor: decoded,
       limit,
+      type: type as 'after' | 'before',
     });
 
     return Connection.create({

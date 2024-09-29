@@ -1,29 +1,86 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
-import { Link } from '@darun/utils-router';
-import { Table } from '@mantine/core';
+import { Button, Flex, Group, Paper, Text } from '@mantine/core';
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { DataTable, DataTableColumn } from 'mantine-datatable';
+import Image from 'next/image';
 import { useProductListTable } from './useProductListTable';
 
-export const ProductListTable = bind(useProductListTable, ({ products }) => (
-  <Table>
-    <Table.Thead>
-      <Table.Tr>
-        <Table.Th>slug</Table.Th>
-        <Table.Th>name</Table.Th>
-        <Table.Th>summary</Table.Th>
-      </Table.Tr>
-    </Table.Thead>
-    <Table.Tbody>
-      {products.map(product => (
-        <Table.Tr key={product.cursor}>
-          <Table.Td>
-            <Link href={`/products/${product.node.slug}`}>{product.node.slug}</Link>
-          </Table.Td>
-          <Table.Td>{product.node.name}</Table.Td>
-          <Table.Td>{product.node.summary}</Table.Td>
-        </Table.Tr>
-      ))}
-    </Table.Tbody>
-  </Table>
-));
+export const ProductListTable = bind(
+  useProductListTable,
+  ({ products, totalCount, hasPreviousPage, hasNextPage, pageCount, loadNextPage, loadPreviousPage }) => (
+    <Flex direction={'column'} gap="12px">
+      <DataTable
+        withTableBorder
+        borderRadius="sm"
+        withColumnBorders
+        striped={'even'}
+        highlightOnHover
+        // provide data
+        records={products.map(product => product.node)}
+        idAccessor="slug"
+        columns={dataTableColumns}
+      />
+      <Paper p="md" mt="sm" withBorder>
+        <Group justify="space-between">
+          <Text size="sm">
+            {totalCount}개의 서비스 중 {pageCount}개부터 표시합니다.
+          </Text>
+          <Button.Group>
+            <Button
+              variant="default"
+              leftSection={<IconChevronLeft size={14} />}
+              disabled={!hasPreviousPage}
+              onClick={loadPreviousPage}
+            >
+              이전
+            </Button>
+            <Button
+              variant="default"
+              leftSection={<IconChevronRight size={14} />}
+              disabled={!hasNextPage}
+              onClick={loadNextPage}
+            >
+              다음
+            </Button>
+          </Button.Group>
+        </Group>
+      </Paper>
+    </Flex>
+  )
+);
+
+const dataTableColumns: DataTableColumn<{
+  id: string;
+  logoUrl: string;
+  name: string;
+  summary: string;
+  slug: string;
+}>[] = [
+  {
+    accessor: 'logoUrl',
+    title: '로고',
+    render: ({ logoUrl }) => (
+      <Image
+        src={logoUrl}
+        unoptimized={!logoUrl}
+        alt={`서비스 로고`}
+        width={32}
+        height={32}
+        style={{
+          objectFit: 'contain',
+          borderRadius: 8,
+          border: '1px solid rgba(0, 0, 0, 0.15)',
+        }}
+      />
+    ),
+  },
+  { accessor: 'name', title: '이름' },
+  { accessor: 'summary', title: '요약' },
+  {
+    accessor: 'slug',
+    title: '슬러그',
+    render: ({ slug }) => <Text>{slug}</Text>,
+  },
+];
