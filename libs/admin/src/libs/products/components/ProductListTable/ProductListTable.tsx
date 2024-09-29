@@ -9,7 +9,16 @@ import { useProductListTable } from './useProductListTable';
 
 export const ProductListTable = bind(
   useProductListTable,
-  ({ products, totalCount, hasPreviousPage, hasNextPage, pageCount, loadNextPage, loadPreviousPage }) => (
+  ({
+    products,
+    totalCount,
+    hasPreviousPage,
+    hasNextPage,
+    pageCount,
+    loadNextPage,
+    loadPreviousPage,
+    handleRowClick,
+  }) => (
     <Flex direction={'column'} gap="12px">
       <DataTable
         withTableBorder
@@ -21,6 +30,7 @@ export const ProductListTable = bind(
         records={products.map(product => product.node)}
         idAccessor="slug"
         columns={dataTableColumns}
+        onRowClick={handleRowClick}
       />
       <Paper p="md" mt="sm" withBorder>
         <Group justify="space-between">

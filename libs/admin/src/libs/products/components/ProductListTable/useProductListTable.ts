@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useAllProductsOnProductListTableSuspenseQuery } from './__generated__/useProductListTable';
 
@@ -29,6 +30,7 @@ gql`
 const defaultViewCount = 50;
 
 export function useProductListTable() {
+  const { push } = useRouter();
   const [pageCount, setPageCount] = useState(0);
   const { data, refetch } = useAllProductsOnProductListTableSuspenseQuery({
     variables: { first: defaultViewCount },
@@ -54,6 +56,10 @@ export function useProductListTable() {
     });
   };
 
+  const handleRowClick = ({ record: { slug } }: { record: { slug: string } }) => {
+    push(`/products/${slug}`);
+  };
+
   return {
     products: data?.allProducts.edges ?? [],
     totalCount: data?.allProducts.totalCount,
@@ -62,5 +68,6 @@ export function useProductListTable() {
     pageCount,
     loadNextPage,
     loadPreviousPage,
+    handleRowClick,
   };
 }
