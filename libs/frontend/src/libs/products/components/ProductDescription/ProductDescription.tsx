@@ -43,7 +43,8 @@ const DescriptionContentStyle = css`
   & h3 {
     font-size: 16px;
   }
-  & ul {
+  & ul,
+  & ol {
     padding-left: 16px;
   }
   & .blank {
