@@ -106,8 +106,8 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => [Tag])
-  public tags(@Root() product: Product) {
-    return this.getProductTagsUseCase.execute({ productId: product.id });
+  public tags(@Root() product: Product): Promise<Tag[]> {
+    return this.getProductTagsUseCase.execute({ productId: product.id }).then(productTag => productTag?.tags ?? []);
   }
 
   @FieldResolver(() => [Screenshot])

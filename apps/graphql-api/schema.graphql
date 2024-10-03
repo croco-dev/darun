@@ -207,6 +207,7 @@ type SignImageUploadPayload {
 }
 
 type Tag {
+  count: Int!
   id: ID!
   name: String!
 }

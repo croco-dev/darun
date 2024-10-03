@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from 'type-graphql';
+import { Field, ID, Int, ObjectType } from 'type-graphql';
 
 @ObjectType()
 export class Tag {
@@ -7,4 +7,7 @@ export class Tag {
 
   @Field(() => String)
   name: string;
+
+  @Field(() => Int)
+  count: number;
 }
