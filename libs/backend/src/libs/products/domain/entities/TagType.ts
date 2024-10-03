@@ -1,4 +1,4 @@
-export enum ProductTagType {
+export enum TagType {
   Simple = 'Simple',
   Favorite = 'Favorite',
   Featured = 'Featured',

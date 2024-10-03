@@ -6,6 +6,6 @@ export class GetProductTags {
   constructor(@Inject(ProductTagRepositoryToken) private readonly productTagRepository: ProductTagRepository) {}
 
   async execute({ productId }: { productId: string }) {
-    return this.productTagRepository.findManyByProductId(productId);
+    return this.productTagRepository.findOneByProductId(productId);
   }
 }

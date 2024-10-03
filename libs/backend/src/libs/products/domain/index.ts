@@ -13,8 +13,8 @@ export { ProductFeatureRepositoryToken } from './repositories/ProductFeatureRepo
 
 export { Product } from './entities/Product';
 export { ProductLink } from './entities/ProductLink';
-export { ProductTag } from './entities/ProductTag';
-export { ProductTagType } from './entities/ProductTagType';
+export { Tag } from './entities/Tag';
+export { TagType } from './entities/TagType';
 export { ProductScreenshot } from './entities/ProductScreenshot';
 export { ProductFeatureScreenshot } from './entities/ProductFeatureScreenshot';
 export { ProductFeature } from './entities/ProductFeature';

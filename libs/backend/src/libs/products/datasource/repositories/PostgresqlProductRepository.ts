@@ -141,7 +141,9 @@ export class PostgresqlProductRepository implements ProductRepository {
       .then(rows => rows.map(row => this.mapper(row)));
   }
 
-  private mapper(schema: typeof products.$inferSelect | typeof products.$inferInsert): Product {
+  private mapper<ProductType extends typeof products.$inferSelect | typeof products.$inferInsert>(
+    schema: ProductType
+  ): Product {
     return new Product({
       ...schema,
       description: schema.description ?? undefined,

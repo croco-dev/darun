@@ -1,51 +1,71 @@
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { ProductTagRepositoryToken, ProductTagRepository, ProductTag, ProductTagType } from '@products/domain';
-import DataLoader from 'dataloader';
+import { Tag, ProductTagRepository, TagType, ProductTagRepositoryToken } from '@products/domain';
 import { eq, inArray } from 'drizzle-orm';
-import { groupBy } from 'lodash';
 import { Inject, Service } from 'typedi';
+import { ProductTag } from '../../domain/entities/ProductTag';
 import { productTags } from '../entities/ProductTagsSchema';
+import { tags } from '../entities/TagSchema';
 
 @Service(ProductTagRepositoryToken)
 export class PostgresqlProductTagRepository implements ProductTagRepository {
-  private productIdLoader: DataLoader<string, ProductTag[]>;
-  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
-    this.productIdLoader = new DataLoader(
-      async (productIds: readonly string[]) => {
-        const docs = await this.db
-          .select()
-          .from(productTags)
-          .where(inArray(productTags.productId, [...productIds]))
-          .then(rows => rows.map(row => ({ ...row, type: ProductTagType[row.type as keyof typeof ProductTagType] })));
+  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
-        const groupByDocs = groupBy(docs, 'productId');
-        return productIds.map(productId => groupByDocs[productId] || []);
-      },
-      {
-        cache: false,
-      }
-    );
-  }
-
-  updateTagsToProduct(productId: string, tags: ProductTag[]): Promise<void> {
+  upsert(productTag: ProductTag): Promise<ProductTag> {
     return this.db.transaction(async tx => {
-      const existingTags = await tx.select().from(productTags).where(eq(productTags.productId, productId));
-      const removeTargetTags = existingTags.filter(tag => !tags.map(tag => tag.name).includes(tag.name));
+      const existProductTags = await tx
+        .select()
+        .from(productTags)
+        .where(eq(productTags.productId, productTag.productId));
 
-      if (removeTargetTags.length > 0) {
-        await tx.delete(productTags).where(
+      const existTags = await tx
+        .select()
+        .from(tags)
+        .where(
           inArray(
-            productTags.id,
-            removeTargetTags.map(tag => tag.id)
+            tags.name,
+            productTag.tags.map(tag => tag.name)
           )
         );
-      }
-      const newTags = tags.filter(tag => !existingTags.map(tag => tag.name).includes(tag.name));
-      await tx.insert(productTags).values(newTags).returning();
+      const newTags = await tx
+        .insert(tags)
+        .values(productTag.tags.filter(tag => !existTags.find(t => t.name === tag.name)))
+        .returning();
+
+      return new ProductTag({
+        productId: productTag.productId,
+        tags: [...existTags, ...newTags].map(this.toTag),
+      });
     });
   }
 
-  async findManyByProductId(productId: string): Promise<ProductTag[]> {
-    return this.productIdLoader.load(productId);
+  findOneByProductId(productId: string): Promise<ProductTag | null> {
+    return this.db
+      .select()
+      .from(productTags)
+      .innerJoin(tags, eq(productTags.tagId, tags.id))
+      .where(eq(productTags.productId, productId))
+      .limit(1)
+      .then(rows =>
+        rows[0]
+          ? this.mapper(
+              rows[0].product_tags.productId,
+              rows.map(({ tags }) => this.toTag(tags))
+            )
+          : null
+      );
+  }
+
+  private mapper(productId: string, tags: Tag[]): ProductTag {
+    return new ProductTag({
+      productId,
+      tags,
+    });
+  }
+
+  private toTag<TagType extends typeof tags.$inferSelect | typeof tags.$inferInsert>(schema: TagType): Tag {
+    return new Tag({
+      ...schema,
+      type: TagType[schema.type as keyof typeof TagType],
+    });
   }
 }

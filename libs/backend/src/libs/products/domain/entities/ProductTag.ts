@@ -1,18 +1,11 @@
-import { ProductTagType } from './ProductTagType';
+import { Tag } from './Tag';
 
 export class ProductTag {
-  public id: string;
-  public name: string;
-  public type: ProductTagType;
   public productId: string;
+  public tags: Tag[];
 
-  constructor({ id, name, type, productId }: { id?: string; name: string; type?: ProductTagType; productId: string }) {
-    this.name = name;
-    this.type = type ?? ProductTagType.Simple;
+  constructor({ tags, productId }: { tags: Tag[]; productId: string }) {
     this.productId = productId;
-
-    if (id) {
-      this.id = id;
-    }
+    this.tags = tags;
   }
 }

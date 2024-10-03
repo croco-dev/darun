@@ -2,6 +2,8 @@
 const { esbuildDecorators } = require('@kang-heewon/esbuild-plugin-typescript-decorators');
 const { sentryEsbuildPlugin } = require('@sentry/esbuild-plugin');
 
+const IS_LOCAL = process.env['INFRA_ENV'] === 'local';
+
 module.exports = [
   esbuildDecorators({}),
   sentryEsbuildPlugin({
@@ -9,5 +11,6 @@ module.exports = [
     org: 'croco',
     project: 'darun-server',
     url: 'https://sentry.io/',
+    disable: IS_LOCAL,
   }),
 ];
