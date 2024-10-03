@@ -40,10 +40,10 @@ importers:
         version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
         specifier: 0.11.2
-        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-next-font-pretendard':
         specifier: 0.0.2
-        version: 0.0.2(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))
+        version: 0.0.2(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
@@ -78,8 +78,8 @@ importers:
         specifier: 7.10.2
         version: 7.10.2(@mantine/hooks@7.10.2(react@18.2.0))(@types/react@18.2.57)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@mantine/form':
-        specifier: 7.10.2
-        version: 7.10.2(react@18.2.0)
+        specifier: 7.13.1
+        version: 7.13.1(react@18.2.0)
       '@mantine/hooks':
         specifier: 7.10.2
         version: 7.10.2(react@18.2.0)
@@ -88,10 +88,10 @@ importers:
         version: 7.10.2(@mantine/core@7.10.2(@mantine/hooks@7.10.2(react@18.2.0))(@types/react@18.2.57)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@mantine/hooks@7.10.2(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       next:
         specifier: 14.2.14
-        version: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        version: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -240,10 +240,10 @@ importers:
         version: link:../../libs/shared/utils-auth-service/firebase
       '@kuma-ui/core':
         specifier: 1.5.7
-        version: 1.5.7(@types/react@18.2.57)(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.5.7(@types/react@18.2.57)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@sentry/nextjs':
         specifier: 8.32.0
-        version: 8.32.0(@opentelemetry/api@1.9.0)(@opentelemetry/core@1.26.0(@opentelemetry/api@1.9.0))(@opentelemetry/instrumentation@0.53.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.26.0(@opentelemetry/api@1.9.0))(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)
+        version: 8.32.0(@opentelemetry/api@1.9.0)(@opentelemetry/core@1.26.0(@opentelemetry/api@1.9.0))(@opentelemetry/instrumentation@0.53.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.26.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)
       date-fns:
         specifier: 3.6.0
         version: 3.6.0
@@ -286,7 +286,7 @@ importers:
         version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
         specifier: 0.11.2
-        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
@@ -346,7 +346,7 @@ importers:
         version: 7.12.4(@mantine/core@7.10.2(@mantine/hooks@7.10.2(react@18.2.0))(@types/react@18.2.57)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@mantine/hooks@7.10.2(react@18.2.0))(clsx@2.1.1)(react@18.2.0)
       next:
         specifier: 14.2.14
-        version: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        version: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       remixicon:
         specifier: 4.3.0
         version: 4.3.0
@@ -420,7 +420,7 @@ importers:
         version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
         specifier: 0.11.2
-        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
@@ -444,10 +444,10 @@ importers:
         version: link:../shared/utils-router
       '@kuma-ui/core':
         specifier: 1.5.7
-        version: 1.5.7(@types/react@18.2.57)(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.5.7(@types/react@18.2.57)(next@14.2.14(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
       next:
         specifier: 14.2.14
-        version: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        version: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -475,10 +475,10 @@ importers:
         version: link:../../utils-router
       next:
         specifier: 14.2.14
-        version: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        version: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -500,10 +500,10 @@ importers:
         version: link:../../utils-auth-service/core
       next:
         specifier: 14.2.14
-        version: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        version: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -566,7 +566,7 @@ importers:
     dependencies:
       '@kuma-ui/core':
         specifier: '>=1'
-        version: 1.5.7(@types/react@18.2.57)(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.5.7(@types/react@18.2.57)(next@14.2.14(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
       react-dom:
         specifier: '>=18.2.0'
         version: 18.2.0(react@18.2.0)
@@ -588,7 +588,7 @@ importers:
     dependencies:
       '@kuma-ui/core':
         specifier: '>=1'
-        version: 1.5.7(@types/react@18.2.57)(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.5.7(@types/react@18.2.57)(next@14.2.14(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
       react-dom:
         specifier: '>=18.2.0'
         version: 18.2.0(react@18.2.0)
@@ -625,7 +625,7 @@ importers:
         version: link:../utils-router
       '@kuma-ui/core':
         specifier: '>=1'
-        version: 1.5.7(@types/react@18.2.57)(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.5.7(@types/react@18.2.57)(next@14.2.14(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
       react-dom:
         specifier: '>=18.2.0'
         version: 18.2.0(react@18.2.0)
@@ -650,13 +650,13 @@ importers:
         version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
         specifier: 0.11.2
-        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -678,13 +678,13 @@ importers:
         version: 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@apollo/experimental-nextjs-app-support':
         specifier: 0.11.2
-        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
       next-client-cookies:
         specifier: 1.1.1
-        version: 1.1.1(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+        version: 1.1.1(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -743,7 +743,7 @@ importers:
         version: 10.8.1
       next:
         specifier: 14.2.14
-        version: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        version: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       next-firebase-auth-edge:
         specifier: 1.0.1
         version: 1.0.1(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))
@@ -801,7 +801,7 @@ importers:
     dependencies:
       next:
         specifier: 14.2.14
-        version: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+        version: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -3016,6 +3016,11 @@ packages:
 
   '@mantine/form@7.10.2':
     resolution: {integrity: sha512-OlXQ04orkwQO+AEeA4OihYtfxpaoK/LC1r2/nnUQmChG/GO1X9MoEW8oTQYKyYDIpQc8+lHhos4gl9dEF5YAWw==}
+    peerDependencies:
+      react: ^18.2.0
+
+  '@mantine/form@7.13.1':
+    resolution: {integrity: sha512-lgCEyg9kF3xSTDhGt2BKQk/zbxhDdCD/EZFUOW0yUIzvcgvK3TcgqImV3Y1SNqUj/lLKzCQWNNjreAT38jL20g==}
     peerDependencies:
       react: ^18.2.0
 
@@ -9303,6 +9308,13 @@ snapshots:
       next: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       react: 18.2.0
 
+  '@apollo/experimental-nextjs-app-support@0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
+    dependencies:
+      '@apollo/client': 3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@apollo/client-react-streaming': 0.11.2(@apollo/client@3.11.2(@types/react@18.2.57)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      next: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      react: 18.2.0
+
   '@apollo/protobufjs@1.2.7':
     dependencies:
       '@protobufjs/aspromise': 1.1.2
@@ -11269,6 +11281,10 @@ snapshots:
     dependencies:
       next: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
 
+  '@croco/utils-next-font-pretendard@0.0.2(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))':
+    dependencies:
+      next: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+
   '@croco/utils-structure-react@0.0.1': {}
 
   '@emoji-mart/data@1.2.1': {}
@@ -12661,7 +12677,7 @@ snapshots:
   '@kuma-ui/babel-plugin@1.2.1(@types/react@18.2.57)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
     dependencies:
       '@babel/core': 7.23.7
-      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@kuma-ui/sheet': 1.3.1
       '@kuma-ui/system': 1.7.4
     transitivePeerDependencies:
@@ -12674,7 +12690,7 @@ snapshots:
     dependencies:
       '@babel/core': 7.23.7
       '@kuma-ui/babel-plugin': 1.2.1(@types/react@18.2.57)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
-      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@kuma-ui/sheet': 1.3.1
       '@kuma-ui/system': 1.7.4
       '@kuma-ui/wasm': 1.0.2
@@ -12685,7 +12701,7 @@ snapshots:
       - react
       - supports-color
 
-  '@kuma-ui/core@1.5.7(@types/react@18.2.57)(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
+  '@kuma-ui/core@1.5.7(@types/react@18.2.57)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)':
     dependencies:
       '@kuma-ui/sheet': 1.3.1
       '@kuma-ui/system': 1.7.4
@@ -12696,12 +12712,23 @@ snapshots:
       '@types/react': 18.2.57
       next: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
 
+  '@kuma-ui/core@1.5.7(@types/react@18.2.57)(next@14.2.14(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+    dependencies:
+      '@kuma-ui/sheet': 1.3.1
+      '@kuma-ui/system': 1.7.4
+      '@types/stylis': 4.2.5
+      react: 18.2.0
+      stylis: 4.3.1
+    optionalDependencies:
+      '@types/react': 18.2.57
+      next: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+
   '@kuma-ui/next-plugin@1.3.1(@babel/core@7.23.7)(@types/react@18.2.57)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)':
     dependencies:
       '@babel/preset-env': 7.23.8(@babel/core@7.23.7)
       '@babel/preset-react': 7.23.3(@babel/core@7.23.7)
       '@babel/preset-typescript': 7.23.3(@babel/core@7.23.7)
-      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
+      '@kuma-ui/core': 1.5.7(@types/react@18.2.57)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)
       '@kuma-ui/webpack-plugin': 1.4.1(@types/react@18.2.57)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)
       babel-loader: 9.1.3(@babel/core@7.23.7)(webpack@5.91.0)
       browserslist: 4.21.5
@@ -12762,6 +12789,12 @@ snapshots:
       - '@types/react'
 
   '@mantine/form@7.10.2(react@18.2.0)':
+    dependencies:
+      fast-deep-equal: 3.1.3
+      klona: 2.0.6
+      react: 18.2.0
+
+  '@mantine/form@7.13.1(react@18.2.0)':
     dependencies:
       fast-deep-equal: 3.1.3
       klona: 2.0.6
@@ -13267,7 +13300,7 @@ snapshots:
       '@sentry/types': 8.32.0
       '@sentry/utils': 8.32.0
 
-  '@sentry/bundler-plugin-core@2.22.3':
+  '@sentry/bundler-plugin-core@2.22.3(encoding@0.1.13)':
     dependencies:
       '@babel/core': 7.23.7
       '@sentry/babel-plugin-component-annotate': 2.22.3
@@ -13349,7 +13382,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@sentry/nextjs@8.32.0(@opentelemetry/api@1.9.0)(@opentelemetry/core@1.26.0(@opentelemetry/api@1.9.0))(@opentelemetry/instrumentation@0.53.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.26.0(@opentelemetry/api@1.9.0))(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)':
+  '@sentry/nextjs@8.32.0(@opentelemetry/api@1.9.0)(@opentelemetry/core@1.26.0(@opentelemetry/api@1.9.0))(@opentelemetry/instrumentation@0.53.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.26.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0)(webpack@5.91.0)':
     dependencies:
       '@opentelemetry/instrumentation-http': 0.53.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.27.0
@@ -13362,7 +13395,7 @@ snapshots:
       '@sentry/types': 8.32.0
       '@sentry/utils': 8.32.0
       '@sentry/vercel-edge': 8.32.0
-      '@sentry/webpack-plugin': 2.22.3(webpack@5.91.0)
+      '@sentry/webpack-plugin': 2.22.3(encoding@0.1.13)(webpack@5.91.0)
       chalk: 3.0.0
       next: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       resolve: 1.22.8
@@ -13461,9 +13494,9 @@ snapshots:
       '@sentry/types': 8.32.0
       '@sentry/utils': 8.32.0
 
-  '@sentry/webpack-plugin@2.22.3(webpack@5.91.0)':
+  '@sentry/webpack-plugin@2.22.3(encoding@0.1.13)(webpack@5.91.0)':
     dependencies:
-      '@sentry/bundler-plugin-core': 2.22.3
+      '@sentry/bundler-plugin-core': 2.22.3(encoding@0.1.13)
       unplugin: 1.0.1
       uuid: 9.0.1
       webpack: 5.91.0
@@ -18058,17 +18091,50 @@ snapshots:
       next: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
       react: 18.2.0
 
+  next-client-cookies@1.1.1(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6))(react@18.2.0):
+    dependencies:
+      js-cookie: 3.0.5
+      next: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      react: 18.2.0
+
   next-firebase-auth-edge@1.0.1(next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)):
     dependencies:
       '@changesets/cli': 2.27.1
       cookie: 0.5.0
       encoding: 0.1.13
       jose: 4.15.4
-      next: 14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
+      next: 14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6)
 
   next-tick@1.1.0: {}
 
   next@14.2.14(@babel/core@7.23.7)(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6):
+    dependencies:
+      '@next/env': 14.2.14
+      '@swc/helpers': 0.5.5
+      busboy: 1.6.0
+      caniuse-lite: 1.0.30001612
+      graceful-fs: 4.2.11
+      postcss: 8.4.31
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      styled-jsx: 5.1.1(@babel/core@7.23.7)(react@18.2.0)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 14.2.14
+      '@next/swc-darwin-x64': 14.2.14
+      '@next/swc-linux-arm64-gnu': 14.2.14
+      '@next/swc-linux-arm64-musl': 14.2.14
+      '@next/swc-linux-x64-gnu': 14.2.14
+      '@next/swc-linux-x64-musl': 14.2.14
+      '@next/swc-win32-arm64-msvc': 14.2.14
+      '@next/swc-win32-ia32-msvc': 14.2.14
+      '@next/swc-win32-x64-msvc': 14.2.14
+      '@opentelemetry/api': 1.9.0
+      sass: 1.77.6
+    transitivePeerDependencies:
+      - '@babel/core'
+      - babel-plugin-macros
+
+  next@14.2.14(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(sass@1.77.6):
     dependencies:
       '@next/env': 14.2.14
       '@swc/helpers': 0.5.5
