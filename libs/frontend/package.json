@@ -28,6 +28,7 @@
     "@types/react-dom": "^18.2.0"
   },
   "dependencies": {
-    "@darun/utils-router": "workspace:*"
+    "@darun/utils-router": "workspace:*",
+    "react-medium-image-zoom": "5.2.10"
   }
 }
