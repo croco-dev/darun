@@ -17,10 +17,10 @@
     "@darun/provider-graphql": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-router": "workspace:*",
-    "@mantine/core": "7.10.2",
-    "@mantine/form": "7.10.2",
-    "@mantine/hooks": "7.10.2",
-    "@mantine/notifications": "7.10.2",
+    "@mantine/core": "7.13.1",
+    "@mantine/form": "7.13.1",
+    "@mantine/hooks": "7.13.1",
+    "@mantine/notifications": "7.13.1",
     "next": "14.2.14"
   },
   "devDependencies": {
