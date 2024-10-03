@@ -12,11 +12,6 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
 
   upsert(productTag: ProductTag): Promise<ProductTag> {
     return this.db.transaction(async tx => {
-      const existProductTags = await tx
-        .select()
-        .from(productTags)
-        .where(eq(productTags.productId, productTag.productId));
-
       const existTags = await tx
         .select()
         .from(tags)
@@ -26,14 +21,38 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
             productTag.tags.map(tag => tag.name)
           )
         );
-      const newTags = await tx
-        .insert(tags)
-        .values(productTag.tags.filter(tag => !existTags.find(t => t.name === tag.name)))
-        .returning();
+      const newTagValues = productTag.tags.filter(tag => !existTags.find(t => t.name === tag.name));
+      const newTags = newTagValues.length > 0 ? await tx.insert(tags).values(newTagValues).returning() : [];
+      const totalTags = [...existTags, ...newTags];
+
+      const prevProductTags = await tx
+        .select()
+        .from(productTags)
+        .where(eq(productTags.productId, productTag.productId));
+      const addProductTags = totalTags.filter(tag => !prevProductTags.find(t => t.tagId === tag.id));
+      const deleteProductTags = prevProductTags.filter(tag => !totalTags.find(t => t.tagId === tag.id));
+
+      if (addProductTags.length > 0) {
+        await tx.insert(productTags).values(
+          addProductTags.map(tag => ({
+            productId: productTag.productId,
+            tagId: tag.id,
+          }))
+        );
+      }
+
+      if (deleteProductTags.length > 0) {
+        const result = await tx.delete(productTags).where(
+          inArray(
+            productTags.id,
+            deleteProductTags.map(t => t.id)
+          )
+        );
+      }
 
       return new ProductTag({
         productId: productTag.productId,
-        tags: [...existTags, ...newTags].map(this.toTag),
+        tags: totalTags.map(this.toTag),
       });
     });
   }
@@ -62,7 +81,7 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
     });
   }
 
-  private toTag<TagType extends typeof tags.$inferSelect | typeof tags.$inferInsert>(schema: TagType): Tag {
+  private toTag(schema: typeof tags.$inferSelect | typeof tags.$inferInsert): Tag {
     return new Tag({
       ...schema,
       type: TagType[schema.type as keyof typeof TagType],
