@@ -33,7 +33,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }) => {
       borderRadius={'10px'}
     >
       {photos && (
-        <HStack gap={'8px'} width={'max-content'} overflow={'auto'}>
+        <HStack gap={'8px'} width={'max-content'} overflow={'auto'} position={'relative'}>
           {photos.map(photo => (
             <Zoom key={photo.imageUrl}>
               <Image
