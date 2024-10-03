@@ -2,7 +2,7 @@
 
 import { Link } from '@darun/utils-router';
 import { Group, Code, Flex, Text, Anchor } from '@mantine/core';
-import { IconSettings, IconUser, IconArchive } from '@tabler/icons-react';
+import { IconArchive, IconBuildingCommunity } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 import { LogoutButton } from '../../accounts/components/LogoutButton';
 import { Logo } from '../Logo';
@@ -10,6 +10,7 @@ import classes from './Navbar.module.css';
 
 const data = [
   { link: '/products', label: '서비스', icon: IconArchive },
+  { link: '/companies', label: '회사 관리', icon: IconBuildingCommunity },
 ];
 
 export function Navbar() {

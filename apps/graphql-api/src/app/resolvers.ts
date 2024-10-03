@@ -2,6 +2,7 @@ import '../config';
 
 import { NonEmptyArray } from 'type-graphql';
 import { CompanyMutationResolver } from './graphql/company/Company.mutation.resolver';
+import { CompanyQueryResolver } from './graphql/company/Company.query.resolver';
 import { FeatureMutationResolver } from './graphql/feature/Feature.mutation.resolver';
 import { FeatureQueryResolver } from './graphql/feature/Feature.query.resolver';
 import { HealthResolver } from './graphql/Health.resolver';
@@ -15,6 +16,7 @@ export const resolvers: NonEmptyArray<Function> = [
   ProductQueryResolver,
   ProductMutationResolver,
   FeatureQueryResolver,
+  CompanyQueryResolver,
   CompanyMutationResolver,
   FeatureMutationResolver,
   ImageMutationResolver,

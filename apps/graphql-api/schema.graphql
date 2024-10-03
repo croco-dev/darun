@@ -33,6 +33,12 @@ type Company {
   type: String!
 }
 
+type CompanyPagination {
+  companies: [Company!]!
+  totalCount: Int!
+  totalPages: Int!
+}
+
 input CreateCompanyInput {
   address: String!
   name: String!
@@ -178,6 +184,7 @@ type PublishProductPayload {
 }
 
 type Query {
+  allCompanies(page: Int!): CompanyPagination!
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
   feature(id: ID!): Feature
   hello: String!

@@ -20,7 +20,7 @@ export {
   EditProduct,
 } from './libs/products/domain';
 export { GetAccount } from './libs/accounts/domain';
-export { GetCompany, CreateCompany } from './libs/companies/domain';
+export { GetCompany, CreateCompany, GetAllCompanies } from './libs/companies/domain';
 export { IndexProduct, SearchProduct } from './libs/search/domain';
 export { GetAlternativeProducts, UpdateAlternativeProduct } from './libs/recommendation/domain';
 export { SignImageUpload } from './libs/images/domain';
