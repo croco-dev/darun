@@ -3,6 +3,7 @@ import { Company } from '../entities/Company';
 
 export interface CompanyRepository {
   findById(id: string): Promise<Company | null>;
+  findAllWithPagination(page: number, limit: number): Promise<{ data: Company[]; total: number }>;
   insert(values: Company): Promise<Company | null>;
 }
 

@@ -1,7 +1,7 @@
 import { Company, CompanyRepository, CompanyRepositoryToken } from '@companies/domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
-import { inArray } from 'drizzle-orm';
+import { count, inArray } from 'drizzle-orm';
 import { keyBy } from 'lodash';
 import { Inject, Service } from 'typedi';
 import { companies } from '../entities/CompanySchema';
@@ -37,5 +37,22 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
 
   async findById(id: string): Promise<Company | null> {
     return this.companyIdLoader.load(id);
+  }
+
+  async findAllWithPagination(page: number = 1, limit: number = 50): Promise<{ data: Company[]; total: number }> {
+    const offset = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.db.select().from(companies).limit(limit).offset(offset),
+      this.db
+        .select({ count: count() })
+        .from(companies)
+        .then(res => res[0].count),
+    ]);
+
+    return {
+      data,
+      total,
+    };
   }
 }
