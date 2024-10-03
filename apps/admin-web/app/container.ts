@@ -67,8 +67,8 @@ class Container {
             max: 5,
           },
         }),
-        httpErrorLink,
         this.httpLink,
+        httpErrorLink,
       ]),
     });
   }
