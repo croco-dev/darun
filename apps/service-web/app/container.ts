@@ -1,5 +1,7 @@
 import { ApolloLink } from '@apollo/client';
 import { BatchHttpLink } from '@apollo/client/link/batch-http';
+import { onError } from '@apollo/client/link/error';
+import { RetryLink } from '@apollo/client/link/retry';
 import {
   NextSSRApolloClient,
   NextSSRInMemoryCache,
@@ -35,17 +37,40 @@ class Container {
   }
 
   get apolloClient() {
+    const httpErrorLink = onError(({ graphQLErrors, networkError }) => {
+      if (graphQLErrors) {
+        graphQLErrors.map(({ message, locations, path }) =>
+          console.error(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`)
+        );
+      }
+
+      if (networkError) {
+        console.error(`[Network error]: ${networkError}`);
+      }
+    });
+
     return new NextSSRApolloClient({
       cache: new NextSSRInMemoryCache(),
-      link:
-        typeof window === 'undefined'
-          ? ApolloLink.from([
+      link: ApolloLink.from([
+        ...(typeof window === 'undefined'
+          ? [
               new SSRMultipartLink({
                 stripDefer: true,
               }),
-              this.httpLink,
-            ])
-          : this.httpLink,
+            ]
+          : []),
+        new RetryLink({
+          delay: {
+            initial: 100,
+            jitter: true,
+          },
+          attempts: {
+            max: 2,
+          },
+        }),
+        httpErrorLink,
+        this.httpLink,
+      ]),
     });
   }
 }
