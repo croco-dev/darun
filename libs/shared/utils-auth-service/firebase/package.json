@@ -15,7 +15,7 @@
     "next-firebase-auth-edge": "1.0.1"
   },
   "peerDependencies": {
-    "next": "14.2.5"
+    "next": "14.2.14"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
