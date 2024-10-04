@@ -29,8 +29,9 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
         .select()
         .from(productTags)
         .where(eq(productTags.productId, productTag.productId));
-      const addProductTags = totalTags.filter(tag => !prevProductTags.find(t => t.tagId === tag.id));
-      const deleteProductTags = prevProductTags.filter(tag => !totalTags.find(t => t.tagId === tag.id));
+
+      const addProductTags = totalTags.filter(tag => !prevProductTags.find(pt => pt.tagId === tag.id));
+      const deleteProductTags = prevProductTags.filter(pt => !totalTags.find(t => pt.tagId === t.id));
 
       if (addProductTags.length > 0) {
         await tx.insert(productTags).values(
@@ -42,10 +43,10 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
       }
 
       if (deleteProductTags.length > 0) {
-        const result = await tx.delete(productTags).where(
+        await tx.delete(productTags).where(
           inArray(
-            productTags.id,
-            deleteProductTags.map(t => t.id)
+            productTags.id, // tagId로 삭제해야 함
+            deleteProductTags.map(pt => pt.id) // deleteProductTags에서 tagId 추출
           )
         );
       }
@@ -63,9 +64,8 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
       .from(productTags)
       .innerJoin(tags, eq(productTags.tagId, tags.id))
       .where(eq(productTags.productId, productId))
-      .limit(1)
       .then(rows =>
-        rows[0]
+        rows[0]?.product_tags
           ? this.mapper(
               rows[0].product_tags.productId,
               rows.map(({ tags }) => this.toTag(tags))
