@@ -1,7 +1,6 @@
 import { AuthService, AuthStorage, AuthUser } from '@darun/utils-auth-service-core';
-import { signInWithRedirect } from '@firebase/auth';
 import { getApps, initializeApp } from 'firebase/app';
-import { GoogleAuthProvider, getAuth, onIdTokenChanged } from 'firebase/auth';
+import { GoogleAuthProvider, getAuth, onIdTokenChanged, signInWithPopup } from 'firebase/auth';
 import { getFirebaseAuth } from 'next-firebase-auth-edge';
 
 type FirebaseAuthConfig = {
@@ -15,7 +14,7 @@ type FirebaseAuthConfig = {
 export class FirebaseAuthService implements AuthService {
   private authMethods: ReturnType<typeof getFirebaseAuth>;
   private authStorage?: AuthStorage;
-  private isInit: boolean = false;
+  private apiKey: string;
 
   constructor({ projectId, privateKey, clientEmail, authDomain, apiKey }: FirebaseAuthConfig) {
     this.authMethods = getFirebaseAuth(
@@ -26,6 +25,8 @@ export class FirebaseAuthService implements AuthService {
       },
       apiKey
     );
+    this.apiKey = apiKey;
+
     if (typeof window !== 'undefined' && getApps().length === 0) {
       initializeApp({
         apiKey,
@@ -58,22 +59,22 @@ export class FirebaseAuthService implements AuthService {
   public async getUser() {
     const idToken = this.authStorage?.get('idToken');
     const refreshToken = this.authStorage?.get('refreshToken');
-    if (!idToken || !refreshToken) {
-      return null;
-    }
-    const result = await this.authMethods.verifyAndRefreshExpiredIdToken(idToken, refreshToken);
-    if (!result) {
+    if (!refreshToken) {
       return null;
     }
 
+    const { token, decodedToken } =
+      (await this.authMethods.verifyAndRefreshExpiredIdToken(idToken ?? '', refreshToken)) ??
+      (await this.authMethods.handleTokenRefresh(refreshToken, this.apiKey));
+
     this.authStorage?.set({
-      idToken: result.token,
+      idToken: token,
     });
 
     return {
-      id: result.decodedToken.uid,
-      email: result.decodedToken.email ?? '',
-      isAdmin: result.decodedToken.roles?.includes('admin') ?? false,
+      id: decodedToken.uid,
+      email: decodedToken.email ?? '',
+      isAdmin: decodedToken.roles?.includes('admin') ?? false,
     };
   }
 
@@ -102,6 +103,6 @@ export class FirebaseAuthService implements AuthService {
     provider.addScope('profile');
     provider.addScope('email');
 
-    return signInWithRedirect(getAuth(), provider);
+    return signInWithPopup(getAuth(), provider);
   }
 }
