@@ -27,8 +27,6 @@ type Company {
   address: String!
   id: ID!
   name: String!
-  region: String!
-  size: String!
   startAt: DateTimeISO!
   type: String!
 }
@@ -42,8 +40,6 @@ type CompanyPagination {
 input CreateCompanyInput {
   address: String!
   name: String!
-  region: String!
-  size: String!
   startAt: DateTimeISO!
   type: String!
 }

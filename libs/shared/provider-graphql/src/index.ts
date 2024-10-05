@@ -43,17 +43,20 @@ export type Company = {
   readonly address: Scalars['String']['output'];
   readonly id: Scalars['ID']['output'];
   readonly name: Scalars['String']['output'];
-  readonly region: Scalars['String']['output'];
-  readonly size: Scalars['String']['output'];
   readonly startAt: Scalars['DateTimeISO']['output'];
   readonly type: Scalars['String']['output'];
+};
+
+export type CompanyPagination = {
+  readonly __typename?: 'CompanyPagination';
+  readonly companies: ReadonlyArray<Company>;
+  readonly totalCount: Scalars['Int']['output'];
+  readonly totalPages: Scalars['Int']['output'];
 };
 
 export type CreateCompanyInput = {
   readonly address: Scalars['String']['input'];
   readonly name: Scalars['String']['input'];
-  readonly region: Scalars['String']['input'];
-  readonly size: Scalars['String']['input'];
   readonly startAt: Scalars['DateTimeISO']['input'];
   readonly type: Scalars['String']['input'];
 };
@@ -275,6 +278,7 @@ export type PublishProductPayload = {
 
 export type Query = {
   readonly __typename?: 'Query';
+  readonly allCompanies: CompanyPagination;
   readonly allProducts: ProductConnection;
   readonly feature?: Maybe<Feature>;
   readonly hello: Scalars['String']['output'];
@@ -284,6 +288,11 @@ export type Query = {
   readonly recentProducts: ReadonlyArray<Product>;
   readonly searchProducts: ReadonlyArray<Product>;
   readonly tempProductBySlug?: Maybe<Product>;
+};
+
+
+export type QueryallCompaniesArgs = {
+  page: Scalars['Int']['input'];
 };
 
 
@@ -345,6 +354,7 @@ export type SignImageUploadPayload = {
 
 export type Tag = {
   readonly __typename?: 'Tag';
+  readonly count: Scalars['Int']['output'];
   readonly id: Scalars['ID']['output'];
   readonly name: Scalars['String']['output'];
 };

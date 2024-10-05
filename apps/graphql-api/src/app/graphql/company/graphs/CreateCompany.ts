@@ -18,12 +18,6 @@ export class CreateCompanyInput {
   @Field()
   address: string;
 
-  @Field()
-  region: string;
-
-  @Field()
-  size: string;
-
   @Field(() => GraphQLISODateTime)
   startAt: Date;
 }

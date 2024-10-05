@@ -9,9 +9,7 @@ gql`
         id
         name
         type
-        region
         address
-        size
         startAt
       }
     }

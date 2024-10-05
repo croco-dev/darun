@@ -17,8 +17,6 @@ export class CompanyMutationResolver {
       name: input.name,
       address: input.address,
       type: input.type,
-      size: input.size,
-      region: input.region,
       startAt: new Date(input.startAt),
     });
 

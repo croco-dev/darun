@@ -7,8 +7,6 @@ export const companies = pgTable('companies', {
   name: varchar('name', { length: 100 }).notNull(),
   address: varchar('address', { length: 200 }).notNull(),
   type: varchar('type', { length: 20 }).notNull(),
-  size: varchar('size', { length: 10 }).notNull(),
-  region: varchar('region', { length: 20 }).notNull(),
   startAt: timestamp('start_at').notNull(),
   createdAt: timestamp('created_at')
     .notNull()
