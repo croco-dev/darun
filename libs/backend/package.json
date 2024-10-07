@@ -32,6 +32,6 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/lodash": "4.17.5"
+    "@types/lodash": "4.17.10"
   }
 }
