@@ -32,6 +32,7 @@ type NewProductFormProps = {
 
 export function useNewProductLinkForm({ productSlug, children }: NewProductFormProps) {
   const form = useForm<FormValues>({
+    mode: 'uncontrolled',
     initialValues: {
       displayLink: '',
       iconUrl: '',
