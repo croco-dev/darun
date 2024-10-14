@@ -1,0 +1,1 @@
+export { AllCompanyListTable } from './AllCompanyListTable';
