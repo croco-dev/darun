@@ -28,18 +28,6 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
               </Text>
             </HStack>
           )}
-          {company?.region && (
-            <HStack>
-              <Flex width="70px">
-                <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
-                  국적
-                </Text>
-              </Flex>
-              <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
-                {company.region}
-              </Text>
-            </HStack>
-          )}
           {company?.type && (
             <HStack>
               <Flex width="70px">
@@ -61,18 +49,6 @@ export const ProductCompany = bind(useProductCompany, ({ company }) => (
               </Flex>
               <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
                 {company.address}
-              </Text>
-            </HStack>
-          )}
-          {company?.size && (
-            <HStack>
-              <Flex width="70px">
-                <Text fontWeight={'fontWeights.bold'} color={'colors.dark.700'} letterSpacing="-2.4%">
-                  고용 인원
-                </Text>
-              </Flex>
-              <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
-                {company.size} (명)
               </Text>
             </HStack>
           )}

@@ -19,6 +19,8 @@ export const ProductDescription = bind(useProductDescription, ({ description }) 
 const DescriptionContentStyle = css`
   color: #2b2b2b;
   line-height: 1.5;
+  word-break: auto-phrase;
+  word-wrap: break-word;
   & p {
     margin: 4px 0;
   }
