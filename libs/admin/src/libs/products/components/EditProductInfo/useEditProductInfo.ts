@@ -43,6 +43,7 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
   });
 
   const form = useForm<FormValues>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       summary: '',

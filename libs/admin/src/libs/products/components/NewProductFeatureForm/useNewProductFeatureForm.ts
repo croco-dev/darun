@@ -30,6 +30,7 @@ type NewProductFormProps = {
 
 export function useNewProductFeatureForm({ productSlug, children }: NewProductFormProps) {
   const form = useForm<FormValues>({
+    mode: 'uncontrolled',
     initialValues: {
       name: '',
       emoji: '',

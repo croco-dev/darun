@@ -31,6 +31,7 @@ type NewProductFormProps = {
 
 export function useNewProductScreenshotForm({ productSlug, children }: NewProductFormProps) {
   const form = useForm<FormValues>({
+    mode: 'uncontrolled',
     initialValues: {
       file: undefined,
       imageAlt: '',

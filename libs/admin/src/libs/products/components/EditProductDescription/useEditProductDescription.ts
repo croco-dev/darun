@@ -37,6 +37,7 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
   });
 
   const form = useForm<FormValues>({
+    mode: 'uncontrolled',
     initialValues: { description: data?.tempProductBySlug?.description ?? '' },
   });
 

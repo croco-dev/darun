@@ -54,6 +54,7 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
   });
 
   const form = useForm<FormValues>({
+    mode: 'uncontrolled',
     initialValues: {
       alternativeIds: [],
     },

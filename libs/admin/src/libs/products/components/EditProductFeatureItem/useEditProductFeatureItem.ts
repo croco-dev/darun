@@ -59,6 +59,7 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
   });
 
   const form = useForm<FormValues>({
+    mode: 'uncontrolled',
     initialValues: {
       emoji: '',
       name: '',
