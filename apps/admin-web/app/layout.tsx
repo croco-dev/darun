@@ -3,6 +3,8 @@ import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import './globals.css';
 import 'remixicon/fonts/remixicon.css';
+import 'mantine-datatable/styles.layer.css';
+import '@mantine/dates/styles.css';
 
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
 import { ColorSchemeScript } from '@mantine/core';
