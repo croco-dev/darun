@@ -127,6 +127,7 @@ type Mutation {
   editProduct(input: EditProductInput!, slug: String!): EditProductPayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
   publishProduct(input: PublishProductInput!): PublishProductPayload!
+  registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
@@ -190,6 +191,14 @@ type Query {
   recentProducts(first: Int!): [Product!]!
   searchProducts(query: String!): [Product!]!
   tempProductBySlug(slug: String!): Product
+}
+
+input RegisterProductCompanyInput {
+  companyId: ID!
+}
+
+type RegisterProductCompanyPayload {
+  product: Product
 }
 
 type Screenshot {

@@ -10,6 +10,8 @@ import {
   UpdateAlternativeProduct,
   EditProduct,
   UpvoteProduct,
+  GetCompany,
+  RegisterProductCompany,
 } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
@@ -21,6 +23,7 @@ import { EditProductInput, EditProductPayload } from './graphs/EditProduct';
 import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
 import { PublishProductInput, PublishProductPayload } from './graphs/PublishProduct';
+import { RegisterProductCompanyInput, RegisterProductCompanyPayload } from './graphs/RegisterProductCompany';
 import { UpdateAlternativeProductInput, UpdateAlternativeProductPayload } from './graphs/UpdateAlternativeProduct';
 import { UpdateProductTagsInput, UpdateProductTagsPayload } from './graphs/UpdateProductTags';
 import { UpvoteProductPayload } from './graphs/UpvoteProduct';
@@ -30,6 +33,7 @@ import { UpvoteProductPayload } from './graphs/UpvoteProduct';
 export class ProductMutationResolver {
   constructor(
     private readonly createProductUseCase: CreateProduct,
+    private readonly getCompanyUseCase: GetCompany,
     private readonly editProductUseCase: EditProduct,
     private readonly indexProductUseCase: IndexProduct,
     private readonly publishProductUseCase: PublishProduct,
@@ -39,7 +43,8 @@ export class ProductMutationResolver {
     private readonly addProductScreenshotUseCase: AddProductScreenshot,
     private readonly addProductLinkUseCase: AddProductLink,
     private readonly updateAlternativeProductUseCase: UpdateAlternativeProduct,
-    private readonly upvoteProductUseCase: UpvoteProduct
+    private readonly upvoteProductUseCase: UpvoteProduct,
+    private readonly registerProductCompanyUseCase: RegisterProductCompany
   ) {}
 
   @Authorized([AuthRole.Admin])
@@ -214,6 +219,32 @@ export class ProductMutationResolver {
 
     return {
       product: await this.getPublishedProductUseCase.execute({ slug }),
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => RegisterProductCompanyPayload)
+  async registerProductCompany(
+    @Arg('slug') slug: string,
+    @Arg('input') input: RegisterProductCompanyInput
+  ): Promise<RegisterProductCompanyPayload> {
+    const product = await this.getProductUseCase.execute({ slug });
+    const company = await this.getCompanyUseCase.execute({ id: input.companyId });
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    if (!company) {
+      throw new Error('Company not found');
+    }
+
+    await this.registerProductCompanyUseCase.execute({
+      productId: product.id,
+      companyId: company.id,
+    });
+
+    return {
+      product: await this.getProductUseCase.execute({ slug }),
     };
   }
 }
