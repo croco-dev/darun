@@ -38,3 +38,4 @@ export { AddProductScreenshot } from './usecases/AddProductScreenshot';
 export { AddProductLink } from './usecases/AddProductLink';
 export { PublishProduct } from './usecases/PublishProduct';
 export { EditProduct } from './usecases/EditProduct';
+export { RegisterProductCompany } from './usecases/RegisterProductCompany';
