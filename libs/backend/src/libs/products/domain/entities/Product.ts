@@ -7,6 +7,7 @@ export class Product {
   public logoUrl: string;
   public publishedAt?: Date;
   public updatedAt?: Date;
+  public ownedCompanyId?: string;
 
   constructor({
     id,
@@ -17,6 +18,7 @@ export class Product {
     description,
     publishedAt,
     updatedAt,
+    ownedCompanyId,
   }: {
     id?: string;
     slug: string;
@@ -26,6 +28,7 @@ export class Product {
     logoUrl: string;
     publishedAt?: Date;
     updatedAt?: Date;
+    ownedCompanyId?: string;
   }) {
     this.slug = slug;
     this.name = name;
@@ -34,6 +37,7 @@ export class Product {
     this.logoUrl = logoUrl;
     this.publishedAt = publishedAt;
     this.updatedAt = updatedAt;
+    this.ownedCompanyId = ownedCompanyId;
 
     if (id) {
       this.id = id;
@@ -69,5 +73,9 @@ export class Product {
     }
 
     this.updatedAt = new Date();
+  }
+
+  registerCompany(companyId: string) {
+    this.ownedCompanyId = companyId;
   }
 }

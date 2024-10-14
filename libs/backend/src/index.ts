@@ -18,6 +18,7 @@ export {
   AddProductLink,
   PublishProduct,
   EditProduct,
+  RegisterProductCompany,
 } from './libs/products/domain';
 export { GetAccount } from './libs/accounts/domain';
 export { GetCompany, CreateCompany, GetAllCompanies } from './libs/companies/domain';
