@@ -23,7 +23,7 @@
     "@sentry/aws-serverless": "8.32.0",
     "@sentry/esbuild-plugin": "2.22.4",
     "@sentry/profiling-node": "8.32.0",
-    "@typegoose/typegoose": "12.5.0",
+    "@typegoose/typegoose": "12.8.0",
     "cloudinary": "2.4.0",
     "drizzle-orm": "0.32.1",
     "firebase-admin": "12.3.0",
