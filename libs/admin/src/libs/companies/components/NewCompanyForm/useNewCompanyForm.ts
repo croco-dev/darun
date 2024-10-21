@@ -20,6 +20,7 @@ type FormValues = {
   type?: string;
   address?: string;
   startAt?: Date;
+  startAtIsDisabled: boolean;
 };
 
 export function useNewCompanyForm() {
@@ -29,6 +30,7 @@ export function useNewCompanyForm() {
       type: '',
       address: '',
       startAt: new Date(),
+      startAtIsDisabled: false,
     },
     mode: 'uncontrolled',
   });
@@ -45,7 +47,7 @@ export function useNewCompanyForm() {
   });
 
   const handleSubmit = (values: FormValues) => {
-    if (!values.name || !values.type || !values.address || !values.startAt) return;
+    if (!values.name || !values.type || !values.address) return;
 
     mutate({
       variables: {
@@ -53,7 +55,7 @@ export function useNewCompanyForm() {
           name: values.name,
           type: values.type,
           address: values.address,
-          startAt: values.startAt,
+          startAt: values.startAtIsDisabled ? undefined : values.startAt,
         },
       },
     });
