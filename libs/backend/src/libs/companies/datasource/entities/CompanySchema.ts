@@ -7,7 +7,7 @@ export const companies = pgTable('companies', {
   name: varchar('name', { length: 100 }).notNull(),
   address: varchar('address', { length: 200 }).notNull(),
   type: varchar('type', { length: 20 }).notNull(),
-  startAt: timestamp('start_at').notNull(),
+  startAt: timestamp('start_at'),
   createdAt: timestamp('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

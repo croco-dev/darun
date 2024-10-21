@@ -16,7 +16,7 @@ export class CreateCompany {
     name: string;
     address: string;
     type: string;
-    startAt: Date;
+    startAt?: Date;
   }): Promise<Company> {
     const newCompany = new Company({ name, type, startAt, address });
 

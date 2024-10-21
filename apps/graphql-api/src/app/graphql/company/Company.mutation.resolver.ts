@@ -17,7 +17,7 @@ export class CompanyMutationResolver {
       name: input.name,
       address: input.address,
       type: input.type,
-      startAt: new Date(input.startAt),
+      startAt: input.startAt ? new Date(input.startAt) : undefined,
     });
 
     return {
