@@ -43,7 +43,7 @@ export type Company = {
   readonly address: Scalars['String']['output'];
   readonly id: Scalars['ID']['output'];
   readonly name: Scalars['String']['output'];
-  readonly startAt: Scalars['DateTimeISO']['output'];
+  readonly startAt?: Maybe<Scalars['DateTimeISO']['output']>;
   readonly type: Scalars['String']['output'];
 };
 
@@ -57,7 +57,7 @@ export type CompanyPagination = {
 export type CreateCompanyInput = {
   readonly address: Scalars['String']['input'];
   readonly name: Scalars['String']['input'];
-  readonly startAt: Scalars['DateTimeISO']['input'];
+  readonly startAt?: InputMaybe<Scalars['DateTimeISO']['input']>;
   readonly type: Scalars['String']['input'];
 };
 
@@ -148,6 +148,7 @@ export type Mutation = {
   readonly editProduct: EditProductPayload;
   readonly indexProduct: IndexProductPayload;
   readonly publishProduct: PublishProductPayload;
+  readonly registerProductCompany: RegisterProductCompanyPayload;
   readonly signImageUpload: SignImageUploadPayload;
   readonly updateAlternativeProduct: UpdateAlternativeProductPayload;
   readonly updateProductFeature: UpdateProductFeaturePayload;
@@ -196,6 +197,12 @@ export type MutationindexProductArgs = {
 
 export type MutationpublishProductArgs = {
   input: PublishProductInput;
+};
+
+
+export type MutationregisterProductCompanyArgs = {
+  input: RegisterProductCompanyInput;
+  slug: Scalars['String']['input'];
 };
 
 
@@ -331,6 +338,15 @@ export type QuerysearchProductsArgs = {
 
 export type QuerytempProductBySlugArgs = {
   slug: Scalars['String']['input'];
+};
+
+export type RegisterProductCompanyInput = {
+  readonly companyId: Scalars['ID']['input'];
+};
+
+export type RegisterProductCompanyPayload = {
+  readonly __typename?: 'RegisterProductCompanyPayload';
+  readonly product?: Maybe<Product>;
 };
 
 export type Screenshot = {
