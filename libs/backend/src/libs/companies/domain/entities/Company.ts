@@ -3,7 +3,7 @@ export class Company {
   public name: string;
   public address: string;
   public type: string;
-  public startAt: Date;
+  public startAt?: Date;
 
   constructor({
     id,
@@ -16,7 +16,7 @@ export class Company {
     name: string;
     address: string;
     type: string;
-    startAt: Date;
+    startAt?: Date;
   }) {
     this.name = name;
     this.address = address;

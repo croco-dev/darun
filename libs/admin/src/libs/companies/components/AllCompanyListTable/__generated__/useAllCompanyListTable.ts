@@ -8,7 +8,7 @@ export type AllCompaniesOnAllCompanyListTableQueryVariables = Types.Exact<{
 }>;
 
 
-export type AllCompaniesOnAllCompanyListTableQuery = { __typename?: 'Query', allCompanies: { __typename?: 'CompanyPagination', totalCount: number, totalPages: number, companies: Array<{ __typename?: 'Company', id: string, name: string, type: string, address: string, startAt: any }> } };
+export type AllCompaniesOnAllCompanyListTableQuery = { __typename?: 'Query', allCompanies: { __typename?: 'CompanyPagination', totalCount: number, totalPages: number, companies: Array<{ __typename?: 'Company', id: string, name: string, type: string, address: string, startAt?: any | null }> } };
 
 
 export const AllCompaniesOnAllCompanyListTableDocument = gql`

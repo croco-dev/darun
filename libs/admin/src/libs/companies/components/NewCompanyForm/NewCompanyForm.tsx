@@ -1,8 +1,9 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
-import { Button, Group, Stack, TextInput } from '@mantine/core';
+import { Button, Checkbox, Group, Stack, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
+import React from 'react';
 import { useNewCompanyForm } from './useNewCompanyForm';
 
 export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) => (
@@ -26,6 +27,11 @@ export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) =
         {...form.getInputProps('startAt')}
         label="개업일"
         placeholder="눌러서 선택해주세요."
+      />
+      <Checkbox
+        key={form.key('startAtIsDisabled')}
+        {...form.getInputProps('startAtIsDisabled')}
+        label="개업일 미상 (체크 시 위 개업일은 무시됨)"
       />
     </Stack>
 

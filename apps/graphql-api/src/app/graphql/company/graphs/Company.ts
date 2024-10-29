@@ -14,6 +14,6 @@ export class Company {
   @Field(() => String)
   type: string;
 
-  @Field(() => GraphQLISODateTime)
-  startAt: Date;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  startAt?: Date;
 }
