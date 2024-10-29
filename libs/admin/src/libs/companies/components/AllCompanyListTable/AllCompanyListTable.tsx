@@ -15,7 +15,15 @@ export const AllCompanyListTable = bind(
         withColumnBorders
         striped={'even'}
         highlightOnHover
-        records={companies}
+        records={
+          companies as {
+            id: string;
+            name: string;
+            type: string;
+            address: string;
+            startAt: Date;
+          }[]
+        }
         idAccessor="slug"
         columns={dataTableColumns}
         totalRecords={totalCount}
