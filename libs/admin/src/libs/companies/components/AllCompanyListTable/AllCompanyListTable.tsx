@@ -42,6 +42,7 @@ const dataTableColumns: DataTableColumn<{
   address: string;
   startAt: Date;
 }>[] = [
+  { accessor: 'id', title: 'ID' },
   { accessor: 'name', title: '이름' },
   { accessor: 'type', title: '유형' },
   { accessor: 'address', title: '주소' },
