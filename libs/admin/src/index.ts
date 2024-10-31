@@ -9,6 +9,7 @@ export { NewProductPage } from './libs/pages/NewProductPage';
 export { NewProductFeaturePage } from './libs/pages/NewProductFeaturePage';
 export { NewProductScreenshotPage } from './libs/pages/NewProductScreenshotPage';
 export { NewProductLinkPage } from './libs/pages/NewProductLinkPage';
+export { ProductCompanyEditPage } from './libs/pages/ProductCompanyEditPage';
 
 // companies
 export { CompanyListPage } from './libs/pages/CompanyListPage';
