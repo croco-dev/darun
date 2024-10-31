@@ -6,8 +6,8 @@ import { MainHeroBanner, RecentProductSection } from '@products/shells';
 export const HomePage = () => (
   <Layout>
     <VStack as={'main'} mt={8} gap={20}>
-      <MainHeroBanner />
       <ContentArea>
+        <MainHeroBanner />
         <RecentProductSection />
       </ContentArea>
     </VStack>
