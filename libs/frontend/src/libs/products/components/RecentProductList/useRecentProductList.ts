@@ -3,7 +3,7 @@ import { useRecentProductsOnRecentProductListSuspenseQuery } from './__generated
 
 gql`
   query RecentProductsOnRecentProductList {
-    recentProducts(first: 16) {
+    recentProducts(first: 24) {
       id
       name
       slug
