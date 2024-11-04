@@ -34,11 +34,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const tags = data.productBySlug.tags.map(tag => tag.name);
 
   return {
-    title: `${name} - 다른(darun)`,
+    title: `${name} - 다른: 서비스 비교를 한 곳에서`,
+    keywords: [
+      `${name} 비슷한 서비스`,
+      `${name} 장단점`,
+      `${name} 장점`,
+      `${name} 단점`,
+      `${name} 비교`,
+      `${name} 다른 서비스`,
+      `${name} 다른 앱`,
+      `${name} 대안`,
+      `${name} 비슷한 사이트`,
+      `${name} 비슷한 앱`,
+      `${name} 비슷한`,
+      `${name} 말고`,
+      ...tags,
+      ...tags.map(tag => `${tag} 비슷한`),
+    ],
     openGraph: {
-      title: `${name} - 다른(darun)`,
+      title: `${name} - 다른: 서비스 비교를 한 곳에서`,
     },
-    keywords: tags,
   };
 }
 
