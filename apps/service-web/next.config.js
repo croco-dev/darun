@@ -29,6 +29,7 @@ const nextConfig = {
       ],
     ],
   },
+  poweredByHeader: false,
 };
 
 module.exports = withKumaUI(nextConfig);
