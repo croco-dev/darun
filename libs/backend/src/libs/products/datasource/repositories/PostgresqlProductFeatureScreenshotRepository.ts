@@ -6,7 +6,7 @@ import {
 } from '@products/domain';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
-import { groupBy } from 'lodash';
+import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { productFeatureScreenshots } from '../entities/ProductFeatureScreenshotsSchema';
 
@@ -21,7 +21,7 @@ export class PostgresqlProductFeatureScreenshotRepository implements ProductFeat
           .from(productFeatureScreenshots)
           .where(inArray(productFeatureScreenshots.featureId, [...featureIds]));
 
-        const groupByDocs = groupBy(docs, 'featureId');
+        const groupByDocs = groupBy(docs, doc => doc.featureId);
         return featureIds.map(featureId => groupByDocs[featureId] || []);
       },
       {

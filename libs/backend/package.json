@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "dataloader": "2.2.2",
-    "lodash": "4.17.21",
+    "es-toolkit": "1.29.0",
     "ulid": "2.3.0"
   },
   "peerDependencies": {
@@ -31,7 +31,6 @@
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
-    "@darun/utils-tsconfig": "workspace:*",
-    "@types/lodash": "4.17.5"
+    "@darun/utils-tsconfig": "workspace:*"
   }
 }

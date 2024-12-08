@@ -2,7 +2,7 @@ import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { ProductFeature, ProductFeatureRepository, ProductFeatureRepositoryToken } from '@products/domain';
 import DataLoader from 'dataloader';
 import { eq, inArray } from 'drizzle-orm';
-import { groupBy } from 'lodash';
+import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { productFeatures } from '../entities/ProductFeaturesSchema';
 
@@ -19,7 +19,7 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
 
         const groupByDocs = groupBy(
           docs.map(doc => this.mapper(doc)),
-          'productId'
+          doc => doc.productId
         );
 
         return productIds.map(productId => groupByDocs[productId] ?? []);

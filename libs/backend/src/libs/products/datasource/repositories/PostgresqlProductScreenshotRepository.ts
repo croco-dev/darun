@@ -2,7 +2,7 @@ import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { ProductScreenshot, ProductScreenshotRepository, ProductScreenshotRepositoryToken } from '@products/domain';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
-import { groupBy } from 'lodash';
+import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 
@@ -17,7 +17,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
           .from(productScreenshots)
           .where(inArray(productScreenshots.productId, [...productIds]));
 
-        const groupByDocs = groupBy(docs, 'productId');
+        const groupByDocs = groupBy(docs, doc => doc.productId);
         return productIds.map(productId => groupByDocs[productId] || []);
       },
       {

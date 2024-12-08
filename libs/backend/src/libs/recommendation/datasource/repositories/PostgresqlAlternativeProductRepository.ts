@@ -1,7 +1,7 @@
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
-import { groupBy } from 'lodash';
+import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { AlternativeProduct, AlternativeProductRepository, AlternativeProductRepositoryToken } from '../../domain';
 import { alternativeProducts } from '../entities/AlternativeProductSchema';
@@ -17,7 +17,7 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
           .from(alternativeProducts)
           .where(inArray(alternativeProducts.productId, [...productIds]));
 
-        const groupByDocs = groupBy(docs, 'productId');
+        const groupByDocs = groupBy(docs, doc => doc.productId);
         return productIds.map(productId => groupByDocs[productId] || []);
       },
       {

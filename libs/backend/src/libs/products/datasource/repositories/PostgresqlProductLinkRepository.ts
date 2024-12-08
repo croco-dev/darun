@@ -2,7 +2,7 @@ import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { ProductLink, ProductLinkRepository, ProductLinkRepositoryToken } from '@products/domain';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
-import { groupBy } from 'lodash';
+import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { productLinks } from '../entities/ProductLinksSchema';
 
@@ -17,7 +17,7 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
           .from(productLinks)
           .where(inArray(productLinks.productId, [...productIds]));
 
-        const groupByDocs = groupBy(docs, 'productId');
+        const groupByDocs = groupBy(docs, doc => doc.productId);
         return productIds.map(productId => groupByDocs[productId] || []);
       },
       {

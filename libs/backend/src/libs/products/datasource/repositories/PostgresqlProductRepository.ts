@@ -2,7 +2,7 @@ import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { Product, ProductRepository, ProductRepositoryToken } from '@products/domain';
 import DataLoader from 'dataloader';
 import { and, asc, count, desc, eq, gt, inArray, isNotNull, lt } from 'drizzle-orm';
-import { keyBy } from 'lodash';
+import { keyBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
 
@@ -17,7 +17,7 @@ export class PostgresqlProductRepository implements ProductRepository {
           .from(products)
           .where(and(inArray(products.id, [...ids]), isNotNull(products.publishedAt)));
 
-        const groupByDocs = keyBy(docs, 'id');
+        const groupByDocs = keyBy(docs, doc => doc.id);
         return ids.map(id => (groupByDocs[id] ? this.mapper(groupByDocs[id]) : null));
       },
       {
@@ -146,6 +146,7 @@ export class PostgresqlProductRepository implements ProductRepository {
   ): Product {
     return new Product({
       ...schema,
+      ownedCompanyId: schema.ownedCompanyId ?? undefined,
       description: schema.description ?? undefined,
       publishedAt: schema.publishedAt ?? undefined,
       updatedAt: schema.updatedAt ?? undefined,

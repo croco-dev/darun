@@ -3,7 +3,7 @@ export class Company {
   public name: string;
   public address: string;
   public type: string;
-  public startAt?: Date;
+  public startAt?: Date | null;
 
   constructor({
     id,

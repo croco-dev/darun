@@ -2,7 +2,7 @@ import { Company, CompanyRepository, CompanyRepositoryToken } from '@companies/d
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { count, inArray } from 'drizzle-orm';
-import { keyBy } from 'lodash';
+import { keyBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { companies } from '../entities/CompanySchema';
 
@@ -18,7 +18,7 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
           .from(companies)
           .where(inArray(companies.id, [...companyIds]));
 
-        const groupByDocs = keyBy(docs, 'id');
+        const groupByDocs = keyBy(docs, doc => doc.id);
         return companyIds.map(companyId => groupByDocs[companyId] || []);
       },
       {
