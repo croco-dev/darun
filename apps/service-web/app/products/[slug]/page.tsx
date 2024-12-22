@@ -42,6 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `${name} 단점`,
       `${name} 비교`,
       `${name} 다른 서비스`,
+      `${name} 말고 다른 사이트`,
       `${name} 다른 앱`,
       `${name} 대안`,
       `${name} 비슷한 사이트`,
