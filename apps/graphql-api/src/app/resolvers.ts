@@ -7,6 +7,8 @@ import { FeatureMutationResolver } from './graphql/feature/Feature.mutation.reso
 import { FeatureQueryResolver } from './graphql/feature/Feature.query.resolver';
 import { HealthResolver } from './graphql/Health.resolver';
 import { ImageMutationResolver } from './graphql/image/Image.mutation.resolver';
+import { MagazineMutationResolver } from './graphql/magazine/Magazine.mutation.resolver';
+import { MagazineQueryResolver } from './graphql/magazine/Magazine.query.resolver';
 import { ProductMutationResolver } from './graphql/product/Product.mutation.resolver';
 import { ProductQueryResolver } from './graphql/product/Product.query.resolver';
 
@@ -20,4 +22,6 @@ export const resolvers: NonEmptyArray<Function> = [
   CompanyMutationResolver,
   FeatureMutationResolver,
   ImageMutationResolver,
+  MagazineMutationResolver,
+  MagazineQueryResolver,
 ];

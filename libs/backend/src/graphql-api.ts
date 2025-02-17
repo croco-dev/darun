@@ -12,3 +12,4 @@ export { MongodbSearchableProductRepository } from './libs/search/datasource';
 export { PostgresqlAlternativeProductRepository } from './libs/recommendation/datasource';
 export { CloudinaryImageRepository } from './libs/images/datasource';
 export { PostgresqlVoteRepository } from './libs/voting/datasource';
+export { PostgresqlMagazineRepository } from './libs/magazine/datasource';

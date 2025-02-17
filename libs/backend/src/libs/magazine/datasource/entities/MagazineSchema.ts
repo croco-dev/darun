@@ -1,0 +1,16 @@
+import { sql } from 'drizzle-orm';
+import { pgTable, varchar, timestamp, text } from 'drizzle-orm/pg-core';
+import { ulid } from 'ulid';
+
+export const magazines = pgTable('magazines', {
+  id: varchar('id', { length: 26 }).primaryKey().$default(ulid),
+  title: varchar('title', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 150 }).notNull().unique(),
+  description: text('description'),
+  backgroundImageUrl: varchar('background_image_url', { length: 255 }).notNull(),
+  publishedAt: timestamp('published_at'),
+  updatedAt: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: timestamp('created_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});

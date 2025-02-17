@@ -48,6 +48,17 @@ type CreateCompanyPayload {
   company: Company!
 }
 
+input CreateMagazineInput {
+  backgroundImageUrl: String!
+  description: String
+  slug: String
+  title: String!
+}
+
+type CreateMagazinePayload {
+  magazine: Magazine!
+}
+
 input CreateProductFeatureInput {
   emoji: String!
   name: String!
@@ -118,10 +129,21 @@ type Link {
   title: String!
 }
 
+type Magazine {
+  backgroundImageUrl: String!
+  description: String
+  id: ID!
+  publishedAt: DateTimeISO
+  slug: String!
+  title: String!
+  updatedAt: DateTimeISO
+}
+
 type Mutation {
   addProductLink(input: AddProductLinkInput!, slug: String!): AddProductLinkPayload!
   addProductScreenshot(input: AddProductScreenshotInput!, slug: String!): AddProductScreenshotPayload!
   createCompany(input: CreateCompanyInput!): CreateCompanyPayload!
+  createMagazine(input: CreateMagazineInput!): CreateMagazinePayload!
   createProduct(input: CreateProductInput!): CreateProductPayload!
   createProductFeature(input: CreateProductFeatureInput!): CreateProductFeaturePayload!
   editProduct(input: EditProductInput!, slug: String!): EditProductPayload!
