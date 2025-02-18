@@ -69,6 +69,7 @@ export type CreateCompanyPayload = {
 export type CreateMagazineInput = {
   readonly backgroundImageUrl: Scalars['String']['input'];
   readonly description?: InputMaybe<Scalars['String']['input']>;
+  readonly logoImageUrl?: InputMaybe<Scalars['String']['input']>;
   readonly slug?: InputMaybe<Scalars['String']['input']>;
   readonly title: Scalars['String']['input'];
 };
@@ -161,6 +162,13 @@ export type Magazine = {
   readonly updatedAt?: Maybe<Scalars['DateTimeISO']['output']>;
 };
 
+export type MagazinePagination = {
+  readonly __typename?: 'MagazinePagination';
+  readonly magazines: ReadonlyArray<Magazine>;
+  readonly totalCount: Scalars['Int']['output'];
+  readonly totalPages: Scalars['Int']['output'];
+};
+
 export type Mutation = {
   readonly __typename?: 'Mutation';
   readonly addProductLink: AddProductLinkPayload;
@@ -171,6 +179,7 @@ export type Mutation = {
   readonly createProductFeature: CreateProductFeaturePayload;
   readonly editProduct: EditProductPayload;
   readonly indexProduct: IndexProductPayload;
+  readonly publishMagazine: PublishMagazinePayload;
   readonly publishProduct: PublishProductPayload;
   readonly registerProductCompany: RegisterProductCompanyPayload;
   readonly signImageUpload: SignImageUploadPayload;
@@ -221,6 +230,11 @@ export type MutationeditProductArgs = {
 
 export type MutationindexProductArgs = {
   input: IndexProductInput;
+};
+
+
+export type MutationpublishMagazineArgs = {
+  input: PublishMagazineInput;
 };
 
 
@@ -303,6 +317,15 @@ export type ProductEdge = {
   readonly node: Product;
 };
 
+export type PublishMagazineInput = {
+  readonly slug: Scalars['String']['input'];
+};
+
+export type PublishMagazinePayload = {
+  readonly __typename?: 'PublishMagazinePayload';
+  readonly magazine: Magazine;
+};
+
 export type PublishProductInput = {
   readonly slug: Scalars['String']['input'];
 };
@@ -318,11 +341,15 @@ export type Query = {
   readonly allProducts: ProductConnection;
   readonly feature?: Maybe<Feature>;
   readonly hello: Scalars['String']['output'];
+  readonly magazine?: Maybe<Magazine>;
+  readonly magazineBySlug?: Maybe<Magazine>;
   readonly product?: Maybe<Product>;
   readonly productBySlug?: Maybe<Product>;
   readonly productsCount: Scalars['Int']['output'];
   readonly recentProducts: ReadonlyArray<Product>;
   readonly searchProducts: ReadonlyArray<Product>;
+  readonly tempAllMagazines: MagazinePagination;
+  readonly tempMagazineBySlug?: Maybe<Magazine>;
   readonly tempProductBySlug?: Maybe<Product>;
 };
 
@@ -345,6 +372,16 @@ export type QueryfeatureArgs = {
 };
 
 
+export type QuerymagazineArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QuerymagazineBySlugArgs = {
+  slug: Scalars['String']['input'];
+};
+
+
 export type QueryproductArgs = {
   id: Scalars['ID']['input'];
 };
@@ -362,6 +399,16 @@ export type QueryrecentProductsArgs = {
 
 export type QuerysearchProductsArgs = {
   query: Scalars['String']['input'];
+};
+
+
+export type QuerytempAllMagazinesArgs = {
+  page: Scalars['Int']['input'];
+};
+
+
+export type QuerytempMagazineBySlugArgs = {
+  slug: Scalars['String']['input'];
 };
 
 

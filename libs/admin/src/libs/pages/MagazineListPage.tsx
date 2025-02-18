@@ -2,6 +2,7 @@ import { Link } from '@darun/utils-router';
 import { Button, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { AppShell, PageShell } from '@uis';
+import { MagazinesList } from '../magazines/shells/MagazinesList';
 
 export const MagazineListPage = () => {
   return (
@@ -17,7 +18,9 @@ export const MagazineListPage = () => {
             </Link>
           </Group>
         }
-      ></PageShell>
+      >
+        <MagazinesList />
+      </PageShell>
     </AppShell>
   );
 };
