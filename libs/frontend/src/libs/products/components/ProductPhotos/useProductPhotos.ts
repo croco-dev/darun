@@ -18,7 +18,7 @@ type ProductPhotosProps = { slug: string };
 export function useProductPhotos({ slug }: ProductPhotosProps) {
   const { data } = useGetPhotosOnProductPhotosSuspenseQuery({ variables: { slug } });
   return {
-    photos: data.productBySlug?.screenshots.map(screenshot => ({
+    photos: data?.productBySlug?.screenshots.map(screenshot => ({
       imageUrl: screenshot.imageUrl,
       imageAlt: screenshot.imageAlt,
     })),

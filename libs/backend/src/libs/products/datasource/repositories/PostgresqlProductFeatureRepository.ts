@@ -83,7 +83,7 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
   private mapper(schema: typeof productFeatures.$inferSelect | typeof productFeatures.$inferInsert): ProductFeature {
     return new ProductFeature({
       ...schema,
-      summary: schema.summary ?? null,
+      summary: schema.summary ?? undefined,
     });
   }
 }

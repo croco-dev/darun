@@ -27,6 +27,6 @@ export function useAlternativeProductList({ slug }: AlternativeProductListProps)
   const { data } = useProductBySlugOnAlternativeProductListSuspenseQuery({ variables: { slug } });
 
   return {
-    alternatives: data.productBySlug?.alternatives ?? [],
+    alternatives: data?.productBySlug?.alternatives ?? [],
   };
 }

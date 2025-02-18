@@ -11,6 +11,9 @@ export class Magazine {
   @Field(() => String)
   title: string;
 
+  @Field(() => String)
+  authorId: string;
+
   @Field(() => String, { nullable: true })
   description?: string;
 

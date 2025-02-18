@@ -26,5 +26,5 @@ export function useProductCompany({ slug }: ProductCompanyProps) {
       slug,
     },
   });
-  return { company: data.productBySlug?.ownedCompany };
+  return { company: data?.productBySlug?.ownedCompany };
 }

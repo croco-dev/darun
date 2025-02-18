@@ -1,1 +1,0 @@
-export { NewProductAlternativeFormSection } from './NewProductAlternativeFormSection';

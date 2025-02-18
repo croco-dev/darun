@@ -22,7 +22,7 @@ export const createSentryApolloLogPlugin = (): ApolloServerPlugin => ({
             // We can also add the path as breadcrumb
             scope.addBreadcrumb({
               category: 'query-path',
-              message: err.path.join(' > '),
+              message: err.path?.join(' > '),
               level: 'debug',
             });
           }

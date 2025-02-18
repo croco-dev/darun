@@ -24,9 +24,9 @@ export function useProductInformation({ slug }: ProductInformationProps) {
     variables: { slug },
   });
   return {
-    name: data.productBySlug?.name,
-    summary: data.productBySlug?.summary,
-    logoUrl: data.productBySlug?.logoUrl,
-    tags: data.productBySlug?.tags,
+    name: data?.productBySlug?.name,
+    summary: data?.productBySlug?.summary,
+    logoUrl: data?.productBySlug?.logoUrl,
+    tags: data?.productBySlug?.tags,
   };
 }

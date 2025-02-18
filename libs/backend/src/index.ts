@@ -20,11 +20,11 @@ export {
   EditProduct,
   RegisterProductCompany,
 } from './libs/products/domain';
-export { GetAccount } from './libs/accounts/domain';
+export { GetAccount, GetProfile } from './libs/accounts/domain';
 export { GetCompany, CreateCompany, GetAllCompanies } from './libs/companies/domain';
 export { IndexProduct, SearchProduct } from './libs/search/domain';
 export { GetAlternativeProducts, UpdateAlternativeProduct } from './libs/recommendation/domain';
 export { SignImageUpload } from './libs/images/domain';
 export { CloudinaryImageRepositoryConfig } from './libs/images/datasource/repositories/CloudinaryImageRepository';
 export { UpvoteProduct, GetVoteCount } from './libs/voting/domain';
-export { CreateMagazine, GetMagazine, GetPublishedMagazine } from './libs/magazine/domain';
+export { CreateMagazine, GetMagazine, GetPublishedMagazine, PublishMagazine } from './libs/magazine/domain';

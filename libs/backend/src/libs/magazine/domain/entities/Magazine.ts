@@ -2,7 +2,8 @@ export class Magazine {
   public id: string;
   public slug: string;
   public title: string;
-  public description?: string;
+  public summary?: string;
+  public content?: string;
   public backgroundImageUrl: string;
   public logoImageUrl?: string;
   public publishedAt?: Date;
@@ -13,7 +14,8 @@ export class Magazine {
     id,
     slug,
     title,
-    description,
+    summary,
+    content,
     backgroundImageUrl,
     logoImageUrl,
     publishedAt,
@@ -23,7 +25,8 @@ export class Magazine {
     id?: string;
     slug?: string;
     title: string;
-    description?: string;
+    summary?: string;
+    content?: string;
     backgroundImageUrl: string;
     logoImageUrl?: string;
     publishedAt?: Date;
@@ -32,7 +35,8 @@ export class Magazine {
   }) {
     this.slug = slug ?? title.toLowerCase().replace(/ /g, '-');
     this.title = title;
-    this.description = description;
+    this.summary = summary;
+    this.content = content;
     this.backgroundImageUrl = backgroundImageUrl;
     this.logoImageUrl = logoImageUrl;
     this.publishedAt = publishedAt;
