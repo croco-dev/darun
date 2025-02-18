@@ -11,6 +11,9 @@
       "@search/components": ["src/libs/search/components/index.ts"],
       "@search/shells": ["src/libs/search/shells/index.ts"],
       "@search/uis": ["src/libs/search/uis/index.ts"],
+      "@magazines/components": ["src/libs/magazines/components/index.ts"],
+      "@magazines/shells": ["src/libs/magazines/shells/index.ts"],
+      "@magazines/uis": ["src/libs/magazines/uis/index.ts"]
     }
   }
 }

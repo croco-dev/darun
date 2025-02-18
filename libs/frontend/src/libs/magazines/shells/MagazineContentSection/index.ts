@@ -1,0 +1,1 @@
+export { MagazineContentSection } from './MagazineContentSection';
