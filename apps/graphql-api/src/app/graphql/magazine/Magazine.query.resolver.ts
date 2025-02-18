@@ -1,7 +1,8 @@
-import { GetMagazine, GetPublishedMagazine } from '@darun/backend';
+import { GetMagazine, GetPublishedMagazine, GetProfile } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
-import { Arg, Authorized, ID, Query, Resolver } from 'type-graphql';
+import { Arg, Authorized, FieldResolver, ID, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
+import { Author } from '../author/graphs/Author';
 import { Magazine } from './graphs/Magazine';
 
 @Resolver(() => Magazine)
@@ -9,7 +10,8 @@ import { Magazine } from './graphs/Magazine';
 export class MagazineQueryResolver {
   constructor(
     private readonly getPublishedMagazineUseCase: GetPublishedMagazine,
-    private readonly getMagazineUseCase: GetMagazine
+    private readonly getMagazineUseCase: GetMagazine,
+    private readonly getProfileUseCase: GetProfile
   ) {}
 
   @Query(() => Magazine, { nullable: true })
@@ -26,5 +28,17 @@ export class MagazineQueryResolver {
   @Query(() => Magazine, { nullable: true })
   public tempMagazineBySlug(@Arg('slug', () => String) slug: string) {
     return this.getMagazineUseCase.execute({ slug });
+  }
+
+  @FieldResolver(() => Author, { nullable: true })
+  public async author(@Root() magazine: Magazine): Promise<Author | null> {
+    const profile = await this.getProfileUseCase.execute({ userId: magazine.authorId });
+
+    return profile
+      ? {
+          id: profile.id,
+          name: profile.displayName,
+        }
+      : null;
   }
 }

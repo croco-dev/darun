@@ -40,7 +40,7 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
       .from(magazines)
       .where(and(eq(magazines.id, id)))
       .limit(1)
-      .then(result => this.mapper(result[0]));
+      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findOneBySlug(slug: string): Promise<Magazine | null> {
@@ -49,7 +49,7 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
       .from(magazines)
       .where(eq(magazines.slug, slug))
       .limit(1)
-      .then(result => this.mapper(result[0]));
+      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findPublishedOneBySlug(slug: string): Promise<Magazine | null> {
@@ -58,7 +58,7 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
       .from(magazines)
       .where(and(eq(magazines.slug, slug), isNotNull(magazines.publishedAt)))
       .limit(1)
-      .then(result => this.mapper(result[0]));
+      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findPublishedOneById(id: string): Promise<Magazine | null> {
@@ -67,7 +67,7 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
       .from(magazines)
       .where(and(eq(magazines.id, id), isNotNull(magazines.publishedAt)))
       .limit(1)
-      .then(result => this.mapper(result[0]));
+      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async insert(values: Magazine): Promise<Magazine | null> {
@@ -87,7 +87,8 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
     return new Magazine({
       ...schema,
       logoImageUrl: schema.logoImageUrl ?? undefined,
-      description: schema.description ?? undefined,
+      summary: schema.summary ?? undefined,
+      content: schema.content ?? undefined,
       publishedAt: schema.publishedAt ?? undefined,
       updatedAt: schema.updatedAt ?? undefined,
     });

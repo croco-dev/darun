@@ -23,6 +23,11 @@ type AddProductScreenshotPayload {
   product: Product
 }
 
+type Author {
+  id: ID!
+  name: String!
+}
+
 type Company {
   address: String!
   id: ID!
@@ -131,6 +136,8 @@ type Link {
 }
 
 type Magazine {
+  author: Author
+  authorId: String!
   backgroundImageUrl: String!
   description: String
   id: ID!
