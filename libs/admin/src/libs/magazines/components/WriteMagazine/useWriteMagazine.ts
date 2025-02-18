@@ -1,8 +1,22 @@
+import { gql } from '@apollo/client';
 import { FileWithPath } from '@mantine/dropzone';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useImageUpload } from '../../../utils/useImageUplaod';
+import { useCreateMagazineOnWriteMagazineMutation } from './__generated__/useWriteMagazine';
+
+gql`
+  mutation CreateMagazineOnWriteMagazine($input: CreateMagazineInput!) {
+    createMagazine(input: $input) {
+      magazine {
+        id
+        slug
+      }
+    }
+  }
+`;
 
 type FormValues = {
   title: string;
@@ -13,6 +27,13 @@ type FormValues = {
 };
 
 export function useWriteMagazine() {
+  const { push } = useRouter();
+  const [createMagazine] = useCreateMagazineOnWriteMagazineMutation({
+    onCompleted: ({ createMagazine }) => {
+      notifications.show({ message: '생성되었습니다.', color: 'teal' });
+      push(`/magazines/${createMagazine.magazine.slug}`);
+    },
+  });
   const form = useForm<FormValues>({
     initialValues: {
       title: '',
@@ -43,6 +64,17 @@ export function useWriteMagazine() {
       notifications.show({ message: '이미지 업로드에 실패했어요.', color: 'red' });
       return;
     }
+
+    await createMagazine({
+      variables: {
+        input: {
+          title: values.title,
+          slug: values.slug,
+          summary: values.summary,
+          backgroundImageUrl: imageUrl,
+        },
+      },
+    });
   };
 
   return { form, handleSubmit, handleFileDrop, file, handleFileRemove };
