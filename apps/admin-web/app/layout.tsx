@@ -14,7 +14,7 @@ import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
 
 export const metadata: Metadata = {
-  title: 'darun admin',
+  title: '다른 관리자',
   description: 'darun.io',
 };
 

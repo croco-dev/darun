@@ -14,3 +14,6 @@ export { ProductCompanyEditPage } from './libs/pages/ProductCompanyEditPage';
 // companies
 export { CompanyListPage } from './libs/pages/CompanyListPage';
 export { NewCompanyPage } from './libs/pages/NewCompanyPage';
+
+// magazines
+export { MagazineListPage } from './libs/pages/MagazineListPage';

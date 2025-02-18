@@ -1,6 +1,6 @@
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { Magazine, MagazineRepository, MagazineRepositoryToken } from '@magazine/domain';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, count, eq, isNotNull } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { magazines } from '../entities/MagazineSchema';
 
@@ -70,6 +70,22 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
       .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
+  async findAllWithPagination(page: number = 1, limit: number = 50): Promise<{ data: Magazine[]; total: number }> {
+    const offset = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.db.select().from(magazines).limit(limit).offset(offset),
+      this.db
+        .select({ count: count() })
+        .from(magazines)
+        .then(res => res[0].count),
+    ]);
+
+    return {
+      data: data.map(item => this.mapper(item)),
+      total,
+    };
+  }
   async insert(values: Magazine): Promise<Magazine | null> {
     return this.db.transaction(async tx => {
       const inserted = await tx
