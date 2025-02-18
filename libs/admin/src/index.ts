@@ -17,3 +17,4 @@ export { NewCompanyPage } from './libs/pages/NewCompanyPage';
 
 // magazines
 export { MagazineListPage } from './libs/pages/MagazineListPage';
+export { MagazineCreatePage } from './libs/pages/MagazineCreatePage';
