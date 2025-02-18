@@ -11,7 +11,7 @@
   },
   "peerDependencies": {
     "drizzle-orm": "0.32.1",
-    "mongoose": "8.5.0",
+    "mongoose": "8.10.1",
     "typedi": "0.10.0"
   },
   "devDependencies": {

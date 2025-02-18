@@ -23,11 +23,11 @@
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@darun/utils-router": "workspace:*",
-    "@mantine/core": "7.13.1",
-    "@mantine/dates": "7.13.2",
-    "@mantine/form": "7.13.1",
-    "@mantine/hooks": "7.13.1",
-    "@mantine/notifications": "7.13.1",
+    "@mantine/core": "7.17.0",
+    "@mantine/dates": "7.17.0",
+    "@mantine/form": "7.17.0",
+    "@mantine/hooks": "7.17.0",
+    "@mantine/notifications": "7.17.0",
     "dayjs": "1.11.13",
     "next": "14.2.14",
     "next-client-cookies": "1.1.1",
@@ -40,6 +40,7 @@
     "eslint-config-next": "14.2.5",
     "postcss": "8.4.47",
     "postcss-preset-mantine": "1.15.0",
-    "postcss-simple-vars": "7.0.1"
+    "postcss-simple-vars": "7.0.1",
+    "sass": "1.85.0"
   }
 }
