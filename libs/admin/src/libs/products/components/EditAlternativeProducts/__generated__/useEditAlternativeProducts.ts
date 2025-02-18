@@ -62,8 +62,8 @@ export function useTempProductBySlugOnEditAlternativeProductsLazyQuery(baseOptio
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>(TempProductBySlugOnEditAlternativeProductsDocument, options);
         }
-export function useTempProductBySlugOnEditAlternativeProductsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
+export function useTempProductBySlugOnEditAlternativeProductsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
           return Apollo.useSuspenseQuery<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>(TempProductBySlugOnEditAlternativeProductsDocument, options);
         }
 export type TempProductBySlugOnEditAlternativeProductsQueryHookResult = ReturnType<typeof useTempProductBySlugOnEditAlternativeProductsQuery>;
@@ -103,8 +103,8 @@ export function useSearchProductsOnEditAlternativeProductsLazyQuery(baseOptions?
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>(SearchProductsOnEditAlternativeProductsDocument, options);
         }
-export function useSearchProductsOnEditAlternativeProductsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
+export function useSearchProductsOnEditAlternativeProductsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
           return Apollo.useSuspenseQuery<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>(SearchProductsOnEditAlternativeProductsDocument, options);
         }
 export type SearchProductsOnEditAlternativeProductsQueryHookResult = ReturnType<typeof useSearchProductsOnEditAlternativeProductsQuery>;

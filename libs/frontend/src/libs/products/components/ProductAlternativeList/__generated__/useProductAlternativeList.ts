@@ -61,8 +61,8 @@ export function useProductWithFeaturesOnProductAlternativeListLazyQuery(baseOpti
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>(ProductWithFeaturesOnProductAlternativeListDocument, options);
         }
-export function useProductWithFeaturesOnProductAlternativeListSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
+export function useProductWithFeaturesOnProductAlternativeListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
           return Apollo.useSuspenseQuery<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>(ProductWithFeaturesOnProductAlternativeListDocument, options);
         }
 export type ProductWithFeaturesOnProductAlternativeListQueryHookResult = ReturnType<typeof useProductWithFeaturesOnProductAlternativeListQuery>;

@@ -66,6 +66,18 @@ export type CreateCompanyPayload = {
   readonly company: Company;
 };
 
+export type CreateMagazineInput = {
+  readonly backgroundImageUrl: Scalars['String']['input'];
+  readonly description?: InputMaybe<Scalars['String']['input']>;
+  readonly slug?: InputMaybe<Scalars['String']['input']>;
+  readonly title: Scalars['String']['input'];
+};
+
+export type CreateMagazinePayload = {
+  readonly __typename?: 'CreateMagazinePayload';
+  readonly magazine: Magazine;
+};
+
 export type CreateProductFeatureInput = {
   readonly emoji: Scalars['String']['input'];
   readonly name: Scalars['String']['input'];
@@ -138,11 +150,23 @@ export type Link = {
   readonly title: Scalars['String']['output'];
 };
 
+export type Magazine = {
+  readonly __typename?: 'Magazine';
+  readonly backgroundImageUrl: Scalars['String']['output'];
+  readonly description?: Maybe<Scalars['String']['output']>;
+  readonly id: Scalars['ID']['output'];
+  readonly publishedAt?: Maybe<Scalars['DateTimeISO']['output']>;
+  readonly slug: Scalars['String']['output'];
+  readonly title: Scalars['String']['output'];
+  readonly updatedAt?: Maybe<Scalars['DateTimeISO']['output']>;
+};
+
 export type Mutation = {
   readonly __typename?: 'Mutation';
   readonly addProductLink: AddProductLinkPayload;
   readonly addProductScreenshot: AddProductScreenshotPayload;
   readonly createCompany: CreateCompanyPayload;
+  readonly createMagazine: CreateMagazinePayload;
   readonly createProduct: CreateProductPayload;
   readonly createProductFeature: CreateProductFeaturePayload;
   readonly editProduct: EditProductPayload;
@@ -171,6 +195,11 @@ export type MutationaddProductScreenshotArgs = {
 
 export type MutationcreateCompanyArgs = {
   input: CreateCompanyInput;
+};
+
+
+export type MutationcreateMagazineArgs = {
+  input: CreateMagazineInput;
 };
 
 

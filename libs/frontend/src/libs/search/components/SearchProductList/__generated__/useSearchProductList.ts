@@ -57,8 +57,8 @@ export function useSearchProductsOnSearchProductListLazyQuery(baseOptions?: Apol
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>(SearchProductsOnSearchProductListDocument, options);
         }
-export function useSearchProductsOnSearchProductListSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
+export function useSearchProductsOnSearchProductListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
           return Apollo.useSuspenseQuery<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>(SearchProductsOnSearchProductListDocument, options);
         }
 export type SearchProductsOnSearchProductListQueryHookResult = ReturnType<typeof useSearchProductsOnSearchProductListQuery>;

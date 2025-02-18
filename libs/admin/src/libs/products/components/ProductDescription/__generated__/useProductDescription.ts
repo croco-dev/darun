@@ -44,8 +44,8 @@ export function useTempProductBySlugOnProductDescriptionLazyQuery(baseOptions?: 
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>(TempProductBySlugOnProductDescriptionDocument, options);
         }
-export function useTempProductBySlugOnProductDescriptionSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
+export function useTempProductBySlugOnProductDescriptionSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
           return Apollo.useSuspenseQuery<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>(TempProductBySlugOnProductDescriptionDocument, options);
         }
 export type TempProductBySlugOnProductDescriptionQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductDescriptionQuery>;

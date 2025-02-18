@@ -47,8 +47,8 @@ export function useGetPhotosOnProductPhotosLazyQuery(baseOptions?: Apollo.LazyQu
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>(GetPhotosOnProductPhotosDocument, options);
         }
-export function useGetPhotosOnProductPhotosSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
+export function useGetPhotosOnProductPhotosSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
           return Apollo.useSuspenseQuery<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>(GetPhotosOnProductPhotosDocument, options);
         }
 export type GetPhotosOnProductPhotosQueryHookResult = ReturnType<typeof useGetPhotosOnProductPhotosQuery>;

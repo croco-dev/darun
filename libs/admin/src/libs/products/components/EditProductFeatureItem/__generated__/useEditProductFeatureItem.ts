@@ -54,8 +54,8 @@ export function useFeatureOnEditProductFeatureItemLazyQuery(baseOptions?: Apollo
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>(FeatureOnEditProductFeatureItemDocument, options);
         }
-export function useFeatureOnEditProductFeatureItemSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
+export function useFeatureOnEditProductFeatureItemSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
           return Apollo.useSuspenseQuery<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>(FeatureOnEditProductFeatureItemDocument, options);
         }
 export type FeatureOnEditProductFeatureItemQueryHookResult = ReturnType<typeof useFeatureOnEditProductFeatureItemQuery>;

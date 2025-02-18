@@ -38,8 +38,8 @@ export function useProductsCountOnProductsCountLazyQuery(baseOptions?: Apollo.La
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>(ProductsCountOnProductsCountDocument, options);
         }
-export function useProductsCountOnProductsCountSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
+export function useProductsCountOnProductsCountSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
           return Apollo.useSuspenseQuery<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>(ProductsCountOnProductsCountDocument, options);
         }
 export type ProductsCountOnProductsCountQueryHookResult = ReturnType<typeof useProductsCountOnProductsCountQuery>;

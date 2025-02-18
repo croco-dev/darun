@@ -51,8 +51,8 @@ export function useAllCompaniesOnAllCompanyListTableLazyQuery(baseOptions?: Apol
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<AllCompaniesOnAllCompanyListTableQuery, AllCompaniesOnAllCompanyListTableQueryVariables>(AllCompaniesOnAllCompanyListTableDocument, options);
         }
-export function useAllCompaniesOnAllCompanyListTableSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<AllCompaniesOnAllCompanyListTableQuery, AllCompaniesOnAllCompanyListTableQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
+export function useAllCompaniesOnAllCompanyListTableSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<AllCompaniesOnAllCompanyListTableQuery, AllCompaniesOnAllCompanyListTableQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
           return Apollo.useSuspenseQuery<AllCompaniesOnAllCompanyListTableQuery, AllCompaniesOnAllCompanyListTableQueryVariables>(AllCompaniesOnAllCompanyListTableDocument, options);
         }
 export type AllCompaniesOnAllCompanyListTableQueryHookResult = ReturnType<typeof useAllCompaniesOnAllCompanyListTableQuery>;

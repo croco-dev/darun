@@ -48,8 +48,8 @@ export function useRecentProductsOnRecentProductListLazyQuery(baseOptions?: Apol
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>(RecentProductsOnRecentProductListDocument, options);
         }
-export function useRecentProductsOnRecentProductListSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
+export function useRecentProductsOnRecentProductListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
           return Apollo.useSuspenseQuery<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>(RecentProductsOnRecentProductListDocument, options);
         }
 export type RecentProductsOnRecentProductListQueryHookResult = ReturnType<typeof useRecentProductsOnRecentProductListQuery>;
