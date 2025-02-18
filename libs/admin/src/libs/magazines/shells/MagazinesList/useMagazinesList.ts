@@ -1,10 +1,5 @@
 import { gql } from '@apollo/client';
-import { useTempAllMagazinesOnMagazinesListQuery } from './__generated__/useMagazinesList';
-
-export function useMagazinesList() {
-  const { data, loading, error } = useTempAllMagazinesOnMagazinesListQuery({ variables: { page: 1 } });
-  return { data: data?.tempAllMagazines.magazines, isLoading: loading, isError: !!error };
-}
+import { useTempAllMagazinesOnMagazinesListSuspenseQuery } from './__generated__/useMagazinesList';
 
 gql`
   query TempAllMagazinesOnMagazinesList($page: Int!) {
@@ -15,11 +10,22 @@ gql`
         id
         slug
         title
-        description
+        summary
+        content
         backgroundImageUrl
         updatedAt
         publishedAt
+        author {
+          id
+          name
+        }
       }
     }
   }
 `;
+
+export function useMagazinesList() {
+  const { data } = useTempAllMagazinesOnMagazinesListSuspenseQuery({ variables: { page: 1 } });
+
+  return { magazines: data?.tempAllMagazines.magazines ?? [] };
+}

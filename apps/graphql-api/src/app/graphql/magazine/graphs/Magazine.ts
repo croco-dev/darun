@@ -15,7 +15,10 @@ export class Magazine {
   authorId: string;
 
   @Field(() => String, { nullable: true })
-  description?: string;
+  summary?: string;
+
+  @Field(() => String, { nullable: true })
+  content?: string;
 
   @Field(() => String)
   backgroundImageUrl: string;

@@ -55,9 +55,9 @@ type CreateCompanyPayload {
 
 input CreateMagazineInput {
   backgroundImageUrl: String!
-  description: String
   logoImageUrl: String
   slug: String
+  summary: String
   title: String!
 }
 
@@ -139,10 +139,11 @@ type Magazine {
   author: Author
   authorId: String!
   backgroundImageUrl: String!
-  description: String
+  content: String
   id: ID!
   publishedAt: DateTimeISO
   slug: String!
+  summary: String
   title: String!
   updatedAt: DateTimeISO
 }

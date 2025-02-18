@@ -2,6 +2,7 @@ import { Link } from '@darun/utils-router';
 import { Button, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { AppShell, PageShell } from '@uis';
+import { Suspense } from 'react';
 import { MagazinesList } from '../magazines/shells/MagazinesList';
 
 export const MagazineListPage = () => {
@@ -19,7 +20,9 @@ export const MagazineListPage = () => {
           </Group>
         }
       >
-        <MagazinesList />
+        <Suspense fallback={<>로딩중...</>}>
+          <MagazinesList />
+        </Suspense>
       </PageShell>
     </AppShell>
   );

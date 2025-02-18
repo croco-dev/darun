@@ -8,7 +8,7 @@ export type TempAllMagazinesOnMagazinesListQueryVariables = Types.Exact<{
 }>;
 
 
-export type TempAllMagazinesOnMagazinesListQuery = { __typename?: 'Query', tempAllMagazines: { __typename?: 'MagazinePagination', totalCount: number, totalPages: number, magazines: Array<{ __typename?: 'Magazine', id: string, slug: string, title: string, description?: string | null, backgroundImageUrl: string, updatedAt?: any | null, publishedAt?: any | null }> } };
+export type TempAllMagazinesOnMagazinesListQuery = { __typename?: 'Query', tempAllMagazines: { __typename?: 'MagazinePagination', totalCount: number, totalPages: number, magazines: Array<{ __typename?: 'Magazine', id: string, slug: string, title: string, summary?: string | null, content?: string | null, backgroundImageUrl: string, updatedAt?: any | null, publishedAt?: any | null, author?: { __typename?: 'Author', id: string, name: string } | null }> } };
 
 
 export const TempAllMagazinesOnMagazinesListDocument = gql`
@@ -20,10 +20,15 @@ export const TempAllMagazinesOnMagazinesListDocument = gql`
       id
       slug
       title
-      description
+      summary
+      content
       backgroundImageUrl
       updatedAt
       publishedAt
+      author {
+        id
+        name
+      }
     }
   }
 }

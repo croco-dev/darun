@@ -22,5 +22,5 @@ export class CreateMagazineInput {
   slug?: string;
 
   @Field({ nullable: true })
-  description?: string;
+  summary?: string;
 }

@@ -5,12 +5,12 @@ type ArticleCardProps = {
   thumbnailImageUri?: string;
   category?: string;
   title: string;
-  description?: string;
+  summary?: string;
   author?: string;
   date?: Date;
 };
 
-export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, description }: ArticleCardProps) => {
+export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, summary }: ArticleCardProps) => {
   return (
     <Card withBorder radius="md" p={0} className={classes.card}>
       <Group wrap="nowrap" gap={0}>
@@ -25,7 +25,7 @@ export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, 
             {title}
           </Text>
           <Text className={classes.desc} mb="md">
-            {description}
+            {summary}
           </Text>
           <Group wrap="nowrap" gap="xs">
             <Group gap="xs" wrap="nowrap">

@@ -10,19 +10,21 @@ export class CreateMagazine {
   async execute({
     title,
     slug,
-    description,
+    summary,
+    content,
     backgroundImageUrl,
     logoImageUrl,
     authorId,
   }: {
     title: string;
     slug?: string;
-    description?: string;
+    summary?: string;
+    content?: string;
     backgroundImageUrl: string;
     logoImageUrl?: string;
     authorId: string;
   }) {
-    const magazine = new Magazine({ title, slug, description, backgroundImageUrl, logoImageUrl, authorId });
+    const magazine = new Magazine({ title, slug, summary, content, backgroundImageUrl, logoImageUrl, authorId });
 
     const inserted = await this.magazineRepository.insert(magazine);
 
