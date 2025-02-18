@@ -6,6 +6,7 @@ export interface MagazineRepository {
   findPublishedOneById(id: string): Promise<Magazine | null>;
   findOneById(id: string): Promise<Magazine | null>;
   findOneBySlug(slug: string): Promise<Magazine | null>;
+  findAllWithPagination(page: number, limit: number): Promise<{ data: Magazine[]; total: number }>;
   insert(values: Magazine): Promise<Magazine | null>;
   updateById(id: string, modifier: (magazine: Magazine) => Magazine): Promise<Magazine>;
 }
