@@ -1,7 +1,7 @@
 export class ProductFeature {
   public id: string;
   public name: string;
-  public summary: string | null;
+  public summary?: string;
   public emoji: string;
   public productId: string;
 
@@ -14,7 +14,7 @@ export class ProductFeature {
   }: {
     id?: string;
     name: string;
-    summary: string | null;
+    summary?: string;
     emoji: string;
     productId: string;
   }) {

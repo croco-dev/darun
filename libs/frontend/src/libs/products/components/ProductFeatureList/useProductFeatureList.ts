@@ -28,5 +28,5 @@ export function useProductFeatureList({ slug }: ProductFeatureListProps) {
   const { data } = useProductWithFeaturesOnProductFeatureListSuspenseQuery({
     variables: { slug },
   });
-  return { features: data.productBySlug?.features ?? [] };
+  return { features: data?.productBySlug?.features ?? [] };
 }

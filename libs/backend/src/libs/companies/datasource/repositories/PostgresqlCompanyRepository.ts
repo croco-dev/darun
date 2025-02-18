@@ -19,7 +19,7 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
           .where(inArray(companies.id, [...companyIds]));
 
         const groupByDocs = keyBy(docs, doc => doc.id);
-        return companyIds.map(companyId => groupByDocs[companyId] || []);
+        return companyIds.map(companyId => this.mapper(groupByDocs[companyId]) || []);
       },
       {
         cache: false,
@@ -31,7 +31,7 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
     return this.db.transaction(async tx => {
       const inserted = await tx.insert(companies).values(values).returning();
 
-      return inserted[0];
+      return this.mapper(inserted[0]);
     });
   }
 
@@ -43,7 +43,12 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
     const offset = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      this.db.select().from(companies).limit(limit).offset(offset),
+      this.db
+        .select()
+        .from(companies)
+        .limit(limit)
+        .offset(offset)
+        .then(res => res.map(this.mapper)),
       this.db
         .select({ count: count() })
         .from(companies)
@@ -54,5 +59,14 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
       data,
       total,
     };
+  }
+
+  private mapper<CompanyType extends typeof companies.$inferSelect | typeof companies.$inferInsert>(
+    schema: CompanyType
+  ): Company {
+    return new Company({
+      ...schema,
+      startAt: schema.startAt ?? undefined,
+    });
   }
 }

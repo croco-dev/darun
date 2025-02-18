@@ -22,5 +22,5 @@ export function useProductLinks({ slug }: ProductLinksProps) {
   const { data } = useProductOnProductLinksSuspenseQuery({
     variables: { slug },
   });
-  return { links: data.productBySlug?.links ?? [] };
+  return { links: data?.productBySlug?.links ?? [] };
 }

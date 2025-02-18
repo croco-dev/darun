@@ -1,5 +1,6 @@
-import { ProductLink, ProductLinkRepository, ProductLinkRepositoryToken } from '@products/domain';
 import { Inject, Service } from 'typedi';
+import { ProductLink } from '../entities/ProductLink';
+import { ProductLinkRepository, ProductLinkRepositoryToken } from '../repositories/ProductLinkRepository';
 
 @Service()
 export class AddProductLink {

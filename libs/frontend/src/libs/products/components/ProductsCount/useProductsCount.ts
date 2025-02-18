@@ -10,6 +10,6 @@ gql`
 export function useProductsCount() {
   const { data } = useProductsCountOnProductsCountSuspenseQuery();
   return {
-    count: data.productsCount,
+    count: data?.productsCount,
   };
 }

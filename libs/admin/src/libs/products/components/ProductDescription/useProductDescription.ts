@@ -16,5 +16,5 @@ type ProductDescriptionProps = {
 
 export function useProductDescription({ slug }: ProductDescriptionProps) {
   const { data } = useTempProductBySlugOnProductDescriptionSuspenseQuery({ variables: { slug } });
-  return { description: data.tempProductBySlug?.description };
+  return { description: data?.tempProductBySlug?.description };
 }

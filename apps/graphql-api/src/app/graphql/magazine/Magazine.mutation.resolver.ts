@@ -1,4 +1,4 @@
-import { CreateMagazine, GetPublishedMagazine } from '@darun/backend';
+import { CreateMagazine, GetPublishedMagazine, PublishMagazine } from '@darun/backend';
 import { GetMagazine } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
@@ -14,7 +14,8 @@ export class MagazineMutationResolver {
   constructor(
     private readonly createMagazineUseCase: CreateMagazine,
     private readonly getPublishedMagazineUseCase: GetPublishedMagazine,
-    private readonly getMagazineUseCase: GetMagazine
+    private readonly getMagazineUseCase: GetMagazine,
+    private readonly publishMagazineUseCase: PublishMagazine
   ) {}
 
   @Authorized([AuthRole.Admin])
@@ -40,7 +41,7 @@ export class MagazineMutationResolver {
       throw new Error('발행할 매거진이 존재하지 않습니다.');
     }
 
-    const updated = await this.getMagazineUseCase.execute({
+    const updated = await this.publishMagazineUseCase.execute({
       id: magazine.id,
     });
 

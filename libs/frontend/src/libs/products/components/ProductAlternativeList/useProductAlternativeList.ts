@@ -34,6 +34,6 @@ type ProductAlternativeListProps = {
 export const useProductAlternativeList = ({ slug }: ProductAlternativeListProps) => {
   const { data } = useProductWithFeaturesOnProductAlternativeListSuspenseQuery({ variables: { slug } });
   return {
-    products: data.productBySlug?.alternatives,
+    products: data?.productBySlug?.alternatives,
   };
 };

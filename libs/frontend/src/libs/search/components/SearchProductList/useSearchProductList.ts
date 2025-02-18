@@ -27,5 +27,5 @@ type SearchProductListProps = { query: string };
 
 export function useSearchProductList({ query }: SearchProductListProps) {
   const { data } = useSearchProductsOnSearchProductListSuspenseQuery({ variables: { query } });
-  return { products: data.searchProducts };
+  return { products: data?.searchProducts ?? [] };
 }

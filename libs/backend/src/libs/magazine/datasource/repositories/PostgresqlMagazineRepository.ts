@@ -8,6 +8,32 @@ import { magazines } from '../entities/MagazineSchema';
 export class PostgresqlMagazineRepository implements MagazineRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
+  async updateById(id: string, modifier: (magazine: Magazine) => Magazine): Promise<Magazine> {
+    return this.db.transaction(async tx => {
+      const prev = await tx
+        .select()
+        .from(magazines)
+        .where(eq(magazines.id, id))
+        .limit(1)
+        .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+
+      if (!prev) {
+        throw new Error('Magazine not found');
+      }
+
+      const updated = await tx
+        .update(magazines)
+        .set({ ...modifier(prev), updatedAt: new Date() })
+        .where(eq(magazines.id, id))
+        .returning();
+      if (!updated[0]) {
+        throw new Error('Magazine update failed');
+      }
+
+      return this.mapper(updated[0]);
+    });
+  }
+
   async findOneById(id: string): Promise<Magazine | null> {
     return this.db
       .select()

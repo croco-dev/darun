@@ -1,5 +1,5 @@
-import { ProductFeatureRepository, ProductFeatureRepositoryToken } from '@products/domain';
 import { Inject, Service } from 'typedi';
+import { ProductFeatureRepository, ProductFeatureRepositoryToken } from '../repositories/ProductFeatureRepository';
 
 @Service()
 export class GetProductFeature {

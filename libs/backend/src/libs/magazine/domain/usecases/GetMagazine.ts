@@ -1,5 +1,5 @@
-import { MagazineRepository, MagazineRepositoryToken } from '@magazine/domain';
 import { Inject, Service } from 'typedi';
+import { MagazineRepository, MagazineRepositoryToken } from '../repositories/MagazineRepository';
 
 @Service()
 export class GetMagazine {
