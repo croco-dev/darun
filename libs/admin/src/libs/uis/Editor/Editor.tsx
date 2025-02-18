@@ -1,5 +1,6 @@
 'use client';
 
+import Image from '@tiptap/extension-image';
 import Typography from '@tiptap/extension-typography';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -14,7 +15,7 @@ type EditorProps = {
 export const Editor = ({ defaultValue, onChange }: EditorProps) => {
   const editor = useEditor(
     {
-      extensions: [StarterKit.configure(), Typography],
+      extensions: [StarterKit.configure(), Typography, Image],
       content: defaultValue?.replace(/\n/g, '<br />'),
       onUpdate: ({ editor }) => {
         onChange(editor.getHTML());

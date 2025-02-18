@@ -2,7 +2,8 @@
 
 import './MenuBar.scss';
 import { Editor } from '@tiptap/react';
-import { Fragment, useMemo } from 'react';
+import { ChangeEvent, Fragment, useMemo, useRef } from 'react';
+import { useImageUpload } from '../../utils/useImageUplaod';
 import { MenuItem } from './MenuItem';
 
 type MenuBarProps = { editor: Editor };
@@ -74,6 +75,11 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
         isActive: () => editor.isActive('codeBlock'),
       },
       {
+        icon: 'file-image-line',
+        title: 'Insert Image',
+        action: () => triggerImageUpload(),
+      },
+      {
         type: 'divider',
       },
       {
@@ -117,6 +123,27 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
     [editor]
   );
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+  const { upload } = useImageUpload();
+
+  const onFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    try {
+      if (!file || !fileInputRef.current) return;
+
+      const url = await upload('images/attachments', file, file.name);
+
+      if (!url) return;
+
+      editor?.chain().focus().setImage({ src: url }).run();
+    } finally {
+      event.target.value = '';
+    }
+  };
+
   return (
     <div className="editor__header">
       {items.map((item, index) => (
@@ -124,6 +151,7 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
           {item.type === 'divider' ? <div className="divider" /> : <MenuItem {...item} />}
         </Fragment>
       ))}
+      <input type="file" ref={fileInputRef} onChange={onFileChange} accept="image/*" style={{ display: 'none' }} />
     </div>
   );
 };
