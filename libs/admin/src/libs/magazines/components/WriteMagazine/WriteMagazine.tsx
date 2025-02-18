@@ -7,10 +7,10 @@ import { useWriteMagazine } from './useWriteMagazine';
 
 export const WriteMagazine = bind(
   useWriteMagazine,
-  ({ form, handleSubmit, handleFileDrop, files, handleFileRemove }) => {
+  ({ form, handleSubmit, handleFileDrop, file, handleFileRemove }) => {
     const ImagePreview = () => {
-      if (!files) return null;
-      const imageUrl = URL.createObjectURL(files);
+      if (!file) return null;
+      const imageUrl = URL.createObjectURL(file);
       return (
         <Image
           src={imageUrl}
@@ -51,10 +51,9 @@ export const WriteMagazine = bind(
           <Stack>
             <Input.Label>뒷 배경 이미지</Input.Label>
 
-            {!files ? (
+            {!file ? (
               <Dropzone
                 onDrop={handleFileDrop}
-                onReject={files => console.log('rejected files', files)}
                 maxSize={5 * 1024 ** 2}
                 accept={IMAGE_MIME_TYPE}
                 style={{ border: '1px solid #ccc', borderRadius: '4px' }}
