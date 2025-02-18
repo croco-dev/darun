@@ -69,7 +69,7 @@ export function useWriteMagazine() {
       variables: {
         input: {
           title: values.title,
-          slug: values.slug,
+          slug: values.slug === '' ? undefined : values.slug,
           summary: values.summary,
           backgroundImageUrl: imageUrl,
         },
