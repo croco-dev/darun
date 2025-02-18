@@ -33,4 +33,5 @@ export {
   GetPublishedMagazine,
   PublishMagazine,
   GetMagazineList,
+  EditMagazine,
 } from './libs/magazine/domain';

@@ -93,6 +93,19 @@ A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `dat
 """
 scalar DateTimeISO
 
+input EditMagazineInput {
+  backgroundImageUrl: String
+  content: String
+  logoImageUrl: String
+  slug: String
+  summary: String
+  title: String
+}
+
+type EditMagazinePayload {
+  magazine: Magazine!
+}
+
 input EditProductInput {
   description: String
   logoUrl: String
@@ -161,6 +174,7 @@ type Mutation {
   createMagazine(input: CreateMagazineInput!): CreateMagazinePayload!
   createProduct(input: CreateProductInput!): CreateProductPayload!
   createProductFeature(input: CreateProductFeatureInput!): CreateProductFeaturePayload!
+  editMagazine(input: EditMagazineInput!, slug: String!): EditMagazinePayload!
   editProduct(input: EditProductInput!, slug: String!): EditProductPayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
   publishMagazine(input: PublishMagazineInput!): PublishMagazinePayload!

@@ -51,4 +51,46 @@ export class Magazine {
   public publish() {
     this.publishedAt = new Date();
   }
+
+  update({
+    slug,
+    title,
+    summary,
+    content,
+    backgroundImageUrl,
+    logoImageUrl,
+  }: {
+    slug?: string;
+    title?: string;
+    summary?: string;
+    content?: string;
+    backgroundImageUrl?: string;
+    logoImageUrl?: string;
+  }) {
+    if (slug) {
+      this.slug = slug;
+    }
+
+    if (title) {
+      this.title = title;
+    }
+
+    if (summary) {
+      this.summary = summary;
+    }
+
+    if (content) {
+      this.content = content;
+    }
+
+    if (backgroundImageUrl) {
+      this.backgroundImageUrl = backgroundImageUrl;
+    }
+
+    if (logoImageUrl) {
+      this.logoImageUrl = logoImageUrl;
+    }
+
+    this.updatedAt = new Date();
+  }
 }
