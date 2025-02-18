@@ -147,6 +147,12 @@ type Magazine {
   updatedAt: DateTimeISO
 }
 
+type MagazinePagination {
+  magazines: [Magazine!]!
+  totalCount: Int!
+  totalPages: Int!
+}
+
 type Mutation {
   addProductLink(input: AddProductLinkInput!, slug: String!): AddProductLinkPayload!
   addProductScreenshot(input: AddProductScreenshotInput!, slug: String!): AddProductScreenshotPayload!
@@ -231,6 +237,7 @@ type Query {
   productsCount: Int!
   recentProducts(first: Int!): [Product!]!
   searchProducts(query: String!): [Product!]!
+  tempAllMagazines(page: Int!): MagazinePagination!
   tempMagazineBySlug(slug: String!): Magazine
   tempProductBySlug(slug: String!): Product
 }
