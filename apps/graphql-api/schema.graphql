@@ -51,6 +51,7 @@ type CreateCompanyPayload {
 input CreateMagazineInput {
   backgroundImageUrl: String!
   description: String
+  logoImageUrl: String
   slug: String
   title: String!
 }
@@ -148,6 +149,7 @@ type Mutation {
   createProductFeature(input: CreateProductFeatureInput!): CreateProductFeaturePayload!
   editProduct(input: EditProductInput!, slug: String!): EditProductPayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
+  publishMagazine(input: PublishMagazineInput!): PublishMagazinePayload!
   publishProduct(input: PublishProductInput!): PublishProductPayload!
   registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
@@ -194,6 +196,14 @@ type ProductEdge {
   node: Product!
 }
 
+input PublishMagazineInput {
+  slug: String!
+}
+
+type PublishMagazinePayload {
+  magazine: Magazine!
+}
+
 input PublishProductInput {
   slug: String!
 }
@@ -207,11 +217,14 @@ type Query {
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
   feature(id: ID!): Feature
   hello: String!
+  magazine(id: ID!): Magazine
+  magazineBySlug(slug: String!): Magazine
   product(id: ID!): Product
   productBySlug(slug: String!): Product
   productsCount: Int!
   recentProducts(first: Int!): [Product!]!
   searchProducts(query: String!): [Product!]!
+  tempMagazineBySlug(slug: String!): Magazine
   tempProductBySlug(slug: String!): Product
 }
 

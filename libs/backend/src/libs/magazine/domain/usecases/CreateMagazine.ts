@@ -12,13 +12,17 @@ export class CreateMagazine {
     slug,
     description,
     backgroundImageUrl,
+    logoImageUrl,
+    authorId,
   }: {
     title: string;
     slug?: string;
     description?: string;
     backgroundImageUrl: string;
+    logoImageUrl?: string;
+    authorId: string;
   }) {
-    const magazine = new Magazine({ title, slug, description, backgroundImageUrl });
+    const magazine = new Magazine({ title, slug, description, backgroundImageUrl, logoImageUrl, authorId });
 
     const inserted = await this.magazineRepository.insert(magazine);
 

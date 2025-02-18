@@ -37,6 +37,16 @@ export const handler: APIGatewayProxyHandlerV2 = Sentry.wrapHandler(
             Container.get(GetAccount)
               .execute({ token: authToken })
               .then(account => account?.id),
+          getUserIdOrThrow: () =>
+            Container.get(GetAccount)
+              .execute({ token: authToken })
+              .then(account => {
+                if (!account) {
+                  throw new Error('Unauthorized');
+                }
+
+                return account.id;
+              }),
           getRoles: () =>
             Container.get(GetAccount)
               .execute({ token: authToken })

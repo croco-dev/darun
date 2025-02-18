@@ -1,22 +1,51 @@
-import { CreateMagazine } from '@darun/backend';
+import { CreateMagazine, GetPublishedMagazine } from '@darun/backend';
+import { GetMagazine } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
-import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
+import { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
+import { Arg, Authorized, Ctx, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { CreateMagazineInput, CreateMagazinePayload } from './graphs/CreateMagazine';
 import { Magazine } from './graphs/Magazine';
+import { PublishMagazineInput, PublishMagazinePayload } from './graphs/PublishMagazine';
 
 @Resolver(() => Magazine)
 @Service()
 export class MagazineMutationResolver {
-  constructor(private readonly createMagazineUseCase: CreateMagazine) {}
+  constructor(
+    private readonly createMagazineUseCase: CreateMagazine,
+    private readonly getPublishedMagazineUseCase: GetPublishedMagazine,
+    private readonly getMagazineUseCase: GetMagazine
+  ) {}
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => CreateMagazinePayload)
-  async createMagazine(@Arg('input') input: CreateMagazineInput): Promise<CreateMagazinePayload> {
-    const magazine = await this.createMagazineUseCase.execute(input);
+  async createMagazine(
+    @Arg('input') input: CreateMagazineInput,
+    @Ctx() context: GraphQLContext
+  ): Promise<CreateMagazinePayload> {
+    const userId = await context.getUserIdOrThrow();
+    const magazine = await this.createMagazineUseCase.execute({ ...input, authorId: userId });
 
     return {
       magazine,
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => PublishMagazinePayload)
+  async publishMagazine(@Arg('input') input: PublishMagazineInput): Promise<PublishMagazinePayload> {
+    const magazine = await this.getMagazineUseCase.execute({ slug: input.slug });
+
+    if (!magazine) {
+      throw new Error('발행할 매거진이 존재하지 않습니다.');
+    }
+
+    const updated = await this.getMagazineUseCase.execute({
+      id: magazine.id,
+    });
+
+    return {
+      magazine: updated,
     };
   }
 }

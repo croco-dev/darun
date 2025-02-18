@@ -16,6 +16,9 @@ export class CreateMagazineInput {
   backgroundImageUrl: string;
 
   @Field({ nullable: true })
+  logoImageUrl?: string;
+
+  @Field({ nullable: true })
   slug?: string;
 
   @Field({ nullable: true })

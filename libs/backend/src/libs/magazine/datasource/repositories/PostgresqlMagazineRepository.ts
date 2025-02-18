@@ -8,11 +8,38 @@ import { magazines } from '../entities/MagazineSchema';
 export class PostgresqlMagazineRepository implements MagazineRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
+  async findOneById(id: string): Promise<Magazine | null> {
+    return this.db
+      .select()
+      .from(magazines)
+      .where(and(eq(magazines.id, id)))
+      .limit(1)
+      .then(result => this.mapper(result[0]));
+  }
+
+  async findOneBySlug(slug: string): Promise<Magazine | null> {
+    return this.db
+      .select()
+      .from(magazines)
+      .where(eq(magazines.slug, slug))
+      .limit(1)
+      .then(result => this.mapper(result[0]));
+  }
+
   async findPublishedOneBySlug(slug: string): Promise<Magazine | null> {
     return this.db
       .select()
       .from(magazines)
       .where(and(eq(magazines.slug, slug), isNotNull(magazines.publishedAt)))
+      .limit(1)
+      .then(result => this.mapper(result[0]));
+  }
+
+  async findPublishedOneById(id: string): Promise<Magazine | null> {
+    return this.db
+      .select()
+      .from(magazines)
+      .where(and(eq(magazines.id, id), isNotNull(magazines.publishedAt)))
       .limit(1)
       .then(result => this.mapper(result[0]));
   }
@@ -33,6 +60,7 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
   ): Magazine {
     return new Magazine({
       ...schema,
+      logoImageUrl: schema.logoImageUrl ?? undefined,
       description: schema.description ?? undefined,
       publishedAt: schema.publishedAt ?? undefined,
       updatedAt: schema.updatedAt ?? undefined,

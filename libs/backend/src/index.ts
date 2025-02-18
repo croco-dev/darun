@@ -27,4 +27,4 @@ export { GetAlternativeProducts, UpdateAlternativeProduct } from './libs/recomme
 export { SignImageUpload } from './libs/images/domain';
 export { CloudinaryImageRepositoryConfig } from './libs/images/datasource/repositories/CloudinaryImageRepository';
 export { UpvoteProduct, GetVoteCount } from './libs/voting/domain';
-export { CreateMagazine } from './libs/magazine/domain';
+export { CreateMagazine, GetMagazine, GetPublishedMagazine } from './libs/magazine/domain';

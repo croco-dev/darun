@@ -8,6 +8,8 @@ export const magazines = pgTable('magazines', {
   slug: varchar('slug', { length: 150 }).notNull().unique(),
   description: text('description'),
   backgroundImageUrl: varchar('background_image_url', { length: 255 }).notNull(),
+  logoImageUrl: varchar('logo_image_url', { length: 255 }),
+  authorId: varchar('author_id', { length: 50 }).notNull(),
   publishedAt: timestamp('published_at'),
   updatedAt: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
   createdAt: timestamp('created_at')
