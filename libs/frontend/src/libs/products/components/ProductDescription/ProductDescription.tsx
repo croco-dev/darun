@@ -11,7 +11,15 @@ export const ProductDescription = bind(useProductDescription, ({ description }) 
       whiteSpace="pre-wrap"
       lineHeight={'1.5'}
       color={'colors.dark.800'}
-      dangerouslySetInnerHTML={{ __html: description.replace(/<p><\/p>/gi, `<p class="blank"></p>`) }}
+      dangerouslySetInnerHTML={{
+        __html: description
+          .replace(/<p><\/p>/gi, `<p class="blank"></p>`)
+          .replace(
+            /<blockquote>(.*?)<\/blockquote>/gi,
+            (_, content) =>
+              `<blockquote><div><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m10 7l-2 4h3v6H5v-6l2-4zm8 0l-2 4h3v6h-6v-6l2-4z"/></svg></div>${content}</blockquote>`
+          ),
+      }}
     />
   </VStack>
 ));
@@ -58,5 +66,24 @@ const DescriptionContentStyle = css`
     border-radius: 4px;
     margin: 0 2px;
     font-size: 95%;
+  }
+  & blockquote {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: #f6f6f6;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 15px;
+    border-radius: 12px;
+    margin: 12px 0;
+    div {
+      display: flex;
+      svg {
+        width: 28px;
+        height: 28px;
+      }
+    }
   }
 `;
