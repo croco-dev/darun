@@ -40,6 +40,6 @@
     "esbuild": "0.20.1",
     "serverless": "3.38.0",
     "serverless-esbuild": "1.52.1",
-    "serverless-offline": "13.9.0"
+    "serverless-offline": "14.4.0"
   }
 }
