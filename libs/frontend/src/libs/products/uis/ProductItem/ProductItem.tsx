@@ -21,11 +21,11 @@ type ProductItemProps = {
 const logoSizes = {
   small: {
     imageSize: 56,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   medium: {
     imageSize: 72,
-    borderRadius: 12,
+    borderRadius: 16,
   },
 };
 
@@ -49,7 +49,7 @@ export const ProductItem = ({
       width={'100%'}
       gap={'12px'}
       alignItems={isAlignCenter ? 'center' : 'flex-start'}
-      overflow={'hidden'}
+      overflow={'visible'}
     >
       <Image
         src={logoUrl ?? '/images/default-product-icon.svg'}
@@ -60,7 +60,7 @@ export const ProductItem = ({
         style={{
           objectFit: 'contain',
           borderRadius: logoSizes[logoSize].borderRadius,
-          border: '1px solid rgba(0, 0, 0, 0.15)',
+          boxShadow: 'rgba(0, 0, 0, 0.08) 0px 1px 1px 0.8px',
         }}
       />
       <VStack gap={'4px'} overflow={'hidden'}>
