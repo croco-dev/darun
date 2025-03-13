@@ -21,6 +21,14 @@ export const metadata: Metadata = {
     title: '다른 - 서비스 비교를 한 곳에서',
     description:
       '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 소프트웨어, 웹사이트, 어플리케이션를 검색하고 리뷰를 확인해보세요.',
+    images: [
+      {
+        url: 'https://darun-image.doda.dev/?format=png',
+        width: 1200,
+        height: 630,
+        alt: '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다',
+      },
+    ],
   },
 };
 
