@@ -110,6 +110,20 @@ export type CreateProductPayload = {
   readonly product: Product;
 };
 
+export type EditMagazineInput = {
+  readonly backgroundImageUrl?: InputMaybe<Scalars['String']['input']>;
+  readonly content?: InputMaybe<Scalars['String']['input']>;
+  readonly logoImageUrl?: InputMaybe<Scalars['String']['input']>;
+  readonly slug?: InputMaybe<Scalars['String']['input']>;
+  readonly summary?: InputMaybe<Scalars['String']['input']>;
+  readonly title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type EditMagazinePayload = {
+  readonly __typename?: 'EditMagazinePayload';
+  readonly magazine: Magazine;
+};
+
 export type EditProductInput = {
   readonly description?: InputMaybe<Scalars['String']['input']>;
   readonly logoUrl?: InputMaybe<Scalars['String']['input']>;
@@ -186,6 +200,7 @@ export type Mutation = {
   readonly createMagazine: CreateMagazinePayload;
   readonly createProduct: CreateProductPayload;
   readonly createProductFeature: CreateProductFeaturePayload;
+  readonly editMagazine: EditMagazinePayload;
   readonly editProduct: EditProductPayload;
   readonly indexProduct: IndexProductPayload;
   readonly publishMagazine: PublishMagazinePayload;
@@ -228,6 +243,12 @@ export type MutationcreateProductArgs = {
 
 export type MutationcreateProductFeatureArgs = {
   input: CreateProductFeatureInput;
+};
+
+
+export type MutationeditMagazineArgs = {
+  input: EditMagazineInput;
+  slug: Scalars['String']['input'];
 };
 
 

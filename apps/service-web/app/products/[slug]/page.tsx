@@ -8,6 +8,8 @@ const productQuery = gql`
   query ProductBySlugOnProductDetailPageMetadata($slug: String!) {
     productBySlug(slug: $slug) {
       name
+      summary
+      logoUrl
       tags {
         name
       }
@@ -21,7 +23,14 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { data } = await getClient().query<{ productBySlug?: { name: string; tags: { name: string }[] } }>({
+  const { data } = await getClient().query<{
+    productBySlug?: {
+      name: string;
+      summary?: string;
+      logoUrl?: string;
+      tags: { name: string }[];
+    };
+  }>({
     query: productQuery,
     variables: { slug: params.slug },
   });
@@ -31,6 +40,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const name = data.productBySlug.name;
+  const summary = data.productBySlug.summary;
+  const logoUrl = data.productBySlug.logoUrl;
+
   const tags = data.productBySlug.tags.map(tag => tag.name);
 
   return {
@@ -54,8 +66,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ],
     openGraph: {
       title: `${name} - 다른: 서비스 비교를 한 곳에서`,
+      images: [
+        {
+          url: createOgImageUrl({ name, summary, logoUrl }),
+          width: 1200,
+          height: 630,
+          alt: '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다',
+        },
+      ],
     },
   };
 }
+
+const createOgImageUrl = ({ name, summary, logoUrl }: { name: string; summary?: string; logoUrl?: string }) => {
+  const url = new URL('https://darun-image.doda.dev/');
+  url.searchParams.set('format', 'png');
+  url.searchParams.set('type', 'service');
+  url.searchParams.set('name', name);
+  if (summary) url.searchParams.set('desc', summary);
+  if (logoUrl) url.searchParams.set('logo', logoUrl);
+  return url.toString();
+};
 
 export default ProductDetailPage;
