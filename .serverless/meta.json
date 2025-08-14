@@ -1,0 +1,27 @@
+{
+  "unknown": {
+    "versionFramework": "4.18.0",
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "command": [
+      "login"
+    ],
+    "options": {},
+    "orgId": "a7a7388e-0fa9-463e-bfe1-908b1721c0c7",
+    "orgName": "heewon",
+    "userId": "BkDV1SkSWpw89MySmv",
+    "userName": "heewon",
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}
