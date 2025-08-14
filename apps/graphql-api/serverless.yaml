@@ -1,11 +1,16 @@
-service: darun
-frameworkVersion: '3'
+org: heewon
+app: darun
+service: graphql-api
+frameworkVersion: '4'
 
 useDotenv: true
 
 plugins:
   - serverless-esbuild
   - serverless-offline
+
+build:
+  esbuild: false
 
 custom:
   esbuild:
@@ -28,7 +33,7 @@ custom:
 
 provider:
   name: aws
-  runtime: nodejs20.x
+  runtime: nodejs22.x
   region: ap-northeast-2
   stackName: ${self:provider.stage}-${self:service}
   stage: ${opt:stage, 'dev'}

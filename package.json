@@ -16,13 +16,13 @@
     "@darun/utils-tsconfig": "workspace:*",
     "@types/node": "^20.14.10",
     "eslint": "8.57.0",
-    "lefthook": "1.7.15",
+    "lefthook": "1.12.3",
     "prettier": "3.3.2",
-    "turbo": "1.12.4",
-    "typescript": "5.5.2"
+    "turbo": "2.5.5",
+    "typescript": "5.9.2"
   },
-  "packageManager": "pnpm@9.1.0+sha256.22e36fba7f4880ecf749a5ca128b8435da085ecd49575e7fb9e64d6bf4fad394",
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }
