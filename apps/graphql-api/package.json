@@ -1,5 +1,5 @@
 {
-  "name": "@darun/graphql-api",
+  "name": "graphql-api",
   "version": "0.0.0",
   "type": "commonjs",
   "main": "./src/index.ts",
