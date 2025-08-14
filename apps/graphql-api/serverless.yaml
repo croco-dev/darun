@@ -38,7 +38,7 @@ provider:
   stackName: ${self:provider.stage}-${self:service}
   stage: ${opt:stage, 'dev'}
   profile: darun
-  deploymentBucket: ${self:provider.stage}-${self:service}-deploy-bucket
+  deploymentBucket: darun-deploy-bucket
   architecture: arm64
   logRetentionInDays: 7
 
