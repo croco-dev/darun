@@ -3,22 +3,22 @@ pre-commit:
   commands:
     ts:
       glob: "*.ts"
-      run: eslint --fix --quiet {staged_files}
+      run: pnpm eslint --fix --quiet {staged_files}
     tsx:
       glob: "*.tsx"
-      run: eslint --fix --quiet {staged_files}
+      run: pnpm eslint --fix --quiet {staged_files}
     jsx:
       glob: "*.jsx"
-      run: eslint --fix --quiet {staged_files}
+      run: pnpm eslint --fix --quiet {staged_files}
     js:
       glob: "*.js"
-      run: eslint --fix --quiet {staged_files}
+      run: pnpm eslint --fix --quiet {staged_files}
     mdx:
       glob: "*.mdx"
-      run: eslint --fix --quiet {staged_files}
+      run: pnpm eslint --fix --quiet {staged_files}
     json:
       glob: "*.json"
-      run: eslint --fix --quiet {staged_files}
+      run: pnpm eslint --fix --quiet {staged_files}
 
 post-merge:
   commands:
