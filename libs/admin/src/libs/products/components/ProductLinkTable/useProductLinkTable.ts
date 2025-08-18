@@ -1,20 +1,16 @@
 import { gql } from '@apollo/client';
+import { ProductLinkTableFragmentDoc } from './__generated__/ProductLinkTable';
 import { useTempProductBySlugOnProductLinkTableQuery } from './__generated__/useProductLinkTable';
 
 gql`
   query TempProductBySlugOnProductLinkTable($slug: String!) {
     tempProductBySlug(slug: $slug) {
       id
-      links {
-        id
-        title
-        link
-        displayLink
-        iconUrl
-        isPrimary
-      }
+      ...ProductLinkTable
     }
   }
+
+  ${ProductLinkTableFragmentDoc}
 `;
 
 type ProductLinkTableProps = {

@@ -1,8 +1,22 @@
+import { gql } from '@apollo/client';
 import { bind } from '@croco/utils-structure-react';
 import { Button, Group, rem, Table, Text } from '@mantine/core';
 import { IconPencil } from '@tabler/icons-react';
 import styles from './ProductFeatureTable.module.css';
 import { useProductLinkTable } from './useProductLinkTable';
+
+gql`
+  fragment ProductLinkTable on Product {
+    links {
+      id
+      title
+      link
+      displayLink
+      iconUrl
+      isPrimary
+    }
+  }
+`;
 
 export const ProductLinkTable = bind(useProductLinkTable, ({ links, loading, editLink }) => {
   if (loading) {

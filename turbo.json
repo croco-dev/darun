@@ -6,6 +6,10 @@
       "dependsOn": ["^build", "prepare"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
+    "codegen": {
+      "cache": false,
+      "dependsOn": ["^codegen"]
+    },
     "dev": {
       "cache": false,
       "dependsOn": ["prepare"],

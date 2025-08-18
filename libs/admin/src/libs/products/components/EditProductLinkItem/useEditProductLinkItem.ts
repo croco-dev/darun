@@ -1,16 +1,20 @@
-import { gql, useMutation } from '@apollo/client';
+import { gql } from '@apollo/client';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { TempProductBySlugOnProductLinkTableDocument } from '../ProductLinkTable/__generated__/useProductLinkTable';
+import { ProductLinkTableFragmentDoc } from '../ProductLinkTable/__generated__/ProductLinkTable';
+import { useUpdateProductLinkOnEditProductLinkItemMutation } from './__generated__/useEditProductLinkItem';
 
-const UPDATE_PRODUCT_LINK_MUTATION = gql`
+gql`
   mutation UpdateProductLinkOnEditProductLinkItem($slug: String!, $id: String!, $input: UpdateProductLinkInput!) {
     updateProductLink(slug: $slug, id: $id, input: $input) {
       product {
         id
+        ...ProductLinkTable
       }
     }
   }
+
+  ${ProductLinkTableFragmentDoc}
 `;
 
 type EditProductLinkItemProps = {
@@ -33,7 +37,7 @@ type FormValues = {
 };
 
 export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLinkItemProps) {
-  const [updateLink, { loading }] = useMutation(UPDATE_PRODUCT_LINK_MUTATION);
+  const [updateLink, { loading }] = useUpdateProductLinkOnEditProductLinkItemMutation();
 
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
@@ -62,7 +66,6 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
           iconUrl: values.iconUrl,
         },
       },
-      refetchQueries: [{ query: TempProductBySlugOnProductLinkTableDocument, variables: { slug } }],
     });
 
     notifications.show({ message: '수정되었습니다.', color: 'teal' });
