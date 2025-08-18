@@ -11,7 +11,7 @@ export type UpdateProductLinkOnEditProductLinkItemMutationVariables = Types.Exac
 }>;
 
 
-export type UpdateProductLinkOnEditProductLinkItemMutation = { __typename?: 'Mutation', updateProductLink: { __typename?: 'UpdateProductLinkPayload', product?: { __typename?: 'Product', id: string, links: Array<{ __typename?: 'Link', id: string, title: string, link: string, displayLink: string, iconUrl: string, isPrimary: boolean }> } | null } };
+export type UpdateProductLinkOnEditProductLinkItemMutation = { __typename?: 'Mutation', updateProductLink: { __typename?: 'UpdateProductLinkPayload', product?: { __typename?: 'Product', id: string, links: Array<{ __typename?: 'Link', id: string, isPrimary: boolean, title: string, link: string, displayLink: string, iconUrl: string }> } | null } };
 
 
 export const UpdateProductLinkOnEditProductLinkItemDocument = gql`

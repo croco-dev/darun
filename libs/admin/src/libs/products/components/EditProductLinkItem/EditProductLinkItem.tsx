@@ -1,7 +1,18 @@
+import { gql } from '@apollo/client';
 import { bind } from '@croco/utils-structure-react';
 import { Button, Group, Select, SelectProps, Stack, TextInput } from '@mantine/core';
 import { IconCheck } from '@tabler/icons-react';
 import { useEditProductLinkItem } from './useEditProductLinkItem';
+
+gql`
+  fragment EditProductLinkItem on Link {
+    id
+    title
+    link
+    displayLink
+    iconUrl
+  }
+`;
 
 export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit, loading }) => {
   return (
