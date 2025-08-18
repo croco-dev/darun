@@ -183,6 +183,7 @@ type Mutation {
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
+  updateProductLink(id: String!, input: UpdateProductLinkInput!, slug: String!): UpdateProductLinkPayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
   upvoteProduct(slug: String!): UpvoteProductPayload!
 }
@@ -304,6 +305,17 @@ input UpdateProductFeatureInput {
 
 type UpdateProductFeaturePayload {
   feature: Feature!
+}
+
+input UpdateProductLinkInput {
+  displayLink: String
+  iconUrl: String
+  link: String
+  title: String
+}
+
+type UpdateProductLinkPayload {
+  product: Product
 }
 
 input UpdateProductTagsInput {

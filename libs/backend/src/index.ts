@@ -16,6 +16,7 @@ export {
   CreateProductFeature,
   AddProductScreenshot,
   AddProductLink,
+  UpdateProductLink,
   PublishProduct,
   EditProduct,
   RegisterProductCompany,

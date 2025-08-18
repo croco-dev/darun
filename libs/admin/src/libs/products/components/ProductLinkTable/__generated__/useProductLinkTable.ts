@@ -1,6 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
+import { ProductLinkTableFragmentDoc } from './ProductLinkTable';
 import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type TempProductBySlugOnProductLinkTableQueryVariables = Types.Exact<{
@@ -15,17 +16,10 @@ export const TempProductBySlugOnProductLinkTableDocument = gql`
     query TempProductBySlugOnProductLinkTable($slug: String!) {
   tempProductBySlug(slug: $slug) {
     id
-    links {
-      id
-      title
-      link
-      displayLink
-      iconUrl
-      isPrimary
-    }
+    ...ProductLinkTable
   }
 }
-    `;
+    ${ProductLinkTableFragmentDoc}`;
 
 /**
  * __useTempProductBySlugOnProductLinkTableQuery__

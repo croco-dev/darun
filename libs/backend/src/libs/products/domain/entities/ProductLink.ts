@@ -31,4 +31,29 @@ export class ProductLink {
       this.id = id;
     }
   }
+
+  public update({
+    title,
+    link,
+    displayLink,
+    iconUrl,
+  }: {
+    title?: string;
+    link?: string;
+    displayLink?: string;
+    iconUrl?: string;
+  }) {
+    if (title) {
+      this.title = title;
+    }
+    if (link) {
+      this.link = link;
+    }
+    if (displayLink) {
+      this.displayLink = displayLink;
+    }
+    if (iconUrl) {
+      this.iconUrl = iconUrl;
+    }
+  }
 }

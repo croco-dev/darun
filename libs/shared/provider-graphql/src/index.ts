@@ -209,6 +209,7 @@ export type Mutation = {
   readonly signImageUpload: SignImageUploadPayload;
   readonly updateAlternativeProduct: UpdateAlternativeProductPayload;
   readonly updateProductFeature: UpdateProductFeaturePayload;
+  readonly updateProductLink: UpdateProductLinkPayload;
   readonly updateProductTags: UpdateProductTagsPayload;
   readonly upvoteProduct: UpvoteProductPayload;
 };
@@ -293,6 +294,13 @@ export type MutationupdateAlternativeProductArgs = {
 export type MutationupdateProductFeatureArgs = {
   id: Scalars['String']['input'];
   input: UpdateProductFeatureInput;
+};
+
+
+export type MutationupdateProductLinkArgs = {
+  id: Scalars['String']['input'];
+  input: UpdateProductLinkInput;
+  slug: Scalars['String']['input'];
 };
 
 
@@ -499,6 +507,18 @@ export type UpdateProductFeatureInput = {
 export type UpdateProductFeaturePayload = {
   readonly __typename?: 'UpdateProductFeaturePayload';
   readonly feature: Feature;
+};
+
+export type UpdateProductLinkInput = {
+  readonly displayLink?: InputMaybe<Scalars['String']['input']>;
+  readonly iconUrl?: InputMaybe<Scalars['String']['input']>;
+  readonly link?: InputMaybe<Scalars['String']['input']>;
+  readonly title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateProductLinkPayload = {
+  readonly __typename?: 'UpdateProductLinkPayload';
+  readonly product?: Maybe<Product>;
 };
 
 export type UpdateProductTagsInput = {
