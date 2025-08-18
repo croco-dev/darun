@@ -22,7 +22,7 @@ export {
   RegisterProductCompany,
 } from './libs/products/domain';
 export { GetAccount, GetProfile } from './libs/accounts/domain';
-export { GetCompany, CreateCompany, GetAllCompanies } from './libs/companies/domain';
+export { GetCompany, CreateCompany, GetAllCompanies, SearchCompany } from './libs/companies/domain';
 export { IndexProduct, SearchProduct } from './libs/search/domain';
 export { GetAlternativeProducts, UpdateAlternativeProduct } from './libs/recommendation/domain';
 export { SignImageUpload } from './libs/images/domain';

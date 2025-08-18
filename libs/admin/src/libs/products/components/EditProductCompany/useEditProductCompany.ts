@@ -1,9 +1,13 @@
 import { gql, useApolloClient } from '@apollo/client';
 import { useForm } from '@mantine/form';
+import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
 import { TempProductBySlugOnProductCompanyInfoDocument } from '../ProductCompanyInfo/__generated__/useProductCompanyInfo';
-import { useRegisterProductCompanyOnEditProductCompanyMutation } from './__generated__/useEditProductCompany';
+import {
+  useRegisterProductCompanyOnEditProductCompanyMutation,
+  useSearchCompaniesOnEditProductCompanyLazyQuery,
+} from './__generated__/useEditProductCompany';
 
 gql`
   mutation RegisterProductCompanyOnEditProductCompany($input: RegisterProductCompanyInput!, $slug: String!) {
@@ -15,8 +19,18 @@ gql`
   }
 `;
 
+gql`
+  query SearchCompaniesOnEditProductCompany($query: String!) {
+    searchCompanies(query: $query) {
+      id
+      name
+    }
+  }
+`;
+
 type FormValues = {
-  id?: string;
+  companyId: string;
+  query: string;
 };
 
 export function useEditProductCompany({ slug }: { slug: string }) {
@@ -39,20 +53,34 @@ export function useEditProductCompany({ slug }: { slug: string }) {
     },
   });
 
+  const [search, { data }] = useSearchCompaniesOnEditProductCompanyLazyQuery();
+
+  const searchCompany = useThrottledCallback(async (query: string) => {
+    if (!query) return;
+
+    await search({ variables: { query } });
+  }, 500);
+
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: {
-      id: '',
+      companyId: '',
+      query: '',
     },
   });
 
   const handleSubmit = (values: FormValues) => {
-    if (!values.id) {
+    if (!values.companyId) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
-    registerProductCompany({ variables: { input: { companyId: values.id }, slug } });
+    registerProductCompany({ variables: { input: { companyId: values.companyId }, slug } });
   };
 
-  return { form, handleSubmit };
+  return {
+    form,
+    handleSubmit,
+    companies: data?.searchCompanies.map(({ id, name }) => ({ label: name, value: id })) ?? [],
+    searchCompany,
+  };
 }

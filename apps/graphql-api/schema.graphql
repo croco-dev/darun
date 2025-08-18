@@ -243,6 +243,7 @@ type PublishProductPayload {
 
 type Query {
   allCompanies(page: Int!): CompanyPagination!
+  searchCompanies(query: String!): [Company!]!
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
   feature(id: ID!): Feature
   hello: String!
