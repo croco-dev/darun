@@ -9,7 +9,7 @@ export type TempProductBySlugOnProductLinkTableQueryVariables = Types.Exact<{
 }>;
 
 
-export type TempProductBySlugOnProductLinkTableQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, links: Array<{ __typename?: 'Link', id: string, title: string, link: string, displayLink: string, iconUrl: string, isPrimary: boolean }> } | null };
+export type TempProductBySlugOnProductLinkTableQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, links: Array<{ __typename?: 'Link', id: string, isPrimary: boolean, title: string, link: string, displayLink: string, iconUrl: string }> } | null };
 
 
 export const TempProductBySlugOnProductLinkTableDocument = gql`
