@@ -1,4 +1,4 @@
-import { GetAllCompanies } from '@darun/backend';
+import { GetAllCompanies, SearchCompany } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Int, Query, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
@@ -8,7 +8,10 @@ import { CompanyPagination } from './graphs/CompanyPagination';
 @Resolver(() => Company)
 @Service()
 export class CompanyQueryResolver {
-  constructor(private readonly getAllCompanies: GetAllCompanies) {}
+  constructor(
+    private readonly getAllCompanies: GetAllCompanies,
+    private readonly searchCompany: SearchCompany
+  ) {}
 
   @Authorized([AuthRole.Admin])
   @Query(() => CompanyPagination)
@@ -21,5 +24,11 @@ export class CompanyQueryResolver {
       totalPages: Math.ceil(total / limit),
       companies: data,
     };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Query(() => [Company])
+  public async searchCompanies(@Arg('query') query: string): Promise<Company[]> {
+    return this.searchCompany.execute({ query });
   }
 }

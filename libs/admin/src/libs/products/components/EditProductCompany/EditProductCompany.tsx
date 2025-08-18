@@ -1,15 +1,22 @@
 import { bind } from '@croco/utils-structure-react';
-import { Button, Group, Stack, TextInput } from '@mantine/core';
+import { Button, Group, Select, Stack } from '@mantine/core';
 import { useEditProductCompany } from './useEditProductCompany';
 
-export const EditProductCompany = bind(useEditProductCompany, ({ form, handleSubmit }) => (
+export const EditProductCompany = bind(useEditProductCompany, ({ form, handleSubmit, companies, searchCompany }) => (
   <form onSubmit={form.onSubmit(handleSubmit)}>
     <Stack gap={'8px'}>
-      <TextInput
-        label="회사 ID"
-        placeholder="ex) 01J8H7WF8CPNB7Y6RZXC26B1MA"
-        key={form.key('id')}
-        {...form.getInputProps('id')}
+      <Select
+        label="회사"
+        placeholder="회사 이름을 검색하세요."
+        data={companies}
+        searchable
+        onSearchChange={value => {
+          form.setFieldValue('query', value);
+          searchCompany(value);
+        }}
+        onChange={value => form.setFieldValue('companyId', value || '')}
+        value={form.getValues().companyId}
+        key={form.key('query')}
       />
     </Stack>
 
