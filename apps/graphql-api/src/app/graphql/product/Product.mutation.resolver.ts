@@ -6,6 +6,7 @@ import {
   GetPublishedProduct,
   IndexProduct,
   AddProductLink,
+  UpdateProductLink,
   PublishProduct,
   UpdateAlternativeProduct,
   EditProduct,
@@ -25,6 +26,7 @@ import { Product } from './graphs/Product';
 import { PublishProductInput, PublishProductPayload } from './graphs/PublishProduct';
 import { RegisterProductCompanyInput, RegisterProductCompanyPayload } from './graphs/RegisterProductCompany';
 import { UpdateAlternativeProductInput, UpdateAlternativeProductPayload } from './graphs/UpdateAlternativeProduct';
+import { UpdateProductLinkInput, UpdateProductLinkPayload } from './graphs/UpdateProductLink';
 import { UpdateProductTagsInput, UpdateProductTagsPayload } from './graphs/UpdateProductTags';
 import { UpvoteProductPayload } from './graphs/UpvoteProduct';
 
@@ -42,6 +44,7 @@ export class ProductMutationResolver {
     private readonly getProductUseCase: GetProduct,
     private readonly addProductScreenshotUseCase: AddProductScreenshot,
     private readonly addProductLinkUseCase: AddProductLink,
+    private readonly updateProductLinkUseCase: UpdateProductLink,
     private readonly updateAlternativeProductUseCase: UpdateAlternativeProduct,
     private readonly upvoteProductUseCase: UpvoteProduct,
     private readonly registerProductCompanyUseCase: RegisterProductCompany
@@ -177,6 +180,26 @@ export class ProductMutationResolver {
     }
 
     await this.addProductLinkUseCase.execute({ ...input, productId: product.id });
+
+    return {
+      product: await this.getProductUseCase.execute({ slug }),
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => UpdateProductLinkPayload)
+  async updateProductLink(
+    @Arg('slug') slug: string,
+    @Arg('id') id: string,
+    @Arg('input') input: UpdateProductLinkInput
+  ): Promise<UpdateProductLinkPayload> {
+    const product = await this.getProductUseCase.execute({ slug });
+
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    await this.updateProductLinkUseCase.execute({ linkId: id, ...input });
 
     return {
       product: await this.getProductUseCase.execute({ slug }),

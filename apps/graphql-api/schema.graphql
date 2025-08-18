@@ -182,6 +182,7 @@ type Mutation {
   registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
+  updateProductLink(id: String!, input: UpdateProductLinkInput!, slug: String!): UpdateProductLinkPayload!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
   upvoteProduct(slug: String!): UpvoteProductPayload!
@@ -293,6 +294,17 @@ input UpdateAlternativeProductInput {
 }
 
 type UpdateAlternativeProductPayload {
+  product: Product
+}
+
+input UpdateProductLinkInput {
+  displayLink: String
+  iconUrl: String
+  link: String
+  title: String
+}
+
+type UpdateProductLinkPayload {
   product: Product
 }
 

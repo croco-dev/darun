@@ -36,6 +36,7 @@ export { UpdateProductFeature } from './usecases/UpdateProductFeature';
 export { CreateProductFeature } from './usecases/CreateProductFeature';
 export { AddProductScreenshot } from './usecases/AddProductScreenshot';
 export { AddProductLink } from './usecases/AddProductLink';
+export { UpdateProductLink } from './usecases/UpdateProductLink';
 export { PublishProduct } from './usecases/PublishProduct';
 export { EditProduct } from './usecases/EditProduct';
 export { RegisterProductCompany } from './usecases/RegisterProductCompany';

@@ -4,7 +4,7 @@ import { IconPencil } from '@tabler/icons-react';
 import styles from './ProductFeatureTable.module.css';
 import { useProductLinkTable } from './useProductLinkTable';
 
-export const ProductLinkTable = bind(useProductLinkTable, ({ links, loading }) => {
+export const ProductLinkTable = bind(useProductLinkTable, ({ links, loading, editLink }) => {
   if (loading) {
     return <>로딩 중...</>;
   }
@@ -65,9 +65,9 @@ export const ProductLinkTable = bind(useProductLinkTable, ({ links, loading }) =
                     leftSection={<IconPencil style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
                     variant="default"
                     size={'compact-xs'}
-                    disabled
+                    onClick={() => editLink(link)}
                   >
-                    정보 수정 (준비중)
+                    정보 수정
                   </Button>
                 </Group>
               </Table.Td>
