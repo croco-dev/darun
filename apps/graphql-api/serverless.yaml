@@ -41,6 +41,7 @@ provider:
   deploymentBucket: darun-deploy-bucket
   architecture: arm64
   logRetentionInDays: 7
+  timeout: 10
 
 functions:
   graphql:

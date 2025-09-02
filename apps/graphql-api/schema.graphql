@@ -243,7 +243,6 @@ type PublishProductPayload {
 
 type Query {
   allCompanies(page: Int!): CompanyPagination!
-  searchCompanies(query: String!): [Company!]!
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
   feature(id: ID!): Feature
   hello: String!
@@ -253,6 +252,7 @@ type Query {
   productBySlug(slug: String!): Product
   productsCount: Int!
   recentProducts(first: Int!): [Product!]!
+  searchCompanies(query: String!): [Company!]!
   searchProducts(query: String!): [Product!]!
   tempAllMagazines(page: Int!): MagazinePagination!
   tempMagazineBySlug(slug: String!): Magazine
