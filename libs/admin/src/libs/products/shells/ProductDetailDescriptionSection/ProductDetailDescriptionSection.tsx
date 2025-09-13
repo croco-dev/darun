@@ -1,6 +1,6 @@
 import { bind } from '@croco/utils-structure-react';
 import { Button, Card, Group, Modal, Stack, Title } from '@mantine/core';
-import { ProductDescription } from '@products/components';
+import { ProductDescription, GenerateProductDescriptionButton } from '@products/components';
 import { IconPencil } from '@tabler/icons-react';
 import { Suspense } from 'react';
 import { EditProductDescription } from '../../components/EditProductDescription';
@@ -13,15 +13,18 @@ export const ProductDetailDescriptionSection = bind(
       <Stack gap={8}>
         <Group justify={'space-between'}>
           <Title order={3}>설명</Title>
-          <Button
-            onClick={openEditModal}
-            color={'dark'}
-            variant={'light'}
-            leftSection={<IconPencil size={16} />}
-            size={'xs'}
-          >
-            수정
-          </Button>
+          <Group>
+            <GenerateProductDescriptionButton slug={slug} />
+            <Button
+              onClick={openEditModal}
+              color={'dark'}
+              variant={'light'}
+              leftSection={<IconPencil size={16} />}
+              size={'xs'}
+            >
+              수정
+            </Button>
+          </Group>
         </Group>
         <Card withBorder shadow="sm" radius="md">
           <Card.Section withBorder inheritPadding py="xs">

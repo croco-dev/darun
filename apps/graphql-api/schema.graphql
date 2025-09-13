@@ -131,6 +131,14 @@ type FeatureScreenshot {
   imageUrl: String!
 }
 
+input GenerateProductDescriptionInput {
+  slug: String!
+}
+
+type GenerateProductDescriptionPayload {
+  product: Product!
+}
+
 input IndexProductInput {
   slug: String!
 }
@@ -176,6 +184,7 @@ type Mutation {
   createProductFeature(input: CreateProductFeatureInput!): CreateProductFeaturePayload!
   editMagazine(input: EditMagazineInput!, slug: String!): EditMagazinePayload!
   editProduct(input: EditProductInput!, slug: String!): EditProductPayload!
+  generateProductDescription(input: GenerateProductDescriptionInput!): GenerateProductDescriptionPayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
   publishMagazine(input: PublishMagazineInput!): PublishMagazinePayload!
   publishProduct(input: PublishProductInput!): PublishProductPayload!

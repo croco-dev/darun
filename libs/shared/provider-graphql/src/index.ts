@@ -152,6 +152,15 @@ export type FeatureScreenshot = {
   readonly imageUrl: Scalars['String']['output'];
 };
 
+export type GenerateProductDescriptionInput = {
+  readonly slug: Scalars['String']['input'];
+};
+
+export type GenerateProductDescriptionPayload = {
+  readonly __typename?: 'GenerateProductDescriptionPayload';
+  readonly product: Product;
+};
+
 export type IndexProductInput = {
   readonly slug: Scalars['String']['input'];
 };
@@ -202,6 +211,7 @@ export type Mutation = {
   readonly createProductFeature: CreateProductFeaturePayload;
   readonly editMagazine: EditMagazinePayload;
   readonly editProduct: EditProductPayload;
+  readonly generateProductDescription: GenerateProductDescriptionPayload;
   readonly indexProduct: IndexProductPayload;
   readonly publishMagazine: PublishMagazinePayload;
   readonly publishProduct: PublishProductPayload;
@@ -256,6 +266,11 @@ export type MutationeditMagazineArgs = {
 export type MutationeditProductArgs = {
   input: EditProductInput;
   slug: Scalars['String']['input'];
+};
+
+
+export type MutationgenerateProductDescriptionArgs = {
+  input: GenerateProductDescriptionInput;
 };
 
 
