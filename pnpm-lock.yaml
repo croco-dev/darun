@@ -11,6 +11,9 @@ importers:
       '@darun/eslint-config':
         specifier: workspace:*
         version: link:libs/shared/utils-eslint-config
+      '@darun/utils-llm':
+        specifier: workspace:*
+        version: link:libs/shared/utils-llm
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:libs/shared/utils-tsconfig
@@ -147,6 +150,9 @@ importers:
       '@darun/utils-apollo-server':
         specifier: workspace:*
         version: link:../../libs/shared/utils-apollo-server
+      '@darun/utils-llm':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-llm
       '@darun/utils-sentry':
         specifier: workspace:*
         version: link:../../libs/shared/utils-sentry
@@ -463,6 +469,9 @@ importers:
       '@darun/provider-database':
         specifier: workspace:*
         version: link:../shared/provider-database
+      '@darun/utils-llm':
+        specifier: workspace:*
+        version: link:../shared/utils-llm
       '@typegoose/typegoose':
         specifier: 12.11.0
         version: 12.11.0(mongoose@8.10.1)
@@ -887,6 +896,25 @@ importers:
       prettier:
         specifier: 3.3.2
         version: 3.3.2
+
+  libs/shared/utils-llm:
+    dependencies:
+      openai:
+        specifier: 5.20.2
+        version: 5.20.2(ws@8.18.0)
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../utils-tsconfig
+      '@types/react':
+        specifier: ^18
+        version: 18.3.18
+      '@types/react-dom':
+        specifier: ^18
+        version: 18.3.5(@types/react@18.3.18)
 
   libs/shared/utils-router:
     dependencies:
@@ -7163,6 +7191,18 @@ packages:
   onetime@6.0.0:
     resolution: {integrity: sha512-1FlR+gjXK7X+AsAHso35MnyN5KqGwJRi/31ft6x0M194ht7S+rWAvd7PHss9xSKMzE0asv1pyIHaJYq+BbacAQ==}
     engines: {node: '>=12'}
+
+  openai@5.20.2:
+    resolution: {integrity: sha512-ZeBIEazj6W/XOulMw92L8iU5FblQeM5IxjPRCZNVArNXsoF+bLPnS7B2X4O0JSmpCM+F5Gdajr6bn4nAUj4LFQ==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.23.8
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
 
   optimism@0.18.1:
     resolution: {integrity: sha512-mLXNwWPa9dgFyDqkNi54sjDyNJ9/fTI6WGBLgnXku1vdKY/jovHfZT5r+aiVeFFLOz+foPNOm5YJ4mqgld2GBQ==}
@@ -16782,6 +16822,10 @@ snapshots:
   onetime@6.0.0:
     dependencies:
       mimic-fn: 4.0.0
+
+  openai@5.20.2(ws@8.18.0):
+    optionalDependencies:
+      ws: 8.18.0
 
   optimism@0.18.1:
     dependencies:

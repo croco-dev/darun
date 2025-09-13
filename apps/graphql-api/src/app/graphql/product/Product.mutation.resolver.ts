@@ -13,6 +13,7 @@ import {
   UpvoteProduct,
   GetCompany,
   RegisterProductCompany,
+  GenerateProductDescription,
 } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
@@ -21,6 +22,10 @@ import { AddProductLinkInput, AddProductLinkPayload } from './graphs/AddProductL
 import { AddProductScreenshotInput, AddProductScreenshotPayload } from './graphs/AddProductScreenshot';
 import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
 import { EditProductInput, EditProductPayload } from './graphs/EditProduct';
+import {
+  GenerateProductDescriptionInput,
+  GenerateProductDescriptionPayload,
+} from './graphs/GenerateProductDescription';
 import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
 import { PublishProductInput, PublishProductPayload } from './graphs/PublishProduct';
@@ -47,7 +52,8 @@ export class ProductMutationResolver {
     private readonly updateProductLinkUseCase: UpdateProductLink,
     private readonly updateAlternativeProductUseCase: UpdateAlternativeProduct,
     private readonly upvoteProductUseCase: UpvoteProduct,
-    private readonly registerProductCompanyUseCase: RegisterProductCompany
+    private readonly registerProductCompanyUseCase: RegisterProductCompany,
+    private readonly generateProductDescriptionUseCase: GenerateProductDescription
   ) {}
 
   @Authorized([AuthRole.Admin])
@@ -268,6 +274,26 @@ export class ProductMutationResolver {
 
     return {
       product: await this.getProductUseCase.execute({ slug }),
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => GenerateProductDescriptionPayload)
+  async generateProductDescription(
+    @Arg('input') input: GenerateProductDescriptionInput
+  ): Promise<GenerateProductDescriptionPayload> {
+    const product = await this.getProductUseCase.execute({ slug: input.slug });
+
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    const updatedProduct = await this.generateProductDescriptionUseCase.execute({
+      productId: product.id,
+    });
+
+    return {
+      product: updatedProduct,
     };
   }
 }

@@ -4,3 +4,4 @@ export { PostgresqlProductTagRepository } from './repositories/PostgresqlProduct
 export { PostgresqlProductScreenshotRepository } from './repositories/PostgresqlProductScreenshotRepository';
 export { PostgresqlProductFeatureRepository } from './repositories/PostgresqlProductFeatureRepository';
 export { PostgresqlProductFeatureScreenshotRepository } from './repositories/PostgresqlProductFeatureScreenshotRepository';
+export { ProductDescriptionGeneratorImpl } from './services/ProductDescriptionGeneratorImpl';

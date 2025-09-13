@@ -19,6 +19,9 @@ export { ProductScreenshot } from './entities/ProductScreenshot';
 export { ProductFeatureScreenshot } from './entities/ProductFeatureScreenshot';
 export { ProductFeature } from './entities/ProductFeature';
 
+export type { ProductDescriptionGenerator } from './services/ProductDescriptionGenerator';
+export { ProductDescriptionGeneratorToken } from './services/ProductDescriptionGenerator';
+
 export { GetRecentProducts } from './usecases/GetRecentProducts';
 export { GetProduct } from './usecases/GetProduct';
 export { GetProductLinks } from './usecases/GetProductLinks';
@@ -40,3 +43,4 @@ export { UpdateProductLink } from './usecases/UpdateProductLink';
 export { PublishProduct } from './usecases/PublishProduct';
 export { EditProduct } from './usecases/EditProduct';
 export { RegisterProductCompany } from './usecases/RegisterProductCompany';
+export { GenerateProductDescription } from './usecases/GenerateProductDescription';

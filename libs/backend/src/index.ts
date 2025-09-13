@@ -20,6 +20,8 @@ export {
   PublishProduct,
   EditProduct,
   RegisterProductCompany,
+  GenerateProductDescription,
+  ProductDescriptionGeneratorToken,
 } from './libs/products/domain';
 export { GetAccount, GetProfile } from './libs/accounts/domain';
 export { GetCompany, CreateCompany, GetAllCompanies, SearchCompany } from './libs/companies/domain';

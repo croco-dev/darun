@@ -5,6 +5,7 @@ export {
   PostgresqlProductScreenshotRepository,
   PostgresqlProductFeatureRepository,
   PostgresqlProductFeatureScreenshotRepository,
+  ProductDescriptionGeneratorImpl,
 } from './libs/products/datasource';
 export { FirebaseAccountRepository, PosgresqlProfileRepository } from './libs/accounts/datasource';
 export { PostgresqlCompanyRepository } from './libs/companies/datasource';

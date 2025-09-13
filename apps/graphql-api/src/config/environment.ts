@@ -10,6 +10,7 @@ assert(process.env['MONGODB_URI'], 'MONGODB_URI not provided');
 assert(process.env['CLOUDINARY_CLOUD_NAME'], 'CLOUDINARY_CLOUD_NAME not provided');
 assert(process.env['CLOUDINARY_API_KEY'], 'CLOUDINARY_API_KEY not provided');
 assert(process.env['CLOUDINARY_API_SECRET'], 'CLOUDINARY_API_SECRET not provided');
+assert(process.env['OPENAI_API_KEY'], 'OPENAI_API_KEY not provided');
 
 export const IS_LOCAL = process.env['INFRA_ENV'] === 'local';
 export const RUNNING_ENV = process.env['RUNNING_ENV'] as 'development' | 'production';
@@ -21,3 +22,4 @@ export const MONGODB_URI = process.env['MONGODB_URI'];
 export const CLOUDINARY_CLOUD_NAME = process.env['CLOUDINARY_CLOUD_NAME'];
 export const CLOUDINARY_API_KEY = process.env['CLOUDINARY_API_KEY'];
 export const CLOUDINARY_API_SECRET = process.env['CLOUDINARY_API_SECRET'];
+export const OPENAI_API_KEY = process.env['OPENAI_API_KEY'];
