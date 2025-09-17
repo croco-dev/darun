@@ -119,7 +119,7 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
 
 위 정보를 바탕으로 서비스 리뷰를 작성해주세요.`;
 
-    const response = await this.llmClient.completion('openai/gpt-5-mini', [
+    const response = await this.llmClient.completion('openrouter/sonoma-sky-alpha', [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
     ]);
