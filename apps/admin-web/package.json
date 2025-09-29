@@ -27,7 +27,7 @@
     "@mantine/dates": "8.2.8",
     "@mantine/dropzone": "8.2.8",
     "@mantine/form": "8.2.8",
-    "@mantine/hooks": "8.2.8",
+    "@mantine/hooks": "8.3.2",
     "@mantine/notifications": "8.2.8",
     "dayjs": "1.11.13",
     "next": "14.2.14",
