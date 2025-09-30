@@ -17,7 +17,7 @@ jobs:
     environment:
       name: prod-graphql
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
       - name: Use Node.js 22.x
         uses: actions/setup-node@v5
