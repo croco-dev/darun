@@ -1,1 +1,1 @@
-export type LlmModel = 'openrouter/sonoma-sky-alpha';
+export type LlmModel = 'x-ai/grok-4-fast:free';
