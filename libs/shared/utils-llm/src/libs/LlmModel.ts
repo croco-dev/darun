@@ -1,1 +1,1 @@
-export type LlmModel = 'x-ai/grok-4-fast:free';
+export type LlmModel = 'x-ai/grok-4-fast';
