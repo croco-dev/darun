@@ -2,11 +2,6 @@ name: Production Deploy
 
 on:
   workflow_dispatch:
-    inputs:
-      commitHash:
-        description: '배포할 커밋해시'
-        required: true
-        type: string
   repository_dispatch:
     types: [TRIGGER_DEPLOY]
 
