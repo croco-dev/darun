@@ -8,6 +8,7 @@ useDotenv: true
 plugins:
   - serverless-esbuild
   - serverless-offline
+  - serverless-prune-plugin
 
 build:
   esbuild: false
@@ -30,6 +31,9 @@ custom:
   serverless-offline:
     httpPort: 4000
     reloadHandler: true
+  prune:
+    automatic: true
+    number: 1
 
 provider:
   name: aws

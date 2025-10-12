@@ -217,6 +217,9 @@ importers:
       serverless-offline:
         specifier: 14.4.0
         version: 14.4.0(serverless@4.18.0)
+      serverless-prune-plugin:
+        specifier: 2.1.0
+        version: 2.1.0(serverless@4.18.0)
 
   apps/service-web:
     dependencies:
@@ -4918,6 +4921,9 @@ packages:
   bl@4.1.0:
     resolution: {integrity: sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==}
 
+  bluebird@3.7.2:
+    resolution: {integrity: sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==}
+
   body-parser@1.20.3:
     resolution: {integrity: sha512-7rAxByjUMqQ3/bHJy7D6OGXvx/MMc4IqBn/X0fcM1QUcAItpZrBEYhWGem+tzXH90c+G01ypMcYJBO9Y30203g==}
     engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
@@ -7977,6 +7983,11 @@ packages:
     engines: {node: '>=18.12.0'}
     peerDependencies:
       serverless: ^4.0.0
+
+  serverless-prune-plugin@2.1.0:
+    resolution: {integrity: sha512-++22inpEFECgfw+DR2cRn8huxzcsQVgSii4Rjp5q6cPxKo2eKmFc0dfMaJ81DwQoHEnVhfVipIlGdodkauOm1g==}
+    peerDependencies:
+      serverless: 1.x || 2.x || 3.x || 4.x
 
   serverless@4.18.0:
     resolution: {integrity: sha512-44rFxA+hzdvOzjynVsJ27b5gDFN5m39PjRtX4mr//iEIZBUaNwS4WNce49+fsBYJF14CXd2hdN/e80Fu3e3nEQ==}
@@ -14365,6 +14376,8 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.2
 
+  bluebird@3.7.2: {}
+
   body-parser@1.20.3:
     dependencies:
       bytes: 3.1.2
@@ -17803,6 +17816,11 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  serverless-prune-plugin@2.1.0(serverless@4.18.0):
+    dependencies:
+      bluebird: 3.7.2
+      serverless: 4.18.0
 
   serverless@4.18.0:
     dependencies:
