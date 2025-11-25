@@ -23,6 +23,7 @@ export type { ProductDescriptionGenerator } from './services/ProductDescriptionG
 export { ProductDescriptionGeneratorToken } from './services/ProductDescriptionGenerator';
 
 export { GetRecentProducts } from './usecases/GetRecentProducts';
+export { GetRankedProducts } from './usecases/GetRankedProducts';
 export { GetProduct } from './usecases/GetProduct';
 export { GetProductLinks } from './usecases/GetProductLinks';
 export { GetProductsCount } from './usecases/GetProductsCount';

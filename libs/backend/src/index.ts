@@ -1,5 +1,6 @@
 export {
   GetRecentProducts,
+  GetRankedProducts,
   GetProduct,
   GetProductLinks,
   GetProductsCount,

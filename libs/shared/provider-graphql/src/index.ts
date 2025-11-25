@@ -399,6 +399,7 @@ export type Query = {
   readonly product?: Maybe<Product>;
   readonly productBySlug?: Maybe<Product>;
   readonly productsCount: Scalars['Int']['output'];
+  readonly rankedProducts: ReadonlyArray<Product>;
   readonly recentProducts: ReadonlyArray<Product>;
   readonly searchCompanies: ReadonlyArray<Company>;
   readonly searchProducts: ReadonlyArray<Product>;
@@ -443,6 +444,11 @@ export type QueryproductArgs = {
 
 export type QueryproductBySlugArgs = {
   slug: Scalars['String']['input'];
+};
+
+
+export type QueryrankedProductsArgs = {
+  first: Scalars['Int']['input'];
 };
 
 

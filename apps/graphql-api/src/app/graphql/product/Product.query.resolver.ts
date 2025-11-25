@@ -12,6 +12,7 @@ import {
   GetAllProducts,
   GetProduct,
   GetVoteCount,
+  GetRankedProducts,
 } from '@darun/backend';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Args, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
@@ -32,6 +33,7 @@ import { Tag } from './graphs/Tag';
 export class ProductQueryResolver {
   constructor(
     private readonly getRecentProductsUseCase: GetRecentProducts,
+    private readonly getRankedProductsUseCase: GetRankedProducts,
     private readonly getAllProductsUseCase: GetAllProducts,
     private readonly getProductUseCase: GetProduct,
     private readonly getPublishedProductUseCase: GetPublishedProduct,
@@ -49,6 +51,11 @@ export class ProductQueryResolver {
   @Query(() => [Product])
   public recentProducts(@Arg('first', () => Int) first: number) {
     return this.getRecentProductsUseCase.execute({ limit: first });
+  }
+
+  @Query(() => [Product])
+  public rankedProducts(@Arg('first', () => Int) first: number) {
+    return this.getRankedProductsUseCase.execute({ limit: first });
   }
 
   @Query(() => Product, { nullable: true })

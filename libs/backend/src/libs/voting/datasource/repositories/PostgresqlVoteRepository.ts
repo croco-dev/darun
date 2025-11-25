@@ -1,5 +1,5 @@
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { Vote, VoteRepository, VoteRepositoryToken } from '../../domain';
 import { votes } from '../entities/VoteSchema';
@@ -57,5 +57,14 @@ export class PostgresqlVoteRepository implements VoteRepository {
 
       return new Vote(updated[0]);
     });
+  }
+
+  findTopNByVoteCount(n: number): Promise<Vote[]> {
+    return this.db
+      .select()
+      .from(votes)
+      .orderBy(desc(votes.count))
+      .limit(n)
+      .then(rows => rows.map(row => new Vote(row)));
   }
 }

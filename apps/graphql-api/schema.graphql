@@ -260,6 +260,7 @@ type Query {
   product(id: ID!): Product
   productBySlug(slug: String!): Product
   productsCount: Int!
+  rankedProducts(first: Int!): [Product!]!
   recentProducts(first: Int!): [Product!]!
   searchCompanies(query: String!): [Company!]!
   searchProducts(query: String!): [Product!]!
