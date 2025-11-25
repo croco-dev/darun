@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 import { pgTable, varchar, timestamp, bigint, index } from 'drizzle-orm/pg-core';
 import { ulid } from 'ulid';
 
@@ -13,6 +13,6 @@ export const votes = pgTable(
       .default(sql`CURRENT_TIMESTAMP`),
   },
   table => ({
-    countIdx: index('votes_count_idx').on(table.count),
+    countIdx: index('votes_count_idx').on(desc(table.count)),
   })
 );

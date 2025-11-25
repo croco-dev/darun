@@ -12,11 +12,8 @@ export class GetRankedProducts {
   async execute({ limit }: { limit: number }) {
     const votes = await this.voteRepository.findTopNByVoteCount(limit);
 
-    const products = await Promise.all(
-      votes.map(vote => this.productRepository.findPublishedOneById(vote.targetId))
-    );
+    const products = await Promise.all(votes.map(vote => this.productRepository.findPublishedOneById(vote.targetId)));
 
     return products.filter(product => product !== null);
   }
 }
-
