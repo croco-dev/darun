@@ -3,6 +3,7 @@ export { ProductPhotoSection } from './ProductPhotoSection';
 export { ProductAlternativeSection } from './ProductAlternativeSection';
 export { ProductDescriptionSection } from './ProductDescriptionSection';
 export { RecentProductSection } from './RecentProductSection';
+export { RankedProductSection } from './RankedProductSection';
 export { ProductTocSection } from './ProductTocSection';
 export { ProductSummary } from './ProductSummary';
 export { ProductSummaryLink } from './ProductSummaryLink';

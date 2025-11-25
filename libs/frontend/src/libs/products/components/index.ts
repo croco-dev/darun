@@ -4,6 +4,7 @@ export { ProductDescription } from './ProductDescription';
 export { ProductTableOfContent } from './ProductTableOfContent';
 export { ProductUserAction } from './ProductUserAction';
 export { RecentProductList } from './RecentProductList';
+export { RankedProductList } from './RankedProductList';
 export { AlternativeProductList } from './AlternativeProductList';
 export { ProductLinks } from './ProductLinks';
 export { ProductFeatureList } from './ProductFeatureList';

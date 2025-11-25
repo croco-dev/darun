@@ -19,7 +19,7 @@ export const Header = bind(useHeader, () => (
           </HStack>
           <HStack alignItems="center" gap={12} display={['none', 'flex']}>
             <Link
-              href={'#'}
+              href={'/ranking'}
               as={RouterLink}
               fontSize={15}
               fontWeight={'fontWeights.medium'}
