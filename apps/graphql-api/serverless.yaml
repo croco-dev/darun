@@ -1,5 +1,5 @@
-org: croco
-app: darun
+# org: croco
+# app: darun
 service: graphql-api
 frameworkVersion: '4'
 

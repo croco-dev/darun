@@ -19,7 +19,7 @@ type FormValues = {
   name?: string;
   type?: string;
   address?: string;
-  startAt?: Date;
+  startAt?: string;
   startAtIsDisabled: boolean;
 };
 
@@ -29,7 +29,7 @@ export function useNewCompanyForm() {
       name: '',
       type: '',
       address: '',
-      startAt: new Date(),
+      startAt: '',
       startAtIsDisabled: false,
     },
     mode: 'uncontrolled',
@@ -55,7 +55,7 @@ export function useNewCompanyForm() {
           name: values.name,
           type: values.type,
           address: values.address,
-          startAt: values.startAtIsDisabled ? undefined : values.startAt,
+          startAt: values.startAtIsDisabled ? undefined : values.startAt && new Date(values.startAt),
         },
       },
     });
