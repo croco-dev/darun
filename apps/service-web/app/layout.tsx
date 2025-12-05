@@ -11,16 +11,22 @@ import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.darun.io'),
   title: '다른 - 서비스 비교를 한 곳에서',
   description:
     '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 소프트웨어, 웹사이트, 어플리케이션를 검색하고 리뷰를 확인해보세요.',
   keywords: ['비교', '대안', '비슷한', '장단점', '다른 사이트', '다른 서비스', '다른 앱'],
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     siteName: '다른(darun)',
     url: 'https://www.darun.io',
     title: '다른 - 서비스 비교를 한 곳에서',
     description:
       '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 소프트웨어, 웹사이트, 어플리케이션를 검색하고 리뷰를 확인해보세요.',
+    type: 'website',
+    locale: 'ko_KR',
     images: [
       {
         url: 'https://darun-image.doda.dev/?format=png',
@@ -29,6 +35,13 @@ export const metadata: Metadata = {
         alt: '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다',
       },
     ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '다른 - 서비스 비교를 한 곳에서',
+    description:
+      '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 소프트웨어, 웹사이트, 어플리케이션를 검색하고 리뷰를 확인해보세요.',
+    images: ['https://darun-image.doda.dev/?format=png'],
   },
 };
 
