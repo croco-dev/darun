@@ -1,11 +1,11 @@
-import { ContentArea } from "@darun/ui-foundation";
-import { Layout } from "@darun/ui-layout";
-import { Box, HStack, VStack } from "@kuma-ui/core";
+import { ContentArea } from '@darun/ui-foundation';
+import { Layout } from '@darun/ui-layout';
+import { Box, HStack, VStack } from '@kuma-ui/core';
 
 const Skeleton = ({
-  width = "100%",
-  height = "20px",
-  radius = "4px",
+  width = '100%',
+  height = '20px',
+  radius = '4px',
 }: {
   width?: string | number;
   height?: string | number;
@@ -16,7 +16,7 @@ const Skeleton = ({
     height={height}
     borderRadius={radius}
     bg="#f3f4f6"
-    style={{ animation: "pulse 1.5s ease-in-out infinite" }}
+    style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
   />
 );
 

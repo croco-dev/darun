@@ -1,32 +1,19 @@
-"use client";
+'use client';
 
-import { Box, Flex, Heading, Text } from "@kuma-ui/core";
-import { ContainedButton } from "@darun/ui-foundation";
-import * as Sentry from "@sentry/nextjs";
-import { useEffect } from "react";
+import { ContainedButton } from '@darun/ui-foundation';
+import { Box, Flex, Heading, Text } from '@kuma-ui/core';
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
 
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
 
-  const isDev = process.env.NODE_ENV === "development";
+  const isDev = process.env.NODE_ENV === 'development';
 
   return (
-    <Flex
-      flexDir="column"
-      alignItems="center"
-      justifyContent="center"
-      height="100vh"
-      p={24}
-      gap={24}
-    >
+    <Flex flexDir="column" alignItems="center" justifyContent="center" height="100vh" p={24} gap={24}>
       <Heading as="h2" fontSize="24px" fontWeight="bold">
         문제가 발생했습니다
       </Heading>
