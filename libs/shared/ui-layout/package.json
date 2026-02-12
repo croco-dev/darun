@@ -16,6 +16,8 @@
     "@darun/ui-icons": "workspace:*",
     "@darun/utils-router": "workspace:*",
     "@kuma-ui/core": ">=1",
+    "next": ">=14",
+    "next-intl": ">=4",
     "react-dom": ">=18.2.0"
   },
   "devDependencies": {
