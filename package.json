@@ -21,8 +21,8 @@
     "lefthook": "1.12.3",
     "prettier": "3.3.2",
     "turbo": "2.8.7",
-    "typescript-eslint": "8.55.0",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "typescript-eslint": "8.55.0"
   },
   "pnpm": {
     "overrides": {

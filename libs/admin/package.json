@@ -26,8 +26,8 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^18",
-    "@types/react-dom": "^18"
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3"
   },
   "dependencies": {
     "@emoji-mart/data": "1.2.1",
