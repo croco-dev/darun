@@ -1,8 +1,8 @@
-import { gql } from "@apollo/client";
-import { ProductDetailPage } from "@darun/frontend";
-import { getClient } from "@darun/utils-apollo-client/server";
-import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { gql } from '@apollo/client';
+import { ProductDetailPage } from '@darun/frontend';
+import { getClient } from '@darun/utils-apollo-client/server';
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 const productQuery = gql`
   query ProductBySlugOnProductDetailPageMetadata($slug: String!) {
@@ -51,11 +51,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const productDescription = data.productBySlug.description;
   const companyName = data.productBySlug.ownedCompany?.name;
 
-  const tags = data.productBySlug.tags.map((tag) => tag.name);
+  const tags = data.productBySlug.tags.map(tag => tag.name);
 
   const pageTitle = `${name} - 다른: 서비스 비교를 한 곳에서`;
-  const description =
-    summary || "다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다";
+  const description = summary || '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다';
   const canonicalUrl = `https://www.darun.io/products/${params.slug}`;
   const ogImageUrl = createOgImageUrl({ name, summary, logoUrl });
 
@@ -77,7 +76,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `${name} 비슷한`,
       `${name} 말고`,
       ...tags,
-      ...tags.map((tag) => `${tag} 비슷한`),
+      ...tags.map(tag => `${tag} 비슷한`),
     ],
     alternates: {
       canonical: canonicalUrl,
@@ -86,8 +85,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: pageTitle,
       description,
       url: canonicalUrl,
-      siteName: "다른(darun)",
-      type: "website",
+      siteName: '다른(darun)',
+      type: 'website',
       images: [
         {
           url: ogImageUrl,
@@ -98,7 +97,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ],
     },
     twitter: {
-      card: "summary_large_image",
+      card: 'summary_large_image',
       title: pageTitle,
       description,
       images: [ogImageUrl],
@@ -106,21 +105,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-const createOgImageUrl = ({
-  name,
-  summary,
-  logoUrl,
-}: {
-  name: string;
-  summary?: string;
-  logoUrl?: string;
-}) => {
-  const url = new URL("https://darun-image.doda.dev/");
-  url.searchParams.set("format", "png");
-  url.searchParams.set("type", "service");
-  url.searchParams.set("name", name);
-  if (summary) url.searchParams.set("desc", summary);
-  if (logoUrl) url.searchParams.set("logo", logoUrl);
+const createOgImageUrl = ({ name, summary, logoUrl }: { name: string; summary?: string; logoUrl?: string }) => {
+  const url = new URL('https://darun-image.doda.dev/');
+  url.searchParams.set('format', 'png');
+  url.searchParams.set('type', 'service');
+  url.searchParams.set('name', name);
+  if (summary) url.searchParams.set('desc', summary);
+  if (logoUrl) url.searchParams.set('logo', logoUrl);
   return url.toString();
 };
 
@@ -143,40 +134,40 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
 
   const jsonLd = product
     ? {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
         name: product.name,
-        description: product.description || product.summary || "",
-        image: product.logoUrl || "",
+        description: product.description || product.summary || '',
+        image: product.logoUrl || '',
         url: `https://www.darun.io/products/${params.slug}`,
-        applicationCategory: "WebApplication",
+        applicationCategory: 'WebApplication',
         ...(product.ownedCompany && {
           author: {
-            "@type": "Organization",
+            '@type': 'Organization',
             name: product.ownedCompany.name,
           },
         }),
         aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: "4.5",
-          reviewCount: "1",
+          '@type': 'AggregateRating',
+          ratingValue: '4.5',
+          reviewCount: '1',
         },
       }
     : null;
 
   const breadcrumbList = product
     ? {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
         itemListElement: [
           {
-            "@type": "ListItem",
+            '@type': 'ListItem',
             position: 1,
-            name: "홈",
-            item: "https://www.darun.io/",
+            name: '홈',
+            item: 'https://www.darun.io/',
           },
           {
-            "@type": "ListItem",
+            '@type': 'ListItem',
             position: 2,
             name: product.name,
           },
@@ -189,11 +180,7 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
   return (
     <>
       {allJsonLd.map((ld, index) => (
-        <script
-          key={index}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
-        />
+        <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       ))}
       <ProductDetailPage params={params} />
     </>
