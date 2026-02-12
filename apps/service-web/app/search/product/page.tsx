@@ -1,5 +1,5 @@
-import { SearchProductPage } from "@darun/frontend";
-import { Metadata } from "next";
+import { SearchProductPage } from '@darun/frontend';
+import { Metadata } from 'next';
 
 type Props = {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -9,29 +9,22 @@ const QUERY_MAX_LENGTH = 50;
 const TITLE_MAX_LENGTH = 60;
 
 function sanitizeQuery(query: string): string {
-  let sanitized = query.replace(/<[^>]*>/g, "");
-  sanitized = sanitized.replace(/[<>'"&]/g, "");
+  let sanitized = query.replace(/<[^>]*>/g, '');
+  sanitized = sanitized.replace(/[<>'"&]/g, '');
   if (sanitized.length > QUERY_MAX_LENGTH) {
-    sanitized = sanitized.slice(0, QUERY_MAX_LENGTH - 3) + "...";
+    sanitized = sanitized.slice(0, QUERY_MAX_LENGTH - 3) + '...';
   }
   return sanitized.trim();
 }
 
-export async function generateMetadata({
-  searchParams,
-}: Props): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const rawQuery = searchParams.query;
-  const query =
-    typeof rawQuery === "string"
-      ? rawQuery
-      : Array.isArray(rawQuery)
-        ? rawQuery[0]
-        : undefined;
+  const query = typeof rawQuery === 'string' ? rawQuery : Array.isArray(rawQuery) ? rawQuery[0] : undefined;
 
   if (!query) {
     return {
-      title: "서비스 검색 - 다른",
-      description: "다른 팀이 손수 비교한 서비스들을 검색해보세요.",
+      title: '서비스 검색 - 다른',
+      description: '다른 팀이 손수 비교한 서비스들을 검색해보세요.',
       robots: {
         index: false,
         follow: true,
@@ -43,8 +36,8 @@ export async function generateMetadata({
 
   if (!sanitizedQuery) {
     return {
-      title: "서비스 검색 - 다른",
-      description: "다른 팀이 손수 비교한 서비스들을 검색해보세요.",
+      title: '서비스 검색 - 다른',
+      description: '다른 팀이 손수 비교한 서비스들을 검색해보세요.',
       robots: {
         index: false,
         follow: true,
@@ -58,17 +51,12 @@ export async function generateMetadata({
   return {
     title: title.slice(0, TITLE_MAX_LENGTH),
     description,
-    keywords: [
-      sanitizedQuery,
-      `${sanitizedQuery} 검색`,
-      `${sanitizedQuery} 서비스`,
-      `${sanitizedQuery} 비교`,
-    ],
+    keywords: [sanitizedQuery, `${sanitizedQuery} 검색`, `${sanitizedQuery} 서비스`, `${sanitizedQuery} 비교`],
     openGraph: {
       title,
       description,
-      siteName: "다른(darun)",
-      type: "website",
+      siteName: '다른(darun)',
+      type: 'website',
     },
   };
 }
