@@ -30,7 +30,7 @@
     "@mantine/hooks": "8.2.8",
     "@mantine/notifications": "8.2.8",
     "dayjs": "1.11.19",
-    "next": "14.2.14",
+    "next": "15.5.12",
     "next-client-cookies": "2.1.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"

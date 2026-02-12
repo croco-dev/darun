@@ -21,7 +21,7 @@
     "@mantine/form": "8.2.8",
     "@mantine/hooks": "8.2.8",
     "@mantine/notifications": "8.2.8",
-    "next": "14.2.14"
+    "next": "15.5.12"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
