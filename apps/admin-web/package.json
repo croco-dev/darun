@@ -5,7 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev --port 3001",
-    "lint": "next lint",
+    "lint": "eslint --no-warn-ignored **/*.ts*",
     "start": "next start",
     "test": "echo 1"
   },
@@ -38,10 +38,11 @@
   "devDependencies": {
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "eslint-config-next": "14.2.5",
+    "eslint-config-next": "15.5.12",
     "postcss": "8.4.47",
     "postcss-preset-mantine": "1.18.0",
     "postcss-simple-vars": "7.0.1",
-    "sass": "1.85.0"
+    "sass": "1.85.0",
+    "typescript-eslint": "8.55.0"
   }
 }

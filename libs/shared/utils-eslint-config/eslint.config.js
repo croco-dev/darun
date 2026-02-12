@@ -1,17 +1,51 @@
 import eslintConfigPrettier from "eslint-config-prettier";
 import { importX } from "eslint-plugin-import-x";
+import packageJson from "eslint-plugin-package-json";
 import prettierPlugin from "eslint-plugin-prettier";
-import reactHooks from "eslint-plugin-react-hooks";
 import unusedImports from "eslint-plugin-unused-imports";
+import jsoncParser from "jsonc-eslint-parser";
 import tseslint from "typescript-eslint";
 
-import {
-  packageJsonConfig,
-  sourceFilePatterns,
-  typescriptEslintRecommendedConfigs,
-} from "./eslint.config.js";
+const banTypesCompatRule = {
+  meta: {
+    type: "problem",
+    docs: {
+      description: "compatibility alias for removed ban-types rule",
+      recommended: false,
+    },
+    schema: [],
+  },
+  create() {
+    return {};
+  },
+};
 
-export const reactSourceConfig = {
+export const typescriptEslintPlugin = {
+  ...tseslint.plugin,
+  rules: {
+    ...tseslint.plugin.rules,
+    "ban-types": banTypesCompatRule,
+  },
+};
+
+export const typescriptEslintRecommendedConfigs =
+  tseslint.configs.recommended.map((config) => {
+    if (!config.plugins?.["@typescript-eslint"]) {
+      return config;
+    }
+
+    return {
+      ...config,
+      plugins: {
+        ...config.plugins,
+        "@typescript-eslint": typescriptEslintPlugin,
+      },
+    };
+  });
+
+export const sourceFilePatterns = ["**/*.{js,mjs,cjs,jsx,ts,tsx}"];
+
+export const baseSourceConfig = {
   files: sourceFilePatterns,
   languageOptions: {
     parser: tseslint.parser,
@@ -26,17 +60,9 @@ export const reactSourceConfig = {
   plugins: {
     prettier: prettierPlugin,
     "import-x": importX,
-    "react-hooks": reactHooks,
     "unused-imports": unusedImports,
   },
   rules: {
-    ...reactHooks.configs.recommended.rules,
-    "react-hooks/exhaustive-deps": [
-      "warn",
-      {
-        enableDangerousAutofixThisMayCauseInfiniteLoops: true,
-      },
-    ],
     "prettier/prettier": [
       "error",
       {
@@ -44,7 +70,7 @@ export const reactSourceConfig = {
         singleQuote: true,
         printWidth: 120,
         arrowParens: "avoid",
-        endOfLine: "auto",
+        endOfLine: "lf",
       },
     ],
     "import-x/extensions": ["off"],
@@ -92,19 +118,37 @@ export const reactSourceConfig = {
   },
   settings: {
     "import-x/parsers": {
-      "@typescript-eslint/parser": [".ts", ".tsx"],
+      "@typescript-eslint/parser": [".ts"],
     },
   },
 };
 
-const reactConfig = [
+export const packageJsonConfig = {
+  files: ["**/package.json"],
+  languageOptions: {
+    parser: jsoncParser,
+  },
+  plugins: {
+    "package-json": packageJson,
+  },
+  rules: {
+    "package-json/sort-collections": "error",
+  },
+};
+
+const baseConfig = [
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: "off",
+    },
+  },
   ...typescriptEslintRecommendedConfigs,
   eslintConfigPrettier,
-  reactSourceConfig,
+  baseSourceConfig,
   packageJsonConfig,
   {
     ignores: ["**/__generated__/**"],
   },
 ];
 
-export default reactConfig;
+export default baseConfig;

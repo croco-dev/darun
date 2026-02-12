@@ -1,4 +1,0 @@
-{
-  "root": true,
-  "extends": "@darun/eslint-config"
-}
