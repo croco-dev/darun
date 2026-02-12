@@ -112,4 +112,57 @@ const createOgImageUrl = ({
   return url.toString();
 };
 
-export default ProductAlternativePage;
+export default async function ProductAlternativePageWrapper({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const { data } = await getClient().query<{
+    productBySlug?: {
+      name: string;
+    };
+  }>({
+    query: productQuery,
+    variables: { slug: params.slug },
+  });
+
+  if (!data.productBySlug?.name) {
+    notFound();
+  }
+
+  const productName = data.productBySlug.name;
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "홈",
+        item: "https://www.darun.io/",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: productName,
+        item: `https://www.darun.io/products/${params.slug}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "다른 서비스",
+      },
+    ],
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <ProductAlternativePage params={params} />
+    </>
+  );
+}
