@@ -1,9 +1,14 @@
+'use client';
+
 import { ContentArea } from '@darun/ui-foundation';
 import { Box, Flex, Text, VStack } from '@kuma-ui/core';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { ProductsCount } from '../../components/ProductsCount';
 
 export const MainHeroBanner = () => {
+  const t = useTranslations('Main');
+
   return (
     <Flex
       background={'colors.dark.900'}
@@ -55,7 +60,7 @@ export const MainHeroBanner = () => {
                 margin={0}
                 as="span"
               >
-                다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다
+                {t('hero.description')}
               </Text>
               <Text
                 fontSize={['24px', '32px']}
@@ -67,11 +72,11 @@ export const MainHeroBanner = () => {
                 margin={0}
               >
                 <ProductsCount />
-                개의{' '}
+                {t('hero.title.countSuffix')}{' '}
                 <Text as={'span'} color={'colors.brown.600'}>
-                  다른
+                  {t('hero.title.highlight')}
                 </Text>{' '}
-                서비스를 발견하세요
+                {t('hero.title.ending')}
               </Text>
             </VStack>
           </VStack>

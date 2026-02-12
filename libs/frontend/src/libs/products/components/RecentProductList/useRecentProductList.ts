@@ -1,9 +1,10 @@
 import { gql } from '@apollo/client';
+import { useLocale } from 'next-intl';
 import { useRecentProductsOnRecentProductListSuspenseQuery } from './__generated__/useRecentProductList';
 
 gql`
-  query RecentProductsOnRecentProductList {
-    recentProducts(first: 24) {
+  query RecentProductsOnRecentProductList($locale: String!) {
+    recentProducts(first: 24, locale: $locale) {
       id
       name
       slug
@@ -18,7 +19,12 @@ gql`
 `;
 
 export function useRecentProductList() {
-  const { data } = useRecentProductsOnRecentProductListSuspenseQuery();
+  const locale = useLocale();
+  const { data } = useRecentProductsOnRecentProductListSuspenseQuery({
+    variables: {
+      locale,
+    },
+  });
   return {
     products: data?.recentProducts ?? [],
   };

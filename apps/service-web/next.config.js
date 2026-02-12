@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const { withKumaUI } = require('@kuma-ui/next-plugin');
+const { withSentryConfig } = require("@sentry/nextjs");
+const { withKumaUI } = require("@kuma-ui/next-plugin");
+const createNextIntlPlugin = require("next-intl/plugin");
+
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -7,24 +11,24 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        port: '',
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        port: "",
       },
       {
-        protocol: 'https',
-        hostname: 'via.placeholder.com',
-        port: '',
+        protocol: "https",
+        hostname: "via.placeholder.com",
+        port: "",
       },
     ],
   },
   experimental: {
     swcPlugins: [
       [
-        'graphql-tag-swc-plugin',
+        "graphql-tag-swc-plugin",
         {
-          importSources: ['@apollo/client'],
-          gqlTagIdentifiers: ['gql'],
+          importSources: ["@apollo/client"],
+          gqlTagIdentifiers: ["gql"],
         },
       ],
     ],
@@ -32,18 +36,16 @@ const nextConfig = {
   poweredByHeader: false,
 };
 
-module.exports = withKumaUI(nextConfig);
+module.exports = withNextIntl(withKumaUI(nextConfig));
 
 // Injected content via Sentry wizard below
-
-const { withSentryConfig } = require('@sentry/nextjs');
 
 module.exports = withSentryConfig(module.exports, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
-  org: 'croco',
-  project: 'darun-web',
+  org: "croco",
+  project: "darun-web",
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
@@ -63,7 +65,7 @@ module.exports = withSentryConfig(module.exports, {
   // This can increase your server load as well as your hosting bill.
   // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
   // side errors will fail.
-  tunnelRoute: '/monitoring',
+  tunnelRoute: "/monitoring",
 
   // Hides source maps from generated client bundles
   hideSourceMaps: true,

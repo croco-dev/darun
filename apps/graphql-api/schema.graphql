@@ -176,24 +176,50 @@ type MagazinePagination {
 }
 
 type Mutation {
-  addProductLink(input: AddProductLinkInput!, slug: String!): AddProductLinkPayload!
-  addProductScreenshot(input: AddProductScreenshotInput!, slug: String!): AddProductScreenshotPayload!
+  addProductLink(
+    input: AddProductLinkInput!
+    slug: String!
+  ): AddProductLinkPayload!
+  addProductScreenshot(
+    input: AddProductScreenshotInput!
+    slug: String!
+  ): AddProductScreenshotPayload!
   createCompany(input: CreateCompanyInput!): CreateCompanyPayload!
   createMagazine(input: CreateMagazineInput!): CreateMagazinePayload!
   createProduct(input: CreateProductInput!): CreateProductPayload!
-  createProductFeature(input: CreateProductFeatureInput!): CreateProductFeaturePayload!
+  createProductFeature(
+    input: CreateProductFeatureInput!
+  ): CreateProductFeaturePayload!
   editMagazine(input: EditMagazineInput!, slug: String!): EditMagazinePayload!
   editProduct(input: EditProductInput!, slug: String!): EditProductPayload!
-  generateProductDescription(input: GenerateProductDescriptionInput!): GenerateProductDescriptionPayload!
+  generateProductDescription(
+    input: GenerateProductDescriptionInput!
+  ): GenerateProductDescriptionPayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
   publishMagazine(input: PublishMagazineInput!): PublishMagazinePayload!
   publishProduct(input: PublishProductInput!): PublishProductPayload!
-  registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
+  registerProductCompany(
+    input: RegisterProductCompanyInput!
+    slug: String!
+  ): RegisterProductCompanyPayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
-  updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
-  updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
-  updateProductLink(id: String!, input: UpdateProductLinkInput!, slug: String!): UpdateProductLinkPayload!
-  updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
+  updateAlternativeProduct(
+    input: UpdateAlternativeProductInput!
+    slug: String!
+  ): UpdateAlternativeProductPayload!
+  updateProductFeature(
+    id: String!
+    input: UpdateProductFeatureInput!
+  ): UpdateProductFeaturePayload!
+  updateProductLink(
+    id: String!
+    input: UpdateProductLinkInput!
+    slug: String!
+  ): UpdateProductLinkPayload!
+  updateProductTags(
+    input: UpdateProductTagsInput!
+    slug: String!
+  ): UpdateProductTagsPayload!
   upvoteProduct(slug: String!): UpvoteProductPayload!
 }
 
@@ -252,21 +278,26 @@ type PublishProductPayload {
 
 type Query {
   allCompanies(page: Int!): CompanyPagination!
-  allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
+  allProducts(
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): ProductConnection!
   feature(id: ID!): Feature
   hello: String!
-  magazine(id: ID!): Magazine
-  magazineBySlug(slug: String!): Magazine
-  product(id: ID!): Product
-  productBySlug(slug: String!): Product
+  magazine(id: ID!, locale: String = "ko"): Magazine
+  magazineBySlug(slug: String!, locale: String = "ko"): Magazine
+  product(id: ID!, locale: String = "ko"): Product
+  productBySlug(slug: String!, locale: String = "ko"): Product
   productsCount: Int!
-  rankedProducts(first: Int!): [Product!]!
-  recentProducts(first: Int!): [Product!]!
+  rankedProducts(first: Int!, locale: String = "ko"): [Product!]!
+  recentProducts(first: Int!, locale: String = "ko"): [Product!]!
   searchCompanies(query: String!): [Company!]!
-  searchProducts(query: String!): [Product!]!
-  tempAllMagazines(page: Int!): MagazinePagination!
-  tempMagazineBySlug(slug: String!): Magazine
-  tempProductBySlug(slug: String!): Product
+  searchProducts(query: String!, locale: String = "ko"): [Product!]!
+  tempAllMagazines(page: Int!, locale: String = "ko"): MagazinePagination!
+  tempMagazineBySlug(slug: String!, locale: String = "ko"): Magazine
+  tempProductBySlug(slug: String!, locale: String = "ko"): Product
 }
 
 input RegisterProductCompanyInput {

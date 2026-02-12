@@ -3,12 +3,19 @@
 import { bind } from '@croco/utils-structure-react';
 import { css, Flex, HStack, Text } from '@kuma-ui/core';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import Zoom from 'react-medium-image-zoom';
 import { useProductPhotos } from './useProductPhotos';
 
 import 'react-medium-image-zoom/dist/styles.css';
 
-export const ProductPhotos = bind(useProductPhotos, ({ photos }) => {
+type ProductPhotosViewProps = {
+  photos: ReturnType<typeof useProductPhotos>['photos'];
+};
+
+export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosViewProps) => {
+  const t = useTranslations('ProductDetail');
+
   if (!photos || photos.length === 0) {
     return (
       <Flex
@@ -19,7 +26,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }) => {
         borderRadius={'10px'}
       >
         <Text fontSize={'14px'} color={'colors.dark.500'}>
-          스크린샷이 준비되지 않았어요 😢
+          {t('photo.empty')}
         </Text>
       </Flex>
     );

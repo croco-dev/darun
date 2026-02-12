@@ -39,3 +39,5 @@ export {
   GetMagazineList,
   EditMagazine,
 } from './libs/magazine/domain';
+export { TranslationService, TranslationJobService } from './libs/translation/domain';
+export type { TranslationEntityType } from './libs/translation/domain';

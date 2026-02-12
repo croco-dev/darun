@@ -1,8 +1,13 @@
+'use client';
+
 import { VStack, Text, Image, HStack } from '@kuma-ui/core';
+import { useTranslations } from 'next-intl';
 
 type MagazineInfoSectionProps = { slug: string };
 
-export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
+export const MagazineInfoSection = ({ slug: _slug }: MagazineInfoSectionProps) => {
+  const t = useTranslations('Magazine');
+
   return (
     <VStack py={['24px', '44px', '44px']} borderRadius="24px" position={'relative'} overflow={'hidden'}>
       <Image
@@ -43,7 +48,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
             letterSpacing={'-.36px'}
             color={'rgba(255, 255 , 255, 0.8)'}
           >
-            다른 매거진
+            {t('info.badge')}
           </Text>
         </HStack>
         <VStack gap={'12px'}>
@@ -54,7 +59,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
             color={'#fff'}
             lineHeight={1.4}
           >
-            넷플릭스의 가격 인상 발표, 대안 서비스는 뭐가 있을까?
+            {t('info.title')}
           </Text>
           <Text
             fontSize={['14px', '16px', '16px']}
@@ -63,7 +68,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
             color={'rgba(255, 255 , 255, 0.7)'}
             lineHeight={1.3}
           >
-            넷플릭스의 연이은 구독 가격 상승에 부담을 느끼는 소비자들이 늘어나고 있다.
+            {t('info.summary')}
           </Text>
           <Text
             fontSize={['14px', '16px', '16px']}
@@ -71,7 +76,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
             letterSpacing={'-.24px'}
             color={'rgba(255, 255 , 255, 0.8)'}
           >
-            2025.02.18 ∙ by 도다
+            {t('info.meta')}
           </Text>
         </VStack>
       </VStack>

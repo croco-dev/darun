@@ -28,4 +28,6 @@ export class Product {
 
   @Field(() => GraphQLISODateTime, { nullable: true })
   publishedAt?: Date;
+
+  locale?: string;
 }

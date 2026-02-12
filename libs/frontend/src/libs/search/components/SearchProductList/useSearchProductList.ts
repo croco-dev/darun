@@ -1,9 +1,10 @@
 import { gql } from '@apollo/client';
+import { useLocale } from 'next-intl';
 import { useSearchProductsOnSearchProductListSuspenseQuery } from './__generated__/useSearchProductList';
 
 gql`
-  query SearchProductsOnSearchProductList($query: String!) {
-    searchProducts(query: $query) {
+  query SearchProductsOnSearchProductList($query: String!, $locale: String!) {
+    searchProducts(query: $query, locale: $locale) {
       id
       slug
       name
@@ -26,6 +27,9 @@ gql`
 type SearchProductListProps = { query: string };
 
 export function useSearchProductList({ query }: SearchProductListProps) {
-  const { data } = useSearchProductsOnSearchProductListSuspenseQuery({ variables: { query } });
+  const locale = useLocale();
+  const { data } = useSearchProductsOnSearchProductListSuspenseQuery({
+    variables: { query, locale },
+  });
   return { products: data?.searchProducts ?? [] };
 }

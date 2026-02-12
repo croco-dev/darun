@@ -11,6 +11,7 @@ import { MagazineMutationResolver } from './graphql/magazine/Magazine.mutation.r
 import { MagazineQueryResolver } from './graphql/magazine/Magazine.query.resolver';
 import { ProductMutationResolver } from './graphql/product/Product.mutation.resolver';
 import { ProductQueryResolver } from './graphql/product/Product.query.resolver';
+import { TranslationMutationResolver } from './graphql/translation/Translation.mutation.resolver';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export const resolvers: NonEmptyArray<Function> = [
@@ -24,4 +25,5 @@ export const resolvers: NonEmptyArray<Function> = [
   ImageMutationResolver,
   MagazineMutationResolver,
   MagazineQueryResolver,
+  TranslationMutationResolver,
 ];

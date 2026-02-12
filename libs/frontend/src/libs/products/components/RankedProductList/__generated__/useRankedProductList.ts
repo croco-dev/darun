@@ -3,15 +3,17 @@ import * as Types from '@darun/provider-graphql';
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
-export type RankedProductsOnRankedProductListQueryVariables = Types.Exact<{ [key: string]: never; }>;
+export type RankedProductsOnRankedProductListQueryVariables = Types.Exact<{
+  locale: Types.Scalars['String']['input'];
+}>;
 
 
 export type RankedProductsOnRankedProductListQuery = { __typename?: 'Query', rankedProducts: Array<{ __typename?: 'Product', id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number, tags: Array<{ __typename?: 'Tag', id: string, name: string }> }> };
 
 
 export const RankedProductsOnRankedProductListDocument = gql`
-    query RankedProductsOnRankedProductList {
-  rankedProducts(first: 30) {
+    query RankedProductsOnRankedProductList($locale: String!) {
+  rankedProducts(first: 30, locale: $locale) {
     id
     name
     slug
@@ -38,10 +40,11 @@ export const RankedProductsOnRankedProductListDocument = gql`
  * @example
  * const { data, loading, error } = useRankedProductsOnRankedProductListQuery({
  *   variables: {
+ *      locale: // value for 'locale'
  *   },
  * });
  */
-export function useRankedProductsOnRankedProductListQuery(baseOptions?: Apollo.QueryHookOptions<RankedProductsOnRankedProductListQuery, RankedProductsOnRankedProductListQueryVariables>) {
+export function useRankedProductsOnRankedProductListQuery(baseOptions: Apollo.QueryHookOptions<RankedProductsOnRankedProductListQuery, RankedProductsOnRankedProductListQueryVariables> & ({ variables: RankedProductsOnRankedProductListQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
         return Apollo.useQuery<RankedProductsOnRankedProductListQuery, RankedProductsOnRankedProductListQueryVariables>(RankedProductsOnRankedProductListDocument, options);
       }

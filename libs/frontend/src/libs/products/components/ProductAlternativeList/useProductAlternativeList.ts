@@ -1,9 +1,10 @@
 import { gql } from '@apollo/client';
+import { useLocale } from 'next-intl';
 import { useProductWithFeaturesOnProductAlternativeListSuspenseQuery } from './__generated__/useProductAlternativeList';
 
 gql`
-  query ProductWithFeaturesOnProductAlternativeList($slug: String!) {
-    productBySlug(slug: $slug) {
+  query ProductWithFeaturesOnProductAlternativeList($slug: String!, $locale: String!) {
+    productBySlug(slug: $slug, locale: $locale) {
       id
       alternatives {
         id
@@ -32,7 +33,10 @@ type ProductAlternativeListProps = {
 };
 
 export const useProductAlternativeList = ({ slug }: ProductAlternativeListProps) => {
-  const { data } = useProductWithFeaturesOnProductAlternativeListSuspenseQuery({ variables: { slug } });
+  const locale = useLocale();
+  const { data } = useProductWithFeaturesOnProductAlternativeListSuspenseQuery({
+    variables: { slug, locale },
+  });
   return {
     products: data?.productBySlug?.alternatives,
   };

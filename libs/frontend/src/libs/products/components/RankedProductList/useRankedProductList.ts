@@ -1,9 +1,10 @@
 import { gql } from '@apollo/client';
+import { useLocale } from 'next-intl';
 import { useRankedProductsOnRankedProductListSuspenseQuery } from './__generated__/useRankedProductList';
 
 gql`
-  query RankedProductsOnRankedProductList {
-    rankedProducts(first: 30) {
+  query RankedProductsOnRankedProductList($locale: String!) {
+    rankedProducts(first: 30, locale: $locale) {
       id
       name
       slug
@@ -19,7 +20,12 @@ gql`
 `;
 
 export function useRankedProductList() {
-  const { data } = useRankedProductsOnRankedProductListSuspenseQuery();
+  const locale = useLocale();
+  const { data } = useRankedProductsOnRankedProductListSuspenseQuery({
+    variables: {
+      locale,
+    },
+  });
   return {
     products: data?.rankedProducts ?? [],
   };

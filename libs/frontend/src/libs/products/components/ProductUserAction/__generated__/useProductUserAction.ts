@@ -5,6 +5,7 @@ import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type ProductBySlugOnProductUserActionQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
+  locale: Types.Scalars['String']['input'];
 }>;
 
 
@@ -19,8 +20,8 @@ export type UpvoteProductOnProductUserActionMutation = { __typename?: 'Mutation'
 
 
 export const ProductBySlugOnProductUserActionDocument = gql`
-    query ProductBySlugOnProductUserAction($slug: String!) {
-  productBySlug(slug: $slug) {
+    query ProductBySlugOnProductUserAction($slug: String!, $locale: String!) {
+  productBySlug(slug: $slug, locale: $locale) {
     id
     voteCount
   }
@@ -40,6 +41,7 @@ export const ProductBySlugOnProductUserActionDocument = gql`
  * const { data, loading, error } = useProductBySlugOnProductUserActionQuery({
  *   variables: {
  *      slug: // value for 'slug'
+ *      locale: // value for 'locale'
  *   },
  * });
  */

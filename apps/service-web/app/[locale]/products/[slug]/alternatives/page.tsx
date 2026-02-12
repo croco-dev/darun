@@ -5,8 +5,8 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 const productQuery = gql`
-  query ProductBySlugOnProductAlternativePageMetadata($slug: String!) {
-    productBySlug(slug: $slug) {
+  query ProductBySlugOnProductAlternativePageMetadata($slug: String!, $locale: String!) {
+    productBySlug(slug: $slug, locale: $locale) {
       name
       summary
       logoUrl
@@ -24,7 +24,7 @@ const productQuery = gql`
 `;
 
 type Props = {
-  params: { slug: string };
+  params: { locale: string; slug: string };
   searchParams: { [key: string]: string | string[] | undefined };
 };
 
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }>({
     query: productQuery,
-    variables: { slug: params.slug },
+    variables: { slug: params.slug, locale: params.locale },
   });
 
   if (!data.productBySlug?.name) {
@@ -111,7 +111,7 @@ const createOgImageUrl = ({ name, summary, logoUrl }: { name: string; summary?: 
   return url.toString();
 };
 
-export default async function ProductAlternativePageWrapper({ params }: { params: { slug: string } }) {
+export default async function ProductAlternativePageWrapper({ params }: { params: { locale: string; slug: string } }) {
   const { data } = await getClient().query<{
     productBySlug?: {
       name: string;
@@ -119,7 +119,7 @@ export default async function ProductAlternativePageWrapper({ params }: { params
     };
   }>({
     query: productQuery,
-    variables: { slug: params.slug },
+    variables: { slug: params.slug, locale: params.locale },
   });
 
   if (!data.productBySlug?.name) {

@@ -5,8 +5,8 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 const productQuery = gql`
-  query ProductBySlugOnProductDetailPageMetadata($slug: String!) {
-    productBySlug(slug: $slug) {
+  query ProductBySlugOnProductDetailPageMetadata($slug: String!, $locale: String!) {
+    productBySlug(slug: $slug, locale: $locale) {
       name
       summary
       logoUrl
@@ -22,7 +22,7 @@ const productQuery = gql`
 `;
 
 type Props = {
-  params: { slug: string };
+  params: { locale: string; slug: string };
   searchParams: { [key: string]: string | string[] | undefined };
 };
 
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }>({
     query: productQuery,
-    variables: { slug: params.slug },
+    variables: { slug: params.slug, locale: params.locale },
   });
 
   if (!data.productBySlug?.name) {
@@ -48,8 +48,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = data.productBySlug.name;
   const summary = data.productBySlug.summary;
   const logoUrl = data.productBySlug.logoUrl;
-  const productDescription = data.productBySlug.description;
-  const companyName = data.productBySlug.ownedCompany?.name;
 
   const tags = data.productBySlug.tags.map(tag => tag.name);
 
@@ -127,7 +125,7 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
     };
   }>({
     query: productQuery,
-    variables: { slug: params.slug },
+    variables: { slug: params.slug, locale: params.locale },
   });
 
   const product = data.productBySlug;

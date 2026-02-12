@@ -429,31 +429,37 @@ export type QueryfeatureArgs = {
 
 export type QuerymagazineArgs = {
   id: Scalars['ID']['input'];
+  locale?: InputMaybe<Scalars['String']['input']>;
 };
 
 
 export type QuerymagazineBySlugArgs = {
+  locale?: InputMaybe<Scalars['String']['input']>;
   slug: Scalars['String']['input'];
 };
 
 
 export type QueryproductArgs = {
   id: Scalars['ID']['input'];
+  locale?: InputMaybe<Scalars['String']['input']>;
 };
 
 
 export type QueryproductBySlugArgs = {
+  locale?: InputMaybe<Scalars['String']['input']>;
   slug: Scalars['String']['input'];
 };
 
 
 export type QueryrankedProductsArgs = {
   first: Scalars['Int']['input'];
+  locale?: InputMaybe<Scalars['String']['input']>;
 };
 
 
 export type QueryrecentProductsArgs = {
   first: Scalars['Int']['input'];
+  locale?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -463,21 +469,25 @@ export type QuerysearchCompaniesArgs = {
 
 
 export type QuerysearchProductsArgs = {
+  locale?: InputMaybe<Scalars['String']['input']>;
   query: Scalars['String']['input'];
 };
 
 
 export type QuerytempAllMagazinesArgs = {
+  locale?: InputMaybe<Scalars['String']['input']>;
   page: Scalars['Int']['input'];
 };
 
 
 export type QuerytempMagazineBySlugArgs = {
+  locale?: InputMaybe<Scalars['String']['input']>;
   slug: Scalars['String']['input'];
 };
 
 
 export type QuerytempProductBySlugArgs = {
+  locale?: InputMaybe<Scalars['String']['input']>;
   slug: Scalars['String']['input'];
 };
 

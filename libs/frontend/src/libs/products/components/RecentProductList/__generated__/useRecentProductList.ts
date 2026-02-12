@@ -3,15 +3,17 @@ import * as Types from '@darun/provider-graphql';
 import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
-export type RecentProductsOnRecentProductListQueryVariables = Types.Exact<{ [key: string]: never; }>;
+export type RecentProductsOnRecentProductListQueryVariables = Types.Exact<{
+  locale: Types.Scalars['String']['input'];
+}>;
 
 
 export type RecentProductsOnRecentProductListQuery = { __typename?: 'Query', recentProducts: Array<{ __typename?: 'Product', id: string, name: string, slug: string, logoUrl: string, summary: string, tags: Array<{ __typename?: 'Tag', id: string, name: string }> }> };
 
 
 export const RecentProductsOnRecentProductListDocument = gql`
-    query RecentProductsOnRecentProductList {
-  recentProducts(first: 24) {
+    query RecentProductsOnRecentProductList($locale: String!) {
+  recentProducts(first: 24, locale: $locale) {
     id
     name
     slug
@@ -37,10 +39,11 @@ export const RecentProductsOnRecentProductListDocument = gql`
  * @example
  * const { data, loading, error } = useRecentProductsOnRecentProductListQuery({
  *   variables: {
+ *      locale: // value for 'locale'
  *   },
  * });
  */
-export function useRecentProductsOnRecentProductListQuery(baseOptions?: Apollo.QueryHookOptions<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>) {
+export function useRecentProductsOnRecentProductListQuery(baseOptions: Apollo.QueryHookOptions<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables> & ({ variables: RecentProductsOnRecentProductListQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
         return Apollo.useQuery<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>(RecentProductsOnRecentProductListDocument, options);
       }

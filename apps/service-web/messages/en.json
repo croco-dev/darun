@@ -1,0 +1,125 @@
+{
+  "Layout": {
+    "header": {
+      "ranking": "Ranking",
+      "browse": "Browse",
+      "submit": "Submit",
+      "login": "Login",
+      "searchPlaceholder": "Find the service you're currently using!"
+    },
+    "footer": {
+      "copyright": "© 2024 Croco",
+      "privacyPolicy": "Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "contact": "Contact",
+      "disclaimer": "'Darun' service provides simple information and does not hold copyright or ownership of individual content. <br />'Darun' service is not an authoritative source. Do not blindly trust the content on the site."
+    },
+    "metadata": {
+      "title": "Darun - Compare Services in One Place",
+      "description": "Find, use, and evaluate services hand-picked by the Darun team. Search and review various software, websites, and applications.",
+      "siteName": "Darun",
+      "keywords": [
+        "compare",
+        "alternative",
+        "similar",
+        "pros and cons",
+        "comparison site",
+        "comparison service",
+        "comparison app"
+      ],
+      "ogImageAlt": "Find, use, and evaluate services hand-picked by the Darun team",
+      "webSiteName": "Darun"
+    }
+  },
+  "Search": {
+    "page": {
+      "empty": {
+        "title": "Please enter a search term in the search box above.",
+        "description": "e.g.) Service name: 'Toss', 'Naver' or category: 'Finance', 'Video', etc..."
+      },
+      "resultTitle": "'{query}' search results"
+    },
+    "list": {
+      "empty": {
+        "title": "No search results found.",
+        "description": "Try using a more specific query. e.g.) 'Toss', 'Naver', etc..."
+      },
+      "feature": {
+        "title": "Features"
+      }
+    }
+  },
+  "ProductDetail": {
+    "faq": {
+      "title": "Frequently Asked Questions"
+    },
+    "feature": {
+      "title": "Features"
+    },
+    "description": {
+      "title": "Overview"
+    },
+    "photo": {
+      "title": "Screenshots",
+      "empty": "Screenshots are not available yet 😢"
+    },
+    "company": {
+      "title": "Company Information",
+      "description": "We provide information about the company operating this service. Since it may differ from actual information, please use it for reference only.",
+      "basicInfo": "Basic Information",
+      "field": {
+        "name": "Name",
+        "status": "Status",
+        "address": "Address",
+        "foundedAt": "Founded"
+      }
+    },
+    "productItem": {
+      "logoAlt": "{name} service logo"
+    }
+  },
+  "Alternative": {
+    "section": {
+      "title": "Alternative Services",
+      "description": "We show services that offer similar features.",
+      "moreButton": "Find more alternative services"
+    },
+    "more": {
+      "title": "More alternative services",
+      "description": "These are accurate alternative services hand-picked by the Darun team."
+    },
+    "list": {
+      "feature": {
+        "title": "Features"
+      }
+    }
+  },
+  "Main": {
+    "hero": {
+      "description": "Find, use, and evaluate services carefully compared by the Darun team",
+      "title": {
+        "countSuffix": "",
+        "highlight": "alternative",
+        "ending": "services to discover"
+      }
+    },
+    "recentSection": {
+      "title": "Newly Added Services",
+      "description": "You can discover services compared under strict criteria by the Darun team."
+    }
+  },
+  "Ranking": {
+    "section": {
+      "title": "Top 30 Popular Services",
+      "description": "These are the services that received the most interest."
+    }
+  },
+  "Magazine": {
+    "info": {
+      "badge": "Another Magazine",
+      "title": "Netflix announces a price increase, what are the alternatives?",
+      "summary": "More consumers are feeling burdened by Netflix's consecutive subscription price hikes.",
+      "meta": "2025.02.18 ∙ by Doda"
+    }
+  }
+}

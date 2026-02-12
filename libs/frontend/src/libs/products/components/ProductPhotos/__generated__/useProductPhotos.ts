@@ -5,6 +5,7 @@ import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type GetPhotosOnProductPhotosQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
+  locale: Types.Scalars['String']['input'];
 }>;
 
 
@@ -12,8 +13,8 @@ export type GetPhotosOnProductPhotosQuery = { __typename?: 'Query', productBySlu
 
 
 export const GetPhotosOnProductPhotosDocument = gql`
-    query GetPhotosOnProductPhotos($slug: String!) {
-  productBySlug(slug: $slug) {
+    query GetPhotosOnProductPhotos($slug: String!, $locale: String!) {
+  productBySlug(slug: $slug, locale: $locale) {
     id
     screenshots {
       imageUrl
@@ -36,6 +37,7 @@ export const GetPhotosOnProductPhotosDocument = gql`
  * const { data, loading, error } = useGetPhotosOnProductPhotosQuery({
  *   variables: {
  *      slug: // value for 'slug'
+ *      locale: // value for 'locale'
  *   },
  * });
  */

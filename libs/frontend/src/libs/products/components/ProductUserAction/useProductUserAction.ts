@@ -1,12 +1,13 @@
 import { gql } from '@apollo/client';
+import { useLocale } from 'next-intl';
 import {
   useProductBySlugOnProductUserActionQuery,
   useUpvoteProductOnProductUserActionMutation,
 } from './__generated__/useProductUserAction';
 
 gql`
-  query ProductBySlugOnProductUserAction($slug: String!) {
-    productBySlug(slug: $slug) {
+  query ProductBySlugOnProductUserAction($slug: String!, $locale: String!) {
+    productBySlug(slug: $slug, locale: $locale) {
       id
       voteCount
     }
@@ -26,9 +27,11 @@ type ProductUserActionProps = {
 };
 
 export function useProductUserAction({ slug }: ProductUserActionProps) {
+  const locale = useLocale();
   const { data } = useProductBySlugOnProductUserActionQuery({
     variables: {
       slug,
+      locale,
     },
   });
   const [upvoteProductMutation] = useUpvoteProductOnProductUserActionMutation({

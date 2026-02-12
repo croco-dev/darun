@@ -1,6 +1,9 @@
+'use client';
+
 import { Chip } from '@darun/ui-foundation';
 import { HStack, VStack, Text } from '@kuma-ui/core';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 type ProductItemProps = {
@@ -43,6 +46,8 @@ export const ProductItem = ({
   nameAs = 'h3',
   isSummaryNoWrap = false,
 }: ProductItemProps) => {
+  const t = useTranslations('ProductDetail');
+
   return (
     <HStack
       as={as}
@@ -54,7 +59,7 @@ export const ProductItem = ({
       <Image
         src={logoUrl ?? '/images/default-product-icon.svg'}
         unoptimized={!logoUrl}
-        alt={`${name} 서비스 로고`}
+        alt={t('productItem.logoAlt', { name })}
         width={logoSizes[logoSize].imageSize}
         height={logoSizes[logoSize].imageSize}
         style={{

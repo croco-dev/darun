@@ -14,3 +14,4 @@ export { PostgresqlAlternativeProductRepository } from './libs/recommendation/da
 export { CloudinaryImageRepository } from './libs/images/datasource';
 export { PostgresqlVoteRepository } from './libs/voting/datasource';
 export { PostgresqlMagazineRepository } from './libs/magazine/datasource';
+export { PostgresqlTranslationRepository } from './libs/translation/datasource';

@@ -5,8 +5,8 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 const magazineQuery = gql`
-  query MagazineBySlugOnMagazinePageMetadata($slug: String!) {
-    magazineBySlug(slug: $slug) {
+  query MagazineBySlugOnMagazinePageMetadata($slug: String!, $locale: String!) {
+    magazineBySlug(slug: $slug, locale: $locale) {
       title
       summary
       backgroundImageUrl
@@ -20,7 +20,7 @@ const magazineQuery = gql`
 `;
 
 type Props = {
-  params: { slug: string };
+  params: { locale: string; slug: string };
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -37,14 +37,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }>({
     query: magazineQuery,
-    variables: { slug: params.slug },
+    variables: { slug: params.slug, locale: params.locale },
   });
 
   if (!data.magazineBySlug?.title) {
     return notFound();
   }
 
-  const { title, summary, backgroundImageUrl, publishedAt, updatedAt, author } = data.magazineBySlug;
+  const { title, summary, backgroundImageUrl, author } = data.magazineBySlug;
   const description = summary || '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다';
 
   return {
@@ -92,7 +92,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
     };
   }>({
     query: magazineQuery,
-    variables: { slug: params.slug },
+    variables: { slug: params.slug, locale: params.locale },
   });
 
   const magazine = data.magazineBySlug;

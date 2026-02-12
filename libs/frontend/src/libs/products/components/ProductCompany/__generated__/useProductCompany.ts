@@ -5,6 +5,7 @@ import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type ProductBySlugOnProductCompanyQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
+  locale: Types.Scalars['String']['input'];
 }>;
 
 
@@ -12,8 +13,8 @@ export type ProductBySlugOnProductCompanyQuery = { __typename?: 'Query', product
 
 
 export const ProductBySlugOnProductCompanyDocument = gql`
-    query ProductBySlugOnProductCompany($slug: String!) {
-  productBySlug(slug: $slug) {
+    query ProductBySlugOnProductCompany($slug: String!, $locale: String!) {
+  productBySlug(slug: $slug, locale: $locale) {
     id
     ownedCompany {
       id
@@ -39,6 +40,7 @@ export const ProductBySlugOnProductCompanyDocument = gql`
  * const { data, loading, error } = useProductBySlugOnProductCompanyQuery({
  *   variables: {
  *      slug: // value for 'slug'
+ *      locale: // value for 'locale'
  *   },
  * });
  */

@@ -1,11 +1,16 @@
+'use client';
+
 import { ContentArea } from '@darun/ui-foundation';
 import { Layout } from '@darun/ui-layout';
 import { VStack, Text } from '@kuma-ui/core';
+import { useTranslations } from 'next-intl';
 import { SearchProductResult } from '../search/shells/SearchProductResult';
 
 type Props = { searchParams: { [key: string]: string | string[] | undefined } };
 
 export function SearchProductPage({ searchParams }: Props) {
+  const t = useTranslations('Search');
+
   if (!searchParams.query) {
     return (
       <Layout>
@@ -19,10 +24,10 @@ export function SearchProductPage({ searchParams }: Props) {
                 letterSpacing={'-.2px'}
                 textAlign={'center'}
               >
-                위 검색 창에 검색어를 입력해주세요.
+                {t('page.empty.title')}
               </Text>
               <Text fontWeight={'fontWeights.medium'} color={'colors.dark.500'} fontSize={'16px'} textAlign={'center'}>
-                ex) 서비스 이름: ‘토스’, ‘네이버’ 혹은 카테고리: ‘금융’, ‘영상’ 등...
+                {t('page.empty.description')}
               </Text>
             </VStack>
           </ContentArea>
@@ -37,7 +42,7 @@ export function SearchProductPage({ searchParams }: Props) {
         <ContentArea>
           <VStack gap="20px">
             <Text fontWeight={'fontWeights.semibold'} fontSize={'22px'} letterSpacing={'-.2px'}>
-              ‘{searchParams.query}’ 검색 결과
+              {t('page.resultTitle', { query: searchParams.query as string })}
             </Text>
             <SearchProductResult query={searchParams.query as string} />
           </VStack>

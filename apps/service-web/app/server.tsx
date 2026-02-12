@@ -6,6 +6,6 @@ import { container } from './serverContainer';
 initAuthProvider({ authService: container.authService });
 initApolloClient(() => container.serverApolloClient);
 
-export const ServerRootProvider = async ({ children }: { children: ReactNode }) => {
+export const ServerRootProvider = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };

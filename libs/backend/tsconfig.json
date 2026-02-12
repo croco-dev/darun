@@ -11,6 +11,8 @@
       "@magazine/datasource": ["src/libs/magazine/datasource/index.ts"],
       "@products/domain": ["src/libs/products/domain/index.ts"],
       "@products/datasource": ["src/libs/products/datasource/index.ts"],
+      "@translation/domain": ["src/libs/translation/domain/index.ts"],
+      "@translation/datasource": ["src/libs/translation/datasource/index.ts"],
       "@search/domain": ["src/libs/search/domain/index.ts"],
       "@search/datasource": ["src/libs/search/datasource/index.ts"]
     }

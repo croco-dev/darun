@@ -4,17 +4,24 @@ import { bind } from '@croco/utils-structure-react';
 import { Link } from '@darun/utils-router';
 import { Flex, HStack, Text, VStack } from '@kuma-ui/core';
 import { ProductFeatureGridList, ProductItem } from '@products/uis';
+import { useTranslations } from 'next-intl';
 import { useSearchProductList } from './useSearchProductList';
 
-export const SearchProductList = bind(useSearchProductList, ({ products }) => {
+type SearchProductListViewProps = {
+  products: NonNullable<ReturnType<typeof useSearchProductList>['products']>;
+};
+
+export const SearchProductList = bind(useSearchProductList, ({ products }: SearchProductListViewProps) => {
+  const t = useTranslations('Search');
+
   if (products.length === 0)
     return (
       <VStack py={'48px'} gap={'8px'}>
         <Text textAlign={'center'} color={'colors.dark.800'} fontSize={'20px'} fontWeight={'fontWeights.semibold'}>
-          검색 결과가 없습니다.
+          {t('list.empty.title')}
         </Text>
         <Text textAlign={'center'} color={'colors.dark.600'} fontSize={'14px'} fontWeight={'fontWeights.medium'}>
-          더 상세한 검색어를 이용해보세요. ex) ‘토스’, ‘네이버’ 등...
+          {t('list.empty.description')}
         </Text>
       </VStack>
     );
@@ -59,12 +66,15 @@ export const SearchProductList = bind(useSearchProductList, ({ products }) => {
                           fontSize="16px"
                           letterSpacing="-2.4%"
                         >
-                          기능
+                          {t('list.feature.title')}
                         </Text>
                         <Flex height="2px" bg="colors.dark.400" />
                       </VStack>
                       <ProductFeatureGridList
-                        features={product.features.map(item => ({ ...item, summary: item.summary ?? undefined }))}
+                        features={product.features.map(item => ({
+                          ...item,
+                          summary: item.summary ?? undefined,
+                        }))}
                       />
                     </VStack>
                   </>

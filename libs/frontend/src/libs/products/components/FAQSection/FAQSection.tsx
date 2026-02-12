@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, Flex, Text, VStack } from '@kuma-ui/core';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export interface FAQItem {
@@ -13,12 +14,14 @@ interface FAQSectionProps {
 }
 
 export function FAQSection({ items }: FAQSectionProps) {
+  const t = useTranslations('ProductDetail');
+
   if (!items || items.length === 0) return null;
 
   return (
     <VStack gap={24} py={40} width="100%">
       <Text as="h2" fontSize={24} fontWeight={700} color="colors.dark.900">
-        자주 묻는 질문
+        {t('faq.title')}
       </Text>
       <VStack gap={12} width="100%">
         {items.map((item, index) => (
