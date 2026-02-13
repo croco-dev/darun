@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    ...(process.env.ENABLE_EXPERIMENTAL_REACT_COMPILER === 'true'
+      ? {
+          reactCompiler: true,
+        }
+      : {}),
+  },
   images: {
     remotePatterns: [
       {

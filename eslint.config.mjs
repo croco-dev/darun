@@ -1,5 +1,6 @@
 import baseConfig from "./libs/shared/utils-eslint-config/eslint.config.js";
 import { reactSourceConfig } from "./libs/shared/utils-eslint-config/react.js";
+import reactCompiler from "eslint-plugin-react-compiler";
 
 const reactFilePatterns = [
   "libs/admin/**/*.{js,mjs,cjs,jsx,ts,tsx}",
@@ -14,6 +15,10 @@ const config = [
   {
     ...reactSourceConfig,
     files: reactFilePatterns,
+  },
+  {
+    files: reactFilePatterns,
+    ...reactCompiler.configs.recommended,
   },
   {
     ignores: ["libs/shared/provider-graphql/src/index.ts"],

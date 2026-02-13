@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { withKumaUI } = require('@kuma-ui/next-plugin');
 
 /** @type {import('next').NextConfig} */
@@ -19,6 +19,11 @@ const nextConfig = {
     ],
   },
   experimental: {
+    ...(process.env.ENABLE_EXPERIMENTAL_REACT_COMPILER === 'true'
+      ? {
+          reactCompiler: true,
+        }
+      : {}),
     swcPlugins: [
       [
         'graphql-tag-swc-plugin',
