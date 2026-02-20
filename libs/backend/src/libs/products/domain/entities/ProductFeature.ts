@@ -28,15 +28,7 @@ export class ProductFeature {
     }
   }
 
-  public update({
-    name,
-    summary,
-    emoji,
-  }: {
-    name?: string;
-    summary?: string | null;
-    emoji?: string;
-  }) {
+  public update({ name, summary, emoji }: { name?: string; summary?: string | null; emoji?: string }) {
     if (name !== undefined) {
       this.name = name;
     }

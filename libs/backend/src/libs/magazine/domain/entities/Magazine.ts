@@ -33,7 +33,7 @@ export class Magazine {
     updatedAt?: Date;
     authorId: string;
   }) {
-    this.slug = slug ?? title.toLowerCase().replace(/ /g, "-");
+    this.slug = slug ?? title.toLowerCase().replace(/ /g, '-');
     this.title = title;
     this.summary = summary;
     this.content = content;
