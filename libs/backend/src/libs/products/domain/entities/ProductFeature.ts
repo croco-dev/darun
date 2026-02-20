@@ -29,13 +29,13 @@ export class ProductFeature {
   }
 
   public update({ name, summary, emoji }: { name?: string; summary?: string | null; emoji?: string }) {
-    if (name) {
+    if (name !== undefined) {
       this.name = name;
     }
-    if (summary) {
-      this.summary = summary;
+    if (summary !== undefined) {
+      this.summary = summary ?? undefined;
     }
-    if (emoji) {
+    if (emoji !== undefined) {
       this.emoji = emoji;
     }
   }

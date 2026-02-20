@@ -24,11 +24,12 @@ const productQuery = gql`
 `;
 
 type Props = {
-  params: { locale: string; slug: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ locale: string; slug: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const resolvedParams = await params;
+
   const { data } = await getClient().query<{
     productBySlug?: {
       name: string;
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }>({
     query: productQuery,
-    variables: { slug: params.slug, locale: params.locale },
+    variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
   });
 
   if (!data.productBySlug?.name) {
@@ -51,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const description = `${name}의 다른 서비스를 찾아보세요. 다른(darun)에서는 ${name}과 비슷한 다양한 서비스들을 비교하고, 사용자들이 평가한 서비스들을 찾아볼 수 있습니다.`;
   const pageTitle = `${name}의 다른 서비스 - 다른: 서비스 비교를 한 곳에서`;
-  const canonicalUrl = `https://www.darun.io/products/${params.slug}/alternatives`;
+  const canonicalUrl = `https://www.darun.io/products/${resolvedParams.slug}/alternatives`;
 
   const ogImageUrl = createOgImageUrl({ name, summary, logoUrl });
 
@@ -111,7 +112,9 @@ const createOgImageUrl = ({ name, summary, logoUrl }: { name: string; summary?: 
   return url.toString();
 };
 
-export default async function ProductAlternativePageWrapper({ params }: { params: { locale: string; slug: string } }) {
+export default async function ProductAlternativePageWrapper({ params }: Props) {
+  const resolvedParams = await params;
+
   const { data } = await getClient().query<{
     productBySlug?: {
       name: string;
@@ -119,7 +122,7 @@ export default async function ProductAlternativePageWrapper({ params }: { params
     };
   }>({
     query: productQuery,
-    variables: { slug: params.slug, locale: params.locale },
+    variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
   });
 
   if (!data.productBySlug?.name) {
@@ -171,7 +174,7 @@ export default async function ProductAlternativePageWrapper({ params }: { params
         '@type': 'ListItem',
         position: 2,
         name: productName,
-        item: `https://www.darun.io/products/${params.slug}`,
+        item: `https://www.darun.io/products/${resolvedParams.slug}`,
       },
       {
         '@type': 'ListItem',
@@ -198,7 +201,7 @@ export default async function ProductAlternativePageWrapper({ params }: { params
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <ProductAlternativePage params={params} faqItems={faqItems} />
+      <ProductAlternativePage params={resolvedParams} faqItems={faqItems} />
     </>
   );
 }

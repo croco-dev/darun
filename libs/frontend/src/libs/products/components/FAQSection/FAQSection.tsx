@@ -53,7 +53,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         bg="transparent"
         border="none"
         cursor="pointer"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen(prev => !prev)}
         textAlign="left"
         _hover={{ bg: 'colors.dark.50' }}
         transition="background 0.2s"
@@ -69,6 +69,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
           }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <title>{isOpen ? 'Collapse answer' : 'Expand answer'}</title>
             <path
               d="M6 9L12 15L18 9"
               stroke="currentColor"

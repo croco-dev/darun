@@ -19,7 +19,7 @@ export function useProductTableOfContent() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const headingsElements = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+      const headingsElements = Array.from(document.querySelectorAll('#detail-content .darun-heading'));
       const activeHeading = headingsElements.find(element => {
         const rect = element.getBoundingClientRect();
         return rect.top >= 0 && rect.bottom <= window.innerHeight;
@@ -27,10 +27,14 @@ export function useProductTableOfContent() {
 
       if (activeHeading) {
         setActiveHeadingId(activeHeading.id);
+      } else {
+        setActiveHeadingId(null);
       }
     };
 
     window.addEventListener('scroll', handleScroll);
+    handleScroll();
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };

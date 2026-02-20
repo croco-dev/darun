@@ -28,15 +28,6 @@ const nextConfig = {
           reactCompiler: true,
         }
       : {}),
-    swcPlugins: [
-      [
-        'graphql-tag-swc-plugin',
-        {
-          importSources: ['@apollo/client'],
-          gqlTagIdentifiers: ['gql'],
-        },
-      ],
-    ],
   },
   poweredByHeader: false,
 };

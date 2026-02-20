@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@darun/utils-router';
-import { Group, Code, Flex, Text, Anchor } from '@mantine/core';
+import { Group, Code, Flex, Text } from '@mantine/core';
 import { IconArchive, IconBuildingCommunity, IconNews } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 import { LogoutButton } from '../../accounts/components/LogoutButton';
@@ -32,15 +32,14 @@ export function Navbar() {
     <nav className={classes.navbar}>
       <div className={classes.navbarMain}>
         <Group className={classes.header} justify="space-between">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <Anchor href={'/'} component={Link as any}>
+          <Link href={'/'}>
             <Flex align={'center'} gap={8} px={'4px'}>
               <Logo size={32} />
               <Text span fz="lg" fw="bold" c={'dark.7'} style={{ textDecoration: 'none' }}>
                 다른 관리자
               </Text>
             </Flex>
-          </Anchor>
+          </Link>
           <Code fw={700}>{process.env['NODE_ENV'] === 'development' ? 'dev' : 'prod'}</Code>
         </Group>
         {links}

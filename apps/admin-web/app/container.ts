@@ -2,11 +2,7 @@ import { ApolloLink } from '@apollo/client';
 import { BatchHttpLink } from '@apollo/client/link/batch-http';
 import { onError } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
-import {
-  NextSSRInMemoryCache,
-  NextSSRApolloClient,
-  SSRMultipartLink,
-} from '@apollo/experimental-nextjs-app-support/ssr';
+import { ApolloClient, InMemoryCache, SSRMultipartLink } from '@apollo/experimental-nextjs-app-support';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 class Container {
   private static instance: Container;
@@ -48,8 +44,8 @@ class Container {
       }
     });
 
-    return new NextSSRApolloClient({
-      cache: new NextSSRInMemoryCache(),
+    return new ApolloClient({
+      cache: new InMemoryCache(),
       link: ApolloLink.from([
         ...(typeof window === 'undefined'
           ? [

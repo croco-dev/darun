@@ -67,27 +67,27 @@ export class Magazine {
     backgroundImageUrl?: string;
     logoImageUrl?: string;
   }) {
-    if (slug) {
+    if (slug !== undefined) {
       this.slug = slug;
     }
 
-    if (title) {
+    if (title !== undefined) {
       this.title = title;
     }
 
-    if (summary) {
+    if (summary !== undefined) {
       this.summary = summary;
     }
 
-    if (content) {
+    if (content !== undefined) {
       this.content = content;
     }
 
-    if (backgroundImageUrl) {
+    if (backgroundImageUrl !== undefined) {
       this.backgroundImageUrl = backgroundImageUrl;
     }
 
-    if (logoImageUrl) {
+    if (logoImageUrl !== undefined) {
       this.logoImageUrl = logoImageUrl;
     }
 

@@ -20,10 +20,12 @@ const magazineQuery = gql`
 `;
 
 type Props = {
-  params: { locale: string; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const resolvedParams = await params;
+
   const { data } = await getClient().query<{
     magazineBySlug?: {
       title: string;
@@ -37,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }>({
     query: magazineQuery,
-    variables: { slug: params.slug, locale: params.locale },
+    variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
   });
 
   if (!data.magazineBySlug?.title) {
@@ -55,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${title} - 다른`,
       description,
       siteName: '다른(darun)',
-      url: `https://www.darun.io/magazines/${params.slug}`,
+      url: `https://www.darun.io/magazines/${resolvedParams.slug}`,
       type: 'article',
       images: backgroundImageUrl
         ? [
@@ -79,6 +81,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 async function MagazineContentPageWithJsonLd({ params }: Props) {
+  const resolvedParams = await params;
+
   const { data } = await getClient().query<{
     magazineBySlug?: {
       title: string;
@@ -92,7 +96,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
     };
   }>({
     query: magazineQuery,
-    variables: { slug: params.slug, locale: params.locale },
+    variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
   });
 
   const magazine = data.magazineBySlug;
@@ -155,7 +159,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
       {allJsonLd.map((ld, index) => (
         <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       ))}
-      <MagazineContentPage params={params} />
+      <MagazineContentPage params={resolvedParams} />
     </>
   );
 }

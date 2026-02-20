@@ -8,10 +8,10 @@ import { companies } from '../entities/CompanySchema';
 
 @Service(CompanyRepositoryToken)
 export class PostgresqlCompanyRepository implements CompanyRepository {
-  private companyIdLoader: DataLoader<string, Company>;
+  private companyIdLoader: DataLoader<string, Company | null>;
 
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
-    this.companyIdLoader = new DataLoader(
+    this.companyIdLoader = new DataLoader<string, Company | null>(
       async (companyIds: readonly string[]) => {
         const docs = await this.db
           .select()
@@ -19,7 +19,10 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
           .where(inArray(companies.id, [...companyIds]));
 
         const groupByDocs = keyBy(docs, doc => doc.id);
-        return companyIds.map(companyId => this.mapper(groupByDocs[companyId]) || []);
+        return companyIds.map(companyId => {
+          const companySchema = groupByDocs[companyId];
+          return companySchema ? this.mapper(companySchema) : null;
+        });
       },
       {
         cache: false,

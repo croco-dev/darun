@@ -43,16 +43,16 @@ export class ProductLink {
     displayLink?: string;
     iconUrl?: string;
   }) {
-    if (title) {
+    if (title !== undefined) {
       this.title = title;
     }
-    if (link) {
+    if (link !== undefined) {
       this.link = link;
     }
-    if (displayLink) {
+    if (displayLink !== undefined) {
       this.displayLink = displayLink;
     }
-    if (iconUrl) {
+    if (iconUrl !== undefined) {
       this.iconUrl = iconUrl;
     }
   }

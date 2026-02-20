@@ -3,8 +3,7 @@
 import { ApolloLink } from '@apollo/client';
 import { NormalizedCacheObject } from '@apollo/client/cache/inmemory/types';
 import { setContext } from '@apollo/client/link/context';
-import { ApolloClient } from '@apollo/experimental-nextjs-app-support';
-import { ApolloNextAppProvider } from '@apollo/experimental-nextjs-app-support/ssr';
+import { ApolloClient, ApolloNextAppProvider } from '@apollo/experimental-nextjs-app-support';
 import { Cookies } from 'next-client-cookies';
 import { ReactNode } from 'react';
 

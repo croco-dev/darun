@@ -63,9 +63,11 @@ export class FirebaseAuthService implements AuthService {
       return null;
     }
 
-    const { token, decodedToken } =
-      (await this.authMethods.verifyAndRefreshExpiredIdToken(idToken ?? '', refreshToken)) ??
+    const tokens =
+      (idToken ? await this.authMethods.verifyAndRefreshExpiredIdToken(idToken, refreshToken) : null) ??
       (await this.authMethods.handleTokenRefresh(refreshToken, this.apiKey));
+
+    const { token, decodedToken } = tokens;
 
     this.authStorage?.set({
       idToken: token,
@@ -87,7 +89,11 @@ export class FirebaseAuthService implements AuthService {
 
       const idToken = await user.getIdTokenResult(false);
       const roles = (idToken.claims.roles ?? []) as string[];
-      handler({ id: user.uid, email: user.email ?? '', isAdmin: roles.includes('admin') ?? false });
+      handler({
+        id: user.uid,
+        email: user.email ?? '',
+        isAdmin: roles.includes('admin') ?? false,
+      });
 
       this.authStorage?.set({
         idToken: idToken.token,

@@ -27,7 +27,10 @@ export class MagazineMutationResolver {
     @Ctx() context: GraphQLContext
   ): Promise<CreateMagazinePayload> {
     const userId = await context.getUserIdOrThrow();
-    const magazine = await this.createMagazineUseCase.execute({ ...input, authorId: userId });
+    const magazine = await this.createMagazineUseCase.execute({
+      ...input,
+      authorId: userId,
+    });
 
     return {
       magazine,
@@ -37,7 +40,9 @@ export class MagazineMutationResolver {
   @Authorized([AuthRole.Admin])
   @Mutation(() => PublishMagazinePayload)
   async publishMagazine(@Arg('input') input: PublishMagazineInput): Promise<PublishMagazinePayload> {
-    const magazine = await this.getMagazineUseCase.execute({ slug: input.slug });
+    const magazine = await this.getMagazineUseCase.execute({
+      slug: input.slug,
+    });
 
     if (!magazine) {
       throw new Error('발행할 매거진이 존재하지 않습니다.');
@@ -52,6 +57,7 @@ export class MagazineMutationResolver {
     };
   }
 
+  @Authorized([AuthRole.Admin])
   @Mutation(() => EditMagazinePayload)
   async editMagazine(@Arg('slug') slug: string, @Arg('input') input: EditMagazineInput): Promise<EditMagazinePayload> {
     const magazine = await this.getMagazineUseCase.execute({ slug });
