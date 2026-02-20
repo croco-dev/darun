@@ -1,16 +1,7 @@
-import {
-  AuthService,
-  AuthStorage,
-  AuthUser,
-} from "@darun/utils-auth-service-core";
-import { getApps, initializeApp } from "firebase/app";
-import {
-  GoogleAuthProvider,
-  getAuth,
-  onIdTokenChanged,
-  signInWithPopup,
-} from "firebase/auth";
-import { getFirebaseAuth } from "next-firebase-auth-edge";
+import { AuthService, AuthStorage, AuthUser } from '@darun/utils-auth-service-core';
+import { getApps, initializeApp } from 'firebase/app';
+import { GoogleAuthProvider, getAuth, onIdTokenChanged, signInWithPopup } from 'firebase/auth';
+import { getFirebaseAuth } from 'next-firebase-auth-edge';
 
 type FirebaseAuthConfig = {
   projectId: string;
@@ -25,24 +16,18 @@ export class FirebaseAuthService implements AuthService {
   private authStorage?: AuthStorage;
   private apiKey: string;
 
-  constructor({
-    projectId,
-    privateKey,
-    clientEmail,
-    authDomain,
-    apiKey,
-  }: FirebaseAuthConfig) {
+  constructor({ projectId, privateKey, clientEmail, authDomain, apiKey }: FirebaseAuthConfig) {
     this.authMethods = getFirebaseAuth(
       {
         projectId,
         clientEmail,
         privateKey,
       },
-      apiKey,
+      apiKey
     );
     this.apiKey = apiKey;
 
-    if (typeof window !== "undefined" && getApps().length === 0) {
+    if (typeof window !== 'undefined' && getApps().length === 0) {
       initializeApp({
         apiKey,
         authDomain,
@@ -56,7 +41,7 @@ export class FirebaseAuthService implements AuthService {
   }
 
   getRedirectUrl(): string | undefined {
-    return this.authStorage?.get("redirectUrl") ?? undefined;
+    return this.authStorage?.get('redirectUrl') ?? undefined;
   }
   clearRedirectUrl() {
     this.authStorage?.set({ redirectUrl: undefined });
@@ -72,19 +57,14 @@ export class FirebaseAuthService implements AuthService {
   }
 
   public async getUser() {
-    const idToken = this.authStorage?.get("idToken");
-    const refreshToken = this.authStorage?.get("refreshToken");
+    const idToken = this.authStorage?.get('idToken');
+    const refreshToken = this.authStorage?.get('refreshToken');
     if (!refreshToken) {
       return null;
     }
 
     const tokens =
-      (idToken
-        ? await this.authMethods.verifyAndRefreshExpiredIdToken(
-            idToken,
-            refreshToken,
-          )
-        : null) ??
+      (idToken ? await this.authMethods.verifyAndRefreshExpiredIdToken(idToken, refreshToken) : null) ??
       (await this.authMethods.handleTokenRefresh(refreshToken, this.apiKey));
 
     const { token, decodedToken } = tokens;
@@ -95,13 +75,13 @@ export class FirebaseAuthService implements AuthService {
 
     return {
       id: decodedToken.uid,
-      email: decodedToken.email ?? "",
-      isAdmin: decodedToken.roles?.includes("admin") ?? false,
+      email: decodedToken.email ?? '',
+      isAdmin: decodedToken.roles?.includes('admin') ?? false,
     };
   }
 
   public onIdTokenChanged(handler: (user?: AuthUser) => void) {
-    const unsubscribe = onIdTokenChanged(getAuth(), async (user) => {
+    const unsubscribe = onIdTokenChanged(getAuth(), async user => {
       if (!user) {
         handler(undefined);
         return;
@@ -111,8 +91,8 @@ export class FirebaseAuthService implements AuthService {
       const roles = (idToken.claims.roles ?? []) as string[];
       handler({
         id: user.uid,
-        email: user.email ?? "",
-        isAdmin: roles.includes("admin") ?? false,
+        email: user.email ?? '',
+        isAdmin: roles.includes('admin') ?? false,
       });
 
       this.authStorage?.set({
@@ -126,8 +106,8 @@ export class FirebaseAuthService implements AuthService {
 
   public signInWithGoogle() {
     const provider = new GoogleAuthProvider();
-    provider.addScope("profile");
-    provider.addScope("email");
+    provider.addScope('profile');
+    provider.addScope('email');
 
     return signInWithPopup(getAuth(), provider);
   }

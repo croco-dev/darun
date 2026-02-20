@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 export function useProductTocSection() {
   const [isFixed, setIsFixed] = useState<boolean>(false);
@@ -8,11 +8,11 @@ export function useProductTocSection() {
       setIsFixed(window.scrollY > 240);
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
     handleScroll();
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
