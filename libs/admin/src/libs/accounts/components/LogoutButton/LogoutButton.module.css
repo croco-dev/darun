@@ -1,6 +1,13 @@
 .link {
   display: flex;
   align-items: center;
+  width: 100%;
+  border: none;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
   text-decoration: none;
   font-size: var(--mantine-font-size-sm);
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
@@ -8,8 +15,11 @@
   border-radius: var(--mantine-radius-sm);
   font-weight: 500;
 
-  @mixin hover {
-    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  &:hover {
+    background-color: light-dark(
+      var(--mantine-color-gray-0),
+      var(--mantine-color-dark-6)
+    );
     color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
 
     .linkIcon {
