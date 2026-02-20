@@ -76,7 +76,10 @@ export class ProductMutationResolver {
     }
 
     return {
-      product: await this.editProductUseCase.execute({ ...input, id: product.id }),
+      product: await this.editProductUseCase.execute({
+        ...input,
+        id: product.id,
+      }),
     };
   }
 
@@ -109,7 +112,9 @@ export class ProductMutationResolver {
   @Authorized([AuthRole.Admin])
   @Mutation(() => IndexProductPayload)
   async indexProduct(@Arg('input') input: IndexProductInput): Promise<IndexProductPayload> {
-    const product = await this.getPublishedProductUseCase.execute({ slug: input.slug });
+    const product = await this.getPublishedProductUseCase.execute({
+      slug: input.slug,
+    });
 
     if (!product) {
       throw new Error('publish된 Product가 존재하지 않습니다.');
@@ -185,7 +190,10 @@ export class ProductMutationResolver {
       throw new Error('Product not found');
     }
 
-    await this.addProductLinkUseCase.execute({ ...input, productId: product.id });
+    await this.addProductLinkUseCase.execute({
+      ...input,
+      productId: product.id,
+    });
 
     return {
       product: await this.getProductUseCase.execute({ slug }),
@@ -217,7 +225,7 @@ export class ProductMutationResolver {
   async updateAlternativeProduct(
     @Arg('slug') slug: string,
     @Arg('input') input: UpdateAlternativeProductInput
-  ): Promise<AddProductLinkPayload> {
+  ): Promise<UpdateAlternativeProductPayload> {
     const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
@@ -258,7 +266,9 @@ export class ProductMutationResolver {
     @Arg('input') input: RegisterProductCompanyInput
   ): Promise<RegisterProductCompanyPayload> {
     const product = await this.getProductUseCase.execute({ slug });
-    const company = await this.getCompanyUseCase.execute({ id: input.companyId });
+    const company = await this.getCompanyUseCase.execute({
+      id: input.companyId,
+    });
     if (!product) {
       throw new Error('Product not found');
     }

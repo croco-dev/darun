@@ -1,4 +1,37 @@
 {
   "extends": "@darun/utils-tsconfig/tsconfig.node.json",
   "include": ["src/**/*.ts"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@companies/domain": [
+        "../../libs/backend/src/libs/companies/domain/index.ts"
+      ],
+      "@companies/datasource": [
+        "../../libs/backend/src/libs/companies/datasource/index.ts"
+      ],
+      "@magazine/domain": [
+        "../../libs/backend/src/libs/magazine/domain/index.ts"
+      ],
+      "@magazine/datasource": [
+        "../../libs/backend/src/libs/magazine/datasource/index.ts"
+      ],
+      "@products/domain": [
+        "../../libs/backend/src/libs/products/domain/index.ts"
+      ],
+      "@products/datasource": [
+        "../../libs/backend/src/libs/products/datasource/index.ts"
+      ],
+      "@translation/domain": [
+        "../../libs/backend/src/libs/translation/domain/index.ts"
+      ],
+      "@translation/datasource": [
+        "../../libs/backend/src/libs/translation/datasource/index.ts"
+      ],
+      "@search/domain": ["../../libs/backend/src/libs/search/domain/index.ts"],
+      "@search/datasource": [
+        "../../libs/backend/src/libs/search/datasource/index.ts"
+      ]
+    }
+  }
 }

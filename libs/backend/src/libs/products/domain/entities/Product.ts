@@ -59,16 +59,16 @@ export class Product {
     description?: string;
     logoUrl?: string;
   }) {
-    if (name) {
+    if (name !== undefined) {
       this.name = name;
     }
-    if (summary) {
+    if (summary !== undefined) {
       this.summary = summary;
     }
-    if (description) {
+    if (description !== undefined) {
       this.description = description;
     }
-    if (logoUrl) {
+    if (logoUrl !== undefined) {
       this.logoUrl = logoUrl;
     }
 
