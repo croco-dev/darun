@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 type HeadingData = {
   id: string;
@@ -10,29 +10,37 @@ export function useProductTableOfContent() {
   const [headings, setHeadings] = useState<HeadingData[]>([]);
 
   useEffect(() => {
-    const headingsFromHTML = Array.from(document.querySelectorAll('#detail-content .darun-heading')).map(heading => ({
+    const headingsFromHTML = Array.from(
+      document.querySelectorAll("#detail-content .darun-heading"),
+    ).map((heading) => ({
       id: heading.id,
-      text: heading.textContent || '',
+      text: heading.textContent || "",
     }));
     setHeadings(headingsFromHTML);
   }, []);
 
   useEffect(() => {
     const handleScroll = () => {
-      const headingsElements = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
-      const activeHeading = headingsElements.find(element => {
+      const headingsElements = Array.from(
+        document.querySelectorAll("#detail-content .darun-heading"),
+      );
+      const activeHeading = headingsElements.find((element) => {
         const rect = element.getBoundingClientRect();
         return rect.top >= 0 && rect.bottom <= window.innerHeight;
       });
 
       if (activeHeading) {
         setActiveHeadingId(activeHeading.id);
+      } else {
+        setActiveHeadingId(null);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
