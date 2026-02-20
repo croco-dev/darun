@@ -2,7 +2,7 @@ import { SearchProductPage } from '@darun/frontend';
 import { Metadata } from 'next';
 
 type Props = {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 const QUERY_MAX_LENGTH = 50;
@@ -18,7 +18,8 @@ function sanitizeQuery(query: string): string {
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const rawQuery = searchParams.query;
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const rawQuery = resolvedSearchParams.query;
   const query = typeof rawQuery === 'string' ? rawQuery : Array.isArray(rawQuery) ? rawQuery[0] : undefined;
 
   if (!query) {
@@ -61,4 +62,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   };
 }
 
-export default SearchProductPage;
+export default async function Page({ searchParams }: Props) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+
+  return <SearchProductPage searchParams={resolvedSearchParams} />;
+}

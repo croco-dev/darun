@@ -20,11 +20,11 @@ const LOCALE_TO_OG_LOCALE: Record<string, string> = {
 
 type LayoutProps = {
   children: ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 };
 
 export async function generateMetadata({ params }: LayoutProps): Promise<Metadata> {
-  const { locale } = params;
+  const { locale } = await params;
 
   const alternatesLanguages: Record<string, string> = {};
   for (const loc of routing.locales) {
@@ -76,7 +76,7 @@ export function generateStaticParams() {
 }
 
 export default async function RootLayout({ children, params }: LayoutProps) {
-  const { locale } = params;
+  const { locale } = await params;
 
   if (!hasLocale(routing.locales, locale)) {
     notFound();

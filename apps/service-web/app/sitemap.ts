@@ -3,7 +3,7 @@ import { getClient, initApolloClient } from '@darun/utils-apollo-client/server';
 import { MetadataRoute } from 'next';
 import { container } from './serverContainer';
 
-export const revalidate = 60 * 60; // 1 hour
+export const revalidate = 3600; // 1 hour
 
 initApolloClient(() => container.serverApolloClient);
 
@@ -20,16 +20,10 @@ const productQuery = gql`
   }
 `;
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const { data } = await getClient({ static: true }).query<{
-    recentProducts: { slug: string; updatedAt: string; name: string }[];
-  }>({
-    query: productQuery,
-    variables: {
-      locale: 'ko',
-    },
-  });
+const createProductSearchUrl = (locale: 'ko' | 'en', query: string) =>
+  `${container.baseUrl}/${locale}/search/product?query=${encodeURIComponent(query)}`;
 
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [];
 
   entries.push(
@@ -57,104 +51,117 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   );
 
-  for (const product of data.recentProducts ?? []) {
-    const lastModified = product.updatedAt ?? new Date();
-
-    entries.push({
-      url: `${container.baseUrl}/ko/products/${product.slug}`,
-      lastModified,
-      alternates: {
-        languages: {
-          ko: `${container.baseUrl}/ko/products/${product.slug}`,
-          en: `${container.baseUrl}/en/products/${product.slug}`,
-          'x-default': `${container.baseUrl}/ko/products/${product.slug}`,
-        },
+  try {
+    const { data } = await getClient({ static: true }).query<{
+      recentProducts: { slug: string; updatedAt: string; name: string }[];
+    }>({
+      query: productQuery,
+      variables: {
+        locale: 'ko',
       },
     });
 
-    entries.push({
-      url: `${container.baseUrl}/en/products/${product.slug}`,
-      lastModified,
-      alternates: {
-        languages: {
-          ko: `${container.baseUrl}/ko/products/${product.slug}`,
-          en: `${container.baseUrl}/en/products/${product.slug}`,
-          'x-default': `${container.baseUrl}/ko/products/${product.slug}`,
-        },
-      },
-    });
+    for (const product of data.recentProducts ?? []) {
+      const lastModified = product.updatedAt ?? new Date();
 
-    entries.push({
-      url: `${container.baseUrl}/ko/products/${product.slug}/alternatives`,
-      lastModified,
-      alternates: {
-        languages: {
-          ko: `${container.baseUrl}/ko/products/${product.slug}/alternatives`,
-          en: `${container.baseUrl}/en/products/${product.slug}/alternatives`,
-          'x-default': `${container.baseUrl}/ko/products/${product.slug}/alternatives`,
+      entries.push({
+        url: `${container.baseUrl}/ko/products/${product.slug}`,
+        lastModified,
+        alternates: {
+          languages: {
+            ko: `${container.baseUrl}/ko/products/${product.slug}`,
+            en: `${container.baseUrl}/en/products/${product.slug}`,
+            'x-default': `${container.baseUrl}/ko/products/${product.slug}`,
+          },
         },
-      },
-    });
+      });
 
-    entries.push({
-      url: `${container.baseUrl}/en/products/${product.slug}/alternatives`,
-      lastModified,
-      alternates: {
-        languages: {
-          ko: `${container.baseUrl}/ko/products/${product.slug}/alternatives`,
-          en: `${container.baseUrl}/en/products/${product.slug}/alternatives`,
-          'x-default': `${container.baseUrl}/ko/products/${product.slug}/alternatives`,
+      entries.push({
+        url: `${container.baseUrl}/en/products/${product.slug}`,
+        lastModified,
+        alternates: {
+          languages: {
+            ko: `${container.baseUrl}/ko/products/${product.slug}`,
+            en: `${container.baseUrl}/en/products/${product.slug}`,
+            'x-default': `${container.baseUrl}/ko/products/${product.slug}`,
+          },
         },
-      },
-    });
+      });
 
-    entries.push({
-      url: `${container.baseUrl}/ko/search/product?query=${product.slug}`,
-      lastModified,
-      alternates: {
-        languages: {
-          ko: `${container.baseUrl}/ko/search/product?query=${product.slug}`,
-          en: `${container.baseUrl}/en/search/product?query=${product.slug}`,
-          'x-default': `${container.baseUrl}/ko/search/product?query=${product.slug}`,
+      entries.push({
+        url: `${container.baseUrl}/ko/products/${product.slug}/alternatives`,
+        lastModified,
+        alternates: {
+          languages: {
+            ko: `${container.baseUrl}/ko/products/${product.slug}/alternatives`,
+            en: `${container.baseUrl}/en/products/${product.slug}/alternatives`,
+            'x-default': `${container.baseUrl}/ko/products/${product.slug}/alternatives`,
+          },
         },
-      },
-    });
+      });
 
-    entries.push({
-      url: `${container.baseUrl}/en/search/product?query=${product.slug}`,
-      lastModified,
-      alternates: {
-        languages: {
-          ko: `${container.baseUrl}/ko/search/product?query=${product.slug}`,
-          en: `${container.baseUrl}/en/search/product?query=${product.slug}`,
-          'x-default': `${container.baseUrl}/ko/search/product?query=${product.slug}`,
+      entries.push({
+        url: `${container.baseUrl}/en/products/${product.slug}/alternatives`,
+        lastModified,
+        alternates: {
+          languages: {
+            ko: `${container.baseUrl}/ko/products/${product.slug}/alternatives`,
+            en: `${container.baseUrl}/en/products/${product.slug}/alternatives`,
+            'x-default': `${container.baseUrl}/ko/products/${product.slug}/alternatives`,
+          },
         },
-      },
-    });
+      });
 
-    entries.push({
-      url: `${container.baseUrl}/ko/search/product?query=${product.name}`,
-      lastModified,
-      alternates: {
-        languages: {
-          ko: `${container.baseUrl}/ko/search/product?query=${product.name}`,
-          en: `${container.baseUrl}/en/search/product?query=${product.name}`,
-          'x-default': `${container.baseUrl}/ko/search/product?query=${product.name}`,
+      entries.push({
+        url: createProductSearchUrl('ko', product.slug),
+        lastModified,
+        alternates: {
+          languages: {
+            ko: createProductSearchUrl('ko', product.slug),
+            en: createProductSearchUrl('en', product.slug),
+            'x-default': createProductSearchUrl('ko', product.slug),
+          },
         },
-      },
-    });
+      });
 
-    entries.push({
-      url: `${container.baseUrl}/en/search/product?query=${product.name}`,
-      lastModified,
-      alternates: {
-        languages: {
-          ko: `${container.baseUrl}/ko/search/product?query=${product.name}`,
-          en: `${container.baseUrl}/en/search/product?query=${product.name}`,
-          'x-default': `${container.baseUrl}/ko/search/product?query=${product.name}`,
+      entries.push({
+        url: createProductSearchUrl('en', product.slug),
+        lastModified,
+        alternates: {
+          languages: {
+            ko: createProductSearchUrl('ko', product.slug),
+            en: createProductSearchUrl('en', product.slug),
+            'x-default': createProductSearchUrl('ko', product.slug),
+          },
         },
-      },
-    });
+      });
+
+      entries.push({
+        url: createProductSearchUrl('ko', product.name),
+        lastModified,
+        alternates: {
+          languages: {
+            ko: createProductSearchUrl('ko', product.name),
+            en: createProductSearchUrl('en', product.name),
+            'x-default': createProductSearchUrl('ko', product.name),
+          },
+        },
+      });
+
+      entries.push({
+        url: createProductSearchUrl('en', product.name),
+        lastModified,
+        alternates: {
+          languages: {
+            ko: createProductSearchUrl('ko', product.name),
+            en: createProductSearchUrl('en', product.name),
+            'x-default': createProductSearchUrl('ko', product.name),
+          },
+        },
+      });
+    }
+  } catch {
+    return entries;
   }
 
   return entries;

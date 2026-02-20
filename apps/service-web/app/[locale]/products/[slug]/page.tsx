@@ -22,11 +22,12 @@ const productQuery = gql`
 `;
 
 type Props = {
-  params: { locale: string; slug: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ locale: string; slug: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const resolvedParams = await params;
+
   const { data } = await getClient().query<{
     productBySlug?: {
       name: string;
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }>({
     query: productQuery,
-    variables: { slug: params.slug, locale: params.locale },
+    variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
   });
 
   if (!data.productBySlug?.name) {
@@ -53,7 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const pageTitle = `${name} - 다른: 서비스 비교를 한 곳에서`;
   const description = summary || '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다';
-  const canonicalUrl = `https://www.darun.io/products/${params.slug}`;
+  const canonicalUrl = `https://www.darun.io/products/${resolvedParams.slug}`;
   const ogImageUrl = createOgImageUrl({ name, summary, logoUrl });
 
   return {
@@ -114,6 +115,8 @@ const createOgImageUrl = ({ name, summary, logoUrl }: { name: string; summary?: 
 };
 
 async function ProductDetailPageWithJsonLd({ params }: Props) {
+  const resolvedParams = await params;
+
   const { data } = await getClient().query<{
     productBySlug?: {
       name: string;
@@ -125,7 +128,7 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
     };
   }>({
     query: productQuery,
-    variables: { slug: params.slug, locale: params.locale },
+    variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
   });
 
   const product = data.productBySlug;
@@ -137,7 +140,7 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
         name: product.name,
         description: product.description || product.summary || '',
         image: product.logoUrl || '',
-        url: `https://www.darun.io/products/${params.slug}`,
+        url: `https://www.darun.io/products/${resolvedParams.slug}`,
         applicationCategory: 'WebApplication',
         ...(product.ownedCompany && {
           author: {
@@ -180,7 +183,7 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
       {allJsonLd.map((ld, index) => (
         <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       ))}
-      <ProductDetailPage params={params} />
+      <ProductDetailPage params={resolvedParams} />
     </>
   );
 }
