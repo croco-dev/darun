@@ -1,8 +1,9 @@
-import { gql } from '@apollo/client';
-import { useThrottledCallback } from '@mantine/hooks';
-import { useSearchProductsOnSearchProductFieldLazyQuery } from './__generated__/useSearchProductField';
+import { gql } from "@apollo/client";
+import { useThrottledCallback } from "@mantine/hooks";
+import { useRef, useState } from "react";
+import { useSearchProductsOnSearchProductFieldLazyQuery } from "./__generated__/useSearchProductField";
 
-gql`
+export const searchProductsOnSearchProductFieldQueryDocument = gql`
   query SearchProductsOnSearchProductField($query: String!) {
     searchProducts(query: $query) {
       id
@@ -15,19 +16,44 @@ type SearchProductFieldProps = {
 };
 
 export function useSearchProductField({ onSelect }: SearchProductFieldProps) {
-  const searchProduct = useThrottledCallback(async (query: string) => {
-    if (!query) return;
+  const [search] = useSearchProductsOnSearchProductFieldLazyQuery();
+  const [products, setProducts] = useState<{ label: string; value: string }[]>(
+    [],
+  );
+  const latestSearchRequestId = useRef(0);
 
-    await search({
+  const searchProduct = useThrottledCallback(async (query: string) => {
+    const trimmedQuery = query.trim();
+
+    if (!trimmedQuery) {
+      latestSearchRequestId.current += 1;
+      setProducts([]);
+      return;
+    }
+
+    const requestId = latestSearchRequestId.current + 1;
+    latestSearchRequestId.current = requestId;
+
+    const { data } = await search({
       variables: {
-        query,
+        query: trimmedQuery,
       },
     });
+
+    if (requestId !== latestSearchRequestId.current) {
+      return;
+    }
+
+    setProducts(
+      data?.searchProducts.map(({ id, name }) => ({
+        label: name,
+        value: id,
+      })) ?? [],
+    );
   }, 500);
-  const [search, { data }] = useSearchProductsOnSearchProductFieldLazyQuery();
 
   return {
-    products: data?.searchProducts.map(({ id, name }) => ({ label: name, value: id })) ?? [],
+    products,
     searchProduct,
     selectProduct: onSelect,
   };

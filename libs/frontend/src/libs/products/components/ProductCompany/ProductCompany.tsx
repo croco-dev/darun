@@ -2,13 +2,34 @@
 
 import { bind } from '@croco/utils-structure-react';
 import { Grid, VStack, Text, Flex, HStack } from '@kuma-ui/core';
-import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useProductCompany } from './useProductCompany';
 
 type ProductCompanyViewProps = {
   company: ReturnType<typeof useProductCompany>['company'];
 };
+
+function formatStartAt(startAt: unknown) {
+  if (!startAt) {
+    return '-';
+  }
+
+  if (typeof startAt !== 'string' && typeof startAt !== 'number' && !(startAt instanceof Date)) {
+    return '-';
+  }
+
+  const date = startAt instanceof Date ? startAt : new Date(startAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}. ${month}. ${day}`;
+}
 
 export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompanyViewProps) => {
   const t = useTranslations('ProductDetail');
@@ -68,7 +89,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
                   </Text>
                 </Flex>
                 <Text fontWeight={'fontWeights.regular'} color={'colors.dark.600'}>
-                  {format(company.startAt, 'yyyy. MM. dd')}
+                  {formatStartAt(company.startAt)}
                 </Text>
               </HStack>
             )}

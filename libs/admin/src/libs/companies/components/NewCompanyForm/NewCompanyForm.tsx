@@ -27,6 +27,7 @@ export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) =
         {...form.getInputProps('startAt')}
         label="개업일"
         placeholder="눌러서 선택해주세요."
+        disabled={Boolean(form.getValues().startAtIsDisabled)}
       />
       <Checkbox
         key={form.key('startAtIsDisabled')}

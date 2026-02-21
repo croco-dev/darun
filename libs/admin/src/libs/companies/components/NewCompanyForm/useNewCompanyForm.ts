@@ -1,11 +1,10 @@
-import { gql } from '@apollo/client';
-import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { useCreateCompanyOnNewCompanyFormMutation } from './__generated__/useNewCompanyForm';
+import { gql } from "@apollo/client";
+import { useForm } from "@mantine/form";
+import { notifications } from "@mantine/notifications";
+import { useRouter } from "next/navigation";
+import { useCreateCompanyOnNewCompanyFormMutation } from "./__generated__/useNewCompanyForm";
 
-gql`
+export const createCompanyOnNewCompanyFormMutationDocument = gql`
   mutation CreateCompanyOnNewCompanyForm($input: CreateCompanyInput!) {
     createCompany(input: $input) {
       company {
@@ -19,30 +18,37 @@ type FormValues = {
   name?: string;
   type?: string;
   address?: string;
-  startAt?: string;
+  startAt?: Date | null;
   startAtIsDisabled: boolean;
 };
 
 export function useNewCompanyForm() {
   const form = useForm<FormValues>({
     initialValues: {
-      name: '',
-      type: '',
-      address: '',
-      startAt: '',
+      name: "",
+      type: "",
+      address: "",
+      startAt: null,
       startAtIsDisabled: false,
     },
-    mode: 'uncontrolled',
+    mode: "uncontrolled",
   });
   const { push } = useRouter();
 
-  const [mutate, { data, loading, error }] = useCreateCompanyOnNewCompanyFormMutation({
+  const [mutate] = useCreateCompanyOnNewCompanyFormMutation({
     onCompleted: ({ createCompany }) => {
       if (createCompany.company.id) {
-        notifications.show({ message: '생성되었습니다.', color: 'teal' });
+        notifications.show({ message: "생성되었습니다.", color: "teal" });
         form.reset();
         push(`/companies`);
       }
+    },
+    onError: (error) => {
+      notifications.show({
+        title: "오류 발생",
+        message: error.message,
+        color: "red",
+      });
     },
   });
 
@@ -55,21 +61,13 @@ export function useNewCompanyForm() {
           name: values.name,
           type: values.type,
           address: values.address,
-          startAt: values.startAtIsDisabled ? undefined : values.startAt && new Date(values.startAt),
+          startAt: values.startAtIsDisabled
+            ? undefined
+            : values.startAt ?? undefined,
         },
       },
     });
   };
-
-  useEffect(() => {
-    if (error) {
-      notifications.show({
-        title: '오류 발생',
-        message: error.message,
-        color: 'red',
-      });
-    }
-  }, [error]);
 
   return { handleSubmit, form };
 }
