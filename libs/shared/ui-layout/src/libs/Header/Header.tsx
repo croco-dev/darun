@@ -1,3 +1,5 @@
+"use client";
+
 import { bind } from "@croco/utils-structure-react";
 import { ContainedButton, ContentArea, Logo } from "@darun/ui-foundation";
 import { Link as RouterLink } from "@darun/utils-router";

@@ -1,29 +1,40 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { withKumaUI } = require('@kuma-ui/next-plugin');
-const { withSentryConfig } = require('@sentry/nextjs');
-const createNextIntlPlugin = require('next-intl/plugin');
+const path = require("path");
+const { withKumaUI } = require("@kuma-ui/next-plugin");
+const { withSentryConfig } = require("@sentry/nextjs");
+const createNextIntlPlugin = require("next-intl/plugin");
 
-const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compiler: {},
+  webpack: (config) => {
+    config.resolve ??= {};
+    config.resolve.alias ??= {};
+    config.resolve.alias["@croco/utils-structure-react"] = path.resolve(
+      __dirname,
+      "./app/shims/utils-structure-react.ts",
+    );
+
+    return config;
+  },
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        port: '',
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        port: "",
       },
       {
-        protocol: 'https',
-        hostname: 'via.placeholder.com',
-        port: '',
+        protocol: "https",
+        hostname: "via.placeholder.com",
+        port: "",
       },
     ],
   },
   experimental: {
-    ...(process.env.ENABLE_EXPERIMENTAL_REACT_COMPILER === 'true'
+    ...(process.env.ENABLE_EXPERIMENTAL_REACT_COMPILER === "true"
       ? {
           reactCompiler: true,
         }
@@ -40,8 +51,8 @@ module.exports = withSentryConfig(module.exports, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
-  org: 'croco',
-  project: 'darun-web',
+  org: "croco",
+  project: "darun-web",
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
@@ -61,7 +72,7 @@ module.exports = withSentryConfig(module.exports, {
   // This can increase your server load as well as your hosting bill.
   // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
   // side errors will fail.
-  tunnelRoute: '/monitoring',
+  tunnelRoute: "/monitoring",
 
   // Hides source maps from generated client bundles
   hideSourceMaps: true,
