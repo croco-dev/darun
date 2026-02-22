@@ -1,20 +1,17 @@
-import { gql } from "@apollo/client";
-import { useForm } from "@mantine/form";
-import { useThrottledCallback } from "@mantine/hooks";
-import { notifications } from "@mantine/notifications";
-import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
-import { TempProductBySlugOnProductCompanyInfoDocument } from "../ProductCompanyInfo/__generated__/useProductCompanyInfo";
+import { gql } from '@apollo/client';
+import { useForm } from '@mantine/form';
+import { useThrottledCallback } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
+import { useRouter } from 'next/navigation';
+import { useRef, useState, useTransition } from 'react';
+import { TempProductBySlugOnProductCompanyInfoDocument } from '../ProductCompanyInfo/__generated__/useProductCompanyInfo';
 import {
   useRegisterProductCompanyOnEditProductCompanyMutation,
   useSearchCompaniesOnEditProductCompanyLazyQuery,
-} from "./__generated__/useEditProductCompany";
+} from './__generated__/useEditProductCompany';
 
 export const registerProductCompanyOnEditProductCompanyMutationDocument = gql`
-  mutation RegisterProductCompanyOnEditProductCompany(
-    $input: RegisterProductCompanyInput!
-    $slug: String!
-  ) {
+  mutation RegisterProductCompanyOnEditProductCompany($input: RegisterProductCompanyInput!, $slug: String!) {
     registerProductCompany(input: $input, slug: $slug) {
       product {
         id
@@ -38,24 +35,21 @@ type FormValues = {
 
 export function useEditProductCompany({ slug }: { slug: string }) {
   const { push } = useRouter();
-  const [registerProductCompany] =
-    useRegisterProductCompanyOnEditProductCompanyMutation({
-      onCompleted: ({ registerProductCompany }) => {
-        if (registerProductCompany.product?.id) {
-          notifications.show({ message: "저장되었습니다.", color: "green" });
-          push(`/products/${slug}`);
-        }
-      },
-      onError: () => {
-        notifications.show({ message: "서버 오류", color: "red" });
-      },
-      refetchQueries: [TempProductBySlugOnProductCompanyInfoDocument],
-    });
+  const [registerProductCompany] = useRegisterProductCompanyOnEditProductCompanyMutation({
+    onCompleted: ({ registerProductCompany }) => {
+      if (registerProductCompany.product?.id) {
+        notifications.show({ message: '저장되었습니다.', color: 'green' });
+        push(`/products/${slug}`);
+      }
+    },
+    onError: () => {
+      notifications.show({ message: '서버 오류', color: 'red' });
+    },
+    refetchQueries: [TempProductBySlugOnProductCompanyInfoDocument],
+  });
 
   const [search] = useSearchCompaniesOnEditProductCompanyLazyQuery();
-  const [companies, setCompanies] = useState<
-    { label: string; value: string }[]
-  >([]);
+  const [companies, setCompanies] = useState<{ label: string; value: string }[]>([]);
   const latestSearchRequestId = useRef(0);
 
   const searchCompany = useThrottledCallback(async (query: string) => {
@@ -70,7 +64,15 @@ export function useEditProductCompany({ slug }: { slug: string }) {
     const requestId = latestSearchRequestId.current + 1;
     latestSearchRequestId.current = requestId;
 
-    const { data } = await search({ variables: { query: trimmedQuery } });
+    let data: Awaited<ReturnType<typeof search>>['data'] | undefined;
+    try {
+      ({ data } = await search({ variables: { query: trimmedQuery } }));
+    } catch {
+      if (requestId === latestSearchRequestId.current) {
+        setCompanies([]);
+      }
+      return;
+    }
 
     if (requestId !== latestSearchRequestId.current) {
       return;
@@ -80,11 +82,11 @@ export function useEditProductCompany({ slug }: { slug: string }) {
       data?.searchCompanies.map(({ id, name }) => ({
         label: name,
         value: id,
-      })) ?? [],
+      })) ?? []
     );
   }, 500);
 
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState('');
   const [, startTransition] = useTransition();
 
   const handleSearchChange = (value: string) => {
@@ -95,15 +97,15 @@ export function useEditProductCompany({ slug }: { slug: string }) {
   };
 
   const form = useForm<FormValues>({
-    mode: "uncontrolled",
+    mode: 'uncontrolled',
     initialValues: {
-      companyId: "",
+      companyId: '',
     },
   });
 
   const handleSubmit = (values: FormValues) => {
     if (!values.companyId) {
-      notifications.show({ message: "값을 입력해주세요!!", color: "red" });
+      notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
     registerProductCompany({

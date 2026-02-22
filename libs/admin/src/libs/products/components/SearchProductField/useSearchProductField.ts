@@ -1,7 +1,7 @@
-import { gql } from "@apollo/client";
-import { useThrottledCallback } from "@mantine/hooks";
-import { useRef, useState } from "react";
-import { useSearchProductsOnSearchProductFieldLazyQuery } from "./__generated__/useSearchProductField";
+import { gql } from '@apollo/client';
+import { useThrottledCallback } from '@mantine/hooks';
+import { useRef, useState } from 'react';
+import { useSearchProductsOnSearchProductFieldLazyQuery } from './__generated__/useSearchProductField';
 
 export const searchProductsOnSearchProductFieldQueryDocument = gql`
   query SearchProductsOnSearchProductField($query: String!) {
@@ -17,9 +17,7 @@ type SearchProductFieldProps = {
 
 export function useSearchProductField({ onSelect }: SearchProductFieldProps) {
   const [search] = useSearchProductsOnSearchProductFieldLazyQuery();
-  const [products, setProducts] = useState<{ label: string; value: string }[]>(
-    [],
-  );
+  const [products, setProducts] = useState<{ label: string; value: string }[]>([]);
   const latestSearchRequestId = useRef(0);
 
   const searchProduct = useThrottledCallback(async (query: string) => {
@@ -34,11 +32,19 @@ export function useSearchProductField({ onSelect }: SearchProductFieldProps) {
     const requestId = latestSearchRequestId.current + 1;
     latestSearchRequestId.current = requestId;
 
-    const { data } = await search({
-      variables: {
-        query: trimmedQuery,
-      },
-    });
+    let data: Awaited<ReturnType<typeof search>>['data'] | undefined;
+    try {
+      ({ data } = await search({
+        variables: {
+          query: trimmedQuery,
+        },
+      }));
+    } catch {
+      if (requestId === latestSearchRequestId.current) {
+        setProducts([]);
+      }
+      return;
+    }
 
     if (requestId !== latestSearchRequestId.current) {
       return;
@@ -48,7 +54,7 @@ export function useSearchProductField({ onSelect }: SearchProductFieldProps) {
       data?.searchProducts.map(({ id, name }) => ({
         label: name,
         value: id,
-      })) ?? [],
+      })) ?? []
     );
   }, 500);
 

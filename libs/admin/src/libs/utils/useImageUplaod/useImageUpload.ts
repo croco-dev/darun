@@ -1,10 +1,8 @@
-import { gql } from '@apollo/client';
-import { notifications } from '@mantine/notifications';
-import { useSignImageUploadOnUseImageUploadMutation } from './__generated__/useImageUpload';
+import { gql } from "@apollo/client";
+import { notifications } from "@mantine/notifications";
+import { useSignImageUploadOnUseImageUploadMutation } from "./__generated__/useImageUpload";
 
-const UPLOAD_URL = 'https://api.cloudinary.com/v1_1/' + process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME + '/image/upload';
-
-gql`
+export const signImageUploadOnUseImageUploadMutationDocument = gql`
   mutation SignImageUploadOnUseImageUpload($input: SignImageUploadInput!) {
     signImageUpload(input: $input) {
       signature
@@ -18,30 +16,105 @@ export function useImageUpload() {
   const [sign] = useSignImageUploadOnUseImageUploadMutation();
 
   const upload = async (folder: string, file: File, displayName: string) => {
-    const { data } = await sign({
-      variables: {
-        input: {
-          displayName,
-          folder,
-        },
-      },
-    });
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
 
-    if (!data) {
-      notifications.show({ message: '이미지 업로드 요청 암호화에 실패했습니다.', color: 'red' });
+    if (!cloudName || !apiKey) {
+      notifications.show({
+        message: "이미지 업로드 환경설정이 누락되었습니다.",
+        color: "red",
+      });
+      return;
+    }
+
+    let data: Awaited<ReturnType<typeof sign>>["data"] | undefined;
+    try {
+      ({ data } = await sign({
+        variables: {
+          input: {
+            displayName,
+            folder,
+          },
+        },
+      }));
+    } catch {
+      notifications.show({
+        message: "이미지 업로드 요청에 실패했어요.",
+        color: "red",
+      });
+      return;
+    }
+
+    if (!data?.signImageUpload) {
+      notifications.show({
+        message: "이미지 업로드 요청 암호화에 실패했습니다.",
+        color: "red",
+      });
       return;
     }
 
     const form = new FormData();
-    form.append('file', file);
-    form.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY ?? '');
-    form.append('timestamp', data.signImageUpload.timestamp.toString());
-    form.append('signature', data.signImageUpload.signature);
-    form.append('public_id', displayName);
-    form.append('folder', data.signImageUpload.folder);
-    const response = await fetch(UPLOAD_URL, { method: 'POST', body: form });
-    const json = (await response.json()) as { secure_url: string } | undefined;
-    return json?.secure_url;
+    form.append("file", file);
+    form.append("api_key", apiKey);
+    form.append("timestamp", data.signImageUpload.timestamp.toString());
+    form.append("signature", data.signImageUpload.signature);
+    form.append("public_id", displayName);
+    form.append("folder", data.signImageUpload.folder);
+
+    let response: Response;
+    try {
+      response = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: form,
+        },
+      );
+    } catch {
+      notifications.show({
+        message: "이미지 업로드 요청 중 네트워크 오류가 발생했어요.",
+        color: "red",
+      });
+      return;
+    }
+
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      notifications.show({
+        message: "이미지 업로드 응답을 읽지 못했어요.",
+        color: "red",
+      });
+      return;
+    }
+
+    if (!response.ok) {
+      notifications.show({
+        message: "이미지 업로드에 실패했어요.",
+        color: "red",
+      });
+      return;
+    }
+
+    if (!payload || typeof payload !== "object" || !("secure_url" in payload)) {
+      notifications.show({
+        message: "이미지 업로드 응답 형식이 올바르지 않아요.",
+        color: "red",
+      });
+      return;
+    }
+
+    const secureUrl = payload.secure_url;
+    if (typeof secureUrl !== "string" || !secureUrl) {
+      notifications.show({
+        message: "이미지 업로드 결과 URL을 찾지 못했어요.",
+        color: "red",
+      });
+      return;
+    }
+
+    return secureUrl;
   };
 
   return {
