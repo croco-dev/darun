@@ -9,7 +9,7 @@ import { EditProductLinkItemFragmentDoc } from '../EditProductLinkItem/__generat
 import styles from './ProductFeatureTable.module.css';
 import { useProductLinkTable } from './useProductLinkTable';
 
-gql`
+export const ProductLinkTableFragmentDocument = gql`
   fragment ProductLinkTable on Product {
     links {
       id
@@ -58,7 +58,7 @@ export const ProductLinkTable = bind(
                       }}
                       className={styles.link_icon_wrapper}
                     >
-                      <img src={link.iconUrl} />
+                      <img src={link.iconUrl} alt={`${link.title} 아이콘`} loading="lazy" />
                     </div>
                   </Table.Td>
                   <Table.Td>
@@ -68,7 +68,7 @@ export const ProductLinkTable = bind(
                   </Table.Td>
                   <Table.Td>
                     <Text fz="sm" fw={500}>
-                      <a href={link.link} target="_blank">
+                      <a href={link.link} target="_blank" rel="noopener noreferrer">
                         {link.displayLink} ({link.link})
                       </a>
                     </Text>
