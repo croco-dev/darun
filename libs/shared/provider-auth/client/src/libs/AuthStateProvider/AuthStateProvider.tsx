@@ -23,7 +23,7 @@ const AuthStateContext = createContext<{
 
 export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
   const authService = useAuthService();
-  const [authUser, setAuthUser] = useState<AuthUser | null>();
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -43,16 +43,22 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
       setAuthUser(user ?? null);
       setIsLoading(false);
 
-      const redirectUrl = authService.getRedirectUrl();
-      authService.clearRedirectUrl();
-      if (user && redirectUrl) {
-        navigate(redirectUrl);
+      if (!user) {
+        return;
       }
+
+      const redirectUrl = authService.getRedirectUrl();
+
+      if (!redirectUrl) {
+        return;
+      }
+
+      authService.clearRedirectUrl();
+      navigate(redirectUrl);
     });
 
     return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authService, navigate]);
 
   return (
     <AuthStateContext.Provider
