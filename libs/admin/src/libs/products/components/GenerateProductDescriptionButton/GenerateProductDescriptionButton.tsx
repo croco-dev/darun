@@ -7,7 +7,7 @@ interface GenerateProductDescriptionButtonProps {
 }
 
 export function GenerateProductDescriptionButton({ slug }: GenerateProductDescriptionButtonProps) {
-  const { handleGenerate, isGenerating, error } = useGenerateProductDescriptionButton(slug);
+  const { handleGenerate, isGenerating } = useGenerateProductDescriptionButton(slug);
 
   return (
     <Button

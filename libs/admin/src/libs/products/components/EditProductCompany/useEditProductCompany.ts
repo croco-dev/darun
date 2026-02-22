@@ -42,8 +42,12 @@ export function useEditProductCompany({ slug }: { slug: string }) {
         push(`/products/${slug}`);
       }
     },
-    onError: () => {
-      notifications.show({ message: '서버 오류', color: 'red' });
+    onError: error => {
+      notifications.show({
+        title: '오류 발생',
+        message: error.message,
+        color: 'red',
+      });
     },
     refetchQueries: [TempProductBySlugOnProductCompanyInfoDocument],
   });
@@ -105,7 +109,7 @@ export function useEditProductCompany({ slug }: { slug: string }) {
 
   const handleSubmit = (values: FormValues) => {
     if (!values.companyId) {
-      notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
+      notifications.show({ message: '회사를 선택해주세요.', color: 'red' });
       return;
     }
     registerProductCompany({

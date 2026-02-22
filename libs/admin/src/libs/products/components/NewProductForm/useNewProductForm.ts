@@ -6,7 +6,7 @@ import { ReactNode } from 'react';
 import { useImageUpload } from '../../../utils/useImageUplaod';
 import { useCreateProductOnNewProductFormMutation } from './__generated__/useNewProductForm';
 
-gql`
+gql(`
   mutation CreateProductOnNewProductForm($input: CreateProductInput!) {
     createProduct(input: $input) {
       product {
@@ -15,7 +15,7 @@ gql`
       }
     }
   }
-`;
+`);
 
 type FormValues = {
   name?: string;
@@ -47,23 +47,40 @@ export function useNewProductForm({ children }: NewProductFormProps) {
         navigate(`/products/${createProduct.product.slug}`);
       }
     },
+    onError: error => {
+      notifications.show({
+        title: '오류 발생',
+        message: error.message,
+        color: 'red',
+      });
+    },
   });
 
   const submit = async (values: FormValues) => {
-    if (!values.name || !values.slug || !values.summary || !values.file) return;
+    const name = values.name?.trim();
+    const slug = values.slug?.trim();
+    const summary = values.summary?.trim();
 
-    const url = await upload('images/logos', values.file, values.slug);
-
-    if (!url) {
-      notifications.show({ message: '이미지 업로드에 실패했어요.', color: 'red' });
+    if (!name || !slug || !summary || !values.file) {
+      notifications.show({
+        message: '이름, 슬러그, 요약, 로고 이미지를 모두 입력해주세요.',
+        color: 'red',
+      });
       return;
     }
+
+    const url = await upload('images/logos', values.file, slug);
+
+    if (!url) {
+      return;
+    }
+
     await createProduct({
       variables: {
         input: {
-          name: values.name,
-          slug: values.slug,
-          summary: values.summary,
+          name,
+          slug,
+          summary,
           logoUrl: url,
         },
       },

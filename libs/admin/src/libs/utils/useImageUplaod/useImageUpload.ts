@@ -2,6 +2,28 @@ import { gql } from '@apollo/client';
 import { notifications } from '@mantine/notifications';
 import { useSignImageUploadOnUseImageUploadMutation } from './__generated__/useImageUpload';
 
+const getUploadErrorMessage = (payload: unknown): string | undefined => {
+  if (!payload || typeof payload !== 'object') {
+    return undefined;
+  }
+
+  if ('error' in payload && payload.error && typeof payload.error === 'object' && 'message' in payload.error) {
+    const message = payload.error.message;
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+  }
+
+  if ('message' in payload) {
+    const message = payload.message;
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+  }
+
+  return undefined;
+};
+
 export const signImageUploadOnUseImageUploadMutationDocument = gql`
   mutation SignImageUploadOnUseImageUpload($input: SignImageUploadInput!) {
     signImageUpload(input: $input) {
@@ -87,8 +109,11 @@ export function useImageUpload() {
     }
 
     if (!response.ok) {
+      const errorMessage = getUploadErrorMessage(payload);
       notifications.show({
-        message: '이미지 업로드에 실패했어요.',
+        message: errorMessage
+          ? `이미지 업로드에 실패했어요. (${errorMessage})`
+          : `이미지 업로드에 실패했어요. (HTTP ${response.status})`,
         color: 'red',
       });
       return;

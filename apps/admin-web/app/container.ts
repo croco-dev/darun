@@ -34,9 +34,12 @@ class Container {
   get apolloClient() {
     const httpErrorLink = onError(({ graphQLErrors, networkError }) => {
       if (graphQLErrors) {
-        graphQLErrors.map(({ message, locations, path }) =>
-          console.error(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`)
-        );
+        graphQLErrors.forEach(({ message, locations, path }) => {
+          const locationText = locations?.map(location => `${location.line}:${location.column}`).join(', ') ?? '-';
+          const pathText = path?.join('.') ?? '-';
+
+          console.error(`[GraphQL error] ${message} | location=${locationText} | path=${pathText}`);
+        });
       }
 
       if (networkError) {
