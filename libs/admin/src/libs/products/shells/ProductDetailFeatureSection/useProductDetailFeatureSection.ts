@@ -5,7 +5,7 @@ type ProductDetailFeatureSectionProps = { slug: string };
 
 export function useProductDetailFeatureSection({ slug }: ProductDetailFeatureSectionProps) {
   const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
-  const [featureId, setFeatureId] = useState<string>();
+  const [featureId, setFeatureId] = useState<string | null>(null);
 
   const editFeature = useCallback(
     (id: string) => {

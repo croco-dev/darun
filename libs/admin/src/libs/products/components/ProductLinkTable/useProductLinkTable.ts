@@ -5,7 +5,7 @@ import { EditProductLinkItemFragment } from '../EditProductLinkItem/__generated_
 import { ProductLinkTableFragmentDoc } from './__generated__/ProductLinkTable';
 import { useTempProductBySlugOnProductLinkTableQuery } from './__generated__/useProductLinkTable';
 
-gql`
+export const TempProductBySlugOnProductLinkTableDocument = gql`
   query TempProductBySlugOnProductLinkTable($slug: String!) {
     tempProductBySlug(slug: $slug) {
       id
@@ -24,7 +24,7 @@ export function useProductLinkTable({ slug }: ProductLinkTableProps) {
   const { data, loading } = useTempProductBySlugOnProductLinkTableQuery({ variables: { slug } });
 
   const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
-  const [link, setLink] = useState<EditProductLinkItemFragment>();
+  const [link, setLink] = useState<EditProductLinkItemFragment | null>(null);
 
   const editLink = useCallback(
     (selectedLink: EditProductLinkItemFragment) => {
