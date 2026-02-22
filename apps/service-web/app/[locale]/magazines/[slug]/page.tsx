@@ -152,12 +152,14 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
       }
     : null;
 
-  const allJsonLd = [jsonLd, breadcrumbList].filter(Boolean);
+  const allJsonLd = [jsonLd, breadcrumbList].filter((value): value is NonNullable<typeof value> => value !== null);
 
   return (
     <>
-      {allJsonLd.map((ld, index) => (
-        <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      {allJsonLd.map(ld => (
+        <script key={`${ld['@type']}-${resolvedParams.slug}`} type="application/ld+json">
+          {JSON.stringify(ld).replace(/</g, '\\u003c')}
+        </script>
       ))}
       <MagazineContentPage params={resolvedParams} />
     </>

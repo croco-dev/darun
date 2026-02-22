@@ -7,7 +7,8 @@
     "dev": "next dev --turbopack",
     "lint": "eslint --no-warn-ignored **/*.ts*",
     "start": "next start",
-    "test": "echo 1"
+    "test": "echo 1",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@apollo/client": "3.11.2",

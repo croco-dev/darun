@@ -2,6 +2,8 @@ import { ContentArea } from '@darun/ui-foundation';
 import { Layout } from '@darun/ui-layout';
 import { Box, HStack, VStack } from '@kuma-ui/core';
 
+const SKELETON_ROW_KEYS = ['row-1', 'row-2', 'row-3', 'row-4'] as const;
+
 const Skeleton = ({
   width = '100%',
   height = '20px',
@@ -12,6 +14,7 @@ const Skeleton = ({
   radius?: string | number;
 }) => (
   <Box
+    aria-hidden="true"
     width={width}
     height={height}
     borderRadius={radius}
@@ -23,7 +26,15 @@ const Skeleton = ({
 export default function Loading() {
   return (
     <Layout>
-      <VStack as="main" width="100%" mt={32} gap={20}>
+      <VStack
+        as="main"
+        width="100%"
+        mt={32}
+        gap={20}
+        aria-busy="true"
+        aria-live="polite"
+        aria-label="페이지를 불러오는 중입니다"
+      >
         <ContentArea>
           <VStack gap={16} mb={32}>
             <Skeleton height={200} radius="8px" />
@@ -34,8 +45,8 @@ export default function Loading() {
           </VStack>
 
           <VStack gap={16}>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <HStack key={i} gap={16} width="100%">
+            {SKELETON_ROW_KEYS.map(rowKey => (
+              <HStack key={rowKey} gap={16} width="100%">
                 <Skeleton width={80} height={80} radius="8px" />
                 <VStack flex={1} gap={8} justify="center">
                   <Skeleton width="80%" height={20} />
@@ -51,6 +62,12 @@ export default function Loading() {
           0% { opacity: 1; }
           50% { opacity: 0.5; }
           100% { opacity: 1; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          * {
+            animation: none !important;
+          }
         }
       `}</style>
     </Layout>

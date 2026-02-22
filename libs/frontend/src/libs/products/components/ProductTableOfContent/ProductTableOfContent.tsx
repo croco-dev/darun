@@ -8,13 +8,19 @@ import { useProductTableOfContent } from './useProductTableOfContent';
 
 export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings, activeHeadingId }) => (
   <HStack py={'8px'} gap={['2px', '4px']} overflowX="auto">
-    {headings.map(({ id, text }, i) => (
+    {headings.map(({ id, text }) => (
       <TextButton
-        key={i}
+        key={id}
         isActive={activeHeadingId === id}
         onClick={() => {
-          const location = document.getElementById(id)?.offsetTop ?? 0;
-          window.scrollTo({ top: location - 40, behavior: 'smooth' });
+          const target = document.getElementById(id);
+
+          if (!target) {
+            return;
+          }
+
+          const location = target.getBoundingClientRect().top + window.scrollY - 40;
+          window.scrollTo({ top: Math.max(location, 0), behavior: 'smooth' });
         }}
       >
         {text}

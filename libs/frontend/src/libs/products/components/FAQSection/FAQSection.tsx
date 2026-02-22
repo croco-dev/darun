@@ -2,7 +2,7 @@
 
 import { Box, Flex, Text, VStack } from '@kuma-ui/core';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 export interface FAQItem {
   question: string;
@@ -24,8 +24,8 @@ export function FAQSection({ items }: FAQSectionProps) {
         {t('faq.title')}
       </Text>
       <VStack gap={12} width="100%">
-        {items.map((item, index) => (
-          <FAQAccordionItem key={index} question={item.question} answer={item.answer} />
+        {items.map(item => (
+          <FAQAccordionItem key={`${item.question}-${item.answer}`} question={item.question} answer={item.answer} />
         ))}
       </VStack>
     </VStack>
@@ -34,6 +34,9 @@ export function FAQSection({ items }: FAQSectionProps) {
 
 function FAQAccordionItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
+  const id = useId();
+  const buttonId = `faq-button-${id}`;
+  const panelId = `faq-panel-${id}`;
 
   return (
     <Box
@@ -46,6 +49,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
     >
       <Flex
         as="button"
+        type="button"
         alignItems="center"
         justifyContent="space-between"
         width="100%"
@@ -55,6 +59,9 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         cursor="pointer"
         onClick={() => setIsOpen(prev => !prev)}
         textAlign="left"
+        id={buttonId}
+        aria-expanded={isOpen}
+        aria-controls={panelId}
         _hover={{ bg: 'colors.dark.50' }}
         transition="background 0.2s"
       >
@@ -63,13 +70,21 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         </Text>
         <Box
           color="colors.dark.400"
+          aria-hidden="true"
           style={{
             transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.3s ease',
           }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <title>{isOpen ? 'Collapse answer' : 'Expand answer'}</title>
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            focusable="false"
+            aria-hidden="true"
+          >
             <path
               d="M6 9L12 15L18 9"
               stroke="currentColor"
@@ -81,6 +96,10 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         </Box>
       </Flex>
       <Box
+        id={panelId}
+        role="region"
+        aria-labelledby={buttonId}
+        aria-hidden={!isOpen}
         style={{
           maxHeight: isOpen ? '500px' : '0px',
           opacity: isOpen ? 1 : 0,

@@ -17,11 +17,13 @@ export class FirebaseAuthService implements AuthService {
   private apiKey: string;
 
   constructor({ projectId, privateKey, clientEmail, authDomain, apiKey }: FirebaseAuthConfig) {
+    const normalizedPrivateKey = privateKey.replace(/\\n/g, '\n');
+
     this.authMethods = getFirebaseAuth(
       {
         projectId,
         clientEmail,
-        privateKey,
+        privateKey: normalizedPrivateKey,
       },
       apiKey
     );

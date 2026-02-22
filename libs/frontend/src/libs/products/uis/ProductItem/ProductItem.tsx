@@ -80,31 +80,36 @@ export const ProductItem = ({
           >
             {name}
           </Text>
-          {isSummaryNoWrap ? (
-            <Text
-              fontSize={['12px', '14px']}
-              lineHeight={'1.5'}
-              color={'colors.dark.500'}
-              textOverflow={'ellipsis'}
-              overflow={'hidden'}
-              whiteSpace={'nowrap'}
-              width={'100%'}
-            >
-              {summary}
-            </Text>
-          ) : (
-            <Text fontSize={['12px', '14px']} lineHeight={'1.5'} color={'colors.dark.500'}>
-              {summary}
-            </Text>
-          )}
+          {summary &&
+            (isSummaryNoWrap ? (
+              <Text
+                fontSize={['12px', '14px']}
+                lineHeight={'1.5'}
+                color={'colors.dark.500'}
+                textOverflow={'ellipsis'}
+                overflow={'hidden'}
+                whiteSpace={'nowrap'}
+                width={'100%'}
+              >
+                {summary}
+              </Text>
+            ) : (
+              <Text fontSize={['12px', '14px']} lineHeight={'1.5'} color={'colors.dark.500'}>
+                {summary}
+              </Text>
+            ))}
         </VStack>
         {(tags || specialTags) && (
           <HStack gap="4px" alignItems={'center'} overflowX={'auto'} mr={'12px'}>
             {tags &&
               (maxTagItems && tags.length > maxTagItems ? (
                 <HStack alignItems={'center'} gap="4px">
-                  {tags.slice(0, maxTagItems).map((tag, i) => (
-                    <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
+                  {tags.slice(0, maxTagItems).map(tag => (
+                    <Chip
+                      key={`tag-${tag}`}
+                      variant={tagVariant}
+                      color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}
+                    >
                       {tag}
                     </Chip>
                   ))}
@@ -113,8 +118,12 @@ export const ProductItem = ({
                   </Text>
                 </HStack>
               ) : (
-                tags.map((tag, i) => (
-                  <Chip key={i} variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
+                tags.map(tag => (
+                  <Chip
+                    key={`tag-${tag}`}
+                    variant={tagVariant}
+                    color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}
+                  >
                     {tag}
                   </Chip>
                 ))
@@ -122,8 +131,8 @@ export const ProductItem = ({
             {specialTags && (
               <>
                 <Text color={'colors.dark.500'}>•</Text>
-                {specialTags.map((tag, i) => (
-                  <Chip key={i} variant={tagVariant} color="filledDark">
+                {specialTags.map(tag => (
+                  <Chip key={`special-tag-${tag}`} variant={tagVariant} color="filledDark">
                     {tag}
                   </Chip>
                 ))}

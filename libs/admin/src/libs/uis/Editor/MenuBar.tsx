@@ -2,13 +2,18 @@
 
 import './MenuBar.scss';
 import { Editor } from '@tiptap/react';
-import { ChangeEvent, Fragment, useMemo, useRef } from 'react';
+import { ChangeEvent, Fragment, useCallback, useMemo, useRef } from 'react';
 import { useImageUpload } from '../../utils/useImageUplaod';
 import { MenuItem } from './MenuItem';
 
 type MenuBarProps = { editor: Editor };
 
 export const MenuBar = ({ editor }: MenuBarProps) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const triggerImageUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
   const items = useMemo(
     () => [
       {
@@ -120,13 +125,9 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
         action: () => editor.chain().focus().redo().run(),
       },
     ],
-    [editor]
+    [editor, triggerImageUpload]
   );
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const triggerImageUpload = () => {
-    fileInputRef.current?.click();
-  };
   const { upload } = useImageUpload();
 
   const onFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -146,11 +147,26 @@ export const MenuBar = ({ editor }: MenuBarProps) => {
 
   return (
     <div className="editor__header">
-      {items.map((item, index) => (
-        <Fragment key={index}>
-          {item.type === 'divider' ? <div className="divider" /> : <MenuItem {...item} />}
-        </Fragment>
-      ))}
+      {(() => {
+        let dividerOrder = 0;
+
+        return items.map(item => {
+          let key: string;
+
+          if (item.type === 'divider') {
+            dividerOrder += 1;
+            key = `divider-${dividerOrder}`;
+          } else {
+            key = `${item.icon ?? 'item'}-${item.title ?? 'untitled'}`;
+          }
+
+          return (
+            <Fragment key={key}>
+              {item.type === 'divider' ? <div className="divider" aria-hidden="true" /> : <MenuItem {...item} />}
+            </Fragment>
+          );
+        });
+      })()}
       <input type="file" ref={fileInputRef} onChange={onFileChange} accept="image/*" style={{ display: 'none' }} />
     </div>
   );
