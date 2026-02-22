@@ -78,7 +78,7 @@ export class PostgresqlProductRepository implements ProductRepository {
     return this.db
       .select({ value: count() })
       .from(products)
-      .then(rows => rows[0].value);
+      .then(rows => Number(rows[0]?.value ?? 0));
   }
 
   async insert(values: Product): Promise<Product | null> {
@@ -97,7 +97,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .select({ value: count() })
       .from(products)
       .where(isNotNull(products.publishedAt))
-      .then(rows => rows[0].value);
+      .then(rows => Number(rows[0]?.value ?? 0));
   }
 
   async findOneBySlug(slug: string): Promise<Product | null> {

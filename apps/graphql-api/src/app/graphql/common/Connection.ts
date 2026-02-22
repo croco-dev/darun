@@ -3,18 +3,30 @@ import { Cursor } from './Cursor';
 
 export class Connection {
   public static verifyArgs({ first, after, before, last }: ConnectionArgs) {
+    if (first !== undefined && last !== undefined) {
+      throw new Error('pagination/invalid-connection-args');
+    }
+
     if (first !== undefined) {
+      if (!Number.isInteger(first) || first <= 0 || before !== undefined) {
+        throw new Error('pagination/invalid-connection-args');
+      }
+
       return {
         cursor: after,
-        limit: Number(first),
+        limit: first,
         type: 'after',
       };
     }
 
     if (last !== undefined) {
+      if (!Number.isInteger(last) || last <= 0 || after !== undefined) {
+        throw new Error('pagination/invalid-connection-args');
+      }
+
       return {
         cursor: before,
-        limit: Number(last),
+        limit: last,
         type: 'before',
       };
     }

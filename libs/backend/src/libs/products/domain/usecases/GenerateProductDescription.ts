@@ -6,8 +6,10 @@ import { ProductDescriptionGenerator, ProductDescriptionGeneratorToken } from '.
 @Service()
 export class GenerateProductDescription {
   constructor(
-    @Inject(ProductRepositoryToken) private readonly productRepository: ProductRepository,
-    @Inject(ProductDescriptionGeneratorToken) private readonly productDescriptionGenerator: ProductDescriptionGenerator
+    @Inject(ProductRepositoryToken)
+    private readonly productRepository: ProductRepository,
+    @Inject(ProductDescriptionGeneratorToken)
+    private readonly productDescriptionGenerator: ProductDescriptionGenerator
   ) {}
 
   async execute({ productId }: { productId: string }): Promise<Product> {
@@ -18,13 +20,9 @@ export class GenerateProductDescription {
 
     const generatedDescription = await this.productDescriptionGenerator.generate(product);
 
-    product.update({ description: generatedDescription });
-
-    const updatedProduct = await this.productRepository.updateById(product.id, () => product);
-    if (!updatedProduct) {
-      throw new Error('Failed to update product description');
-    }
-
-    return updatedProduct;
+    return this.productRepository.updateById(product.id, prevProduct => {
+      prevProduct.update({ description: generatedDescription });
+      return prevProduct;
+    });
   }
 }
