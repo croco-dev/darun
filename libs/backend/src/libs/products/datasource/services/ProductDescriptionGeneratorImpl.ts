@@ -223,6 +223,12 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
       { role: 'user', content: userPrompt },
     ]);
 
-    return response.content || '';
+    const content = response.content?.trim();
+
+    if (!content) {
+      throw new Error('LLM description response is empty');
+    }
+
+    return content;
   }
 }

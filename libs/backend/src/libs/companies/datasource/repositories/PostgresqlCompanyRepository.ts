@@ -63,7 +63,7 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
       this.db
         .select({ count: count() })
         .from(companies)
-        .then(res => res[0].count),
+        .then(res => Number(res[0]?.count ?? 0)),
     ]);
 
     return {

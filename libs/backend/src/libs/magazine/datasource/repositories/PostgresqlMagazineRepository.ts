@@ -78,7 +78,7 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
       this.db
         .select({ count: count() })
         .from(magazines)
-        .then(res => res[0].count),
+        .then(res => Number(res[0]?.count ?? 0)),
     ]);
 
     return {

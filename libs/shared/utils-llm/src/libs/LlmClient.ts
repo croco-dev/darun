@@ -14,6 +14,12 @@ export class LlmClient {
       messages,
     });
 
-    return completion.choices[0].message;
+    const message = completion.choices[0]?.message;
+
+    if (!message) {
+      throw new Error(`LLM completion is empty for model: ${model}`);
+    }
+
+    return message;
   }
 }
