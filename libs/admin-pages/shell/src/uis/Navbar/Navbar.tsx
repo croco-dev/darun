@@ -1,6 +1,6 @@
 'use client';
 
-import { LogoutButton } from '@darun/admin-accounts/shell';
+import { LogoutButton } from '@darun/admin-accounts-shell';
 import { Link } from '@darun/utils-router';
 import { Group, Code, Flex, Text } from '@mantine/core';
 import { IconArchive, IconBuildingCommunity, IconNews } from '@tabler/icons-react';

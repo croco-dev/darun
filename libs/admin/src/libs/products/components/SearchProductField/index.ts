@@ -1,1 +1,0 @@
-export { SearchProductField } from './SearchProductField';

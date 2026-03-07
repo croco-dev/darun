@@ -1,1 +1,0 @@
-export { ProductFeatureTable } from './ProductFeatureTable';

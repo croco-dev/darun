@@ -1,4 +1,4 @@
-import { MagazineWriteSection } from '@darun/admin-magazines/shell';
+import { MagazineWriteSection } from '@darun/admin-magazines-shell';
 import { AppShell, PageShell } from '../uis';
 
 export const MagazineCreatePage = () => (

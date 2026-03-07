@@ -1,1 +1,0 @@
-export { ProductLinkTable } from './ProductLinkTable';

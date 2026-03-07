@@ -1,1 +1,0 @@
-export { IndexProductButton } from './IndexProductButton';

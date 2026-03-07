@@ -1,1 +1,0 @@
-export { NewProductForm } from './NewProductForm';

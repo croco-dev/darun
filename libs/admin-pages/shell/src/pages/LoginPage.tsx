@@ -1,4 +1,4 @@
-import { LoginSection } from '@darun/admin-accounts/shell';
+import { LoginSection } from '@darun/admin-accounts-shell';
 import { Paper, Title, Container, Flex } from '@mantine/core';
 import { Logo } from '../uis';
 

@@ -1,6 +1,5 @@
 {
   "extends": [
-    "@darun/admin/tsconfig.json",
     "@darun/utils-tsconfig/tsconfig.next.json"
   ],
   "compilerOptions": {

@@ -1,5 +1,5 @@
-import { AllCompaniesList } from '@darun/admin-companies/shell';
-import { ProductListRefreshButton } from '@darun/admin-products/shell';
+import { AllCompaniesList } from '@darun/admin-companies-shell';
+import { ProductListRefreshButton } from '@darun/admin-products-shell';
 import { Link } from '@darun/utils-router';
 import { Button, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';

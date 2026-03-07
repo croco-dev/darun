@@ -1,4 +1,4 @@
-import { NewProductLinkPage } from '@darun/admin';
+import { NewProductLinkPage } from '@darun/admin-pages-shell';
 
 type PageProps = {
   params: Promise<{

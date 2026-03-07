@@ -1,6 +1,6 @@
 'use client';
 
-import { NewProductScreenshotFormSection } from '@darun/admin-products/shell';
+import { NewProductScreenshotFormSection } from '@darun/admin-products-shell';
 import { Card, Text } from '@mantine/core';
 import { AppShell, PageShell } from '../uis';
 

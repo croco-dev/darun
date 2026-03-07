@@ -1,14 +1,14 @@
 'use client';
 
-import { ProductTagsForm } from '@darun/admin-products/shell';
+import { ProductTagsForm } from '@darun/admin-products-shell';
 import {
   ProductDetailInfoSection,
   ProductDetailDescriptionSection,
   ProductDetailLinkSection,
-} from '@darun/admin-products/shell';
-import { ProductDetailAlternativeSection } from '@darun/admin-products/shell';
-import { ProductDetailCompanySection } from '@darun/admin-products/shell';
-import { ProductDetailFeatureSection } from '@darun/admin-products/shell';
+} from '@darun/admin-products-shell';
+import { ProductDetailAlternativeSection } from '@darun/admin-products-shell';
+import { ProductDetailCompanySection } from '@darun/admin-products-shell';
+import { ProductDetailFeatureSection } from '@darun/admin-products-shell';
 import { Button, Card, Group, Stack, Title } from '@mantine/core';
 import Link from 'next/link';
 import { AppShell, PageShell } from '../uis';

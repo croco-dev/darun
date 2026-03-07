@@ -1,3 +1,3 @@
-import { ProductListPage } from '@darun/admin';
+import { ProductListPage } from '@darun/admin-pages-shell';
 
 export default ProductListPage;

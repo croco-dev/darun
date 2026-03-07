@@ -1,6 +1,6 @@
 'use client';
 
-import { ProductCompanyEditSection } from '@darun/admin-products/shell';
+import { ProductCompanyEditSection } from '@darun/admin-products-shell';
 import { AppShell, PageShell } from '../uis';
 
 export const ProductCompanyEditPage = ({ params: { slug } }: { params: { slug: string } }) => (

@@ -10,6 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@darun/admin-accounts-shell": "workspace:*",
+    "@darun/admin-companies-shell": "workspace:*",
+    "@darun/admin-magazines-shell": "workspace:*",
+    "@darun/admin-products-shell": "workspace:*",
     "@darun/ui": "workspace:*"
   },
   "peerDependencies": {

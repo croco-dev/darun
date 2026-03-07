@@ -1,1 +1,0 @@
-export { WriteMagazine } from './WriteMagazine';

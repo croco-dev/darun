@@ -1,4 +1,4 @@
-import { LogoutSection } from '@darun/admin-accounts/shell';
+import { LogoutSection } from '@darun/admin-accounts-shell';
 import { Center, Container } from '@mantine/core';
 
 export const LogoutPage = () => {

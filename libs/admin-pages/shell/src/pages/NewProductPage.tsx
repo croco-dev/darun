@@ -1,4 +1,4 @@
-import { NewProductFormSection } from '@darun/admin-products/shell';
+import { NewProductFormSection } from '@darun/admin-products-shell';
 import { AppShell, PageShell } from '../uis';
 
 export const NewProductPage = () => (

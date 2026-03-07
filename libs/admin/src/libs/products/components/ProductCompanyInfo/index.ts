@@ -1,1 +1,0 @@
-export { ProductCompanyInfo } from './ProductCompanyInfo';

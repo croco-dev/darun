@@ -1,4 +1,4 @@
-import { MagazinesList } from '@darun/admin-magazines/shell';
+import { MagazinesList } from '@darun/admin-magazines-shell';
 import { Link } from '@darun/utils-router';
 import { Button, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';

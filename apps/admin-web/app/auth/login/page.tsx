@@ -1,3 +1,3 @@
-import { LoginPage } from '@darun/admin';
+import { LoginPage } from '@darun/admin-pages-shell';
 
 export default LoginPage;

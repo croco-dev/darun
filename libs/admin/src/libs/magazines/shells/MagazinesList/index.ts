@@ -1,1 +1,0 @@
-export { MagazinesList } from './MagazinesList';

@@ -1,4 +1,4 @@
-import { NewCompanyFormSection } from '@darun/admin-companies/shell';
+import { NewCompanyFormSection } from '@darun/admin-companies-shell';
 import { AppShell, PageShell } from '../uis';
 
 export const NewCompanyPage = () => (

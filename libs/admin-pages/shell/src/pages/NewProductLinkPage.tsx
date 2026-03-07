@@ -1,6 +1,6 @@
 'use client';
 
-import { NewProductLinkSection } from '@darun/admin-products/shell';
+import { NewProductLinkSection } from '@darun/admin-products-shell';
 import { Card, Text } from '@mantine/core';
 import { AppShell, PageShell } from '../uis';
 
