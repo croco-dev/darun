@@ -10,7 +10,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@darun/backend": "workspace:*",
     "@darun/magazines-datasource": "workspace:*",
     "@darun/magazines-domain": "workspace:*"
   },

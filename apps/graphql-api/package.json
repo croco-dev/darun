@@ -17,7 +17,6 @@
     "@as-integrations/aws-lambda": "3.1.0",
     "@darun/accounts-datasource": "workspace:*",
     "@darun/accounts-domain": "workspace:*",
-    "@darun/backend": "workspace:*",
     "@darun/companies-datasource": "workspace:*",
     "@darun/companies-domain": "workspace:*",
     "@darun/images-datasource": "workspace:*",

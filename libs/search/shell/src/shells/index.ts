@@ -1,0 +1,1 @@
+export { SearchProductResult } from './SearchProductResult';

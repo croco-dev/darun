@@ -1,0 +1,37 @@
+{
+  "name": "@darun/products-shell",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint **/*.ts*",
+    "test": "echo 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@darun/products-feature": "workspace:*",
+    "@darun/ui": "workspace:*",
+    "@darun/utils-router": "workspace:*",
+    "react-medium-image-zoom": "5.2.10"
+  },
+  "peerDependencies": {
+    "@apollo/client": "3.11.2",
+    "@croco/utils-structure-react": "0.0.1",
+    "@darun/provider-graphql": "workspace:*",
+    "@darun/ui-foundation": "workspace:*",
+    "@darun/ui-icons": "workspace:*",
+    "@kuma-ui/core": "1.5.7",
+    "next": "*",
+    "next-intl": ">=4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.2"
+  }
+}

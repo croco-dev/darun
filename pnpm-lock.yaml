@@ -193,9 +193,6 @@ importers:
       '@darun/accounts-domain':
         specifier: workspace:*
         version: link:../../libs/accounts/domain
-      '@darun/backend':
-        specifier: workspace:*
-        version: link:../../libs/backend
       '@darun/companies-datasource':
         specifier: workspace:*
         version: link:../../libs/companies/datasource
@@ -664,55 +661,6 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
 
-  libs/backend:
-    dependencies:
-      '@darun/provider-database':
-        specifier: workspace:*
-        version: link:../shared/provider-database
-      '@darun/utils-llm':
-        specifier: workspace:*
-        version: link:../shared/utils-llm
-      '@typegoose/typegoose':
-        specifier: 12.11.0
-        version: 12.11.0(mongoose@8.10.1)
-      cloudinary:
-        specifier: 2.4.0
-        version: 2.4.0
-      dataloader:
-        specifier: 2.2.2
-        version: 2.2.2
-      drizzle-orm:
-        specifier: 0.32.1
-        version: 0.32.1(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@types/react@19.2.14)(postgres@3.4.8)(react@19.2.4)
-      es-toolkit:
-        specifier: 1.29.0
-        version: 1.29.0
-      firebase-admin:
-        specifier: 12.3.0
-        version: 12.3.0(encoding@0.1.13)
-      mongoose:
-        specifier: 8.10.1
-        version: 8.10.1
-      reflect-metadata:
-        specifier: 0.2.2
-        version: 0.2.2
-      type-graphql:
-        specifier: 2.0.0-rc.2
-        version: 2.0.0-rc.2(graphql-scalars@1.25.0(graphql@16.12.0))(graphql@16.12.0)
-      typedi:
-        specifier: 0.10.0
-        version: 0.10.0
-      ulid:
-        specifier: 2.3.0
-        version: 2.3.0
-    devDependencies:
-      '@darun/eslint-config':
-        specifier: workspace:*
-        version: link:../shared/utils-eslint-config
-      '@darun/utils-tsconfig':
-        specifier: workspace:*
-        version: link:../shared/utils-tsconfig
-
   libs/companies/datasource:
     dependencies:
       '@darun/companies-domain':
@@ -756,9 +704,6 @@ importers:
 
   libs/companies/feature:
     dependencies:
-      '@darun/backend':
-        specifier: workspace:*
-        version: link:../../backend
       '@darun/companies-datasource':
         specifier: workspace:*
         version: link:../datasource
@@ -893,9 +838,6 @@ importers:
 
   libs/images/feature:
     dependencies:
-      '@darun/backend':
-        specifier: workspace:*
-        version: link:../../backend
       '@darun/images-datasource':
         specifier: workspace:*
         version: link:../datasource
@@ -978,9 +920,6 @@ importers:
 
   libs/magazines/feature:
     dependencies:
-      '@darun/backend':
-        specifier: workspace:*
-        version: link:../../backend
       '@darun/magazines-datasource':
         specifier: workspace:*
         version: link:../datasource
@@ -1016,6 +955,102 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../shared/utils-tsconfig
+
+  libs/magazines/shell:
+    dependencies:
+      '@darun/magazines-feature':
+        specifier: workspace:*
+        version: link:../feature
+      '@darun/ui':
+        specifier: workspace:*
+        version: link:../../shared/ui
+      next:
+        specifier: '*'
+        version: 15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../../shared/utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../../shared/utils-tsconfig
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.2
+
+  libs/opengraph/shell:
+    dependencies:
+      '@darun/ui':
+        specifier: workspace:*
+        version: link:../../shared/ui
+      next:
+        specifier: '*'
+        version: 15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../../shared/utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../../shared/utils-tsconfig
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.2
+
+  libs/pages/shell:
+    dependencies:
+      '@darun/ui':
+        specifier: workspace:*
+        version: link:../../shared/ui
+      next:
+        specifier: '*'
+        version: 15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../../shared/utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../../shared/utils-tsconfig
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.2
 
   libs/products/datasource:
     dependencies:
@@ -1066,9 +1101,6 @@ importers:
 
   libs/products/feature:
     dependencies:
-      '@darun/backend':
-        specifier: workspace:*
-        version: link:../../backend
       '@darun/products-datasource':
         specifier: workspace:*
         version: link:../datasource
@@ -1104,6 +1136,67 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../shared/utils-tsconfig
+
+  libs/products/shell:
+    dependencies:
+      '@apollo/client':
+        specifier: 3.11.2
+        version: 3.11.2(@types/react@19.2.14)(graphql@16.12.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@croco/utils-structure-react':
+        specifier: 0.0.1
+        version: 0.0.1
+      '@darun/products-feature':
+        specifier: workspace:*
+        version: link:../feature
+      '@darun/provider-graphql':
+        specifier: workspace:*
+        version: link:../../shared/provider-graphql
+      '@darun/ui':
+        specifier: workspace:*
+        version: link:../../shared/ui
+      '@darun/ui-foundation':
+        specifier: workspace:*
+        version: link:../../shared/ui-foundation
+      '@darun/ui-icons':
+        specifier: workspace:*
+        version: link:../../shared/ui-icons
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../../shared/utils-router
+      '@kuma-ui/core':
+        specifier: 1.5.7
+        version: 1.5.7(@types/react@19.2.14)(next@15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react@19.2.4)
+      next:
+        specifier: '*'
+        version: 15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
+      next-intl:
+        specifier: '>=4'
+        version: 4.8.2(next@15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react@19.2.4)(typescript@5.9.2)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+      react-medium-image-zoom:
+        specifier: 5.2.10
+        version: 5.2.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../../shared/utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../../shared/utils-tsconfig
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.2
 
   libs/recommendation/datasource:
     dependencies:
@@ -1274,6 +1367,43 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../shared/utils-tsconfig
+
+  libs/search/shell:
+    dependencies:
+      '@darun/products-shell':
+        specifier: workspace:*
+        version: link:../../products/shell
+      '@darun/search-feature':
+        specifier: workspace:*
+        version: link:../feature
+      '@darun/ui':
+        specifier: workspace:*
+        version: link:../../shared/ui
+      next:
+        specifier: '*'
+        version: 15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../../shared/utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../../shared/utils-tsconfig
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.2
 
   libs/shared/provider-auth/client:
     dependencies:
@@ -1737,9 +1867,6 @@ importers:
 
   libs/translation/feature:
     dependencies:
-      '@darun/backend':
-        specifier: workspace:*
-        version: link:../../backend
       '@darun/magazines-domain':
         specifier: workspace:*
         version: link:../../magazines/domain
@@ -17830,7 +17957,7 @@ snapshots:
       eslint: 9.39.2(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.8.1(eslint-plugin-import-x@4.16.1(@typescript-eslint/utils@8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1)))(eslint-plugin-import@2.32.0)(eslint@9.39.2(jiti@2.6.1))
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@7.3.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-typescript@3.8.1)(eslint@9.39.2(jiti@2.6.1))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-react: 7.37.4(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-react-hooks: 5.2.0(eslint@9.39.2(jiti@2.6.1))
@@ -17877,19 +18004,18 @@ snapshots:
       stable-hash: 0.0.4
       tinyglobby: 0.2.15
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@7.3.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-typescript@3.8.1)(eslint@9.39.2(jiti@2.6.1))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-import-x: 4.16.1(@typescript-eslint/utils@8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@7.3.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.1)(eslint@9.39.2(jiti@2.6.1)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
-      '@typescript-eslint/parser': 7.3.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/parser': 8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2)
       eslint: 9.39.2(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.8.1(eslint-plugin-import-x@4.16.1(@typescript-eslint/utils@8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1)))(eslint-plugin-import@2.32.0)(eslint@9.39.2(jiti@2.6.1))
     transitivePeerDependencies:
       - supports-color
 
@@ -17929,7 +18055,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@7.3.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-typescript@3.8.1)(eslint@9.39.2(jiti@2.6.1)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint@9.39.2(jiti@2.6.1)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -17940,7 +18066,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.39.2(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@7.3.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.1)(eslint@9.39.2(jiti@2.6.1))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -17952,7 +18078,7 @@ snapshots:
       string.prototype.trimend: 1.0.9
       tsconfig-paths: 3.15.0
     optionalDependencies:
-      '@typescript-eslint/parser': 7.3.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/parser': 8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2)
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack

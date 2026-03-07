@@ -1,0 +1,1 @@
+export { ProductDetailCompanySection } from './ProductDetailCompanySection';

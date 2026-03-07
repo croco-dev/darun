@@ -10,7 +10,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@darun/backend": "workspace:*",
     "@darun/images-datasource": "workspace:*",
     "@darun/images-domain": "workspace:*"
   },

@@ -1,0 +1,1 @@
+export { ProductPhotoSection } from './ProductPhotoSection';
