@@ -1,0 +1,15 @@
+.table_row {
+  &:hover {
+    background: var(--code-bg, var(--mantine-color-gray-1));
+  }
+}
+
+.link_icon_wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 12px;
+}
+

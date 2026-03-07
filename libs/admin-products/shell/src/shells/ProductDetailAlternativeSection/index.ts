@@ -1,0 +1,1 @@
+export { ProductDetailAlternativeSection } from './ProductDetailAlternativeSection';

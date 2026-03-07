@@ -1,0 +1,11 @@
+{
+  "extends": "@darun/utils-tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "typed.d.ts"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,20 @@
+'use client';
+
+import { NewProductLinkSection } from '@darun/admin-products/shell';
+import { Card, Text } from '@mantine/core';
+import { AppShell, PageShell } from '../uis';
+
+export const NewProductLinkPage = ({ params: { slug } }: { params: { slug: string } }) => (
+  <AppShell>
+    <PageShell title={'서비스에 링크 추가'}>
+      <Card withBorder shadow="sm" radius="md">
+        <Card.Section withBorder inheritPadding py="xs">
+          <Text fw={500}>링크</Text>
+        </Card.Section>
+        <Card.Section inheritPadding mt="sm" pb="md">
+          <NewProductLinkSection productSlug={slug} />
+        </Card.Section>
+      </Card>
+    </PageShell>
+  </AppShell>
+);

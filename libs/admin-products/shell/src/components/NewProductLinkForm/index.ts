@@ -1,0 +1,1 @@
+export { NewProductLinkForm } from './NewProductLinkForm';
