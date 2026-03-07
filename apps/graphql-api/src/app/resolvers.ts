@@ -1,16 +1,18 @@
 import '../config';
 
+import {
+  FeatureMutationResolver,
+  FeatureQueryResolver,
+  ProductMutationResolver,
+  ProductQueryResolver,
+} from '@darun/products-feature';
 import { NonEmptyArray } from 'type-graphql';
 import { CompanyMutationResolver } from './graphql/company/Company.mutation.resolver';
 import { CompanyQueryResolver } from './graphql/company/Company.query.resolver';
-import { FeatureMutationResolver } from './graphql/feature/Feature.mutation.resolver';
-import { FeatureQueryResolver } from './graphql/feature/Feature.query.resolver';
 import { HealthResolver } from './graphql/Health.resolver';
 import { ImageMutationResolver } from './graphql/image/Image.mutation.resolver';
 import { MagazineMutationResolver } from './graphql/magazine/Magazine.mutation.resolver';
 import { MagazineQueryResolver } from './graphql/magazine/Magazine.query.resolver';
-import { ProductMutationResolver } from './graphql/product/Product.mutation.resolver';
-import { ProductQueryResolver } from './graphql/product/Product.query.resolver';
 import { TranslationMutationResolver } from './graphql/translation/Translation.mutation.resolver';
 
 // eslint-disable-next-line @typescript-eslint/ban-types

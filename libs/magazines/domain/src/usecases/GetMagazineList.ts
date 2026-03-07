@@ -1,0 +1,15 @@
+import { Inject, Service } from 'typedi';
+import { Magazine } from '../entities/Magazine';
+import { MagazineRepository, MagazineRepositoryToken } from '../repositories/MagazineRepository';
+
+@Service()
+export class GetMagazineList {
+  constructor(
+    @Inject(MagazineRepositoryToken)
+    private readonly magazineRepository: MagazineRepository
+  ) {}
+
+  async execute({ page, limit = 50 }: { page: number; limit: number }): Promise<{ data: Magazine[]; total: number }> {
+    return this.magazineRepository.findAllWithPagination(page, limit);
+  }
+}

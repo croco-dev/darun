@@ -1,4 +1,5 @@
-import { GetMagazine, GetPublishedMagazine, GetProfile, GetMagazineList } from '@darun/backend';
+import { GetProfile } from '@darun/accounts-domain';
+import { GetMagazine, GetPublishedMagazine, GetMagazineList } from '@darun/magazines-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
@@ -36,7 +37,10 @@ export class MagazineQueryResolver {
   @Query(() => MagazinePagination)
   public async tempAllMagazines(@Arg('page', () => Int) page: number): Promise<MagazinePagination> {
     const limit = 50;
-    const { data, total } = await this.getMagazineListUseCase.execute({ page, limit });
+    const { data, total } = await this.getMagazineListUseCase.execute({
+      page,
+      limit,
+    });
 
     return {
       totalCount: total,
@@ -47,7 +51,9 @@ export class MagazineQueryResolver {
 
   @FieldResolver(() => Author, { nullable: true })
   public async author(@Root() magazine: Magazine): Promise<Author | null> {
-    const profile = await this.getProfileUseCase.execute({ userId: magazine.authorId });
+    const profile = await this.getProfileUseCase.execute({
+      userId: magazine.authorId,
+    });
 
     return profile
       ? {

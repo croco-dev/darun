@@ -1,0 +1,499 @@
+---
+description: Next.js 클라이언트 개발 규칙 (Shell, Feature, UI 계층 구조, MVVM bind 패턴, Suspense 활용, Apollo Client, Clerk 인증)
+alwaysApply: false
+---
+# 📱 클라이언트 개발 규칙
+
+## 계층 구조
+
+```
+Apps (라우팅 + Provider)
+  └── Shells (레이아웃 조립 + UX Boundary)
+        └── Features (비즈니스 로직 + GraphQL)
+              └── UI (프레젠테이션)
+                    └── @darun/ui (공통 UI 라이브러리)
+```
+
+## 계층별 위치 및 역할
+
+### Apps (`apps/*`)
+- **위치**: `apps/console-web`, `apps/admin-web`, `apps/service-web`
+- **역할**: 라우팅, Provider 설정, 전역 스타일 import
+- **금지**: 비즈니스 로직, 복잡한 레이아웃 조립
+
+### Shells
+
+Shell은 두 가지 유형으로 나뉩니다:
+
+#### 공용 Shell (`apps/*/src/shells/`)
+- **위치**: 각 App 내부의 `src/shells/` 폴더
+- **용도**: Root Layout 등 전역 공통 Shell만 위치
+- **예시**: GlobalLayout, RootLayout
+
+```typescript
+// apps/console-web/src/shells/GlobalLayout.tsx
+'use client';
+
+import { GlobalHeader } from '@darun/feature-navigation';
+import { Suspense } from 'react';
+
+export function GlobalLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <Suspense fallback={<HeaderSkeleton />}>
+        <GlobalHeader />
+      </Suspense>
+      {children}
+    </>
+  );
+}
+```
+
+#### 도메인 Shell (`libs/{domain}/shell`)
+- **위치**: `libs/{domain}/shell` 패키지
+- **역할**:
+  - 도메인별 페이지(`*Page`)/레이아웃(`*Layout`) 컴포넌트 제공
+  - Feature 컴포넌트 조립
+  - Suspense/ErrorBoundary 등 UX Boundary 전략 정의
+- **의존성**: `{domain}/feature`, `shared/feature-*`, `@darun/ui`
+- **금지**: 비즈니스 로직, GraphQL 호출, 직접적인 데이터 fetching
+- **네이밍 규칙**: Next.js 컨벤션과 일치
+  - `*Page` - 페이지 컴포넌트 (예: `ProjectListPage`, `CreateWorkspacePage`)
+  - `*Layout` - 레이아웃 컴포넌트 (예: `WorkspaceLayout`)
+- **폴더 구조**: flat (중첩 폴더 없이 `libs/` 바로 아래에 컴포넌트 배치)
+
+```
+libs/{domain}/shell/src/
+├── index.ts
+└── libs/
+    ├── WorkspaceLayout.tsx       # 레이아웃 컴포넌트
+    ├── CreateWorkspacePage.tsx   # 페이지 컴포넌트
+    ├── ProjectListPage.tsx
+    └── ProjectDetailPage.tsx
+```
+
+```typescript
+// libs/workspace/shell/src/libs/CreateWorkspacePage.tsx
+'use client';
+
+import { CreateWorkspaceForm } from '@darun/workspace-feature';
+import { useRouter } from '@darun/utils-router';
+
+export function CreateWorkspacePage() {
+  const router = useRouter();
+  
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <CreateWorkspaceForm onSuccess={() => router.push('/')} />
+    </div>
+  );
+}
+```
+
+### Features
+
+#### 전역 Feature (`libs/shared/feature-*`)
+- **위치**: `libs/shared/feature-navigation`, `libs/shared/feature-notification` 등
+- **역할**: 도메인에 종속되지 않는 전역 스마트 컴포넌트
+- **예시**: GlobalHeader, GlobalSidebar, ToastManager, ThemeToggle
+- **의존성**: @darun/ui, utils-*, provider-graphql
+- **금지**: 특정 도메인 패키지 의존 (순환 참조 방지)
+
+```
+libs/shared/feature-navigation/src/libs/
+└── navigation/
+    └── GlobalHeader/
+        ├── GlobalHeader.tsx      # bind(hook, view)
+        ├── GlobalHeaderView.tsx  # 순수 View
+        ├── useGlobalHeader.ts    # ViewModel (GraphQL 쿼리)
+        └── index.ts
+```
+
+#### 도메인 Feature (`libs/{domain}/feature`)
+- **위치**: `libs/portfolio/feature`, `libs/user/feature` 등
+- **역할**: 도메인 특화 비즈니스 로직 + GraphQL 연동
+- **폴더링**: 페이지(Shell) 기준 Context-Based Grouping
+
+```
+libs/portfolio/feature/src/libs/
+├── project-list/           # ProjectListPage에서 쓰이는 기능들
+│   ├── ProjectTable/
+│   ├── ProjectStats/
+│   └── index.ts
+├── project-detail/         # ProjectDetailPage에서 쓰이는 기능들
+│   ├── ProjectInfo/
+│   └── ProjectHistory/
+└── shared/                 # 여러 페이지에서 공통으로 쓰이는 Feature
+```
+
+### UI
+
+#### 도메인 UI (`libs/{domain}/ui`)
+- **위치**: `libs/portfolio/ui` 등
+- **역할**: 도메인 특화 프레젠테이션 컴포넌트
+- **의존성**: @darun/ui만 의존
+- **금지**: 비즈니스 로직, GraphQL
+
+#### 공통 UI Library (`@darun/ui`)
+- **위치**: `libs/shared/ui`
+- **역할**: shadcn/ui 기반 재사용 컴포넌트
+
+## 기술 스택
+- **Framework**: Next.js 15 + React 19 + TypeScript
+- **Styling**: Tailwind CSS 4 + shadcn/ui
+- **UI Components**: @radix-ui/react-* + @darun/ui
+- **Icons**: `@darun/ui/icons` (lucide-react re-export)
+- **Navigation**: `@darun/utils-router` (next/navigation re-export)
+- **State**: React hooks, 복잡한 상태는 컨텍스트 활용
+- **GraphQL**: Apollo Client (@apollo/client, @apollo/client-integration-nextjs)
+- **Auth**: Clerk (@clerk/nextjs)
+- **Deployment**: Cloudflare (@opennextjs/cloudflare)
+
+## 파일 구조
+
+### Apps
+```
+apps/console-web/src/
+├── app/
+│   ├── layout.tsx           # 루트 레이아웃 (GlobalLayout 사용)
+│   ├── page.tsx             # 페이지 컴포넌트
+│   ├── client-providers.tsx # Apollo Provider
+│   ├── server-providers.tsx # Clerk Provider
+│   └── environment.ts       # 환경 변수
+└── shells/
+    └── GlobalLayout.tsx     # 레이아웃 조립 + UX Boundary
+```
+
+### Feature (MVVM 패턴)
+```
+libs/shared/feature-navigation/src/
+├── index.ts                              # 최상위에서 바로 export
+└── libs/
+    └── navigation/
+        └── GlobalHeader/
+            ├── GlobalHeader.tsx          # bind(hook, 인라인 View)
+            └── useGlobalHeader.ts        # ViewModel (GraphQL 쿼리 + 로직)
+```
+
+## MVVM 패턴 (bind + hook)
+
+Feature Layer에서 `@darun/utils-mvvm`의 `bind` 함수 사용:
+
+```typescript
+// GlobalHeader.tsx - View를 bind에 인라인으로 작성
+'use client';
+
+import { UserButton } from '@clerk/nextjs';
+import { bind } from '@darun/utils-mvvm';
+import { useGlobalHeader } from './useGlobalHeader';
+
+export const GlobalHeader = bind(useGlobalHeader, ({ workspaceName }) => (
+  <header className="flex items-center justify-between border-b px-4 py-3">
+    <h1 className="text-lg font-semibold">{workspaceName}</h1>
+    <UserButton />
+  </header>
+));
+
+// useGlobalHeader.ts (ViewModel)
+'use client';
+
+import { useSuspenseQuery } from '@darun/utils-apollo-client';
+import { graphql } from '@darun/provider-graphql';
+
+const ViewerQuery = graphql(`...`);
+
+export function useGlobalHeader() {
+  const { data } = useSuspenseQuery(ViewerQuery);
+  return {
+    workspaceName: data.viewer?.workspace?.name ?? 'Slackbase Console',
+  };
+}
+```
+
+## GraphQL Operation Naming Convention
+
+GraphQL operation 이름은 다음과 같은 규칙을 따릅니다:
+
+- **Query**: `{EntityName}On{ComponentName}`
+  - 예시: `ViewerOnGlobalHeader`, `WikiDocumentOnWikiDetail`
+- **Mutation**: `{MutationName}On{ComponentName}`
+  - 예시: `CreateWorkspaceOnCreateWorkspaceForm`, `UpdateWikiDocumentOnWikiEditForm`
+- **Fragment**: `{EntityName}On{ComponentName}`
+  - 예시: `WikiDocumentOnWikiDetail`, `UserOnUserProfile`
+
+```typescript
+// ✅ 올바른 예시
+const ViewerQuery = graphql(`
+  query ViewerOnGlobalHeader {
+    viewer {
+      id
+      workspace {
+        name
+      }
+    }
+  }
+`);
+
+const CreateWorkspaceMutation = graphql(`
+  mutation CreateWorkspaceOnCreateWorkspaceForm($input: CreateWorkspaceInput!) {
+    createWorkspace(input: $input) {
+      viewer {
+        id
+        workspace {
+          id
+          name
+        }
+      }
+    }
+  }
+`);
+
+// ❌ 잘못된 예시
+const ViewerQuery = graphql(`
+  query GetViewer { ... }  # 'Get' 접두사 불필요, 컴포넌트명 누락
+`);
+
+const CreateWorkspace = graphql(`
+  mutation CreateWorkspace { ... }  # 컴포넌트명 누락
+`);
+```
+
+## Fragment 공유 패턴 (Apollo 캐시 업데이트)
+
+Apollo 캐시가 자동으로 업데이트되려면 Mutation 결과가 Query와 같은 필드를 반환해야 합니다.
+Detail 컴포넌트에서 Fragment를 정의하고, Edit/Create에서 재사용합니다.
+
+### Fragment 정의 및 Export
+```typescript
+// libs/wiki/feature/src/libs/wiki-detail/WikiDetail/useWikiDetail.ts
+export const WikiDocumentFragment = graphql(`
+  fragment WikiDocumentOnWikiDetail on WikiDocument {
+    id
+    title
+    content
+    updatedAt
+    version
+  }
+`);
+
+const WikiDocumentQuery = graphql(`
+  query WikiDocumentOnWikiDetail($id: ID!) {
+    wikiDocument(id: $id) {
+      id
+      ...WikiDocumentOnWikiDetail
+    }
+  }
+`);
+
+// index.ts에서 fragment도 export
+export { WikiDocumentFragment } from './useWikiDetail';
+```
+
+### Fragment 재사용 (Mutation)
+```typescript
+// libs/wiki/feature/src/libs/wiki-edit/WikiEditForm/useWikiEditForm.ts
+import { WikiDocumentFragment } from '../../wiki-detail/WikiDetail';
+
+const UpdateWikiDocumentMutation = graphql(`
+  mutation UpdateWikiDocumentOnWikiEditForm($input: UpdateWikiDocumentInput!) {
+    updateWikiDocument(input: $input) {
+      wikiDocument {
+        id
+        ...WikiDocumentOnWikiDetail
+      }
+    }
+  }
+`);
+```
+
+### useFragment로 데이터 추출
+```typescript
+import { graphql, useFragment } from '@darun/provider-graphql';
+
+const document = useFragment(WikiDocumentFragment, data.wikiDocument);
+```
+
+**핵심 규칙:**
+- Query/Mutation에서 `id`를 항상 직접 포함 (Apollo 캐시 정규화용)
+- Fragment spread와 함께 사용
+- Detail에서 Fragment 정의 → Edit/Create에서 import하여 재사용
+
+**View 분리 기준:**
+- **인라인 View**: 간단한 UI는 bind에 직접 작성 (기본)
+- **파일 분리**: UI가 복잡하거나 스토리북/테스트가 필요한 경우만 `*View.tsx` 분리
+
+**장점:**
+- 파일 수 최소화, 코드 응집도 향상
+- Hook은 로직만 담당 → 단위 테스트 가능
+- 필요시에만 View 분리 → 유연한 구조
+
+### bind + Suspense 패턴
+
+Hook에서 `useSuspenseQuery` 등 Suspense를 트리거하는 경우, `bind`의 `fallback` 옵션 활용:
+
+```typescript
+// AuthGuard.tsx - Suspense fallback을 bind에서 처리
+'use client';
+
+import { Spinner } from '@darun/ui/components/spinner';
+import { bind } from '@darun/utils-mvvm';
+import { useAuthGuard } from './useAuthGuard';
+
+export const AuthGuard = bind(useAuthGuard, ({ children }) => <>{children}</>, {
+  fallback: (
+    <div className="flex h-screen items-center justify-center">
+      <Spinner className="size-8" />
+    </div>
+  ),
+});
+```
+
+**사용 시점:**
+- Hook 내부에서 `useSuspenseQuery`, `use()` 등 Suspense 트리거 사용 시
+- 컴포넌트 자체가 로딩 상태를 갖는 경우
+
+**장점:**
+- Shell에서 매번 Suspense로 감싸지 않아도 됨
+- 로딩 UI가 컴포넌트와 함께 정의되어 응집도 향상
+- fallback이 없으면 상위 Suspense boundary까지 버블링
+
+## Shell Layer 개발
+
+Shell은 Feature를 조립하고 UX Boundary를 정의합니다:
+
+```typescript
+// apps/console-web/src/shells/GlobalLayout.tsx
+'use client';
+
+import { GlobalHeader } from '@darun/feature-navigation';
+import { Suspense } from 'react';
+
+function HeaderSkeleton() {
+  return (
+    <header className="flex items-center justify-between border-b px-4 py-3">
+      <div className="h-7 w-32 animate-pulse rounded bg-muted" />
+      <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+    </header>
+  );
+}
+
+export function GlobalLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <Suspense fallback={<HeaderSkeleton />}>
+        <GlobalHeader />
+      </Suspense>
+      {children}
+    </>
+  );
+}
+```
+
+**UX Boundary 전략:**
+- 각 영역별 독립적인 Suspense → 워터폴 로딩 방지
+- ErrorBoundary로 에러 격리 → 전체 화면 깨짐 방지
+
+## Apollo Client 사용 패턴
+```typescript
+// apps/*/src/app/client-providers.tsx
+import { ApolloNextAppProvider } from '@apollo/client-integration-nextjs';
+import { makeClient } from '@darun/utils-apollo-client';
+
+export function ClientProviders({ children }: { children: React.ReactNode }) {
+  const makeApolloClient = useMemo(() => {
+    return () => makeClient({ uri: GRAPHQL_API_URL });
+  }, []);
+  
+  return <ApolloNextAppProvider makeClient={makeApolloClient}>{children}</ApolloNextAppProvider>;
+}
+```
+
+## Clerk 인증 사용 패턴
+```typescript
+// apps/*/src/app/server-providers.tsx
+import { ClerkProvider } from '@clerk/nextjs';
+
+export function ServerProviders({ children }: { children: React.ReactNode }) {
+  return <ClerkProvider>{children}</ClerkProvider>;
+}
+```
+
+## 컴포넌트 작성 규칙
+- 함수형 컴포넌트 + TypeScript 사용
+- Props 인터페이스는 컴포넌트 상단에 정의
+- **@darun/ui 컴포넌트를 최대한 활용**
+- **새로운 UI 컴포넌트 필요시 @darun/ui에 추가 후 사용**
+- Tailwind CSS 유틸리티 클래스를 활용한 스타일링
+
+## 아이콘 사용 규칙
+
+**항상 `@darun/ui/icons`에서 아이콘을 import 해야 합니다:**
+
+```typescript
+// ✅ 올바른 예시
+import { Home, BookText, Search } from '@darun/ui/icons';
+
+// ❌ 잘못된 예시
+import { Home } from 'lucide-react';  // 직접 import 금지
+```
+
+**사용 가능한 아이콘 목록:**
+- Navigation: Home, ChevronRight, ChevronLeft, ChevronDown, ChevronUp, Menu
+- Files: Folder, File, BookText, FolderKanban
+- Actions: Plus, Edit, Trash, Copy, Download, Upload, Search, Filter
+- UI: X, Check, MoreHorizontal, Settings, Eye, EyeOff
+- Status: AlertCircle, Info, CheckCircle, XCircle, Loader2
+- Social: Heart, Star, User, Mail, Bell
+- Data: TrendingUp, TrendingDown, BarChart3, Calendar, LayoutDashboard
+- Security: Lock, Unlock
+- Other: Globe
+
+**새 아이콘 필요시:**
+- `libs/shared/ui/src/components/icons.tsx`에 lucide-react에서 export 추가
+- 프로젝트 전체에서 재사용 가능하도록 관리
+
+## Next.js Navigation 사용 규칙
+
+**항상 `@darun/utils-router`에서 navigation 기능을 import 해야 합니다:**
+
+```typescript
+// ✅ 올바른 예시
+import { useRouter, usePathname, Link } from '@darun/utils-router';
+
+// ❌ 잘못된 예시
+import { useRouter } from 'next/navigation';  // 직접 import 금지
+import Link from 'next/link';  // 직접 import 금지
+```
+
+**사용 가능한 기능:**
+- **Hooks**: `useRouter`, `usePathname`, `useSearchParams`, `useParams`
+- **Server Actions**: `redirect`, `permanentRedirect`, `notFound`
+- **Components**: `Link`
+- **Types**: `LinkProps`, `ReadonlyURLSearchParams`
+
+**예시:**
+
+```typescript
+'use client';
+
+import { useRouter, usePathname, Link } from '@darun/utils-router';
+import { Home, Settings } from '@darun/ui/icons';
+
+export function Navigation() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  return (
+    <nav>
+      <Link href="/">
+        <Home className="size-4" />
+        홈
+      </Link>
+      <button onClick={() => router.push('/settings')}>
+        <Settings className="size-4" />
+        설정
+      </button>
+    </nav>
+  );
+}
+```

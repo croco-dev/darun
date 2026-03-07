@@ -1,0 +1,15 @@
+{
+  "extends": "@darun/utils-tsconfig/tsconfig.node.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "paths": {
+      "@magazine/domain": ["../../backend/src/libs/magazine/domain/index.ts"],
+      "@products/domain": ["../domain/src/index.ts"]
+    },
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}

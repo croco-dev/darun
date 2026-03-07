@@ -1,0 +1,233 @@
+---
+description: Tailwind CSS 4 + shadcn/ui 스타일링 시스템, CVA variant 관리, Design Token 활용
+alwaysApply: false
+---
+# 🎨 스타일링 시스템 규칙
+
+## 기술 스택
+- **Framework**: Tailwind CSS 4
+- **Component Library**: shadcn/ui (Radix UI primitives 기반)
+- **Variant 관리**: class-variance-authority (CVA)
+- **클래스 병합**: tailwind-merge (cn 유틸리티)
+- **UI 패키지**: @darun/ui
+
+## 스타일링 계층 구조
+
+### @darun/ui (UI Component Library)
+- **역할**: 재사용 가능한 공통 컴포넌트 제공
+- **기반**: shadcn/ui 컴포넌트 (Radix UI + Tailwind CSS)
+- **구성 요소**:
+  - Radix UI primitives (접근성 보장)
+  - Tailwind CSS 유틸리티 클래스
+  - CVA로 variant 패턴 구현
+  - cn 유틸리티로 조건부 스타일 병합
+
+### Apps/Features/Shells
+- **@darun/ui 컴포넌트 사용**: 최대한 기존 컴포넌트 활용
+- **Tailwind 유틸리티 클래스 사용 허용**: 레이아웃, 간격, 반응형 등
+- **복잡한 스타일 필요시**: @darun/ui에 새 컴포넌트 추가
+
+## UI 컴포넌트 작성 패턴 (@darun/ui)
+
+### 기본 컴포넌트 구조
+```typescript
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "@darun/ui/lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, ...props }, ref) => {
+    return (
+      <button
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }
+```
+
+## Apps/Features에서의 사용 패턴
+
+### UI 컴포넌트 + Tailwind 조합
+```typescript
+import { Button } from "@darun/ui/components/button"
+import { Card } from "@darun/ui/components/card"
+
+export const LoginForm = () => {
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-md space-y-4 p-6">
+        <h1 className="text-2xl font-bold">로그인</h1>
+        <input className="w-full rounded-md border px-3 py-2" />
+        <Button variant="default" size="lg" className="w-full">
+          로그인
+        </Button>
+      </Card>
+    </div>
+  )
+}
+```
+
+### 반응형 스타일링
+```typescript
+<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+  <Card className="p-4">컨텐츠 1</Card>
+  <Card className="p-4">컨텐츠 2</Card>
+  <Card className="p-4">컨텐츠 3</Card>
+</div>
+```
+
+### 조건부 스타일링
+```typescript
+import { cn } from "@darun/ui/lib/utils"
+
+const isActive = true
+const isError = false
+
+<Button 
+  className={cn(
+    "transition-all",
+    isActive && "ring-2 ring-primary",
+    isError && "border-destructive"
+  )}
+>
+  제출
+</Button>
+```
+
+## Design Token 활용
+
+### Tailwind CSS 4 설정 기반
+- **색상**: `bg-primary`, `text-destructive`, `border-input` 등
+- **간격**: `p-4`, `space-y-2`, `gap-6` 등
+- **타이포그래피**: `text-sm`, `font-medium`, `leading-6` 등
+- **반응형**: `sm:`, `md:`, `lg:`, `xl:` breakpoints
+
+### CSS Variables (globals.css)
+```css
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    /* ... */
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    /* ... */
+  }
+}
+```
+
+## 스타일링 Best Practices
+
+### ✅ 권장사항
+- @darun/ui 컴포넌트를 최우선 활용
+- Tailwind 유틸리티 클래스로 레이아웃 구성
+- cn() 유틸리티로 조건부 클래스 병합
+- Design token 사용 (커스텀 색상값 지양)
+- 반응형 디자인은 Tailwind breakpoint 활용
+- **아이콘은 @darun/ui/components/icons에서 임포트**
+
+### ❌ 금지사항
+- 인라인 스타일 남용 (style prop 최소화)
+- !important 사용 금지
+- 하드코딩된 색상값 (예: `#FF0000`, `rgb(255, 0, 0)`)
+- 임의의 값 남용 (예: `w-[247px]` 대신 `w-64` 사용)
+- **lucide-react 직접 임포트 금지** (대신 @darun/ui/components/icons 사용)
+
+## 아이콘 사용 가이드
+
+### 기본 원칙
+- **모든 아이콘은 @darun/ui/components/icons에서 임포트**
+- lucide-react를 직접 임포트하지 말 것
+- 필요한 아이콘이 없다면 icons.tsx에 추가
+
+### 올바른 사용법
+```typescript
+import { Check, X, ChevronRight } from "@darun/ui/components/icons"
+
+export const Component = () => {
+  return (
+    <div>
+      <Check className="h-4 w-4 text-green-500" />
+      <X className="h-4 w-4 text-red-500" />
+      <ChevronRight className="h-5 w-5" />
+    </div>
+  )
+}
+```
+
+### ❌ 잘못된 사용법
+```typescript
+import { Check } from "lucide-react"
+```
+
+### 새 아이콘 추가 방법
+1. `libs/shared/ui/src/components/icons.tsx` 파일 열기
+2. lucide-react export 목록에 아이콘 추가
+3. 알파벳 순서로 정렬 유지
+
+```typescript
+export {
+  Check,
+  ChevronRight,
+  NewIcon,
+  X,
+} from 'lucide-react';
+```
+
+## 새 컴포넌트 추가 가이드
+
+### 언제 @darun/ui에 추가해야 하는가?
+- 여러 곳에서 재사용되는 컴포넌트
+- variant가 필요한 복잡한 컴포넌트
+- 접근성 요구사항이 있는 컴포넌트 (Radix UI 활용)
+
+### shadcn/ui 컴포넌트 추가 방법
+```bash
+cd libs/shared/ui
+pnpm components
+# 원하는 컴포넌트 선택 (예: button, card, dialog 등)
+```
+
+### 커스텀 컴포넌트 작성 시
+1. `libs/shared/ui/src/components/` 하위에 파일 생성
+2. CVA로 variant 정의
+3. cn 유틸리티로 className 병합
+4. TypeScript 타입 명시
+5. `libs/shared/ui/package.json`의 exports에 추가

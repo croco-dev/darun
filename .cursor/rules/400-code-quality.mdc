@@ -1,0 +1,65 @@
+---
+description: 가독성 우선 원칙, TypeScript 작성 규칙, 에러 처리, 테스트 작성 원칙
+alwaysApply: false
+---
+# 🔧 코드 품질 및 개발 도구 규칙
+
+## 가독성 우선 원칙
+- **명확함이 간결함보다 우선**: 코드의 의도가 명확하게 드러나도록 작성
+- **적절한 중복 허용**: 가독성을 위해 합리적인 중복은 문제없음
+- **과도한 추상화 지양**: 추상화로 인해 코드가 복잡해지면 구체적으로 작성
+- **직관적인 네이밍**: 함수/변수명만 봐도 역할을 이해할 수 있도록
+
+## TypeScript 작성 규칙
+- **strict 모드 사용**: 타입 안전성 확보
+- **interface 우선 사용**: 확장 가능하고 명확한 타입 정의
+- **as any 사용 금지**: unknown 타입 활용으로 타입 안전성 유지
+- **명시적 타입 정의**: 추론 가능해도 중요한 부분은 명시적으로 타입 선언
+
+## 코드 작성 철학
+- **함수는 한 가지 일만**: 단일 책임 원칙으로 이해하기 쉽게
+- **긴 함수보다 여러 함수**: 작은 함수들로 분리해서 읽기 쉽게
+- **매직 넘버/문자열 제거**: 상수로 의미를 명확히 표현
+- **조건문은 명확하게**: 복잡한 조건은 변수나 함수로 의미 부여
+
+## 가독성 향상 기법
+```typescript
+// 나쁜 예: 간결하지만 의미 불명확
+const u = users.filter(u => u.age > 18 && u.status === 'active')
+
+// 좋은 예: 의도가 명확함
+const isAdultActiveUser = (user: User) => {
+  return user.age > 18 && user.status === 'active'
+}
+const adultActiveUsers = users.filter(isAdultActiveUser)
+
+// 또는 더 명확하게
+const MINIMUM_ADULT_AGE = 18
+const ACTIVE_STATUS = 'active'
+
+const adultActiveUsers = users.filter(user => {
+  const isAdult = user.age >= MINIMUM_ADULT_AGE
+  const isActive = user.status === ACTIVE_STATUS
+  return isAdult && isActive
+})
+```
+
+## 에러 처리 및 로깅
+- **구체적인 에러 메시지**: 디버깅 시 도움이 되는 정보 포함
+- **에러 타입 명시**: unknown 타입으로 안전하게 처리
+- **의미있는 로그**: 개발자가 이해할 수 있는 컨텍스트 제공
+
+## 테스트 작성 원칙  
+- **테스트 이름은 시나리오로**: "should return user when valid id provided"
+- **Given-When-Then 구조**: 상황-실행-결과 명확히 분리
+- **Mock은 최소한으로**: 실제 로직 테스트에 집중
+
+## 성능 vs 가독성
+- **가독성 우선**: 성능 최적화는 병목이 확인된 후에
+- **조기 최적화 지양**: 측정 가능한 성능 문제가 있을 때만 최적화
+- **React 최적화**: memo, useMemo, useCallback은 필요성이 명확할 때만
+
+## 파일 구성 원칙
+- **관련 코드 근처 배치**: import문 근처에 관련 타입/상수 정의
+- **폴더 구조는 기능별**: 기술별보다는 도메인/기능별로 구성
+- **export는 명시적으로**: 무엇을 외부에 노출하는지 명확히

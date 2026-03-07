@@ -1,7 +1,6 @@
+import { GetCompany } from '@darun/companies-domain';
 import {
-  GetAlternativeProducts,
   GetAllProducts,
-  GetCompany,
   GetProduct,
   GetProductFeatures,
   GetProductLinks,
@@ -11,11 +10,12 @@ import {
   GetPublishedProduct,
   GetRankedProducts,
   GetRecentProducts,
-  GetVoteCount,
-  SearchProduct,
-  TranslationService,
-} from '@darun/backend';
+} from '@darun/products-domain';
+import { GetAlternativeProducts } from '@darun/recommendation-domain';
+import { SearchProduct } from '@darun/search-domain';
+import { TranslationService } from '@darun/translation-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
+import { GetVoteCount } from '@darun/voting-domain';
 import { Arg, Args, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Connection } from '../common/Connection';

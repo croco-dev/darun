@@ -1,5 +1,5 @@
-import { CreateMagazine, EditMagazine, GetPublishedMagazine, PublishMagazine } from '@darun/backend';
-import { GetMagazine } from '@darun/backend';
+import { CreateMagazine, EditMagazine, GetPublishedMagazine, PublishMagazine } from '@darun/magazines-domain';
+import { GetMagazine } from '@darun/magazines-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
 import { Arg, Authorized, Ctx, Mutation, Resolver } from 'type-graphql';

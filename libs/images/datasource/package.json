@@ -1,0 +1,26 @@
+{
+  "name": "@darun/images-datasource",
+  "version": "0.0.0",
+  "type": "commonjs",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint **/*.ts*",
+    "test": "echo 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@darun/images-domain": "workspace:*",
+    "cloudinary": "2.4.0"
+  },
+  "peerDependencies": {
+    "@darun/provider-database": "workspace:*",
+    "cloudinary": "*",
+    "reflect-metadata": "*",
+    "typedi": "*"
+  },
+  "devDependencies": {
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*"
+  }
+}

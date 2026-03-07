@@ -1,0 +1,121 @@
+---
+description: 모노레포 패키지 생성, 의존성 관리, index.ts export 규칙, pnpm workspace 설정
+alwaysApply: false
+---
+# 📦 패키지 관리 규칙
+
+## 패키지 명명 규칙
+
+### 도메인 패키지
+- 서버: `@darun/{domain}-{layer}` (예: `@darun/user-service`)
+- 클라이언트: `@darun/{domain}-{layer}` (예: `@darun/portfolio-feature`)
+
+### 공유 패키지
+- 전역 Feature: `@darun/feature-{name}` (예: `@darun/feature-navigation`)
+- 유틸리티: `@darun/utils-{name}` (예: `@darun/utils-mvvm`)
+- Provider: `@darun/provider-{name}` (예: `@darun/provider-graphql`)
+- 공통 UI: `@darun/ui`
+
+## 새 패키지 생성 시
+- 명명 규칙 준수
+- workspace:* 프로토콜로 내부 패키지 참조
+- 각 패키지는 독립적으로 빌드/테스트 가능해야 함
+
+## index.ts Export 규칙
+
+### 기본 원칙
+- `export *` 대신 명시적 export 사용
+- 타입은 `export type`으로 분리 (isolatedModules 호환)
+- **중간 index.ts 최소화**: 최상위 index.ts에서 직접 export
+
+### 패턴 예시
+
+**Feature 패키지** - 최상위에서 바로 export:
+```typescript
+// libs/shared/feature-navigation/src/index.ts
+export { GlobalHeader } from './libs/navigation/GlobalHeader';
+```
+
+**Domain 패키지** - 엔티티/리포지토리 export:
+```typescript
+// libs/{domain}/domain/src/index.ts
+export { User } from './libs/entities/User';
+export { Workspace } from './libs/entities/Workspace';
+export type { UserRepository } from './libs/repositories/UserRepository';
+export { UserRepositoryToken } from './libs/repositories/UserRepository';
+```
+
+### 중간 index.ts 생략
+- 각 폴더마다 index.ts를 만들지 않음
+- 최상위 index.ts에서 필요한 것만 직접 export
+- 파일 수 최소화, 의존성 추적 용이
+
+## 의존성 관리
+
+### 클라이언트 레이어 의존성
+- **Shell** (`libs/{domain}/shell`): {domain}/feature, shared/feature-*, @darun/ui
+- **Feature**: ui, @darun/ui, Apollo Client, provider-graphql, utils-mvvm
+- **UI**: @darun/ui만 의존
+
+### 서버 레이어 의존성
+- **Service**: domain, type-graphql, typedi, utils-pagination
+- **Domain**: typedi, provider-gid만 의존 (순수 비즈니스 로직)
+- **Datasource**: domain, Drizzle ORM, provider-database, provider-gid
+
+### 금지사항
+- 상위 레이어는 하위 레이어만 참조 가능
+- 같은 레이어끼리는 참조 금지 (같은 도메인 내에서도)
+- 다른 도메인의 패키지 참조 금지 (shared 제외)
+- 순환 의존성 절대 금지
+- shared/feature-*는 특정 도메인 패키지 의존 금지
+
+## 패키지 구조 예시
+
+```
+# 전역 Feature (도메인 비종속)
+@darun/feature-navigation    # GlobalHeader, GlobalSidebar
+@darun/feature-notification  # ToastManager
+
+# 서버 레이어 (Backend)
+@darun/user-service          # Service Layer (GraphQL Resolvers)
+@darun/user-domain           # Domain Layer (Entity, Repository Interface)
+@darun/user-datasource       # Datasource Layer (Drizzle ORM)
+
+# 클라이언트 레이어 (Frontend) - 도메인별
+@darun/portfolio-feature     # Feature Layer (Business Logic + GraphQL)
+@darun/portfolio-ui          # UI Layer (Domain-specific Components)
+
+# 공통 라이브러리
+@darun/ui                    # Common UI Component Library
+@darun/utils-mvvm            # MVVM bind 패턴
+@darun/utils-form            # Form 관련 유틸
+@darun/provider-graphql      # GraphQL codegen 타입
+
+# 도메인 Shell (별도 패키지)
+@darun/workspace-shell        # WorkspaceLayout, ProjectListPage 등
+@darun/project-shell          # ProjectDetailPage 등
+
+# 공용 Shell (apps 내부)
+apps/console-web/src/shells/         # GlobalLayout 등
+```
+
+## 패키지 위치 정리
+
+| 유형 | 위치 | 패키지 여부 |
+|------|------|------------|
+| 전역 Feature | `libs/shared/feature-*` | ✅ 별도 패키지 |
+| 도메인 Feature | `libs/{domain}/feature` | ✅ 별도 패키지 |
+| 도메인 UI | `libs/{domain}/ui` | ✅ 별도 패키지 |
+| 도메인 Shell | `libs/{domain}/shell` | ✅ 별도 패키지 (`*Page`, `*Layout`) |
+| 공용 Shell | `apps/*/src/shells/` | ❌ App 내부 |
+| 서버 레이어 | `libs/{domain}/{layer}` | ✅ 별도 패키지 |
+
+## workspace 설정
+- pnpm workspace 사용
+- 모든 내부 패키지는 workspace:* 참조
+- 외부 의존성은 정확한 버전 명시
+
+## 빌드 및 배포
+- Turbo를 통한 모노레포 빌드 최적화
+- 각 패키지별 독립적 테스트 가능
+- 의존성 그래프 기반 빌드 순서 관리

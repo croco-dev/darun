@@ -1,5 +1,5 @@
 {
-  "name": "@aa/aaa",
+  "name": "@darun/{package-name}",
   "version": "0.0.0",
   "type": "module",
   "main": "./src/index.ts",
@@ -12,15 +12,17 @@
   "peerDependencies": {
     "@apollo/client": "*",
     "@apollo/experimental-nextjs-app-support": "*",
-    "@croco/utils-structure-react": "*",
     "@darun/provider-graphql": "workspace:*",
-    "@darun/ui-foundation": "workspace:*",
-    "@kuma-ui/core": "1.5.7"
+    "@darun/ui": "workspace:*",
+    "next": "*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0"
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.2"
   }
 }

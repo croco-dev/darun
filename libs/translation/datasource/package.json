@@ -1,0 +1,25 @@
+{
+  "name": "@darun/translation-datasource",
+  "version": "0.0.0",
+  "type": "commonjs",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint **/*.ts*",
+    "test": "echo 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@darun/translation-domain": "workspace:*",
+    "drizzle-orm": "0.32.1"
+  },
+  "peerDependencies": {
+    "@darun/provider-database": "workspace:*",
+    "reflect-metadata": "*",
+    "typedi": "*"
+  },
+  "devDependencies": {
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*"
+  }
+}

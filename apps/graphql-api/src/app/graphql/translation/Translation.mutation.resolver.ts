@@ -1,4 +1,4 @@
-import { TranslationEntityType, TranslationJobService } from '@darun/backend';
+import { TranslationEntityType, TranslationJobService } from '@darun/translation-feature';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';

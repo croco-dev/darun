@@ -1,0 +1,28 @@
+{
+  "name": "@darun/translation-feature",
+  "version": "0.0.0",
+  "type": "commonjs",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint **/*.ts*",
+    "test": "echo 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@darun/backend": "workspace:*",
+    "@darun/magazines-domain": "workspace:*",
+    "@darun/products-domain": "workspace:*",
+    "@darun/translation-datasource": "workspace:*",
+    "@darun/translation-domain": "workspace:*"
+  },
+  "peerDependencies": {
+    "reflect-metadata": "*",
+    "type-graphql": "*",
+    "typedi": "*"
+  },
+  "devDependencies": {
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*"
+  }
+}

@@ -1,5 +1,5 @@
 import '../config';
-import { GetAccount } from '@darun/backend';
+import { GetAccount } from '@darun/accounts-domain';
 import { createAuthChecker, createLambdaHandler, createServer } from '@darun/utils-apollo-server';
 import { createSentryApolloLogPlugin } from '@darun/utils-sentry';
 import * as Sentry from '@sentry/aws-serverless';

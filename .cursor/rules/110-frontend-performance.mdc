@@ -1,0 +1,194 @@
+---
+description: React 렌더링 최적화, Hook 패턴, Context 성능, 메모리 누수 방지 등 프론트엔드 성능 규칙
+alwaysApply: false
+---
+# ⚡ 프론트엔드 코드 퍼포먼스 최적화 규칙
+
+## React 렌더링 코드 최적화
+- **memo 사용 기준**: props가 자주 변하지 않는 컴포넌트만 memo 적용
+- **useMemo/useCallback**: 무거운 계산이나 자식 컴포넌트 props 전달시에만 사용
+- **의존성 배열 최적화**: 불필요한 의존성 제거, 안정적인 참조 사용
+- **조건부 렌더링**: && 연산자보다 삼항 연산자로 명확한 조건 표현
+
+## 리스트 렌더링 최적화 패턴
+- **인라인 map 피하기**: 리렌더링시 N회 컴포넌트 생성 방지
+```typescript
+const [name, setName] = useState('')
+
+// Don't - 부모 리렌더링시 PostItem * N개 재생성
+<div>
+  {name}
+  {posts.map(post => <PostItem key={post.id} post={post} />)}
+</div>
+
+// Do - 참조 동등성 비교만 수행
+<div>
+  {name}
+  <PostList posts={posts} />
+</div>
+```
+- **리스트 컴포넌트 분리**: 배열 렌더링은 전용 컴포넌트로 격리
+- **key 최적화**: 배열 인덱스 대신 고유한 id 사용
+- **가상화 고려**: 100개 이상 아이템은 react-window 검토
+
+## 고급 Hook 최적화 패턴
+- **useCallback 의존성 함정**: 객체/배열 의존성은 useMemo로 안정화
+```typescript
+// Don't - 매번 새로운 함수 생성
+const handleClick = useCallback(() => {
+  doSomething(user, settings)
+}, [user, settings]) // 객체 참조 변경시 매번 재생성
+
+// Do - 의존성 안정화
+const stableDeps = useMemo(() => ({ 
+  userId: user.id, 
+  theme: settings.theme 
+}), [user.id, settings.theme])
+
+const handleClick = useCallback(() => {
+  doSomething(stableDeps)
+}, [stableDeps])
+```
+- **useState 함수형 업데이트**: 이전 상태 의존 시 함수형 업데이트 활용
+- **useRef 활용**: 리렌더링 없이 값 저장이 필요한 경우
+- **조건부 hooks 피하기**: hooks는 항상 최상위에서 호출
+
+## Context 성능 최적화
+- **Context 분할**: 자주 변하는 상태와 정적 상태 분리
+```typescript
+// Don't - 하나의 Context에 모든 상태
+const AppContext = createContext({ user, theme, notifications })
+
+// Do - 변경 빈도별로 분리
+const UserContext = createContext(user)
+const ThemeContext = createContext(theme) 
+const NotificationContext = createContext(notifications)
+```
+- **Provider 최적화**: value prop은 useMemo로 안정화
+- **선택적 구독**: Context에서 필요한 데이터만 구독
+
+## 상태 구조 최적화
+- **Flat State 설계**: 깊은 중첩보다는 평면적 구조 선호
+- **정규화 패턴**: 배열 내 객체는 id 기반 정규화 고려
+- **상태 분할**: 관련 없는 상태는 별도 useState로 분리
+- **지연 상태 초기화**: 무거운 초기값은 함수로 지연 계산
+
+## 이벤트 핸들러 최적화
+- **SyntheticEvent 주의**: 비동기 작업에서 event.persist() 또는 구조분해할당
+- **이벤트 위임 활용**: 많은 자식 요소에서 개별 핸들러보다 부모 위임
+- **Passive 이벤트**: 터치/스크롤 이벤트는 { passive: true } 옵션
+- **debounce/throttle 최적화**: 적절한 delay 값과 cleanup 고려
+
+## 메모리 누수 고급 방지법
+- **Closure 메모리 누수**: 큰 객체를 참조하는 클로저 주의
+```typescript
+// Don't - 전체 data 객체를 클로저가 참조
+const processData = (data: LargeDataObject) => {
+  return useCallback(() => {
+    console.log(data.id) // 전체 data 객체가 메모리에 유지됨
+  }, [data])
+}
+
+// Do - 필요한 값만 추출
+const processData = (data: LargeDataObject) => {
+  const { id } = data
+  return useCallback(() => {
+    console.log(id) // id만 메모리에 유지
+  }, [id])
+}
+```
+- **WeakMap/WeakSet 활용**: 컴포넌트 인스턴스와 연관 데이터 관리
+- **AbortController**: 컴포넌트 언마운트시 진행 중인 요청 취소
+- **Intersection Observer 정리**: 관찰자 해제 필수
+
+## 렌더링 사이클 최적화
+- **useLayoutEffect vs useEffect**: DOM 변경 후 동기 실행이 필요한 경우만 useLayoutEffect
+- **Render Phase vs Commit Phase**: 순수 함수 유지, 사이드 이펙트는 useEffect에서
+- **배치 업데이트**: React 18의 자동 배치 활용
+- **startTransition**: 긴급하지 않은 업데이트는 startTransition으로 우선순위 조절
+
+## 고급 컴포넌트 패턴 최적화
+- **Render Props vs Custom Hooks**: 렌더링 성능상 Custom Hooks 선호
+- **HOC 체이닝 최적화**: 여러 HOC 체이닝시 React.memo로 중간 최적화
+- **Children 함수 패턴**: children이 함수인 경우 useCallback으로 안정화
+- **Compound Component**: 관련 컴포넌트들의 불필요한 props drilling 방지
+
+## 무거운 컴포넌트 렌더링 방지
+- **모달/팝업 중복 생성 금지**: 반복문 안에서 모달 컴포넌트 생성 방지
+```typescript
+// Don't - PostItem마다 모달 생성
+{posts.map(post => (
+  <PostItem key={post.id} post={post}>
+    <PostEditModal post={post} />
+  </PostItem>
+))}
+
+// Do - 모달 하나만 생성, 선택된 포스트만 전달
+<>
+  <PostList posts={posts} onEdit={setSelectedPost} />
+  {selectedPost && <PostEditModal post={selectedPost} />}
+</>
+```
+- **조건부 마운트**: 필요할 때만 무거운 컴포넌트 렌더링
+- **Portal 활용**: 모달/툴팁은 Portal로 DOM 트리 외부에 렌더링
+- **지연 로딩**: 초기 화면에 불필요한 컴포넌트는 lazy 로딩
+
+## Leaf 컴포넌트 설계 원칙
+- **단일 책임**: 하나의 UI 요소만 담당하는 작은 컴포넌트
+- **얕은 중첩**: 컴포넌트 트리 깊이 최소화
+- **Props 최소화**: 필요한 데이터만 전달, 전체 객체 전달 지양
+- **순수 컴포넌트**: 외부 상태 의존성 최소화
+
+## DOM 조작 및 이벤트 최적화
+- **DOM 쿼리 최소화**: querySelector 결과 캐싱, 반복 조회 방지
+- **이벤트 위임**: 많은 자식 요소 대신 부모에서 이벤트 처리
+- **passive 이벤트**: 스크롤, 터치 이벤트에 passive: true 옵션
+- **RAF 활용**: 애니메이션은 requestAnimationFrame 사용
+
+## 배열 및 객체 처리 최적화
+- **key props 최적화**: 리스트 렌더링시 안정적이고 고유한 key 사용
+- **for vs map**: 단순 렌더링은 for 루프가 더 빠를 수 있음
+- **얕은 비교 활용**: React.memo, useMemo에서 참조 동등성 고려
+- **불변성 패턴**: spread 대신 Object.assign이나 구조적 공유 라이브러리
+
+## 비동기 처리 및 데이터 페칭
+- **디바운싱/스로틀링**: 사용자 입력에 따른 API 호출 최적화
+- **취소 가능한 요청**: AbortController로 불필요한 요청 취소
+- **낙관적 업데이트**: UI 반응성을 위한 즉시 상태 업데이트
+- **배치 요청**: 여러 API 호출을 하나로 묶어서 처리
+
+## Apollo Client useQuery 최적화
+- **variables 참조 안정성 필수**: useQuery의 variables가 매 렌더링마다 새로운 객체/값을 갖지 않도록 useMemo 활용
+```typescript
+// Don't - getDateRange가 매 렌더링마다 호출되어 새로운 endDate 생성 → 무한 쿼리 루프
+const { startDate, endDate } = getDateRange(period);
+const { data } = useQuery(Query, {
+  variables: { startDate, endDate },
+});
+
+// Do - period가 변경될 때만 date range 재계산
+const { startDate, endDate } = useMemo(() => getDateRange(period), [period]);
+const { data } = useQuery(Query, {
+  variables: { startDate, endDate },
+});
+```
+- **Date, 객체, 배열 variables 주의**: `new Date().toISOString()` 같은 표현식이 variables에 직접 들어가면 매 렌더링마다 쿼리 재실행
+- **skip 옵션 활용**: 조건이 충족되지 않으면 쿼리 실행 방지
+
+## 문자열 및 계산 최적화
+- **템플릿 리터럴 vs 연결**: 정적 문자열은 연결, 동적은 템플릿 리터럴
+- **정규식 성능**: 복잡한 정규식은 컴포넌트 외부에서 선언
+- **숫자 계산**: Math 함수보다 비트 연산이 빠른 경우 활용
+- **날짜 처리**: new Date() 대신 Date.now() 활용
+
+## 조건부 렌더링 최적화
+- **early return**: 조건이 맞지 않으면 즉시 return
+- **단락 평가**: && 연산자에서 falsy 값 주의
+- **switch vs if-else**: 많은 조건 분기시 switch 고려
+- **컴포넌트 팩토리**: 조건에 따른 컴포넌트 선택 최적화
+
+## 이미지 및 미디어 최적화
+- **lazy loading**: Intersection Observer로 뷰포트 진입시 로딩
+- **이미지 preload**: 중요한 이미지는 미리 로딩
+- **srcset 활용**: 디바이스별 최적 이미지 크기 제공
+- **비디오 최적화**: autoplay, preload 속성 신중하게 사용

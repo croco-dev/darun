@@ -1,0 +1,483 @@
+---
+description: GraphQL API 서버 개발 규칙 (Service, Domain, Datasource 계층, Entity/Repository 패턴)
+alwaysApply: false
+---
+# 🚀 서버 개발 규칙
+
+## 계층 구조 (Service → Domain → Datasource)
+- **Service**: UseCase + GraphQL Resolver, 외부 인터페이스 제공
+- **Domain**: Entity + Repository Interface, 순수 비즈니스 로직
+- **Datasource**: Repository 구현체, 데이터 접근
+
+## 기술 스택
+- **API**: type-graphql (GraphQL 스키마 및 리졸버)
+- **Database**: Drizzle ORM + Drizzle Kit + Supabase (postgres)
+- **DI**: TypeDI 컨테이너 사용
+- **Auth**: Clerk (@clerk/backend)
+- **Deployment**: Serverless Framework + AWS Lambda (Node.js 22.x, ARM64)
+
+## ⚠️ 마이그레이션 규칙
+- **마이그레이션 파일 생성 금지**: AI가 마이그레이션을 직접 생성하지 않음
+- 사용자가 `pnpm drizzle-kit generate` 명령으로 직접 생성
+- Drizzle 스키마(`libs/**/datasource/src/libs/entities/*.ts`)만 정의
+
+## Domain Layer 규칙
+- Entity는 비즈니스 규칙과 불변성 보장
+- Repository는 인터페이스만 정의, 구현체는 Datasource에
+- 외부 라이브러리 의존성 최소화 (TypeDI, provider-gid 제외)
+- 순수 비즈니스 로직만 포함
+- **외부 프로바이더 이름 노출 금지**: `clerkUserId` → `externalId` 사용
+- **도메인 간 직접 참조 금지**: 다른 도메인 패키지 import 금지
+  - 예: `wiki-service`에서 `@darun/user-domain` import 금지
+  - 다른 도메인 엔티티 참조 시 ID만 저장 (`createdById: string`)
+
+### Entity 패턴
+- private constructor + `create()` / `reconstitute()` 팩토리 메서드
+- `create()`: 새 엔티티 생성 (IdPrefixes로 ID 생성)
+- `reconstitute()`: DB 조회 결과로 엔티티 복원
+- mutable 필드는 setter 메서드로 변경
+```typescript
+export class User {
+  readonly id: string;
+  externalId: string;
+  workspaceId: string | null;
+
+  private constructor(props: ReconstituteUserProps) { ... }
+
+  static create(props: CreateUserProps): User {
+    return new User({
+      id: IdPrefixes.USER.generate(),
+      ...props,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+
+  static reconstitute(props: ReconstituteUserProps): User {
+    return new User(props);
+  }
+
+  setWorkspaceId(workspaceId: string): void {
+    this.workspaceId = workspaceId;
+  }
+}
+```
+
+### AggregateRoot 패턴 (도메인 이벤트 발행이 필요한 Entity)
+- 크로스 도메인 통신이 필요한 Entity는 `AggregateRoot`를 상속
+- `@darun/provider-domain-events`에서 `AggregateRoot` import
+- 도메인 이벤트는 Entity 내부 메서드에서 `addDomainEvent()`로 추가
+- 이벤트 발행은 Repository(Datasource)의 `save`/`update` 시점에 자동 처리
+```typescript
+import { AggregateRoot, SlackMemberJoinedEvent } from '@darun/provider-domain-events';
+
+export class SlackMember extends AggregateRoot {
+  private constructor(props: ReconstituteProps) {
+    super();
+    // ...
+  }
+
+  static create(props: CreateProps): SlackMember {
+    const member = new SlackMember({ ... });
+    // Entity 내부에서 이벤트 추가
+    member.addDomainEvent(new SlackMemberJoinedEvent({ ... }));
+    return member;
+  }
+
+  deactivate(): void {
+    this.isActive = false;
+    this.addDomainEvent(new SlackMemberLeftEvent({ ... }));
+  }
+}
+```
+
+### 도메인 이벤트 정의 규칙
+- 도메인 이벤트는 `@darun/provider-domain-events`에 정의 (shared 패키지)
+- 크로스 도메인 간 계약이므로 특정 도메인에 종속되지 않음
+- **Aggregate Root 이름별로 폴더 생성** (kebab-case)
+- 이벤트 클래스는 `DomainEvent`를 상속
+- ⚠️ **`@croco/events-core`, `@croco/events-inmemory` 직접 import 금지**: 싱글턴 인스턴스(`EventBusConfig`) 초기화 문제 방지를 위해 반드시 `@darun/provider-domain-events`에서 import
+```
+libs/shared/provider-domain-events/src/libs/events/
+├── slack-member/                    # SlackMember Aggregate
+│   ├── index.ts                     # re-export
+│   ├── SlackMemberJoinedEvent.ts
+│   └── SlackMemberLeftEvent.ts
+├── workspace/                       # Workspace Aggregate
+│   ├── index.ts
+│   └── WorkspaceCreatedEvent.ts
+└── ...
+```
+
+```typescript
+// libs/shared/provider-domain-events/src/libs/events/slack-member/SlackMemberJoinedEvent.ts
+// ⚠️ provider-domain-events 내부에서만 @croco/events-core 직접 import 허용
+import { DomainEvent } from '@croco/events-core';
+
+export class SlackMemberJoinedEvent extends DomainEvent {
+  constructor(public readonly payload: { slackMemberId: string; workspaceId: string; ... }) {
+    super();
+  }
+}
+
+// libs/shared/provider-domain-events/src/libs/events/slack-member/index.ts
+export { SlackMemberJoinedEvent } from './SlackMemberJoinedEvent';
+export { SlackMemberLeftEvent } from './SlackMemberLeftEvent';
+
+// libs/shared/provider-domain-events/src/index.ts
+export { SlackMemberJoinedEvent, SlackMemberLeftEvent } from './libs/events/slack-member';
+```
+
+### Problems 패턴 (도메인 에러)
+- `@croco/problems-core`의 `Problem`, `ProblemCategory` 사용
+- 도메인별 에러 코드 enum 정의 (`{Domain}ProblemCode`)
+- `Problem`을 상속받아 `{Domain}Problems` 클래스 생성
+- static 팩토리 메서드로 각 에러 타입 생성
+- **위치**: `libs/{domain}/domain/src/libs/exceptions/`
+
+```typescript
+// libs/user/domain/src/libs/exceptions/UserProblems.ts
+import { Problem, ProblemCategory } from '@croco/problems-core';
+
+enum UserProblemCode {
+  UserNotFound = 'user/user-not-found',
+  UserAlreadyHasWorkspace = 'user/user-already-has-workspace',
+}
+
+export class UserProblems extends Problem {
+  static userNotFound(userId: string) {
+    return new UserProblems(
+      UserProblemCode.UserNotFound,
+      ProblemCategory.NotFound,
+      `User with id "${userId}" not found`
+    );
+  }
+
+  static userAlreadyHasWorkspace(userId: string) {
+    return new UserProblems(
+      UserProblemCode.UserAlreadyHasWorkspace,
+      ProblemCategory.BusinessRuleViolation,
+      `User with id "${userId}" already has a workspace`
+    );
+  }
+}
+```
+
+**에러 코드 네이밍**: `{domain}/{error-name}` (kebab-case)
+**ProblemCategory 종류**: `NotFound`, `BusinessRuleViolation`, `Validation`, `Unauthorized`, `Forbidden`
+
+### Repository 네이밍 규칙
+
+#### Aggregate Root Repository
+- **Domain Interface**: `{Entity}Repository`
+  - 예: `WikiDocumentRepository`, `UserRepository`
+- **Datasource Implementation**: `{Entity}RepositoryImpl`
+  - 예: `WikiDocumentRepositoryImpl`, `UserRepositoryImpl`
+
+#### Internal Technical Repository
+- **Datasource Concrete Class**: `{Technology}{Purpose}Repository`
+- **인터페이스 없음** (구현체만 존재)
+- **용도**: 다른 Repository 구현체 내부에서만 사용하는 기술적 Repository
+- **예시**:
+  - `AtlasWikiSearchRepository` - MongoDB Atlas Search
+  - `RedisWikiCacheRepository` - Redis 캐싱
+  - `S3FileStorageRepository` - AWS S3 파일 저장
+
+**파일 위치:**
+```
+libs/wiki/
+├── domain/
+│   └── src/libs/repositories/
+│       └── WikiDocumentRepository.ts          # Interface + Token
+└── datasource/
+    └── src/libs/repositories/
+        ├── WikiDocumentRepositoryImpl.ts      # Aggregate Root Impl
+        └── AtlasWikiSearchRepository.ts       # Internal Technical
+```
+
+**예제:**
+```typescript
+// ✅ Aggregate Root - Domain
+export interface WikiDocumentRepository {
+  search(workspaceId: string, keyword: string): Promise<SearchResult>;
+}
+export const WikiDocumentRepositoryToken = new Token<WikiDocumentRepository>('WikiDocumentRepository');
+
+// ✅ Aggregate Root - Datasource Implementation
+@Service(WikiDocumentRepositoryToken)
+export class WikiDocumentRepositoryImpl implements WikiDocumentRepository {
+  constructor(
+    @Inject(DrizzleToken) private readonly db: Drizzle,
+    private readonly atlasSearch: AtlasWikiSearchRepository, // 내부 기술 Repository
+  ) {}
+
+  async search(workspaceId: string, keyword: string): Promise<SearchResult> {
+    const { ids } = await this.atlasSearch.search(workspaceId, keyword, 10, 0);
+    // ...
+  }
+}
+
+// ✅ Internal Technical Repository - Datasource Only
+@Service()
+export class AtlasWikiSearchRepository {
+  async search(workspaceId: string, keyword: string, limit: number, offset: number): Promise<{ ids: string[] }> {
+    // MongoDB Atlas Search 구현 디테일
+  }
+}
+```
+
+### Repository 인터페이스 정의 규칙
+- 인터페이스와 Token을 함께 정의
+- 순수 데이터 접근만 담당 (`findOrCreate` 같은 비즈니스 로직은 UseCase로)
+- `update` 메서드는 modifier 패턴 사용
+```typescript
+export interface UserRepository {
+  findByExternalId(externalId: string): Promise<User | null>;
+  update(id: string, modifier: (user: User) => User): Promise<User>;
+  save(user: User): Promise<void>;
+}
+
+export const UserRepositoryToken = new Token<UserRepository>('UserRepository');
+```
+
+## Service Layer 규칙
+- UseCase는 단일 책임 원칙 준수
+- UseCase 파일명/클래스명에 `UseCase` suffix 금지 (예: `GetViewer.ts`, `CreateWorkspace.ts`)
+- Resolver에서 변수명은 `UseCase` suffix 유지 (예: `getViewerUseCase: GetViewer`)
+- type-graphql decorators 활용한 GraphQL 스키마 정의
+- 비즈니스 로직 조합 및 트랜잭션 관리
+
+### 폴더 구조
+```
+service/src/libs/
+├── interfaces/
+│   ├── graphql/
+│   │   ├── graphs/          # Graph 타입 + Payload (Viewer.ts, CreateWorkspacePayload.ts)
+│   │   ├── inputs/          # Input 타입들 (CreateWorkspaceInput.ts)
+│   │   ├── ViewerQueryResolver.ts
+│   │   └── WorkspaceMutationResolver.ts
+│   ├── slack/               # Slack Controller (선택적)
+│   │   └── WikiSlackController.ts
+│   └── events/              # Domain Event Handler (선택적)
+│       └── SlackMemberJoinedEventHandler.ts
+└── usecases/                # UseCase들 (GetViewer.ts, CreateWorkspace.ts)
+```
+
+### 도메인 이벤트 핸들러 패턴
+- 다른 도메인의 이벤트를 구독하여 처리하는 핸들러
+- `interfaces/events/` 디렉토리에 위치
+- ⚠️ **모든 이벤트 관련 import는 `@darun/provider-domain-events`에서** (싱글턴 인스턴스 문제 방지)
+```typescript
+import { RegisterEventHandler } from '@darun/provider-domain-events';
+import type { EventHandler } from '@darun/provider-domain-events';
+import { SlackMemberJoinedEvent } from '@darun/provider-domain-events';
+
+@Service()
+@RegisterEventHandler(SlackMemberJoinedEvent)
+export class SlackMemberJoinedEventHandler implements EventHandler<SlackMemberJoinedEvent> {
+  async handle(event: SlackMemberJoinedEvent): Promise<void> {
+    // 이벤트 처리 로직
+  }
+}
+```
+
+### Event Handlers Export 패턴
+```typescript
+// libs/{domain}/service/src/index.ts
+export const eventHandlers = [SlackMemberJoinedEventHandler];
+```
+
+### GraphQL Graph 타입 규칙
+- 파일명/클래스명에 `Type` suffix 금지 (예: `Viewer.ts`, `Workspace.ts`)
+- `@ObjectType()`에 이름 명시 불필요 (클래스명 자동 사용)
+- Resolver에서 도메인 모델 직접 import 금지 (Graph 타입만 사용)
+```typescript
+@ObjectType()
+export class Viewer {
+  @Field(() => ID)
+  id: string;
+}
+```
+
+### Domain ↔ GraphQL 타입 No Mapping 전략
+- Domain Entity와 GraphQL Graph 타입은 **구조적으로 동일**하게 유지
+- TypeScript의 구조적 타이핑(Structural Typing)을 활용하여 **매핑 함수 없이** 직접 반환
+- `as` 캐스팅이나 매핑 함수 생성 금지
+- 약간의 차이가 있을 경우 인라인 객체로 처리
+
+```typescript
+// ✅ 올바른 예시: UseCase 결과를 직접 반환
+@Query(() => WikiDocument, { nullable: true })
+async wikiDocument(@Arg('id', () => ID) id: string): Promise<WikiDocument | null> {
+  return this.getWikiDocumentUseCase.execute(id);
+}
+
+// ✅ 올바른 예시: 인라인 객체로 조합
+@Query(() => WikiDocumentConnection)
+async searchWikiDocuments(...): Promise<WikiDocumentConnection> {
+  const result = await this.searchWikiDocumentsUseCase.execute({ ... });
+  return { nodes: result.documents, totalCount: result.totalCount };
+}
+
+// ❌ 잘못된 예시: 매핑 함수 사용
+function toWikiDocumentGraph(doc: WikiDocumentEntity): WikiDocument {
+  return { id: doc.id, title: doc.title, ... };
+}
+return toWikiDocumentGraph(document);
+
+// ❌ 잘못된 예시: as 캐스팅 사용
+return document as unknown as WikiDocument;
+```
+
+### Resolver 분리
+- Query, Mutation, FieldResolver는 별도 Resolver로 분리
+- 네이밍: `{Entity}QueryResolver`, `{Entity}MutationResolver`
+```typescript
+@Resolver(() => Viewer)
+export class ViewerQueryResolver { ... }
+
+@Resolver(() => Viewer)
+export class WorkspaceQueryResolver { ... }
+
+@Resolver()
+export class WorkspaceMutationResolver { ... }
+```
+
+### Mutation Input/Payload 패턴
+- Mutation은 항상 Input 객체 하나로 묶어서 처리
+- 응답은 `~~Payload` 형식으로 반환
+- Input은 `inputs/` 폴더에, Payload는 `graphs/` 폴더에 위치
+```typescript
+// inputs/CreateWorkspaceInput.ts
+@InputType()
+export class CreateWorkspaceInput {
+  @Field()
+  name: string;
+}
+
+// graphs/CreateWorkspacePayload.ts
+@ObjectType()
+export class CreateWorkspacePayload {
+  @Field(() => Workspace)
+  workspace: Workspace;
+}
+
+// WorkspaceMutationResolver.ts
+@Mutation(() => CreateWorkspacePayload)
+async createWorkspace(@Arg('input') input: CreateWorkspaceInput): Promise<CreateWorkspacePayload> {
+  const workspace = await this.createWorkspaceUseCase.execute({ ... });
+  return { workspace };
+}
+```
+
+### Resolvers Export 패턴
+- 각 service 패키지에서 `resolvers` 배열을 export
+```typescript
+// libs/{domain}/service/src/index.ts
+export const resolvers = [
+  ViewerQueryResolver,
+  WorkspaceQueryResolver,
+  WorkspaceMutationResolver,
+];
+```
+
+## Datasource Layer 규칙
+- Drizzle ORM을 통한 타입 안전한 DB 접근
+- Repository 인터페이스 구현
+- 외부 API 호출 로직 포함
+- `toEntity()`, `toRow()` private 메서드로 매핑
+- **AggregateRoot 이벤트 발행**: `save`/`update` 시점에 Entity의 도메인 이벤트 자동 발행
+
+### Repository 구현체 패턴
+- `{Entity}RepositoryImpl` 형식 사용
+- `update`에서 트랜잭션 사용
+- `updatedAt`은 repository에서 자동 설정
+```typescript
+@Service()
+export class UserRepositoryImpl implements UserRepository {
+  async update(id: string, modifier: (user: User) => User): Promise<User> {
+    return this.db.transaction(async tx => {
+      const result = await tx.select().from(users).where(eq(users.id, id)).limit(1);
+      if (result.length === 0) {
+        throw new Error(`User not found: ${id}`);
+      }
+
+      const prev = this.toEntity(result[0]);
+      const next = modifier(prev);
+
+      await tx
+        .update(users)
+        .set({ ...this.toRow(next), updatedAt: new Date() })
+        .where(eq(users.id, id));
+
+      return next;
+    });
+  }
+
+  private toEntity(row: UserRow): User {
+    return User.reconstitute({ ... });
+  }
+
+  private toRow(user: User) {
+    return { ... };
+  }
+}
+```
+
+### AggregateRoot Repository 이벤트 발행 패턴
+- AggregateRoot를 상속한 Entity의 Repository는 `save`/`update` 후 이벤트 발행
+- `EventPublisher`를 사용하여 `getDomainEvents()` 결과 발행
+- UseCase에서 직접 이벤트를 발행하지 않음 (Repository에 위임)
+```typescript
+import { EventPublisher } from '@darun/provider-domain-events';
+
+@Service(SlackMemberRepositoryToken)
+export class SlackMemberRepositoryImpl implements SlackMemberRepository {
+  private readonly eventPublisher = new EventPublisher();
+
+  async save(member: SlackMember): Promise<void> {
+    await this.db.insert(slackMembers).values(this.toRow(member));
+    await this.publishEvents(member);  // 저장 후 이벤트 발행
+  }
+
+  async update(id: string, modifier: (m: SlackMember) => SlackMember): Promise<SlackMember> {
+    return this.db.transaction(async tx => {
+      // ... update 로직 ...
+      await this.publishEvents(next);  // 업데이트 후 이벤트 발행
+      return next;
+    });
+  }
+
+  private async publishEvents(member: SlackMember): Promise<void> {
+    const events = member.getDomainEvents();
+    if (events.length > 0) {
+      await this.eventPublisher.publishMany([...events]);
+      member.clearDomainEvents();
+    }
+  }
+}
+```
+
+## graphql-api 통합
+
+### DI Container 설정
+- `apps/graphql-api/src/config/container.ts`에서 datasource 패키지 re-export
+```typescript
+export * from '@darun/user-datasource';
+```
+
+### Resolvers 등록
+- `apps/graphql-api/src/app/resolvers.ts`에서 service 패키지의 resolvers 통합
+```typescript
+import { resolvers as userResolvers } from '@darun/user-service';
+
+export const resolvers = [...userResolvers] as NonEmptyArray<ResolverClass>;
+```
+
+## 패키지 구조
+```
+libs/{domain}/
+├── service/        # @darun/{domain}-service
+├── domain/         # @darun/{domain}-domain
+└── datasource/     # @darun/{domain}-datasource
+```

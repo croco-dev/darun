@@ -1,0 +1,144 @@
+---
+description: Clean Architecture + DDD 패턴, 모노레포 패키지 구조, 계층별 의존성 관리 규칙
+alwaysApply: false
+---
+#WM|# darun 아키텍처 핵심 원칙
+
+## Clean Architecture + DDD 패턴 준수
+- 의존성 방향은 항상 안쪽(Domain)으로 향해야 함
+- Domain Layer는 외부 의존성 없이 순수 비즈니스 로직만 포함  
+- Repository 패턴을 통한 데이터 접근 추상화
+- Ports & Adapters 패턴을 통한 외부 서비스 접근 추상화
+
+## 모노레포 패키지 구조
+- `apps/`: 애플리케이션 진입점들 (서버 앱 + 클라이언트 앱)
+- `libs/shared/`: 도메인 비종속 공유 라이브러리
+  - `provider-domain-events`: 도메인 이벤트 정의 + AggregateRoot/EventPublisher re-export
+  - `provider-database`, `provider-gid`, `provider-role`: 인프라 프로바이더
+  - `utils-*`: 유틸리티 라이브러리
+- `libs/{domain}/`: 도메인별 라이브러리
+
+## Apps 구조
+
+### 서버 앱 (`apps/graphql-api`, `apps/slack-api`)
+- **역할**: API 진입점, DI 컨테이너 설정, 서버 설정
+- **구조**:
+  ```
+  apps/graphql-api/src/
+  ├── app/
+  │   ├── authChecker.ts    # 인증 체커
+  │   ├── buildContext.ts   # GraphQL Context
+  │   └── resolvers.ts      # Resolver 등록
+  ├── config/
+  │   ├── container.ts      # DI 컨테이너
+  │   ├── database.ts       # DB 연결
+  │   └── environment.ts    # 환경 변수
+  └── main.ts               # 진입점
+  ```
+- **의존성**: `libs/{domain}/service` 패키지들을 import하여 조합
+
+### 클라이언트 앱 (`apps/console-web`, `apps/admin-web`, `apps/service-web`)
+- **역할**: 라우팅, Provider 설정, 전역 스타일
+- **구조**:
+  ```
+  apps/console-web/src/
+  ├── app/
+  │   ├── layout.tsx           # 루트 레이아웃
+  │   ├── page.tsx             # 페이지
+  │   ├── client-providers.tsx # Apollo Provider
+  │   ├── server-providers.tsx # Clerk Provider
+  │   └── environment.ts       # 환경 변수
+  └── shells/
+      └── GlobalLayout.tsx     # 레이아웃 조립 + UX Boundary
+  ```
+- **의존성**: `libs/shared/feature-*`, `libs/{domain}/feature` 패키지들을 import
+
+## 계층별 의존성 관리
+
+### 서버 레이어
+```
+Service (UseCase + GraphQL Resolver)
+  └── Domain (Entity + Repository Interface)
+        └── Datasource (Repository 구현체)
+```
+
+### 클라이언트 레이어
+```
+Apps (라우팅 + Provider)
+  └── Shells (*Page, *Layout - Feature 조립 + UX Boundary)
+        └── Features (비즈니스 로직 + GraphQL, MVVM 패턴)
+              └── UI (프레젠테이션)
+                    └── @darun/ui (공통 UI 라이브러리)
+```
+
+- 상위 레이어는 하위 레이어만 참조 가능
+- 같은 레이어끼리는 참조 금지 (같은 도메인 내에서도 동일)
+
+## 아키텍처 ESLint 룰 (자동 검증)
+
+### `no-cross-domain-import` - 크로스 도메인 참조 금지
+- 다른 도메인의 패키지를 직접 import 금지
+- 예: `billing-service`에서 `@darun/user-domain` import 금지
+- **예외**: `@darun/provider-domain-events`는 도메인 이벤트 공유를 위해 허용
+- 크로스 도메인 통신은 도메인 이벤트를 통해 처리
+
+### `no-datasource-import` - Datasource 직접 참조 금지
+- `service`, `domain` 레이어에서 `datasource` 패키지 직접 import 금지
+- 예: `user-service`에서 `@darun/user-datasource` import 금지
+- Datasource는 DI Container(apps)에서만 등록하여 사용
+
+## 패키지 위치 및 구조
+
+### 서버 레이어 (`libs/{domain}/*`)
+| 레이어 | 위치 | 역할 |
+|--------|------|------|
+| Service | `libs/{domain}/service` | UseCase, GraphQL Resolver |
+| Domain | `libs/{domain}/domain` | Entity, Repository Interface, Port Interface |
+| Datasource | `libs/{domain}/datasource` | Repository 구현체, Adapter 구현체 |
+
+### Ports & Adapters 패턴 (헥사고날 아키텍처)
+외부 서비스(인증 프로바이더, 외부 API 등)에 대한 의존성을 추상화합니다.
+
+| 구분 | 위치 | 역할 | 예시 |
+|------|------|------|------|
+| Port (인터페이스) | `domain/src/libs/ports/` | 외부 서비스 인터페이스 정의 | `ExternalAccountProvider` |
+| Adapter (구현체) | `datasource/src/libs/adapters/` | 실제 외부 서비스 호출 구현 | `ClerkExternalAccountProvider` |
+| Repository | `domain/src/libs/repositories/` | 영속성 인터페이스 (특수 케이스) | `UserRepository` |
+
+- **Port**: Domain Layer에 인터페이스 정의 (외부 의존성 없음)
+- **Adapter**: Datasource Layer에 구현체 (실제 외부 API 호출)
+- **Repository**: 영속성 접근을 위한 특수한 Port로, 별도 디렉토리로 분리
+
+### 클라이언트 레이어
+| 유형 | 위치 | 역할 |
+|------|------|------|
+| 공용 Shell | `apps/*/src/shells/` | 전역 레이아웃 조립 (GlobalLayout 등) |
+| 도메인 Shell | `libs/{domain}/shell` | 도메인별 `*Page`, `*Layout` 컴포넌트 (flat 구조) |
+| 전역 Feature | `libs/shared/feature-*` | 도메인 비종속 스마트 컴포넌트 |
+| 도메인 Feature | `libs/{domain}/feature` | 도메인 특화 비즈니스 로직 (MVVM 패턴) |
+| 도메인 UI | `libs/{domain}/ui` | 도메인 특화 프레젠테이션 |
+| 공통 UI | `libs/shared/ui` | shadcn/ui 기반 공통 컴포넌트 |
+
+## 새 기능 개발 순서 (전체 스택)
+
+1. **서버 레이어**:
+   - Domain Layer 설계 (Entity, Repository Interface)
+   - Service Layer 구현 (UseCase, GraphQL Resolver)  
+   - Datasource Layer 구현 (Repository 구현체)
+   - `apps/graphql-api`에 Resolver 등록
+
+2. **클라이언트 레이어**:
+   - UI Layer: 도메인 특화 프레젠테이션 컴포넌트
+   - Feature Layer: 비즈니스 로직 + GraphQL 연동 (MVVM 패턴)
+   - Shell Layer: `libs/{domain}/shell`에 `*Page`, `*Layout` 컴포넌트 (flat 구조)
+
+3. **Apps에서 통합**: Shell의 `*Page` 컴포넌트를 page.tsx에서 사용
+
+## 전역 기능 vs 도메인 기능
+
+| 구분 | 위치 | 예시 |
+|------|------|------|
+| 전역 Feature | `libs/shared/feature-*` | GlobalHeader, ToastManager |
+| 도메인 Feature | `libs/{domain}/feature` | ProjectTable, UserProfile |
+| 전역 UI | `libs/shared/ui` | Button, Card, Dialog |
+| 도메인 UI | `libs/{domain}/ui` | ProjectHeader, UserAvatar |
