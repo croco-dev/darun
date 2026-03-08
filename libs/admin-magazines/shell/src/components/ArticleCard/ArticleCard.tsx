@@ -1,6 +1,3 @@
-import { Card, Group, Image, Text } from '@mantine/core';
-import classes from './ArticleCard.module.css';
-
 type ArticleCardProps = {
   thumbnailImageUri?: string;
   category?: string;
@@ -10,36 +7,39 @@ type ArticleCardProps = {
   date?: Date;
 };
 
-export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, summary }: ArticleCardProps) => {
+export const ArticleCard = ({
+  thumbnailImageUri,
+  category,
+  title,
+  date,
+  author,
+  summary,
+}: ArticleCardProps) => {
   return (
-    <Card withBorder radius="md" p={0} className={classes.card}>
-      <Group wrap="nowrap" gap={0}>
-        {thumbnailImageUri && <Image src={thumbnailImageUri} height={144} />}
-        <div className={classes.body}>
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="flex">
+        {thumbnailImageUri && (
+          <img
+            src={thumbnailImageUri}
+            alt={title}
+            className="h-36 w-auto flex-shrink-0 object-cover"
+          />
+        )}
+        <div className="flex flex-col justify-center p-4 pl-5 pr-5">
           {category && (
-            <Text tt="uppercase" c="dimmed" fw={700} size="xs">
+            <div className="mb-1 text-xs font-bold uppercase text-gray-500">
               {category}
-            </Text>
+            </div>
           )}
-          <Text className={classes.title} mt="xs" mb={'xs'}>
-            {title}
-          </Text>
-          <Text className={classes.desc} mb="md">
-            {summary}
-          </Text>
-          <Group wrap="nowrap" gap="xs">
-            <Group gap="xs" wrap="nowrap">
-              <Text size="xs">{author}</Text>
-            </Group>
-            <Text size="xs" c="dimmed">
-              •
-            </Text>
-            <Text size="xs" c="dimmed">
-              {date?.toLocaleDateString()}
-            </Text>
-          </Group>
+          <h3 className="mb-2 font-bold leading-tight">{title}</h3>
+          {summary && <p className="mb-3 text-sm text-gray-600">{summary}</p>}
+          <div className="flex items-center gap-x-2 text-xs text-gray-500">
+            <span>{author}</span>
+            <span>•</span>
+            <span>{date?.toLocaleDateString()}</span>
+          </div>
         </div>
-      </Group>
-    </Card>
+      </div>
+    </div>
   );
 };
