@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@darun/ui";
-import { Box, Flex, Heading, Text } from "@kuma-ui/core";
+
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 
@@ -19,46 +19,27 @@ export default function ErrorPage({
   const isDev = process.env.NODE_ENV === "development";
 
   return (
-    <Flex
-      flexDir="column"
-      alignItems="center"
-      justifyContent="center"
-      height="100vh"
-      p={24}
-      gap={24}
-    >
-      <Heading as="h2" fontSize="24px" fontWeight="bold">
+    <div className="flex flex-col items-center justify-center h-screen p-6 gap-6">
+      <h2 className="text-2xl font-bold">
         문제가 발생했습니다
-      </Heading>
-      <Text color="#666" textAlign="center">
+      </h2>
+      <p className="text-[#666] text-center">
         일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
-      </Text>
+      </p>
 
       <Button onClick={() => reset()}>다시 시도</Button>
 
       {isDev && (
-        <Box
-          mt={32}
-          p={16}
-          bg="#f5f5f5"
-          borderRadius={8}
-          maxWidth="800px"
-          width="100%"
-          overflow="auto"
-          fontFamily="monospace"
-          fontSize="12px"
-        >
-          <Text fontWeight="bold" mb={8}>
+        <div className="mt-8 p-4 bg-[#f5f5f5] rounded-lg max-w-2xl w-full overflow-auto font-mono text-xs">
+          <p className="font-bold mb-2">
             {error.name}: {error.message}
-          </Text>
+          </p>
           <pre>{error.stack}</pre>
           {error.digest && (
-            <Text mt={8} color="#666">
+            <p className="mt-2 text-[#666]">
               Digest: {error.digest}
-            </Text>
+            </p>
           )}
-        </Box>
-      )}
-    </Flex>
-  );
+        </div>
+    </div>
 }

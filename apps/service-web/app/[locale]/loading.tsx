@@ -1,6 +1,6 @@
 import { ContentArea } from "@darun/ui";
 import { Layout } from "@darun/ui-layout";
-import { Box, HStack, VStack } from "@kuma-ui/core";
+
 
 const SKELETON_ROW_KEYS = ["row-1", "row-2", "row-3", "row-4"] as const;
 
@@ -13,12 +13,9 @@ const Skeleton = ({
   height?: string | number;
   radius?: string | number;
 }) => (
-  <Box
+  <div
     aria-hidden="true"
-    width={width}
-    height={height}
-    borderRadius={radius}
-    bg="#f3f4f6"
+    className={"w-[" + width + "] h-[" + height + "] rounded-[" + radius + "] bg-[#f3f4f6]"}
     style={{ animation: "pulse 1.5s ease-in-out infinite" }}
   />
 );
@@ -26,37 +23,35 @@ const Skeleton = ({
 export default function Loading() {
   return (
     <Layout>
-      <VStack
-        as="main"
-        width="100%"
-        mt={32}
-        gap={20}
+      <main
+        className="w-full mt-8 gap-5"
         aria-busy="true"
         aria-live="polite"
         aria-label="페이지를 불러오는 중입니다"
       >
         <ContentArea>
-          <VStack gap={16} mb={32}>
+          <div className="flex flex-col gap-4 mb-8">
             <Skeleton height={200} radius="8px" />
-            <HStack gap={16}>
+            <div className="flex flex-row gap-4">
               <Skeleton width="60%" height={24} />
               <Skeleton width="30%" height={24} />
-            </HStack>
-          </VStack>
+            </div>
+          </div>
 
-          <VStack gap={16}>
+          <div className="flex flex-col gap-4">
             {SKELETON_ROW_KEYS.map((rowKey) => (
-              <HStack key={rowKey} gap={16} width="100%">
+              <div key={rowKey} className="flex flex-row gap-4 w-full">
                 <Skeleton width={80} height={80} radius="8px" />
-                <VStack flex={1} gap={8} justify="center">
+                <div className="flex flex-col gap-2 flex-1 justify-center">
                   <Skeleton width="80%" height={20} />
                   <Skeleton width="40%" height={16} />
-                </VStack>
-              </HStack>
+                </div>
+              </div>
             ))}
-          </VStack>
+          </div>
         </ContentArea>
-      </VStack>
+        </div>
+      </main>
       <style>{`
         @keyframes pulse {
           0% { opacity: 1; }

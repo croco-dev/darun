@@ -1,6 +1,6 @@
 import { Button, ContentArea } from "@darun/ui";
 import { Layout } from "@darun/ui-layout";
-import { Heading, Text, VStack } from "@kuma-ui/core";
+
 import { Metadata } from "next";
 import Link from "next/link";
 
@@ -12,25 +12,19 @@ export default function NotFound() {
   return (
     <Layout>
       <ContentArea>
-        <VStack
-          alignItems="center"
-          justifyContent="center"
-          py={160}
-          gap={24}
-          textAlign="center"
-        >
-          <Heading as="h1" fontSize="24px" fontWeight="bold">
+        <div className="flex flex-col items-center justify-center py-40 gap-6 text-center">
+          <h1 className="text-2xl font-bold">
             페이지를 찾을 수 없습니다
-          </Heading>
-          <Text color="colors.gray.600" fontSize="16px">
+          </h1>
+          <p className="text-gray-600 text-base">
             요청하신 페이지가 사라졌거나 잘못된 경로입니다.
-          </Text>
+          </p>
           <Link href="/">
             <Button variant="shadow" color="primary">
               홈으로 돌아가기
             </Button>
           </Link>
-        </VStack>
+        </div>
       </ContentArea>
     </Layout>
   );
