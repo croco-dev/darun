@@ -1,9 +1,11 @@
 packages:
-  - apps/**/*
-  - '!apps/**/node_modules/**/*'
-  - '!apps/**/.next/**/*'
-  - libs/**/*
-  - '!libs/**/node_modules/**/*'
+  - "apps/*"
+  - "libs/*/*"
+  - "libs/shared/*"
+  - "!**/node_modules/**"
+  - "!**/.next/**"
+  - "!**/dist/**"
+  - "!**/build/**"
 
 onlyBuiltDependencies:
   - serverless
