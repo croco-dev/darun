@@ -15,7 +15,6 @@
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-icons": "workspace:*",
     "@darun/utils-router": "workspace:*",
-    "@kuma-ui/core": ">=1",
     "next": "^15.5.12",
     "next-intl": ">=4",
     "react-dom": ">=19.0.0"

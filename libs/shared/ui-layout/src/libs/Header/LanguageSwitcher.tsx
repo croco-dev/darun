@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import { Box } from '@kuma-ui/core';
-import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from '../../i18n/navigation';
+import { useLocale } from "next-intl";
+import { usePathname, useRouter } from "../../i18n/navigation";
 
 export const LanguageSwitcher = () => {
   const locale = useLocale();
@@ -10,26 +9,17 @@ export const LanguageSwitcher = () => {
   const pathname = usePathname();
 
   const toggle = () => {
-    const nextLocale = locale === 'ko' ? 'en' : 'ko';
+    const nextLocale = locale === "ko" ? "en" : "ko";
     router.replace(pathname, { locale: nextLocale });
   };
 
   return (
-    <Box
-      as="button"
+    <button
+      type="button"
       onClick={toggle}
-      border="1px solid #E2E8F0"
-      borderRadius="8px"
-      padding="6px 12px"
-      bg="white"
-      cursor="pointer"
-      fontSize="14px"
-      fontWeight="600"
-      color="#1A202C"
-      _hover={{ bg: '#F7FAFC' }}
-      transition="all 0.2s"
+      className="cursor-pointer rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-sm font-semibold text-[#1A202C] transition-colors duration-200 hover:bg-[#F7FAFC]"
     >
-      {locale === 'ko' ? '🇰🇷 KO' : '🇺🇸 EN'}
-    </Box>
+      {locale === "ko" ? "🇰🇷 KO" : "🇺🇸 EN"}
+    </button>
   );
 };

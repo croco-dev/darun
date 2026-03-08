@@ -1,45 +1,38 @@
-import { bind } from '@croco/utils-structure-react';
-import { ContentArea } from '@darun/ui-foundation';
-import { HStack, VStack, Text, Flex } from '@kuma-ui/core';
-import { useFooter } from './useFooter';
+import { bind } from "@croco/utils-structure-react";
+import { ContentArea } from "@darun/ui-foundation";
+import { useFooter } from "./useFooter";
 
 export const Footer = bind(useFooter, () => (
-  <Flex as={'footer'} py={28}>
+  <footer className="py-7">
     <ContentArea>
-      <HStack justifyContent={'space-between'}>
-        <VStack gap={4}>
-          <HStack gap={6}>
-            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.600'}>
+      <div className="flex flex-col justify-between gap-6 sm:flex-row">
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-sm font-medium text-dark-600">
               &copy; 2024 Croco
-            </Text>
-            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.400'}>
-              •
-            </Text>
-            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.600'}>
+            </span>
+            <span className="text-sm font-medium text-dark-400">•</span>
+            <span className="text-sm font-medium text-dark-600">
               개인정보처리방침
-            </Text>
-            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.400'}>
-              •
-            </Text>
-            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.600'}>
+            </span>
+            <span className="text-sm font-medium text-dark-400">•</span>
+            <span className="text-sm font-medium text-dark-600">
               서비스 약관
-            </Text>
-            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.400'}>
-              •
-            </Text>
-            <Text as={'span'} fontSize={14} fontWeight={'fontWeights.medium'} color={'colors.dark.600'}>
-              문의
-            </Text>
-          </HStack>
-          <HStack>
-            <Text fontSize={13} fontWeight={'fontWeights.normal'} color={'colors.dark.500'}>
-              ‘다른’ 서비스는 단순 정보를 제공하며, 각 개별 컨텐츠의 저작권과 소유권을 보유하고 있지 않습니다. <br />
-              ‘다른’ 서비스는 공신력 있는 매체가 아닙니다. 사이트에 있는 내용을 맹신하지 마세요.
-            </Text>
-          </HStack>
-        </VStack>
-        <HStack gap={8}></HStack>
-      </HStack>
+            </span>
+            <span className="text-sm font-medium text-dark-400">•</span>
+            <span className="text-sm font-medium text-dark-600">문의</span>
+          </div>
+          <div className="flex">
+            <p className="text-[13px] font-normal text-dark-500">
+              ‘다른’ 서비스는 단순 정보를 제공하며, 각 개별 컨텐츠의 저작권과
+              소유권을 보유하고 있지 않습니다. <br />
+              ‘다른’ 서비스는 공신력 있는 매체가 아닙니다. 사이트에 있는 내용을
+              맹신하지 마세요.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2"></div>
+      </div>
     </ContentArea>
-  </Flex>
+  </footer>
 ));
