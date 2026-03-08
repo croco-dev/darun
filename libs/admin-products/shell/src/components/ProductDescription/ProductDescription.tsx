@@ -6,6 +6,7 @@ export const ProductDescription = bind(
   ({ description }) => (
     <>
       {description ? (
+        // eslint-disable-next-line react-dom/no-dangerously-set-innerhtml
         <div
           className="whitespace-pre-wrap text-sm leading-6 text-dark-900"
           dangerouslySetInnerHTML={{ __html: description }}
