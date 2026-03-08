@@ -1,46 +1,49 @@
-'use client';
+"use client";
 
-import { ProductTagsForm } from '@darun/admin-products-shell';
+import { ProductTagsForm } from "@darun/admin-products-shell";
 import {
   ProductDetailInfoSection,
   ProductDetailDescriptionSection,
   ProductDetailLinkSection,
-} from '@darun/admin-products-shell';
-import { ProductDetailAlternativeSection } from '@darun/admin-products-shell';
-import { ProductDetailCompanySection } from '@darun/admin-products-shell';
-import { ProductDetailFeatureSection } from '@darun/admin-products-shell';
-import { Button, Card, Group, Stack, Title } from '@mantine/core';
-import Link from 'next/link';
-import { AppShell, PageShell } from '../uis';
+} from "@darun/admin-products-shell";
+import { ProductDetailAlternativeSection } from "@darun/admin-products-shell";
+import { ProductDetailCompanySection } from "@darun/admin-products-shell";
+import { ProductDetailFeatureSection } from "@darun/admin-products-shell";
+import Link from "next/link";
+import { AppShell, PageShell } from "../uis";
 
-export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
+export const ProductDetailPage = ({
+  params: { slug },
+}: {
+  params: { slug: string };
+}) => (
   <AppShell>
-    <PageShell title={'서비스 상세'}>
+    <PageShell title={"서비스 상세"}>
       <ProductDetailInfoSection slug={slug} />
-      <Stack gap={32}>
+      <div className="flex flex-col gap-8">
         <ProductDetailDescriptionSection slug={slug} />
         <ProductDetailFeatureSection slug={slug} />
         <ProductDetailLinkSection slug={slug} />
-        <Stack gap={8}>
-          <Group justify={'space-between'}>
-            <Title order={3}>스크린샷 관리</Title>
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-semibold">스크린샷 관리</h3>
             <Link href={`/products/${slug}/screenshots/new`}>
-              <Button color={'dark'}>스크린샷 추가</Button>
+              <button className="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800">
+                스크린샷 추가
+              </button>
             </Link>
-          </Group>
-          <Card withBorder shadow="sm" radius="md">
-            <Card.Section withBorder inheritPadding py="xs">
-              미완
-            </Card.Section>
-          </Card>
-        </Stack>
+          </div>
+          <div className="border border-gray-200 shadow-sm rounded-lg">
+            <div className="border-b border-gray-200 px-4 py-2">미완</div>
+          </div>
+        </div>
         <ProductDetailAlternativeSection slug={slug} />
-        <Stack gap={8}>
-          <Title order={3}>태그 관리</Title>
+        <div className="flex flex-col gap-2">
+          <h3 className="text-xl font-semibold">태그 관리</h3>
           <ProductTagsForm slug={slug} />
-        </Stack>
+        </div>
         <ProductDetailCompanySection slug={slug} />
-      </Stack>
+      </div>
     </PageShell>
   </AppShell>
 );

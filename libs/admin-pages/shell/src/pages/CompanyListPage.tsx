@@ -1,7 +1,6 @@
 import { AllCompaniesList } from '@darun/admin-companies-shell';
 import { ProductListRefreshButton } from '@darun/admin-products-shell';
 import { Link } from '@darun/utils-router';
-import { Button, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { AppShell, PageShell } from '../uis';
 
@@ -11,14 +10,15 @@ export const CompanyListPage = () => {
       <PageShell
         title={'기업(업체) 목록'}
         rightSide={
-          <Group gap={'8px'}>
+          <div className="flex gap-2">
             <ProductListRefreshButton />
             <Link href="/companies/new">
-              <Button rightSection={<IconPlus size={16} />} color={'dark'}>
+              <button className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors">
                 기업 추가
-              </Button>
+                <IconPlus size={16} />
+              </button>
             </Link>
-          </Group>
+          </div>
         }
       >
         <AllCompaniesList />

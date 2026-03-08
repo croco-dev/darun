@@ -1,25 +1,25 @@
 import { LoginSection } from '@darun/admin-accounts-shell';
-import { Paper, Title, Container, Flex } from '@mantine/core';
+
 import { Logo } from '../uis';
 
 export const LoginPage = () => {
   return (
-    <Flex w={'100%'} mih={'100vh'} bg={'gray.1'}>
-      <Container size={400} my={56} w={340}>
-        <Flex align={'center'} gap={6} justify={'center'}>
+    <div className="w-full min-h-screen bg-gray-100">
+      <div className="max-w-[400px] mx-auto mt-14 mb-14 w-[340px]">
+        <div className="flex items-center gap-1.5 justify-center">
           <Logo size={24} />{' '}
-          <Title fz={'16px'} fw={'extraBold'} c={'dark.6'}>
+          <h2 className="text-base font-extrabold text-gray-700">
             다른 관리자
-          </Title>
-        </Flex>
-        <Title fz={'24px'} fw={'medium'} c="dark.8" ta={'center'} mt={8}>
+          </h2>
+        </div>
+        <h2 className="text-2xl font-medium text-gray-800 text-center mt-2">
           로그인
-        </Title>
+        </h2>
 
-        <Paper withBorder shadow="md" p={30} mt={30} radius="md">
+        <div className="border border-gray-200 shadow-md p-8 mt-8 rounded-md">
           <LoginSection />
-        </Paper>
-      </Container>
-    </Flex>
+        </div>
+      </div>
+    </div>
   );
 };

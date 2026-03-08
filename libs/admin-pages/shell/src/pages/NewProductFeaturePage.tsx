@@ -1,20 +1,19 @@
 'use client';
 
 import { NewProductFeatureFormSection } from '@darun/admin-products-shell';
-import { Card, Text } from '@mantine/core';
 import { AppShell, PageShell } from '../uis';
 
 export const NewProductFeaturePage = ({ params: { slug } }: { params: { slug: string } }) => (
   <AppShell>
     <PageShell title={'서비스에 기능 추가'}>
-      <Card withBorder shadow="sm" radius="md">
-        <Card.Section withBorder inheritPadding py="xs">
-          <Text fw={500}>기능</Text>
-        </Card.Section>
-        <Card.Section inheritPadding mt="sm" pb="md">
+      <div className="border border-gray-200 shadow-sm rounded-md">
+        <div className="border-b px-4 py-2">
+          <p className="font-medium">기능</p>
+        </div>
+        <div className="px-4 mt-2 pb-4">
           <NewProductFeatureFormSection productSlug={slug} />
-        </Card.Section>
-      </Card>
+        </div>
+      </div>
     </PageShell>
   </AppShell>
-);
+  )

@@ -1,6 +1,5 @@
 import { MagazinesList } from '@darun/admin-magazines-shell';
 import { Link } from '@darun/utils-router';
-import { Button, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { Suspense } from 'react';
 import { AppShell, PageShell } from '../uis';
@@ -11,13 +10,14 @@ export const MagazineListPage = () => {
       <PageShell
         title={'다른 매거진'}
         rightSide={
-          <Group gap={'8px'}>
+          <div className="flex gap-2">
             <Link href="/magazines/create">
-              <Button rightSection={<IconPlus size={16} />} color={'dark'}>
+              <button className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors">
                 새로운 매거진 발행
-              </Button>
+                <IconPlus size={16} />
+              </button>
             </Link>
-          </Group>
+          </div>
         }
       >
         <Suspense fallback={<>로딩중...</>}>

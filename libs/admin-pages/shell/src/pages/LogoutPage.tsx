@@ -1,12 +1,11 @@
 import { LogoutSection } from '@darun/admin-accounts-shell';
-import { Center, Container } from '@mantine/core';
 
 export const LogoutPage = () => {
   return (
-    <Container>
-      <Center maw={400} h={100}>
+    <div className="mx-auto px-4">
+      <div className="flex items-center justify-center max-w-[400px] h-25">
         <LogoutSection />
-      </Center>
-    </Container>
+      </div>
+    </div>
   );
 };
