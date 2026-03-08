@@ -1,7 +1,12 @@
-import { AlternativeProductSection, FAQSection, FAQItem, ProductSummary } from '@darun/products-shell';
-import { ContentArea } from '@darun/ui-foundation';
-import { Layout } from '@darun/ui-layout';
-import { Link } from '@darun/utils-router';
+import {
+  AlternativeProductSection,
+  FAQSection,
+  FAQItem,
+  ProductSummary,
+} from "@darun/products-shell";
+import { ContentArea } from "@darun/ui";
+import { Layout } from "@darun/ui-layout";
+import { Link } from "@darun/utils-router";
 
 export const ProductAlternativePage = ({
   params: { slug },

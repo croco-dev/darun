@@ -22,8 +22,9 @@
     "@darun/provider-auth/client": "workspace:*",
     "@darun/provider-auth/server": "workspace:*",
     "@darun/search-shell": "workspace:*",
-    "@darun/ui-foundation": "workspace:*",
+    "@darun/ui": "workspace:*",
     "@darun/ui-layout": "workspace:*",
+    "lucide-react": "^0.468.0",
     "@darun/utils-apollo-client/client": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
@@ -35,7 +36,6 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
-
     "@types/react-dom": "^19.2.3",
     "eslint-config-next": "15.5.12",
     "graphql-tag-swc-plugin": "1.1.0",

@@ -1,19 +1,32 @@
-'use client';
+"use client";
 
-import { ContainedButton } from '@darun/ui-foundation';
-import { Box, Flex, Heading, Text } from '@kuma-ui/core';
-import * as Sentry from '@sentry/nextjs';
-import { useEffect } from 'react';
+import { Button } from "@darun/ui";
+import { Box, Flex, Heading, Text } from "@kuma-ui/core";
+import * as Sentry from "@sentry/nextjs";
+import { useEffect } from "react";
 
-export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function ErrorPage({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
 
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = process.env.NODE_ENV === "development";
 
   return (
-    <Flex flexDir="column" alignItems="center" justifyContent="center" height="100vh" p={24} gap={24}>
+    <Flex
+      flexDir="column"
+      alignItems="center"
+      justifyContent="center"
+      height="100vh"
+      p={24}
+      gap={24}
+    >
       <Heading as="h2" fontSize="24px" fontWeight="bold">
         문제가 발생했습니다
       </Heading>
@@ -21,7 +34,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
       </Text>
 
-      <ContainedButton onClick={() => reset()}>다시 시도</ContainedButton>
+      <Button onClick={() => reset()}>다시 시도</Button>
 
       {isDev && (
         <Box

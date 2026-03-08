@@ -1,13 +1,13 @@
-import { ContentArea } from '@darun/ui-foundation';
-import { Layout } from '@darun/ui-layout';
-import { Box, HStack, VStack } from '@kuma-ui/core';
+import { ContentArea } from "@darun/ui";
+import { Layout } from "@darun/ui-layout";
+import { Box, HStack, VStack } from "@kuma-ui/core";
 
-const SKELETON_ROW_KEYS = ['row-1', 'row-2', 'row-3', 'row-4'] as const;
+const SKELETON_ROW_KEYS = ["row-1", "row-2", "row-3", "row-4"] as const;
 
 const Skeleton = ({
-  width = '100%',
-  height = '20px',
-  radius = '4px',
+  width = "100%",
+  height = "20px",
+  radius = "4px",
 }: {
   width?: string | number;
   height?: string | number;
@@ -19,7 +19,7 @@ const Skeleton = ({
     height={height}
     borderRadius={radius}
     bg="#f3f4f6"
-    style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
+    style={{ animation: "pulse 1.5s ease-in-out infinite" }}
   />
 );
 
@@ -45,7 +45,7 @@ export default function Loading() {
           </VStack>
 
           <VStack gap={16}>
-            {SKELETON_ROW_KEYS.map(rowKey => (
+            {SKELETON_ROW_KEYS.map((rowKey) => (
               <HStack key={rowKey} gap={16} width="100%">
                 <Skeleton width={80} height={80} radius="8px" />
                 <VStack flex={1} gap={8} justify="center">

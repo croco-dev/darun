@@ -13,14 +13,13 @@
     "@darun/products-feature": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/utils-router": "workspace:*",
+    "lucide-react": "^0.468.0",
     "react-medium-image-zoom": "5.2.10"
   },
   "peerDependencies": {
     "@apollo/client": "3.11.2",
     "@croco/utils-structure-react": "0.0.1",
     "@darun/provider-graphql": "workspace:*",
-    "@darun/ui-foundation": "workspace:*",
-    "@darun/ui-icons": "workspace:*",
     "@kuma-ui/core": "1.5.7",
     "next": "*",
     "next-intl": ">=4",

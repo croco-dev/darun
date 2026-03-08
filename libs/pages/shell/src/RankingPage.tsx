@@ -1,6 +1,6 @@
-import { RankedProductSection } from '@darun/products-shell';
-import { ContentArea } from '@darun/ui-foundation';
-import { Layout } from '@darun/ui-layout';
+import { RankedProductSection } from "@darun/products-shell";
+import { ContentArea } from "@darun/ui";
+import { Layout } from "@darun/ui-layout";
 
 export const RankingPage = () => (
   <Layout>

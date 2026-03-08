@@ -1,1 +1,0 @@
-export { HeartIcon } from './HeartIcon';

@@ -1,1 +1,0 @@
-export { InternetIcon } from './InternetIcon';
