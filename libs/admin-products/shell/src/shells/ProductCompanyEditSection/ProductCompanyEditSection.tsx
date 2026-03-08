@@ -1,15 +1,13 @@
-import { Card, Text } from '@mantine/core';
 import { EditProductCompany } from '../../components/EditProductCompany';
-
 export function ProductCompanyEditSection({ slug }: { slug: string }) {
   return (
-    <Card withBorder shadow="sm" radius="md">
-      <Card.Section withBorder inheritPadding py="xs">
-        <Text fw={500}>회사 수정</Text>
-      </Card.Section>
-      <Card.Section inheritPadding mt="sm" pb="md">
+    <div className="border border-gray-200 shadow-sm rounded-md">
+      <div className="border-b p-4">
+        <p className="font-medium">회사 수정</p>
+      </div>
+      <div className="p-4 mt-2 pb-4">
         <EditProductCompany slug={slug} />
-      </Card.Section>
-    </Card>
+      </div>
+    </div>
   );
 }
