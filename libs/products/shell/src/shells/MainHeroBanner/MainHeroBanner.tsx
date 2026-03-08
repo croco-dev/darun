@@ -1,37 +1,16 @@
 'use client';
 
 import { ContentArea } from '@darun/ui-foundation';
-import { Box, Flex, Text, VStack } from '@kuma-ui/core';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { ProductsCount } from '../../components/ProductsCount';
-
 export const MainHeroBanner = () => {
   const t = useTranslations('Main');
 
   return (
-    <Flex
-      background={'colors.dark.900'}
-      position={'relative'}
-      width={'100%'}
-      overflow={'hidden'}
-      py={'40px'}
-      mb={'20px'}
-      borderRadius={'24px'}
-      border="1px"
-      boxShadow="0px 2px 4px 0px rgba(0, 0, 0, 0.08)"
-    >
-      <Flex
-        position={'absolute'}
-        top={[0, 0]}
-        bottom={0}
-        right={[-100, -120]}
-        zIndex={20}
-        width={['200%', '100%']}
-        opacity={[0.35, 1]}
-      >
-        <Box
-          as={Image}
+    <div className="relative w-full overflow-hidden py-10 mb-5 rounded-3xl border shadow-sm bg-dark-900">
+      <div className="absolute top-0 bottom-0 -right-[120px] -md:right-32 z-20 w-[200%] md:w-full opacity-[0.35] md:opacity-1">
+        <Image
           fill={true}
           src={'/images/main-hero-banner.png'}
           alt="hero banner"
@@ -39,49 +18,30 @@ export const MainHeroBanner = () => {
           objectPosition="right"
           priority={true}
         />
-      </Flex>
-      <Flex zIndex={40} width={'100%'}>
+      </div>
+      <div className="z-40 flex w-full">
         <ContentArea>
-          <VStack
-            display={'inline-flex'}
-            py={[20, 20]}
-            px={[0, '12px']}
-            width={'100%'}
-            gap={'24px'}
-            textAlign={['center', 'left']}
-          >
-            <VStack gap={'8px'}>
-              <Text
-                fontSize={['14px', '18px']}
-                fontWeight={'fontWeights.medium'}
-                textAlign={['center', 'left']}
-                letterSpacing={'-.4px'}
-                color={'colors.dark.300'}
-                margin={0}
-                as="span"
+          <div className="inline-flex flex-col py-5 px-0 md:px-3 w-full gap-6 text-center md:text-left">
+            <div className="flex flex-col gap-2">
+              <span
+                className={`text-sm md:text-lg font-medium text-center md:text-left tracking-tight text-dark-300 m-0`}
               >
                 {t('hero.description')}
-              </Text>
-              <Text
-                fontSize={['24px', '32px']}
-                fontWeight={'fontWeights.bold'}
-                letterSpacing={'-.8px'}
-                color={'colors.dark.100'}
-                textAlign={['center', 'left']}
-                as="h1"
-                margin={0}
+              </span>
+              <h1
+                className={`text-2xl md:text-4xl font-bold tracking-tighter text-dark-100 text-center md:text-left m-0`}
               >
                 <ProductsCount />
                 {t('hero.title.countSuffix')}{' '}
-                <Text as={'span'} color={'colors.brown.600'}>
+                <span className={`text-brown-600`}>
                   {t('hero.title.highlight')}
-                </Text>{' '}
+                </span>{' '}
                 {t('hero.title.ending')}
-              </Text>
-            </VStack>
-          </VStack>
+              </h1>
+            </div>
+          </div>
         </ContentArea>
-      </Flex>
-    </Flex>
+      </div>
+    </div>
   );
 };

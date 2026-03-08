@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useTranslations } from "next-intl";
-import { useId, useState } from "react";
+import { useTranslations } from 'next-intl';
+import { useId, useState } from 'react';
 
 export interface FAQItem {
   question: string;
@@ -13,33 +13,23 @@ interface FAQSectionProps {
 }
 
 export function FAQSection({ items }: FAQSectionProps) {
-  const t = useTranslations("ProductDetail");
+  const t = useTranslations('ProductDetail');
 
   if (!items || items.length === 0) return null;
 
   return (
     <div className="flex w-full flex-col gap-6 py-10">
-      <h2 className="text-2xl font-bold text-dark-900">{t("faq.title")}</h2>
+      <h2 className="text-2xl font-bold text-dark-900">{t('faq.title')}</h2>
       <div className="flex w-full flex-col gap-3">
-        {items.map((item) => (
-          <FAQAccordionItem
-            key={`${item.question}-${item.answer}`}
-            question={item.question}
-            answer={item.answer}
-          />
+        {items.map(item => (
+          <FAQAccordionItem key={`${item.question}-${item.answer}`} question={item.question} answer={item.answer} />
         ))}
       </div>
     </div>
   );
 }
 
-function FAQAccordionItem({
-  question,
-  answer,
-}: {
-  question: string;
-  answer: string;
-}) {
+function FAQAccordionItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const id = useId();
   const buttonId = `faq-button-${id}`;
@@ -49,21 +39,19 @@ function FAQAccordionItem({
     <div className="w-full overflow-hidden rounded-[12px] border border-dark-100 bg-white">
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => setIsOpen(prev => !prev)}
         id={buttonId}
         aria-expanded={isOpen}
         aria-controls={panelId}
         className="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-dark-50"
       >
-        <p className="flex-1 pr-4 text-base font-semibold text-dark-900">
-          {question}
-        </p>
+        <p className="flex-1 pr-4 text-base font-semibold text-dark-900">{question}</p>
         <div
           className="text-dark-400"
           aria-hidden="true"
           style={{
-            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.3s ease",
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.3s ease',
           }}
         >
           <svg
@@ -90,9 +78,9 @@ function FAQAccordionItem({
         aria-labelledby={buttonId}
         aria-hidden={!isOpen}
         style={{
-          maxHeight: isOpen ? "500px" : "0px",
+          maxHeight: isOpen ? '500px' : '0px',
           opacity: isOpen ? 1 : 0,
-          transition: "all 0.3s ease-in-out",
+          transition: 'all 0.3s ease-in-out',
         }}
         className="overflow-hidden"
       >

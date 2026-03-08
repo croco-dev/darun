@@ -1,10 +1,9 @@
-import { HStack } from '@kuma-ui/core';
 import { ProductLinks } from '../../components';
 
 type ProductSummaryLinkProps = { slug: string };
 
 export const ProductSummaryLink = ({ slug }: ProductSummaryLinkProps) => (
-  <HStack gap={'12px'} pb={'12px'} overflowX="auto">
+  <div className="flex gap-3 pb-3 overflow-x-auto">
     <ProductLinks slug={slug} />
-  </HStack>
+  </div>
 );
