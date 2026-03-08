@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { ProductAlternativePage } from '@darun/products-shell';
+import { ProductAlternativePage } from '@darun/pages-shell';
 import { getClient } from '@darun/utils-apollo-client/server';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -199,8 +199,8 @@ export default async function ProductAlternativePageWrapper({ params }: Props) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd).replace(/</g, '\\u003c')}</script>
+      <script type="application/ld+json">{JSON.stringify(faqJsonLd).replace(/</g, '\\u003c')}</script>
       <ProductAlternativePage params={resolvedParams} faqItems={faqItems} />
     </>
   );

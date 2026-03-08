@@ -1,4 +1,4 @@
-import { SearchProductPage } from '@darun/search-shell';
+import { SearchProductPage } from '@darun/pages-shell';
 import { Metadata } from 'next';
 
 type Props = {

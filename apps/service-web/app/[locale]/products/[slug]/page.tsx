@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { ProductDetailPage } from '@darun/products-shell';
+import { ProductDetailPage } from '@darun/pages-shell';
 import { getClient } from '@darun/utils-apollo-client/server';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';

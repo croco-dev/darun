@@ -1,5 +1,5 @@
 {
-  "extends": "@darun/utils-tsconfig/tsconfig.base.json",
+  "extends": "@darun/utils-tsconfig/tsconfig.react.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "module": "ESNext",
