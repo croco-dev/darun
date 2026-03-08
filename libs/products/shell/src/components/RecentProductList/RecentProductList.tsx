@@ -1,24 +1,23 @@
-'use client';
+"use client";
 
-import { bind } from '@croco/utils-structure-react';
-import { Link } from '@darun/utils-router';
-import { Grid } from '@kuma-ui/core';
-import { ProductItem } from '../../uis';
-import { useRecentProductList } from './useRecentProductList';
+import { bind } from "@croco/utils-structure-react";
+import { Link } from "@darun/utils-router";
+import { ProductItem } from "../../uis";
+import { useRecentProductList } from "./useRecentProductList";
 
 export const RecentProductList = bind(useRecentProductList, ({ products }) => (
-  <Grid width={'100%'} gap={'20px'} gridTemplateColumns={['repeat(1, 1fr)', 'repeat(2, 1fr)']}>
-    {products.map(product => (
+  <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2">
+    {products.map((product) => (
       <Link key={product.id} href={`/products/${product.slug}`}>
         <ProductItem
           name={product.name}
           logoUrl={product.logoUrl}
-          logoSize={'medium'}
+          logoSize={"medium"}
           summary={product.summary}
-          tags={product.tags.map(tag => tag.name)}
+          tags={product.tags.map((tag) => tag.name)}
           maxTagItems={2}
         />
       </Link>
     ))}
-  </Grid>
+  </div>
 ));

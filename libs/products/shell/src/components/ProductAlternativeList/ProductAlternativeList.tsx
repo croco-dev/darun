@@ -1,75 +1,64 @@
-'use client';
+"use client";
 
-import { bind } from '@croco/utils-structure-react';
-import { Link } from '@darun/utils-router';
-import { Flex, HStack, Text, VStack } from '@kuma-ui/core';
-import { useTranslations } from 'next-intl';
-import { ProductFeatureGridList, ProductItem } from '../../uis';
-import { useProductAlternativeList } from './useProductAlternativeList';
+import { bind } from "@croco/utils-structure-react";
+import { Link } from "@darun/utils-router";
+import { useTranslations } from "next-intl";
+import { ProductFeatureGridList, ProductItem } from "../../uis";
+import { useProductAlternativeList } from "./useProductAlternativeList";
 
-type ProductAlternativeListViewProps = ReturnType<typeof useProductAlternativeList>;
+type ProductAlternativeListViewProps = ReturnType<
+  typeof useProductAlternativeList
+>;
 
 export const ProductAlternativeList = bind(
   useProductAlternativeList,
   ({ products }: ProductAlternativeListViewProps) => {
-    const t = useTranslations('Alternative');
+    const t = useTranslations("Alternative");
 
     if (!products) return <></>;
 
     return (
-      <VStack gap={'20px'}>
-        {products.map(product => (
+      <div className="flex flex-col gap-5">
+        {products.map((product) => (
           <Link key={product.id} href={`/products/${product.slug}`}>
-            <Flex
-              px="18px"
-              py="16px"
-              borderRadius="8px"
-              border="1px solid rgba(0, 0, 0, 0.12)"
-              bg="#fff"
-              boxShadow="0px 2px 8px 0px rgba(0, 0, 0, 0.08)"
-            >
-              <VStack gap="12px" w={'100%'}>
-                <HStack>
+            <div className="rounded-[8px] border border-[rgba(0,0,0,0.12)] bg-white px-[18px] py-4 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.08)]">
+              <div className="flex w-full flex-col gap-3">
+                <div className="flex flex-row">
                   <ProductItem
                     name={product.name}
                     summary={product.summary}
-                    logoSize={'small'}
+                    logoSize={"small"}
                     logoUrl={product.logoUrl}
-                    tagVariant={'circle'}
-                    tags={product.tags.map(tag => tag.name)}
+                    tagVariant={"circle"}
+                    tags={product.tags.map((tag) => tag.name)}
                   />
-                </HStack>
-                <Flex w={'100%'} h={'1px'} background={'colors.dark.100'} my={'2px'} />
-                <VStack gap={'24px'}>
+                </div>
+                <div className="my-[2px] h-px w-full bg-dark-100" />
+                <div className="flex flex-col gap-6">
                   {product.features && product.features.length > 0 && (
                     <>
-                      <VStack gap={'12px'}>
-                        <VStack gap="4px" width={'fit-content'}>
-                          <Text
-                            color="colors.dark.500"
-                            fontWeight="fontWeights.bold"
-                            fontSize="16px"
-                            letterSpacing="-2.4%"
-                          >
-                            {t('list.feature.title')}
-                          </Text>
-                          <Flex height="2px" bg="colors.dark.400" />
-                        </VStack>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex w-fit flex-col gap-1">
+                          <p className="text-[16px] font-bold tracking-[-0.024em] text-dark-500">
+                            {t("list.feature.title")}
+                          </p>
+                          <div className="h-[2px] bg-dark-400" />
+                        </div>
                         <ProductFeatureGridList
-                          features={product.features.map(item => ({
+                          features={product.features.map((item) => ({
                             ...item,
                             summary: item.summary ?? undefined,
                           }))}
                         />
-                      </VStack>
+                      </div>
                     </>
                   )}
-                </VStack>
-              </VStack>
-            </Flex>
+                </div>
+              </div>
+            </div>
           </Link>
         ))}
-      </VStack>
+      </div>
     );
-  }
+  },
 );
