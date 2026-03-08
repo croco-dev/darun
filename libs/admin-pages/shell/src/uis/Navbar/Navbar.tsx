@@ -2,7 +2,7 @@
 
 import { LogoutButton } from '@darun/admin-accounts-shell';
 import { Link } from '@darun/utils-router';
-import { Group, Code, Flex, Text } from '@mantine/core';
+
 import { IconArchive, IconBuildingCommunity, IconNews } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 import { Logo } from '../Logo';
@@ -31,17 +31,17 @@ export function Navbar() {
   return (
     <nav className={classes.navbar}>
       <div className={classes.navbarMain}>
-        <Group className={classes.header} justify="space-between">
+        <div className={classes.header + ' flex justify-between'}>
           <Link href={'/'}>
-            <Flex align={'center'} gap={8} px={'4px'}>
+            <div className={'flex items-center gap-2 px-1'}>
               <Logo size={32} />
-              <Text span fz="lg" fw="bold" c={'dark.7'} style={{ textDecoration: 'none' }}>
+              <span className={'text-lg font-bold text-gray-700'} style={{ textDecoration: 'none' }}>
                 다른 관리자
-              </Text>
-            </Flex>
+              </span>
+            </div>
           </Link>
-          <Code fw={700}>{process.env['NODE_ENV'] === 'development' ? 'dev' : 'prod'}</Code>
-        </Group>
+          <code className={'font-mono font-bold text-xs bg-gray-100 px-1 py-0.5 rounded'}>{process.env['NODE_ENV'] === 'development' ? 'dev' : 'prod'}</code>
+        </div>
         {links}
       </div>
 

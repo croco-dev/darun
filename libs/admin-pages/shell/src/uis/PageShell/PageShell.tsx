@@ -1,4 +1,4 @@
-import { Flex, Stack, Title } from '@mantine/core';
+import { ReactNode } from 'react';
 import { ReactNode } from 'react';
 
 type PageShellProps = {
@@ -8,13 +8,13 @@ type PageShellProps = {
 };
 
 export const PageShell = ({ title, rightSide, children }: PageShellProps) => (
-  <Stack w="100%" p={20}>
-    <Flex direction="row" justify="space-between">
-      <Title size={24} order={2} style={{ fontWeight: 600 }}>
+  <div className="w-full p-5">
+    <div className="flex flex-row justify-between">
+      <h2 className="text-2xl font-semibold">
         {title}
-      </Title>
+      </h2>
       {rightSide}
-    </Flex>
+    </div>
     {children}
-  </Stack>
+  </div>
 );
