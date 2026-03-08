@@ -1,6 +1,5 @@
 'use client';
 
-import { Text, VStack } from '@kuma-ui/core';
 import { useTranslations } from 'next-intl';
 import { ProductAlternativeList } from '../../components/ProductAlternativeList';
 
@@ -12,16 +11,12 @@ export const AlternativeProductSection = ({ slug }: AlternativeProductSectionPro
   const t = useTranslations('Alternative');
 
   return (
-    <VStack as="section" gap={'20px'} py={'16px'}>
-      <VStack gap={'4px'}>
-        <Text fontWeight={'fontWeights.semibold'} fontSize={'24px'} color={'colors.dark.900'} letterSpacing={'-.4px'}>
-          {t('more.title')}
-        </Text>
-        <Text fontWeight={'fontWeights.medium'} fontSize={'16px'} color={'colors.dark.600'} letterSpacing={'-.4px'}>
-          {t('more.description')}
-        </Text>
-      </VStack>
+    <section className="gap-5 py-4 flex flex-col">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[24px] font-semibold text-dark-900 tracking-[-0.4px]">{t('more.title')}</h2>
+        <p className="text-[16px] font-medium text-dark-600 tracking-[-0.4px]">{t('more.description')}</p>
+      </div>
       <ProductAlternativeList slug={slug} />
-    </VStack>
+    </section>
   );
 };

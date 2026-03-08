@@ -32,10 +32,7 @@ export const MainHeroBanner = () => {
                 className={`text-2xl md:text-4xl font-bold tracking-tighter text-dark-100 text-center md:text-left m-0`}
               >
                 <ProductsCount />
-                {t('hero.title.countSuffix')}{' '}
-                <span className={`text-brown-600`}>
-                  {t('hero.title.highlight')}
-                </span>{' '}
+                {t('hero.title.countSuffix')} <span className={`text-brown-600`}>{t('hero.title.highlight')}</span>{' '}
                 {t('hero.title.ending')}
               </h1>
             </div>

@@ -1,6 +1,5 @@
 'use client';
 
-import { VStack, Text } from '@kuma-ui/core';
 import { useTranslations } from 'next-intl';
 import { ProductDescription } from '../../components';
 
@@ -11,19 +10,11 @@ export const ProductDescriptionSection = ({ slug }: ProductDescriptionSectionPro
   const t = useTranslations('ProductDetail');
 
   return (
-    <VStack as="section" gap={'20px'} py={['24px', '16px']}>
-      <Text
-        as={'h2'}
-        className={`darun-heading`}
-        id={'description'}
-        fontWeight={'fontWeights.semibold'}
-        fontSize={24}
-        color={'colors.dark.900'}
-        letterSpacing={'-.4px'}
-      >
+    <section className="gap-5 py-6 md:py-4 flex flex-col">
+      <h2 className="darun-heading text-[24px] font-semibold text-dark-900 tracking-[-0.4px]" id="description">
         {t('description.title')}
-      </Text>
+      </h2>
       <ProductDescription slug={slug} />
-    </VStack>
+    </section>
   );
 };

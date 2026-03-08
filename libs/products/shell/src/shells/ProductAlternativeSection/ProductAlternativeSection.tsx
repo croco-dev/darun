@@ -2,7 +2,6 @@
 
 import { ShadowButton } from '@darun/ui-foundation';
 import { Link } from '@darun/utils-router';
-import { HStack, Text, VStack } from '@kuma-ui/core';
 import { useTranslations } from 'next-intl';
 import { AlternativeProductList } from '../../components';
 
@@ -14,34 +13,18 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
   const t = useTranslations('Alternative');
 
   return (
-    <VStack as="section" gap={'20px'} py={'16px'}>
-      <VStack gap={'6px'}>
-        <Text
-          as={'h2'}
-          id={'darun'}
-          fontWeight={'fontWeights.semibold'}
-          fontSize={'24px'}
-          color={'colors.dark.900'}
-          letterSpacing={'-.4px'}
-          className={'darun-heading'}
-        >
+    <section className="flex flex-col gap-5 py-4">
+      <div className="flex flex-col gap-[6px]">
+        <h2 id="darun" className="darun-heading text-[24px] font-semibold text-dark-900 tracking-[-0.4px]">
           {t('section.title')}
-        </Text>
-        <Text
-          as={'p'}
-          fontWeight={'fontWeights.medium'}
-          fontSize={'15px'}
-          color={'colors.dark.600'}
-          letterSpacing={'-.06px'}
-        >
-          {t('section.description')}
-        </Text>
-      </VStack>
+        </h2>
+        <p className="text-[15px] font-medium text-dark-600 tracking-[-0.06px]">{t('section.description')}</p>
+      </div>
       <AlternativeProductList slug={slug} />
-      <HStack justifyContent={'center'}>
+      <div className="flex justify-center">
         <Link href={`/products/${slug}/alternatives`}>
           <ShadowButton>
-            <HStack alignItems={'center'} gap={'4px'} justifyContent={'center'}>
+            <div className="flex items-center justify-center gap-1">
               <svg
                 aria-hidden="true"
                 width="23"
@@ -56,10 +39,10 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
                 />
               </svg>
               {t('section.moreButton')}
-            </HStack>
+            </div>
           </ShadowButton>
         </Link>
-      </HStack>
-    </VStack>
+      </div>
+    </section>
   );
 };

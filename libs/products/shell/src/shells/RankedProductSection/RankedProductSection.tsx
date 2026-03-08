@@ -1,6 +1,5 @@
 'use client';
 
-import { VStack, Text } from '@kuma-ui/core';
 import { useTranslations } from 'next-intl';
 import { RankedProductList } from '../../components';
 
@@ -8,29 +7,16 @@ export const RankedProductSection = () => {
   const t = useTranslations('Ranking');
 
   return (
-    <VStack as="section" gap={'20px'} width={'100%'} py={'16px'}>
-      <VStack gap={'4px'}>
-        <Text
-          fontWeight={'fontWeights.semibold'}
-          fontSize={['20px', '24px']}
-          color={'colors.dark.900'}
-          letterSpacing={'-.4px'}
-          as="h2"
-          className={'darun-heading'}
-        >
+    <section className="flex flex-col gap-5 w-full py-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="darun-heading text-[20px] md:text-[24px] font-semibold text-dark-900 tracking-[-0.4px]">
           {t('section.title')}
-        </Text>
-        <Text
-          fontWeight={'fontWeights.medium'}
-          fontSize={['14px', '16px']}
-          color={'colors.dark.600'}
-          letterSpacing={'-.4px'}
-          as="h2"
-        >
+        </h2>
+        <p className="text-[14px] md:text-[16px] font-medium text-dark-600 tracking-[-0.4px]">
           {t('section.description')}
-        </Text>
-      </VStack>
+        </p>
+      </div>
       <RankedProductList />
-    </VStack>
+    </section>
   );
 };
