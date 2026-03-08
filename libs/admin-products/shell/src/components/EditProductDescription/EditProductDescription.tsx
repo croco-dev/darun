@@ -1,5 +1,5 @@
 import { bind } from '@croco/utils-structure-react';
-import { Editor } from '@darun/admin/src/libs/uis';
+import { Editor } from '@darun/admin-pages-shell';
 import { Button, Group, Stack } from '@mantine/core';
 import { useEditProductDescription } from './useEditProductDescription';
 

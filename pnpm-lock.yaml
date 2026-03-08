@@ -350,15 +350,27 @@ importers:
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
-      '@darun/frontend':
+      '@darun/magazines-shell':
         specifier: workspace:*
-        version: link:../../libs/frontend
+        version: link:../../libs/magazines/shell
+      '@darun/opengraph-shell':
+        specifier: workspace:*
+        version: link:../../libs/opengraph/shell
+      '@darun/pages-shell':
+        specifier: workspace:*
+        version: link:../../libs/pages/shell
+      '@darun/products-shell':
+        specifier: workspace:*
+        version: link:../../libs/products/shell
       '@darun/provider-auth/client':
         specifier: workspace:*
         version: link:../../libs/shared/provider-auth/client
       '@darun/provider-auth/server':
         specifier: workspace:*
         version: link:../../libs/shared/provider-auth/server
+      '@darun/search-shell':
+        specifier: workspace:*
+        version: link:../../libs/search/shell
       '@darun/ui-foundation':
         specifier: workspace:*
         version: link:../../libs/shared/ui-foundation
@@ -435,15 +447,27 @@ importers:
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
-      '@darun/frontend':
+      '@darun/magazines-shell':
         specifier: workspace:*
-        version: link:../../libs/frontend
+        version: link:../../libs/magazines/shell
+      '@darun/opengraph-shell':
+        specifier: workspace:*
+        version: link:../../libs/opengraph/shell
+      '@darun/pages-shell':
+        specifier: workspace:*
+        version: link:../../libs/pages/shell
+      '@darun/products-shell':
+        specifier: workspace:*
+        version: link:../../libs/products/shell
       '@darun/provider-auth/client':
         specifier: workspace:*
         version: link:../../libs/shared/provider-auth/client
       '@darun/provider-auth/server':
         specifier: workspace:*
         version: link:../../libs/shared/provider-auth/server
+      '@darun/search-shell':
+        specifier: workspace:*
+        version: link:../../libs/search/shell
       '@darun/ui-foundation':
         specifier: workspace:*
         version: link:../../libs/shared/ui-foundation

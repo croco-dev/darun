@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { MagazineContentPage } from '@darun/frontend';
+import { MagazineContentPage } from '@darun/magazines-shell';
 import { getClient } from '@darun/utils-apollo-client/server';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';

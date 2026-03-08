@@ -1,7 +1,7 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
-import { GoogleButton } from '@darun/admin/src/libs/uis';
+import { GoogleButton } from '@darun/admin-pages-shell';
 import { useLoginButton } from './useLoginButton';
 
 export const LoginButton = bind(useLoginButton, ({ login, isLoading }) => (

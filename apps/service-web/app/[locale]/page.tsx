@@ -1,3 +1,3 @@
-import { HomePage } from '@darun/frontend';
+import { HomePage } from '@darun/pages-shell';
 
 export default HomePage;
