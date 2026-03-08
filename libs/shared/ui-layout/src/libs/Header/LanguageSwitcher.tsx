@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useLocale } from "next-intl";
-import { usePathname, useRouter } from "../../i18n/navigation";
+import { useLocale } from 'next-intl';
+import { usePathname, useRouter } from '../../i18n/navigation';
 
 export const LanguageSwitcher = () => {
   const locale = useLocale();
@@ -9,7 +9,7 @@ export const LanguageSwitcher = () => {
   const pathname = usePathname();
 
   const toggle = () => {
-    const nextLocale = locale === "ko" ? "en" : "ko";
+    const nextLocale = locale === 'ko' ? 'en' : 'ko';
     router.replace(pathname, { locale: nextLocale });
   };
 
@@ -19,7 +19,7 @@ export const LanguageSwitcher = () => {
       onClick={toggle}
       className="cursor-pointer rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-sm font-semibold text-[#1A202C] transition-colors duration-200 hover:bg-[#F7FAFC]"
     >
-      {locale === "ko" ? "🇰🇷 KO" : "🇺🇸 EN"}
+      {locale === 'ko' ? '🇰🇷 KO' : '🇺🇸 EN'}
     </button>
   );
 };

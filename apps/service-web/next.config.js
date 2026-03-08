@@ -41,6 +41,7 @@ const nextConfig = {
       : {}),
   },
   poweredByHeader: false,
+  transpilePackages: ['@darun/ui', '@darun/ui-layout'],
 };
 
 module.exports = withNextIntl(withKumaUI(nextConfig));

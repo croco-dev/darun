@@ -1,7 +1,7 @@
-import { ReactNode } from "react";
+import { ReactNode } from 'react';
 
-import { Footer } from "./libs/Footer";
-import { Header } from "./libs/Header";
+import { Footer } from './libs/Footer';
+import { Header } from './libs/Header';
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
