@@ -1,1 +1,0 @@
-export { RankedProductSection } from './RankedProductSection';

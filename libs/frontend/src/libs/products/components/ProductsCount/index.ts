@@ -1,1 +1,0 @@
-export { ProductsCount } from './ProductsCount';

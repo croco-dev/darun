@@ -1,1 +1,0 @@
-export { RecentProductSection } from './RecentProductSection';

@@ -1,12 +1,16 @@
-import { ContentArea } from '@darun/ui-foundation';
-import { Layout } from '@darun/ui-layout';
-import { VStack } from '@kuma-ui/core';
-import { MagazineInfoSection } from '@magazines/shells';
+import { ContentArea } from "@darun/ui-foundation";
+import { Layout } from "@darun/ui-layout";
+import { VStack } from "@kuma-ui/core";
+import { MagazineInfoSection } from "@darun/magazines-shell";
 
-export const MagazineContentPage = ({ params: { slug } }: { params: { slug: string } }) => (
+export const MagazineContentPage = ({
+  params: { slug },
+}: {
+  params: { slug: string };
+}) => (
   <Layout>
     <VStack>
-      <VStack as={'main'} width={'100%'}>
+      <VStack as={"main"} width={"100%"}>
         <ContentArea>
           <VStack py="12px">
             <MagazineInfoSection slug={slug} />

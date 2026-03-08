@@ -1,1 +1,0 @@
-export { ProductSummaryLink } from './ProductSummaryLink';

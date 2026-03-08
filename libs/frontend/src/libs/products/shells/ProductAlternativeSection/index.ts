@@ -1,1 +1,0 @@
-export { ProductAlternativeSection } from './ProductAlternativeSection';

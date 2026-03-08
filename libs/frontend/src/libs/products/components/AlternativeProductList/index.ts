@@ -1,1 +1,0 @@
-export { AlternativeProductList } from './AlternativeProductList';

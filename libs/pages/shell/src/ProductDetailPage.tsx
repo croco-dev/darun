@@ -1,23 +1,27 @@
-import { ContentArea } from '@darun/ui-foundation';
-import { Layout } from '@darun/ui-layout';
-import { VStack } from '@kuma-ui/core';
+import { ContentArea } from "@darun/ui-foundation";
+import { Layout } from "@darun/ui-layout";
+import { VStack } from "@kuma-ui/core";
 import {
+  ProductDetailCompanySection,
+  ProductDetailFeatureSection,
   ProductAlternativeSection,
   ProductDescriptionSection,
   ProductPhotoSection,
-  ProductTocSection,
   ProductSummary,
   ProductSummaryLink,
-  ProductDetailFeatureSection,
-  ProductDetailCompanySection,
-} from '@products/shells';
+  ProductTocSection,
+} from "@darun/products-shell";
 
-export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
+export const ProductDetailPage = ({
+  params: { slug },
+}: {
+  params: { slug: string };
+}) => (
   <Layout>
-    <VStack as={'main'} width={'100%'}>
-      <VStack gap={'2px'} mb={'12px'}>
+    <VStack as={"main"} width={"100%"}>
+      <VStack gap={"2px"} mb={"12px"}>
         <ContentArea>
-          <VStack gap={'8px'}>
+          <VStack gap={"8px"}>
             <ProductSummary slug={slug} />
             <ProductSummaryLink slug={slug} />
           </VStack>
@@ -25,7 +29,7 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
       </VStack>
       <ProductTocSection />
       <ContentArea>
-        <VStack id={'detail-content'}>
+        <VStack id={"detail-content"}>
           <ProductDescriptionSection slug={slug} />
           <ProductPhotoSection slug={slug} />
           <ProductDetailFeatureSection slug={slug} />

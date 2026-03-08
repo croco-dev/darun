@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@darun/magazines-shell": "workspace:*",
+    "@darun/products-shell": "workspace:*",
+    "@darun/search-shell": "workspace:*",
     "@darun/ui": "workspace:*"
   },
   "peerDependencies": {
