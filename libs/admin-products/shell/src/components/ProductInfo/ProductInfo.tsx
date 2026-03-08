@@ -1,40 +1,38 @@
-'use client';
+"use client";
 
-import { bind } from '@croco/utils-structure-react';
-import { Code, Group, Stack, Title, Text } from '@mantine/core';
-import Image from 'next/image';
-import { useProductInfo } from './useProductInfo';
+import { bind } from "@croco/utils-structure-react";
+import Image from "next/image";
+import { useProductInfo } from "./useProductInfo";
 
-export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, summary, slug }) => (
-  <Group gap={12}>
-    {logoUrl && (
-      <Image
-        src={logoUrl}
-        unoptimized={!logoUrl}
-        alt={`${name} 서비스 로고`}
-        width={64}
-        height={64}
-        style={{
-          objectFit: 'contain',
-          borderRadius: 12,
-          border: '1px solid rgba(0, 0, 0, 0.15)',
-        }}
-      />
-    )}
-    <Stack gap="4px">
-      <Stack gap="1px">
-        <Title order={2} size={'24px'}>
-          {name}
-        </Title>
-        <Text c="dimmed" size={'sm'}>
-          {summary}
-        </Text>
-      </Stack>
-      {slug && (
-        <Code fw={700} display={'inline-flex'} style={{ width: 'fit-content' }}>
-          {slug}
-        </Code>
+export const ProductInfo = bind(
+  useProductInfo,
+  ({ name, logoUrl, summary, slug }) => (
+    <div className="flex items-start gap-3">
+      {logoUrl && (
+        <Image
+          src={logoUrl}
+          unoptimized={!logoUrl}
+          alt={`${name} 서비스 로고`}
+          width={64}
+          height={64}
+          style={{
+            objectFit: "contain",
+            borderRadius: 12,
+            border: "1px solid rgba(0, 0, 0, 0.15)",
+          }}
+        />
       )}
-    </Stack>
-  </Group>
-));
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-px">
+          <h2 className="text-2xl font-semibold text-dark-900">{name}</h2>
+          <p className="text-sm text-black/60">{summary}</p>
+        </div>
+        {slug && (
+          <code className="inline-flex w-fit rounded-md bg-black/5 px-2 py-1 text-sm font-bold text-dark-900">
+            {slug}
+          </code>
+        )}
+      </div>
+    </div>
+  ),
+);

@@ -1,27 +1,30 @@
-'use client';
+"use client";
 
-import { bind } from '@croco/utils-structure-react';
-import { Group, Text } from '@mantine/core';
-import { useProductCompanyInfo } from './useProductCompanyInfo';
+import { bind } from "@croco/utils-structure-react";
+import { useProductCompanyInfo } from "./useProductCompanyInfo";
 
 function formatStartAt(startAt: unknown) {
   if (!startAt) {
-    return '-';
+    return "-";
   }
 
-  if (typeof startAt !== 'string' && typeof startAt !== 'number' && !(startAt instanceof Date)) {
-    return '-';
+  if (
+    typeof startAt !== "string" &&
+    typeof startAt !== "number" &&
+    !(startAt instanceof Date)
+  ) {
+    return "-";
   }
 
   const date = startAt instanceof Date ? startAt : new Date(startAt);
 
   if (Number.isNaN(date.getTime())) {
-    return '-';
+    return "-";
   }
 
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}. ${month}. ${day}`;
 }
@@ -33,44 +36,32 @@ export const ProductCompanyInfo = bind(useProductCompanyInfo, ({ company }) => {
 
   return (
     <div>
-      <Group wrap="nowrap">
+      <div className="flex flex-nowrap">
         <div>
-          <Text fz="xs" tt="uppercase" fw={700} c="dimmed">
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-black/45">
             기본 정보
-          </Text>
+          </p>
 
-          <Text fz="lg" fw={500}>
-            {company.name}
-          </Text>
+          <p className="text-lg font-medium text-dark-900">{company.name}</p>
 
-          <Group wrap="nowrap" gap={10} mt={3}>
-            <Text fz="xs" c="dark" fw="700">
-              유형
-            </Text>
-            <Text fz="xs" c="dimmed">
-              {company.type}
-            </Text>
-          </Group>
+          <div className="mt-1 flex flex-nowrap items-center gap-2.5 text-xs">
+            <span className="font-bold text-dark-900">유형</span>
+            <span className="text-black/60">{company.type}</span>
+          </div>
 
-          <Group wrap="nowrap" gap={10} mt={3}>
-            <Text fz="xs" c="dark" fw="700">
-              주소
-            </Text>
-            <Text fz="xs" c="dimmed">
-              {company.address}
-            </Text>
-          </Group>
+          <div className="mt-1 flex flex-nowrap items-center gap-2.5 text-xs">
+            <span className="font-bold text-dark-900">주소</span>
+            <span className="text-black/60">{company.address}</span>
+          </div>
 
-          <Group wrap="nowrap" gap={10} mt={3}>
-            <Text fz="xs" c="dark" fw="700">
-              상장일
-            </Text>
-            <Text fz="xs" c="dimmed">
+          <div className="mt-1 flex flex-nowrap items-center gap-2.5 text-xs">
+            <span className="font-bold text-dark-900">상장일</span>
+            <span className="text-black/60">
               {formatStartAt(company.startAt)}
-            </Text>
-          </Group>
+            </span>
+          </div>
         </div>
-      </Group>
+      </div>
     </div>
   );
 });

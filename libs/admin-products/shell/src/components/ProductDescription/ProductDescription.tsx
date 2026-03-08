@@ -1,13 +1,18 @@
-import { bind } from '@croco/utils-structure-react';
-import { Text } from '@mantine/core';
-import { useProductDescription } from './useProductDescription';
+import { bind } from "@croco/utils-structure-react";
+import { useProductDescription } from "./useProductDescription";
 
-export const ProductDescription = bind(useProductDescription, ({ description }) => (
-  <>
-    {description ? (
-      <Text style={{ whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: description }}></Text>
-    ) : (
-      <Text size={'xs'}>설명이 없습니다.</Text>
-    )}
-  </>
-));
+export const ProductDescription = bind(
+  useProductDescription,
+  ({ description }) => (
+    <>
+      {description ? (
+        <div
+          className="whitespace-pre-wrap text-sm leading-6 text-dark-900"
+          dangerouslySetInnerHTML={{ __html: description }}
+        ></div>
+      ) : (
+        <p className="text-xs text-black/60">설명이 없습니다.</p>
+      )}
+    </>
+  ),
+);

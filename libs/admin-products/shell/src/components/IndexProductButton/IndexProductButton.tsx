@@ -1,11 +1,19 @@
-'use client';
+"use client";
 
-import { bind } from '@croco/utils-structure-react';
-import { Button } from '@mantine/core';
-import { useIndexProductButton } from './useIndexProductButton';
+import { bind } from "@croco/utils-structure-react";
+import { Button } from "@darun/ui";
+import { useIndexProductButton } from "./useIndexProductButton";
 
-export const IndexProductButton = bind(useIndexProductButton, ({ indexProduct }) => (
-  <Button onClick={indexProduct} variant={'light'} color={'dark'} size={'compact-sm'}>
-    검색 인덱싱
-  </Button>
-));
+export const IndexProductButton = bind(
+  useIndexProductButton,
+  ({ indexProduct }) => (
+    <Button
+      onClick={indexProduct}
+      variant="contained"
+      color="secondary"
+      size="sm"
+    >
+      검색 인덱싱
+    </Button>
+  ),
+);
