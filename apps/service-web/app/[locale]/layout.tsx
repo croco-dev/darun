@@ -2,7 +2,7 @@ import 'normalize.css/normalize.css';
 import '../globals.css';
 
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
-import { KumaRegistry } from '@kuma-ui/next-plugin/registry';
+
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { CookiesProvider } from 'next-client-cookies/server';
@@ -118,9 +118,7 @@ export default async function RootLayout({ children, params }: LayoutProps) {
       </head>
       <body className={pretendardFont.className}>
         <NextIntlClientProvider messages={messages}>
-          <KumaRegistry>
-            <CookiesProvider>{content}</CookiesProvider>
-          </KumaRegistry>
+          <CookiesProvider>{content}</CookiesProvider>
         </NextIntlClientProvider>
         <script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8177584316528588"

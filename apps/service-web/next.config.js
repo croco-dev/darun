@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { withKumaUI } = require('@kuma-ui/next-plugin');
+const { withSentryConfig } = require('@sentry/nextjs');
 const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
 const path = require('path');
@@ -44,7 +44,7 @@ const nextConfig = {
   transpilePackages: ['@darun/ui', '@darun/ui-layout'],
 };
 
-module.exports = withNextIntl(withKumaUI(nextConfig));
+module.exports = withNextIntl(nextConfig);
 
 // Injected content via Sentry wizard below
 

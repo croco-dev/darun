@@ -1,4 +1,4 @@
-import { ProductInformation, ProductUserAction } from "../../components";
+import { ProductInformation, ProductUserAction } from '../../components';
 
 type ProductSummaryProps = { slug: string };
 

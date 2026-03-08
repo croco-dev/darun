@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-const { withKumaUI } = require('@kuma-ui/next-plugin');
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compiler: {},
@@ -29,7 +26,7 @@ const nextConfig = {
   poweredByHeader: false,
 };
 
-module.exports = withKumaUI(nextConfig);
+module.exports = nextConfig;
 
 // Injected content via Sentry wizard below
 

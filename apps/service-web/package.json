@@ -19,15 +19,14 @@
     "@darun/opengraph-shell": "workspace:*",
     "@darun/pages-shell": "workspace:*",
     "@darun/products-shell": "workspace:*",
-    "@darun/search-shell": "workspace:*",
     "@darun/provider-auth/client": "workspace:*",
     "@darun/provider-auth/server": "workspace:*",
+    "@darun/search-shell": "workspace:*",
     "@darun/ui-foundation": "workspace:*",
     "@darun/ui-layout": "workspace:*",
     "@darun/utils-apollo-client/client": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
-    "@kuma-ui/core": "1.6.3",
     "@sentry/nextjs": "10.38.0",
     "date-fns": "3.6.0",
     "next": "15.5.12",
@@ -38,7 +37,7 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@kuma-ui/next-plugin": "1.4.0",
+
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint-config-next": "15.5.12",
