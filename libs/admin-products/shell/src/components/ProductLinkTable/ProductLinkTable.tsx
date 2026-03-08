@@ -2,11 +2,10 @@
 
 import { gql } from '@apollo/client';
 import { bind } from '@croco/utils-structure-react';
-import { Button, Group, Modal, rem, Table, Text } from '@mantine/core';
-import { IconPencil } from '@tabler/icons-react';
+import { Button } from '@darun/ui';
+import { Pencil } from 'lucide-react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
 import { EditProductLinkItemFragmentDoc } from '../EditProductLinkItem/__generated__/EditProductLinkItem';
-import styles from './ProductLinkTable.module.css';
 import { useProductLinkTable } from './useProductLinkTable';
 
 export const ProductLinkTableFragmentDocument = gql`
@@ -30,80 +29,93 @@ export const ProductLinkTable = bind(
 
     if (!links || links.length === 0) {
       return (
-        <Text fz="sm" fw={500} c={'gray'}>
+        <p className="text-sm font-medium text-gray-600">
           등록된 링크가 없습니다. 우측 상단 버튼으로 등록해보세요.
-        </Text>
+        </p>
       );
     }
 
     return (
       <>
-        <Table.ScrollContainer minWidth={'300px'}>
-          <Table verticalSpacing="sm">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th style={{ width: '80px', textAlign: 'center' }}>아이콘</Table.Th>
-                <Table.Th>이름</Table.Th>
-                <Table.Th>링크</Table.Th>
-                <Table.Th>주 링크 여부</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
+        <div className="overflow-x-auto">
+          <table className="min-w-[300px] border-collapse">
+            <thead>
+              <tr>
+                <th className="border-b border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900" style={{ width: '80px', textAlign: 'center' }}>아이콘</th>
+                <th className="border-b border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900">이름</th>
+                <th className="border-b border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900">링크</th>
+                <th className="border-b border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900">주 링크 여부</th>
+              </tr>
+            </thead>
+            <tbody>
               {links.map(link => (
-                <Table.Tr key={link.id} className={styles.table_row}>
-                  <Table.Td>
+                <tr key={link.id} className="hover:bg-gray-100 transition">
+                  <td className="border-b border-black/10 px-4 py-3">
                     <div
+                      className="flex items-center justify-center rounded-xl p-2 text-center"
                       style={{
                         background: link.isPrimary ? '#000' : '#fff',
                       }}
-                      className={styles.link_icon_wrapper}
                     >
                       <img src={link.iconUrl} alt={`${link.title} 아이콘`} loading="lazy" />
                     </div>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text fz="sm" fw={500}>
+                  </td>
+                  <td className="border-b border-black/10 px-4 py-3">
+                    <p className="text-sm font-medium text-dark-900">
                       {link.title}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text fz="sm" fw={500}>
-                      <a href={link.link} target="_blank" rel="noopener noreferrer">
+                    </p>
+                  </td>
+                  <td className="border-b border-black/10 px-4 py-3">
+                    <p className="text-sm font-medium text-dark-900">
+                      <a href={link.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
                         {link.displayLink} ({link.link})
                       </a>
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text fz="sm" fw={500}>
+                    </p>
+                  </td>
+                  <td className="border-b border-black/10 px-4 py-3">
+                    <p className="text-sm font-medium text-dark-900">
                       {link.isPrimary ? '✅' : '❌'}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap={0} justify="flex-end">
+                    </p>
+                  </td>
+                  <td className="border-b border-black/10 px-4 py-3">
+                    <div className="flex justify-end gap-0">
                       <Button
-                        justify="center"
-                        leftSection={<IconPencil style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
-                        variant="default"
-                        size={'compact-xs'}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        startIcon={<Pencil className="h-4 w-4" />}
                         onClick={() => editLink(link)}
                       >
                         정보 수정
                       </Button>
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
+                    </div>
+                  </td>
+                </tr>
               ))}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
-        <Modal opened={isEditModalOpened} onClose={closeEditModal} title="링크 정보 수정" centered>
-          {link ? (
-            <EditProductLinkItem slug={slug} link={link} onSubmit={closeEditModal} />
-          ) : (
-            <>오류 발생. 새로고침 후 시도.</>
-          )}
-        </Modal>
+            </tbody>
+          </table>
+        </div>
+        {isEditModalOpened && (
+          <dialog
+            open={isEditModalOpened}
+            className="rounded-xl bg-white p-6 shadow-lg backdrop:bg-black/50"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">링크 정보 수정</h2>
+              <button
+                type="button"
+                onClick={closeEditModal}
+                className="text-dark-900 hover:text-dark-900/70"
+              >
+                ✕
+              </button>
+            </div>
+            {link ? (
+              <EditProductLinkItem slug={slug} link={link} onSubmit={closeEditModal} />
+            ) : (
+              <>오류 발생. 새로고침 후 시도.</>
+            )}
+          </dialog>
+        )}
       </>
     );
-  }
-);

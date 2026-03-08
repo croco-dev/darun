@@ -1,5 +1,5 @@
 import { bind } from '@croco/utils-structure-react';
-import { Button, Card, Group, Modal, Stack, Title } from '@mantine/core';
+import { Button } from '@darun/ui';
 import Link from 'next/link';
 import { ProductFeatureTable } from '../../components';
 import { EditProductFeatureItem } from '../../components/EditProductFeatureItem';
@@ -10,26 +10,41 @@ export const ProductDetailFeatureSection = bind(
   ({ slug, isEditModalOpened, closeEditModal, editFeature, featureId }) => {
     return (
       <>
-        <Stack gap={8}>
-          <Group justify={'space-between'}>
-            <Title order={3}>기능 관리</Title>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-dark-900">기능 관리</h3>
             <Link href={`/products/${slug}/features/new`}>
-              <Button color={'dark'}>새 기능 추가</Button>
+              <Button type="button" variant="contained" color="secondary">새 기능 추가</Button>
             </Link>
-          </Group>
-          <Card withBorder shadow="sm" radius="md">
-            <Card.Section withBorder inheritPadding py="xs">
+          </div>
+          <div className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
+            <div className="border-b border-black/10 px-4 py-2">
               <ProductFeatureTable slug={slug} editFeature={editFeature} />
-            </Card.Section>
-          </Card>
-        </Stack>
-        <Modal opened={isEditModalOpened} onClose={closeEditModal} title="기능 정보 수정" centered>
-          {featureId ? (
-            <EditProductFeatureItem featureId={featureId} onSubmit={closeEditModal} />
-          ) : (
-            <>오류 발생. 새로고침 후 시도.</>
-          )}
-        </Modal>
+            </div>
+          </div>
+        </div>
+        {isEditModalOpened && (
+          <dialog
+            open={isEditModalOpened}
+            className="rounded-xl bg-white p-6 shadow-lg backdrop:bg-black/50"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">기능 정보 수정</h2>
+              <button
+                type="button"
+                onClick={closeEditModal}
+                className="text-dark-900 hover:text-dark-900/70"
+              >
+                ✕
+              </button>
+            </div>
+            {featureId ? (
+              <EditProductFeatureItem featureId={featureId} onSubmit={closeEditModal} />
+            ) : (
+              <>오류 발생. 새로고침 후 시도.</>
+            )}
+          </dialog>
+        )}
       </>
     );
   }

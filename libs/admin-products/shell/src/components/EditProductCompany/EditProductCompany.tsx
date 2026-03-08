@@ -1,8 +1,6 @@
-import { bind } from '@croco/utils-structure-react';
-import { Button } from '@darun/ui';
-import { useEditProductCompany } from './useEditProductCompany';
-import { Button, Group, Select, Stack } from '@mantine/core';
-import { useEditProductCompany } from './useEditProductCompany';
+import { bind } from "@croco/utils-structure-react";
+import { Button } from "@darun/ui";
+import { useEditProductCompany } from "./useEditProductCompany";
 
 export const EditProductCompany = bind(
   useEditProductCompany,
@@ -15,10 +13,10 @@ export const EditProductCompany = bind(
             <select
               className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
               value={form.getValues().companyId}
-              onChange={e => form.setFieldValue('companyId', e.target.value)}
+              onChange={(e) => form.setFieldValue("companyId", e.target.value)}
             >
               <option value="">회사 이름을 검색하세요.</option>
-              {companies.map(company => (
+              {companies.map((company) => (
                 <option key={company.value} value={company.value}>
                   {company.label}
                 </option>
@@ -34,26 +32,5 @@ export const EditProductCompany = bind(
         </div>
       </form>
     );
-      <form onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap={'8px'}>
-          <Select
-            label="회사"
-            placeholder="회사 이름을 검색하세요."
-            data={companies}
-            searchable
-            searchValue={searchValue}
-            onSearchChange={handleSearchChange}
-            value={form.getValues().companyId}
-            onChange={value => form.setFieldValue('companyId', value || '')}
-          />
-        </Stack>
-
-        <Group justify="flex-end" mt="md">
-          <Button type="submit" color={'dark'}>
-            저장
-          </Button>
-        </Group>
-      </form>
-    );
-  }
+  },
 );

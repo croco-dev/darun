@@ -1,48 +1,64 @@
-'use client';
+"use client";
 
-import { Button, Card, Stack, TextInput, Text, Textarea, FileInput } from '@mantine/core';
-import { NewProductForm } from '../../components/NewProductForm';
+import { Button } from "@darun/ui";
+import { NewProductForm } from "../../components/NewProductForm";
 
 export const NewProductFormSection = () => (
   <NewProductForm>
     {({ form }) => (
-      <Card withBorder shadow="sm" radius="md">
-        <Card.Section withBorder inheritPadding py="xs">
-          <Text fw={500}>서비스 등록</Text>
-        </Card.Section>
-        <Card.Section inheritPadding mt="sm" pb="md">
-          <Stack>
-            <TextInput
+      <div className="rounded-2xl border border-black/10 bg-white shadow-sm">
+        <div className="border-b border-black/10 px-6 py-4">
+          <p className="font-medium text-dark-900">서비스 등록</p>
+        </div>
+        <div className="flex flex-col gap-3 px-6 py-5">
+          <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
+            <span>이름</span>
+            <input
               name="name"
-              size="md"
-              label="이름"
-              placeholder="ex) NAVER"
               form="new-product-form"
-              {...form.getInputProps('name')}
+              placeholder="ex) NAVER"
+              className="rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+              {...form.getInputProps("name")}
             />
-            <TextInput name="slug" size="md" label="slug" placeholder="ex) naver" {...form.getInputProps('slug')} />
-            <Textarea
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
+            <span>slug</span>
+            <input
+              name="slug"
+              placeholder="ex) naver"
+              className="rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+              {...form.getInputProps("slug")}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
+            <span>짧은 설명</span>
+            <textarea
               name="summary"
-              size="md"
-              label="짧은 설명"
-              autosize
-              minRows={4}
+              rows={4}
               placeholder="ex) 국내 검색 엔진 1위 기업. 포털 사이트로도 유명하다. 네이버 검색, 뉴스, 지도, 카페, 블로그 서비스를 제공하고 있으며, 네이버 웨일, 네이버 클라우드, 네이버 페이 등 다양한 서비스를 운영하고 있습니다."
-              {...form.getInputProps('summary')}
+              className="min-h-28 rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+              {...form.getInputProps("summary")}
             />
-            <FileInput
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
+            <span>로고</span>
+            <input
               name="file"
-              size="md"
-              label="로고"
+              type="file"
               accept="image/png,image/jpeg,image/webp"
-              {...form.getInputProps('file')}
+              className="rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 file:mr-3 file:rounded-lg file:border-0 file:bg-black/5 file:px-3 file:py-1.5 file:text-sm file:font-medium"
+              onChange={(event) =>
+                form
+                  .getInputProps("file")
+                  .onChange(event.currentTarget.files?.[0] ?? undefined)
+              }
             />
-            <Button type="submit" size={'md'} color={'dark'}>
-              등록
-            </Button>
-          </Stack>
-        </Card.Section>
-      </Card>
+          </label>
+          <Button type="submit" size="md" variant="contained" color="secondary">
+            등록
+          </Button>
+        </div>
+      </div>
     )}
   </NewProductForm>
 );

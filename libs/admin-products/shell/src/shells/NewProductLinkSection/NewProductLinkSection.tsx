@@ -1,7 +1,6 @@
 'use client';
 
-import { Button, Group, Select, SelectProps, Stack, TextInput } from '@mantine/core';
-import { IconCheck } from '@tabler/icons-react';
+import { Button } from '@darun/ui';
 import { NewProductLinkForm } from '../../components/NewProductLinkForm';
 
 type NewProductLinkSectionProps = {
@@ -12,44 +11,55 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
   <NewProductLinkForm productSlug={productSlug}>
     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
     {({ form }: any) => (
-      <Stack>
-        <TextInput
-          name="displayLink"
-          size="md"
-          label="표시 링크"
-          placeholder={'ex) toss.im'}
-          {...form.getInputProps('displayLink')}
-        />
-        <TextInput
-          name="link"
-          size="md"
-          label="링크"
-          placeholder={'ex) https://toss.im/'}
-          {...form.getInputProps('link')}
-        />
-        <TextInput
-          name="title"
-          size="md"
-          label="이름"
-          placeholder={'ex) 공식 홈페이지'}
-          {...form.getInputProps('title')}
-        />
-        <Select
-          name="iconUrl"
-          size="md"
-          label="링크"
-          placeholder={
-            'ex) https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg'
-          }
-          data={iconData}
-          renderOption={renderSelectOption}
-          {...form.getInputProps('iconUrl')}
-        />
+      <div className="flex flex-col gap-2">
+        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
+          <span>표시 링크</span>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+            placeholder="ex) toss.im"
+            {...form.getInputProps('displayLink')}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
+          <span>링크</span>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+            placeholder="ex) https://toss.im/"
+            {...form.getInputProps('link')}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
+          <span>이름</span>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+            placeholder="ex) 공식 홈페이지"
+            {...form.getInputProps('title')}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
+          <span>아이콘</span>
+          <select
+            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+            {...form.getInputProps('iconUrl')}
+          >
+            <option value="">
+              ex) https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg
+            </option>
+            {iconData.map(icon => (
+              <option key={icon.value} value={icon.value}>
+                {icon.label}
+              </option>
+            ))}
+          </select>
+        </label>
 
-        <Button type="submit" size={'md'} color={'dark'}>
+        <Button type="submit" variant="contained" color="secondary" size="md">
           등록
         </Button>
-      </Stack>
+      </div>
     )}
   </NewProductLinkForm>
 );
@@ -73,10 +83,4 @@ const iconData = [
   },
 ];
 
-const renderSelectOption: SelectProps['renderOption'] = ({ option, checked }) => (
-  <Group flex="1" gap="xs">
-    <img src={option.value} style={{ width: 20, height: 20 }} />
-    {option.label}
-    {checked && <IconCheck style={{ marginInlineStart: 'auto' }} />}
-  </Group>
-);
+
