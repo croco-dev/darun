@@ -1,6 +1,6 @@
 import { bind } from "@croco/utils-structure-react";
 import { Button } from "@darun/ui";
-import { Modal } from "@mantine/core";
+
 import { IndexProductButton, ProductInfo } from "../../components";
 import { EditProductInfo } from "../../components/EditProductInfo/EditProductInfo";
 import { PublishProductButton } from "../../components/PublishProductButton";
@@ -29,14 +29,25 @@ export const ProductDetailInfoSection = bind(
           </div>
         </div>
       </div>
-      <Modal
-        opened={isEditModalOpened}
-        onClose={closeEditModal}
-        title="기본 정보 수정"
-        centered
+      <dialog
+        ref={(ref) => {
+          if (isEditModalOpened) {
+            ref?.showModal();
+          } else {
+            ref?.close();
+          }
+        }}
+        className="p-0 rounded-lg shadow-lg backdrop:bg-black/50"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            closeEditModal();
+          }
+        }}
       >
-        <EditProductInfo slug={slug} onSubmit={closeEditModal} />
-      </Modal>
-    </>
+        <div className="p-6">
+          <h2 className="text-lg font-semibold mb-4">기본 정보 수정</h2>
+          <EditProductInfo slug={slug} onSubmit={closeEditModal} />
+        </div>
+      </dialog>
   ),
 );
