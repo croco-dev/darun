@@ -1,6 +1,5 @@
 import { ContentArea } from "@darun/ui-foundation";
 import { Layout } from "@darun/ui-layout";
-import { VStack } from "@kuma-ui/core";
 import {
   ProductDetailCompanySection,
   ProductDetailFeatureSection,
@@ -18,25 +17,25 @@ export const ProductDetailPage = ({
   params: { slug: string };
 }) => (
   <Layout>
-    <VStack as={"main"} width={"100%"}>
-      <VStack gap={"2px"} mb={"12px"}>
+    <main className="flex w-full flex-col">
+      <div className="mb-3 flex flex-col gap-0.5">
         <ContentArea>
-          <VStack gap={"8px"}>
+          <div className="flex flex-col gap-2">
             <ProductSummary slug={slug} />
             <ProductSummaryLink slug={slug} />
-          </VStack>
+          </div>
         </ContentArea>
-      </VStack>
+      </div>
       <ProductTocSection />
       <ContentArea>
-        <VStack id={"detail-content"}>
+        <div id="detail-content" className="flex flex-col">
           <ProductDescriptionSection slug={slug} />
           <ProductPhotoSection slug={slug} />
           <ProductDetailFeatureSection slug={slug} />
           <ProductAlternativeSection slug={slug} />
           <ProductDetailCompanySection slug={slug} />
-        </VStack>
+        </div>
       </ContentArea>
-    </VStack>
+    </main>
   </Layout>
 );

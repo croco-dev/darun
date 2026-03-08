@@ -2,7 +2,6 @@
 
 import { ContentArea } from "@darun/ui-foundation";
 import { Layout } from "@darun/ui-layout";
-import { VStack, Text } from "@kuma-ui/core";
 import { useTranslations } from "next-intl";
 import { SearchProductResult } from "@darun/search-shell";
 
@@ -26,49 +25,34 @@ export function SearchProductPage({ searchParams }: Props) {
   if (!query) {
     return (
       <Layout>
-        <VStack as={"main"} width={"100%"} py={"32px"}>
+        <main className="flex w-full flex-col py-8">
           <ContentArea>
-            <VStack gap={"12px"}>
-              <Text
-                fontWeight={"fontWeights.semibold"}
-                color={"colors.dark.800"}
-                fontSize={"22px"}
-                letterSpacing={"-.2px"}
-                textAlign={"center"}
-              >
+            <div className="flex flex-col gap-3">
+              <p className="text-center text-[22px] font-semibold tracking-[-0.2px] text-dark-800">
                 {t("page.empty.title")}
-              </Text>
-              <Text
-                fontWeight={"fontWeights.medium"}
-                color={"colors.dark.500"}
-                fontSize={"16px"}
-                textAlign={"center"}
-              >
+              </p>
+              <p className="text-center text-base font-medium text-dark-500">
                 {t("page.empty.description")}
-              </Text>
-            </VStack>
+              </p>
+            </div>
           </ContentArea>
-        </VStack>
+        </main>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <VStack as={"main"} width={"100%"} py={"20px"}>
+      <main className="flex w-full flex-col py-5">
         <ContentArea>
-          <VStack gap="20px">
-            <Text
-              fontWeight={"fontWeights.semibold"}
-              fontSize={"22px"}
-              letterSpacing={"-.2px"}
-            >
+          <div className="flex flex-col gap-5">
+            <p className="text-[22px] font-semibold tracking-[-0.2px]">
               {t("page.resultTitle", { query })}
-            </Text>
+            </p>
             <SearchProductResult query={query} />
-          </VStack>
+          </div>
         </ContentArea>
-      </VStack>
+      </main>
     </Layout>
   );
 }

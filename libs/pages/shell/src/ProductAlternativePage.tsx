@@ -1,7 +1,6 @@
 import { ContentArea } from "@darun/ui-foundation";
 import { Layout } from "@darun/ui-layout";
 import { Link } from "@darun/utils-router";
-import { Flex, VStack } from "@kuma-ui/core";
 import {
   AlternativeProductSection,
   FAQSection,
@@ -17,27 +16,27 @@ export const ProductAlternativePage = ({
   faqItems?: FAQItem[];
 }) => (
   <Layout>
-    <VStack>
-      <VStack as={"main"} width={"100%"}>
-        <VStack gap={"2px"} mb={"4px"}>
+    <div className="flex flex-col">
+      <main className="flex w-full flex-col">
+        <div className="mb-1 flex flex-col gap-0.5">
           <ContentArea>
             <Link href={`/products/${slug}`}>
               <ProductSummary slug={slug} />
             </Link>
           </ContentArea>
-        </VStack>
-        <Flex w={"100%"} h={"1px"} background={"colors.dark.100"} my={"2px"} />
+        </div>
+        <div className="my-0.5 flex h-px w-full bg-dark-100" />
         <ContentArea>
-          <VStack py="12px">
+          <div className="flex flex-col py-3">
             <AlternativeProductSection slug={slug} />
-          </VStack>
+          </div>
         </ContentArea>
         {faqItems && faqItems.length > 0 && (
           <ContentArea>
             <FAQSection items={faqItems} />
           </ContentArea>
         )}
-      </VStack>
-    </VStack>
+      </main>
+    </div>
   </Layout>
 );

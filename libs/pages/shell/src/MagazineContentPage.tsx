@@ -1,6 +1,5 @@
 import { ContentArea } from "@darun/ui-foundation";
 import { Layout } from "@darun/ui-layout";
-import { VStack } from "@kuma-ui/core";
 import { MagazineInfoSection } from "@darun/magazines-shell";
 
 export const MagazineContentPage = ({
@@ -9,14 +8,14 @@ export const MagazineContentPage = ({
   params: { slug: string };
 }) => (
   <Layout>
-    <VStack>
-      <VStack as={"main"} width={"100%"}>
+    <div className="flex flex-col">
+      <main className="flex w-full flex-col">
         <ContentArea>
-          <VStack py="12px">
+          <div className="flex flex-col py-3">
             <MagazineInfoSection slug={slug} />
-          </VStack>
+          </div>
         </ContentArea>
-      </VStack>
-    </VStack>
+      </main>
+    </div>
   </Layout>
 );
