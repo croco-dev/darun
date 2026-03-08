@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ['@darun/ui', '@darun/ui-layout'],
+  experimental: {
   experimental: {
     ...(process.env.ENABLE_EXPERIMENTAL_REACT_COMPILER === 'true'
       ? {

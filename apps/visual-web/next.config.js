@@ -4,6 +4,7 @@ const { withKumaUI } = require('@kuma-ui/next-plugin');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compiler: {},
+  transpilePackages: ['@darun/ui', '@darun/ui-layout'],
   images: {
     remotePatterns: [
       {
