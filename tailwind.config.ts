@@ -1,7 +1,12 @@
 import { Config } from 'tailwindcss';
 
 const config: Config = {
-  content: ['./apps/*/app/**/*.{js,ts,jsx,tsx,mdx}', './libs/*/shell/src/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    './apps/*/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './libs/*/shell/src/**/*.{js,ts,jsx,tsx}',
+    './libs/shared/ui/src/**/*.{js,ts,jsx,tsx}',
+    './libs/shared/ui-layout/src/**/*.{js,ts,jsx,tsx}',
+  ],
   theme: {
     extend: {
       colors: {
@@ -70,11 +75,11 @@ const config: Config = {
         xl: '1280px',
       },
       fontWeight: {
-        light: 300,
-        normal: 400,
-        medium: 500,
-        semibold: 600,
-        bold: 700,
+        light: '300',
+        normal: '400',
+        medium: '500',
+        semibold: '600',
+        bold: '700',
       },
     },
   },
