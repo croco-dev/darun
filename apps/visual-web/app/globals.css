@@ -1,7 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
+@config '../../../tailwind.config.ts';
+@source './**/*.{js,ts,jsx,tsx,mdx}';
+@source '../../../libs/*/shell/src/**/*.{js,ts,jsx,tsx}';
+@source '../../../libs/shared/ui/src/**/*.{js,ts,jsx,tsx}';
+@source '../../../libs/shared/ui-layout/src/**/*.{js,ts,jsx,tsx}';
 
 * {
   margin: 0;
