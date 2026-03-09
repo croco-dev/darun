@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { WriteMagazine } from "../../components/WriteMagazine";
+import { WriteMagazine } from '@darun/magazines-feature';
 
 export const MagazineWriteSection = () => (
   <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">

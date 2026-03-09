@@ -2,6 +2,7 @@ import { gql } from '@apollo/client';
 import { useEffect, useState } from 'react';
 import { useAllCompaniesOnAllCompanyListTableLazyQuery } from './__generated__/useAllCompanyListTable';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query AllCompaniesOnAllCompanyListTable($page: Int!) {
     allCompanies(page: $page) {

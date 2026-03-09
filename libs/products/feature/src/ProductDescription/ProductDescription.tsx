@@ -4,7 +4,6 @@ import { useProductDescription } from './useProductDescription';
 export const ProductDescription = bind(useProductDescription, ({ description }) => (
   <>
     {description ? (
-      
       <div
         className="whitespace-pre-wrap text-sm leading-6 text-dark-900"
         dangerouslySetInnerHTML={{ __html: description }}

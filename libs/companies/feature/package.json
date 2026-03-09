@@ -1,25 +1,45 @@
 {
   "name": "@darun/companies-feature",
-  "version": "0.0.0",
-  "type": "commonjs",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
   "scripts": {
-    "lint": "eslint **/*.ts*",
-    "test": "echo 1",
+    "lint": "eslint .",
+    "test": "echo 'No tests yet'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@apollo/client": "^3.12.8",
+    "@croco/utils-structure-react": "0.0.1",
     "@darun/companies-datasource": "workspace:*",
-    "@darun/companies-domain": "workspace:*"
-  },
-  "peerDependencies": {
-    "reflect-metadata": "*",
-    "type-graphql": "*",
-    "typedi": "*"
+    "@darun/companies-domain": "workspace:*",
+    "@darun/utils-apollo-server": "workspace:*",
+    "@mantine/core": "^8.3.16",
+    "@mantine/form": "^8.3.16",
+    "@mantine/hooks": "^8.3.16",
+    "@mantine/notifications": "^8.3.16",
+    "reflect-metadata": "0.2.2",
+    "type-graphql": "2.0.0-rc.2",
+    "typedi": "0.10.0"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
-    "@darun/utils-tsconfig": "workspace:*"
+    "@darun/utils-tsconfig": "workspace:*",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "next": "*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }

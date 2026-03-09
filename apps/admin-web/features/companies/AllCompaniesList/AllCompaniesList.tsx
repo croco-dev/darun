@@ -1,4 +1,4 @@
-import { AllCompanyListTable } from '../../components';
+import { AllCompanyListTable } from '@darun/companies-feature';
 
 export function AllCompaniesList() {
   return (

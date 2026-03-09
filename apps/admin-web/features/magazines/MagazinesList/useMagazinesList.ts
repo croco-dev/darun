@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import { useTempAllMagazinesOnMagazinesListSuspenseQuery } from './__generated__/useMagazinesList';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempAllMagazinesOnMagazinesList($page: Int!) {
     tempAllMagazines(page: $page) {

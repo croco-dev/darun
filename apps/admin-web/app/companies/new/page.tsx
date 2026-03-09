@@ -1,5 +1,5 @@
-import { NewCompanyFormSection } from '@darun/admin-companies-shell';
 import { PageShell } from '@darun/ui-admin';
+import { NewCompanyFormSection } from '../../../features/companies/NewCompanyFormSection/NewCompanyFormSection';
 
 export default function NewCompanyPage() {
   return (

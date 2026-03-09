@@ -1,7 +1,6 @@
 'use client';
 
-
-import { NewCompanyForm } from '../../components/NewCompanyForm';
+import { NewCompanyForm } from '@darun/companies-feature';
 
 export const NewCompanyFormSection = () => {
   return (

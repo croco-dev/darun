@@ -1,11 +1,13 @@
 {
-  "extends": "@darun/utils-tsconfig/tsconfig.node.json",
+  "extends": "@darun/utils-tsconfig/tsconfig.react.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules"]
 }

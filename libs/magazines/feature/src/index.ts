@@ -5,3 +5,5 @@ export * from './graphs/EditMagazine';
 export * from './graphs/Magazine';
 export * from './graphs/MagazinePagination';
 export * from './graphs/PublishMagazine';
+export { ArticleCard } from './ArticleCard';
+export { WriteMagazine } from './WriteMagazine';

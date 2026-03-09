@@ -111,12 +111,12 @@ importers:
       '@croco/utils-structure-react':
         specifier: 0.0.1
         version: 0.0.1
-      '@darun/admin-companies-shell':
+      '@darun/companies-feature':
         specifier: workspace:*
-        version: link:../../libs/admin-companies/shell
-      '@darun/admin-magazines-shell':
+        version: link:../../libs/companies/feature
+      '@darun/magazines-feature':
         specifier: workspace:*
-        version: link:../../libs/admin-magazines/shell
+        version: link:../../libs/magazines/feature
       '@darun/products-feature':
         specifier: workspace:*
         version: link:../../libs/products/feature
@@ -606,141 +606,6 @@ importers:
         specifier: workspace:*
         version: link:../../shared/utils-tsconfig
 
-  libs/admin-accounts/shell:
-    dependencies:
-      '@darun/ui':
-        specifier: workspace:*
-        version: link:../../shared/ui
-      '@darun/ui-admin':
-        specifier: workspace:*
-        version: link:../../shared/ui-admin
-      '@mantine/core':
-        specifier: ^8.3.16
-        version: 8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@mantine/hooks':
-        specifier: ^8.3.16
-        version: 8.3.16(react@19.2.4)
-      '@mantine/notifications':
-        specifier: ^8.3.16
-        version: 8.3.16(@mantine/core@8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mantine/hooks@8.3.16(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next:
-        specifier: '*'
-        version: 15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.4(react@19.2.4)
-    devDependencies:
-      '@darun/eslint-config':
-        specifier: workspace:*
-        version: link:../../shared/utils-eslint-config
-      '@darun/utils-tsconfig':
-        specifier: workspace:*
-        version: link:../../shared/utils-tsconfig
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.14)
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.2
-
-  libs/admin-companies/shell:
-    dependencies:
-      '@darun/ui':
-        specifier: workspace:*
-        version: link:../../shared/ui
-      '@mantine/core':
-        specifier: ^8.3.16
-        version: 8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@mantine/form':
-        specifier: ^8.3.16
-        version: 8.3.16(react@19.2.4)
-      '@mantine/hooks':
-        specifier: ^8.3.16
-        version: 8.3.16(react@19.2.4)
-      '@mantine/notifications':
-        specifier: ^8.3.16
-        version: 8.3.16(@mantine/core@8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mantine/hooks@8.3.16(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next:
-        specifier: '*'
-        version: 15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.4(react@19.2.4)
-    devDependencies:
-      '@darun/eslint-config':
-        specifier: workspace:*
-        version: link:../../shared/utils-eslint-config
-      '@darun/utils-tsconfig':
-        specifier: workspace:*
-        version: link:../../shared/utils-tsconfig
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.14)
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.2
-
-  libs/admin-magazines/shell:
-    dependencies:
-      '@darun/ui':
-        specifier: workspace:*
-        version: link:../../shared/ui
-      '@darun/utils-image-upload':
-        specifier: workspace:*
-        version: link:../../shared/utils-image-upload
-      '@mantine/core':
-        specifier: ^8.3.16
-        version: 8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@mantine/dropzone':
-        specifier: ^8.3.16
-        version: 8.3.16(@mantine/core@8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mantine/hooks@8.3.16(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@mantine/form':
-        specifier: ^8.3.16
-        version: 8.3.16(react@19.2.4)
-      '@mantine/hooks':
-        specifier: ^8.3.16
-        version: 8.3.16(react@19.2.4)
-      '@mantine/notifications':
-        specifier: ^8.3.16
-        version: 8.3.16(@mantine/core@8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mantine/hooks@8.3.16(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next:
-        specifier: '*'
-        version: 15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.4(react@19.2.4)
-    devDependencies:
-      '@darun/eslint-config':
-        specifier: workspace:*
-        version: link:../../shared/utils-eslint-config
-      '@darun/utils-tsconfig':
-        specifier: workspace:*
-        version: link:../../shared/utils-tsconfig
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.14)
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.2
-
   libs/companies/datasource:
     dependencies:
       '@darun/companies-domain':
@@ -784,20 +649,50 @@ importers:
 
   libs/companies/feature:
     dependencies:
+      '@apollo/client':
+        specifier: ^3.12.8
+        version: 3.14.0(@types/react@19.2.14)(graphql-ws@6.0.4(graphql@16.12.0)(ws@8.18.0))(graphql@16.12.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@croco/utils-structure-react':
+        specifier: 0.0.1
+        version: 0.0.1
       '@darun/companies-datasource':
         specifier: workspace:*
         version: link:../datasource
       '@darun/companies-domain':
         specifier: workspace:*
         version: link:../domain
-      reflect-metadata:
+      '@darun/utils-apollo-server':
+        specifier: workspace:*
+        version: link:../../shared/utils-apollo-server
+      '@mantine/core':
+        specifier: ^8.3.16
+        version: 8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@mantine/form':
+        specifier: ^8.3.16
+        version: 8.3.16(react@19.2.4)
+      '@mantine/hooks':
+        specifier: ^8.3.16
+        version: 8.3.16(react@19.2.4)
+      '@mantine/notifications':
+        specifier: ^8.3.16
+        version: 8.3.16(@mantine/core@8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mantine/hooks@8.3.16(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      next:
         specifier: '*'
+        version: 15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+      reflect-metadata:
+        specifier: 0.2.2
         version: 0.2.2
       type-graphql:
-        specifier: '*'
-        version: 2.0.0-rc.3(graphql-scalars@1.25.0(graphql@16.12.0))(graphql@16.12.0)
+        specifier: 2.0.0-rc.2
+        version: 2.0.0-rc.2(graphql-scalars@1.25.0(graphql@16.12.0))(graphql@16.12.0)
       typedi:
-        specifier: '*'
+        specifier: 0.10.0
         version: 0.10.0
     devDependencies:
       '@darun/eslint-config':
@@ -806,6 +701,15 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../shared/utils-tsconfig
+      '@types/react':
+        specifier: ^19.1.12
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.1.9
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
 
   libs/companies/service:
     dependencies:
@@ -945,12 +849,42 @@ importers:
 
   libs/magazines/feature:
     dependencies:
+      '@apollo/client':
+        specifier: ^3.12.8
+        version: 3.14.0(@types/react@19.2.14)(graphql-ws@6.0.4(graphql@16.12.0)(ws@8.18.0))(graphql@16.12.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@croco/utils-structure-react':
+        specifier: 0.0.1
+        version: 0.0.1
       '@darun/magazines-datasource':
         specifier: workspace:*
         version: link:../datasource
       '@darun/magazines-domain':
         specifier: workspace:*
         version: link:../domain
+      '@darun/provider-graphql':
+        specifier: workspace:*
+        version: link:../../shared/provider-graphql
+      '@darun/utils-image-upload':
+        specifier: workspace:*
+        version: link:../../shared/utils-image-upload
+      '@mantine/dropzone':
+        specifier: ^8.3.16
+        version: 8.3.16(@mantine/core@8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mantine/hooks@8.3.16(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@mantine/form':
+        specifier: ^8.3.16
+        version: 8.3.16(react@19.2.4)
+      '@mantine/notifications':
+        specifier: ^8.3.16
+        version: 8.3.16(@mantine/core@8.3.16(@mantine/hooks@8.3.16(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mantine/hooks@8.3.16(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      next:
+        specifier: '*'
+        version: 15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
       reflect-metadata:
         specifier: '*'
         version: 0.2.2
@@ -967,6 +901,15 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../shared/utils-tsconfig
+      '@types/react':
+        specifier: ^19.1.12
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.1.9
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
 
   libs/magazines/service:
     dependencies:
@@ -3771,10 +3714,6 @@ packages:
     peerDependencies:
       graphql: 16.12.0
 
-  '@graphql-yoga/subscription@5.0.3':
-    resolution: {integrity: sha512-xLGEataxCULjL9rlTCVFL1IW2E90TnDIL+mE4lZBi9X92jc6s+Q+jk6Ax3I98kryCJh0UMiwjit7CaIIczTiJg==}
-    engines: {node: '>=18.0.0'}
-
   '@graphql-yoga/subscription@5.0.5':
     resolution: {integrity: sha512-oCMWOqFs6QV96/NZRt/ZhTQvzjkGB4YohBOpKM4jH/lDT4qb7Lex/aGCxpi/JD9njw3zBBtMqxbaC22+tFHVvw==}
     engines: {node: '>=18.0.0'}
@@ -5529,9 +5468,6 @@ packages:
 
   '@types/request@2.48.12':
     resolution: {integrity: sha512-G3sY+NpsA9jnwm0ixhAFQSJ3Q9JkpLZpJbI3GMv0mIAT0y3mRabYeINzal5WOChIiaTEGQYlHOKgkaM9EisWHw==}
-
-  '@types/semver@7.5.8':
-    resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
 
   '@types/semver@7.7.1':
     resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
@@ -13114,13 +13050,6 @@ snapshots:
     dependencies:
       graphql: 16.12.0
 
-  '@graphql-yoga/subscription@5.0.3':
-    dependencies:
-      '@graphql-yoga/typed-event-target': 3.0.2
-      '@repeaterjs/repeater': 3.0.6
-      '@whatwg-node/events': 0.1.2
-      tslib: 2.8.1
-
   '@graphql-yoga/subscription@5.0.5':
     dependencies:
       '@graphql-yoga/typed-event-target': 3.0.2
@@ -15098,8 +15027,6 @@ snapshots:
       '@types/tough-cookie': 4.0.5
       form-data: 2.5.3
     optional: true
-
-  '@types/semver@7.5.8': {}
 
   '@types/semver@7.7.1': {}
 
@@ -20356,13 +20283,13 @@ snapshots:
 
   type-graphql@2.0.0-rc.2(graphql-scalars@1.25.0(graphql@16.12.0))(graphql@16.12.0):
     dependencies:
-      '@graphql-yoga/subscription': 5.0.3
-      '@types/node': 20.17.19
-      '@types/semver': 7.5.8
+      '@graphql-yoga/subscription': 5.0.5
+      '@types/node': 25.2.3
+      '@types/semver': 7.7.1
       graphql: 16.12.0
       graphql-query-complexity: 0.12.0(graphql@16.12.0)
       graphql-scalars: 1.25.0(graphql@16.12.0)
-      semver: 7.7.1
+      semver: 7.7.4
       tslib: 2.8.1
 
   type-graphql@2.0.0-rc.3(graphql-scalars@1.25.0(graphql@16.12.0))(graphql@16.12.0):

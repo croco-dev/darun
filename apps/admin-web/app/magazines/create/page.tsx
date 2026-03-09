@@ -1,5 +1,5 @@
-import { MagazineWriteSection } from '@darun/admin-magazines-shell';
 import { PageShell } from '@darun/ui-admin';
+import { MagazineWriteSection } from '../../../features/magazines/MagazineWriteSection/MagazineWriteSection';
 
 export default function MagazineCreatePage() {
   return (

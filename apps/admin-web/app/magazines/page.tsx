@@ -1,8 +1,8 @@
-import { MagazinesList } from '@darun/admin-magazines-shell';
 import { PageShell } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { IconPlus } from '@tabler/icons-react';
 import { Suspense } from 'react';
+import { MagazinesList } from '../../features/magazines/MagazinesList/MagazinesList';
 
 export default function MagazineListPage() {
   return (
