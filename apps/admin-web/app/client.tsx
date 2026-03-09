@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthProvider } from '@darun/provider-auth/client';
+import { MantineProvider } from '@mantine/core';
 import { ApolloProvider } from '@darun/utils-apollo-client/client';
 import { useCookies } from 'next-client-cookies';
 import { ReactNode } from 'react';
@@ -11,9 +12,9 @@ export const ClientRootProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ApolloProvider makeClient={() => container.apolloClient} cookies={cookies}>
-      <AuthProvider authService={container.authService} cookies={cookies}>
-        {children}
-      </AuthProvider>
+        <MantineProvider>
+          {children}
+        </MantineProvider>
     </ApolloProvider>
   );
 };
