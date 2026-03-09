@@ -1,18 +1,15 @@
-"use client";
+'use client';
 
-import { gql } from "@apollo/client";
-import { useImageUpload } from "@darun/utils-image-upload";
-import { useForm } from "@mantine/form";
-import { notifications } from "@mantine/notifications";
-import { ReactNode } from "react";
-import { useAddProductScreenshotOnNewProductScreenshotFormMutation } from "./__generated__/useNewProductScreenshotForm";
+import { gql } from '@apollo/client';
+import { useImageUpload } from '@darun/utils-image-upload';
+import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
+import { ReactNode } from 'react';
+import { useAddProductScreenshotOnNewProductScreenshotFormMutation } from './__generated__/useNewProductScreenshotForm';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
-  mutation AddProductScreenshotOnNewProductScreenshotForm(
-    $slug: String!
-    $input: AddProductScreenshotInput!
-  ) {
+  mutation AddProductScreenshotOnNewProductScreenshotForm($slug: String!, $input: AddProductScreenshotInput!) {
     addProductScreenshot(slug: $slug, input: $input) {
       product {
         id
@@ -32,47 +29,37 @@ type FormValues = {
 };
 type NewProductFormProps = {
   productSlug: string;
-  children: (props: {
-    form: ReturnType<typeof useForm<FormValues>>;
-  }) => ReactNode;
+  children: (props: { form: ReturnType<typeof useForm<FormValues>> }) => ReactNode;
 };
 
-export function useNewProductScreenshotForm({
-  productSlug,
-  children,
-}: NewProductFormProps) {
+export function useNewProductScreenshotForm({ productSlug, children }: NewProductFormProps) {
   const form = useForm<FormValues>({
-    mode: "uncontrolled",
+    mode: 'uncontrolled',
     initialValues: {
       file: undefined,
-      imageAlt: "",
+      imageAlt: '',
     },
   });
   const { upload } = useImageUpload();
 
-  const [createProductFeature] =
-    useAddProductScreenshotOnNewProductScreenshotFormMutation({
-      onCompleted: ({ addProductScreenshot }) => {
-        if (addProductScreenshot.product?.id) {
-          notifications.show({ message: "생성되었습니다.", color: "teal" });
-          form.reset();
-        }
-      },
-    });
+  const [createProductFeature] = useAddProductScreenshotOnNewProductScreenshotFormMutation({
+    onCompleted: ({ addProductScreenshot }) => {
+      if (addProductScreenshot.product?.id) {
+        notifications.show({ message: '생성되었습니다.', color: 'teal' });
+        form.reset();
+      }
+    },
+  });
 
   const submit = async (values: FormValues) => {
     if (!values.file || !values.imageAlt) return;
 
-    const url = await upload(
-      `images/screenshots/${productSlug}`,
-      values.file,
-      values.file.name,
-    );
+    const url = await upload(`images/screenshots/${productSlug}`, values.file, values.file.name);
 
     if (!url) {
       notifications.show({
-        message: "이미지 업로드에 실패했어요.",
-        color: "red",
+        message: '이미지 업로드에 실패했어요.',
+        color: 'red',
       });
       return;
     }

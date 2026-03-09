@@ -17,7 +17,6 @@
     "@croco/utils-structure-react": "0.0.1",
     "@darun/admin-companies-shell": "workspace:*",
     "@darun/admin-magazines-shell": "workspace:*",
-    "@darun/admin-pages-shell": "workspace:*",
     "@darun/admin-products-shell": "workspace:*",
     "@darun/provider-auth/client": "workspace:*",
     "@darun/provider-auth/server": "workspace:*",

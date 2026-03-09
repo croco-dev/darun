@@ -46,8 +46,9 @@ export function useWriteMagazine() {
       backgroundImageUrl: "",
     },
   });
-  const { uploadImage } = useImageUpload();
+  const { upload } = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
 
   const handleSubmit = async (values: FormValues) => {
     await createMagazine({
@@ -55,21 +56,25 @@ export function useWriteMagazine() {
         input: {
           title: values.title,
           slug: values.slug,
-          summary: values.summary,
-          content: values.content,
-          backgroundImageUrl: values.backgroundImageUrl,
+          summary: values.summary || "",
+          backgroundImageUrl: values.backgroundImageUrl || "",
         },
       },
     });
   };
 
-  const handleDrop = async (files: FileWithPath[]) => {
-    const file = files[0];
-    if (!file) return;
+  const handleFileDrop = async (files: FileWithPath[]) => {
+    const droppedFile = files[0];
+    if (!droppedFile) return;
 
     setIsUploading(true);
     try {
-      const imageUrl = await uploadImage(file);
+      const imageUrl = await upload(
+        "images/magazines",
+        droppedFile,
+        droppedFile.name,
+      );
+      setFile(droppedFile);
       form.setFieldValue("backgroundImageUrl", imageUrl);
       notifications.show({
         message: "이미지가 업로드되었습니다.",
@@ -85,10 +90,17 @@ export function useWriteMagazine() {
     }
   };
 
+  const handleFileRemove = () => {
+    setFile(null);
+    form.setFieldValue("backgroundImageUrl", "");
+  };
+
   return {
     form,
     handleSubmit,
-    handleDrop,
+    handleFileDrop,
+    handleFileRemove,
+    file,
     isUploading,
   };
 }
