@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "libs/*/*"
   - "libs/shared/*"
+  - "libs/shared/*/*"
   - "!**/node_modules/**"
   - "!**/.next/**"
   - "!**/dist/**"

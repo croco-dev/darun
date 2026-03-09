@@ -1,10 +1,12 @@
-import { bind } from "@croco/utils-structure-react";
-import { Button } from "@darun/ui";
+'use client';
 
-import { IndexProductButton, ProductInfo } from "../../components";
-import { EditProductInfo } from "../../components/EditProductInfo/EditProductInfo";
-import { PublishProductButton } from "../../components/PublishProductButton";
-import { useProductDetailInfoSection } from "./useProductDetailInfoSection";
+import { bind } from '@croco/utils-structure-react';
+import { Button } from '@darun/ui';
+
+import { IndexProductButton, ProductInfo } from '../../components';
+import { EditProductInfo } from '../../components/EditProductInfo/EditProductInfo';
+import { PublishProductButton } from '../../components/PublishProductButton';
+import { useProductDetailInfoSection } from './useProductDetailInfoSection';
 
 export const ProductDetailInfoSection = bind(
   useProductDetailInfoSection,
@@ -30,7 +32,7 @@ export const ProductDetailInfoSection = bind(
         </div>
       </div>
       <dialog
-        ref={(ref) => {
+        ref={ref => {
           if (isEditModalOpened) {
             ref?.showModal();
           } else {
@@ -38,8 +40,13 @@ export const ProductDetailInfoSection = bind(
           }
         }}
         className="p-0 rounded-lg shadow-lg backdrop:bg-black/50"
-        onClick={(e) => {
+        onClick={e => {
           if (e.target === e.currentTarget) {
+            closeEditModal();
+          }
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Escape') {
             closeEditModal();
           }
         }}
@@ -49,5 +56,6 @@ export const ProductDetailInfoSection = bind(
           <EditProductInfo slug={slug} onSubmit={closeEditModal} />
         </div>
       </dialog>
-  ),
+    </>
+  )
 );

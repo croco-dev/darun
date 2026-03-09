@@ -1,3 +1,5 @@
+'use client';
+
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useState } from 'react';
 
@@ -15,5 +17,12 @@ export function useProductDetailFeatureSection({ slug }: ProductDetailFeatureSec
     [openEditModal]
   );
 
-  return { isEditModalOpened, openEditModal, closeEditModal, editFeature, slug, featureId };
+  return {
+    isEditModalOpened,
+    openEditModal,
+    closeEditModal,
+    editFeature,
+    slug,
+    featureId,
+  };
 }

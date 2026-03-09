@@ -29,9 +29,7 @@ export const ProductLinkTable = bind(
 
     if (!links || links.length === 0) {
       return (
-        <p className="text-sm font-medium text-gray-600">
-          등록된 링크가 없습니다. 우측 상단 버튼으로 등록해보세요.
-        </p>
+        <p className="text-sm font-medium text-gray-600">등록된 링크가 없습니다. 우측 상단 버튼으로 등록해보세요.</p>
       );
     }
 
@@ -41,10 +39,17 @@ export const ProductLinkTable = bind(
           <table className="min-w-[300px] border-collapse">
             <thead>
               <tr>
-                <th className="border-b border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900" style={{ width: '80px', textAlign: 'center' }}>아이콘</th>
+                <th
+                  className="border-b border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900"
+                  style={{ width: '80px', textAlign: 'center' }}
+                >
+                  아이콘
+                </th>
                 <th className="border-b border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900">이름</th>
                 <th className="border-b border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900">링크</th>
-                <th className="border-b border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900">주 링크 여부</th>
+                <th className="border-b border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900">
+                  주 링크 여부
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -61,9 +66,7 @@ export const ProductLinkTable = bind(
                     </div>
                   </td>
                   <td className="border-b border-black/10 px-4 py-3">
-                    <p className="text-sm font-medium text-dark-900">
-                      {link.title}
-                    </p>
+                    <p className="text-sm font-medium text-dark-900">{link.title}</p>
                   </td>
                   <td className="border-b border-black/10 px-4 py-3">
                     <p className="text-sm font-medium text-dark-900">
@@ -73,20 +76,15 @@ export const ProductLinkTable = bind(
                     </p>
                   </td>
                   <td className="border-b border-black/10 px-4 py-3">
-                    <p className="text-sm font-medium text-dark-900">
-                      {link.isPrimary ? '✅' : '❌'}
-                    </p>
+                    <p className="text-sm font-medium text-dark-900">{link.isPrimary ? '✅' : '❌'}</p>
                   </td>
                   <td className="border-b border-black/10 px-4 py-3">
                     <div className="flex justify-end gap-0">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        startIcon={<Pencil className="h-4 w-4" />}
-                        onClick={() => editLink(link)}
-                      >
-                        정보 수정
+                      <Button type="button" variant="base" size="sm" onClick={() => editLink(link)}>
+                        <span className="inline-flex items-center gap-2">
+                          <Pencil className="h-4 w-4" />
+                          정보 수정
+                        </span>
                       </Button>
                     </div>
                   </td>
@@ -96,17 +94,10 @@ export const ProductLinkTable = bind(
           </table>
         </div>
         {isEditModalOpened && (
-          <dialog
-            open={isEditModalOpened}
-            className="rounded-xl bg-white p-6 shadow-lg backdrop:bg-black/50"
-          >
+          <dialog open={isEditModalOpened} className="rounded-xl bg-white p-6 shadow-lg backdrop:bg-black/50">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold">링크 정보 수정</h2>
-              <button
-                type="button"
-                onClick={closeEditModal}
-                className="text-dark-900 hover:text-dark-900/70"
-              >
+              <button type="button" onClick={closeEditModal} className="text-dark-900 hover:text-dark-900/70">
                 ✕
               </button>
             </div>
@@ -119,3 +110,5 @@ export const ProductLinkTable = bind(
         )}
       </>
     );
+  }
+);

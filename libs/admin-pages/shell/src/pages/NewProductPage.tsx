@@ -1,10 +1,8 @@
 import { NewProductFormSection } from '@darun/admin-products-shell';
-import { AppShell, PageShell } from '../uis';
+import { PageShell } from '@darun/ui-admin';
 
 export const NewProductPage = () => (
-  <AppShell>
-    <PageShell title={'새로운 서비스'}>
-      <NewProductFormSection />
-    </PageShell>
-  </AppShell>
+  <PageShell title={'새로운 서비스'}>
+    <NewProductFormSection />
+  </PageShell>
 );

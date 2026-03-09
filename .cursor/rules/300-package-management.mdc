@@ -15,6 +15,14 @@ alwaysApply: false
 - 유틸리티: `@darun/utils-{name}` (예: `@darun/utils-mvvm`)
 - Provider: `@darun/provider-{name}` (예: `@darun/provider-graphql`)
 - 공통 UI: `@darun/ui`
+- Admin 공용 UI: `@darun/ui-admin`
+
+### 금지할 이름
+- `@darun/admin-products-*`
+- `@darun/admin-companies-*`
+- `@darun/admin-magazines-*`
+- `@darun/admin-accounts-*`
+- admin을 도메인처럼 표현하는 새 패키지 생성 금지
 
 ## 새 패키지 생성 시
 - 명명 규칙 준수
@@ -53,9 +61,11 @@ export { UserRepositoryToken } from './libs/repositories/UserRepository';
 ## 의존성 관리
 
 ### 클라이언트 레이어 의존성
-- **Shell** (`libs/{domain}/shell`): {domain}/feature, shared/feature-*, @darun/ui
+- **Apps / app-local features**: `{domain}/feature`, `{domain}/ui`, `shared/feature-*`, `@darun/ui`, `@darun/ui-admin`
+- **Shell** (`libs/{domain}/shell`): 필요한 경우에만 사용. 기본값은 아님.
 - **Feature**: ui, @darun/ui, Apollo Client, provider-graphql, utils-mvvm
-- **UI**: @darun/ui만 의존
+- **Domain UI**: @darun/ui만 의존
+- **Admin shared UI** (`libs/shared/ui-admin`): `@darun/ui`, shared utils, admin-app 전용 재사용 UI만 포함
 
 ### 서버 레이어 의존성
 - **Service**: domain, type-graphql, typedi, utils-pagination
@@ -68,6 +78,9 @@ export { UserRepositoryToken } from './libs/repositories/UserRepository';
 - 다른 도메인의 패키지 참조 금지 (shared 제외)
 - 순환 의존성 절대 금지
 - shared/feature-*는 특정 도메인 패키지 의존 금지
+- 새 admin 기능을 `admin-{domain}-*` 패키지에 추가하는 것 금지
+- app route 전용 조합을 위해 별도 shell 패키지를 만드는 것 금지
+- shell-to-shell 의존성 추가 금지
 
 ## 패키지 구조 예시
 
@@ -87,15 +100,18 @@ export { UserRepositoryToken } from './libs/repositories/UserRepository';
 
 # 공통 라이브러리
 @darun/ui                    # Common UI Component Library
+@darun/ui-admin              # Admin-only shared UI
 @darun/utils-mvvm            # MVVM bind 패턴
 @darun/utils-form            # Form 관련 유틸
 @darun/provider-graphql      # GraphQL codegen 타입
 
-# 도메인 Shell (별도 패키지)
+# 도메인 Shell (필요할 때만)
 @darun/workspace-shell        # WorkspaceLayout, ProjectListPage 등
 @darun/project-shell          # ProjectDetailPage 등
 
-# 공용 Shell (apps 내부)
+# 앱 전용 조합 (권장)
+apps/admin-web/features/             # route-specific composition
+apps/admin-web/layouts/              # admin app layout composition
 apps/console-web/src/shells/         # GlobalLayout 등
 ```
 
@@ -106,8 +122,10 @@ apps/console-web/src/shells/         # GlobalLayout 등
 | 전역 Feature | `libs/shared/feature-*` | ✅ 별도 패키지 |
 | 도메인 Feature | `libs/{domain}/feature` | ✅ 별도 패키지 |
 | 도메인 UI | `libs/{domain}/ui` | ✅ 별도 패키지 |
-| 도메인 Shell | `libs/{domain}/shell` | ✅ 별도 패키지 (`*Page`, `*Layout`) |
+| Admin 전용 공용 UI | `libs/shared/ui-admin` | ✅ 별도 패키지 |
+| 도메인 Shell | `libs/{domain}/shell` | ⚠️ 선택적, 필요한 경우만 |
 | 공용 Shell | `apps/*/src/shells/` | ❌ App 내부 |
+| App 전용 Feature | `apps/*/features/` | ❌ App 내부 |
 | 서버 레이어 | `libs/{domain}/{layer}` | ✅ 별도 패키지 |
 
 ## workspace 설정

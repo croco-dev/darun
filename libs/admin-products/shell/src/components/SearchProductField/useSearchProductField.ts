@@ -1,3 +1,5 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useThrottledCallback } from '@mantine/hooks';
 import { useRef, useState } from 'react';

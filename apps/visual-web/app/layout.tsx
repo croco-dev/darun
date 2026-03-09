@@ -2,7 +2,8 @@ import 'normalize.css/normalize.css';
 import './globals.css';
 
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
-
+import { Metadata } from 'next';
+import { CookiesProvider } from 'next-client-cookies/server';
 import { ReactNode } from 'react';
 import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';

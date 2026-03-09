@@ -15,7 +15,6 @@
     "@apollo/experimental-nextjs-app-support": "0.11.2",
     "@croco/utils-next-font-pretendard": "0.0.2",
     "@croco/utils-structure-react": "0.0.1",
-    "@darun/admin-accounts-shell": "workspace:*",
     "@darun/admin-companies-shell": "workspace:*",
     "@darun/admin-magazines-shell": "workspace:*",
     "@darun/admin-pages-shell": "workspace:*",
@@ -24,18 +23,17 @@
     "@darun/provider-auth/server": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/ui-layout": "workspace:*",
-    "lucide-react": "^0.468.0",
     "@darun/utils-apollo-client/client": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@darun/utils-router": "workspace:*",
-
-
-
-
-
-
+    "@mantine/core": "^8.3.16",
+    "@mantine/dropzone": "^8.3.16",
+    "@mantine/form": "^8.3.16",
+    "@mantine/hooks": "^8.3.16",
+    "@mantine/notifications": "^8.3.16",
     "dayjs": "1.11.19",
+    "lucide-react": "^0.468.0",
     "next": "15.5.12",
     "next-client-cookies": "2.1.0",
     "react": "^19.2.4",
@@ -46,7 +44,6 @@
     "@types/react-dom": "^19.2.3",
     "eslint-config-next": "15.5.12",
     "postcss": "8.4.47",
-
     "postcss-simple-vars": "7.0.1",
     "sass": "1.97.3",
     "typescript-eslint": "8.55.0"

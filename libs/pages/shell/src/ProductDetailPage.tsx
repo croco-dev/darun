@@ -1,21 +1,17 @@
 import {
-  ProductDetailCompanySection,
-  ProductDetailFeatureSection,
   ProductAlternativeSection,
   ProductDescriptionSection,
+  ProductDetailCompanySection,
+  ProductDetailFeatureSection,
   ProductPhotoSection,
   ProductSummary,
   ProductSummaryLink,
   ProductTocSection,
-} from "@darun/products-shell";
-import { ContentArea } from "@darun/ui";
-import { Layout } from "@darun/ui-layout";
+} from '@darun/products-shell';
+import { ContentArea } from '@darun/ui';
+import { Layout } from '@darun/ui-layout';
 
-export const ProductDetailPage = ({
-  params: { slug },
-}: {
-  params: { slug: string };
-}) => (
+export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
   <Layout>
     <main className="flex w-full flex-col">
       <div className="mb-3 flex flex-col gap-0.5">

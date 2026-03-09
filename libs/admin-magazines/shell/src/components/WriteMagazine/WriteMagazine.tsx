@@ -1,6 +1,8 @@
-import { bind } from "@croco/utils-structure-react";
-import React from "react";
-import { useWriteMagazine } from "./useWriteMagazine";
+'use client';
+
+import { bind } from '@croco/utils-structure-react';
+import React from 'react';
+import { useWriteMagazine } from './useWriteMagazine';
 
 export const WriteMagazine = bind(
   useWriteMagazine,
@@ -22,52 +24,61 @@ export const WriteMagazine = bind(
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-sm font-medium">글 제목</label>
+            <label htmlFor="magazine-title" className="mb-1 block text-sm font-medium">
+              글 제목
+            </label>
             <input
+              id="magazine-title"
               type="text"
               placeholder="ex) 다른의 서비스 종료 발표, 대안 서비스는 뭐가 있을까?"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              key={form.key("title")}
-              {...form.getInputProps("title")}
+              key={form.key('title')}
+              {...form.getInputProps('title')}
             />
           </div>
           <div>
             <div className="mb-1">
-              <label className="block text-sm font-medium">
+              <label htmlFor="magazine-slug" className="block text-sm font-medium">
                 슬러그(slug) (선택, 미입력시 자동생성)
               </label>
             </div>
             <input
+              id="magazine-slug"
               type="text"
               placeholder="ex) darun-io-service-jongryo"
               className="mb-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              key={form.key("slug")}
-              {...form.getInputProps("slug")}
+              key={form.key('slug')}
+              {...form.getInputProps('slug')}
             />
             <p className="text-xs text-gray-500">
-              링크로 뒤에 표시될 내용입니다. 띄어쓰기가 있어서는 안됩니다. /
-              사용 예: darun-io → https://darun.io/magazines/darun-io
+              링크로 뒤에 표시될 내용입니다. 띄어쓰기가 있어서는 안됩니다. / 사용 예: darun-io →
+              https://darun.io/magazines/darun-io
             </p>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">한 줄 요약</label>
+            <label htmlFor="magazine-summary" className="mb-1 block text-sm font-medium">
+              한 줄 요약
+            </label>
             <input
+              id="magazine-summary"
               type="text"
               placeholder="ex) 사용자가 없기에 종료의 영향이 없지만, 제가 슬프니 정리해봤습니다."
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              key={form.key("summary")}
-              {...form.getInputProps("summary")}
+              key={form.key('summary')}
+              {...form.getInputProps('summary')}
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">
+            <label htmlFor="magazine-background-image" className="mb-1 block text-sm font-medium">
               뒷 배경 이미지
             </label>
 
             {!file ? (
-              <div
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
+              <button
+                id="magazine-background-image"
+                type="button"
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => {
                   e.preventDefault();
                   const droppedFile = e.dataTransfer.files[0];
                   if (droppedFile) {
@@ -75,11 +86,10 @@ export const WriteMagazine = bind(
                   }
                 }}
                 onClick={() => {
-                  const input = document.createElement("input");
-                  input.type = "file";
-                  input.accept =
-                    "image/png,image/jpeg,image/webp,image/bmp,image/avif";
-                  input.onchange = (e) => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/png,image/jpeg,image/webp,image/bmp,image/avif';
+                  input.onchange = e => {
                     const target = e.target as HTMLInputElement;
                     if (target.files && target.files[0]) {
                       handleFileDrop([target.files[0]]);
@@ -95,7 +105,9 @@ export const WriteMagazine = bind(
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
+                    <title>이미지 업로드</title>
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -104,16 +116,13 @@ export const WriteMagazine = bind(
                     />
                   </svg>
                   <div className="text-center">
-                    <p className="text-lg font-medium">
-                      이미지 끌어오거나 클릭하여 첨부
-                    </p>
+                    <p className="text-lg font-medium">이미지 끌어오거나 클릭하여 첨부</p>
                     <p className="mt-2 text-sm text-gray-500">
-                      한개만 첨부해주세요. png, jpg, jpeg, webp, bmp, avif 등
-                      지원
+                      한개만 첨부해주세요. png, jpg, jpeg, webp, bmp, avif 등 지원
                     </p>
                   </div>
                 </div>
-              </div>
+              </button>
             ) : (
               <div className="flex items-center gap-4">
                 <ImagePreview />
@@ -129,9 +138,7 @@ export const WriteMagazine = bind(
           </div>
         </div>
 
-        <p className="mt-3 text-sm">
-          글 작성은 저장 후, 수정 기능을 이용하여 가능합니다.
-        </p>
+        <p className="mt-3 text-sm">글 작성은 저장 후, 수정 기능을 이용하여 가능합니다.</p>
 
         <div className="mt-4 flex justify-end">
           <button
@@ -143,5 +150,5 @@ export const WriteMagazine = bind(
         </div>
       </form>
     );
-  },
+  }
 );

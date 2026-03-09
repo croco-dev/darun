@@ -10,9 +10,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@darun/ui": "workspace:*"
+    "@darun/ui": "workspace:*",
+    "@darun/ui-admin": "workspace:*"
   },
   "peerDependencies": {
+    "@mantine/core": "^8.3.16",
+    "@mantine/hooks": "^8.3.16",
+    "@mantine/notifications": "^8.3.16",
     "next": "*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

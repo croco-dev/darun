@@ -22,19 +22,13 @@ export const EditAlternativeProducts = bind(useEditAlternativeProducts, ({ form,
           key={form.key('alternativeIds')}
           {...form.getInputProps('alternativeIds')}
         >
-          {selectData.flatMap(group => 
+          {selectData.flatMap(group =>
             group.items.map(option => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))
           )}
-        </select>
-          {selectData.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
         </select>
       </label>
     </div>

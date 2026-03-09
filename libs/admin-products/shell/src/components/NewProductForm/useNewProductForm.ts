@@ -1,9 +1,11 @@
+'use client';
+
 import { gql } from '@apollo/client';
+import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
-import { useImageUpload } from '../../../../../admin/src/libs/utils/useImageUplaod';
 import { useCreateProductOnNewProductFormMutation } from './__generated__/useNewProductForm';
 
 gql(`

@@ -1,13 +1,8 @@
 import 'normalize.css/normalize.css';
-
-
 import './globals.css';
 import 'remixicon/fonts/remixicon.css';
 
-
-
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
-
 import { Metadata } from 'next';
 import { ReactNode } from 'react';
 import { ClientRootProvider } from './client';
@@ -26,7 +21,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="icon" href="/images/favicon.svg" />
         <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
-
       </head>
       <body className={pretendardFont.className}>
         <ServerRootProvider>

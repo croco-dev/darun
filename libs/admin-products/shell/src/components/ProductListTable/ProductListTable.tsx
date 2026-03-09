@@ -1,16 +1,11 @@
-"use client";
+'use client';
 
-import { bind } from "@croco/utils-structure-react";
-import { Button } from "@darun/ui";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  createColumnHelper,
-  flexRender,
-} from "@tanstack/react-table";
-import Image from "next/image";
-import { useProductListTable } from "./useProductListTable";
+import { bind } from '@croco/utils-structure-react';
+import { Button } from '@darun/ui';
+import { useReactTable, getCoreRowModel, createColumnHelper, flexRender } from '@tanstack/react-table';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
+import { useProductListTable } from './useProductListTable';
 
 type Product = {
   id: string;
@@ -23,9 +18,9 @@ type Product = {
 const columnHelper = createColumnHelper<Product>();
 
 const columns = [
-  columnHelper.accessor("logoUrl", {
-    header: "로고",
-    cell: (info) => (
+  columnHelper.accessor('logoUrl', {
+    header: '로고',
+    cell: info => (
       <Image
         src={info.getValue()}
         unoptimized={!info.getValue()}
@@ -36,19 +31,17 @@ const columns = [
       />
     ),
   }),
-  columnHelper.accessor("name", {
-    header: "이름",
-    cell: (info) => info.getValue(),
+  columnHelper.accessor('name', {
+    header: '이름',
+    cell: info => info.getValue(),
   }),
-  columnHelper.accessor("summary", {
-    header: "요약",
-    cell: (info) => info.getValue(),
+  columnHelper.accessor('summary', {
+    header: '요약',
+    cell: info => info.getValue(),
   }),
-  columnHelper.accessor("slug", {
-    header: "슬러그",
-    cell: (info) => (
-      <span className="text-sm text-dark-900">{info.getValue()}</span>
-    ),
+  columnHelper.accessor('slug', {
+    header: '슬러그',
+    cell: info => <span className="text-sm text-dark-900">{info.getValue()}</span>,
   }),
 ];
 
@@ -65,7 +58,7 @@ export const ProductListTable = bind(
     handleRowClick,
   }) => {
     const table = useReactTable({
-      data: products.map((product) => product.node),
+      data: products.map(product => product.node),
       columns,
       getCoreRowModel: getCoreRowModel(),
     });
@@ -75,17 +68,14 @@ export const ProductListTable = bind(
         <div className="overflow-hidden rounded-xl border border-black/10">
           <table className="w-full border-collapse">
             <thead className="bg-dark-50">
-              {table.getHeaderGroups().map((headerGroup) => (
+              {table.getHeaderGroups().map(headerGroup => (
                 <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
+                  {headerGroup.headers.map(header => (
                     <th
                       key={header.id}
                       className="border-b border-r border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
                     >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
+                      {flexRender(header.column.columnDef.header, header.getContext())}
                     </th>
                   ))}
                 </tr>
@@ -97,18 +87,15 @@ export const ProductListTable = bind(
                   key={row.id}
                   onClick={() => handleRowClick({ record: row.original })}
                   className={`cursor-pointer border-b border-black/10 transition hover:bg-dark-50 ${
-                    index % 2 === 0 ? "bg-white" : "bg-dark-50/30"
+                    index % 2 === 0 ? 'bg-white' : 'bg-dark-50/30'
                   }`}
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map(cell => (
                     <td
                       key={cell.id}
                       className="border-r border-black/10 px-4 py-3 text-sm text-dark-900 last:border-r-0"
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
                 </tr>
@@ -122,30 +109,22 @@ export const ProductListTable = bind(
               {totalCount}개의 서비스 중 {pageCount}개부터 표시합니다.
             </p>
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outlined"
-                size="sm"
-                startIcon={<ChevronLeft className="h-4 w-4" />}
-                disabled={!hasPreviousPage}
-                onClick={loadPreviousPage}
-              >
-                이전
+              <Button type="button" variant="base" size="sm" disabled={!hasPreviousPage} onClick={loadPreviousPage}>
+                <span className="inline-flex items-center gap-2">
+                  <ChevronLeft className="h-4 w-4" />
+                  이전
+                </span>
               </Button>
-              <Button
-                type="button"
-                variant="outlined"
-                size="sm"
-                startIcon={<ChevronRight className="h-4 w-4" />}
-                disabled={!hasNextPage}
-                onClick={loadNextPage}
-              >
-                다음
+              <Button type="button" variant="base" size="sm" disabled={!hasNextPage} onClick={loadNextPage}>
+                <span className="inline-flex items-center gap-2">
+                  <ChevronRight className="h-4 w-4" />
+                  다음
+                </span>
               </Button>
             </div>
           </div>
         </div>
       </div>
     );
-  },
+  }
 );

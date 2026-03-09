@@ -38,7 +38,7 @@ alwaysApply: false
 - **의존성**: `libs/{domain}/service` 패키지들을 import하여 조합
 
 ### 클라이언트 앱 (`apps/console-web`, `apps/admin-web`, `apps/service-web`)
-- **역할**: 라우팅, Provider 설정, 전역 스타일
+- **역할**: 라우팅, Provider 설정, 전역 스타일, 앱 전용 기능 조합
 - **구조**:
   ```
   apps/console-web/src/
@@ -51,7 +51,7 @@ alwaysApply: false
   └── shells/
       └── GlobalLayout.tsx     # 레이아웃 조립 + UX Boundary
   ```
-- **의존성**: `libs/shared/feature-*`, `libs/{domain}/feature` 패키지들을 import
+- **의존성**: `libs/shared/feature-*`, `libs/{domain}/feature`, `libs/{domain}/ui`, `libs/shared/ui-admin` 같은 shared UI 패키지들을 import
 
 ## 계층별 의존성 관리
 
@@ -65,14 +65,16 @@ Service (UseCase + GraphQL Resolver)
 ### 클라이언트 레이어
 ```
 Apps (라우팅 + Provider)
-  └── Shells (*Page, *Layout - Feature 조립 + UX Boundary)
-        └── Features (비즈니스 로직 + GraphQL, MVVM 패턴)
-              └── UI (프레젠테이션)
-                    └── @darun/ui (공통 UI 라이브러리)
+  ├── App-local Features / Layouts (앱 전용 조합, route composition)
+  └── Domain Features (비즈니스 로직 + GraphQL, MVVM 패턴)
+        └── Domain UI / Shared UI
+              └── @darun/ui, @darun/ui-admin
 ```
 
 - 상위 레이어는 하위 레이어만 참조 가능
 - 같은 레이어끼리는 참조 금지 (같은 도메인 내에서도 동일)
+- **Admin은 도메인이 아니라 앱이다**. admin 전용 조합 로직은 `apps/admin-web` 내부에 두고, 재사용 가능한 admin UI만 `libs/shared/ui-admin`에 둔다.
+- 앱 전용 조합을 위해 별도 shell 패키지를 만드는 것은 기본값이 아니다. route-local composition 또는 `apps/*/features`를 우선한다.
 
 ## 아키텍처 ESLint 룰 (자동 검증)
 
@@ -113,11 +115,13 @@ Apps (라우팅 + Provider)
 | 유형 | 위치 | 역할 |
 |------|------|------|
 | 공용 Shell | `apps/*/src/shells/` | 전역 레이아웃 조립 (GlobalLayout 등) |
-| 도메인 Shell | `libs/{domain}/shell` | 도메인별 `*Page`, `*Layout` 컴포넌트 (flat 구조) |
+| 앱 전용 Feature | `apps/*/features/` | 앱 route 전용 조합/오케스트레이션 |
+| 도메인 Shell | `libs/{domain}/shell` | **선택적** 도메인별 `*Page`, `*Layout` 컴포넌트 (필요할 때만) |
 | 전역 Feature | `libs/shared/feature-*` | 도메인 비종속 스마트 컴포넌트 |
 | 도메인 Feature | `libs/{domain}/feature` | 도메인 특화 비즈니스 로직 (MVVM 패턴) |
 | 도메인 UI | `libs/{domain}/ui` | 도메인 특화 프레젠테이션 |
 | 공통 UI | `libs/shared/ui` | shadcn/ui 기반 공통 컴포넌트 |
+| Admin 전용 공용 UI | `libs/shared/ui-admin` | admin-app 전용 재사용 UI |
 
 ## 새 기능 개발 순서 (전체 스택)
 
@@ -130,9 +134,10 @@ Apps (라우팅 + Provider)
 2. **클라이언트 레이어**:
    - UI Layer: 도메인 특화 프레젠테이션 컴포넌트
    - Feature Layer: 비즈니스 로직 + GraphQL 연동 (MVVM 패턴)
-   - Shell Layer: `libs/{domain}/shell`에 `*Page`, `*Layout` 컴포넌트 (flat 구조)
+   - 필요한 경우만 Domain Shell 구성
+   - Admin 같은 앱 전용 흐름은 `apps/*/features`와 route 파일에서 직접 조합
 
-3. **Apps에서 통합**: Shell의 `*Page` 컴포넌트를 page.tsx에서 사용
+3. **Apps에서 통합**: route 파일 또는 app-local feature에서 도메인 feature/ui를 직접 조합
 
 ## 전역 기능 vs 도메인 기능
 
@@ -142,3 +147,4 @@ Apps (라우팅 + Provider)
 | 도메인 Feature | `libs/{domain}/feature` | ProjectTable, UserProfile |
 | 전역 UI | `libs/shared/ui` | Button, Card, Dialog |
 | 도메인 UI | `libs/{domain}/ui` | ProjectHeader, UserAvatar |
+| Admin 공용 UI | `libs/shared/ui-admin` | PageShell, Editor, GoogleButton |
