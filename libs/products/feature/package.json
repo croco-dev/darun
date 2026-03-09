@@ -1,25 +1,35 @@
 {
   "name": "@darun/products-feature",
-  "version": "0.0.0",
-  "type": "commonjs",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
   "scripts": {
-    "lint": "eslint **/*.ts*",
-    "test": "echo 1",
+    "lint": "eslint .",
+    "test": "echo 'No tests yet'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@darun/products-datasource": "workspace:*",
-    "@darun/products-domain": "workspace:*"
-  },
-  "peerDependencies": {
-    "reflect-metadata": "*",
-    "type-graphql": "*",
-    "typedi": "*"
+    "@apollo/client": "^3.12.8",
+    "@darun/products-ui": "workspace:*",
+    "@mantine/core": "^7.16.5"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
-    "@darun/utils-tsconfig": "workspace:*"
+    "@darun/utils-tsconfig": "workspace:*",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }

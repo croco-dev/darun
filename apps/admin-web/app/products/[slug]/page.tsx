@@ -1,5 +1,9 @@
 'use client';
 
+import { ProductTagsForm } from '@darun/products-feature';
+import { PageShell } from '@darun/ui-admin';
+import Link from 'next/link';
+import { use } from 'react';
 import {
   ProductDetailAlternativeSection,
   ProductDetailCompanySection,
@@ -7,11 +11,7 @@ import {
   ProductDetailFeatureSection,
   ProductDetailInfoSection,
   ProductDetailLinkSection,
-  ProductTagsForm,
-} from '@darun/admin-products-shell';
-import { PageShell } from '@darun/ui-admin';
-import Link from 'next/link';
-import { use } from 'react';
+} from '~/features/products';
 
 type PageProps = {
   params: Promise<{

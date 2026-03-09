@@ -1,7 +1,8 @@
-import { ProductListRefreshButton, ProductListSection } from '@darun/admin-products-shell';
+import { ProductListRefreshButton } from '@darun/products-feature';
 import { PageShell } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { Plus } from 'lucide-react';
+import { ProductListSection } from '~/features/products/ProductListSection';
 
 export default function ProductListPage() {
   return (

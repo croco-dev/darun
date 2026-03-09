@@ -1,5 +1,5 @@
-import { NewProductFormSection } from '@darun/admin-products-shell';
 import { PageShell } from '@darun/ui-admin';
+import { NewProductFormSection } from '~/features/products/NewProductFormSection';
 
 export default function NewProductPage() {
   return (

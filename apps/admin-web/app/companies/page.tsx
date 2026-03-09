@@ -1,5 +1,5 @@
 import { AllCompaniesList } from '@darun/admin-companies-shell';
-import { ProductListRefreshButton } from '@darun/admin-products-shell';
+import { ProductListRefreshButton } from '@darun/products-feature';
 import { PageShell } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { IconPlus } from '@tabler/icons-react';

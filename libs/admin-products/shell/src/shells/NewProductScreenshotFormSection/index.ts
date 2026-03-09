@@ -1,1 +1,0 @@
-export { NewProductScreenshotFormSection } from './NewProductScreenshotFormSection';

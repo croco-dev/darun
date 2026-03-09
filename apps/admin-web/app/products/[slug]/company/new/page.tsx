@@ -1,8 +1,8 @@
 'use client';
 
-import { ProductCompanyEditSection } from '@darun/admin-products-shell';
 import { PageShell } from '@darun/ui-admin';
 import { use } from 'react';
+import { ProductCompanyEditSection } from '~/features/products/ProductCompanyEditSection';
 
 type PageProps = {
   params: Promise<{

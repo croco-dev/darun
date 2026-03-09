@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { gql } from "@apollo/client";
-import { useImageUpload } from "@darun/utils-image-upload";
-import { FileWithPath } from "@mantine/dropzone";
-import { useForm } from "@mantine/form";
-import { notifications } from "@mantine/notifications";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useCreateMagazineOnWriteMagazineMutation } from "./__generated__/useWriteMagazine";
+import { gql } from '@apollo/client';
+import { useImageUpload } from '@darun/utils-image-upload';
+import { FileWithPath } from '@mantine/dropzone';
+import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useCreateMagazineOnWriteMagazineMutation } from './__generated__/useWriteMagazine';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -33,17 +33,17 @@ export function useWriteMagazine() {
   const { push } = useRouter();
   const [createMagazine] = useCreateMagazineOnWriteMagazineMutation({
     onCompleted: ({ createMagazine }) => {
-      notifications.show({ message: "생성되었습니다.", color: "teal" });
+      notifications.show({ message: '생성되었습니다.', color: 'teal' });
       push(`/magazines/${createMagazine.magazine.slug}`);
     },
   });
   const form = useForm<FormValues>({
     initialValues: {
-      title: "",
-      slug: "",
-      summary: "",
-      content: "",
-      backgroundImageUrl: "",
+      title: '',
+      slug: '',
+      summary: '',
+      content: '',
+      backgroundImageUrl: '',
     },
   });
   const { upload } = useImageUpload();
@@ -56,8 +56,8 @@ export function useWriteMagazine() {
         input: {
           title: values.title,
           slug: values.slug,
-          summary: values.summary || "",
-          backgroundImageUrl: values.backgroundImageUrl || "",
+          summary: values.summary || '',
+          backgroundImageUrl: values.backgroundImageUrl || '',
         },
       },
     });
@@ -69,21 +69,17 @@ export function useWriteMagazine() {
 
     setIsUploading(true);
     try {
-      const imageUrl = await upload(
-        "images/magazines",
-        droppedFile,
-        droppedFile.name,
-      );
+      const imageUrl = await upload('images/magazines', droppedFile, droppedFile.name);
       setFile(droppedFile);
-      form.setFieldValue("backgroundImageUrl", imageUrl);
+      form.setFieldValue('backgroundImageUrl', imageUrl);
       notifications.show({
-        message: "이미지가 업로드되었습니다.",
-        color: "teal",
+        message: '이미지가 업로드되었습니다.',
+        color: 'teal',
       });
     } catch (error) {
       notifications.show({
-        message: "이미지 업로드에 실패했습니다.",
-        color: "red",
+        message: '이미지 업로드에 실패했습니다.',
+        color: 'red',
       });
     } finally {
       setIsUploading(false);
@@ -92,7 +88,7 @@ export function useWriteMagazine() {
 
   const handleFileRemove = () => {
     setFile(null);
-    form.setFieldValue("backgroundImageUrl", "");
+    form.setFieldValue('backgroundImageUrl', '');
   };
 
   return {
