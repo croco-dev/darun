@@ -11,7 +11,7 @@ import {
   ProductDetailFeatureSection,
   ProductDetailInfoSection,
   ProductDetailLinkSection,
-} from '~/features/products';
+} from '../../../features/products';
 
 type PageProps = {
   params: Promise<{

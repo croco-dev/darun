@@ -8,9 +8,10 @@ alwaysApply: false
 
 ```
 Apps (라우팅 + Provider)
-  └── Shells (레이아웃 조립 + UX Boundary)
-        └── Features (비즈니스 로직 + GraphQL)
-              └── UI (프레젠테이션)
+  ├── features/ (app-local route composition)
+  └── shells/ (레이아웃 조립 + UX Boundary)
+        └── Domain Feature (비즈니스 로직 + GraphQL)
+              └── Domain UI / @darun/ui-admin (프레젠테이션)
                     └── @darun/ui (공통 UI 라이브러리)
 ```
 
@@ -55,8 +56,11 @@ export function GlobalLayout({ children }: { children: React.ReactNode }) {
   - 도메인별 페이지(`*Page`)/레이아웃(`*Layout`) 컴포넌트 제공
   - Feature 컴포넌트 조립
   - Suspense/ErrorBoundary 등 UX Boundary 전략 정의
-- **의존성**: `{domain}/feature`, `shared/feature-*`, `@darun/ui`
+- **의존성**: `{domain}/feature`, `shared/feature-*`, `@darun/ui-admin`, `@darun/ui`
 - **금지**: 비즈니스 로직, GraphQL 호출, 직접적인 데이터 fetching
+- **운영 원칙**: 도메인 Shell은 선택적이며, 대부분의 경우 app-local `features/` 사용 권장
+- **관리 원칙**: admin-*-shell 패키지는 금지 (Phase A-D에서 모두 제거됨)
+- **Admin 공용 UI 원칙**: admin shared UI의 단일 소스는 `@darun/ui-admin`
 - **네이밍 규칙**: Next.js 컨벤션과 일치
   - `*Page` - 페이지 컴포넌트 (예: `ProjectListPage`, `CreateWorkspacePage`)
   - `*Layout` - 레이아웃 컴포넌트 (예: `WorkspaceLayout`)
@@ -89,6 +93,14 @@ export function CreateWorkspacePage() {
   );
 }
 ```
+
+### Admin App 전용 Feature (app-local)
+
+- **위치**: `apps/admin-web/features/{domain}/`
+- **용도**: admin-web 전용 route 조합
+- **예시**: `apps/admin-web/features/products/`, `apps/admin-web/features/companies/`
+- **패턴**: Feature 컴포넌트들을 조합하여 route-specific section 제공
+- **의존성**: `@darun/{domain}-feature`, `@darun/ui-admin`, `@darun/ui`
 
 ### Features
 
@@ -137,6 +149,11 @@ libs/portfolio/feature/src/libs/
 #### 공통 UI Library (`@darun/ui`)
 - **위치**: `libs/shared/ui`
 - **역할**: shadcn/ui 기반 재사용 컴포넌트
+
+## 금지사항
+
+- `admin-{domain}-shell` 패키지 생성 금지 (제거 완료)
+- shell-to-shell 의존성 금지
 
 ## 기술 스택
 - **Framework**: Next.js 15 + React 19 + TypeScript

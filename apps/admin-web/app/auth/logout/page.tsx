@@ -1,4 +1,4 @@
-import { LogoutSection } from '@darun/admin-accounts-shell';
+import { LogoutSection } from '../../../features/auth/LogoutSection';
 
 export default function LogoutPage() {
   return (

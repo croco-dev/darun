@@ -2,7 +2,7 @@
 
 import { PageShell } from '@darun/ui-admin';
 import { use } from 'react';
-import { NewProductScreenshotFormSection } from '~/features/products/NewProductScreenshotFormSection';
+import { NewProductScreenshotFormSection } from '../../../../../features/products/NewProductScreenshotFormSection';
 
 type PageProps = {
   params: Promise<{

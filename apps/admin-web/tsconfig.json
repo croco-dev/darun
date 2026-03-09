@@ -3,6 +3,10 @@
     "@darun/utils-tsconfig/tsconfig.next.json"
   ],
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./*"]
+    },
     "plugins": [
       {
         "name": "next"

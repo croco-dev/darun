@@ -1,5 +1,5 @@
-import { LoginSection } from '@darun/admin-accounts-shell';
 import { Logo } from '@darun/ui-admin';
+import { LoginSection } from '../../../features/auth/LoginSection';
 
 export default function LoginPage() {
   return (

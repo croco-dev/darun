@@ -1,0 +1,1 @@
+export { ProductCompanyEditSection } from './ProductCompanyEditSection';
