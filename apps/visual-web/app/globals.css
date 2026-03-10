@@ -6,12 +6,14 @@
 @source '../../../libs/shared/ui/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/shared/ui-layout/src/**/*.{js,ts,jsx,tsx}';
 
-* {
-  margin: 0;
-  padding: 0;
-}
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+  }
 
-a {
-  text-decoration: none;
-  color: inherit;
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
 }
