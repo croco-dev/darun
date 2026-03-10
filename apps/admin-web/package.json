@@ -26,6 +26,8 @@
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@darun/utils-router": "workspace:*",
+    "@emoji-mart/data": "^1.2.1",
+    "@emoji-mart/react": "^1.1.1",
     "@mantine/core": "^8.3.16",
     "@mantine/dropzone": "^8.3.16",
     "@mantine/form": "^8.3.16",
