@@ -7,7 +7,7 @@ import { SearchableProductRepositoryToken } from '../repositories/SearchableProd
 export class IndexProduct {
   constructor(
     @Inject(SearchableProductRepositoryToken)
-    private searchableProductRepository: SearchableProductRepository
+    private readonly searchableProductRepository: SearchableProductRepository
   ) {}
 
   async execute({

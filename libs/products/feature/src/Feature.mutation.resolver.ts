@@ -1,4 +1,10 @@
-import { CreateProductFeature, GetProduct, GetProductFeature, UpdateProductFeature } from '@darun/products-domain';
+import {
+  CreateProductFeature,
+  GetProduct,
+  GetProductFeature,
+  productNotFound,
+  UpdateProductFeature,
+} from '@darun/products-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
@@ -22,7 +28,7 @@ export class FeatureMutationResolver {
       slug: input.productSlug,
     });
     if (!product) {
-      throw new Error('Product not found');
+      throw productNotFound();
     }
 
     const productFeature = await this.createProductFeatureUseCase.execute({
@@ -47,7 +53,7 @@ export class FeatureMutationResolver {
     const product = await this.getProductFeatureUseCase.execute({ id });
 
     if (!product) {
-      throw new Error('Product가 존재하지 않습니다.');
+      throw productNotFound();
     }
 
     return {

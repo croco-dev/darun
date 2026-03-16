@@ -6,7 +6,7 @@ import { AlternativeProductRepositoryToken } from '../repositories/AlternativePr
 export class GetAlternativeProducts {
   constructor(
     @Inject(AlternativeProductRepositoryToken)
-    private alternativeProductRepository: AlternativeProductRepository
+    private readonly alternativeProductRepository: AlternativeProductRepository
   ) {}
 
   async execute({ productId }: { productId: string }) {

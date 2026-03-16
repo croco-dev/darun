@@ -1,7 +1,8 @@
 import { VoteRepository } from '@darun/voting-domain';
 import { VoteRepositoryToken } from '@darun/voting-domain';
 import { Inject, Service } from 'typedi';
-import { ProductRepository, ProductRepositoryToken } from '../repositories/ProductRepository';
+import { ProductRepository } from '../repositories/ProductRepository';
+import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
 @Service()
 export class GetRankedProducts {

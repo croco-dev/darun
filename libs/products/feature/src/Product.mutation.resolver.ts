@@ -143,7 +143,7 @@ export class ProductMutationResolver {
     const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
-      throw new Error('Product not found');
+      throw productNotFound();
     }
 
     await this.updateProductTagUseCase.execute({

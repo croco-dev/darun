@@ -2,9 +2,7 @@ import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
 import { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
-
-import { ProductDescriptionGenerator } from '../services/ProductDescriptionGenerator';
-import { ProductDescriptionGeneratorToken } from '../services/ProductDescriptionGenerator';
+import { ProductDescriptionGenerator, ProductDescriptionGeneratorToken } from '../services/ProductDescriptionGenerator';
 
 @Service()
 export class GenerateProductDescription {
