@@ -1,14 +1,13 @@
 import { Inject, Service } from 'typedi';
 import { SearchableProduct } from '../entities/SearchableProduct';
-import {
-  SearchableProductRepository,
-  SearchableProductRepositoryToken,
-} from '../repositories/SearchableProductRepository';
+import { SearchableProductRepository } from '../repositories/SearchableProductRepository';
+import { SearchableProductRepositoryToken } from '../repositories/SearchableProductRepository';
 
 @Service()
 export class IndexProduct {
   constructor(
-    @Inject(SearchableProductRepositoryToken) private searchableProductRepository: SearchableProductRepository
+    @Inject(SearchableProductRepositoryToken)
+    private searchableProductRepository: SearchableProductRepository
   ) {}
 
   async execute({

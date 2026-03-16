@@ -1,10 +1,14 @@
 import { Inject, Service } from 'typedi';
 import { Magazine } from '../entities/Magazine';
-import { MagazineRepository, MagazineRepositoryToken } from '../repositories/MagazineRepository';
+import { MagazineRepository } from '../repositories/MagazineRepository';
+import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
 
 @Service()
 export class EditMagazine {
-  constructor(@Inject(MagazineRepositoryToken) private readonly magazineRepository: MagazineRepository) {}
+  constructor(
+    @Inject(MagazineRepositoryToken)
+    private readonly magazineRepository: MagazineRepository
+  ) {}
 
   async execute({
     id,

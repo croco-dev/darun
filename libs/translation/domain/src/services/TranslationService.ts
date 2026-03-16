@@ -1,5 +1,6 @@
 import { Inject, Service } from 'typedi';
-import { TranslationRepository, TranslationRepositoryToken } from '../repositories/TranslationRepository';
+import { TranslationRepository } from '../repositories/TranslationRepository';
+import { TranslationRepositoryToken } from '../repositories/TranslationRepository';
 
 @Service()
 export class TranslationService {

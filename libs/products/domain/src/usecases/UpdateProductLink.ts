@@ -1,10 +1,14 @@
 import { Inject, Service } from 'typedi';
 import { ProductLink } from '../entities/ProductLink';
-import { ProductLinkRepository, ProductLinkRepositoryToken } from '../repositories/ProductLinkRepository';
+import { ProductLinkRepository } from '../repositories/ProductLinkRepository';
+import { ProductLinkRepositoryToken } from '../repositories/ProductLinkRepository';
 
 @Service()
 export class UpdateProductLink {
-  constructor(@Inject(ProductLinkRepositoryToken) private readonly productLinkRepository: ProductLinkRepository) {}
+  constructor(
+    @Inject(ProductLinkRepositoryToken)
+    private readonly productLinkRepository: ProductLinkRepository
+  ) {}
 
   async execute({
     linkId,

@@ -1,11 +1,15 @@
 import { Inject, Service } from 'typedi';
 import { Magazine } from '../entities/Magazine';
 import { magazineCreateFailed } from '../errors/magazineError';
-import { MagazineRepository, MagazineRepositoryToken } from '../repositories/MagazineRepository';
+import { MagazineRepository } from '../repositories/MagazineRepository';
+import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
 
 @Service()
 export class CreateMagazine {
-  constructor(@Inject(MagazineRepositoryToken) private readonly magazineRepository: MagazineRepository) {}
+  constructor(
+    @Inject(MagazineRepositoryToken)
+    private readonly magazineRepository: MagazineRepository
+  ) {}
 
   async execute({
     title,
@@ -24,7 +28,15 @@ export class CreateMagazine {
     logoImageUrl?: string;
     authorId: string;
   }) {
-    const magazine = new Magazine({ title, slug, summary, content, backgroundImageUrl, logoImageUrl, authorId });
+    const magazine = new Magazine({
+      title,
+      slug,
+      summary,
+      content,
+      backgroundImageUrl,
+      logoImageUrl,
+      authorId,
+    });
 
     const inserted = await this.magazineRepository.insert(magazine);
 

@@ -1,6 +1,6 @@
 import { Inject, Service } from 'typedi';
-
-import { VoteRepository, VoteRepositoryToken } from '../repositories/VoteRepository';
+import { VoteRepository } from '../repositories/VoteRepository';
+import { VoteRepositoryToken } from '../repositories/VoteRepository';
 
 @Service()
 export class GetVoteCount {

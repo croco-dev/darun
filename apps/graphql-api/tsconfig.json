@@ -31,6 +31,21 @@
       "@search/domain": ["../../libs/backend/src/libs/search/domain/index.ts"],
       "@search/datasource": [
         "../../libs/backend/src/libs/search/datasource/index.ts"
+      ],
+      "@darun/companies-feature/server": [
+        "../../libs/companies/feature/src/server.ts"
+      ],
+      "@darun/images-feature/server": [
+        "../../libs/images/feature/src/server.ts"
+      ],
+      "@darun/magazines-feature/server": [
+        "../../libs/magazines/feature/src/server.ts"
+      ],
+      "@darun/products-feature/server": [
+        "../../libs/products/feature/src/server.ts"
+      ],
+      "@darun/translation-feature/server": [
+        "../../libs/translation/feature/src/server.ts"
       ]
     }
   }

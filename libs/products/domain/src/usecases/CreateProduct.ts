@@ -1,11 +1,15 @@
 import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
 import { productCreateFailed, productSlugAlreadyExists } from '../errors/productError';
-import { ProductRepository, ProductRepositoryToken } from '../repositories/ProductRepository';
+import { ProductRepository } from '../repositories/ProductRepository';
+import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
 @Service()
 export class CreateProduct {
-  constructor(@Inject(ProductRepositoryToken) private readonly productRepository: ProductRepository) {}
+  constructor(
+    @Inject(ProductRepositoryToken)
+    private readonly productRepository: ProductRepository
+  ) {}
 
   async execute({
     name,
@@ -25,7 +29,13 @@ export class CreateProduct {
       throw productSlugAlreadyExists();
     }
 
-    const newProduct = new Product({ name, slug, logoUrl, summary, description });
+    const newProduct = new Product({
+      name,
+      slug,
+      logoUrl,
+      summary,
+      description,
+    });
 
     const insertedProduct = await this.productRepository.insert(newProduct);
 

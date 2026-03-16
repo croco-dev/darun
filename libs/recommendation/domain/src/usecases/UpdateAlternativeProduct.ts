@@ -1,9 +1,7 @@
 import { Inject, Service } from 'typedi';
 import { AlternativeProduct } from '../entities/AlternativeProduct';
-import {
-  AlternativeProductRepository,
-  AlternativeProductRepositoryToken,
-} from '../repositories/AlternativeProductRepository';
+import { AlternativeProductRepository } from '../repositories/AlternativeProductRepository';
+import { AlternativeProductRepositoryToken } from '../repositories/AlternativeProductRepository';
 
 @Service()
 export class UpdateAlternativeProduct {

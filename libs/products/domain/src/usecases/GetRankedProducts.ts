@@ -1,12 +1,15 @@
-import { VoteRepository, VoteRepositoryToken } from '@darun/voting-domain';
+import { VoteRepository } from '@darun/voting-domain';
+import { VoteRepositoryToken } from '@darun/voting-domain';
 import { Inject, Service } from 'typedi';
 import { ProductRepository, ProductRepositoryToken } from '../repositories/ProductRepository';
 
 @Service()
 export class GetRankedProducts {
   constructor(
-    @Inject(VoteRepositoryToken) private readonly voteRepository: VoteRepository,
-    @Inject(ProductRepositoryToken) private readonly productRepository: ProductRepository
+    @Inject(VoteRepositoryToken)
+    private readonly voteRepository: VoteRepository,
+    @Inject(ProductRepositoryToken)
+    private readonly productRepository: ProductRepository
   ) {}
 
   async execute({ limit }: { limit: number }) {

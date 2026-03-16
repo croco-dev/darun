@@ -1,8 +1,6 @@
 import { Inject, Service } from 'typedi';
-import {
-  ProductFeatureScreenshotRepository,
-  ProductFeatureScreenshotRepositoryToken,
-} from '../repositories/ProductFeatureScreenshotRepository';
+import { ProductFeatureScreenshotRepository } from '../repositories/ProductFeatureScreenshotRepository';
+import { ProductFeatureScreenshotRepositoryToken } from '../repositories/ProductFeatureScreenshotRepository';
 
 @Service()
 export class GetProductFeatureScreenshots {

@@ -11,7 +11,7 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "@apollo/server": "^4",
+    "@apollo/server": "^5",
     "graphql": "^16"
   },
   "devDependencies": {

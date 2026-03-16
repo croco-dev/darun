@@ -1,5 +1,6 @@
 import { Inject, Service } from 'typedi';
-import { AccountRepository, AccountRepositoryToken } from '../repositories/AccountRepository';
+import { AccountRepository } from '../repositories/AccountRepository';
+import { AccountRepositoryToken } from '../repositories/AccountRepository';
 
 @Service()
 export class GetAccount {
