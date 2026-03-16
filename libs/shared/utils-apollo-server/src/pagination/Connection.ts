@@ -1,4 +1,4 @@
-import type { ConnectionArgs } from './ConnectionArgs';
+import { ConnectionArgs } from './ConnectionArgs';
 import { Cursor } from './Cursor';
 
 export class Connection {
@@ -45,7 +45,7 @@ export class Connection {
   }) {
     const { nodes, cursorKeys, previous, totalCount } = args;
 
-    const edges = nodes.map((node) => ({
+    const edges = nodes.map(node => ({
       node,
       cursor: Cursor.encode(node, cursorKeys),
     }));

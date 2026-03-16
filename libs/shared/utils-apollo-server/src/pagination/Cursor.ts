@@ -4,7 +4,7 @@ const KEY_DELIMITER = '__KEY_DELIMITER__';
 export class Cursor {
   static encode<Node>(item: Node, cursorKeys: (keyof Node)[]): string {
     const cursor = cursorKeys
-      .map((cursorKey) => {
+      .map(cursorKey => {
         if (item[cursorKey] instanceof Date) {
           const isoString = (item[cursorKey] as Date).toISOString();
           return `${cursorKey.toString()}${KEY_DELIMITER}${isoString}`;
@@ -17,10 +17,7 @@ export class Cursor {
     return Buffer.from(cursor).toString('base64');
   }
 
-  static decode<Keys extends readonly string[]>(
-    cursor: string,
-    keys: Keys,
-  ): { [K in Keys[number]]: string } {
+  static decode<Keys extends readonly string[]>(cursor: string, keys: Keys): { [K in Keys[number]]: string } {
     const parsedCursor = Buffer.from(cursor, 'base64')
       .toString('utf8')
       .split(CURSOR_DELIMITER)
@@ -34,7 +31,7 @@ export class Cursor {
         ...acc,
         [key]: parsedCursor[key as keyof typeof parsedCursor],
       }),
-      {},
+      {}
     ) as {
       [K in Keys[number]]: string;
     };
