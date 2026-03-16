@@ -1,16 +1,17 @@
 import { GetCompany } from '@darun/companies-domain';
 import {
+  AddProductLink,
   AddProductScreenshot,
-  UpdateProductTag,
   CreateProduct,
+  EditProduct,
+  GenerateProductDescription,
   GetProduct,
   GetPublishedProduct,
-  AddProductLink,
-  UpdateProductLink,
   PublishProduct,
-  EditProduct,
+  productNotFound,
   RegisterProductCompany,
-  GenerateProductDescription,
+  UpdateProductLink,
+  UpdateProductTag,
 } from '@darun/products-domain';
 import { UpdateAlternativeProduct } from '@darun/recommendation-domain';
 import { IndexProduct } from '@darun/search-domain';
@@ -72,7 +73,7 @@ export class ProductMutationResolver {
     const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
-      throw new Error('Product가 존재하지 않습니다.');
+      throw productNotFound();
     }
 
     return {
@@ -89,7 +90,7 @@ export class ProductMutationResolver {
     const product = await this.getProductUseCase.execute({ slug: input.slug });
 
     if (!product) {
-      throw new Error('Product가 존재하지 않습니다.');
+      throw productNotFound();
     }
 
     const updatedProduct = await this.publishProductUseCase.execute({
@@ -117,7 +118,7 @@ export class ProductMutationResolver {
     });
 
     if (!product) {
-      throw new Error('publish된 Product가 존재하지 않습니다.');
+      throw productNotFound();
     }
 
     const indexed = await this.indexProductUseCase.execute({
@@ -164,7 +165,7 @@ export class ProductMutationResolver {
     const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
-      throw new Error('Product not found');
+      throw productNotFound();
     }
 
     await this.addProductScreenshotUseCase.execute({
@@ -187,7 +188,7 @@ export class ProductMutationResolver {
     const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
-      throw new Error('Product not found');
+      throw productNotFound();
     }
 
     await this.addProductLinkUseCase.execute({
@@ -210,7 +211,7 @@ export class ProductMutationResolver {
     const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
-      throw new Error('Product not found');
+      throw productNotFound();
     }
 
     await this.updateProductLinkUseCase.execute({ linkId: id, ...input });
@@ -229,7 +230,7 @@ export class ProductMutationResolver {
     const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
-      throw new Error('Product not found');
+      throw productNotFound();
     }
 
     await this.updateAlternativeProductUseCase.execute({
@@ -247,7 +248,7 @@ export class ProductMutationResolver {
     const product = await this.getPublishedProductUseCase.execute({ slug });
 
     if (!product) {
-      throw new Error('publish된 Product가 존재하지 않습니다.');
+      throw productNotFound();
     }
 
     await this.upvoteProductUseCase.execute({
@@ -270,7 +271,7 @@ export class ProductMutationResolver {
       id: input.companyId,
     });
     if (!product) {
-      throw new Error('Product not found');
+      throw productNotFound();
     }
 
     if (!company) {
@@ -295,7 +296,7 @@ export class ProductMutationResolver {
     const product = await this.getProductUseCase.execute({ slug: input.slug });
 
     if (!product) {
-      throw new Error('Product not found');
+      throw productNotFound();
     }
 
     const updatedProduct = await this.generateProductDescriptionUseCase.execute({

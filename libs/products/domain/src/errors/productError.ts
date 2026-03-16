@@ -8,10 +8,8 @@ export enum ProductError {
 }
 
 export const productNotFound = () => new Error(ProductError.NotFound);
-export const productSlugAlreadyExists = () =>
-  new Error(ProductError.SlugAlreadyExists);
+export const productSlugAlreadyExists = () => new Error(ProductError.SlugAlreadyExists);
 export const productCreateFailed = () => new Error(ProductError.CreateFailed);
 export const productUpdateFailed = () => new Error(ProductError.UpdateFailed);
 export const productDeleteFailed = () => new Error(ProductError.DeleteFailed);
-export const productFeatureNotFound = () =>
-  new Error(ProductError.FeatureNotFound);
+export const productFeatureNotFound = () => new Error(ProductError.FeatureNotFound);
