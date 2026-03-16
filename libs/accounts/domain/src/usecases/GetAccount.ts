@@ -1,14 +1,11 @@
 import { Inject, Service } from 'typedi';
-import {
-  type AccountRepository,
-  AccountRepositoryToken,
-} from '../repositories/AccountRepository';
+import { AccountRepository, AccountRepositoryToken } from '../repositories/AccountRepository';
 
 @Service()
 export class GetAccount {
   constructor(
     @Inject(AccountRepositoryToken)
-    private readonly accountRepository: AccountRepository,
+    private readonly accountRepository: AccountRepository
   ) {}
 
   async execute({ token }: { token?: string }) {
