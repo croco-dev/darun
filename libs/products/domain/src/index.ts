@@ -1,48 +1,54 @@
-export type { ProductRepository } from './repositories/ProductRepository';
-export { ProductRepositoryToken } from './repositories/ProductRepository';
-export type { ProductLinkRepository } from './repositories/ProductLinkRepository';
-export { ProductLinkRepositoryToken } from './repositories/ProductLinkRepository';
-export type { ProductTagRepository } from './repositories/ProductTagRepository';
-export { ProductTagRepositoryToken } from './repositories/ProductTagRepository';
-export type { ProductScreenshotRepository } from './repositories/ProductScreenshotRepository';
-export { ProductScreenshotRepositoryToken } from './repositories/ProductScreenshotRepository';
-export type { ProductFeatureScreenshotRepository } from './repositories/ProductFeatureScreenshotRepository';
-export { ProductFeatureScreenshotRepositoryToken } from './repositories/ProductFeatureScreenshotRepository';
-export type { ProductFeatureRepository } from './repositories/ProductFeatureRepository';
-export { ProductFeatureRepositoryToken } from './repositories/ProductFeatureRepository';
-
 export { Product } from './entities/Product';
+export { ProductFeature } from './entities/ProductFeature';
+export { ProductFeatureScreenshot } from './entities/ProductFeatureScreenshot';
 export { ProductLink } from './entities/ProductLink';
+export { ProductScreenshot } from './entities/ProductScreenshot';
 export { ProductTag } from './entities/ProductTag';
 export { Tag } from './entities/Tag';
 export { TagType } from './entities/TagType';
-export { ProductScreenshot } from './entities/ProductScreenshot';
-export { ProductFeatureScreenshot } from './entities/ProductFeatureScreenshot';
-export { ProductFeature } from './entities/ProductFeature';
-
+export {
+  ProductError,
+  productCreateFailed,
+  productDeleteFailed,
+  productFeatureNotFound,
+  productNotFound,
+  productSlugAlreadyExists,
+  productUpdateFailed,
+} from './errors/productError';
+export type { ProductFeatureRepository } from './repositories/ProductFeatureRepository';
+export { ProductFeatureRepositoryToken } from './repositories/ProductFeatureRepository';
+export type { ProductFeatureScreenshotRepository } from './repositories/ProductFeatureScreenshotRepository';
+export { ProductFeatureScreenshotRepositoryToken } from './repositories/ProductFeatureScreenshotRepository';
+export type { ProductLinkRepository } from './repositories/ProductLinkRepository';
+export { ProductLinkRepositoryToken } from './repositories/ProductLinkRepository';
+export type { ProductRepository } from './repositories/ProductRepository';
+export { ProductRepositoryToken } from './repositories/ProductRepository';
+export type { ProductScreenshotRepository } from './repositories/ProductScreenshotRepository';
+export { ProductScreenshotRepositoryToken } from './repositories/ProductScreenshotRepository';
+export type { ProductTagRepository } from './repositories/ProductTagRepository';
+export { ProductTagRepositoryToken } from './repositories/ProductTagRepository';
 export type { ProductDescriptionGenerator } from './services/ProductDescriptionGenerator';
 export { ProductDescriptionGeneratorToken } from './services/ProductDescriptionGenerator';
-
-export { GetRecentProducts } from './usecases/GetRecentProducts';
-export { GetRankedProducts } from './usecases/GetRankedProducts';
-export { GetProduct } from './usecases/GetProduct';
-export { GetProductLinks } from './usecases/GetProductLinks';
-export { GetProductsCount } from './usecases/GetProductsCount';
-export { GetProductTags } from './usecases/GetProductTags';
-export { GetProductScreenshots } from './usecases/GetProductScreenshots';
+export { AddProductLink } from './usecases/AddProductLink';
+export { AddProductScreenshot } from './usecases/AddProductScreenshot';
 export { CreateProduct } from './usecases/CreateProduct';
+export { CreateProductFeature } from './usecases/CreateProductFeature';
+export { EditProduct } from './usecases/EditProduct';
+export { GenerateProductDescription } from './usecases/GenerateProductDescription';
+export { GetAllProducts } from './usecases/GetAllProducts';
+export { GetProduct } from './usecases/GetProduct';
+export { GetProductFeature } from './usecases/GetProductFeature';
 export { GetProductFeatureScreenshots } from './usecases/GetProductFeatureScreenshots';
 export { GetProductFeatures } from './usecases/GetProductFeatures';
-export { GetProductFeature } from './usecases/GetProductFeature';
-export { GetAllProducts } from './usecases/GetAllProducts';
+export { GetProductLinks } from './usecases/GetProductLinks';
+export { GetProductScreenshots } from './usecases/GetProductScreenshots';
+export { GetProductsCount } from './usecases/GetProductsCount';
+export { GetProductTags } from './usecases/GetProductTags';
 export { GetPublishedProduct } from './usecases/GetPublishedProduct';
-export { UpdateProductTag } from './usecases/UpdateProductTag';
-export { UpdateProductFeature } from './usecases/UpdateProductFeature';
-export { CreateProductFeature } from './usecases/CreateProductFeature';
-export { AddProductScreenshot } from './usecases/AddProductScreenshot';
-export { AddProductLink } from './usecases/AddProductLink';
-export { UpdateProductLink } from './usecases/UpdateProductLink';
+export { GetRankedProducts } from './usecases/GetRankedProducts';
+export { GetRecentProducts } from './usecases/GetRecentProducts';
 export { PublishProduct } from './usecases/PublishProduct';
-export { EditProduct } from './usecases/EditProduct';
 export { RegisterProductCompany } from './usecases/RegisterProductCompany';
-export { GenerateProductDescription } from './usecases/GenerateProductDescription';
+export { UpdateProductFeature } from './usecases/UpdateProductFeature';
+export { UpdateProductLink } from './usecases/UpdateProductLink';
+export { UpdateProductTag } from './usecases/UpdateProductTag';
