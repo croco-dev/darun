@@ -1,0 +1,34 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.*
+
+# Build outputs
+.next
+.turbo
+dist
+build
+out
+.cache
+
+# Generated files
+*.generated.*
+*.d.ts
+*.d.ts.map
+
+# Package manager files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Config files that have their own formatting
+pnpm-workspace.yaml
+package.json
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+.DS_Store
+*.log
