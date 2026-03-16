@@ -1,12 +1,26 @@
-import { CreateMagazine, EditMagazine, GetMagazine, PublishMagazine } from '@darun/magazines-domain';
+import type {
+  CreateMagazine,
+  EditMagazine,
+  GetMagazine,
+  PublishMagazine,
+} from '@darun/magazines-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
-import { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
+import type { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
 import { Arg, Authorized, Ctx, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
-import { CreateMagazineInput, CreateMagazinePayload } from './graphs/CreateMagazine';
-import { EditMagazineInput, EditMagazinePayload } from './graphs/EditMagazine';
+import {
+  type CreateMagazineInput,
+  CreateMagazinePayload,
+} from './graphs/CreateMagazine';
+import {
+  type EditMagazineInput,
+  EditMagazinePayload,
+} from './graphs/EditMagazine';
 import { Magazine } from './graphs/Magazine';
-import { PublishMagazineInput, PublishMagazinePayload } from './graphs/PublishMagazine';
+import {
+  type PublishMagazineInput,
+  PublishMagazinePayload,
+} from './graphs/PublishMagazine';
 
 @Resolver(() => Magazine)
 @Service()
@@ -15,14 +29,14 @@ export class MagazineMutationResolver {
     private readonly createMagazineUseCase: CreateMagazine,
     private readonly getMagazineUseCase: GetMagazine,
     private readonly publishMagazineUseCase: PublishMagazine,
-    private readonly editMagazineUseCase: EditMagazine
+    private readonly editMagazineUseCase: EditMagazine,
   ) {}
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => CreateMagazinePayload)
   async createMagazine(
     @Arg('input') input: CreateMagazineInput,
-    @Ctx() context: GraphQLContext
+    @Ctx() context: GraphQLContext,
   ): Promise<CreateMagazinePayload> {
     const userId = await context.getUserIdOrThrow();
     const magazine = await this.createMagazineUseCase.execute({
@@ -37,7 +51,9 @@ export class MagazineMutationResolver {
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => PublishMagazinePayload)
-  async publishMagazine(@Arg('input') input: PublishMagazineInput): Promise<PublishMagazinePayload> {
+  async publishMagazine(
+    @Arg('input') input: PublishMagazineInput,
+  ): Promise<PublishMagazinePayload> {
     const magazine = await this.getMagazineUseCase.execute({
       slug: input.slug,
     });
@@ -57,7 +73,10 @@ export class MagazineMutationResolver {
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => EditMagazinePayload)
-  async editMagazine(@Arg('slug') slug: string, @Arg('input') input: EditMagazineInput): Promise<EditMagazinePayload> {
+  async editMagazine(
+    @Arg('slug') slug: string,
+    @Arg('input') input: EditMagazineInput,
+  ): Promise<EditMagazinePayload> {
     const magazine = await this.getMagazineUseCase.execute({ slug });
 
     if (!magazine) {
