@@ -1,12 +1,13 @@
 {
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "formatter": {
+    "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
   },
   "javascript": {
     "formatter": {
