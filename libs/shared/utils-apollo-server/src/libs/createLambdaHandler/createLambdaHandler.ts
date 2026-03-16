@@ -1,18 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ApolloServer } from '@apollo/server';
-import { handlers, startServerAndCreateLambdaHandler } from '@as-integrations/aws-lambda';
-import { LambdaHandlerOptions } from '@as-integrations/aws-lambda/src/lambdaHandler';
-import { RequestHandler } from '@as-integrations/aws-lambda/src/request-handlers/_create';
-import { APIGatewayProxyEventV2, APIGatewayProxyHandlerV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
-import { GraphQLContext } from '../GraphQLContext';
+import type { ApolloServer } from '@apollo/server';
+import {
+  handlers,
+  type LambdaHandlerOptions,
+  startServerAndCreateLambdaHandler,
+} from '@as-integrations/aws-lambda';
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyHandlerV2,
+  APIGatewayProxyStructuredResultV2,
+} from 'aws-lambda';
+import type { GraphQLContext } from '../GraphQLContext';
 
 export function createLambdaHandler(
   middlewares: (() => void)[],
   server: ApolloServer,
   options?: LambdaHandlerOptions<
-    RequestHandler<APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2>,
+    handlers.RequestHandler<
+      APIGatewayProxyEventV2,
+      APIGatewayProxyStructuredResultV2
+    >,
     GraphQLContext
-  >
+  >,
 ): APIGatewayProxyHandlerV2 {
   for (const middleware of middlewares) {
     middleware();
@@ -20,6 +29,6 @@ export function createLambdaHandler(
   return startServerAndCreateLambdaHandler(
     server,
     handlers.createAPIGatewayProxyEventV2RequestHandler(),
-    options ?? {}
+    options ?? {},
   );
 }
