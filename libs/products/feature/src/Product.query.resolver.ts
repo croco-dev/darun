@@ -1,6 +1,6 @@
-import type { GetCompany } from '@darun/companies-domain';
+import { GetCompany } from '@darun/companies-domain';
 import { Company } from '@darun/companies-feature/server';
-import type {
+import {
   GetAllProducts,
   GetProduct,
   GetProductFeatures,
@@ -12,27 +12,12 @@ import type {
   GetRankedProducts,
   GetRecentProducts,
 } from '@darun/products-domain';
-import type { GetAlternativeProducts } from '@darun/recommendation-domain';
-import type { SearchProduct } from '@darun/search-domain';
-import type { TranslationService } from '@darun/translation-domain';
-import {
-  AuthRole,
-  Connection,
-  type ConnectionArgs,
-  Cursor,
-} from '@darun/utils-apollo-server';
-import type { GetVoteCount } from '@darun/voting-domain';
-import {
-  Arg,
-  Args,
-  Authorized,
-  FieldResolver,
-  ID,
-  Int,
-  Query,
-  Resolver,
-  Root,
-} from 'type-graphql';
+import { GetAlternativeProducts } from '@darun/recommendation-domain';
+import { SearchProduct } from '@darun/search-domain';
+import { TranslationService } from '@darun/translation-domain';
+import { AuthRole, Connection, ConnectionArgs, Cursor } from '@darun/utils-apollo-server';
+import { GetVoteCount } from '@darun/voting-domain';
+import { Arg, Args, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Feature } from './graphs/Feature';
 import { Link } from './graphs/Link';
@@ -45,9 +30,7 @@ type ProductWithLocale = Product & {
   locale?: string;
 };
 
-type PublishedProduct = NonNullable<
-  Awaited<ReturnType<GetPublishedProduct['execute']>>
->;
+type PublishedProduct = NonNullable<Awaited<ReturnType<GetPublishedProduct['execute']>>>;
 
 @Resolver(() => Product)
 @Service()
@@ -67,17 +50,14 @@ export class ProductQueryResolver {
     private readonly searchProductUseCase: SearchProduct,
     private readonly getAlternativeProductsUseCase: GetAlternativeProducts,
     private readonly getVoteCountUseCase: GetVoteCount,
-    private readonly translationService: TranslationService,
+    private readonly translationService: TranslationService
   ) {}
 
   private normalizeLocale(locale: string): 'ko' | 'en' {
     return locale === 'en' ? 'en' : 'ko';
   }
 
-  private async translateProduct(
-    product: PublishedProduct,
-    locale: string,
-  ): Promise<ProductWithLocale> {
+  private async translateProduct(product: PublishedProduct, locale: string): Promise<ProductWithLocale> {
     const normalizedLocale = this.normalizeLocale(locale);
     const localizedProduct: ProductWithLocale = {
       ...product,
@@ -114,19 +94,14 @@ export class ProductQueryResolver {
     };
   }
 
-  private async translateProducts(
-    products: PublishedProduct[],
-    locale: string,
-  ): Promise<ProductWithLocale[]> {
-    return Promise.all(
-      products.map((product) => this.translateProduct(product, locale)),
-    );
+  private async translateProducts(products: PublishedProduct[], locale: string): Promise<ProductWithLocale[]> {
+    return Promise.all(products.map(product => this.translateProduct(product, locale)));
   }
 
   @Query(() => [Product])
   public async recentProducts(
     @Arg('first', () => Int) first: number,
-    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string,
+    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
   ) {
     const products = await this.getRecentProductsUseCase.execute({
       limit: first,
@@ -137,7 +112,7 @@ export class ProductQueryResolver {
   @Query(() => [Product])
   public async rankedProducts(
     @Arg('first', () => Int) first: number,
-    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string,
+    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
   ) {
     const products = await this.getRankedProductsUseCase.execute({
       limit: first,
@@ -148,7 +123,7 @@ export class ProductQueryResolver {
   @Query(() => Product, { nullable: true })
   public async product(
     @Arg('id', () => ID) id: string,
-    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string,
+    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
   ) {
     const product = await this.getPublishedProductUseCase.execute({ id });
 
@@ -162,7 +137,7 @@ export class ProductQueryResolver {
   @Query(() => Product, { nullable: true })
   public async productBySlug(
     @Arg('slug', () => String) slug: string,
-    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string,
+    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
   ) {
     const product = await this.getPublishedProductUseCase.execute({ slug });
 
@@ -181,28 +156,22 @@ export class ProductQueryResolver {
   @Query(() => [Product])
   public async searchProducts(
     @Arg('query', () => String) query: string,
-    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string,
+    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
   ) {
     const searchableProducts = await this.searchProductUseCase.execute({
       query,
     });
 
     const products = (await Promise.all(
-      searchableProducts.map((searchableProduct) =>
-        this.getPublishedProductUseCase.execute({ id: searchableProduct.id }),
-      ),
-    ).then((products) =>
-      products.filter((product) => Boolean(product)),
-    )) as PublishedProduct[];
+      searchableProducts.map(searchableProduct => this.getPublishedProductUseCase.execute({ id: searchableProduct.id }))
+    ).then(products => products.filter(product => Boolean(product)))) as PublishedProduct[];
 
     return this.translateProducts(products, locale);
   }
 
   @Authorized([AuthRole.Admin])
   @Query(() => ProductConnection)
-  public async allProducts(
-    @Args() connectionArgs: ConnectionArgs,
-  ): Promise<ProductConnection> {
+  public async allProducts(@Args() connectionArgs: ConnectionArgs): Promise<ProductConnection> {
     const { cursor, limit, type } = Connection.verifyArgs(connectionArgs);
     const decoded = cursor ? Cursor.decode(cursor, ['id'] as const) : undefined;
 
@@ -258,7 +227,7 @@ export class ProductQueryResolver {
     }
 
     return Promise.all(
-      features.map(async (feature) => {
+      features.map(async feature => {
         const [name, summary] = await Promise.all([
           this.translationService.getTranslation({
             entityType: 'ProductFeature',
@@ -283,7 +252,7 @@ export class ProductQueryResolver {
           name,
           summary,
         };
-      }),
+      })
     );
   }
 
@@ -298,19 +267,16 @@ export class ProductQueryResolver {
 
   @FieldResolver(() => [Product])
   public async alternatives(@Root() product: ProductWithLocale) {
-    const alternativeProducts =
-      await this.getAlternativeProductsUseCase.execute({
-        productId: product.id,
-      });
+    const alternativeProducts = await this.getAlternativeProductsUseCase.execute({
+      productId: product.id,
+    });
     const products = (await Promise.all(
-      alternativeProducts.map((alternativeProduct) =>
+      alternativeProducts.map(alternativeProduct =>
         this.getPublishedProductUseCase.execute({
           id: alternativeProduct.alternativeProductId,
-        }),
-      ),
-    ).then((products) =>
-      products.filter((alternativeProduct) => Boolean(alternativeProduct)),
-    )) as PublishedProduct[];
+        })
+      )
+    ).then(products => products.filter(alternativeProduct => Boolean(alternativeProduct)))) as PublishedProduct[];
 
     return this.translateProducts(products, product.locale ?? 'ko');
   }
@@ -324,7 +290,7 @@ export class ProductQueryResolver {
   @Query(() => Product, { nullable: true })
   public async tempProductBySlug(
     @Arg('slug', () => String) slug: string,
-    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string,
+    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
   ) {
     const product = await this.getProductUseCase.execute({ slug });
 
