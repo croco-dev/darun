@@ -1,13 +1,13 @@
 import { Inject, Service } from 'typedi';
-import type { Company } from '../entities/Company';
-import type { CompanyRepository } from '../repositories/CompanyRepository';
+import { Company } from '../entities/Company';
+import { CompanyRepository } from '../repositories/CompanyRepository';
 import { CompanyRepositoryToken } from '../repositories/CompanyRepository';
 
 @Service()
 export class SearchCompany {
   constructor(
     @Inject(CompanyRepositoryToken)
-    private readonly companyRepository: CompanyRepository,
+    private readonly companyRepository: CompanyRepository
   ) {}
 
   execute({ query }: { query: string }): Promise<Company[]> {

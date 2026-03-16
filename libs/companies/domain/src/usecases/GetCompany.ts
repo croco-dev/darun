@@ -1,12 +1,12 @@
 import { Inject, Service } from 'typedi';
-import type { CompanyRepository } from '../repositories/CompanyRepository';
+import { CompanyRepository } from '../repositories/CompanyRepository';
 import { CompanyRepositoryToken } from '../repositories/CompanyRepository';
 
 @Service()
 export class GetCompany {
   constructor(
     @Inject(CompanyRepositoryToken)
-    private readonly companyRepository: CompanyRepository,
+    private readonly companyRepository: CompanyRepository
   ) {}
 
   async execute({ id }: { id: string }) {
