@@ -1,12 +1,12 @@
 import { Inject, Service } from 'typedi';
-import { MagazineRepository } from '../repositories/MagazineRepository';
+import type { MagazineRepository } from '../repositories/MagazineRepository';
 import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
 
 @Service()
 export class GetMagazine {
   constructor(
     @Inject(MagazineRepositoryToken)
-    private readonly magazineRepository: MagazineRepository
+    private readonly magazineRepository: MagazineRepository,
   ) {}
 
   async execute({ id, slug }: { id?: string; slug?: string }) {
