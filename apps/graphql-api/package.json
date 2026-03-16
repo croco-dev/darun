@@ -13,8 +13,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/server": "4.10.4",
-    "@as-integrations/aws-lambda": "3.1.0",
+    "@apollo/server": "5.4.0",
+    "@as-integrations/aws-lambda": "4.0.1",
     "@darun/accounts-datasource": "workspace:*",
     "@darun/accounts-domain": "workspace:*",
     "@darun/companies-datasource": "workspace:*",

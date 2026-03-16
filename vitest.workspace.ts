@@ -22,10 +22,7 @@ export default defineWorkspace({
         extends: './vitest.config.ts',
         test: {
           name: 'root',
-          include: [
-            'apps/*/__tests__/**/*.test.ts',
-            'libs/shared/**/src/**/*.test.ts',
-          ],
+          include: ['apps/*/__tests__/**/*.test.ts', 'libs/shared/**/src/**/*.test.ts'],
         },
       },
       {
