@@ -1,9 +1,22 @@
-import { GetProfile } from '@darun/accounts-domain';
-import { GetMagazine, GetPublishedMagazine, GetMagazineList } from '@darun/magazines-domain';
+import type { GetProfile } from '@darun/accounts-domain';
+import type {
+  GetMagazine,
+  GetMagazineList,
+  GetPublishedMagazine,
+} from '@darun/magazines-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
-import { Arg, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
+import {
+  Arg,
+  Authorized,
+  FieldResolver,
+  ID,
+  Int,
+  Query,
+  Resolver,
+  Root,
+} from 'type-graphql';
 import { Service } from 'typedi';
-import { Author } from '../../../../apps/graphql-api/src/app/graphql/author/graphs/Author';
+import { Author } from './graphs/Author';
 import { Magazine } from './graphs/Magazine';
 import { MagazinePagination } from './graphs/MagazinePagination';
 
@@ -14,7 +27,7 @@ export class MagazineQueryResolver {
     private readonly getPublishedMagazineUseCase: GetPublishedMagazine,
     private readonly getMagazineUseCase: GetMagazine,
     private readonly getProfileUseCase: GetProfile,
-    private readonly getMagazineListUseCase: GetMagazineList
+    private readonly getMagazineListUseCase: GetMagazineList,
   ) {}
 
   @Query(() => Magazine, { nullable: true })
@@ -35,7 +48,9 @@ export class MagazineQueryResolver {
 
   @Authorized([AuthRole.Admin])
   @Query(() => MagazinePagination)
-  public async tempAllMagazines(@Arg('page', () => Int) page: number): Promise<MagazinePagination> {
+  public async tempAllMagazines(
+    @Arg('page', () => Int) page: number,
+  ): Promise<MagazinePagination> {
     const limit = 50;
     const { data, total } = await this.getMagazineListUseCase.execute({
       page,
