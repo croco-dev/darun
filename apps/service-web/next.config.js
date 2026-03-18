@@ -17,26 +17,13 @@ const nextConfig = {
     );
 
     if (isServer) {
-      const testDeps = [
+      config.externals = [
+        ...(config.externals || []),
         'vitest',
         'jsdom',
         '@vitest/runner',
         '@vitest/utils',
-        'isomorphic-dompurify',
-        'dompurify',
-        'html-encoding-sniffer',
-        '@exodus/bytes',
-        'parse5',
-        'w3c-xmlserializer',
-        'cssstyle',
-        'data-urls',
-        'decimal.js',
-        'whatwg-encoding',
-        'whatwg-mimetype',
-        'whatwg-url',
-        'xml-name-validator',
       ];
-      config.externals = [...(config.externals || []), ...testDeps];
     }
 
     return config;
