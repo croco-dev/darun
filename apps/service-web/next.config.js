@@ -13,11 +13,30 @@ const nextConfig = {
     config.resolve.alias ??= {};
     config.resolve.alias['@croco/utils-structure-react'] = path.resolve(
       __dirname,
-      './app/shims/utils-structure-react.ts'
+      './app/shims/utils-structure-react.ts',
     );
 
     if (isServer) {
-      config.externals = [...(config.externals || []), 'vitest', 'jsdom', '@vitest/runner', '@vitest/utils'];
+      const testDeps = [
+        'vitest',
+        'jsdom',
+        '@vitest/runner',
+        '@vitest/utils',
+        'isomorphic-dompurify',
+        'dompurify',
+        'html-encoding-sniffer',
+        '@exodus/bytes',
+        'parse5',
+        'w3c-xmlserializer',
+        'cssstyle',
+        'data-urls',
+        'decimal.js',
+        'whatwg-encoding',
+        'whatwg-mimetype',
+        'whatwg-url',
+        'xml-name-validator',
+      ];
+      config.externals = [...(config.externals || []), ...testDeps];
     }
 
     return config;
