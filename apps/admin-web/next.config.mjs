@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@darun/ui', '@darun/ui-layout'],
@@ -30,6 +32,12 @@ const nextConfig = {
     },
   ],
   webpack: (config, { isServer }) => {
+    config.resolve ??= {};
+    config.resolve.alias ??= {};
+    config.resolve.alias['@croco/utils-structure-react'] = fileURLToPath(
+      new URL('./app/shims/utils-structure-react.js', import.meta.url),
+    );
+
     if (isServer) {
       config.externals = [
         ...(config.externals || []),
