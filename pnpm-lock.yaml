@@ -232,6 +232,9 @@ importers:
       '@darun/companies-domain':
         specifier: workspace:*
         version: link:../../libs/companies/domain
+      '@darun/companies-feature':
+        specifier: workspace:*
+        version: link:../../libs/companies/feature
       '@darun/images-datasource':
         specifier: workspace:*
         version: link:../../libs/images/datasource

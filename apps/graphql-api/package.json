@@ -19,6 +19,7 @@
     "@darun/accounts-domain": "workspace:*",
     "@darun/companies-datasource": "workspace:*",
     "@darun/companies-domain": "workspace:*",
+    "@darun/companies-feature": "workspace:*",
     "@darun/images-datasource": "workspace:*",
     "@darun/images-domain": "workspace:*",
     "@darun/magazines-datasource": "workspace:*",
