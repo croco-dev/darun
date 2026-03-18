@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.12.8",
+    "@darun/companies-feature": "workspace:*",
     "@darun/products-ui": "workspace:*",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
