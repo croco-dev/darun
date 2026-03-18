@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compiler: {},
@@ -24,6 +25,12 @@ const nextConfig = {
       : {}),
   },
   poweredByHeader: false,
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'vitest', 'jsdom', '@vitest/runner', '@vitest/utils'];
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;

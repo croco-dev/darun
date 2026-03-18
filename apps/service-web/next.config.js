@@ -8,13 +8,17 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compiler: {},
-  webpack: config => {
+  webpack: (config, { isServer }) => {
     config.resolve ??= {};
     config.resolve.alias ??= {};
     config.resolve.alias['@croco/utils-structure-react'] = path.resolve(
       __dirname,
       './app/shims/utils-structure-react.ts'
     );
+
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'vitest', 'jsdom', '@vitest/runner', '@vitest/utils'];
+    }
 
     return config;
   },
