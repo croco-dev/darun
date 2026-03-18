@@ -1,7 +1,6 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
-import DOMPurify from 'dompurify';
 import { useEffect, useState } from 'react';
 import { useProductDescription } from './useProductDescription';
 
@@ -12,7 +11,9 @@ export const ProductDescription = bind(
 
     useEffect(() => {
       if (description) {
-        setSanitizedDescription(DOMPurify.sanitize(description));
+        import('dompurify').then((DOMPurify) => {
+          setSanitizedDescription(DOMPurify.default.sanitize(description));
+        });
       }
     }, [description]);
 
