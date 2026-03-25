@@ -1,11 +1,9 @@
 import { gql } from '@apollo/client';
-import { getClient, initApolloClient } from '@darun/utils-apollo-client/server';
 import { MetadataRoute } from 'next';
+import { getClient } from './getServerClient';
 import { container } from './serverContainer';
 
 export const revalidate = 3600; // 1 hour
-
-initApolloClient(() => container.serverApolloClient);
 
 const productQuery = gql`
   query GetPublishedProductsOnSitemap($locale: String!) {

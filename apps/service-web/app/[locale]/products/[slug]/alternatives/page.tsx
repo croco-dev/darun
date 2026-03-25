@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 import { ProductAlternativePage } from '@darun/pages-shell';
-import { getClient } from '@darun/utils-apollo-client/server';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getClient } from '../../../../getServerClient';
 
 const productQuery = gql`
   query ProductBySlugOnProductAlternativePageMetadata($slug: String!, $locale: String!) {
