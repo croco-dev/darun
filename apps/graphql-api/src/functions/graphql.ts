@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import '../config';
 import { GetAccount } from '@darun/accounts-domain';
 import { createAuthChecker, createLambdaHandler, createServer } from '@darun/utils-apollo-server';
