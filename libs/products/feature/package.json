@@ -12,6 +12,7 @@
     },
     "./server": {
       "import": "./src/server.ts",
+      "require": "./src/server.ts",
       "types": "./src/server.ts"
     }
   },
