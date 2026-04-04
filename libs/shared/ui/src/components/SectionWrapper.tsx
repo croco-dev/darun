@@ -1,5 +1,5 @@
-import { cva, type VariantProps } from 'class-variance-authority';
-import type { HTMLAttributes, ReactNode } from 'react';
+import { cva, VariantProps } from 'class-variance-authority';
+import { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '../lib/utils';
 import { ContentArea } from './ContentArea';
 
@@ -29,18 +29,9 @@ export type SectionWrapperProps = HTMLAttributes<HTMLElement> & {
   spacing?: VariantProps<typeof sectionWrapperVariants>['spacing'];
 };
 
-export function SectionWrapper({
-  children,
-  background,
-  spacing,
-  className,
-  ...props
-}: SectionWrapperProps) {
+export function SectionWrapper({ children, background, spacing, className, ...props }: SectionWrapperProps) {
   return (
-    <section
-      className={cn(sectionWrapperVariants({ background, spacing }), className)}
-      {...props}
-    >
+    <section className={cn(sectionWrapperVariants({ background, spacing }), className)} {...props}>
       <ContentArea>{children}</ContentArea>
     </section>
   );
