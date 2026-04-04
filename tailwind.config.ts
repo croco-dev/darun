@@ -1,4 +1,4 @@
-import { Config } from 'tailwindcss';
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
@@ -66,6 +66,22 @@ const config: Config = {
           700: '#A74955',
           800: '#8D3E48',
           900: '#72323A',
+        },
+        brand: {
+          100: '#EEF2FF',
+          200: '#DBE5FF',
+          300: '#BDCCFF',
+          400: '#93AAFF',
+          500: '#6F84FF',
+          600: '#5465F5',
+          700: '#434EDC',
+          800: '#353FAE',
+          900: '#2D367F',
+        },
+        surface: {
+          100: '#F6F8FC',
+          200: '#EEF2F8',
+          300: '#E3E9F3',
         },
       },
       screens: {
