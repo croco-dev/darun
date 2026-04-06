@@ -108,6 +108,34 @@
       "description": "You can discover services compared under strict criteria by the Darun team."
     }
   },
+  "home": {
+    "hero": {
+      "title": "Discover the Best Services",
+      "subtitle": "Compare thousands of services and read reviews",
+      "searchPlaceholder": "Search for a service",
+      "cta": {
+        "popular": "View Popular Services",
+        "categories": "Browse Categories"
+      }
+    },
+    "category": {
+      "title": "Categories",
+      "more": "See All",
+      "empty": "Categories Coming Soon"
+    },
+    "trending": {
+      "title": "Trending Services",
+      "more": "See All",
+      "empty": "Trending Services Coming Soon"
+    },
+    "magazine": {
+      "title": "Magazine",
+      "more": "See All"
+    },
+    "recent": {
+      "title": "Recently Added"
+    }
+  },
   "Ranking": {
     "section": {
       "title": "Top 30 Popular Services",

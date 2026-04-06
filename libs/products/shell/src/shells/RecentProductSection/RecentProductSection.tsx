@@ -1,22 +1,31 @@
 'use client';
 
+import { Link } from '@darun/utils-router';
 import { useTranslations } from 'next-intl';
+import { SectionHeader } from '../../../../../shared/ui/src/components/SectionHeader';
+import { SectionWrapper } from '../../../../../shared/ui/src/components/SectionWrapper';
 import { RecentProductList } from '../../components';
 
 export const RecentProductSection = () => {
-  const t = useTranslations('Main');
+  const t = useTranslations();
 
   return (
-    <section className="flex flex-col gap-5 w-full py-4">
-      <div className="flex flex-col gap-1">
-        <h2 className={`darun-heading font-semibold text-xl md:text-2xl text-dark-900 tracking-tight`}>
-          {t('recentSection.title')}
-        </h2>
-        <h2 className={`font-medium text-sm md:text-base text-dark-600 tracking-tight`}>
-          {t('recentSection.description')}
-        </h2>
+    <SectionWrapper background="subtle" spacing="md" className="home-motion">
+      <div className="flex w-full flex-col gap-6">
+        <SectionHeader
+          title={t('home.recent.title')}
+          subtitle={t('Main.recentSection.description')}
+          moreLink={
+            <Link
+              href="/search"
+              className="text-sm font-semibold text-brand-700 transition-colors duration-200 ease-out hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--home-bg-section-alt)] motion-reduce:transition-none"
+            >
+              {t('home.category.more')}
+            </Link>
+          }
+        />
+        <RecentProductList />
       </div>
-      <RecentProductList />
-    </section>
+    </SectionWrapper>
   );
 };
