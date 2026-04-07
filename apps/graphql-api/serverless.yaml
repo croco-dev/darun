@@ -1,7 +1,7 @@
 org: croco
 app: darun
 service: graphql-api
-frameworkVersion: '4'
+frameworkVersion: "4"
 
 useDotenv: true
 
@@ -16,18 +16,20 @@ build:
 custom:
   esbuild:
     bundle: true
-    exclude: ['class-validator']
+    exclude: ["class-validator"]
     minify: false
     keepNames: true
     sourcemap: true
     sourcesContent: false
     treeShaking: false
     ignoreAnnotations: true
+    banner:
+      js: "require('reflect-metadata');"
     plugins: esbuild.plugins.js
     watch:
       patterns:
-        - 'src/**/*.ts'
-        - '../../libs/**/*.ts'
+        - "src/**/*.ts"
+        - "../../libs/**/*.ts"
   serverless-offline:
     httpPort: 4000
     reloadHandler: true
@@ -69,4 +71,3 @@ functions:
       CLOUDINARY_API_KEY: ${env:CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${env:CLOUDINARY_API_SECRET}
       OPEN_ROUTER_API_KEY: ${env:OPEN_ROUTER_API_KEY}
-
