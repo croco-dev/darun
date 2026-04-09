@@ -1,4 +1,4 @@
-import { GetAllCompanies, SearchCompany } from '@darun/companies-domain';
+import type { GetAllCompanies, SearchCompany } from '@darun/companies-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Int, Query, Resolver } from 'type-graphql';
 import { Service } from 'typedi';

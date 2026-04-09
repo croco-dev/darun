@@ -5,7 +5,8 @@ import { useNavigate } from '@darun/utils-router';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { ChangeEvent, useMemo, useState } from 'react';
+import type { ChangeEvent } from 'react';
+import { useMemo, useState } from 'react';
 
 import { ProductsCount } from '../../components/ProductsCount';
 

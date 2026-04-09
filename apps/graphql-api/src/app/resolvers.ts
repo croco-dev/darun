@@ -1,14 +1,8 @@
 import '../config';
 
-import {
-  CompanyMutationResolver,
-  CompanyQueryResolver,
-} from '@darun/companies-feature/server';
+import { CompanyMutationResolver, CompanyQueryResolver } from '@darun/companies-feature/server';
 import { ImageMutationResolver } from '@darun/images-feature/server';
-import {
-  MagazineMutationResolver,
-  MagazineQueryResolver,
-} from '@darun/magazines-feature/server';
+import { MagazineMutationResolver, MagazineQueryResolver } from '@darun/magazines-feature/server';
 import {
   FeatureMutationResolver,
   FeatureQueryResolver,

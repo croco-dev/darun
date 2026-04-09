@@ -8,7 +8,7 @@ import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
 export class CreateMagazine {
   constructor(
     @Inject(MagazineRepositoryToken)
-    private readonly magazineRepository: MagazineRepository,
+    private readonly magazineRepository: MagazineRepository
   ) {}
 
   async execute({

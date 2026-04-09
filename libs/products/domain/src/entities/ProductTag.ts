@@ -1,4 +1,4 @@
-import { Tag } from './Tag';
+import type { Tag } from './Tag';
 
 export class ProductTag {
   public productId: string;

@@ -1,4 +1,4 @@
-import { AuthService, AuthStorage, AuthUser } from '@darun/utils-auth-service-core';
+import type { AuthService, AuthStorage, AuthUser } from '@darun/utils-auth-service-core';
 import { getApps, initializeApp } from 'firebase/app';
 import { GoogleAuthProvider, getAuth, onIdTokenChanged, signInWithPopup } from 'firebase/auth';
 import { getFirebaseAuth } from 'next-firebase-auth-edge';

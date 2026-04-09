@@ -1,9 +1,7 @@
-import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import {
-  AlternativeProduct,
-  AlternativeProductRepository,
-  AlternativeProductRepositoryToken,
-} from '@darun/recommendation-domain';
+import type { Drizzle } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
+import type { AlternativeProduct, AlternativeProductRepository } from '@darun/recommendation-domain';
+import { AlternativeProductRepositoryToken } from '@darun/recommendation-domain';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';

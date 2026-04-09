@@ -7,7 +7,7 @@ import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
 export class EditMagazine {
   constructor(
     @Inject(MagazineRepositoryToken)
-    private readonly magazineRepository: MagazineRepository,
+    private readonly magazineRepository: MagazineRepository
   ) {}
 
   async execute({
@@ -27,7 +27,7 @@ export class EditMagazine {
     backgroundImageUrl?: string;
     logoImageUrl?: string;
   }): Promise<Magazine> {
-    return this.magazineRepository.updateById(id, (magazine) => {
+    return this.magazineRepository.updateById(id, magazine => {
       magazine.update({
         slug,
         title,

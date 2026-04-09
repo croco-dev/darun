@@ -2,7 +2,7 @@
 
 import * as Sentry from '@sentry/nextjs';
 import NextError from 'next/error';
-import { ComponentType } from 'react';
+import type { ComponentType } from 'react';
 import { useEffect } from 'react';
 
 const NextErrorPage = NextError as unknown as ComponentType<{

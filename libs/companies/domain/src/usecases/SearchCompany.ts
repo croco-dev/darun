@@ -7,7 +7,7 @@ import { CompanyRepositoryToken } from '../repositories/CompanyRepository';
 export class SearchCompany {
   constructor(
     @Inject(CompanyRepositoryToken)
-    private readonly companyRepository: CompanyRepository,
+    private readonly companyRepository: CompanyRepository
   ) {}
 
   execute({ query }: { query: string }): Promise<Company[]> {

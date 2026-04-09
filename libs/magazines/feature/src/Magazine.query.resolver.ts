@@ -1,5 +1,5 @@
-import { GetProfile } from '@darun/accounts-domain';
-import { GetMagazine, GetMagazineList, GetPublishedMagazine } from '@darun/magazines-domain';
+import type { GetProfile } from '@darun/accounts-domain';
+import type { GetMagazine, GetMagazineList, GetPublishedMagazine } from '@darun/magazines-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';

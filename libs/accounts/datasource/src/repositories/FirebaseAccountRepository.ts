@@ -1,4 +1,5 @@
-import { Account, AccountRepository, AccountRepositoryToken } from '@darun/accounts-domain';
+import type { Account, AccountRepository } from '@darun/accounts-domain';
+import { AccountRepositoryToken } from '@darun/accounts-domain';
 import { getAuth } from 'firebase-admin/auth';
 import { Service } from 'typedi';
 

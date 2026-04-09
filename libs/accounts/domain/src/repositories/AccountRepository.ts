@@ -1,5 +1,5 @@
 import { Token } from 'typedi';
-import { Account } from '../entities/Account';
+import type { Account } from '../entities/Account';
 
 export interface AccountRepository {
   parseByToken: (token: string) => Promise<Account | null>;

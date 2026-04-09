@@ -1,9 +1,7 @@
-import {
-  ProductFeatureScreenshot,
-  ProductFeatureScreenshotRepository,
-  ProductFeatureScreenshotRepositoryToken,
-} from '@darun/products-domain';
-import { Drizzle, DrizzleToken } from '@darun/provider-database';
+import type { ProductFeatureScreenshot, ProductFeatureScreenshotRepository } from '@darun/products-domain';
+import { ProductFeatureScreenshotRepositoryToken } from '@darun/products-domain';
+import type { Drizzle } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';

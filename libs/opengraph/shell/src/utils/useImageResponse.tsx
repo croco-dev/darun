@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { getPretendardFontSet } from './fonts';
 
 export async function useImageResponse(

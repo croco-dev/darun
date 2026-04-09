@@ -8,7 +8,7 @@ import { CompanyRepositoryToken } from '../repositories/CompanyRepository';
 export class CreateCompany {
   constructor(
     @Inject(CompanyRepositoryToken)
-    private readonly companyRepository: CompanyRepository,
+    private readonly companyRepository: CompanyRepository
   ) {}
 
   async execute({

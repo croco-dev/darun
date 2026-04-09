@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
 import { MagazineContentPage } from '@darun/pages-shell';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getClient } from '../../../getServerClient';
 

@@ -1,6 +1,6 @@
 import { PageInfo } from '@darun/utils-apollo-server';
 import { Field, Int, ObjectType } from 'type-graphql';
-import { Product } from './Product';
+import type { Product } from './Product';
 
 @ObjectType()
 export class ProductConnection {

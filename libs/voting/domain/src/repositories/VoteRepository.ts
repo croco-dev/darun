@@ -1,5 +1,5 @@
 import { Token } from 'typedi';
-import { Vote } from '../entities/Vote';
+import type { Vote } from '../entities/Vote';
 
 export interface VoteRepository {
   upsertByTargetId(id: string, modifier: (vote: Vote) => Vote): Promise<Vote>;

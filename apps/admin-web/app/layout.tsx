@@ -4,8 +4,8 @@ import './globals.css';
 import 'remixicon/fonts/remixicon.css';
 
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
-import { Metadata } from 'next';
-import { ReactNode } from 'react';
+import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
 

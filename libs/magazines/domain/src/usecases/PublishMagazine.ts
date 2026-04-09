@@ -7,11 +7,11 @@ import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
 export class PublishMagazine {
   constructor(
     @Inject(MagazineRepositoryToken)
-    private readonly magazineRepository: MagazineRepository,
+    private readonly magazineRepository: MagazineRepository
   ) {}
 
   async execute({ id }: { id: string }): Promise<Magazine> {
-    return this.magazineRepository.updateById(id, (magazine) => {
+    return this.magazineRepository.updateById(id, magazine => {
       magazine.publish();
       return magazine;
     });

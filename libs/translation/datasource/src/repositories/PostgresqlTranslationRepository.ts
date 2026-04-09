@@ -1,5 +1,7 @@
-import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { TranslationRepository, TranslationRepositoryToken, TranslationRow } from '@darun/translation-domain';
+import type { Drizzle } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
+import type { TranslationRepository, TranslationRow } from '@darun/translation-domain';
+import { TranslationRepositoryToken } from '@darun/translation-domain';
 import { and, eq } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { translations } from '../entities/TranslationSchema';

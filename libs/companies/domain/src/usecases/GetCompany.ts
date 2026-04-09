@@ -6,7 +6,7 @@ import { CompanyRepositoryToken } from '../repositories/CompanyRepository';
 export class GetCompany {
   constructor(
     @Inject(CompanyRepositoryToken)
-    private readonly companyRepository: CompanyRepository,
+    private readonly companyRepository: CompanyRepository
   ) {}
 
   async execute({ id }: { id: string }) {

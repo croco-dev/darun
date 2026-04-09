@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { MetadataRoute } from 'next';
+import type { MetadataRoute } from 'next';
 import { getClient } from './getServerClient';
 import { container } from './serverContainer';
 

@@ -3,12 +3,12 @@ import '../globals.css';
 
 import { pretendardFont } from '@croco/utils-next-font-pretendard';
 
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { CookiesProvider } from 'next-client-cookies/server';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { routing } from '../../i18n/routing';
 import { ClientRootProvider } from '../client';
 import { ServerRootProvider } from '../server';

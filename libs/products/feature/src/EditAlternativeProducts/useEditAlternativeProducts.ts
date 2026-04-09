@@ -2,7 +2,8 @@ import { gql } from '@apollo/client';
 import { useForm } from '@mantine/form';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { ChangeEvent, useCallback } from 'react';
+import type { ChangeEvent } from 'react';
+import { useCallback } from 'react';
 import {
   useEditProductOnEditAlternativeProductsMutation,
   useSearchProductsOnEditAlternativeProductsLazyQuery,

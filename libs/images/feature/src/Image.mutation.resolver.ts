@@ -1,7 +1,8 @@
-import { SignImageUpload } from '@darun/images-domain';
+import type { SignImageUpload } from '@darun/images-domain';
 import { Arg, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
-import { SignImageUploadInput, SignImageUploadPayload } from './graphs/SignImageUpload';
+import type { SignImageUploadInput } from './graphs/SignImageUpload';
+import { SignImageUploadPayload } from './graphs/SignImageUpload';
 
 @Resolver()
 @Service()

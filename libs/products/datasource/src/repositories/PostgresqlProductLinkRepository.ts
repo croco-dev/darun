@@ -1,5 +1,7 @@
-import { ProductLink, ProductLinkRepository, ProductLinkRepositoryToken } from '@darun/products-domain';
-import { Drizzle, DrizzleToken } from '@darun/provider-database';
+import type { ProductLinkRepository } from '@darun/products-domain';
+import { ProductLink, ProductLinkRepositoryToken } from '@darun/products-domain';
+import type { Drizzle } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { eq, inArray } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';

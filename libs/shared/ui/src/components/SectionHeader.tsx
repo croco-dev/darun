@@ -1,5 +1,6 @@
-import { cva, VariantProps } from 'class-variance-authority';
-import { HTMLAttributes, ReactNode } from 'react';
+import type { VariantProps } from 'class-variance-authority';
+import { cva } from 'class-variance-authority';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
 

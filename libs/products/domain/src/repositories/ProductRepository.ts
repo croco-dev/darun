@@ -1,5 +1,5 @@
 import { Token } from 'typedi';
-import { Product } from '../entities/Product';
+import type { Product } from '../entities/Product';
 
 export interface ProductRepository {
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product>;

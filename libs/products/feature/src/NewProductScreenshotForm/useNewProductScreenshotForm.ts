@@ -4,7 +4,7 @@ import { gql } from '@apollo/client';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useAddProductScreenshotOnNewProductScreenshotFormMutation } from './__generated__/useNewProductScreenshotForm';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions

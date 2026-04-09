@@ -1,5 +1,5 @@
 import { Token } from 'typedi';
-import { Magazine } from '../entities/Magazine';
+import type { Magazine } from '../entities/Magazine';
 
 export interface MagazineRepository {
   findPublishedOneBySlug(slug: string): Promise<Magazine | null>;

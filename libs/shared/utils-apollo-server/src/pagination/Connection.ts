@@ -1,4 +1,4 @@
-import { ConnectionArgs } from './ConnectionArgs';
+import type { ConnectionArgs } from './ConnectionArgs';
 import { Cursor } from './Cursor';
 
 export class Connection {

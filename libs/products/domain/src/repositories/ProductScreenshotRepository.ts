@@ -1,5 +1,5 @@
 import { Token } from 'typedi';
-import { ProductScreenshot } from '../entities/ProductScreenshot';
+import type { ProductScreenshot } from '../entities/ProductScreenshot';
 
 export interface ProductScreenshotRepository {
   findManyByProductIdSortByPriorityDesc(productId: string): Promise<ProductScreenshot[]>;

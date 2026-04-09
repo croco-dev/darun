@@ -1,4 +1,5 @@
-import { Button, ButtonProps } from '@darun/ui';
+import type { ButtonProps } from '@darun/ui';
+import { Button } from '@darun/ui';
 
 type GoogleButtonProps = ButtonProps & {
   fullWidth?: boolean;

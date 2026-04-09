@@ -6,7 +6,7 @@ import { ProfileRepositoryToken } from '../repositories/ProfileRepository';
 export class GetProfile {
   constructor(
     @Inject(ProfileRepositoryToken)
-    private readonly profileRepository: ProfileRepository,
+    private readonly profileRepository: ProfileRepository
   ) {}
 
   async execute({ userId }: { userId: string }) {

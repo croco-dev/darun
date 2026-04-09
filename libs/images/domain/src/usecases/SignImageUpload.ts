@@ -1,5 +1,6 @@
 import { Inject, Service } from 'typedi';
-import { ImageRepository, ImageRepositoryToken } from '../repositories/ImageRepository';
+import type { ImageRepository } from '../repositories/ImageRepository';
+import { ImageRepositoryToken } from '../repositories/ImageRepository';
 
 @Service()
 export class SignImageUpload {

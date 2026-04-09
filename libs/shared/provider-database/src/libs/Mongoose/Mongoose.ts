@@ -1,4 +1,4 @@
-import { Connection } from 'mongoose';
+import type { Connection } from 'mongoose';
 import { Token } from 'typedi';
 
 export type Mongoose = Connection;
