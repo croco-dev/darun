@@ -85,11 +85,27 @@ export class ProductMutationResolver {
       throw productNotFound();
     }
 
+    const updatedProduct = await this.editProductUseCase.execute({
+      ...input,
+      id: product.id,
+    });
+
+    if (updatedProduct.publishedAt !== undefined) {
+      try {
+        await this.indexProductUseCase.execute({
+          id: updatedProduct.id,
+          name: updatedProduct.name,
+          slug: updatedProduct.slug,
+          summary: updatedProduct.summary,
+          description: updatedProduct.description,
+        });
+      } catch (error) {
+        console.error('Failed to index product:', error);
+      }
+    }
+
     return {
-      product: await this.editProductUseCase.execute({
-        ...input,
-        id: product.id,
-      }),
+      product: updatedProduct,
     };
   }
 
