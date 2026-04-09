@@ -1,12 +1,15 @@
-import type { ProductFeatureRepository } from '@darun/products-domain';
-import { ProductFeature, ProductFeatureRepositoryToken } from '@darun/products-domain';
-import type { Drizzle } from '@darun/provider-database';
-import { DrizzleToken } from '@darun/provider-database';
-import DataLoader from 'dataloader';
-import { eq, inArray } from 'drizzle-orm';
-import { groupBy } from 'es-toolkit';
-import { Inject, Service } from 'typedi';
-import { productFeatures } from '../entities/ProductFeaturesSchema';
+import type { ProductFeatureRepository } from "@darun/products-domain";
+import {
+  ProductFeature,
+  ProductFeatureRepositoryToken,
+} from "@darun/products-domain";
+import type { Drizzle } from "@darun/provider-database";
+import { DrizzleToken } from "@darun/provider-database";
+import DataLoader from "dataloader";
+import { eq, inArray } from "drizzle-orm";
+import { groupBy } from "es-toolkit";
+import { Inject, Service } from "typedi";
+import { productFeatures } from "../entities/ProductFeaturesSchema";
 
 @Service(ProductFeatureRepositoryToken)
 export class PostgresqlProductFeatureRepository implements ProductFeatureRepository {
@@ -20,20 +23,20 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
           .where(inArray(productFeatures.productId, [...productIds]));
 
         const groupByDocs = groupBy(
-          docs.map(doc => this.mapper(doc)),
-          doc => doc.productId
+          docs.map((doc) => this.mapper(doc)),
+          (doc) => doc.productId,
         );
 
-        return productIds.map(productId => groupByDocs[productId] ?? []);
+        return productIds.map((productId) => groupByDocs[productId] ?? []);
       },
       {
-        cache: false,
-      }
+        cache: true,
+      },
     );
   }
 
   insert(newFeature: ProductFeature): Promise<ProductFeature> {
-    return this.db.transaction(async tx => {
+    return this.db.transaction(async (tx) => {
       const inserted = await tx
         .insert(productFeatures)
         .values({ ...newFeature })
@@ -43,17 +46,20 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
     });
   }
 
-  updateById(featureId: string, modifier: (feature: ProductFeature) => ProductFeature): Promise<ProductFeature> {
-    return this.db.transaction(async tx => {
+  updateById(
+    featureId: string,
+    modifier: (feature: ProductFeature) => ProductFeature,
+  ): Promise<ProductFeature> {
+    return this.db.transaction(async (tx) => {
       const prevFeature = await tx
         .select()
         .from(productFeatures)
         .where(eq(productFeatures.id, featureId))
         .limit(1)
-        .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+        .then((rows) => (rows[0] ? this.mapper(rows[0]) : null));
 
       if (!prevFeature) {
-        throw new Error('ProductFeature not found');
+        throw new Error("ProductFeature not found");
       }
 
       const updated = await tx
@@ -62,7 +68,7 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
         .where(eq(productFeatures.id, featureId))
         .returning();
       if (!updated[0]) {
-        throw new Error('ProductFeature update failed');
+        throw new Error("ProductFeature update failed");
       }
 
       return this.mapper(updated[0]);
@@ -75,14 +81,18 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
       .from(productFeatures)
       .where(eq(productFeatures.id, id))
       .limit(1)
-      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+      .then((rows) => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findManyByProductId(productId: string): Promise<ProductFeature[]> {
     return this.productIdLoader.load(productId);
   }
 
-  private mapper(schema: typeof productFeatures.$inferSelect | typeof productFeatures.$inferInsert): ProductFeature {
+  private mapper(
+    schema:
+      | typeof productFeatures.$inferSelect
+      | typeof productFeatures.$inferInsert,
+  ): ProductFeature {
     return new ProductFeature({
       ...schema,
       summary: schema.summary ?? undefined,

@@ -1,12 +1,22 @@
-import type { ProductRepository } from '@darun/products-domain';
-import { Product, ProductRepositoryToken } from '@darun/products-domain';
-import type { Drizzle } from '@darun/provider-database';
-import { DrizzleToken } from '@darun/provider-database';
-import DataLoader from 'dataloader';
-import { and, asc, count, desc, eq, gt, inArray, isNotNull, lt } from 'drizzle-orm';
-import { keyBy } from 'es-toolkit';
-import { Inject, Service } from 'typedi';
-import { products } from '../entities/ProductSchema';
+import type { ProductRepository } from "@darun/products-domain";
+import { Product, ProductRepositoryToken } from "@darun/products-domain";
+import type { Drizzle } from "@darun/provider-database";
+import { DrizzleToken } from "@darun/provider-database";
+import DataLoader from "dataloader";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  lt,
+} from "drizzle-orm";
+import { keyBy } from "es-toolkit";
+import { Inject, Service } from "typedi";
+import { products } from "../entities/ProductSchema";
 
 @Service(ProductRepositoryToken)
 export class PostgresqlProductRepository implements ProductRepository {
@@ -17,28 +27,38 @@ export class PostgresqlProductRepository implements ProductRepository {
         const docs = await this.db
           .select()
           .from(products)
-          .where(and(inArray(products.id, [...ids]), isNotNull(products.publishedAt)));
+          .where(
+            and(
+              inArray(products.id, [...ids]),
+              isNotNull(products.publishedAt),
+            ),
+          );
 
-        const groupByDocs = keyBy(docs, doc => doc.id);
-        return ids.map(id => (groupByDocs[id] ? this.mapper(groupByDocs[id]) : null));
+        const groupByDocs = keyBy(docs, (doc) => doc.id);
+        return ids.map((id) =>
+          groupByDocs[id] ? this.mapper(groupByDocs[id]) : null,
+        );
       },
       {
-        cache: false,
-      }
+        cache: true,
+      },
     );
   }
 
-  updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {
-    return this.db.transaction(async tx => {
+  updateById(
+    id: string,
+    modifier: (product: Product) => Product,
+  ): Promise<Product> {
+    return this.db.transaction(async (tx) => {
       const prevProduct = await tx
         .select()
         .from(products)
         .where(eq(products.id, id))
         .limit(1)
-        .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+        .then((rows) => (rows[0] ? this.mapper(rows[0]) : null));
 
       if (!prevProduct) {
-        throw new Error('Product not found');
+        throw new Error("Product not found");
       }
 
       const updated = await tx
@@ -47,14 +67,17 @@ export class PostgresqlProductRepository implements ProductRepository {
         .where(eq(products.id, id))
         .returning();
       if (!updated[0]) {
-        throw new Error('Product update failed');
+        throw new Error("Product update failed");
       }
 
       return this.mapper(updated[0]);
     });
   }
 
-  async findAllByBeforeIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+  async findAllByBeforeIdAndLimit(
+    limit: number,
+    id?: string | undefined,
+  ): Promise<Product[]> {
     return (
       await this.db
         .select()
@@ -62,29 +85,32 @@ export class PostgresqlProductRepository implements ProductRepository {
         .where(id ? and(gt(products.id, id)) : undefined)
         .limit(limit)
         .orderBy(asc(products.id))
-        .then(rows => rows.map(row => this.mapper(row)))
+        .then((rows) => rows.map((row) => this.mapper(row)))
     ).reverse();
   }
 
-  async findAllByAfterIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+  async findAllByAfterIdAndLimit(
+    limit: number,
+    id?: string | undefined,
+  ): Promise<Product[]> {
     return this.db
       .select()
       .from(products)
       .where(id ? and(lt(products.id, id)) : undefined)
       .limit(limit)
       .orderBy(desc(products.id))
-      .then(rows => rows.map(row => this.mapper(row)));
+      .then((rows) => rows.map((row) => this.mapper(row)));
   }
 
   async countAll(): Promise<number> {
     return this.db
       .select({ value: count() })
       .from(products)
-      .then(rows => Number(rows[0]?.value ?? 0));
+      .then((rows) => Number(rows[0]?.value ?? 0));
   }
 
   async insert(values: Product): Promise<Product | null> {
-    return this.db.transaction(async tx => {
+    return this.db.transaction(async (tx) => {
       const inserted = await tx
         .insert(products)
         .values({ ...values })
@@ -99,7 +125,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .select({ value: count() })
       .from(products)
       .where(isNotNull(products.publishedAt))
-      .then(rows => Number(rows[0]?.value ?? 0));
+      .then((rows) => Number(rows[0]?.value ?? 0));
   }
 
   async findOneBySlug(slug: string): Promise<Product | null> {
@@ -108,7 +134,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(eq(products.slug, slug))
       .limit(1)
-      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+      .then((rows) => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findOneById(id: string): Promise<Product | null> {
@@ -117,7 +143,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(eq(products.id, id))
       .limit(1)
-      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+      .then((rows) => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findPublishedOneBySlug(slug: string): Promise<Product | null> {
@@ -126,7 +152,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(and(eq(products.slug, slug), isNotNull(products.publishedAt)))
       .limit(1)
-      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+      .then((rows) => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findPublishedOneById(id: string): Promise<Product | null> {
@@ -140,12 +166,14 @@ export class PostgresqlProductRepository implements ProductRepository {
       .where(isNotNull(products.publishedAt))
       .orderBy(desc(products.publishedAt))
       .limit(n)
-      .then(rows => rows.map(row => this.mapper(row)));
+      .then((rows) => rows.map((row) => this.mapper(row)));
   }
 
-  private mapper<ProductType extends typeof products.$inferSelect | typeof products.$inferInsert>(
-    schema: ProductType
-  ): Product {
+  private mapper<
+    ProductType extends
+      | typeof products.$inferSelect
+      | typeof products.$inferInsert,
+  >(schema: ProductType): Product {
     return new Product({
       ...schema,
       ownedCompanyId: schema.ownedCompanyId ?? undefined,
