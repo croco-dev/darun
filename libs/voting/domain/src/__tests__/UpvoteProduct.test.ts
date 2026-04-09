@@ -42,11 +42,13 @@ describe('UpvoteProduct', () => {
   });
 
   it('should call upsertVoteWithRecord on normal vote', async () => {
-    vi.mocked(repository.countByVoterIpHashSince).mockResolvedValue(0);
-    vi.mocked(repository.existsByTargetIdAndVoterIpHash).mockResolvedValue(false);
-    vi.mocked(repository.upsertVoteWithRecord).mockImplementation(async (targetId, _hash, modifier) => {
-      return modifier(new Vote({ targetId }));
-    });
+    (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (repository.existsByTargetIdAndVoterIpHash as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    (repository.upsertVoteWithRecord as ReturnType<typeof vi.fn>).mockImplementation(
+      async (targetId, _hash, modifier) => {
+        return modifier(new Vote({ targetId }));
+      }
+    );
 
     await useCase.execute({ productId: 'product-1', voterIp: '192.168.1.1' });
 
@@ -54,8 +56,8 @@ describe('UpvoteProduct', () => {
   });
 
   it('should block duplicate vote', async () => {
-    vi.mocked(repository.countByVoterIpHashSince).mockResolvedValue(0);
-    vi.mocked(repository.existsByTargetIdAndVoterIpHash).mockResolvedValue(true);
+    (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (repository.existsByTargetIdAndVoterIpHash as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
     await expect(useCase.execute({ productId: 'product-1', voterIp: '192.168.1.1' })).rejects.toThrow(
       votingDuplicateVote()
@@ -64,8 +66,8 @@ describe('UpvoteProduct', () => {
   });
 
   it('should block rate limited vote', async () => {
-    vi.mocked(repository.countByVoterIpHashSince).mockResolvedValue(10);
-    vi.mocked(repository.existsByTargetIdAndVoterIpHash).mockResolvedValue(false);
+    (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(10);
+    (repository.existsByTargetIdAndVoterIpHash as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
     await expect(useCase.execute({ productId: 'product-1', voterIp: '192.168.1.1' })).rejects.toThrow(
       votingRateLimitExceeded()
