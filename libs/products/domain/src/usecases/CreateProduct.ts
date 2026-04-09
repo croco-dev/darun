@@ -1,7 +1,7 @@
 import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
 import { productCreateFailed, productSlugAlreadyExists } from '../errors/productError';
-import { ProductRepository } from '../repositories/ProductRepository';
+import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
 @Service()

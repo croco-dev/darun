@@ -2,13 +2,12 @@ name: PullRequest CI
 
 on:
   push:
-    branches: [ "trunk" ]
+    branches: ["trunk"]
   pull_request:
-    branches: [ "trunk" ]
+    branches: ["trunk"]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -22,8 +21,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - run: pnpm run lint
+      - name: Type Check
+        run: pnpm run typecheck
       - run: pnpm run test

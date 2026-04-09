@@ -1,7 +1,7 @@
-import { VoteRepository } from '@darun/voting-domain';
+import type { VoteRepository } from '@darun/voting-domain';
 import { VoteRepositoryToken } from '@darun/voting-domain';
 import { Inject, Service } from 'typedi';
-import { ProductRepository } from '../repositories/ProductRepository';
+import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
 @Service()
