@@ -860,6 +860,9 @@ importers:
 
   libs/magazines/domain:
     dependencies:
+      '@darun/utils-error':
+        specifier: workspace:*
+        version: link:../../shared/utils-error
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -1792,6 +1795,15 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+
+  libs/shared/utils-error:
+    devDependencies:
+      '@darun/eslint-config':
+        specifier: workspace:*
+        version: link:../utils-eslint-config
+      '@darun/utils-tsconfig':
+        specifier: workspace:*
+        version: link:../utils-tsconfig
 
   libs/shared/utils-eslint-config:
     devDependencies:

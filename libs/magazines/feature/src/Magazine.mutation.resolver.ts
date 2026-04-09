@@ -1,4 +1,5 @@
 import type { CreateMagazine, EditMagazine, GetMagazine, PublishMagazine } from '@darun/magazines-domain';
+import { magazineNotFound } from '@darun/magazines-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import type { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
 import { Arg, Authorized, Ctx, Mutation, Resolver } from 'type-graphql';
@@ -46,7 +47,7 @@ export class MagazineMutationResolver {
     });
 
     if (!magazine) {
-      throw new Error('발행할 매거진이 존재하지 않습니다.');
+      throw magazineNotFound();
     }
 
     const updated = await this.publishMagazineUseCase.execute({
@@ -64,7 +65,7 @@ export class MagazineMutationResolver {
     const magazine = await this.getMagazineUseCase.execute({ slug });
 
     if (!magazine) {
-      throw new Error('매거진이 존재하지 않습니다.');
+      throw magazineNotFound();
     }
 
     const updated = await this.editMagazineUseCase.execute({
