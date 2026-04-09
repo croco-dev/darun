@@ -16,8 +16,9 @@ import { productNotFound } from '@darun/products-domain';
 import type { UpdateAlternativeProduct } from '@darun/recommendation-domain';
 import type { IndexProduct } from '@darun/search-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
+import type { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
 import type { UpvoteProduct } from '@darun/voting-domain';
-import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
+import { Arg, Ctx, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import type { AddProductLinkInput } from './graphs/AddProductLink';
 import { AddProductLinkPayload } from './graphs/AddProductLink';
@@ -252,7 +253,7 @@ export class ProductMutationResolver {
   }
 
   @Mutation(() => UpvoteProductPayload)
-  async upvoteProduct(@Arg('slug') slug: string): Promise<UpvoteProductPayload> {
+  async upvoteProduct(@Arg('slug') slug: string, @Ctx() ctx: GraphQLContext): Promise<UpvoteProductPayload> {
     const product = await this.getPublishedProductUseCase.execute({ slug });
 
     if (!product) {
@@ -261,6 +262,7 @@ export class ProductMutationResolver {
 
     await this.upvoteProductUseCase.execute({
       productId: product.id,
+      voterIp: ctx.clientIp ?? 'unknown',
     });
 
     return {
