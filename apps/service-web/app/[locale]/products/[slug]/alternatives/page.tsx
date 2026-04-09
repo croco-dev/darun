@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
 import { ProductAlternativePage } from '@darun/pages-shell';
-import type { Metadata } from 'next';
+import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getClient } from '../../../../getServerClient';
 

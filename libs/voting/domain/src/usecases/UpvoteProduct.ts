@@ -1,6 +1,6 @@
 import { Inject, Service } from 'typedi';
 import { votingRateLimitExceeded, votingDuplicateVote } from '../errors/VoteError';
-import type { VoteRecordRepository } from '../repositories/VoteRecordRepository';
+import { VoteRecordRepository } from '../repositories/VoteRecordRepository';
 import { VoteRecordRepositoryToken } from '../repositories/VoteRecordRepository';
 import { hashVoterIp } from '../utils/hashVoterIp';
 

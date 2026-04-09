@@ -1,15 +1,15 @@
-import type { CreateMagazine, EditMagazine, GetMagazine, PublishMagazine } from '@darun/magazines-domain';
+import { CreateMagazine, EditMagazine, GetMagazine, PublishMagazine } from '@darun/magazines-domain';
 import { magazineNotFound } from '@darun/magazines-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
-import type { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
+import { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
 import { Arg, Authorized, Ctx, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
-import type { CreateMagazineInput } from './graphs/CreateMagazine';
+import { CreateMagazineInput } from './graphs/CreateMagazine';
 import { CreateMagazinePayload } from './graphs/CreateMagazine';
-import type { EditMagazineInput } from './graphs/EditMagazine';
+import { EditMagazineInput } from './graphs/EditMagazine';
 import { EditMagazinePayload } from './graphs/EditMagazine';
 import { Magazine } from './graphs/Magazine';
-import type { PublishMagazineInput } from './graphs/PublishMagazine';
+import { PublishMagazineInput } from './graphs/PublishMagazine';
 import { PublishMagazinePayload } from './graphs/PublishMagazine';
 
 @Resolver(() => Magazine)

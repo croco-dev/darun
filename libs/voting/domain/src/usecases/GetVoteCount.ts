@@ -1,5 +1,5 @@
 import { Inject, Service } from 'typedi';
-import type { VoteRepository } from '../repositories/VoteRepository';
+import { VoteRepository } from '../repositories/VoteRepository';
 import { VoteRepositoryToken } from '../repositories/VoteRepository';
 
 @Service()

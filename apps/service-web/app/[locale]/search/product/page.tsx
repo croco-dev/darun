@@ -1,5 +1,5 @@
 import { SearchProductPage } from '@darun/pages-shell';
-import type { Metadata } from 'next';
+import { Metadata } from 'next';
 
 type Props = {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;

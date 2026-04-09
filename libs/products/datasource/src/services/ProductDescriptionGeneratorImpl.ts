@@ -1,7 +1,7 @@
-import type { Product } from '@darun/products-domain';
-import type { ProductDescriptionGenerator } from '@darun/products-domain';
+import { Product } from '@darun/products-domain';
+import { ProductDescriptionGenerator } from '@darun/products-domain';
 import { ProductDescriptionGeneratorToken } from '@darun/products-domain';
-import type { LlmClient } from '@darun/utils-llm';
+import { LlmClient } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 
 @Service({ id: ProductDescriptionGeneratorToken })

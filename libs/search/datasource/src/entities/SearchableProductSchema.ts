@@ -1,6 +1,6 @@
 import { getModelForClass, modelOptions, prop } from '@typegoose/typegoose';
 import * as mongoose from 'mongoose';
-import type { ObjectId } from 'mongoose';
+import { ObjectId } from 'mongoose';
 
 @modelOptions({
   existingMongoose: mongoose,

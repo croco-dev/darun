@@ -1,5 +1,5 @@
 import { Inject, Service } from 'typedi';
-import type { MagazineRepository } from '../repositories/MagazineRepository';
+import { MagazineRepository } from '../repositories/MagazineRepository';
 import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
 
 @Service()

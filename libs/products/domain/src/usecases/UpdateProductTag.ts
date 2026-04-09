@@ -1,7 +1,7 @@
 import { Inject, Service } from 'typedi';
 import { ProductTag } from '../entities/ProductTag';
 import { Tag } from '../entities/Tag';
-import type { ProductTagRepository } from '../repositories/ProductTagRepository';
+import { ProductTagRepository } from '../repositories/ProductTagRepository';
 import { ProductTagRepositoryToken } from '../repositories/ProductTagRepository';
 
 @Service()

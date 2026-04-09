@@ -1,7 +1,7 @@
 'use client';
 
 import { useImageUpload } from '@darun/utils-image-upload';
-import type { Editor } from '@tiptap/react';
+import { Editor } from '@tiptap/react';
 import { useCallback, useMemo, useRef } from 'react';
 import { MenuItem } from './MenuItem';
 import './MenuBar.scss';

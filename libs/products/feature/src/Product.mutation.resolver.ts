@@ -1,5 +1,5 @@
-import type { GetCompany } from '@darun/companies-domain';
-import type {
+import { GetCompany } from '@darun/companies-domain';
+import {
   AddProductLink,
   AddProductScreenshot,
   CreateProduct,
@@ -13,35 +13,35 @@ import type {
   UpdateProductTag,
 } from '@darun/products-domain';
 import { productNotFound } from '@darun/products-domain';
-import type { UpdateAlternativeProduct } from '@darun/recommendation-domain';
-import type { IndexProduct } from '@darun/search-domain';
+import { UpdateAlternativeProduct } from '@darun/recommendation-domain';
+import { IndexProduct } from '@darun/search-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
-import type { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
-import type { UpvoteProduct } from '@darun/voting-domain';
+import { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
+import { UpvoteProduct } from '@darun/voting-domain';
 import { Arg, Ctx, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
-import type { AddProductLinkInput } from './graphs/AddProductLink';
+import { AddProductLinkInput } from './graphs/AddProductLink';
 import { AddProductLinkPayload } from './graphs/AddProductLink';
-import type { AddProductScreenshotInput } from './graphs/AddProductScreenshot';
+import { AddProductScreenshotInput } from './graphs/AddProductScreenshot';
 import { AddProductScreenshotPayload } from './graphs/AddProductScreenshot';
-import type { CreateProductInput } from './graphs/CreateProduct';
+import { CreateProductInput } from './graphs/CreateProduct';
 import { CreateProductPayload } from './graphs/CreateProduct';
-import type { EditProductInput } from './graphs/EditProduct';
+import { EditProductInput } from './graphs/EditProduct';
 import { EditProductPayload } from './graphs/EditProduct';
-import type { GenerateProductDescriptionInput } from './graphs/GenerateProductDescription';
+import { GenerateProductDescriptionInput } from './graphs/GenerateProductDescription';
 import { GenerateProductDescriptionPayload } from './graphs/GenerateProductDescription';
-import type { IndexProductInput } from './graphs/IndexProduct';
+import { IndexProductInput } from './graphs/IndexProduct';
 import { IndexProductPayload } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
-import type { PublishProductInput } from './graphs/PublishProduct';
+import { PublishProductInput } from './graphs/PublishProduct';
 import { PublishProductPayload } from './graphs/PublishProduct';
-import type { RegisterProductCompanyInput } from './graphs/RegisterProductCompany';
+import { RegisterProductCompanyInput } from './graphs/RegisterProductCompany';
 import { RegisterProductCompanyPayload } from './graphs/RegisterProductCompany';
-import type { UpdateAlternativeProductInput } from './graphs/UpdateAlternativeProduct';
+import { UpdateAlternativeProductInput } from './graphs/UpdateAlternativeProduct';
 import { UpdateAlternativeProductPayload } from './graphs/UpdateAlternativeProduct';
-import type { UpdateProductLinkInput } from './graphs/UpdateProductLink';
+import { UpdateProductLinkInput } from './graphs/UpdateProductLink';
 import { UpdateProductLinkPayload } from './graphs/UpdateProductLink';
-import type { UpdateProductTagsInput } from './graphs/UpdateProductTags';
+import { UpdateProductTagsInput } from './graphs/UpdateProductTags';
 import { UpdateProductTagsPayload } from './graphs/UpdateProductTags';
 import { UpvoteProductPayload } from './graphs/UpvoteProduct';
 

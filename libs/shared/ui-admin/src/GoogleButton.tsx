@@ -1,4 +1,4 @@
-import type { ButtonProps } from '@darun/ui';
+import { ButtonProps } from '@darun/ui';
 import { Button } from '@darun/ui';
 
 type GoogleButtonProps = ButtonProps & {

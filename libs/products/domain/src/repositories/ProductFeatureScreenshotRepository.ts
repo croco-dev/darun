@@ -1,5 +1,5 @@
 import { Token } from 'typedi';
-import type { ProductFeatureScreenshot } from '../entities/ProductFeatureScreenshot';
+import { ProductFeatureScreenshot } from '../entities/ProductFeatureScreenshot';
 
 export interface ProductFeatureScreenshotRepository {
   findManyByFeatureIdSortByPriorityDesc(featureId: string): Promise<ProductFeatureScreenshot[]>;

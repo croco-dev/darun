@@ -1,6 +1,6 @@
-import type { ProfileRepository } from '@darun/accounts-domain';
+import { ProfileRepository } from '@darun/accounts-domain';
 import { Profile, ProfileRepositoryToken } from '@darun/accounts-domain';
-import type { Drizzle } from '@darun/provider-database';
+import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import { and, eq } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';

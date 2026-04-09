@@ -5,7 +5,7 @@ import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import type { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { useCreateProductOnNewProductFormMutation } from './__generated__/useNewProductForm';
 
 gql(`

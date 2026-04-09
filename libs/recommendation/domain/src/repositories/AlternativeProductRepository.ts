@@ -1,5 +1,5 @@
 import { Token } from 'typedi';
-import type { AlternativeProduct } from '../entities/AlternativeProduct';
+import { AlternativeProduct } from '../entities/AlternativeProduct';
 
 export interface AlternativeProductRepository {
   findManyByProductId(productId: string): Promise<AlternativeProduct[]>;

@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useState } from 'react';
-import type { EditProductLinkItemFragment } from '../EditProductLinkItem/__generated__/EditProductLinkItem';
+import { EditProductLinkItemFragment } from '../EditProductLinkItem/__generated__/EditProductLinkItem';
 import { ProductLinkTableFragmentDoc } from './__generated__/ProductLinkTable';
 import { useTempProductBySlugOnProductLinkTableQuery } from './__generated__/useProductLinkTable';
 

@@ -1,6 +1,6 @@
 import { Token } from 'typedi';
-import type { Vote } from '../entities/Vote';
-import type { VoteRecord } from '../entities/VoteRecord';
+import { Vote } from '../entities/Vote';
+import { VoteRecord } from '../entities/VoteRecord';
 
 export interface VoteRecordRepository {
   existsByTargetIdAndVoterIpHash(targetId: string, voterIpHash: string): Promise<boolean>;

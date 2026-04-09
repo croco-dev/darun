@@ -1,6 +1,6 @@
 import { Inject, Service } from 'typedi';
-import type { Magazine } from '../entities/Magazine';
-import type { MagazineRepository } from '../repositories/MagazineRepository';
+import { Magazine } from '../entities/Magazine';
+import { MagazineRepository } from '../repositories/MagazineRepository';
 import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
 
 @Service()

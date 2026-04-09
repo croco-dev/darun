@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Vote } from '../entities/Vote';
 import { votingRateLimitExceeded, votingDuplicateVote } from '../errors/VoteError';
-import type { VoteRecordRepository } from '../repositories/VoteRecordRepository';
+import { VoteRecordRepository } from '../repositories/VoteRecordRepository';
 import { UpvoteProduct } from '../usecases/UpvoteProduct';
 
 describe('hashVoterIp', () => {

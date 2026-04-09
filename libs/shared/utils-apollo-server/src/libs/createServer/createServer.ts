@@ -1,11 +1,11 @@
-import type { ApolloServerPlugin } from '@apollo/server';
+import { ApolloServerPlugin } from '@apollo/server';
 import { ApolloServer } from '@apollo/server';
 import {
   ApolloServerPluginLandingPageLocalDefault,
   ApolloServerPluginLandingPageProductionDefault,
 } from '@apollo/server/plugin/landingPage/default';
-import type { GraphQLSchema } from 'graphql/type';
-import type { BuildSchemaOptions } from 'type-graphql';
+import { GraphQLSchema } from 'graphql/type';
+import { BuildSchemaOptions } from 'type-graphql';
 import { buildSchemaSync } from 'type-graphql';
 
 type CreateApolloServerParams = {

@@ -1,4 +1,4 @@
-import type { GetAccount } from '@darun/accounts-domain';
+import { GetAccount } from '@darun/accounts-domain';
 import { Container } from 'typedi';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 

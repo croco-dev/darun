@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ProductLinkTableFragmentDoc } from '../ProductLinkTable/__generated__/ProductLinkTable';
-import type { EditProductLinkItemFragment } from './__generated__/EditProductLinkItem';
+import { EditProductLinkItemFragment } from './__generated__/EditProductLinkItem';
 import { useUpdateProductLinkOnEditProductLinkItemMutation } from './__generated__/useEditProductLinkItem';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions

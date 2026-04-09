@@ -1,7 +1,7 @@
-import type { SearchableProduct, SearchableProductRepository } from '@darun/search-domain';
+import { SearchableProduct, SearchableProductRepository } from '@darun/search-domain';
 import { SearchableProductRepositoryToken } from '@darun/search-domain';
 import { Service } from 'typedi';
-import type { SearchableProductSchema } from '../entities/SearchableProductSchema';
+import { SearchableProductSchema } from '../entities/SearchableProductSchema';
 import { SearchableProductModel } from '../entities/SearchableProductSchema';
 
 @Service(SearchableProductRepositoryToken)

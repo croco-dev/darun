@@ -1,5 +1,5 @@
 import { Inject, Service } from 'typedi';
-import type { ProductFeatureRepository } from '../repositories/ProductFeatureRepository';
+import { ProductFeatureRepository } from '../repositories/ProductFeatureRepository';
 import { ProductFeatureRepositoryToken } from '../repositories/ProductFeatureRepository';
 
 @Service()

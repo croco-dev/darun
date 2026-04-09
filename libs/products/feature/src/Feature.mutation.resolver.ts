@@ -1,12 +1,12 @@
-import type { CreateProductFeature, GetProduct, GetProductFeature, UpdateProductFeature } from '@darun/products-domain';
+import { CreateProductFeature, GetProduct, GetProductFeature, UpdateProductFeature } from '@darun/products-domain';
 import { productNotFound } from '@darun/products-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
-import type { CreateProductFeatureInput } from './graphs/CreateProductFeature';
+import { CreateProductFeatureInput } from './graphs/CreateProductFeature';
 import { CreateProductFeaturePayload } from './graphs/CreateProductFeature';
 import { Feature } from './graphs/Feature';
-import type { UpdateProductFeatureInput } from './graphs/UpdateProductFeature';
+import { UpdateProductFeatureInput } from './graphs/UpdateProductFeature';
 import { UpdateProductFeaturePayload } from './graphs/UpdateProductFeature';
 
 @Resolver(() => Feature)

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { ReactNode } from 'react';
 
 import { Footer } from './libs/Footer';
 import { Header } from './libs/Header';

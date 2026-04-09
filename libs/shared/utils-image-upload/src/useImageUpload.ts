@@ -1,7 +1,7 @@
 'use client';
 
 import { gql, useMutation } from '@apollo/client';
-import type { Mutation, MutationsignImageUploadArgs } from '@darun/provider-graphql';
+import { Mutation, MutationsignImageUploadArgs } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 
 const SIGN_IMAGE_UPLOAD = gql`

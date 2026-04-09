@@ -1,5 +1,5 @@
-import type { AuthChecker } from 'type-graphql';
-import type { GraphQLContext } from '../GraphQLContext';
+import { AuthChecker } from 'type-graphql';
+import { GraphQLContext } from '../GraphQLContext';
 
 export const createAuthChecker = (): AuthChecker<GraphQLContext> => {
   return async (resolverData, roles) => {

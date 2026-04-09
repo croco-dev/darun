@@ -1,4 +1,4 @@
-import type { ApolloServerPlugin } from '@apollo/server';
+import { ApolloServerPlugin } from '@apollo/server';
 import * as Sentry from '@sentry/node';
 
 export const createSentryApolloLogPlugin = (): ApolloServerPlugin => ({

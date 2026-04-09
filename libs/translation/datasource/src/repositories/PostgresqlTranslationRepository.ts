@@ -1,6 +1,6 @@
-import type { Drizzle } from '@darun/provider-database';
+import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
-import type { TranslationRepository, TranslationRow } from '@darun/translation-domain';
+import { TranslationRepository, TranslationRow } from '@darun/translation-domain';
 import { TranslationRepositoryToken } from '@darun/translation-domain';
 import { and, eq } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';

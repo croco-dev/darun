@@ -1,4 +1,4 @@
-import type { GetProductFeature, GetProductFeatureScreenshots } from '@darun/products-domain';
+import { GetProductFeature, GetProductFeatureScreenshots } from '@darun/products-domain';
 import { Arg, FieldResolver, ID, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Feature } from './graphs/Feature';

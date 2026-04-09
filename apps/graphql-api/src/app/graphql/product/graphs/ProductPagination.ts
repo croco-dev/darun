@@ -1,6 +1,6 @@
 import { Field, Int, ObjectType } from 'type-graphql';
 import { PageInfo } from '../../common/PageInfo';
-import type { Product } from './Product';
+import { Product } from './Product';
 
 @ObjectType()
 export class ProductConnection {

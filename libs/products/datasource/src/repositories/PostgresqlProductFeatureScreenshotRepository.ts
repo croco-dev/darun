@@ -1,15 +1,12 @@
-import type {
-  ProductFeatureScreenshot,
-  ProductFeatureScreenshotRepository,
-} from "@darun/products-domain";
-import { ProductFeatureScreenshotRepositoryToken } from "@darun/products-domain";
-import type { Drizzle } from "@darun/provider-database";
-import { DrizzleToken } from "@darun/provider-database";
-import DataLoader from "dataloader";
-import { inArray } from "drizzle-orm";
-import { groupBy } from "es-toolkit";
-import { Inject, Service } from "typedi";
-import { productFeatureScreenshots } from "../entities/ProductFeatureScreenshotsSchema";
+import { ProductFeatureScreenshot, ProductFeatureScreenshotRepository } from '@darun/products-domain';
+import { ProductFeatureScreenshotRepositoryToken } from '@darun/products-domain';
+import { Drizzle } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
+import DataLoader from 'dataloader';
+import { inArray } from 'drizzle-orm';
+import { groupBy } from 'es-toolkit';
+import { Inject, Service } from 'typedi';
+import { productFeatureScreenshots } from '../entities/ProductFeatureScreenshotsSchema';
 
 @Service(ProductFeatureScreenshotRepositoryToken)
 export class PostgresqlProductFeatureScreenshotRepository implements ProductFeatureScreenshotRepository {
@@ -22,18 +19,16 @@ export class PostgresqlProductFeatureScreenshotRepository implements ProductFeat
           .from(productFeatureScreenshots)
           .where(inArray(productFeatureScreenshots.featureId, [...featureIds]));
 
-        const groupByDocs = groupBy(docs, (doc) => doc.featureId);
-        return featureIds.map((featureId) => groupByDocs[featureId] || []);
+        const groupByDocs = groupBy(docs, doc => doc.featureId);
+        return featureIds.map(featureId => groupByDocs[featureId] || []);
       },
       {
         cache: true,
-      },
+      }
     );
   }
 
-  async findManyByFeatureIdSortByPriorityDesc(
-    featureId: string,
-  ): Promise<ProductFeatureScreenshot[]> {
+  async findManyByFeatureIdSortByPriorityDesc(featureId: string): Promise<ProductFeatureScreenshot[]> {
     return this.featureIdLoader.load(featureId);
   }
 }

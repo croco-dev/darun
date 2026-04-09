@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 
 import { OPEN_ROUTER_API_KEY } from '../constant';
-import type { LlmModel } from './LlmModel';
+import { LlmModel } from './LlmModel';
 
 export class LlmClient {
   private openRouterClient?: OpenAI;

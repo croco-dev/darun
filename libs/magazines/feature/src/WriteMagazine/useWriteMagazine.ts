@@ -2,7 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useImageUpload } from '@darun/utils-image-upload';
-import type { FileWithPath } from '@mantine/dropzone';
+import { FileWithPath } from '@mantine/dropzone';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';

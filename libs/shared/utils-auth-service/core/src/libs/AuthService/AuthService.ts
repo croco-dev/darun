@@ -1,5 +1,5 @@
-import type { AuthStorage } from '../AuthStorage';
-import type { AuthUser } from '../AuthUser';
+import { AuthStorage } from '../AuthStorage';
+import { AuthUser } from '../AuthUser';
 
 export interface AuthService {
   setAuthStorage(storage: AuthStorage): void;

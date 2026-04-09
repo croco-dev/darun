@@ -1,7 +1,7 @@
-import type { GetMagazine, Magazine } from '@darun/magazines-domain';
-import type { GetProduct, Product } from '@darun/products-domain';
-import type { TranslationService } from '@darun/translation-domain';
-import type { LlmClient } from '@darun/utils-llm';
+import { GetMagazine, Magazine } from '@darun/magazines-domain';
+import { GetProduct, Product } from '@darun/products-domain';
+import { TranslationService } from '@darun/translation-domain';
+import { LlmClient } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 
 export type TranslationEntityType = 'Product' | 'Magazine';

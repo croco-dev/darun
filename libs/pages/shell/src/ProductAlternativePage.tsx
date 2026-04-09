@@ -1,4 +1,4 @@
-import type { FAQItem } from '@darun/products-shell';
+import { FAQItem } from '@darun/products-shell';
 import { AlternativeProductSection, FAQSection, ProductSummary } from '@darun/products-shell';
 import { ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';

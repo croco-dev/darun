@@ -1,6 +1,6 @@
 import { Inject, Service } from 'typedi';
-import type { ProductLink } from '../entities/ProductLink';
-import type { ProductLinkRepository } from '../repositories/ProductLinkRepository';
+import { ProductLink } from '../entities/ProductLink';
+import { ProductLinkRepository } from '../repositories/ProductLinkRepository';
 import { ProductLinkRepositoryToken } from '../repositories/ProductLinkRepository';
 
 @Service()

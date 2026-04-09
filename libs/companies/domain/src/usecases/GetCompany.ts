@@ -1,5 +1,5 @@
 import { Inject, Service } from 'typedi';
-import type { CompanyRepository } from '../repositories/CompanyRepository';
+import { CompanyRepository } from '../repositories/CompanyRepository';
 import { CompanyRepositoryToken } from '../repositories/CompanyRepository';
 
 @Service()

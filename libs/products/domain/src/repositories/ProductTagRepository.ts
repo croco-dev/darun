@@ -1,5 +1,5 @@
 import { Token } from 'typedi';
-import type { ProductTag } from '../entities/ProductTag';
+import { ProductTag } from '../entities/ProductTag';
 
 export interface ProductTagRepository {
   upsert(productTag: ProductTag): Promise<ProductTag>;

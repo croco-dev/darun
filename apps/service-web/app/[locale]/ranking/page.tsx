@@ -1,5 +1,5 @@
 import { RankingPage } from '@darun/pages-shell';
-import type { Metadata } from 'next';
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: '인기 서비스 랭킹 Top 30 - 다른',

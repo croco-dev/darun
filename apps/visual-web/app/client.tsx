@@ -3,7 +3,7 @@
 import { AuthProvider } from '@darun/provider-auth/client';
 import { ApolloProvider } from '@darun/utils-apollo-client/client';
 import { useCookies } from 'next-client-cookies';
-import type { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { container } from './container';
 
 export const ClientRootProvider = ({ children }: { children: ReactNode }) => {

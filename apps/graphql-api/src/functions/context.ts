@@ -1,4 +1,4 @@
-import type { GetAccount } from '@darun/accounts-domain';
+import { GetAccount } from '@darun/accounts-domain';
 
 export type GraphQLContext = {
   requestId: string;

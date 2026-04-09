@@ -1,5 +1,5 @@
 import { Inject, Service } from 'typedi';
-import type { ImageRepository } from '../repositories/ImageRepository';
+import { ImageRepository } from '../repositories/ImageRepository';
 import { ImageRepositoryToken } from '../repositories/ImageRepository';
 
 @Service()

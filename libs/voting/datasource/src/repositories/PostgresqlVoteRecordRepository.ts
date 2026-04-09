@@ -1,6 +1,6 @@
-import type { Drizzle } from '@darun/provider-database';
+import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
-import type { VoteRecordRepository } from '@darun/voting-domain';
+import { VoteRecordRepository } from '@darun/voting-domain';
 import { Vote, VoteRecord, VoteRecordRepositoryToken } from '@darun/voting-domain';
 import { and, eq, gte } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';

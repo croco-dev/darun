@@ -1,15 +1,12 @@
-import type {
-  ProductScreenshot,
-  ProductScreenshotRepository,
-} from "@darun/products-domain";
-import { ProductScreenshotRepositoryToken } from "@darun/products-domain";
-import type { Drizzle } from "@darun/provider-database";
-import { DrizzleToken } from "@darun/provider-database";
-import DataLoader from "dataloader";
-import { inArray } from "drizzle-orm";
-import { groupBy } from "es-toolkit";
-import { Inject, Service } from "typedi";
-import { productScreenshots } from "../entities/ProductScreenshotsSchema";
+import { ProductScreenshot, ProductScreenshotRepository } from '@darun/products-domain';
+import { ProductScreenshotRepositoryToken } from '@darun/products-domain';
+import { Drizzle } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
+import DataLoader from 'dataloader';
+import { inArray } from 'drizzle-orm';
+import { groupBy } from 'es-toolkit';
+import { Inject, Service } from 'typedi';
+import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 
 @Service(ProductScreenshotRepositoryToken)
 export class PostgresqlProductScreenshotRepository implements ProductScreenshotRepository {
@@ -22,32 +19,27 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
           .from(productScreenshots)
           .where(inArray(productScreenshots.productId, [...productIds]));
 
-        const groupByDocs = groupBy(docs, (doc) => doc.productId);
-        return productIds.map((productId) => groupByDocs[productId] || []);
+        const groupByDocs = groupBy(docs, doc => doc.productId);
+        return productIds.map(productId => groupByDocs[productId] || []);
       },
       {
         cache: true,
-      },
+      }
     );
   }
 
   insert(productScreenshot: ProductScreenshot): Promise<ProductScreenshot> {
-    return this.db.transaction(async (tx) => {
-      const inserted = await tx
-        .insert(productScreenshots)
-        .values(productScreenshot)
-        .returning();
+    return this.db.transaction(async tx => {
+      const inserted = await tx.insert(productScreenshots).values(productScreenshot).returning();
 
       if (!inserted[0]) {
-        throw new Error("Failed to insert product screenshot");
+        throw new Error('Failed to insert product screenshot');
       }
       return inserted[0];
     });
   }
 
-  async findManyByProductIdSortByPriorityDesc(
-    productId: string,
-  ): Promise<ProductScreenshot[]> {
+  async findManyByProductIdSortByPriorityDesc(productId: string): Promise<ProductScreenshot[]> {
     return this.productIdLoader.load(productId);
   }
 }

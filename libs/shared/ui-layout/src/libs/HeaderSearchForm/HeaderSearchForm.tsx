@@ -2,7 +2,7 @@
 
 import { bind } from '@croco/utils-structure-react';
 import { Search } from 'lucide-react';
-import type { ChangeEvent } from 'react';
+import { ChangeEvent } from 'react';
 import { useHeaderSearchForm } from './useHeaderSearchForm';
 
 export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, onSubmit }) => (

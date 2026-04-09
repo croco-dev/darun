@@ -1,4 +1,4 @@
-import type { ElementType, HTMLAttributes, ReactNode } from 'react';
+import { ElementType, HTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
 

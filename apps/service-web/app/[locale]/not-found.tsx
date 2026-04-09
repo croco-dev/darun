@@ -1,7 +1,7 @@
 import { Button, ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 
-import type { Metadata } from 'next';
+import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {

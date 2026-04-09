@@ -10,7 +10,7 @@ import {
   ProductQueryResolver,
 } from '@darun/products-feature/server';
 import { TranslationMutationResolver } from '@darun/translation-feature/server';
-import type { NonEmptyArray } from 'type-graphql';
+import { NonEmptyArray } from 'type-graphql';
 import { HealthResolver } from './graphql/Health.resolver';
 
 // eslint-disable-next-line @typescript-eslint/ban-types

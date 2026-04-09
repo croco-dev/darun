@@ -1,5 +1,5 @@
 import { Field, InputType, ObjectType } from 'type-graphql';
-import type { Magazine } from './Magazine';
+import { Magazine } from './Magazine';
 
 @ObjectType()
 export class PublishMagazinePayload {

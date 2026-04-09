@@ -1,5 +1,5 @@
 import { Token } from 'typedi';
-import type { ProductLink } from '../entities/ProductLink';
+import { ProductLink } from '../entities/ProductLink';
 
 export interface ProductLinkRepository {
   insert(input: ProductLink): Promise<ProductLink>;

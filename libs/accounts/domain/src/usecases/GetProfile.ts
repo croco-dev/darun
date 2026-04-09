@@ -1,5 +1,5 @@
 import { Inject, Service } from 'typedi';
-import type { ProfileRepository } from '../repositories/ProfileRepository';
+import { ProfileRepository } from '../repositories/ProfileRepository';
 import { ProfileRepositoryToken } from '../repositories/ProfileRepository';
 
 @Service()

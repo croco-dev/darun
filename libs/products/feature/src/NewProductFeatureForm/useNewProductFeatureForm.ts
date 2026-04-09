@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import type { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { useCreateProductFeatureOnNewProductFeatureFormMutation } from './__generated__/useNewProductFeatureForm';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions

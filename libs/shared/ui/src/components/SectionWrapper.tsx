@@ -1,6 +1,6 @@
-import type { VariantProps } from 'class-variance-authority';
+import { VariantProps } from 'class-variance-authority';
 import { cva } from 'class-variance-authority';
-import type { HTMLAttributes, ReactNode } from 'react';
+import { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '../lib/utils';
 import { ContentArea } from './ContentArea';
 

@@ -1,6 +1,6 @@
-import type { MagazineRepository } from '@darun/magazines-domain';
+import { MagazineRepository } from '@darun/magazines-domain';
 import { Magazine, MagazineRepositoryToken } from '@darun/magazines-domain';
-import type { Drizzle } from '@darun/provider-database';
+import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import { and, count, eq, isNotNull } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
