@@ -7,7 +7,7 @@
     "dev": "next dev --turbopack --port 3002",
     "lint": "eslint --no-warn-ignored **/*.ts*",
     "start": "next start",
-    "test": "echo 1",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -39,6 +39,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint-config-next": "15.5.12",
     "graphql-tag-swc-plugin": "1.1.0",
-    "typescript-eslint": "8.55.0"
+    "typescript-eslint": "8.55.0",
+    "vitest": "4.0.18"
   }
 }

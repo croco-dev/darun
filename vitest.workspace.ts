@@ -22,23 +22,13 @@ export default defineWorkspace({
         extends: './vitest.config.ts',
         test: {
           name: 'root',
-          include: ['apps/*/__tests__/**/*.test.ts', 'libs/shared/**/src/**/*.test.ts'],
-        },
-      },
-      {
-        extends: './vitest.config.ts',
-        test: {
-          name: 'products-domain',
-          root: './libs/products/domain',
-          include: ['src/__tests__/**/*.test.ts'],
-        },
-      },
-      {
-        extends: './vitest.config.ts',
-        test: {
-          name: 'companies-domain',
-          root: './libs/companies/domain',
-          include: ['src/__tests__/**/*.test.ts'],
+          include: [
+            'apps/*/__tests__/**/*.test.ts',
+            'libs/*/domain/src/**/*.test.ts',
+            'libs/*/datasource/src/**/*.test.ts',
+            'libs/*/feature/src/**/*.test.ts',
+            'libs/shared/**/src/**/*.test.ts',
+          ],
         },
       },
     ],

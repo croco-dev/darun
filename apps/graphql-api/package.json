@@ -9,7 +9,7 @@
     "deploy:prod": "serverless deploy --stage prod",
     "dev": "serverless offline --stage dev",
     "lint": "eslint **/*.ts*",
-    "test": "echo 1",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -62,6 +62,7 @@
     "serverless": "4.25.0",
     "serverless-esbuild": "1.55.1",
     "serverless-offline": "14.4.0",
-    "serverless-prune-plugin": "2.1.0"
+    "serverless-prune-plugin": "2.1.0",
+    "vitest": "4.0.18"
   }
 }
