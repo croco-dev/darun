@@ -1,7 +1,8 @@
-import type { VoteRepository } from '@darun/voting-domain';
+// eslint-disable-next-line boundaries/element-types
+import { VoteRepository } from '@darun/voting-domain';
 import { VoteRepositoryToken } from '@darun/voting-domain';
 import { Inject, Service } from 'typedi';
-import type { ProductRepository } from '../repositories/ProductRepository';
+import { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
 @Service()
