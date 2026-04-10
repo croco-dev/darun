@@ -1,5 +1,6 @@
 import { authChecker, initAuthProvider } from '@darun/provider-auth/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { CookieAttributes, Cookies } from 'next-client-cookies';
 import { container } from './app/container';
 

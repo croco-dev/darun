@@ -1,8 +1,8 @@
-import { Inject, Service } from 'typedi';
-import { Company } from '../entities/Company';
-import { companyCreateFailed } from '../errors/companyError';
-import type { CompanyRepository } from '../repositories/CompanyRepository';
-import { CompanyRepositoryToken } from '../repositories/CompanyRepository';
+import { Inject, Service } from "typedi";
+import { Company } from "../entities/Company";
+import { companyCreateFailed } from "../errors/companyError";
+import type { CompanyRepository } from "../repositories/CompanyRepository";
+import { CompanyRepositoryToken } from "../repositories/CompanyRepository";
 
 @Service()
 export class CreateCompany {

@@ -1,7 +1,7 @@
-import { Inject, Service } from 'typedi';
-import type { Magazine } from '../entities/Magazine';
-import type { MagazineRepository } from '../repositories/MagazineRepository';
-import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
+import { Inject, Service } from "typedi";
+import { Magazine } from "../entities/Magazine";
+import type { MagazineRepository } from "../repositories/MagazineRepository";
+import { MagazineRepositoryToken } from "../repositories/MagazineRepository";
 
 @Service()
 export class GetMagazineList {

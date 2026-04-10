@@ -3,7 +3,8 @@ import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { Company } from './graphs/Company';
-import { CreateCompanyInput, CreateCompanyPayload } from './graphs/CreateCompany';
+import { CreateCompanyInput } from './graphs/CreateCompany';
+import { CreateCompanyPayload } from './graphs/CreateCompany';
 
 @Resolver(() => Company)
 @Service()

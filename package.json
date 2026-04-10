@@ -25,6 +25,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "eslint": "9.39.2",
+    "eslint-plugin-boundaries": "6.0.2",
     "eslint-plugin-import-x": "4.16.1",
     "eslint-plugin-react-compiler": "19.1.0-rc.2",
     "lefthook": "1.12.3",

@@ -1,4 +1,5 @@
 import { GetCompany } from '@darun/companies-domain';
+
 import { Company } from '@darun/companies-feature/server';
 import {
   GetAllProducts,
@@ -15,7 +16,8 @@ import {
 import { GetAlternativeProducts } from '@darun/recommendation-domain';
 import { SearchProduct } from '@darun/search-domain';
 import { TranslationService } from '@darun/translation-domain';
-import { AuthRole, Connection, ConnectionArgs, Cursor } from '@darun/utils-apollo-server';
+import { ConnectionArgs } from '@darun/utils-apollo-server';
+import { AuthRole, Connection, Cursor } from '@darun/utils-apollo-server';
 import { GetVoteCount } from '@darun/voting-domain';
 import { Arg, Args, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';

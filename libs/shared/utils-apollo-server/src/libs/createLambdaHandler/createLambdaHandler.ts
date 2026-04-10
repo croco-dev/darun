@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ApolloServer } from '@apollo/server';
-import { handlers, LambdaHandlerOptions, startServerAndCreateLambdaHandler } from '@as-integrations/aws-lambda';
+import { LambdaHandlerOptions } from '@as-integrations/aws-lambda';
+import { handlers, startServerAndCreateLambdaHandler } from '@as-integrations/aws-lambda';
 import { APIGatewayProxyEventV2, APIGatewayProxyHandlerV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import { GraphQLContext } from '../GraphQLContext';
 

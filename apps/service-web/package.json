@@ -7,7 +7,7 @@
     "dev": "next dev --turbopack",
     "lint": "eslint --no-warn-ignored **/*.ts*",
     "start": "next start",
-    "test": "echo 1",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -24,12 +24,12 @@
     "@darun/search-shell": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/ui-layout": "workspace:*",
-    "lucide-react": "^0.468.0",
     "@darun/utils-apollo-client/client": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@sentry/nextjs": "10.38.0",
     "date-fns": "3.6.0",
+    "lucide-react": "^0.468.0",
     "next": "15.5.12",
     "next-client-cookies": "2.1.0",
     "next-intl": "4.8.2",
@@ -42,6 +42,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint-config-next": "15.5.12",
     "graphql-tag-swc-plugin": "1.1.0",
-    "typescript-eslint": "8.55.0"
+    "typescript-eslint": "8.55.0",
+    "vitest": "4.0.18"
   }
 }

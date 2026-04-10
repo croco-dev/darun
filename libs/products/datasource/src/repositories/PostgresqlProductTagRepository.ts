@@ -1,5 +1,7 @@
-import { ProductTag, ProductTagRepository, ProductTagRepositoryToken, Tag, TagType } from '@darun/products-domain';
-import { Drizzle, DrizzleToken } from '@darun/provider-database';
+import { ProductTagRepository } from '@darun/products-domain';
+import { ProductTag, ProductTagRepositoryToken, Tag, TagType } from '@darun/products-domain';
+import { Drizzle } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
 import { eq, inArray } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { productTags } from '../entities/ProductTagsSchema';

@@ -1,5 +1,7 @@
-import { ProductFeature, ProductFeatureRepository, ProductFeatureRepositoryToken } from '@darun/products-domain';
-import { Drizzle, DrizzleToken } from '@darun/provider-database';
+import { ProductFeatureRepository } from '@darun/products-domain';
+import { ProductFeature, ProductFeatureRepositoryToken } from '@darun/products-domain';
+import { Drizzle } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { eq, inArray } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
@@ -25,7 +27,7 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
         return productIds.map(productId => groupByDocs[productId] ?? []);
       },
       {
-        cache: false,
+        cache: true,
       }
     );
   }

@@ -1,12 +1,12 @@
-import { Inject, Service } from 'typedi';
-import { TranslationRepository } from '../repositories/TranslationRepository';
-import { TranslationRepositoryToken } from '../repositories/TranslationRepository';
+import { Inject, Service } from "typedi";
+import type { TranslationRepository } from "../repositories/TranslationRepository";
+import { TranslationRepositoryToken } from "../repositories/TranslationRepository";
 
 @Service()
 export class TranslationService {
   constructor(
     @Inject(TranslationRepositoryToken)
-    private readonly translationRepository: TranslationRepository
+    private readonly translationRepository: TranslationRepository,
   ) {}
 
   async upsertTranslation(params: {
@@ -28,7 +28,7 @@ export class TranslationService {
   }): Promise<string> {
     const { entityType, entityId, locale, field, koreanValue } = params;
 
-    if (locale === 'ko') {
+    if (locale === "ko") {
       return koreanValue;
     }
 

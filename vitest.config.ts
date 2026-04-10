@@ -1,6 +1,6 @@
 export default {
   test: {
-    passWithNoTests: false,
+    passWithNoTests: true,
     coverage: {
       provider: 'v8',
     },

@@ -1,6 +1,6 @@
-import { Inject, Service } from 'typedi';
-import type { MagazineRepository } from '../repositories/MagazineRepository';
-import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
+import { Inject, Service } from "typedi";
+import type { MagazineRepository } from "../repositories/MagazineRepository";
+import { MagazineRepositoryToken } from "../repositories/MagazineRepository";
 
 @Service()
 export class GetPublishedMagazine {
@@ -15,7 +15,7 @@ export class GetPublishedMagazine {
     }
 
     if (!id) {
-      throw new Error('id or slug is required to get a magazine.');
+      throw new Error("id or slug is required to get a magazine.");
     }
     return this.magazineRepository.findPublishedOneById(id);
   }

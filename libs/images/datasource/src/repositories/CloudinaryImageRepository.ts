@@ -1,4 +1,5 @@
-import { ImageRepository, ImageRepositoryToken } from '@darun/images-domain';
+import { ImageRepository } from '@darun/images-domain';
+import { ImageRepositoryToken } from '@darun/images-domain';
 import cloudinary from 'cloudinary';
 import { Service } from 'typedi';
 

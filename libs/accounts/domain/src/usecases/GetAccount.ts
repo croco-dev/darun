@@ -6,7 +6,7 @@ import { AccountRepositoryToken } from '../repositories/AccountRepository';
 export class GetAccount {
   constructor(
     @Inject(AccountRepositoryToken)
-    private readonly accountRepository: AccountRepository,
+    private readonly accountRepository: AccountRepository
   ) {}
 
   async execute({ token }: { token?: string }) {

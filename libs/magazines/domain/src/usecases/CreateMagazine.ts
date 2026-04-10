@@ -1,8 +1,8 @@
-import { Inject, Service } from 'typedi';
-import { Magazine } from '../entities/Magazine';
-import { magazineCreateFailed } from '../errors/magazineError';
-import type { MagazineRepository } from '../repositories/MagazineRepository';
-import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
+import { Inject, Service } from "typedi";
+import { Magazine } from "../entities/Magazine";
+import { magazineCreateFailed } from "../errors/magazineError";
+import type { MagazineRepository } from "../repositories/MagazineRepository";
+import { MagazineRepositoryToken } from "../repositories/MagazineRepository";
 
 @Service()
 export class CreateMagazine {

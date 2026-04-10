@@ -1,15 +1,17 @@
-import { Inject, Service } from 'typedi';
-import { VoteRepository } from '../repositories/VoteRepository';
-import { VoteRepositoryToken } from '../repositories/VoteRepository';
+import { Inject, Service } from "typedi";
+import type { VoteRepository } from "../repositories/VoteRepository";
+import { VoteRepositoryToken } from "../repositories/VoteRepository";
 
 @Service()
 export class GetVoteCount {
   constructor(
     @Inject(VoteRepositoryToken)
-    private readonly voteRepository: VoteRepository
+    private readonly voteRepository: VoteRepository,
   ) {}
 
   async execute({ productId }: { productId: string }) {
-    return this.voteRepository.findByTargetId(productId).then(vote => vote?.count ?? 0);
+    return this.voteRepository
+      .findByTargetId(productId)
+      .then((vote) => vote?.count ?? 0);
   }
 }

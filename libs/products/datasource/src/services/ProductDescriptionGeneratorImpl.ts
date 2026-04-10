@@ -1,5 +1,6 @@
 import { Product } from '@darun/products-domain';
-import { ProductDescriptionGenerator, ProductDescriptionGeneratorToken } from '@darun/products-domain';
+import { ProductDescriptionGenerator } from '@darun/products-domain';
+import { ProductDescriptionGeneratorToken } from '@darun/products-domain';
 import { LlmClient } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 

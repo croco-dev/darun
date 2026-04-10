@@ -1,6 +1,8 @@
-import { SearchableProduct, SearchableProductRepository, SearchableProductRepositoryToken } from '@darun/search-domain';
+import { SearchableProduct, SearchableProductRepository } from '@darun/search-domain';
+import { SearchableProductRepositoryToken } from '@darun/search-domain';
 import { Service } from 'typedi';
-import { SearchableProductModel, SearchableProductSchema } from '../entities/SearchableProductSchema';
+import { SearchableProductSchema } from '../entities/SearchableProductSchema';
+import { SearchableProductModel } from '../entities/SearchableProductSchema';
 
 @Service(SearchableProductRepositoryToken)
 export class MongodbSearchableProductRepository implements SearchableProductRepository {

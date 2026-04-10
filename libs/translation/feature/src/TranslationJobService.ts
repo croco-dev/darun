@@ -1,7 +1,7 @@
 import { GetMagazine, Magazine } from '@darun/magazines-domain';
 import { GetProduct, Product } from '@darun/products-domain';
 import { TranslationService } from '@darun/translation-domain';
-import { LlmClient } from '@darun/utils-llm';
+import { LlmClient, withRetry } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 
 export type TranslationEntityType = 'Product' | 'Magazine';
@@ -84,12 +84,16 @@ export class TranslationJobService {
   }
 
   private async translateKoreanToEnglish(text: string): Promise<string> {
-    const response = await this.llmClient.completion('x-ai/grok-4-fast', [
-      {
-        role: 'user',
-        content: `Translate the following Korean text to English: ${text}`,
-      },
-    ]);
+    const response = await withRetry(
+      () =>
+        this.llmClient.completion('x-ai/grok-4-fast', [
+          {
+            role: 'user',
+            content: `Translate the following Korean text to English: ${text}`,
+          },
+        ]),
+      { maxRetries: 3, baseDelay: 1000, maxDelay: 30000 }
+    );
 
     if (!response.content?.trim()) {
       throw new Error('LLM 번역 응답이 비어 있습니다.');

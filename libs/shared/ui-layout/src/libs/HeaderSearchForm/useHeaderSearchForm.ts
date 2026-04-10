@@ -1,6 +1,6 @@
-import { useNavigate, usePathname, useSearchParams } from "@darun/utils-router";
-import { useEffect, useMemo, useState } from "react";
-import { routing } from "../../i18n/routing";
+import { useNavigate, usePathname, useSearchParams } from '@darun/utils-router';
+import { useEffect, useMemo, useState } from 'react';
+import { routing } from '../../i18n/routing';
 
 type SubmitEventLike = {
   preventDefault: () => void;
@@ -9,19 +9,19 @@ type SubmitEventLike = {
 type Locale = (typeof routing.locales)[number];
 
 function isLocale(segment: string): segment is Locale {
-  return routing.locales.some((locale) => locale === segment);
+  return routing.locales.some(locale => locale === segment);
 }
 
 function resolveSearchPath(pathname: string | null): string {
   if (!pathname) {
-    return "/search/product";
+    return '/search/product';
   }
 
-  const segments = pathname.split("/").filter(Boolean);
+  const segments = pathname.split('/').filter(Boolean);
   const localePrefix = segments[0];
 
   if (!localePrefix || !isLocale(localePrefix)) {
-    return "/search/product";
+    return '/search/product';
   }
 
   return `/${localePrefix}/search/product`;
@@ -32,7 +32,7 @@ export function useHeaderSearchForm() {
   const pathname = usePathname();
   const navigate = useNavigate();
   const searchPath = useMemo(() => resolveSearchPath(pathname), [pathname]);
-  const queryFromSearchParam = searchParams.get("query") ?? "";
+  const queryFromSearchParam = searchParams.get('query') ?? '';
   const [query, setQuery] = useState(queryFromSearchParam);
 
   useEffect(() => {

@@ -3,37 +3,49 @@ import {
   AddProductLink,
   AddProductScreenshot,
   CreateProduct,
+  DeleteProductScreenshot,
   EditProduct,
   GenerateProductDescription,
   GetProduct,
   GetPublishedProduct,
   PublishProduct,
-  productNotFound,
   RegisterProductCompany,
   UpdateProductLink,
   UpdateProductTag,
 } from '@darun/products-domain';
+import { productNotFound } from '@darun/products-domain';
 import { UpdateAlternativeProduct } from '@darun/recommendation-domain';
 import { IndexProduct } from '@darun/search-domain';
+import { TranslationJobService } from '@darun/translation-feature/server';
 import { AuthRole } from '@darun/utils-apollo-server';
+import type { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
 import { UpvoteProduct } from '@darun/voting-domain';
-import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
+import { Arg, Ctx, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
-import { AddProductLinkInput, AddProductLinkPayload } from './graphs/AddProductLink';
-import { AddProductScreenshotInput, AddProductScreenshotPayload } from './graphs/AddProductScreenshot';
-import { CreateProductInput, CreateProductPayload } from './graphs/CreateProduct';
-import { EditProductInput, EditProductPayload } from './graphs/EditProduct';
-import {
-  GenerateProductDescriptionInput,
-  GenerateProductDescriptionPayload,
-} from './graphs/GenerateProductDescription';
-import { IndexProductInput, IndexProductPayload } from './graphs/IndexProduct';
+import { AddProductLinkInput } from './graphs/AddProductLink';
+import { AddProductLinkPayload } from './graphs/AddProductLink';
+import { AddProductScreenshotInput } from './graphs/AddProductScreenshot';
+import { AddProductScreenshotPayload } from './graphs/AddProductScreenshot';
+import { CreateProductInput } from './graphs/CreateProduct';
+import { CreateProductPayload } from './graphs/CreateProduct';
+import { DeleteProductScreenshotPayload } from './graphs/DeleteProductScreenshot';
+import { EditProductInput } from './graphs/EditProduct';
+import { EditProductPayload } from './graphs/EditProduct';
+import { GenerateProductDescriptionInput } from './graphs/GenerateProductDescription';
+import { GenerateProductDescriptionPayload } from './graphs/GenerateProductDescription';
+import { IndexProductInput } from './graphs/IndexProduct';
+import { IndexProductPayload } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
-import { PublishProductInput, PublishProductPayload } from './graphs/PublishProduct';
-import { RegisterProductCompanyInput, RegisterProductCompanyPayload } from './graphs/RegisterProductCompany';
-import { UpdateAlternativeProductInput, UpdateAlternativeProductPayload } from './graphs/UpdateAlternativeProduct';
-import { UpdateProductLinkInput, UpdateProductLinkPayload } from './graphs/UpdateProductLink';
-import { UpdateProductTagsInput, UpdateProductTagsPayload } from './graphs/UpdateProductTags';
+import { PublishProductInput } from './graphs/PublishProduct';
+import { PublishProductPayload } from './graphs/PublishProduct';
+import { RegisterProductCompanyInput } from './graphs/RegisterProductCompany';
+import { RegisterProductCompanyPayload } from './graphs/RegisterProductCompany';
+import { UpdateAlternativeProductInput } from './graphs/UpdateAlternativeProduct';
+import { UpdateAlternativeProductPayload } from './graphs/UpdateAlternativeProduct';
+import { UpdateProductLinkInput } from './graphs/UpdateProductLink';
+import { UpdateProductLinkPayload } from './graphs/UpdateProductLink';
+import { UpdateProductTagsInput } from './graphs/UpdateProductTags';
+import { UpdateProductTagsPayload } from './graphs/UpdateProductTags';
 import { UpvoteProductPayload } from './graphs/UpvoteProduct';
 
 @Resolver(() => Product)
@@ -49,12 +61,14 @@ export class ProductMutationResolver {
     private readonly getPublishedProductUseCase: GetPublishedProduct,
     private readonly getProductUseCase: GetProduct,
     private readonly addProductScreenshotUseCase: AddProductScreenshot,
+    private readonly deleteProductScreenshotUseCase: DeleteProductScreenshot,
     private readonly addProductLinkUseCase: AddProductLink,
     private readonly updateProductLinkUseCase: UpdateProductLink,
     private readonly updateAlternativeProductUseCase: UpdateAlternativeProduct,
     private readonly upvoteProductUseCase: UpvoteProduct,
     private readonly registerProductCompanyUseCase: RegisterProductCompany,
-    private readonly generateProductDescriptionUseCase: GenerateProductDescription
+    private readonly generateProductDescriptionUseCase: GenerateProductDescription,
+    private readonly translationJobService: TranslationJobService
   ) {}
 
   @Authorized([AuthRole.Admin])
@@ -76,11 +90,27 @@ export class ProductMutationResolver {
       throw productNotFound();
     }
 
+    const updatedProduct = await this.editProductUseCase.execute({
+      ...input,
+      id: product.id,
+    });
+
+    if (updatedProduct.publishedAt !== undefined) {
+      try {
+        await this.indexProductUseCase.execute({
+          id: updatedProduct.id,
+          name: updatedProduct.name,
+          slug: updatedProduct.slug,
+          summary: updatedProduct.summary,
+          description: updatedProduct.description,
+        });
+      } catch (error) {
+        console.error('Failed to index product:', error);
+      }
+    }
+
     return {
-      product: await this.editProductUseCase.execute({
-        ...input,
-        id: product.id,
-      }),
+      product: updatedProduct,
     };
   }
 
@@ -104,6 +134,16 @@ export class ProductMutationResolver {
       summary: updatedProduct.summary,
       description: updatedProduct.description,
     });
+
+    try {
+      await this.translationJobService.translateEntity('Product', updatedProduct.id, [
+        'name',
+        'summary',
+        'description',
+      ]);
+    } catch (error) {
+      console.error('Failed to trigger translation:', error);
+    }
 
     return {
       product: updatedProduct,
@@ -244,7 +284,7 @@ export class ProductMutationResolver {
   }
 
   @Mutation(() => UpvoteProductPayload)
-  async upvoteProduct(@Arg('slug') slug: string): Promise<UpvoteProductPayload> {
+  async upvoteProduct(@Arg('slug') slug: string, @Ctx() ctx: GraphQLContext): Promise<UpvoteProductPayload> {
     const product = await this.getPublishedProductUseCase.execute({ slug });
 
     if (!product) {
@@ -253,6 +293,7 @@ export class ProductMutationResolver {
 
     await this.upvoteProductUseCase.execute({
       productId: product.id,
+      voterIp: ctx.clientIp ?? 'unknown',
     });
 
     return {
@@ -305,6 +346,16 @@ export class ProductMutationResolver {
 
     return {
       product: updatedProduct,
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => DeleteProductScreenshotPayload)
+  async deleteProductScreenshot(@Arg('id') id: string): Promise<DeleteProductScreenshotPayload> {
+    await this.deleteProductScreenshotUseCase.execute(id);
+
+    return {
+      success: true,
     };
   }
 }

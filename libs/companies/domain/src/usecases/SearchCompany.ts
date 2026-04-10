@@ -1,7 +1,7 @@
-import { Inject, Service } from 'typedi';
-import type { Company } from '../entities/Company';
-import type { CompanyRepository } from '../repositories/CompanyRepository';
-import { CompanyRepositoryToken } from '../repositories/CompanyRepository';
+import { Inject, Service } from "typedi";
+import { Company } from "../entities/Company";
+import type { CompanyRepository } from "../repositories/CompanyRepository";
+import { CompanyRepositoryToken } from "../repositories/CompanyRepository";
 
 @Service()
 export class SearchCompany {

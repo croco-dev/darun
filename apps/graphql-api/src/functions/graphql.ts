@@ -11,6 +11,7 @@ import { Container } from 'typedi';
 import { resolvers } from '../app/resolvers';
 import { createMongodbConnection, createMysqlConnection } from '../config/database';
 import { IS_LOCAL } from '../config/environment';
+import { createGraphQLContext } from './context';
 
 export const handler: APIGatewayProxyHandlerV2 = Sentry.wrapHandler(
   createLambdaHandler(
@@ -31,33 +32,15 @@ export const handler: APIGatewayProxyHandlerV2 = Sentry.wrapHandler(
     {
       context: async ({ event }) => {
         const authToken = event.headers?.['authorization']?.replace('Bearer ', '');
+        const clientIp =
+          event.requestContext?.http?.sourceIp ?? event.headers?.['x-forwarded-for']?.split(',')[0]?.trim();
 
-        return {
+        return createGraphQLContext({
           requestId: event.requestContext.requestId,
           authToken,
-          getUserId: async () => {
-            const account = await Container.get(GetAccount).execute({
-              token: authToken,
-            });
-            return account?.id;
-          },
-          getUserIdOrThrow: async () => {
-            const account = await Container.get(GetAccount).execute({
-              token: authToken,
-            });
-            if (!account) {
-              throw new Error('Unauthorized');
-            }
-
-            return account.id;
-          },
-          getRoles: async () => {
-            const account = await Container.get(GetAccount).execute({
-              token: authToken,
-            });
-            return account?.roles ?? [];
-          },
-        };
+          clientIp,
+          getAccountUseCase: Container.get(GetAccount),
+        });
       },
     }
   )

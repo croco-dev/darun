@@ -1,5 +1,7 @@
-import { Company, CompanyRepository, CompanyRepositoryToken } from '@darun/companies-domain';
-import { Drizzle, DrizzleToken } from '@darun/provider-database';
+import { CompanyRepository } from '@darun/companies-domain';
+import { Company, CompanyRepositoryToken } from '@darun/companies-domain';
+import { Drizzle } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { count, ilike, inArray } from 'drizzle-orm';
 import { keyBy } from 'es-toolkit';
@@ -25,7 +27,7 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
         });
       },
       {
-        cache: false,
+        cache: true,
       }
     );
   }

@@ -1,9 +1,7 @@
-import {
-  ProductFeatureScreenshot,
-  ProductFeatureScreenshotRepository,
-  ProductFeatureScreenshotRepositoryToken,
-} from '@darun/products-domain';
-import { Drizzle, DrizzleToken } from '@darun/provider-database';
+import { ProductFeatureScreenshot, ProductFeatureScreenshotRepository } from '@darun/products-domain';
+import { ProductFeatureScreenshotRepositoryToken } from '@darun/products-domain';
+import { Drizzle } from '@darun/provider-database';
+import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { inArray } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
@@ -25,7 +23,7 @@ export class PostgresqlProductFeatureScreenshotRepository implements ProductFeat
         return featureIds.map(featureId => groupByDocs[featureId] || []);
       },
       {
-        cache: false,
+        cache: true,
       }
     );
   }

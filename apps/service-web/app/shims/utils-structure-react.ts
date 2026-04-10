@@ -1,4 +1,5 @@
-import { ComponentType, createElement, memo } from 'react';
+import { ComponentType } from 'react';
+import { createElement, memo } from 'react';
 
 type BindOptions = {
   displayName?: string;
