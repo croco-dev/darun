@@ -12,6 +12,7 @@ export {
   productDeleteFailed,
   productFeatureNotFound,
   productNotFound,
+  productScreenshotNotFound,
   productSlugAlreadyExists,
   productUpdateFailed,
 } from './errors/productError';
@@ -33,6 +34,7 @@ export { AddProductLink } from './usecases/AddProductLink';
 export { AddProductScreenshot } from './usecases/AddProductScreenshot';
 export { CreateProduct } from './usecases/CreateProduct';
 export { CreateProductFeature } from './usecases/CreateProductFeature';
+export { DeleteProductScreenshot } from './usecases/DeleteProductScreenshot';
 export { EditProduct } from './usecases/EditProduct';
 export { GenerateProductDescription } from './usecases/GenerateProductDescription';
 export { GetAllProducts } from './usecases/GetAllProducts';
