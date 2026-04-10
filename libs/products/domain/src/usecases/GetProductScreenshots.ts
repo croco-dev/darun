@@ -1,17 +1,15 @@
-import { Inject, Service } from "typedi";
-import type { ProductScreenshotRepository } from "../repositories/ProductScreenshotRepository";
-import { ProductScreenshotRepositoryToken } from "../repositories/ProductScreenshotRepository";
+import { Inject, Service } from 'typedi';
+import { ProductScreenshotRepository } from '../repositories/ProductScreenshotRepository';
+import { ProductScreenshotRepositoryToken } from '../repositories/ProductScreenshotRepository';
 
 @Service()
 export class GetProductScreenshots {
   constructor(
     @Inject(ProductScreenshotRepositoryToken)
-    private readonly productScreenshotRepository: ProductScreenshotRepository,
+    private readonly productScreenshotRepository: ProductScreenshotRepository
   ) {}
 
   async execute({ productId }: { productId: string }) {
-    return this.productScreenshotRepository.findManyByProductIdSortByPriorityDesc(
-      productId,
-    );
+    return this.productScreenshotRepository.findManyByProductIdSortByPriorityDesc(productId);
   }
 }

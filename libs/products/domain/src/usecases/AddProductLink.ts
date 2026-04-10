@@ -1,13 +1,13 @@
-import { Inject, Service } from "typedi";
-import { ProductLink } from "../entities/ProductLink";
-import type { ProductLinkRepository } from "../repositories/ProductLinkRepository";
-import { ProductLinkRepositoryToken } from "../repositories/ProductLinkRepository";
+import { Inject, Service } from 'typedi';
+import { ProductLink } from '../entities/ProductLink';
+import { ProductLinkRepository } from '../repositories/ProductLinkRepository';
+import { ProductLinkRepositoryToken } from '../repositories/ProductLinkRepository';
 
 @Service()
 export class AddProductLink {
   constructor(
     @Inject(ProductLinkRepositoryToken)
-    private readonly productLinkRepository: ProductLinkRepository,
+    private readonly productLinkRepository: ProductLinkRepository
   ) {}
 
   async execute({
@@ -23,8 +23,6 @@ export class AddProductLink {
     iconUrl: string;
     productId: string;
   }) {
-    await this.productLinkRepository.insert(
-      new ProductLink({ iconUrl, link, displayLink, title, productId }),
-    );
+    await this.productLinkRepository.insert(new ProductLink({ iconUrl, link, displayLink, title, productId }));
   }
 }
