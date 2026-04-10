@@ -1,12 +1,12 @@
-import { Inject, Service } from 'typedi';
-import { ProductRepository } from '../repositories/ProductRepository';
-import { ProductRepositoryToken } from '../repositories/ProductRepository';
+import { Inject, Service } from "typedi";
+import type { ProductRepository } from "../repositories/ProductRepository";
+import { ProductRepositoryToken } from "../repositories/ProductRepository";
 
 @Service()
 export class GetPublishedProduct {
   constructor(
     @Inject(ProductRepositoryToken)
-    private readonly productRepository: ProductRepository
+    private readonly productRepository: ProductRepository,
   ) {}
 
   async execute({ id, slug }: { id?: string; slug?: string }) {
@@ -15,7 +15,7 @@ export class GetPublishedProduct {
     }
 
     if (!id) {
-      throw new Error('id or slug is required to get a product.');
+      throw new Error("id or slug is required to get a product.");
     }
     return this.productRepository.findPublishedOneById(id);
   }
