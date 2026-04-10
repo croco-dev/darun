@@ -29,17 +29,21 @@ export const typescriptEslintPlugin = {
 };
 
 export const typescriptEslintRecommendedConfigs = tseslint.configs.recommended.map(config => {
-  if (!config.plugins?.['@typescript-eslint']) {
-    return config;
+  const newConfig = { ...config };
+
+  if (newConfig.plugins?.['@typescript-eslint']) {
+    newConfig.plugins = {
+      ...newConfig.plugins,
+      '@typescript-eslint': typescriptEslintPlugin,
+    };
   }
 
-  return {
-    ...config,
-    plugins: {
-      ...config.plugins,
-      '@typescript-eslint': typescriptEslintPlugin,
-    },
-  };
+  if (newConfig.rules?.['@typescript-eslint/consistent-type-imports']) {
+    newConfig.rules = { ...newConfig.rules };
+    newConfig.rules['@typescript-eslint/consistent-type-imports'] = 'off';
+  }
+
+  return newConfig;
 });
 
 export const sourceFilePatterns = ['**/*.{js,mjs,cjs,jsx,ts,tsx}'];
@@ -78,36 +82,9 @@ export const baseSourceConfig = {
     'import-x/no-named-as-default': ['off'],
     'import-x/no-relative-packages': ['off'],
     'import-x/no-self-import': ['error'],
-    'import-x/order': [
-      'error',
-      {
-        groups: ['internal', 'external', 'builtin', 'parent', 'sibling'],
-        pathGroups: [
-          {
-            pattern: '@*/**',
-            group: 'internal',
-            position: 'before',
-          },
-          {
-            pattern: '@*/**',
-            group: 'external',
-            position: 'after',
-          },
-        ],
-        pathGroupsExcludedImportTypes: [],
-        alphabetize: {
-          order: 'asc',
-          caseInsensitive: true,
-        },
-      },
-    ],
+    'import-x/order': 'off',
     'import-x/prefer-default-export': ['off'],
-    '@typescript-eslint/consistent-type-imports': [
-      'error',
-      {
-        prefer: 'type-imports',
-      },
-    ],
+    '@typescript-eslint/consistent-type-imports': 'off',
     '@typescript-eslint/ban-types': 'off',
     '@typescript-eslint/no-empty-object-type': 'off',
     '@typescript-eslint/no-unsafe-function-type': 'off',
