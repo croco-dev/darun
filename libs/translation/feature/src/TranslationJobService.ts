@@ -1,14 +1,14 @@
-import { GetMagazine, Magazine } from "@darun/magazines-domain";
-import { GetProduct, Product } from "@darun/products-domain";
-import { TranslationService } from "@darun/translation-domain";
-import { LlmClient, withRetry } from "@darun/utils-llm";
-import { Inject, Service } from "typedi";
+import { GetMagazine, Magazine } from '@darun/magazines-domain';
+import { GetProduct, Product } from '@darun/products-domain';
+import { TranslationService } from '@darun/translation-domain';
+import { LlmClient, withRetry } from '@darun/utils-llm';
+import { Inject, Service } from 'typedi';
 
-export type TranslationEntityType = "Product" | "Magazine";
+export type TranslationEntityType = 'Product' | 'Magazine';
 
 const TRANSLATABLE_FIELDS: Record<TranslationEntityType, string[]> = {
-  Product: ["name", "summary", "description"],
-  Magazine: ["title", "summary", "content"],
+  Product: ['name', 'summary', 'description'],
+  Magazine: ['title', 'summary', 'content'],
 };
 
 @Service()
@@ -17,14 +17,10 @@ export class TranslationJobService {
     private readonly getProductUseCase: GetProduct,
     private readonly getMagazineUseCase: GetMagazine,
     private readonly translationService: TranslationService,
-    @Inject() private readonly llmClient: LlmClient,
+    @Inject() private readonly llmClient: LlmClient
   ) {}
 
-  async translateEntity(
-    entityType: TranslationEntityType,
-    entityId: string,
-    fields: string[],
-  ): Promise<void> {
+  async translateEntity(entityType: TranslationEntityType, entityId: string, fields: string[]): Promise<void> {
     const entity = await this.getEntity(entityType, entityId);
     const uniqueFields = this.getUniqueFields(fields);
 
@@ -39,7 +35,7 @@ export class TranslationJobService {
       await this.translationService.upsertTranslation({
         entityType,
         entityId,
-        locale: "en",
+        locale: 'en',
         field,
         value: translatedValue,
       });
@@ -47,17 +43,14 @@ export class TranslationJobService {
   }
 
   private getUniqueFields(fields: string[]): string[] {
-    return [...new Set(fields.map((field) => field.trim()).filter(Boolean))];
+    return [...new Set(fields.map(field => field.trim()).filter(Boolean))];
   }
 
-  private async getEntity(
-    entityType: TranslationEntityType,
-    entityId: string,
-  ): Promise<Product | Magazine> {
-    if (entityType === "Product") {
+  private async getEntity(entityType: TranslationEntityType, entityId: string): Promise<Product | Magazine> {
+    if (entityType === 'Product') {
       const product = await this.getProductUseCase.execute({ id: entityId });
       if (!product) {
-        throw new Error("Product가 존재하지 않습니다.");
+        throw new Error('Product가 존재하지 않습니다.');
       }
 
       return product;
@@ -65,7 +58,7 @@ export class TranslationJobService {
 
     const magazine = await this.getMagazineUseCase.execute({ id: entityId });
     if (!magazine) {
-      throw new Error("Magazine이 존재하지 않습니다.");
+      throw new Error('Magazine이 존재하지 않습니다.');
     }
 
     return magazine;
@@ -74,7 +67,7 @@ export class TranslationJobService {
   private getKoreanValue(
     entityType: TranslationEntityType,
     entity: Product | Magazine,
-    field: string,
+    field: string
   ): string | undefined {
     const translatableFields = TRANSLATABLE_FIELDS[entityType];
     if (!translatableFields.includes(field)) {
@@ -82,7 +75,7 @@ export class TranslationJobService {
     }
 
     const value = (entity as unknown as Record<string, unknown>)[field];
-    if (typeof value !== "string") {
+    if (typeof value !== 'string') {
       return undefined;
     }
 
@@ -93,17 +86,17 @@ export class TranslationJobService {
   private async translateKoreanToEnglish(text: string): Promise<string> {
     const response = await withRetry(
       () =>
-        this.llmClient.completion("x-ai/grok-4-fast", [
+        this.llmClient.completion('x-ai/grok-4-fast', [
           {
-            role: "user",
+            role: 'user',
             content: `Translate the following Korean text to English: ${text}`,
           },
         ]),
-      { maxRetries: 3, baseDelay: 1000, maxDelay: 30000 },
+      { maxRetries: 3, baseDelay: 1000, maxDelay: 30000 }
     );
 
     if (!response.content?.trim()) {
-      throw new Error("LLM 번역 응답이 비어 있습니다.");
+      throw new Error('LLM 번역 응답이 비어 있습니다.');
     }
 
     return response.content.trim();

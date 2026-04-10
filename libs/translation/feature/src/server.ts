@@ -1,2 +1,2 @@
-export { TranslationMutationResolver } from "./Translation.mutation.resolver";
-export { TranslationJobService } from "./TranslationJobService";
+export { TranslationMutationResolver } from './Translation.mutation.resolver';
+export { TranslationJobService } from './TranslationJobService';

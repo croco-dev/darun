@@ -1,13 +1,13 @@
-import { Inject, Service } from 'typedi';
-import { Product } from '../entities/Product';
-import { ProductRepository } from '../repositories/ProductRepository';
-import { ProductRepositoryToken } from '../repositories/ProductRepository';
+import { Inject, Service } from "typedi";
+import { Product } from "../entities/Product";
+import type { ProductRepository } from "../repositories/ProductRepository";
+import { ProductRepositoryToken } from "../repositories/ProductRepository";
 
 @Service()
 export class EditProduct {
   constructor(
     @Inject(ProductRepositoryToken)
-    private readonly productRepository: ProductRepository
+    private readonly productRepository: ProductRepository,
   ) {}
 
   async execute({
@@ -23,7 +23,7 @@ export class EditProduct {
     description?: string;
     logoUrl?: string;
   }): Promise<Product> {
-    return this.productRepository.updateById(id, product => {
+    return this.productRepository.updateById(id, (product) => {
       product.update({
         name,
         summary,
