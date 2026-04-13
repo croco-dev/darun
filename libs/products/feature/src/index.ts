@@ -21,5 +21,4 @@ export { ProductListTable, AllProductsOnProductListTableDocument } from './Produ
 export { ProductCompanyInfo } from './ProductCompanyInfo';
 export { ProductDescription } from './ProductDescription';
 export { ProductFeatureTable } from './ProductFeatureTable';
-export { ProductInfo } from './ProductInfo';
-export { ProductLinkTable } from './ProductLinkTable';
+export { ProductInfo, useProductInfo } from './ProductInfo';

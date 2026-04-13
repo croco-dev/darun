@@ -5,3 +5,4 @@ export { PostgresqlProductScreenshotRepository } from './repositories/Postgresql
 export { PostgresqlProductFeatureRepository } from './repositories/PostgresqlProductFeatureRepository';
 export { PostgresqlProductFeatureScreenshotRepository } from './repositories/PostgresqlProductFeatureScreenshotRepository';
 export { ProductDescriptionGeneratorImpl } from './services/ProductDescriptionGeneratorImpl';
+export { PostgresqlCategoryRepository } from './repositories/PostgresqlCategoryRepository';
