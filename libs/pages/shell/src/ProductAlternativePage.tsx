@@ -1,6 +1,7 @@
+import { useProductInfo } from '@darun/products-feature';
 import { FAQItem } from '@darun/products-shell';
 import { AlternativeProductSection, FAQSection, ProductSummary } from '@darun/products-shell';
-import { ContentArea } from '@darun/ui';
+import { Breadcrumb, ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Link } from '@darun/utils-router';
 
@@ -10,29 +11,45 @@ export const ProductAlternativePage = ({
 }: {
   params: { slug: string };
   faqItems?: FAQItem[];
-}) => (
-  <Layout>
-    <div className="flex flex-col">
-      <main className="flex w-full flex-col">
-        <div className="mb-1 flex flex-col gap-0.5">
-          <ContentArea>
-            <Link href={`/products/${slug}`}>
-              <ProductSummary slug={slug} />
-            </Link>
-          </ContentArea>
-        </div>
-        <div className="my-0.5 flex h-px w-full bg-dark-100" />
-        <ContentArea>
-          <div className="flex flex-col py-3">
-            <AlternativeProductSection slug={slug} />
+}) => {
+  const product = useProductInfo({ slug });
+
+  return (
+    <Layout>
+      <div className="flex flex-col">
+        <main className="flex w-full flex-col">
+          <div className="mb-1 flex flex-col gap-0.5">
+            <ContentArea>
+              <Breadcrumb
+                data-testid="breadcrumb-alternatives"
+                items={[
+                  { label: '홈', href: '/ko/' },
+                  { label: product.name, href: `/ko/products/${slug}` },
+                  { label: '대안', ariaCurrent: 'page' },
+                ]}
+              />
+            </ContentArea>
           </div>
-        </ContentArea>
-        {faqItems && faqItems.length > 0 && (
+          <div className="mb-1 flex flex-col gap-0.5">
+            <ContentArea>
+              <Link href={`/products/${slug}`}>
+                <ProductSummary slug={slug} />
+              </Link>
+            </ContentArea>
+          </div>
+          <div className="my-0.5 flex h-px w-full bg-dark-100" />
           <ContentArea>
-            <FAQSection items={faqItems} />
+            <div className="flex flex-col py-3">
+              <AlternativeProductSection slug={slug} />
+            </div>
           </ContentArea>
-        )}
-      </main>
-    </div>
-  </Layout>
-);
+          {faqItems && faqItems.length > 0 && (
+            <ContentArea>
+              <FAQSection items={faqItems} />
+            </ContentArea>
+          )}
+        </main>
+      </div>
+    </Layout>
+  );
+};

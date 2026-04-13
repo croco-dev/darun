@@ -1,14 +1,16 @@
 import { gql } from '@apollo/client';
 import { useLocale } from 'next-intl';
+import { useState } from 'react';
 import {
   useProductBySlugOnProductUserActionQuery,
   useUpvoteProductOnProductUserActionMutation,
 } from './__generated__/useProductUserAction';
 
-gql`
+void gql`
   query ProductBySlugOnProductUserAction($slug: String!, $locale: String!) {
     productBySlug(slug: $slug, locale: $locale) {
       id
+      name
       voteCount
     }
   }
@@ -40,11 +42,42 @@ export function useProductUserAction({ slug }: ProductUserActionProps) {
     },
   });
 
+  const [voted, setVoted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [optimisticCount, setOptimisticCount] = useState<number | null>(null);
+
   const upvoteProduct = async () => {
-    await upvoteProductMutation();
+    if (loading) return;
+
+    setLoading(true);
+    setError(null);
+
+    // Optimistic update: immediately increment count
+    const currentCount = optimisticCount ?? data?.productBySlug?.voteCount ?? 0;
+    setOptimisticCount(currentCount + 1);
+    setVoted(true);
+
+    try {
+      await upvoteProductMutation();
+      // Success: keep the optimistic count
+      setOptimisticCount(null);
+    } catch (err) {
+      // Error: revert optimistic update
+      setOptimisticCount(null);
+      setVoted(false);
+      setError('투표에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
   };
+
   return {
     upvoteProduct,
-    voteCount: data?.productBySlug?.voteCount ?? 0,
+    voteCount: optimisticCount ?? data?.productBySlug?.voteCount ?? 0,
+    voted,
+    loading,
+    error,
+    slug,
   };
 }
