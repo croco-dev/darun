@@ -8,11 +8,13 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ChangeEvent } from 'react';
 import { useMemo, useState } from 'react';
 
-import { ProductsCount } from '../../components/ProductsCount';
-
 const buildSearchPath = (locale: string) => `/${locale}/search/product`;
 
-export const MainHeroBanner = () => {
+type MainHeroBannerProps = {
+  productsCount?: number;
+};
+
+export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
   const locale = useLocale();
   const navigate = useNavigate();
   const t = useTranslations();
@@ -28,7 +30,7 @@ export const MainHeroBanner = () => {
       return;
     }
 
-    navigate(`${searchPath}?query=${encodeURIComponent(normalizedQuery)}`);
+    navigate(`${searchPath}?query=${normalizedQuery.replace(/[?&#]/g, '')}`);
   };
 
   return (
@@ -50,7 +52,7 @@ export const MainHeroBanner = () => {
                 <h1 className="darun-heading text-[1.85rem] font-semibold leading-[1.05] tracking-[-0.06em] text-dark-900 sm:text-[2.35rem] md:text-[3.5rem]">
                   <span className="flex flex-wrap items-end gap-x-3 gap-y-1">
                     <span className="text-[2.6rem] leading-none text-brand-700 sm:text-[3.8rem] md:text-[5rem] [&_span]:text-brand-700">
-                      <ProductsCount />
+                      <span className="text-brown-600">{productsCount ?? 0}</span>
                     </span>
                     <span className="text-base font-medium tracking-[-0.04em] text-dark-700 sm:text-[1.2rem] md:pb-2 md:text-[1.6rem]">
                       {t('Main.hero.title.countSuffix')}
