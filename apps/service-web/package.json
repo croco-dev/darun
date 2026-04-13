@@ -5,6 +5,8 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev --turbopack",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps chromium",
     "lint": "eslint --no-warn-ignored **/*.ts*",
     "start": "next start",
     "test": "vitest run",
@@ -38,6 +40,7 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "1.59.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint-config-next": "15.5.12",

@@ -9,6 +9,7 @@
     "deploy:prod": "serverless deploy --stage prod",
     "dev": "serverless offline --stage dev",
     "lint": "eslint **/*.ts*",
+    "seed:e2e": "tsx scripts/seed-e2e.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

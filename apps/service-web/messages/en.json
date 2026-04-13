@@ -92,6 +92,11 @@
       "feature": {
         "title": "Features"
       }
+    },
+    "empty": {
+      "title": "No alternatives registered yet",
+      "description": "Explore similar categories.",
+      "button": "Browse Categories"
     }
   },
   "Main": {
@@ -124,9 +129,9 @@
       "empty": "Categories Coming Soon"
     },
     "trending": {
-      "title": "Trending Services",
+      "title": "Top Picks",
       "more": "See All",
-      "empty": "Trending Services Coming Soon"
+      "empty": "Top Picks Coming Soon"
     },
     "magazine": {
       "title": "Magazine",
