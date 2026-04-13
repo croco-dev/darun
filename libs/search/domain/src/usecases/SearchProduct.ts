@@ -10,6 +10,7 @@ export class SearchProduct {
   ) {}
 
   async execute({ query }: { query: string }) {
-    return this.searchableProductRepository.searchProduct(query);
+    const normalizedQuery = query.trim().toLowerCase();
+    return this.searchableProductRepository.searchProduct(normalizedQuery);
   }
 }

@@ -1,21 +1,11 @@
 import { SearchProductPage } from '@darun/pages-shell';
 import { Metadata } from 'next';
+import { sanitizeQuery } from '@darun/sanitize';
 
 type Props = {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-const QUERY_MAX_LENGTH = 50;
-const TITLE_MAX_LENGTH = 60;
-
-function sanitizeQuery(query: string): string {
-  let sanitized = query.replace(/<[^>]*>/g, '');
-  sanitized = sanitized.replace(/[<>'"&]/g, '');
-  if (sanitized.length > QUERY_MAX_LENGTH) {
-    sanitized = sanitized.slice(0, QUERY_MAX_LENGTH - 3) + '...';
-  }
-  return sanitized.trim();
-}
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const resolvedSearchParams = (await searchParams) ?? {};
