@@ -1,0 +1,1 @@
+export { CompareButton } from './CompareButton';
