@@ -15,14 +15,25 @@ export class GetRankedProducts {
   ) {}
 
   async execute({ limit }: { limit: number }) {
-    const votes = await this.voteRepository.findTopNByVoteCount(limit);
+    // Try 2x first, then 3x if needed
+    let results = await this.fetchWithMultiplier(limit, 2);
+    if (results.length < limit) {
+      results = await this.fetchWithMultiplier(limit, 3);
+    }
 
+    // Return exactly limit items (or all published if fewer)
+    return results.slice(0, limit);
+  }
+
+  private async fetchWithMultiplier(limit: number, multiplier: number) {
+    const votes = await this.voteRepository.findTopNByVoteCount(
+      limit * multiplier,
+    );
     const products = await Promise.all(
       votes.map((vote) =>
         this.productRepository.findPublishedOneById(vote.targetId),
       ),
     );
-
     return products.filter((product) => product !== null);
   }
 }

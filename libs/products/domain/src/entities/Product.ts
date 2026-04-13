@@ -8,6 +8,7 @@ export class Product {
   public publishedAt?: Date;
   public updatedAt?: Date;
   public ownedCompanyId?: string;
+  public categoryIds: string[];
 
   constructor({
     id,
@@ -19,6 +20,7 @@ export class Product {
     publishedAt,
     updatedAt,
     ownedCompanyId,
+    categoryIds,
   }: {
     id?: string;
     slug: string;
@@ -29,6 +31,7 @@ export class Product {
     publishedAt?: Date;
     updatedAt?: Date;
     ownedCompanyId?: string;
+    categoryIds?: string[];
   }) {
     this.slug = slug;
     this.name = name;
@@ -38,6 +41,7 @@ export class Product {
     this.publishedAt = publishedAt;
     this.updatedAt = updatedAt;
     this.ownedCompanyId = ownedCompanyId;
+    this.categoryIds = categoryIds ?? [];
 
     if (id) {
       this.id = id;
@@ -53,11 +57,13 @@ export class Product {
     summary,
     logoUrl,
     description,
+    categoryIds,
   }: {
     name?: string;
     summary?: string;
     description?: string;
     logoUrl?: string;
+    categoryIds?: string[];
   }) {
     if (name !== undefined) {
       this.name = name;
@@ -70,6 +76,9 @@ export class Product {
     }
     if (logoUrl !== undefined) {
       this.logoUrl = logoUrl;
+    }
+    if (categoryIds !== undefined) {
+      this.categoryIds = categoryIds;
     }
 
     this.updatedAt = new Date();
