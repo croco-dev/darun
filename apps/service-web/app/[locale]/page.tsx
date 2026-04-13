@@ -1,15 +1,15 @@
-import { gql } from "@apollo/client";
-import { Suspense } from "react";
-import { getClient } from '../getServerClient';
+import { gql } from '@apollo/client';
 import {
   CategoryNavigationSection,
   MainHeroBanner,
   RecentProductSection,
   TrendingProductSection,
-} from "@darun/products-shell";
-import { CategoryNavigationSkeleton } from "@darun/products-shell/src/shells/CategoryNavigationSection/CategoryNavigationSkeleton";
-import { RecentProductSkeleton } from "@darun/products-shell/src/shells/RecentProductSection/RecentProductSkeleton";
-import { TrendingProductSkeleton } from "@darun/products-shell/src/shells/TrendingProductSection/TrendingProductSkeleton";
+} from '@darun/products-shell';
+import { CategoryNavigationSkeleton } from '@darun/products-shell/src/shells/CategoryNavigationSection/CategoryNavigationSkeleton';
+import { RecentProductSkeleton } from '@darun/products-shell/src/shells/RecentProductSection/RecentProductSkeleton';
+import { TrendingProductSkeleton } from '@darun/products-shell/src/shells/TrendingProductSection/TrendingProductSkeleton';
+import { Suspense } from 'react';
+import { getClient } from '../getServerClient';
 
 const productsCountQuery = gql`
   query ProductsCountOnHomePage {

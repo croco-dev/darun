@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { gql, useSuspenseQuery } from "@apollo/client";
-import { ContentArea } from "@darun/ui";
-import { Link } from "@darun/utils-router";
-import { useLocale, useTranslations } from "next-intl";
-import { ProductItem } from "../../uis";
+import { gql, useSuspenseQuery } from '@apollo/client';
+import { ContentArea } from '@darun/ui';
+import { Link } from '@darun/utils-router';
+import { useLocale, useTranslations } from 'next-intl';
+import { ProductItem } from '../../uis';
 
 const PRODUCTS_BY_CATEGORY_QUERY = gql`
   query ProductsByCategoryOnSection($slug: String!, $locale: String!) {
@@ -42,34 +42,29 @@ type ProductsByCategoryQueryData = {
 
 export function CategoryProductSection({ slug }: { slug: string }) {
   const locale = useLocale();
-  const t = useTranslations("Category");
-  const { data } = useSuspenseQuery<ProductsByCategoryQueryData>(
-    PRODUCTS_BY_CATEGORY_QUERY,
-    {
-      variables: {
-        slug,
-        locale,
-      },
+  const t = useTranslations('Category');
+  const { data } = useSuspenseQuery<ProductsByCategoryQueryData>(PRODUCTS_BY_CATEGORY_QUERY, {
+    variables: {
+      slug,
+      locale,
     },
-  );
+  });
 
   const products = data?.productsByCategory ?? [];
-  const categoryLabel = t("title", { category: slug });
-  const emptyLabel = t("empty");
+  const categoryLabel = t('title', { category: slug });
+  const emptyLabel = t('empty');
 
   return (
     <ContentArea>
       <div className="flex flex-col gap-6">
-        <h1 className="text-[22px] font-semibold tracking-[-0.2px] text-dark-800">
-          {categoryLabel}
-        </h1>
+        <h1 className="text-[22px] font-semibold tracking-[-0.2px] text-dark-800">{categoryLabel}</h1>
         {products.length === 0 ? (
           <div className="flex min-h-40 items-center justify-center rounded-[24px] border border-surface-300 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
             {emptyLabel}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
-            {products.map((product) => (
+            {products.map(product => (
               <Link
                 key={product.id}
                 href={`/products/${product.slug}`}
@@ -82,7 +77,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                       logoUrl={product.logoUrl ?? undefined}
                       logoSize="small"
                       summary={product.summary ?? undefined}
-                      tags={product.tags.map((tag) => tag.name)}
+                      tags={product.tags.map(tag => tag.name)}
                       maxTagItems={2}
                     />
                   </div>

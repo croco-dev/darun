@@ -1,1 +1,1 @@
-export { SearchProductListSkeleton } from "./SearchProductListSkeleton";
+export { SearchProductListSkeleton } from './SearchProductListSkeleton';

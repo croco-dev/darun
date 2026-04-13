@@ -1,11 +1,11 @@
-import { ContentArea } from "@darun/ui";
-import { Layout } from "@darun/ui-layout";
+import { ContentArea } from '@darun/ui';
+import { Layout } from '@darun/ui-layout';
 
 const Skeleton = ({
-  width = "100%",
-  height = "20px",
-  radius = "4px",
-  className = "",
+  width = '100%',
+  height = '20px',
+  radius = '4px',
+  className = '',
 }: {
   width?: string | number;
   height?: string | number;
@@ -16,9 +16,9 @@ const Skeleton = ({
     aria-hidden="true"
     className={`${className} bg-gradient-to-r from-dark-100 via-dark-200 to-dark-100 animate-pulse`}
     style={{
-      width: typeof width === "number" ? `${width}px` : width,
-      height: typeof height === "number" ? `${height}px` : height,
-      borderRadius: typeof radius === "number" ? `${radius}px` : radius,
+      width: typeof width === 'number' ? `${width}px` : width,
+      height: typeof height === 'number' ? `${height}px` : height,
+      borderRadius: typeof radius === 'number' ? `${radius}px` : radius,
     }}
   />
 );
@@ -36,10 +36,7 @@ export default function Loading() {
           <ContentArea>
             <div className="flex flex-col gap-2">
               {/* Product Summary Skeleton */}
-              <div
-                data-testid="skel-product-hero"
-                className="flex flex-col gap-3"
-              >
+              <div data-testid="skel-product-hero" className="flex flex-col gap-3">
                 <div className="flex items-start gap-4">
                   <Skeleton width={80} height={80} radius="12px" />
                   <div className="flex flex-1 flex-col gap-2">
@@ -61,10 +58,7 @@ export default function Loading() {
             </div>
 
             {/* Product Description Section Skeleton */}
-            <div
-              data-testid="skel-product-desc"
-              className="mb-6 flex flex-col gap-3"
-            >
+            <div data-testid="skel-product-desc" className="mb-6 flex flex-col gap-3">
               <Skeleton width="40%" height={24} radius="4px" />
               <Skeleton width="100%" height={16} radius="4px" />
               <Skeleton width="100%" height={16} radius="4px" />
@@ -72,10 +66,7 @@ export default function Loading() {
             </div>
 
             {/* Product Feature Section Skeleton */}
-            <div
-              data-testid="skel-product-feature"
-              className="flex flex-col gap-3"
-            >
+            <div data-testid="skel-product-feature" className="flex flex-col gap-3">
               <Skeleton width="30%" height={24} radius="4px" />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-2">

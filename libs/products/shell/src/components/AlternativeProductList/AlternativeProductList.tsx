@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { bind } from "@croco/utils-structure-react";
-import { Link } from "@darun/utils-router";
-import { ProductItem } from "../../uis";
-import { useAlternativeProductList } from "./useAlternativeProductList";
-import type { ProductBySlugOnAlternativeProductListQuery } from "./__generated__/useAlternativeProductList";
+import { bind } from '@croco/utils-structure-react';
+import { Link } from '@darun/utils-router';
+import { ProductItem } from '../../uis';
+import type { ProductBySlugOnAlternativeProductListQuery } from './__generated__/useAlternativeProductList';
+import { useAlternativeProductList } from './useAlternativeProductList';
 
 type AlternativeProduct = NonNullable<
-  ProductBySlugOnAlternativeProductListQuery["productBySlug"]
->["alternatives"][number];
-type Tag = AlternativeProduct["tags"][number];
+  ProductBySlugOnAlternativeProductListQuery['productBySlug']
+>['alternatives'][number];
+type Tag = AlternativeProduct['tags'][number];
 
 type AlternativeProductListReturn = {
   slug: string;
@@ -30,7 +30,7 @@ export const AlternativeProductList = bind(
             <ProductItem
               name={alternative.name}
               logoUrl={alternative.logoUrl}
-              logoSize={"medium"}
+              logoSize={'medium'}
               summary={alternative.summary}
               tags={alternative.tags.map((tag: Tag) => tag.name)}
             />
@@ -38,5 +38,5 @@ export const AlternativeProductList = bind(
         ))}
       </div>
     );
-  },
+  }
 );

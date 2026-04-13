@@ -24,7 +24,6 @@ export const CompareButton = ({ slug }: CompareButtonProps) => {
   const [compareList, setCompareList] = useState<string[]>(getStoredList);
   const isAdded = compareList.includes(slug);
 
-
   const handleClick = () => {
     let newList = [...compareList];
 

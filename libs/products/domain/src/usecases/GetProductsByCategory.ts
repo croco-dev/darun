@@ -1,9 +1,9 @@
-import { Inject, Service } from "typedi";
-import type { ProductRepository } from "../repositories/ProductRepository";
-import { ProductRepositoryToken } from "../repositories/ProductRepository";
-import type { CategoryRepository } from "../repositories/CategoryRepository";
-import { CategoryRepositoryToken } from "../repositories/CategoryRepository";
-import { Product } from "../entities/Product";
+import { Inject, Service } from 'typedi';
+import { Product } from '../entities/Product';
+import type { CategoryRepository } from '../repositories/CategoryRepository';
+import { CategoryRepositoryToken } from '../repositories/CategoryRepository';
+import type { ProductRepository } from '../repositories/ProductRepository';
+import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
 @Service()
 export class GetProductsByCategory {
@@ -11,14 +11,10 @@ export class GetProductsByCategory {
     @Inject(ProductRepositoryToken)
     private readonly productRepository: ProductRepository,
     @Inject(CategoryRepositoryToken)
-    private readonly categoryRepository: CategoryRepository,
+    private readonly categoryRepository: CategoryRepository
   ) {}
 
-  async execute({
-    slug,
-  }: {
-    slug: string;
-  }): Promise<{
+  async execute({ slug }: { slug: string }): Promise<{
     category: {
       id: string;
       slug: string;
@@ -33,9 +29,7 @@ export class GetProductsByCategory {
       return { category: null, products: [] };
     }
 
-    const products = await this.productRepository.findPublishedByCategoryId(
-      category.id,
-    );
+    const products = await this.productRepository.findPublishedByCategoryId(category.id);
 
     return {
       category: {

@@ -1,1 +1,1 @@
-export { sanitizeQuery } from "./sanitizeQuery";
+export { sanitizeQuery } from './sanitizeQuery';

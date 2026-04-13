@@ -1,20 +1,16 @@
-import "reflect-metadata";
-import { Container } from "typedi";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { products } from "../libs/products/datasource/src/entities/ProductSchema";
-import { votes } from "../libs/voting/datasource/src/entities/VoteSchema";
-import { magazines } from "../libs/magazines/datasource/src/entities/MagazineSchema";
-import { recommendations } from "../libs/recommendation/datasource/src/entities/RecommendationSchema";
-import { Product } from "../libs/products/domain/src/entities/Product";
-import { Magazine } from "../libs/magazines/domain/src/entities/Magazine";
-import { Vote } from "../libs/voting/domain/src/entities/Vote";
-import { Recommendation } from "../libs/recommendation/domain/src/entities/Recommendation";
-import { ProductRepositoryToken } from "../libs/products/domain/src/repositories/ProductRepository";
-import { MagazineRepositoryToken } from "../libs/magazines/domain/src/repositories/MagazineRepository";
-import { VoteRepositoryToken } from "../libs/voting/domain/src/repositories/VoteRepository";
-import { RecommendationRepositoryToken } from "../libs/recommendation/domain/src/repositories/RecommendationRepository";
-import { Drizzle, DrizzleToken } from "../libs/shared/provider-database/src";
+import 'reflect-metadata';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { Container } from 'typedi';
+import { magazines } from '../libs/magazines/datasource/src/entities/MagazineSchema';
+import { Magazine } from '../libs/magazines/domain/src/entities/Magazine';
+import { products } from '../libs/products/datasource/src/entities/ProductSchema';
+import { Product } from '../libs/products/domain/src/entities/Product';
+import { recommendations } from '../libs/recommendation/datasource/src/entities/RecommendationSchema';
+import { Recommendation } from '../libs/recommendation/domain/src/entities/Recommendation';
+import { DrizzleToken } from '../libs/shared/provider-database/src';
+import { votes } from '../libs/voting/datasource/src/entities/VoteSchema';
+import { Vote } from '../libs/voting/domain/src/entities/Vote';
 
 /**
  * E2E 테스트를 위한 고정 Seed 데이터 계약
@@ -39,92 +35,84 @@ interface SeedVoteRepository {
 }
 
 interface SeedRecommendationRepository {
-  findBySourceProductId(
-    productId: string,
-  ): Promise<{ id: string; targetProductId: string }[]>;
+  findBySourceProductId(productId: string): Promise<{ id: string; targetProductId: string }[]>;
   create(recommendation: Recommendation): Promise<Recommendation | null>;
 }
 
 // Seed 데이터 상수
 const FIXTURE_A = {
-  slug: "darun-product",
-  name: "다른 서비스",
-  summary: "E2E 테스트용 - 대안 없음",
-  description: "대안이 없는 테스트 상품입니다.",
+  slug: 'darun-product',
+  name: '다른 서비스',
+  summary: 'E2E 테스트용 - 대안 없음',
+  description: '대안이 없는 테스트 상품입니다.',
 };
 const FIXTURE_B = {
-  slug: "figma-e2e",
-  name: "Figma E2E",
-  summary: "E2E 테스트용 - 다수 대안 보유",
-  description: "디자인 도구 E2E 테스트 픽스처입니다.",
+  slug: 'figma-e2e',
+  name: 'Figma E2E',
+  summary: 'E2E 테스트용 - 다수 대안 보유',
+  description: '디자인 도구 E2E 테스트 픽스처입니다.',
   metadata: {
-    price: "무료/유료",
-    platform: "Web, Mac, Windows",
+    price: '무료/유료',
+    platform: 'Web, Mac, Windows',
     freeTier: true,
   },
 };
 const FIXTURE_C = {
-  slug: "sketch-e2e",
-  name: "Sketch E2E",
-  summary: "E2E 테스트용 - 비교 대상",
-  description: "벡터 그래픽 도구 E2E 테스트 픽스처입니다.",
-  metadata: { price: "유료", platform: "Mac", freeTier: false },
+  slug: 'sketch-e2e',
+  name: 'Sketch E2E',
+  summary: 'E2E 테스트용 - 비교 대상',
+  description: '벡터 그래픽 도구 E2E 테스트 픽스처입니다.',
+  metadata: { price: '유료', platform: 'Mac', freeTier: false },
 };
-const FIXTURE_D_PREFIX = "notion-e2e";
-const FIXTURE_E = { email: "test@darun.io", uid: "e2e-test-uid" };
+const FIXTURE_D_PREFIX = 'notion-e2e';
+const FIXTURE_E = { email: 'test@darun.io', uid: 'e2e-test-uid' };
 const FIXTURE_F = {
-  slug: "intro-e2e",
-  title: "다른.io 소개",
-  author: "다른 팀",
+  slug: 'intro-e2e',
+  title: '다른.io 소개',
+  author: '다른 팀',
 };
 
 const ALTERNATIVE_PRODUCTS = [
   {
-    slug: "sketch-e2e",
-    name: "Sketch E2E",
-    summary: "Sketch 대안",
-    description: "Sketch 스타일 E2E 테스트",
+    slug: 'sketch-e2e',
+    name: 'Sketch E2E',
+    summary: 'Sketch 대안',
+    description: 'Sketch 스타일 E2E 테스트',
   },
   {
-    slug: "adobe-xd-e2e",
-    name: "Adobe XD E2E",
-    summary: "Adobe XD 대안",
-    description: "Adobe XD 스타일 E2E 테스트",
+    slug: 'adobe-xd-e2e',
+    name: 'Adobe XD E2E',
+    summary: 'Adobe XD 대안',
+    description: 'Adobe XD 스타일 E2E 테스트',
   },
   {
-    slug: "invision-e2e",
-    name: "InVision E2E",
-    summary: "InVision 대안",
-    description: "InVision 스타일 E2E 테스트",
+    slug: 'invision-e2e',
+    name: 'InVision E2E',
+    summary: 'InVision 대안',
+    description: 'InVision 스타일 E2E 테스트',
   },
 ];
 
 const RANKED_PRODUCTS_COUNT = 32;
 
 async function main() {
-  console.log("🔧 E2E Seed 스크립트 시작...");
+  console.log('🔧 E2E Seed 스크립트 시작...');
 
   // 환경 변수 검증
   const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
   if (!databaseUrl) {
-    console.error("❌ DATABASE_URL 또는 POSTGRES_URL 환경 변수가 필요합니다");
+    console.error('❌ DATABASE_URL 또는 POSTGRES_URL 환경 변수가 필요합니다');
     process.exit(1);
   }
 
   // 프로덕션 DB 감지 및 차단
-  if (
-    databaseUrl.includes("prod") ||
-    databaseUrl.includes("production") ||
-    databaseUrl.includes("aws")
-  ) {
-    console.error(
-      "❌ 프로덕션 데이터베이스 URL이 감지되었습니다. E2E seed는 테스트 환경에서만 실행 가능합니다.",
-    );
+  if (databaseUrl.includes('prod') || databaseUrl.includes('production') || databaseUrl.includes('aws')) {
+    console.error('❌ 프로덕션 데이터베이스 URL이 감지되었습니다. E2E seed는 테스트 환경에서만 실행 가능합니다.');
     process.exit(1);
   }
 
-  console.log("📊 데이터베이스 연결 중...");
+  console.log('📊 데이터베이스 연결 중...');
 
   const client = postgres(databaseUrl);
   const db = drizzle(client);
@@ -135,11 +123,7 @@ async function main() {
   // Repository 인스턴스 생성 (직접 구현)
   const productRepo = {
     async findOneBySlug(slug: string) {
-      const result = await db
-        .select({ id: products.id })
-        .from(products)
-        .where(eq(products.slug, slug))
-        .limit(1);
+      const result = await db.select({ id: products.id }).from(products).where(eq(products.slug, slug)).limit(1);
       return result[0] || null;
     },
     async insert(values: Product) {
@@ -158,28 +142,26 @@ async function main() {
           categoryIds: values.categoryIds || [],
         } as typeof products.$inferInsert)
         .returning();
-      return result[0] ? new Product({
-        id: result[0].id,
-        slug: result[0].slug,
-        name: result[0].name,
-        summary: result[0].summary,
-        description: result[0].description ?? undefined,
-        logoUrl: result[0].logoUrl,
-        publishedAt: result[0].publishedAt ?? undefined,
-        updatedAt: result[0].updatedAt ?? undefined,
-        ownedCompanyId: result[0].ownedCompanyId ?? undefined,
-        categoryIds: result[0].categoryIds,
-      }) : null;
+      return result[0]
+        ? new Product({
+            id: result[0].id,
+            slug: result[0].slug,
+            name: result[0].name,
+            summary: result[0].summary,
+            description: result[0].description ?? undefined,
+            logoUrl: result[0].logoUrl,
+            publishedAt: result[0].publishedAt ?? undefined,
+            updatedAt: result[0].updatedAt ?? undefined,
+            ownedCompanyId: result[0].ownedCompanyId ?? undefined,
+            categoryIds: result[0].categoryIds,
+          })
+        : null;
     },
   } as SeedProductRepository;
 
   const magazineRepo = {
     async findOneBySlug(slug: string) {
-      const result = await db
-        .select({ id: magazines.id })
-        .from(magazines)
-        .where(eq(magazines.slug, slug))
-        .limit(1);
+      const result = await db.select({ id: magazines.id }).from(magazines).where(eq(magazines.slug, slug)).limit(1);
       return result[0] || null;
     },
     async insert(values: Magazine) {
@@ -198,42 +180,33 @@ async function main() {
           authorId: values.authorId,
         } as typeof magazines.$inferInsert)
         .returning();
-      return result[0] ? new Magazine({
-        id: result[0].id,
-        slug: result[0].slug ?? undefined,
-        title: result[0].title,
-        summary: result[0].summary ?? undefined,
-        content: result[0].content ?? undefined,
-        backgroundImageUrl: result[0].backgroundImageUrl,
-        logoImageUrl: result[0].logoImageUrl ?? undefined,
-        publishedAt: result[0].publishedAt ?? undefined,
-        updatedAt: result[0].updatedAt ?? undefined,
-        authorId: result[0].authorId,
-      }) : null;
+      return result[0]
+        ? new Magazine({
+            id: result[0].id,
+            slug: result[0].slug ?? undefined,
+            title: result[0].title,
+            summary: result[0].summary ?? undefined,
+            content: result[0].content ?? undefined,
+            backgroundImageUrl: result[0].backgroundImageUrl,
+            logoImageUrl: result[0].logoImageUrl ?? undefined,
+            publishedAt: result[0].publishedAt ?? undefined,
+            updatedAt: result[0].updatedAt ?? undefined,
+            authorId: result[0].authorId,
+          })
+        : null;
     },
   } as SeedMagazineRepository;
 
   const voteRepo = {
     async findByTargetId(targetId: string) {
-      const result = await db
-        .select({ id: votes.id })
-        .from(votes)
-        .where(eq(votes.targetId, targetId))
-        .limit(1);
+      const result = await db.select({ id: votes.id }).from(votes).where(eq(votes.targetId, targetId)).limit(1);
       return result[0] || null;
     },
     async upsertByTargetId(targetId: string, modifier: (vote: Vote) => Vote) {
-      const existing = await db
-        .select()
-        .from(votes)
-        .where(eq(votes.targetId, targetId))
-        .limit(1);
+      const existing = await db.select().from(votes).where(eq(votes.targetId, targetId)).limit(1);
       if (existing[0]) {
         const updated = modifier(new Vote(existing[0]));
-        await db
-          .update(votes)
-          .set({ count: updated.count })
-          .where(eq(votes.id, existing[0].id));
+        await db.update(votes).set({ count: updated.count }).where(eq(votes.id, existing[0].id));
         return updated;
       } else {
         const newVote = modifier(new Vote({ targetId, count: 0 }));
@@ -266,15 +239,15 @@ async function main() {
           targetProductId: recommendation.targetProductId,
         } as typeof recommendations.$inferInsert)
         .returning();
-      return result[0] ? result[0] as Record<string, unknown> : null;
+      return result[0] ? (result[0] as Record<string, unknown>) : null;
     },
   } as SeedRecommendationRepository;
 
   // Import statements
-  const { eq, and, isNotNull } = await import("drizzle-orm");
-  const { ulid } = await import("ulid");
+  const { eq, and, isNotNull } = await import('drizzle-orm');
+  const { ulid } = await import('ulid');
 
-  console.log("🌱 Fixture A: darun-product (대안 없음)");
+  console.log('🌱 Fixture A: darun-product (대안 없음)');
   {
     const existing = await productRepo.findOneBySlug(FIXTURE_A.slug);
     if (!existing) {
@@ -284,7 +257,7 @@ async function main() {
         name: FIXTURE_A.name,
         summary: FIXTURE_A.summary,
         description: FIXTURE_A.description,
-        logoUrl: "https://placehold.co/400x400?text=Darun",
+        logoUrl: 'https://placehold.co/400x400?text=Darun',
       });
       product.publish();
       await productRepo.insert(product);
@@ -294,7 +267,7 @@ async function main() {
     }
   }
 
-  console.log("🌱 Fixture B/C/대안들: figma-e2e, sketch-e2e 등");
+  console.log('🌱 Fixture B/C/대안들: figma-e2e, sketch-e2e 등');
   {
     // figma-e2e 생성
     let figmaId: string | null = null;
@@ -306,7 +279,7 @@ async function main() {
         name: FIXTURE_B.name,
         summary: FIXTURE_B.summary,
         description: FIXTURE_B.description,
-        logoUrl: "https://placehold.co/400x400?text=Figma",
+        logoUrl: 'https://placehold.co/400x400?text=Figma',
       });
       product.publish();
       const inserted = await productRepo.insert(product);
@@ -342,11 +315,8 @@ async function main() {
 
     // 대안 관계 설정 (figma-e2e에 대안 연결)
     if (figmaId) {
-      const existingRecommendations =
-        await recommendationRepo.findBySourceProductId(figmaId);
-      const existingTargetIds = new Set(
-        existingRecommendations.map((r) => r.targetProductId),
-      );
+      const existingRecommendations = await recommendationRepo.findBySourceProductId(figmaId);
+      const existingTargetIds = new Set(existingRecommendations.map(r => r.targetProductId));
 
       for (const targetId of alternativeIds) {
         if (!existingTargetIds.has(targetId)) {
@@ -358,13 +328,11 @@ async function main() {
           await recommendationRepo.create(rec);
         }
       }
-      console.log(
-        `  ✓ ${FIXTURE_B.slug}에 ${alternativeIds.length}개 대안 연결 완료`,
-      );
+      console.log(`  ✓ ${FIXTURE_B.slug}에 ${alternativeIds.length}개 대안 연결 완료`);
     }
   }
 
-  console.log("🌱 Fixture D: rankedProducts용 32개 상품");
+  console.log('🌱 Fixture D: rankedProducts용 32개 상품');
   {
     const existingCount = await db
       .select({ count: sql<number>`count(*)` })
@@ -374,20 +342,18 @@ async function main() {
 
     if (currentPublishedCount < RANKED_PRODUCTS_COUNT) {
       const neededCount = RANKED_PRODUCTS_COUNT - currentPublishedCount;
-      console.log(
-        `  📊 현재 ${currentPublishedCount}개 → ${neededCount}개 추가 필요`,
-      );
+      console.log(`  📊 현재 ${currentPublishedCount}개 → ${neededCount}개 추가 필요`);
 
       for (let i = 1; i <= neededCount; i++) {
         const index = currentPublishedCount + i;
-        const slug = `${FIXTURE_D_PREFIX}-${String(index).padStart(2, "0")}`;
+        const slug = `${FIXTURE_D_PREFIX}-${String(index).padStart(2, '0')}`;
         const existing = await productRepo.findOneBySlug(slug);
 
         if (!existing) {
           const product = new Product({
             id: ulid(),
             slug,
-            name: `Notion E2E ${String(index).padStart(2, "0")}`,
+            name: `Notion E2E ${String(index).padStart(2, '0')}`,
             summary: `E2E 테스트용 상품 ${index}`,
             description: `E2E 랭킹 테스트를 위한 ${index}번째 상품`,
             logoUrl: `https://placehold.co/400x400?text=Notion${index}`,
@@ -397,7 +363,7 @@ async function main() {
 
           // 고유한 voteCount 주입 (1~32)
           if (inserted?.id) {
-            await voteRepo.upsertByTargetId(inserted.id, (vote) => {
+            await voteRepo.upsertByTargetId(inserted.id, vote => {
               vote.count = index;
               return vote;
             });
@@ -410,17 +376,15 @@ async function main() {
     }
   }
 
-  console.log("🌱 Fixture E: 테스트 계정 (Firebase Auth emulator용)");
+  console.log('🌱 Fixture E: 테스트 계정 (Firebase Auth emulator용)');
   {
     // Note: Account 데이터는 Firebase Auth에 의존
     // 여기서는 상품 저장 관계 3건만 생성
-    console.log(
-      `  ℹ️ 테스트 계정 ${FIXTURE_E.email}은 Firebase Auth emulator에서 관리`,
-    );
+    console.log(`  ℹ️ 테스트 계정 ${FIXTURE_E.email}은 Firebase Auth emulator에서 관리`);
     console.log(`  ℹ️ 저장 상품 관계는 E2E 테스트 시 동적으로 생성`);
   }
 
-  console.log("🌱 Fixture F: 매거진 (intro-e2e)");
+  console.log('🌱 Fixture F: 매거진 (intro-e2e)');
   {
     const existing = await magazineRepo.findOneBySlug(FIXTURE_F.slug);
     if (!existing) {
@@ -428,7 +392,7 @@ async function main() {
         id: ulid(),
         slug: FIXTURE_F.slug,
         title: FIXTURE_F.title,
-        summary: "다른.io는 한국 SaaS와 서비스를 비교·발견하는 플랫폼입니다.",
+        summary: '다른.io는 한국 SaaS와 서비스를 비교·발견하는 플랫폼입니다.',
         content: `## 다른.io 소개
 
 다른.io는 "다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다"라는 미션을 가진 서비스 비교 플랫폼입니다.
@@ -444,9 +408,9 @@ async function main() {
 - **대안 비교**: 비슷한 서비스 간의 명확한 차이점 제시
 
 이 글은 E2E 테스트를 위한 픽스처입니다.`,
-        backgroundImageUrl: "https://placehold.co/1200x600?text=Darun.io",
-        logoImageUrl: "https://placehold.co/400x400?text=Darun",
-        authorId: "e2e-author-id",
+        backgroundImageUrl: 'https://placehold.co/1200x600?text=Darun.io',
+        logoImageUrl: 'https://placehold.co/400x400?text=Darun',
+        authorId: 'e2e-author-id',
       });
       magazine.publish();
       await magazineRepo.insert(magazine);
@@ -456,24 +420,20 @@ async function main() {
     }
   }
 
-  console.log("\n✅ E2E Seed 데이터 생성 완료");
-  console.log("");
-  console.log("📋 Seed 데이터 계약:");
+  console.log('\n✅ E2E Seed 데이터 생성 완료');
+  console.log('');
+  console.log('📋 Seed 데이터 계약:');
   console.log(`  • Fixture A (darun-product): 대안 0개`);
-  console.log(
-    `  • Fixture B (figma-e2e): 대안 ${ALTERNATIVE_PRODUCTS.length}개 이상`,
-  );
+  console.log(`  • Fixture B (figma-e2e): 대안 ${ALTERNATIVE_PRODUCTS.length}개 이상`);
   console.log(`  • Fixture C (sketch-e2e): 비교 가능한 메타데이터 보유`);
-  console.log(
-    `  • Fixture D: rankedProducts용 ${RANKED_PRODUCTS_COUNT}개 상품`,
-  );
+  console.log(`  • Fixture D: rankedProducts용 ${RANKED_PRODUCTS_COUNT}개 상품`);
   console.log(`  • Fixture E (test@darun.io): Firebase Auth emulator 사용`);
   console.log(`  • Fixture F (intro-e2e): 매거진 1건`);
 
   await client.end();
 }
 
-main().catch((error) => {
-  console.error("❌ Seed 스크립트 실패:", error);
+main().catch(error => {
+  console.error('❌ Seed 스크립트 실패:', error);
   process.exit(1);
 });

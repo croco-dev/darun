@@ -1,11 +1,10 @@
 import { SearchProductPage } from '@darun/pages-shell';
-import { Metadata } from 'next';
 import { sanitizeQuery } from '@darun/sanitize';
+import { Metadata } from 'next';
 
 type Props = {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
-
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const resolvedSearchParams = (await searchParams) ?? {};
