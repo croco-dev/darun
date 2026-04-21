@@ -778,7 +778,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
     Evidence: .sisyphus/evidence/task-10-followup-question.txt
   ```
 
-- [ ] 11. main에 squash merge 및 브랜치 정리
+- [x] 11. main에 squash merge 및 브랜치 정리
 
   **What to do**:
   - FINAL 검증 웨이브가 모두 승인된 뒤 `main`으로 체크아웃한다.
