@@ -843,19 +843,19 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
 
 ## Final Verification Wave
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   - 리포트 파일 존재 여부, 6축 섹션 유무, P0-P3 심각도, 근거 파일 경로, `tech_contract` 비확정 상태, 단일 후속 질문 여부를 점검한다.
   - Output: `Must Have [N/N] | Must NOT Have [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   - 진단 과정에서 사용한 명령, 리포트 구조, 마크다운 정합성, 민감 정보 마스킹 여부를 확인한다.
   - Output: `Commands [PASS/FAIL] | Report Structure [PASS/FAIL] | Secret Hygiene [PASS/FAIL] | VERDICT`
 
-- [ ] F3. **Real Manual QA** — `unspecified-high`
+- [x] F3. **Real Manual QA** — `unspecified-high`
   - 각 태스크의 QA 시나리오를 실제로 따라가며, 리포트 파일과 증거 파일이 계획과 일치하는지 확인한다.
   - Output: `Scenarios [N/N pass] | Evidence [N/N] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   - 리포트 생성 범위를 넘어선 변경(예: 코드 수정, `.impeccable.md` 생성, 추가 산출물 생성)이 없는지 확인한다.
   - Output: `Scope [PASS/FAIL] | Extra Changes [CLEAN/N issues] | VERDICT`
 
@@ -879,8 +879,8 @@ grep -cE "P[0-3]" .sisyphus/tech-improve/darun-20260421*.md
 ```
 
 ### Final Checklist
-- [ ] 모든 "Must Have" 충족
-- [ ] 모든 "Must NOT Have" 부재
-- [ ] 리포트 저장 완료
-- [ ] 후속 질문 1회만 수행
-- [ ] main squash merge 및 브랜치 정리 완료
+- [x] 모든 "Must Have" 충족
+- [x] 모든 "Must NOT Have" 부재
+- [x] 리포트 저장 완료
+- [x] 후속 질문 1회만 수행
+- [x] main squash merge 및 브랜치 정리 완료
