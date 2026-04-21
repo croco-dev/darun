@@ -1,0 +1,72 @@
+{
+  "active_plan": "/Users/owen/Projects/croco/darun/.sisyphus/plans/tech-improve-darun.md",
+  "started_at": "2026-04-21T00:16:25.805Z",
+  "session_ids": [
+    "ses_254287d69ffe6CGGaR2avcYe8L",
+    "ses_252995700ffecrU6kuQIizYGWy",
+    "ses_25299124fffeypFJ0pKhxIn5fy",
+    "ses_25298dcf8ffeUOSjGQ5lmfUaJD",
+    "ses_25298a9ffffekw0GjbjPwhLNHC",
+    "ses_2529874d7ffeli7f2trGY2JLU6",
+    "ses_2528c5459ffeZxAynziUWLqqkA",
+    "ses_25286d50fffechyAGKBvi45T2c",
+    "ses_2527de8ebffeJ747GETKkcG8Mn",
+    "ses_2527d434cffex86fUD63g2c1cc",
+    "ses_2527cf3cbffeL4cGVy5Mmp6Duj",
+    "ses_2527cba41ffeJIADUSK97OLXkl"
+  ],
+  "session_origins": {
+    "ses_254287d69ffe6CGGaR2avcYe8L": "direct",
+    "ses_252995700ffecrU6kuQIizYGWy": "appended",
+    "ses_25299124fffeypFJ0pKhxIn5fy": "appended",
+    "ses_25298dcf8ffeUOSjGQ5lmfUaJD": "appended",
+    "ses_25298a9ffffekw0GjbjPwhLNHC": "appended",
+    "ses_2529874d7ffeli7f2trGY2JLU6": "appended",
+    "ses_2528c5459ffeZxAynziUWLqqkA": "appended",
+    "ses_25286d50fffechyAGKBvi45T2c": "appended",
+    "ses_2527de8ebffeJ747GETKkcG8Mn": "appended",
+    "ses_2527d434cffex86fUD63g2c1cc": "appended",
+    "ses_2527cf3cbffeL4cGVy5Mmp6Duj": "appended",
+    "ses_2527cba41ffeJIADUSK97OLXkl": "appended"
+  },
+  "plan_name": "tech-improve-darun",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "작업 브랜치 생성 및 리포트 경로 충돌 점검",
+      "session_id": "ses_252956710ffezOIZ8KF1EpPUcg",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-21T00:28:34.745Z"
+    },
+    "todo:8": {
+      "task_key": "todo:8",
+      "task_label": "8",
+      "task_title": "6축 결과 합성 및 심각도/Priority 정규화",
+      "session_id": "ses_2528c5459ffeZxAynziUWLqqkA",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-21T00:35:49.752Z"
+    },
+    "todo:9": {
+      "task_key": "todo:9",
+      "task_label": "9",
+      "task_title": "진단 리포트 마크다운 작성 및 저장",
+      "session_id": "ses_25286d50fffechyAGKBvi45T2c",
+      "agent": "Sisyphus-Junior",
+      "category": "writing",
+      "updated_at": "2026-04-21T00:42:45.634Z"
+    },
+    "todo:11": {
+      "task_key": "todo:11",
+      "task_label": "11",
+      "task_title": "main에 squash merge 및 브랜치 정리",
+      "session_id": "ses_2527cba41ffeJIADUSK97OLXkl",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-21T00:52:34.789Z"
+    }
+  }
+}

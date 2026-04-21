@@ -1,0 +1,118 @@
+Task 7: Security + DX 축 진단
+
+정적 분석 기준:
+- 소스 수정 없이 문서/설정/인증 provider/워크플로우/패턴 검색만 읽었다.
+- 민감값은 기록하지 않았고, secret/token/password/apiKey 계열은 파일 경로와 패턴 종류만 남겼다.
+- 동적 침투 테스트나 외부 시스템 상호작용은 수행하지 않았다.
+
+근거 파일:
+- README.md
+- package.json
+- eslint.config.mjs
+- vitest.config.ts
+- turbo.json
+- lefthook.yml
+- .github/workflows/PullRequest.yaml
+- .github/workflows/Deploy.yaml
+- .github/workflows/Production.yaml
+- apps/graphql-api/.env.sample
+- apps/service-web/.env.sample
+- apps/graphql-api/src/config/environment.ts
+- apps/graphql-api/src/functions/context.ts
+- apps/graphql-api/src/config/storage.ts
+- libs/accounts/datasource/src/repositories/FirebaseAccountRepository.ts
+- libs/shared/provider-auth/server/src/libs/AuthChecker/AuthChecker.ts
+- libs/shared/provider-auth/server/src/libs/AuthServerProvider/AuthServerProvider.tsx
+- libs/shared/provider-auth/client/src/libs/AuthProvider/AuthProvider.tsx
+- libs/shared/provider-auth/client/src/libs/AuthStateProvider/AuthStateProvider.tsx
+- libs/shared/provider-auth/client/src/libs/AuthServiceProvider/AuthServiceProvider.tsx
+- libs/shared/utils-auth-service/firebase/src/libs/FirebaseAuthService/FirebaseAuthService.ts
+- libs/shared/utils-apollo-client/client/src/libs/ApolloProvider.tsx
+- libs/shared/utils-apollo-client/server/src/libs/ServerClient.ts
+- apps/service-web/app/getServerClient.ts
+- pnpm audit 결과
+
+## Security
+
+### 1) 인증/권한 경계
+- `apps/graphql-api/src/functions/context.ts`는 요청 단위로 `authToken`을 `GetAccount.execute({ token })`에 넘기고, `getUserIdOrThrow()`에서 계정이 없으면 `Unauthorized`를 던진다. GraphQL 컨텍스트에서 인증 유무와 권한 조회(`getRoles`) 경계가 분리되어 있다.
+- `libs/accounts/datasource/src/repositories/FirebaseAccountRepository.ts`는 Firebase Admin `verifyIdToken(token)` 성공 시에만 계정을 복원하고, 실패하면 `null`을 반환한다. 권한 데이터는 decoded token의 `roles` claim에 의존한다.
+- `libs/shared/provider-auth/client/src/libs/AuthStateProvider/AuthStateProvider.tsx`는 클라이언트 상태를 `Authorized`/`UnAuthorized`로 분리하지만, 실제 권한 판정은 토큰 claim(`isAdmin`)과 서버 검증 결과에 의존한다. UI 상태만으로 권한이 확정되지는 않는다.
+
+### 2) secret 취급 방식
+- `apps/graphql-api/src/config/environment.ts`는 `requireEnv()`로 서버측 필수 환경변수를 강제하고, `FIREBASE_PRIVATE_KEY`는 개행 치환 후 사용한다. 비밀값이 코드 상수로 하드코딩되기보다 환경변수에서 주입되는 구조다.
+- `apps/graphql-api/src/config/storage.ts`와 `libs/images/datasource/src/repositories/CloudinaryImageRepository.ts`는 Cloudinary secret을 런타임 설정에서 읽어 서명 생성에만 사용한다. secret이 없으면 즉시 예외를 던져 fail-fast 동작을 한다.
+- `libs/shared/utils-auth-service/firebase/src/libs/FirebaseAuthService/FirebaseAuthService.ts`는 `idToken`/`refreshToken`을 storage에 저장·갱신하고, 서버/클라이언트 provider는 `sameSite: 'strict'` 쿠키 정책을 공통으로 사용한다. 다만 `httpOnly`/`secure` 속성은 이 provider 코드에서 직접 지정되지 않는다.
+
+### 3) 토큰 전달 경로
+- `apps/service-web/app/getServerClient.ts`, `libs/shared/utils-apollo-client/client/src/libs/ApolloProvider.tsx`, `libs/shared/utils-apollo-client/server/src/libs/ServerClient.ts` 모두 쿠키의 `idToken`을 읽어 `Authorization: Bearer ...` 헤더로 GraphQL 호출에 전달한다.
+- 인증 토큰 전달 로직이 client/server 양쪽에 반복되어 있어 경로는 명확하지만, 쿠키 속성 강제나 토큰 스코프 축소가 provider 내부에서 일관되게 보장되는지는 추가 확인이 필요하다.
+
+### 4) 의존성 취약점 감사 (`pnpm audit`)
+- 감사 결과: 총 106건 (`critical 4`, `high 55`, `moderate 34`, `low 13`).
+- 대표 사례:
+  1. `form-data <2.5.4` — 경로: `apps/graphql-api > firebase-admin > @google-cloud/firestore > ... > form-data`.
+  2. `fast-xml-parser <4.5.4` — 경로: `apps/graphql-api > serverless-offline/@aws-sdk...`, `apps/graphql-api > firebase-admin > @google-cloud/storage...`.
+  3. `protobufjs <7.5.5` — 경로: `apps/graphql-api > firebase-admin > @google-cloud/firestore`.
+  4. `cloudinary <2.7.0` — 경로: `libs/images/datasource > cloudinary`.
+  5. `jws` 취약 버전 — 경로: `apps/graphql-api > firebase-admin > google-auth-library/jsonwebtoken`.
+  6. `axios <=1.13.4` — 경로: `apps/graphql-api > serverless > axios`.
+  7. `undici <5.29.0` — 경로: `libs/shared/utils-auth-service/firebase > firebase > @firebase/auth > undici`.
+- 해석: 취약점이 `graphql-api`와 인증/이미지 업로드 관련 트랜지티브 의존성에 집중되어 있다. 특히 배포/서버 런타임 체인(`firebase-admin`, `serverless`, `cloudinary`)이 우선 정리 대상이다.
+
+### 5) secret 패턴 검색 결과(마스킹 적용)
+동일 유형끼리 그룹화했고 대표 사례만 적었다.
+
+- `password` 패턴
+  - 대표: `apps/service-web/tests/helpers/auth-mock.ts` — 테스트 로그인용 password literal 사용.
+
+- `secret` / `SECRET` 패턴
+  - 대표: `apps/graphql-api/src/config/storage.ts` — Cloudinary secret 환경변수 주입.
+  - 대표: `libs/images/datasource/src/repositories/CloudinaryImageRepository.ts` — secret 존재 검사 및 서명 생성.
+  - 대표: `apps/graphql-api/serverless.yaml`, `apps/graphql-api/.env.sample` — secret env key 선언.
+
+- `token` 패턴
+  - 대표: `apps/graphql-api/src/functions/context.ts` — 요청 token을 계정 조회에 전달.
+  - 대표: `libs/accounts/datasource/src/repositories/FirebaseAccountRepository.ts` — token 검증.
+  - 대표: `libs/shared/utils-auth-service/firebase/src/libs/FirebaseAuthService/FirebaseAuthService.ts` — id/refresh token 갱신.
+  - 대표: `apps/service-web/app/getServerClient.ts`, `libs/shared/utils-apollo-client/*` — Bearer token 헤더 주입.
+  - 대표: `apps/service-web/tests/helpers/auth-mock.ts` — mock token/에뮬레이터 토큰 사용.
+
+- `apiKey` / `API_KEY` 패턴
+  - 대표: `apps/graphql-api/src/config/environment.ts`, `apps/graphql-api/src/config/storage.ts` — Cloudinary/OpenRouter/Firebase 계열 env key 참조.
+  - 대표: `libs/shared/utils-auth-service/firebase/src/libs/FirebaseAuthService/FirebaseAuthService.ts` — Firebase auth refresh 입력값으로 apiKey 사용.
+  - 대표: `libs/shared/utils-image-upload/src/useImageUpload.ts` — public upload용 API key 사용.
+  - 대표: `apps/*/.env.sample` — 공개/비공개 API key 템플릿 선언.
+
+## DX
+
+### 1) 설치/개발/검증 흐름
+- `README.md`는 `pnpm install`, `pnpm dev`, `pnpm lint`, `pnpm typecheck`, `pnpm test`를 루트 기준으로 안내한다.
+- 루트 `package.json`도 같은 스크립트를 `turbo` 래퍼로 제공해 문서와 실제 진입점이 대체로 일치한다.
+- `turbo.json`은 `build/dev/prepare/test/typecheck` 파이프라인을 선언해 워크스페이스 공통 명령 구조를 유지한다.
+
+### 2) 검증/도구 일관성의 장점
+- `prepare: lefthook install`이 루트에 있어 `pnpm install` 후 훅 설치가 자동 연결된다.
+- `PullRequest.yaml`은 Node 22 + pnpm install + lint + typecheck + test 순서를 강제해 README의 기본 검증 흐름과 대체로 맞춘다.
+- provider-auth client/server 패키지도 각각 `lint`, `typecheck` 스크립트를 독립 보유해 라이브러리 단위 검증 가능성이 있다.
+
+### 3) 검증/도구 일관성의 약점
+- README의 품질 스택은 `Vitest, Biome`라고 적혀 있지만, 루트 검증 경로와 `lefthook.yml`은 실제로 `eslint`를 사용한다. 문서의 툴 설명과 실제 훅/스크립트가 부분적으로 어긋난다.
+- 루트 `format` 스크립트가 `turbo lint -- --fix`라서 이름은 format이지만 실제 수행체는 lint fix다. 신규 기여자에게 포맷터/린터 경계가 모호할 수 있다.
+- `vitest.config.ts`는 `passWithNoTests: true`라서 패키지별 테스트 부재가 전체 실패로 드러나지 않을 수 있다.
+- `lefthook.yml` pre-commit은 staged 파일의 eslint --fix만 실행하고 typecheck/test는 실행하지 않는다. 로컬 훅과 CI 검증 강도 차이가 있다.
+
+### 4) 문서/환경 변수 경험
+- `apps/graphql-api/.env.sample`, `apps/service-web/.env.sample` 등 샘플 파일은 필수 키 목록을 제공해 온보딩에는 도움이 된다.
+- 반면 glob 결과상 실제 추적된 `.env` 파일(`apps/graphql-api/.env`)도 존재한다. 이번 범위에서는 값을 읽지 않았지만, 실제 비밀값이 들어갈 수 있는 파일이 추적 대상 경로에 있는 점은 운영/협업 DX와 보안 위생 모두에 리스크다.
+- README에는 `.env.sample -> .env.local/.env` 복사 절차나 앱별 필수 변수 설명표가 부족해, 설치 후 어떤 환경변수를 어디에 채워야 하는지 추론이 필요하다.
+
+### 5) 훅/CI/배포 연결
+- `lefthook.yml`의 `post-merge: pnpm install`은 의존성 변경 후 로컬 상태를 맞추는 데 유리하다.
+- `Deploy.yaml`/`Production.yaml`은 GitHub Secrets를 통해 배포용 환경변수를 주입하므로, 배포 단계의 secret 전달 경로는 코드 저장소 밖으로 분리되어 있다.
+- 그러나 배포 워크플로우는 `pnpm install` 후 바로 deploy로 진입하며 lint/typecheck/test 단계를 별도로 재검증하지 않는다. PR CI 통과를 전제하지만, 배포 워크플로우 자체만 보면 검증 가드가 얇다.
+
+## 종합 판단
+- Security는 "환경변수 주입 + 토큰 검증 + 배포 시 GitHub Secrets 사용"이라는 기본 구조는 갖췄다.
+- 다만 인증 쿠키 속성 강제 범위, tracked `.env` 존재, 그리고 `pnpm audit` 대량 경고(특히 `graphql-api`/`firebase-admin`/`serverless`/`cloudinary`) 때문에 보안 위생을 높은 신뢰도로 보기 어렵다.
+- DX는 루트 문서/스크립트/CI의 주 흐름은 맞지만, README의 Biome 언급, format 명명, pre-commit과 CI 검증 강도 차이, 환경변수 설정 가이드 부족이 반복적인 마찰 포인트다.

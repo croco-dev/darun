@@ -1,0 +1,68 @@
+# Task 5 Tests Axis Diagnosis
+
+## 기준
+- 루트 테스트 명령: `pnpm test` → `turbo test` (`package.json`)
+- 루트 Vitest 설정: `passWithNoTests: true`, coverage provider만 지정되어 있고 임계치/리포트 강제는 없음 (`vitest.config.ts`)
+- 공식 기본 검증 명령에 `pnpm test` 포함 (`README.md`)
+- E2E는 루트 test가 아니라 `apps/service-web`의 별도 `e2e` 스크립트로 분리 (`apps/service-web/package.json`)
+
+## 테스트 축 분류 기준
+- `단위`: 패키지/앱의 `test` 스크립트가 `vitest run`이고 실제 `.test.ts` 파일이 존재하는 경우
+- `E2E`: Playwright 설정과 `e2e` 스크립트가 있고 `apps/service-web/tests` 아래 실제 실행 대상 `.spec.ts`가 존재하는 경우
+- `미구성`: 테스트 파일/설정 의도가 보이지만 현재 테스트 자산이 없거나 `No tests yet`로 명시한 경우
+- `N/A`: 해당 패키지가 현재 테스트 실행 대상으로 구성되지 않았고 `echo 1` 같은 placeholder 스크립트만 있는 경우. 품질 수치 0%로 환산하지 않음
+
+## 대표 근거 파일
+- 루트 설정: `vitest.config.ts`
+- 루트 스크립트: `package.json`
+- 단위 테스트 예시:
+  - `apps/graphql-api/__tests__/context.test.ts`
+  - `libs/products/domain/src/__tests__/product.entity.test.ts`
+  - `libs/shared/utils-error/src/__tests__/createDomainError.test.ts`
+- 스모크 수준 앱 테스트 예시:
+  - `apps/service-web/__tests__/smoke.test.ts`
+  - `apps/visual-web/__tests__/smoke.test.ts`
+- E2E 설정/문서:
+  - `apps/service-web/playwright.config.ts`
+  - `apps/service-web/tests/README.md`
+
+## 분포 요약 표
+| 영역 | 상태 | 근거 | 해석 |
+| --- | --- | --- | --- |
+| `apps/graphql-api` | 단위 테스트 존재 | `apps/graphql-api/package.json`의 `test: vitest run`, `apps/graphql-api/__tests__/context.test.ts` | smoke/setup 외에 context memoization 동작 검증까지 존재 |
+| `apps/admin-web` | 단위 테스트 존재(스모크 중심) | `apps/admin-web/package.json`, `apps/admin-web/__tests__/smoke.test.ts`, `apps/admin-web/__tests__/setup.test.ts` | 실행 경로는 있으나 현재는 최소 스모크/설정 확인 수준 |
+| `apps/visual-web` | 단위 테스트 존재(스모크 중심) | `apps/visual-web/package.json`, `apps/visual-web/__tests__/smoke.test.ts` | 최소 스모크 검증만 확인됨 |
+| `apps/service-web` | 단위 + E2E 분리 구성 | `apps/service-web/package.json`, `apps/service-web/__tests__/smoke.test.ts`, `apps/service-web/playwright.config.ts`, `apps/service-web/tests/README.md` | unit는 스모크 수준, E2E는 별도 Playwright 축으로 설계 |
+| `libs/companies/domain` | 단위 테스트 존재 | `libs/companies/domain/package.json`, `libs/companies/domain/src/__tests__/company.entity.test.ts` | 엔티티 생성자/속성 검증 |
+| `libs/products/domain` | 단위 테스트 존재 | `libs/products/domain/package.json`, `libs/products/domain/src/__tests__/product.entity.test.ts`, `.../delete-product-screenshot.test.ts` | 엔티티/도메인 유스케이스 검증 존재 |
+| `libs/shared/utils-error` | 단위 테스트 존재 | `libs/shared/utils-error/package.json`, `libs/shared/utils-error/src/__tests__/createDomainError.test.ts` | 공통 유틸 함수 테스트 존재 |
+| `libs/shared/utils-llm` | 단위 테스트 존재 | `libs/shared/utils-llm/package.json`, `libs/shared/utils-llm/src/example.test.ts` | 예제 수준 테스트 1건 확인 |
+| `libs/voting/domain` | 테스트 파일 존재하지만 스크립트 미구성 | `libs/voting/domain/src/__tests__/UpvoteProduct.test.ts`, `libs/voting/domain/package.json`의 `test: echo 1` | 자산은 있으나 실행 경로가 placeholder라 실제 단위 테스트 축에 연결되지 않음 |
+| `libs/magazines/domain` | 테스트 파일 존재하지만 스크립트 미구성 | `libs/magazines/domain/src/__tests__/magazineError.test.ts`, `libs/magazines/domain/package.json`의 `test: echo 1` | 파일은 있으나 워크스페이스 test에서 vitest가 아니라 placeholder만 실행 |
+| `libs/shared/sanitize` | N/A에 가까운 루트 Vitest 통과형 | `libs/shared/sanitize/package.json`의 `test: vitest run`, `pnpm test` 로그의 `No test files found, exiting with code 0` | 실행은 되지만 실제 테스트 자산은 없음. `passWithNoTests` 때문에 실패하지 않음 |
+| `libs/products/feature` | 미구성 | `libs/products/feature/package.json`의 `test: echo 'No tests yet'` | 테스트 필요성은 명시하지만 아직 없음 |
+| `libs/magazines/feature` | 미구성 | `libs/magazines/feature/package.json`의 `test: echo 'No tests yet'` | 테스트 필요성은 명시하지만 아직 없음 |
+| `libs/companies/feature` | 미구성 | `libs/companies/feature/package.json`의 `test: echo 'No tests yet'` | 테스트 필요성은 명시하지만 아직 없음 |
+| `libs/products/ui` | 미구성 | `libs/products/ui/package.json`의 `test: echo 'No tests yet'` | UI 레이어 테스트 공백 |
+| 다수 service/domain/datasource/shared 패키지 | N/A | 예: `libs/accounts/domain/package.json`, `libs/shared/provider-graphql/package.json`, `libs/search/service/package.json`의 `test: echo 1` | 현재 워크스페이스에선 테스트 실행 대상으로 구성되지 않음 |
+
+## 패턴 관찰
+- 앱 4개 모두 Vitest 실행 경로는 있으나, `admin-web`/`visual-web`/`service-web`은 현재 smoke/setup 2파일 중심이다.
+- `graphql-api`만 앱 레벨에서 smoke 외 구체적 행위 테스트(`context.test.ts`)가 확인된다.
+- 라이브러리 테스트는 도메인/유틸 일부에만 집중되어 있고, feature/service/datasource 계층은 대부분 `echo 1` 또는 `No tests yet`다.
+- 루트 Vitest의 `passWithNoTests: true` 때문에 `@darun/sanitize`처럼 실제 테스트가 없어도 green으로 집계되는 패키지가 존재한다.
+
+## E2E 축 해석
+- `apps/service-web`만 Playwright 설정이 명시돼 있다 (`apps/service-web/playwright.config.ts`).
+- E2E는 `testDir: './tests'`, `webServer: pnpm --filter service-web dev`, `BASE_URL` 사용, seed/browser 설치 사전준비가 필요하다.
+- 이번 조사에서 `apps/service-web/tests` 아래 실제 `.spec.ts` 파일은 발견되지 않았고, 현재 확인된 것은 `tests/helpers/auth-mock.ts`, `.gitkeep`, `tests/README.md`뿐이다.
+- 따라서 E2E는 **프레임워크/실행 경로는 구성됨**, 그러나 **현재 저장소에 대표 실행 케이스 파일은 부재**한 상태로 기록한다.
+
+## 공백 해석
+- feature/service/datasource 계층 전반은 단위 테스트 공백이 크다.
+- `apps/admin-web`, `apps/visual-web`, `apps/service-web`는 실행 경로는 있으나 스모크 위주여서 기능별 회귀 방어막이 제한적이다.
+- E2E는 서비스 웹에만 국한되며, 그마저도 현재 저장소 기준 대표 `.spec.ts` 자산이 없어 실질 커버 범위 판단은 불가하다.
+
+## 결론
+- 이 저장소의 테스트 축은 `일부 도메인/유틸 + 앱 스모크`에 편중되어 있다.
+- `0%`로 단정할 수 없는 패키지가 많다. placeholder 스크립트(`echo 1`)는 `N/A`, `No tests yet`는 `미구성`, `vitest run`이지만 파일이 없는 경우는 `passWithNoTests`에 기대는 별도 공백으로 분리해야 한다.

@@ -1,0 +1,373 @@
+# Task 2 Baseline Verification
+
+## Command definitions
+- README.md: 기본 검증 명령으로 `pnpm lint`, `pnpm typecheck`, `pnpm test` 문서화
+- package.json: `lint`, `typecheck`, `test`, `build` 모두 root turbo 스크립트로 정의
+- turbo.json: `lint`, `typecheck`, `test`, `build` 파이프라인 연결 확인
+
+## pnpm lint
+- status: PASS
+- exit_code: 0
+- stdout_summary:
+  - > darun@ lint /Users/owen/Projects/croco/darun
+  - > turbo lint
+  - • Packages in scope: @darun/accounts-datasource, @darun/accounts-domain, @darun/accounts-feature, @darun/accounts-service, @darun/companies-datasource, @darun/companies-domain, @darun/companies-feature, @darun/companies-service, @darun/eslint-config, @darun/images-datasource, @darun/images-domain, @darun/images-feature, @darun/images-service, @darun/magazines-datasource, @darun/magazines-domain, @darun/magazines-feature, @darun/magazines-service, @darun/magazines-shell, @darun/opengraph-shell, @darun/pages-shell, @darun/products-datasource, @darun/products-domain, @darun/products-feature, @darun/products-service, @darun/products-shell, @darun/products-ui, @darun/provider-auth/client, @darun/provider-auth/server, @darun/provider-database, @darun/provider-graphql, @darun/recommendation-datasource, @darun/recommendation-domain, @darun/recommendation-feature, @darun/recommendation-service, @darun/sanitize, @darun/search-datasource, @darun/search-domain, @darun/search-feature, @darun/search-service, @darun/search-shell, @darun/translation-datasource, @darun/translation-domain, @darun/translation-feature, @darun/translation-service, @darun/ui, @darun/ui-admin, @darun/ui-layout, @darun/utils-apollo-client/client, @darun/utils-apollo-client/server, @darun/utils-apollo-server, @darun/utils-auth-service-core, @darun/utils-auth-service-firebase, @darun/utils-error, @darun/utils-image-upload, @darun/utils-llm, @darun/utils-router, @darun/utils-sentry, @darun/utils-tsconfig, @darun/voting-datasource, @darun/voting-domain, @darun/voting-feature, @darun/voting-service, admin-web, graphql-api, service-web, visual-web
+  - • Running lint in 66 packages
+  - • Remote caching disabled
+  - @darun/ui:lint: cache miss, executing 8d1746bce0caf01f
+  - @darun/voting-domain:lint: cache miss, executing 96a59a298c14994e
+  - @darun/ui-layout:lint: cache miss, executing ee24812565483849
+  - @darun/companies-domain:lint: cache miss, executing bb92fa2eb3256dae
+  - @darun/translation-domain:lint: cache miss, executing 0caa73dba0287f9f
+  - @darun/utils-sentry:lint: cache miss, executing 17381dd4d776f7cd
+  - @darun/utils-auth-service-core:lint: cache miss, executing 94304a655fc48737
+  - @darun/search-domain:lint: cache miss, executing 8fd7d3873c2f53bd
+  - @darun/provider-database:lint: cache miss, executing cf6d5cb97ddf63dd
+  - @darun/utils-apollo-client/client:lint: cache miss, executing 8ded3cfd39a5169b
+  - @darun/translation-domain:lint:
+  - @darun/translation-domain:lint: > @darun/translation-domain@0.0.0 lint /Users/owen/Projects/croco/darun/libs/translation/domain
+  - @darun/translation-domain:lint: > eslint **/*.ts*
+  - @darun/translation-domain:lint:
+  - @darun/utils-sentry:lint:
+  - @darun/utils-sentry:lint: > @darun/utils-sentry@0.0.0 lint /Users/owen/Projects/croco/darun/libs/shared/utils-sentry
+  - @darun/utils-sentry:lint: > eslint **/*.ts*
+  - @darun/utils-sentry:lint:
+  - @darun/voting-domain:lint:
+  - @darun/voting-domain:lint: > @darun/voting-domain@0.0.0 lint /Users/owen/Projects/croco/darun/libs/voting/domain
+  - @darun/voting-domain:lint: > eslint **/*.ts*
+  - @darun/voting-domain:lint:
+  - @darun/ui:lint:
+  - @darun/ui:lint: > @darun/ui@0.0.1 lint /Users/owen/Projects/croco/darun/libs/shared/ui
+  - @darun/ui:lint: > eslint **/*.ts*
+  - @darun/ui:lint:
+  - @darun/companies-domain:lint:
+  - @darun/companies-domain:lint: > @darun/companies-domain@0.0.0 lint /Users/owen/Projects/croco/darun/libs/companies/domain
+  - @darun/companies-domain:lint: > eslint **/*.ts*
+  - @darun/companies-domain:lint:
+  - @darun/ui-layout:lint:
+  - @darun/ui-layout:lint: > @darun/ui-layout@0.0.0 lint /Users/owen/Projects/croco/darun/libs/shared/ui-layout
+  - @darun/ui-layout:lint: > eslint **/*.ts*
+  - @darun/ui-layout:lint:
+  - @darun/utils-auth-service-core:lint:
+  - @darun/utils-auth-service-core:lint: > @darun/utils-auth-service-core@0.0.0 lint /Users/owen/Projects/croco/darun/libs/shared/utils-auth-service/core
+  - @darun/utils-auth-service-core:lint: > eslint **/*.ts*
+  - @darun/utils-auth-service-core:lint:
+  - @darun/search-domain:lint:
+  - @darun/search-domain:lint: > @darun/search-domain@0.0.0 lint /Users/owen/Projects/croco/darun/libs/search/domain
+  - @darun/search-domain:lint: > eslint **/*.ts*
+  - @darun/search-domain:lint:
+  - @darun/utils-apollo-client/client:lint:
+  - @darun/utils-apollo-client/client:lint: > @darun/utils-apollo-client/client@0.0.0 lint /Users/owen/Projects/croco/darun/libs/shared/utils-apollo-client/client
+  - @darun/utils-apollo-client/client:lint: > eslint **/*.ts*
+  - @darun/utils-apollo-client/client:lint:
+  - @darun/provider-database:lint:
+  - @darun/provider-database:lint: > @darun/provider-database@0.0.0 lint /Users/owen/Projects/croco/darun/libs/shared/provider-database
+  - @darun/provider-database:lint: > eslint **/*.ts*
+  - @darun/provider-database:lint:
+  - @darun/utils-llm:lint: cache miss, executing 0e1dbb8913f8c781
+  - @darun/utils-llm:lint:
+  - @darun/utils-llm:lint: > @darun/utils-llm@0.0.0 lint /Users/owen/Projects/croco/darun/libs/shared/utils-llm
+  - @darun/utils-llm:lint: > eslint **/*.ts*
+  - @darun/utils-llm:lint:
+  - @darun/recommendation-domain:lint: cache miss, executing a8b0253d4ba40181
+  - @darun/sanitize:lint: cache miss, executing 87284ac83646779f
+  - @darun/accounts-domain:lint: cache miss, executing e29925f802232aaf
+  - @darun/utils-apollo-client/server:lint: cache miss, executing 84bd3179da5251af
+  - @darun/provider-graphql:lint: cache miss, executing 7c37b00052437dd9
+  - @darun/utils-apollo-server:lint: cache miss, executing 44146e456dbea6a8
+  - @darun/utils-router:lint: cache miss, executing 2ff235291c39a15c
+  - @darun/images-domain:lint: cache miss, executing 1b8ffebd2c6c8cf0
+  - @darun/utils-error:lint: cache miss, executing 84b51ce11737e2c8
+  - @darun/recommendation-domain:lint:
+  - @darun/recommendation-domain:lint: > @darun/recommendation-domain@0.0.0 lint /Users/owen/Projects/croco/darun/libs/recommendation/domain
+  - @darun/recommendation-domain:lint: > eslint **/*.ts*
+  - @darun/recommendation-domain:lint:
+  - @darun/sanitize:lint:
+  - @darun/sanitize:lint: > @darun/sanitize@0.0.0 lint /Users/owen/Projects/croco/darun/libs/shared/sanitize
+  - @darun/sanitize:lint: > eslint **/*.ts*
+  - @darun/sanitize:lint:
+  - @darun/accounts-domain:lint:
+  - @darun/accounts-domain:lint: > @darun/accounts-domain@0.0.0 lint /Users/owen/Projects/croco/darun/libs/accounts/domain
+  - @darun/accounts-domain:lint: > eslint **/*.ts*
+  - ...[truncated]...
+- stderr_summary:
+  - • turbo 2.8.7
+- raw_stdout: /tmp/opencode-baseline-1776730781/lint.stdout.txt
+- raw_stderr: /tmp/opencode-baseline-1776730781/lint.stderr.txt
+
+## pnpm typecheck
+- status: FAIL
+- exit_code: 2
+- stdout_summary:
+  - > darun@ typecheck /Users/owen/Projects/croco/darun
+  - > turbo typecheck
+  - • Packages in scope: @darun/accounts-datasource, @darun/accounts-domain, @darun/accounts-feature, @darun/accounts-service, @darun/companies-datasource, @darun/companies-domain, @darun/companies-feature, @darun/companies-service, @darun/eslint-config, @darun/images-datasource, @darun/images-domain, @darun/images-feature, @darun/images-service, @darun/magazines-datasource, @darun/magazines-domain, @darun/magazines-feature, @darun/magazines-service, @darun/magazines-shell, @darun/opengraph-shell, @darun/pages-shell, @darun/products-datasource, @darun/products-domain, @darun/products-feature, @darun/products-service, @darun/products-shell, @darun/products-ui, @darun/provider-auth/client, @darun/provider-auth/server, @darun/provider-database, @darun/provider-graphql, @darun/recommendation-datasource, @darun/recommendation-domain, @darun/recommendation-feature, @darun/recommendation-service, @darun/sanitize, @darun/search-datasource, @darun/search-domain, @darun/search-feature, @darun/search-service, @darun/search-shell, @darun/translation-datasource, @darun/translation-domain, @darun/translation-feature, @darun/translation-service, @darun/ui, @darun/ui-admin, @darun/ui-layout, @darun/utils-apollo-client/client, @darun/utils-apollo-client/server, @darun/utils-apollo-server, @darun/utils-auth-service-core, @darun/utils-auth-service-firebase, @darun/utils-error, @darun/utils-image-upload, @darun/utils-llm, @darun/utils-router, @darun/utils-sentry, @darun/utils-tsconfig, @darun/voting-datasource, @darun/voting-domain, @darun/voting-feature, @darun/voting-service, admin-web, graphql-api, service-web, visual-web
+  - • Running typecheck in 66 packages
+  - • Remote caching disabled
+  - @darun/search-domain:typecheck: cache miss, executing 9429ffbc130fd813
+  - @darun/translation-domain:typecheck: cache hit, replaying logs 6cafabb07c79e339
+  - @darun/translation-domain:typecheck:
+  - @darun/translation-domain:typecheck: > @darun/translation-domain@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/translation/domain
+  - @darun/translation-domain:typecheck: > tsc --noEmit
+  - @darun/translation-domain:typecheck:
+  - @darun/recommendation-domain:typecheck: cache hit, replaying logs 1cc9a350185831d0
+  - @darun/utils-apollo-server:typecheck: cache hit, replaying logs 4d06b32a6b8d1757
+  - @darun/images-domain:typecheck: cache hit, replaying logs 21fd70f9f3d3f29d
+  - @darun/utils-apollo-server:typecheck:
+  - @darun/utils-apollo-server:typecheck: > @darun/utils-apollo-server@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/shared/utils-apollo-server
+  - @darun/utils-apollo-server:typecheck: > tsc --noEmit
+  - @darun/utils-apollo-server:typecheck:
+  - @darun/voting-domain:typecheck: cache hit, replaying logs 550c8245ce421cf3
+  - @darun/images-domain:typecheck:
+  - @darun/images-domain:typecheck: > @darun/images-domain@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/images/domain
+  - @darun/images-domain:typecheck: > tsc --noEmit
+  - @darun/images-domain:typecheck:
+  - @darun/voting-domain:typecheck:
+  - @darun/voting-domain:typecheck: > @darun/voting-domain@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/voting/domain
+  - @darun/voting-domain:typecheck: > tsc --noEmit
+  - @darun/voting-domain:typecheck:
+  - @darun/recommendation-domain:typecheck:
+  - @darun/recommendation-domain:typecheck: > @darun/recommendation-domain@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/recommendation/domain
+  - @darun/recommendation-domain:typecheck: > tsc --noEmit
+  - @darun/recommendation-domain:typecheck:
+  - @darun/utils-llm:typecheck: cache hit, replaying logs 6787349ddc42bb97
+  - @darun/utils-llm:typecheck:
+  - @darun/utils-llm:typecheck: > @darun/utils-llm@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/shared/utils-llm
+  - @darun/utils-llm:typecheck: > tsc --noEmit
+  - @darun/utils-llm:typecheck:
+  - @darun/ui:typecheck: cache miss, executing 998e274739116206
+  - @darun/accounts-domain:typecheck: cache hit, replaying logs 82cb062cb5eba89e
+  - @darun/accounts-domain:typecheck:
+  - @darun/accounts-domain:typecheck: > @darun/accounts-domain@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/accounts/domain
+  - @darun/accounts-domain:typecheck: > tsc --noEmit
+  - @darun/accounts-domain:typecheck:
+  - @darun/utils-apollo-client/server:typecheck: cache hit, replaying logs b4163448f582f9b3
+  - @darun/utils-apollo-client/server:typecheck:
+  - @darun/utils-apollo-client/server:typecheck: > @darun/utils-apollo-client/server@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/shared/utils-apollo-client/server
+  - @darun/utils-apollo-client/server:typecheck: > tsc --noEmit
+  - @darun/utils-apollo-client/server:typecheck:
+  - @darun/ui-layout:typecheck: cache hit, replaying logs 5bc8204a85fb5c87
+  - @darun/ui-layout:typecheck:
+  - @darun/ui-layout:typecheck: > @darun/ui-layout@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/shared/ui-layout
+  - @darun/ui-layout:typecheck: > tsc --noEmit
+  - @darun/ui-layout:typecheck:
+  - @darun/utils-apollo-client/client:typecheck: cache hit, replaying logs e3ef0a88f77a75e1
+  - @darun/utils-apollo-client/client:typecheck:
+  - @darun/utils-apollo-client/client:typecheck: > @darun/utils-apollo-client/client@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/shared/utils-apollo-client/client
+  - @darun/utils-apollo-client/client:typecheck: > tsc --noEmit
+  - @darun/utils-apollo-client/client:typecheck:
+  - @darun/utils-sentry:typecheck: cache hit, replaying logs 2dc14c590656b805
+  - @darun/utils-sentry:typecheck:
+  - @darun/utils-sentry:typecheck: > @darun/utils-sentry@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/shared/utils-sentry
+  - @darun/utils-sentry:typecheck: > tsc --noEmit
+  - @darun/utils-sentry:typecheck:
+  - @darun/provider-graphql:typecheck: cache hit, replaying logs 7f5f4ccd826565c8
+  - @darun/provider-graphql:typecheck:
+  - @darun/provider-graphql:typecheck: > @darun/provider-graphql@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/shared/provider-graphql
+  - @darun/provider-graphql:typecheck: > tsc --noEmit
+  - @darun/provider-graphql:typecheck:
+  - @darun/provider-database:typecheck: cache hit, replaying logs c9053d6c9ec96511
+  - @darun/provider-database:typecheck:
+  - @darun/provider-database:typecheck: > @darun/provider-database@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/shared/provider-database
+  - @darun/provider-database:typecheck: > tsc --noEmit
+  - @darun/provider-database:typecheck:
+  - @darun/sanitize:typecheck: cache miss, executing 98f7a4ce85755e04
+  - @darun/utils-error:typecheck: cache hit, replaying logs 7918829a93f4e8c0
+  - @darun/utils-error:typecheck:
+  - @darun/utils-error:typecheck: > @darun/utils-error@0.0.0 typecheck /Users/owen/Projects/croco/darun/libs/shared/utils-error
+  - @darun/utils-error:typecheck: > tsc --noEmit
+  - @darun/utils-error:typecheck:
+  - @darun/companies-domain:typecheck: cache hit, replaying logs 988471e267cb3cd5
+  - @darun/companies-domain:typecheck:
+  - ...[truncated]...
+- stderr_summary:
+  - • turbo 2.8.7
+  - @darun/products-feature:typecheck: ERROR: command finished with error: command (/Users/owen/Projects/croco/darun/libs/products/feature) /Users/owen/.local/share/mise/installs/node/lts/bin/pnpm run typecheck exited (2)
+  - @darun/products-feature#typecheck: command (/Users/owen/Projects/croco/darun/libs/products/feature) /Users/owen/.local/share/mise/installs/node/lts/bin/pnpm run typecheck exited (2)
+  -  ERROR  run failed: command  exited (2)
+- raw_stdout: /tmp/opencode-baseline-1776730781/typecheck.stdout.txt
+- raw_stderr: /tmp/opencode-baseline-1776730781/typecheck.stderr.txt
+
+## pnpm test
+- status: PASS
+- exit_code: 0
+- stdout_summary:
+  - > darun@ test /Users/owen/Projects/croco/darun
+  - > turbo test
+  - • Packages in scope: @darun/accounts-datasource, @darun/accounts-domain, @darun/accounts-feature, @darun/accounts-service, @darun/companies-datasource, @darun/companies-domain, @darun/companies-feature, @darun/companies-service, @darun/eslint-config, @darun/images-datasource, @darun/images-domain, @darun/images-feature, @darun/images-service, @darun/magazines-datasource, @darun/magazines-domain, @darun/magazines-feature, @darun/magazines-service, @darun/magazines-shell, @darun/opengraph-shell, @darun/pages-shell, @darun/products-datasource, @darun/products-domain, @darun/products-feature, @darun/products-service, @darun/products-shell, @darun/products-ui, @darun/provider-auth/client, @darun/provider-auth/server, @darun/provider-database, @darun/provider-graphql, @darun/recommendation-datasource, @darun/recommendation-domain, @darun/recommendation-feature, @darun/recommendation-service, @darun/sanitize, @darun/search-datasource, @darun/search-domain, @darun/search-feature, @darun/search-service, @darun/search-shell, @darun/translation-datasource, @darun/translation-domain, @darun/translation-feature, @darun/translation-service, @darun/ui, @darun/ui-admin, @darun/ui-layout, @darun/utils-apollo-client/client, @darun/utils-apollo-client/server, @darun/utils-apollo-server, @darun/utils-auth-service-core, @darun/utils-auth-service-firebase, @darun/utils-error, @darun/utils-image-upload, @darun/utils-llm, @darun/utils-router, @darun/utils-sentry, @darun/utils-tsconfig, @darun/voting-datasource, @darun/voting-domain, @darun/voting-feature, @darun/voting-service, admin-web, graphql-api, service-web, visual-web
+  - • Running test in 66 packages
+  - • Remote caching disabled
+  - @darun/recommendation-domain:test: cache hit, replaying logs 091d58992b248148
+  - @darun/recommendation-domain:test:
+  - @darun/recommendation-domain:test: > @darun/recommendation-domain@0.0.0 test /Users/owen/Projects/croco/darun/libs/recommendation/domain
+  - @darun/recommendation-domain:test: > echo 1
+  - @darun/recommendation-domain:test:
+  - @darun/recommendation-domain:test: 1
+  - @darun/utils-error:test: cache hit, replaying logs 93c78ed96ab06fb0
+  - @darun/utils-error:test:
+  - @darun/utils-error:test: > @darun/utils-error@0.0.0 test /Users/owen/Projects/croco/darun/libs/shared/utils-error
+  - @darun/utils-error:test: > vitest run
+  - @darun/utils-error:test:
+  - @darun/utils-error:test:
+  - @darun/utils-error:test: [1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/owen/Projects/croco/darun/libs/shared/utils-error[39m
+  - @darun/utils-error:test:
+  - @darun/utils-error:test:  [32m✓[39m src/__tests__/createDomainError.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+  - @darun/utils-error:test:
+  - @darun/utils-error:test: [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+  - @darun/utils-error:test: [2m      Tests [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+  - @darun/utils-error:test: [2m   Start at [22m 09:20:18
+  - @darun/utils-error:test: [2m   Duration [22m 336ms[2m (transform 27ms, setup 0ms, import 45ms, tests 1ms, environment 0ms)[22m
+  - @darun/utils-error:test:
+  - @darun/utils-apollo-client/server:test: cache hit, replaying logs e5245936dbfac638
+  - @darun/utils-apollo-client/server:test:
+  - @darun/utils-apollo-client/server:test: > @darun/utils-apollo-client/server@0.0.0 test /Users/owen/Projects/croco/darun/libs/shared/utils-apollo-client/server
+  - @darun/utils-apollo-client/server:test: > echo 1
+  - @darun/utils-apollo-client/server:test:
+  - @darun/utils-apollo-client/server:test: 1
+  - @darun/provider-graphql:test: cache hit, replaying logs b46b7543e636aa6a
+  - @darun/provider-graphql:test:
+  - @darun/provider-graphql:test: > @darun/provider-graphql@0.0.0 test /Users/owen/Projects/croco/darun/libs/shared/provider-graphql
+  - @darun/provider-graphql:test: > echo 1
+  - @darun/provider-graphql:test:
+  - @darun/provider-graphql:test: 1
+  - @darun/accounts-domain:test: cache hit, replaying logs 242b9373824264d9
+  - @darun/accounts-domain:test:
+  - @darun/accounts-domain:test: > @darun/accounts-domain@0.0.0 test /Users/owen/Projects/croco/darun/libs/accounts/domain
+  - @darun/accounts-domain:test: > echo 1
+  - @darun/accounts-domain:test:
+  - @darun/accounts-domain:test: 1
+  - @darun/utils-auth-service-core:test: cache hit, replaying logs 10abc40d5dfd9549
+  - @darun/utils-auth-service-core:test:
+  - @darun/utils-auth-service-core:test: > @darun/utils-auth-service-core@0.0.0 test /Users/owen/Projects/croco/darun/libs/shared/utils-auth-service/core
+  - @darun/utils-auth-service-core:test: > echo 1
+  - @darun/utils-auth-service-core:test:
+  - @darun/utils-auth-service-core:test: 1
+  - @darun/companies-domain:test: cache hit, replaying logs a239ae929cd80462
+  - @darun/companies-domain:test:
+  - @darun/companies-domain:test: > @darun/companies-domain@0.0.0 test /Users/owen/Projects/croco/darun/libs/companies/domain
+  - @darun/companies-domain:test: > vitest run
+  - @darun/companies-domain:test:
+  - @darun/companies-domain:test:
+  - @darun/companies-domain:test: [1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/owen/Projects/croco/darun/libs/companies/domain[39m
+  - @darun/companies-domain:test:
+  - @darun/companies-domain:test:  [32m✓[39m src/__tests__/company.entity.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+  - @darun/companies-domain:test:
+  - @darun/companies-domain:test: [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+  - @darun/companies-domain:test: [2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+  - @darun/companies-domain:test: [2m   Start at [22m 09:20:18
+  - @darun/companies-domain:test: [2m   Duration [22m 329ms[2m (transform 23ms, setup 0ms, import 32ms, tests 1ms, environment 0ms)[22m
+  - @darun/companies-domain:test:
+  - @darun/voting-domain:test: cache hit, replaying logs 97543428fcae99a3
+  - @darun/voting-domain:test:
+  - @darun/voting-domain:test: > @darun/voting-domain@0.0.0 test /Users/owen/Projects/croco/darun/libs/voting/domain
+  - @darun/voting-domain:test: > echo 1
+  - @darun/voting-domain:test:
+  - @darun/voting-domain:test: 1
+  - @darun/search-domain:test: cache hit, replaying logs b7ddf85aef635eb9
+  - @darun/search-domain:test:
+  - @darun/search-domain:test: > @darun/search-domain@0.0.0 test /Users/owen/Projects/croco/darun/libs/search/domain
+  - @darun/search-domain:test: > echo 1
+  - @darun/search-domain:test:
+  - @darun/search-domain:test: 1
+  - @darun/images-domain:test: cache hit, replaying logs a3236efb5cb64974
+  - @darun/images-domain:test:
+  - @darun/images-domain:test: > @darun/images-domain@0.0.0 test /Users/owen/Projects/croco/darun/libs/images/domain
+  - ...[truncated]...
+- stderr_summary:
+  - • turbo 2.8.7
+- raw_stdout: /tmp/opencode-baseline-1776730781/test.stdout.txt
+- raw_stderr: /tmp/opencode-baseline-1776730781/test.stderr.txt
+
+## pnpm build
+- status: FAIL
+- exit_code: 1
+- stdout_summary:
+  - > darun@ build /Users/owen/Projects/croco/darun
+  - > turbo build
+  - • Packages in scope: @darun/accounts-datasource, @darun/accounts-domain, @darun/accounts-feature, @darun/accounts-service, @darun/companies-datasource, @darun/companies-domain, @darun/companies-feature, @darun/companies-service, @darun/eslint-config, @darun/images-datasource, @darun/images-domain, @darun/images-feature, @darun/images-service, @darun/magazines-datasource, @darun/magazines-domain, @darun/magazines-feature, @darun/magazines-service, @darun/magazines-shell, @darun/opengraph-shell, @darun/pages-shell, @darun/products-datasource, @darun/products-domain, @darun/products-feature, @darun/products-service, @darun/products-shell, @darun/products-ui, @darun/provider-auth/client, @darun/provider-auth/server, @darun/provider-database, @darun/provider-graphql, @darun/recommendation-datasource, @darun/recommendation-domain, @darun/recommendation-feature, @darun/recommendation-service, @darun/sanitize, @darun/search-datasource, @darun/search-domain, @darun/search-feature, @darun/search-service, @darun/search-shell, @darun/translation-datasource, @darun/translation-domain, @darun/translation-feature, @darun/translation-service, @darun/ui, @darun/ui-admin, @darun/ui-layout, @darun/utils-apollo-client/client, @darun/utils-apollo-client/server, @darun/utils-apollo-server, @darun/utils-auth-service-core, @darun/utils-auth-service-firebase, @darun/utils-error, @darun/utils-image-upload, @darun/utils-llm, @darun/utils-router, @darun/utils-sentry, @darun/utils-tsconfig, @darun/voting-datasource, @darun/voting-domain, @darun/voting-feature, @darun/voting-service, admin-web, graphql-api, service-web, visual-web
+  - • Running build in 66 packages
+  - • Remote caching disabled
+  - admin-web:build: cache miss, executing 9584cea481b55cad
+  - visual-web:build: cache miss, executing 86e8d7d3737f3d13
+  - service-web:build: cache miss, executing 25d53da83366ee41
+  - admin-web:build:
+  - admin-web:build: > admin-web@0.1.0 build /Users/owen/Projects/croco/darun/apps/admin-web
+  - admin-web:build: > next build
+  - admin-web:build:
+  - visual-web:build:
+  - visual-web:build: > visual-web@0.1.0 build /Users/owen/Projects/croco/darun/apps/visual-web
+  - visual-web:build: > next build
+  - visual-web:build:
+  - service-web:build:
+  - service-web:build: > service-web@0.1.0 build /Users/owen/Projects/croco/darun/apps/service-web
+  - service-web:build: > next build
+  - service-web:build:
+  - admin-web:build:    ▲ Next.js 15.5.12
+  - admin-web:build:
+  - admin-web:build:    Creating an optimized production build ...
+  - service-web:build: [@sentry/nextjs] DEPRECATION WARNING: disableLogger is deprecated and will be removed in a future version. Use webpack.treeshake.removeDebugLogging instead.
+  - service-web:build: [@sentry/nextjs] DEPRECATION WARNING: automaticVercelMonitors is deprecated and will be removed in a future version. Use webpack.automaticVercelMonitors instead.
+  - service-web:build: [@sentry/nextjs] DEPRECATION WARNING: reactComponentAnnotation is deprecated and will be removed in a future version. Use webpack.reactComponentAnnotation instead.
+  - visual-web:build: [@sentry/nextjs] DEPRECATION WARNING: disableLogger is deprecated and will be removed in a future version. Use webpack.treeshake.removeDebugLogging instead.
+  - visual-web:build: [@sentry/nextjs] DEPRECATION WARNING: automaticVercelMonitors is deprecated and will be removed in a future version. Use webpack.automaticVercelMonitors instead.
+  - visual-web:build: [@sentry/nextjs] DEPRECATION WARNING: reactComponentAnnotation is deprecated and will be removed in a future version. Use webpack.reactComponentAnnotation instead.
+  - service-web:build:    ▲ Next.js 15.5.12
+  - service-web:build:    - Environments: .env.local
+  - service-web:build:    - Experiments (use with caution):
+  - service-web:build:      · clientTraceMetadata
+  - service-web:build:
+  - visual-web:build:    ▲ Next.js 15.5.12
+  - visual-web:build:    - Experiments (use with caution):
+  - visual-web:build:      · clientTraceMetadata
+  - visual-web:build:
+  - service-web:build:    Creating an optimized production build ...
+  - visual-web:build:    Creating an optimized production build ...
+  - service-web:build: [@sentry/nextjs] DEPRECATION WARNING: It is recommended renaming your `sentry.client.config.ts` file, or moving its content to `instrumentation-client.ts`. When using Turbopack `sentry.client.config.ts` will no longer work. Read more about the `instrumentation-client.ts` file: https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client
+  - visual-web:build: [@sentry/nextjs] DEPRECATION WARNING: It is recommended renaming your `sentry.client.config.ts` file, or moving its content to `instrumentation-client.ts`. When using Turbopack `sentry.client.config.ts` will no longer work. Read more about the `instrumentation-client.ts` file: https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client
+  - admin-web:build: <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (431kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+  - admin-web:build: (node:35416) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/owen/Projects/croco/darun/tailwind.config.ts?id=1776730836060 is not specified and it doesn't parse as CommonJS.
+  - admin-web:build: Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+  - admin-web:build: To eliminate this warning, add "type": "module" to /Users/owen/Projects/croco/darun/package.json.
+  - admin-web:build: (Use `node --trace-warnings ...` to show where the warning was created)
+  - visual-web:build: (node:35448) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/owen/Projects/croco/darun/tailwind.config.ts?id=1776730838733 is not specified and it doesn't parse as CommonJS.
+  - visual-web:build: Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+  - visual-web:build: To eliminate this warning, add "type": "module" to /Users/owen/Projects/croco/darun/package.json.
+  - visual-web:build: (Use `node --trace-warnings ...` to show where the warning was created)
+  - admin-web:build:  ⚠ Compiled with warnings in 16.6s
+  - admin-web:build:
+  - admin-web:build: ./features/products/ProductDetailLinkSection/ProductDetailLinkSection.tsx
+  - admin-web:build: Attempted import error: 'ProductLinkTable' is not exported from '@darun/products-feature' (imported as 'ProductLinkTable').
+  - admin-web:build:
+  - admin-web:build: Import trace for requested module:
+  - admin-web:build: ./features/products/ProductDetailLinkSection/ProductDetailLinkSection.tsx
+  - admin-web:build: ./features/products/ProductDetailLinkSection/index.ts
+  - admin-web:build: ./features/products/index.ts
+  - admin-web:build: ./app/products/[slug]/page.tsx
+  - admin-web:build:
+  - admin-web:build: ../../libs/products/feature/src/index.ts
+  - admin-web:build: export 'useProductInfo' (reexported as 'useProductInfo') was not found in './ProductInfo' (possible exports: ProductInfo)
+  - admin-web:build:
+  - admin-web:build: Import trace for requested module:
+  - admin-web:build: ../../libs/products/feature/src/index.ts
+  - admin-web:build: ./app/products/[slug]/page.tsx
+  - admin-web:build:
+  - admin-web:build: ./features/products/ProductDetailLinkSection/ProductDetailLinkSection.tsx
+  - admin-web:build: Attempted import error: 'ProductLinkTable' is not exported from '@darun/products-feature' (imported as 'ProductLinkTable').
+  - admin-web:build:
+  - admin-web:build: Import trace for requested module:
+  - admin-web:build: ./features/products/ProductDetailLinkSection/ProductDetailLinkSection.tsx
+  - admin-web:build: ./features/products/ProductDetailLinkSection/index.ts
+  - admin-web:build: ./features/products/index.ts
+  - admin-web:build: ./app/products/[slug]/page.tsx
+  - admin-web:build:
+  - admin-web:build: ../../libs/products/feature/src/index.ts
+  - admin-web:build: export 'useProductInfo' (reexported as 'useProductInfo') was not found in './ProductInfo' (possible exports: ProductInfo)
+  - ...[truncated]...
+- stderr_summary:
+  - • turbo 2.8.7
+  - admin-web:build: ERROR: command finished with error: command (/Users/owen/Projects/croco/darun/apps/admin-web) /Users/owen/.local/share/mise/installs/node/lts/bin/pnpm run build exited (1)
+  - admin-web#build: command (/Users/owen/Projects/croco/darun/apps/admin-web) /Users/owen/.local/share/mise/installs/node/lts/bin/pnpm run build exited (1)
+  -  ERROR  run failed: command  exited (1)
+- raw_stdout: /tmp/opencode-baseline-1776730781/build.stdout.txt
+- raw_stderr: /tmp/opencode-baseline-1776730781/build.stderr.txt
+

@@ -1,0 +1,21 @@
+Task 4 QA
+
+Scenario 1: Serverless 관련 파일 완전 삭제 확인
+- Command results:
+  - test ! -f apps/graphql-api/serverless.yaml => PASS serverless.yaml
+  - test ! -f apps/graphql-api/esbuild.plugins.js => PASS esbuild.plugins.js
+  - test ! -d apps/graphql-api/.serverless => PASS .serverless
+- Result: PASS
+
+Scenario 2: Serverless 의존성 제거 + 필수 의존성 유지 확인
+- Command results:
+  - grep -c '"serverless"' apps/graphql-api/package.json => 0
+  - grep -c '"serverless-esbuild"' apps/graphql-api/package.json => 0
+  - grep -c '"serverless-offline"' apps/graphql-api/package.json => 0
+  - grep -c '"serverless-prune-plugin"' apps/graphql-api/package.json => 0
+  - grep '"esbuild"' apps/graphql-api/package.json => matched
+  - grep 'esbuild-plugin-typescript-decorators' apps/graphql-api/package.json => matched
+  - grep '@sentry/esbuild-plugin' apps/graphql-api/package.json => matched
+- Result: PASS
+
+Task 4 summary: 2/2 PASS
