@@ -2,7 +2,6 @@ import { gql } from '@apollo/client';
 import { useTempProductBySlugOnProductFeatureTableQuery } from './__generated__/useProductFeatureTable';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductBySlugOnProductFeatureTable($slug: String!) {
     tempProductBySlug(slug: $slug) {

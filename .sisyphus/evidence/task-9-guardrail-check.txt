@@ -1,0 +1,9 @@
+=== Guardrail Principle Check ===
+  [OK] 즉시 lint 강제 금지 원칙 명시
+  [OK] 점진적 활성화 원칙 명시
+  [OK] 분해 → 예외 축소 → 규칙 활성화 순서 명시
+  [OK] 전체 저장소 즉시 error enforcement 계획 없음
+  [OK] products 허브 실제 코드 분해 구현으로 확장하지 않음
+
+PRINCIPLE: boundaries는 baseline을 줄인 뒤 범위 제한 방식으로 활성화한다.
+RESULT: PASS

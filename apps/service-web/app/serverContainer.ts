@@ -3,6 +3,18 @@ import { HttpLink, InMemoryCache } from '@apollo/client';
 import { createApolloClient } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 
+const FIREBASE_PRIVATE_KEY = process.env['FIREBASE_PRIVATE_KEY'];
+
+if (!FIREBASE_PRIVATE_KEY) {
+  throw new Error('Missing required env: FIREBASE_PRIVATE_KEY');
+}
+
+const FIREBASE_CLIENT_EMAIL = process.env['FIREBASE_CLIENT_EMAIL'];
+
+if (!FIREBASE_CLIENT_EMAIL) {
+  throw new Error('Missing required env: FIREBASE_CLIENT_EMAIL');
+}
+
 class Container {
   private static instance: Container;
   public static getInstance() {
@@ -15,8 +27,8 @@ class Container {
     return new FirebaseAuthService({
       projectId: process.env['NEXT_PUBLIC_FIREBASE_PROJECT_ID'] ?? 'darun-io',
       authDomain: process.env['NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'] ?? 'darun-io.firebaseapp.com',
-      privateKey: process.env['FIREBASE_PRIVATE_KEY'] ?? '',
-      clientEmail: process.env['FIREBASE_CLIENT_EMAIL'] ?? '',
+      privateKey: FIREBASE_PRIVATE_KEY,
+      clientEmail: FIREBASE_CLIENT_EMAIL,
       apiKey: process.env['NEXT_PUBLIC_FIREBASE_API_KEY'] ?? '',
     });
   }

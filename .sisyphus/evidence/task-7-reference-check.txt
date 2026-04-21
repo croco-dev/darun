@@ -1,0 +1,32 @@
+# Task 7 - 참조 소스 검증
+
+## README 참조 확인
+10:pnpm --filter graphql-api seed:e2e
+20:- 테스트 계정: `test@darun.io` (Firebase Auth emulator)
+64:## Firebase Auth Emulator 연동
+66:로컬 개발 시 Firebase Auth Emulator를 사용합니다:
+72:`tests/helpers/auth-mock.ts`의 `loginAs()` 함수를 사용하여 테스트 중 인증 상태를 설정할 수 있습니다.
+78:| `BASE_URL`     | 테스트 대상 URL     | `http://localhost:3000` |
+79:| `DATABASE_URL` | PostgreSQL 연결 URL | -                       |
+
+## 코드 근거 확인 (data-testid)
+33:      <div data-testid="home-hero">
+
+## 코드 근거 확인 (JSON-LD script)
+161:        <script key={`${ld['@type']}-${resolvedParams.slug}`} type="application/ld+json">
+
+## 코드 근거 확인 (auth-mock 쿠키명)
+8:const TEST_USER = {
+19:export async function loginAs(page: Page, email: string = TEST_USER.email): Promise<void> {
+23:  const customToken = await createCustomToken(TEST_USER.uid);
+28:      name: '__darun_session',
+30:        uid: TEST_USER.uid,
+31:        email: TEST_USER.email,
+46:  }, TEST_USER);
+111:  return cookies.some(cookie => cookie.name === '__darun_session');
+
+## 코드 근거 확인 (locale 라우팅)
+4:  locales: ['ko', 'en'],
+5:  defaultLocale: 'ko',
+
+확인 시각: Tue Apr 21 14:16:52 KST 2026

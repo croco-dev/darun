@@ -1,0 +1,11 @@
+FILE: .sisyphus/drafts/security-scan-rollout.md
+EXISTS: True
+SIZE: 6048 bytes
+
+SECTIONS:
+  [OK] Option Comparison
+  [OK] Recommended Phase 1
+  [OK] CI Impact
+  [OK] Out of Scope
+
+RESULT: PASS

@@ -88,8 +88,8 @@ export const baseSourceConfig = {
     '@typescript-eslint/ban-types': 'off',
     '@typescript-eslint/no-empty-object-type': 'off',
     '@typescript-eslint/no-unsafe-function-type': 'off',
-    'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': 'off',
+    'no-unused-vars': 'warn',
+    '@typescript-eslint/no-unused-vars': 'warn',
     'unused-imports/no-unused-imports': 'error',
   },
   settings: {
@@ -129,7 +129,7 @@ export const packageJsonConfig = {
 const baseConfig = [
   {
     linterOptions: {
-      reportUnusedDisableDirectives: 'off',
+      reportUnusedDisableDirectives: 'warn',
     },
   },
   ...typescriptEslintRecommendedConfigs,

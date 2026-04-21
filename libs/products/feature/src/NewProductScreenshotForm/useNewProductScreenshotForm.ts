@@ -8,7 +8,6 @@ import { ReactNode } from 'react';
 import { useAddProductScreenshotOnNewProductScreenshotFormMutation } from './__generated__/useNewProductScreenshotForm';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation AddProductScreenshotOnNewProductScreenshotForm($slug: String!, $input: AddProductScreenshotInput!) {
     addProductScreenshot(slug: $slug, input: $input) {
