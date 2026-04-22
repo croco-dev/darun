@@ -7,13 +7,21 @@ import { ProductRepositoryToken } from '../repositories/ProductRepository';
 export class GetPublishedProduct {
   constructor(
     @Inject(ProductRepositoryToken)
-    private readonly productRepository: ProductRepository,
+    private readonly productRepository: ProductRepository
   ) {}
 
   async execute({ ids }: { ids: string[] }): Promise<(Product | null)[]>;
   async execute({ slug }: { slug: string }): Promise<Product | null>;
   async execute({ id }: { id: string }): Promise<Product | null>;
-  async execute({ id, ids, slug }: { id?: string; ids?: string[]; slug?: string }): Promise<Product | null | (Product | null)[]> {
+  async execute({
+    id,
+    ids,
+    slug,
+  }: {
+    id?: string;
+    ids?: string[];
+    slug?: string;
+  }): Promise<Product | null | (Product | null)[]> {
     if (ids) {
       return this.productRepository.findPublishedByIds(ids);
     }

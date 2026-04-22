@@ -2,7 +2,7 @@ import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import { TranslationRepository, TranslationRow } from '@darun/translation-domain';
 import { TranslationRepositoryToken } from '@darun/translation-domain';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { translations } from '../entities/TranslationSchema';
 
@@ -31,6 +31,36 @@ export class PostgresqlTranslationRepository implements TranslationRepository {
       )
       .limit(1)
       .then(rows => rows[0] ?? null);
+  }
+
+  async findMany(params: {
+    entityType: string;
+    locale: string;
+    entities: Array<{
+      entityId: string;
+      field: string;
+    }>;
+  }): Promise<TranslationRow[]> {
+    const { entityType, locale, entities } = params;
+
+    if (entities.length === 0) {
+      return [];
+    }
+
+    const entityIds = [...new Set(entities.map(entity => entity.entityId))];
+    const fields = [...new Set(entities.map(entity => entity.field))];
+
+    return this.db
+      .select()
+      .from(translations)
+      .where(
+        and(
+          eq(translations.entityType, entityType),
+          eq(translations.locale, locale),
+          inArray(translations.entityId, entityIds),
+          inArray(translations.field, fields)
+        )
+      );
   }
 
   async upsert(params: {

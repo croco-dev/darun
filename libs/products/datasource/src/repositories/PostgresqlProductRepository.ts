@@ -13,12 +13,9 @@ export class PostgresqlProductRepository implements ProductRepository {
   private publishedIdLoader: DataLoader<string, Product | null>;
 
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
-    this.publishedIdLoader = new DataLoader(
-      async (ids: readonly string[]) => this.findPublishedByIdsInternal(ids),
-      {
-        cache: true,
-      }
-    );
+    this.publishedIdLoader = new DataLoader(async (ids: readonly string[]) => this.findPublishedByIdsInternal(ids), {
+      cache: true,
+    });
   }
 
   async findPublishedByIds(ids: string[]): Promise<(Product | null)[]> {

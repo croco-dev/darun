@@ -62,9 +62,13 @@ const config = [
     plugins: {
       boundaries,
     },
+    // STAGED ROLLOUT POLICY (T13):
+    // - Phase 1: warn로 시작 (T2+T7 완료 후)
+    // - Phase 2 (현재): violations 0건 확인 → error 승격 완료
+    // - Phase 3 (예정): domain→service/datasource 규칙 추가 검토
     rules: {
       "boundaries/element-types": [
-        "warn",
+        "error",
         {
           default: "disallow",
           rules: [
@@ -72,13 +76,13 @@ const config = [
               from: "feature",
               to: "service",
               disallow: ["*"],
-              message: "feature에서 타 도메인의 service 레이어로 직접 참조 - orchestration 경계 위반 가능성",
+              message: "feature에서 타 도메인의 service 레이어로 직접 참조 - orchestration 경계 위반",
             },
             {
               from: "feature",
               to: "datasource",
               disallow: ["*"],
-              message: "feature에서 타 도메인의 datasource 레이어로 직접 참조 - orchestration 경계 위반 가능성",
+              message: "feature에서 타 도메인의 datasource 레이어로 직접 참조 - orchestration 경계 위반",
             },
           ],
         },

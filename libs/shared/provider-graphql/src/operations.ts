@@ -1,4 +1,22 @@
-import type { Company, CompanyPagination, CreateCompanyInput, CreateCompanyPayload, InputMaybe, Maybe, Scalars } from './core';
+import type {
+  Company,
+  CompanyPagination,
+  CreateCompanyInput,
+  CreateCompanyPayload,
+  InputMaybe,
+  Maybe,
+  Scalars,
+} from './core';
+import type {
+  CreateMagazineInput,
+  CreateMagazinePayload,
+  EditMagazineInput,
+  EditMagazinePayload,
+  Magazine,
+  MagazinePagination,
+  PublishMagazineInput,
+  PublishMagazinePayload,
+} from './magazine';
 import type {
   AddProductLinkInput,
   AddProductLinkPayload,
@@ -33,16 +51,6 @@ import type {
   UpdateProductTagsPayload,
   UpvoteProductPayload,
 } from './product';
-import type {
-  CreateMagazineInput,
-  CreateMagazinePayload,
-  EditMagazineInput,
-  EditMagazinePayload,
-  Magazine,
-  MagazinePagination,
-  PublishMagazineInput,
-  PublishMagazinePayload,
-} from './magazine';
 
 export type Mutation = {
   readonly __typename?: 'Mutation';
