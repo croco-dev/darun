@@ -115,7 +115,7 @@ pnpm test        # Vitest 단위 테스트
 pnpm format
 ```
 
-Lefthook이 설치되어 있으면 커밋 전 lint/typecheck가 자동으로 실행됩니다.
+Lefthook이 설치되어 있으면 커밋 전 ESLint 검사가 자동으로 실행됩니다.
 
 ## 모노레포 구조
 

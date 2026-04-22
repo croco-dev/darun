@@ -1,6 +1,6 @@
-import { Inject, Service } from "typedi";
-import type { TranslationRepository } from "../repositories/TranslationRepository";
-import { TranslationRepositoryToken } from "../repositories/TranslationRepository";
+import { Inject, Service } from 'typedi';
+import type { TranslationRepository } from '../repositories/TranslationRepository';
+import { TranslationRepositoryToken } from '../repositories/TranslationRepository';
 
 type TranslationEntry = {
   entityId: string;
@@ -12,7 +12,7 @@ type TranslationEntry = {
 export class TranslationService {
   constructor(
     @Inject(TranslationRepositoryToken)
-    private readonly translationRepository: TranslationRepository,
+    private readonly translationRepository: TranslationRepository
   ) {}
 
   async upsertTranslation(params: {
@@ -34,7 +34,7 @@ export class TranslationService {
   }): Promise<string> {
     const { entityType, entityId, locale, field, koreanValue } = params;
 
-    if (locale === "ko") {
+    if (locale === 'ko') {
       return koreanValue;
     }
 
@@ -65,7 +65,7 @@ export class TranslationService {
 
     const fallbackTranslations = new Map(entries.map(entry => [`${entry.entityId}:${entry.field}`, entry.koreanValue]));
 
-    if (locale === "ko") {
+    if (locale === 'ko') {
       return fallbackTranslations;
     }
 
