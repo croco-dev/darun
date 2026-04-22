@@ -24,7 +24,23 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
   const t = useTranslations();
 
   if (articles.length === 0) {
-    return null;
+    return (
+      <SectionWrapper background="subtle" spacing="md" className="home-motion">
+        <div className="flex w-full flex-col gap-6">
+          <SectionHeader title={t('home.magazine.title')} />
+          <div data-testid="magazine-empty" className="py-8 text-center">
+            <p className="text-lg font-semibold text-dark-700">{t('magazine.empty.title')}</p>
+            <p className="mt-1 text-sm text-dark-500">{t('magazine.empty.description')}</p>
+            <Link
+              href="/ranking"
+              className="mt-4 inline-flex items-center justify-center rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--home-bg-section-alt)]"
+            >
+              {t('magazine.empty.cta')}
+            </Link>
+          </div>
+        </div>
+      </SectionWrapper>
+    );
   }
 
   return (

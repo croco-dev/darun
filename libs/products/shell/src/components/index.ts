@@ -1,3 +1,4 @@
+export { ProductCard } from './ProductCard';
 export { ProductInformation } from './ProductInformation';
 export { ProductPhotos } from './ProductPhotos';
 export { ProductDescription } from './ProductDescription';

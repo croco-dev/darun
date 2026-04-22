@@ -40,6 +40,7 @@ const nextConfig = {
     ],
   },
   experimental: {
+    viewTransition: true,
     ...(process.env.ENABLE_EXPERIMENTAL_REACT_COMPILER === 'true'
       ? {
           reactCompiler: true,

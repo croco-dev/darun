@@ -1,0 +1,1 @@
+export { HomeCategoryBar } from './HomeCategoryBar';

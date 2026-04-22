@@ -7,6 +7,7 @@ import {
   ProductSummary,
   ProductSummaryLink,
   ProductTocSection,
+  RelatedProductsSection,
 } from '@darun/products-shell';
 import { ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
@@ -18,6 +19,7 @@ export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string
         <ContentArea>
           <div className="flex flex-col gap-2">
             <ProductSummary slug={slug} />
+            <RelatedProductsSection slug={slug} />
             <ProductSummaryLink slug={slug} />
           </div>
         </ContentArea>

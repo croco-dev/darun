@@ -1,6 +1,6 @@
 'use client';
 
-import { SearchProductResult } from '@darun/search-shell';
+import { CategoryShortcutGrid, PopularQueriesStripe, SearchProductResult, TrendingProductPreview } from '@darun/search-shell';
 import { ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { useTranslations } from 'next-intl';
@@ -22,19 +22,18 @@ export function SearchProductPage({ searchParams }: Props) {
 
   if (!query) {
     return (
-      <Layout>
-        <main className="flex w-full flex-col py-8">
-          <ContentArea>
-            <div className="flex flex-col gap-3">
-              <p className="text-center text-[22px] font-semibold tracking-[-0.2px] text-dark-800">
-                {t('page.empty.title')}
-              </p>
-              <p className="text-center text-base font-medium text-dark-500">{t('page.empty.description')}</p>
-            </div>
-          </ContentArea>
-        </main>
-      </Layout>
-    );
+    <Layout>
+      <main className="flex w-full flex-col gap-4 py-6">
+        <ContentArea>
+          <div className="flex flex-col gap-4">
+            <PopularQueriesStripe />
+            <CategoryShortcutGrid />
+            <TrendingProductPreview />
+          </div>
+        </ContentArea>
+      </main>
+    </Layout>
+  );
   }
 
   return (

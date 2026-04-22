@@ -32,6 +32,7 @@
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@sentry/nextjs": "10.38.0",
     "date-fns": "3.6.0",
+    "framer-motion": "12.38.0",
     "lucide-react": "^0.468.0",
     "next": "15.5.12",
     "next-client-cookies": "2.1.0",

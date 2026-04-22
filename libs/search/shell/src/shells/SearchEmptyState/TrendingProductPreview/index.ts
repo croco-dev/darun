@@ -1,0 +1,1 @@
+export { TrendingProductPreview } from './TrendingProductPreview';

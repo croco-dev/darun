@@ -7,6 +7,26 @@
 @source '../../../libs/shared/ui-layout/src/**/*.{js,ts,jsx,tsx}';
 
 @layer base {
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-image-pair,
+  ::view-transition-group,
+  ::view-transition-old,
+  ::view-transition-new {
+    animation: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-image-pair,
+    ::view-transition-group,
+    ::view-transition-old,
+    ::view-transition-new {
+      animation-duration: 0s;
+    }
+  }
+
   :root {
     --home-gradient-hero: linear-gradient(
       135deg,

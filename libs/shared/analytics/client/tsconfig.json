@@ -1,0 +1,9 @@
+{
+  "extends": "@darun/utils-tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "module": "preserve",
+    "moduleResolution": "bundler"
+  },
+  "include": ["src"]
+}

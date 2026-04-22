@@ -12,4 +12,5 @@ export { ProductSummaryLink } from './ProductSummaryLink';
 export { ProductTocSection } from './ProductTocSection';
 export { RankedProductSection } from './RankedProductSection';
 export { RecentProductSection } from './RecentProductSection';
+export { RelatedProductsSection } from './RelatedProductsSection';
 export { TrendingProductSection } from './TrendingProductSection';

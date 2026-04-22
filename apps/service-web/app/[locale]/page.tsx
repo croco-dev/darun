@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import { HomeCategoryBar } from '@darun/pages-shell/src/components/HomeCategoryBar';
 import {
   CategoryNavigationSection,
   MainHeroBanner,
@@ -35,6 +36,9 @@ export default async function HomePage() {
       </div>
       <Suspense fallback={<CategoryNavigationSkeleton />}>
         <CategoryNavigationSection />
+      </Suspense>
+      <Suspense fallback={null}>
+        <HomeCategoryBar />
       </Suspense>
       <Suspense fallback={<TrendingProductSkeleton />}>
         <TrendingProductSection />
