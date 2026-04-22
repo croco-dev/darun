@@ -24,6 +24,8 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=moderate
       - run: pnpm run lint
       - name: Type Check
         run: pnpm run typecheck

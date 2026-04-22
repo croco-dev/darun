@@ -109,6 +109,14 @@ export const baseSourceConfig = {
         type: 'shell',
         pattern: '**/shell/**/*',
       },
+      {
+        type: 'service',
+        pattern: '**/service/**/*',
+      },
+      {
+        type: 'datasource',
+        pattern: '**/datasource/**/*',
+      },
     ],
   },
 };

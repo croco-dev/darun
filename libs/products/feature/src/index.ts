@@ -17,6 +17,7 @@ export { ProductListRefreshButton } from './ProductListRefreshButton';
 export { ProductTagsForm } from './ProductTagsForm';
 export { PublishProductButton } from './PublishProductButton';
 export { SearchProductField } from './SearchProductField';
+export { ProductLinkTable } from './ProductLinkTable';
 export { ProductListTable, AllProductsOnProductListTableDocument } from './ProductListTable';
 export { ProductCompanyInfo } from './ProductCompanyInfo';
 export { ProductDescription } from './ProductDescription';

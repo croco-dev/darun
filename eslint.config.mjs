@@ -61,6 +61,33 @@ const config = [
       ],
     },
   },
+  {
+    plugins: {
+      boundaries,
+    },
+    rules: {
+      "boundaries/element-types": [
+        "warn",
+        {
+          default: "disallow",
+          rules: [
+            {
+              from: "feature",
+              to: "service",
+              disallow: ["*"],
+              message: "feature에서 타 도메인의 service 레이어로 직접 참조 - orchestration 경계 위반 가능성",
+            },
+            {
+              from: "feature",
+              to: "datasource",
+              disallow: ["*"],
+              message: "feature에서 타 도메인의 datasource 레이어로 직접 참조 - orchestration 경계 위반 가능성",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
 
 export default config;

@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.BUNDLE_ANALYZE === 'true',
+});
 const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
 const path = require('path');
@@ -68,7 +71,7 @@ const nextConfig = {
   },
 };
 
-module.exports = withNextIntl(nextConfig);
+module.exports = withBundleAnalyzer(withNextIntl(nextConfig));
 
 // Injected content via Sentry wizard below
 

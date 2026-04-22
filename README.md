@@ -86,4 +86,4 @@ pnpm test
 - Frontend: React 19, Next.js 15, Tailwind CSS 4
 - Backend: Apollo Server, TypeDI, AWS Lambda, Serverless
 - Data: Drizzle ORM, Mongoose
-- Quality: Vitest, Biome
+- Quality: ESLint, Prettier, Vitest, Lefthook

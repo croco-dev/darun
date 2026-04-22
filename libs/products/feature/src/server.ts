@@ -1,5 +1,9 @@
 export { FeatureMutationResolver } from './Feature.mutation.resolver';
 export { FeatureQueryResolver } from './Feature.query.resolver';
 export { ProductConnection } from './graphs/ProductPagination';
+export { ProductCoreMutationResolver } from './ProductCoreMutationResolver';
+export { ProductMediaMutationResolver } from './ProductMediaMutationResolver';
 export { ProductMutationResolver } from './Product.mutation.resolver';
+export { ProductPublishMutationResolver } from './ProductPublishMutationResolver';
 export { ProductQueryResolver } from './Product.query.resolver';
+export { ProductRecommendationMutationResolver } from './ProductRecommendationMutationResolver';
