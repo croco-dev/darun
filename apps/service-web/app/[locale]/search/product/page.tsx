@@ -1,5 +1,5 @@
 import { SearchProductPage } from '@darun/pages-shell';
-import { sanitizeQuery } from '@darun/sanitize';
+import { sanitizeQuery, TITLE_MAX_LENGTH } from '@darun/sanitize';
 import { Metadata } from 'next';
 
 type Props = {

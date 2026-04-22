@@ -1,5 +1,7 @@
 const QUERY_MAX_LENGTH = 50;
 
+export const TITLE_MAX_LENGTH = 60;
+
 export function sanitizeQuery(query: string): string {
   let sanitized = query.replace(/<[^>]*>/g, '');
   sanitized = sanitized.replace(/[<>'"&]/g, '');

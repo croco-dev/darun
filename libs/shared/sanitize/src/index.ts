@@ -1,1 +1,1 @@
-export { sanitizeQuery } from './sanitizeQuery';
+export { sanitizeQuery, TITLE_MAX_LENGTH } from './sanitizeQuery';
