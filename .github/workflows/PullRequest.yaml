@@ -32,3 +32,8 @@ jobs:
       - run: pnpm run test -- --coverage
       - name: Build
         run: pnpm run build
+
+      - name: Playwright Smoke Tests
+        if: always()
+        run: pnpm --filter service-web exec playwright test --grep "@smoke" || true
+        continue-on-error: true

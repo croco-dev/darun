@@ -100,3 +100,7 @@ pnpm test
 - Backend: Apollo Server, TypeDI, AWS Lambda, Serverless
 - Data: Drizzle ORM, Mongoose
 - Quality: ESLint, Prettier, Vitest, Lefthook
+
+## Contributing
+
+환경 변수 설명, 개발 워크플로우, 코드 품질 도구, 기여 프로세스는 [CONTRIBUTING.md](./CONTRIBUTING.md)를 참고하세요.

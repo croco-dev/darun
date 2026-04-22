@@ -6,6 +6,7 @@ export interface ProductRepository {
   findAllByBeforeIdAndLimit(limit: number, id?: string): Promise<Product[]>;
   findAllByAfterIdAndLimit(limit: number, id?: string): Promise<Product[]>;
   findTopNSortByPublishedAtDesc(n: number): Promise<Product[]>;
+  findPublishedByIds(ids: string[]): Promise<(Product | null)[]>;
   findPublishedOneById(id: string): Promise<Product | null>;
   findOneBySlug(slug: string): Promise<Product | null>;
   findOneById(id: string): Promise<Product | null>;

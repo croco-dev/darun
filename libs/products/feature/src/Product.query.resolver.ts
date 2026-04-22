@@ -12,6 +12,7 @@ import {
   GetRankedProducts,
   GetRecentProducts,
   GetProductsByCategory,
+  Product as DomainProduct,
 } from '@darun/products-domain';
 import { GetAlternativeProducts } from '@darun/recommendation-domain';
 import { SearchProduct } from '@darun/search-domain';
@@ -32,7 +33,7 @@ type ProductWithLocale = Product & {
   locale?: string;
 };
 
-type PublishedProduct = NonNullable<Awaited<ReturnType<GetPublishedProduct['execute']>>>;
+type PublishedProduct = DomainProduct;
 
 @Resolver(() => Product)
 @Service()
@@ -164,12 +165,16 @@ export class ProductQueryResolver {
     const searchableProducts = await this.searchProductUseCase.execute({
       query,
     });
+    const searchableProductIds = searchableProducts.map(searchableProduct => searchableProduct.id);
 
-    const products = (await Promise.all(
-      searchableProducts.map(searchableProduct => this.getPublishedProductUseCase.execute({ id: searchableProduct.id }))
-    ).then(products => products.filter(product => Boolean(product)))) as PublishedProduct[];
+    const products = (await this.getPublishedProductUseCase.execute({
+      ids: searchableProductIds,
+    })) as (PublishedProduct | null)[];
 
-    return this.translateProducts(products, locale);
+    return this.translateProducts(
+      products.filter((product): product is PublishedProduct => Boolean(product)),
+      locale
+    );
   }
 
   @Authorized([AuthRole.Admin])
