@@ -58,7 +58,11 @@ export class PostgresqlTranslationRepository implements TranslationRepository {
         and(
           eq(translations.entityType, entityType),
           eq(translations.locale, locale),
-          or(...uniquePairs.map(({ entityId, field }) => and(eq(translations.entityId, entityId), eq(translations.field, field))))
+          or(
+            ...uniquePairs.map(({ entityId, field }) =>
+              and(eq(translations.entityId, entityId), eq(translations.field, field))
+            )
+          )
         )
       );
   }
