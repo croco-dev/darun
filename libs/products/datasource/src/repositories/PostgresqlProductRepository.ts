@@ -19,7 +19,13 @@ export class PostgresqlProductRepository implements ProductRepository {
   }
 
   async findPublishedByIds(ids: string[]): Promise<(Product | null)[]> {
-    return this.findPublishedByIdsInternal(ids);
+    const results = await this.findPublishedByIdsInternal(ids);
+
+    ids.forEach((id, index) => {
+      this.publishedIdLoader.prime(id, results[index] ?? null);
+    });
+
+    return results;
   }
 
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {
