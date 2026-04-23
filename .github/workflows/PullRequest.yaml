@@ -36,6 +36,7 @@ jobs:
       - name: Install Playwright browsers
         if: always()
         run: npx playwright install --with-deps chromium
+        continue-on-error: true
 
       - name: Playwright Smoke Tests
         if: always()
