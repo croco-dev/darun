@@ -76,7 +76,9 @@ export class TranslationService {
     });
 
     for (const translatedRow of translatedRows) {
-      fallbackTranslations.set(`${translatedRow.entityId}:${translatedRow.field}`, translatedRow.value);
+      if (translatedRow.value) {
+        fallbackTranslations.set(`${translatedRow.entityId}:${translatedRow.field}`, translatedRow.value);
+      }
     }
 
     return fallbackTranslations;

@@ -2,7 +2,7 @@ import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import { TranslationRepository, TranslationRow } from '@darun/translation-domain';
 import { TranslationRepositoryToken } from '@darun/translation-domain';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { translations } from '../entities/TranslationSchema';
 
@@ -47,8 +47,9 @@ export class PostgresqlTranslationRepository implements TranslationRepository {
       return [];
     }
 
-    const entityIds = [...new Set(entities.map(entity => entity.entityId))];
-    const fields = [...new Set(entities.map(entity => entity.field))];
+    const uniquePairs = Array.from(
+      new Map(entities.map(entity => [`${entity.entityId}:${entity.field}`, entity])).values()
+    );
 
     return this.db
       .select()
@@ -57,8 +58,7 @@ export class PostgresqlTranslationRepository implements TranslationRepository {
         and(
           eq(translations.entityType, entityType),
           eq(translations.locale, locale),
-          inArray(translations.entityId, entityIds),
-          inArray(translations.field, fields)
+          or(...uniquePairs.map(({ entityId, field }) => and(eq(translations.entityId, entityId), eq(translations.field, field))))
         )
       );
   }
