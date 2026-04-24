@@ -34,11 +34,9 @@ jobs:
         run: pnpm run build
 
       - name: Install Playwright browsers
-        if: always()
         run: npx playwright install --with-deps chromium
         continue-on-error: true
 
       - name: Playwright Smoke Tests
-        if: always()
         run: pnpm --filter service-web exec playwright test --grep "@smoke"
         continue-on-error: true
