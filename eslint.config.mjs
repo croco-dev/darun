@@ -27,6 +27,9 @@ const config = [
     ...reactCompiler.configs.recommended,
   },
   {
+    ignores: ["libs/shared/provider-graphql/src/index.ts"],
+  },
+  {
     plugins: {
       boundaries,
     },
