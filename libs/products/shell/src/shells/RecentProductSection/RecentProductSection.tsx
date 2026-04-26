@@ -1,8 +1,8 @@
 'use client';
 
+import { SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useTranslations } from 'next-intl';
-import { SectionHeader, SectionWrapper } from '@darun/ui';
 import { RecentProductList } from '../../components';
 
 export const RecentProductSection = () => {

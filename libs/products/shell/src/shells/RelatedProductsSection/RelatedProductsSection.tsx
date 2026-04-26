@@ -1,11 +1,10 @@
 'use client';
 
 import { gql, useSuspenseQuery } from '@apollo/client';
-import { useEffect } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
-import { ProductCard } from '../../components/ProductCard';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { SectionHeader } from '@darun/ui';
+import { useLocale, useTranslations } from 'next-intl';
+import { ProductCard } from '../../components/ProductCard';
 
 const RELATED_PRODUCTS_QUERY = gql`
   query RelatedProducts($slug: String!, $locale: String!) {
@@ -67,15 +66,8 @@ export const RelatedProductsSection = ({ slug }: { slug: string }) => {
       <SectionHeader title={t('related.title')} />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
         {alternatives.slice(0, 4).map((alt, index) => (
-          <div
-            key={alt.id}
-            onClick={() => handleClick(alt.slug, index + 1)}
-          >
-            <ProductCard
-              product={alt}
-              href={`/${locale}/products/${alt.slug}`}
-              source="related"
-            />
+          <div key={alt.id} onClick={() => handleClick(alt.slug, index + 1)}>
+            <ProductCard product={alt} href={`/${locale}/products/${alt.slug}`} source="related" />
           </div>
         ))}
       </div>

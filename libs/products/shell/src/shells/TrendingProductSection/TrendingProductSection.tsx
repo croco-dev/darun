@@ -2,10 +2,10 @@
 
 import { gql, useSuspenseQuery } from '@apollo/client';
 import { bind } from '@croco/utils-structure-react';
+import { SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
 import { ProductCard } from '../../components/ProductCard';
-import { SectionHeader, SectionWrapper } from '@darun/ui';
 
 const TRENDING_PRODUCTS_QUERY = gql`
   query TrendingProductsOnTrendingProductSection($locale: String!) {
