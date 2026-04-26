@@ -8,7 +8,7 @@ import { ProductCard } from '../../components/ProductCard';
 
 const RELATED_PRODUCTS_QUERY = gql`
   query RelatedProducts($slug: String!, $locale: String!) {
-    product(slug: $slug) {
+    productBySlug(slug: $slug, locale: $locale) {
       alternatives {
         id
         name
@@ -37,9 +37,9 @@ type Alternative = {
 };
 
 type QueryResult = {
-  product: {
+  productBySlug: {
     alternatives: Alternative[];
-  };
+  } | null;
 };
 
 export const RelatedProductsSection = ({ slug }: { slug: string }) => {
@@ -49,7 +49,7 @@ export const RelatedProductsSection = ({ slug }: { slug: string }) => {
     variables: { slug, locale },
   });
 
-  const alternatives = data?.product?.alternatives ?? [];
+  const alternatives = data?.productBySlug?.alternatives ?? [];
 
   if (alternatives.length === 0) return null;
 
