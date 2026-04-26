@@ -29,7 +29,7 @@ jobs:
       - run: pnpm run lint
       - name: Type Check
         run: pnpm run typecheck
-      - run: pnpm run test -- --coverage
+      - run: pnpm exec turbo test -- --coverage
       - name: Build
         run: pnpm run build
 
