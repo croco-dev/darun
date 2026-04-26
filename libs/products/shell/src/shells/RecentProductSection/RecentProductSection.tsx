@@ -2,8 +2,7 @@
 
 import { Link } from '@darun/utils-router';
 import { useTranslations } from 'next-intl';
-import { SectionHeader } from '../../../../../shared/ui/src/components/SectionHeader';
-import { SectionWrapper } from '../../../../../shared/ui/src/components/SectionWrapper';
+import { SectionHeader, SectionWrapper } from '@darun/ui';
 import { RecentProductList } from '../../components';
 
 export const RecentProductSection = () => {

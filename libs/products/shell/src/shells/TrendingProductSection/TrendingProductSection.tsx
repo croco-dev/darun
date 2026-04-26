@@ -5,8 +5,7 @@ import { bind } from '@croco/utils-structure-react';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
 import { ProductCard } from '../../components/ProductCard';
-import { SectionHeader } from '../../../../../shared/ui/src/components/SectionHeader';
-import { SectionWrapper } from '../../../../../shared/ui/src/components/SectionWrapper';
+import { SectionHeader, SectionWrapper } from '@darun/ui';
 
 const TRENDING_PRODUCTS_QUERY = gql`
   query TrendingProductsOnTrendingProductSection($locale: String!) {

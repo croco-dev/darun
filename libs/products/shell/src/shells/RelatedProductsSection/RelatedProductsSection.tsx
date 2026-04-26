@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ProductCard } from '../../components/ProductCard';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
-import { SectionHeader } from '../../../../shared/ui/src/components/SectionHeader';
+import { SectionHeader } from '@darun/ui';
 
 const RELATED_PRODUCTS_QUERY = gql`
   query RelatedProducts($slug: String!, $locale: String!) {
