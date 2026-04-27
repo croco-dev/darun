@@ -1132,9 +1132,9 @@ importers:
       '@darun/products-ui':
         specifier: workspace:*
         version: link:../ui
-      '@darun/translation-feature':
+      '@darun/translation-service':
         specifier: workspace:*
-        version: link:../../translation/feature
+        version: link:../../translation/service
       '@emoji-mart/data':
         specifier: ^1.2.1
         version: 1.2.1
@@ -2017,18 +2017,9 @@ importers:
 
   libs/translation/feature:
     dependencies:
-      '@darun/magazines-domain':
+      '@darun/translation-service':
         specifier: workspace:*
-        version: link:../../magazines/domain
-      '@darun/products-domain':
-        specifier: workspace:*
-        version: link:../../products/domain
-      '@darun/translation-datasource':
-        specifier: workspace:*
-        version: link:../datasource
-      '@darun/translation-domain':
-        specifier: workspace:*
-        version: link:../domain
+        version: link:../service
       reflect-metadata:
         specifier: '*'
         version: 0.2.2
@@ -2048,9 +2039,21 @@ importers:
 
   libs/translation/service:
     dependencies:
+      '@darun/magazines-domain':
+        specifier: workspace:*
+        version: link:../../magazines/domain
+      '@darun/products-domain':
+        specifier: workspace:*
+        version: link:../../products/domain
       '@darun/translation-domain':
         specifier: workspace:*
         version: link:../domain
+      '@darun/utils-llm':
+        specifier: workspace:*
+        version: link:../../shared/utils-llm
+      typedi:
+        specifier: ^0.10.0
+        version: 0.10.0
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*

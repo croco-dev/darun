@@ -1,8 +1,8 @@
+import { TranslationEntityType, TranslationJobService } from '@darun/translation-service';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { TranslationJob } from './graphs/TranslationJob';
-import { TranslationEntityType, TranslationJobService } from './TranslationJobService';
 
 const SUPPORTED_ENTITY_TYPES: TranslationEntityType[] = ['Product', 'Magazine'];
 

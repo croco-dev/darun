@@ -1,7 +1,7 @@
 import { GetProduct, PublishProduct } from '@darun/products-domain';
 import { productNotFound } from '@darun/products-domain';
 import { IndexProduct } from '@darun/search-domain';
-import { TranslationJobService } from '@darun/translation-feature/server';
+import { TranslationJobService } from '@darun/translation-service';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';

@@ -25,7 +25,7 @@
     "@apollo/client": "^3.12.8",
     "@darun/companies-feature": "workspace:*",
     "@darun/products-ui": "workspace:*",
-    "@darun/translation-feature": "workspace:*",
+    "@darun/translation-service": "workspace:*",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@mantine/core": "^7.16.5",
