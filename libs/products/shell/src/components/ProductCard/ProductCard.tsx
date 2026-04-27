@@ -21,14 +21,16 @@ type ProductCardProps = {
   href: string;
   source: 'trending' | 'search-empty' | 'related';
   layoutId?: string;
+  onClick?: () => void;
 };
 
-export const ProductCard = ({ product, rank, href, source, layoutId }: ProductCardProps) => {
+export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: ProductCardProps) => {
   return (
     <Link
       key={product.id}
       href={href}
       className="group h-full focus-visible:outline-none"
+      onClick={onClick}
       {...(layoutId ? { 'data-layout-id': layoutId } : {})}
       {...{ 'data-source': source }}
     >

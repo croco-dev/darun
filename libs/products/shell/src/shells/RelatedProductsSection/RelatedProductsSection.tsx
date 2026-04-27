@@ -1,15 +1,14 @@
 'use client';
 
 import { gql, useSuspenseQuery } from '@apollo/client';
-import { useEffect } from 'react';
+import { AnalyticsEvents, track } from '@darun/analytics-client';
+import { SectionHeader } from '@darun/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { ProductCard } from '../../components/ProductCard';
-import { AnalyticsEvents, track } from '@darun/analytics-client';
-import { SectionHeader } from '../../../../shared/ui/src/components/SectionHeader';
 
 const RELATED_PRODUCTS_QUERY = gql`
   query RelatedProducts($slug: String!, $locale: String!) {
-    product(slug: $slug) {
+    productBySlug(slug: $slug, locale: $locale) {
       alternatives {
         id
         name
@@ -38,9 +37,9 @@ type Alternative = {
 };
 
 type QueryResult = {
-  product: {
+  productBySlug: {
     alternatives: Alternative[];
-  };
+  } | null;
 };
 
 export const RelatedProductsSection = ({ slug }: { slug: string }) => {
@@ -50,7 +49,7 @@ export const RelatedProductsSection = ({ slug }: { slug: string }) => {
     variables: { slug, locale },
   });
 
-  const alternatives = data?.product?.alternatives ?? [];
+  const alternatives = data?.productBySlug?.alternatives ?? [];
 
   if (alternatives.length === 0) return null;
 
@@ -67,16 +66,13 @@ export const RelatedProductsSection = ({ slug }: { slug: string }) => {
       <SectionHeader title={t('related.title')} />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
         {alternatives.slice(0, 4).map((alt, index) => (
-          <div
+          <ProductCard
             key={alt.id}
+            product={alt}
+            href={`/${locale}/products/${alt.slug}`}
+            source="related"
             onClick={() => handleClick(alt.slug, index + 1)}
-          >
-            <ProductCard
-              product={alt}
-              href={`/${locale}/products/${alt.slug}`}
-              source="related"
-            />
-          </div>
+          />
         ))}
       </div>
     </div>

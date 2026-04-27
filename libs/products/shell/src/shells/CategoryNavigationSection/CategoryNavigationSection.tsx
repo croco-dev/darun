@@ -1,11 +1,10 @@
 'use client';
 
+import { SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { Banknote, Clapperboard, Code2, MessageSquare, PenTool, Workflow } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { ComponentType, SVGProps } from 'react';
-import { SectionHeader } from '../../../../../shared/ui/src/components/SectionHeader';
-import { SectionWrapper } from '../../../../../shared/ui/src/components/SectionWrapper';
 
 type CategoryIcon = ComponentType<SVGProps<SVGSVGElement>>;
 

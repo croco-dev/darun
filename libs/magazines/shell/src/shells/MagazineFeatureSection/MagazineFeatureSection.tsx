@@ -1,10 +1,9 @@
 'use client';
 
 import { ArticleCard } from '@darun/magazines-feature';
+import { SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useTranslations } from 'next-intl';
-import { SectionHeader } from '../../../../../shared/ui/src/components/SectionHeader';
-import { SectionWrapper } from '../../../../../shared/ui/src/components/SectionWrapper';
 
 type MagazineFeatureArticle = {
   id: string;

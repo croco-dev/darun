@@ -2,8 +2,8 @@
 
 import { gql, useSuspenseQuery } from '@apollo/client';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
-import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 
 const CATEGORIES_QUERY = gql`
   query CategoriesForHomeCategoryBar($first: Int!, $locale: String!) {

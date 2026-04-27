@@ -11,21 +11,21 @@ import { products } from '../entities/ProductSchema';
 @Service(ProductRepositoryToken)
 export class PostgresqlProductRepository implements ProductRepository {
   private publishedIdLoader: DataLoader<string, Product | null>;
-  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
-    this.publishedIdLoader = new DataLoader(
-      async (ids: readonly string[]) => {
-        const docs = await this.db
-          .select()
-          .from(products)
-          .where(and(inArray(products.id, [...ids]), isNotNull(products.publishedAt)));
 
-        const groupByDocs = keyBy(docs, doc => doc.id);
-        return ids.map(id => (groupByDocs[id] ? this.mapper(groupByDocs[id]) : null));
-      },
-      {
-        cache: true,
-      }
-    );
+  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
+    this.publishedIdLoader = new DataLoader(async (ids: readonly string[]) => this.findPublishedByIdsInternal(ids), {
+      cache: true,
+    });
+  }
+
+  async findPublishedByIds(ids: string[]): Promise<(Product | null)[]> {
+    const results = await this.findPublishedByIdsInternal(ids);
+
+    ids.forEach((id, index) => {
+      this.publishedIdLoader.prime(id, results[index] ?? null);
+    });
+
+    return results;
   }
 
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {
@@ -150,6 +150,21 @@ export class PostgresqlProductRepository implements ProductRepository {
       .where(and(isNotNull(products.publishedAt), sql`${products.categoryIds} @> ${JSON.stringify([categoryId])}`))
       .orderBy(desc(products.publishedAt))
       .then(rows => rows.map(row => this.mapper(row)));
+  }
+
+  private async findPublishedByIdsInternal(ids: readonly string[]): Promise<(Product | null)[]> {
+    if (!ids.length) {
+      return [];
+    }
+
+    const docs = await this.db
+      .select()
+      .from(products)
+      .where(and(inArray(products.id, [...ids]), isNotNull(products.publishedAt)));
+
+    const groupByDocs = keyBy(docs, doc => doc.id);
+
+    return ids.map(id => (groupByDocs[id] ? this.mapper(groupByDocs[id]) : null));
   }
 
   private mapper<ProductType extends typeof products.$inferSelect | typeof products.$inferInsert>(

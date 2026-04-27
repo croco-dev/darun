@@ -18,6 +18,14 @@ export interface TranslationRepository {
     locale: string;
     field: string;
   }): Promise<TranslationRow | null>;
+  findMany(params: {
+    entityType: string;
+    locale: string;
+    entities: Array<{
+      entityId: string;
+      field: string;
+    }>;
+  }): Promise<TranslationRow[]>;
   upsert(params: {
     entityType: string;
     entityId: string;

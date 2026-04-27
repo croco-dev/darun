@@ -12,6 +12,7 @@ import {
   GetRankedProducts,
   GetRecentProducts,
   GetProductsByCategory,
+  Product as DomainProduct,
 } from '@darun/products-domain';
 import { GetAlternativeProducts } from '@darun/recommendation-domain';
 import { SearchProduct } from '@darun/search-domain';
@@ -32,7 +33,7 @@ type ProductWithLocale = Product & {
   locale?: string;
 };
 
-type PublishedProduct = NonNullable<Awaited<ReturnType<GetPublishedProduct['execute']>>>;
+type PublishedProduct = DomainProduct;
 
 @Resolver(() => Product)
 @Service()
@@ -61,44 +62,59 @@ export class ProductQueryResolver {
   }
 
   private async translateProduct(product: PublishedProduct, locale: string): Promise<ProductWithLocale> {
-    const normalizedLocale = this.normalizeLocale(locale);
-    const localizedProduct: ProductWithLocale = {
-      ...product,
-      locale: normalizedLocale,
-    };
+    const [translatedProduct] = await this.translateProducts([product], locale);
 
-    if (normalizedLocale === 'ko') {
-      return localizedProduct;
-    }
-
-    const [name, description] = await Promise.all([
-      this.translationService.getTranslation({
-        entityType: 'Product',
-        entityId: product.id,
-        locale: normalizedLocale,
-        field: 'name',
-        koreanValue: product.name,
-      }),
-      typeof product.description === 'string'
-        ? this.translationService.getTranslation({
-            entityType: 'Product',
-            entityId: product.id,
-            locale: normalizedLocale,
-            field: 'description',
-            koreanValue: product.description,
-          })
-        : Promise.resolve(undefined),
-    ]);
-
-    return {
-      ...localizedProduct,
-      name,
-      description,
-    };
+    return translatedProduct;
   }
 
   private async translateProducts(products: PublishedProduct[], locale: string): Promise<ProductWithLocale[]> {
-    return Promise.all(products.map(product => this.translateProduct(product, locale)));
+    const normalizedLocale = this.normalizeLocale(locale);
+
+    if (products.length === 0) {
+      return [];
+    }
+
+    const localizedProducts = products.map(product => ({
+      ...product,
+      locale: normalizedLocale,
+    }));
+
+    if (normalizedLocale === 'ko') {
+      return localizedProducts;
+    }
+
+    const translatedFields = await this.translationService.getTranslations({
+      entityType: 'Product',
+      locale: normalizedLocale,
+      entries: localizedProducts.flatMap(product => {
+        const entries = [
+          {
+            entityId: product.id,
+            field: 'name',
+            koreanValue: product.name,
+          },
+        ];
+
+        if (typeof product.description === 'string') {
+          entries.push({
+            entityId: product.id,
+            field: 'description',
+            koreanValue: product.description,
+          });
+        }
+
+        return entries;
+      }),
+    });
+
+    return localizedProducts.map(product => ({
+      ...product,
+      name: translatedFields.get(`${product.id}:name`) ?? product.name,
+      description:
+        typeof product.description === 'string'
+          ? translatedFields.get(`${product.id}:description`) ?? product.description
+          : undefined,
+    }));
   }
 
   @Query(() => [Product])
@@ -164,12 +180,16 @@ export class ProductQueryResolver {
     const searchableProducts = await this.searchProductUseCase.execute({
       query,
     });
+    const searchableProductIds = searchableProducts.map(searchableProduct => searchableProduct.id);
 
-    const products = (await Promise.all(
-      searchableProducts.map(searchableProduct => this.getPublishedProductUseCase.execute({ id: searchableProduct.id }))
-    ).then(products => products.filter(product => Boolean(product)))) as PublishedProduct[];
+    const products = (await this.getPublishedProductUseCase.execute({
+      ids: searchableProductIds,
+    })) as (PublishedProduct | null)[];
 
-    return this.translateProducts(products, locale);
+    return this.translateProducts(
+      products.filter((product): product is PublishedProduct => Boolean(product)),
+      locale
+    );
   }
 
   @Authorized([AuthRole.Admin])
