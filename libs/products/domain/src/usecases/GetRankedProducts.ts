@@ -2,6 +2,7 @@
 import type { VoteRepository } from '@darun/voting-domain';
 import { VoteRepositoryToken } from '@darun/voting-domain';
 import { Inject, Service } from 'typedi';
+import type { Product } from '../entities/Product';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
@@ -27,7 +28,12 @@ export class GetRankedProducts {
 
   private async fetchWithMultiplier(limit: number, multiplier: number) {
     const votes = await this.voteRepository.findTopNByVoteCount(limit * multiplier);
-    const products = await Promise.all(votes.map(vote => this.productRepository.findPublishedOneById(vote.targetId)));
+    const results = await Promise.allSettled(
+      votes.map(vote => this.productRepository.findPublishedOneById(vote.targetId))
+    );
+    const products = results
+      .filter((r): r is PromiseFulfilledResult<Product | null> => r.status === 'fulfilled')
+      .map(r => r.value);
     return products.filter(product => product !== null);
   }
 }
