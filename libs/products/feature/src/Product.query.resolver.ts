@@ -249,9 +249,9 @@ export class ProductQueryResolver {
       return features;
     }
 
-    return Promise.all(
+    const settledFeaturesResults = await Promise.allSettled(
       features.map(async feature => {
-        const [name, summary] = await Promise.all([
+        const [nameResult, summaryResult] = await Promise.allSettled([
           this.translationService.getTranslation({
             entityType: 'ProductFeature',
             entityId: feature.id,
@@ -272,11 +272,15 @@ export class ProductQueryResolver {
 
         return {
           ...feature,
-          name,
-          summary,
+          name: nameResult.status === 'fulfilled' ? nameResult.value : feature.name,
+          summary: summaryResult.status === 'fulfilled' ? summaryResult.value : feature.summary,
         };
       })
     );
+
+    return settledFeaturesResults
+      .filter((r): r is PromiseFulfilledResult<(typeof features)[number]> => r.status === 'fulfilled')
+      .map(r => r.value);
   }
 
   @FieldResolver(() => Company, { nullable: true })
