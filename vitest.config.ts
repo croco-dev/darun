@@ -1,6 +1,7 @@
 export default {
   test: {
     passWithNoTests: false,
+    environment: 'jsdom',
     coverage: {
       provider: 'v8',
       thresholds: {
