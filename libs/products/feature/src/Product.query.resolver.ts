@@ -297,13 +297,18 @@ export class ProductQueryResolver {
     const alternativeProducts = await this.getAlternativeProductsUseCase.execute({
       productId: product.id,
     });
-    const products = (await Promise.all(
+    const results = await Promise.allSettled(
       alternativeProducts.map(alternativeProduct =>
         this.getPublishedProductUseCase.execute({
           id: alternativeProduct.alternativeProductId,
         })
       )
-    ).then(products => products.filter(alternativeProduct => Boolean(alternativeProduct)))) as PublishedProduct[];
+    );
+
+    const products = results
+      .filter((r): r is PromiseFulfilledResult<PublishedProduct | null> => r.status === 'fulfilled')
+      .map(r => r.value)
+      .filter((p): p is PublishedProduct => Boolean(p));
 
     return this.translateProducts(products, product.locale ?? 'ko');
   }
