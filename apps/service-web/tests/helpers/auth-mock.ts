@@ -41,8 +41,7 @@ export async function loginAs(page: Page, email: string = TEST_USER.email): Prom
 
   // 페이지에서 인증 상태 설정
   await page.evaluate(user => {
-    // @ts-expect-error - E2E 테스트용 전역 속성
-    window.__E2E_AUTH_USER__ = user;
+    (window as { __E2E_AUTH_USER__?: typeof user }).__E2E_AUTH_USER__ = user;
   }, TEST_USER);
 }
 
