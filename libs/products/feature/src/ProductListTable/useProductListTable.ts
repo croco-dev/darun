@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAllProductsOnProductListTableSuspenseQuery } from './__generated__/useProductListTable';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -37,23 +37,32 @@ export function useProductListTable() {
     variables: { first: defaultViewCount },
   });
 
+  // Refs to prevent stale closure in callbacks
+  const endCursorRef = useRef(data?.allProducts.pageInfo.endCursor);
+  const startCursorRef = useRef(data?.allProducts.pageInfo.startCursor);
+
+  useEffect(() => {
+    endCursorRef.current = data?.allProducts.pageInfo.endCursor;
+    startCursorRef.current = data?.allProducts.pageInfo.startCursor;
+  }, [data]);
+
   const loadNextPage = () => {
-    setPageCount(pageCount + defaultViewCount + 1);
+    setPageCount(prev => prev + defaultViewCount + 1);
     refetch({
       first: defaultViewCount,
-      after: data?.allProducts.pageInfo.endCursor,
+      after: endCursorRef.current,
       last: undefined,
       before: undefined,
     });
   };
 
   const loadPreviousPage = () => {
-    setPageCount(pageCount - defaultViewCount - 1);
+    setPageCount(prev => prev - defaultViewCount - 1);
     refetch({
       first: undefined,
       after: undefined,
       last: defaultViewCount,
-      before: data?.allProducts.pageInfo.startCursor,
+      before: startCursorRef.current,
     });
   };
 
