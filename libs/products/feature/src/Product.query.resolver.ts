@@ -270,11 +270,13 @@ export class ProductQueryResolver {
             : Promise.resolve(undefined),
         ]);
 
-        return {
+        const translatedFeature = {
           ...feature,
           name: nameResult.status === 'fulfilled' ? nameResult.value : feature.name,
           summary: summaryResult.status === 'fulfilled' ? summaryResult.value : feature.summary,
-        };
+        } as (typeof features)[number];
+
+        return translatedFeature;
       })
     );
 

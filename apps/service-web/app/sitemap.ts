@@ -40,14 +40,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     for (const product of data.recentProducts ?? []) {
-      const lastModified = product.updatedAt ?? new Date();
+      const lastModified = product.updatedAt ? new Date(product.updatedAt) : new Date();
       const { slug, name } = product;
 
       entries.push(
         ...makeEntries(`${baseUrl}/ko/products/${slug}`, `${baseUrl}/en/products/${slug}`, lastModified),
-        ...makeEntries(`${baseUrl}/ko/products/${slug}/alternatives`, `${baseUrl}/en/products/${slug}/alternatives`, lastModified),
+        ...makeEntries(
+          `${baseUrl}/ko/products/${slug}/alternatives`,
+          `${baseUrl}/en/products/${slug}/alternatives`,
+          lastModified
+        ),
         ...makeEntries(createProductSearchUrl('ko', slug), createProductSearchUrl('en', slug), lastModified),
-        ...makeEntries(createProductSearchUrl('ko', name), createProductSearchUrl('en', name), lastModified),
+        ...makeEntries(createProductSearchUrl('ko', name), createProductSearchUrl('en', name), lastModified)
       );
     }
   } catch {

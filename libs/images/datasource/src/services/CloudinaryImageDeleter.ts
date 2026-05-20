@@ -1,41 +1,41 @@
-import { ImageDeleter } from "@darun/images-domain";
-import { ImageDeleterToken } from "@darun/images-domain";
-import cloudinary from "cloudinary";
-import { Service } from "typedi";
+import { ImageDeleter } from '@darun/images-domain';
+import { ImageDeleterToken } from '@darun/images-domain';
+import cloudinary from 'cloudinary';
+import { Service } from 'typedi';
 
 @Service(ImageDeleterToken)
 export class CloudinaryImageDeleter implements ImageDeleter {
   async delete(imageUrl: string): Promise<void> {
     const publicId = this.extractPublicId(imageUrl);
     if (!publicId) {
-      throw new Error("Invalid Cloudinary URL: cannot extract publicId");
+      throw new Error('Invalid Cloudinary URL: cannot extract publicId');
     }
 
     const result = await cloudinary.v2.uploader.destroy(publicId);
 
-    if (result.result !== "ok") {
-      throw new Error("ImageDeleteError");
+    if (result.result !== 'ok') {
+      throw new Error('ImageDeleteError');
     }
   }
 
   private extractPublicId(imageUrl: string): string | null {
     try {
       const url = new URL(imageUrl);
-      const pathParts = url.pathname.split("/");
+      const pathParts = url.pathname.split('/');
 
-      const uploadIndex = pathParts.findIndex((part) => part === "upload");
+      const uploadIndex = pathParts.findIndex(part => part === 'upload');
       if (uploadIndex === -1) {
         return null;
       }
 
       let startIndex = uploadIndex + 1;
 
-      if (pathParts[startIndex]?.startsWith("v")) {
+      if (pathParts[startIndex]?.startsWith('v')) {
         startIndex += 1;
       }
 
-      const publicIdWithExtension = pathParts.slice(startIndex).join("/");
-      const lastDotIndex = publicIdWithExtension.lastIndexOf(".");
+      const publicIdWithExtension = pathParts.slice(startIndex).join('/');
+      const lastDotIndex = publicIdWithExtension.lastIndexOf('.');
 
       if (lastDotIndex === -1) {
         return publicIdWithExtension;

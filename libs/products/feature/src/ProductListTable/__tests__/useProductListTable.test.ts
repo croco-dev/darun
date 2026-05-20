@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Mock: next/navigation ────────────────────────────────────────
 vi.mock('next/navigation', () => ({
@@ -7,7 +7,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 // ── Mock: @apollo/client to isolate the hook ─────────────────────
-vi.mock('@apollo/client', async (importOriginal) => {
+vi.mock('@apollo/client', async importOriginal => {
   const actual = await importOriginal();
   return {
     ...(actual as Record<string, unknown>),
@@ -137,16 +137,16 @@ describe('useProductListTable', () => {
       const { result } = renderHook(() => useProductListTable());
 
       act(() => {
-        result.current.loadNextPage();      // 0 → 51
+        result.current.loadNextPage(); // 0 → 51
       });
       act(() => {
-        result.current.loadNextPage();      // 51 → 102
+        result.current.loadNextPage(); // 51 → 102
       });
       act(() => {
-        result.current.loadPreviousPage();   // 102 → 51
+        result.current.loadPreviousPage(); // 102 → 51
       });
       act(() => {
-        result.current.loadNextPage();      // 51 → 102
+        result.current.loadNextPage(); // 51 → 102
       });
 
       expect(result.current.pageCount).toBe(102);
@@ -156,7 +156,7 @@ describe('useProductListTable', () => {
       const { result, rerender } = renderHook(() => useProductListTable());
 
       act(() => {
-        result.current.loadNextPage();  // 0 → 51
+        result.current.loadNextPage(); // 0 → 51
       });
 
       // Simulate data arriving from refetch (re-render with new data)
@@ -174,7 +174,7 @@ describe('useProductListTable', () => {
       rerender();
 
       act(() => {
-        result.current.loadNextPage();  // 51 → 102
+        result.current.loadNextPage(); // 51 → 102
       });
 
       expect(result.current.pageCount).toBe(102);

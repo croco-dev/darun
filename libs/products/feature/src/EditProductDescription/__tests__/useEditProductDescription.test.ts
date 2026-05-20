@@ -1,4 +1,11 @@
-import { useQuery, useMutation } from '@apollo/client';
+import {
+  useQuery,
+  useMutation,
+  type ApolloCache,
+  type MutationHookOptions,
+  type OperationVariables,
+  type QueryHookOptions,
+} from '@apollo/client';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -34,6 +41,8 @@ import { useEditProductDescription } from '../useEditProductDescription';
 
 describe('useEditProductDescription', () => {
   const defaultSlug = 'test-product-slug';
+  type MockQueryOptions = QueryHookOptions<unknown, OperationVariables>;
+  type MockMutationOptions = MutationHookOptions<unknown, unknown, unknown, ApolloCache<unknown>>;
   let queryOnCompleted:
     | ((data: { tempProductBySlug: { __typename: string; id: string; description?: string | null } }) => void)
     | null = null;
@@ -55,7 +64,7 @@ describe('useEditProductDescription', () => {
 
   describe('query onCompleted', () => {
     beforeEach(() => {
-      vi.mocked(useQuery).mockImplementation((_query, options?: Record<string, unknown>) => {
+      vi.mocked(useQuery).mockImplementation((_query, options?: MockQueryOptions) => {
         if (options?.onCompleted) {
           queryOnCompleted = options.onCompleted as typeof queryOnCompleted;
         }
@@ -104,7 +113,7 @@ describe('useEditProductDescription', () => {
 
   describe('mutation onCompleted', () => {
     beforeEach(() => {
-      vi.mocked(useMutation).mockImplementation((_query, options?: Record<string, unknown>) => {
+      vi.mocked(useMutation).mockImplementation((_query, options?: MockMutationOptions) => {
         if (options?.onCompleted) {
           mutationOnCompleted = options.onCompleted as typeof mutationOnCompleted;
         }
@@ -158,7 +167,7 @@ describe('useEditProductDescription', () => {
 
   describe('mutation failure handling', () => {
     beforeEach(() => {
-      vi.mocked(useMutation).mockImplementation((_query, options?: Record<string, unknown>) => {
+      vi.mocked(useMutation).mockImplementation((_query, options?: MockMutationOptions) => {
         if (options?.onCompleted) {
           mutationOnCompleted = options.onCompleted as typeof mutationOnCompleted;
         }
@@ -187,7 +196,7 @@ describe('useEditProductDescription', () => {
 
   describe('submit function', () => {
     beforeEach(() => {
-      vi.mocked(useMutation).mockImplementation((_query, options?: Record<string, unknown>) => {
+      vi.mocked(useMutation).mockImplementation((_query, options?: MockMutationOptions) => {
         if (options?.onCompleted) {
           mutationOnCompleted = options.onCompleted as typeof mutationOnCompleted;
         }

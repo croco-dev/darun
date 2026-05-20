@@ -39,7 +39,7 @@ describe('useEditProductLinkItem', () => {
       link: 'https://example.com',
       displayLink: 'Example',
       iconUrl: 'https://example.com/icon.png',
-      __typename: 'ProductLink' as const,
+      __typename: 'Link' as const,
     },
   };
   let mutateFn: ReturnType<typeof vi.fn>;

@@ -1,10 +1,6 @@
 import { MetadataRoute } from 'next';
 
-export function makeEntries(
-  koUrl: string,
-  enUrl: string,
-  lastModified: Date,
-): MetadataRoute.Sitemap {
+export function makeEntries(koUrl: string, enUrl: string, lastModified: Date): MetadataRoute.Sitemap {
   const alternates = {
     languages: {
       ko: koUrl,
