@@ -77,16 +77,21 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       return;
     }
 
-    await createProduct({
-      variables: {
-        input: {
-          name,
-          slug,
-          summary,
-          logoUrl: url,
+    try {
+      await createProduct({
+        variables: {
+          input: {
+            name,
+            slug,
+            summary,
+            logoUrl: url,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
   };
 
   return { form, children, submit };

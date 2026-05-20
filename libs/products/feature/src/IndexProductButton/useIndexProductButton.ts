@@ -31,13 +31,18 @@ export function useIndexProductButton({ slug }: IndexProductButtonProps) {
   });
 
   const indexProduct = async () => {
-    await indexProductMutation({
-      variables: {
-        input: {
-          slug,
+    try {
+      await indexProductMutation({
+        variables: {
+          input: {
+            slug,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
   };
   return {
     indexProduct,

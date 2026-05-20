@@ -51,16 +51,21 @@ export function useWriteMagazine() {
   const [file, setFile] = useState<File | null>(null);
 
   const handleSubmit = async (values: FormValues) => {
-    await createMagazine({
-      variables: {
-        input: {
-          title: values.title,
-          slug: values.slug,
-          summary: values.summary || '',
-          backgroundImageUrl: values.backgroundImageUrl || '',
+    try {
+      await createMagazine({
+        variables: {
+          input: {
+            title: values.title,
+            slug: values.slug,
+            summary: values.summary || '',
+            backgroundImageUrl: values.backgroundImageUrl || '',
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
   };
 
   const handleFileDrop = async (files: FileWithPath[]) => {

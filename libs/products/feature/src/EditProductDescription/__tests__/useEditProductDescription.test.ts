@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useQuery, useMutation } from '@apollo/client';
 import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Mock: @apollo/client to avoid ApolloProvider requirement ─────
-vi.mock('@apollo/client', async (importOriginal) => {
+vi.mock('@apollo/client', async importOriginal => {
   const actual = await importOriginal();
   return {
     ...(actual as Record<string, unknown>),
@@ -29,17 +30,16 @@ vi.mock('@mantine/notifications', () => ({
 }));
 
 // ── Import after mocks ───────────────────────────────────────────
-import { useQuery, useMutation } from '@apollo/client';
 import { useEditProductDescription } from '../useEditProductDescription';
 
 describe('useEditProductDescription', () => {
   const defaultSlug = 'test-product-slug';
-  let queryOnCompleted: ((data: {
-    tempProductBySlug: { __typename: string; id: string; description?: string | null };
-  }) => void) | null = null;
-  let mutationOnCompleted: ((data: {
-    editProduct: { product: { id: string; description?: string | null } };
-  }) => void) | null = null;
+  let queryOnCompleted:
+    | ((data: { tempProductBySlug: { __typename: string; id: string; description?: string | null } }) => void)
+    | null = null;
+  let mutationOnCompleted:
+    | ((data: { editProduct: { product: { id: string; description?: string | null } } }) => void)
+    | null = null;
   let mutateFn: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -50,9 +50,7 @@ describe('useEditProductDescription', () => {
 
     // Default Apollo mocks
     vi.mocked(useQuery).mockReturnValue({ data: undefined } as ReturnType<typeof useQuery>);
-    vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: false }] as unknown as ReturnType<
-      typeof useMutation
-    >);
+    vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>);
   });
 
   describe('query onCompleted', () => {
@@ -158,6 +156,35 @@ describe('useEditProductDescription', () => {
     });
   });
 
+  describe('mutation failure handling', () => {
+    beforeEach(() => {
+      vi.mocked(useMutation).mockImplementation((_query, options?: Record<string, unknown>) => {
+        if (options?.onCompleted) {
+          mutationOnCompleted = options.onCompleted as typeof mutationOnCompleted;
+        }
+        return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
+      });
+    });
+
+    it('should log error and rethrow when mutation rejects', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const onSubmit = vi.fn();
+      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug, onSubmit }));
+
+      mutateFn.mockRejectedValueOnce(new Error('Network error'));
+
+      await expect(
+        act(async () => {
+          await result.current.submit({ description: 'New description' });
+        })
+      ).rejects.toThrow('Network error');
+
+      expect(consoleSpy).toHaveBeenCalledWith('mutation failed:', expect.any(Error));
+      expect(onSubmit).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+  });
+
   describe('submit function', () => {
     beforeEach(() => {
       vi.mocked(useMutation).mockImplementation((_query, options?: Record<string, unknown>) => {
@@ -176,17 +203,13 @@ describe('useEditProductDescription', () => {
         await result.current.submit({ description: '' });
       });
 
-      expect(notifications.show).toHaveBeenCalledWith(
-        expect.objectContaining({ color: 'red' }),
-      );
+      expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'red' }));
       expect(mutateFn).not.toHaveBeenCalled();
     });
 
     it('should call mutation with description when provided', async () => {
       const onSubmit = vi.fn();
-      const { result } = renderHook(() =>
-        useEditProductDescription({ slug: defaultSlug, onSubmit }),
-      );
+      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug, onSubmit }));
 
       mutateFn.mockResolvedValueOnce({
         data: {

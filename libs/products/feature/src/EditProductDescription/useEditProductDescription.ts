@@ -57,14 +57,19 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
       return;
     }
 
-    await editDescription({
-      variables: {
-        slug,
-        input: {
-          description: values.description || '',
+    try {
+      await editDescription({
+        variables: {
+          slug,
+          input: {
+            description: values.description || '',
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
 
     onSubmit?.();
   };

@@ -54,16 +54,21 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
   const submit = async (values: FormValues) => {
     if (!values.name || !values.emoji || !values.summary) return;
 
-    await createProductFeature({
-      variables: {
-        input: {
-          productSlug,
-          name: values.name,
-          emoji: values.emoji,
-          summary: values.summary,
+    try {
+      await createProductFeature({
+        variables: {
+          input: {
+            productSlug,
+            name: values.name,
+            emoji: values.emoji,
+            summary: values.summary,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
   };
 
   return { form, children, submit, pickEmoji };

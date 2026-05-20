@@ -54,18 +54,23 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
       return;
     }
 
-    await updateLink({
-      variables: {
-        slug,
-        id: link.id,
-        input: {
-          title: values.title,
-          link: values.link,
-          displayLink: values.displayLink,
-          iconUrl: values.iconUrl,
+    try {
+      await updateLink({
+        variables: {
+          slug,
+          id: link.id,
+          input: {
+            title: values.title,
+            link: values.link,
+            displayLink: values.displayLink,
+            iconUrl: values.iconUrl,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
 
     notifications.show({ message: '수정되었습니다.', color: 'teal' });
     if (onSubmit) {
