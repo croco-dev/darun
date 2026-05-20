@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { Vote, type VoteRepository } from '@darun/voting-domain';
+import { describe, expect, it, vi } from 'vitest';
 import { Product } from '../entities/Product';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { GetRankedProducts } from '../usecases/GetRankedProducts';
@@ -18,7 +18,9 @@ describe('GetRankedProducts', () => {
   const createVote = (targetId: string) => new Vote({ targetId });
 
   const productMap = (map: Record<string, Product | null>) =>
-    vi.fn<ProductRepository['findPublishedOneById']>().mockImplementation((id: string) => Promise.resolve(map[id] ?? null));
+    vi
+      .fn<ProductRepository['findPublishedOneById']>()
+      .mockImplementation((id: string) => Promise.resolve(map[id] ?? null));
 
   const createVoteRepository = (votes: Vote[]): VoteRepository => ({
     upsertByTargetId: vi.fn<VoteRepository['upsertByTargetId']>(),
