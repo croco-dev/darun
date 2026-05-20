@@ -11,7 +11,11 @@ export class CloudinaryImageDeleter implements ImageDeleter {
       throw new Error("Invalid Cloudinary URL: cannot extract publicId");
     }
 
-    await cloudinary.v2.uploader.destroy(publicId);
+    const result = await cloudinary.v2.uploader.destroy(publicId);
+
+    if (result.result !== "ok") {
+      throw new Error("ImageDeleteError");
+    }
   }
 
   private extractPublicId(imageUrl: string): string | null {
