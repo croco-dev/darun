@@ -51,6 +51,9 @@ export class PostgresqlProductRepository implements ProductRepository {
       }
 
       return this.mapper(updated[0]);
+    }).then(result => {
+      this.publishedIdLoader.clearAll();
+      return result;
     });
   }
 
@@ -91,6 +94,9 @@ export class PostgresqlProductRepository implements ProductRepository {
         .returning();
 
       return inserted[0] ? this.mapper(inserted[0]) : null;
+    }).then(result => {
+      this.publishedIdLoader.clearAll();
+      return result;
     });
   }
 

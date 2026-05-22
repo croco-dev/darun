@@ -32,17 +32,22 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
   }
 
   insert(productScreenshot: ProductScreenshot): Promise<ProductScreenshot> {
-    return this.db.transaction(async (tx) => {
-      const inserted = await tx
-        .insert(productScreenshots)
-        .values(productScreenshot)
-        .returning();
+    return this.db
+      .transaction(async (tx) => {
+        const inserted = await tx
+          .insert(productScreenshots)
+          .values(productScreenshot)
+          .returning();
 
-      if (!inserted[0]) {
-        throw new Error("Failed to insert product screenshot");
-      }
-      return inserted[0];
-    });
+        if (!inserted[0]) {
+          throw new Error("Failed to insert product screenshot");
+        }
+        return inserted[0];
+      })
+      .then((result) => {
+        this.productIdLoader.clearAll();
+        return result;
+      });
   }
 
   async findManyByProductIdSortByPriorityDesc(
@@ -65,5 +70,6 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
     await this.db
       .delete(productScreenshots)
       .where(eq(productScreenshots.id, id));
+    this.productIdLoader.clearAll();
   }
 }

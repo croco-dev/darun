@@ -33,40 +33,50 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
   }
 
   insert(newFeature: ProductFeature): Promise<ProductFeature> {
-    return this.db.transaction(async tx => {
-      const inserted = await tx
-        .insert(productFeatures)
-        .values({ ...newFeature })
-        .returning();
+    return this.db
+      .transaction(async tx => {
+        const inserted = await tx
+          .insert(productFeatures)
+          .values({ ...newFeature })
+          .returning();
 
-      return this.mapper(inserted[0]);
-    });
+        return this.mapper(inserted[0]);
+      })
+      .then(result => {
+        this.productIdLoader.clearAll();
+        return result;
+      });
   }
 
   updateById(featureId: string, modifier: (feature: ProductFeature) => ProductFeature): Promise<ProductFeature> {
-    return this.db.transaction(async tx => {
-      const prevFeature = await tx
-        .select()
-        .from(productFeatures)
-        .where(eq(productFeatures.id, featureId))
-        .limit(1)
-        .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+    return this.db
+      .transaction(async tx => {
+        const prevFeature = await tx
+          .select()
+          .from(productFeatures)
+          .where(eq(productFeatures.id, featureId))
+          .limit(1)
+          .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
 
-      if (!prevFeature) {
-        throw new Error('ProductFeature not found');
-      }
+        if (!prevFeature) {
+          throw new Error('ProductFeature not found');
+        }
 
-      const updated = await tx
-        .update(productFeatures)
-        .set({ ...modifier(prevFeature) })
-        .where(eq(productFeatures.id, featureId))
-        .returning();
-      if (!updated[0]) {
-        throw new Error('ProductFeature update failed');
-      }
+        const updated = await tx
+          .update(productFeatures)
+          .set({ ...modifier(prevFeature) })
+          .where(eq(productFeatures.id, featureId))
+          .returning();
+        if (!updated[0]) {
+          throw new Error('ProductFeature update failed');
+        }
 
-      return this.mapper(updated[0]);
-    });
+        return this.mapper(updated[0]);
+      })
+      .then(result => {
+        this.productIdLoader.clearAll();
+        return result;
+      });
   }
 
   async findOneById(id: string): Promise<ProductFeature | null> {

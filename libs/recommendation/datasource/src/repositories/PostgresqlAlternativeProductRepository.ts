@@ -37,11 +37,17 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
         )
       );
       return result.count === removedAlternatives.length;
+    }).then(result => {
+      this.productIdLoader.clearAll();
+      return result;
     });
   }
   createMany(newAlternatives: AlternativeProduct[]): Promise<AlternativeProduct[]> {
     return this.db.transaction(async tx => {
       return tx.insert(alternativeProducts).values(newAlternatives).returning();
+    }).then(result => {
+      this.productIdLoader.clearAll();
+      return result;
     });
   }
   create(data: AlternativeProduct): Promise<AlternativeProduct> {
@@ -58,6 +64,9 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
       }
 
       return createdAlternative;
+    }).then(result => {
+      this.productIdLoader.clearAll();
+      return result;
     });
   }
 
