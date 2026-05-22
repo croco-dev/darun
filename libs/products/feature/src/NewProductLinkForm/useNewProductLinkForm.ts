@@ -53,17 +53,22 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
   const submit = async (values: FormValues) => {
     if (!values.displayLink || !values.link || !values.title || !values.iconUrl) return;
 
-    await addProductLink({
-      variables: {
-        slug: productSlug,
-        input: {
-          displayLink: values.displayLink,
-          iconUrl: values.iconUrl,
-          link: values.link,
-          title: values.title,
+    try {
+      await addProductLink({
+        variables: {
+          slug: productSlug,
+          input: {
+            displayLink: values.displayLink,
+            iconUrl: values.iconUrl,
+            link: values.link,
+            title: values.title,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
   };
 
   return { form, children, submit };

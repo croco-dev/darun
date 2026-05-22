@@ -48,13 +48,18 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
   });
 
   const publishProduct = async () => {
-    await publishProductMutation({
-      variables: {
-        input: {
-          slug,
+    try {
+      await publishProductMutation({
+        variables: {
+          input: {
+            slug,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
   };
   return {
     loading,

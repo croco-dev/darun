@@ -4,7 +4,7 @@ export const SearchProductListSkeleton = () => {
   return (
     <div className="flex flex-col gap-5">
       {Array.from({ length: 5 }).map((_, index) => (
-        <div key={index}>
+        <div key={String(index)}>
           <div className="bg-white rounded-[8px] border border-[rgba(0,0,0,0.12)] px-[18px] py-4 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.04)]">
             <div className="flex w-full flex-col gap-3">
               <div className="flex flex-row animate-pulse">

@@ -64,15 +64,20 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
       return;
     }
 
-    await createProductFeature({
-      variables: {
-        slug: productSlug,
-        input: {
-          imageUrl: url,
-          imageAlt: values.imageAlt,
+    try {
+      await createProductFeature({
+        variables: {
+          slug: productSlug,
+          input: {
+            imageUrl: url,
+            imageAlt: values.imageAlt,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
   };
 
   return { form, children, submit };

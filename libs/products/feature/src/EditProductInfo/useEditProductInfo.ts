@@ -65,15 +65,20 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
-    await editInformation({
-      variables: {
-        slug,
-        input: {
-          name: values.name || undefined,
-          summary: values.summary || undefined,
+    try {
+      await editInformation({
+        variables: {
+          slug,
+          input: {
+            name: values.name || undefined,
+            summary: values.summary || undefined,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
     onSubmit?.();
   };
 

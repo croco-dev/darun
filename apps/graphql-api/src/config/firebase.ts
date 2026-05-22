@@ -11,11 +11,8 @@ if (getApps().length === 0) {
         clientEmail: FIREBASE_CLIENT_EMAIL,
       }),
     });
-    console.log('[Firebase] Admin SDK initialized successfully');
   } catch (error) {
     console.error('[Firebase] Failed to initialize:', error);
     throw error;
   }
-} else {
-  console.log('[Firebase] Using existing app instance');
 }

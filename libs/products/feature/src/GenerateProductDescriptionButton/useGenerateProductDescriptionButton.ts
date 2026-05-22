@@ -40,8 +40,9 @@ export function useGenerateProductDescriptionButton(slug: string) {
           },
         },
       });
-    } catch {
-      return;
+    } catch (error) {
+      console.error('generate description failed:', error);
+      throw error;
     }
   };
 

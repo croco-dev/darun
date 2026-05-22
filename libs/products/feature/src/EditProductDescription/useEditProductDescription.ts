@@ -33,7 +33,7 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
   const { data } = useTempProductBySlugOnEditProductDescriptionQuery({
     variables: { slug },
     onCompleted: ({ tempProductBySlug }) => {
-      form.reset();
+      form.setInitialValues({ description: tempProductBySlug?.description ?? '' });
     },
   });
 
@@ -46,7 +46,7 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
     onCompleted: ({ editProduct }) => {
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
-        form.reset();
+        form.setInitialValues({ description: editProduct.product.description ?? '' });
       }
     },
   });
@@ -57,14 +57,19 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
       return;
     }
 
-    await editDescription({
-      variables: {
-        slug,
-        input: {
-          description: values.description || '',
+    try {
+      await editDescription({
+        variables: {
+          slug,
+          input: {
+            description: values.description || '',
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
 
     onSubmit?.();
   };

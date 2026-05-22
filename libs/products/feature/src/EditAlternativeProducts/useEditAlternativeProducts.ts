@@ -80,14 +80,19 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
       return;
     }
 
-    await updateAlternativeProducts({
-      variables: {
-        slug,
-        input: {
-          alternativeProductIds: values.alternativeIds ?? [],
+    try {
+      await updateAlternativeProducts({
+        variables: {
+          slug,
+          input: {
+            alternativeProductIds: values.alternativeIds ?? [],
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
   };
 
   const search = useThrottledCallback((query: string) => searchProducts({ variables: { query } }), 300);

@@ -79,16 +79,21 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
       return;
     }
 
-    await updateFeature({
-      variables: {
-        featureId,
-        input: {
-          emoji: values.emoji,
-          name: values.name,
-          summary: values.summary,
+    try {
+      await updateFeature({
+        variables: {
+          featureId,
+          input: {
+            emoji: values.emoji,
+            name: values.name,
+            summary: values.summary,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
 
     if (onSubmit) {
       onSubmit();

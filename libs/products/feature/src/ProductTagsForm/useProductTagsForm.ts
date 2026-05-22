@@ -64,14 +64,19 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
   };
 
   const applyTags = async () => {
-    await updateProductTags({
-      variables: {
-        slug,
-        input: {
-          tagNames: tags,
+    try {
+      await updateProductTags({
+        variables: {
+          slug,
+          input: {
+            tagNames: tags,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('mutation failed:', error);
+      throw error;
+    }
   };
   return {
     tags,

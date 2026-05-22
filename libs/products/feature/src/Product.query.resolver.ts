@@ -249,9 +249,9 @@ export class ProductQueryResolver {
       return features;
     }
 
-    return Promise.all(
+    const settledFeaturesResults = await Promise.allSettled(
       features.map(async feature => {
-        const [name, summary] = await Promise.all([
+        const [nameResult, summaryResult] = await Promise.allSettled([
           this.translationService.getTranslation({
             entityType: 'ProductFeature',
             entityId: feature.id,
@@ -270,13 +270,19 @@ export class ProductQueryResolver {
             : Promise.resolve(undefined),
         ]);
 
-        return {
+        const translatedFeature = {
           ...feature,
-          name,
-          summary,
-        };
+          name: nameResult.status === 'fulfilled' ? nameResult.value : feature.name,
+          summary: summaryResult.status === 'fulfilled' ? summaryResult.value : feature.summary,
+        } as (typeof features)[number];
+
+        return translatedFeature;
       })
     );
+
+    return settledFeaturesResults
+      .filter((r): r is PromiseFulfilledResult<(typeof features)[number]> => r.status === 'fulfilled')
+      .map(r => r.value);
   }
 
   @FieldResolver(() => Company, { nullable: true })
@@ -293,13 +299,18 @@ export class ProductQueryResolver {
     const alternativeProducts = await this.getAlternativeProductsUseCase.execute({
       productId: product.id,
     });
-    const products = (await Promise.all(
+    const results = await Promise.allSettled(
       alternativeProducts.map(alternativeProduct =>
         this.getPublishedProductUseCase.execute({
           id: alternativeProduct.alternativeProductId,
         })
       )
-    ).then(products => products.filter(alternativeProduct => Boolean(alternativeProduct)))) as PublishedProduct[];
+    );
+
+    const products = results
+      .filter((r): r is PromiseFulfilledResult<PublishedProduct | null> => r.status === 'fulfilled')
+      .map(r => r.value)
+      .filter((p): p is PublishedProduct => Boolean(p));
 
     return this.translateProducts(products, product.locale ?? 'ko');
   }
