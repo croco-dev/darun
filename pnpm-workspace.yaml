@@ -8,5 +8,17 @@ packages:
   - "!**/dist/**"
   - "!**/build/**"
 
+shamefullyHoist: true
+autoInstallPeers: true
+saveExact: true
+
+overrides:
+  graphql: "16.12.0"
+  drizzle-orm: "0.32.1"
+
 onlyBuiltDependencies:
+  - serverless
+
+allowBuilds:
+  - protobufjs
   - serverless
