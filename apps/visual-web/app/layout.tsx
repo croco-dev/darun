@@ -1,12 +1,18 @@
 import 'normalize.css/normalize.css';
 import './globals.css';
 
-import { pretendardFont } from '@croco/utils-next-font-pretendard';
 import { Metadata } from 'next';
+import localFont from 'next/font/local';
 import { CookiesProvider } from 'next-client-cookies/server';
 import { ReactNode } from 'react';
 import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
+
+const pretendardFont = localFont({
+  src: '../../../node_modules/@croco/utils-next-font-pretendard/PretendardVariable.woff2',
+  display: 'swap',
+  weight: '45 920',
+});
 
 export const metadata: Metadata = {
   title: '다른 - 서비스 비교를 한 곳에서',

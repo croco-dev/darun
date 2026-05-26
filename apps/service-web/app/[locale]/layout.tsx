@@ -1,9 +1,8 @@
 import 'normalize.css/normalize.css';
 import '../globals.css';
 
-import { pretendardFont } from '@croco/utils-next-font-pretendard';
-
 import { Metadata } from 'next';
+import localFont from 'next/font/local';
 import { notFound } from 'next/navigation';
 import { CookiesProvider } from 'next-client-cookies/server';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
@@ -17,6 +16,12 @@ const LOCALE_TO_OG_LOCALE: Record<string, string> = {
   ko: 'ko_KR',
   en: 'en_US',
 };
+
+const pretendardFont = localFont({
+  src: '../../../../node_modules/@croco/utils-next-font-pretendard/PretendardVariable.woff2',
+  display: 'swap',
+  weight: '45 920',
+});
 
 type LayoutProps = {
   children: ReactNode;
