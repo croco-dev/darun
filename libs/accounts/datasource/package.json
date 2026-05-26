@@ -11,13 +11,13 @@
   },
   "dependencies": {
     "@darun/accounts-domain": "workspace:*",
-    "drizzle-orm": "0.32.1",
+    "drizzle-orm": "0.45.2",
     "firebase-admin": "13.6.1"
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
-    "reflect-metadata": "*",
-    "typedi": "*"
+    "reflect-metadata": "^0.2.2",
+    "typedi": "^0.10.0"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

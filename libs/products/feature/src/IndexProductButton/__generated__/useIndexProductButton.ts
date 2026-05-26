@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type IndexProductOnIndexProductButtonMutationVariables = Types.Exact<{
   input: Types.IndexProductInput;
@@ -20,7 +20,7 @@ export const IndexProductOnIndexProductButtonDocument = gql`
   }
 `;
 export type IndexProductOnIndexProductButtonMutationFn =
-  Apollo.MutationFunction<
+  Apollo.MutationFunctionOptions<
     IndexProductOnIndexProductButtonMutation,
     IndexProductOnIndexProductButtonMutationVariables
   >;
@@ -60,7 +60,7 @@ export type IndexProductOnIndexProductButtonMutationHookResult = ReturnType<
 export type IndexProductOnIndexProductButtonMutationResult =
   Apollo.MutationResult<IndexProductOnIndexProductButtonMutation>;
 export type IndexProductOnIndexProductButtonMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     IndexProductOnIndexProductButtonMutation,
     IndexProductOnIndexProductButtonMutationVariables
   >;

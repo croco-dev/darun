@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type TempProductBySlugOnEditProductInfoQueryVariables = Types.Exact<{
   slug: Types.Scalars["String"]["input"];
@@ -93,17 +93,9 @@ export function useTempProductBySlugOnEditProductInfoLazyQuery(
   >(TempProductBySlugOnEditProductInfoDocument, options);
 }
 export function useTempProductBySlugOnEditProductInfoSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        TempProductBySlugOnEditProductInfoQuery,
-        TempProductBySlugOnEditProductInfoQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnEditProductInfoQuery, TempProductBySlugOnEditProductInfoQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     TempProductBySlugOnEditProductInfoQuery,
     TempProductBySlugOnEditProductInfoQueryVariables
@@ -135,7 +127,7 @@ export const EditProductOnEditProductInfoDocument = gql`
     }
   }
 `;
-export type EditProductOnEditProductInfoMutationFn = Apollo.MutationFunction<
+export type EditProductOnEditProductInfoMutationFn = Apollo.MutationFunctionOptions<
   EditProductOnEditProductInfoMutation,
   EditProductOnEditProductInfoMutationVariables
 >;
@@ -176,7 +168,7 @@ export type EditProductOnEditProductInfoMutationHookResult = ReturnType<
 export type EditProductOnEditProductInfoMutationResult =
   Apollo.MutationResult<EditProductOnEditProductInfoMutation>;
 export type EditProductOnEditProductInfoMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     EditProductOnEditProductInfoMutation,
     EditProductOnEditProductInfoMutationVariables
   >;

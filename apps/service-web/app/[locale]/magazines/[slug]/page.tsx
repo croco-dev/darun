@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
   });
 
-  if (!data.magazineBySlug?.title) {
+  if (!data?.magazineBySlug?.title) {
     return notFound();
   }
 
@@ -99,7 +99,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
     variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
   });
 
-  const magazine = data.magazineBySlug;
+  const magazine = data?.magazineBySlug;
 
   const jsonLd = magazine
     ? {

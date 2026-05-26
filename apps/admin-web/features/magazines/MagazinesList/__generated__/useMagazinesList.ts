@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type TempAllMagazinesOnMagazinesListQueryVariables = Types.Exact<{
   page: Types.Scalars["Int"]["input"];
@@ -99,17 +99,9 @@ export function useTempAllMagazinesOnMagazinesListLazyQuery(
   >(TempAllMagazinesOnMagazinesListDocument, options);
 }
 export function useTempAllMagazinesOnMagazinesListSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        TempAllMagazinesOnMagazinesListQuery,
-        TempAllMagazinesOnMagazinesListQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<TempAllMagazinesOnMagazinesListQuery, TempAllMagazinesOnMagazinesListQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     TempAllMagazinesOnMagazinesListQuery,
     TempAllMagazinesOnMagazinesListQueryVariables

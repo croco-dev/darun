@@ -18,20 +18,20 @@
     "react-medium-image-zoom": "5.2.10"
   },
   "peerDependencies": {
-    "@apollo/client": "3.11.2",
+    "@apollo/client": "4.2.0",
     "@croco/utils-structure-react": "0.0.1",
     "@darun/provider-graphql": "workspace:*",
     "@kuma-ui/core": "1.5.7",
-    "next": "*",
+    "next": "^16.2.6",
     "next-intl": ">=4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^19.0.0",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.7.2"
+    "typescript": "^6.0.3"
   }
 }

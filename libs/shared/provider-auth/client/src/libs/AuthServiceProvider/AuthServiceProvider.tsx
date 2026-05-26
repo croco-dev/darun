@@ -1,6 +1,6 @@
 'use client';
 
-import { useApolloClient } from '@apollo/client';
+import { useApolloClient } from '@apollo/client/react';
 import { AuthService } from '@darun/utils-auth-service-core';
 import { Cookies } from 'next-client-cookies';
 import { createContext, ReactNode, useContext } from 'react';

@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type SearchProductsOnSearchProductFieldQueryVariables = Types.Exact<{
   query: Types.Scalars["String"]["input"];
@@ -69,17 +69,9 @@ export function useSearchProductsOnSearchProductFieldLazyQuery(
   >(SearchProductsOnSearchProductFieldDocument, options);
 }
 export function useSearchProductsOnSearchProductFieldSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        SearchProductsOnSearchProductFieldQuery,
-        SearchProductsOnSearchProductFieldQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<SearchProductsOnSearchProductFieldQuery, SearchProductsOnSearchProductFieldQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     SearchProductsOnSearchProductFieldQuery,
     SearchProductsOnSearchProductFieldQueryVariables

@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type TempProductBySlugOnProductCompanyInfoQueryVariables = Types.Exact<{
   slug: Types.Scalars["String"]["input"];
@@ -86,17 +86,9 @@ export function useTempProductBySlugOnProductCompanyInfoLazyQuery(
   >(TempProductBySlugOnProductCompanyInfoDocument, options);
 }
 export function useTempProductBySlugOnProductCompanyInfoSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        TempProductBySlugOnProductCompanyInfoQuery,
-        TempProductBySlugOnProductCompanyInfoQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductCompanyInfoQuery, TempProductBySlugOnProductCompanyInfoQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     TempProductBySlugOnProductCompanyInfoQuery,
     TempProductBySlugOnProductCompanyInfoQueryVariables

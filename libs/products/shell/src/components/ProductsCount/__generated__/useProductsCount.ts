@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client';
+import * as Apollo from '@apollo/client/react';
 const defaultOptions = {} as const;
 export type ProductsCountOnProductsCountQueryVariables = Types.Exact<{ [key: string]: never; }>;
 
@@ -38,10 +38,15 @@ export function useProductsCountOnProductsCountLazyQuery(baseOptions?: Apollo.La
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>(ProductsCountOnProductsCountDocument, options);
         }
-export function useProductsCountOnProductsCountSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>(ProductsCountOnProductsCountDocument, options);
-        }
+export function useProductsCountOnProductsCountSuspenseQuery(
+  baseOptions?: Apollo.SuspenseQueryHookOptions<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>,
+) {
+  const options = baseOptions ? { ...defaultOptions, ...baseOptions } : defaultOptions;
+  return Apollo.useSuspenseQuery<
+    ProductsCountOnProductsCountQuery,
+    ProductsCountOnProductsCountQueryVariables
+  >(ProductsCountOnProductsCountDocument, options);
+}
 export type ProductsCountOnProductsCountQueryHookResult = ReturnType<typeof useProductsCountOnProductsCountQuery>;
 export type ProductsCountOnProductsCountLazyQueryHookResult = ReturnType<typeof useProductsCountOnProductsCountLazyQuery>;
 export type ProductsCountOnProductsCountSuspenseQueryHookResult = ReturnType<typeof useProductsCountOnProductsCountSuspenseQuery>;

@@ -20,9 +20,9 @@
     "@darun/images-domain": "workspace:*"
   },
   "peerDependencies": {
-    "reflect-metadata": "*",
-    "type-graphql": "*",
-    "typedi": "*"
+    "reflect-metadata": "^0.2.2",
+    "type-graphql": "^2.0.0-rc.2",
+    "typedi": "^0.10.0"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

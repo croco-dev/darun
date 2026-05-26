@@ -18,7 +18,7 @@ type CreateApolloServerParams = {
 
 let schema: GraphQLSchema | undefined = undefined;
 let cachedServer: ApolloServer | undefined = undefined;
-export function createServer({ options, config }: CreateApolloServerParams) {
+export function createServer({ options, config }: CreateApolloServerParams): ApolloServer {
   schema ??= buildSchemaSync({
     ...options,
     skipCheck: true,

@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client';
+import * as Apollo from '@apollo/client/react';
 const defaultOptions = {} as const;
 export type ProductBySlugOnProductUserActionQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -53,10 +53,15 @@ export function useProductBySlugOnProductUserActionLazyQuery(baseOptions?: Apoll
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>(ProductBySlugOnProductUserActionDocument, options);
         }
-export function useProductBySlugOnProductUserActionSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>(ProductBySlugOnProductUserActionDocument, options);
-        }
+export function useProductBySlugOnProductUserActionSuspenseQuery(
+  baseOptions: Apollo.SuspenseQueryHookOptions<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useSuspenseQuery<
+    ProductBySlugOnProductUserActionQuery,
+    ProductBySlugOnProductUserActionQueryVariables
+  >(ProductBySlugOnProductUserActionDocument, options);
+}
 export type ProductBySlugOnProductUserActionQueryHookResult = ReturnType<typeof useProductBySlugOnProductUserActionQuery>;
 export type ProductBySlugOnProductUserActionLazyQueryHookResult = ReturnType<typeof useProductBySlugOnProductUserActionLazyQuery>;
 export type ProductBySlugOnProductUserActionSuspenseQueryHookResult = ReturnType<typeof useProductBySlugOnProductUserActionSuspenseQuery>;
@@ -71,7 +76,7 @@ export const UpvoteProductOnProductUserActionDocument = gql`
   }
 }
     `;
-export type UpvoteProductOnProductUserActionMutationFn = Apollo.MutationFunction<UpvoteProductOnProductUserActionMutation, UpvoteProductOnProductUserActionMutationVariables>;
+export type UpvoteProductOnProductUserActionMutationFn = Apollo.MutationFunctionOptions<UpvoteProductOnProductUserActionMutation, UpvoteProductOnProductUserActionMutationVariables>;
 
 /**
  * __useUpvoteProductOnProductUserActionMutation__
@@ -96,4 +101,4 @@ export function useUpvoteProductOnProductUserActionMutation(baseOptions?: Apollo
       }
 export type UpvoteProductOnProductUserActionMutationHookResult = ReturnType<typeof useUpvoteProductOnProductUserActionMutation>;
 export type UpvoteProductOnProductUserActionMutationResult = Apollo.MutationResult<UpvoteProductOnProductUserActionMutation>;
-export type UpvoteProductOnProductUserActionMutationOptions = Apollo.BaseMutationOptions<UpvoteProductOnProductUserActionMutation, UpvoteProductOnProductUserActionMutationVariables>;
+export type UpvoteProductOnProductUserActionMutationOptions = Apollo.MutationHookOptions<UpvoteProductOnProductUserActionMutation, UpvoteProductOnProductUserActionMutationVariables>;

@@ -4,6 +4,7 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "target": "ES2015",
     "types": ["node"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],

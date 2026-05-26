@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { useEffect } from 'react';
 import {
   useEditProductOnEditProductInfoMutation,
   useTempProductBySlugOnEditProductInfoQuery,
@@ -33,14 +34,8 @@ type FormValues = {
 };
 
 export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
-  useTempProductBySlugOnEditProductInfoQuery({
+  const { data } = useTempProductBySlugOnEditProductInfoQuery({
     variables: { slug },
-    onCompleted: ({ tempProductBySlug }) => {
-      form.setValues({
-        name: tempProductBySlug?.name ?? '',
-        summary: tempProductBySlug?.summary ?? '',
-      });
-    },
   });
 
   const form = useForm<FormValues>({
@@ -50,6 +45,13 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
       summary: '',
     },
   });
+
+  useEffect(() => {
+    form.setValues({
+      name: data?.tempProductBySlug?.name ?? '',
+      summary: data?.tempProductBySlug?.summary ?? '',
+    });
+  }, [data, form]);
 
   const [editInformation] = useEditProductOnEditProductInfoMutation({
     onCompleted: ({ editProduct }) => {

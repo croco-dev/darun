@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@darun/images-domain": "workspace:*",
-    "cloudinary": "*"
+    "cloudinary": "^2.9.0"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

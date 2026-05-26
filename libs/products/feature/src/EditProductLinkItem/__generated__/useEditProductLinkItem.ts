@@ -2,7 +2,7 @@ import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
 import { ProductLinkTableFragmentDoc } from "../../ProductLinkTable/__generated__/ProductLinkTable";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type UpdateProductLinkOnEditProductLinkItemMutationVariables =
   Types.Exact<{
@@ -47,7 +47,7 @@ export const UpdateProductLinkOnEditProductLinkItemDocument = gql`
   ${ProductLinkTableFragmentDoc}
 `;
 export type UpdateProductLinkOnEditProductLinkItemMutationFn =
-  Apollo.MutationFunction<
+  Apollo.MutationFunctionOptions<
     UpdateProductLinkOnEditProductLinkItemMutation,
     UpdateProductLinkOnEditProductLinkItemMutationVariables
   >;
@@ -88,7 +88,7 @@ export type UpdateProductLinkOnEditProductLinkItemMutationHookResult =
 export type UpdateProductLinkOnEditProductLinkItemMutationResult =
   Apollo.MutationResult<UpdateProductLinkOnEditProductLinkItemMutation>;
 export type UpdateProductLinkOnEditProductLinkItemMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     UpdateProductLinkOnEditProductLinkItemMutation,
     UpdateProductLinkOnEditProductLinkItemMutationVariables
   >;

@@ -2,7 +2,7 @@ import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
 import { ProductLinkTableFragmentDoc } from "./ProductLinkTable";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type TempProductBySlugOnProductLinkTableQueryVariables = Types.Exact<{
   slug: Types.Scalars["String"]["input"];
@@ -83,17 +83,9 @@ export function useTempProductBySlugOnProductLinkTableLazyQuery(
   >(TempProductBySlugOnProductLinkTableDocument, options);
 }
 export function useTempProductBySlugOnProductLinkTableSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        TempProductBySlugOnProductLinkTableQuery,
-        TempProductBySlugOnProductLinkTableQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductLinkTableQuery, TempProductBySlugOnProductLinkTableQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     TempProductBySlugOnProductLinkTableQuery,
     TempProductBySlugOnProductLinkTableQueryVariables

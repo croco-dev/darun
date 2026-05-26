@@ -72,9 +72,11 @@ export default async function ComparePage({ params }: Props) {
     },
   });
 
-  if (!data.product1 || !data.product2) {
+  if (!data?.product1 || !data.product2) {
     return notFound();
   }
+
+  const { product1, product2 } = data;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
@@ -82,32 +84,32 @@ export default async function ComparePage({ params }: Props) {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div data-testid="compare-column">
-          <ProductCard product={data.product1} />
+          <ProductCard product={product1} />
         </div>
         <div data-testid="compare-column">
-          <ProductCard product={data.product2} />
+          <ProductCard product={product2} />
         </div>
       </div>
 
       <div className="mt-8 space-y-4">
-        <CompareRow label="서비스명" value1={data.product1.name} value2={data.product2.name} testid="name" />
-        <CompareRow label="설명" value1={data.product1.summary} value2={data.product2.summary} testid="summary" />
+        <CompareRow label="서비스명" value1={product1.name} value2={product2.name} testid="name" />
+        <CompareRow label="설명" value1={product1.summary} value2={product2.summary} testid="summary" />
         <CompareRow
           label="회사"
-          value1={data.product1.ownedCompany?.name}
-          value2={data.product2.ownedCompany?.name}
+          value1={product1.ownedCompany?.name}
+          value2={product2.ownedCompany?.name}
           testid="company"
         />
         <CompareRow
           label="투표 수"
-          value1={data.product1.voteCount.toString()}
-          value2={data.product2.voteCount.toString()}
+          value1={product1.voteCount.toString()}
+          value2={product2.voteCount.toString()}
           testid="vote-count"
         />
         <CompareRow
           label="태그"
-          value1={data.product1.tags.map((t: { name: string }) => t.name).join(', ')}
-          value2={data.product2.tags.map((t: { name: string }) => t.name).join(', ')}
+          value1={product1.tags.map((t: { name: string }) => t.name).join(', ')}
+          value2={product2.tags.map((t: { name: string }) => t.name).join(', ')}
           testid="tags"
         />
       </div>

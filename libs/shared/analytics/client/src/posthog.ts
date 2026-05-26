@@ -2,6 +2,13 @@ import posthog from 'posthog-js';
 
 let initialized = false;
 
+declare const process: {
+  env: {
+    NEXT_PUBLIC_POSTHOG_HOST?: string;
+    NEXT_PUBLIC_POSTHOG_KEY?: string;
+  };
+};
+
 export function initPostHog() {
   if (typeof window === 'undefined') return;
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;

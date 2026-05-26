@@ -27,7 +27,7 @@ export default async function HomePage() {
     query: productsCountQuery,
   });
 
-  const productsCount = data.productsCount;
+  const productsCount = data?.productsCount ?? 0;
 
   return (
     <main>

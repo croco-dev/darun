@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/client": "3.11.2",
-    "@apollo/experimental-nextjs-app-support": "0.11.2",
+    "@apollo/client": "4.2.0",
+    "@apollo/client-integration-nextjs": "0.14.5",
     "@croco/utils-next-font-pretendard": "0.0.2",
     "@croco/utils-structure-react": "0.0.1",
     "@darun/companies-feature": "workspace:*",
@@ -36,10 +36,10 @@
     "@tabler/icons-react": "^3.34.1",
     "dayjs": "1.11.19",
     "lucide-react": "^0.468.0",
-    "next": "15.5.12",
+    "next": "^16.2.6",
     "next-client-cookies": "2.1.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "remixicon": "^4.6.0"
   },
   "devDependencies": {
@@ -50,6 +50,6 @@
     "postcss-simple-vars": "7.0.1",
     "sass": "1.97.3",
     "typescript-eslint": "8.55.0",
-    "vitest": "4.0.18"
+    "vitest": "4.1.7"
   }
 }

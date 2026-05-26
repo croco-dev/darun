@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type TempProductBySlugOnEditProductDescriptionQueryVariables =
   Types.Exact<{
@@ -91,17 +91,9 @@ export function useTempProductBySlugOnEditProductDescriptionLazyQuery(
   >(TempProductBySlugOnEditProductDescriptionDocument, options);
 }
 export function useTempProductBySlugOnEditProductDescriptionSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        TempProductBySlugOnEditProductDescriptionQuery,
-        TempProductBySlugOnEditProductDescriptionQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnEditProductDescriptionQuery, TempProductBySlugOnEditProductDescriptionQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     TempProductBySlugOnEditProductDescriptionQuery,
     TempProductBySlugOnEditProductDescriptionQueryVariables
@@ -132,7 +124,7 @@ export const EditProductOnEditProductDescriptionDocument = gql`
   }
 `;
 export type EditProductOnEditProductDescriptionMutationFn =
-  Apollo.MutationFunction<
+  Apollo.MutationFunctionOptions<
     EditProductOnEditProductDescriptionMutation,
     EditProductOnEditProductDescriptionMutationVariables
   >;
@@ -173,7 +165,7 @@ export type EditProductOnEditProductDescriptionMutationHookResult = ReturnType<
 export type EditProductOnEditProductDescriptionMutationResult =
   Apollo.MutationResult<EditProductOnEditProductDescriptionMutation>;
 export type EditProductOnEditProductDescriptionMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     EditProductOnEditProductDescriptionMutation,
     EditProductOnEditProductDescriptionMutationVariables
   >;

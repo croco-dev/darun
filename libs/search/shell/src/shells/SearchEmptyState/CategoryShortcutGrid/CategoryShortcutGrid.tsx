@@ -2,7 +2,8 @@
 
 import { useLocale } from 'next-intl';
 import { useNavigate } from '@darun/utils-router';
-import { useSuspenseQuery, gql } from '@apollo/client';
+import { gql } from '@apollo/client';
+import { useSuspenseQuery } from '@apollo/client/react';
 
 const CATEGORIES_QUERY = gql`
   query CategoriesForEmptyState($first: Int!, $locale: String!) {

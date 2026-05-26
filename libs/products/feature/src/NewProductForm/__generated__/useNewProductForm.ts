@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type CreateProductOnNewProductFormMutationVariables = Types.Exact<{
   input: Types.CreateProductInput;
@@ -25,7 +25,7 @@ export const CreateProductOnNewProductFormDocument = gql`
     }
   }
 `;
-export type CreateProductOnNewProductFormMutationFn = Apollo.MutationFunction<
+export type CreateProductOnNewProductFormMutationFn = Apollo.MutationFunctionOptions<
   CreateProductOnNewProductFormMutation,
   CreateProductOnNewProductFormMutationVariables
 >;
@@ -65,7 +65,7 @@ export type CreateProductOnNewProductFormMutationHookResult = ReturnType<
 export type CreateProductOnNewProductFormMutationResult =
   Apollo.MutationResult<CreateProductOnNewProductFormMutation>;
 export type CreateProductOnNewProductFormMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     CreateProductOnNewProductFormMutation,
     CreateProductOnNewProductFormMutationVariables
   >;

@@ -1,9 +1,9 @@
-import { useQuery, useMutation } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Mock: @apollo/client ──────────────────────────────────────────
-vi.mock('@apollo/client', async importOriginal => {
+vi.mock('@apollo/client/react', async importOriginal => {
   const actual = await importOriginal();
   return {
     ...(actual as Record<string, unknown>),

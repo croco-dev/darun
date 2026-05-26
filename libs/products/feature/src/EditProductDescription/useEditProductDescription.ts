@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { useEffect } from 'react';
 import {
   useEditProductOnEditProductDescriptionMutation,
   useTempProductBySlugOnEditProductDescriptionQuery,
@@ -32,15 +33,16 @@ type FormValues = {
 export function useEditProductDescription({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
   const { data } = useTempProductBySlugOnEditProductDescriptionQuery({
     variables: { slug },
-    onCompleted: ({ tempProductBySlug }) => {
-      form.setInitialValues({ description: tempProductBySlug?.description ?? '' });
-    },
   });
 
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: { description: data?.tempProductBySlug?.description ?? '' },
   });
+
+  useEffect(() => {
+    form.setInitialValues({ description: data?.tempProductBySlug?.description ?? '' });
+  }, [data, form]);
 
   const [editDescription] = useEditProductOnEditProductDescriptionMutation({
     onCompleted: ({ editProduct }) => {

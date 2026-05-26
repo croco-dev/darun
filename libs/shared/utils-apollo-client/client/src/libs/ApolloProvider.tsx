@@ -1,23 +1,22 @@
 'use client';
 
 import { ApolloLink } from '@apollo/client';
-import { NormalizedCacheObject } from '@apollo/client/cache/inmemory/types';
-import { setContext } from '@apollo/client/link/context';
-import { ApolloClient, ApolloNextAppProvider } from '@apollo/experimental-nextjs-app-support';
+import { SetContextLink } from '@apollo/client/link/context';
+import { ApolloClient, ApolloNextAppProvider } from '@apollo/client-integration-nextjs';
 import { Cookies } from 'next-client-cookies';
 import { ReactNode } from 'react';
 
 type ApolloProviderProps = {
   cookies: Cookies;
   children: ReactNode;
-  makeClient: () => ApolloClient<NormalizedCacheObject>;
+  makeClient: () => ApolloClient;
 };
 
 export function ApolloProvider({ cookies, children, makeClient }: ApolloProviderProps) {
   const clientFactory = () => {
     const client = makeClient();
 
-    const authLink = setContext((_, { headers }) => {
+    const authLink = new SetContextLink(({ headers }) => {
       const token = cookies.get('idToken');
       return {
         headers: {

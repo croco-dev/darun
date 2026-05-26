@@ -10,23 +10,23 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/client": "^3.13.1",
+    "@apollo/client": "4.2.0",
     "@darun/products-shell": "workspace:*",
     "@darun/search-feature": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/utils-router": "workspace:*"
   },
   "peerDependencies": {
-    "next": "*",
+    "next": "^16.2.6",
     "next-intl": "*",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^19.0.0",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.7.2"
+    "typescript": "^6.0.3"
   }
 }

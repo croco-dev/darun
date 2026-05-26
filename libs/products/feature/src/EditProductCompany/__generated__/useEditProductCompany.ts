@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type RegisterProductCompanyOnEditProductCompanyMutationVariables =
   Types.Exact<{
@@ -39,7 +39,7 @@ export const RegisterProductCompanyOnEditProductCompanyDocument = gql`
   }
 `;
 export type RegisterProductCompanyOnEditProductCompanyMutationFn =
-  Apollo.MutationFunction<
+  Apollo.MutationFunctionOptions<
     RegisterProductCompanyOnEditProductCompanyMutation,
     RegisterProductCompanyOnEditProductCompanyMutationVariables
   >;
@@ -79,7 +79,7 @@ export type RegisterProductCompanyOnEditProductCompanyMutationHookResult =
 export type RegisterProductCompanyOnEditProductCompanyMutationResult =
   Apollo.MutationResult<RegisterProductCompanyOnEditProductCompanyMutation>;
 export type RegisterProductCompanyOnEditProductCompanyMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     RegisterProductCompanyOnEditProductCompanyMutation,
     RegisterProductCompanyOnEditProductCompanyMutationVariables
   >;
@@ -140,17 +140,9 @@ export function useSearchCompaniesOnEditProductCompanyLazyQuery(
   >(SearchCompaniesOnEditProductCompanyDocument, options);
 }
 export function useSearchCompaniesOnEditProductCompanySuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        SearchCompaniesOnEditProductCompanyQuery,
-        SearchCompaniesOnEditProductCompanyQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<SearchCompaniesOnEditProductCompanyQuery, SearchCompaniesOnEditProductCompanyQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     SearchCompaniesOnEditProductCompanyQuery,
     SearchCompaniesOnEditProductCompanyQueryVariables

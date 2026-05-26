@@ -22,13 +22,13 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^19.1.12",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.1.9",
-    "typescript": "^5.9.2"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "@apollo/client": "^3.11.2",
+    "@apollo/client": "4.2.0",
     "@mantine/notifications": "^8.3.16",
-    "react": "^19.0.0"
+    "react": "^19.2.6"
   }
 }

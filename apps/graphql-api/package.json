@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/server": "5.4.0",
+    "@apollo/server": "5.5.1",
     "@as-integrations/aws-lambda": "4.0.1",
     "@darun/accounts-datasource": "workspace:*",
     "@darun/accounts-domain": "workspace:*",
@@ -47,7 +47,7 @@
     "@sentry/profiling-node": "10.38.0",
     "@typegoose/typegoose": "13.1.0",
     "cloudinary": "2.9.0",
-    "drizzle-orm": "0.45.1",
+    "drizzle-orm": "0.45.2",
     "firebase-admin": "13.6.1",
     "graphql": "16.12.0",
     "graphql-scalars": "1.25.0",
@@ -64,6 +64,6 @@
     "serverless-esbuild": "1.55.1",
     "serverless-offline": "14.4.0",
     "serverless-prune-plugin": "2.1.0",
-    "vitest": "4.0.18"
+    "vitest": "4.1.7"
   }
 }

@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type CreateProductFeatureOnNewProductFeatureFormMutationVariables =
   Types.Exact<{
@@ -29,7 +29,7 @@ export const CreateProductFeatureOnNewProductFeatureFormDocument = gql`
   }
 `;
 export type CreateProductFeatureOnNewProductFeatureFormMutationFn =
-  Apollo.MutationFunction<
+  Apollo.MutationFunctionOptions<
     CreateProductFeatureOnNewProductFeatureFormMutation,
     CreateProductFeatureOnNewProductFeatureFormMutationVariables
   >;
@@ -68,7 +68,7 @@ export type CreateProductFeatureOnNewProductFeatureFormMutationHookResult =
 export type CreateProductFeatureOnNewProductFeatureFormMutationResult =
   Apollo.MutationResult<CreateProductFeatureOnNewProductFeatureFormMutation>;
 export type CreateProductFeatureOnNewProductFeatureFormMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     CreateProductFeatureOnNewProductFeatureFormMutation,
     CreateProductFeatureOnNewProductFeatureFormMutationVariables
   >;

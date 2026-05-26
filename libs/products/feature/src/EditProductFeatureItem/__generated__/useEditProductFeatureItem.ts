@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type FeatureOnEditProductFeatureItemQueryVariables = Types.Exact<{
   id: Types.Scalars["ID"]["input"];
@@ -91,17 +91,9 @@ export function useFeatureOnEditProductFeatureItemLazyQuery(
   >(FeatureOnEditProductFeatureItemDocument, options);
 }
 export function useFeatureOnEditProductFeatureItemSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        FeatureOnEditProductFeatureItemQuery,
-        FeatureOnEditProductFeatureItemQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     FeatureOnEditProductFeatureItemQuery,
     FeatureOnEditProductFeatureItemQueryVariables
@@ -133,7 +125,7 @@ export const UpdateProductFeatureOnEditProductFeatureItemDocument = gql`
   }
 `;
 export type UpdateProductFeatureOnEditProductFeatureItemMutationFn =
-  Apollo.MutationFunction<
+  Apollo.MutationFunctionOptions<
     UpdateProductFeatureOnEditProductFeatureItemMutation,
     UpdateProductFeatureOnEditProductFeatureItemMutationVariables
   >;
@@ -173,7 +165,7 @@ export type UpdateProductFeatureOnEditProductFeatureItemMutationHookResult =
 export type UpdateProductFeatureOnEditProductFeatureItemMutationResult =
   Apollo.MutationResult<UpdateProductFeatureOnEditProductFeatureItemMutation>;
 export type UpdateProductFeatureOnEditProductFeatureItemMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     UpdateProductFeatureOnEditProductFeatureItemMutation,
     UpdateProductFeatureOnEditProductFeatureItemMutationVariables
   >;

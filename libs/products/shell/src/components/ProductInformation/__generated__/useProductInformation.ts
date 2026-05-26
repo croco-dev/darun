@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client';
+import * as Apollo from '@apollo/client/react';
 const defaultOptions = {} as const;
 export type ProductBySlugOnProductInformationQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -53,10 +53,15 @@ export function useProductBySlugOnProductInformationLazyQuery(baseOptions?: Apol
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables>(ProductBySlugOnProductInformationDocument, options);
         }
-export function useProductBySlugOnProductInformationSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables>(ProductBySlugOnProductInformationDocument, options);
-        }
+export function useProductBySlugOnProductInformationSuspenseQuery(
+  baseOptions: Apollo.SuspenseQueryHookOptions<ProductBySlugOnProductInformationQuery, ProductBySlugOnProductInformationQueryVariables>,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useSuspenseQuery<
+    ProductBySlugOnProductInformationQuery,
+    ProductBySlugOnProductInformationQueryVariables
+  >(ProductBySlugOnProductInformationDocument, options);
+}
 export type ProductBySlugOnProductInformationQueryHookResult = ReturnType<typeof useProductBySlugOnProductInformationQuery>;
 export type ProductBySlugOnProductInformationLazyQueryHookResult = ReturnType<typeof useProductBySlugOnProductInformationLazyQuery>;
 export type ProductBySlugOnProductInformationSuspenseQueryHookResult = ReturnType<typeof useProductBySlugOnProductInformationSuspenseQuery>;
