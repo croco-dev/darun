@@ -26,4 +26,3 @@ onlyBuiltDependencies:
 allowBuilds:
   protobufjs: true
   serverless: true
-  type-graphql: set this to true or false
