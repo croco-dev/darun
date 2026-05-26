@@ -1,3 +1,5 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';

@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@apollo/client": "4.2.0",
-    "@apollo/client-integration-nextjs": "0.14.5",
     "@croco/utils-next-font-pretendard": "0.0.2",
     "@croco/utils-structure-react": "0.0.1",
     "@darun/magazines-shell": "workspace:*",

@@ -11,7 +11,6 @@
   },
   "peerDependencies": {
     "@apollo/client": "*",
-    "@apollo/experimental-nextjs-app-support": "*",
     "@darun/provider-graphql": "workspace:*",
     "@darun/ui": "workspace:*",
     "next": "*",

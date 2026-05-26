@@ -1,3 +1,5 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useApolloClient } from '@apollo/client/react';
 import { useForm } from '@mantine/form';

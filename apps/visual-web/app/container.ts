@@ -1,9 +1,8 @@
-import { ApolloLink } from '@apollo/client';
+import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { BatchHttpLink } from '@apollo/client/link/batch-http';
 import { ErrorLink } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
-import { ApolloClient, InMemoryCache, SSRMultipartLink } from '@apollo/client-integration-nextjs';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 
 class Container {
@@ -52,13 +51,6 @@ class Container {
     return new ApolloClient({
       cache: new InMemoryCache(),
       link: ApolloLink.from([
-        ...(typeof window === 'undefined'
-          ? [
-              new SSRMultipartLink({
-                stripDefer: true,
-              }),
-            ]
-          : []),
         new RetryLink({
           delay: {
             initial: 100,

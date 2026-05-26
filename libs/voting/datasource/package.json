@@ -15,8 +15,8 @@
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
-    "reflect-metadata": "^0.2.2",
-    "typedi": "^0.10.0"
+    "reflect-metadata": "*",
+    "typedi": "*"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

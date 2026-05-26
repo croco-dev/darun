@@ -1,5 +1,3 @@
-'use client';
-
 import { ProductListRefreshButton } from '@darun/products-feature';
 import { PageShell } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';

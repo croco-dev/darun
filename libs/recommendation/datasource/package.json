@@ -18,8 +18,8 @@
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
     "drizzle-orm": "0.45.2",
-    "reflect-metadata": "^0.2.2",
-    "typedi": "^0.10.0"
+    "reflect-metadata": "*",
+    "typedi": "*"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

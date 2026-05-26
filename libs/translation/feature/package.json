@@ -20,9 +20,9 @@
     "@darun/translation-service": "workspace:*"
   },
   "peerDependencies": {
-    "reflect-metadata": "^0.2.2",
-    "type-graphql": "^2.0.0-rc.2",
-    "typedi": "^0.10.0"
+    "reflect-metadata": "*",
+    "type-graphql": "*",
+    "typedi": "*"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
