@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client';
+import * as Apollo from '@apollo/client/react';
 const defaultOptions = {} as const;
 export type ProductWithFeaturesOnProductFeatureListQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -56,10 +56,15 @@ export function useProductWithFeaturesOnProductFeatureListLazyQuery(baseOptions?
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<ProductWithFeaturesOnProductFeatureListQuery, ProductWithFeaturesOnProductFeatureListQueryVariables>(ProductWithFeaturesOnProductFeatureListDocument, options);
         }
-export function useProductWithFeaturesOnProductFeatureListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ProductWithFeaturesOnProductFeatureListQuery, ProductWithFeaturesOnProductFeatureListQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<ProductWithFeaturesOnProductFeatureListQuery, ProductWithFeaturesOnProductFeatureListQueryVariables>(ProductWithFeaturesOnProductFeatureListDocument, options);
-        }
+export function useProductWithFeaturesOnProductFeatureListSuspenseQuery(
+  baseOptions: Apollo.SuspenseQueryHookOptions<ProductWithFeaturesOnProductFeatureListQuery, ProductWithFeaturesOnProductFeatureListQueryVariables>,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useSuspenseQuery<
+    ProductWithFeaturesOnProductFeatureListQuery,
+    ProductWithFeaturesOnProductFeatureListQueryVariables
+  >(ProductWithFeaturesOnProductFeatureListDocument, options);
+}
 export type ProductWithFeaturesOnProductFeatureListQueryHookResult = ReturnType<typeof useProductWithFeaturesOnProductFeatureListQuery>;
 export type ProductWithFeaturesOnProductFeatureListLazyQueryHookResult = ReturnType<typeof useProductWithFeaturesOnProductFeatureListLazyQuery>;
 export type ProductWithFeaturesOnProductFeatureListSuspenseQueryHookResult = ReturnType<typeof useProductWithFeaturesOnProductFeatureListSuspenseQuery>;

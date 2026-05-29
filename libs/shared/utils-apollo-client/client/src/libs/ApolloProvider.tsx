@@ -1,23 +1,27 @@
 'use client';
 
-import { ApolloLink } from '@apollo/client';
-import { NormalizedCacheObject } from '@apollo/client/cache/inmemory/types';
-import { setContext } from '@apollo/client/link/context';
-import { ApolloClient, ApolloNextAppProvider } from '@apollo/experimental-nextjs-app-support';
+import { ApolloClient, ApolloLink } from '@apollo/client';
+import { SetContextLink } from '@apollo/client/link/context';
+import { ApolloProvider as ReactApolloProvider } from '@apollo/client/react';
 import { Cookies } from 'next-client-cookies';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 
 type ApolloProviderProps = {
   cookies: Cookies;
   children: ReactNode;
-  makeClient: () => ApolloClient<NormalizedCacheObject>;
+  makeClient: () => ApolloClient;
+};
+
+type LinkableApolloClient = ApolloClient & {
+  readonly link: ApolloLink;
+  setLink(newLink: ApolloLink): void;
 };
 
 export function ApolloProvider({ cookies, children, makeClient }: ApolloProviderProps) {
-  const clientFactory = () => {
-    const client = makeClient();
+  const [client] = useState(() => {
+    const apolloClient = makeClient() as LinkableApolloClient;
 
-    const authLink = setContext((_, { headers }) => {
+    const authLink = new SetContextLink(({ headers }) => {
       const token = cookies.get('idToken');
       return {
         headers: {
@@ -27,9 +31,9 @@ export function ApolloProvider({ cookies, children, makeClient }: ApolloProvider
       };
     });
 
-    client.setLink(ApolloLink.from([authLink, client.link]));
-    return client;
-  };
+    apolloClient.setLink(ApolloLink.from([authLink, apolloClient.link]));
+    return apolloClient;
+  });
 
-  return <ApolloNextAppProvider makeClient={clientFactory}>{children}</ApolloNextAppProvider>;
+  return <ReactApolloProvider client={client}>{children}</ReactApolloProvider>;
 }

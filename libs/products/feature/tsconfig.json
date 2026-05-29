@@ -4,8 +4,9 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "target": "ES2015",
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "../../shared/ui-admin/src/styles.d.ts"],
   "exclude": ["node_modules"]
 }

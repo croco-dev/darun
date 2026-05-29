@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {},
   transpilePackages: ['@darun/ui', '@darun/ui-layout'],
   experimental: {
     ...(process.env.ENABLE_EXPERIMENTAL_REACT_COMPILER === 'true'

@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type AddProductScreenshotOnNewProductScreenshotFormMutationVariables =
   Types.Exact<{
@@ -44,7 +44,7 @@ export const AddProductScreenshotOnNewProductScreenshotFormDocument = gql`
   }
 `;
 export type AddProductScreenshotOnNewProductScreenshotFormMutationFn =
-  Apollo.MutationFunction<
+  Apollo.MutationFunctionOptions<
     AddProductScreenshotOnNewProductScreenshotFormMutation,
     AddProductScreenshotOnNewProductScreenshotFormMutationVariables
   >;
@@ -84,7 +84,7 @@ export type AddProductScreenshotOnNewProductScreenshotFormMutationHookResult =
 export type AddProductScreenshotOnNewProductScreenshotFormMutationResult =
   Apollo.MutationResult<AddProductScreenshotOnNewProductScreenshotFormMutation>;
 export type AddProductScreenshotOnNewProductScreenshotFormMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     AddProductScreenshotOnNewProductScreenshotFormMutation,
     AddProductScreenshotOnNewProductScreenshotFormMutationVariables
   >;

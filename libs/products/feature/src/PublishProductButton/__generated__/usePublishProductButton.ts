@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type TempProductOnPublishProductButtonQueryVariables = Types.Exact<{
   slug: Types.Scalars["String"]["input"];
@@ -86,17 +86,9 @@ export function useTempProductOnPublishProductButtonLazyQuery(
   >(TempProductOnPublishProductButtonDocument, options);
 }
 export function useTempProductOnPublishProductButtonSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        TempProductOnPublishProductButtonQuery,
-        TempProductOnPublishProductButtonQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     TempProductOnPublishProductButtonQuery,
     TempProductOnPublishProductButtonQueryVariables
@@ -125,7 +117,7 @@ export const PublishProductOnPublishProductButtonDocument = gql`
   }
 `;
 export type PublishProductOnPublishProductButtonMutationFn =
-  Apollo.MutationFunction<
+  Apollo.MutationFunctionOptions<
     PublishProductOnPublishProductButtonMutation,
     PublishProductOnPublishProductButtonMutationVariables
   >;
@@ -165,7 +157,7 @@ export type PublishProductOnPublishProductButtonMutationHookResult = ReturnType<
 export type PublishProductOnPublishProductButtonMutationResult =
   Apollo.MutationResult<PublishProductOnPublishProductButtonMutation>;
 export type PublishProductOnPublishProductButtonMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     PublishProductOnPublishProductButtonMutation,
     PublishProductOnPublishProductButtonMutationVariables
   >;

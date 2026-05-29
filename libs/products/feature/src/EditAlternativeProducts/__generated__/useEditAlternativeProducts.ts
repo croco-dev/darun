@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type TempProductBySlugOnEditAlternativeProductsQueryVariables =
   Types.Exact<{
@@ -105,17 +105,9 @@ export function useTempProductBySlugOnEditAlternativeProductsLazyQuery(
   >(TempProductBySlugOnEditAlternativeProductsDocument, options);
 }
 export function useTempProductBySlugOnEditAlternativeProductsSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        TempProductBySlugOnEditAlternativeProductsQuery,
-        TempProductBySlugOnEditAlternativeProductsQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     TempProductBySlugOnEditAlternativeProductsQuery,
     TempProductBySlugOnEditAlternativeProductsQueryVariables
@@ -189,17 +181,9 @@ export function useSearchProductsOnEditAlternativeProductsLazyQuery(
   >(SearchProductsOnEditAlternativeProductsDocument, options);
 }
 export function useSearchProductsOnEditAlternativeProductsSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        SearchProductsOnEditAlternativeProductsQuery,
-        SearchProductsOnEditAlternativeProductsQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     SearchProductsOnEditAlternativeProductsQuery,
     SearchProductsOnEditAlternativeProductsQueryVariables
@@ -233,7 +217,7 @@ export const EditProductOnEditAlternativeProductsDocument = gql`
   }
 `;
 export type EditProductOnEditAlternativeProductsMutationFn =
-  Apollo.MutationFunction<
+  Apollo.MutationFunctionOptions<
     EditProductOnEditAlternativeProductsMutation,
     EditProductOnEditAlternativeProductsMutationVariables
   >;
@@ -274,7 +258,7 @@ export type EditProductOnEditAlternativeProductsMutationHookResult = ReturnType<
 export type EditProductOnEditAlternativeProductsMutationResult =
   Apollo.MutationResult<EditProductOnEditAlternativeProductsMutation>;
 export type EditProductOnEditAlternativeProductsMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     EditProductOnEditAlternativeProductsMutation,
     EditProductOnEditAlternativeProductsMutationVariables
   >;

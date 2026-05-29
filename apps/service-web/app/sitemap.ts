@@ -39,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     });
 
-    for (const product of data.recentProducts ?? []) {
+    for (const product of data?.recentProducts ?? []) {
       const lastModified = product.updatedAt ? new Date(product.updatedAt) : new Date();
       const { slug, name } = product;
 

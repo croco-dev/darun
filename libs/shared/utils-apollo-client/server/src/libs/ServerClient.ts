@@ -1,22 +1,20 @@
 import { ApolloClient, ApolloLink } from '@apollo/client';
-import { NormalizedCacheObject } from '@apollo/client/cache/inmemory/types';
-import { setContext } from '@apollo/client/link/context';
-import { registerApolloClient } from '@apollo/experimental-nextjs-app-support/rsc';
+import { SetContextLink } from '@apollo/client/link/context';
 import { getCookies } from 'next-client-cookies/server';
 
-let clientFactory: { getClient: () => ApolloClient<NormalizedCacheObject> };
+let clientFactory: () => ApolloClient;
 
-export const initApolloClient = (makeClient: () => ApolloClient<NormalizedCacheObject>) => {
-  clientFactory = registerApolloClient(makeClient);
+export const initApolloClient = (makeClient: () => ApolloClient) => {
+  clientFactory = makeClient;
 };
 
 export const getClient = (options?: { static?: boolean }) => {
   if (!clientFactory) {
     throw new Error('Apollo client not initialized');
   }
-  const client = clientFactory.getClient();
+  const client = clientFactory();
 
-  const authLink = setContext((_, { headers }) => {
+  const authLink = new SetContextLink(({ headers }) => {
     const canUseCookies = !options?.static;
     const token = canUseCookies ? getCookies().get('idToken') : undefined;
     return {

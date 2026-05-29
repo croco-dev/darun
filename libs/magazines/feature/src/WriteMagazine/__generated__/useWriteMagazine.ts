@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type CreateMagazineOnWriteMagazineMutationVariables = Types.Exact<{
   input: Types.CreateMagazineInput;
@@ -25,7 +25,7 @@ export const CreateMagazineOnWriteMagazineDocument = gql`
     }
   }
 `;
-export type CreateMagazineOnWriteMagazineMutationFn = Apollo.MutationFunction<
+export type CreateMagazineOnWriteMagazineMutationFn = Apollo.MutationFunctionOptions<
   CreateMagazineOnWriteMagazineMutation,
   CreateMagazineOnWriteMagazineMutationVariables
 >;
@@ -65,7 +65,7 @@ export type CreateMagazineOnWriteMagazineMutationHookResult = ReturnType<
 export type CreateMagazineOnWriteMagazineMutationResult =
   Apollo.MutationResult<CreateMagazineOnWriteMagazineMutation>;
 export type CreateMagazineOnWriteMagazineMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     CreateMagazineOnWriteMagazineMutation,
     CreateMagazineOnWriteMagazineMutationVariables
   >;

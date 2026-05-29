@@ -17,7 +17,7 @@
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
-    "drizzle-orm": "*",
+    "drizzle-orm": "0.45.2",
     "reflect-metadata": "*",
     "typedi": "*"
   },

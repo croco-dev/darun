@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client';
+import * as Apollo from '@apollo/client/react';
 const defaultOptions = {} as const;
 export type RecentProductsOnRecentProductListQueryVariables = Types.Exact<{
   locale: Types.Scalars['String']['input'];
@@ -51,10 +51,15 @@ export function useRecentProductsOnRecentProductListLazyQuery(baseOptions?: Apol
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>(RecentProductsOnRecentProductListDocument, options);
         }
-export function useRecentProductsOnRecentProductListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>(RecentProductsOnRecentProductListDocument, options);
-        }
+export function useRecentProductsOnRecentProductListSuspenseQuery(
+  baseOptions: Apollo.SuspenseQueryHookOptions<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useSuspenseQuery<
+    RecentProductsOnRecentProductListQuery,
+    RecentProductsOnRecentProductListQueryVariables
+  >(RecentProductsOnRecentProductListDocument, options);
+}
 export type RecentProductsOnRecentProductListQueryHookResult = ReturnType<typeof useRecentProductsOnRecentProductListQuery>;
 export type RecentProductsOnRecentProductListLazyQueryHookResult = ReturnType<typeof useRecentProductsOnRecentProductListLazyQuery>;
 export type RecentProductsOnRecentProductListSuspenseQueryHookResult = ReturnType<typeof useRecentProductsOnRecentProductListSuspenseQuery>;

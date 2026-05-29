@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client';
+import * as Apollo from '@apollo/client/react';
 const defaultOptions = {} as const;
 export type SearchProductsOnSearchProductListQueryVariables = Types.Exact<{
   query: Types.Scalars['String']['input'];
@@ -59,10 +59,15 @@ export function useSearchProductsOnSearchProductListLazyQuery(baseOptions?: Apol
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>(SearchProductsOnSearchProductListDocument, options);
         }
-export function useSearchProductsOnSearchProductListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>(SearchProductsOnSearchProductListDocument, options);
-        }
+export function useSearchProductsOnSearchProductListSuspenseQuery(
+  baseOptions: Apollo.SuspenseQueryHookOptions<SearchProductsOnSearchProductListQuery, SearchProductsOnSearchProductListQueryVariables>,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useSuspenseQuery<
+    SearchProductsOnSearchProductListQuery,
+    SearchProductsOnSearchProductListQueryVariables
+  >(SearchProductsOnSearchProductListDocument, options);
+}
 export type SearchProductsOnSearchProductListQueryHookResult = ReturnType<typeof useSearchProductsOnSearchProductListQuery>;
 export type SearchProductsOnSearchProductListLazyQueryHookResult = ReturnType<typeof useSearchProductsOnSearchProductListLazyQuery>;
 export type SearchProductsOnSearchProductListSuspenseQueryHookResult = ReturnType<typeof useSearchProductsOnSearchProductListSuspenseQuery>;

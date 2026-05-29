@@ -1,9 +1,12 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useForm } from '@mantine/form';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { ChangeEvent } from 'react';
 import { useCallback } from 'react';
+import { useEffect } from 'react';
 import {
   useEditProductOnEditAlternativeProductsMutation,
   useSearchProductsOnEditAlternativeProductsLazyQuery,
@@ -48,11 +51,6 @@ type FormValues = {
 export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
   const { data } = useTempProductBySlugOnEditAlternativeProductsQuery({
     variables: { slug },
-    onCompleted: ({ tempProductBySlug }) => {
-      form.setValues({
-        alternativeIds: tempProductBySlug?.alternatives.map(({ id }) => id) ?? [],
-      });
-    },
   });
 
   const form = useForm<FormValues>({
@@ -62,6 +60,12 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
     },
   });
   const [searchProducts, { data: searchData }] = useSearchProductsOnEditAlternativeProductsLazyQuery();
+
+  useEffect(() => {
+    form.setValues({
+      alternativeIds: data?.tempProductBySlug?.alternatives.map(({ id }) => id) ?? [],
+    });
+  }, [data, form]);
 
   const [updateAlternativeProducts] = useEditProductOnEditAlternativeProductsMutation({
     onCompleted: ({ updateAlternativeProduct }) => {

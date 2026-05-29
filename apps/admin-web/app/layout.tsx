@@ -3,11 +3,17 @@ import '@mantine/core/styles.css';
 import './globals.css';
 import 'remixicon/fonts/remixicon.css';
 
-import { pretendardFont } from '@croco/utils-next-font-pretendard';
 import { Metadata } from 'next';
+import localFont from 'next/font/local';
 import { ReactNode } from 'react';
 import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
+
+const pretendardFont = localFont({
+  src: '../../../node_modules/@croco/utils-next-font-pretendard/PretendardVariable.woff2',
+  display: 'swap',
+  weight: '45 920',
+});
 
 export const metadata: Metadata = {
   title: 'darun admin',

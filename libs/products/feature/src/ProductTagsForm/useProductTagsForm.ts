@@ -35,16 +35,16 @@ type ProductTagsFormProps = {
   slug: string;
 };
 export function useProductTagsForm({ slug }: ProductTagsFormProps) {
-  const [tags, setTags] = useState<string[]>([]);
+  const [editedTags, setEditedTags] = useState<string[] | undefined>();
 
-  useTempProductBySlugOnProductTagsFormQuery({
+  const { data } = useTempProductBySlugOnProductTagsFormQuery({
     variables: {
       slug,
     },
-    onCompleted: data => {
-      setTags(data.tempProductBySlug?.tags.map(tag => tag.name) ?? []);
-    },
   });
+
+  const fetchedTags = data?.tempProductBySlug?.tags.map(tag => tag.name) ?? [];
+  const tags = editedTags ?? fetchedTags;
   const [updateProductTags] = useUpdateProductTagsOnProductTagFormMutation({
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
@@ -60,7 +60,7 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
   });
 
   const updateTags = (newTags: string[]) => {
-    setTags(newTags);
+    setEditedTags(newTags);
   };
 
   const applyTags = async () => {

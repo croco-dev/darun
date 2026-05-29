@@ -1,6 +1,10 @@
-import { gql, useApolloClient } from '@apollo/client';
+'use client';
+
+import { gql } from '@apollo/client';
+import { useApolloClient } from '@apollo/client/react';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { useEffect } from 'react';
 import { TempProductBySlugOnProductFeatureTableDocument } from '../ProductFeatureTable/__generated__/useProductFeatureTable';
 import {
   useFeatureOnEditProductFeatureItemQuery,
@@ -38,17 +42,8 @@ type FormValues = {
 export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFeatureItemProps) {
   const apolloClient = useApolloClient();
 
-  const { loading: queryLoading } = useFeatureOnEditProductFeatureItemQuery({
+  const { data, loading: queryLoading } = useFeatureOnEditProductFeatureItemQuery({
     variables: { id: featureId },
-    onCompleted: ({ feature }) => {
-      if (feature?.id) {
-        form.setValues({
-          emoji: feature.emoji,
-          name: feature.name,
-          summary: feature.summary ?? '',
-        });
-      }
-    },
   });
   const [updateFeature, { loading: mutationLoading }] = useUpdateProductFeatureOnEditProductFeatureItemMutation({
     onCompleted: ({ updateProductFeature }) => {
@@ -69,6 +64,19 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
       summary: '',
     },
   });
+
+  useEffect(() => {
+    const feature = data?.feature;
+    if (!feature?.id) {
+      return;
+    }
+
+    form.setValues({
+      emoji: feature.emoji,
+      name: feature.name,
+      summary: feature.summary ?? '',
+    });
+  }, [data, form]);
 
   const submit = async (values: FormValues) => {
     if (!values.name && !values.summary && !values.emoji) {

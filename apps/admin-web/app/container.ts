@@ -1,8 +1,8 @@
-import { ApolloLink } from '@apollo/client';
+import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { BatchHttpLink } from '@apollo/client/link/batch-http';
-import { onError } from '@apollo/client/link/error';
+import { ErrorLink } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
-import { ApolloClient, InMemoryCache, SSRMultipartLink } from '@apollo/experimental-nextjs-app-support';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 class Container {
   private static instance: Container;
@@ -32,31 +32,24 @@ class Container {
   }
 
   get apolloClient() {
-    const httpErrorLink = onError(({ graphQLErrors, networkError }) => {
-      if (graphQLErrors) {
-        graphQLErrors.forEach(({ message, locations, path }) => {
+    const httpErrorLink = new ErrorLink(({ error }) => {
+      if (CombinedGraphQLErrors.is(error)) {
+        error.errors.forEach(({ message, locations, path }) => {
           const locationText = locations?.map(location => `${location.line}:${location.column}`).join(', ') ?? '-';
           const pathText = path?.join('.') ?? '-';
 
           console.error(`[GraphQL error] ${message} | location=${locationText} | path=${pathText}`);
         });
+
+        return;
       }
 
-      if (networkError) {
-        console.error(`[Network error]: ${networkError}`);
-      }
+      console.error(`[Network error]: ${error}`);
     });
 
     return new ApolloClient({
       cache: new InMemoryCache(),
       link: ApolloLink.from([
-        ...(typeof window === 'undefined'
-          ? [
-              new SSRMultipartLink({
-                stripDefer: true,
-              }),
-            ]
-          : []),
         new RetryLink({
           delay: {
             initial: 100,

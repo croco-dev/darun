@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client';
+import * as Apollo from '@apollo/client/react';
 const defaultOptions = {} as const;
 export type RankedProductsOnRankedProductListQueryVariables = Types.Exact<{
   locale: Types.Scalars['String']['input'];
@@ -52,10 +52,15 @@ export function useRankedProductsOnRankedProductListLazyQuery(baseOptions?: Apol
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<RankedProductsOnRankedProductListQuery, RankedProductsOnRankedProductListQueryVariables>(RankedProductsOnRankedProductListDocument, options);
         }
-export function useRankedProductsOnRankedProductListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<RankedProductsOnRankedProductListQuery, RankedProductsOnRankedProductListQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<RankedProductsOnRankedProductListQuery, RankedProductsOnRankedProductListQueryVariables>(RankedProductsOnRankedProductListDocument, options);
-        }
+export function useRankedProductsOnRankedProductListSuspenseQuery(
+  baseOptions: Apollo.SuspenseQueryHookOptions<RankedProductsOnRankedProductListQuery, RankedProductsOnRankedProductListQueryVariables>,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useSuspenseQuery<
+    RankedProductsOnRankedProductListQuery,
+    RankedProductsOnRankedProductListQueryVariables
+  >(RankedProductsOnRankedProductListDocument, options);
+}
 export type RankedProductsOnRankedProductListQueryHookResult = ReturnType<typeof useRankedProductsOnRankedProductListQuery>;
 export type RankedProductsOnRankedProductListLazyQueryHookResult = ReturnType<typeof useRankedProductsOnRankedProductListLazyQuery>;
 export type RankedProductsOnRankedProductListSuspenseQueryHookResult = ReturnType<typeof useRankedProductsOnRankedProductListSuspenseQuery>;

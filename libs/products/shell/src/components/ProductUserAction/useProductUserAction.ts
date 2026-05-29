@@ -59,7 +59,7 @@ export function useProductUserAction({ slug }: ProductUserActionProps) {
     setVoted(true);
 
     try {
-      await upvoteProductMutation();
+      await upvoteProductMutation({ variables: { slug } });
       // Success: keep the optimistic count
       setOptimisticCount(null);
     } catch (err) {

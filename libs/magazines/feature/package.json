@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/client": "^3.12.8",
+    "@apollo/client": "4.2.0",
     "@croco/utils-structure-react": "0.0.1",
     "@darun/magazines-datasource": "workspace:*",
     "@darun/magazines-domain": "workspace:*",
@@ -35,14 +35,14 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^19.1.12",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.1.9",
-    "typescript": "^5.9.2"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "next": "*",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "reflect-metadata": "*",
     "type-graphql": "*",
     "typedi": "*"

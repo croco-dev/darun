@@ -43,7 +43,7 @@ const getProductBySlug = cache(async ({ slug, locale }: Awaited<Props['params']>
     variables: { slug, locale },
   });
 
-  return data.productBySlug;
+  return data?.productBySlug;
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

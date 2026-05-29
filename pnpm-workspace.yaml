@@ -8,5 +8,21 @@ packages:
   - "!**/dist/**"
   - "!**/build/**"
 
+shamefullyHoist: true
+autoInstallPeers: true
+saveExact: true
+minimumReleaseAge: 0
+strictDepBuilds: false
+
+overrides:
+  graphql: "16.12.0"
+  form-data: ">=2.5.4"
+  fast-xml-parser: ">=4.5.5"
+  protobufjs: ">=7.5.5"
+
 onlyBuiltDependencies:
   - serverless
+
+allowBuilds:
+  protobufjs: true
+  serverless: true

@@ -1,11 +1,5 @@
-import {
-  useQuery,
-  useMutation,
-  type ApolloCache,
-  type MutationHookOptions,
-  type OperationVariables,
-  type QueryHookOptions,
-} from '@apollo/client';
+import { type ApolloCache, type OperationVariables } from '@apollo/client';
+import { useQuery, useMutation, type MutationHookOptions } from '@apollo/client/react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -41,8 +35,8 @@ import { useEditProductDescription } from '../useEditProductDescription';
 
 describe('useEditProductDescription', () => {
   const defaultSlug = 'test-product-slug';
-  type MockQueryOptions = QueryHookOptions<unknown, OperationVariables>;
-  type MockMutationOptions = MutationHookOptions<unknown, unknown, unknown, ApolloCache<unknown>>;
+  type MockQueryOptions = { onCompleted?: (data: unknown) => void };
+  type MockMutationOptions = MutationHookOptions<unknown, OperationVariables, unknown, ApolloCache>;
   let queryOnCompleted:
     | ((data: { tempProductBySlug: { __typename: string; id: string; description?: string | null } }) => void)
     | null = null;
@@ -64,12 +58,12 @@ describe('useEditProductDescription', () => {
 
   describe('query onCompleted', () => {
     beforeEach(() => {
-      vi.mocked(useQuery).mockImplementation((_query, options?: MockQueryOptions) => {
+      vi.mocked(useQuery).mockImplementation(((_query: unknown, options?: MockQueryOptions) => {
         if (options?.onCompleted) {
           queryOnCompleted = options.onCompleted as typeof queryOnCompleted;
         }
         return { data: undefined } as ReturnType<typeof useQuery>;
-      });
+      }) as typeof useQuery);
     });
 
     it('should call setInitialValues with loaded description instead of reset', () => {
@@ -113,12 +107,12 @@ describe('useEditProductDescription', () => {
 
   describe('mutation onCompleted', () => {
     beforeEach(() => {
-      vi.mocked(useMutation).mockImplementation((_query, options?: MockMutationOptions) => {
+      vi.mocked(useMutation).mockImplementation(((_query: unknown, options?: MockMutationOptions) => {
         if (options?.onCompleted) {
           mutationOnCompleted = options.onCompleted as typeof mutationOnCompleted;
         }
         return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
-      });
+      }) as typeof useMutation);
     });
 
     it('should preserve loaded description after mutation save', () => {
@@ -167,12 +161,12 @@ describe('useEditProductDescription', () => {
 
   describe('mutation failure handling', () => {
     beforeEach(() => {
-      vi.mocked(useMutation).mockImplementation((_query, options?: MockMutationOptions) => {
+      vi.mocked(useMutation).mockImplementation(((_query: unknown, options?: MockMutationOptions) => {
         if (options?.onCompleted) {
           mutationOnCompleted = options.onCompleted as typeof mutationOnCompleted;
         }
         return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
-      });
+      }) as typeof useMutation);
     });
 
     it('should log error and rethrow when mutation rejects', async () => {
@@ -196,12 +190,12 @@ describe('useEditProductDescription', () => {
 
   describe('submit function', () => {
     beforeEach(() => {
-      vi.mocked(useMutation).mockImplementation((_query, options?: MockMutationOptions) => {
+      vi.mocked(useMutation).mockImplementation(((_query: unknown, options?: MockMutationOptions) => {
         if (options?.onCompleted) {
           mutationOnCompleted = options.onCompleted as typeof mutationOnCompleted;
         }
         return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
-      });
+      }) as typeof useMutation);
     });
 
     it('should show error notification when description is empty', async () => {

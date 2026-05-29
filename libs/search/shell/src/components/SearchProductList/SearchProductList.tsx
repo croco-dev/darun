@@ -1,6 +1,7 @@
 'use client';
 
-import { gql, useSuspenseQuery } from '@apollo/client';
+import { gql } from '@apollo/client';
+import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { bind } from '@croco/utils-structure-react';
 import { ProductCard, ProductItem } from '@darun/products-shell';

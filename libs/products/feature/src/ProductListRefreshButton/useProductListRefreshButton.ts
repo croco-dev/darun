@@ -1,4 +1,4 @@
-import { useApolloClient } from '@apollo/client';
+import { useApolloClient } from '@apollo/client/react';
 import { notifications } from '@mantine/notifications';
 import { useCallback } from 'react';
 import { AllProductsOnProductListTableDocument } from '../ProductListTable';

@@ -23,12 +23,12 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^19.0.10",
-    "react": "^19.0.0",
-    "typescript": "^5.7.2"
+    "@types/react": "^19.2.14",
+    "react": "^19.2.6",
+    "typescript": "^6.0.3"
   },
 
   "peerDependencies": {
-    "react": "^19.0.0"
+    "react": "^19.2.6"
   }
 }

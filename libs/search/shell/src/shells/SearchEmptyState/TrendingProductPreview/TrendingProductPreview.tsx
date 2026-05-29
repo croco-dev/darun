@@ -1,6 +1,7 @@
 'use client';
 
-import { gql, useSuspenseQuery } from '@apollo/client';
+import { gql } from '@apollo/client';
+import { useSuspenseQuery } from '@apollo/client/react';
 import { useLocale } from 'next-intl';
 import { ProductCard } from '@darun/products-shell';
 

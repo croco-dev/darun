@@ -1,4 +1,5 @@
-import { useMutation, type ApolloCache, type DocumentNode, type MutationHookOptions } from '@apollo/client';
+import { type ApolloCache, type DocumentNode } from '@apollo/client';
+import { useMutation, type MutationHookOptions } from '@apollo/client/react';
 import { notifications } from '@mantine/notifications';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -19,7 +20,7 @@ import { useGenerateProductDescriptionButton } from '../useGenerateProductDescri
 
 describe('useGenerateProductDescriptionButton', () => {
   const defaultSlug = 'test-product-slug';
-  type MockMutationOptions = MutationHookOptions<unknown, unknown, unknown, ApolloCache<unknown>>;
+  type MockMutationOptions = MutationHookOptions<unknown, Record<string, unknown>, unknown, ApolloCache>;
   let mutateFn: ReturnType<typeof vi.fn>;
   let mutationOptions: { onCompleted?: () => void; onError?: (e: Error) => void };
 
@@ -28,10 +29,10 @@ describe('useGenerateProductDescriptionButton', () => {
     mutateFn = vi.fn();
     mutationOptions = {};
 
-    vi.mocked(useMutation).mockImplementation((_document?: DocumentNode, options?: MockMutationOptions) => {
+    vi.mocked(useMutation).mockImplementation(((_document?: DocumentNode, options?: MockMutationOptions) => {
       mutationOptions = (options as { onCompleted?: () => void; onError?: (e: Error) => void }) || {};
       return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
-    });
+    }) as typeof useMutation);
   });
 
   it('should show success notification on completed', () => {

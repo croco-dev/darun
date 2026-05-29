@@ -27,6 +27,10 @@ export default async function HomePage() {
     query: productsCountQuery,
   });
 
+  if (!data) {
+    throw new Error('Products count query returned no data');
+  }
+
   const productsCount = data.productsCount;
 
   return (

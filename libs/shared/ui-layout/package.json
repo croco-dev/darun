@@ -15,7 +15,7 @@
     "@darun/ui": "workspace:*",
     "@darun/utils-router": "workspace:*",
     "lucide-react": "^0.468.0",
-    "next": "^15.5.12",
+    "next": "^16.2.6",
     "next-intl": ">=4",
     "react-dom": ">=19.0.0"
   },

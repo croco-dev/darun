@@ -1,7 +1,7 @@
 import * as Types from "@darun/provider-graphql";
 
 import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client";
+import * as Apollo from "@apollo/client/react";
 const defaultOptions = {} as const;
 export type TempProductBySlugOnProductTagsFormQueryVariables = Types.Exact<{
   slug: Types.Scalars["String"]["input"];
@@ -93,17 +93,9 @@ export function useTempProductBySlugOnProductTagsFormLazyQuery(
   >(TempProductBySlugOnProductTagsFormDocument, options);
 }
 export function useTempProductBySlugOnProductTagsFormSuspenseQuery(
-  baseOptions?:
-    | Apollo.SkipToken
-    | Apollo.SuspenseQueryHookOptions<
-        TempProductBySlugOnProductTagsFormQuery,
-        TempProductBySlugOnProductTagsFormQueryVariables
-      >,
+  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>,
 ) {
-  const options =
-    baseOptions === Apollo.skipToken
-      ? baseOptions
-      : { ...defaultOptions, ...baseOptions };
+  const options = { ...defaultOptions, ...baseOptions };
   return Apollo.useSuspenseQuery<
     TempProductBySlugOnProductTagsFormQuery,
     TempProductBySlugOnProductTagsFormQueryVariables
@@ -138,7 +130,7 @@ export const UpdateProductTagsOnProductTagFormDocument = gql`
   }
 `;
 export type UpdateProductTagsOnProductTagFormMutationFn =
-  Apollo.MutationFunction<
+  Apollo.MutationFunctionOptions<
     UpdateProductTagsOnProductTagFormMutation,
     UpdateProductTagsOnProductTagFormMutationVariables
   >;
@@ -179,7 +171,7 @@ export type UpdateProductTagsOnProductTagFormMutationHookResult = ReturnType<
 export type UpdateProductTagsOnProductTagFormMutationResult =
   Apollo.MutationResult<UpdateProductTagsOnProductTagFormMutation>;
 export type UpdateProductTagsOnProductTagFormMutationOptions =
-  Apollo.BaseMutationOptions<
+  Apollo.MutationHookOptions<
     UpdateProductTagsOnProductTagFormMutation,
     UpdateProductTagsOnProductTagFormMutationVariables
   >;
