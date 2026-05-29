@@ -29,29 +29,34 @@ export class PostgresqlProductRepository implements ProductRepository {
   }
 
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {
-    return this.db.transaction(async tx => {
-      const prevProduct = await tx
-        .select()
-        .from(products)
-        .where(eq(products.id, id))
-        .limit(1)
-        .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+    return this.db
+      .transaction(async tx => {
+        const prevProduct = await tx
+          .select()
+          .from(products)
+          .where(eq(products.id, id))
+          .limit(1)
+          .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
 
-      if (!prevProduct) {
-        throw new Error('Product not found');
-      }
+        if (!prevProduct) {
+          throw new Error('Product not found');
+        }
 
-      const updated = await tx
-        .update(products)
-        .set({ ...modifier(prevProduct), updatedAt: new Date() })
-        .where(eq(products.id, id))
-        .returning();
-      if (!updated[0]) {
-        throw new Error('Product update failed');
-      }
+        const updated = await tx
+          .update(products)
+          .set({ ...modifier(prevProduct), updatedAt: new Date() })
+          .where(eq(products.id, id))
+          .returning();
+        if (!updated[0]) {
+          throw new Error('Product update failed');
+        }
 
-      return this.mapper(updated[0]);
-    });
+        return this.mapper(updated[0]);
+      })
+      .then(result => {
+        this.publishedIdLoader.clearAll();
+        return result;
+      });
   }
 
   async findAllByBeforeIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
@@ -84,14 +89,19 @@ export class PostgresqlProductRepository implements ProductRepository {
   }
 
   async insert(values: Product): Promise<Product | null> {
-    return this.db.transaction(async tx => {
-      const inserted = await tx
-        .insert(products)
-        .values({ ...values })
-        .returning();
+    return this.db
+      .transaction(async tx => {
+        const inserted = await tx
+          .insert(products)
+          .values({ ...values })
+          .returning();
 
-      return inserted[0] ? this.mapper(inserted[0]) : null;
-    });
+        return inserted[0] ? this.mapper(inserted[0]) : null;
+      })
+      .then(result => {
+        this.publishedIdLoader.clearAll();
+        return result;
+      });
   }
 
   async countPublishedAll(): Promise<number> {

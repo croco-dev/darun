@@ -32,14 +32,19 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
   }
 
   insert(link: ProductLink): Promise<ProductLink> {
-    return this.db.transaction(async tx => {
-      const inserted = await tx.insert(productLinks).values(link).returning();
+    return this.db
+      .transaction(async tx => {
+        const inserted = await tx.insert(productLinks).values(link).returning();
 
-      if (!inserted[0]) {
-        throw new Error('Failed to insert product screenshot');
-      }
-      return this.mapper(inserted[0]);
-    });
+        if (!inserted[0]) {
+          throw new Error('Failed to insert product screenshot');
+        }
+        return this.mapper(inserted[0]);
+      })
+      .then(result => {
+        this.productIdLoader.clearAll();
+        return result;
+      });
   }
 
   async findManyByProductId(productId: string): Promise<ProductLink[]> {
@@ -47,30 +52,35 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
   }
 
   updateById(linkId: string, modifier: (link: ProductLink) => ProductLink): Promise<ProductLink> {
-    return this.db.transaction(async tx => {
-      const prevLink = await tx
-        .select()
-        .from(productLinks)
-        .where(eq(productLinks.id, linkId))
-        .limit(1)
-        .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+    return this.db
+      .transaction(async tx => {
+        const prevLink = await tx
+          .select()
+          .from(productLinks)
+          .where(eq(productLinks.id, linkId))
+          .limit(1)
+          .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
 
-      if (!prevLink) {
-        throw new Error('ProductLink not found');
-      }
+        if (!prevLink) {
+          throw new Error('ProductLink not found');
+        }
 
-      const updated = await tx
-        .update(productLinks)
-        .set({ ...modifier(prevLink) })
-        .where(eq(productLinks.id, linkId))
-        .returning();
+        const updated = await tx
+          .update(productLinks)
+          .set({ ...modifier(prevLink) })
+          .where(eq(productLinks.id, linkId))
+          .returning();
 
-      if (!updated[0]) {
-        throw new Error('ProductLink update failed');
-      }
+        if (!updated[0]) {
+          throw new Error('ProductLink update failed');
+        }
 
-      return this.mapper(updated[0]);
-    });
+        return this.mapper(updated[0]);
+      })
+      .then(result => {
+        this.productIdLoader.clearAll();
+        return result;
+      });
   }
 
   private mapper(schema: typeof productLinks.$inferSelect | typeof productLinks.$inferInsert): ProductLink {
