@@ -13,8 +13,6 @@ export interface ProductRepository {
   findPublishedOneBySlug(slug: string): Promise<Product | null>;
   findPublishedByCategoryId(categoryId: string): Promise<Product[]>;
   countPublishedAll(): Promise<number>;
-  findPublishedOneBySlug(slug: string): Promise<Product | null>;
-  countPublishedAll(): Promise<number>;
   countAll(): Promise<number>;
   insert(values: Product): Promise<Product | null>;
 }

@@ -31,6 +31,16 @@ export class UpvoteProduct {
   }) {
     const voterIpHash = hashVoterIp(voterIp);
 
+    const alreadyVoted =
+      await this.voteRecordRepository.existsByTargetIdAndVoterIpHash(
+        productId,
+        voterIpHash,
+      );
+
+    if (alreadyVoted) {
+      throw votingDuplicateVote();
+    }
+
     const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
     const recentVoteCount =
       await this.voteRecordRepository.countByVoterIpHashSince(
@@ -40,16 +50,6 @@ export class UpvoteProduct {
 
     if (recentVoteCount >= 10) {
       throw votingRateLimitExceeded();
-    }
-
-    const alreadyVoted =
-      await this.voteRecordRepository.existsByTargetIdAndVoterIpHash(
-        productId,
-        voterIpHash,
-      );
-
-    if (alreadyVoted) {
-      throw votingDuplicateVote();
     }
 
     try {

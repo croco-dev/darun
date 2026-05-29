@@ -42,8 +42,8 @@ describe('UpvoteProduct', () => {
   });
 
   it('should call upsertVoteWithRecord on normal vote', async () => {
-    (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(0);
     (repository.existsByTargetIdAndVoterIpHash as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(0);
     (repository.upsertVoteWithRecord as ReturnType<typeof vi.fn>).mockImplementation(
       async (targetId, _hash, modifier) => {
         return modifier(new Vote({ targetId }));
@@ -52,27 +52,29 @@ describe('UpvoteProduct', () => {
 
     await useCase.execute({ productId: 'product-1', voterIp: '192.168.1.1' });
 
+    expect(repository.existsByTargetIdAndVoterIpHash).toHaveBeenCalledOnce();
+    expect(repository.countByVoterIpHashSince).toHaveBeenCalledOnce();
     expect(repository.upsertVoteWithRecord).toHaveBeenCalled();
   });
 
   it('should block duplicate vote', async () => {
-    (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(0);
     (repository.existsByTargetIdAndVoterIpHash as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
     await expect(useCase.execute({ productId: 'product-1', voterIp: '192.168.1.1' })).rejects.toThrow(
       votingDuplicateVote()
     );
+    expect(repository.countByVoterIpHashSince).not.toHaveBeenCalled();
     expect(repository.upsertVoteWithRecord).not.toHaveBeenCalled();
   });
 
   it('should block rate limited vote', async () => {
-    (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(10);
     (repository.existsByTargetIdAndVoterIpHash as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(10);
 
     await expect(useCase.execute({ productId: 'product-1', voterIp: '192.168.1.1' })).rejects.toThrow(
       votingRateLimitExceeded()
     );
-    expect(repository.existsByTargetIdAndVoterIpHash).not.toHaveBeenCalled();
+    expect(repository.existsByTargetIdAndVoterIpHash).toHaveBeenCalledOnce();
     expect(repository.upsertVoteWithRecord).not.toHaveBeenCalled();
   });
 });

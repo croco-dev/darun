@@ -1,3 +1,5 @@
+import './repositories/RankedProductVoteRepositoryBinding';
+
 export { PostgresqlProductRepository } from './repositories/PostgresqlProductRepository';
 export { PostgresqlProductLinkRepository } from './repositories/PostgresqlProductLinkRepository';
 export { PostgresqlProductTagRepository } from './repositories/PostgresqlProductTagRepository';

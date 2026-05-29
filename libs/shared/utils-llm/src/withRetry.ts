@@ -70,6 +70,34 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function getRetryAfterDelay(error: unknown): number | undefined {
+  if (!(error instanceof RetryableError) || !error.cause || typeof error.cause !== 'object') {
+    return undefined;
+  }
+
+  const headers = (error.cause as { headers?: unknown }).headers;
+  if (!headers || typeof headers !== 'object') {
+    return undefined;
+  }
+
+  const getter = (headers as { get?: unknown }).get;
+  const value =
+    typeof getter === 'function'
+      ? getter.call(headers, 'retry-after')
+      : (headers as Record<string, unknown>)['retry-after'];
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return seconds * 1000;
+  }
+
+  const dateMs = Date.parse(value);
+  return Number.isNaN(dateMs) ? undefined : Math.max(dateMs - Date.now(), 0);
+}
+
 export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
   const { maxRetries = 3, baseDelay = 1000, maxDelay = 30000 } = options;
 
@@ -93,9 +121,10 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
         break;
       }
 
+      const retryAfterDelay = is429Error(error) ? getRetryAfterDelay(error) : undefined;
       const exponentialDelay = baseDelay * Math.pow(2, attempt);
       const jitter = Math.random() * baseDelay;
-      const delay = Math.min(exponentialDelay + jitter, maxDelay);
+      const delay = retryAfterDelay ?? Math.min(exponentialDelay + jitter, maxDelay);
 
       await sleep(delay);
     }

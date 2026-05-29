@@ -9,7 +9,7 @@ import {
   votingVoteRecordInsertFailed,
   votingVoteUpdateFailed,
 } from '@darun/voting-domain';
-import { and, eq, gte } from 'drizzle-orm';
+import { and, count, eq, gte } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { voteRecords } from '../entities/VoteRecordSchema';
 import { votes } from '../entities/VoteSchema';
@@ -29,12 +29,11 @@ export class PostgresqlVoteRecordRepository implements VoteRecordRepository {
   }
 
   async countByVoterIpHashSince(voterIpHash: string, since: Date): Promise<number> {
-    const rows = await this.db
-      .select()
+    return this.db
+      .select({ value: count() })
       .from(voteRecords)
-      .where(and(eq(voteRecords.voterIpHash, voterIpHash), gte(voteRecords.createdAt, since)));
-
-    return rows.length;
+      .where(and(eq(voteRecords.voterIpHash, voterIpHash), gte(voteRecords.createdAt, since)))
+      .then(rows => Number(rows[0]?.value ?? 0));
   }
 
   async insert(record: VoteRecord): Promise<VoteRecord> {
@@ -80,12 +79,7 @@ export class PostgresqlVoteRecordRepository implements VoteRecordRepository {
         }
       }
 
-      await tx.insert(voteRecords).values({
-        id: undefined as unknown as string,
-        targetId,
-        voterIpHash,
-        createdAt: undefined as unknown as Date,
-      });
+      await tx.insert(voteRecords).values({ targetId, voterIpHash });
 
       return updatedVote;
     });

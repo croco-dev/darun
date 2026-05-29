@@ -6,7 +6,7 @@ import { SearchableProductModel } from '../entities/SearchableProductSchema';
 
 @Service(SearchableProductRepositoryToken)
 export class MongodbSearchableProductRepository implements SearchableProductRepository {
-  async searchProduct(query: string): Promise<SearchableProduct[]> {
+  async searchProduct(query: string, limit = 20): Promise<SearchableProduct[]> {
     return SearchableProductModel.aggregate<SearchableProductSchema>([
       {
         $search: {
@@ -38,7 +38,7 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
           },
         },
       },
-      { $limit: 20 },
+      { $limit: limit },
     ]).then(products => products.map(product => ({ ...product, id: product.productId })));
   }
   async index(id: string, product: SearchableProduct): Promise<boolean> {

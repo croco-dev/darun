@@ -6,9 +6,28 @@ import { Inject, Service } from 'typedi';
 
 export type TranslationEntityType = 'Product' | 'Magazine';
 
-const TRANSLATABLE_FIELDS: Record<TranslationEntityType, string[]> = {
-  Product: ['name', 'summary', 'description'],
-  Magazine: ['title', 'summary', 'content'],
+type TranslatableFieldMetadata = {
+  property: string;
+};
+
+export const TRANSLATABLE_FIELD_METADATA: Record<
+  TranslationEntityType,
+  { fields: Record<string, TranslatableFieldMetadata> }
+> = {
+  Product: {
+    fields: {
+      name: { property: 'name' },
+      summary: { property: 'summary' },
+      description: { property: 'description' },
+    },
+  },
+  Magazine: {
+    fields: {
+      title: { property: 'title' },
+      summary: { property: 'summary' },
+      content: { property: 'content' },
+    },
+  },
 };
 
 @Service()
@@ -69,12 +88,12 @@ export class TranslationJobService {
     entity: Product | Magazine,
     field: string
   ): string | undefined {
-    const translatableFields = TRANSLATABLE_FIELDS[entityType];
-    if (!translatableFields.includes(field)) {
+    const fieldMetadata = TRANSLATABLE_FIELD_METADATA[entityType].fields[field];
+    if (!fieldMetadata) {
       throw new Error(`${entityType}의 번역 가능한 필드가 아닙니다: ${field}`);
     }
 
-    const value = (entity as unknown as Record<string, unknown>)[field];
+    const value = (entity as unknown as Record<string, unknown>)[fieldMetadata.property];
     if (typeof value !== 'string') {
       return undefined;
     }

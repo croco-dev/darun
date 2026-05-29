@@ -1072,6 +1072,9 @@ importers:
       '@darun/provider-database':
         specifier: workspace:*
         version: link:../../shared/provider-database
+      '@darun/voting-datasource':
+        specifier: workspace:*
+        version: link:../../voting/datasource
       '@typegoose/typegoose':
         specifier: '*'
         version: 13.1.0(mongoose@9.2.1)
@@ -1094,17 +1097,8 @@ importers:
 
   libs/products/domain:
     dependencies:
-      '@darun/utils-error':
-        specifier: workspace:*
-        version: link:../../shared/utils-error
-      '@darun/voting-domain':
-        specifier: workspace:*
-        version: link:../../voting/domain
-      reflect-metadata:
-        specifier: ^0.2.2
-        version: 0.2.2
       typedi:
-        specifier: ^0.10.0
+        specifier: '*'
         version: 0.10.0
     devDependencies:
       '@darun/eslint-config':
