@@ -82,7 +82,7 @@ const TrendingProductsView = ({ products, title, moreLabel, emptyLabel }: Trendi
           }
         />
         {products.length === 0 ? (
-          <div className="flex min-h-40 items-center justify-center rounded-[24px] border border-surface-300 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
+          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-surface-300 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
             {emptyLabel}
           </div>
         ) : (

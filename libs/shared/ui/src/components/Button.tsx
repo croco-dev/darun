@@ -5,19 +5,19 @@ import { ButtonHTMLAttributes, ElementType, ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex h-fit w-fit items-center justify-center rounded-xl border text-[14px] font-medium transition-colors duration-200 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex h-fit w-fit items-center justify-center rounded-xl border text-sm font-medium transition-colors duration-200 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
         base: '',
         contained: '',
         text: 'border-transparent bg-transparent shadow-none',
-        shadow: 'shadow-[0px_2px_8px_0px_rgba(0,0,0,0.08)]',
+        shadow: 'shadow-button',
       },
       size: {
         sm: 'px-3 py-1.5',
         md: 'px-3 py-1.5 sm:px-3.5 sm:py-2',
-        lg: 'px-4 py-2 sm:px-[18px] sm:py-2.5 text-[15px]',
+        lg: 'px-4 py-2 sm:px-[18px] sm:py-2.5 text-sm',
       },
       color: {
         primary: '',
@@ -67,12 +67,12 @@ const buttonVariants = cva(
       {
         variant: 'shadow',
         color: 'primary',
-        className: 'border-[rgba(0,0,0,0.1)] bg-dark-900 text-white',
+        className: 'border-dark-100 bg-dark-900 text-white',
       },
       {
         variant: 'shadow',
         color: 'secondary',
-        className: 'border-[rgba(0,0,0,0.1)] bg-transparent text-dark-900',
+        className: 'border-dark-100 bg-transparent text-dark-900',
       },
     ],
     defaultVariants: {

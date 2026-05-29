@@ -56,22 +56,22 @@ export const ProductItem = ({
         alt={t('productItem.logoAlt', { name })}
         width={logoSizes[logoSize].imageSize}
         height={logoSizes[logoSize].imageSize}
+        className="shadow-sm"
         style={{
           objectFit: 'contain',
           borderRadius: logoSizes[logoSize].borderRadius,
-          boxShadow: 'rgba(0, 0, 0, 0.08) 0px 1px 1px 0.8px',
         }}
       />
       <div className="flex min-w-0 flex-col gap-1 overflow-hidden">
         <div className="flex flex-col gap-1">
-          <NameTag className="m-0 text-[18px] font-bold tracking-[-0.4px] text-dark-900 md:text-[20px]">{name}</NameTag>
+          <NameTag className="m-0 text-lg font-bold tracking-[-0.4px] text-dark-900 md:text-xl">{name}</NameTag>
           {summary &&
             (isSummaryNoWrap ? (
-              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-[12px] leading-[1.5] text-dark-500 md:text-[14px]">
+              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-[1.5] text-dark-500 md:text-sm">
                 {summary}
               </p>
             ) : (
-              <p className="text-[12px] leading-[1.5] text-dark-500 md:text-[14px]">{summary}</p>
+              <p className="text-xs leading-[1.5] text-dark-500 md:text-sm">{summary}</p>
             ))}
         </div>
         {(tags || specialTags) && (
@@ -88,7 +88,7 @@ export const ProductItem = ({
                       {tag}
                     </Chip>
                   ))}
-                  <span className="text-[12px] text-dark-500">+{tags.length - maxTagItems}</span>
+                  <span className="text-xs text-dark-500">+{tags.length - maxTagItems}</span>
                 </div>
               ) : (
                 tags.map(tag => (

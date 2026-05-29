@@ -36,7 +36,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
   return (
     <section className="home-motion relative left-1/2 mb-6 w-screen -translate-x-1/2 overflow-hidden md:mb-8">
       <div
-        className="group relative isolate overflow-hidden border-y border-brand-200/70 bg-brand-700 text-dark-900 shadow-[var(--home-shadow-card)]"
+        className="group relative isolate overflow-hidden border-y border-brand-200/70 bg-brand-700 text-dark-900 shadow-hero"
         style={{ backgroundImage: 'var(--home-gradient-hero)' }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,theme(colors.brand.100/.95),transparent_42%),radial-gradient(circle_at_78%_22%,theme(colors.brand.400/.24),transparent_30%),linear-gradient(120deg,transparent_0%,rgba(255,255,255,0.24)_45%,transparent_100%)] transition-transform duration-300 ease-out group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none" />
@@ -49,7 +49,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
                 {t('Main.hero.description')}
               </div>
               <div className="flex max-w-3xl flex-col gap-4">
-                <h1 className="darun-heading text-[1.85rem] font-semibold leading-[1.05] tracking-[-0.06em] text-dark-900 sm:text-[2.35rem] md:text-[3.5rem]">
+                <h1 className="darun-heading text-3xl font-semibold leading-[1.05] tracking-[-0.06em] text-dark-900 sm:text-4xl md:text-5xl">
                   <span className="flex flex-wrap items-end gap-x-3 gap-y-1">
                     <span className="text-[2.6rem] leading-none text-brand-700 sm:text-[3.8rem] md:text-[5rem] [&_span]:text-brand-700">
                       <span className="text-brown-600">{productsCount ?? 0}</span>
@@ -65,7 +65,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
                 </h1>
               </div>
               <form
-                className="flex w-full flex-col gap-2.5 rounded-[24px] border border-white/75 bg-white/86 p-2.5 shadow-[var(--home-shadow-card)] backdrop-blur transition-all duration-200 ease-out focus-within:border-brand-300 focus-within:shadow-[0_28px_60px_-30px_rgba(53,63,174,0.42)] motion-reduce:transition-none md:max-w-2xl md:flex-row md:items-center md:gap-3 md:p-3"
+                className="flex w-full flex-col gap-2.5 rounded-card-lg border border-white/75 bg-white/86 p-2.5 shadow-hero backdrop-blur transition-all duration-200 ease-out focus-within:border-brand-300 focus-within:shadow-[0_28px_60px_-30px_rgba(53,63,174,0.42)] motion-reduce:transition-none md:max-w-2xl md:flex-row md:items-center md:gap-3 md:p-3"
                 onSubmit={event => {
                   event.preventDefault();
                   navigateToSearch();
@@ -112,17 +112,17 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
                   variant="shadow"
                   size="lg"
                   color="secondary"
-                  className="min-h-11 w-full border-white/85 bg-white/86 px-6 py-3 text-base font-semibold text-brand-700 shadow-[var(--home-shadow-card)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-brand-200 hover:shadow-[0_20px_34px_-24px_rgba(53,63,174,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-50 active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none md:w-auto"
+                  className="min-h-11 w-full border-white/85 bg-white/86 px-6 py-3 text-base font-semibold text-brand-700 shadow-hero transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-brand-200 hover:shadow-[0_20px_34px_-24px_rgba(53,63,174,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-50 active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none md:w-auto"
                 >
                   {t('home.hero.cta.categories')}
                 </Button>
               </div>
             </div>
             <div className="flex justify-start md:justify-end">
-              <div className="relative w-full max-w-full overflow-hidden rounded-[28px] border border-white/70 bg-white/78 p-5 shadow-[var(--home-shadow-card)] backdrop-blur transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_36px_68px_-36px_rgba(53,63,174,0.36)] motion-reduce:transform-none motion-reduce:transition-none sm:max-w-[360px] md:rounded-[32px] md:p-8">
+              <div className="relative w-full max-w-full overflow-hidden rounded-card-xl border border-white/70 bg-white/78 p-5 shadow-hero backdrop-blur transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_36px_68px_-36px_rgba(53,63,174,0.36)] motion-reduce:transform-none motion-reduce:transition-none sm:max-w-[360px] md:rounded-card-xl md:p-8">
                 <div className="absolute right-[-18%] top-[-16%] h-40 w-40 rounded-full bg-brand-600/16 blur-3xl transition-transform duration-300 ease-out group-hover:translate-x-2 group-hover:-translate-y-1 motion-reduce:transform-none motion-reduce:transition-none" />
                 <div className="relative flex flex-col gap-4 md:gap-6">
-                  <div className="flex flex-col gap-2 rounded-[24px] border border-brand-100 bg-white/82 px-4 py-4 shadow-[0_14px_32px_-22px_rgba(53,63,174,0.24)] transition-transform duration-300 ease-out group-hover:-translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none md:px-5 md:py-5">
+                  <div className="flex flex-col gap-2 rounded-card-lg border border-brand-100 bg-white/82 px-4 py-4 shadow-[0_14px_32px_-22px_rgba(53,63,174,0.24)] transition-transform duration-300 ease-out group-hover:-translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none md:px-5 md:py-5">
                     <span className="text-sm font-medium tracking-[-0.02em] text-dark-600">
                       {t('Main.hero.description')}
                     </span>
@@ -131,7 +131,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
                     </span>
                     <span className="text-sm leading-6 text-dark-600">{t('home.hero.subtitle')}</span>
                   </div>
-                  <div className="grid gap-2.5 rounded-[24px] bg-brand-700 px-4 py-5 text-white shadow-[0_20px_44px_-28px_rgba(53,63,174,0.62)] transition-transform duration-300 ease-out group-hover:translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none md:gap-3 md:px-5 md:py-6">
+                  <div className="grid gap-2.5 rounded-card-lg bg-brand-700 px-4 py-5 text-white shadow-[0_20px_44px_-28px_rgba(53,63,174,0.62)] transition-transform duration-300 ease-out group-hover:translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none md:gap-3 md:px-5 md:py-6">
                     <span className="text-lg font-semibold tracking-[-0.04em]">{t('Main.hero.title.highlight')}</span>
                     <span className="text-sm font-medium leading-6 text-white/85">{t('Main.hero.title.ending')}</span>
                   </div>

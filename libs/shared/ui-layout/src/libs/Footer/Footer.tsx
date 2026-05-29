@@ -10,11 +10,26 @@ export const Footer = bind(useFooter, () => (
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-sm font-medium text-dark-600">&copy; 2024 Croco</span>
             <span className="text-sm font-medium text-dark-400">•</span>
-            <span className="text-sm font-medium text-dark-600">개인정보처리방침</span>
+            <a
+              href="#"
+              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2"
+            >
+              개인정보처리방침
+            </a>
             <span className="text-sm font-medium text-dark-400">•</span>
-            <span className="text-sm font-medium text-dark-600">서비스 약관</span>
+            <a
+              href="#"
+              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2"
+            >
+              서비스 약관
+            </a>
             <span className="text-sm font-medium text-dark-400">•</span>
-            <span className="text-sm font-medium text-dark-600">문의</span>
+            <a
+              href="#"
+              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2"
+            >
+              문의
+            </a>
           </div>
           <div className="flex">
             <p className="text-[13px] font-normal text-dark-500">

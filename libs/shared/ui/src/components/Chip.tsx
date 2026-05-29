@@ -3,14 +3,14 @@ import { AnchorHTMLAttributes, ButtonHTMLAttributes, HTMLAttributes, ReactNode }
 import { cn } from '../lib/utils';
 
 const chipVariants = {
-  square: 'rounded-[4px] px-[5px] py-[3px] text-[12px]',
-  circle: 'rounded-2xl px-[8px] py-[4px] text-[12px]',
+  square: 'rounded-chip px-1.5 py-1 text-xs',
+  circle: 'rounded-2xl px-2 py-1 text-xs',
 } as const;
 
 const chipColors = {
   filledGray: 'border-dark-100 bg-dark-100 text-dark-700',
   filledDark: 'border-dark-900 bg-dark-900 text-dark-100',
-  outlineGray: 'border-[rgba(0,0,0,0.15)] bg-transparent text-dark-600',
+  outlineGray: 'border-dark-200 bg-transparent text-dark-600',
   outlineBrown: 'border-brown-300 bg-transparent text-brown-900',
   outlineLeaf: 'border-leaf-300 bg-transparent text-leaf-900',
   outlineYellow: 'border-yellow-300 bg-transparent text-yellow-900',
