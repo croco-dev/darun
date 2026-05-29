@@ -99,7 +99,14 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
     }
   };
 
-  const search = useThrottledCallback((query: string) => searchProducts({ variables: { query } }), 300);
+  const search = useThrottledCallback(async (query: string) => {
+    try {
+      await searchProducts({ variables: { query } });
+    } catch (error) {
+      console.error('Search failed:', error);
+      notifications.show({ message: '검색 중 오류가 발생했습니다.', color: 'red' });
+    }
+  }, 300);
 
   const updateQuery = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {

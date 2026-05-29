@@ -1,6 +1,5 @@
 import { ProductLinkTable } from '@darun/products-feature';
 import { Button } from '@darun/ui';
-import Link from 'next/link';
 
 type ProductDetailLinkSectionProps = {
   slug: string;
@@ -15,9 +14,9 @@ export const ProductDetailLinkSection = ({ slug }: ProductDetailLinkSectionProps
           서비스 정보에서 목차 위에 표시되는 링크 버튼에 뜨는 버튼들을 관리합니다.
         </p>
       </div>
-      <Link href={`/products/${slug}/links/new`}>
-        <Button variant="base">새 링크 추가</Button>
-      </Link>
+      <Button variant="base" as="a" href={`/products/${slug}/links/new`}>
+        새 링크 추가
+      </Button>
     </div>
     <div className="border border-gray-200 shadow-sm rounded-md">
       <div className="border-b p-4">

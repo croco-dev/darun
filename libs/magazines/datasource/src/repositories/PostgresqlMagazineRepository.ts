@@ -1,5 +1,5 @@
 import { MagazineRepository } from '@darun/magazines-domain';
-import { Magazine, MagazineRepositoryToken } from '@darun/magazines-domain';
+import { Magazine, MagazineRepositoryToken, magazineNotFound, magazineUpdateFailed } from '@darun/magazines-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import { and, count, eq, isNotNull } from 'drizzle-orm';
@@ -20,7 +20,7 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
         .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
 
       if (!prev) {
-        throw new Error('Magazine not found');
+        throw magazineNotFound();
       }
 
       const updated = await tx
@@ -29,7 +29,7 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
         .where(eq(magazines.id, id))
         .returning();
       if (!updated[0]) {
-        throw new Error('Magazine update failed');
+        throw magazineUpdateFailed();
       }
 
       return this.mapper(updated[0]);

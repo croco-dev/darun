@@ -71,7 +71,17 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       return;
     }
 
-    const url = await upload('images/logos', values.file, slug);
+    let url: string | undefined;
+    try {
+      url = await upload('images/logos', values.file, slug);
+    } catch {
+      notifications.show({
+        title: '업로드 실패',
+        message: '이미지 업로드에 실패했습니다.',
+        color: 'red',
+      });
+      return;
+    }
 
     if (!url) {
       return;

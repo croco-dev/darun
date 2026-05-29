@@ -2,6 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useThrottledCallback } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 import { useSearchProductsOnSearchProductFieldLazyQuery } from './__generated__/useSearchProductField';
 
@@ -41,10 +42,12 @@ export function useSearchProductField({ onSelect }: SearchProductFieldProps) {
           query: trimmedQuery,
         },
       }));
-    } catch {
+    } catch (error) {
+      console.error('Search failed:', error);
       if (requestId === latestSearchRequestId.current) {
         setProducts([]);
       }
+      notifications.show({ message: '검색 중 오류가 발생했습니다.', color: 'red' });
       return;
     }
 

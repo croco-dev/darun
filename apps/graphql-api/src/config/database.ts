@@ -4,7 +4,7 @@ import * as mongoose from 'mongoose';
 import postgres from 'postgres';
 
 import { Container } from 'typedi';
-import { DATABASE_URL, MONGODB_URI } from './environment';
+import { DATABASE_URL, IS_LOCAL, MONGODB_URI } from './environment';
 
 let postgresqlConnection: ReturnType<typeof postgres>;
 let drizzleInstance: ReturnType<typeof drizzle>;
@@ -21,11 +21,15 @@ export function createMongodbConnection() {
     mongoose
       .connect(MONGODB_URI, {
         dbName: 'darun',
-        autoIndex: true,
+        autoIndex: IS_LOCAL,
         maxPoolSize: 3,
       })
       .then(connection => {
         mongooseConnection = connection;
+      })
+      .catch(error => {
+        console.error('MongoDB connection failed:', error);
+        throw error;
       });
   }
 }

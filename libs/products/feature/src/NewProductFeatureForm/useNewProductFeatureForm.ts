@@ -37,6 +37,11 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
       emoji: '',
       summary: '',
     },
+    validate: {
+      name: value => (!value ? '이름을 입력해주세요.' : null),
+      emoji: value => (!value ? '이모지를 선택해주세요.' : null),
+      summary: value => (!value ? '짧은 설명을 입력해주세요.' : null),
+    },
   });
   const [createProductFeature] = useCreateProductFeatureOnNewProductFeatureFormMutation({
     onCompleted: ({ createProductFeature }) => {

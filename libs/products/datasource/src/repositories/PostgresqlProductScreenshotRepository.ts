@@ -1,5 +1,5 @@
 import { ProductScreenshot, ProductScreenshotRepository } from '@darun/products-domain';
-import { ProductScreenshotRepositoryToken } from '@darun/products-domain';
+import { ProductScreenshotRepositoryToken, productScreenshotInsertFailed } from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
@@ -34,7 +34,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
         const inserted = await tx.insert(productScreenshots).values(productScreenshot).returning();
 
         if (!inserted[0]) {
-          throw new Error('Failed to insert product screenshot');
+          throw productScreenshotInsertFailed();
         }
         return inserted[0];
       })

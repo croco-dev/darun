@@ -84,21 +84,37 @@ export class TranslationJobService {
   }
 
   private async translateKoreanToEnglish(text: string): Promise<string> {
-    const response = await withRetry(
-      () =>
-        this.llmClient.completion('x-ai/grok-4-fast', [
-          {
-            role: 'user',
-            content: `Translate the following Korean text to English: ${text}`,
-          },
-        ]),
-      { maxRetries: 3, baseDelay: 1000, maxDelay: 30000 }
-    );
+    try {
+      const response = await withRetry(
+        () =>
+          this.withTimeout(
+            this.llmClient.completion('x-ai/grok-4-fast', [
+              {
+                role: 'user',
+                content: `Translate the following Korean text to English: ${text}`,
+              },
+            ]),
+            25_000,
+            'LLM 번역 요청이 시간 초과되었습니다. 잠시 후 다시 시도해주세요.'
+          ),
+        { maxRetries: 3, baseDelay: 1000, maxDelay: 30000 }
+      );
 
-    if (!response.content?.trim()) {
-      throw new Error('LLM 번역 응답이 비어 있습니다.');
+      if (!response.content?.trim()) {
+        throw new Error('LLM 번역 응답이 비어 있습니다.');
+      }
+
+      return response.content.trim();
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('시간 초과')) {
+        throw error;
+      }
+      throw new Error(`번역 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     }
+  }
 
-    return response.content.trim();
+  private withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error(message)), ms));
+    return Promise.race([promise, timeout]);
   }
 }

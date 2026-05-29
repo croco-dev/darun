@@ -1,7 +1,7 @@
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import { VoteRepository } from '@darun/voting-domain';
-import { Vote, VoteRepositoryToken } from '@darun/voting-domain';
+import { Vote, VoteRepositoryToken, votingVoteInsertFailed, votingVoteUpdateFailed } from '@darun/voting-domain';
 import { desc, eq } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { votes } from '../entities/VoteSchema';
@@ -40,7 +40,7 @@ export class PostgresqlVoteRepository implements VoteRepository {
           .then(rows => (rows[0] ? new Vote(rows[0]) : undefined));
 
         if (!inserted) {
-          throw new Error('Vote insert failed');
+          throw votingVoteInsertFailed();
         }
         return inserted;
       }
@@ -54,7 +54,7 @@ export class PostgresqlVoteRepository implements VoteRepository {
         .returning();
 
       if (!updated[0]) {
-        throw new Error('Vote update failed');
+        throw votingVoteUpdateFailed();
       }
 
       return new Vote(updated[0]);

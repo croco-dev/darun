@@ -1,5 +1,5 @@
 import { GetPublishedProduct } from '@darun/products-domain';
-import { productNotFound } from '@darun/products-domain';
+import { productNotFound, productInvalidArgs } from '@darun/products-domain';
 import { IndexProduct } from '@darun/search-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import type { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
@@ -94,7 +94,7 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
     }
 
     if (!ctx.clientIp) {
-      throw new Error('Client IP is required for upvoting');
+      throw productInvalidArgs('Client IP is required for upvoting');
     }
 
     await this.upvoteProductUseCase.execute({

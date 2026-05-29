@@ -7,5 +7,12 @@ export { Vote } from './entities/Vote';
 export { VoteRecord } from './entities/VoteRecord';
 export { UpvoteProduct } from './usecases/UpvoteProduct';
 export { GetVoteCount } from './usecases/GetVoteCount';
-export { votingRateLimitExceeded, votingDuplicateVote } from './errors/VoteError';
+export {
+  VoteError,
+  votingDuplicateVote,
+  votingRateLimitExceeded,
+  votingVoteInsertFailed,
+  votingVoteRecordInsertFailed,
+  votingVoteUpdateFailed,
+} from './errors/VoteError';
 export { hashVoterIp } from './utils/hashVoterIp';

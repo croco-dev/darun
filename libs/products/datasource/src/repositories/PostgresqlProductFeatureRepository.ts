@@ -1,5 +1,10 @@
 import { ProductFeatureRepository } from '@darun/products-domain';
-import { ProductFeature, ProductFeatureRepositoryToken } from '@darun/products-domain';
+import {
+  ProductFeature,
+  ProductFeatureRepositoryToken,
+  productFeatureNotFound,
+  productFeatureUpdateFailed,
+} from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
@@ -59,7 +64,7 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
           .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
 
         if (!prevFeature) {
-          throw new Error('ProductFeature not found');
+          throw productFeatureNotFound();
         }
 
         const updated = await tx
@@ -68,7 +73,7 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
           .where(eq(productFeatures.id, featureId))
           .returning();
         if (!updated[0]) {
-          throw new Error('ProductFeature update failed');
+          throw productFeatureUpdateFailed();
         }
 
         return this.mapper(updated[0]);

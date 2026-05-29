@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 
 export interface Toast {
   id: string;
@@ -18,13 +18,21 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const timerIdsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const addToast = useCallback((message: string, type: 'success' | 'error') => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
+    const timerId = setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 3000);
+    timerIdsRef.current = [...timerIdsRef.current, timerId];
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      timerIdsRef.current.forEach(clearTimeout);
+    };
   }, []);
 
   const removeToast = useCallback((id: string) => {

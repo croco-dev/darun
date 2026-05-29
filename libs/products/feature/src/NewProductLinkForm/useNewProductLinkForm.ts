@@ -40,6 +40,12 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
       link: '',
       title: '',
     },
+    validate: {
+      displayLink: value => (!value ? '표시 링크를 입력해주세요.' : null),
+      link: value => (!value ? '링크를 입력해주세요.' : null),
+      title: value => (!value ? '이름을 입력해주세요.' : null),
+      iconUrl: value => (!value ? '아이콘을 선택해주세요.' : null),
+    },
   });
   const [addProductLink] = useAddProductLinkOnNewProductLinkFormMutation({
     onCompleted: ({ addProductLink }) => {

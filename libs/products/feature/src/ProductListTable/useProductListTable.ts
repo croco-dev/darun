@@ -32,7 +32,7 @@ const defaultViewCount = 50;
 
 export function useProductListTable() {
   const { push } = useRouter();
-  const [pageCount, setPageCount] = useState(0);
+  const [pageCount, setPageCount] = useState(1);
   const { data, refetch } = useAllProductsOnProductListTableSuspenseQuery({
     variables: { first: defaultViewCount },
   });
@@ -47,7 +47,7 @@ export function useProductListTable() {
   }, [data]);
 
   const loadNextPage = () => {
-    setPageCount(prev => prev + defaultViewCount + 1);
+    setPageCount(prev => prev + defaultViewCount);
     refetch({
       first: defaultViewCount,
       after: endCursorRef.current,
@@ -57,7 +57,7 @@ export function useProductListTable() {
   };
 
   const loadPreviousPage = () => {
-    setPageCount(prev => prev - defaultViewCount - 1);
+    setPageCount(prev => prev - defaultViewCount);
     refetch({
       first: undefined,
       after: undefined,

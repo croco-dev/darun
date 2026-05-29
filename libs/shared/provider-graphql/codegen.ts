@@ -28,6 +28,7 @@ const config: CodegenConfig = {
         defaultScalarType: 'unknown',
         scalars: {
           DateTime: 'string',
+          DateTimeISO: 'string',
         },
         useTypeImports: true,
       },

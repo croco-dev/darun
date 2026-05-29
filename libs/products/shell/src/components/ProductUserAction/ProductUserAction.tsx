@@ -3,7 +3,7 @@
 import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
 import { Heart } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { CompareButton } from '../CompareButton';
 import { useProductUserAction } from './useProductUserAction';
 
@@ -15,21 +15,32 @@ const showToast = (message: string, type: 'success' | 'error') => {
     type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
   }`;
   document.body.appendChild(toast);
-  setTimeout(() => {
+  const timerId = setTimeout(() => {
     toast.remove();
   }, 3000);
+  return timerId;
 };
 
 export const ProductUserAction = bind(
   useProductUserAction,
   ({ voteCount, upvoteProduct, voted, loading, error, slug }) => {
+    const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
     useEffect(() => {
       if (error) {
-        showToast(error, 'error');
+        timerRef.current = showToast(error, 'error');
       } else if (voted && !loading) {
-        showToast('투표가 완료되었습니다!', 'success');
+        timerRef.current = showToast('투표가 완료되었습니다!', 'success');
       }
     }, [error, voted, loading]);
+
+    useEffect(() => {
+      return () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+      };
+    }, []);
 
     return (
       <div className="flex gap-1">

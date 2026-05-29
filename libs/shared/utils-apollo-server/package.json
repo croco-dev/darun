@@ -14,6 +14,9 @@
     "graphql": "16.12.0",
     "type-graphql": "^2.0.0-rc.2"
   },
+  "dependencies": {
+    "@darun/utils-error": "workspace:*"
+  },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",

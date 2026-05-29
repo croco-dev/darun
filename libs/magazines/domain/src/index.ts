@@ -5,8 +5,10 @@ export { Magazine } from './entities/Magazine';
 export {
   MagazineError,
   magazineCreateFailed,
+  magazineInvalidArgs,
   magazineNotFound,
   magazineSlugAlreadyExists,
+  magazineUpdateFailed,
 } from './errors/magazineError';
 export { CreateMagazine } from './usecases/CreateMagazine';
 export { EditMagazine } from './usecases/EditMagazine';

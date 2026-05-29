@@ -112,8 +112,8 @@ describe('useProductListTable', () => {
         result.current.loadNextPage();
       });
 
-      // 각각 51씩 증가: 0 → 51 → 102 → 153
-      expect(result.current.pageCount).toBe(153);
+      // 각각 50씩 증가: 1 → 51 → 101 → 151
+      expect(result.current.pageCount).toBe(151);
     });
 
     it('should correctly accumulate pageCount on 3 rapid loadPreviousPage calls', () => {
@@ -129,34 +129,34 @@ describe('useProductListTable', () => {
         result.current.loadPreviousPage();
       });
 
-      // 각각 51씩 감소: 0 → -51 → -102 → -153
-      expect(result.current.pageCount).toBe(-153);
+      // 각각 50씩 감소: 1 → -49 → -99 → -149
+      expect(result.current.pageCount).toBe(-149);
     });
 
     it('should handle mixed next/previous calls correctly', () => {
       const { result } = renderHook(() => useProductListTable());
 
       act(() => {
-        result.current.loadNextPage(); // 0 → 51
+        result.current.loadNextPage(); // 1 → 51
       });
       act(() => {
-        result.current.loadNextPage(); // 51 → 102
+        result.current.loadNextPage(); // 51 → 101
       });
       act(() => {
-        result.current.loadPreviousPage(); // 102 → 51
+        result.current.loadPreviousPage(); // 101 → 51
       });
       act(() => {
-        result.current.loadNextPage(); // 51 → 102
+        result.current.loadNextPage(); // 51 → 101
       });
 
-      expect(result.current.pageCount).toBe(102);
+      expect(result.current.pageCount).toBe(101);
     });
 
     it('should correctly track pageCount after data refresh + re-render', () => {
       const { result, rerender } = renderHook(() => useProductListTable());
 
       act(() => {
-        result.current.loadNextPage(); // 0 → 51
+        result.current.loadNextPage(); // 1 → 51
       });
 
       // Simulate data arriving from refetch (re-render with new data)
@@ -174,10 +174,10 @@ describe('useProductListTable', () => {
       rerender();
 
       act(() => {
-        result.current.loadNextPage(); // 51 → 102
+        result.current.loadNextPage(); // 51 → 101
       });
 
-      expect(result.current.pageCount).toBe(102);
+      expect(result.current.pageCount).toBe(101);
     });
   });
 
@@ -261,7 +261,7 @@ describe('useProductListTable', () => {
     it('should return the correct initial values', () => {
       const { result } = renderHook(() => useProductListTable());
 
-      expect(result.current.pageCount).toBe(0);
+      expect(result.current.pageCount).toBe(1);
       expect(result.current.products[0]?.node.name).toBe('Product 1');
       expect(result.current.totalCount).toBe(100);
       expect(result.current.hasNextPage).toBe(true);

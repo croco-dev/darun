@@ -5,7 +5,7 @@ import { ulid } from 'ulid';
 
 export const tags = pgTable('tags', {
   id: varchar('id', { length: 26 }).primaryKey().$default(ulid),
-  name: varchar('name', { length: 100 }).notNull(),
+  name: varchar('name', { length: 100 }).notNull().unique(),
   type: varchar('type', { length: 20 }).notNull(),
   count: integer('count').notNull().default(0),
   createdAt: timestamp('created_at')

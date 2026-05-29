@@ -1,6 +1,7 @@
 import { Inject, Service } from "typedi";
 import type { ProductRepository } from "../repositories/ProductRepository";
 import { ProductRepositoryToken } from "../repositories/ProductRepository";
+import { productInvalidArgs } from "../errors/productError";
 
 @Service()
 export class GetProduct {
@@ -15,7 +16,7 @@ export class GetProduct {
     }
 
     if (!id) {
-      throw new Error("id or slug is required to get a product.");
+      throw productInvalidArgs("id or slug is required to get a product.");
     }
     return this.productRepository.findOneById(id);
   }

@@ -1,11 +1,15 @@
-export const votingRateLimitExceeded = () => {
-  const e = new Error('voting/rate-limit-exceeded');
-  (e as unknown as { code: string }).code = 'voting/rate-limit-exceeded';
-  return e;
-};
+import { createDomainError } from '@darun/utils-error';
 
-export const votingDuplicateVote = () => {
-  const e = new Error('voting/duplicate-vote');
-  (e as unknown as { code: string }).code = 'voting/duplicate-vote';
-  return e;
-};
+export enum VoteError {
+  RateLimitExceeded = 'voting/rate-limit-exceeded',
+  DuplicateVote = 'voting/duplicate-vote',
+  VoteInsertFailed = 'voting/vote-insert-failed',
+  VoteUpdateFailed = 'voting/vote-update-failed',
+  VoteRecordInsertFailed = 'voting/vote-record-insert-failed',
+}
+
+export const votingRateLimitExceeded = () => createDomainError(VoteError.RateLimitExceeded);
+export const votingDuplicateVote = () => createDomainError(VoteError.DuplicateVote);
+export const votingVoteInsertFailed = () => createDomainError(VoteError.VoteInsertFailed);
+export const votingVoteUpdateFailed = () => createDomainError(VoteError.VoteUpdateFailed);
+export const votingVoteRecordInsertFailed = () => createDomainError(VoteError.VoteRecordInsertFailed);

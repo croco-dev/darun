@@ -1094,6 +1094,9 @@ importers:
 
   libs/products/domain:
     dependencies:
+      '@darun/utils-error':
+        specifier: workspace:*
+        version: link:../../shared/utils-error
       '@darun/voting-domain':
         specifier: workspace:*
         version: link:../../voting/domain
@@ -1781,6 +1784,9 @@ importers:
       '@as-integrations/aws-lambda':
         specifier: ^4.0.0
         version: 4.0.1(@apollo/server@5.4.0(graphql@16.12.0))
+      '@darun/utils-error':
+        specifier: workspace:*
+        version: link:../utils-error
       graphql:
         specifier: 16.12.0
         version: 16.12.0
@@ -2076,6 +2082,9 @@ importers:
 
   libs/voting/domain:
     dependencies:
+      '@darun/utils-error':
+        specifier: workspace:*
+        version: link:../../shared/utils-error
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2

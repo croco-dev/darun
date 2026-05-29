@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import { ProductAlternativePage } from '@darun/pages-shell';
 import { Metadata } from 'next';
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { getClient } from '../../../../getServerClient';
 
@@ -23,25 +24,32 @@ const productQuery = gql`
   }
 `;
 
+type ProductQueryData = {
+  productBySlug?: {
+    name: string;
+    summary?: string;
+    logoUrl?: string;
+    tags: { name: string }[];
+    alternatives?: { name: string; tags: { name: string }[] }[];
+  };
+};
+
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
 };
 
+const getProduct = cache(async (slug: string, locale: string) => {
+  const { data } = await getClient().query<ProductQueryData>({
+    query: productQuery,
+    variables: { slug, locale },
+  });
+  return data;
+});
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
 
-  const { data } = await getClient().query<{
-    productBySlug?: {
-      name: string;
-      summary?: string;
-      logoUrl?: string;
-      tags: { name: string }[];
-      alternatives?: { name: string; tags: { name: string }[] }[];
-    };
-  }>({
-    query: productQuery,
-    variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
-  });
+  const data = await getProduct(resolvedParams.slug, resolvedParams.locale);
 
   if (!data?.productBySlug?.name) {
     return notFound();
@@ -98,15 +106,7 @@ const createOgImageUrl = ({ name, summary, logoUrl }: { name: string; summary?: 
 export default async function ProductAlternativePageWrapper({ params }: Props) {
   const resolvedParams = await params;
 
-  const { data } = await getClient().query<{
-    productBySlug?: {
-      name: string;
-      alternatives: { name: string; tags: { name: string }[] }[];
-    };
-  }>({
-    query: productQuery,
-    variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
-  });
+  const data = await getProduct(resolvedParams.slug, resolvedParams.locale);
 
   if (!data?.productBySlug?.name) {
     notFound();

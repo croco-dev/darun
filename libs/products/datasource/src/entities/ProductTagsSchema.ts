@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, unique, varchar } from 'drizzle-orm/pg-core';
 import { timestamp } from 'drizzle-orm/pg-core';
 import { ulid } from 'ulid';
 import { products } from './ProductSchema';
@@ -16,4 +16,6 @@ export const productTags = pgTable('product_tags', {
   createdAt: timestamp('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-});
+}, (productTags) => [
+  unique('product_tags_product_id_tag_id_unique').on(productTags.productId, productTags.tagId),
+]);

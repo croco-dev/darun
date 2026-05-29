@@ -1,5 +1,11 @@
 import { ProductLinkRepository } from '@darun/products-domain';
-import { ProductLink, ProductLinkRepositoryToken } from '@darun/products-domain';
+import {
+  ProductLink,
+  ProductLinkRepositoryToken,
+  productLinkInsertFailed,
+  productLinkNotFound,
+  productUpdateFailed,
+} from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
@@ -37,7 +43,7 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
         const inserted = await tx.insert(productLinks).values(link).returning();
 
         if (!inserted[0]) {
-          throw new Error('Failed to insert product screenshot');
+          throw productLinkInsertFailed();
         }
         return this.mapper(inserted[0]);
       })
@@ -62,7 +68,7 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
           .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
 
         if (!prevLink) {
-          throw new Error('ProductLink not found');
+          throw productLinkNotFound();
         }
 
         const updated = await tx
@@ -72,7 +78,7 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
           .returning();
 
         if (!updated[0]) {
-          throw new Error('ProductLink update failed');
+          throw productUpdateFailed();
         }
 
         return this.mapper(updated[0]);

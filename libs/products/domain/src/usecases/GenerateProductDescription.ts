@@ -4,6 +4,7 @@ import type { ProductRepository } from "../repositories/ProductRepository";
 import { ProductRepositoryToken } from "../repositories/ProductRepository";
 import type { ProductDescriptionGenerator } from "../services/ProductDescriptionGenerator";
 import { ProductDescriptionGeneratorToken } from "../services/ProductDescriptionGenerator";
+import { productNotFound } from "../errors/productError";
 
 @Service()
 export class GenerateProductDescription {
@@ -17,7 +18,7 @@ export class GenerateProductDescription {
   async execute({ productId }: { productId: string }): Promise<Product> {
     const product = await this.productRepository.findOneById(productId);
     if (!product) {
-      throw new Error("Product not found");
+      throw productNotFound();
     }
 
     const generatedDescription =

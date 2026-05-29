@@ -22,6 +22,7 @@ export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureF
             className="rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
             {...form.getInputProps('name')}
           />
+          {form.errors.name && <p className="mt-1 text-xs text-red-500">{form.errors.name}</p>}
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
           <span>이모지</span>
@@ -42,6 +43,7 @@ export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureF
               </div>
             </details>
           </div>
+          {form.errors.emoji && <p className="mt-1 text-xs text-red-500">{form.errors.emoji}</p>}
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
           <span>짧은 설명</span>
@@ -52,6 +54,7 @@ export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureF
             className="min-h-28 rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
             {...form.getInputProps('summary')}
           />
+          {form.errors.summary && <p className="mt-1 text-xs text-red-500">{form.errors.summary}</p>}
         </label>
         <Button type="submit" size="md" variant="contained" color="secondary">
           등록

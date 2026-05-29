@@ -1,6 +1,5 @@
 import { ProductCompanyInfo } from '@darun/products-feature';
 import { Button } from '@darun/ui';
-import { Link } from '@darun/utils-router';
 
 export const ProductDetailCompanySection = ({ slug }: { slug: string }) => {
   return (
@@ -13,9 +12,9 @@ export const ProductDetailCompanySection = ({ slug }: { slug: string }) => {
           <div className="border-b p-4">
             <ProductCompanyInfo slug={slug} />
             <div className="h-3"></div>
-            <Link href={`/products/${slug}/company/new`}>
-              <Button variant="base">정보 수정</Button>
-            </Link>
+            <Button variant="base" as="a" href={`/products/${slug}/company/new`}>
+              정보 수정
+            </Button>
           </div>
         </div>
       </div>

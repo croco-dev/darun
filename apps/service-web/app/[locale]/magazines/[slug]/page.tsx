@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import { MagazineContentPage } from '@darun/pages-shell';
 import { Metadata } from 'next';
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { getClient } from '../../../getServerClient';
 
@@ -19,28 +20,35 @@ const magazineQuery = gql`
   }
 `;
 
+type MagazineQueryData = {
+  magazineBySlug?: {
+    title: string;
+    summary?: string;
+    backgroundImageUrl?: string;
+    publishedAt?: string;
+    updatedAt?: string;
+    author?: {
+      name: string;
+    };
+  };
+};
+
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
 };
 
+const getMagazine = cache(async (slug: string, locale: string) => {
+  const { data } = await getClient().query<MagazineQueryData>({
+    query: magazineQuery,
+    variables: { slug, locale },
+  });
+  return data;
+});
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
 
-  const { data } = await getClient().query<{
-    magazineBySlug?: {
-      title: string;
-      summary?: string;
-      backgroundImageUrl?: string;
-      publishedAt?: string;
-      updatedAt?: string;
-      author?: {
-        name: string;
-      };
-    };
-  }>({
-    query: magazineQuery,
-    variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
-  });
+  const data = await getMagazine(resolvedParams.slug, resolvedParams.locale);
 
   if (!data?.magazineBySlug?.title) {
     return notFound();
@@ -83,21 +91,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 async function MagazineContentPageWithJsonLd({ params }: Props) {
   const resolvedParams = await params;
 
-  const { data } = await getClient().query<{
-    magazineBySlug?: {
-      title: string;
-      summary?: string;
-      backgroundImageUrl?: string;
-      publishedAt?: string;
-      updatedAt?: string;
-      author?: {
-        name: string;
-      };
-    };
-  }>({
-    query: magazineQuery,
-    variables: { slug: resolvedParams.slug, locale: resolvedParams.locale },
-  });
+  const data = await getMagazine(resolvedParams.slug, resolvedParams.locale);
 
   const magazine = data?.magazineBySlug;
 

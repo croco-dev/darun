@@ -17,11 +17,11 @@ custom:
   esbuild:
     bundle: true
     exclude: ["class-validator"]
-    minify: false
+    minify: true
     keepNames: true
     sourcemap: true
     sourcesContent: false
-    treeShaking: false
+    treeShaking: true
     ignoreAnnotations: true
     banner:
       js: "require('reflect-metadata');"

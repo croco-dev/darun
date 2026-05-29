@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@darun/utils-error": "workspace:*",
     "@darun/voting-domain": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "typedi": "^0.10.0"

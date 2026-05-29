@@ -1,7 +1,7 @@
 import { Product } from '@darun/products-domain';
 import { ProductDescriptionGenerator } from '@darun/products-domain';
 import { ProductDescriptionGeneratorToken } from '@darun/products-domain';
-import { LlmClient } from '@darun/utils-llm';
+import { LlmClient, withRetry } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 
 @Service({ id: ProductDescriptionGeneratorToken })
@@ -216,17 +216,37 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
 
 위 정보를 바탕으로 서비스 리뷰를 작성해주세요.`;
 
-    const response = await this.llmClient.completion('x-ai/grok-4-fast', [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ]);
+    try {
+      const response = await withRetry(
+        () =>
+          this.withTimeout(
+            this.llmClient.completion('x-ai/grok-4-fast', [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ]),
+            25_000,
+            '상품 설명 생성 요청이 시간 초과되었습니다. 잠시 후 다시 시도해주세요.'
+          ),
+        { maxRetries: 2, baseDelay: 1000, maxDelay: 10000 }
+      );
 
-    const content = response.content?.trim();
+      const content = response.content?.trim();
 
-    if (!content) {
-      throw new Error('LLM description response is empty');
+      if (!content) {
+        throw new Error('LLM description response is empty');
+      }
+
+      return content;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('시간 초과')) {
+        throw error;
+      }
+      throw new Error(`상품 설명 생성 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     }
+  }
 
-    return content;
+  private withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error(message)), ms));
+    return Promise.race([promise, timeout]);
   }
 }

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, varchar, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, unique, varchar, timestamp } from 'drizzle-orm/pg-core';
 import { ulid } from 'ulid';
 
 export const alternativeProducts = pgTable('alternative_products', {
@@ -9,4 +9,6 @@ export const alternativeProducts = pgTable('alternative_products', {
   createdAt: timestamp('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-});
+}, (alternativeProducts) => [
+  unique('alternative_products_product_id_alt_product_id_unique').on(alternativeProducts.productId, alternativeProducts.alternativeProductId),
+]);

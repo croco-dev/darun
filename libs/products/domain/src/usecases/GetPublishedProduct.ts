@@ -2,6 +2,7 @@ import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
+import { productInvalidArgs } from '../errors/productError';
 
 @Service()
 export class GetPublishedProduct {
@@ -31,7 +32,7 @@ export class GetPublishedProduct {
     }
 
     if (!id) {
-      throw new Error('id or slug is required to get a product.');
+      throw productInvalidArgs('id or slug is required to get a product.');
     }
     return this.productRepository.findPublishedOneById(id);
   }

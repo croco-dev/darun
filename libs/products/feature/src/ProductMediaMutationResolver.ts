@@ -7,8 +7,9 @@ import {
   GetProduct,
   RegisterProductCompany,
   UpdateProductLink,
+  productNotFound,
+  productCompanyNotFound,
 } from '@darun/products-domain';
-import { productNotFound } from '@darun/products-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
@@ -136,7 +137,7 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
     }
 
     if (!company) {
-      throw new Error('Company not found');
+      throw productCompanyNotFound();
     }
 
     await this.registerProductCompanyUseCase.execute({

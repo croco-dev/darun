@@ -9,14 +9,25 @@ export { TagType } from './entities/TagType';
 export { Category } from './entities/Category';
 export {
   ProductError,
+  productCategoryNotFound,
+  productCompanyNotFound,
   productCreateFailed,
   productDeleteFailed,
-  productFeatureNotFound,
+  productInvalidArgs,
+  productLinkInsertFailed,
+  productLinkNotFound,
   productNotFound,
+  productScreenshotInsertFailed,
   productScreenshotNotFound,
   productSlugAlreadyExists,
   productUpdateFailed,
 } from './errors/productError';
+export {
+  ProductFeatureErrorCode,
+  productFeatureCreateFailed,
+  productFeatureNotFound,
+  productFeatureUpdateFailed,
+} from './errors/productFeatureError';
 export type { ProductFeatureRepository } from './repositories/ProductFeatureRepository';
 export { ProductFeatureRepositoryToken } from './repositories/ProductFeatureRepository';
 export type { ProductFeatureScreenshotRepository } from './repositories/ProductFeatureScreenshotRepository';

@@ -1,5 +1,5 @@
 import { CategoryRepository } from '@darun/products-domain';
-import { Category, CategoryRepositoryToken } from '@darun/products-domain';
+import { Category, CategoryRepositoryToken, productCategoryNotFound, productUpdateFailed } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { eq, inArray } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
@@ -54,7 +54,7 @@ export class PostgresqlCategoryRepository implements CategoryRepository {
         .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
 
       if (!prevCategory) {
-        throw new Error('Category not found');
+        throw productCategoryNotFound();
       }
 
       const updated = await tx
@@ -64,7 +64,7 @@ export class PostgresqlCategoryRepository implements CategoryRepository {
         .returning();
 
       if (!updated[0]) {
-        throw new Error('Category update failed');
+        throw productUpdateFailed();
       }
 
       return this.mapper(updated[0]);

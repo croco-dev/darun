@@ -7,6 +7,14 @@ import type { VoteRecordRepository } from "../repositories/VoteRecordRepository"
 import { VoteRecordRepositoryToken } from "../repositories/VoteRecordRepository";
 import { hashVoterIp } from "../utils/hashVoterIp";
 
+function isUniqueConstraintViolation(error: unknown): boolean {
+  if (error instanceof Error) {
+    const anyError = error as { code?: string; constraint?: string };
+    return anyError.code === '23505';
+  }
+  return false;
+}
+
 @Service()
 export class UpvoteProduct {
   constructor(
@@ -44,14 +52,21 @@ export class UpvoteProduct {
       throw votingDuplicateVote();
     }
 
-    return this.voteRecordRepository.upsertVoteWithRecord(
-      productId,
-      voterIpHash,
-      (vote) => {
-        vote.upvote();
+    try {
+      return await this.voteRecordRepository.upsertVoteWithRecord(
+        productId,
+        voterIpHash,
+        (vote) => {
+          vote.upvote();
 
-        return vote;
-      },
-    );
+          return vote;
+        },
+      );
+    } catch (error) {
+      if (isUniqueConstraintViolation(error)) {
+        throw votingDuplicateVote();
+      }
+      throw error;
+    }
   }
 }

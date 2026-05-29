@@ -1,5 +1,5 @@
 import { ProductRepository } from '@darun/products-domain';
-import { Product, ProductRepositoryToken } from '@darun/products-domain';
+import { Product, ProductRepositoryToken, productNotFound, productUpdateFailed } from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
@@ -39,7 +39,7 @@ export class PostgresqlProductRepository implements ProductRepository {
           .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
 
         if (!prevProduct) {
-          throw new Error('Product not found');
+          throw productNotFound();
         }
 
         const updated = await tx
@@ -48,7 +48,7 @@ export class PostgresqlProductRepository implements ProductRepository {
           .where(eq(products.id, id))
           .returning();
         if (!updated[0]) {
-          throw new Error('Product update failed');
+          throw productUpdateFailed();
         }
 
         return this.mapper(updated[0]);

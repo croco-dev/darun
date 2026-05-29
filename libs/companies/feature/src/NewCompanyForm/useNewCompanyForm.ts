@@ -32,6 +32,11 @@ export function useNewCompanyForm() {
       startAtIsDisabled: false,
     },
     mode: 'uncontrolled',
+    validate: {
+      name: value => (!value ? '회사 이름을 입력해주세요.' : null),
+      type: value => (!value ? '유형을 입력해주세요.' : null),
+      address: value => (!value ? '주소를 입력해주세요.' : null),
+    },
   });
   const { push } = useRouter();
 
@@ -61,7 +66,7 @@ export function useNewCompanyForm() {
           name: values.name,
           type: values.type,
           address: values.address,
-          startAt: values.startAtIsDisabled ? undefined : values.startAt ?? undefined,
+          startAt: values.startAtIsDisabled ? undefined : values.startAt?.toISOString() ?? undefined,
         },
       },
     });

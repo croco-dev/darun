@@ -20,6 +20,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
             placeholder="ex) toss.im"
             {...form.getInputProps('displayLink')}
           />
+          {form.errors.displayLink && <p className="mt-1 text-xs text-red-500">{form.errors.displayLink}</p>}
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
           <span>링크</span>
@@ -29,6 +30,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
             placeholder="ex) https://toss.im/"
             {...form.getInputProps('link')}
           />
+          {form.errors.link && <p className="mt-1 text-xs text-red-500">{form.errors.link}</p>}
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
           <span>이름</span>
@@ -38,6 +40,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
             placeholder="ex) 공식 홈페이지"
             {...form.getInputProps('title')}
           />
+          {form.errors.title && <p className="mt-1 text-xs text-red-500">{form.errors.title}</p>}
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
           <span>아이콘</span>
@@ -55,6 +58,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
               </option>
             ))}
           </select>
+          {form.errors.iconUrl && <p className="mt-1 text-xs text-red-500">{form.errors.iconUrl}</p>}
         </label>
 
         <Button type="submit" variant="contained" color="secondary" size="md">

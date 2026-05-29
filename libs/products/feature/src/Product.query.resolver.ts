@@ -33,6 +33,14 @@ type ProductWithLocale = Product & {
   locale?: string;
 };
 
+type ProductWithPreload = ProductWithLocale & {
+  __preloadedTags?: Tag[];
+  __preloadedVoteCount?: number;
+  __preloadedLinks?: Link[];
+  __preloadedScreenshots?: Screenshot[];
+  __preloadedFeatures?: Feature[];
+};
+
 type PublishedProduct = DomainProduct;
 
 @Resolver(() => Product)
@@ -59,6 +67,29 @@ export class ProductQueryResolver {
 
   private normalizeLocale(locale: string): 'ko' | 'en' {
     return locale === 'en' ? 'en' : 'ko';
+  }
+
+  private async preloadFields(products: ProductWithLocale[]): Promise<ProductWithPreload[]> {
+    if (products.length === 0) return [];
+
+    const productIds = products.map(p => p.id);
+
+    const [productTags, voteCounts, productLinks, screenshots, features] = await Promise.all([
+      Promise.all(productIds.map(id => this.getProductTagsUseCase.execute({ productId: id }))),
+      Promise.all(productIds.map(id => this.getVoteCountUseCase.execute({ productId: id }))),
+      Promise.all(productIds.map(id => this.getProductLinksUseCase.execute({ productId: id }))),
+      Promise.all(productIds.map(id => this.getProductScreenshotsUseCase.execute({ productId: id }))),
+      Promise.all(productIds.map(id => this.getProductFeaturesUseCase.execute({ productId: id }))),
+    ]);
+
+    return products.map((product, i) => ({
+      ...product,
+      __preloadedTags: productTags[i]?.tags ?? [],
+      __preloadedVoteCount: voteCounts[i],
+      __preloadedLinks: productLinks[i].map((link, j) => ({ ...link, isPrimary: j === 0 })),
+      __preloadedScreenshots: screenshots[i],
+      __preloadedFeatures: features[i],
+    }));
   }
 
   private async translateProduct(product: PublishedProduct, locale: string): Promise<ProductWithLocale> {
@@ -125,7 +156,8 @@ export class ProductQueryResolver {
     const products = await this.getRecentProductsUseCase.execute({
       limit: first,
     });
-    return this.translateProducts(products, locale);
+    const translated = await this.translateProducts(products, locale);
+    return this.preloadFields(translated);
   }
 
   @Query(() => [Product])
@@ -136,7 +168,8 @@ export class ProductQueryResolver {
     const products = await this.getRankedProductsUseCase.execute({
       limit: first,
     });
-    return this.translateProducts(products, locale);
+    const translated = await this.translateProducts(products, locale);
+    return this.preloadFields(translated);
   }
 
   @Query(() => Product, { nullable: true })
@@ -186,10 +219,11 @@ export class ProductQueryResolver {
       ids: searchableProductIds,
     })) as (PublishedProduct | null)[];
 
-    return this.translateProducts(
+    const translated = await this.translateProducts(
       products.filter((product): product is PublishedProduct => Boolean(product)),
       locale
     );
+    return this.preloadFields(translated);
   }
 
   @Authorized([AuthRole.Admin])
@@ -216,7 +250,11 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => [Link])
-  public async links(@Root() product: Product) {
+  public async links(@Root() product: ProductWithPreload) {
+    if (product.__preloadedLinks !== undefined) {
+      return product.__preloadedLinks;
+    }
+
     const links = await this.getProductLinksUseCase.execute({
       productId: product.id,
     });
@@ -225,7 +263,11 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => [Tag])
-  public async tags(@Root() product: Product): Promise<Tag[]> {
+  public async tags(@Root() product: ProductWithPreload): Promise<Tag[]> {
+    if (product.__preloadedTags !== undefined) {
+      return product.__preloadedTags;
+    }
+
     const productTag = await this.getProductTagsUseCase.execute({
       productId: product.id,
     });
@@ -234,15 +276,21 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => [Screenshot])
-  public screenshots(@Root() product: Product) {
+  public async screenshots(@Root() product: ProductWithPreload) {
+    if (product.__preloadedScreenshots !== undefined) {
+      return product.__preloadedScreenshots;
+    }
+
     return this.getProductScreenshotsUseCase.execute({ productId: product.id });
   }
 
   @FieldResolver(() => [Feature])
-  public async features(@Root() product: ProductWithLocale) {
-    const features = await this.getProductFeaturesUseCase.execute({
-      productId: product.id,
-    });
+  public async features(@Root() product: ProductWithPreload) {
+    const features =
+      product.__preloadedFeatures !== undefined
+        ? product.__preloadedFeatures
+        : await this.getProductFeaturesUseCase.execute({ productId: product.id });
+
     const locale = this.normalizeLocale(product.locale ?? 'ko');
 
     if (locale === 'ko') {
@@ -295,7 +343,7 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => [Product])
-  public async alternatives(@Root() product: ProductWithLocale) {
+  public async alternatives(@Root() product: ProductWithPreload) {
     const alternativeProducts = await this.getAlternativeProductsUseCase.execute({
       productId: product.id,
     });
@@ -316,7 +364,11 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => Int)
-  public async voteCount(@Root() product: Product) {
+  public async voteCount(@Root() product: ProductWithPreload) {
+    if (product.__preloadedVoteCount !== undefined) {
+      return product.__preloadedVoteCount;
+    }
+
     return this.getVoteCountUseCase.execute({ productId: product.id });
   }
 
@@ -329,7 +381,8 @@ export class ProductQueryResolver {
       slug,
     });
 
-    return this.translateProducts(products, locale);
+    const translated = await this.translateProducts(products, locale);
+    return this.preloadFields(translated);
   }
 
   @Authorized([AuthRole.Admin])

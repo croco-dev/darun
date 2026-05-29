@@ -16,6 +16,7 @@ export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) =
           {...form.getInputProps('name')}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        {form.errors.name && <p className="mt-1 text-xs text-red-500">{form.errors.name}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">유형</label>
@@ -26,6 +27,7 @@ export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) =
           {...form.getInputProps('type')}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        {form.errors.type && <p className="mt-1 text-xs text-red-500">{form.errors.type}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">주소</label>
@@ -36,6 +38,7 @@ export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) =
           {...form.getInputProps('address')}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        {form.errors.address && <p className="mt-1 text-xs text-red-500">{form.errors.address}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">개업일</label>
