@@ -31,6 +31,7 @@ export function createMongodbConnection(): void | Promise<void> {
         mongooseConnection = connection;
       })
       .catch(error => {
+        mongooseConnectionPromise = undefined;
         console.error('MongoDB connection failed:', error);
         throw error;
       });
