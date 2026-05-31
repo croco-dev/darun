@@ -10,9 +10,13 @@ import { products } from '../entities/ProductSchema';
 
 @Service(ProductRepositoryToken)
 export class PostgresqlProductRepository implements ProductRepository {
+  private idLoader: DataLoader<string, Product | null>;
   private publishedIdLoader: DataLoader<string, Product | null>;
 
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
+    this.idLoader = new DataLoader(async (ids: readonly string[]) => this.findByIdsInternal(ids), {
+      cache: true,
+    });
     this.publishedIdLoader = new DataLoader(async (ids: readonly string[]) => this.findPublishedByIdsInternal(ids), {
       cache: true,
     });
@@ -54,6 +58,7 @@ export class PostgresqlProductRepository implements ProductRepository {
         return this.mapper(updated[0]);
       })
       .then(result => {
+        this.idLoader.clear(id);
         this.publishedIdLoader.clearAll();
         return result;
       });
@@ -99,6 +104,9 @@ export class PostgresqlProductRepository implements ProductRepository {
         return inserted[0] ? this.mapper(inserted[0]) : null;
       })
       .then(result => {
+        if (result?.id) {
+          this.idLoader.clear(result.id);
+        }
         this.publishedIdLoader.clearAll();
         return result;
       });
@@ -122,12 +130,7 @@ export class PostgresqlProductRepository implements ProductRepository {
   }
 
   async findOneById(id: string): Promise<Product | null> {
-    return this.db
-      .select()
-      .from(products)
-      .where(eq(products.id, id))
-      .limit(1)
-      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+    return this.idLoader.load(id);
   }
 
   async findPublishedOneBySlug(slug: string): Promise<Product | null> {
@@ -171,6 +174,21 @@ export class PostgresqlProductRepository implements ProductRepository {
       .select()
       .from(products)
       .where(and(inArray(products.id, [...ids]), isNotNull(products.publishedAt)));
+
+    const groupByDocs = keyBy(docs, doc => doc.id);
+
+    return ids.map(id => (groupByDocs[id] ? this.mapper(groupByDocs[id]) : null));
+  }
+
+  private async findByIdsInternal(ids: readonly string[]): Promise<(Product | null)[]> {
+    if (!ids.length) {
+      return [];
+    }
+
+    const docs = await this.db
+      .select()
+      .from(products)
+      .where(inArray(products.id, [...ids]));
 
     const groupByDocs = keyBy(docs, doc => doc.id);
 

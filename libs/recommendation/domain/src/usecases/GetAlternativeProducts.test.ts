@@ -1,0 +1,94 @@
+import { Product, ProductTag, Tag, TagType } from '@darun/products-domain';
+import { describe, expect, it, vi } from 'vitest';
+import { AlternativeProduct } from '../entities/AlternativeProduct';
+import type { AlternativeProductRepository } from '../repositories/AlternativeProductRepository';
+import { AutoRecommender } from '../services/AutoRecommender';
+import { GetAlternativeProducts } from './GetAlternativeProducts';
+
+describe('GetAlternativeProducts', () => {
+  const createProduct = (id: string, categoryIds: string[] = []) =>
+    new Product({ id, slug: id, name: id, summary: id, logoUrl: `${id}.png`, publishedAt: new Date(), categoryIds });
+
+  const createTag = (name: string) => new Tag({ id: name, name, type: TagType.Featured });
+
+  it('keeps manual alternatives first and fills missing slots from categories', async () => {
+    const manual = [
+      new AlternativeProduct({ id: 'alt-1', productId: 'prod-1', alternativeProductId: 'manual-1' }),
+      new AlternativeProduct({ id: 'alt-2', productId: 'prod-1', alternativeProductId: 'manual-2' }),
+    ];
+    const alternativeRepository = {
+      findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue(manual),
+      create: vi.fn<AlternativeProductRepository['create']>(),
+      deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
+      createMany: vi.fn<AlternativeProductRepository['createMany']>(),
+    } satisfies AlternativeProductRepository;
+    const productRepository = {
+      findPublishedOneById: vi.fn().mockResolvedValue(createProduct('prod-1', ['cat-1'])),
+      findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
+      findPublishedByCategoryId: vi
+        .fn()
+        .mockResolvedValue([
+          createProduct('prod-1', ['cat-1']),
+          createProduct('manual-1', ['cat-1']),
+          createProduct('auto-1', ['cat-1']),
+          createProduct('auto-2', ['cat-1']),
+          createProduct('auto-3', ['cat-1']),
+          createProduct('auto-4', ['cat-1']),
+        ]),
+    };
+    const tagRepository = { findOneByProductId: vi.fn().mockResolvedValue(null) };
+
+    const result = await new GetAlternativeProducts(
+      alternativeRepository,
+      new AutoRecommender(productRepository, tagRepository)
+    ).execute({ productId: 'prod-1' });
+
+    expect(result.map(alternative => alternative.alternativeProductId)).toEqual([
+      'manual-1',
+      'manual-2',
+      'auto-1',
+      'auto-2',
+      'auto-3',
+    ]);
+  });
+
+  it('ranks category matches before tag-only matches', async () => {
+    const alternativeRepository = {
+      findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+      create: vi.fn<AlternativeProductRepository['create']>(),
+      deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
+      createMany: vi.fn<AlternativeProductRepository['createMany']>(),
+    } satisfies AlternativeProductRepository;
+    const productRepository = {
+      findPublishedOneById: vi.fn().mockResolvedValue(createProduct('prod-1', ['cat-1'])),
+      findTopNSortByPublishedAtDesc: vi
+        .fn()
+        .mockResolvedValue([createProduct('tag-only'), createProduct('category-1', ['cat-1'])]),
+      findPublishedByCategoryId: vi
+        .fn()
+        .mockResolvedValue([createProduct('category-1', ['cat-1']), createProduct('category-2', ['cat-1'])]),
+    };
+    const tagRepository = {
+      findOneByProductId: vi.fn().mockImplementation(async productId => {
+        const tagsByProductId = new Map([
+          ['prod-1', new ProductTag({ productId: 'prod-1', tags: [createTag('ai'), createTag('crm')] })],
+          ['category-1', new ProductTag({ productId: 'category-1', tags: [createTag('ai')] })],
+          ['tag-only', new ProductTag({ productId: 'tag-only', tags: [createTag('ai'), createTag('crm')] })],
+        ]);
+
+        return tagsByProductId.get(productId) ?? null;
+      }),
+    };
+
+    const result = await new GetAlternativeProducts(
+      alternativeRepository,
+      new AutoRecommender(productRepository, tagRepository)
+    ).execute({ productId: 'prod-1' });
+
+    expect(result.map(alternative => alternative.alternativeProductId)).toEqual([
+      'category-1',
+      'category-2',
+      'tag-only',
+    ]);
+  });
+});

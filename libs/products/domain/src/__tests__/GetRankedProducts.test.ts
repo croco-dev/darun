@@ -2,10 +2,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { Product } from '../entities/Product';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import type { RankedProductVoteRepository } from '../repositories/RankedProductVoteRepository';
+import { RankingCache } from '../services/RankingCache';
+import { RankingService } from '../services/RankingService';
 import { GetRankedProducts } from '../usecases/GetRankedProducts';
 
+const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
+const NOW = new Date('2026-01-01T12:00:00.000Z');
+
 describe('GetRankedProducts', () => {
-  const now = new Date('2026-01-01T12:00:00.000Z');
+  const now = NOW;
 
   const createProduct = ({ id, publishedAt = now }: { id: string; publishedAt?: Date }) =>
     new Product({
@@ -53,8 +58,8 @@ describe('GetRankedProducts', () => {
   };
 
   it('applies time decay so a recent product ranks higher', async () => {
-    const older = createProduct({ id: 'older', publishedAt: new Date(now.getTime() - 72 * 60 * 60 * 1000) });
-    const recent = createProduct({ id: 'recent', publishedAt: new Date(now.getTime() - 1 * 60 * 60 * 1000) });
+    const older = createProduct({ id: 'older', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
+    const recent = createProduct({ id: 'recent', publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR) });
     const { voteRepository, productRepository } = createRepository({
       votes: [
         { targetId: older.id, count: 40 },
@@ -96,5 +101,72 @@ describe('GetRankedProducts', () => {
 
     expect(result).toEqual([]);
     expect(productRepository.findPublishedByIds).not.toHaveBeenCalled();
+  });
+
+  it('boosts products published within 24 hours', async () => {
+    const newProduct = createProduct({ id: 'new', publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR) });
+    const oldProduct = createProduct({ id: 'old', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
+    const { voteRepository, productRepository } = createRepository({
+      votes: [
+        { targetId: oldProduct.id, count: 20 },
+        { targetId: newProduct.id, count: 10 },
+      ],
+      products: [oldProduct, newProduct],
+    });
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+    expect(result).toEqual([newProduct, oldProduct]);
+  });
+
+  it('keeps existing vote counts compatible with the new ranking formula', async () => {
+    const product = createProduct({ id: 'p1', publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR) });
+    const { voteRepository, productRepository } = createRepository({
+      votes: [{ targetId: product.id, count: 10 }],
+      products: [product],
+    });
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 1 });
+
+    expect(result).toEqual([product]);
+    expect(voteRepository.findTopNByVoteCount).toHaveBeenCalledWith(2);
+  });
+});
+
+describe('RankingService', () => {
+  it('calculates score with fixed gravity and new product boost', () => {
+    const createdAt = new Date(NOW.getTime() - 1 * MILLISECONDS_PER_HOUR);
+    const score = new RankingService(() => NOW).calculateScore(10, 1, createdAt);
+
+    expect(score).toBeCloseTo((10 / Math.pow(1 + 2, 0.6)) * 1.5);
+  });
+});
+
+describe('RankingCache', () => {
+  it('returns cached scores before the TTL expires', () => {
+    const cache = new RankingCache(() => 1000);
+
+    cache.set('p1', 12);
+
+    expect(cache.get('p1')).toBe(12);
+  });
+
+  it('returns undefined after the TTL expires', () => {
+    let now = 1000;
+    const cache = new RankingCache(() => now);
+
+    cache.set('p1', 12);
+    now += 300_001;
+
+    expect(cache.get('p1')).toBeUndefined();
+  });
+
+  it('invalidates scores by product id', () => {
+    const cache = new RankingCache(() => 1000);
+
+    cache.set('p1', 12);
+    cache.invalidate('p1');
+
+    expect(cache.get('p1')).toBeUndefined();
   });
 });

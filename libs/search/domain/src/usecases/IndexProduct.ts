@@ -16,16 +16,20 @@ export class IndexProduct {
     slug,
     summary,
     description,
+    tags,
+    category,
   }: {
     id: string;
     name: string;
     slug: string;
     summary: string;
     description?: string;
+    tags?: string[];
+    category?: string;
   }) {
     return this.searchableProductRepository.index(
       id,
-      new SearchableProduct({ name, slug, summary, description }),
+      new SearchableProduct({ name, slug, summary, description, tags, category }),
     );
   }
 }

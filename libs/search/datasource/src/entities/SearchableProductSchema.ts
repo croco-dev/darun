@@ -25,6 +25,12 @@ export class SearchableProductSchema {
 
   @prop()
   public description?: string;
+
+  @prop({ type: () => [String], default: [] })
+  public tags: string[];
+
+  @prop({ default: '' })
+  public category: string;
 }
 
 export const SearchableProductModel = getModelForClass(SearchableProductSchema);

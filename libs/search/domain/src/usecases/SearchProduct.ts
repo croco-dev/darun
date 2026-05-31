@@ -1,12 +1,16 @@
 import { Inject, Service } from 'typedi';
 import type { SearchableProductRepository } from '../repositories/SearchableProductRepository';
 import { SearchableProductRepositoryToken } from '../repositories/SearchableProductRepository';
+import { SearchRanker } from '../services/SearchRanker';
+import { SynonymExpander } from '../services/SynonymExpander';
 
 @Service()
 export class SearchProduct {
   constructor(
     @Inject(SearchableProductRepositoryToken)
-    private readonly searchableProductRepository: SearchableProductRepository
+    private readonly searchableProductRepository: SearchableProductRepository,
+    private readonly synonymExpander: SynonymExpander = new SynonymExpander(),
+    private readonly searchRanker: SearchRanker = new SearchRanker()
   ) {}
 
   /**
@@ -21,6 +25,9 @@ export class SearchProduct {
    */
   async execute({ query, limit }: { query: string; limit?: number }) {
     const normalizedQuery = query.trim().toLowerCase();
-    return this.searchableProductRepository.searchProduct(normalizedQuery, limit);
+    const expandedQuery = this.synonymExpander.expand(normalizedQuery);
+    const products = await this.searchableProductRepository.searchProduct(expandedQuery, limit);
+
+    return this.searchRanker.rank(products);
   }
 }

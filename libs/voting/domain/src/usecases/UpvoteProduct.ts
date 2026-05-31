@@ -49,7 +49,9 @@ export class UpvoteProduct {
       );
 
     if (recentVoteCount >= 10) {
-      throw votingRateLimitExceeded();
+      throw votingRateLimitExceeded(
+        "1분 내 최대 10회까지 투표할 수 있습니다.",
+      );
     }
 
     try {

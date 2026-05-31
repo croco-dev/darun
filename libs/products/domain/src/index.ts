@@ -46,6 +46,8 @@ export type { RankedProductVoteRepository } from './repositories/RankedProductVo
 export { RankedProductVoteRepositoryToken } from './repositories/RankedProductVoteRepository';
 export type { ProductDescriptionGenerator } from './services/ProductDescriptionGenerator';
 export { ProductDescriptionGeneratorToken } from './services/ProductDescriptionGenerator';
+export { RankingCache } from './services/RankingCache';
+export { RankingService } from './services/RankingService';
 export { AddProductLink } from './usecases/AddProductLink';
 export { AddProductScreenshot } from './usecases/AddProductScreenshot';
 export { CreateProduct } from './usecases/CreateProduct';
