@@ -6,19 +6,33 @@ import { APIGatewayProxyEventV2, APIGatewayProxyHandlerV2, APIGatewayProxyStruct
 import { GraphQLContext } from '../GraphQLContext';
 
 export function createLambdaHandler(
-  middlewares: (() => void)[],
+  middlewares: (() => void | Promise<void>)[],
   server: ApolloServer,
   options?: LambdaHandlerOptions<
     handlers.RequestHandler<APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2>,
     GraphQLContext
   >
 ): APIGatewayProxyHandlerV2 {
-  for (const middleware of middlewares) {
-    middleware();
-  }
-  return startServerAndCreateLambdaHandler(
+  const results = middlewares.map(m => m());
+  const asyncResults = results.filter((r): r is Promise<void> => r instanceof Promise);
+
+  const handler = startServerAndCreateLambdaHandler(
     server,
     handlers.createAPIGatewayProxyEventV2RequestHandler(),
     options ?? {}
   );
+
+  if (asyncResults.length === 0) {
+    return handler;
+  }
+
+  let initialized = false;
+  const wrappedHandler: APIGatewayProxyHandlerV2 = async (event, context, callback) => {
+    if (!initialized) {
+      initialized = true;
+      await Promise.all(asyncResults);
+    }
+    return handler(event, context, callback) as APIGatewayProxyStructuredResultV2;
+  };
+  return wrappedHandler;
 }

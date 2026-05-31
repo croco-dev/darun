@@ -9,6 +9,7 @@ import { DATABASE_URL, IS_LOCAL, MONGODB_URI } from './environment';
 let postgresqlConnection: ReturnType<typeof postgres>;
 let drizzleInstance: ReturnType<typeof drizzle>;
 let mongooseConnection: mongoose.Mongoose;
+let mongooseConnectionPromise: Promise<void> | undefined;
 
 export function createMysqlConnection() {
   postgresqlConnection ??= postgres(DATABASE_URL, { prepare: false });
@@ -16,9 +17,11 @@ export function createMysqlConnection() {
   Container.set(DrizzleToken, drizzleInstance);
 }
 
-export function createMongodbConnection() {
-  if (!mongooseConnection) {
-    mongoose
+export function createMongodbConnection(): void | Promise<void> {
+  if (mongooseConnection) return;
+
+  if (!mongooseConnectionPromise) {
+    mongooseConnectionPromise = mongoose
       .connect(MONGODB_URI, {
         dbName: 'darun',
         autoIndex: IS_LOCAL,
@@ -32,4 +35,6 @@ export function createMongodbConnection() {
         throw error;
       });
   }
+
+  return mongooseConnectionPromise;
 }

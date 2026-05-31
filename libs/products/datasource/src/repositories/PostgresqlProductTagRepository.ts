@@ -46,8 +46,8 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
       if (deleteProductTags.length > 0) {
         await tx.delete(productTags).where(
           inArray(
-            productTags.id, // tagId로 삭제해야 함
-            deleteProductTags.map(pt => pt.id) // deleteProductTags에서 tagId 추출
+            productTags.id,
+            deleteProductTags.map(pt => pt.id)
           )
         );
       }
