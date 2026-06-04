@@ -33,7 +33,11 @@ type FormValues = {
 };
 
 export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLinkItemProps) {
-  const [updateLink, { loading }] = useUpdateProductLinkOnEditProductLinkItemMutation();
+  const [updateLink, { loading }] = useUpdateProductLinkOnEditProductLinkItemMutation({
+    onError: error => {
+      notifications.show({ message: error.message, color: 'red' });
+    },
+  });
 
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
@@ -54,23 +58,18 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
       return;
     }
 
-    try {
-      await updateLink({
-        variables: {
-          slug,
-          id: link.id,
-          input: {
-            title: values.title,
-            link: values.link,
-            displayLink: values.displayLink,
-            iconUrl: values.iconUrl,
-          },
+    await updateLink({
+      variables: {
+        slug,
+        id: link.id,
+        input: {
+          title: values.title,
+          link: values.link,
+          displayLink: values.displayLink,
+          iconUrl: values.iconUrl,
         },
-      });
-    } catch (error) {
-      console.error('mutation failed:', error);
-      throw error;
-    }
+      },
+    });
 
     notifications.show({ message: '수정되었습니다.', color: 'teal' });
     if (onSubmit) {

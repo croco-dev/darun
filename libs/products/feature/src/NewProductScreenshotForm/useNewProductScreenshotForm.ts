@@ -49,6 +49,9 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
         form.reset();
       }
     },
+    onError: error => {
+      notifications.show({ message: error.message, color: 'red' });
+    },
   });
 
   const submit = async (values: FormValues) => {
@@ -64,20 +67,15 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
       return;
     }
 
-    try {
-      await createProductFeature({
-        variables: {
-          slug: productSlug,
-          input: {
-            imageUrl: url,
-            imageAlt: values.imageAlt,
-          },
+    await createProductFeature({
+      variables: {
+        slug: productSlug,
+        input: {
+          imageUrl: url,
+          imageAlt: values.imageAlt,
         },
-      });
-    } catch (error) {
-      console.error('mutation failed:', error);
-      throw error;
-    }
+      },
+    });
   };
 
   return { form, children, submit };

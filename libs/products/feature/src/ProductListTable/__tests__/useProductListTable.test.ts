@@ -116,7 +116,7 @@ describe('useProductListTable', () => {
       expect(result.current.pageCount).toBe(151);
     });
 
-    it('should correctly accumulate pageCount on 3 rapid loadPreviousPage calls', () => {
+    it('should clamp pageCount to 1 on rapid loadPreviousPage calls', () => {
       const { result } = renderHook(() => useProductListTable());
 
       act(() => {
@@ -129,11 +129,26 @@ describe('useProductListTable', () => {
         result.current.loadPreviousPage();
       });
 
-      // 각각 50씩 감소: 1 → -49 → -99 → -149
-      expect(result.current.pageCount).toBe(-149);
+      // pageCount는 1 아래로 내려가지 않도록 clamp
+      expect(result.current.pageCount).toBe(1);
     });
 
     it('should handle mixed next/previous calls correctly', () => {
+      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+        data: {
+          ...defaultData,
+          allProducts: {
+            ...defaultData.allProducts,
+            pageInfo: {
+              ...defaultData.allProducts.pageInfo,
+              hasPreviousPage: true,
+              startCursor: 'cursor-start-page-1',
+            },
+          },
+        },
+        refetch: refetchMock,
+      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+
       const { result } = renderHook(() => useProductListTable());
 
       act(() => {
@@ -221,6 +236,21 @@ describe('useProductListTable', () => {
     });
 
     it('should use latest cursor for loadPreviousPage after data changes', () => {
+      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+        data: {
+          ...defaultData,
+          allProducts: {
+            ...defaultData.allProducts,
+            pageInfo: {
+              ...defaultData.allProducts.pageInfo,
+              hasPreviousPage: true,
+              startCursor: 'cursor-start-page-1',
+            },
+          },
+        },
+        refetch: refetchMock,
+      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+
       const { result, rerender } = renderHook(() => useProductListTable());
 
       act(() => {
@@ -234,6 +264,7 @@ describe('useProductListTable', () => {
             ...defaultData.allProducts,
             pageInfo: {
               ...defaultData.allProducts.pageInfo,
+              hasPreviousPage: true,
               startCursor: 'cursor-prev-page',
             },
           },
@@ -254,6 +285,97 @@ describe('useProductListTable', () => {
         last: 50,
         before: 'cursor-prev-page',
       });
+    });
+  });
+
+  describe('cursor contract — pagination refetch variables', () => {
+    it('should start with initial query { first: 50 }', () => {
+      renderHook(() => useProductListTable());
+
+      expect(vi.mocked(useAllProductsOnProductListTableSuspenseQuery)).toHaveBeenCalledWith(
+        expect.objectContaining({ variables: { first: 50 } })
+      );
+    });
+
+    it('should use correct next page refetch variables', () => {
+      const { result } = renderHook(() => useProductListTable());
+
+      act(() => {
+        result.current.loadNextPage();
+      });
+
+      expect(refetchMock).toHaveBeenCalledWith({
+        first: 50,
+        after: 'cursor-page-1',
+        last: undefined,
+        before: undefined,
+      });
+    });
+
+    it('should use correct previous page refetch variables when hasPreviousPage is true', () => {
+      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+        data: {
+          ...defaultData,
+          allProducts: {
+            ...defaultData.allProducts,
+            pageInfo: {
+              ...defaultData.allProducts.pageInfo,
+              hasPreviousPage: true,
+              startCursor: 'cursor-prev-start',
+            },
+          },
+        },
+        refetch: refetchMock,
+      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+
+      const { result } = renderHook(() => useProductListTable());
+
+      act(() => {
+        result.current.loadPreviousPage();
+      });
+
+      expect(refetchMock).toHaveBeenCalledWith({
+        first: undefined,
+        after: undefined,
+        last: 50,
+        before: 'cursor-prev-start',
+      });
+    });
+
+    it('should not refetch when hasPreviousPage is false', () => {
+      const { result } = renderHook(() => useProductListTable());
+
+      // default mock has hasPreviousPage: false
+      act(() => {
+        result.current.loadPreviousPage();
+      });
+
+      expect(refetchMock).not.toHaveBeenCalled();
+    });
+
+    it('should not refetch when startCursor is absent', () => {
+      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+        data: {
+          ...defaultData,
+          allProducts: {
+            ...defaultData.allProducts,
+            pageInfo: {
+              ...defaultData.allProducts.pageInfo,
+              hasPreviousPage: true,
+              startCursor: undefined,
+            },
+          },
+        },
+        refetch: refetchMock,
+      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+
+      const { result } = renderHook(() => useProductListTable());
+
+      act(() => {
+        result.current.loadPreviousPage();
+      });
+
+      expect(refetchMock).not.toHaveBeenCalled();
     });
   });
 

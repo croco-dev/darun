@@ -46,13 +46,17 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
     variables: { id: featureId },
   });
   const [updateFeature, { loading: mutationLoading }] = useUpdateProductFeatureOnEditProductFeatureItemMutation({
-    onCompleted: ({ updateProductFeature }) => {
+    onCompleted: async ({ updateProductFeature }) => {
       if (updateProductFeature) {
-        notifications.show({ message: '수정되었습니다.', color: 'teal' });
-        apolloClient.refetchQueries({
+        await apolloClient.refetchQueries({
           include: [TempProductBySlugOnProductFeatureTableDocument],
         });
+        notifications.show({ message: '수정되었습니다.', color: 'teal' });
+        onSubmit?.();
       }
+    },
+    onError: error => {
+      notifications.show({ message: error.message, color: 'red' });
     },
   });
 
@@ -87,25 +91,16 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
       return;
     }
 
-    try {
-      await updateFeature({
-        variables: {
-          featureId,
-          input: {
-            emoji: values.emoji,
-            name: values.name,
-            summary: values.summary,
-          },
+    await updateFeature({
+      variables: {
+        featureId,
+        input: {
+          emoji: values.emoji,
+          name: values.name,
+          summary: values.summary,
         },
-      });
-    } catch (error) {
-      console.error('mutation failed:', error);
-      throw error;
-    }
-
-    if (onSubmit) {
-      onSubmit();
-    }
+      },
+    });
   };
 
   return { loading: queryLoading || mutationLoading, form, submit };

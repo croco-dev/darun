@@ -51,7 +51,11 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
         form.setInitialValues({ description: editProduct.product.description ?? '' });
+        onSubmit?.();
       }
+    },
+    onError: error => {
+      notifications.show({ message: error.message, color: 'red' });
     },
   });
 
@@ -61,21 +65,14 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
       return;
     }
 
-    try {
-      await editDescription({
-        variables: {
-          slug,
-          input: {
-            description: values.description || '',
-          },
+    await editDescription({
+      variables: {
+        slug,
+        input: {
+          description: values.description || '',
         },
-      });
-    } catch (error) {
-      console.error('mutation failed:', error);
-      throw error;
-    }
-
-    onSubmit?.();
+      },
+    });
   };
 
   return {

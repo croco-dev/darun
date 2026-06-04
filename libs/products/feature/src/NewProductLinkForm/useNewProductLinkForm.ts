@@ -54,27 +54,25 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
         form.reset();
       }
     },
+    onError: error => {
+      notifications.show({ message: error.message, color: 'red' });
+    },
   });
 
   const submit = async (values: FormValues) => {
     if (!values.displayLink || !values.link || !values.title || !values.iconUrl) return;
 
-    try {
-      await addProductLink({
-        variables: {
-          slug: productSlug,
-          input: {
-            displayLink: values.displayLink,
-            iconUrl: values.iconUrl,
-            link: values.link,
-            title: values.title,
-          },
+    await addProductLink({
+      variables: {
+        slug: productSlug,
+        input: {
+          displayLink: values.displayLink,
+          iconUrl: values.iconUrl,
+          link: values.link,
+          title: values.title,
         },
-      });
-    } catch (error) {
-      console.error('mutation failed:', error);
-      throw error;
-    }
+      },
+    });
   };
 
   return { form, children, submit };

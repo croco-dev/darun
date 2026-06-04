@@ -57,7 +57,10 @@ export function useProductListTable() {
   };
 
   const loadPreviousPage = () => {
-    setPageCount(prev => prev - defaultViewCount);
+    if (!data?.allProducts.pageInfo.hasPreviousPage || !startCursorRef.current) {
+      return;
+    }
+    setPageCount(prev => Math.max(1, prev - defaultViewCount));
     refetch({
       first: undefined,
       after: undefined,

@@ -50,6 +50,9 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
         form.reset();
       }
     },
+    onError: error => {
+      notifications.show({ message: error.message, color: 'red' });
+    },
   });
 
   const pickEmoji = (emoji: { native: string }) => {
@@ -59,21 +62,16 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
   const submit = async (values: FormValues) => {
     if (!values.name || !values.emoji || !values.summary) return;
 
-    try {
-      await createProductFeature({
-        variables: {
-          input: {
-            productSlug,
-            name: values.name,
-            emoji: values.emoji,
-            summary: values.summary,
-          },
+    await createProductFeature({
+      variables: {
+        input: {
+          productSlug,
+          name: values.name,
+          emoji: values.emoji,
+          summary: values.summary,
         },
-      });
-    } catch (error) {
-      console.error('mutation failed:', error);
-      throw error;
-    }
+      },
+    });
   };
 
   return { form, children, submit, pickEmoji };

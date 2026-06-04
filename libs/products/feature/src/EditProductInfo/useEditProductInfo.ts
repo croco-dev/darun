@@ -58,7 +58,11 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
         form.reset();
+        onSubmit?.();
       }
+    },
+    onError: error => {
+      notifications.show({ message: error.message, color: 'red' });
     },
   });
 
@@ -67,21 +71,15 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
-    try {
-      await editInformation({
-        variables: {
-          slug,
-          input: {
-            name: values.name || undefined,
-            summary: values.summary || undefined,
-          },
+    await editInformation({
+      variables: {
+        slug,
+        input: {
+          name: values.name || undefined,
+          summary: values.summary || undefined,
         },
-      });
-    } catch (error) {
-      console.error('mutation failed:', error);
-      throw error;
-    }
-    onSubmit?.();
+      },
+    });
   };
 
   return { form, submit };

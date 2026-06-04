@@ -1,8 +1,9 @@
-import { useMutation } from '@apollo/client/react';
+import { type ApolloCache, type DocumentNode } from '@apollo/client';
+import { useMutation, type MutationHookOptions } from '@apollo/client/react';
+import { notifications } from '@mantine/notifications';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// ── Mock: @apollo/client ──────────────────────────────────────────
 vi.mock('@apollo/client/react', async importOriginal => {
   const actual = await importOriginal();
   return {
@@ -11,7 +12,6 @@ vi.mock('@apollo/client/react', async importOriginal => {
   };
 });
 
-// ── Mock: @mantine/form ──────────────────────────────────────────
 const mockForm = {
   reset: vi.fn(),
   getInputProps: vi.fn(() => ({ key: 'test-form-key', defaultValue: '' })),
@@ -22,12 +22,10 @@ vi.mock('@mantine/form', () => ({
   useForm: vi.fn(() => mockForm),
 }));
 
-// ── Mock: @mantine/notifications ─────────────────────────────────
 vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn() },
 }));
 
-// ── Import after mocks ───────────────────────────────────────────
 import { useEditProductLinkItem } from '../useEditProductLinkItem';
 
 describe('useEditProductLinkItem', () => {
@@ -42,38 +40,34 @@ describe('useEditProductLinkItem', () => {
       __typename: 'Link' as const,
     },
   };
+  type MockMutationOptions = MutationHookOptions<unknown, Record<string, unknown>, unknown, ApolloCache>;
   let mutateFn: ReturnType<typeof vi.fn>;
+  let mutationOptions: { onCompleted?: (data: unknown) => void; onError?: (e: Error) => void };
 
   beforeEach(() => {
     vi.clearAllMocks();
     mutateFn = vi.fn();
+    mutationOptions = {};
 
-    vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>);
+    vi.mocked(useMutation).mockImplementation(((_document?: DocumentNode, options?: MockMutationOptions) => {
+      mutationOptions = (options as { onCompleted?: (data: unknown) => void; onError?: (e: Error) => void }) || {};
+      return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
+    }) as typeof useMutation);
   });
 
-  it('should log error and rethrow when update mutation fails', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { result } = renderHook(() => useEditProductLinkItem(defaultProps));
+  it('should show error notification via onError when mutation fails', () => {
+    renderHook(() => useEditProductLinkItem(defaultProps));
 
-    mutateFn.mockRejectedValueOnce(new Error('Network error'));
+    act(() => {
+      mutationOptions.onError?.(new Error('Network error'));
+    });
 
-    await expect(
-      act(async () => {
-        await result.current.submit({
-          title: 'Updated',
-          link: 'https://example.com',
-          displayLink: 'Example',
-          iconUrl: 'https://example.com/icon.png',
-        });
-      })
-    ).rejects.toThrow('Network error');
-
-    expect(consoleSpy).toHaveBeenCalledWith('mutation failed:', expect.any(Error));
-    consoleSpy.mockRestore();
+    expect(notifications.show).toHaveBeenCalledWith({ message: 'Network error', color: 'red' });
   });
 
-  it('should call mutation with the correct variables on success', async () => {
-    const { result } = renderHook(() => useEditProductLinkItem(defaultProps));
+  it('should call mutation with the correct variables and show success notification and call onSubmit', async () => {
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() => useEditProductLinkItem({ ...defaultProps, onSubmit }));
 
     mutateFn.mockResolvedValueOnce({ data: { updateProductLink: { product: { id: 'product-1' } } } });
 
@@ -98,5 +92,24 @@ describe('useEditProductLinkItem', () => {
         },
       },
     });
+    expect(notifications.show).toHaveBeenCalledWith({ message: '수정되었습니다.', color: 'teal' });
+    expect(onSubmit).toHaveBeenCalled();
+  });
+
+  it('should throw when mutation fails (promise rejects)', async () => {
+    const { result } = renderHook(() => useEditProductLinkItem(defaultProps));
+
+    mutateFn.mockRejectedValueOnce(new Error('Network error'));
+
+    await expect(
+      act(async () => {
+        await result.current.submit({
+          title: 'Updated',
+          link: 'https://example.com',
+          displayLink: 'Example',
+          iconUrl: 'https://example.com/icon.png',
+        });
+      })
+    ).rejects.toThrow('Network error');
   });
 });
