@@ -31,7 +31,7 @@ export const AlternativeProductList = bind(
             key={alternative.id}
             className="flex items-center justify-between gap-4 rounded-[8px] border border-[rgba(0,0,0,0.12)] bg-white px-[18px] py-4 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.08)] hover:border-brand-300 transition-colors"
           >
-            <Link href={`/products/${alternative.slug}`} className="flex-1 min-w-0">
+            <Link href={`/products/${alternative.slug}?from=related`} className="flex-1 min-w-0">
               <ProductItem
                 name={alternative.name}
                 logoUrl={alternative.logoUrl}

@@ -92,7 +92,7 @@ const TrendingProductsView = ({ products, title, moreLabel, emptyLabel }: Trendi
                 key={product.id}
                 product={product}
                 rank={index + 1}
-                href={`/products/${product.slug}`}
+                href={`/products/${product.slug}?from=trending`}
                 source="trending"
               />
             ))}

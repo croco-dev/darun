@@ -1,5 +1,6 @@
 'use client';
 
+import { initPostHog } from '@darun/analytics-client';
 import { AuthProvider } from '@darun/provider-auth/client';
 import { MotionProvider } from '@darun/ui-layout';
 import { ApolloProvider } from '@darun/utils-apollo-client/client';
@@ -10,6 +11,7 @@ import { container } from './container';
 
 export const ClientRootProvider = ({ children }: { children: ReactNode }) => {
   const cookies = useCookies();
+  initPostHog();
   return (
     <MotionProvider>
       <ApolloProvider makeClient={() => container.apolloClient} cookies={cookies}>

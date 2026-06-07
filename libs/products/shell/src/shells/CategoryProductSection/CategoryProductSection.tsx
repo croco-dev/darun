@@ -68,7 +68,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
             {products.map(product => (
               <Link
                 key={product.id}
-                href={`/products/${product.slug}`}
+                href={`/products/${product.slug}?from=category`}
                 className="group h-full focus-visible:outline-none"
               >
                 <div className="relative flex h-full flex-col rounded-[20px] border border-surface-300 bg-white p-3.5 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:border-brand-300 group-hover:shadow-[0_22px_40px_-26px_rgba(53,63,174,0.28)] group-focus-visible:-translate-y-1 group-focus-visible:border-brand-300 group-focus-visible:shadow-[0_22px_40px_-26px_rgba(53,63,174,0.28)] group-focus-visible:ring-2 group-focus-visible:ring-brand-300/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none md:rounded-[24px] md:p-4">

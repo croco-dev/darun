@@ -25,7 +25,7 @@ export const ProductAlternativeList = bind(
           >
             <div className="flex w-full flex-col gap-3">
               <div className="flex flex-row justify-between items-center">
-                <Link href={`/products/${product.slug}`} className="flex-1 min-w-0">
+                <Link href={`/products/${product.slug}?from=related`} className="flex-1 min-w-0">
                   <ProductItem
                     name={product.name}
                     summary={product.summary}

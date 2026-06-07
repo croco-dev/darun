@@ -50,7 +50,7 @@ export const TrendingProductPreview = () => {
             key={product.id}
             product={product}
             rank={index + 1}
-            href={`/${locale}/products/${product.slug}`}
+            href={`/${locale}/products/${product.slug}?from=trending`}
             source="search-empty"
           />
         ))}
