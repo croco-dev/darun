@@ -1,4 +1,5 @@
 export { ProductCard } from './ProductCard';
+export { CompareButton } from './CompareButton';
 export { ProductInformation } from './ProductInformation';
 export { ProductPhotos } from './ProductPhotos';
 export { ProductDescription } from './ProductDescription';

@@ -7,3 +7,4 @@ export {
   type EmptySearchStripeClickedPayload,
   type RelatedProductClickedPayload,
 } from './events';
+export { ProductDetailViewTracker } from './ProductDetailViewTracker';

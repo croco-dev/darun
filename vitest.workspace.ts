@@ -28,7 +28,7 @@ export default defineWorkspace({
             'libs/*/datasource/src/**/*.test.ts',
             'libs/*/feature/src/**/*.test.ts',
             'libs/shared/**/src/**/*.test.ts',
-            'libs/*/shell/src/**/*.test.ts',
+            'libs/*/shell/src/**/*.test.ts*',
             'libs/*/service/src/**/*.test.ts',
           ],
         },

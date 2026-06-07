@@ -1,3 +1,4 @@
+import { ProductDetailViewTracker } from '@darun/analytics-client';
 import {
   ProductAlternativeSection,
   ProductDescriptionSection,
@@ -14,6 +15,7 @@ import { Layout } from '@darun/ui-layout';
 
 export const ProductDetailPage = ({ params: { slug } }: { params: { slug: string } }) => (
   <Layout>
+    <ProductDetailViewTracker productSlug={slug} />
     <main className="flex w-full flex-col">
       <div className="mb-3 flex flex-col gap-0.5">
         <ContentArea>

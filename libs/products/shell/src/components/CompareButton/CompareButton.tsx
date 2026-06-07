@@ -17,8 +17,12 @@ export const CompareButton = ({ slug }: CompareButtonProps) => {
 
   const getStoredList = (): string[] => {
     if (typeof window === 'undefined') return [];
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
   };
 
   const [compareList, setCompareList] = useState<string[]>(getStoredList);

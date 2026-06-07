@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     passWithNoTests: true,
-    include: ['src/__tests__/**/*.test.ts'],
+    include: ['src/__tests__/**/*.test.ts', 'src/**/*.test.tsx'],
     coverage: {
       provider: 'v8',
     },

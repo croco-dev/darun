@@ -8,6 +8,7 @@ import { ProductCard, ProductItem } from '@darun/products-shell';
 import { Link, useNavigate } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 import { useSearchProductList } from './useSearchProductList';
 
 const POPULAR_QUERIES: Record<string, string[]> = {
@@ -78,6 +79,12 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
   const navigate = useNavigate();
   const searchParams = useSearchParams();
   const query = searchParams.get('query')?.trim() ?? '';
+
+  useEffect(() => {
+    if (!query || products.length === 0) return;
+    track(AnalyticsEvents.SEARCH_PERFORMED, { query, resultCount: products.length });
+  }, [query, products]);
+
   const popularQueries = POPULAR_QUERIES[locale] ?? POPULAR_QUERIES.ko;
   const { data: categoriesData } = useSuspenseQuery(CATEGORIES_QUERY, {
     variables: { first: 4, locale },
@@ -176,7 +183,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
   return (
     <div className="flex flex-col gap-5">
       {products.map(product => (
-        <Link href={`/products/${product.slug}`} key={product.id} data-testid="search-card">
+        <Link href={`/products/${product.slug}?from=search`} key={product.id} data-testid="search-card">
           <div className="bg-white rounded-[8px] border border-[rgba(0,0,0,0.12)] px-[18px] py-4 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.04)] transition-all duration-200 ease-in-out hover:border-[rgba(0,0,0,0.14)] hover:shadow-[0px_4px_8px_2px_rgba(0,0,0,0.08)]">
             <ProductItem
               name={product.name}
