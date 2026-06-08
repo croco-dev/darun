@@ -36,7 +36,10 @@ describe('GetAlternativeProducts', () => {
           createProduct('auto-4', ['cat-1']),
         ]),
     };
-    const tagRepository = { findOneByProductId: vi.fn().mockResolvedValue(null) };
+    const tagRepository = {
+      findOneByProductId: vi.fn().mockResolvedValue(null),
+      findByProductIds: vi.fn().mockResolvedValue([]),
+    };
 
     const result = await new GetAlternativeProducts(
       alternativeRepository,
@@ -78,6 +81,14 @@ describe('GetAlternativeProducts', () => {
 
         return tagsByProductId.get(productId) ?? null;
       }),
+      findByProductIds: vi.fn().mockImplementation(async (ids: readonly string[]) => {
+        const tagsByProductId = new Map([
+          ['category-1', new ProductTag({ productId: 'category-1', tags: [createTag('ai')] })],
+          ['tag-only', new ProductTag({ productId: 'tag-only', tags: [createTag('ai'), createTag('crm')] })],
+        ]);
+
+        return ids.map(id => tagsByProductId.get(id)).filter(Boolean) as ProductTag[];
+      }),
     };
 
     const result = await new GetAlternativeProducts(
@@ -90,5 +101,66 @@ describe('GetAlternativeProducts', () => {
       'category-2',
       'tag-only',
     ]);
+  });
+
+  it('batches tag lookup into a single call', async () => {
+    const alternativeRepository = {
+      findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+      create: vi.fn<AlternativeProductRepository['create']>(),
+      deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
+      createMany: vi.fn<AlternativeProductRepository['createMany']>(),
+    } satisfies AlternativeProductRepository;
+    const productRepository = {
+      findPublishedOneById: vi.fn().mockResolvedValue(createProduct('prod-1', ['cat-1'])),
+      findTopNSortByPublishedAtDesc: vi
+        .fn()
+        .mockResolvedValue([createProduct('auto-1'), createProduct('auto-2'), createProduct('auto-3')]),
+      findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
+    };
+    const tagRepository = {
+      findOneByProductId: vi.fn().mockResolvedValue(new ProductTag({ productId: 'prod-1', tags: [createTag('ai')] })),
+      findByProductIds: vi.fn().mockImplementation(async (ids: readonly string[]) => {
+        return ids.map(id => new ProductTag({ productId: id, tags: [createTag('ai')] }));
+      }),
+    };
+
+    await new GetAlternativeProducts(
+      alternativeRepository,
+      new AutoRecommender(productRepository, tagRepository)
+    ).execute({ productId: 'prod-1' });
+
+    expect(tagRepository.findByProductIds).toHaveBeenCalledTimes(1);
+    expect(tagRepository.findByProductIds).toHaveBeenCalledWith(['auto-1', 'auto-2', 'auto-3']);
+  });
+
+  it('deduplicates products appearing in multiple categories', async () => {
+    const alternativeRepository = {
+      findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+      create: vi.fn<AlternativeProductRepository['create']>(),
+      deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
+      createMany: vi.fn<AlternativeProductRepository['createMany']>(),
+    } satisfies AlternativeProductRepository;
+    const productRepository = {
+      findPublishedOneById: vi.fn().mockResolvedValue(createProduct('prod-1', ['cat-1', 'cat-2'])),
+      findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
+      findPublishedByCategoryId: vi.fn().mockImplementation(async (categoryId: string) => {
+        if (categoryId === 'cat-1') {
+          return [createProduct('dup-1', ['cat-1']), createProduct('dup-2', ['cat-1'])];
+        }
+        return [createProduct('dup-1', ['cat-2']), createProduct('dup-3', ['cat-2'])];
+      }),
+    };
+    const tagRepository = {
+      findOneByProductId: vi.fn().mockResolvedValue(null),
+      findByProductIds: vi.fn().mockResolvedValue([]),
+    };
+
+    const result = await new GetAlternativeProducts(
+      alternativeRepository,
+      new AutoRecommender(productRepository, tagRepository)
+    ).execute({ productId: 'prod-1' });
+
+    expect(result.map(alternative => alternative.alternativeProductId)).toEqual(['dup-1', 'dup-2', 'dup-3']);
+    expect(productRepository.findPublishedByCategoryId).toHaveBeenCalledTimes(2);
   });
 });

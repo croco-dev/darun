@@ -18,6 +18,9 @@ export class IndexProduct {
     description,
     tags,
     category,
+    votes,
+    createdAt,
+    publishedAt,
   }: {
     id: string;
     name: string;
@@ -26,10 +29,13 @@ export class IndexProduct {
     description?: string;
     tags?: string[];
     category?: string;
+    votes?: number;
+    createdAt?: Date;
+    publishedAt?: Date;
   }) {
     return this.searchableProductRepository.index(
       id,
-      new SearchableProduct({ name, slug, summary, description, tags, category }),
+      new SearchableProduct({ name, slug, summary, description, tags, category, votes, createdAt, publishedAt }),
     );
   }
 }

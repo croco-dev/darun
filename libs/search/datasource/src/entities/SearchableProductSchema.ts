@@ -31,6 +31,15 @@ export class SearchableProductSchema {
 
   @prop({ default: '' })
   public category: string;
+
+  @prop({ default: 0 })
+  public votes: number;
+
+  @prop()
+  public createdAt?: Date;
+
+  @prop()
+  public publishedAt?: Date;
 }
 
 export const SearchableProductModel = getModelForClass(SearchableProductSchema);

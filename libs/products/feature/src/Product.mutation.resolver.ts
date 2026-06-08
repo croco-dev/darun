@@ -78,6 +78,7 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
       slug: product.slug,
       summary: product.summary,
       description: product.description,
+      publishedAt: product.publishedAt,
     });
 
     return {

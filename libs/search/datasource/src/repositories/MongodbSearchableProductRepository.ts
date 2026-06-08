@@ -6,7 +6,8 @@ import { SearchableProductModel } from '../entities/SearchableProductSchema';
 
 @Service(SearchableProductRepositoryToken)
 export class MongodbSearchableProductRepository implements SearchableProductRepository {
-  async searchProduct(query: string, limit = 20): Promise<SearchableProduct[]> {
+  async searchProduct(query: string, limit?: number, candidateLimit?: number): Promise<SearchableProduct[]> {
+    const effectiveLimit = candidateLimit ?? limit ?? 20;
     return SearchableProductModel.aggregate<SearchableProductSchema & { readonly searchScore?: number }>([
       {
         $search: {
@@ -49,7 +50,7 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
         },
       },
       { $addFields: { searchScore: { $meta: 'searchScore' } } },
-      { $limit: limit },
+      { $limit: effectiveLimit },
     ]).then(products =>
       products.map(product => ({ ...product, id: product.productId, searchScore: product.searchScore }))
     );
@@ -66,6 +67,9 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
         description: product.description,
         tags: product.tags,
         category: product.category,
+        votes: product.votes ?? 0,
+        createdAt: product.createdAt,
+        publishedAt: product.publishedAt,
       },
       {
         upsert: true,

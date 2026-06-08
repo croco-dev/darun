@@ -131,6 +131,137 @@ describe('GetRankedProducts', () => {
     expect(result).toEqual([product]);
     expect(voteRepository.findTopNByVoteCount).toHaveBeenCalledWith(2);
   });
+
+  it('expands candidate collection when unpublished products cause initial shortage', async () => {
+    const published = [createProduct({ id: 'published-1' }), createProduct({ id: 'published-2' })];
+    const allVotes = [
+      { targetId: 'unpublished-1', count: 100 },
+      { targetId: 'unpublished-2', count: 90 },
+      { targetId: 'unpublished-3', count: 80 },
+      { targetId: published[0].id, count: 50 },
+      { targetId: published[1].id, count: 40 },
+    ];
+
+    const voteRepository = {
+      findTopNByVoteCount: vi.fn().mockImplementation(async (n: number) => allVotes.slice(0, n)),
+    } satisfies Pick<RankedProductVoteRepository, 'findTopNByVoteCount'>;
+
+    const allProducts = new Map<string, Product | null>([
+      ['unpublished-1', null],
+      ['unpublished-2', null],
+      ['unpublished-3', null],
+      [published[0].id, published[0]],
+      [published[1].id, published[1]],
+    ]);
+
+    const productRepository = {
+      findPublishedByIds: vi
+        .fn()
+        .mockImplementation(async (ids: string[]) => ids.map(id => allProducts.get(id) ?? null)),
+      findPublishedOneById: vi.fn().mockResolvedValue(null),
+      findOneById: vi.fn().mockResolvedValue(null),
+      findOneBySlug: vi.fn().mockResolvedValue(null),
+      findPublishedOneBySlug: vi.fn().mockResolvedValue(null),
+      findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
+      findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
+      findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
+      findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
+      updateById: vi.fn(),
+      countPublishedAll: vi.fn().mockResolvedValue(0),
+      countAll: vi.fn().mockResolvedValue(0),
+      insert: vi.fn().mockResolvedValue(null),
+    } satisfies ProductRepository;
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({
+      limit: 2,
+    });
+
+    expect(result.map(p => p.id)).toEqual(['published-1', 'published-2']);
+    expect(voteRepository.findTopNByVoteCount).toHaveBeenCalledTimes(2);
+    expect(voteRepository.findTopNByVoteCount).toHaveBeenNthCalledWith(1, 4);
+    expect(voteRepository.findTopNByVoteCount).toHaveBeenNthCalledWith(2, 6);
+  });
+
+  it('stops at hard cap when not enough published products exist', async () => {
+    const allVotes = Array.from({ length: 29 }, (_, i) => ({ targetId: `unpublished-${i}`, count: 100 - i }));
+    const published = createProduct({
+      id: 'published-1',
+      publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR),
+    });
+    allVotes.splice(4, 0, { targetId: published.id, count: 96 });
+    allVotes.sort((a, b) => b.count - a.count);
+
+    const voteRepository = {
+      findTopNByVoteCount: vi.fn().mockImplementation(async (n: number) => allVotes.slice(0, n)),
+    } satisfies Pick<RankedProductVoteRepository, 'findTopNByVoteCount'>;
+
+    const allProducts = new Map<string, Product | null>(
+      allVotes.map(v => [v.targetId, v.targetId === published.id ? published : null])
+    );
+
+    const productRepository = {
+      findPublishedByIds: vi
+        .fn()
+        .mockImplementation(async (ids: string[]) => ids.map(id => allProducts.get(id) ?? null)),
+      findPublishedOneById: vi.fn().mockResolvedValue(null),
+      findOneById: vi.fn().mockResolvedValue(null),
+      findOneBySlug: vi.fn().mockResolvedValue(null),
+      findPublishedOneBySlug: vi.fn().mockResolvedValue(null),
+      findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
+      findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
+      findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
+      findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
+      updateById: vi.fn(),
+      countPublishedAll: vi.fn().mockResolvedValue(0),
+      countAll: vi.fn().mockResolvedValue(0),
+      insert: vi.fn().mockResolvedValue(null),
+    } satisfies ProductRepository;
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({
+      limit: 5,
+    });
+
+    expect(result.map(p => p.id)).toEqual(['published-1']);
+    expect(voteRepository.findTopNByVoteCount).toHaveBeenCalledTimes(4);
+    expect(voteRepository.findTopNByVoteCount).toHaveBeenNthCalledWith(1, 10);
+    expect(voteRepository.findTopNByVoteCount).toHaveBeenNthCalledWith(2, 15);
+    expect(voteRepository.findTopNByVoteCount).toHaveBeenNthCalledWith(3, 20);
+    expect(voteRepository.findTopNByVoteCount).toHaveBeenNthCalledWith(4, 25);
+  });
+
+  it('breaks ties deterministically by publishedAt desc then id asc', async () => {
+    const older = createProduct({ id: 'b-older', publishedAt: new Date(now.getTime() - 2 * MILLISECONDS_PER_HOUR) });
+    const newer = createProduct({ id: 'a-newer', publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR) });
+
+    const { voteRepository, productRepository } = createRepository({
+      votes: [
+        { targetId: newer.id, count: 10 },
+        { targetId: older.id, count: 10 },
+      ],
+      products: [older, newer],
+    });
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+    expect(result.map(p => p.id)).toEqual(['a-newer', 'b-older']);
+  });
+
+  it('breaks ties by id asc when scores and publishedAt are equal', async () => {
+    const p1 = createProduct({ id: 'p-b' });
+    const p2 = createProduct({ id: 'p-a' });
+
+    const { voteRepository, productRepository } = createRepository({
+      votes: [
+        { targetId: p1.id, count: 5 },
+        { targetId: p2.id, count: 5 },
+      ],
+      products: [p1, p2],
+    });
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+    expect(result.map(p => p.id)).toEqual(['p-a', 'p-b']);
+  });
 });
 
 describe('RankingService', () => {
@@ -146,27 +277,64 @@ describe('RankingCache', () => {
   it('returns cached scores before the TTL expires', () => {
     const cache = new RankingCache(() => 1000);
 
-    cache.set('p1', 12);
+    cache.set('p1', 5, 10, 12);
 
-    expect(cache.get('p1')).toBe(12);
+    expect(cache.get('p1', 5, 10)).toBe(12);
   });
 
   it('returns undefined after the TTL expires', () => {
     let now = 1000;
     const cache = new RankingCache(() => now);
 
-    cache.set('p1', 12);
+    cache.set('p1', 5, 10, 12);
     now += 300_001;
 
-    expect(cache.get('p1')).toBeUndefined();
+    expect(cache.get('p1', 5, 10)).toBeUndefined();
   });
 
   it('invalidates scores by product id', () => {
     const cache = new RankingCache(() => 1000);
 
-    cache.set('p1', 12);
+    cache.set('p1', 5, 10, 12);
     cache.invalidate('p1');
 
-    expect(cache.get('p1')).toBeUndefined();
+    expect(cache.get('p1', 5, 10)).toBeUndefined();
+  });
+
+  it('does not reuse cached score when vote count changes for the same product', () => {
+    const cache = new RankingCache(() => 1000);
+
+    cache.set('p1', 5, 10, 12);
+
+    expect(cache.get('p1', 6, 10)).toBeUndefined();
+  });
+
+  it('does not reuse cached score when age bucket changes for the same product', () => {
+    const cache = new RankingCache(() => 1000);
+
+    cache.set('p1', 5, 10, 12);
+
+    expect(cache.get('p1', 5, 11)).toBeUndefined();
+  });
+
+  it('invalidates all composite keys for the same product id', () => {
+    const cache = new RankingCache(() => 1000);
+
+    cache.set('p1', 5, 10, 12);
+    cache.set('p1', 6, 11, 13);
+    cache.invalidate('p1');
+
+    expect(cache.get('p1', 5, 10)).toBeUndefined();
+    expect(cache.get('p1', 6, 11)).toBeUndefined();
+  });
+
+  it('preserves other product entries when invalidating one product', () => {
+    const cache = new RankingCache(() => 1000);
+
+    cache.set('p1', 5, 10, 12);
+    cache.set('p2', 3, 8, 9);
+    cache.invalidate('p1');
+
+    expect(cache.get('p2', 3, 8)).toBe(9);
   });
 });

@@ -129,6 +129,7 @@ export class ProductCoreMutationResolver {
           slug: updatedProduct.slug,
           summary: updatedProduct.summary,
           description: updatedProduct.description,
+          publishedAt: updatedProduct.publishedAt,
         });
       });
     }

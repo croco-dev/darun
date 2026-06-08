@@ -21,7 +21,7 @@ export class AutoRecommender {
     @Inject(ProductRepositoryToken)
     private readonly productRepository: ProductReader,
     @Inject(ProductTagRepositoryToken)
-    private readonly productTagRepository: Pick<ProductTagRepository, 'findOneByProductId'>
+    private readonly productTagRepository: Pick<ProductTagRepository, 'findOneByProductId' | 'findByProductIds'>
   ) {}
 
   async recommend({
@@ -102,13 +102,25 @@ export class AutoRecommender {
     }
 
     const products = await this.productRepository.findTopNSortByPublishedAtDesc(50);
+    const candidateIds = products
+      .filter(candidateProduct => !excludedIds.has(candidateProduct.id))
+      .map(candidateProduct => candidateProduct.id);
+
+    const productTags = await this.productTagRepository.findByProductIds(candidateIds);
+    console.info({
+      event: 'recommendation.batch_tags_loaded',
+      batchTagLookupSize: candidateIds.length,
+    });
+
+    const tagsByProductId = new Map(productTags.map(pt => [pt.productId, pt.tags]));
+
     for (const candidateProduct of products) {
       if (excludedIds.has(candidateProduct.id)) {
         continue;
       }
 
-      const productTag = await this.productTagRepository.findOneByProductId(candidateProduct.id);
-      const tagMatches = productTag?.tags.filter(tag => targetTagNames.has(tag.name)).length ?? 0;
+      const tags = tagsByProductId.get(candidateProduct.id) ?? [];
+      const tagMatches = tags.filter(tag => targetTagNames.has(tag.name)).length;
       if (!tagMatches) {
         continue;
       }

@@ -74,6 +74,28 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
       : null;
   }
 
+  async findByProductIds(productIds: readonly string[]): Promise<readonly ProductTag[]> {
+    if (productIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.db
+      .select()
+      .from(productTags)
+      .innerJoin(tags, eq(productTags.tagId, tags.id))
+      .where(inArray(productTags.productId, [...productIds]));
+
+    const tagsByProductId = new Map<string, Tag[]>();
+    for (const row of rows) {
+      const pid = row.product_tags.productId;
+      const list = tagsByProductId.get(pid) ?? [];
+      list.push(this.toTag(row.tags));
+      tagsByProductId.set(pid, list);
+    }
+
+    return [...tagsByProductId.entries()].map(([productId, tags]) => this.mapper(productId, tags));
+  }
+
   private mapper(productId: string, tags: Tag[]): ProductTag {
     return new ProductTag({
       productId,

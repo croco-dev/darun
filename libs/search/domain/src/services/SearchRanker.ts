@@ -28,14 +28,46 @@ export class SearchRanker {
   ) {}
 
   rank(products: readonly RankableProduct[]): SearchableProduct[] {
-    return [...products].sort((a, b) => this.finalScore(b) - this.finalScore(a));
+    if (products.length === 0) {
+      return [];
+    }
+
+    const start = performance.now();
+
+    const searchScores = products.map(p => p.searchScore ?? 0);
+    const rankingScores = products.map(p => this.rankingScore(p));
+
+    const normalizedSearchScores = this.minMaxNormalize(searchScores);
+    const normalizedRankingScores = this.minMaxNormalize(rankingScores);
+
+    const result = [...products]
+      .map((product, i) => ({
+        product,
+        score: normalizedSearchScores[i] * SEARCH_SCORE_WEIGHT + normalizedRankingScores[i] * RANKING_SCORE_WEIGHT,
+      }))
+      .sort((a, b) => b.score - a.score)
+      .map(({ product }) => product);
+
+    const rerankLatencyMs = performance.now() - start;
+    console.info({
+      event: 'search.reranked',
+      rerankCandidateCount: products.length,
+      rerankLatencyMs: Math.round(rerankLatencyMs),
+    });
+
+    return result;
   }
 
-  private finalScore(product: RankableProduct): number {
-    const searchScore = product.searchScore ?? 0;
-    const rankingScore = this.rankingScore(product);
+  private minMaxNormalize(values: number[]): number[] {
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
 
-    return searchScore * SEARCH_SCORE_WEIGHT + rankingScore * RANKING_SCORE_WEIGHT;
+    if (range === 0) {
+      return values.map(() => 0.5);
+    }
+
+    return values.map(v => (v - min) / range);
   }
 
   private rankingScore(product: RankableProduct): number {

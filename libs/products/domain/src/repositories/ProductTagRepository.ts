@@ -4,6 +4,7 @@ import { ProductTag } from '../entities/ProductTag';
 export interface ProductTagRepository {
   upsert(productTag: ProductTag): Promise<ProductTag>;
   findOneByProductId(productId: string): Promise<ProductTag | null>;
+  findByProductIds(productIds: readonly string[]): Promise<readonly ProductTag[]>;
 }
 
 export const ProductTagRepositoryToken = new Token<ProductTagRepository>('ProductTagRepository');

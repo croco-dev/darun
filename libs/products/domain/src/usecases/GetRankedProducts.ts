@@ -9,6 +9,11 @@ import { RankingService } from '../services/RankingService';
 
 const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
 
+const INITIAL_RANKING_CANDIDATE_MULTIPLIER = 2;
+const RANKING_CANDIDATE_MULTIPLIER_STEP = 1;
+const MAX_RANKING_CANDIDATE_MULTIPLIER = 5;
+const MAX_RANKING_CANDIDATES = 250;
+
 @Service()
 export class GetRankedProducts {
   constructor(
@@ -22,41 +27,104 @@ export class GetRankedProducts {
   ) {}
 
   async execute({ limit }: { limit: number }): Promise<Product[]> {
-    let results = await this.fetchWithMultiplier(limit, 2);
-    if (results.length < limit) {
-      results = await this.fetchWithMultiplier(limit, 3);
+    const voteCountByProductId = new Map<string, number>();
+    const seenProductIds = new Set<string>();
+    const publishedProducts: Product[] = [];
+
+    let multiplier = INITIAL_RANKING_CANDIDATE_MULTIPLIER;
+
+    while (multiplier <= MAX_RANKING_CANDIDATE_MULTIPLIER) {
+      const fetchSize = Math.min(limit * multiplier, MAX_RANKING_CANDIDATES);
+
+      const votes = await this.voteRepository.findTopNByVoteCount(fetchSize);
+      if (votes.length === 0) {
+        break;
+      }
+
+      for (const vote of votes) {
+        voteCountByProductId.set(vote.targetId, vote.count);
+      }
+
+      const newIds = votes.map(vote => vote.targetId).filter(id => !seenProductIds.has(id));
+      if (newIds.length === 0) {
+        break;
+      }
+
+      const products = await this.productRepository.findPublishedByIds(newIds);
+
+      for (let i = 0; i < products.length; i++) {
+        seenProductIds.add(newIds[i]);
+        const product = products[i];
+        if (product !== null) {
+          publishedProducts.push(product);
+        }
+      }
+
+      if (publishedProducts.length >= limit) {
+        break;
+      }
+
+      if (votes.length < fetchSize) {
+        break;
+      }
+
+      const nextMultiplier = multiplier + RANKING_CANDIDATE_MULTIPLIER_STEP;
+      const nextFetchSize = Math.min(limit * nextMultiplier, MAX_RANKING_CANDIDATES);
+      if (nextFetchSize <= fetchSize) {
+        break;
+      }
+
+      multiplier = nextMultiplier;
     }
 
-    return results.slice(0, limit);
-  }
-
-  private async fetchWithMultiplier(limit: number, multiplier: number): Promise<Product[]> {
-    const votes = await this.voteRepository.findTopNByVoteCount(limit * multiplier);
-    if (votes.length === 0) {
+    if (publishedProducts.length === 0) {
       return [];
     }
 
-    const voteCountByProductId = new Map(votes.map(vote => [vote.targetId, vote.count]));
-    const products = await this.productRepository.findPublishedByIds(votes.map(vote => vote.targetId));
+    const candidateCount = seenProductIds.size;
+    const publishedCandidateCount = publishedProducts.length;
+    const filteredUnpublishedCount = candidateCount - publishedCandidateCount;
+    console.info({
+      event: 'ranking.candidates_collected',
+      candidateCount,
+      publishedCandidateCount,
+      filteredUnpublishedCount,
+    });
 
-    return products
-      .filter((product): product is Product => product !== null)
-      .sort((a, b) => this.score(b, voteCountByProductId) - this.score(a, voteCountByProductId));
+    return publishedProducts
+      .sort((a, b) => {
+        const scoreDiff = this.score(b, voteCountByProductId) - this.score(a, voteCountByProductId);
+        if (scoreDiff !== 0) {
+          return scoreDiff;
+        }
+
+        const now = this.getNow();
+        const aPublished = a.publishedAt ?? now;
+        const bPublished = b.publishedAt ?? now;
+        const publishedDiff = bPublished.getTime() - aPublished.getTime();
+        if (publishedDiff !== 0) {
+          return publishedDiff;
+        }
+
+        return a.id.localeCompare(b.id);
+      })
+      .slice(0, limit);
   }
 
   private score(product: Product, voteCountByProductId: ReadonlyMap<string, number>): number {
     const votes = voteCountByProductId.get(product.id) ?? 0;
-    const cachedScore = this.rankingCache.get(product.id);
+    const now = this.getNow();
+    const publishedAt = product.publishedAt ?? now;
+    const ageHours = Math.max(0, now.getTime() - publishedAt.getTime()) / MILLISECONDS_PER_HOUR;
+    const ageBucket = Math.floor(ageHours * 12);
+
+    const cachedScore = this.rankingCache.get(product.id, votes, ageBucket);
     if (cachedScore !== undefined) {
       return cachedScore;
     }
 
-    const now = this.getNow();
-    const publishedAt = product.publishedAt ?? now;
-    const ageHours = Math.max(0, now.getTime() - publishedAt.getTime()) / MILLISECONDS_PER_HOUR;
     const score = this.rankingService.calculateScore(votes, ageHours, publishedAt);
-
-    this.rankingCache.set(product.id, score);
+    this.rankingCache.set(product.id, votes, ageBucket, score);
 
     return score;
   }

@@ -4,6 +4,9 @@ import { SearchableProductRepositoryToken } from '../repositories/SearchableProd
 import { SearchRanker } from '../services/SearchRanker';
 import { SynonymExpander } from '../services/SynonymExpander';
 
+const SEARCH_CANDIDATE_MULTIPLIER = 3;
+const MAX_SEARCH_CANDIDATES = 100;
+
 @Service()
 export class SearchProduct {
   constructor(
@@ -26,8 +29,11 @@ export class SearchProduct {
   async execute({ query, limit }: { query: string; limit?: number }) {
     const normalizedQuery = query.trim().toLowerCase();
     const expandedQuery = this.synonymExpander.expand(normalizedQuery);
-    const products = await this.searchableProductRepository.searchProduct(expandedQuery, limit);
+    const candidateLimit =
+      limit !== undefined ? Math.min(limit * SEARCH_CANDIDATE_MULTIPLIER, MAX_SEARCH_CANDIDATES) : undefined;
+    const products = await this.searchableProductRepository.searchProduct(expandedQuery, limit, candidateLimit);
 
-    return this.searchRanker.rank(products);
+    const ranked = this.searchRanker.rank(products);
+    return limit !== undefined ? ranked.slice(0, limit) : ranked;
   }
 }

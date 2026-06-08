@@ -112,6 +112,7 @@ const createProductLinkRepository = (): ProductLinkRepository => ({
 const createProductTagRepository = (): ProductTagRepository => ({
   upsert: vi.fn<ProductTagRepository['upsert']>(),
   findOneByProductId: vi.fn<ProductTagRepository['findOneByProductId']>().mockResolvedValue(null),
+  findByProductIds: vi.fn<ProductTagRepository['findByProductIds']>().mockResolvedValue([]),
 });
 
 const createProductScreenshotRepository = (): ProductScreenshotRepository => ({

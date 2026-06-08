@@ -7,6 +7,9 @@ export class SearchableProduct {
   public tags: string[] = [];
   public category: string = '';
   public searchScore?: number;
+  public votes?: number;
+  public createdAt?: Date;
+  public publishedAt?: Date;
 
   constructor({
     id,
@@ -17,6 +20,9 @@ export class SearchableProduct {
     tags = [],
     category = '',
     searchScore,
+    votes,
+    createdAt,
+    publishedAt,
   }: {
     id?: string;
     slug: string;
@@ -26,6 +32,9 @@ export class SearchableProduct {
     tags?: string[];
     category?: string;
     searchScore?: number;
+    votes?: number;
+    createdAt?: Date;
+    publishedAt?: Date;
   }) {
     this.slug = slug;
     this.name = name;
@@ -34,6 +43,9 @@ export class SearchableProduct {
     this.tags = tags;
     this.category = category;
     this.searchScore = searchScore;
+    this.votes = votes;
+    this.createdAt = createdAt;
+    this.publishedAt = publishedAt;
 
     if (id) {
       this.id = id;

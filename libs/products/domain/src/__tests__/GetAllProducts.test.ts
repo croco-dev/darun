@@ -31,10 +31,36 @@ const productRepository = (products: Product[]) =>
   }) satisfies ProductRepository;
 
 const relatedRepositories = () => ({
-  links: { insert: vi.fn(), findManyByProductId: vi.fn(async productId => [new ProductLink({ id: `link-${productId}`, productId, title: '', link: '', displayLink: '', iconUrl: '' })]), updateById: vi.fn() } satisfies ProductLinkRepository,
-  tags: { upsert: vi.fn(), findOneByProductId: vi.fn(async productId => new ProductTag({ productId, tags: [new Tag({ id: `tag-${productId}`, name: '' })] })) } satisfies ProductTagRepository,
-  screenshots: { findManyByProductIdSortByPriorityDesc: vi.fn(async productId => [{ id: `screenshot-${productId}`, productId, imageUrl: '', imageAlt: '' }]), findById: vi.fn(), insert: vi.fn(), deleteById: vi.fn() } satisfies ProductScreenshotRepository,
-  features: { updateById: vi.fn(), findOneById: vi.fn(), findManyByProductId: vi.fn(async productId => [new ProductFeature({ id: `feature-${productId}`, productId, name: '', emoji: '' })]), insert: vi.fn() } satisfies ProductFeatureRepository,
+  links: {
+    insert: vi.fn(),
+    findManyByProductId: vi.fn(async productId => [
+      new ProductLink({ id: `link-${productId}`, productId, title: '', link: '', displayLink: '', iconUrl: '' }),
+    ]),
+    updateById: vi.fn(),
+  } satisfies ProductLinkRepository,
+  tags: {
+    upsert: vi.fn(),
+    findOneByProductId: vi.fn(
+      async productId => new ProductTag({ productId, tags: [new Tag({ id: `tag-${productId}`, name: '' })] })
+    ),
+    findByProductIds: vi.fn(async () => []),
+  } satisfies ProductTagRepository,
+  screenshots: {
+    findManyByProductIdSortByPriorityDesc: vi.fn(async productId => [
+      { id: `screenshot-${productId}`, productId, imageUrl: '', imageAlt: '' },
+    ]),
+    findById: vi.fn(),
+    insert: vi.fn(),
+    deleteById: vi.fn(),
+  } satisfies ProductScreenshotRepository,
+  features: {
+    updateById: vi.fn(),
+    findOneById: vi.fn(),
+    findManyByProductId: vi.fn(async productId => [
+      new ProductFeature({ id: `feature-${productId}`, productId, name: '', emoji: '' }),
+    ]),
+    insert: vi.fn(),
+  } satisfies ProductFeatureRepository,
 });
 
 describe('GetAllProducts', () => {
@@ -42,7 +68,13 @@ describe('GetAllProducts', () => {
     const repository = productRepository([product('p1'), product('p2'), product('p3')]);
     const related = relatedRepositories();
 
-    const result = await new GetAllProducts(repository, related.links, related.tags, related.screenshots, related.features).execute({ limit: 3 });
+    const result = await new GetAllProducts(
+      repository,
+      related.links,
+      related.tags,
+      related.screenshots,
+      related.features
+    ).execute({ limit: 3 });
 
     expect(result.total).toBe(3);
     expect(repository.findOneById).toHaveBeenCalledTimes(3);
@@ -50,7 +82,12 @@ describe('GetAllProducts', () => {
     expect(related.tags.findOneByProductId).toHaveBeenCalledTimes(3);
     expect(related.screenshots.findManyByProductIdSortByPriorityDesc).toHaveBeenCalledTimes(3);
     expect(related.features.findManyByProductId).toHaveBeenCalledTimes(3);
-    expect(result.products[0]).toMatchObject({ __preloadedLinks: [{ id: 'link-p1', isPrimary: true }], __preloadedTags: [{ id: 'tag-p1' }], __preloadedScreenshots: [{ id: 'screenshot-p1' }], __preloadedFeatures: [{ id: 'feature-p1' }] });
+    expect(result.products[0]).toMatchObject({
+      __preloadedLinks: [{ id: 'link-p1', isPrimary: true }],
+      __preloadedTags: [{ id: 'tag-p1' }],
+      __preloadedScreenshots: [{ id: 'screenshot-p1' }],
+      __preloadedFeatures: [{ id: 'feature-p1' }],
+    });
   });
 
   it('skips preload work when the page is empty', async () => {
