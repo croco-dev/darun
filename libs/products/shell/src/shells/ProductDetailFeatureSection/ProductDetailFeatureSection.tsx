@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { SectionHeader } from '@darun/ui';
+import { useTranslations } from 'next-intl';
 import { ProductFeatureList } from '../../components';
 
 type ProductDetailFeatureSectionProps = {
@@ -14,7 +14,9 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
   return (
     <section className="flex flex-col gap-5 py-4 md:py-6" id="features">
       <SectionHeader title={t('feature.title')} />
-      <ProductFeatureList slug={slug} />
+      <div className="[&>div>div]:!rounded-card [&>div>div]:!shadow-card [&>div>div]:!border-surface-300 [&_div.border-black\/10]:!border-surface-300 [&_div.bg-dark-100]:!bg-surface-100 [&_div.bg-dark-100]:!rounded-md [&_p.text-dark-900]:!text-base [&_p.text-dark-900]:!text-surface-900 [&_p.text-dark-900]:!font-bold [&_p.text-dark-600]:!text-sm [&_p.text-dark-600]:!text-surface-500 [&_p.text-dark-600]:!font-normal [&_img]:!border-surface-300 [&_img]:!rounded-md">
+        <ProductFeatureList slug={slug} />
+      </div>
     </section>
   );
 };

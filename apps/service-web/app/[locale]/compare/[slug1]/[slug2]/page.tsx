@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
+import { ContentArea, SectionHeader } from '@darun/ui';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getClient } from '../../../../getServerClient';
-import { ContentArea, SectionHeader } from '@darun/ui';
 
 const productsQuery = gql`
   query ProductsForCompare($slug1: String!, $slug2: String!, $locale: String!) {
@@ -80,7 +80,7 @@ export default async function ComparePage({ params }: Props) {
   const { product1, product2 } = data;
 
   return (
-    <ContentArea className="flex flex-col gap-8 py-8 md:gap-12 md:py-12">
+    <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
       <SectionHeader title="서비스 비교" align="center" />
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
@@ -129,7 +129,7 @@ function ProductCard({
   };
 }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-card border border-surface-300 p-6 shadow-card">
+    <div className="flex flex-col items-center gap-4 rounded-card border border-surface-300 bg-white p-6 shadow-card">
       <img
         src={product.logoUrl || '/images/default-product-icon.svg'}
         alt={product.name}

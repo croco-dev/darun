@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { SectionHeader } from '@darun/ui';
+import { useTranslations } from 'next-intl';
 import { ProductDescription } from '../../components';
 
 type ProductDescriptionSectionProps = {
@@ -14,7 +14,9 @@ export const ProductDescriptionSection = ({ slug }: ProductDescriptionSectionPro
   return (
     <section className="flex flex-col gap-5 py-4 md:py-6" id="description">
       <SectionHeader title={t('description.title')} />
-      <ProductDescription slug={slug} />
+      <div className="[&_div]:text-surface-700">
+        <ProductDescription slug={slug} />
+      </div>
     </section>
   );
 };

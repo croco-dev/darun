@@ -1,8 +1,8 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
 import { SectionHeader } from '@darun/ui';
+import { useTranslations } from 'next-intl';
+import { useId, useState, useRef, useEffect } from 'react';
 
 export interface FAQItem {
   question: string;
@@ -32,9 +32,17 @@ export function FAQSection({ items }: FAQSectionProps) {
 
 function FAQAccordionItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrollHeight, setScrollHeight] = useState(0);
   const id = useId();
   const buttonId = `faq-button-${id}`;
   const panelId = `faq-panel-${id}`;
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (panelRef.current) {
+      setScrollHeight(panelRef.current.scrollHeight);
+    }
+  }, [isOpen, answer]);
 
   return (
     <div className="w-full overflow-hidden rounded-xl border border-surface-300 bg-white">
@@ -44,16 +52,14 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         id={buttonId}
         aria-expanded={isOpen}
         aria-controls={panelId}
-        className="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-surface-100"
+        className="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
       >
         <p className="flex-1 pr-4 text-base font-semibold text-dark-900">{question}</p>
         <div
-          className="text-dark-400"
           aria-hidden="true"
-          style={{
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.3s ease',
-          }}
+          className={`text-dark-400 transition-transform duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none ${
+            isOpen ? 'rotate-180' : 'rotate-0'
+          }`}
         >
           <svg
             width="24"
@@ -79,13 +85,12 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         aria-labelledby={buttonId}
         aria-hidden={!isOpen}
         style={{
-          maxHeight: isOpen ? '500px' : '0px',
+          maxHeight: isOpen ? `${scrollHeight}px` : '0px',
           opacity: isOpen ? 1 : 0,
-          transition: 'all 0.3s ease-in-out',
         }}
-        className="overflow-hidden"
+        className="overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out motion-reduce:transition-none"
       >
-        <div className="px-5 pb-5 pt-0 text-dark-700 leading-[1.6]">
+        <div ref={panelRef} className="px-5 pb-5 pt-0 text-dark-700 leading-[1.6]">
           <p className="whitespace-pre-wrap">{answer}</p>
         </div>
       </section>

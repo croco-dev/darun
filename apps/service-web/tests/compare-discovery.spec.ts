@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Compare discovery journey', () => {
-  test('Journey 1: search result compare buttons activate compare page', async ({ page }) => {
+  test('Journey 1: search result compare buttons activate compare page @smoke', async ({ page }) => {
     // Search for figma-e2e and wait for results
     await page.goto('/ko/search/product?query=figma');
     await page.waitForLoadState('networkidle');

@@ -1,10 +1,10 @@
 'use client';
 
 import { Button } from '@darun/ui';
+import { SectionHeader } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useTranslations } from 'next-intl';
 import { AlternativeProductList } from '../../components';
-import { SectionHeader } from '@darun/ui';
 
 type ProductAlternativeSectionProps = {
   slug: string;
@@ -15,11 +15,10 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
 
   return (
     <section className="flex flex-col gap-5 py-4 md:py-6" id="darun">
-      <SectionHeader
-        title={t('section.title')}
-        subtitle={t('section.description')}
-      />
-      <AlternativeProductList slug={slug} />
+      <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
+      <div className="[&_div.rounded-\[8px\]]:!rounded-card [&_div.rounded-\[8px\]]:!shadow-card [&_div.rounded-\[8px\]]:!border-surface-300 [&_div.rounded-\[8px\]]:hover:!shadow-card-hover [&_div.rounded-\[8px\]]:hover:!border-brand-300 [&_p.text-dark-900]:!text-base [&_p.text-dark-900]:!text-surface-900 [&_p.text-dark-900]:!font-bold [&_p.text-dark-600]:!text-sm [&_p.text-dark-600]:!text-surface-500 [&_p.text-dark-600]:!font-normal [&_span.text-dark-500]:!text-surface-400 [&_p.text-dark-500]:!text-surface-500">
+        <AlternativeProductList slug={slug} />
+      </div>
       <div className="flex justify-center">
         <Link href={`/products/${slug}/alternatives`}>
           <Button variant="shadow">
