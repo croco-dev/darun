@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
+import { SectionHeader } from '@darun/ui';
 
 export interface FAQItem {
   question: string;
@@ -18,14 +19,14 @@ export function FAQSection({ items }: FAQSectionProps) {
   if (!items || items.length === 0) return null;
 
   return (
-    <div className="flex w-full flex-col gap-6 py-10">
-      <h2 className="text-2xl font-bold text-dark-900">{t('faq.title')}</h2>
+    <section className="flex w-full flex-col gap-5 py-4 md:py-6">
+      <SectionHeader title={t('faq.title')} />
       <div className="flex w-full flex-col gap-3">
         {items.map(item => (
           <FAQAccordionItem key={`${item.question}-${item.answer}`} question={item.question} answer={item.answer} />
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -36,14 +37,14 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
   const panelId = `faq-panel-${id}`;
 
   return (
-    <div className="w-full overflow-hidden rounded-[12px] border border-dark-100 bg-white">
+    <div className="w-full overflow-hidden rounded-xl border border-surface-300 bg-white">
       <button
         type="button"
         onClick={() => setIsOpen(prev => !prev)}
         id={buttonId}
         aria-expanded={isOpen}
         aria-controls={panelId}
-        className="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-dark-50"
+        className="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-surface-100"
       >
         <p className="flex-1 pr-4 text-base font-semibold text-dark-900">{question}</p>
         <div

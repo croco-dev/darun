@@ -69,7 +69,7 @@ function useTrendingProducts(): TrendingProductsViewProps {
 const TrendingProductsView = ({ products, title, moreLabel, emptyLabel }: TrendingProductsViewProps) => {
   return (
     <SectionWrapper background="white" spacing="md" className="home-motion">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5 md:gap-6">
         <SectionHeader
           title={title}
           moreLink={

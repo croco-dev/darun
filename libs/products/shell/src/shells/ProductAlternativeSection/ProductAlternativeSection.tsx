@@ -4,6 +4,7 @@ import { Button } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useTranslations } from 'next-intl';
 import { AlternativeProductList } from '../../components';
+import { SectionHeader } from '@darun/ui';
 
 type ProductAlternativeSectionProps = {
   slug: string;
@@ -13,13 +14,11 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
   const t = useTranslations('Alternative');
 
   return (
-    <section className="flex flex-col gap-5 py-4">
-      <div className="flex flex-col gap-[6px]">
-        <h2 id="darun" className="darun-heading text-[24px] font-semibold text-dark-900 tracking-[-0.4px]">
-          {t('section.title')}
-        </h2>
-        <p className="text-[15px] font-medium text-dark-600 tracking-[-0.06px]">{t('section.description')}</p>
-      </div>
+    <section className="flex flex-col gap-5 py-4 md:py-6" id="darun">
+      <SectionHeader
+        title={t('section.title')}
+        subtitle={t('section.description')}
+      />
       <AlternativeProductList slug={slug} />
       <div className="flex justify-center">
         <Link href={`/products/${slug}/alternatives`}>

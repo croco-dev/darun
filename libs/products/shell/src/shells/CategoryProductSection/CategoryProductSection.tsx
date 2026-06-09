@@ -2,7 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
-import { ContentArea } from '@darun/ui';
+import { SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
 import { ProductItem } from '../../uis';
@@ -56,11 +56,11 @@ export function CategoryProductSection({ slug }: { slug: string }) {
   const emptyLabel = t('empty');
 
   return (
-    <ContentArea>
-      <div className="flex flex-col gap-6">
-        <h1 className="text-[22px] font-semibold tracking-[-0.2px] text-dark-800">{categoryLabel}</h1>
+    <SectionWrapper background="white" spacing="md">
+      <div className="flex flex-col gap-5 md:gap-6">
+        <SectionHeader title={categoryLabel} />
         {products.length === 0 ? (
-          <div className="flex min-h-40 items-center justify-center rounded-[24px] border border-surface-300 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
+          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-surface-300 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
             {emptyLabel}
           </div>
         ) : (
@@ -71,7 +71,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                 href={`/products/${product.slug}?from=category`}
                 className="group h-full focus-visible:outline-none"
               >
-                <div className="relative flex h-full flex-col rounded-[20px] border border-surface-300 bg-white p-3.5 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:border-brand-300 group-hover:shadow-[0_22px_40px_-26px_rgba(53,63,174,0.28)] group-focus-visible:-translate-y-1 group-focus-visible:border-brand-300 group-focus-visible:shadow-[0_22px_40px_-26px_rgba(53,63,174,0.28)] group-focus-visible:ring-2 group-focus-visible:ring-brand-300/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none md:rounded-[24px] md:p-4">
+                <div className="relative flex h-full flex-col rounded-card border border-surface-300 bg-white p-3.5 shadow-card transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:border-brand-300 group-hover:shadow-card-hover group-focus-visible:-translate-y-1 group-focus-visible:border-brand-300 group-focus-visible:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-brand-300/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none md:rounded-card-lg md:p-4">
                   <div className="transition-transform duration-200 ease-out group-hover:translate-y-0.5 group-focus-visible:translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none [&>div>div:last-child>div:last-child]:transition-transform [&>div>div:last-child>div:last-child]:duration-200 [&>div>div:last-child>div:last-child]:ease-out group-hover:[&>div>div:last-child>div:last-child]:translate-x-0.5 group-focus-visible:[&>div>div:last-child>div:last-child]:translate-x-0.5 motion-reduce:[&>div>div:last-child>div:last-child]:transform-none motion-reduce:[&>div>div:last-child>div:last-child]:transition-none">
                     <ProductItem
                       name={product.name}
@@ -88,6 +88,6 @@ export function CategoryProductSection({ slug }: { slug: string }) {
           </div>
         )}
       </div>
-    </ContentArea>
+    </SectionWrapper>
   );
 }

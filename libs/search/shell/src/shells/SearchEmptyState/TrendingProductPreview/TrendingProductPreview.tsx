@@ -2,8 +2,8 @@
 
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
-import { useLocale } from 'next-intl';
 import { ProductCard } from '@darun/products-shell';
+import { useLocale } from 'next-intl';
 
 const TRENDING_PREVIEW_QUERY = gql`
   query TrendingPreview($first: Int!, $locale: String!) {
@@ -43,7 +43,7 @@ export const TrendingProductPreview = () => {
   const products = (data as unknown as TrendingPreviewQueryResult)?.rankedProducts ?? [];
 
   return (
-    <div data-testid="trending-preview" className="px-4">
+    <div data-testid="trending-preview">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
         {products.slice(0, 6).map((product, index) => (
           <ProductCard

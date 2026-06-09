@@ -2,6 +2,7 @@ import { gql } from '@apollo/client';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getClient } from '../../../../getServerClient';
+import { ContentArea, SectionHeader } from '@darun/ui';
 
 const productsQuery = gql`
   query ProductsForCompare($slug1: String!, $slug2: String!, $locale: String!) {
@@ -79,10 +80,10 @@ export default async function ComparePage({ params }: Props) {
   const { product1, product2 } = data;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
-      <h1 className="mb-8 text-center text-2xl font-bold text-dark-900 md:text-3xl">서비스 비교</h1>
+    <ContentArea className="flex flex-col gap-8 py-8 md:gap-12 md:py-12">
+      <SectionHeader title="서비스 비교" align="center" />
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
         <div data-testid="compare-column">
           <ProductCard product={product1} />
         </div>
@@ -91,7 +92,7 @@ export default async function ComparePage({ params }: Props) {
         </div>
       </div>
 
-      <div className="mt-8 space-y-4">
+      <div className="flex flex-col gap-4 md:gap-5">
         <CompareRow label="서비스명" value1={product1.name} value2={product2.name} testid="name" />
         <CompareRow label="설명" value1={product1.summary} value2={product2.summary} testid="summary" />
         <CompareRow
@@ -113,7 +114,7 @@ export default async function ComparePage({ params }: Props) {
           testid="tags"
         />
       </div>
-    </div>
+    </ContentArea>
   );
 }
 
@@ -128,11 +129,11 @@ function ProductCard({
   };
 }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-xl border border-dark-100 p-6">
+    <div className="flex flex-col items-center gap-4 rounded-card border border-surface-300 p-6 shadow-card">
       <img
         src={product.logoUrl || '/images/default-product-icon.svg'}
         alt={product.name}
-        className="h-20 w-20 rounded-xl object-contain"
+        className="h-20 w-20 rounded-card object-contain"
       />
       <h2 className="text-center text-xl font-bold text-dark-900">{product.name}</h2>
       {product.summary && <p className="text-center text-sm text-dark-500">{product.summary}</p>}
@@ -152,7 +153,7 @@ function CompareRow({
   testid: string;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-4 border-b border-dark-100 pb-4 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 border-b border-surface-300 pb-4 md:grid-cols-3">
       <div className="font-medium text-dark-900">{label}</div>
       <div className="text-dark-700" data-testid={`compare-row-${testid}-1`}>
         {value1 || '-'}

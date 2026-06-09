@@ -1,5 +1,4 @@
 import { CategoryProductSection } from '@darun/products-shell';
-import { ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -72,10 +71,8 @@ export default async function CategoryPage({ params }: Props) {
 
   return (
     <Layout>
-      <main className="mt-2 flex flex-col gap-5">
-        <ContentArea>
-          <CategoryProductSection slug={slug} />
-        </ContentArea>
+      <main>
+        <CategoryProductSection slug={slug} />
       </main>
     </Layout>
   );

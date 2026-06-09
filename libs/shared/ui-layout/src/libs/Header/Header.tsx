@@ -11,7 +11,7 @@ import { useHeader } from './useHeader';
 export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl }) => (
   <nav className="w-full">
     <ContentArea>
-      <div className="flex w-full items-center gap-6 py-[14px]">
+      <div className="flex w-full items-center gap-6 py-3.5">
         <div className="flex shrink-0 items-center gap-6">
           <div className="flex items-center">
             <Link href={headerUrl} className="block">
@@ -19,10 +19,10 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl }) => 
             </Link>
           </div>
           <div className="hidden items-center gap-3 sm:flex">
-            <Link href={rankingUrl} className="text-[15px] font-medium text-dark-700 no-underline">
+            <Link href={rankingUrl} className="text-sm font-medium text-dark-700 no-underline sm:text-base">
               랭킹
             </Link>
-            <Link href={browseUrl} className="text-[15px] font-medium text-dark-700 no-underline">
+            <Link href={browseUrl} className="text-sm font-medium text-dark-700 no-underline sm:text-base">
               둘러보기
             </Link>
           </div>

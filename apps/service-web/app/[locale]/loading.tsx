@@ -14,8 +14,13 @@ const Skeleton = ({
 }) => (
   <div
     aria-hidden="true"
-    className={'w-[' + width + '] h-[' + height + '] rounded-[' + radius + '] bg-[#f3f4f6]'}
-    style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
+    className="bg-surface-100 motion-reduce:animate-none"
+    style={{
+      width: typeof width === 'number' ? `${width}px` : width,
+      height: typeof height === 'number' ? `${height}px` : height,
+      borderRadius: typeof radius === 'number' ? `${radius}px` : radius,
+      animation: 'pulse 1.5s ease-in-out infinite',
+    }}
   />
 );
 

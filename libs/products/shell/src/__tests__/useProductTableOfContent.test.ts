@@ -67,17 +67,19 @@ describe('useProductTableOfContent', () => {
   });
 
   it('should detect headings inside detail-content', () => {
-    const h1 = document.createElement('div');
-    h1.id = 'heading-1';
-    h1.className = 'darun-heading';
-    h1.textContent = 'Heading 1';
-    container.appendChild(h1);
+    const section1 = document.createElement('section');
+    section1.id = 'heading-1';
+    const h2_1 = document.createElement('h2');
+    h2_1.textContent = 'Heading 1';
+    section1.appendChild(h2_1);
+    container.appendChild(section1);
 
-    const h2 = document.createElement('div');
-    h2.id = 'heading-2';
-    h2.className = 'darun-heading';
-    h2.textContent = 'Heading 2';
-    container.appendChild(h2);
+    const section2 = document.createElement('section');
+    section2.id = 'heading-2';
+    const h2_2 = document.createElement('h2');
+    h2_2.textContent = 'Heading 2';
+    section2.appendChild(h2_2);
+    container.appendChild(section2);
 
     const { result } = renderHook(() => useProductTableOfContent());
 
@@ -88,17 +90,19 @@ describe('useProductTableOfContent', () => {
   });
 
   it('should update active heading based on IntersectionObserver events', () => {
-    const h1 = document.createElement('div');
-    h1.id = 'heading-1';
-    h1.className = 'darun-heading';
-    h1.textContent = 'Heading 1';
-    container.appendChild(h1);
+    const section1 = document.createElement('section');
+    section1.id = 'heading-1';
+    const h2_1 = document.createElement('h2');
+    h2_1.textContent = 'Heading 1';
+    section1.appendChild(h2_1);
+    container.appendChild(section1);
 
-    const h2 = document.createElement('div');
-    h2.id = 'heading-2';
-    h2.className = 'darun-heading';
-    h2.textContent = 'Heading 2';
-    container.appendChild(h2);
+    const section2 = document.createElement('section');
+    section2.id = 'heading-2';
+    const h2_2 = document.createElement('h2');
+    h2_2.textContent = 'Heading 2';
+    section2.appendChild(h2_2);
+    container.appendChild(section2);
 
     const { result } = renderHook(() => useProductTableOfContent());
 
@@ -110,7 +114,7 @@ describe('useProductTableOfContent', () => {
     act(() => {
       observer.trigger([
         {
-          target: h1,
+          target: section1,
           isIntersecting: false,
           boundingClientRect: { top: 30 } as unknown as DOMRectReadOnly,
         },
@@ -122,7 +126,7 @@ describe('useProductTableOfContent', () => {
     act(() => {
       observer.trigger([
         {
-          target: h2,
+          target: section2,
           isIntersecting: false,
           boundingClientRect: { top: 20 } as unknown as DOMRectReadOnly,
         },
@@ -134,7 +138,7 @@ describe('useProductTableOfContent', () => {
     act(() => {
       observer.trigger([
         {
-          target: h2,
+          target: section2,
           isIntersecting: true,
           boundingClientRect: { top: 100 } as unknown as DOMRectReadOnly,
         },
@@ -149,13 +153,14 @@ describe('useProductTableOfContent', () => {
 
     expect(result.current.headings).toEqual([]);
 
-    const h1 = document.createElement('div');
-    h1.id = 'heading-1';
-    h1.className = 'darun-heading';
-    h1.textContent = 'Heading 1';
+    const section1 = document.createElement('section');
+    section1.id = 'heading-1';
+    const h2_1 = document.createElement('h2');
+    h2_1.textContent = 'Heading 1';
+    section1.appendChild(h2_1);
 
     act(() => {
-      container.appendChild(h1);
+      container.appendChild(section1);
     });
 
     await act(async () => {

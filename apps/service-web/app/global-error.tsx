@@ -1,27 +1,23 @@
 'use client';
 
+import { Button } from '@darun/ui';
 import * as Sentry from '@sentry/nextjs';
-import NextError from 'next/error';
-import { ComponentType } from 'react';
 import { useEffect } from 'react';
 
-const NextErrorPage = NextError as unknown as ComponentType<{
-  statusCode: number;
-}>;
-
-export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
 
   return (
     <html>
-      <body>
-        {/* `NextError` is the default Next.js error page component. Its type
-        definition requires a `statusCode` prop. However, since the App Router
-        does not expose status codes for errors, we simply pass 0 to render a
-        generic error message. */}
-        <NextErrorPage statusCode={0} />
+      <body className="flex h-screen flex-col items-center justify-center gap-6 p-6 text-center">
+        <div>
+          <h2 className="text-2xl font-bold">문제가 발생했습니다</h2>
+          <p className="mt-2 text-dark-600">애플리케이션에 오류가 발생했습니다. 다시 시도해주세요.</p>
+        </div>
+
+        <Button onClick={() => reset()}>다시 시도</Button>
       </body>
     </html>
   );

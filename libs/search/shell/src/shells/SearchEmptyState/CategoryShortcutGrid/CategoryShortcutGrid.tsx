@@ -1,9 +1,9 @@
 'use client';
 
-import { useLocale } from 'next-intl';
-import { useNavigate } from '@darun/utils-router';
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
+import { useNavigate } from '@darun/utils-router';
+import { useLocale } from 'next-intl';
 
 const CATEGORIES_QUERY = gql`
   query CategoriesForEmptyState($first: Int!, $locale: String!) {
@@ -43,17 +43,17 @@ export const CategoryShortcutGrid = () => {
   return (
     <div
       data-testid="category-shortcut-grid"
-      className="grid grid-cols-2 gap-2 px-4 sm:grid-cols-4"
+      className="grid grid-cols-2 gap-2 sm:grid-cols-4"
       role="list"
       aria-label="Browse by category"
     >
-      {categories.map((cat) => (
+      {categories.map(cat => (
         <button
           key={cat.id}
           type="button"
           role="listitem"
           onClick={() => handleClick(cat.slug)}
-          className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-medium text-dark-700 transition-colors hover:bg-brand-100 hover:text-brand-700"
+          className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-medium text-dark-700 transition-colors hover:bg-brand-100 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/70 focus-visible:ring-offset-2"
         >
           {locale === 'ko' ? cat.labelKo : cat.labelEn}
         </button>

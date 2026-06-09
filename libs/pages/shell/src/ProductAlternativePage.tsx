@@ -16,40 +16,25 @@ export const ProductAlternativePage = ({
 
   return (
     <Layout>
-      <div className="flex flex-col">
-        <main className="flex w-full flex-col">
-          <div className="mb-1 flex flex-col gap-0.5">
-            <ContentArea>
-              <Breadcrumb
-                data-testid="breadcrumb-alternatives"
-                items={[
-                  { label: '홈', href: '/ko/' },
-                  { label: product.name, href: `/ko/products/${slug}` },
-                  { label: '대안', ariaCurrent: 'page' },
-                ]}
-              />
-            </ContentArea>
-          </div>
-          <div className="mb-1 flex flex-col gap-0.5">
-            <ContentArea>
-              <Link href={`/products/${slug}`}>
-                <ProductSummary slug={slug} />
-              </Link>
-            </ContentArea>
-          </div>
-          <div className="my-0.5 flex h-px w-full bg-dark-100" />
-          <ContentArea>
-            <div className="flex flex-col py-3">
-              <AlternativeProductSection slug={slug} />
-            </div>
-          </ContentArea>
-          {faqItems && faqItems.length > 0 && (
-            <ContentArea>
-              <FAQSection items={faqItems} />
-            </ContentArea>
-          )}
-        </main>
-      </div>
+      <main className="flex w-full flex-col">
+        <ContentArea className="flex flex-col gap-6 py-6 md:py-8">
+          <Breadcrumb
+            data-testid="breadcrumb-alternatives"
+            items={[
+              { label: '홈', href: '/ko/' },
+              { label: product.name, href: `/ko/products/${slug}` },
+              { label: '대안', ariaCurrent: 'page' },
+            ]}
+          />
+          <Link href={`/products/${slug}`}>
+            <ProductSummary slug={slug} />
+          </Link>
+        </ContentArea>
+        <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
+          <AlternativeProductSection slug={slug} />
+          {faqItems && faqItems.length > 0 && <FAQSection items={faqItems} />}
+        </ContentArea>
+      </main>
     </Layout>
   );
 };

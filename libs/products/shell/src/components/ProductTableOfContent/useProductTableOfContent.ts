@@ -5,7 +5,7 @@ type HeadingData = {
   text: string;
 };
 
-const HEADING_SELECTOR = '#detail-content .darun-heading';
+const HEADING_SELECTOR = '#detail-content section[id]';
 const ACTIVE_HEADING_OFFSET = 56;
 
 function getHeadingElements() {
@@ -13,10 +13,13 @@ function getHeadingElements() {
 }
 
 function toHeadingData(headings: HTMLElement[]): HeadingData[] {
-  return headings.map(heading => ({
-    id: heading.id,
-    text: heading.textContent || '',
-  }));
+  return headings.map(section => {
+    const headingEl = section.querySelector('h2');
+    return {
+      id: section.id,
+      text: headingEl?.textContent || section.id,
+    };
+  });
 }
 
 function areHeadingsEqual(prev: HeadingData[], next: HeadingData[]) {

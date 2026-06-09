@@ -6,7 +6,7 @@ import {
   SearchProductResult,
   TrendingProductPreview,
 } from '@darun/search-shell';
-import { ContentArea } from '@darun/ui';
+import { ContentArea, SectionHeader } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { useTranslations } from 'next-intl';
 
@@ -28,13 +28,11 @@ export function SearchProductPage({ searchParams }: Props) {
   if (!query) {
     return (
       <Layout>
-        <main className="flex w-full flex-col gap-4 py-6">
-          <ContentArea>
-            <div className="flex flex-col gap-4">
-              <PopularQueriesStripe />
-              <CategoryShortcutGrid />
-              <TrendingProductPreview />
-            </div>
+        <main className="flex w-full flex-col">
+          <ContentArea className="flex flex-col gap-5 py-6 md:py-8">
+            <PopularQueriesStripe />
+            <CategoryShortcutGrid />
+            <TrendingProductPreview />
           </ContentArea>
         </main>
       </Layout>
@@ -43,12 +41,10 @@ export function SearchProductPage({ searchParams }: Props) {
 
   return (
     <Layout>
-      <main className="flex w-full flex-col py-5">
-        <ContentArea>
-          <div className="flex flex-col gap-5">
-            <p className="text-[22px] font-semibold tracking-[-0.2px]">{t('page.resultTitle', { query })}</p>
-            <SearchProductResult query={query} />
-          </div>
+      <main className="flex w-full flex-col">
+        <ContentArea className="flex flex-col gap-5 py-6 md:py-8">
+          <SectionHeader title={t('page.resultTitle', { query })} />
+          <SearchProductResult query={query} />
         </ContentArea>
       </main>
     </Layout>

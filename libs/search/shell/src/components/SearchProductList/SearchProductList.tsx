@@ -2,13 +2,13 @@
 
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
-import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { bind } from '@croco/utils-structure-react';
+import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { ProductCard, ProductItem } from '@darun/products-shell';
 import { Link, useNavigate } from '@darun/utils-router';
-import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useSearchProductList } from './useSearchProductList';
 
 const POPULAR_QUERIES: Record<string, string[]> = {
@@ -120,10 +120,10 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
 
   if (products.length === 0)
     return (
-      <div className="flex flex-col gap-6 py-8 md:py-10">
-        <div className="flex flex-col gap-2 text-center">
-          <p className="text-[20px] font-semibold text-dark-800">{getNoResultsMessage()}</p>
-          <p className="text-[14px] font-medium text-dark-600">{t('list.empty.description')}</p>
+      <div className="flex flex-col gap-6 py-6 md:py-8">
+        <div className="flex flex-col gap-1 text-center">
+          <p className="text-xl font-bold text-dark-900 sm:text-2xl">{getNoResultsMessage()}</p>
+          <p className="text-sm text-dark-600 sm:text-base">{t('list.empty.description')}</p>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -133,7 +133,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
             role="list"
             aria-label="Popular searches"
           >
-            {popularQueries.map((popularQuery) => (
+            {popularQueries.map(popularQuery => (
               <button
                 key={popularQuery}
                 type="button"
@@ -184,7 +184,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
     <div className="flex flex-col gap-5">
       {products.map(product => (
         <Link href={`/products/${product.slug}?from=search`} key={product.id} data-testid="search-card">
-          <div className="bg-white rounded-[8px] border border-[rgba(0,0,0,0.12)] px-[18px] py-4 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.04)] transition-all duration-200 ease-in-out hover:border-[rgba(0,0,0,0.14)] hover:shadow-[0px_4px_8px_2px_rgba(0,0,0,0.08)]">
+          <div className="bg-white rounded-card border border-surface-300 p-4 shadow-card transition-all duration-200 ease-in-out hover:border-brand-300 hover:shadow-card-hover">
             <ProductItem
               name={product.name}
               summary={product.summary}
