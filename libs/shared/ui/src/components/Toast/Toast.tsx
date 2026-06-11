@@ -47,6 +47,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={toast.id}
             data-testid={`toast-${toast.type}`}
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
             className={`px-4 py-2 rounded-lg shadow-lg text-white ${
               toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
             }`}

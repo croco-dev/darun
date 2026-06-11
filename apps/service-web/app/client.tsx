@@ -2,6 +2,7 @@
 
 import { initPostHog } from '@darun/analytics-client';
 import { AuthProvider } from '@darun/provider-auth/client';
+import { ToastProvider } from '@darun/ui';
 import { MotionProvider } from '@darun/ui-layout';
 import { ApolloProvider } from '@darun/utils-apollo-client/client';
 import { useCookies } from 'next-client-cookies';
@@ -16,7 +17,7 @@ export const ClientRootProvider = ({ children }: { children: ReactNode }) => {
     <MotionProvider>
       <ApolloProvider makeClient={() => container.apolloClient} cookies={cookies}>
         <AuthProvider authService={container.authService} cookies={cookies}>
-          {children}
+          <ToastProvider>{children}</ToastProvider>
         </AuthProvider>
       </ApolloProvider>
     </MotionProvider>

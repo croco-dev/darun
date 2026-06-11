@@ -21,7 +21,7 @@ export const ProductAlternativeList = bind(
         {products.map(product => (
           <div
             key={product.id}
-            className="rounded-[8px] border border-[rgba(0,0,0,0.12)] bg-white px-[18px] py-4 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.08)] hover:border-brand-300 transition-colors"
+            className="rounded-card border border-surface-300 bg-white px-[18px] py-4 shadow-card transition-colors hover:border-brand-300 motion-reduce:transition-none"
           >
             <div className="flex w-full flex-col gap-3">
               <div className="flex flex-row justify-between items-center">

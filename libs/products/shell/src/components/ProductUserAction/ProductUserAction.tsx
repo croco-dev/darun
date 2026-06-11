@@ -1,46 +1,24 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
-import { Button } from '@darun/ui';
+import { Button, useToast } from '@darun/ui';
 import { Heart } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { CompareButton } from '../CompareButton';
 import { useProductUserAction } from './useProductUserAction';
-
-// Simple toast notification
-const showToast = (message: string, type: 'success' | 'error') => {
-  const toast = document.createElement('div');
-  toast.textContent = message;
-  toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg z-50 ${
-    type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-  }`;
-  document.body.appendChild(toast);
-  const timerId = setTimeout(() => {
-    toast.remove();
-  }, 3000);
-  return timerId;
-};
 
 export const ProductUserAction = bind(
   useProductUserAction,
   ({ voteCount, upvoteProduct, voted, loading, error, slug }) => {
-    const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const { addToast } = useToast();
 
     useEffect(() => {
       if (error) {
-        timerRef.current = showToast(error, 'error');
+        addToast(error, 'error');
       } else if (voted && !loading) {
-        timerRef.current = showToast('투표가 완료되었습니다!', 'success');
+        addToast('투표가 완료되었습니다!', 'success');
       }
-    }, [error, voted, loading]);
-
-    useEffect(() => {
-      return () => {
-        if (timerRef.current) {
-          clearTimeout(timerRef.current);
-        }
-      };
-    }, []);
+    }, [error, voted, loading, addToast]);
 
     return (
       <div className="flex gap-1">

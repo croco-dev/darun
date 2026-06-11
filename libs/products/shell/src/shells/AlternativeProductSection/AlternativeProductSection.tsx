@@ -34,7 +34,7 @@ export const AlternativeProductSection = ({ slug }: AlternativeProductSectionPro
   return (
     <section className="flex flex-col gap-5 py-4 md:py-6">
       <SectionHeader title={t('more.title')} subtitle={t('more.description')} />
-      <div className="[&_div.rounded-\[8px\]]:!rounded-card [&_div.rounded-\[8px\]]:!shadow-card [&_div.rounded-\[8px\]]:!border-surface-300 [&_div.rounded-\[8px\]]:hover:!shadow-card-hover [&_div.rounded-\[8px\]]:hover:!border-brand-300 [&_div.bg-dark-100]:!bg-surface-200 [&_div.bg-dark-400]:!bg-surface-300 [&_div.bg-dark-400]:!h-px [&_p.text-dark-500]:!text-sm [&_p.text-dark-500]:!text-surface-600 [&_p.text-dark-500]:!font-bold [&_p.text-dark-900]:!text-base [&_p.text-dark-900]:!text-surface-900 [&_p.text-dark-900]:!font-bold [&_p.text-dark-600]:!text-sm [&_p.text-dark-600]:!text-surface-500 [&_p.text-dark-600]:!font-normal [&_span.text-dark-500]:!text-surface-400">
+      <div className="[&_div.rounded-card]:hover:!shadow-card-hover [&_div.rounded-card]:hover:!border-brand-300 [&_div.bg-dark-100]:!bg-surface-200 [&_div.bg-dark-400]:!bg-surface-300 [&_div.bg-dark-400]:!h-px [&_p.text-dark-500]:!text-sm [&_p.text-dark-500]:!text-surface-600 [&_p.text-dark-500]:!font-bold [&_p.text-dark-900]:!text-base [&_p.text-dark-900]:!text-surface-900 [&_p.text-dark-900]:!font-bold [&_p.text-dark-600]:!text-sm [&_p.text-dark-600]:!text-surface-500 [&_p.text-dark-600]:!font-normal [&_span.text-dark-500]:!text-surface-400">
         <ProductAlternativeList slug={slug} />
       </div>
     </section>

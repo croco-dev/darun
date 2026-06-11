@@ -6,3 +6,4 @@ export * from './components/Logo';
 export * from './components/Breadcrumb';
 export * from './components/SectionHeader';
 export * from './components/SectionWrapper';
+export * from './components/Toast';
