@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@darun/ui';
+import { AdminPanel } from '@darun/ui-admin';
 import { useReactTable, getCoreRowModel, createColumnHelper, flexRender } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
@@ -64,7 +65,7 @@ export function ProductListTable() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-hidden rounded-xl border border-black/10">
+      <AdminPanel className="overflow-hidden">
         <table className="w-full border-collapse">
           <thead className="bg-dark-50">
             {table.getHeaderGroups().map(headerGroup => (
@@ -72,7 +73,7 @@ export function ProductListTable() {
                 {headerGroup.headers.map(header => (
                   <th
                     key={header.id}
-                    className="border-b border-r border-black/10 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
+                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
                   >
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
@@ -85,14 +86,14 @@ export function ProductListTable() {
               <tr
                 key={row.id}
                 onClick={() => handleRowClick({ record: row.original })}
-                className={`cursor-pointer border-b border-black/10 transition hover:bg-dark-50 ${
+                className={`cursor-pointer border-b border-dark-200 transition hover:bg-dark-50 ${
                   index % 2 === 0 ? 'bg-white' : 'bg-dark-50/30'
                 }`}
               >
                 {row.getVisibleCells().map(cell => (
                   <td
                     key={cell.id}
-                    className="border-r border-black/10 px-4 py-3 text-sm text-dark-900 last:border-r-0"
+                    className="border-r border-dark-200 px-4 py-3 text-sm text-dark-900 last:border-r-0"
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
@@ -101,8 +102,8 @@ export function ProductListTable() {
             ))}
           </tbody>
         </table>
-      </div>
-      <div className="mt-2 rounded-xl border border-black/10 bg-white p-4">
+      </AdminPanel>
+      <AdminPanel className="p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-dark-900">
             {totalCount}개의 서비스 중 {pageCount}개부터 표시합니다.
@@ -122,7 +123,7 @@ export function ProductListTable() {
             </Button>
           </div>
         </div>
-      </div>
+      </AdminPanel>
     </div>
   );
 }

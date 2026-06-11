@@ -1,18 +1,17 @@
 'use client';
 
 import { NewCompanyForm } from '@darun/companies-feature';
+import { AdminPanel, AdminSection, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
 
 export const NewCompanyFormSection = () => {
   return (
-    <div className="border shadow-sm rounded-md bg-white">
-      <div className="border-b px-4 py-2">
-        <div className="font-medium">기업 등록</div>
-      </div>
-      <div className="p-4 mt-2 pb-4">
-        <div className="flex flex-col gap-3">
+    <AdminPanel>
+      <AdminSection>
+        <AdminSectionHeader title="기업 등록" />
+        <AdminSectionBody>
           <NewCompanyForm />
-        </div>
-      </div>
-    </div>
+        </AdminSectionBody>
+      </AdminSection>
+    </AdminPanel>
   );
 };

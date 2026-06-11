@@ -1,17 +1,21 @@
-import { Logo } from '@darun/ui-admin';
+import { Logo, AdminPanel } from '@darun/ui-admin';
 import { LoginSection } from '../../../features/auth/LoginSection';
 
 export default function LoginPage() {
   return (
-    <div className="w-full min-h-screen bg-gray-100">
-      <div className="max-w-[400px] mx-auto mt-14 mb-14 w-[340px]">
-        <div className="flex items-center gap-1.5 justify-center">
-          <Logo size={24} /> <h2 className="text-base font-extrabold text-gray-700">다른 관리자</h2>
+    <div className="w-full min-h-screen bg-dark-50 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[400px] w-[340px] space-y-6">
+        <div className="flex flex-col items-center gap-3">
+          <Logo size={40} />
+          <div className="text-center">
+            <h2 className="text-xl font-bold tracking-tight text-dark-900">다른 관리자</h2>
+            <p className="mt-1 text-sm text-dark-500">관리자 계정으로 로그인해 주세요.</p>
+          </div>
         </div>
-        <h2 className="text-2xl font-medium text-gray-800 text-center mt-2">로그인</h2>
-        <div className="border border-gray-200 shadow-md p-8 mt-8 rounded-md">
+
+        <AdminPanel className="p-8">
           <LoginSection />
-        </div>
+        </AdminPanel>
       </div>
     </div>
   );

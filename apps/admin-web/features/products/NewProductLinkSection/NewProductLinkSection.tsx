@@ -2,6 +2,7 @@
 
 import { NewProductLinkForm } from '@darun/products-feature';
 import { Button } from '@darun/ui';
+import { AdminField, AdminInput, AdminActions } from '@darun/ui-admin';
 
 type NewProductLinkSectionProps = {
   productSlug: string;
@@ -11,41 +12,31 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
   <NewProductLinkForm productSlug={productSlug}>
     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
     {({ form }: any) => (
-      <div className="flex flex-col gap-2">
-        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
-          <span>표시 링크</span>
-          <input
+      <div className="flex flex-col gap-3">
+        <AdminField label="표시 링크" error={form.errors.displayLink}>
+          <AdminInput
             type="text"
-            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
             placeholder="ex) toss.im"
             {...form.getInputProps('displayLink')}
           />
-          {form.errors.displayLink && <p className="mt-1 text-xs text-red-500">{form.errors.displayLink}</p>}
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
-          <span>링크</span>
-          <input
+        </AdminField>
+        <AdminField label="링크" error={form.errors.link}>
+          <AdminInput
             type="text"
-            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
             placeholder="ex) https://toss.im/"
             {...form.getInputProps('link')}
           />
-          {form.errors.link && <p className="mt-1 text-xs text-red-500">{form.errors.link}</p>}
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
-          <span>이름</span>
-          <input
+        </AdminField>
+        <AdminField label="이름" error={form.errors.title}>
+          <AdminInput
             type="text"
-            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
             placeholder="ex) 공식 홈페이지"
             {...form.getInputProps('title')}
           />
-          {form.errors.title && <p className="mt-1 text-xs text-red-500">{form.errors.title}</p>}
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
-          <span>아이콘</span>
+        </AdminField>
+        <AdminField label="아이콘" error={form.errors.iconUrl}>
           <select
-            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+            className="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900 focus-visible:ring-2 focus-visible:ring-dark-900/20"
             {...form.getInputProps('iconUrl')}
           >
             <option value="">
@@ -58,12 +49,13 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
               </option>
             ))}
           </select>
-          {form.errors.iconUrl && <p className="mt-1 text-xs text-red-500">{form.errors.iconUrl}</p>}
-        </label>
+        </AdminField>
 
-        <Button type="submit" variant="contained" color="secondary" size="md">
-          등록
-        </Button>
+        <AdminActions>
+          <Button type="submit" variant="contained" color="primary" size="md">
+            등록
+          </Button>
+        </AdminActions>
       </div>
     )}
   </NewProductLinkForm>

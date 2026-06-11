@@ -1,17 +1,19 @@
-import { PageShell } from '@darun/ui-admin';
+import { PageShell, AdminEmptyState } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 
 export default function NotFoundPage() {
   return (
     <PageShell title={'404'}>
-      <div className="flex flex-col items-center gap-6 py-16">
-        <p className="text-gray-500">
-          페이지를 찾을 수 없습니다. 주소를 다시 확인해 주세요.
-        </p>
+      <div className="flex flex-col items-center justify-center py-16 gap-6">
+        <AdminEmptyState
+          title="페이지를 찾을 수 없습니다."
+          description="주소를 다시 확인하거나 대시보드로 돌아가 주세요."
+          className="min-h-0 p-0"
+        />
         <Link href="/">
           <button
             type="button"
-            className="rounded bg-gray-800 px-4 py-2 text-white transition-colors hover:bg-gray-700"
+            className="rounded-lg bg-dark-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-dark-800 outline-none focus-visible:ring-2 focus-visible:ring-dark-900/20 motion-reduce:transition-none"
           >
             대시보드로 돌아가기
           </button>

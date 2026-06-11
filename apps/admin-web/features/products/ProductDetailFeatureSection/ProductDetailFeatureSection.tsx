@@ -2,6 +2,7 @@
 
 import { EditProductFeatureItem, ProductFeatureTable } from '@darun/products-feature';
 import { Button } from '@darun/ui';
+import { AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useState } from 'react';
 
@@ -23,30 +24,28 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-dark-900">기능 관리</h3>
-          <Button
-            type="button"
-            variant="contained"
-            color="secondary"
-            as="a"
-            href={`/products/${slug}/features/new`}
-          >
-            새 기능 추가
-          </Button>
-        </div>
-        <div className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
-          <div className="border-b border-black/10 px-4 py-2">
-            <ProductFeatureTable slug={slug} editFeature={editFeature} />
-          </div>
-        </div>
-      </div>
+      <AdminPanel>
+        <AdminSectionHeader
+          title="기능 관리"
+          rightSide={
+            <Button type="button" variant="contained" color="primary" as="a" href={`/products/${slug}/features/new`}>
+              새 기능 추가
+            </Button>
+          }
+        />
+        <AdminSectionBody className="p-0">
+          <ProductFeatureTable slug={slug} editFeature={editFeature} />
+        </AdminSectionBody>
+      </AdminPanel>
       {isEditModalOpened && (
         <dialog open={isEditModalOpened} className="rounded-xl bg-white p-6 shadow-lg backdrop:bg-black/50">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold">기능 정보 수정</h2>
-            <button type="button" onClick={closeEditModal} className="text-dark-900 hover:text-dark-900/70">
+            <button
+              type="button"
+              onClick={closeEditModal}
+              className="text-dark-900 hover:text-dark-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/20"
+            >
               ✕
             </button>
           </div>

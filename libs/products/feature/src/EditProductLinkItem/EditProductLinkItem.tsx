@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
+import { AdminField, AdminInput } from '@darun/ui-admin';
 import { useEditProductLinkItem } from './useEditProductLinkItem';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -18,40 +19,33 @@ export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit,
   return (
     <form onSubmit={form.onSubmit(submit)}>
       <div className="flex flex-col gap-2">
-        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
-          <span>표시 링크</span>
-          <input
+        <AdminField label="표시 링크">
+          <AdminInput
             type="text"
-            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
             placeholder="ex) toss.im"
             key={form.key('displayLink')}
             {...form.getInputProps('displayLink')}
           />
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
-          <span>링크</span>
-          <input
+        </AdminField>
+        <AdminField label="링크">
+          <AdminInput
             type="text"
-            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
             placeholder="ex) https://toss.im/"
             key={form.key('link')}
             {...form.getInputProps('link')}
           />
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
-          <span>이름</span>
-          <input
+        </AdminField>
+        <AdminField label="이름">
+          <AdminInput
             type="text"
-            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
             placeholder="ex) 공식 홈페이지"
             key={form.key('title')}
             {...form.getInputProps('title')}
           />
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
-          <span>아이콘</span>
+        </AdminField>
+        <AdminField label="아이콘">
           <select
-            className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+            className="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm text-dark-900 outline-none transition motion-reduce:transition-none focus:border-dark-900 focus-visible:ring-2 focus-visible:ring-dark-900/20"
             key={form.key('iconUrl')}
             {...form.getInputProps('iconUrl')}
           >
@@ -65,7 +59,7 @@ export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit,
               </option>
             ))}
           </select>
-        </label>
+        </AdminField>
         <div className="mt-4 flex justify-end">
           <Button type="submit" variant="contained" color="secondary" disabled={loading}>
             저장

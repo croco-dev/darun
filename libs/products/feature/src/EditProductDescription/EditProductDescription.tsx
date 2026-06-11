@@ -1,6 +1,6 @@
 import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
-import { Editor } from '@darun/ui-admin';
+import { Editor, AdminActions } from '@darun/ui-admin';
 import { useEditProductDescription } from './useEditProductDescription';
 
 export const EditProductDescription = bind(useEditProductDescription, ({ form, submit, defaultValue }) => (
@@ -9,10 +9,10 @@ export const EditProductDescription = bind(useEditProductDescription, ({ form, s
       <Editor {...form.getInputProps('description')} defaultValue={defaultValue} />
     </div>
 
-    <div className="mt-4 flex justify-end">
-      <Button type="submit" variant="contained" color="secondary">
+    <AdminActions>
+      <Button type="submit" variant="contained" color="primary">
         저장
       </Button>
-    </div>
+    </AdminActions>
   </form>
 ));

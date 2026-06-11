@@ -1,24 +1,22 @@
 import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
+import { AdminField, AdminInput, AdminActions } from '@darun/ui-admin';
 import { useEditAlternativeProducts } from './useEditAlternativeProducts';
 
 export const EditAlternativeProducts = bind(useEditAlternativeProducts, ({ form, submit, selectData, updateQuery }) => (
   <form onSubmit={form.onSubmit(submit)}>
-    <div className="flex flex-col gap-2">
-      <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
-        <span>서비스 검색</span>
-        <input
+    <div className="flex flex-col gap-3">
+      <AdminField label="서비스 검색">
+        <AdminInput
           type="text"
-          className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
           placeholder="ex) 토스"
           onChange={updateQuery}
         />
-      </label>
-      <label className="flex flex-col gap-1 text-sm font-medium text-dark-900">
-        <span>다른 서비스 (alternatives)</span>
+      </AdminField>
+      <AdminField label="다른 서비스 (alternatives)">
         <select
           multiple
-          className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+          className="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900 focus-visible:ring-2 focus-visible:ring-dark-900/20"
           key={form.key('alternativeIds')}
           {...form.getInputProps('alternativeIds')}
         >
@@ -30,13 +28,13 @@ export const EditAlternativeProducts = bind(useEditAlternativeProducts, ({ form,
             ))
           )}
         </select>
-      </label>
+      </AdminField>
     </div>
 
-    <div className="mt-4 flex justify-end">
-      <Button type="submit" variant="contained" color="secondary">
+    <AdminActions>
+      <Button type="submit" variant="contained" color="primary">
         저장
       </Button>
-    </div>
+    </AdminActions>
   </form>
 ));

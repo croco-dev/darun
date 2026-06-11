@@ -8,6 +8,7 @@ import localFont from 'next/font/local';
 import { ReactNode } from 'react';
 import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
+import { AppShell } from '../layouts/AppShell';
 
 const pretendardFont = localFont({
   src: '../../../node_modules/@croco/utils-next-font-pretendard/PretendardVariable.woff2',
@@ -31,7 +32,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className={pretendardFont.className}>
         <ServerRootProvider>
-          <ClientRootProvider>{children}</ClientRootProvider>
+          <ClientRootProvider>
+            <AppShell>{children}</AppShell>
+          </ClientRootProvider>
         </ServerRootProvider>
       </body>
     </html>

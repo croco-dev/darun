@@ -1,4 +1,5 @@
 import { ProductListRefreshButton } from '@darun/products-feature';
+import { Button } from '@darun/ui';
 import { PageShell } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { Plus } from 'lucide-react';
@@ -12,13 +13,15 @@ export default function ProductListPage() {
         <div className="flex gap-2">
           <ProductListRefreshButton />
           <Link href="/products/new">
-            <button
+            <Button
               type="button"
-              className="flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-white hover:bg-gray-800"
+              variant="contained"
+              color="primary"
+              className="flex items-center gap-2"
             >
               <Plus size={16} />
               추가하기
-            </button>
+            </Button>
           </Link>
         </div>
       }

@@ -21,7 +21,7 @@ gql`
 
 export function useAllCompanyListTable() {
   const [page, setPage] = useState(1);
-  const [tableQuery, { data }] = useAllCompaniesOnAllCompanyListTableLazyQuery();
+  const [tableQuery, { data, loading, error }] = useAllCompaniesOnAllCompanyListTableLazyQuery();
 
   const handlePage = (p: number) => {
     setPage(p);
@@ -39,5 +39,7 @@ export function useAllCompanyListTable() {
     page,
     totalCount: data?.allCompanies.totalCount,
     totalPages: data?.allCompanies.totalPages,
+    loading,
+    error,
   };
 }

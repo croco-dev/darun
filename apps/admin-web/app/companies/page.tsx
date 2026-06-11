@@ -14,7 +14,7 @@ export default function CompanyListPage() {
           <Link href="/companies/new">
             <button
               type="button"
-              className="flex items-center gap-2 rounded bg-gray-800 px-4 py-2 text-white transition-colors hover:bg-gray-700"
+              className="flex items-center gap-2 rounded-lg bg-dark-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-dark-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/20"
             >
               기업 추가
               <IconPlus size={16} />

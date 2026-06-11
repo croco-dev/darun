@@ -6,7 +6,7 @@ export const SearchProductField = bind(useSearchProductField, ({ products, searc
     <span>다른 서비스</span>
     <input
       type="text"
-      className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+      className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900 focus-visible:ring-2 focus-visible:ring-dark-900/20"
       placeholder="서비스 이름을 검색하세요."
       list="product-list"
       onChange={e => searchProduct(e.target.value)}

@@ -1,11 +1,14 @@
 'use client';
 
 import { WriteMagazine } from '@darun/magazines-feature';
+import { AdminPanel, AdminSection, AdminSectionBody } from '@darun/ui-admin';
 
 export const MagazineWriteSection = () => (
-  <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-    <div className="flex flex-col gap-3">
-      <WriteMagazine />
-    </div>
-  </div>
+  <AdminPanel>
+    <AdminSection>
+      <AdminSectionBody>
+        <WriteMagazine />
+      </AdminSectionBody>
+    </AdminSection>
+  </AdminPanel>
 );

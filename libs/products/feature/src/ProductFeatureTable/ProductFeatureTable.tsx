@@ -1,21 +1,27 @@
 import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
+import { AdminEmptyState, AdminLoadingState } from '@darun/ui-admin';
 import { Pencil } from 'lucide-react';
 import { useProductFeatureTable } from './useProductFeatureTable';
 
 export const ProductFeatureTable = bind(useProductFeatureTable, ({ features, loading, editFeature }) => {
   if (loading) {
-    return <>로딩 중...</>;
+    return <AdminLoadingState />;
   }
 
   if (!features || features.length === 0) {
-    return <p className="text-sm font-medium text-black/50">기능이 한 개도 없습니다.</p>;
+    return (
+      <AdminEmptyState
+        title="기능이 한 개도 없습니다."
+        description="새 기능을 추가해보세요."
+      />
+    );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-black/10">
-      <table className="min-w-[300px] divide-y divide-black/10 text-sm">
-        <thead className="bg-black/[0.03] text-left text-black/60">
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-dark-50 text-left text-dark-900">
           <tr>
             <th className="w-[60px] px-4 py-3 font-medium">이모지</th>
             <th className="px-4 py-3 font-medium">이름</th>
@@ -23,9 +29,9 @@ export const ProductFeatureTable = bind(useProductFeatureTable, ({ features, loa
             <th className="px-4 py-3"></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-black/5 bg-white">
+        <tbody className="divide-y divide-dark-200 bg-white">
           {features.map(feature => (
-            <tr key={feature.name} className="transition hover:bg-black/[0.03]">
+            <tr key={feature.name} className="transition hover:bg-dark-50">
               <td className="px-4 py-3 text-center">
                 <span className="p-1 text-base font-medium text-dark-900">{feature.emoji}</span>
               </td>

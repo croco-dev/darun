@@ -2,12 +2,13 @@
 
 import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
+import { AdminInput } from '@darun/ui-admin';
 import { useProductTagsForm } from './useProductTagsForm';
 
 export const ProductTagsForm = bind(useProductTagsForm, ({ tags, updateTags, applyTags }) => (
   <div className="flex flex-row gap-2">
-    <input
-      className="min-w-0 flex-1 rounded-xl border border-black/10 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900"
+    <AdminInput
+      className="min-w-0 flex-1"
       value={tags.join(', ')}
       onChange={event =>
         updateTags(
@@ -19,7 +20,7 @@ export const ProductTagsForm = bind(useProductTagsForm, ({ tags, updateTags, app
       }
       placeholder="태그를 쉼표로 구분해 입력하세요."
     />
-    <Button onClick={applyTags} variant="contained" color="secondary">
+    <Button onClick={applyTags} variant="contained" color="primary">
       저장
     </Button>
   </div>
