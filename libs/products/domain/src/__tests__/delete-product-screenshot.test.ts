@@ -64,7 +64,7 @@ describe("DeleteProductScreenshot", () => {
     expect(mockImageDeleter.delete).not.toHaveBeenCalled();
   });
 
-  it("should delete screenshot even when image deletion fails", async () => {
+  it("should not delete screenshot when image deletion fails (non-not-found)", async () => {
     const mockScreenshot = new ProductScreenshot({
       id: "screenshot-1",
       productId: "product-1",
@@ -82,6 +82,42 @@ describe("DeleteProductScreenshot", () => {
 
     const mockImageDeleter = {
       delete: vi.fn().mockRejectedValue(new Error("Cloudinary error")),
+    };
+
+    const useCase = new DeleteProductScreenshot(
+      mockRepository,
+      mockImageDeleter,
+    );
+
+    await expect(useCase.execute("screenshot-1")).rejects.toThrow(
+      "Cloudinary error",
+    );
+
+    expect(mockRepository.findById).toHaveBeenCalledWith("screenshot-1");
+    expect(mockRepository.deleteById).not.toHaveBeenCalled();
+    expect(mockImageDeleter.delete).toHaveBeenCalledWith(
+      mockScreenshot.imageUrl,
+    );
+  });
+
+  it("should delete screenshot when remote image is already not found", async () => {
+    const mockScreenshot = new ProductScreenshot({
+      id: "screenshot-1",
+      productId: "product-1",
+      imageUrl:
+        "https://res.cloudinary.com/test/image/upload/v1/folder/image.png",
+      imageAlt: "Test image",
+    });
+
+    const mockRepository = {
+      findById: vi.fn().mockResolvedValue(mockScreenshot),
+      deleteById: vi.fn().mockResolvedValue(undefined),
+      findManyByProductIdSortByPriorityDesc: vi.fn(),
+      insert: vi.fn(),
+    };
+
+    const mockImageDeleter = {
+      delete: vi.fn().mockResolvedValue(undefined),
     };
 
     const useCase = new DeleteProductScreenshot(

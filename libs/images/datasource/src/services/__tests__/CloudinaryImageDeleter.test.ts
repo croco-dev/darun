@@ -33,10 +33,10 @@ describe('CloudinaryImageDeleter', () => {
       expect(mockDestroy).toHaveBeenCalledWith('products/shoe');
     });
 
-    it("result가 'ok'가 아니면 ImageDeleteError를 throw한다", async () => {
+    it("result가 'not found'면 성공으로 처리한다", async () => {
       mockDestroy.mockResolvedValue({ result: 'not found' });
 
-      await expect(deleter.delete(validUrl)).rejects.toThrow('ImageDeleteError');
+      await expect(deleter.delete(validUrl)).resolves.toBeUndefined();
       expect(mockDestroy).toHaveBeenCalledWith('products/shoe');
     });
 

@@ -13,7 +13,7 @@ export class CloudinaryImageDeleter implements ImageDeleter {
 
     const result = await cloudinary.v2.uploader.destroy(publicId);
 
-    if (result.result !== 'ok') {
+    if (result.result !== 'ok' && result.result !== 'not found') {
       throw new Error('ImageDeleteError');
     }
   }

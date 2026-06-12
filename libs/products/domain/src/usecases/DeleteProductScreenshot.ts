@@ -21,12 +21,7 @@ export class DeleteProductScreenshot {
       throw productScreenshotNotFound();
     }
 
+    await this.imageDeleter.delete(screenshot.imageUrl);
     await this.productScreenshotRepository.deleteById(id);
-
-    try {
-      await this.imageDeleter.delete(screenshot.imageUrl);
-    } catch (error) {
-      console.error("Failed to delete image from Cloudinary:", error);
-    }
   }
 }
