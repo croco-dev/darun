@@ -1,5 +1,6 @@
 import { SignImageUpload } from '@darun/images-domain';
-import { Arg, Mutation, Resolver } from 'type-graphql';
+import { AuthRole } from '@darun/utils-apollo-server';
+import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { SignImageUploadInput } from './graphs/SignImageUpload';
 import { SignImageUploadPayload } from './graphs/SignImageUpload';
@@ -9,6 +10,7 @@ import { SignImageUploadPayload } from './graphs/SignImageUpload';
 export class ImageMutationResolver {
   constructor(private readonly signImageUploadUseCase: SignImageUpload) {}
 
+  @Authorized([AuthRole.Admin])
   @Mutation(() => SignImageUploadPayload)
   async signImageUpload(@Arg('input') input: SignImageUploadInput): Promise<SignImageUploadPayload> {
     return this.signImageUploadUseCase.execute(input);

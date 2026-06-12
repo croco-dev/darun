@@ -19,6 +19,7 @@ export class FeatureMutationResolver {
     private readonly updateProductFeatureUseCase: UpdateProductFeature
   ) {}
 
+  @Authorized([AuthRole.Admin])
   @Mutation(() => CreateProductFeaturePayload)
   async createProductFeature(@Arg('input') input: CreateProductFeatureInput): Promise<CreateProductFeaturePayload> {
     const product = await this.getProductUseCase.execute({

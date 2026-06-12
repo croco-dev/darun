@@ -35,6 +35,8 @@ async someAdminMutation(@Arg('input') input: SomeInput): Promise<SomePayload> {
 - `createCompany`, `allCompanies`, `searchCompanies` (Company resolvers)
 - `allProducts`, `tempProductBySlug` (ProductQueryResolver)
 - `requestTranslation` (TranslationMutationResolver)
+- `createProductFeature` (FeatureMutationResolver)
+- `signImageUpload` (ImageMutationResolver)
 
 ---
 
@@ -147,8 +149,7 @@ async someMutation(@Arg('input') input: SomeInput): Promise<SomePayload> {
 - 이 패턴은 의도적으로 열어둔 것임을 PR에 명시한다.
 
 **현재 사용 예시:**
-- `signImageUpload` (ImageMutationResolver) - presigned URL 발급
-- `createProductFeature` (FeatureMutationResolver)
+- 현재 코드베이스에 이 패턴을 사용하는 resolver는 없다. 향후 "로그인 시 개인화" 같은 기능에 적용한다.
 
 ---
 

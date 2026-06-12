@@ -583,6 +583,9 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../shared/utils-tsconfig
+      vitest:
+        specifier: 4.1.7
+        version: 4.1.7(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.7)(@vitest/ui@4.1.7)(jsdom@29.0.2)(vite@7.3.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass@1.97.3)(terser@5.46.0)(tsx@4.20.4)(yaml@2.7.0))
 
   libs/accounts/domain:
     dependencies:
