@@ -74,6 +74,11 @@ type ResolverOverrides = Partial<{
   getPublishedProductUseCase: GetPublishedProduct;
   getAlternativeProductsUseCase: GetAlternativeProducts;
   translationService: TranslationService;
+  getRecentProductsUseCase: GetRecentProducts;
+  getProductTagsUseCase: GetProductTags;
+  getVoteCountUseCase: GetVoteCount;
+  getProductLinksUseCase: GetProductLinks;
+  getProductScreenshotsUseCase: GetProductScreenshots;
 }>;
 
 const createProductRepository = (overrides: Partial<ProductRepository> = {}): ProductRepository => ({
@@ -195,20 +200,20 @@ const createProductQueryResolver = (overrides: ResolverOverrides = {}) => {
   const voteRepository = createVoteRepository();
 
   return new ProductQueryResolver(
-    new GetRecentProducts(productRepository),
+    overrides.getRecentProductsUseCase ?? new GetRecentProducts(productRepository),
     new GetRankedProducts(voteRepository, productRepository),
     new GetAllProducts(productRepository),
     new GetProduct(productRepository),
     overrides.getPublishedProductUseCase ?? new GetPublishedProduct(productRepository),
-    new GetProductLinks(createProductLinkRepository()),
-    new GetProductTags(createProductTagRepository()),
-    new GetProductScreenshots(createProductScreenshotRepository()),
+    overrides.getProductLinksUseCase ?? new GetProductLinks(createProductLinkRepository()),
+    overrides.getProductTagsUseCase ?? new GetProductTags(createProductTagRepository()),
+    overrides.getProductScreenshotsUseCase ?? new GetProductScreenshots(createProductScreenshotRepository()),
     new GetProductsCount(productRepository),
     overrides.getProductFeaturesUseCase ?? new GetProductFeatures(createProductFeatureRepository()),
     new GetCompany(createCompanyRepository()),
     new SearchProduct(createSearchableProductRepository()),
     overrides.getAlternativeProductsUseCase ?? new GetAlternativeProducts(createAlternativeProductRepository()),
-    new GetVoteCount(voteRepository),
+    overrides.getVoteCountUseCase ?? new GetVoteCount(voteRepository),
     new GetProductsByCategory(productRepository, createCategoryRepository()),
     overrides.translationService ?? createTranslationService()
   );
@@ -218,9 +223,27 @@ describe('ProductQueryResolver', () => {
   describe('features', () => {
     it('should return all features even when some translations fail', async () => {
       const features = [
-        new DomainProductFeature({ id: 'f1', name: 'Feature 1', summary: 'Summary 1', emoji: '🚀', productId: 'p1' }),
-        new DomainProductFeature({ id: 'f2', name: 'Feature 2', summary: 'Summary 2', emoji: '🔥', productId: 'p1' }),
-        new DomainProductFeature({ id: 'f3', name: 'Feature 3', summary: 'Summary 3', emoji: '💡', productId: 'p1' }),
+        new DomainProductFeature({
+          id: 'f1',
+          name: 'Feature 1',
+          summary: 'Summary 1',
+          emoji: '🚀',
+          productId: 'p1',
+        }),
+        new DomainProductFeature({
+          id: 'f2',
+          name: 'Feature 2',
+          summary: 'Summary 2',
+          emoji: '🔥',
+          productId: 'p1',
+        }),
+        new DomainProductFeature({
+          id: 'f3',
+          name: 'Feature 3',
+          summary: 'Summary 3',
+          emoji: '💡',
+          productId: 'p1',
+        }),
       ];
 
       const mockGetProductFeatures = new GetProductFeatures(
@@ -262,9 +285,27 @@ describe('ProductQueryResolver', () => {
 
     it('should return other features when one feature processing fails entirely', async () => {
       const features = [
-        new DomainProductFeature({ id: 'f1', name: 'Feature 1', summary: 'Summary 1', emoji: '🚀', productId: 'p1' }),
-        new DomainProductFeature({ id: 'f2', name: 'Feature 2', summary: 'Summary 2', emoji: '🔥', productId: 'p1' }),
-        new DomainProductFeature({ id: 'f3', name: 'Feature 3', summary: 'Summary 3', emoji: '💡', productId: 'p1' }),
+        new DomainProductFeature({
+          id: 'f1',
+          name: 'Feature 1',
+          summary: 'Summary 1',
+          emoji: '🚀',
+          productId: 'p1',
+        }),
+        new DomainProductFeature({
+          id: 'f2',
+          name: 'Feature 2',
+          summary: 'Summary 2',
+          emoji: '🔥',
+          productId: 'p1',
+        }),
+        new DomainProductFeature({
+          id: 'f3',
+          name: 'Feature 3',
+          summary: 'Summary 3',
+          emoji: '💡',
+          productId: 'p1',
+        }),
       ];
 
       const mockGetProductFeatures = new GetProductFeatures(
@@ -305,13 +346,20 @@ describe('ProductQueryResolver', () => {
     it('should return alternatives even when some lookups fail', async () => {
       const mockGetAlternativeProducts = new GetAlternativeProducts(
         createAlternativeProductRepository({
-          findManyByProductId: vi
-            .fn<AlternativeProductRepository['findManyByProductId']>()
-            .mockResolvedValue([
-              new AlternativeProduct({ productId: 'p1', alternativeProductId: 'alt-1' }),
-              new AlternativeProduct({ productId: 'p1', alternativeProductId: 'alt-2' }),
-              new AlternativeProduct({ productId: 'p1', alternativeProductId: 'alt-3' }),
-            ]),
+          findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([
+            new AlternativeProduct({
+              productId: 'p1',
+              alternativeProductId: 'alt-1',
+            }),
+            new AlternativeProduct({
+              productId: 'p1',
+              alternativeProductId: 'alt-2',
+            }),
+            new AlternativeProduct({
+              productId: 'p1',
+              alternativeProductId: 'alt-3',
+            }),
+          ]),
         })
       );
 
@@ -353,6 +401,100 @@ describe('ProductQueryResolver', () => {
       expect(result[0].name).toBe('Product 1');
       expect(result[1].name).toBe('Product 3');
       expect(publishedProductRepository.findPublishedOneById).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('preloadFields', () => {
+    it('일부 보조 배치가 실패해도 product node는 생존한다', async () => {
+      const recentProductsUseCase = new GetRecentProducts(
+        createProductRepository({
+          findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([
+            new DomainProduct({
+              id: 'p1',
+              name: 'Product 1',
+              slug: 'product-1',
+              summary: 'Summary 1',
+              logoUrl: 'https://example.com/logo.png',
+            }),
+          ]),
+        })
+      );
+
+      const rejectingTagsUseCase = new GetProductTags(createProductTagRepository());
+      vi.spyOn(rejectingTagsUseCase, 'execute').mockRejectedValue(new Error('Tags batch failed'));
+
+      const resolver = createProductQueryResolver({
+        getRecentProductsUseCase: recentProductsUseCase,
+        getProductTagsUseCase: rejectingTagsUseCase,
+      });
+
+      const result = await resolver.recentProducts(10, 'ko');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('p1');
+
+      const tags = await resolver.tags(result[0]);
+      expect(tags).toEqual([]);
+    });
+
+    it('모든 보조 배치가 실패해도 product node는 생존한다', async () => {
+      const recentProductsUseCase = new GetRecentProducts(
+        createProductRepository({
+          findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([
+            new DomainProduct({
+              id: 'p1',
+              name: 'Product 1',
+              slug: 'product-1',
+              summary: 'Summary 1',
+              logoUrl: 'https://example.com/logo.png',
+            }),
+          ]),
+        })
+      );
+
+      const rejectingTagsUseCase = new GetProductTags(createProductTagRepository());
+      vi.spyOn(rejectingTagsUseCase, 'execute').mockRejectedValue(new Error('Tags batch failed'));
+
+      const rejectingVoteCountUseCase = new GetVoteCount(createVoteRepository());
+      vi.spyOn(rejectingVoteCountUseCase, 'execute').mockRejectedValue(new Error('Vote count batch failed'));
+
+      const rejectingLinksUseCase = new GetProductLinks(createProductLinkRepository());
+      vi.spyOn(rejectingLinksUseCase, 'execute').mockRejectedValue(new Error('Links batch failed'));
+
+      const rejectingScreenshotsUseCase = new GetProductScreenshots(createProductScreenshotRepository());
+      vi.spyOn(rejectingScreenshotsUseCase, 'execute').mockRejectedValue(new Error('Screenshots batch failed'));
+
+      const rejectingFeaturesUseCase = new GetProductFeatures(createProductFeatureRepository());
+      vi.spyOn(rejectingFeaturesUseCase, 'execute').mockRejectedValue(new Error('Features batch failed'));
+
+      const resolver = createProductQueryResolver({
+        getRecentProductsUseCase: recentProductsUseCase,
+        getProductTagsUseCase: rejectingTagsUseCase,
+        getVoteCountUseCase: rejectingVoteCountUseCase,
+        getProductLinksUseCase: rejectingLinksUseCase,
+        getProductScreenshotsUseCase: rejectingScreenshotsUseCase,
+        getProductFeaturesUseCase: rejectingFeaturesUseCase,
+      });
+
+      const result = await resolver.recentProducts(10, 'ko');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('p1');
+
+      const tags = await resolver.tags(result[0]);
+      expect(tags).toEqual([]);
+
+      const voteCount = await resolver.voteCount(result[0]);
+      expect(voteCount).toBe(0);
+
+      const links = await resolver.links(result[0]);
+      expect(links).toEqual([]);
+
+      const screenshots = await resolver.screenshots(result[0]);
+      expect(screenshots).toEqual([]);
+
+      const features = await resolver.features(result[0]);
+      expect(features).toEqual([]);
     });
   });
 });

@@ -160,7 +160,9 @@ export class PostgresqlProductRepository implements ProductRepository {
     return this.db
       .select()
       .from(products)
-      .where(and(isNotNull(products.publishedAt), sql`${products.categoryIds} @> ${JSON.stringify([categoryId])}`))
+      .where(
+        and(isNotNull(products.publishedAt), sql`${products.categoryIds}::jsonb @> ${JSON.stringify([categoryId])}`)
+      )
       .orderBy(desc(products.publishedAt))
       .then(rows => rows.map(row => this.mapper(row)));
   }

@@ -20,14 +20,20 @@ export function createGraphQLContext({
   clientIp?: string;
   getAccountUseCase: GetAccount;
 }): GraphQLContext {
-  let cachedAccount: Awaited<ReturnType<GetAccount['execute']>> | undefined = undefined;
+  let cachedAccountPromise: ReturnType<GetAccount['execute']> | undefined;
 
   const getAccount = async () => {
-    if (cachedAccount !== undefined) return cachedAccount;
-    cachedAccount = await getAccountUseCase.execute({
-      token: authToken,
-    });
-    return cachedAccount;
+    if (cachedAccountPromise === undefined) {
+      cachedAccountPromise = getAccountUseCase
+        .execute({
+          token: authToken,
+        })
+        .catch((err: unknown) => {
+          cachedAccountPromise = undefined;
+          throw err;
+        });
+    }
+    return cachedAccountPromise;
   };
 
   return {

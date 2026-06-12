@@ -74,21 +74,28 @@ export class ProductQueryResolver {
 
     const productIds = products.map(p => p.id);
 
-    const [productTags, voteCounts, productLinks, screenshots, features] = await Promise.all([
-      Promise.all(productIds.map(id => this.getProductTagsUseCase.execute({ productId: id }))),
-      Promise.all(productIds.map(id => this.getVoteCountUseCase.execute({ productId: id }))),
-      Promise.all(productIds.map(id => this.getProductLinksUseCase.execute({ productId: id }))),
-      Promise.all(productIds.map(id => this.getProductScreenshotsUseCase.execute({ productId: id }))),
-      Promise.all(productIds.map(id => this.getProductFeaturesUseCase.execute({ productId: id }))),
-    ]);
+    const [productTagsResult, voteCountsResult, productLinksResult, screenshotsResult, featuresResult] =
+      await Promise.allSettled([
+        Promise.all(productIds.map(id => this.getProductTagsUseCase.execute({ productId: id }))),
+        Promise.all(productIds.map(id => this.getVoteCountUseCase.execute({ productId: id }))),
+        Promise.all(productIds.map(id => this.getProductLinksUseCase.execute({ productId: id }))),
+        Promise.all(productIds.map(id => this.getProductScreenshotsUseCase.execute({ productId: id }))),
+        Promise.all(productIds.map(id => this.getProductFeaturesUseCase.execute({ productId: id }))),
+      ]);
+
+    const productTags = productTagsResult.status === 'fulfilled' ? productTagsResult.value : [];
+    const voteCounts = voteCountsResult.status === 'fulfilled' ? voteCountsResult.value : [];
+    const productLinks = productLinksResult.status === 'fulfilled' ? productLinksResult.value : [];
+    const screenshots = screenshotsResult.status === 'fulfilled' ? screenshotsResult.value : [];
+    const features = featuresResult.status === 'fulfilled' ? featuresResult.value : [];
 
     return products.map((product, i) => ({
       ...product,
       __preloadedTags: productTags[i]?.tags ?? [],
-      __preloadedVoteCount: voteCounts[i],
-      __preloadedLinks: productLinks[i].map((link, j) => ({ ...link, isPrimary: j === 0 })),
-      __preloadedScreenshots: screenshots[i],
-      __preloadedFeatures: features[i],
+      __preloadedVoteCount: voteCounts[i] ?? 0,
+      __preloadedLinks: (productLinks[i] ?? []).map((link, j) => ({ ...link, isPrimary: j === 0 })),
+      __preloadedScreenshots: screenshots[i] ?? [],
+      __preloadedFeatures: features[i] ?? [],
     }));
   }
 
