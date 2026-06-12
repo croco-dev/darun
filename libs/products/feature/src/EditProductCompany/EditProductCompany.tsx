@@ -1,6 +1,6 @@
 import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
-import { AdminField, AdminActions } from '@darun/ui-admin';
+import { AdminField, AdminSelect, AdminActions } from '@darun/ui-admin';
 import { useEditProductCompany } from './useEditProductCompany';
 
 export const EditProductCompany = bind(
@@ -10,8 +10,7 @@ export const EditProductCompany = bind(
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <div className="flex flex-col gap-3">
           <AdminField label="회사">
-            <select
-              className="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900 focus-visible:ring-2 focus-visible:ring-dark-900/20"
+            <AdminSelect
               value={form.getValues().companyId}
               onChange={e => form.setFieldValue('companyId', e.target.value)}
             >
@@ -21,7 +20,7 @@ export const EditProductCompany = bind(
                   {company.label}
                 </option>
               ))}
-            </select>
+            </AdminSelect>
           </AdminField>
         </div>
 

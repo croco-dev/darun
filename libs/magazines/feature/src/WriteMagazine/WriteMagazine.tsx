@@ -1,8 +1,8 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
+import { Button } from '@darun/ui';
 import { AdminActions, AdminField, AdminInput } from '@darun/ui-admin';
-import React from 'react';
 import { useWriteMagazine } from './useWriteMagazine';
 
 export const WriteMagazine = bind(
@@ -83,7 +83,7 @@ export const WriteMagazine = bind(
                   };
                   input.click();
                 }}
-                className="flex min-h-[220px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-dark-200 bg-white transition hover:border-dark-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/20"
+                className="flex min-h-[220px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-dark-200 bg-white transition hover:border-dark-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
               >
                 <div className="flex flex-col items-center gap-4 p-8">
                   <svg
@@ -112,13 +112,15 @@ export const WriteMagazine = bind(
             ) : (
               <div className="flex items-center gap-4">
                 <ImagePreview />
-                <button
+                <Button
                   type="button"
+                  variant="contained"
+                  color="secondary"
                   onClick={() => handleFileRemove()}
-                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/20"
+                  className="!bg-red-600 hover:!bg-red-700 !text-white !border-transparent"
                 >
                   이미지 삭제
-                </button>
+                </Button>
               </div>
             )}
           </AdminField>
@@ -127,12 +129,9 @@ export const WriteMagazine = bind(
         <p className="mt-4 text-xs text-dark-500">글 작성은 저장 후, 수정 기능을 이용하여 가능합니다.</p>
 
         <AdminActions>
-          <button
-            type="submit"
-            className="rounded-lg bg-dark-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-dark-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/20"
-          >
+          <Button type="submit" variant="contained" color="primary">
             저장
-          </button>
+          </Button>
         </AdminActions>
       </form>
     );

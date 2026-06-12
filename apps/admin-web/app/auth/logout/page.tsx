@@ -15,7 +15,7 @@ export default function LogoutPage() {
                 <Link href="/">
                   <button
                     type="button"
-                    className="rounded-lg border border-dark-200 bg-white px-4 py-2 text-sm font-medium text-dark-700 hover:bg-dark-50 transition outline-none focus-visible:ring-2 focus-visible:ring-dark-900/20 motion-reduce:transition-none"
+                    className="rounded-lg border border-dark-200 bg-white px-4 py-2 text-sm font-medium text-dark-700 hover:bg-dark-50 transition motion-reduce:transition-none outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
                   >
                     취소
                   </button>

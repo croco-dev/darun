@@ -13,7 +13,7 @@ export default function NotFoundPage() {
         <Link href="/">
           <button
             type="button"
-            className="rounded-lg bg-dark-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-dark-800 outline-none focus-visible:ring-2 focus-visible:ring-dark-900/20 motion-reduce:transition-none"
+            className="rounded-lg bg-dark-900 px-4 py-2.5 text-sm font-medium text-white transition motion-reduce:transition-none outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
           >
             대시보드로 돌아가기
           </button>

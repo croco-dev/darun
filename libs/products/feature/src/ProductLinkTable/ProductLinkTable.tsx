@@ -35,52 +35,72 @@ export const ProductLinkTable = bind(
     return (
       <>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
+          <table className="w-full border-collapse table-fixed">
+            <thead className="bg-dark-50 text-left text-dark-900">
               <tr>
-                <th
-                  className="border-b border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900"
-                  style={{ width: '80px', textAlign: 'center' }}
-                >
+                <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[80px]">
                   아이콘
                 </th>
-                <th className="border-b border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900">이름</th>
-                <th className="border-b border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900">링크</th>
-                <th className="border-b border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900">
+                <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 w-[150px]">
+                  이름
+                </th>
+                <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900">링크</th>
+                <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[120px]">
                   주 링크 여부
                 </th>
-                <th className="border-b border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900" />
+                <th className="border-b border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 last:border-r-0 w-[120px]" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-white">
               {links.map(link => (
-                <tr key={link.id} className="hover:bg-dark-50 transition">
-                  <td className="border-b border-dark-200 px-4 py-3">
-                    <div
-                      className="flex items-center justify-center rounded-xl p-2 text-center"
-                      style={{
-                        background: link.isPrimary ? '#000' : '#fff',
-                      }}
-                    >
-                      <img src={link.iconUrl} alt={`${link.title} 아이콘`} loading="lazy" />
+                <tr key={link.id} className="border-b border-dark-200 hover:bg-dark-50 transition last:border-b-0">
+                  <td className="border-r border-dark-200 px-4 py-3">
+                    <div className="flex justify-center">
+                      <div
+                        className="flex items-center justify-center rounded-xl p-2 text-center h-10 w-10 shrink-0"
+                        style={{
+                          background: link.isPrimary ? '#000' : '#fff',
+                        }}
+                      >
+                        <img
+                          src={link.iconUrl}
+                          alt={`${link.title} 아이콘`}
+                          loading="lazy"
+                          className="h-6 w-6 object-contain"
+                        />
+                      </div>
                     </div>
                   </td>
-                  <td className="border-b border-dark-200 px-4 py-3">
-                    <p className="text-sm font-medium text-dark-900">{link.title}</p>
+                  <td className="border-r border-dark-200 px-4 py-3">
+                    <div className="truncate text-sm font-medium text-dark-900" title={link.title}>
+                      {link.title}
+                    </div>
                   </td>
-                  <td className="border-b border-dark-200 px-4 py-3">
-                    <p className="text-sm font-medium text-dark-900">
-                      <a href={link.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                  <td className="border-r border-dark-200 px-4 py-3">
+                    <div className="truncate text-sm text-dark-900">
+                      <a
+                        href={link.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                        title={`${link.displayLink} (${link.link})`}
+                      >
                         {link.displayLink} ({link.link})
                       </a>
-                    </p>
+                    </div>
                   </td>
-                  <td className="border-b border-dark-200 px-4 py-3">
+                  <td className="border-r border-dark-200 px-4 py-3 text-center">
                     <p className="text-sm font-medium text-dark-900">{link.isPrimary ? '✅' : '❌'}</p>
                   </td>
-                  <td className="border-b border-dark-200 px-4 py-3">
+                  <td className="px-4 py-3">
                     <div className="flex justify-end gap-0">
-                      <Button type="button" variant="base" size="sm" onClick={() => editLink(link)}>
+                      <Button
+                        type="button"
+                        variant="base"
+                        size="sm"
+                        onClick={() => editLink(link)}
+                        className="shrink-0"
+                      >
                         <span className="inline-flex items-center gap-2">
                           <Pencil className="h-4 w-4" />
                           정보 수정
@@ -94,13 +114,13 @@ export const ProductLinkTable = bind(
           </table>
         </div>
         {isEditModalOpened && (
-          <dialog open={isEditModalOpened} className="rounded-xl bg-white p-6 shadow-lg backdrop:bg-black/50">
+          <dialog open={isEditModalOpened} className="rounded-xl bg-white p-6 shadow-lg backdrop:bg-black/50 z-50">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold">링크 정보 수정</h2>
               <button
                 type="button"
                 onClick={closeEditModal}
-                className="text-dark-900 hover:text-dark-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/20"
+                className="text-dark-900 hover:text-dark-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
               >
                 ✕
               </button>

@@ -22,9 +22,7 @@ export function Navbar() {
           <Link href="/">
             <div className="flex items-center gap-2 px-1">
               <Logo size={32} />
-              <span className="text-lg font-bold text-dark-900 select-none">
-                다른 관리자
-              </span>
+              <span className="text-lg font-bold text-dark-900 select-none">다른 관리자</span>
             </div>
           </Link>
           <code className="font-mono font-bold text-xs bg-dark-100 text-dark-700 px-1.5 py-0.5 rounded">
@@ -38,10 +36,8 @@ export function Navbar() {
             return (
               <Link
                 key={item.link}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition outline-none select-none focus-visible:ring-2 focus-visible:ring-dark-900/20 ${
-                  isActive
-                    ? 'bg-dark-900 text-white'
-                    : 'text-dark-600 hover:bg-dark-50 hover:text-dark-900'
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition motion-reduce:transition-none outline-none select-none focus-visible:ring-2 focus-visible:ring-dark-900/40 ${
+                  isActive ? 'bg-dark-900 text-white' : 'text-dark-600 hover:bg-dark-50 hover:text-dark-900'
                 }`}
                 href={item.link}
               >

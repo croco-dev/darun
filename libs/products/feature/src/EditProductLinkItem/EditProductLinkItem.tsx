@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
-import { AdminField, AdminInput } from '@darun/ui-admin';
+import { AdminField, AdminInput, AdminSelect, AdminActions } from '@darun/ui-admin';
 import { useEditProductLinkItem } from './useEditProductLinkItem';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -44,11 +44,7 @@ export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit,
           />
         </AdminField>
         <AdminField label="아이콘">
-          <select
-            className="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm text-dark-900 outline-none transition motion-reduce:transition-none focus:border-dark-900 focus-visible:ring-2 focus-visible:ring-dark-900/20"
-            key={form.key('iconUrl')}
-            {...form.getInputProps('iconUrl')}
-          >
+          <AdminSelect key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
             <option value="">
               ex)
               https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg
@@ -58,13 +54,13 @@ export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit,
                 {icon.label}
               </option>
             ))}
-          </select>
+          </AdminSelect>
         </AdminField>
-        <div className="mt-4 flex justify-end">
-          <Button type="submit" variant="contained" color="secondary" disabled={loading}>
+        <AdminActions>
+          <Button type="submit" variant="contained" color="primary" disabled={loading}>
             저장
           </Button>
-        </div>
+        </AdminActions>
       </div>
     </form>
   );

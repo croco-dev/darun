@@ -1,6 +1,6 @@
 import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
-import { AdminField, AdminInput, AdminTextarea } from '@darun/ui-admin';
+import { AdminField, AdminInput, AdminTextarea, AdminActions } from '@darun/ui-admin';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { useEditProductFeatureItem } from './useEditProductFeatureItem';
@@ -44,11 +44,11 @@ export const EditProductFeatureItem = bind(useEditProductFeatureItem, ({ form, s
         </AdminField>
       </div>
 
-      <div className="mt-4 flex justify-end">
-        <Button type="submit" variant="contained" color="secondary" disabled={loading}>
+      <AdminActions>
+        <Button type="submit" variant="contained" color="primary" disabled={loading}>
           저장
         </Button>
-      </div>
+      </AdminActions>
     </form>
   );
 });

@@ -1,8 +1,8 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
-import { AdminActions, AdminField, AdminInput } from '@darun/ui-admin';
-import React from 'react';
+import { Button } from '@darun/ui';
+import { AdminActions, AdminField, AdminInput, AdminCheckbox } from '@darun/ui-admin';
 import { useNewCompanyForm } from './useNewCompanyForm';
 
 export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) => (
@@ -36,24 +36,18 @@ export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) =
           disabled={Boolean(form.getValues().startAtIsDisabled)}
         />
       </AdminField>
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          key={form.key('startAtIsDisabled')}
-          {...form.getInputProps('startAtIsDisabled')}
-          className="w-4 h-4 text-dark-900 border-dark-200 rounded focus:ring-dark-900/20"
-        />
-        <label className="text-sm text-dark-900">개업일 미상 (체크 시 위 개업일은 무시됨)</label>
-      </div>
+      <AdminCheckbox
+        id="startAtIsDisabled"
+        label="개업일 미상 (체크 시 위 개업일은 무시됨)"
+        key={form.key('startAtIsDisabled')}
+        {...form.getInputProps('startAtIsDisabled', { type: 'checkbox' })}
+      />
     </div>
 
     <AdminActions>
-      <button
-        type="submit"
-        className="px-4 py-2 bg-dark-900 text-white text-sm font-medium rounded-lg hover:bg-dark-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/20"
-      >
+      <Button type="submit" variant="contained" color="primary">
         저장
-      </button>
+      </Button>
     </AdminActions>
   </form>
 ));

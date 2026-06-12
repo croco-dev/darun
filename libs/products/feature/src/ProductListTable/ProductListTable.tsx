@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@darun/ui';
-import { AdminPanel } from '@darun/ui-admin';
+import { AdminPanel, AdminEmptyState } from '@darun/ui-admin';
 import { useReactTable, getCoreRowModel, createColumnHelper, flexRender } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
@@ -20,28 +20,45 @@ const columnHelper = createColumnHelper<Product>();
 const columns = [
   columnHelper.accessor('logoUrl', {
     header: '로고',
+    size: 70,
     cell: info => (
-      <Image
-        src={info.getValue()}
-        unoptimized={!info.getValue()}
-        alt={`서비스 로고`}
-        width={32}
-        height={32}
-        className="h-8 w-8 rounded-lg border border-black/15 object-contain"
-      />
+      <div className="flex justify-center">
+        <Image
+          src={info.getValue()}
+          unoptimized={!info.getValue()}
+          alt={`서비스 로고`}
+          width={32}
+          height={32}
+          className="h-8 w-8 rounded-lg border border-black/15 object-contain"
+        />
+      </div>
     ),
   }),
   columnHelper.accessor('name', {
     header: '이름',
-    cell: info => info.getValue(),
+    size: 200,
+    cell: info => (
+      <div className="truncate font-medium text-dark-900" title={info.getValue()}>
+        {info.getValue()}
+      </div>
+    ),
   }),
   columnHelper.accessor('summary', {
     header: '요약',
-    cell: info => info.getValue(),
+    cell: info => (
+      <div className="truncate text-dark-500" title={info.getValue()}>
+        {info.getValue()}
+      </div>
+    ),
   }),
   columnHelper.accessor('slug', {
     header: '슬러그',
-    cell: info => <span className="text-sm text-dark-900">{info.getValue()}</span>,
+    size: 150,
+    cell: info => (
+      <div className="truncate text-sm text-dark-500" title={info.getValue()}>
+        {info.getValue()}
+      </div>
+    ),
   }),
 ];
 
@@ -63,10 +80,18 @@ export function ProductListTable() {
     getCoreRowModel: getCoreRowModel(),
   });
 
+  if (products.length === 0) {
+    return (
+      <AdminPanel className="p-8">
+        <AdminEmptyState title="등록된 서비스가 없습니다." description="새로운 서비스를 추가해보세요." />
+      </AdminPanel>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <AdminPanel className="overflow-hidden">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse table-fixed">
           <thead className="bg-dark-50">
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
@@ -74,6 +99,7 @@ export function ProductListTable() {
                   <th
                     key={header.id}
                     className="border-b border-r border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
+                    style={{ width: header.column.columnDef.size }}
                   >
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </th>

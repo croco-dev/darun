@@ -2,7 +2,7 @@
 
 import { NewProductLinkForm } from '@darun/products-feature';
 import { Button } from '@darun/ui';
-import { AdminField, AdminInput, AdminActions } from '@darun/ui-admin';
+import { AdminField, AdminInput, AdminSelect, AdminActions } from '@darun/ui-admin';
 
 type NewProductLinkSectionProps = {
   productSlug: string;
@@ -14,31 +14,16 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
     {({ form }: any) => (
       <div className="flex flex-col gap-3">
         <AdminField label="표시 링크" error={form.errors.displayLink}>
-          <AdminInput
-            type="text"
-            placeholder="ex) toss.im"
-            {...form.getInputProps('displayLink')}
-          />
+          <AdminInput type="text" placeholder="ex) toss.im" {...form.getInputProps('displayLink')} />
         </AdminField>
         <AdminField label="링크" error={form.errors.link}>
-          <AdminInput
-            type="text"
-            placeholder="ex) https://toss.im/"
-            {...form.getInputProps('link')}
-          />
+          <AdminInput type="text" placeholder="ex) https://toss.im/" {...form.getInputProps('link')} />
         </AdminField>
         <AdminField label="이름" error={form.errors.title}>
-          <AdminInput
-            type="text"
-            placeholder="ex) 공식 홈페이지"
-            {...form.getInputProps('title')}
-          />
+          <AdminInput type="text" placeholder="ex) 공식 홈페이지" {...form.getInputProps('title')} />
         </AdminField>
         <AdminField label="아이콘" error={form.errors.iconUrl}>
-          <select
-            className="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm text-dark-900 outline-none transition focus:border-dark-900 focus-visible:ring-2 focus-visible:ring-dark-900/20"
-            {...form.getInputProps('iconUrl')}
-          >
+          <AdminSelect {...form.getInputProps('iconUrl')}>
             <option value="">
               ex)
               https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg
@@ -48,7 +33,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
                 {icon.label}
               </option>
             ))}
-          </select>
+          </AdminSelect>
         </AdminField>
 
         <AdminActions>

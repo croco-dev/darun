@@ -38,13 +38,27 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
         </AdminSectionBody>
       </AdminPanel>
       {isEditModalOpened && (
-        <dialog open={isEditModalOpened} className="rounded-xl bg-white p-6 shadow-lg backdrop:bg-black/50">
+        <dialog
+          open={isEditModalOpened}
+          className="p-6 rounded-xl border border-dark-200 bg-white shadow-lg backdrop:bg-black/50 z-50 focus-visible:outline-none min-w-[500px]"
+          onClick={e => {
+            if (e.target === e.currentTarget) {
+              closeEditModal();
+            }
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Escape') {
+              closeEditModal();
+            }
+          }}
+        >
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">설명 수정</h2>
+            <h2 className="text-xl font-semibold text-dark-900">설명 수정</h2>
             <button
               type="button"
               onClick={closeEditModal}
-              className="text-dark-900 hover:text-dark-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/20"
+              className="text-dark-500 hover:text-dark-900 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 rounded-lg p-1.5"
+              aria-label="닫기"
             >
               ✕
             </button>

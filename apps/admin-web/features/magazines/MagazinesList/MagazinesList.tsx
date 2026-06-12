@@ -2,12 +2,16 @@
 
 import { bind } from '@croco/utils-structure-react';
 import { ArticleCard } from '@darun/magazines-feature';
-import { AdminEmptyState } from '@darun/ui-admin';
+import { AdminPanel, AdminEmptyState } from '@darun/ui-admin';
 import { useMagazinesList } from './useMagazinesList';
 
 export const MagazinesList = bind(useMagazinesList, ({ magazines }) => {
   if (!magazines || magazines.length === 0) {
-    return <AdminEmptyState title="등록된 매거진이 없습니다." description="새로운 매거진을 발행해 보세요." />;
+    return (
+      <AdminPanel className="p-8">
+        <AdminEmptyState title="등록된 매거진이 없습니다." description="새로운 매거진을 발행해 보세요." />
+      </AdminPanel>
+    );
   }
 
   return (

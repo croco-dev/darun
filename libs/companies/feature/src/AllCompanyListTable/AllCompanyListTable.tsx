@@ -1,7 +1,9 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
-import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
+import { Button } from '@darun/ui';
+import { AdminPanel, AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React from 'react';
 import { useAllCompanyListTable } from './useAllCompanyListTable';
 
@@ -47,35 +49,43 @@ export const AllCompanyListTable = bind(
     }
 
     if (!companies || companies.length === 0) {
-      return <AdminEmptyState title="등록된 기업이 없습니다." description="새로운 기업을 등록해 보세요." />;
+      return (
+        <AdminPanel className="p-8">
+          <AdminEmptyState title="등록된 기업이 없습니다." description="새로운 기업을 등록해 보세요." />
+        </AdminPanel>
+      );
     }
 
     return (
       <div className="flex flex-col gap-3">
-        <div className="overflow-x-auto border border-dark-200 rounded-xl">
-          <table className="min-w-full divide-y divide-dark-100">
+        <AdminPanel className="overflow-hidden">
+          <table className="w-full border-collapse table-fixed">
             <thead className="bg-dark-50">
               <tr>
                 {dataTableColumns.map(col => (
                   <th
                     key={col.accessor}
-                    className="px-4 py-3 text-left text-xs font-medium text-dark-500 uppercase tracking-wider border-r border-dark-100 last:border-r-0"
+                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
+                    style={{ width: col.accessor === 'id' ? 100 : col.accessor === 'startAt' ? 150 : undefined }}
                   >
                     {col.title}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-dark-100">
+            <tbody>
               {(companies ?? []).map((record, index) => (
                 <tr
                   key={record.id}
-                  className={index % 2 === 0 ? 'hover:bg-dark-50/50' : 'bg-dark-50/20 hover:bg-dark-50/50'}
+                  className={`border-b border-dark-200 transition hover:bg-dark-50 ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-dark-50/30'
+                  }`}
                 >
                   {dataTableColumns.map(col => (
                     <td
                       key={col.accessor}
-                      className="px-4 py-3 whitespace-nowrap text-sm text-dark-900 border-r border-dark-100 last:border-r-0"
+                      className="border-r border-dark-200 px-4 py-3 text-sm text-dark-900 last:border-r-0 truncate"
+                      title={col.render ? undefined : String(record[col.accessor as keyof CompanyRecord] ?? '-')}
                     >
                       {col.render ? col.render(record) : String(record[col.accessor as keyof CompanyRecord] ?? '-')}
                     </td>
@@ -84,30 +94,42 @@ export const AllCompanyListTable = bind(
               ))}
             </tbody>
           </table>
-        </div>
+        </AdminPanel>
         {totalCount && totalCount > 50 ? (
-          <div className="flex items-center justify-between px-4 py-3 bg-white border border-dark-200 rounded-xl">
-            <div className="text-sm text-dark-700">
-              총 {totalCount}개 중 {(page - 1) * 50 + 1}-{Math.min(page * 50, totalCount)}
+          <AdminPanel className="p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-dark-900">
+                총 {totalCount}개 중 {(page - 1) * 50 + 1}-{Math.min(page * 50, totalCount)}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="base"
+                  size="sm"
+                  onClick={() => handlePage(Math.max(1, page - 1))}
+                  disabled={page === 1}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <ChevronLeft className="h-4 w-4" />
+                    이전
+                  </span>
+                </Button>
+                <span className="px-3 py-1 text-sm text-dark-900 font-medium">{page}</span>
+                <Button
+                  type="button"
+                  variant="base"
+                  size="sm"
+                  onClick={() => handlePage(Math.min(Math.ceil(totalCount / 50), page + 1))}
+                  disabled={page >= Math.ceil(totalCount / 50)}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    다음
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handlePage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className="px-3 py-1 text-sm border border-dark-200 rounded-lg hover:bg-dark-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-dark-700 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-200"
-              >
-                이전
-              </button>
-              <span className="px-3 py-1 text-sm text-dark-700 font-medium">{page}</span>
-              <button
-                onClick={() => handlePage(Math.min(Math.ceil(totalCount / 50), page + 1))}
-                disabled={page >= Math.ceil(totalCount / 50)}
-                className="px-3 py-1 text-sm border border-dark-200 rounded-lg hover:bg-dark-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-dark-700 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-200"
-              >
-                다음
-              </button>
-            </div>
-          </div>
+          </AdminPanel>
         ) : null}
       </div>
     );
