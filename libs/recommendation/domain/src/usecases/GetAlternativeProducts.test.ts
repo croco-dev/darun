@@ -6,8 +6,16 @@ import { AutoRecommender } from '../services/AutoRecommender';
 import { GetAlternativeProducts } from './GetAlternativeProducts';
 
 describe('GetAlternativeProducts', () => {
-  const createProduct = (id: string, categoryIds: string[] = []) =>
-    new Product({ id, slug: id, name: id, summary: id, logoUrl: `${id}.png`, publishedAt: new Date(), categoryIds });
+  const createProduct = (id: string, categoryIds: string[] = [], publishedAt?: Date) =>
+    new Product({
+      id,
+      slug: id,
+      name: id,
+      summary: id,
+      logoUrl: `${id}.png`,
+      publishedAt: publishedAt ?? new Date(),
+      categoryIds,
+    });
 
   const createTag = (name: string) => new Tag({ id: name, name, type: TagType.Featured });
 
@@ -25,7 +33,7 @@ describe('GetAlternativeProducts', () => {
     const productRepository = {
       findPublishedOneById: vi.fn().mockResolvedValue(createProduct('prod-1', ['cat-1'])),
       findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
-      findPublishedByCategoryId: vi
+      findPublishedByCategoryIdAndLimit: vi
         .fn()
         .mockResolvedValue([
           createProduct('prod-1', ['cat-1']),
@@ -67,7 +75,7 @@ describe('GetAlternativeProducts', () => {
       findTopNSortByPublishedAtDesc: vi
         .fn()
         .mockResolvedValue([createProduct('tag-only'), createProduct('category-1', ['cat-1'])]),
-      findPublishedByCategoryId: vi
+      findPublishedByCategoryIdAndLimit: vi
         .fn()
         .mockResolvedValue([createProduct('category-1', ['cat-1']), createProduct('category-2', ['cat-1'])]),
     };
@@ -115,7 +123,7 @@ describe('GetAlternativeProducts', () => {
       findTopNSortByPublishedAtDesc: vi
         .fn()
         .mockResolvedValue([createProduct('auto-1'), createProduct('auto-2'), createProduct('auto-3')]),
-      findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
+      findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
     };
     const tagRepository = {
       findOneByProductId: vi.fn().mockResolvedValue(new ProductTag({ productId: 'prod-1', tags: [createTag('ai')] })),
@@ -143,7 +151,7 @@ describe('GetAlternativeProducts', () => {
     const productRepository = {
       findPublishedOneById: vi.fn().mockResolvedValue(createProduct('prod-1', ['cat-1', 'cat-2'])),
       findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
-      findPublishedByCategoryId: vi.fn().mockImplementation(async (categoryId: string) => {
+      findPublishedByCategoryIdAndLimit: vi.fn().mockImplementation(async (categoryId: string) => {
         if (categoryId === 'cat-1') {
           return [createProduct('dup-1', ['cat-1']), createProduct('dup-2', ['cat-1'])];
         }
@@ -161,6 +169,62 @@ describe('GetAlternativeProducts', () => {
     ).execute({ productId: 'prod-1' });
 
     expect(result.map(alternative => alternative.alternativeProductId)).toEqual(['dup-1', 'dup-2', 'dup-3']);
-    expect(productRepository.findPublishedByCategoryId).toHaveBeenCalledTimes(2);
+    expect(productRepository.findPublishedByCategoryIdAndLimit).toHaveBeenCalledTimes(2);
+  });
+
+  it('calls bounded category fetch with the candidate cap', async () => {
+    const alternativeRepository = {
+      findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+      create: vi.fn<AlternativeProductRepository['create']>(),
+      deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
+      createMany: vi.fn<AlternativeProductRepository['createMany']>(),
+    } satisfies AlternativeProductRepository;
+    const productRepository = {
+      findPublishedOneById: vi.fn().mockResolvedValue(createProduct('prod-1', ['cat-1'])),
+      findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
+      findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
+    };
+    const tagRepository = {
+      findOneByProductId: vi.fn().mockResolvedValue(null),
+      findByProductIds: vi.fn().mockResolvedValue([]),
+    };
+
+    await new GetAlternativeProducts(
+      alternativeRepository,
+      new AutoRecommender(productRepository, tagRepository)
+    ).execute({ productId: 'prod-1' });
+
+    expect(productRepository.findPublishedByCategoryIdAndLimit).toHaveBeenCalledWith('cat-1', 30);
+  });
+
+  it('uses tag overlap and latestness as tie-breakers without overriding category match', async () => {
+    const alternativeRepository = {
+      findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+      create: vi.fn<AlternativeProductRepository['create']>(),
+      deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
+      createMany: vi.fn<AlternativeProductRepository['createMany']>(),
+    } satisfies AlternativeProductRepository;
+    const ts = (hoursAgo: number) => new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+    const productRepository = {
+      findPublishedOneById: vi.fn().mockResolvedValue(createProduct('prod-1', ['cat-1'])),
+      findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
+      findPublishedByCategoryIdAndLimit: vi
+        .fn()
+        .mockResolvedValue([
+          createProduct('cat-match-old', ['cat-1'], ts(48)),
+          createProduct('cat-match-new', ['cat-1'], ts(1)),
+        ]),
+    };
+    const tagRepository = {
+      findOneByProductId: vi.fn().mockResolvedValue(null),
+      findByProductIds: vi.fn().mockResolvedValue([]),
+    };
+
+    const result = await new GetAlternativeProducts(
+      alternativeRepository,
+      new AutoRecommender(productRepository, tagRepository)
+    ).execute({ productId: 'prod-1' });
+
+    expect(result.map(a => a.alternativeProductId)).toEqual(['cat-match-new', 'cat-match-old']);
   });
 });

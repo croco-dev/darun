@@ -13,6 +13,8 @@ const INITIAL_RANKING_CANDIDATE_MULTIPLIER = 2;
 const RANKING_CANDIDATE_MULTIPLIER_STEP = 1;
 const MAX_RANKING_CANDIDATE_MULTIPLIER = 5;
 const MAX_RANKING_CANDIDATES = 250;
+const LATEST_BUFFER_MULTIPLIER = 2;
+const LATEST_BUFFER_HARD_CAP = 50;
 
 @Service()
 export class GetRankedProducts {
@@ -77,19 +79,45 @@ export class GetRankedProducts {
       multiplier = nextMultiplier;
     }
 
+    const voteCandidateCount = seenProductIds.size;
+    const votePublishedCount = publishedProducts.length;
+    const filteredUnpublishedCount = voteCandidateCount - votePublishedCount;
+
+    // Fetch latest-published candidates to improve recall for recent low-vote products
+    const latestBufferSize = Math.min(limit * LATEST_BUFFER_MULTIPLIER, LATEST_BUFFER_HARD_CAP);
+    const latestProducts = await this.productRepository.findTopNSortByPublishedAtDesc(latestBufferSize);
+    const latestCandidateCount = latestProducts.length;
+
+    // Union: add latest-published products not already in vote candidates
+    const voteSourcedIds = new Set(seenProductIds);
+    let addedFromLatest = 0;
+    for (const product of latestProducts) {
+      if (!seenProductIds.has(product.id)) {
+        seenProductIds.add(product.id);
+        publishedProducts.push(product);
+        addedFromLatest++;
+      }
+    }
+
+    const dedupedCandidateCount = publishedProducts.length;
+    const voteSourcedInFinal = voteCandidateCount > 0
+      ? publishedProducts.filter(p => voteSourcedIds.has(p.id)).length
+      : 0;
+    const finalSourceRatio =
+      dedupedCandidateCount > 0 ? Math.round((voteSourcedInFinal / dedupedCandidateCount) * 100) / 100 : 0;
+
+    console.info({
+      event: 'ranking.candidates_collected',
+      voteCandidateCount,
+      latestCandidateCount,
+      dedupedCandidateCount,
+      finalSourceRatio,
+      filteredUnpublishedCount,
+    });
+
     if (publishedProducts.length === 0) {
       return [];
     }
-
-    const candidateCount = seenProductIds.size;
-    const publishedCandidateCount = publishedProducts.length;
-    const filteredUnpublishedCount = candidateCount - publishedCandidateCount;
-    console.info({
-      event: 'ranking.candidates_collected',
-      candidateCount,
-      publishedCandidateCount,
-      filteredUnpublishedCount,
-    });
 
     return publishedProducts
       .sort((a, b) => {

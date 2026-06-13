@@ -36,25 +36,21 @@ describe('UpvoteProduct', () => {
       existsByTargetIdAndVoterIpHash: vi.fn(),
       countByVoterIpHashSince: vi.fn(),
       insert: vi.fn(),
-      upsertVoteWithRecord: vi.fn(),
+      incrementVote: vi.fn(),
     };
     useCase = new UpvoteProduct(repository);
   });
 
-  it('should call upsertVoteWithRecord on normal vote', async () => {
+  it('should call incrementVote on normal vote', async () => {
     (repository.existsByTargetIdAndVoterIpHash as ReturnType<typeof vi.fn>).mockResolvedValue(false);
     (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-    (repository.upsertVoteWithRecord as ReturnType<typeof vi.fn>).mockImplementation(
-      async (targetId, _hash, modifier) => {
-        return modifier(new Vote({ targetId }));
-      }
-    );
+    (repository.incrementVote as ReturnType<typeof vi.fn>).mockResolvedValue(new Vote({ targetId: 'product-1' }));
 
     await useCase.execute({ productId: 'product-1', voterIp: '192.168.1.1' });
 
     expect(repository.existsByTargetIdAndVoterIpHash).toHaveBeenCalledOnce();
     expect(repository.countByVoterIpHashSince).toHaveBeenCalledOnce();
-    expect(repository.upsertVoteWithRecord).toHaveBeenCalled();
+    expect(repository.incrementVote).toHaveBeenCalled();
   });
 
   it('should block duplicate vote', async () => {
@@ -64,7 +60,7 @@ describe('UpvoteProduct', () => {
       votingDuplicateVote()
     );
     expect(repository.countByVoterIpHashSince).not.toHaveBeenCalled();
-    expect(repository.upsertVoteWithRecord).not.toHaveBeenCalled();
+    expect(repository.incrementVote).not.toHaveBeenCalled();
   });
 
   it('should block rate limited vote', async () => {
@@ -75,22 +71,18 @@ describe('UpvoteProduct', () => {
       votingRateLimitExceeded('1분 내 최대 10회까지 투표할 수 있습니다.')
     );
     expect(repository.existsByTargetIdAndVoterIpHash).toHaveBeenCalledOnce();
-    expect(repository.upsertVoteWithRecord).not.toHaveBeenCalled();
+    expect(repository.incrementVote).not.toHaveBeenCalled();
   });
 
   it('should allow vote when under rate limit threshold (9 votes)', async () => {
     (repository.existsByTargetIdAndVoterIpHash as ReturnType<typeof vi.fn>).mockResolvedValue(false);
     (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(9);
-    (repository.upsertVoteWithRecord as ReturnType<typeof vi.fn>).mockImplementation(
-      async (targetId, _hash, modifier) => {
-        return modifier(new Vote({ targetId }));
-      }
-    );
+    (repository.incrementVote as ReturnType<typeof vi.fn>).mockResolvedValue(new Vote({ targetId: 'product-1' }));
 
     await useCase.execute({ productId: 'product-1', voterIp: '192.168.1.1' });
 
     expect(repository.countByVoterIpHashSince).toHaveBeenCalledOnce();
-    expect(repository.upsertVoteWithRecord).toHaveBeenCalled();
+    expect(repository.incrementVote).toHaveBeenCalled();
   });
 
   it('should use correct sliding window time boundary', async () => {
@@ -102,19 +94,28 @@ describe('UpvoteProduct', () => {
 
     (repository.existsByTargetIdAndVoterIpHash as ReturnType<typeof vi.fn>).mockResolvedValue(false);
     (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-    (repository.upsertVoteWithRecord as ReturnType<typeof vi.fn>).mockImplementation(
-      async (targetId, _hash, modifier) => {
-        return modifier(new Vote({ targetId }));
-      }
-    );
+    (repository.incrementVote as ReturnType<typeof vi.fn>).mockResolvedValue(new Vote({ targetId: 'product-1' }));
 
     await useCase.execute({ productId: 'product-1', voterIp: '192.168.1.1' });
 
-    expect(repository.countByVoterIpHashSince).toHaveBeenCalledWith(
-      expect.any(String),
-      expectedSince,
-    );
+    expect(repository.countByVoterIpHashSince).toHaveBeenCalledWith(expect.any(String), expectedSince);
 
     vi.useRealTimers();
+  });
+
+  it('should handle parallel votes from different IPs without lost updates', async () => {
+    (repository.existsByTargetIdAndVoterIpHash as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    (repository.countByVoterIpHashSince as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    const incrementSpy = vi.fn().mockResolvedValue(new Vote({ targetId: 'product-1', count: 1 }));
+    (repository.incrementVote as ReturnType<typeof vi.fn>) = incrementSpy;
+
+    const ipAddresses = Array.from({ length: 20 }, (_, i) => `192.168.1.${i + 1}`);
+
+    await Promise.all(ipAddresses.map(ip => useCase.execute({ productId: 'product-1', voterIp: ip })));
+
+    expect(incrementSpy).toHaveBeenCalledTimes(20);
+    ipAddresses.forEach((ip, index) => {
+      expect(incrementSpy).toHaveBeenNthCalledWith(index + 1, 'product-1', expect.any(String));
+    });
   });
 });

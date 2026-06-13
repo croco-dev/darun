@@ -50,6 +50,9 @@ describe('GetRankedProducts', () => {
         findOneById: vi.fn<ProductRepository['findOneById']>().mockResolvedValue(null),
         findPublishedOneBySlug: vi.fn<ProductRepository['findPublishedOneBySlug']>().mockResolvedValue(null),
         findPublishedByCategoryId: vi.fn<ProductRepository['findPublishedByCategoryId']>().mockResolvedValue([]),
+        findPublishedByCategoryIdAndLimit: vi
+          .fn<ProductRepository['findPublishedByCategoryIdAndLimit']>()
+          .mockResolvedValue([]),
         countPublishedAll: vi.fn<ProductRepository['countPublishedAll']>().mockResolvedValue(0),
         countAll: vi.fn<ProductRepository['countAll']>().mockResolvedValue(0),
         insert: vi.fn<ProductRepository['insert']>().mockResolvedValue(null),
@@ -167,6 +170,7 @@ describe('GetRankedProducts', () => {
       findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
       findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
       updateById: vi.fn(),
+      findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
       countPublishedAll: vi.fn().mockResolvedValue(0),
       countAll: vi.fn().mockResolvedValue(0),
       insert: vi.fn().mockResolvedValue(null),
@@ -212,6 +216,7 @@ describe('GetRankedProducts', () => {
       findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
       findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
       updateById: vi.fn(),
+      findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
       countPublishedAll: vi.fn().mockResolvedValue(0),
       countAll: vi.fn().mockResolvedValue(0),
       insert: vi.fn().mockResolvedValue(null),
@@ -261,6 +266,49 @@ describe('GetRankedProducts', () => {
     const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
 
     expect(result.map(p => p.id)).toEqual(['p-a', 'p-b']);
+  });
+
+  it('includes recent low-vote products from the latest-published buffer', async () => {
+    const p1 = createProduct({ id: 'p1', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
+    const p2 = createProduct({ id: 'p2', publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR) });
+    const p3 = createProduct({ id: 'p3', publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR) });
+
+    const { voteRepository, productRepository } = createRepository({
+      votes: [
+        { targetId: p1.id, count: 10 },
+        { targetId: p2.id, count: 5 },
+      ],
+      products: [p1, p2],
+    });
+
+    productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([p3]);
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 3 });
+
+    expect(result).toHaveLength(3);
+    expect(result.map(p => p.id)).toContain(p3.id);
+    expect(productRepository.findTopNSortByPublishedAtDesc).toHaveBeenCalledWith(expect.any(Number));
+  });
+
+  it('deduplicates products present in both vote and latest-published sources', async () => {
+    const p1 = createProduct({ id: 'p1', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
+    const p2 = createProduct({ id: 'p2', publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR) });
+
+    const { voteRepository, productRepository } = createRepository({
+      votes: [
+        { targetId: p1.id, count: 10 },
+        { targetId: p2.id, count: 5 },
+      ],
+      products: [p1, p2],
+    });
+
+    productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([p1]);
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+    const p1Occurrences = result.filter(p => p.id === p1.id);
+    expect(p1Occurrences).toHaveLength(1);
+    expect(result).toHaveLength(2);
   });
 });
 

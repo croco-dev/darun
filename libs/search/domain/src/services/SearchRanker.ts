@@ -43,9 +43,11 @@ export class SearchRanker {
     const result = [...products]
       .map((product, i) => ({
         product,
-        score: normalizedSearchScores[i] * SEARCH_SCORE_WEIGHT + normalizedRankingScores[i] * RANKING_SCORE_WEIGHT,
+        normalizedSearch: normalizedSearchScores[i],
+        combinedScore:
+          normalizedSearchScores[i] * SEARCH_SCORE_WEIGHT + normalizedRankingScores[i] * RANKING_SCORE_WEIGHT,
       }))
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => b.combinedScore - a.combinedScore)
       .map(({ product }) => product);
 
     const rerankLatencyMs = performance.now() - start;
@@ -71,7 +73,7 @@ export class SearchRanker {
   }
 
   private rankingScore(product: RankableProduct): number {
-    const createdAt = product.createdAt ?? product.publishedAt ?? this.getNow();
+    const createdAt = product.publishedAt ?? product.createdAt ?? this.getNow();
     const ageHours = Math.max(0, this.getNow().getTime() - createdAt.getTime()) / MILLISECONDS_PER_HOUR;
 
     return this.rankingService.calculateScore(product.votes ?? 0, ageHours, createdAt);

@@ -7,9 +7,8 @@ import {
   VoteRecordRepositoryToken,
   votingVoteInsertFailed,
   votingVoteRecordInsertFailed,
-  votingVoteUpdateFailed,
 } from '@darun/voting-domain';
-import { and, count, eq, gte } from 'drizzle-orm';
+import { and, count, eq, gte, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { voteRecords } from '../entities/VoteRecordSchema';
 import { votes } from '../entities/VoteSchema';
@@ -46,42 +45,25 @@ export class PostgresqlVoteRecordRepository implements VoteRecordRepository {
     return new VoteRecord(inserted[0].id, inserted[0].targetId, inserted[0].voterIpHash, inserted[0].createdAt);
   }
 
-  async upsertVoteWithRecord(targetId: string, voterIpHash: string, modifier: (vote: Vote) => Vote): Promise<Vote> {
+  async incrementVote(targetId: string, voterIpHash: string): Promise<Vote> {
     return this.db.transaction(async tx => {
-      const prevVote = await tx
-        .select()
-        .from(votes)
-        .where(eq(votes.targetId, targetId))
-        .limit(1)
-        .then(rows => (rows[0] ? new Vote(rows[0]) : undefined));
+      const rows = await tx
+        .insert(votes)
+        .values({ targetId, count: 1 })
+        .onConflictDoUpdate({
+          target: votes.targetId,
+          set: { count: sql`${votes.count} + 1` },
+        })
+        .returning();
 
-      const updatedVote = modifier(prevVote ?? new Vote({ targetId }));
-
-      if (!prevVote) {
-        const inserted = await tx
-          .insert(votes)
-          .values(updatedVote)
-          .returning()
-          .then(rows => (rows[0] ? new Vote(rows[0]) : undefined));
-
-        if (!inserted) {
-          throw votingVoteInsertFailed();
-        }
-      } else {
-        const updated = await tx
-          .update(votes)
-          .set({ count: updatedVote.count })
-          .where(eq(votes.id, prevVote.id))
-          .returning();
-
-        if (!updated[0]) {
-          throw votingVoteUpdateFailed();
-        }
+      const vote = rows[0];
+      if (!vote) {
+        throw votingVoteInsertFailed();
       }
 
       await tx.insert(voteRecords).values({ targetId, voterIpHash });
 
-      return updatedVote;
+      return new Vote(vote);
     });
   }
 }

@@ -4,6 +4,7 @@ import { Drizzle } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { PostgresqlProductRepository } from '../repositories/PostgresqlProductRepository';
+import { products } from '../entities/ProductSchema';
 
 function createMockDb(rows: Record<string, unknown>[]) {
   const orderByMock = vi.fn().mockResolvedValue(rows);
@@ -32,7 +33,7 @@ function extractSqlString(sqlObj: unknown): string {
 }
 
 describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
-  let mockDb: { transaction: ReturnType<typeof vi.fn> };
+  let mockDb: { transaction: ReturnType<typeof vi.fn>; select?: ReturnType<typeof vi.fn> };
   let clearAllSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
@@ -81,6 +82,43 @@ describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
 
       expect(result).toBe(product);
       expect(clearAllSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('findPublishedByCategoryIdAndLimit()', () => {
+    it('delegates to the database with published-only filter and the supplied limit', async () => {
+      const product1 = new Product({
+        id: 'product-1',
+        slug: 'product-1',
+        name: 'Product 1',
+        summary: 'Test',
+        logoUrl: 'https://example.com/logo1.png',
+        publishedAt: new Date('2026-01-02'),
+      });
+      const product2 = new Product({
+        id: 'product-2',
+        slug: 'product-2',
+        name: 'Product 2',
+        summary: 'Test 2',
+        logoUrl: 'https://example.com/logo2.png',
+        publishedAt: new Date('2026-01-01'),
+      });
+      const mockThen = vi.fn().mockResolvedValue([product1, product2, product2]);
+      const mockLimit = vi.fn().mockReturnValue({ then: mockThen });
+      const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      mockDb.select = vi.fn().mockReturnValue({ from: mockFrom });
+
+      const repository = new PostgresqlProductRepository(mockDb as unknown as ConstructorParameters<typeof PostgresqlProductRepository>[0]);
+
+      const result = await repository.findPublishedByCategoryIdAndLimit('cat-1', 2);
+
+      expect(mockDb.select).toHaveBeenCalledTimes(1);
+      expect(mockFrom).toHaveBeenCalledWith(products);
+      expect(mockLimit).toHaveBeenCalledWith(2);
+      expect(result).toHaveLength(3);
+      expect(result[0].id).toBe('product-1');
     });
   });
 });

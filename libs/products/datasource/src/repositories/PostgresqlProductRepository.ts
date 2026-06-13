@@ -167,6 +167,16 @@ export class PostgresqlProductRepository implements ProductRepository {
       .then(rows => rows.map(row => this.mapper(row)));
   }
 
+  async findPublishedByCategoryIdAndLimit(categoryId: string, limit: number): Promise<Product[]> {
+    return this.db
+      .select()
+      .from(products)
+      .where(and(isNotNull(products.publishedAt), sql`${products.categoryIds} @> ${JSON.stringify([categoryId])}`))
+      .orderBy(desc(products.publishedAt))
+      .limit(limit)
+      .then(rows => rows.map(row => this.mapper(row)));
+  }
+
   private async findPublishedByIdsInternal(ids: readonly string[]): Promise<(Product | null)[]> {
     if (!ids.length) {
       return [];
