@@ -12,6 +12,9 @@
 		"test": "vitest run",
 		"typecheck": "tsc --noEmit"
 	},
+	"dependencies": {
+		"@darun/utils-croco-adapter": "workspace:*"
+	},
 	"devDependencies": {
 		"@darun/eslint-config": "workspace:*",
 		"@darun/utils-tsconfig": "workspace:*"

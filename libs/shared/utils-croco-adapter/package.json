@@ -1,0 +1,35 @@
+{
+  "name": "@darun/utils-croco-adapter",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./croco-domain-error": "./src/croco-domain-error.ts",
+    "./framework-context": "./src/framework-context.ts",
+    "./next-font-pretendard": "./src/next-font-pretendard.ts",
+    "./problems-core": "./src/problems-core.ts",
+    "./structure-react": "./src/structure-react.ts"
+  },
+  "scripts": {
+    "lint": "eslint **/*.ts*",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@croco/framework-context": "0.0.2",
+    "@croco/problems-core": "0.0.2",
+    "@croco/utils-next-font-pretendard": "0.0.2",
+    "@croco/utils-structure-react": "0.0.1"
+  },
+  "peerDependencies": {
+    "next": "^15.0.0 || ^16.0.0",
+    "react": ">=19.0.0"
+  },
+  "devDependencies": {
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*",
+    "@types/react": "^19.2.14"
+  }
+}

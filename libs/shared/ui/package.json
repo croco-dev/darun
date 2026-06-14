@@ -11,7 +11,7 @@
   },
   "scripts": {
     "lint": "eslint **/*.ts*",
-    "test": "echo 1",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -23,11 +23,12 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/jest-dom": "6.9.1",
     "@types/react": "^19.2.14",
     "react": "^19.2.6",
     "typescript": "^6.0.3"
   },
-
   "peerDependencies": {
     "react": "^19.2.6"
   }

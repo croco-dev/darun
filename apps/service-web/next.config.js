@@ -16,7 +16,7 @@ const nextConfig = {
     config.resolve.alias ??= {};
     config.resolve.alias['@croco/utils-structure-react'] = path.resolve(
       __dirname,
-      './app/shims/utils-structure-react.ts'
+      '../../libs/shared/utils-structure-react/src/index.ts'
     );
 
     if (isServer) {

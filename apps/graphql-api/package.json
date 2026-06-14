@@ -37,6 +37,7 @@
     "@darun/translation-domain": "workspace:*",
     "@darun/translation-feature": "workspace:*",
     "@darun/utils-apollo-server": "workspace:*",
+    "@darun/utils-croco-adapter": "workspace:*",
     "@darun/utils-llm": "workspace:*",
     "@darun/utils-sentry": "workspace:*",
     "@darun/voting-datasource": "workspace:*",

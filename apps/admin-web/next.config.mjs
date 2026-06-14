@@ -36,7 +36,7 @@ const nextConfig = {
     config.resolve ??= {};
     config.resolve.alias ??= {};
     config.resolve.alias['@croco/utils-structure-react'] = fileURLToPath(
-      new URL('./app/shims/utils-structure-react.js', import.meta.url),
+      new URL('../../libs/shared/utils-structure-react/src/index.ts', import.meta.url),
     );
 
     if (isServer) {

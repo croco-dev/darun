@@ -92,6 +92,68 @@ const config = [
       ],
     },
   },
+  {
+    plugins: {
+      boundaries,
+    },
+    settings: {
+      "boundaries/elements": [
+        {
+          type: "croco-adapter",
+          pattern: "libs/shared/*-croco-adapter/**",
+        },
+        {
+          type: "shared-wrapper",
+          pattern: "libs/shared/utils-structure-react/**",
+        },
+        {
+          type: "domain",
+          pattern: "**/domain/**",
+        },
+        {
+          type: "feature",
+          pattern: "**/feature/**",
+        },
+        {
+          type: "shell",
+          pattern: "**/shell/**",
+        },
+        {
+          type: "service",
+          pattern: "**/service/**",
+        },
+        {
+          type: "datasource",
+          pattern: "**/datasource/**",
+        },
+        {
+          type: "app",
+          pattern: "apps/**",
+        },
+      ],
+    },
+    rules: {
+      "boundaries/entry-point": ["off"],
+      // STAGED ROLLOUT: warn for existing violations → error after consumer migration (T4+)
+      "boundaries/external": [
+        "warn",
+        {
+          default: "disallow",
+          rules: [
+            {
+              from: "croco-adapter",
+              allow: "@croco/*",
+            },
+            {
+              from: "shared-wrapper",
+              allow: "@croco/*",
+            },
+          ],
+          message: "@croco/* 직접 import는 @darun wrapper/adapter를 통해서만 허용됩니다",
+        },
+      ],
+    },
+  },
 ];
 
 export default config;
