@@ -1,24 +1,24 @@
-import { Inject, Service } from "typedi";
-import { Product } from "../entities/Product";
-import type { ProductFeature } from "../entities/ProductFeature";
-import type { ProductLink } from "../entities/ProductLink";
-import type { ProductScreenshot } from "../entities/ProductScreenshot";
-import type { ProductTag } from "../entities/ProductTag";
-import type { ProductFeatureRepository } from "../repositories/ProductFeatureRepository";
-import { ProductFeatureRepositoryToken } from "../repositories/ProductFeatureRepository";
-import type { ProductLinkRepository } from "../repositories/ProductLinkRepository";
-import { ProductLinkRepositoryToken } from "../repositories/ProductLinkRepository";
-import type { ProductRepository } from "../repositories/ProductRepository";
-import { ProductRepositoryToken } from "../repositories/ProductRepository";
-import type { ProductScreenshotRepository } from "../repositories/ProductScreenshotRepository";
-import { ProductScreenshotRepositoryToken } from "../repositories/ProductScreenshotRepository";
-import type { ProductTagRepository } from "../repositories/ProductTagRepository";
-import { ProductTagRepositoryToken } from "../repositories/ProductTagRepository";
+import { Inject, Service } from 'typedi';
+import { Product } from '../entities/Product';
+import type { ProductFeature } from '../entities/ProductFeature';
+import type { ProductLink } from '../entities/ProductLink';
+import type { ProductScreenshot } from '../entities/ProductScreenshot';
+import type { ProductTag } from '../entities/ProductTag';
+import type { ProductFeatureRepository } from '../repositories/ProductFeatureRepository';
+import { ProductFeatureRepositoryToken } from '../repositories/ProductFeatureRepository';
+import type { ProductLinkRepository } from '../repositories/ProductLinkRepository';
+import { ProductLinkRepositoryToken } from '../repositories/ProductLinkRepository';
+import type { ProductRepository } from '../repositories/ProductRepository';
+import { ProductRepositoryToken } from '../repositories/ProductRepository';
+import type { ProductScreenshotRepository } from '../repositories/ProductScreenshotRepository';
+import { ProductScreenshotRepositoryToken } from '../repositories/ProductScreenshotRepository';
+import type { ProductTagRepository } from '../repositories/ProductTagRepository';
+import { ProductTagRepositoryToken } from '../repositories/ProductTagRepository';
 
 type ProductLinkWithPrimary = ProductLink & { isPrimary: boolean };
 
 type ProductWithPreload = Product & {
-  __preloadedTags?: ProductTag["tags"];
+  __preloadedTags?: ProductTag['tags'];
   __preloadedLinks?: ProductLinkWithPrimary[];
   __preloadedScreenshots?: ProductScreenshot[];
   __preloadedFeatures?: ProductFeature[];
@@ -36,31 +36,25 @@ export class GetAllProducts {
     @Inject(ProductScreenshotRepositoryToken)
     private readonly productScreenshotRepository?: ProductScreenshotRepository,
     @Inject(ProductFeatureRepositoryToken)
-    private readonly productFeatureRepository?: ProductFeatureRepository,
+    private readonly productFeatureRepository?: ProductFeatureRepository
   ) {}
 
   async execute({
     limit,
     cursor,
-    type = "after",
+    type = 'after',
   }: {
     limit: number;
     cursor?: {
       id: string;
     };
-    type?: "after" | "before";
+    type?: 'after' | 'before';
   }) {
     let products: Product[];
-    if (type === "after") {
-      products = await this.productRepository.findAllByAfterIdAndLimit(
-        limit,
-        cursor?.id,
-      );
+    if (type === 'after') {
+      products = await this.productRepository.findAllByAfterIdAndLimit(limit, cursor?.id);
     } else {
-      products = await this.productRepository.findAllByBeforeIdAndLimit(
-        limit,
-        cursor?.id,
-      );
+      products = await this.productRepository.findAllByBeforeIdAndLimit(limit, cursor?.id);
     }
     const preloadedProducts = await this.preloadProducts(products);
     const total = await this.productRepository.countAll();
@@ -88,21 +82,29 @@ export class GetAllProducts {
     }
 
     const productIds = products.map(product => product.id);
-    const [productTags, productLinks, productScreenshots, productFeatures] = await Promise.all([
-      Promise.all(productIds.map(productId => productTagRepository.findOneByProductId(productId))),
-      Promise.all(productIds.map(productId => productLinkRepository.findManyByProductId(productId))),
-      Promise.all(productIds.map(productId => productScreenshotRepository.findManyByProductIdSortByPriorityDesc(productId))),
-      Promise.all(productIds.map(productId => productFeatureRepository.findManyByProductId(productId))),
-    ]);
+
+    const productTags = await this.settleAll(productIds, pid => productTagRepository.findOneByProductId(pid));
+    const productLinks = await this.settleAll(productIds, pid => productLinkRepository.findManyByProductId(pid));
+    const productScreenshots = await this.settleAll(productIds, pid =>
+      productScreenshotRepository.findManyByProductIdSortByPriorityDesc(pid)
+    );
+    const productFeatures = await this.settleAll(productIds, pid => productFeatureRepository.findManyByProductId(pid));
 
     return products.map((product, index) =>
       Object.assign(product, {
         __preloadedTags: productTags[index]?.tags ?? [],
-        __preloadedLinks: productLinks[index].map((link, linkIndex) => Object.assign(link, { isPrimary: linkIndex === 0 })),
-        __preloadedScreenshots: productScreenshots[index],
-        __preloadedFeatures: productFeatures[index],
-      }),
+        __preloadedLinks: (productLinks[index] ?? []).map((link, linkIndex) =>
+          Object.assign(link, { isPrimary: linkIndex === 0 })
+        ),
+        __preloadedScreenshots: productScreenshots[index] ?? [],
+        __preloadedFeatures: productFeatures[index] ?? [],
+      })
     );
+  }
+
+  private async settleAll<T>(ids: string[], fetcher: (id: string) => Promise<T>): Promise<(T | undefined)[]> {
+    const results = await Promise.allSettled(ids.map(id => fetcher(id)));
+    return results.map(r => (r.status === 'fulfilled' ? r.value : undefined));
   }
 
   private async primeProductCache(products: Product[]): Promise<void> {
