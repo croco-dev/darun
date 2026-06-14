@@ -7,6 +7,11 @@
     "dev": "turbo dev",
     "format": "turbo lint -- --fix",
     "lint": "turbo lint",
+    "local": "docker compose -f docker-compose.yml",
+    "local:bootstrap": "DATABASE_URL=postgresql://darun:darun@localhost:5432/darun pnpm --filter graphql-api local:bootstrap",
+    "local:down": "docker compose -f docker-compose.yml down",
+    "local:logs": "docker compose -f docker-compose.yml logs -f",
+    "local:up": "docker compose -f docker-compose.yml up -d",
     "prepare": "lefthook install",
     "test": "turbo test",
     "typecheck": "turbo typecheck"

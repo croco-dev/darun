@@ -23,7 +23,7 @@ class Container {
 
   get httpLink() {
     return new HttpLink({
-      uri: process.env['NEXT_PUBLIC_GRAPHQL_URL'] ?? '',
+      uri: process.env['GRAPHQL_INTERNAL_URL'] ?? process.env['NEXT_PUBLIC_GRAPHQL_URL'] ?? '',
       credentials: 'include',
     });
   }

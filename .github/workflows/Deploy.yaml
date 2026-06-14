@@ -1,16 +1,40 @@
-name: Deploy
+name: Production Deploy
 
 on:
   push:
     branches:
       - trunk
+  workflow_dispatch:
+  repository_dispatch:
+    types: [TRIGGER_DEPLOY]
 
 jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Lint
+        run: pnpm run lint --filter graphql-api
+      - name: Typecheck
+        run: pnpm run typecheck --filter graphql-api
+      - name: Test
+        run: pnpm run test --filter graphql-api
+
   deploy:
     name: deploy
+    needs: quality
     runs-on: ubuntu-latest
     environment:
-      name: dev-graphql
+      name: prod-graphql
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -29,7 +53,7 @@ jobs:
           access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Deploy
-        run: pnpm run --F graphql-api deploy
+        run: pnpm run --filter graphql-api deploy
         env:
           INFRA_ENV: prod
           RUNNING_ENV: ${{ secrets.RUNNING_ENV }}

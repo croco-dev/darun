@@ -42,7 +42,7 @@ provider:
   runtime: nodejs22.x
   region: ap-northeast-2
   stackName: ${self:provider.stage}-${self:service}
-  stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage, 'local'}
   profile: darun
   deploymentBucket: darun-deploy-bucket
   architecture: arm64

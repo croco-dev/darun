@@ -1,0 +1,22 @@
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+ENV INFRA_ENV=local
+RUN corepack enable && corepack prepare pnpm@11.2.2 --activate
+
+FROM base AS deps
+WORKDIR /workspace
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/graphql-api/package.json apps/graphql-api/package.json
+COPY libs/ libs/
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
+
+FROM base AS local
+WORKDIR /workspace
+ENV INFRA_ENV=local
+ENV NODE_ENV=development
+COPY --from=deps /workspace/node_modules ./node_modules
+COPY --from=deps /workspace/apps/graphql-api/node_modules ./apps/graphql-api/node_modules
+COPY . .
+EXPOSE 4000
+CMD ["pnpm", "--filter", "graphql-api", "dev"]

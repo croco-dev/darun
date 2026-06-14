@@ -6,9 +6,9 @@ import 'remixicon/fonts/remixicon.css';
 import { Metadata } from 'next';
 import localFont from 'next/font/local';
 import { ReactNode } from 'react';
+import { AppShell } from '../layouts/AppShell';
 import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
-import { AppShell } from '../layouts/AppShell';
 
 const pretendardFont = localFont({
   src: '../../../node_modules/@croco/utils-next-font-pretendard/PretendardVariable.woff2',

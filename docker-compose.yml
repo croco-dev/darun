@@ -1,0 +1,183 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: darun
+      POSTGRES_PASSWORD: darun
+      POSTGRES_DB: darun
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U darun -d darun']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:8
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: darun
+      MONGO_INITDB_ROOT_PASSWORD: darun
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD-SHELL', 'mongosh --eval "db.adminCommand(\"ping\")" -u darun -p darun --authenticationDatabase admin || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  firebase-auth:
+    build:
+      context: .
+      dockerfile: .local/firebase-auth/Dockerfile
+    ports:
+      - '9099:9099'
+    volumes:
+      - firebase-data:/firebase/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:9099/ >/dev/null']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  graphql-api:
+    build:
+      context: .
+      dockerfile: apps/graphql-api/Dockerfile.local
+      target: local
+    ports:
+      - '4000:4000'
+    environment:
+      INFRA_ENV: local
+      RUNNING_ENV: ${RUNNING_ENV:-local}
+      DATABASE_URL: postgres://darun:darun@postgres:5432/darun
+      MONGODB_URI: mongodb://darun:darun@mongo:27017/darun?authSource=admin
+      FIREBASE_PROJECT_ID: darun-local
+      FIREBASE_AUTH_EMULATOR_HOST: firebase-auth:9099
+    env_file:
+      - path: apps/graphql-api/.env.local
+        required: false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      firebase-auth:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'node -e "fetch(\"http://localhost:4000/graphql\",{method:\"POST\",headers:{\"content-type\":\"application/json\"},body:JSON.stringify({query:\"{__typename}\"})}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - .:/workspace
+      - pnpm-store:/workspace/.pnpm-store
+      - node_modules:/workspace/node_modules
+      - graphql-api-node_modules:/workspace/apps/graphql-api/node_modules
+    working_dir: /workspace
+    command: pnpm --filter graphql-api dev
+
+  service-web:
+    build:
+      context: .
+      dockerfile: apps/service-web/Dockerfile.local
+      target: local
+    ports:
+      - '3000:3000'
+    environment:
+      NEXT_PUBLIC_GRAPHQL_URL: http://localhost:4000/graphql
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: darun-local
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: localhost
+      NEXT_PUBLIC_FIREBASE_API_KEY: local-api-key
+      GRAPHQL_INTERNAL_URL: http://graphql-api:4000/graphql
+      NEXT_PUBLIC_INFRA_ENV: local
+      FIREBASE_AUTH_EMULATOR_HOST: firebase-auth:9099
+    env_file:
+      - path: apps/service-web/.env.local
+        required: false
+    depends_on:
+      graphql-api:
+        condition: service_healthy
+    volumes:
+      - .:/workspace
+      - pnpm-store:/workspace/.pnpm-store
+      - node_modules:/workspace/node_modules
+      - service-web-node_modules:/workspace/apps/service-web/node_modules
+    working_dir: /workspace
+    command: pnpm --filter service-web dev
+
+  admin-web:
+    build:
+      context: .
+      dockerfile: apps/admin-web/Dockerfile.local
+      target: local
+    ports:
+      - '3001:3001'
+    environment:
+      NEXT_PUBLIC_GRAPHQL_URL: http://localhost:4000/graphql
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: darun-local
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: localhost
+      NEXT_PUBLIC_FIREBASE_API_KEY: local-api-key
+      GRAPHQL_INTERNAL_URL: http://graphql-api:4000/graphql
+      NEXT_PUBLIC_INFRA_ENV: local
+      FIREBASE_AUTH_EMULATOR_HOST: firebase-auth:9099
+    env_file:
+      - path: apps/admin-web/.env.local
+        required: false
+    depends_on:
+      graphql-api:
+        condition: service_healthy
+    volumes:
+      - .:/workspace
+      - pnpm-store:/workspace/.pnpm-store
+      - node_modules:/workspace/node_modules
+      - admin-web-node_modules:/workspace/apps/admin-web/node_modules
+    working_dir: /workspace
+    command: pnpm --filter admin-web dev
+
+  visual-web:
+    build:
+      context: .
+      dockerfile: apps/visual-web/Dockerfile.local
+      target: local
+    ports:
+      - '3002:3002'
+    environment:
+      NEXT_PUBLIC_GRAPHQL_URL: http://localhost:4000/graphql
+      NEXT_PUBLIC_BASE_URL: http://localhost:3002
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: darun-local
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: localhost
+      NEXT_PUBLIC_FIREBASE_API_KEY: local-api-key
+      GRAPHQL_INTERNAL_URL: http://graphql-api:4000/graphql
+      NEXT_PUBLIC_INFRA_ENV: local
+      FIREBASE_AUTH_EMULATOR_HOST: firebase-auth:9099
+    env_file:
+      - path: apps/visual-web/.env.local
+        required: false
+    depends_on:
+      graphql-api:
+        condition: service_healthy
+    volumes:
+      - .:/workspace
+      - pnpm-store:/workspace/.pnpm-store
+      - node_modules:/workspace/node_modules
+      - visual-web-node_modules:/workspace/apps/visual-web/node_modules
+    working_dir: /workspace
+    command: pnpm --filter visual-web dev
+
+volumes:
+  postgres-data:
+  mongo-data:
+  firebase-data:
+  pnpm-store:
+  node_modules:
+  graphql-api-node_modules:
+  service-web-node_modules:
+  admin-web-node_modules:
+  visual-web-node_modules:

@@ -26,7 +26,9 @@ export function Navbar() {
             </div>
           </Link>
           <code className="font-mono font-bold text-xs bg-dark-100 text-dark-700 px-1.5 py-0.5 rounded">
-            {process.env['NODE_ENV'] === 'development' ? 'dev' : 'prod'}
+            {process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local' || process.env['NODE_ENV'] === 'development'
+              ? 'local'
+              : 'prod'}
           </code>
         </div>
 

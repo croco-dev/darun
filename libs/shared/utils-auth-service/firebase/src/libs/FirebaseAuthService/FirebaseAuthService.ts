@@ -1,7 +1,9 @@
 import { AuthService, AuthStorage, AuthUser } from '@darun/utils-auth-service-core';
 import { getApps, initializeApp } from 'firebase/app';
-import { GoogleAuthProvider, getAuth, onIdTokenChanged, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, getAuth, onIdTokenChanged, signInWithPopup, connectAuthEmulator } from 'firebase/auth';
 import { getFirebaseAuth } from 'next-firebase-auth-edge';
+
+let isEmulatorConnected = false;
 
 type FirebaseAuthConfig = {
   projectId: string;
@@ -29,12 +31,19 @@ export class FirebaseAuthService implements AuthService {
     );
     this.apiKey = apiKey;
 
-    if (typeof window !== 'undefined' && getApps().length === 0) {
-      initializeApp({
-        apiKey,
-        authDomain,
-        projectId,
-      });
+    if (typeof window !== 'undefined') {
+      if (getApps().length === 0) {
+        initializeApp({
+          apiKey,
+          authDomain,
+          projectId,
+        });
+      }
+
+      if (process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local' && !isEmulatorConnected) {
+        connectAuthEmulator(getAuth(), 'http://localhost:9099');
+        isEmulatorConnected = true;
+      }
     }
   }
 

@@ -13,7 +13,8 @@ describe('graphql-api smoke', () => {
     };
 
     expect(packageJson.scripts).toMatchObject({
-      dev: 'serverless offline --stage dev',
+      dev: 'serverless offline --stage local',
+      deploy: 'serverless deploy --stage prod',
       test: 'vitest run',
       typecheck: 'tsc --noEmit',
     });

@@ -5,10 +5,10 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "deploy": "serverless deploy --stage dev",
-    "deploy:prod": "serverless deploy --stage prod",
-    "dev": "serverless offline --stage dev",
+    "deploy": "serverless deploy --stage prod",
+    "dev": "serverless offline --stage local",
     "lint": "eslint **/*.ts*",
+    "local:bootstrap": "tsx scripts/bootstrap-local.ts",
     "seed:e2e": "tsx scripts/seed-e2e.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
@@ -47,6 +47,7 @@
     "@sentry/profiling-node": "10.38.0",
     "@typegoose/typegoose": "13.1.0",
     "cloudinary": "2.9.0",
+    "drizzle-kit": "0.31.10",
     "drizzle-orm": "0.45.2",
     "firebase-admin": "13.6.1",
     "graphql": "16.12.0",

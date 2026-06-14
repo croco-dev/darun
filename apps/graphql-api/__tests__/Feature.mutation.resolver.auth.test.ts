@@ -3,10 +3,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 function getFeatureResolverSource() {
-  const path = resolve(
-    __dirname,
-    '../../../libs/products/feature/src/Feature.mutation.resolver.ts'
-  );
+  const path = resolve(__dirname, '../../../libs/products/feature/src/Feature.mutation.resolver.ts');
   return readFileSync(path, 'utf-8');
 }
 

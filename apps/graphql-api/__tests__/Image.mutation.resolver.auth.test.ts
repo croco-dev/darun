@@ -3,10 +3,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 function getImageResolverSource() {
-  const path = resolve(
-    __dirname,
-    '../../../libs/images/feature/src/Image.mutation.resolver.ts'
-  );
+  const path = resolve(__dirname, '../../../libs/images/feature/src/Image.mutation.resolver.ts');
   return readFileSync(path, 'utf-8');
 }
 

@@ -24,5 +24,17 @@ onlyBuiltDependencies:
   - serverless
 
 allowBuilds:
+  '@apollo/protobufjs': true
+  '@firebase/util': true
+  '@parcel/watcher': true
+  '@sentry-internal/node-cpu-profiler': true
+  '@sentry/cli': true
+  '@swc/core': true
+  core-js: true
+  esbuild: true
+  lefthook: true
   protobufjs: true
   serverless: true
+  sharp: true
+  type-graphql: true
+  unrs-resolver: true

@@ -1,0 +1,20 @@
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@11.2.2 --activate
+
+FROM base AS deps
+WORKDIR /workspace
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/visual-web/package.json apps/visual-web/package.json
+COPY libs/ libs/
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
+
+FROM base AS local
+WORKDIR /workspace
+ENV NODE_ENV=development
+COPY --from=deps /workspace/node_modules ./node_modules
+COPY --from=deps /workspace/apps/visual-web/node_modules ./apps/visual-web/node_modules
+COPY . .
+EXPOSE 3002
+CMD ["pnpm", "--filter", "visual-web", "dev"]

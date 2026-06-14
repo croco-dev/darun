@@ -9,11 +9,7 @@ export const EditProductInfo = bind(useEditProductInfo, ({ form, submit }) => (
   <form onSubmit={form.onSubmit(submit)}>
     <div className="flex flex-col gap-3">
       <AdminField label="서비스 이름">
-        <AdminInput
-          placeholder="ex) 다른"
-          key={form.key('name')}
-          {...form.getInputProps('name')}
-        />
+        <AdminInput placeholder="ex) 다른" key={form.key('name')} {...form.getInputProps('name')} />
       </AdminField>
       <AdminField label="서비스 요약 (summary)">
         <AdminTextarea
