@@ -15,11 +15,14 @@ export type AddProductLinkOnNewProductLinkFormMutation = {
     product?: {
       __typename?: "Product";
       id: string;
-      screenshots: Array<{
-        __typename?: "Screenshot";
+      links: Array<{
+        __typename?: "Link";
         id: string;
-        imageAlt: string;
-        imageUrl: string;
+        isPrimary: boolean;
+        title: string;
+        link: string;
+        displayLink: string;
+        iconUrl: string;
       }>;
     } | null;
   };
@@ -33,10 +36,13 @@ export const AddProductLinkOnNewProductLinkFormDocument = gql`
     addProductLink(slug: $slug, input: $input) {
       product {
         id
-        screenshots {
+        links {
           id
-          imageAlt
-          imageUrl
+          isPrimary
+          title
+          link
+          displayLink
+          iconUrl
         }
       }
     }

@@ -26,7 +26,7 @@ export default defineWorkspace({
             'apps/*/__tests__/**/*.test.ts',
             'libs/*/domain/src/**/*.test.ts',
             'libs/*/datasource/src/**/*.test.ts',
-            'libs/*/feature/src/**/*.test.ts',
+            'libs/*/feature/src/**/*.test.ts*',
             'libs/shared/**/src/**/*.test.ts',
             'libs/*/shell/src/**/*.test.ts*',
             'libs/*/service/src/**/*.test.ts',

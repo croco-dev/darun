@@ -10,10 +10,13 @@ gql`
     addProductLink(slug: $slug, input: $input) {
       product {
         id
-        screenshots {
+        links {
           id
-          imageAlt
-          imageUrl
+          isPrimary
+          title
+          link
+          displayLink
+          iconUrl
         }
       }
     }

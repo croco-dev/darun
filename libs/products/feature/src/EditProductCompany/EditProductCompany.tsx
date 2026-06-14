@@ -1,6 +1,6 @@
 import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
-import { AdminField, AdminSelect, AdminActions } from '@darun/ui-admin';
+import { AdminField, AdminSelect, AdminActions, AdminInput } from '@darun/ui-admin';
 import { useEditProductCompany } from './useEditProductCompany';
 
 export const EditProductCompany = bind(
@@ -10,17 +10,24 @@ export const EditProductCompany = bind(
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <div className="flex flex-col gap-3">
           <AdminField label="회사">
-            <AdminSelect
-              value={form.getValues().companyId}
-              onChange={e => form.setFieldValue('companyId', e.target.value)}
-            >
-              <option value="">회사 이름을 검색하세요.</option>
-              {companies.map(company => (
-                <option key={company.value} value={company.value}>
-                  {company.label}
-                </option>
-              ))}
-            </AdminSelect>
+            <div className="flex flex-col gap-2">
+              <AdminInput
+                placeholder="회사 이름을 검색하세요"
+                value={searchValue}
+                onChange={e => handleSearchChange(e.target.value)}
+              />
+              <AdminSelect
+                value={form.getValues().companyId}
+                onChange={e => form.setFieldValue('companyId', e.target.value)}
+              >
+                <option value="">선택하세요</option>
+                {companies.map(company => (
+                  <option key={company.value} value={company.value}>
+                    {company.label}
+                  </option>
+                ))}
+              </AdminSelect>
+            </div>
           </AdminField>
         </div>
 
