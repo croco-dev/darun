@@ -1,15 +1,103 @@
+import { DrizzleToken } from '@darun/provider-database';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockConnect = vi.fn();
+const mockPostgres = vi.fn();
+const mockDrizzle = vi.fn();
+const mockContainerSet = vi.fn();
 
 vi.mock('mongoose', () => ({
   connect: (...args: unknown[]) => mockConnect(...args),
 }));
 
+vi.mock('postgres', () => ({
+  default: (...args: unknown[]) => mockPostgres(...args),
+}));
+
+vi.mock('drizzle-orm/postgres-js', () => ({
+  drizzle: (...args: unknown[]) => mockDrizzle(...args),
+}));
+
+vi.mock('typedi', async importOriginal => {
+  const actual = await importOriginal<typeof import('typedi')>();
+  return {
+    ...actual,
+    Container: {
+      ...actual.Container,
+      set: (...args: unknown[]) => mockContainerSet(...args),
+    },
+  };
+});
+
 vi.mock('../src/config/environment', () => ({
+  DATABASE_URL: 'postgresql://localhost:5432/darun',
   MONGODB_URI: 'mongodb://localhost:27017/test',
   IS_LOCAL: true,
 }));
+
+describe('createPostgresConnection', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    mockPostgres.mockReset();
+    mockDrizzle.mockReset();
+    mockContainerSet.mockReset();
+  });
+
+  it('should initialize postgres and drizzle lazily', async () => {
+    const mockClient = { client: 'postgres' };
+    const mockDb = { db: 'drizzle' };
+    mockPostgres.mockReturnValue(mockClient);
+    mockDrizzle.mockReturnValue(mockDb);
+
+    const { createPostgresConnection } = await import('../src/config/database');
+    createPostgresConnection();
+
+    expect(mockPostgres).toHaveBeenCalledTimes(1);
+    expect(mockPostgres).toHaveBeenCalledWith('postgresql://localhost:5432/darun', { prepare: false });
+    expect(mockDrizzle).toHaveBeenCalledTimes(1);
+    expect(mockDrizzle).toHaveBeenCalledWith(mockClient);
+    expect(mockContainerSet).toHaveBeenCalledTimes(1);
+    expect(mockContainerSet).toHaveBeenCalledWith(DrizzleToken, mockDb);
+  });
+
+  it('should retry when postgres() throws synchronously', async () => {
+    const mockClient = { client: 'postgres' };
+    const mockDb = { db: 'drizzle' };
+    mockPostgres.mockImplementationOnce(() => {
+      throw new Error('PG init failed');
+    });
+    mockPostgres.mockReturnValue(mockClient);
+    mockDrizzle.mockReturnValue(mockDb);
+
+    const { createPostgresConnection } = await import('../src/config/database');
+
+    expect(() => createPostgresConnection()).toThrow('PG init failed');
+    expect(mockPostgres).toHaveBeenCalledTimes(1);
+    expect(mockDrizzle).not.toHaveBeenCalled();
+    expect(mockContainerSet).not.toHaveBeenCalled();
+
+    createPostgresConnection();
+
+    expect(mockPostgres).toHaveBeenCalledTimes(2);
+    expect(mockDrizzle).toHaveBeenCalledWith(mockClient);
+    expect(mockContainerSet).toHaveBeenCalledWith(DrizzleToken, mockDb);
+  });
+
+  it('should only initialize once on repeated successful calls', async () => {
+    const mockClient = { client: 'postgres' };
+    const mockDb = { db: 'drizzle' };
+    mockPostgres.mockReturnValue(mockClient);
+    mockDrizzle.mockReturnValue(mockDb);
+
+    const { createPostgresConnection } = await import('../src/config/database');
+    createPostgresConnection();
+    createPostgresConnection();
+
+    expect(mockPostgres).toHaveBeenCalledTimes(1);
+    expect(mockDrizzle).toHaveBeenCalledTimes(1);
+    expect(mockContainerSet).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('createMongodbConnection', () => {
   beforeEach(() => {

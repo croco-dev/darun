@@ -1,3 +1,4 @@
+// Structural guard: verifies @Authorized decorator presence via source inspection. Does NOT test runtime auth behavior.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -7,7 +8,7 @@ function getImageResolverSource() {
   return readFileSync(path, 'utf-8');
 }
 
-describe('signImageUpload auth policy via source inspection', () => {
+describe('signImageUpload auth policy via source inspection (structural guard via source inspection)', () => {
   const source = getImageResolverSource();
 
   it('ImageMutationResolver.signImageUpload에 @Authorized([AuthRole.Admin]) 데코레이터가 적용되어 있다', () => {

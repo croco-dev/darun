@@ -11,7 +11,7 @@ export default defineConfig({
   },
   test: {
     passWithNoTests: false,
-    environment: 'jsdom',
+    environment: 'node',
     exclude: ['**/tests/**', '**/node_modules/**'],
     coverage: {
       provider: 'v8',

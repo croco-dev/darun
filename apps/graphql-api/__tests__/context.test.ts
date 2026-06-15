@@ -204,4 +204,88 @@ describe('GraphQL Context memoization', () => {
     expect(roles).toEqual([]);
     expect(mockExecute).toHaveBeenCalledTimes(1);
   });
+
+  it('should return undefined for getUserId when token is empty string', async () => {
+    mockExecute.mockResolvedValue(undefined);
+
+    const context = createGraphQLContext({
+      requestId: 'test-request-id',
+      authToken: '',
+      getAccountUseCase: mockGetAccount,
+    });
+
+    const userId = await context.getUserId();
+
+    expect(userId).toBeUndefined();
+    expect(mockExecute).toHaveBeenCalledTimes(1);
+    expect(mockExecute).toHaveBeenCalledWith({ token: '' });
+  });
+
+  it('should throw Unauthorized for getUserIdOrThrow when token is undefined', async () => {
+    mockExecute.mockResolvedValue(undefined);
+
+    const context = createGraphQLContext({
+      requestId: 'test-request-id',
+      authToken: undefined,
+      getAccountUseCase: mockGetAccount,
+    });
+
+    await expect(context.getUserIdOrThrow()).rejects.toThrow('Unauthorized');
+    expect(mockExecute).toHaveBeenCalledTimes(1);
+    expect(mockExecute).toHaveBeenCalledWith({ token: undefined });
+  });
+
+  it('should return empty array for getRoles when token is empty string', async () => {
+    mockExecute.mockResolvedValue(undefined);
+
+    const context = createGraphQLContext({
+      requestId: 'test-request-id',
+      authToken: '',
+      getAccountUseCase: mockGetAccount,
+    });
+
+    const roles = await context.getRoles();
+
+    expect(roles).toEqual([]);
+    expect(mockExecute).toHaveBeenCalledTimes(1);
+    expect(mockExecute).toHaveBeenCalledWith({ token: '' });
+  });
+
+  it('should return valid account from getUserIdOrThrow after provider initially fails then succeeds on retry', async () => {
+    mockExecute
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({ id: 'user-789', email: 'retry-admin@test.com', roles: ['admin'] });
+
+    const context = createGraphQLContext({
+      requestId: 'test-request-id',
+      authToken: 'valid-token',
+      getAccountUseCase: mockGetAccount,
+    });
+
+    await expect(context.getUserIdOrThrow()).rejects.toThrow('Network error');
+    expect(mockExecute).toHaveBeenCalledTimes(1);
+
+    const userId = await context.getUserIdOrThrow();
+    expect(userId).toBe('user-789');
+    expect(mockExecute).toHaveBeenCalledTimes(2);
+  });
+
+  it('should return valid roles from getRoles after provider initially fails then succeeds on retry', async () => {
+    mockExecute
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({ id: 'user-789', email: 'retry-admin@test.com', roles: ['admin', 'editor'] });
+
+    const context = createGraphQLContext({
+      requestId: 'test-request-id',
+      authToken: 'valid-token',
+      getAccountUseCase: mockGetAccount,
+    });
+
+    await expect(context.getRoles()).rejects.toThrow('Network error');
+    expect(mockExecute).toHaveBeenCalledTimes(1);
+
+    const roles = await context.getRoles();
+    expect(roles).toEqual(['admin', 'editor']);
+    expect(mockExecute).toHaveBeenCalledTimes(2);
+  });
 });

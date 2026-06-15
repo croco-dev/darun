@@ -11,10 +11,13 @@ let drizzleInstance: ReturnType<typeof drizzle>;
 let mongooseConnection: mongoose.Mongoose;
 let mongooseConnectionPromise: Promise<void> | undefined;
 
-export function createMysqlConnection() {
+export function createPostgresConnection() {
+  const hadDrizzle = drizzleInstance !== undefined;
   postgresqlConnection ??= postgres(DATABASE_URL, { prepare: false });
   drizzleInstance ??= drizzle(postgresqlConnection);
-  Container.set(DrizzleToken, drizzleInstance);
+  if (!hadDrizzle) {
+    Container.set(DrizzleToken, drizzleInstance);
+  }
 }
 
 export function createMongodbConnection(): void | Promise<void> {
