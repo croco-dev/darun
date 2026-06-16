@@ -45,6 +45,7 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
     indexProductUseCase: ProductCoreMutationResolver['indexProductUseCase'],
     updateProductTagUseCase: ProductCoreMutationResolver['updateProductTagUseCase'],
     getProductUseCase: GetProduct,
+    getProductTagsUseCase: ProductCoreMutationResolver['getProductTagsUseCase'],
     protected readonly getCompanyUseCase: GetCompany,
     protected readonly addProductScreenshotUseCase: AddProductScreenshot,
     protected readonly deleteProductScreenshotUseCase: DeleteProductScreenshot,
@@ -53,7 +54,14 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
     protected readonly registerProductCompanyUseCase: RegisterProductCompany,
     protected readonly generateProductDescriptionUseCase: GenerateProductDescription
   ) {
-    super(createProductUseCase, editProductUseCase, indexProductUseCase, updateProductTagUseCase, getProductUseCase);
+    super(
+      createProductUseCase,
+      editProductUseCase,
+      indexProductUseCase,
+      updateProductTagUseCase,
+      getProductUseCase,
+      getProductTagsUseCase
+    );
   }
 
   @Authorized([AuthRole.Admin])

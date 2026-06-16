@@ -20,6 +20,7 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
     coreIndexProductUseCase: ProductMediaMutationResolver['indexProductUseCase'],
     updateProductTagUseCase: ProductMediaMutationResolver['updateProductTagUseCase'],
     getProductUseCase: GetProduct,
+    getProductTagsUseCase: ProductMediaMutationResolver['getProductTagsUseCase'],
     addProductScreenshotUseCase: ProductMediaMutationResolver['addProductScreenshotUseCase'],
     deleteProductScreenshotUseCase: ProductMediaMutationResolver['deleteProductScreenshotUseCase'],
     addProductLinkUseCase: ProductMediaMutationResolver['addProductLinkUseCase'],
@@ -36,6 +37,7 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
       coreIndexProductUseCase,
       updateProductTagUseCase,
       getProductUseCase,
+      getProductTagsUseCase,
       getCompanyUseCase,
       addProductScreenshotUseCase,
       deleteProductScreenshotUseCase,
@@ -60,12 +62,16 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
     });
 
     await this.runFatalSideEffect('publishProduct', 'search-index-sync', async () => {
+      const productTag = await this.getProductTagsUseCase.execute({ productId: updatedProduct.id });
+
       await this.publishIndexProductUseCase.execute({
         id: updatedProduct.id,
         name: updatedProduct.name,
         slug: updatedProduct.slug,
         summary: updatedProduct.summary,
         description: updatedProduct.description,
+        tags: productTag ? productTag.tags.map(tag => tag.name) : [],
+        category: updatedProduct.categoryIds[0] ?? '',
         publishedAt: updatedProduct.publishedAt,
       });
     });

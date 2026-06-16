@@ -1,6 +1,7 @@
 import posthog from 'posthog-js';
 
 let initialized = false;
+let ready = false;
 
 declare const process: {
   env: {
@@ -11,19 +12,24 @@ declare const process: {
 
 export function initPostHog() {
   if (typeof window === 'undefined') return;
+  if (initialized) return;
+  initialized = true;
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   const host = process.env.NEXT_PUBLIC_POSTHOG_HOST;
-  if (!key || !host) return; // no-op
+  if (!key || !host) return;
   posthog.init(key, {
     api_host: host,
     loaded: () => {
-      initialized = true;
+      ready = true;
     },
   });
-  initialized = true;
+}
+
+export function isPostHogReady() {
+  return ready;
 }
 
 export function track(event: string, properties?: Record<string, unknown>) {
-  if (!initialized) return;
+  if (!ready) return;
   posthog.capture(event, properties);
 }

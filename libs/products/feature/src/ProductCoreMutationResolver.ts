@@ -1,4 +1,4 @@
-import { CreateProduct, EditProduct, GetProduct, UpdateProductTag } from '@darun/products-domain';
+import { CreateProduct, EditProduct, GetProduct, GetProductTags, UpdateProductTag } from '@darun/products-domain';
 import { productNotFound } from '@darun/products-domain';
 import { IndexProduct } from '@darun/search-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
@@ -33,7 +33,8 @@ export class ProductCoreMutationResolver {
     protected readonly editProductUseCase: EditProduct,
     protected readonly indexProductUseCase: IndexProduct,
     protected readonly updateProductTagUseCase: UpdateProductTag,
-    protected readonly getProductUseCase: GetProduct
+    protected readonly getProductUseCase: GetProduct,
+    protected readonly getProductTagsUseCase: GetProductTags
   ) {}
 
   protected async runFatalSideEffect<T>(
@@ -123,12 +124,16 @@ export class ProductCoreMutationResolver {
 
     if (updatedProduct.publishedAt !== undefined) {
       await this.runDegradedSideEffect('editProduct', 'search-index-sync', async () => {
+        const productTag = await this.getProductTagsUseCase.execute({ productId: updatedProduct.id });
+
         await this.indexProductUseCase.execute({
           id: updatedProduct.id,
           name: updatedProduct.name,
           slug: updatedProduct.slug,
           summary: updatedProduct.summary,
           description: updatedProduct.description,
+          tags: productTag ? productTag.tags.map(tag => tag.name) : [],
+          category: updatedProduct.categoryIds[0] ?? '',
           publishedAt: updatedProduct.publishedAt,
         });
       });

@@ -43,15 +43,21 @@ describe('posthog', () => {
     );
   });
 
-  it('track should call posthog.capture after initialization', async () => {
+  it('track should capture after loaded callback marks readiness', async () => {
     vi.stubEnv('NEXT_PUBLIC_POSTHOG_KEY', 'test-ph-key');
     vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://test.example.com');
 
     const { initPostHog, track } = await import('../posthog');
     initPostHog();
-    track('test_event', { foo: 'bar' });
 
-    expect(mockCapture).toHaveBeenCalledWith('test_event', { foo: 'bar' });
+    track('before_loaded', { phase: 'before' });
+    expect(mockCapture).not.toHaveBeenCalled();
+
+    const loadedCallback = mockInit.mock.calls[0][1].loaded;
+    loadedCallback();
+
+    track('after_loaded', { phase: 'after' });
+    expect(mockCapture).toHaveBeenCalledWith('after_loaded', { phase: 'after' });
   });
 
   it('track should be no-op when init env vars are missing', async () => {
@@ -60,5 +66,33 @@ describe('posthog', () => {
     track('another_event');
 
     expect(mockCapture).not.toHaveBeenCalled();
+  });
+
+  it('initPostHog should only call posthog.init once on repeated calls', async () => {
+    vi.stubEnv('NEXT_PUBLIC_POSTHOG_KEY', 'test-ph-key');
+    vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://test.example.com');
+
+    const { initPostHog } = await import('../posthog');
+    initPostHog();
+    initPostHog();
+    initPostHog();
+
+    expect(mockInit).toHaveBeenCalledTimes(1);
+  });
+
+  it('isPostHogReady should reflect loaded state', async () => {
+    vi.stubEnv('NEXT_PUBLIC_POSTHOG_KEY', 'test-ph-key');
+    vi.stubEnv('NEXT_PUBLIC_POSTHOG_HOST', 'https://test.example.com');
+
+    const { initPostHog, isPostHogReady } = await import('../posthog');
+
+    expect(isPostHogReady()).toBe(false);
+
+    initPostHog();
+    expect(isPostHogReady()).toBe(false);
+
+    const loadedCallback = mockInit.mock.calls[0][1].loaded;
+    loadedCallback();
+    expect(isPostHogReady()).toBe(true);
   });
 });

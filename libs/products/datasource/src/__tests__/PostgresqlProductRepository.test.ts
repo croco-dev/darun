@@ -120,6 +120,29 @@ describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
       expect(result).toHaveLength(3);
       expect(result[0].id).toBe('product-1');
     });
+
+    it('should include ::jsonb cast in the category filter SQL', async () => {
+      const orderByMock = vi.fn().mockReturnValue({
+        limit: vi.fn().mockReturnValue({
+          then: vi.fn().mockResolvedValue([]),
+        }),
+      });
+      const whereMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
+      const mockDbWithLimit = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({ where: whereMock }),
+        }),
+      } as unknown as Drizzle;
+      const repository = new PostgresqlProductRepository(mockDbWithLimit);
+
+      await repository.findPublishedByCategoryIdAndLimit('cat-a', 5);
+
+      expect(whereMock).toHaveBeenCalledTimes(1);
+      const whereArg = whereMock.mock.calls[0][0];
+      const sqlString = extractSqlString(whereArg);
+      expect(sqlString).toContain('::jsonb');
+      expect(sqlString).toContain('@>');
+    });
   });
 });
 

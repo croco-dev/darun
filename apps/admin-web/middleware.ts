@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { CookieAttributes, Cookies } from 'next-client-cookies';
 import { container } from './app/container';
 
-initAuthProvider({ authService: container.authService });
+initAuthProvider({ authServiceFactory: () => container.createAuthService() });
 
 const DAY_IN_MILLISECONDS = 1000 * 60 * 60 * 24;
 

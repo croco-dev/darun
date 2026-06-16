@@ -8,28 +8,47 @@ class AuthChecker {
     return this.instance;
   }
 
-  private authService: AuthService;
-  init(authService: AuthService) {
-    this.authService = authService;
+  private authService?: AuthService;
+  private authServiceFactory?: () => AuthService;
+
+  init(authService: AuthService): void;
+  init(authServiceFactory: () => AuthService): void;
+  init(authServiceOrFactory: AuthService | (() => AuthService)): void {
+    if (typeof authServiceOrFactory === 'function') {
+      this.authServiceFactory = authServiceOrFactory;
+      this.authService = undefined;
+    } else {
+      this.authService = authServiceOrFactory;
+      this.authServiceFactory = undefined;
+    }
   }
 
   async getUser(cookies: Cookies) {
-    this.setAuthStorage(cookies);
-    return this.authService.getUser();
+    const service = this.resolveAuthService(cookies);
+    return service.getUser();
   }
 
   async getIsAdmin(cookies: Cookies) {
-    this.setAuthStorage(cookies);
-    return this.authService.getUser().then(user => Boolean(user?.isAdmin));
+    const service = this.resolveAuthService(cookies);
+    return service.getUser().then(user => Boolean(user?.isAdmin));
   }
 
   async getIsLoggedIn(cookies: Cookies) {
-    this.setAuthStorage(cookies);
-    return this.authService.getUser().then(user => !!user);
+    const service = this.resolveAuthService(cookies);
+    return service.getUser().then(user => !!user);
   }
 
-  private setAuthStorage(cookies: Cookies) {
-    this.authService.setAuthStorage({
+  private resolveAuthService(cookies: Cookies): AuthService {
+    const service = this.authServiceFactory ? this.authServiceFactory() : this.authService;
+    if (!service) {
+      throw new Error('AuthChecker not initialized. Call init() first.');
+    }
+    this.setAuthStorage(service, cookies);
+    return service;
+  }
+
+  private setAuthStorage(service: AuthService, cookies: Cookies) {
+    service.setAuthStorage({
       get: (key: string) => cookies.get(key) ?? null,
       clear() {},
       set(values) {
