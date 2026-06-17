@@ -312,8 +312,14 @@ describe('GetRankedProducts', () => {
   });
 
   it('lets a zero-vote latest product into the scoring set via the latest buffer', async () => {
-    const oldHighVote = createProduct({ id: 'old-high', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
-    const latestZeroVote = createProduct({ id: 'latest-zero', publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR) });
+    const oldHighVote = createProduct({
+      id: 'old-high',
+      publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR),
+    });
+    const latestZeroVote = createProduct({
+      id: 'latest-zero',
+      publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR),
+    });
 
     const { voteRepository, productRepository } = createRepository({
       votes: [{ targetId: oldHighVote.id, count: 100 }],
@@ -329,8 +335,14 @@ describe('GetRankedProducts', () => {
   });
 
   it('does not drop latest buffer candidates when low-vote recent products are filtered out by votes', async () => {
-    const oldHighVote = createProduct({ id: 'old-high', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
-    const recentLowVote = createProduct({ id: 'recent-low', publishedAt: new Date(now.getTime() - 2 * MILLISECONDS_PER_HOUR) });
+    const oldHighVote = createProduct({
+      id: 'old-high',
+      publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR),
+    });
+    const recentLowVote = createProduct({
+      id: 'recent-low',
+      publishedAt: new Date(now.getTime() - 2 * MILLISECONDS_PER_HOUR),
+    });
 
     const { voteRepository, productRepository } = createRepository({
       votes: [{ targetId: oldHighVote.id, count: 100 }],
@@ -352,16 +364,20 @@ describe('GetRankedProducts', () => {
     });
 
     const voteRepository = {
-      findTopNByVoteCount: vi.fn().mockImplementation(async (n: number) => [
-        { targetId: unpublishedHighVoteId, count: 1000 },
-        { targetId: publishedLowVote.id, count: 2 },
-      ].slice(0, n)),
+      findTopNByVoteCount: vi.fn().mockImplementation(async (n: number) =>
+        [
+          { targetId: unpublishedHighVoteId, count: 1000 },
+          { targetId: publishedLowVote.id, count: 2 },
+        ].slice(0, n)
+      ),
     } satisfies Pick<RankedProductVoteRepository, 'findTopNByVoteCount'>;
 
     const productRepository = {
-      findPublishedByIds: vi.fn().mockImplementation(async (ids: string[]) =>
-        ids.map(id => (id === publishedLowVote.id ? publishedLowVote : null))
-      ),
+      findPublishedByIds: vi
+        .fn()
+        .mockImplementation(async (ids: string[]) =>
+          ids.map(id => (id === publishedLowVote.id ? publishedLowVote : null))
+        ),
       findPublishedOneById: vi.fn().mockResolvedValue(null),
       findOneById: vi.fn().mockResolvedValue(null),
       findOneBySlug: vi.fn().mockResolvedValue(null),

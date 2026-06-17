@@ -13,7 +13,10 @@ export class RankingService {
   constructor(private readonly getNow: () => Date = () => new Date()) {}
 
   calculateScore(votes: number, ageHours: number, createdAt: Date): number {
-    return (calculateVoteSignal(votes) / Math.pow(ageHours + RANKING_AGE_OFFSET_HOURS, RANKING_GRAVITY)) * this.boostMultiplier(createdAt);
+    return (
+      (calculateVoteSignal(votes) / Math.pow(ageHours + RANKING_AGE_OFFSET_HOURS, RANKING_GRAVITY)) *
+      this.boostMultiplier(createdAt)
+    );
   }
 
   private boostMultiplier(createdAt: Date): number {
