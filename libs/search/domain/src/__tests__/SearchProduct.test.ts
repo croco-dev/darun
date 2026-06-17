@@ -346,32 +346,199 @@ describe('SearchProduct', () => {
     expect(result[1].id).toBe('b');
   });
 
-  it('keeps clear lexical relevance ahead of log-scaled popularity', async () => {
+  it('returns empty array when limit is explicitly 0', async () => {
+    const products = [createProduct('p1')];
+    const repository = createRepository(products);
+    const useCase = createUseCase(repository);
+
+    const result = await useCase.execute({ query: 'product', limit: 0 });
+
+    expect(repository.searchProduct).toHaveBeenCalledWith('product', 0, 0);
+    expect(result).toEqual([]);
+  });
+
+  it('returns single candidate unchanged when min-max range is 0', async () => {
+    const product = new SearchableProduct({
+      id: 'single',
+      slug: 'single',
+      name: 'Single',
+      summary: 'Only one result',
+      searchScore: 5,
+      createdAt: NOW,
+      votes: 10,
+    });
+    const repository = createRepository([product]);
+    const useCase = createUseCase(repository);
+
+    const result = await useCase.execute({ query: 'product', limit: 1 });
+
+    expect(result).toEqual([product]);
+  });
+
+  it('treats undefined searchScore as 0 for normalization', async () => {
     const a = new SearchableProduct({
       id: 'a',
       slug: 'a',
       name: 'A',
       summary: 'A',
-      searchScore: 0.95,
-      publishedAt: new Date(NOW.getTime() - 24 * 60 * 60 * 1000),
-      votes: 5,
+      searchScore: 0,
+      createdAt: NOW,
+      votes: 0,
     });
     const b = new SearchableProduct({
       id: 'b',
       slug: 'b',
       name: 'B',
       summary: 'B',
-      searchScore: 0.2,
-      publishedAt: new Date(NOW.getTime() - 24 * 60 * 60 * 1000),
-      votes: 1000,
+      createdAt: NOW,
+      votes: 100,
     });
-    const repository = createRepository([b, a]);
+    const repository = createRepository([a, b]);
     const useCase = createUseCase(repository);
 
     const result = await useCase.execute({ query: 'product', limit: 2 });
 
+    // searchScores = [0, undefined] → both 0 after ?? 0 → range=0 → both 0.5 normalized
+    // b has higher ranking score → b first
+    expect(result[0].id).toBe('b');
+    expect(result[1].id).toBe('a');
+  });
+
+  it('preserves input order when combined scores are completely tied', async () => {
+    const a = new SearchableProduct({
+      id: 'a',
+      slug: 'a',
+      name: 'A',
+      summary: 'A',
+      searchScore: 5,
+      createdAt: NOW,
+      votes: 0,
+    });
+    const b = new SearchableProduct({
+      id: 'b',
+      slug: 'b',
+      name: 'B',
+      summary: 'B',
+      searchScore: 5,
+      createdAt: NOW,
+      votes: 0,
+    });
+
+    // Input order: b then a
+    const repository1 = createRepository([b, a]);
+    const uc1 = createUseCase(repository1);
+    const result1 = await uc1.execute({ query: 'product', limit: 2 });
+
+    expect(result1[0].id).toBe('b');
+    expect(result1[1].id).toBe('a');
+
+    // Input order: a then b
+    const repository2 = createRepository([a, b]);
+    const uc2 = createUseCase(repository2);
+    const result2 = await uc2.execute({ query: 'product', limit: 2 });
+
+    expect(result2[0].id).toBe('a');
+    expect(result2[1].id).toBe('b');
+  });
+
+  it('treats future publishedAt the same as publishedAt=NOW for ranking', async () => {
+    const a = new SearchableProduct({
+      id: 'a',
+      slug: 'a',
+      name: 'A',
+      summary: 'A',
+      searchScore: 5,
+      createdAt: NOW,
+      votes: 10,
+      publishedAt: NOW,
+    });
+    const b = new SearchableProduct({
+      id: 'b',
+      slug: 'b',
+      name: 'B',
+      summary: 'B',
+      searchScore: 5,
+      createdAt: NOW,
+      votes: 10,
+      publishedAt: new Date(NOW.getTime() + 4 * 24 * 60 * 60 * 1000),
+    });
+    const repository = createRepository([a, b]);
+    const useCase = createUseCase(repository);
+
+    const result = await useCase.execute({ query: 'product', limit: 2 });
+
+    // Both get ageHours=0 and same boost → identical combined scores → input order preserved
     expect(result[0].id).toBe('a');
     expect(result[1].id).toBe('b');
+  });
+
+  describe('input defense', () => {
+    it('handles NaN searchScore by treating it as 0', async () => {
+      const a = new SearchableProduct({
+        id: 'a',
+        slug: 'a',
+        name: 'A',
+        summary: 'A',
+        searchScore: 10,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const b = new SearchableProduct({
+        id: 'b',
+        slug: 'b',
+        name: 'B',
+        summary: 'B',
+        searchScore: NaN,
+        createdAt: NOW,
+        votes: 100,
+      });
+      const repository = createRepository([b, a]);
+      const useCase = createUseCase(repository);
+
+      const result = await useCase.execute({ query: 'product', limit: 2 });
+
+      // NaN should be treated as 0 for min-max normalization.
+      // a (searchScore=10, relevance=1) should beat b (searchScore=0, relevance=0).
+      expect(result[0].id).toBe('a');
+      expect(result[1].id).toBe('b');
+    });
+
+    it('clamps negative searchScore to 0 for normalization', async () => {
+      const a = new SearchableProduct({
+        id: 'a',
+        slug: 'a',
+        name: 'A',
+        summary: 'A',
+        searchScore: 5,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const b = new SearchableProduct({
+        id: 'b',
+        slug: 'b',
+        name: 'B',
+        summary: 'B',
+        searchScore: 2,
+        createdAt: NOW,
+        votes: 100,
+      });
+      const c = new SearchableProduct({
+        id: 'c',
+        slug: 'c',
+        name: 'C',
+        summary: 'C',
+        searchScore: -10,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const repository = createRepository([c, b, a]);
+      const useCase = createUseCase(repository);
+
+      const result = await useCase.execute({ query: 'product', limit: 3 });
+
+      // Negative should be clamped to 0: searchScores=[5,2,0], norm: a=1, b=0.4, c=0
+      expect(result[0].id).toBe('a');
+    });
   });
 
   const createRepository = (products: SearchableProduct[]): SearchableProductRepository => ({

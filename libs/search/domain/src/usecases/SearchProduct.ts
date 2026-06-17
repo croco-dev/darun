@@ -2,10 +2,8 @@ import { Inject, Service } from 'typedi';
 import type { SearchableProductRepository } from '../repositories/SearchableProductRepository';
 import { SearchableProductRepositoryToken } from '../repositories/SearchableProductRepository';
 import { SearchRanker } from '../services/SearchRanker';
+import { SEARCH_CANDIDATE_MULTIPLIER, MAX_SEARCH_CANDIDATES } from '../services/SearchRankingPolicy';
 import { SynonymExpander } from '../services/SynonymExpander';
-
-const SEARCH_CANDIDATE_MULTIPLIER = 3;
-const MAX_SEARCH_CANDIDATES = 100;
 
 @Service()
 export class SearchProduct {

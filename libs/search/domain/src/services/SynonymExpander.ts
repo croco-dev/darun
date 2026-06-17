@@ -1,5 +1,5 @@
 import { Service } from 'typedi';
-import { SEARCH_SYNONYM_MAP } from './SearchRanker';
+import { SEARCH_SYNONYM_MAP } from './SearchSynonyms';
 
 @Service()
 export class SynonymExpander {

@@ -1,17 +1,9 @@
 import { RankingService } from '@darun/products-domain';
 import { Service } from 'typedi';
 import type { SearchableProduct } from '../entities/SearchableProduct';
+import { SEARCH_SCORE_WEIGHT, RANKING_SCORE_WEIGHT } from './SearchRankingPolicy';
 
-const SEARCH_SCORE_WEIGHT = 0.7;
-const RANKING_SCORE_WEIGHT = 0.3;
 const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
-
-export const SEARCH_SYNONYM_MAP = {
-  노트북: ['laptop', '랩톱'],
-  마우스: ['mouse', '포인팅 디바이스'],
-  키보드: ['keyboard', '자판'],
-  모니터: ['monitor', 'display', '디스플레이'],
-} satisfies Record<string, readonly string[]>;
 
 type RankableProduct = SearchableProduct & {
   readonly searchScore?: number;
@@ -34,21 +26,16 @@ export class SearchRanker {
 
     const start = performance.now();
 
-    const searchScores = products.map(p => p.searchScore ?? 0);
+    const searchScores = products.map(p => {
+      const raw = p.searchScore ?? 0;
+      return Number.isFinite(raw) ? Math.max(0, raw) : 0;
+    });
     const rankingScores = products.map(p => this.rankingScore(p));
 
     const normalizedSearchScores = this.minMaxNormalize(searchScores);
     const normalizedRankingScores = this.minMaxNormalize(rankingScores);
 
-    const result = [...products]
-      .map((product, i) => ({
-        product,
-        normalizedSearch: normalizedSearchScores[i],
-        combinedScore:
-          normalizedSearchScores[i] * SEARCH_SCORE_WEIGHT + normalizedRankingScores[i] * RANKING_SCORE_WEIGHT,
-      }))
-      .sort((a, b) => b.combinedScore - a.combinedScore)
-      .map(({ product }) => product);
+    const result = this.sortByCombinedScore(products, normalizedSearchScores, normalizedRankingScores);
 
     const rerankLatencyMs = performance.now() - start;
     console.info({
@@ -77,5 +64,21 @@ export class SearchRanker {
     const ageHours = Math.max(0, this.getNow().getTime() - createdAt.getTime()) / MILLISECONDS_PER_HOUR;
 
     return this.rankingService.calculateScore(product.votes ?? 0, ageHours, createdAt);
+  }
+
+  private sortByCombinedScore(
+    products: readonly RankableProduct[],
+    normalizedSearchScores: number[],
+    normalizedRankingScores: number[]
+  ): SearchableProduct[] {
+    return [...products]
+      .map((product, i) => ({
+        product,
+        normalizedSearch: normalizedSearchScores[i],
+        combinedScore:
+          normalizedSearchScores[i] * SEARCH_SCORE_WEIGHT + normalizedRankingScores[i] * RANKING_SCORE_WEIGHT,
+      }))
+      .sort((a, b) => b.combinedScore - a.combinedScore)
+      .map(({ product }) => product);
   }
 }

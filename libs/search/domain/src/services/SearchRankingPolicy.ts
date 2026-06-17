@@ -1,0 +1,4 @@
+export const SEARCH_SCORE_WEIGHT = 0.7;
+export const RANKING_SCORE_WEIGHT = 0.3;
+export const SEARCH_CANDIDATE_MULTIPLIER = 3;
+export const MAX_SEARCH_CANDIDATES = 100;
