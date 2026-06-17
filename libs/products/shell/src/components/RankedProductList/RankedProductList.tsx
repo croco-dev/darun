@@ -1,6 +1,7 @@
 'use client';
 
 import { bind } from '@croco/utils-structure-react';
+import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { Link } from '@darun/utils-router';
 import { ProductItem } from '../../uis';
 import { useRankedProductList } from './useRankedProductList';
@@ -8,7 +9,16 @@ import { useRankedProductList } from './useRankedProductList';
 export const RankedProductList = bind(useRankedProductList, ({ products }) => (
   <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2">
     {products.map((product, index) => (
-      <Link key={product.id} href={`/products/${product.slug}?from=trending`}>
+      <Link
+        key={product.id}
+        href={`/products/${product.slug}?from=trending`}
+        onClick={() =>
+          track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
+            productSlug: product.slug,
+            source: 'ranking',
+          })
+        }
+      >
         <div className="flex items-center gap-3">
           <p className="min-w-7 text-center text-[18px] font-bold text-dark-400">{index + 1}</p>
           <ProductItem

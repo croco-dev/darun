@@ -2,6 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
+import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { ProductCard } from '@darun/products-shell';
 import { useLocale } from 'next-intl';
 
@@ -52,6 +53,12 @@ export const TrendingProductPreview = () => {
             rank={index + 1}
             href={`/${locale}/products/${product.slug}?from=trending`}
             source="search-empty"
+            onClick={() =>
+              track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
+                productSlug: product.slug,
+                source: 'search-empty-trending',
+              })
+            }
           />
         ))}
       </div>

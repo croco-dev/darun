@@ -4,6 +4,7 @@ export const AnalyticsEvents = {
   CATEGORY_CHIP_CLICKED: 'category_chip_clicked',
   EMPTY_SEARCH_STRIPE_CLICKED: 'empty_search_stripe_clicked',
   RELATED_PRODUCT_CLICKED: 'related_product_clicked',
+  RANKED_PRODUCT_CLICKED: 'ranked_product_clicked',
 } as const;
 
 export type ProductDetailViewedPayload = {
@@ -29,4 +30,9 @@ export type RelatedProductClickedPayload = {
   fromSlug: string;
   toSlug: string;
   position: number;
+};
+
+export type RankedProductClickedPayload = {
+  productSlug: string;
+  source: 'ranking' | 'trending' | 'search-empty-trending';
 };

@@ -310,6 +310,106 @@ describe('GetRankedProducts', () => {
     expect(p1Occurrences).toHaveLength(1);
     expect(result).toHaveLength(2);
   });
+
+  it('lets a zero-vote latest product into the scoring set via the latest buffer', async () => {
+    const oldHighVote = createProduct({ id: 'old-high', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
+    const latestZeroVote = createProduct({ id: 'latest-zero', publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR) });
+
+    const { voteRepository, productRepository } = createRepository({
+      votes: [{ targetId: oldHighVote.id, count: 100 }],
+      products: [oldHighVote],
+    });
+
+    productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([latestZeroVote]);
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+    expect(result.map(p => p.id)).toEqual([oldHighVote.id, latestZeroVote.id]);
+    expect(productRepository.findTopNSortByPublishedAtDesc).toHaveBeenCalledWith(expect.any(Number));
+  });
+
+  it('does not drop latest buffer candidates when low-vote recent products are filtered out by votes', async () => {
+    const oldHighVote = createProduct({ id: 'old-high', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
+    const recentLowVote = createProduct({ id: 'recent-low', publishedAt: new Date(now.getTime() - 2 * MILLISECONDS_PER_HOUR) });
+
+    const { voteRepository, productRepository } = createRepository({
+      votes: [{ targetId: oldHighVote.id, count: 100 }],
+      products: [oldHighVote],
+    });
+
+    productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([recentLowVote]);
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+    expect(result.map(p => p.id)).toEqual([oldHighVote.id, recentLowVote.id]);
+  });
+
+  it('keeps candidate collection and scoring separate for unpublished high-vote products', async () => {
+    const unpublishedHighVoteId = 'unpublished-high';
+    const publishedLowVote = createProduct({
+      id: 'published-low',
+      publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR),
+    });
+
+    const voteRepository = {
+      findTopNByVoteCount: vi.fn().mockImplementation(async (n: number) => [
+        { targetId: unpublishedHighVoteId, count: 1000 },
+        { targetId: publishedLowVote.id, count: 2 },
+      ].slice(0, n)),
+    } satisfies Pick<RankedProductVoteRepository, 'findTopNByVoteCount'>;
+
+    const productRepository = {
+      findPublishedByIds: vi.fn().mockImplementation(async (ids: string[]) =>
+        ids.map(id => (id === publishedLowVote.id ? publishedLowVote : null))
+      ),
+      findPublishedOneById: vi.fn().mockResolvedValue(null),
+      findOneById: vi.fn().mockResolvedValue(null),
+      findOneBySlug: vi.fn().mockResolvedValue(null),
+      findPublishedOneBySlug: vi.fn().mockResolvedValue(null),
+      findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
+      findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
+      findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
+      findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
+      updateById: vi.fn(),
+      findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
+      countPublishedAll: vi.fn().mockResolvedValue(0),
+      countAll: vi.fn().mockResolvedValue(0),
+      insert: vi.fn().mockResolvedValue(null),
+    } satisfies ProductRepository;
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 1 });
+
+    expect(result.map(p => p.id)).toEqual([publishedLowVote.id]);
+    expect(voteRepository.findTopNByVoteCount).toHaveBeenCalledWith(2);
+  });
+
+  it('uses deterministic tie-breaking by publishedAt desc then id asc with log-scaled vote gaps', async () => {
+    const highOld = createProduct({
+      id: 'high-old',
+      publishedAt: new Date(now.getTime() - 6 * MILLISECONDS_PER_HOUR),
+    });
+    const lowRecent = createProduct({
+      id: 'low-recent',
+      publishedAt: new Date(now.getTime() - 3 * MILLISECONDS_PER_HOUR),
+    });
+    const midAged = createProduct({
+      id: 'mid-aged',
+      publishedAt: new Date(now.getTime() - 12 * MILLISECONDS_PER_HOUR),
+    });
+
+    const { voteRepository, productRepository } = createRepository({
+      votes: [
+        { targetId: highOld.id, count: 100 },
+        { targetId: lowRecent.id, count: 1 },
+        { targetId: midAged.id, count: 50 },
+      ],
+      products: [highOld, lowRecent, midAged],
+    });
+
+    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 3 });
+
+    expect(result.map(p => p.id)).toEqual(['high-old', 'mid-aged', 'low-recent']);
+  });
 });
 
 describe('RankingService', () => {
@@ -317,7 +417,30 @@ describe('RankingService', () => {
     const createdAt = new Date(NOW.getTime() - 1 * MILLISECONDS_PER_HOUR);
     const score = new RankingService(() => NOW).calculateScore(10, 1, createdAt);
 
-    expect(score).toBeCloseTo((10 / Math.pow(1 + 2, 0.6)) * 1.5);
+    expect(score).toBeCloseTo((Math.log1p(10) / Math.pow(1 + 2, 0.6)) * 1.5);
+  });
+
+  it('produces a zero score when there are no votes', () => {
+    const createdAt = new Date(NOW.getTime() - 1 * MILLISECONDS_PER_HOUR);
+    const score = new RankingService(() => NOW).calculateScore(0, 1, createdAt);
+
+    expect(score).toBe(0);
+  });
+
+  it('ranks a recent low-vote product above an older high-vote product under log-scaled influence', () => {
+    const getNow = () => new Date('2026-06-17T00:00:00.000Z');
+    const service = new RankingService(getNow);
+
+    const oldPublishedAt = new Date('2026-05-18T00:00:00.000Z');
+    const recentPublishedAt = new Date('2026-06-16T12:00:00.000Z');
+
+    const oldAgeHours = (getNow().getTime() - oldPublishedAt.getTime()) / MILLISECONDS_PER_HOUR;
+    const recentAgeHours = (getNow().getTime() - recentPublishedAt.getTime()) / MILLISECONDS_PER_HOUR;
+
+    const oldScore = service.calculateScore(1000, oldAgeHours, oldPublishedAt);
+    const recentScore = service.calculateScore(10, recentAgeHours, recentPublishedAt);
+
+    expect(recentScore).toBeGreaterThan(oldScore);
   });
 });
 

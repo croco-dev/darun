@@ -346,6 +346,34 @@ describe('SearchProduct', () => {
     expect(result[1].id).toBe('b');
   });
 
+  it('keeps clear lexical relevance ahead of log-scaled popularity', async () => {
+    const a = new SearchableProduct({
+      id: 'a',
+      slug: 'a',
+      name: 'A',
+      summary: 'A',
+      searchScore: 0.95,
+      publishedAt: new Date(NOW.getTime() - 24 * 60 * 60 * 1000),
+      votes: 5,
+    });
+    const b = new SearchableProduct({
+      id: 'b',
+      slug: 'b',
+      name: 'B',
+      summary: 'B',
+      searchScore: 0.2,
+      publishedAt: new Date(NOW.getTime() - 24 * 60 * 60 * 1000),
+      votes: 1000,
+    });
+    const repository = createRepository([b, a]);
+    const useCase = createUseCase(repository);
+
+    const result = await useCase.execute({ query: 'product', limit: 2 });
+
+    expect(result[0].id).toBe('a');
+    expect(result[1].id).toBe('b');
+  });
+
   const createRepository = (products: SearchableProduct[]): SearchableProductRepository => ({
     index: vi.fn<SearchableProductRepository['index']>().mockResolvedValue(true),
     searchProduct: vi.fn<SearchableProductRepository['searchProduct']>().mockResolvedValue(products),

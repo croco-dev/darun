@@ -6,12 +6,14 @@ const NEW_PRODUCT_BOOST_MULTIPLIER = 1.5;
 const RANKING_AGE_OFFSET_HOURS = 2;
 const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
 
+const calculateVoteSignal = (votes: number): number => Math.log1p(votes);
+
 @Service()
 export class RankingService {
   constructor(private readonly getNow: () => Date = () => new Date()) {}
 
   calculateScore(votes: number, ageHours: number, createdAt: Date): number {
-    return (votes / Math.pow(ageHours + RANKING_AGE_OFFSET_HOURS, RANKING_GRAVITY)) * this.boostMultiplier(createdAt);
+    return (calculateVoteSignal(votes) / Math.pow(ageHours + RANKING_AGE_OFFSET_HOURS, RANKING_GRAVITY)) * this.boostMultiplier(createdAt);
   }
 
   private boostMultiplier(createdAt: Date): number {

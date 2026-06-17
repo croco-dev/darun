@@ -3,6 +3,7 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { bind } from '@croco/utils-structure-react';
+import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
@@ -94,6 +95,12 @@ const TrendingProductsView = ({ products, title, moreLabel, emptyLabel }: Trendi
                 rank={index + 1}
                 href={`/products/${product.slug}?from=trending`}
                 source="trending"
+                onClick={() =>
+                  track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
+                    productSlug: product.slug,
+                    source: 'trending',
+                  })
+                }
               />
             ))}
           </div>
