@@ -143,7 +143,7 @@ export class PostgresqlProductRepository implements ProductRepository {
   }
 
   async findPublishedOneById(id: string): Promise<Product | null> {
-    return this.publishedIdLoader.load(id);
+    return this.findPublishedByIds([id]).then(results => results[0] ?? null);
   }
 
   async findTopNSortByPublishedAtDesc(n: number): Promise<Product[]> {
@@ -216,6 +216,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       description: schema.description ?? undefined,
       publishedAt: schema.publishedAt ?? undefined,
       updatedAt: schema.updatedAt ?? undefined,
+      categoryIds: schema.categoryIds ?? [],
     });
   }
 }

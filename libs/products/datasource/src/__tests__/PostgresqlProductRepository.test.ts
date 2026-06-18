@@ -33,19 +33,42 @@ function extractSqlString(sqlObj: unknown): string {
 }
 
 describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
-  let mockDb: { transaction: ReturnType<typeof vi.fn>; select?: ReturnType<typeof vi.fn> };
+  let mockDb: Drizzle & {
+    transaction: ReturnType<typeof vi.fn>;
+    select?: ReturnType<typeof vi.fn>;
+    insert?: ReturnType<typeof vi.fn>;
+    update?: ReturnType<typeof vi.fn>;
+  };
   let clearAllSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     mockDb = {
       transaction: vi.fn(),
-    };
+    } as unknown as typeof mockDb;
     clearAllSpy = vi.spyOn(DataLoader.prototype, 'clearAll');
   });
 
   afterEach(() => {
     clearAllSpy.mockRestore();
   });
+
+  function createMockSelect(rows: Record<string, unknown>[]) {
+    return vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(rows),
+      }),
+    });
+  }
+
+  function createMockSelectWithLimit(rows: Record<string, unknown>[]) {
+    return vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue(rows),
+        }),
+      }),
+    });
+  }
 
   describe('insert()', () => {
     it('should call publishedIdLoader.clearAll() after successful insert', async () => {
@@ -63,6 +86,60 @@ describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
 
       expect(result).toBe(product);
       expect(clearAllSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not return a stale product from findPublishedOneById after insert', async () => {
+      const initialProduct = new Product({
+        id: 'product-1',
+        slug: 'initial-product',
+        name: 'Initial Product',
+        summary: 'Initial summary',
+        logoUrl: 'https://example.com/initial.png',
+      });
+      const insertedProduct = new Product({
+        id: 'product-1',
+        slug: 'inserted-product',
+        name: 'Inserted Product',
+        summary: 'Inserted summary',
+        logoUrl: 'https://example.com/inserted.png',
+      });
+      const publishedRowsAfterInsert = [
+        {
+          id: 'product-1',
+          slug: 'inserted-product',
+          name: 'Inserted Product',
+          summary: 'Inserted summary',
+          logoUrl: 'https://example.com/inserted.png',
+          categoryIds: [],
+          publishedAt: new Date('2026-01-02'),
+          createdAt: new Date('2026-01-02'),
+        },
+      ];
+      let selectCallCount = 0;
+      const mockSelect = vi.fn().mockImplementation(() => {
+        selectCallCount += 1;
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue(selectCallCount === 1 ? [] : publishedRowsAfterInsert),
+          }),
+        };
+      });
+      const mockReturning = vi.fn().mockResolvedValue([insertedProduct]);
+      const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
+      const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
+      mockDb.select = mockSelect;
+      mockDb.insert = mockInsert;
+      mockDb.transaction.mockImplementation(async (cb: (tx: typeof mockDb) => Promise<unknown>) => cb(mockDb));
+
+      const repository = new PostgresqlProductRepository(mockDb);
+
+      const beforeInsert = await repository.findPublishedOneById('product-1');
+      expect(beforeInsert).toBeNull();
+
+      await repository.insert(initialProduct);
+      const readAfterInsert = await repository.findPublishedOneById('product-1');
+
+      expect(readAfterInsert?.name).toBe('Inserted Product');
     });
   });
 
@@ -82,6 +159,61 @@ describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
 
       expect(result).toBe(product);
       expect(clearAllSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not return stale data from findOneById after updateById', async () => {
+      const staleRow = {
+        id: 'product-1',
+        slug: 'stale-product',
+        name: 'Stale Product',
+        summary: 'Stale summary',
+        logoUrl: 'https://example.com/stale.png',
+        categoryIds: ['cat-a'],
+        publishedAt: new Date('2026-01-01'),
+        createdAt: new Date('2026-01-01'),
+      };
+      const updatedRow = {
+        id: 'product-1',
+        slug: 'updated-product',
+        name: 'Updated Product',
+        summary: 'Updated summary',
+        logoUrl: 'https://example.com/updated.png',
+        categoryIds: ['cat-b'],
+        publishedAt: new Date('2026-01-02'),
+        createdAt: new Date('2026-01-01'),
+        updatedAt: new Date('2026-01-02'),
+      };
+      let selectCallCount = 0;
+      const mockSelect = vi.fn().mockImplementation(() => {
+        selectCallCount += 1;
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue(selectCallCount === 1 ? [staleRow] : [updatedRow]),
+          }),
+        };
+      });
+      const mockTxSelect = createMockSelectWithLimit([staleRow]);
+      const mockReturning = vi.fn().mockResolvedValue([updatedRow]);
+      const mockSet = vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ returning: mockReturning }) });
+      const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
+      mockDb.select = mockSelect;
+      mockDb.update = mockUpdate;
+      mockDb.transaction.mockImplementation(async (cb: (tx: typeof mockDb) => Promise<unknown>) => {
+        const tx = { ...mockDb, select: mockTxSelect } as unknown as typeof mockDb;
+        return cb(tx);
+      });
+
+      const repository = new PostgresqlProductRepository(mockDb);
+
+      const beforeUpdate = await repository.findOneById('product-1');
+      expect(beforeUpdate?.name).toBe('Stale Product');
+
+      await repository.updateById('product-1', (p: Product) => p);
+      const readAfterUpdate = await repository.findOneById('product-1');
+
+      expect(readAfterUpdate?.name).toBe('Updated Product');
+      expect(readAfterUpdate?.slug).toBe('updated-product');
+      expect(readAfterUpdate?.categoryIds).toEqual(['cat-b']);
     });
   });
 

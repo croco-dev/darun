@@ -20,12 +20,24 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
           .where(inArray(alternativeProducts.productId, [...productIds]));
 
         const groupByDocs = groupBy(docs, doc => doc.productId);
-        return productIds.map(productId => groupByDocs[productId] || []);
+        return productIds.map(productId =>
+          (groupByDocs[productId] || []).map(doc => this.toDomain(doc))
+        );
       },
       {
         cache: true,
       }
     );
+  }
+
+  private toDomain(
+    doc: Pick<typeof alternativeProducts.$inferSelect, 'id' | 'productId' | 'alternativeProductId'>
+  ): AlternativeProduct {
+    return new AlternativeProduct({
+      id: doc.id,
+      productId: doc.productId,
+      alternativeProductId: doc.alternativeProductId,
+    });
   }
 
   deleteMany(removedAlternatives: AlternativeProduct[]): Promise<boolean> {
@@ -51,7 +63,7 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
       })
       .then(result => {
         this.productIdLoader.clearAll();
-        return result;
+        return result.map(doc => this.toDomain(doc));
       });
   }
   create(data: AlternativeProduct): Promise<AlternativeProduct> {
@@ -72,7 +84,7 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
       })
       .then(result => {
         this.productIdLoader.clearAll();
-        return result;
+        return this.toDomain(result);
       });
   }
 
