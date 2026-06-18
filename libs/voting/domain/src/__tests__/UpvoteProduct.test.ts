@@ -5,6 +5,38 @@ import { VoteRecordRepository } from '../repositories/VoteRecordRepository';
 import { UpvoteProduct } from '../usecases/UpvoteProduct';
 
 describe('hashVoterIp', () => {
+  it('can be imported without VOTE_IP_SALT env var', async () => {
+    const prev = process.env.VOTE_IP_SALT;
+    delete process.env.VOTE_IP_SALT;
+    vi.resetModules();
+    try {
+      const { hashVoterIp } = await import('../utils/hashVoterIp');
+      expect(hashVoterIp).toBeDefined();
+    } finally {
+      if (prev === undefined) {
+        delete process.env.VOTE_IP_SALT;
+      } else {
+        process.env.VOTE_IP_SALT = prev;
+      }
+    }
+  });
+
+  it('throws when called without VOTE_IP_SALT', async () => {
+    const prev = process.env.VOTE_IP_SALT;
+    delete process.env.VOTE_IP_SALT;
+    vi.resetModules();
+    try {
+      const { hashVoterIp } = await import('../utils/hashVoterIp');
+      expect(() => hashVoterIp('1.2.3.4')).toThrow(/VOTE_IP_SALT/);
+    } finally {
+      if (prev === undefined) {
+        delete process.env.VOTE_IP_SALT;
+      } else {
+        process.env.VOTE_IP_SALT = prev;
+      }
+    }
+  });
+
   it('should return 64 character hex string', async () => {
     const { hashVoterIp } = await import('../utils/hashVoterIp');
     const result = hashVoterIp('192.168.1.1');

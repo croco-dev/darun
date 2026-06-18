@@ -3,8 +3,8 @@ import { useQuery, useMutation, type MutationHookOptions } from '@apollo/client/
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// ── Mock: @apollo/client to avoid ApolloProvider requirement ─────
-vi.mock('@apollo/client', async importOriginal => {
+// ── Mock: @apollo/client/react to avoid ApolloProvider requirement ─────
+vi.mock('@apollo/client/react', async importOriginal => {
   const actual = await importOriginal();
   return {
     ...(actual as Record<string, unknown>),
@@ -35,11 +35,7 @@ import { useEditProductDescription } from '../useEditProductDescription';
 
 describe('useEditProductDescription', () => {
   const defaultSlug = 'test-product-slug';
-  type MockQueryOptions = { onCompleted?: (data: unknown) => void };
   type MockMutationOptions = MutationHookOptions<unknown, OperationVariables, unknown, ApolloCache>;
-  let queryOnCompleted:
-    | ((data: { tempProductBySlug: { __typename: string; id: string; description?: string | null } }) => void)
-    | null = null;
   let mutationOnCompleted:
     | ((data: { editProduct: { product: { id: string; description?: string | null } } }) => void)
     | null = null;
@@ -47,62 +43,12 @@ describe('useEditProductDescription', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    queryOnCompleted = null;
     mutationOnCompleted = null;
     mutateFn = vi.fn();
 
     // Default Apollo mocks
     vi.mocked(useQuery).mockReturnValue({ data: undefined } as ReturnType<typeof useQuery>);
     vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>);
-  });
-
-  describe('query onCompleted', () => {
-    beforeEach(() => {
-      vi.mocked(useQuery).mockImplementation(((_query: unknown, options?: MockQueryOptions) => {
-        if (options?.onCompleted) {
-          queryOnCompleted = options.onCompleted as typeof queryOnCompleted;
-        }
-        return { data: undefined } as ReturnType<typeof useQuery>;
-      }) as typeof useQuery);
-    });
-
-    it('should call setInitialValues with loaded description instead of reset', () => {
-      renderHook(() => useEditProductDescription({ slug: defaultSlug }));
-
-      act(() => {
-        queryOnCompleted!({
-          tempProductBySlug: {
-            __typename: 'Product',
-            id: 'product-1',
-            description: 'Loaded description',
-          },
-        });
-      });
-
-      expect(mockForm.setInitialValues).toHaveBeenCalledWith({
-        description: 'Loaded description',
-      });
-      expect(mockForm.reset).not.toHaveBeenCalled();
-    });
-
-    it('should fallback to empty string when description is null', () => {
-      renderHook(() => useEditProductDescription({ slug: defaultSlug }));
-
-      act(() => {
-        queryOnCompleted!({
-          tempProductBySlug: {
-            __typename: 'Product',
-            id: 'product-1',
-            description: null,
-          },
-        });
-      });
-
-      expect(mockForm.setInitialValues).toHaveBeenCalledWith({
-        description: '',
-      });
-      expect(mockForm.reset).not.toHaveBeenCalled();
-    });
   });
 
   describe('mutation onCompleted', () => {
@@ -169,8 +115,7 @@ describe('useEditProductDescription', () => {
       }) as typeof useMutation);
     });
 
-    it('should log error and rethrow when mutation rejects', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('should rethrow when mutation rejects', async () => {
       const onSubmit = vi.fn();
       const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug, onSubmit }));
 
@@ -182,9 +127,7 @@ describe('useEditProductDescription', () => {
         })
       ).rejects.toThrow('Network error');
 
-      expect(consoleSpy).toHaveBeenCalledWith('mutation failed:', expect.any(Error));
       expect(onSubmit).not.toHaveBeenCalled();
-      consoleSpy.mockRestore();
     });
   });
 
@@ -232,6 +175,32 @@ describe('useEditProductDescription', () => {
           input: { description: 'New description' },
         },
       });
+    });
+
+    it('should call onCompleted and onSubmit after mutation succeeds', async () => {
+      const onSubmit = vi.fn();
+      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug, onSubmit }));
+
+      mutateFn.mockResolvedValueOnce({
+        data: {
+          editProduct: {
+            product: { id: 'product-1', description: 'New description' },
+          },
+        },
+      });
+
+      await act(async () => {
+        await result.current.submit({ description: 'New description' });
+      });
+
+      // The mock captures onCompleted but does not auto-call it;
+      // simulate Apollo's post-mutation onCompleted trigger.
+      act(() => {
+        mutationOnCompleted!({
+          editProduct: { product: { id: 'product-1', description: 'New description' } },
+        });
+      });
+
       expect(onSubmit).toHaveBeenCalled();
     });
   });

@@ -4,7 +4,7 @@ import { notifications } from '@mantine/notifications';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@apollo/client', async importOriginal => {
+vi.mock('@apollo/client/react', async importOriginal => {
   const actual = await importOriginal();
   return {
     ...(actual as Record<string, unknown>),
