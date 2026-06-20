@@ -7,6 +7,16 @@ import { CompareButton } from './CompareButton';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+const { mockTrack, mockAnalyticsEvents } = vi.hoisted(() => ({
+  mockTrack: vi.fn(),
+  mockAnalyticsEvents: { COMPARE_CTA_CLICKED: 'compare_cta_clicked' },
+}));
+
+vi.mock('@darun/analytics-client', () => ({
+  track: mockTrack,
+  AnalyticsEvents: mockAnalyticsEvents,
+}));
+
 const mockPush = vi.fn();
 
 vi.mock('next/navigation', () => ({
@@ -27,6 +37,7 @@ describe('CompareButton', () => {
     root = createRoot(container);
     localStorage.clear();
     mockPush.mockClear();
+    mockTrack.mockClear();
   });
 
   afterEach(() => {
@@ -129,5 +140,93 @@ describe('CompareButton', () => {
 
     expect(localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(['product-b', 'product-c']));
     expect(mockPush).toHaveBeenCalledWith('/compare/product-b/product-c');
+  });
+
+  it('emits add event when first product is added to empty compare list', () => {
+    act(() => {
+      root?.render(<CompareButton slug="product-1" source="search" />);
+    });
+
+    const button = container.querySelector('[data-testid="compare-button"]') as HTMLButtonElement;
+
+    act(() => {
+      button.click();
+    });
+
+    expect(mockTrack).toHaveBeenCalledTimes(1);
+    expect(mockTrack).toHaveBeenCalledWith('compare_cta_clicked', {
+      productSlug: 'product-1',
+      action: 'add',
+      source: 'search',
+      compareCount: 1,
+    });
+  });
+
+  it('emits remove event when product is removed from compare list', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(['product-1']));
+
+    act(() => {
+      root?.render(<CompareButton slug="product-1" />);
+    });
+
+    const button = container.querySelector('[data-testid="compare-button"]') as HTMLButtonElement;
+
+    act(() => {
+      button.click();
+    });
+
+    expect(mockTrack).toHaveBeenCalledTimes(1);
+    expect(mockTrack).toHaveBeenCalledWith('compare_cta_clicked', {
+      productSlug: 'product-1',
+      action: 'remove',
+      source: 'direct',
+      compareCount: 0,
+    });
+  });
+
+  it('emits navigate event when second product is added', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(['product-a']));
+
+    act(() => {
+      root?.render(<CompareButton slug="product-b" source="related" />);
+    });
+
+    const button = container.querySelector('[data-testid="compare-button"]') as HTMLButtonElement;
+
+    act(() => {
+      button.click();
+    });
+
+    expect(mockTrack).toHaveBeenCalledTimes(1);
+    expect(mockTrack).toHaveBeenCalledWith('compare_cta_clicked', {
+      productSlug: 'product-b',
+      action: 'navigate',
+      source: 'related',
+      compareCount: 2,
+      targetSlug: 'product-a',
+    });
+  });
+
+  it('emits shift+navigate event when third product is added', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(['product-a', 'product-b']));
+
+    act(() => {
+      root?.render(<CompareButton slug="product-c" source="trending" />);
+    });
+
+    const button = container.querySelector('[data-testid="compare-button"]') as HTMLButtonElement;
+
+    act(() => {
+      button.click();
+    });
+
+    expect(mockTrack).toHaveBeenCalledTimes(1);
+    expect(mockTrack).toHaveBeenCalledWith('compare_cta_clicked', {
+      productSlug: 'product-c',
+      action: 'navigate',
+      source: 'trending',
+      compareCount: 2,
+      targetSlug: 'product-b',
+    });
   });
 });

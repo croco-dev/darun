@@ -36,7 +36,7 @@ export const ProductAlternativeList = bind(
                   />
                 </Link>
                 <div className="flex-shrink-0 ml-2">
-                  <CompareButton slug={product.slug} />
+                  <CompareButton slug={product.slug} source="related" />
                 </div>
               </div>
               <div className="my-[2px] h-px w-full bg-dark-100" />

@@ -5,6 +5,7 @@ export const AnalyticsEvents = {
   EMPTY_SEARCH_STRIPE_CLICKED: 'empty_search_stripe_clicked',
   RELATED_PRODUCT_CLICKED: 'related_product_clicked',
   RANKED_PRODUCT_CLICKED: 'ranked_product_clicked',
+  COMPARE_CTA_CLICKED: 'compare_cta_clicked',
 } as const;
 
 export type ProductDetailViewedPayload = {
@@ -35,4 +36,29 @@ export type RelatedProductClickedPayload = {
 export type RankedProductClickedPayload = {
   productSlug: string;
   source: 'ranking' | 'trending' | 'search-empty-trending';
+};
+
+export type ProductDiscoverySource = 'trending' | 'search' | 'related' | 'category' | 'empty-stripe';
+
+export type ProductAttributionSource = ProductDiscoverySource | 'direct';
+
+export function normalizeProductAttributionSource(rawFrom: string | null | undefined): ProductAttributionSource {
+  if (
+    rawFrom === 'trending' ||
+    rawFrom === 'search' ||
+    rawFrom === 'related' ||
+    rawFrom === 'category' ||
+    rawFrom === 'empty-stripe'
+  ) {
+    return rawFrom;
+  }
+  return 'direct';
+}
+
+export type CompareCtaClickedPayload = {
+  productSlug: string;
+  action: 'add' | 'remove' | 'navigate';
+  source: ProductAttributionSource;
+  compareCount: number;
+  targetSlug?: string;
 };

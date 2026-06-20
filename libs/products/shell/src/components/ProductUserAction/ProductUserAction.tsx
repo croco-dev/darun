@@ -39,7 +39,7 @@ export const ProductUserAction = bind(
             <span className="break-keep text-sm font-medium text-dark-700">{voteCount}</span>
           </div>
         </Button>
-        <CompareButton slug={slug} />
+        <CompareButton slug={slug} source="direct" />
       </div>
     );
   }

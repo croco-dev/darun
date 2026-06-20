@@ -1,5 +1,6 @@
 'use client';
 
+import { AnalyticsEvents, track, type ProductAttributionSource } from '@darun/analytics-client';
 import { Button } from '@darun/ui';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -10,9 +11,10 @@ const MAX_COMPARE_ITEMS = 2;
 
 type CompareButtonProps = {
   slug: string;
+  source?: ProductAttributionSource;
 };
 
-export const CompareButton = ({ slug }: CompareButtonProps) => {
+export const CompareButton = ({ slug, source }: CompareButtonProps) => {
   const router = useRouter();
 
   const getStoredList = (): string[] => {
@@ -42,6 +44,33 @@ export const CompareButton = ({ slug }: CompareButtonProps) => {
 
     setCompareList(newList);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
+
+    const effectiveSource = source ?? 'direct';
+
+    if (isAdded) {
+      track(AnalyticsEvents.COMPARE_CTA_CLICKED, {
+        productSlug: slug,
+        action: 'remove',
+        source: effectiveSource,
+        compareCount: newList.length,
+      });
+    } else if (newList.length === 2) {
+      const targetSlug = newList.find(s => s !== slug)!;
+      track(AnalyticsEvents.COMPARE_CTA_CLICKED, {
+        productSlug: slug,
+        action: 'navigate',
+        source: effectiveSource,
+        compareCount: 2,
+        targetSlug,
+      });
+    } else {
+      track(AnalyticsEvents.COMPARE_CTA_CLICKED, {
+        productSlug: slug,
+        action: 'add',
+        source: effectiveSource,
+        compareCount: newList.length,
+      });
+    }
 
     if (newList.length === 2) {
       router.push(`/compare/${newList[0]}/${newList[1]}`);

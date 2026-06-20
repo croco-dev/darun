@@ -1,7 +1,5 @@
 import { gql } from '@apollo/client';
-import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { useLocale } from 'next-intl';
-import { useEffect } from 'react';
 import { useProductBySlugOnProductInformationSuspenseQuery } from './__generated__/useProductInformation';
 
 gql`
@@ -27,16 +25,6 @@ export function useProductInformation({ slug }: ProductInformationProps) {
   const { data } = useProductBySlugOnProductInformationSuspenseQuery({
     variables: { slug, locale },
   });
-
-  useEffect(() => {
-    const sourceParam = new URLSearchParams(window.location.search).get('from');
-    if (sourceParam === 'search') {
-      track(AnalyticsEvents.PRODUCT_DETAIL_VIEWED, {
-        productSlug: slug,
-        source: 'search',
-      });
-    }
-  }, [slug]);
 
   return {
     name: data?.productBySlug?.name,

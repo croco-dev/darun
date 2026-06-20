@@ -1,23 +1,24 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
-import { AnalyticsEvents } from './events';
+import { useEffect, useRef } from 'react';
+import { AnalyticsEvents, normalizeProductAttributionSource } from './events';
 import { track } from './posthog';
-
-const VALID_SOURCES = ['trending', 'search', 'related', 'category', 'empty-stripe'] as const;
-
-type Source = (typeof VALID_SOURCES)[number];
 
 export function ProductDetailViewTracker({ productSlug }: { productSlug: string }) {
   const searchParams = useSearchParams();
+  const emittedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const from = searchParams.get('from');
-    if (from && VALID_SOURCES.includes(from as Source)) {
+    const source = normalizeProductAttributionSource(from);
+    const key = `${productSlug}:${source}`;
+
+    if (!emittedRef.current.has(key)) {
+      emittedRef.current.add(key);
       track(AnalyticsEvents.PRODUCT_DETAIL_VIEWED, {
         productSlug,
-        source: from as Source,
+        source,
       });
     }
   }, [productSlug, searchParams]);
