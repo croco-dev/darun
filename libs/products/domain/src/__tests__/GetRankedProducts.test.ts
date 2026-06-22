@@ -399,6 +399,163 @@ describe('GetRankedProducts', () => {
     expect(voteRepository.findTopNByVoteCount).toHaveBeenCalledWith(2);
   });
 
+  describe('candidate quality gate logging', () => {
+    it('logs structured candidate quality summary with exact counts for filtered candidates', async () => {
+      const published = [createProduct({ id: 'published-1' }), createProduct({ id: 'published-2' })];
+      const allVotes = [
+        { targetId: 'unpublished-1', count: 100 },
+        { targetId: 'unpublished-2', count: 90 },
+        { targetId: published[0].id, count: 50 },
+        { targetId: published[1].id, count: 40 },
+      ];
+
+      const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+
+      const voteRepository = {
+        findTopNByVoteCount: vi.fn().mockImplementation(async (n: number) => allVotes.slice(0, n)),
+      } satisfies Pick<RankedProductVoteRepository, 'findTopNByVoteCount'>;
+
+      const allProducts = new Map<string, Product | null>([
+        ['unpublished-1', null],
+        ['unpublished-2', null],
+        [published[0].id, published[0]],
+        [published[1].id, published[1]],
+      ]);
+
+      const productRepository = {
+        findPublishedByIds: vi
+          .fn()
+          .mockImplementation(async (ids: string[]) => ids.map(id => allProducts.get(id) ?? null)),
+        findPublishedOneById: vi.fn().mockResolvedValue(null),
+        findOneById: vi.fn().mockResolvedValue(null),
+        findOneBySlug: vi.fn().mockResolvedValue(null),
+        findPublishedOneBySlug: vi.fn().mockResolvedValue(null),
+        findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
+        findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
+        findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
+        findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
+        updateById: vi.fn(),
+        findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
+        countPublishedAll: vi.fn().mockResolvedValue(0),
+        countAll: vi.fn().mockResolvedValue(0),
+        insert: vi.fn().mockResolvedValue(null),
+      } satisfies ProductRepository;
+
+      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({
+        limit: 2,
+      });
+
+      expect(result.map(p => p.id)).toEqual(['published-1', 'published-2']);
+
+      const qualityLog = infoSpy.mock.calls.find(call => call[0]?.event === 'ranking.candidate_quality_checked')?.[0];
+      expect(qualityLog).toBeDefined();
+      expect(qualityLog.event).toBe('ranking.candidate_quality_checked');
+      expect(qualityLog).toMatchObject({
+        voteCandidateCount: 4,
+        latestCandidateCount: 0,
+        dedupedCandidateCount: 2,
+        filteredUnpublishedCount: 2,
+        finalSourceRatio: 1,
+        droppedCandidateCount: 2,
+        warnings: ['unpublished_or_missing_candidates_filtered'],
+      });
+      expect(Array.isArray(qualityLog.warnings)).toBe(true);
+
+      infoSpy.mockRestore();
+    });
+
+    it('locks the candidate quality log name and required payload fields', async () => {
+      const p1 = createProduct({ id: 'p1' });
+      const p2 = createProduct({ id: 'p2' });
+      const { voteRepository, productRepository } = createRepository({
+        votes: [
+          { targetId: p1.id, count: 5 },
+          { targetId: p2.id, count: 3 },
+        ],
+        products: [p1, p2],
+      });
+      const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+
+      await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+      const qualityLog = infoSpy.mock.calls.find(call => call[0]?.event === 'ranking.candidate_quality_checked')?.[0];
+      expect(qualityLog).toBeDefined();
+      expect(qualityLog.event).toBe('ranking.candidate_quality_checked');
+      expect(qualityLog).toHaveProperty('voteCandidateCount');
+      expect(qualityLog).toHaveProperty('latestCandidateCount');
+      expect(qualityLog).toHaveProperty('dedupedCandidateCount');
+      expect(qualityLog).toHaveProperty('filteredUnpublishedCount');
+      expect(qualityLog).toHaveProperty('finalSourceRatio');
+      expect(qualityLog).toHaveProperty('droppedCandidateCount');
+      expect(qualityLog).toHaveProperty('warnings');
+
+      infoSpy.mockRestore();
+    });
+
+    it('warns when a candidate has a null publishedAt', async () => {
+      const p1 = new Product({
+        id: 'p1',
+        slug: 'product-p1',
+        name: 'Product p1',
+        summary: 'Summary p1',
+        logoUrl: 'https://example.com/p1.png',
+        publishedAt: undefined,
+      });
+      const p2 = createProduct({ id: 'p2' });
+
+      const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+
+      const { voteRepository, productRepository } = createRepository({
+        votes: [
+          { targetId: p1.id, count: 5 },
+          { targetId: p2.id, count: 3 },
+        ],
+        products: [p1, p2],
+      });
+
+      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+      expect(result.map(p => p.id)).toEqual(['p1', 'p2']);
+
+      const qualityLog = infoSpy.mock.calls.find(call => call[0]?.event === 'ranking.candidate_quality_checked')?.[0];
+      expect(qualityLog).toBeDefined();
+      expect(qualityLog.warnings).toContain('null_published_at_in_candidates');
+
+      infoSpy.mockRestore();
+    });
+
+    it('keeps final order unchanged for valid candidate fixtures', async () => {
+      const oldHighVote = createProduct({
+        id: 'old-high',
+        publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR),
+      });
+      const recentLowVote = createProduct({
+        id: 'recent-low',
+        publishedAt: new Date(now.getTime() - 2 * MILLISECONDS_PER_HOUR),
+      });
+
+      const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+
+      const { voteRepository, productRepository } = createRepository({
+        votes: [
+          { targetId: oldHighVote.id, count: 100 },
+          { targetId: recentLowVote.id, count: 5 },
+        ],
+        products: [oldHighVote, recentLowVote],
+      });
+
+      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+      expect(result.map(p => p.id)).toEqual(['recent-low', 'old-high']);
+
+      const qualityLog = infoSpy.mock.calls.find(call => call[0]?.event === 'ranking.candidate_quality_checked')?.[0];
+      expect(qualityLog).toBeDefined();
+      expect(qualityLog.warnings).toEqual([]);
+
+      infoSpy.mockRestore();
+    });
+  });
+
   it('uses deterministic tie-breaking by publishedAt desc then id asc with log-scaled vote gaps', async () => {
     const highOld = createProduct({
       id: 'high-old',
@@ -425,6 +582,78 @@ describe('GetRankedProducts', () => {
     const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 3 });
 
     expect(result.map(p => p.id)).toEqual(['high-old', 'mid-aged', 'low-recent']);
+  });
+
+  describe('golden ranking order fixtures', () => {
+    it('orders zero-vote new product above high-vote old product', async () => {
+      const zeroVoteNew = createProduct({
+        id: 'zero-vote-new',
+        publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR),
+      });
+      const highVoteOld = createProduct({
+        id: 'high-vote-old',
+        publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR),
+      });
+      const { voteRepository, productRepository } = createRepository({
+        votes: [{ targetId: highVoteOld.id, count: 100 }],
+        products: [highVoteOld],
+      });
+
+      productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([zeroVoteNew]);
+
+      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+      expect(result.map(p => p.id)).toEqual([highVoteOld.id, zeroVoteNew.id]);
+    });
+
+    it('orders same publishedAt tie by id asc with equal scores', async () => {
+      const first = createProduct({ id: 'same-tie-a', publishedAt: now });
+      const second = createProduct({ id: 'same-tie-b', publishedAt: now });
+      const { voteRepository, productRepository } = createRepository({
+        votes: [
+          { targetId: first.id, count: 5 },
+          { targetId: second.id, count: 5 },
+        ],
+        products: [first, second],
+      });
+
+      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+
+      expect(result.map(p => p.id)).toEqual(['same-tie-a', 'same-tie-b']);
+    });
+
+    it('orders representative mixed fixture with exact ids', async () => {
+      const newHigh = createProduct({
+        id: 'new-high',
+        publishedAt: new Date(now.getTime() - 2 * MILLISECONDS_PER_HOUR),
+      });
+      const midLow = createProduct({
+        id: 'mid-low',
+        publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR),
+      });
+      const oldModerate = createProduct({
+        id: 'old-moderate',
+        publishedAt: new Date(now.getTime() - 168 * MILLISECONDS_PER_HOUR),
+      });
+      const newZero = createProduct({
+        id: 'new-zero',
+        publishedAt: new Date(now.getTime() - 3 * MILLISECONDS_PER_HOUR),
+      });
+      const { voteRepository, productRepository } = createRepository({
+        votes: [
+          { targetId: newHigh.id, count: 40 },
+          { targetId: midLow.id, count: 5 },
+          { targetId: oldModerate.id, count: 100 },
+        ],
+        products: [newHigh, midLow, oldModerate],
+      });
+
+      productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([newZero]);
+
+      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 4 });
+
+      expect(result.map(p => p.id)).toEqual(['new-high', 'old-moderate', 'mid-low', 'new-zero']);
+    });
   });
 });
 
@@ -457,6 +686,50 @@ describe('RankingService', () => {
     const recentScore = service.calculateScore(10, recentAgeHours, recentPublishedAt);
 
     expect(recentScore).toBeGreaterThan(oldScore);
+  });
+});
+
+describe('RankingService golden fixtures', () => {
+  it('returns exact score for zero votes', () => {
+    const createdAt = new Date(NOW.getTime() - 24 * MILLISECONDS_PER_HOUR);
+    const score = new RankingService(() => NOW).calculateScore(0, 24, createdAt);
+
+    expect(score).toBe(0);
+  });
+
+  it('returns exact score for high votes with no boost', () => {
+    const createdAt = new Date(NOW.getTime() - 72 * MILLISECONDS_PER_HOUR);
+    const score = new RankingService(() => NOW).calculateScore(1000, 72, createdAt);
+
+    expect(score).toBeCloseTo(Math.log1p(1000) / Math.pow(72 + 2, 0.6), 12);
+  });
+
+  it('returns exact score for old product with moderate votes', () => {
+    const createdAt = new Date(NOW.getTime() - 720 * MILLISECONDS_PER_HOUR);
+    const score = new RankingService(() => NOW).calculateScore(50, 720, createdAt);
+
+    expect(score).toBeCloseTo(Math.log1p(50) / Math.pow(720 + 2, 0.6), 12);
+  });
+
+  it('returns exact score for new product boost within 24 hours', () => {
+    const createdAt = new Date(NOW.getTime() - 12 * MILLISECONDS_PER_HOUR);
+    const score = new RankingService(() => NOW).calculateScore(30, 12, createdAt);
+
+    expect(score).toBeCloseTo((Math.log1p(30) / Math.pow(12 + 2, 0.6)) * 1.5, 12);
+  });
+
+  it('returns exact score for new product boost at exactly 24 hours', () => {
+    const createdAt = new Date(NOW.getTime() - 24 * MILLISECONDS_PER_HOUR);
+    const score = new RankingService(() => NOW).calculateScore(5, 24, createdAt);
+
+    expect(score).toBeCloseTo((Math.log1p(5) / Math.pow(24 + 2, 0.6)) * 1.5, 12);
+  });
+
+  it('does not apply boost just after 24 hours', () => {
+    const createdAt = new Date(NOW.getTime() - (24 * MILLISECONDS_PER_HOUR + 1));
+    const score = new RankingService(() => NOW).calculateScore(5, 24, createdAt);
+
+    expect(score).toBeCloseTo(Math.log1p(5) / Math.pow(24 + 2, 0.6), 12);
   });
 });
 

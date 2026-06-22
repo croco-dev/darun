@@ -12,6 +12,22 @@ type RankableProduct = SearchableProduct & {
   readonly publishedAt?: Date;
 };
 
+type RerankQualitySummary = {
+  event: 'search.rerank_quality_checked';
+  rerankCandidateCount: number;
+  searchMin: number;
+  searchMax: number;
+  searchRange: number;
+  searchZeroRange: boolean;
+  rankingMin: number;
+  rankingMax: number;
+  rankingRange: number;
+  rankingZeroRange: boolean;
+  topResultSearchScore: number;
+  topResultRankingScore: number;
+  topResultCombinedScore: number;
+};
+
 @Service()
 export class SearchRanker {
   constructor(
@@ -32,8 +48,11 @@ export class SearchRanker {
     });
     const rankingScores = products.map(p => this.rankingScore(p));
 
-    const normalizedSearchScores = this.minMaxNormalize(searchScores);
-    const normalizedRankingScores = this.minMaxNormalize(rankingScores);
+    const searchStats = this.minMaxStats(searchScores);
+    const rankingStats = this.minMaxStats(rankingScores);
+
+    const normalizedSearchScores = this.normalizeWithStats(searchScores, searchStats);
+    const normalizedRankingScores = this.normalizeWithStats(rankingScores, rankingStats);
 
     const result = this.sortByCombinedScore(products, normalizedSearchScores, normalizedRankingScores);
 
@@ -43,20 +62,67 @@ export class SearchRanker {
       rerankCandidateCount: products.length,
       rerankLatencyMs: Math.round(rerankLatencyMs),
     });
+    this.logQualitySummary({
+      rerankCandidateCount: products.length,
+      searchStats,
+      rankingStats,
+      topResult: result[0] ? products.indexOf(result[0]) : 0,
+      normalizedSearchScores,
+      normalizedRankingScores,
+    });
 
     return result;
   }
 
-  private minMaxNormalize(values: number[]): number[] {
+  private minMaxStats(values: number[]): { min: number; max: number; range: number; zeroRange: boolean } {
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = max - min;
 
-    if (range === 0) {
+    return { min, max, range, zeroRange: range === 0 };
+  }
+
+  private normalizeWithStats(values: number[], stats: { min: number; range: number; zeroRange: boolean }): number[] {
+    if (stats.zeroRange) {
       return values.map(() => 0.5);
     }
 
-    return values.map(v => (v - min) / range);
+    return values.map(v => (v - stats.min) / stats.range);
+  }
+
+  private combinedScore(normalizedSearch: number, normalizedRanking: number): number {
+    return normalizedSearch * SEARCH_SCORE_WEIGHT + normalizedRanking * RANKING_SCORE_WEIGHT;
+  }
+
+  private logQualitySummary(payload: {
+    rerankCandidateCount: number;
+    searchStats: { min: number; max: number; range: number; zeroRange: boolean };
+    rankingStats: { min: number; max: number; range: number; zeroRange: boolean };
+    topResult: number;
+    normalizedSearchScores: number[];
+    normalizedRankingScores: number[];
+  }): void {
+    const topResultIndex = payload.topResult;
+    const summary: RerankQualitySummary = {
+      event: 'search.rerank_quality_checked',
+      rerankCandidateCount: payload.rerankCandidateCount,
+      searchMin: payload.searchStats.min,
+      searchMax: payload.searchStats.max,
+      searchRange: payload.searchStats.range,
+      searchZeroRange: payload.searchStats.zeroRange,
+      rankingMin: payload.rankingStats.min,
+      rankingMax: payload.rankingStats.max,
+      rankingRange: payload.rankingStats.range,
+      rankingZeroRange: payload.rankingStats.zeroRange,
+      topResultSearchScore: payload.normalizedSearchScores[topResultIndex],
+      topResultRankingScore: payload.normalizedRankingScores[topResultIndex],
+      topResultCombinedScore: this.combinedScore(
+        payload.normalizedSearchScores[topResultIndex],
+        payload.normalizedRankingScores[topResultIndex]
+      ),
+    };
+
+    console.info(summary);
   }
 
   private rankingScore(product: RankableProduct): number {
@@ -75,8 +141,7 @@ export class SearchRanker {
       .map((product, i) => ({
         product,
         normalizedSearch: normalizedSearchScores[i],
-        combinedScore:
-          normalizedSearchScores[i] * SEARCH_SCORE_WEIGHT + normalizedRankingScores[i] * RANKING_SCORE_WEIGHT,
+        combinedScore: this.combinedScore(normalizedSearchScores[i], normalizedRankingScores[i]),
       }))
       .sort((a, b) => b.combinedScore - a.combinedScore)
       .map(({ product }) => product);

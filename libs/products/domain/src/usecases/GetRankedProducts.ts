@@ -100,19 +100,30 @@ export class GetRankedProducts {
     }
 
     const dedupedCandidateCount = publishedProducts.length;
-    const voteSourcedInFinal = voteCandidateCount > 0
-      ? publishedProducts.filter(p => voteSourcedIds.has(p.id)).length
-      : 0;
+    const voteSourcedInFinal =
+      voteCandidateCount > 0 ? publishedProducts.filter(p => voteSourcedIds.has(p.id)).length : 0;
     const finalSourceRatio =
       dedupedCandidateCount > 0 ? Math.round((voteSourcedInFinal / dedupedCandidateCount) * 100) / 100 : 0;
+    const droppedCandidateCount = voteCandidateCount + latestCandidateCount - dedupedCandidateCount;
+
+    const nullPublishedAtCount = publishedProducts.filter(p => p.publishedAt == null).length;
+    const warnings: string[] = [];
+    if (nullPublishedAtCount > 0) {
+      warnings.push('null_published_at_in_candidates');
+    }
+    if (filteredUnpublishedCount > 0) {
+      warnings.push('unpublished_or_missing_candidates_filtered');
+    }
 
     console.info({
-      event: 'ranking.candidates_collected',
+      event: 'ranking.candidate_quality_checked',
       voteCandidateCount,
       latestCandidateCount,
       dedupedCandidateCount,
-      finalSourceRatio,
       filteredUnpublishedCount,
+      finalSourceRatio,
+      droppedCandidateCount,
+      warnings,
     });
 
     if (publishedProducts.length === 0) {

@@ -472,6 +472,286 @@ describe('SearchProduct', () => {
     expect(result[1].id).toBe('b');
   });
 
+  describe('golden rerank fixtures', () => {
+    it('relevance-wins fixture produces exact order with exact combined scores', async () => {
+      const a = new SearchableProduct({
+        id: 'a',
+        slug: 'a',
+        name: 'A',
+        summary: 'A',
+        searchScore: 10,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const b = new SearchableProduct({
+        id: 'b',
+        slug: 'b',
+        name: 'B',
+        summary: 'B',
+        searchScore: 1,
+        createdAt: NOW,
+        votes: 1000,
+      });
+      const repository = createRepository([b, a]);
+      const useCase = createUseCase(repository);
+
+      const result = await useCase.execute({ query: 'product', limit: 2 });
+
+      expect(result[0].id).toBe('a');
+      expect(result[1].id).toBe('b');
+    });
+
+    it('zero-range search fallback (0.5) lets popularity win with exact order', async () => {
+      const a = new SearchableProduct({
+        id: 'a',
+        slug: 'a',
+        name: 'A',
+        summary: 'A',
+        searchScore: 5,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const b = new SearchableProduct({
+        id: 'b',
+        slug: 'b',
+        name: 'B',
+        summary: 'B',
+        searchScore: 5,
+        createdAt: NOW,
+        votes: 100,
+      });
+      const repository = createRepository([a, b]);
+      const useCase = createUseCase(repository);
+
+      const result = await useCase.execute({ query: 'product', limit: 2 });
+
+      expect(result[0].id).toBe('b');
+      expect(result[1].id).toBe('a');
+    });
+
+    it('logs rerank quality summary with exact event name and range fields', async () => {
+      const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+      const a = new SearchableProduct({
+        id: 'a',
+        slug: 'a',
+        name: 'A',
+        summary: 'A',
+        searchScore: 10,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const b = new SearchableProduct({
+        id: 'b',
+        slug: 'b',
+        name: 'B',
+        summary: 'B',
+        searchScore: 1,
+        createdAt: NOW,
+        votes: 1000,
+      });
+      const repository = createRepository([b, a]);
+      const useCase = createUseCase(repository);
+
+      await useCase.execute({ query: 'product', limit: 2 });
+
+      const qualityLog = infoSpy.mock.calls
+        .map(call => call[0])
+        .find(log => log.event === 'search.rerank_quality_checked');
+      expect(qualityLog).toBeDefined();
+      expect(qualityLog.event).toBe('search.rerank_quality_checked');
+      expect(qualityLog.rerankCandidateCount).toBe(2);
+      expect(qualityLog.searchMin).toBe(1);
+      expect(qualityLog.searchMax).toBe(10);
+      expect(qualityLog.searchRange).toBe(9);
+      expect(qualityLog.searchZeroRange).toBe(false);
+      expect(qualityLog.rankingMin).toBeGreaterThanOrEqual(0);
+      expect(qualityLog.rankingMax).toBeGreaterThanOrEqual(0);
+      expect(qualityLog.rankingRange).toBeGreaterThanOrEqual(0);
+      expect(qualityLog.rankingZeroRange).toBe(false);
+      expect(qualityLog.topResultSearchScore).toBe(1);
+      expect(qualityLog.topResultRankingScore).toBeGreaterThanOrEqual(0);
+      expect(qualityLog.topResultCombinedScore).toBeGreaterThan(0);
+
+      infoSpy.mockRestore();
+    });
+
+    it('locks the rerank quality log name and required payload fields', async () => {
+      const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+      const a = new SearchableProduct({
+        id: 'a',
+        slug: 'a',
+        name: 'A',
+        summary: 'A',
+        searchScore: 5,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const b = new SearchableProduct({
+        id: 'b',
+        slug: 'b',
+        name: 'B',
+        summary: 'B',
+        searchScore: 1,
+        createdAt: NOW,
+        votes: 100,
+      });
+      const repository = createRepository([a, b]);
+      const useCase = createUseCase(repository);
+
+      await useCase.execute({ query: 'product', limit: 2 });
+
+      const qualityLog = infoSpy.mock.calls
+        .map(call => call[0])
+        .find(log => log.event === 'search.rerank_quality_checked');
+      expect(qualityLog).toBeDefined();
+      expect(qualityLog.event).toBe('search.rerank_quality_checked');
+      expect(qualityLog).toHaveProperty('rerankCandidateCount');
+      expect(qualityLog).toHaveProperty('searchMin');
+      expect(qualityLog).toHaveProperty('searchMax');
+      expect(qualityLog).toHaveProperty('searchRange');
+      expect(qualityLog).toHaveProperty('searchZeroRange');
+      expect(qualityLog).toHaveProperty('rankingMin');
+      expect(qualityLog).toHaveProperty('rankingMax');
+      expect(qualityLog).toHaveProperty('rankingRange');
+      expect(qualityLog).toHaveProperty('rankingZeroRange');
+      expect(qualityLog).toHaveProperty('topResultSearchScore');
+      expect(qualityLog).toHaveProperty('topResultRankingScore');
+      expect(qualityLog).toHaveProperty('topResultCombinedScore');
+
+      infoSpy.mockRestore();
+    });
+
+    it('logs zero-range flag in rerank quality summary when all search scores are identical', async () => {
+      const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+      const a = new SearchableProduct({
+        id: 'a',
+        slug: 'a',
+        name: 'A',
+        summary: 'A',
+        searchScore: 5,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const b = new SearchableProduct({
+        id: 'b',
+        slug: 'b',
+        name: 'B',
+        summary: 'B',
+        searchScore: 5,
+        createdAt: NOW,
+        votes: 100,
+      });
+      const repository = createRepository([a, b]);
+      const useCase = createUseCase(repository);
+
+      await useCase.execute({ query: 'product', limit: 2 });
+
+      const qualityLog = infoSpy.mock.calls
+        .map(call => call[0])
+        .find(log => log.event === 'search.rerank_quality_checked');
+      expect(qualityLog).toBeDefined();
+      expect(qualityLog.searchMin).toBe(5);
+      expect(qualityLog.searchMax).toBe(5);
+      expect(qualityLog.searchRange).toBe(0);
+      expect(qualityLog.searchZeroRange).toBe(true);
+      expect(qualityLog.topResultSearchScore).toBe(0.5);
+
+      infoSpy.mockRestore();
+    });
+
+    it('popularity wins only when search score is in zero-range', async () => {
+      const a = new SearchableProduct({
+        id: 'a',
+        slug: 'a',
+        name: 'A',
+        summary: 'A',
+        searchScore: 5,
+        createdAt: NOW,
+        votes: 100000,
+      });
+      const b = new SearchableProduct({
+        id: 'b',
+        slug: 'b',
+        name: 'B',
+        summary: 'B',
+        searchScore: 5.0000001,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const repository = createRepository([a, b]);
+      const useCase = createUseCase(repository);
+
+      const result = await useCase.execute({ query: 'product', limit: 2 });
+
+      expect(result[0].id).toBe('b');
+      expect(result[1].id).toBe('a');
+    });
+
+    it('three-way fixture produces exact order', async () => {
+      const highRelevance = new SearchableProduct({
+        id: 'high-relevance',
+        slug: 'high-relevance',
+        name: 'High Relevance',
+        summary: 'Exactly matches query',
+        searchScore: 10,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const mediumPopularity = new SearchableProduct({
+        id: 'medium-popularity',
+        slug: 'medium-popularity',
+        name: 'Medium Popularity',
+        summary: 'Somewhat popular',
+        searchScore: 7,
+        createdAt: NOW,
+        votes: 50,
+      });
+      const lowBoth = new SearchableProduct({
+        id: 'low-both',
+        slug: 'low-both',
+        name: 'Low Both',
+        summary: 'Neither relevant nor popular',
+        searchScore: 2,
+        createdAt: NOW,
+        votes: 1,
+      });
+      const repository = createRepository([lowBoth, mediumPopularity, highRelevance]);
+      const useCase = createUseCase(repository);
+
+      const result = await useCase.execute({ query: 'product', limit: 3 });
+
+      expect(result.map(p => p.id)).toEqual(['medium-popularity', 'high-relevance', 'low-both']);
+    });
+
+    it('zero-vote and zero-search all tie preserves input order', async () => {
+      const a = new SearchableProduct({
+        id: 'a',
+        slug: 'a',
+        name: 'A',
+        summary: 'A',
+        searchScore: 0,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const b = new SearchableProduct({
+        id: 'b',
+        slug: 'b',
+        name: 'B',
+        summary: 'B',
+        searchScore: 0,
+        createdAt: NOW,
+        votes: 0,
+      });
+      const repository = createRepository([b, a]);
+      const useCase = createUseCase(repository);
+
+      const result = await useCase.execute({ query: 'product', limit: 2 });
+
+      expect(result[0].id).toBe('b');
+      expect(result[1].id).toBe('a');
+    });
+  });
+
   describe('input defense', () => {
     it('handles NaN searchScore by treating it as 0', async () => {
       const a = new SearchableProduct({
