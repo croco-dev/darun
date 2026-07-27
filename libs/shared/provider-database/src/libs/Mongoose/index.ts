@@ -1,2 +1,1 @@
-export { MongooseToken } from './Mongoose';
-export type { Mongoose } from './Mongoose';
+export { Mongoose, MongooseToken } from './Mongoose';

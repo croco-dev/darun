@@ -13,7 +13,9 @@ export class CompanyMutationResolver {
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => CreateCompanyPayload)
-  async createCompany(@Arg('input') input: CreateCompanyInput): Promise<CreateCompanyPayload> {
+  async createCompany(
+    @Arg('input', () => CreateCompanyInput) input: CreateCompanyInput
+  ): Promise<CreateCompanyPayload> {
     const company = await this.createCompanyUseCase.execute({
       name: input.name,
       address: input.address,

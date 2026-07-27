@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "types": ["node"],
-    "module": "commonjs",
+    "module": "ESNext",
     "moduleResolution": "node",
     "target": "es2017",
     "lib": ["es2017"],
@@ -18,6 +18,6 @@
     "noEmit": true,
     "sourceMap": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "../../libs/**/*.ts"],
   "exclude": ["node_modules"]
 }

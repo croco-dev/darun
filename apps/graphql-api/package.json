@@ -42,7 +42,6 @@
     "@darun/utils-sentry": "workspace:*",
     "@darun/voting-datasource": "workspace:*",
     "@darun/voting-domain": "workspace:*",
-    "@kang-heewon/esbuild-plugin-typescript-decorators": "0.1.0",
     "@sentry/aws-serverless": "10.38.0",
     "@sentry/esbuild-plugin": "4.9.1",
     "@sentry/profiling-node": "10.38.0",

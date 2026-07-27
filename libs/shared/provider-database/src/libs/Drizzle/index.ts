@@ -1,2 +1,1 @@
-export { DrizzleToken } from './Drizzle';
-export type { Drizzle } from './Drizzle';
+export { Drizzle, DrizzleToken } from './Drizzle';

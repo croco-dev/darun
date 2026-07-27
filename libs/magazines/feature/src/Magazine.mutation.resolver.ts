@@ -25,7 +25,7 @@ export class MagazineMutationResolver {
   @Authorized([AuthRole.Admin])
   @Mutation(() => CreateMagazinePayload)
   async createMagazine(
-    @Arg('input') input: CreateMagazineInput,
+    @Arg('input', () => CreateMagazineInput) input: CreateMagazineInput,
     @Ctx() context: GraphQLContext
   ): Promise<CreateMagazinePayload> {
     const userId = await context.getUserIdOrThrow();
@@ -41,7 +41,9 @@ export class MagazineMutationResolver {
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => PublishMagazinePayload)
-  async publishMagazine(@Arg('input') input: PublishMagazineInput): Promise<PublishMagazinePayload> {
+  async publishMagazine(
+    @Arg('input', () => PublishMagazineInput) input: PublishMagazineInput
+  ): Promise<PublishMagazinePayload> {
     const magazine = await this.getMagazineUseCase.execute({
       slug: input.slug,
     });
@@ -61,7 +63,10 @@ export class MagazineMutationResolver {
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => EditMagazinePayload)
-  async editMagazine(@Arg('slug') slug: string, @Arg('input') input: EditMagazineInput): Promise<EditMagazinePayload> {
+  async editMagazine(
+    @Arg('slug') slug: string,
+    @Arg('input', () => EditMagazineInput) input: EditMagazineInput
+  ): Promise<EditMagazinePayload> {
     const magazine = await this.getMagazineUseCase.execute({ slug });
 
     if (!magazine) {
