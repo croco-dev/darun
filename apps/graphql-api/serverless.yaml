@@ -17,6 +17,9 @@ custom:
   esbuild:
     bundle: true
     exclude: ["class-validator"]
+    external:
+      - reflect-metadata
+    packager: pnpm
     minify: true
     keepNames: true
     sourcemap: true
