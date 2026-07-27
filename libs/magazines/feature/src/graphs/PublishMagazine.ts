@@ -3,7 +3,7 @@ import { Magazine } from './Magazine';
 
 @ObjectType()
 export class PublishMagazinePayload {
-  @Field()
+  @Field(() => Magazine)
   magazine: Magazine;
 }
 

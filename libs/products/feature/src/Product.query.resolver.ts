@@ -235,7 +235,7 @@ export class ProductQueryResolver {
 
   @Authorized([AuthRole.Admin])
   @Query(() => ProductConnection)
-  public async allProducts(@Args() connectionArgs: ConnectionArgs): Promise<ProductConnection> {
+  public async allProducts(@Args(() => ConnectionArgs) connectionArgs: ConnectionArgs): Promise<ProductConnection> {
     const { cursor, limit, type } = Connection.verifyArgs(connectionArgs);
     const decoded = cursor ? Cursor.decode(cursor, ['id'] as const) : undefined;
 

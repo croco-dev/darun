@@ -12,7 +12,9 @@ export class ImageMutationResolver {
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => SignImageUploadPayload)
-  async signImageUpload(@Arg('input') input: SignImageUploadInput): Promise<SignImageUploadPayload> {
+  async signImageUpload(
+    @Arg('input', () => SignImageUploadInput) input: SignImageUploadInput
+  ): Promise<SignImageUploadPayload> {
     return this.signImageUploadUseCase.execute(input);
   }
 }

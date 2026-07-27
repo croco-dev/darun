@@ -304,9 +304,6 @@ importers:
       '@darun/voting-domain':
         specifier: workspace:*
         version: link:../../libs/voting/domain
-      '@kang-heewon/esbuild-plugin-typescript-decorators':
-        specifier: 0.1.0
-        version: 0.1.0
       '@sentry/aws-serverless':
         specifier: 10.38.0
         version: 10.38.0(@opentelemetry/context-async-hooks@2.5.1(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.5.1(@opentelemetry/api@1.9.0))(@opentelemetry/resources@2.5.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))
@@ -4530,9 +4527,6 @@ packages:
     engines: {node: '>= 10.16.0'}
     peerDependencies:
       jsep: ^0.4.0||^1.0.0
-
-  '@kang-heewon/esbuild-plugin-typescript-decorators@0.1.0':
-    resolution: {integrity: sha512-AAAPNJpLKS+MNbHGO4eiQnlsh6vb7mjRtZL3Nu6cTWiP+eiyb26St/UZxxSpzxmxFLHjxOyJ2w8v1u+14tCjeg==}
 
   '@kuma-ui/core@1.5.7':
     resolution: {integrity: sha512-AL373rd526D2uOEPzs5SHwW74uAPfwY1nYF41nHxaQXl4HSRIe4wQXDbDYpEOwLinJ/9G+HietTWncPAsQ7oGw==}
@@ -10757,11 +10751,6 @@ packages:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: '>=4.8.4 <6.1.0'
 
-  typescript@4.9.5:
-    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
-    engines: {node: '>=4.2.0'}
-    hasBin: true
-
   typescript@6.0.3:
     resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
@@ -14284,10 +14273,6 @@ snapshots:
   '@jsep-plugin/regex@1.0.4(jsep@1.4.0)':
     dependencies:
       jsep: 1.4.0
-
-  '@kang-heewon/esbuild-plugin-typescript-decorators@0.1.0':
-    dependencies:
-      typescript: 4.9.5
 
   '@kuma-ui/core@1.5.7(@types/react@19.2.14)(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))(react@19.2.6)':
     dependencies:
@@ -21369,8 +21354,6 @@ snapshots:
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
-
-  typescript@4.9.5: {}
 
   typescript@6.0.3: {}
 

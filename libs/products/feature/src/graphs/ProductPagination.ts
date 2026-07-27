@@ -19,6 +19,6 @@ export class ProductEdge {
   @Field()
   cursor: string;
 
-  @Field()
+  @Field(() => Product)
   node: Product;
 }

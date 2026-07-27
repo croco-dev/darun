@@ -21,7 +21,9 @@ export class FeatureMutationResolver {
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => CreateProductFeaturePayload)
-  async createProductFeature(@Arg('input') input: CreateProductFeatureInput): Promise<CreateProductFeaturePayload> {
+  async createProductFeature(
+    @Arg('input', () => CreateProductFeatureInput) input: CreateProductFeatureInput
+  ): Promise<CreateProductFeaturePayload> {
     const product = await this.getProductUseCase.execute({
       slug: input.productSlug,
     });
@@ -46,7 +48,7 @@ export class FeatureMutationResolver {
   @Mutation(() => UpdateProductFeaturePayload)
   async updateProductFeature(
     @Arg('id') id: string,
-    @Arg('input') input: UpdateProductFeatureInput
+    @Arg('input', () => UpdateProductFeatureInput) input: UpdateProductFeatureInput
   ): Promise<UpdateProductFeaturePayload> {
     const product = await this.getProductFeatureUseCase.execute({ id });
 
