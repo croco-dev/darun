@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 
-import { afterEach, describe, expect, it } from 'vitest';
 import { Container } from 'typedi';
+import { afterEach, describe, expect, it } from 'vitest';
 import { SearchableProductRepositoryToken } from '../repositories/SearchableProductRepository';
 import { SearchProduct } from '../usecases/SearchProduct';
 

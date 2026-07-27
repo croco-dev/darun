@@ -79,7 +79,11 @@ describe('GetRankedProducts', () => {
       products: [older, recent],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 2 });
 
     expect(result).toEqual([recent, older]);
   });
@@ -97,7 +101,11 @@ describe('GetRankedProducts', () => {
       products: [p1, p2, p3],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 2 });
 
     expect(result).toEqual([p1, p2]);
     expect(productRepository.findPublishedByIds).toHaveBeenCalledTimes(1);
@@ -108,7 +116,11 @@ describe('GetRankedProducts', () => {
   it('returns an empty array when there are no ranked votes', async () => {
     const { voteRepository, productRepository } = createRepository({ votes: [] });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 10 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 10 });
 
     expect(result).toEqual([]);
     expect(productRepository.findPublishedByIds).not.toHaveBeenCalled();
@@ -125,7 +137,11 @@ describe('GetRankedProducts', () => {
       products: [oldProduct, newProduct],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 2 });
 
     expect(result).toEqual([newProduct, oldProduct]);
   });
@@ -137,7 +153,11 @@ describe('GetRankedProducts', () => {
       products: [product],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 1 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 1 });
 
     expect(result).toEqual([product]);
     expect(voteRepository.findTopNByVoteCount).toHaveBeenCalledWith(2);
@@ -184,7 +204,11 @@ describe('GetRankedProducts', () => {
       insert: vi.fn().mockResolvedValue(null),
     } satisfies ProductRepository;
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({
       limit: 2,
     });
 
@@ -230,7 +254,11 @@ describe('GetRankedProducts', () => {
       insert: vi.fn().mockResolvedValue(null),
     } satisfies ProductRepository;
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({
       limit: 5,
     });
 
@@ -254,7 +282,11 @@ describe('GetRankedProducts', () => {
       products: [older, newer],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 2 });
 
     expect(result.map(p => p.id)).toEqual(['a-newer', 'b-older']);
   });
@@ -271,7 +303,11 @@ describe('GetRankedProducts', () => {
       products: [p1, p2],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 2 });
 
     expect(result.map(p => p.id)).toEqual(['p-a', 'p-b']);
   });
@@ -291,7 +327,11 @@ describe('GetRankedProducts', () => {
 
     productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([p3]);
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 3 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 3 });
 
     expect(result).toHaveLength(3);
     expect(result.map(p => p.id)).toContain(p3.id);
@@ -312,7 +352,11 @@ describe('GetRankedProducts', () => {
 
     productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([p1]);
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 2 });
 
     const p1Occurrences = result.filter(p => p.id === p1.id);
     expect(p1Occurrences).toHaveLength(1);
@@ -336,7 +380,11 @@ describe('GetRankedProducts', () => {
 
     productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([latestZeroVote]);
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 2 });
 
     expect(result.map(p => p.id)).toEqual([oldHighVote.id, latestZeroVote.id]);
     expect(productRepository.findTopNSortByPublishedAtDesc).toHaveBeenCalledWith(expect.any(Number));
@@ -359,7 +407,11 @@ describe('GetRankedProducts', () => {
 
     productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([recentLowVote]);
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 2 });
 
     expect(result.map(p => p.id)).toEqual([oldHighVote.id, recentLowVote.id]);
   });
@@ -401,7 +453,11 @@ describe('GetRankedProducts', () => {
       insert: vi.fn().mockResolvedValue(null),
     } satisfies ProductRepository;
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 1 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 1 });
 
     expect(result.map(p => p.id)).toEqual([publishedLowVote.id]);
     expect(voteRepository.findTopNByVoteCount).toHaveBeenCalledWith(2);
@@ -449,7 +505,11 @@ describe('GetRankedProducts', () => {
         insert: vi.fn().mockResolvedValue(null),
       } satisfies ProductRepository;
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({
+      const result = await new GetRankedProducts(
+        voteRepository,
+        productRepository,
+        clockAt(() => now)
+      ).execute({
         limit: 2,
       });
 
@@ -484,7 +544,11 @@ describe('GetRankedProducts', () => {
       });
       const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
 
-      await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+      await new GetRankedProducts(
+        voteRepository,
+        productRepository,
+        clockAt(() => now)
+      ).execute({ limit: 2 });
 
       const qualityLog = infoSpy.mock.calls.find(call => call[0]?.event === 'ranking.candidate_quality_checked')?.[0];
       expect(qualityLog).toBeDefined();
@@ -521,7 +585,11 @@ describe('GetRankedProducts', () => {
         products: [p1, p2],
       });
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+      const result = await new GetRankedProducts(
+        voteRepository,
+        productRepository,
+        clockAt(() => now)
+      ).execute({ limit: 2 });
 
       expect(result.map(p => p.id)).toEqual(['p1', 'p2']);
 
@@ -552,7 +620,11 @@ describe('GetRankedProducts', () => {
         products: [oldHighVote, recentLowVote],
       });
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+      const result = await new GetRankedProducts(
+        voteRepository,
+        productRepository,
+        clockAt(() => now)
+      ).execute({ limit: 2 });
 
       expect(result.map(p => p.id)).toEqual(['recent-low', 'old-high']);
 
@@ -587,7 +659,11 @@ describe('GetRankedProducts', () => {
       products: [highOld, lowRecent, midAged],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 3 });
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 3 });
 
     expect(result.map(p => p.id)).toEqual(['high-old', 'mid-aged', 'low-recent']);
   });
@@ -609,7 +685,11 @@ describe('GetRankedProducts', () => {
 
       productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([zeroVoteNew]);
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+      const result = await new GetRankedProducts(
+        voteRepository,
+        productRepository,
+        clockAt(() => now)
+      ).execute({ limit: 2 });
 
       expect(result.map(p => p.id)).toEqual([highVoteOld.id, zeroVoteNew.id]);
     });
@@ -625,7 +705,11 @@ describe('GetRankedProducts', () => {
         products: [first, second],
       });
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
+      const result = await new GetRankedProducts(
+        voteRepository,
+        productRepository,
+        clockAt(() => now)
+      ).execute({ limit: 2 });
 
       expect(result.map(p => p.id)).toEqual(['same-tie-a', 'same-tie-b']);
     });
@@ -658,7 +742,11 @@ describe('GetRankedProducts', () => {
 
       productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([newZero]);
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 4 });
+      const result = await new GetRankedProducts(
+        voteRepository,
+        productRepository,
+        clockAt(() => now)
+      ).execute({ limit: 4 });
 
       expect(result.map(p => p.id)).toEqual(['new-high', 'old-moderate', 'mid-low', 'new-zero']);
     });
