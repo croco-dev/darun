@@ -28,20 +28,16 @@ jobs:
           aws lambda get-function-configuration --function-name "$FN" --query '{LastModified:LastModified,CodeSize:CodeSize,Runtime:Runtime,Handler:Handler}' --output json
 
           echo "=== invoke ==="
-          aws lambda invoke --function-name "$FN" --cli-binary-format raw-in-base64-out --payload '{"httpMethod":"POST","path":"/graphql","headers":{"content-type":"application/json"},"requestContext":{"http":{"method":"POST","path":"/graphql"}},"body":"{\"query\":\"{ __typename }\"}","isBase64Encoded":false}' /tmp/out.json >/tmp/invoke-meta.json || true
+          aws lambda invoke --function-name "$FN" --cli-binary-format raw-in-base64-out --payload '{"httpMethod":"POST","path":"/graphql","headers":{"content-type":"application/json"},"body":"{\"query\":\"{ __typename }\"}"}' /tmp/out.json >/tmp/invoke-meta.json || true
           cat /tmp/invoke-meta.json
           echo
-          python3 - <<'PY'
-          import json
-          raw=open('/tmp/out.json').read()
-          print(raw[:4000])
-          try:
-            print(json.dumps(json.loads(raw), indent=2)[:4000])
-          except Exception:
-            pass
-          PY
+          cat /tmp/out.json
+          echo
 
-          echo "=== recent logs ==="
+          echo "=== recent ERROR logs ==="
           START=$(($(date +%s)*1000-1800000))
-          aws logs filter-log-events --log-group-name "$GROUP" --start-time "$START" --filter-pattern '?ERROR ?Error ?TypeError ?Runtime ?Cannot ?Unhandled ?REPORT' --limit 40 --output json | python3 -c 'import json,sys; d=json.load(sys.stdin);
-[print(e.get("message","")) for e in d.get("events",[])]'
+          aws logs filter-log-events --log-group-name "$GROUP" --start-time "$START" --filter-pattern "ERROR" --limit 30 --output text
+          echo "=== recent TypeError logs ==="
+          aws logs filter-log-events --log-group-name "$GROUP" --start-time "$START" --filter-pattern "TypeError" --limit 20 --output text
+          echo "=== recent Runtime logs ==="
+          aws logs filter-log-events --log-group-name "$GROUP" --start-time "$START" --filter-pattern "Runtime" --limit 20 --output text
