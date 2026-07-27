@@ -1,0 +1,44 @@
+name: Debug Lambda Logs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch-logs:
+    runs-on: ubuntu-latest
+    environment:
+      name: prod-graphql
+    steps:
+      - uses: croco-dev/aws-profile-action@v1.3
+        with:
+          profile: darun
+          region: ap-northeast-2
+          access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Fetch recent Lambda logs and status
+        env:
+          AWS_PROFILE: darun
+          AWS_DEFAULT_REGION: ap-northeast-2
+        run: |
+          set -euo pipefail
+          echo "=== caller ==="
+          aws sts get-caller-identity --profile darun
+          echo "=== functions matching graphql ==="
+          aws lambda list-functions --profile darun --query 'Functions[?contains(FunctionName, `graphql`)].[FunctionName,LastModified,Runtime,State,StateReason]' --output table || true
+          echo "=== log groups ==="
+          aws logs describe-log-groups --profile darun --log-group-name-prefix /aws/lambda/ --query 'logGroups[?contains(logGroupName, `graphql`)].logGroupName' --output text
+          GROUP=$(aws logs describe-log-groups --profile darun --log-group-name-prefix /aws/lambda/ --query 'logGroups[?contains(logGroupName, `graphql`)].logGroupName' --output text | awk '{print $1}')
+          echo "Using group: ${GROUP:-none}"
+          if [ -n "${GROUP:-}" ]; then
+            echo "=== recent streams ==="
+            aws logs describe-log-streams --profile darun --log-group-name "$GROUP" --order-by LastEventTime --descending --max-items 5 --output table
+            STREAM=$(aws logs describe-log-streams --profile darun --log-group-name "$GROUP" --order-by LastEventTime --descending --max-items 1 --query 'logStreams[0].logStreamName' --output text)
+            echo "Latest stream: $STREAM"
+            echo "=== latest log events ==="
+            aws logs get-log-events --profile darun --log-group-name "$GROUP" --log-stream-name "$STREAM" --limit 50 --output text || true
+            echo "=== filter ERROR last 2h ==="
+            START=$(( ($(date +%s) - 7200) * 1000 ))
+            aws logs filter-log-events --profile darun --log-group-name "$GROUP" --start-time "$START" --filter-pattern "?ERROR ?Error ?error ?Task ?timeout ?Mongo ?postgres ?ECONN ?SECRET" --max-items 30 --output json | head -c 50000
+          fi
+          echo "=== http api / stack ==="
+          aws cloudformation describe-stacks --profile darun --stack-name prod-graphql-api --query 'Stacks[0].[StackName,StackStatus,LastUpdatedTime]' --output text || true
