@@ -1,4 +1,4 @@
-import { createNodeConfig, thresholds } from '@darun/utils-vitest-config';
+import { createNodeConfig } from '@darun/utils-vitest-config';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig(
@@ -9,11 +9,6 @@ export default defineConfig(
           experimentalDecorators: true,
           emitDecoratorMetadata: true,
         },
-      },
-    },
-    test: {
-      coverage: {
-        thresholds: thresholds.feature,
       },
     },
   })

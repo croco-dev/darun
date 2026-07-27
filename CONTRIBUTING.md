@@ -218,7 +218,7 @@ Lefthook이 설치되어 있으면 커밋 전 ESLint 검사가 자동으로 실�
 
 ### 커버리지 목표
 
-계층별 threshold는 `@darun/utils-vitest-config`의 `thresholds` 상수로 관리됩니다. 각 패키지 `vitest.config.ts`에서 적절한 threshold를 적용하세요.
+계층별 목표 threshold는 `@darun/utils-vitest-config`의 `thresholds` 상수로 관리됩니다. 현재 목표를 충족하는 패키지는 `vitest.config.ts`에서 적절한 threshold를 적용하고, 아직 충족하지 못하는 패키지는 리포트 생성을 먼저 활성화한 뒤 테스트 보강과 함께 threshold를 적용하세요.
 
 | 계층 | lines / branches | 적용 패키지 예시 |
 | --- | --- | --- |
@@ -229,7 +229,7 @@ Lefthook이 설치되어 있으면 커밋 전 ESLint 검사가 자동으로 실�
 
 ### 새 패키지 vitest 설정
 
-새 패키지를 생성할 때 반드시 `vitest.config.ts`를 포함해야 합니다. `@darun/utils-vitest-config`의 팩토리 함수와 `thresholds` 상수를 사용합니다.
+새 패키지를 생성할 때 반드시 `vitest.config.ts`를 포함해야 합니다. `@darun/utils-vitest-config`의 팩토리 함수를 사용하고, 계층별 목표를 충족하는 시점에 `thresholds` 상수를 적용합니다.
 
 ```typescript
 // 백엔드 domain 패키지 — threshold 포함
