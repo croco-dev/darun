@@ -1,4 +1,4 @@
-import { RankingService } from '@darun/products-domain';
+import { RankingService, SystemClock } from '@darun/products-domain';
 import { Service } from 'typedi';
 import type { SearchableProduct } from '../entities/SearchableProduct';
 import { SEARCH_SCORE_WEIGHT, RANKING_SCORE_WEIGHT } from './SearchRankingPolicy';
@@ -31,8 +31,8 @@ type RerankQualitySummary = {
 @Service()
 export class SearchRanker {
   constructor(
-    private readonly getNow: () => Date = () => new Date(),
-    private readonly rankingService: RankingService = new RankingService(getNow)
+    private readonly clock: SystemClock = new SystemClock(),
+    private readonly rankingService: RankingService = new RankingService(clock)
   ) {}
 
   rank(products: readonly RankableProduct[]): SearchableProduct[] {
@@ -126,8 +126,8 @@ export class SearchRanker {
   }
 
   private rankingScore(product: RankableProduct): number {
-    const createdAt = product.publishedAt ?? product.createdAt ?? this.getNow();
-    const ageHours = Math.max(0, this.getNow().getTime() - createdAt.getTime()) / MILLISECONDS_PER_HOUR;
+    const createdAt = product.publishedAt ?? product.createdAt ?? this.clock.now();
+    const ageHours = Math.max(0, this.clock.now().getTime() - createdAt.getTime()) / MILLISECONDS_PER_HOUR;
 
     return this.rankingService.calculateScore(product.votes ?? 0, ageHours, createdAt);
   }

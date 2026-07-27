@@ -8,6 +8,14 @@ import { GetRankedProducts } from '../usecases/GetRankedProducts';
 
 const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
 const NOW = new Date('2026-01-01T12:00:00.000Z');
+const clockAt = (getNow: () => Date) => ({
+  now: getNow,
+  nowMilliseconds: () => getNow().getTime(),
+});
+const millisecondClockAt = (getNow: () => number) => ({
+  now: () => new Date(getNow()),
+  nowMilliseconds: getNow,
+});
 
 describe('GetRankedProducts', () => {
   const now = NOW;
@@ -71,7 +79,7 @@ describe('GetRankedProducts', () => {
       products: [older, recent],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
     expect(result).toEqual([recent, older]);
   });
@@ -89,7 +97,7 @@ describe('GetRankedProducts', () => {
       products: [p1, p2, p3],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
     expect(result).toEqual([p1, p2]);
     expect(productRepository.findPublishedByIds).toHaveBeenCalledTimes(1);
@@ -100,7 +108,7 @@ describe('GetRankedProducts', () => {
   it('returns an empty array when there are no ranked votes', async () => {
     const { voteRepository, productRepository } = createRepository({ votes: [] });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 10 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 10 });
 
     expect(result).toEqual([]);
     expect(productRepository.findPublishedByIds).not.toHaveBeenCalled();
@@ -117,7 +125,7 @@ describe('GetRankedProducts', () => {
       products: [oldProduct, newProduct],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
     expect(result).toEqual([newProduct, oldProduct]);
   });
@@ -129,7 +137,7 @@ describe('GetRankedProducts', () => {
       products: [product],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 1 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 1 });
 
     expect(result).toEqual([product]);
     expect(voteRepository.findTopNByVoteCount).toHaveBeenCalledWith(2);
@@ -176,7 +184,7 @@ describe('GetRankedProducts', () => {
       insert: vi.fn().mockResolvedValue(null),
     } satisfies ProductRepository;
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({
       limit: 2,
     });
 
@@ -222,7 +230,7 @@ describe('GetRankedProducts', () => {
       insert: vi.fn().mockResolvedValue(null),
     } satisfies ProductRepository;
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({
       limit: 5,
     });
 
@@ -246,7 +254,7 @@ describe('GetRankedProducts', () => {
       products: [older, newer],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
     expect(result.map(p => p.id)).toEqual(['a-newer', 'b-older']);
   });
@@ -263,7 +271,7 @@ describe('GetRankedProducts', () => {
       products: [p1, p2],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
     expect(result.map(p => p.id)).toEqual(['p-a', 'p-b']);
   });
@@ -283,7 +291,7 @@ describe('GetRankedProducts', () => {
 
     productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([p3]);
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 3 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 3 });
 
     expect(result).toHaveLength(3);
     expect(result.map(p => p.id)).toContain(p3.id);
@@ -304,7 +312,7 @@ describe('GetRankedProducts', () => {
 
     productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([p1]);
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
     const p1Occurrences = result.filter(p => p.id === p1.id);
     expect(p1Occurrences).toHaveLength(1);
@@ -328,7 +336,7 @@ describe('GetRankedProducts', () => {
 
     productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([latestZeroVote]);
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
     expect(result.map(p => p.id)).toEqual([oldHighVote.id, latestZeroVote.id]);
     expect(productRepository.findTopNSortByPublishedAtDesc).toHaveBeenCalledWith(expect.any(Number));
@@ -351,7 +359,7 @@ describe('GetRankedProducts', () => {
 
     productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([recentLowVote]);
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
     expect(result.map(p => p.id)).toEqual([oldHighVote.id, recentLowVote.id]);
   });
@@ -393,7 +401,7 @@ describe('GetRankedProducts', () => {
       insert: vi.fn().mockResolvedValue(null),
     } satisfies ProductRepository;
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 1 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 1 });
 
     expect(result.map(p => p.id)).toEqual([publishedLowVote.id]);
     expect(voteRepository.findTopNByVoteCount).toHaveBeenCalledWith(2);
@@ -441,7 +449,7 @@ describe('GetRankedProducts', () => {
         insert: vi.fn().mockResolvedValue(null),
       } satisfies ProductRepository;
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({
+      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({
         limit: 2,
       });
 
@@ -476,7 +484,7 @@ describe('GetRankedProducts', () => {
       });
       const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
 
-      await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+      await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
       const qualityLog = infoSpy.mock.calls.find(call => call[0]?.event === 'ranking.candidate_quality_checked')?.[0];
       expect(qualityLog).toBeDefined();
@@ -513,7 +521,7 @@ describe('GetRankedProducts', () => {
         products: [p1, p2],
       });
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
       expect(result.map(p => p.id)).toEqual(['p1', 'p2']);
 
@@ -544,7 +552,7 @@ describe('GetRankedProducts', () => {
         products: [oldHighVote, recentLowVote],
       });
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
       expect(result.map(p => p.id)).toEqual(['recent-low', 'old-high']);
 
@@ -579,7 +587,7 @@ describe('GetRankedProducts', () => {
       products: [highOld, lowRecent, midAged],
     });
 
-    const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 3 });
+    const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 3 });
 
     expect(result.map(p => p.id)).toEqual(['high-old', 'mid-aged', 'low-recent']);
   });
@@ -601,7 +609,7 @@ describe('GetRankedProducts', () => {
 
       productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([zeroVoteNew]);
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
       expect(result.map(p => p.id)).toEqual([highVoteOld.id, zeroVoteNew.id]);
     });
@@ -617,7 +625,7 @@ describe('GetRankedProducts', () => {
         products: [first, second],
       });
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 2 });
+      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 2 });
 
       expect(result.map(p => p.id)).toEqual(['same-tie-a', 'same-tie-b']);
     });
@@ -650,7 +658,7 @@ describe('GetRankedProducts', () => {
 
       productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([newZero]);
 
-      const result = await new GetRankedProducts(voteRepository, productRepository, () => now).execute({ limit: 4 });
+      const result = await new GetRankedProducts(voteRepository, productRepository, clockAt(() => now)).execute({ limit: 4 });
 
       expect(result.map(p => p.id)).toEqual(['new-high', 'old-moderate', 'mid-low', 'new-zero']);
     });
@@ -660,21 +668,21 @@ describe('GetRankedProducts', () => {
 describe('RankingService', () => {
   it('calculates score with fixed gravity and new product boost', () => {
     const createdAt = new Date(NOW.getTime() - 1 * MILLISECONDS_PER_HOUR);
-    const score = new RankingService(() => NOW).calculateScore(10, 1, createdAt);
+    const score = new RankingService(clockAt(() => NOW)).calculateScore(10, 1, createdAt);
 
     expect(score).toBeCloseTo((Math.log1p(10) / Math.pow(1 + 2, 0.6)) * 1.5);
   });
 
   it('produces a zero score when there are no votes', () => {
     const createdAt = new Date(NOW.getTime() - 1 * MILLISECONDS_PER_HOUR);
-    const score = new RankingService(() => NOW).calculateScore(0, 1, createdAt);
+    const score = new RankingService(clockAt(() => NOW)).calculateScore(0, 1, createdAt);
 
     expect(score).toBe(0);
   });
 
   it('ranks a recent low-vote product above an older high-vote product under log-scaled influence', () => {
     const getNow = () => new Date('2026-06-17T00:00:00.000Z');
-    const service = new RankingService(getNow);
+    const service = new RankingService(clockAt(getNow));
 
     const oldPublishedAt = new Date('2026-05-18T00:00:00.000Z');
     const recentPublishedAt = new Date('2026-06-16T12:00:00.000Z');
@@ -692,42 +700,42 @@ describe('RankingService', () => {
 describe('RankingService golden fixtures', () => {
   it('returns exact score for zero votes', () => {
     const createdAt = new Date(NOW.getTime() - 24 * MILLISECONDS_PER_HOUR);
-    const score = new RankingService(() => NOW).calculateScore(0, 24, createdAt);
+    const score = new RankingService(clockAt(() => NOW)).calculateScore(0, 24, createdAt);
 
     expect(score).toBe(0);
   });
 
   it('returns exact score for high votes with no boost', () => {
     const createdAt = new Date(NOW.getTime() - 72 * MILLISECONDS_PER_HOUR);
-    const score = new RankingService(() => NOW).calculateScore(1000, 72, createdAt);
+    const score = new RankingService(clockAt(() => NOW)).calculateScore(1000, 72, createdAt);
 
     expect(score).toBeCloseTo(Math.log1p(1000) / Math.pow(72 + 2, 0.6), 12);
   });
 
   it('returns exact score for old product with moderate votes', () => {
     const createdAt = new Date(NOW.getTime() - 720 * MILLISECONDS_PER_HOUR);
-    const score = new RankingService(() => NOW).calculateScore(50, 720, createdAt);
+    const score = new RankingService(clockAt(() => NOW)).calculateScore(50, 720, createdAt);
 
     expect(score).toBeCloseTo(Math.log1p(50) / Math.pow(720 + 2, 0.6), 12);
   });
 
   it('returns exact score for new product boost within 24 hours', () => {
     const createdAt = new Date(NOW.getTime() - 12 * MILLISECONDS_PER_HOUR);
-    const score = new RankingService(() => NOW).calculateScore(30, 12, createdAt);
+    const score = new RankingService(clockAt(() => NOW)).calculateScore(30, 12, createdAt);
 
     expect(score).toBeCloseTo((Math.log1p(30) / Math.pow(12 + 2, 0.6)) * 1.5, 12);
   });
 
   it('returns exact score for new product boost at exactly 24 hours', () => {
     const createdAt = new Date(NOW.getTime() - 24 * MILLISECONDS_PER_HOUR);
-    const score = new RankingService(() => NOW).calculateScore(5, 24, createdAt);
+    const score = new RankingService(clockAt(() => NOW)).calculateScore(5, 24, createdAt);
 
     expect(score).toBeCloseTo((Math.log1p(5) / Math.pow(24 + 2, 0.6)) * 1.5, 12);
   });
 
   it('does not apply boost just after 24 hours', () => {
     const createdAt = new Date(NOW.getTime() - (24 * MILLISECONDS_PER_HOUR + 1));
-    const score = new RankingService(() => NOW).calculateScore(5, 24, createdAt);
+    const score = new RankingService(clockAt(() => NOW)).calculateScore(5, 24, createdAt);
 
     expect(score).toBeCloseTo(Math.log1p(5) / Math.pow(24 + 2, 0.6), 12);
   });
@@ -735,7 +743,7 @@ describe('RankingService golden fixtures', () => {
 
 describe('RankingCache', () => {
   it('returns cached scores before the TTL expires', () => {
-    const cache = new RankingCache(() => 1000);
+    const cache = new RankingCache(millisecondClockAt(() => 1000));
 
     cache.set('p1', 5, 10, 12);
 
@@ -744,7 +752,7 @@ describe('RankingCache', () => {
 
   it('returns undefined after the TTL expires', () => {
     let now = 1000;
-    const cache = new RankingCache(() => now);
+    const cache = new RankingCache(millisecondClockAt(() => now));
 
     cache.set('p1', 5, 10, 12);
     now += 300_001;
@@ -753,7 +761,7 @@ describe('RankingCache', () => {
   });
 
   it('invalidates scores by product id', () => {
-    const cache = new RankingCache(() => 1000);
+    const cache = new RankingCache(millisecondClockAt(() => 1000));
 
     cache.set('p1', 5, 10, 12);
     cache.invalidate('p1');
@@ -762,7 +770,7 @@ describe('RankingCache', () => {
   });
 
   it('does not reuse cached score when vote count changes for the same product', () => {
-    const cache = new RankingCache(() => 1000);
+    const cache = new RankingCache(millisecondClockAt(() => 1000));
 
     cache.set('p1', 5, 10, 12);
 
@@ -770,7 +778,7 @@ describe('RankingCache', () => {
   });
 
   it('does not reuse cached score when age bucket changes for the same product', () => {
-    const cache = new RankingCache(() => 1000);
+    const cache = new RankingCache(millisecondClockAt(() => 1000));
 
     cache.set('p1', 5, 10, 12);
 
@@ -778,7 +786,7 @@ describe('RankingCache', () => {
   });
 
   it('invalidates all composite keys for the same product id', () => {
-    const cache = new RankingCache(() => 1000);
+    const cache = new RankingCache(millisecondClockAt(() => 1000));
 
     cache.set('p1', 5, 10, 12);
     cache.set('p1', 6, 11, 13);
@@ -789,7 +797,7 @@ describe('RankingCache', () => {
   });
 
   it('preserves other product entries when invalidating one product', () => {
-    const cache = new RankingCache(() => 1000);
+    const cache = new RankingCache(millisecondClockAt(() => 1000));
 
     cache.set('p1', 5, 10, 12);
     cache.set('p2', 3, 8, 9);

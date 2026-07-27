@@ -4,14 +4,12 @@ import { IndexProduct } from '@darun/search-domain';
 import { TranslationJobService } from '@darun/translation-service';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
-import { Service } from 'typedi';
 import { Product } from './graphs/Product';
 import { PublishProductInput } from './graphs/PublishProduct';
 import { PublishProductPayload } from './graphs/PublishProduct';
 import { ProductMediaMutationResolver } from './ProductMediaMutationResolver';
 
 @Resolver(() => Product)
-@Service()
 export class ProductPublishMutationResolver extends ProductMediaMutationResolver {
   constructor(
     getCompanyUseCase: ProductMediaMutationResolver['getCompanyUseCase'],

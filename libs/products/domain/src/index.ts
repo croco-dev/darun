@@ -48,6 +48,7 @@ export type { ProductDescriptionGenerator } from './services/ProductDescriptionG
 export { ProductDescriptionGeneratorToken } from './services/ProductDescriptionGenerator';
 export { RankingCache } from './services/RankingCache';
 export { RankingService } from './services/RankingService';
+export { SystemClock } from './services/SystemClock';
 export { AddProductLink } from './usecases/AddProductLink';
 export { AddProductScreenshot } from './usecases/AddProductScreenshot';
 export { CreateProduct } from './usecases/CreateProduct';

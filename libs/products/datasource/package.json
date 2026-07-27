@@ -10,8 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@darun/products-domain": "workspace:*",
-    "@darun/voting-datasource": "workspace:*"
+    "@darun/products-domain": "workspace:*"
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
