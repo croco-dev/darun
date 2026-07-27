@@ -1,0 +1,47 @@
+name: Fetch Prod GraphQL Logs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch-logs:
+    runs-on: ubuntu-latest
+    environment:
+      name: prod-graphql
+    steps:
+      - uses: croco-dev/aws-profile-action@v1.3
+        with:
+          profile: darun
+          region: ap-northeast-2
+          access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Inspect prod GraphQL Lambda
+        env:
+          AWS_PROFILE: darun
+          AWS_DEFAULT_REGION: ap-northeast-2
+        run: |
+          set -euo pipefail
+          FN=graphql-api-prod-graphql
+          GROUP=/aws/lambda/$FN
+
+          echo "=== function meta ==="
+          aws lambda get-function-configuration --function-name "$FN" --query '{LastModified:LastModified,CodeSize:CodeSize,Runtime:Runtime,Handler:Handler}' --output json
+
+          echo "=== invoke ==="
+          aws lambda invoke --function-name "$FN" --cli-binary-format raw-in-base64-out --payload '{"httpMethod":"POST","path":"/graphql","headers":{"content-type":"application/json"},"requestContext":{"http":{"method":"POST","path":"/graphql"}},"body":"{\"query\":\"{ __typename }\"}","isBase64Encoded":false}' /tmp/out.json >/tmp/invoke-meta.json || true
+          cat /tmp/invoke-meta.json
+          echo
+          python3 - <<'PY'
+          import json
+          raw=open('/tmp/out.json').read()
+          print(raw[:4000])
+          try:
+            print(json.dumps(json.loads(raw), indent=2)[:4000])
+          except Exception:
+            pass
+          PY
+
+          echo "=== recent logs ==="
+          START=$(($(date +%s)*1000-1800000))
+          aws logs filter-log-events --log-group-name "$GROUP" --start-time "$START" --filter-pattern '?ERROR ?Error ?TypeError ?Runtime ?Cannot ?Unhandled ?REPORT' --limit 40 --output json | python3 -c 'import json,sys; d=json.load(sys.stdin);
+[print(e.get("message","")) for e in d.get("events",[])]'
