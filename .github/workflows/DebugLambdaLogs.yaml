@@ -1,0 +1,73 @@
+name: Debug Lambda Logs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch-logs:
+    runs-on: ubuntu-latest
+    environment:
+      name: prod-graphql
+    steps:
+      - uses: croco-dev/aws-profile-action@v1.3
+        with:
+          profile: darun
+          region: ap-northeast-2
+          access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Inspect prod after deploy
+        env:
+          AWS_PROFILE: darun
+          AWS_DEFAULT_REGION: ap-northeast-2
+        run: |
+          set -euo pipefail
+          FN=graphql-api-prod-graphql
+          GROUP=/aws/lambda/$FN
+
+          echo "=== function meta ==="
+          aws lambda get-function-configuration --function-name "$FN" --query '{LastModified:LastModified,CodeSize:CodeSize,Env:Environment.Variables}' --output json > /tmp/fn.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/fn.json'))
+          print('LastModified', d.get('LastModified'))
+          print('CodeSize', d.get('CodeSize'))
+          env=d.get('Env') or {}
+          print('EnvKeys', sorted(env.keys()))
+          print('hasCursor', 'CURSOR_SIGNATURE_SECRET' in env, 'len', len(str(env.get('CURSOR_SIGNATURE_SECRET',''))))
+          PY
+
+          echo "=== package ==="
+          URL=$(aws lambda get-function --function-name "$FN" --query 'Code.Location' --output text)
+          curl -sL "$URL" -o /tmp/fn.zip
+          python3 - <<'PY'
+          import zipfile
+          z=zipfile.ZipFile('/tmp/fn.zip')
+          names=z.namelist()
+          print('total_files', len(names))
+          print('reflect_hits', [n for n in names if 'reflect' in n.lower()][:20])
+          print('class_validator_hits', [n for n in names if 'class-validator' in n][:10])
+          print('top', sorted(set(n.split('/')[0] for n in names))[:30])
+          if 'src/functions/graphql.js' in names:
+            head=z.read('src/functions/graphql.js')[:200]
+            print('bundle_head', head)
+          PY
+
+          echo "=== invoke ==="
+          cat > /tmp/payload.json <<'JSON'
+          {"version":"2.0","routeKey":"POST /graphql","rawPath":"/graphql","headers":{"content-type":"application/json"},"requestContext":{"requestId":"debug-b48481-2","http":{"method":"POST","path":"/graphql","sourceIp":"127.0.0.1"}},"body":"{\"query\":\"{ __typename }\"}"}
+          JSON
+          aws lambda invoke --function-name "$FN" --cli-binary-format raw-in-base64-out --payload file:///tmp/payload.json /tmp/out.json > /tmp/invoke-meta.json
+          python3 - <<'PY'
+          print('meta', open('/tmp/invoke-meta.json').read())
+          print('out', open('/tmp/out.json').read()[:4000])
+          PY
+
+          echo "=== recent errors ==="
+          START=$(( ($(date +%s) - 1800) * 1000 ))
+          aws logs filter-log-events --log-group-name "$GROUP" --start-time "$START" --filter-pattern '?ERROR ?Error ?Runtime ?Task ?Cannot ?Mongo ?postgres' --max-items 20 > /tmp/err.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/err.json'))
+          for e in d.get('events', [])[:20]:
+            print(e.get('timestamp'), (e.get('message') or '')[:600])
+          PY
