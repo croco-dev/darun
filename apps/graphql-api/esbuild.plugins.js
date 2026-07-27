@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports */
+const fs = require('fs');
 const { esbuildDecorators } = require('@kang-heewon/esbuild-plugin-typescript-decorators');
 const { sentryEsbuildPlugin } = require('@sentry/esbuild-plugin');
-const fs = require('fs');
 
 const IS_LOCAL = process.env['INFRA_ENV'] === 'local';
 const reflectMetadataSource = fs.readFileSync(require.resolve('reflect-metadata'), 'utf8');
@@ -13,7 +13,7 @@ module.exports = [
       const existingBanner = build.initialOptions.banner?.js ?? '';
       build.initialOptions.banner = {
         ...build.initialOptions.banner,
-        js: `${reflectMetadataSource}\n${existingBanner}`,
+        js: `(function () {\n${reflectMetadataSource}\n})();\n${existingBanner}`,
       };
     },
   },
