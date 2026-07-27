@@ -1,11 +1,13 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports */
 const { esbuildDecorators } = require('@kang-heewon/esbuild-plugin-typescript-decorators');
 const { sentryEsbuildPlugin } = require('@sentry/esbuild-plugin');
 
 const IS_LOCAL = process.env['INFRA_ENV'] === 'local';
 
 module.exports = [
-  esbuildDecorators({}),
+  esbuildDecorators({
+    tsconfig: 'tsconfig.lambda.json',
+  }),
   sentryEsbuildPlugin({
     authToken: process.env.SENTRY_AUTH_TOKEN,
     org: 'croco',
