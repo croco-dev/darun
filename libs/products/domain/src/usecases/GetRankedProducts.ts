@@ -6,6 +6,7 @@ import type { RankedProductVoteRepository } from '../repositories/RankedProductV
 import { RankedProductVoteRepositoryToken } from '../repositories/RankedProductVoteRepository';
 import { RankingCache } from '../services/RankingCache';
 import { RankingService } from '../services/RankingService';
+import { SystemClock } from '../services/SystemClock';
 
 const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
 
@@ -23,9 +24,9 @@ export class GetRankedProducts {
     private readonly voteRepository: RankedProductVoteRepository,
     @Inject(ProductRepositoryToken)
     private readonly productRepository: ProductRepository,
-    private readonly getNow: () => Date = () => new Date(),
-    private readonly rankingService: RankingService = new RankingService(getNow),
-    private readonly rankingCache: RankingCache = new RankingCache()
+    private readonly clock: SystemClock = new SystemClock(),
+    private readonly rankingService: RankingService = new RankingService(clock),
+    private readonly rankingCache: RankingCache = new RankingCache(clock)
   ) {}
 
   async execute({ limit }: { limit: number }): Promise<Product[]> {
@@ -137,7 +138,7 @@ export class GetRankedProducts {
           return scoreDiff;
         }
 
-        const now = this.getNow();
+        const now = this.clock.now();
         const aPublished = a.publishedAt ?? now;
         const bPublished = b.publishedAt ?? now;
         const publishedDiff = bPublished.getTime() - aPublished.getTime();
@@ -152,7 +153,7 @@ export class GetRankedProducts {
 
   private score(product: Product, voteCountByProductId: ReadonlyMap<string, number>): number {
     const votes = voteCountByProductId.get(product.id) ?? 0;
-    const now = this.getNow();
+    const now = this.clock.now();
     const publishedAt = product.publishedAt ?? now;
     const ageHours = Math.max(0, now.getTime() - publishedAt.getTime()) / MILLISECONDS_PER_HOUR;
     const ageBucket = Math.floor(ageHours * 12);

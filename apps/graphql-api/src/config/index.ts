@@ -16,6 +16,9 @@ import { CloudinaryImageRepositoryConfig } from '@darun/images-datasource';
 import { LlmClient } from '@darun/utils-llm/src/libs/LlmClient';
 import { Container } from 'typedi';
 import { RUNNING_ENV } from './environment';
+import { registerRepositoryAliases } from './repositoryAliases';
+
+registerRepositoryAliases();
 
 Container.set(CloudinaryImageRepositoryConfig, new CloudinaryImageRepositoryConfig(RUNNING_ENV));
 

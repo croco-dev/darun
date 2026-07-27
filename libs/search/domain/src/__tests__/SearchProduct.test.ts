@@ -6,6 +6,10 @@ import { SynonymExpander } from '../services/SynonymExpander';
 import { SearchProduct } from '../usecases/SearchProduct';
 
 const NOW = new Date('2026-01-01T12:00:00.000Z');
+const clockAt = (getNow: () => Date) => ({
+  now: getNow,
+  nowMilliseconds: () => getNow().getTime(),
+});
 
 describe('SearchProduct', () => {
   const createProduct = (id: string, searchScore?: number) =>
@@ -18,7 +22,7 @@ describe('SearchProduct', () => {
     });
 
   const createUseCase = (repository: SearchableProductRepository) =>
-    new SearchProduct(repository, new SynonymExpander(), new SearchRanker(() => NOW));
+    new SearchProduct(repository, new SynonymExpander(), new SearchRanker(clockAt(() => NOW)));
 
   it('searches with the normalized query when limit is omitted', async () => {
     const products = [createProduct('p1')];

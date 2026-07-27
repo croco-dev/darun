@@ -4,14 +4,12 @@ import { UpdateAlternativeProduct } from '@darun/recommendation-domain';
 import { IndexProduct } from '@darun/search-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
-import { Service } from 'typedi';
 import { Product } from './graphs/Product';
 import { UpdateAlternativeProductInput } from './graphs/UpdateAlternativeProduct';
 import { UpdateAlternativeProductPayload } from './graphs/UpdateAlternativeProduct';
 import { ProductPublishMutationResolver } from './ProductPublishMutationResolver';
 
 @Resolver(() => Product)
-@Service()
 export class ProductRecommendationMutationResolver extends ProductPublishMutationResolver {
   constructor(
     getCompanyUseCase: ProductPublishMutationResolver['getCompanyUseCase'],

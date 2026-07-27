@@ -1130,9 +1130,6 @@ importers:
       '@darun/provider-database':
         specifier: workspace:*
         version: link:../../shared/provider-database
-      '@darun/voting-datasource':
-        specifier: workspace:*
-        version: link:../../voting/datasource
       '@typegoose/typegoose':
         specifier: '*'
         version: 13.1.0(mongoose@9.2.1)

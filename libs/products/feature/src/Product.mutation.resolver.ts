@@ -1,6 +1,23 @@
-import { GetPublishedProduct } from '@darun/products-domain';
+import { GetCompany } from '@darun/companies-domain';
+import {
+  AddProductLink,
+  AddProductScreenshot,
+  CreateProduct,
+  DeleteProductScreenshot,
+  EditProduct,
+  GenerateProductDescription,
+  GetProduct,
+  GetProductTags,
+  GetPublishedProduct,
+  PublishProduct,
+  RegisterProductCompany,
+  UpdateProductLink,
+  UpdateProductTag,
+} from '@darun/products-domain';
 import { productNotFound, productInvalidArgs } from '@darun/products-domain';
+import { UpdateAlternativeProduct } from '@darun/recommendation-domain';
 import { IndexProduct } from '@darun/search-domain';
+import { TranslationJobService } from '@darun/translation-service';
 import { AuthRole } from '@darun/utils-apollo-server';
 import type { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
 import { UpvoteProduct } from '@darun/voting-domain';
@@ -21,23 +38,23 @@ export * from './ProductRecommendationMutationResolver';
 @Service()
 export class ProductMutationResolver extends ProductRecommendationMutationResolver {
   constructor(
-    getCompanyUseCase: ProductRecommendationMutationResolver['getCompanyUseCase'],
-    createProductUseCase: ProductRecommendationMutationResolver['createProductUseCase'],
-    editProductUseCase: ProductRecommendationMutationResolver['editProductUseCase'],
-    coreIndexProductUseCase: ProductRecommendationMutationResolver['indexProductUseCase'],
-    updateProductTagUseCase: ProductRecommendationMutationResolver['updateProductTagUseCase'],
-    getProductUseCase: ProductRecommendationMutationResolver['getProductUseCase'],
-    getProductTagsUseCase: ProductRecommendationMutationResolver['getProductTagsUseCase'],
-    addProductScreenshotUseCase: ProductRecommendationMutationResolver['addProductScreenshotUseCase'],
-    deleteProductScreenshotUseCase: ProductRecommendationMutationResolver['deleteProductScreenshotUseCase'],
-    addProductLinkUseCase: ProductRecommendationMutationResolver['addProductLinkUseCase'],
-    updateProductLinkUseCase: ProductRecommendationMutationResolver['updateProductLinkUseCase'],
-    registerProductCompanyUseCase: ProductRecommendationMutationResolver['registerProductCompanyUseCase'],
-    generateProductDescriptionUseCase: ProductRecommendationMutationResolver['generateProductDescriptionUseCase'],
-    publishProductUseCase: ProductRecommendationMutationResolver['publishProductUseCase'],
-    publishIndexProductUseCase: ProductRecommendationMutationResolver['publishIndexProductUseCase'],
-    translationJobService: ProductRecommendationMutationResolver['translationJobService'],
-    updateAlternativeProductUseCase: ProductRecommendationMutationResolver['updateAlternativeProductUseCase'],
+    getCompanyUseCase: GetCompany,
+    createProductUseCase: CreateProduct,
+    editProductUseCase: EditProduct,
+    coreIndexProductUseCase: IndexProduct,
+    updateProductTagUseCase: UpdateProductTag,
+    getProductUseCase: GetProduct,
+    getProductTagsUseCase: GetProductTags,
+    addProductScreenshotUseCase: AddProductScreenshot,
+    deleteProductScreenshotUseCase: DeleteProductScreenshot,
+    addProductLinkUseCase: AddProductLink,
+    updateProductLinkUseCase: UpdateProductLink,
+    registerProductCompanyUseCase: RegisterProductCompany,
+    generateProductDescriptionUseCase: GenerateProductDescription,
+    publishProductUseCase: PublishProduct,
+    publishIndexProductUseCase: IndexProduct,
+    translationJobService: TranslationJobService,
+    updateAlternativeProductUseCase: UpdateAlternativeProduct,
     private readonly standaloneIndexProductUseCase: IndexProduct,
     private readonly getPublishedProductUseCase: GetPublishedProduct,
     private readonly upvoteProductUseCase: UpvoteProduct

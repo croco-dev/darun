@@ -3,7 +3,6 @@ import { productNotFound } from '@darun/products-domain';
 import { IndexProduct } from '@darun/search-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
-import { Service } from 'typedi';
 import { CreateProductInput } from './graphs/CreateProduct';
 import { CreateProductPayload } from './graphs/CreateProduct';
 import { EditProductInput } from './graphs/EditProduct';
@@ -26,7 +25,6 @@ type SideEffectFailureContext = {
 };
 
 @Resolver(() => Product)
-@Service()
 export class ProductCoreMutationResolver {
   constructor(
     protected readonly createProductUseCase: CreateProduct,

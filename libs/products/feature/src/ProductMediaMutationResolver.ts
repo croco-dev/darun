@@ -12,7 +12,6 @@ import {
 } from '@darun/products-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
-import { Service } from 'typedi';
 import { AddProductLinkInput } from './graphs/AddProductLink';
 import { AddProductLinkPayload } from './graphs/AddProductLink';
 import { AddProductScreenshotInput } from './graphs/AddProductScreenshot';
@@ -28,7 +27,6 @@ import { UpdateProductLinkPayload } from './graphs/UpdateProductLink';
 import { ProductCoreMutationResolver } from './ProductCoreMutationResolver';
 
 @Resolver(() => Product)
-@Service()
 export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
   protected readonly mutationContracts = {
     addProductScreenshot: 'fatal',

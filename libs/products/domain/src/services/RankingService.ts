@@ -1,4 +1,5 @@
 import { Service } from 'typedi';
+import { SystemClock } from './SystemClock';
 
 const RANKING_GRAVITY = 0.6;
 const NEW_PRODUCT_BOOST_HOURS = 24;
@@ -10,7 +11,7 @@ const calculateVoteSignal = (votes: number): number => Math.log1p(votes);
 
 @Service()
 export class RankingService {
-  constructor(private readonly getNow: () => Date = () => new Date()) {}
+  constructor(private readonly clock: SystemClock = new SystemClock()) {}
 
   calculateScore(votes: number, ageHours: number, createdAt: Date): number {
     return (
@@ -20,7 +21,7 @@ export class RankingService {
   }
 
   private boostMultiplier(createdAt: Date): number {
-    const ageHours = Math.max(0, this.getNow().getTime() - createdAt.getTime()) / MILLISECONDS_PER_HOUR;
+    const ageHours = Math.max(0, this.clock.now().getTime() - createdAt.getTime()) / MILLISECONDS_PER_HOUR;
 
     return ageHours <= NEW_PRODUCT_BOOST_HOURS ? NEW_PRODUCT_BOOST_MULTIPLIER : 1;
   }
