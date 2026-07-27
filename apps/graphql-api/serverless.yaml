@@ -17,17 +17,12 @@ custom:
   esbuild:
     bundle: true
     exclude: ["class-validator"]
-    external:
-      - reflect-metadata
-    packager: pnpm
     minify: true
     keepNames: true
     sourcemap: true
     sourcesContent: false
     treeShaking: true
     ignoreAnnotations: true
-    banner:
-      js: "require('reflect-metadata');"
     plugins: esbuild.plugins.js
     watch:
       patterns:
