@@ -15,113 +15,40 @@ jobs:
           region: ap-northeast-2
           access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: Fetch prod Lambda/API details
+      - name: Inspect deployed package
         env:
           AWS_PROFILE: darun
           AWS_DEFAULT_REGION: ap-northeast-2
         run: |
           set -euo pipefail
           FN=graphql-api-prod-graphql
-          GROUP=/aws/lambda/$FN
-
-          echo "=== function config ==="
-          aws lambda get-function-configuration --function-name "$FN" > /tmp/fn.json
+          URL=$(aws lambda get-function --function-name "$FN" --query 'Code.Location' --output text)
+          curl -sL "$URL" -o /tmp/fn.zip
           python3 - <<'PY'
-          import json
-          d=json.load(open('/tmp/fn.json'))
-          print('FunctionName', d.get('FunctionName'))
-          print('LastModified', d.get('LastModified'))
-          print('Runtime', d.get('Runtime'))
-          print('Timeout', d.get('Timeout'))
-          print('MemorySize', d.get('MemorySize'))
-          print('State', d.get('State'), d.get('StateReason'))
-          print('LastUpdateStatus', d.get('LastUpdateStatus'), d.get('LastUpdateStatusReason'))
-          env=(d.get('Environment') or {}).get('Variables') or {}
-          print('EnvKeys', sorted(env.keys()))
-          print('EnvMeta', {k:(len(str(v)), bool(v)) for k,v in env.items()})
+          import zipfile
+          z=zipfile.ZipFile('/tmp/fn.zip')
+          names=z.namelist()
+          print('total_files', len(names))
+          print('top', sorted(set(n.split('/')[0] for n in names))[:50])
+          hits=[n for n in names if 'reflect' in n.lower()]
+          print('reflect_hits', hits[:50])
+          print('has_node_modules_reflect', any(n.startswith('node_modules/reflect-metadata/') for n in names))
+          # show start of handler bundle
+          for cand in ['src/functions/graphql.js','graphql.js']:
+            if cand in names:
+              data=z.read(cand)[:500]
+              print('bundle_head', cand, data[:500])
+              break
           PY
 
-          echo "=== recent prod streams ==="
-          aws logs describe-log-streams --log-group-name "$GROUP" --order-by LastEventTime --descending --max-items 8 > /tmp/streams.json
+          echo "=== first reflect-metadata error ever (oldest in retention) ==="
+          START=$(( ($(date +%s) - 7*86400) * 1000 ))
+          aws logs filter-log-events --log-group-name /aws/lambda/$FN --start-time "$START" --filter-pattern 'reflect-metadata' --max-items 5 > /tmp/first.json
           python3 - <<'PY'
           import json
-          d=json.load(open('/tmp/streams.json'))
-          for s in d.get('logStreams', []):
-              print(s['logStreamName'], s.get('lastEventTimestamp'), s.get('lastIngestionTime'))
-          PY
-
-          START=$(( ($(date +%s) - 86400) * 1000 ))
-          echo "=== filter last 24h errors ==="
-          aws logs filter-log-events --log-group-name "$GROUP" --start-time "$START" --filter-pattern '?ERROR ?Error ?Task ?timeout ?Mongo ?postgres ?ECONN ?SECRET ?Runtime ?INIT' --max-items 50 > /tmp/err.json
-          python3 - <<'PY'
-          import json
-          d=json.load(open('/tmp/err.json'))
-          evs=d.get('events', [])
+          d=json.load(open('/tmp/first.json'))
+          evs=d.get('events',[])
           print('count', len(evs))
-          for e in evs[:40]:
-              print(e.get('timestamp'), (e.get('message') or '')[:500])
-          PY
-
-          echo "=== filter last 24h any ==="
-          aws logs filter-log-events --log-group-name "$GROUP" --start-time "$START" --max-items 30 > /tmp/any.json
-          python3 - <<'PY'
-          import json
-          d=json.load(open('/tmp/any.json'))
-          evs=d.get('events', [])
-          print('count', len(evs))
-          for e in evs[:30]:
-              print(e.get('timestamp'), (e.get('message') or '')[:400])
-          PY
-
-          echo "=== apis ==="
-          aws apigatewayv2 get-apis > /tmp/apis.json
-          python3 - <<'PY'
-          import json
-          d=json.load(open('/tmp/apis.json'))
-          for a in d.get('Items', []):
-              print(a.get('Name'), a.get('ApiId'), a.get('ApiEndpoint'), a.get('CreatedDate'))
-          PY
-
-          for API in $(aws apigatewayv2 get-apis --query 'Items[].ApiId' --output text); do
-            echo "--- api $API routes ---"
-            aws apigatewayv2 get-routes --api-id "$API" > /tmp/routes.json
-            python3 - <<'PY'
-          import json
-          d=json.load(open('/tmp/routes.json'))
-          for r in d.get('Items', []):
-              print(r.get('RouteKey'), r.get('Target'), r.get('RouteId'))
-          PY
-            echo "--- api $API integrations ---"
-            aws apigatewayv2 get-integrations --api-id "$API" > /tmp/integrations.json
-            python3 - <<'PY'
-          import json
-          d=json.load(open('/tmp/integrations.json'))
-          for i in d.get('Items', []):
-              print(i.get('IntegrationId'), i.get('IntegrationUri'), i.get('IntegrationType'), i.get('PayloadFormatVersion'))
-          PY
-          done
-
-          echo "=== domain names ==="
-          aws apigatewayv2 get-domain-names > /tmp/domains.json || true
-          python3 - <<'PY'
-          import json
-          try:
-            d=json.load(open('/tmp/domains.json'))
-          except Exception as e:
-            print('no domains', e); raise SystemExit
-          for x in d.get('Items', []):
-              print(x.get('DomainName'), x.get('DomainNameArn'))
-          PY
-
-          echo "=== invoke lambda directly ==="
-          cat > /tmp/payload.json <<'JSON'
-          {"version":"2.0","routeKey":"POST /graphql","rawPath":"/graphql","headers":{"content-type":"application/json"},"requestContext":{"requestId":"debug-b48481","http":{"method":"POST","path":"/graphql","sourceIp":"127.0.0.1"}},"body":"{\"query\":\"{ __typename }\"}"}
-          JSON
-          set +e
-          aws lambda invoke --function-name "$FN" --cli-binary-format raw-in-base64-out --payload file:///tmp/payload.json /tmp/out.json
-          RC=$?
-          set -e
-          echo "invoke_exit:$RC"
-          python3 - <<'PY'
-          print(open('/tmp/out.json').read()[:3000])
+          for e in evs[:5]:
+            print(e.get('timestamp'), (e.get('message') or '')[:300])
           PY
