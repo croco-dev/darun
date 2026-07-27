@@ -15,30 +15,52 @@ jobs:
           region: ap-northeast-2
           access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: Fetch recent Lambda logs and status
+      - name: Fetch prod Lambda/API details
         env:
           AWS_PROFILE: darun
           AWS_DEFAULT_REGION: ap-northeast-2
         run: |
           set -euo pipefail
-          echo "=== caller ==="
-          aws sts get-caller-identity --profile darun
-          echo "=== functions matching graphql ==="
-          aws lambda list-functions --profile darun --query 'Functions[?contains(FunctionName, `graphql`)].[FunctionName,LastModified,Runtime,State,StateReason]' --output table || true
-          echo "=== log groups ==="
-          aws logs describe-log-groups --profile darun --log-group-name-prefix /aws/lambda/ --query 'logGroups[?contains(logGroupName, `graphql`)].logGroupName' --output text
-          GROUP=$(aws logs describe-log-groups --profile darun --log-group-name-prefix /aws/lambda/ --query 'logGroups[?contains(logGroupName, `graphql`)].logGroupName' --output text | awk '{print $1}')
-          echo "Using group: ${GROUP:-none}"
-          if [ -n "${GROUP:-}" ]; then
-            echo "=== recent streams ==="
-            aws logs describe-log-streams --profile darun --log-group-name "$GROUP" --order-by LastEventTime --descending --max-items 5 --output table
-            STREAM=$(aws logs describe-log-streams --profile darun --log-group-name "$GROUP" --order-by LastEventTime --descending --max-items 1 --query 'logStreams[0].logStreamName' --output text)
-            echo "Latest stream: $STREAM"
-            echo "=== latest log events ==="
-            aws logs get-log-events --profile darun --log-group-name "$GROUP" --log-stream-name "$STREAM" --limit 50 --output text || true
-            echo "=== filter ERROR last 2h ==="
-            START=$(( ($(date +%s) - 7200) * 1000 ))
-            aws logs filter-log-events --profile darun --log-group-name "$GROUP" --start-time "$START" --filter-pattern "?ERROR ?Error ?error ?Task ?timeout ?Mongo ?postgres ?ECONN ?SECRET" --max-items 30 --output json | head -c 50000
-          fi
-          echo "=== http api / stack ==="
-          aws cloudformation describe-stacks --profile darun --stack-name prod-graphql-api --query 'Stacks[0].[StackName,StackStatus,LastUpdatedTime]' --output text || true
+          FN=graphql-api-prod-graphql
+          GROUP=/aws/lambda/$FN
+          echo "=== function config ==="
+          aws lambda get-function-configuration --function-name "$FN" --output json
+          echo "=== env keys only ==="
+          aws lambda get-function-configuration --function-name "$FN" --query 'Environment.Variables' --output json | python3 -c 'import json,sys; d=json.load(sys.stdin) or {}; print(sorted(d.keys())); print({k:(bool(v), len(str(v))) for k,v in d.items()})'
+          echo "=== recent prod streams ==="
+          aws logs describe-log-streams --log-group-name "$GROUP" --order-by LastEventTime --descending --max-items 8 --output json | python3 -c 'import json,sys; d=json.load(sys.stdin);
+for s in d.get("logStreams",[]):
+ print(s["logStreamName"], s.get("lastEventTimestamp"), s.get("lastIngestionTime"))'
+          echo "=== filter last 24h errors ==="
+          START=$(( ($(date +%s) - 86400) * 1000 ))
+          aws logs filter-log-events --log-group-name "$GROUP" --start-time "$START" --filter-pattern "?ERROR ?Error ?Task ?timeout ?Mongo ?postgres ?ECONN ?SECRET ?Runtime ?INIT" --max-items 50 --output json | python3 -c 'import json,sys; d=json.load(sys.stdin); evs=d.get("events",[]); print("count",len(evs));
+[print(e.get("timestamp"), e.get("message","")[:500]) for e in evs[:40]]'
+          echo "=== filter last 24h any ==="
+          aws logs filter-log-events --log-group-name "$GROUP" --start-time "$START" --max-items 30 --output json | python3 -c 'import json,sys; d=json.load(sys.stdin); evs=d.get("events",[]); print("count",len(evs));
+[print(e.get("timestamp"), e.get("message","")[:400]) for e in evs[:30]]'
+          echo "=== custom domains / apis ==="
+          aws apigatewayv2 get-apis --output json | python3 -c 'import json,sys; d=json.load(sys.stdin);
+for a in d.get("Items",[]): print(a.get("Name"), a.get("ApiId"), a.get("ApiEndpoint"), a.get("CreatedDate"))'
+          for API in $(aws apigatewayv2 get-apis --query 'Items[].ApiId' --output text); do
+            echo "--- api $API routes ---"
+            aws apigatewayv2 get-routes --api-id "$API" --output json | python3 -c 'import json,sys; d=json.load(sys.stdin);
+[print(r.get("RouteKey"), r.get("Target"), r.get("RouteId")) for r in d.get("Items",[])]'
+            echo "--- api $API integrations ---"
+            aws apigatewayv2 get-integrations --api-id "$API" --output json | python3 -c 'import json,sys; d=json.load(sys.stdin);
+[print(i.get("IntegrationId"), i.get("IntegrationUri"), i.get("IntegrationType"), i.get("PayloadFormatVersion")) for i in d.get("Items",[])]'
+            echo "--- api $API stages ---"
+            aws apigatewayv2 get-stages --api-id "$API" --output json | python3 -c 'import json,sys; d=json.load(sys.stdin);
+[print(s.get("StageName"), s.get("AutoDeploy"), s.get("LastUpdatedDate"), s.get("DefaultRouteSettings")) for s in d.get("Items",[])]'
+            echo "--- api $API domain names mappings check ---"
+          done
+          echo "=== domain names ==="
+          aws apigatewayv2 get-domain-names --output json | python3 -c 'import json,sys; d=json.load(sys.stdin);
+[print(x.get("DomainName"), x.get("DomainNameArn"), x.get("ApiMappingSelectionExpression")) for x in d.get("Items",[])]' || true
+          echo "=== invoke lambda directly ==="
+          OUT=$(mktemp)
+          set +e
+          aws lambda invoke --function-name "$FN" --cli-binary-format raw-in-base64-out --payload '{"version":"2.0","routeKey":"POST /graphql","rawPath":"/graphql","headers":{"content-type":"application/json"},"requestContext":{"requestId":"debug-b48481","http":{"method":"POST","path":"/graphql","sourceIp":"127.0.0.1"}},"body":"{\"query\":\"{ __typename }\"}"}' "$OUT"
+          RC=$?
+          set -e
+          echo "invoke_exit:$RC"
+          python3 -c 'import pathlib; p=pathlib.Path("'"$OUT"'"); print(p.read_text()[:2000])'
