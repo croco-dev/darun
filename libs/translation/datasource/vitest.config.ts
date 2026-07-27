@@ -1,11 +1,12 @@
+import { createNodeConfig, thresholds } from '@darun/utils-vitest-config';
 import { defineConfig } from 'vitest/config';
 
-export default defineConfig({
-  test: {
-    passWithNoTests: true,
-    include: ['src/__tests__/**/*.test.ts'],
-    coverage: {
-      provider: 'v8',
+export default defineConfig(
+  createNodeConfig({
+    test: {
+      coverage: {
+        thresholds: thresholds.datasource,
+      },
     },
-  },
-});
+  })
+);

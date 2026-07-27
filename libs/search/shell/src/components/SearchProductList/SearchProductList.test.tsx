@@ -98,7 +98,7 @@ describe('SearchProductList', () => {
     document.body.replaceChildren();
   });
 
-  it('renders products with a compare button next to each item', () => {
+  it('renders products as search cards', () => {
     const mockProducts = [
       {
         id: '1',
@@ -121,13 +121,9 @@ describe('SearchProductList', () => {
 
     const searchCard = container.querySelector('[data-testid="search-card"]');
     expect(searchCard).not.toBeNull();
-
-    const compareButton = container.querySelector('[data-testid="compare-button"]');
-    expect(compareButton).not.toBeNull();
-    expect(compareButton?.textContent).toContain('비교에 추가');
   });
 
-  it('renders instructions to compare in empty search state', () => {
+  it('renders popular queries and categories in empty search state', () => {
     vi.mocked(useSearchProductList).mockReturnValue({
       products: [],
     });
@@ -137,6 +133,6 @@ describe('SearchProductList', () => {
     });
 
     expect(container.textContent).toContain('검색 결과가 없습니다');
-    expect(container.textContent).toContain('두 서비스를 선택해 비교할 수 있습니다');
+    expect(container.querySelector('[data-testid="search-empty-popular-queries"]')).not.toBeNull();
   });
 });

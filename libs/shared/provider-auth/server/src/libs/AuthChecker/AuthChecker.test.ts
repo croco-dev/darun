@@ -1,4 +1,5 @@
 import { AuthService, AuthStorage } from '@darun/utils-auth-service-core';
+import { Cookies } from 'next-client-cookies';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { authChecker } from './AuthChecker';
 
@@ -9,11 +10,12 @@ function createMockAuthService(user: { id: string; isAdmin: boolean } | null): A
   } as unknown as AuthService;
 }
 
-function createMockCookies(token: string): { get: (key: string) => string | undefined; set: (...args: Array<unknown>) => void; remove: (...args: Array<unknown>) => void } {
+function createMockCookies(token: string): Cookies {
   return {
-    get: vi.fn((key: string) => (key === 'token' ? token : undefined)),
+    get: vi.fn((key?: string) => (key === 'token' ? token : undefined)) as unknown as Cookies['get'],
     set: vi.fn(),
     remove: vi.fn(),
+    toString: vi.fn().mockReturnValue(''),
   };
 }
 
@@ -59,7 +61,7 @@ describe('AuthChecker', () => {
       ({
         getUser: vi.fn().mockResolvedValue(user),
         setAuthStorage: vi.fn((storage: AuthStorage) => {
-          setAuthStorageCalls.push(storage);
+          setAuthStorageCalls.push(storage as unknown as { get: (key: string) => string | null });
         }),
       }) as unknown as AuthService;
 

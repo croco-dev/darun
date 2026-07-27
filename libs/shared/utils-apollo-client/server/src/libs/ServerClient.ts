@@ -14,9 +14,9 @@ export const getClient = (options?: { static?: boolean }) => {
   }
   const client = clientFactory();
 
-  const authLink = new SetContextLink(({ headers }) => {
+  const authLink = new SetContextLink(async ({ headers }) => {
     const canUseCookies = !options?.static;
-    const token = canUseCookies ? getCookies().get('idToken') : undefined;
+    const token = canUseCookies ? (await getCookies()).get('idToken') : undefined;
     return {
       headers: {
         ...headers,

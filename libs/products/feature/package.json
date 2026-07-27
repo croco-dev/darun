@@ -34,6 +34,7 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
+    "@darun/utils-vitest-config": "workspace:*",
     "@testing-library/react": "16.3.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.1.9",

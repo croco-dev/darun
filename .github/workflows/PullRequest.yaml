@@ -29,7 +29,16 @@ jobs:
       - run: pnpm run lint
       - name: Type Check
         run: pnpm run typecheck
-      - run: pnpm exec turbo test -- --coverage
+      - run: pnpm run test:coverage
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ matrix.node-version }}
+          path: |
+            **/coverage/lcov.info
+            **/coverage/index.html
+          retention-days: 7
       - name: Build
         run: pnpm run build
 
@@ -38,9 +47,7 @@ jobs:
         continue-on-error: true
 
       - name: Playwright Smoke Tests
+        # Non-blocking until CI has DB/Firebase/seed infrastructure for the webServer.
+        # Re-enable blocking after: DB service + seed-e2e.ts + required env vars are wired.
         run: pnpm --filter service-web exec playwright test --grep "@smoke"
         continue-on-error: true
-
-      - name: Record Playwright smoke status
-        if: failure()
-        run: echo "::warning title=Playwright smoke failed::E2E smoke tests failed but are non-blocking. Tracked in T8."

@@ -13,7 +13,7 @@
   },
   "scripts": {
     "lint": "eslint **/*.ts*",
-    "test": "echo 1",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -26,6 +26,8 @@
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
-    "@darun/utils-tsconfig": "workspace:*"
+    "@darun/utils-tsconfig": "workspace:*",
+    "@darun/utils-vitest-config": "workspace:*",
+    "vitest": "4.1.10"
   }
 }

@@ -24,7 +24,7 @@ test.describe('Compare discovery journey', () => {
     await expect(page.getByTestId('compare-column')).toHaveCount(2);
   });
 
-  test('Journey 2: alternatives page compare buttons activate compare page', async ({ page }) => {
+  test('Journey 2: alternatives page compare buttons activate compare page @smoke', async ({ page }) => {
     // Navigate to figma-e2e alternatives page
     await page.goto('/ko/products/figma-e2e/alternatives');
     await page.waitForLoadState('networkidle');

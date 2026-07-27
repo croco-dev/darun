@@ -46,7 +46,7 @@ test.describe('Search No Results Surface', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('Displays no-results view', async ({ page }) => {
+  test('Displays no-results view @smoke', async ({ page }) => {
     const noResultsText = page.locator('text=zzzz-no-product');
     await expect(noResultsText).toBeVisible();
   });

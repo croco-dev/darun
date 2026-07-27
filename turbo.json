@@ -19,7 +19,9 @@
       "dependsOn": ["^lint"]
     },
     "test": {
-      "dependsOn": ["^test"]
+      "dependsOn": ["^test"],
+      "inputs": ["src/**", "vitest.config.{ts,js}", "vitest.setup.{ts,js}"],
+      "outputs": ["coverage/**"]
     },
     "prepare": {
       "cache": false,

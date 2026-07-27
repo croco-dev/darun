@@ -44,11 +44,11 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "eslint-config-next": "15.5.12",
+    "eslint-config-next": "16.2.12",
     "postcss": "8.4.47",
     "postcss-simple-vars": "7.0.1",
     "sass": "1.97.3",
     "typescript-eslint": "8.59.4",
-    "vitest": "4.1.7"
+    "vitest": "4.1.10"
   }
 }
