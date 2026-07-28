@@ -202,9 +202,10 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
 PR을 올리기 전에 아래 명령이 모두 통과해야 합니다.
 
 ```bash
-pnpm lint        # ESLint + Prettier 검사
-pnpm typecheck   # TypeScript 타입 검사
-pnpm test        # Vitest 단위 테스트
+pnpm lint           # ESLint + Prettier 검사
+pnpm typecheck      # TypeScript 타입 검사
+pnpm test           # Vitest 단위 테스트
+pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 ```
 
 포맷 자동 수정은 다음 명령을 사용합니다.
@@ -214,6 +215,46 @@ pnpm format
 ```
 
 Lefthook이 설치되어 있으면 커밋 전 ESLint 검사가 자동으로 실행됩니다.
+
+### 커버리지 목표
+
+계층별 목표 threshold는 `@darun/utils-vitest-config`의 `thresholds` 상수로 관리됩니다. 현재 목표를 충족하는 패키지는 `vitest.config.ts`에서 적절한 threshold를 적용하고, 아직 충족하지 못하는 패키지는 리포트 생성을 먼저 활성화한 뒤 테스트 보강과 함께 threshold를 적용하세요.
+
+| 계층 | lines / branches | 적용 패키지 예시 |
+| --- | --- | --- |
+| Domain | 85% / 65% | `**/domain` |
+| Datasource | 85% / 65% | `**/datasource` |
+| Feature (GraphQL resolver) | 70% / 55% | `**/feature` |
+| Shell / UI | 60% / 45% | `**/shell`, `**/ui-*` |
+
+### 새 패키지 vitest 설정
+
+새 패키지를 생성할 때 반드시 `vitest.config.ts`를 포함해야 합니다. `@darun/utils-vitest-config`의 팩토리 함수를 사용하고, 계층별 목표를 충족하는 시점에 `thresholds` 상수를 적용합니다.
+
+```typescript
+// 백엔드 domain 패키지 — threshold 포함
+import { defineConfig } from 'vitest/config';
+import { createNodeConfig, thresholds } from '@darun/utils-vitest-config';
+export default defineConfig(
+  createNodeConfig({ test: { coverage: { thresholds: thresholds.domain } } }),
+);
+
+// 프론트엔드 shell 패키지 — threshold 포함
+import { defineConfig } from 'vitest/config';
+import { createJsdomConfig, thresholds } from '@darun/utils-vitest-config';
+export default defineConfig(
+  createJsdomConfig({ test: { coverage: { thresholds: thresholds.shell } } }),
+);
+
+// threshold 없이 기본 설정 (barrel·util 패키지)
+import { defineConfig } from 'vitest/config';
+import { createNodeConfig } from '@darun/utils-vitest-config';
+export default defineConfig(createNodeConfig());
+```
+
+실제 테스트 코드가 없는 패키지도 `passWithNoTests: true`(기본값)로 turbo 그래프에 포함됩니다.
+
+`pnpm test:coverage` 실행 시 lcov·html 리포트가 각 패키지 `coverage/` 디렉터리에 생성되고, CI에서 `coverage-reports` 아티팩트로 업로드됩니다.
 
 ## 모노레포 구조
 

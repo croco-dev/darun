@@ -20,6 +20,8 @@ overrides:
   fast-xml-parser: ">=4.5.5"
   protobufjs: ">=7.5.5"
   shell-quote: ">=1.8.4"
+  velocityjs: ">=2.1.7"
+  websocket-driver: ">=0.7.5"
 
 onlyBuiltDependencies:
   - serverless

@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@darun/search-domain": "workspace:*",
-    "@typegoose/typegoose": "12.11.0",
-    "mongoose": "8.10.1"
+    "@typegoose/typegoose": "13.1.0",
+    "mongoose": "9.2.1"
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
-    "@darun/utils-tsconfig": "workspace:*"
+    "@darun/utils-tsconfig": "workspace:*",
+    "@darun/utils-vitest-config": "workspace:*"
   }
 }
