@@ -31,15 +31,20 @@ services:
       retries: 5
 
   firebase-auth:
-    build:
-      context: .
-      dockerfile: .local/firebase-auth/Dockerfile
+    image: andreysenov/firebase-tools:latest
     ports:
       - '9099:9099'
     volumes:
       - firebase-data:/firebase/data
+    working_dir: /firebase
+    command:
+      - /bin/sh
+      - -c
+      - |
+        printf '%s\n' '{"emulators":{"auth":{"host":"0.0.0.0","port":9099}}}' > /tmp/firebase.json
+        exec firebase emulators:start --only auth --project darun-local --config /tmp/firebase.json
     healthcheck:
-      test: ['CMD-SHELL', 'curl -fsS http://localhost:9099/ >/dev/null']
+      test: ['CMD-SHELL', 'node -e "fetch(\"http://localhost:9099/\").then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"']
       interval: 5s
       timeout: 5s
       retries: 10
