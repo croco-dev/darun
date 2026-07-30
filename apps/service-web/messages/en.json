@@ -117,10 +117,8 @@
     }
   },
   "home": {
-    "hero": {
-      "cta": {
-        "popular": "View Popular Services"
-      }
+    "recent": {
+      "title": "Recently Added"
     },
     "category": {
       "title": "Categories",
@@ -135,9 +133,6 @@
     "magazine": {
       "title": "Magazine",
       "more": "See All"
-    },
-    "recent": {
-      "title": "Recently Added"
     }
   },
   "Ranking": {

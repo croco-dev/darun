@@ -117,10 +117,8 @@
     }
   },
   "home": {
-    "hero": {
-      "cta": {
-        "popular": "인기 서비스 보기"
-      }
+    "recent": {
+      "title": "최근 등록 서비스"
     },
     "category": {
       "title": "카테고리",
@@ -135,9 +133,6 @@
     "magazine": {
       "title": "매거진",
       "more": "더 보기"
-    },
-    "recent": {
-      "title": "최근 등록 서비스"
     }
   },
   "Ranking": {
