@@ -118,8 +118,8 @@ const config: Config = {
         pill: '9999px',
       },
       boxShadow: {
-        card: '0 12px 28px -24px rgba(15,23,42,0.18)',
-        'card-hover': '0 22px 40px -26px rgba(53,63,174,0.28)',
+        card: '0 2px 8px -2px rgba(15,23,42,0.08)',
+        'card-hover': '0 8px 20px -8px rgba(53,63,174,0.16)',
         button: '0px 2px 8px 0px rgba(0,0,0,0.08)',
         hero: '0 24px 60px -24px rgba(53,63,174,0.28)',
       },
