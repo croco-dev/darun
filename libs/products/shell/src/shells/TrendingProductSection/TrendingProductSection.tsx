@@ -48,6 +48,8 @@ type TrendingProductsViewProps = {
   title: string;
   moreLabel: string;
   emptyLabel: string;
+  rankingMoreHref: string;
+  locale: string;
 };
 
 function useTrendingProducts(): TrendingProductsViewProps {
@@ -64,19 +66,28 @@ function useTrendingProducts(): TrendingProductsViewProps {
     title: t('trending.title'),
     moreLabel: t('trending.more'),
     emptyLabel: t('trending.empty'),
+    rankingMoreHref: `/${locale}/ranking`,
+    locale,
   };
 }
 
-const TrendingProductsView = ({ products, title, moreLabel, emptyLabel }: TrendingProductsViewProps) => {
+const TrendingProductsView = ({
+  products,
+  title,
+  moreLabel,
+  emptyLabel,
+  rankingMoreHref,
+  locale,
+}: TrendingProductsViewProps) => {
   return (
-    <SectionWrapper background="white" spacing="md" className="home-motion">
+    <SectionWrapper background="subtle" spacing="md">
       <div className="flex flex-col gap-5 md:gap-6">
         <SectionHeader
           title={title}
           moreLink={
             <Link
-              href="/ranking"
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 transition-colors duration-200 ease-out hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transition-none"
+              href={rankingMoreHref}
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 transition-colors duration-200 ease-out hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transition-none"
             >
               {moreLabel}
             </Link>
@@ -93,7 +104,7 @@ const TrendingProductsView = ({ products, title, moreLabel, emptyLabel }: Trendi
                 key={product.id}
                 product={product}
                 rank={index + 1}
-                href={`/products/${product.slug}?from=trending`}
+                href={`/${locale}/products/${product.slug}?from=trending`}
                 source="trending"
                 onClick={() =>
                   track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {

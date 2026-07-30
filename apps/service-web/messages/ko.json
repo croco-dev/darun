@@ -76,6 +76,9 @@
     },
     "productItem": {
       "logoAlt": "{name} 서비스 로고"
+    },
+    "related": {
+      "title": "함께 비교되는 서비스"
     }
   },
   "Alternative": {
@@ -115,12 +118,8 @@
   },
   "home": {
     "hero": {
-      "title": "최고의 서비스를 찾아보세요",
-      "subtitle": "수천 개의 서비스를 비교하고 리뷰를 확인하세요",
-      "searchPlaceholder": "서비스명을 입력하세요",
       "cta": {
-        "popular": "인기 서비스 보기",
-        "categories": "카테고리 둘러보기"
+        "popular": "인기 서비스 보기"
       }
     },
     "category": {

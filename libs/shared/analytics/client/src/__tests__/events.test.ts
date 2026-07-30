@@ -20,6 +20,7 @@ describe('normalizeProductAttributionSource', () => {
     expect(normalizeProductAttributionSource('related')).toBe('related');
     expect(normalizeProductAttributionSource('category')).toBe('category');
     expect(normalizeProductAttributionSource('empty-stripe')).toBe('empty-stripe');
+    expect(normalizeProductAttributionSource('recent')).toBe('recent');
   });
 
   it('should return "direct" for null, undefined, or empty string', () => {

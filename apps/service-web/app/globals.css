@@ -27,18 +27,6 @@
     }
   }
 
-  :root {
-    --home-gradient-hero: linear-gradient(
-      135deg,
-      #f7f9ff 0%,
-      #eef2ff 48%,
-      #e3e9f3 100%
-    );
-    /* @deprecated — use shadow-hero tailwind token instead */
-    --home-shadow-card: 0 24px 60px -24px rgba(53, 63, 174, 0.28);
-    --home-bg-section-alt: #f6f8fc;
-  }
-
   * {
     margin: 0;
     padding: 0;

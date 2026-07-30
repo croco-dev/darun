@@ -1,5 +1,4 @@
 import { gql } from '@apollo/client';
-import { HomeCategoryBar } from '@darun/pages-shell/src/components/HomeCategoryBar';
 import {
   CategoryNavigationSection,
   MainHeroBanner,
@@ -9,6 +8,7 @@ import {
 import { CategoryNavigationSkeleton } from '@darun/products-shell/src/shells/CategoryNavigationSection/CategoryNavigationSkeleton';
 import { RecentProductSkeleton } from '@darun/products-shell/src/shells/RecentProductSection/RecentProductSkeleton';
 import { TrendingProductSkeleton } from '@darun/products-shell/src/shells/TrendingProductSection/TrendingProductSkeleton';
+import { Layout } from '@darun/ui-layout';
 import { Suspense } from 'react';
 import { getClient } from '../getServerClient';
 
@@ -34,22 +34,19 @@ export default async function HomePage() {
   const productsCount = data.productsCount;
 
   return (
-    <main>
-      <div data-testid="home-hero">
+    <Layout>
+      <main data-testid="home-page" className="flex flex-col">
         <MainHeroBanner productsCount={productsCount} />
-      </div>
-      <Suspense fallback={<CategoryNavigationSkeleton />}>
-        <CategoryNavigationSection />
-      </Suspense>
-      <Suspense fallback={null}>
-        <HomeCategoryBar />
-      </Suspense>
-      <Suspense fallback={<TrendingProductSkeleton />}>
-        <TrendingProductSection />
-      </Suspense>
-      <Suspense fallback={<RecentProductSkeleton />}>
-        <RecentProductSection />
-      </Suspense>
-    </main>
+        <Suspense fallback={<CategoryNavigationSkeleton />}>
+          <CategoryNavigationSection />
+        </Suspense>
+        <Suspense fallback={<TrendingProductSkeleton />}>
+          <TrendingProductSection />
+        </Suspense>
+        <Suspense fallback={<RecentProductSkeleton />}>
+          <RecentProductSection />
+        </Suspense>
+      </main>
+    </Layout>
   );
 }

@@ -24,7 +24,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
 
   if (articles.length === 0) {
     return (
-      <SectionWrapper background="subtle" spacing="md" className="home-motion">
+      <SectionWrapper background="subtle" spacing="md">
         <div className="flex w-full flex-col gap-6">
           <SectionHeader title={t('home.magazine.title')} />
           <div data-testid="magazine-empty" className="py-8 text-center">
@@ -32,7 +32,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
             <p className="mt-1 text-sm text-dark-500">{t('magazine.empty.description')}</p>
             <Link
               href="/ranking"
-              className="mt-4 inline-flex items-center justify-center rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--home-bg-section-alt)]"
+              className="mt-4 inline-flex items-center justify-center rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-100"
             >
               {t('magazine.empty.cta')}
             </Link>
@@ -43,14 +43,14 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
   }
 
   return (
-    <SectionWrapper background="subtle" spacing="md" className="home-motion">
+    <SectionWrapper background="subtle" spacing="md">
       <div className="flex w-full flex-col gap-6">
         <SectionHeader
           title={t('home.magazine.title')}
           moreLink={
             <Link
               href="/magazines"
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 transition-colors duration-200 ease-out hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--home-bg-section-alt)] motion-reduce:transition-none"
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 transition-colors duration-200 ease-out hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-100 motion-reduce:transition-none"
             >
               {t('home.magazine.more')}
             </Link>

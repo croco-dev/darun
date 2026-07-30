@@ -13,7 +13,7 @@ export type RecentProductsOnRecentProductListQuery = { __typename?: 'Query', rec
 
 export const RecentProductsOnRecentProductListDocument = gql`
     query RecentProductsOnRecentProductList($locale: String!) {
-  recentProducts(first: 24, locale: $locale) {
+  recentProducts(first: 8, locale: $locale) {
     id
     name
     slug

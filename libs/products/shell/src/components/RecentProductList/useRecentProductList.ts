@@ -2,9 +2,10 @@ import { gql } from '@apollo/client';
 import { useLocale } from 'next-intl';
 import { useRecentProductsOnRecentProductListSuspenseQuery } from './__generated__/useRecentProductList';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query RecentProductsOnRecentProductList($locale: String!) {
-    recentProducts(first: 24, locale: $locale) {
+    recentProducts(first: 8, locale: $locale) {
       id
       name
       slug
@@ -27,5 +28,6 @@ export function useRecentProductList() {
   });
   return {
     products: data?.recentProducts ?? [],
+    locale,
   };
 }

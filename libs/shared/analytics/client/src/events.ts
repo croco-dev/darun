@@ -10,7 +10,7 @@ export const AnalyticsEvents = {
 
 export type ProductDetailViewedPayload = {
   productSlug: string;
-  source: 'trending' | 'search' | 'related' | 'category' | 'empty-stripe';
+  source: 'trending' | 'search' | 'related' | 'category' | 'empty-stripe' | 'recent';
 };
 
 export type SearchPerformedPayload = {
@@ -38,7 +38,7 @@ export type RankedProductClickedPayload = {
   source: 'ranking' | 'trending' | 'search-empty-trending';
 };
 
-export type ProductDiscoverySource = 'trending' | 'search' | 'related' | 'category' | 'empty-stripe';
+export type ProductDiscoverySource = 'trending' | 'search' | 'related' | 'category' | 'empty-stripe' | 'recent';
 
 export type ProductAttributionSource = ProductDiscoverySource | 'direct';
 
@@ -48,7 +48,8 @@ export function normalizeProductAttributionSource(rawFrom: string | null | undef
     rawFrom === 'search' ||
     rawFrom === 'related' ||
     rawFrom === 'category' ||
-    rawFrom === 'empty-stripe'
+    rawFrom === 'empty-stripe' ||
+    rawFrom === 'recent'
   ) {
     return rawFrom;
   }

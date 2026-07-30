@@ -1,4 +1,3 @@
-export { HomePage } from './HomePage';
 export { MagazineContentPage } from './MagazineContentPage';
 export { ProductAlternativePage } from './ProductAlternativePage';
 export { ProductDetailPage } from './ProductDetailPage';

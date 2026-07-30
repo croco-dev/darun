@@ -19,7 +19,7 @@ type ProductCardProps = {
   product: ProductFragment;
   rank?: number;
   href: string;
-  source: 'trending' | 'search-empty' | 'related';
+  source: 'trending' | 'search-empty' | 'related' | 'recent';
   layoutId?: string;
   onClick?: () => void;
 };
@@ -41,7 +41,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
           </span>
         )}
         <div
-          className="pt-10 transition-transform duration-200 ease-out group-hover:translate-y-0.5 group-focus-visible:translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none [&>div>div:last-child>div:last-child]:transition-transform [&>div>div:last-child>div:last-child]:duration-200 [&>div>div:last-child>div:last-child]:ease-out group-hover:[&>div>div:last-child>div:last-child]:translate-x-0.5 group-focus-visible:[&>div>div:last-child>div:last-child]:translate-x-0.5 motion-reduce:[&>div>div:last-child>div:last-child]:transform-none motion-reduce:[&>div>div:last-child>div:last-child]:transition-none md:pt-12"
+          className="pt-10 md:pt-12"
           style={{
             viewTransitionName: layoutId ? `product-${layoutId}` : `product-${product.slug}`,
           }}

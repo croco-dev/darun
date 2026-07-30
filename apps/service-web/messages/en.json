@@ -76,6 +76,9 @@
     },
     "productItem": {
       "logoAlt": "{name} service logo"
+    },
+    "related": {
+      "title": "Compare With"
     }
   },
   "Alternative": {
@@ -115,12 +118,8 @@
   },
   "home": {
     "hero": {
-      "title": "Discover the Best Services",
-      "subtitle": "Compare thousands of services and read reviews",
-      "searchPlaceholder": "Search for a service",
       "cta": {
-        "popular": "View Popular Services",
-        "categories": "Browse Categories"
+        "popular": "View Popular Services"
       }
     },
     "category": {

@@ -45,7 +45,7 @@ type QueryResult = {
 
 export const RelatedProductsSection = ({ slug }: { slug: string }) => {
   const locale = useLocale();
-  const t = useTranslations('product');
+  const t = useTranslations('ProductDetail');
   const { data } = useSuspenseQuery<QueryResult>(RELATED_PRODUCTS_QUERY, {
     variables: { slug, locale },
   });
