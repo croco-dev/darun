@@ -17,6 +17,7 @@ type ProductItemProps = {
   isAlignCenter?: boolean;
   nameAs?: 'h3' | 'h2' | 'h1';
   isSummaryNoWrap?: boolean;
+  isStacked?: boolean;
 };
 
 const logoSizes = {
@@ -41,13 +42,20 @@ export const ProductItem = ({
   isAlignCenter,
   nameAs = 'h3',
   isSummaryNoWrap = false,
+  isStacked = false,
 }: ProductItemProps) => {
   const t = useTranslations('ProductDetail');
   const Component = as;
   const NameTag = nameAs;
 
   return (
-    <Component className={`flex w-full gap-3 overflow-visible ${isAlignCenter ? 'items-center' : 'items-start'}`}>
+    <Component
+      className={
+        isStacked
+          ? 'flex w-full flex-col gap-3 overflow-visible'
+          : `flex w-full gap-3 overflow-visible ${isAlignCenter ? 'items-center' : 'items-start'}`
+      }
+    >
       <Image
         src={logoUrl ?? '/images/default-product-icon.svg'}
         unoptimized={!logoUrl}
@@ -58,9 +66,15 @@ export const ProductItem = ({
       />
       <div className="flex min-w-0 flex-col gap-1 overflow-hidden">
         <div className="flex flex-col gap-1">
-          <NameTag className="m-0 text-lg font-bold tracking-tight text-dark-900 md:text-xl">{name}</NameTag>
+          <NameTag
+            className={`m-0 text-lg font-bold tracking-tight text-dark-900 md:text-xl ${isStacked ? 'line-clamp-2' : ''}`}
+          >
+            {name}
+          </NameTag>
           {summary &&
-            (isSummaryNoWrap ? (
+            (isStacked ? (
+              <p className="line-clamp-2 text-xs leading-[1.5] text-dark-500 md:text-sm">{summary}</p>
+            ) : isSummaryNoWrap ? (
               <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-[1.5] text-dark-500 md:text-sm">
                 {summary}
               </p>
@@ -69,7 +83,7 @@ export const ProductItem = ({
             ))}
         </div>
         {(tags || specialTags) && (
-          <div className="mr-3 flex items-center gap-1 overflow-x-auto">
+          <div className={`flex items-center gap-1 overflow-x-auto ${isStacked ? '' : 'mr-3'}`}>
             {tags &&
               (maxTagItems && tags.length > maxTagItems ? (
                 <div className="flex items-center gap-1">

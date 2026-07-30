@@ -34,15 +34,17 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
       {...(layoutId ? { 'data-layout-id': layoutId } : {})}
       {...{ 'data-source': source }}
     >
-      <div className="relative flex h-full flex-col border border-surface-300 bg-white p-5 transition-colors duration-200 ease-out group-hover:border-brand-400 group-focus-visible:border-brand-400 group-focus-visible:ring-2 group-focus-visible:ring-brand-500/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white motion-reduce:transition-none">
+      <div className="flex h-full flex-col gap-4 rounded-card border border-surface-300 bg-white p-5 shadow-card transition-all duration-200 ease-out group-hover:-translate-y-0.5 group-hover:border-brand-300 group-hover:shadow-card-hover group-focus-visible:-translate-y-0.5 group-focus-visible:border-brand-300 group-focus-visible:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-brand-500/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none">
         {rank !== undefined && (
-          <span
-            aria-label={`rank ${rank}`}
-            className="absolute right-4 top-3 select-none font-bold leading-none tracking-tightest text-surface-300 transition-colors duration-200 ease-out group-hover:text-brand-300 group-focus-visible:text-brand-300 motion-reduce:transition-none"
-            style={{ fontSize: '2.25rem' }}
-          >
-            {rank}
-          </span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs font-bold leading-none tabular-nums text-dark-500 transition-colors duration-200 ease-out group-hover:text-brand-700 group-focus-visible:text-brand-700 motion-reduce:transition-none">
+              {rank}
+            </span>
+            <span
+              aria-hidden="true"
+              className="h-px flex-1 bg-surface-300 transition-colors duration-200 ease-out group-hover:bg-brand-300 group-focus-visible:bg-brand-300 motion-reduce:transition-none"
+            />
+          </div>
         )}
         <div
           style={{
@@ -56,7 +58,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
             summary={product.summary ?? undefined}
             tags={product.tags.map(tag => tag.name)}
             maxTagItems={1}
-            isSummaryNoWrap
+            isStacked
           />
         </div>
       </div>
