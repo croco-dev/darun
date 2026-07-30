@@ -1,9 +1,7 @@
-import { fileURLToPath } from 'node:url';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {},
-  transpilePackages: ['@darun/ui', '@darun/ui-layout'],
+  transpilePackages: ['@darun/ui', '@darun/ui-layout', '@darun/utils-structure-react'],
   experimental: {
     ...(process.env.ENABLE_EXPERIMENTAL_REACT_COMPILER === 'true'
       ? {
@@ -33,12 +31,6 @@ const nextConfig = {
     },
   ],
   webpack: (config, { isServer }) => {
-    config.resolve ??= {};
-    config.resolve.alias ??= {};
-    config.resolve.alias['@croco/utils-structure-react'] = fileURLToPath(
-      new URL('../../libs/shared/utils-structure-react/src/index.ts', import.meta.url),
-    );
-
     if (isServer) {
       config.externals = [
         ...(config.externals || []),

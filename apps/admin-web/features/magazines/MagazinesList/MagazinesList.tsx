@@ -1,8 +1,8 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { ArticleCard } from '@darun/magazines-feature';
 import { AdminPanel, AdminEmptyState } from '@darun/ui-admin';
+import { bind } from '@darun/utils-structure-react';
 import { useMagazinesList } from './useMagazinesList';
 
 export const MagazinesList = bind(useMagazinesList, ({ magazines }) => {

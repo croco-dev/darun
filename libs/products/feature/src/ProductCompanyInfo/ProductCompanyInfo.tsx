@@ -1,7 +1,7 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { AdminEmptyState } from '@darun/ui-admin';
+import { bind } from '@darun/utils-structure-react';
 import { useProductCompanyInfo } from './useProductCompanyInfo';
 
 function formatStartAt(startAt: unknown) {

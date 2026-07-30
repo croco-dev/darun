@@ -1,8 +1,8 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
 import { AdminField, AdminInput, AdminTextarea, AdminActions } from '@darun/ui-admin';
+import { bind } from '@darun/utils-structure-react';
 import { useEditProductInfo } from './useEditProductInfo';
 
 export const EditProductInfo = bind(useEditProductInfo, ({ form, submit }) => (

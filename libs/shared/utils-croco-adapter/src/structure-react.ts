@@ -1,6 +1,6 @@
-import { bind as crocoBind } from '@croco/utils-structure-react';
+import { bind as darunBind } from '@darun/utils-structure-react';
 
-export const bind = crocoBind;
+export const bind = darunBind;
 
 export type BindOptions = {
   displayName?: string;

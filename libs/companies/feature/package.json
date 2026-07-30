@@ -23,10 +23,10 @@
   },
   "dependencies": {
     "@apollo/client": "4.2.0",
-    "@croco/utils-structure-react": "0.0.1",
     "@darun/companies-datasource": "workspace:*",
     "@darun/companies-domain": "workspace:*",
     "@darun/utils-apollo-server": "workspace:*",
+    "@darun/utils-structure-react": "workspace:*",
     "@mantine/core": "^8.3.16",
     "@mantine/form": "^8.3.16",
     "@mantine/hooks": "^8.3.16",

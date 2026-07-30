@@ -16,7 +16,6 @@
   "dependencies": {
     "@apollo/client": "4.2.0",
     "@croco/utils-next-font-pretendard": "0.0.2",
-    "@croco/utils-structure-react": "0.0.1",
     "@darun/magazines-shell": "workspace:*",
     "@darun/opengraph-shell": "workspace:*",
     "@darun/pages-shell": "workspace:*",
@@ -29,6 +28,7 @@
     "@darun/utils-apollo-client/client": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
+    "@darun/utils-structure-react": "workspace:*",
     "@sentry/nextjs": "10.38.0",
     "date-fns": "3.6.0",
     "framer-motion": "12.38.0",

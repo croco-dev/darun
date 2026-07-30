@@ -1,7 +1,7 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { Button, useToast } from '@darun/ui';
+import { bind } from '@darun/utils-structure-react';
 import { Heart } from 'lucide-react';
 import { useEffect } from 'react';
 import { CompareButton } from '../CompareButton';

@@ -11,7 +11,7 @@
   },
   "peerDependencies": {
     "@apollo/client": "4.2.0",
-    "@croco/utils-structure-react": "0.0.1",
+    "@darun/utils-structure-react": "workspace:*",
     "next-client-cookies": "2.1.0"
   },
   "devDependencies": {

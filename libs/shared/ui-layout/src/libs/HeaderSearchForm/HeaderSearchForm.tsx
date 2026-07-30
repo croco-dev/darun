@@ -1,6 +1,6 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
+import { bind } from '@darun/utils-structure-react';
 import { Search } from 'lucide-react';
 import { ChangeEvent } from 'react';
 import { useHeaderSearchForm } from './useHeaderSearchForm';

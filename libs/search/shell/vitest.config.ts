@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
 import { fileURLToPath } from 'node:url';
+import path from 'path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -16,7 +16,7 @@ export default defineConfig({
       deps: {
         inline: [
           '@darun/products-shell',
-          '@croco/utils-structure-react',
+          '@darun/utils-structure-react',
           '@darun/ui',
           '@darun/utils-router',
           'next-intl',

@@ -1,8 +1,8 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
 import { AdminPanel, AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
+import { bind } from '@darun/utils-structure-react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React from 'react';
 import { useAllCompanyListTable } from './useAllCompanyListTable';

@@ -1,5 +1,5 @@
-import { bind } from '@croco/utils-structure-react';
 import { AdminField, AdminInput } from '@darun/ui-admin';
+import { bind } from '@darun/utils-structure-react';
 import { useSearchProductField } from './useSearchProductField';
 
 export const SearchProductField = bind(useSearchProductField, ({ products, searchProduct, selectProduct }) => (

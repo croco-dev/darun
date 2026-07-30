@@ -1,6 +1,6 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
+import { bind } from '@darun/utils-structure-react';
 import { LogOut } from 'lucide-react';
 import { useLogoutButton } from './useLogoutButton';
 

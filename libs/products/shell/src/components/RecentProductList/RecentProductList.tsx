@@ -1,7 +1,7 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { Link } from '@darun/utils-router';
+import { bind } from '@darun/utils-structure-react';
 import { ProductItem } from '../../uis';
 import { useRecentProductList } from './useRecentProductList';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
+import { bind } from '@darun/utils-structure-react';
 import { useNewProductLinkForm } from './useNewProductLinkForm';
 
 export const NewProductLinkForm = bind(useNewProductLinkForm, ({ form, submit, children }) => (

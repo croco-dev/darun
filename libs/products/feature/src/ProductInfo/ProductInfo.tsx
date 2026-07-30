@@ -1,6 +1,6 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
+import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
 import { useProductInfo } from './useProductInfo';
 

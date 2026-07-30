@@ -1,8 +1,8 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
 import { AdminActions, AdminField, AdminInput, AdminCheckbox } from '@darun/ui-admin';
+import { bind } from '@darun/utils-structure-react';
 import { useNewCompanyForm } from './useNewCompanyForm';
 
 export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) => (

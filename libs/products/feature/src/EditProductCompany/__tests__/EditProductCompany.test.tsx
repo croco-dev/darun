@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EditProductCompany } from '../EditProductCompany';
 import { useEditProductCompany } from '../useEditProductCompany';
 
-vi.mock('@croco/utils-structure-react', () => ({
+vi.mock('@darun/utils-structure-react', () => ({
   bind: vi.fn(
     (
       useHook: (props: Record<string, unknown>) => Record<string, unknown>,

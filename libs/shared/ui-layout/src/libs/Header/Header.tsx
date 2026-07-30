@@ -1,8 +1,8 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { Button, ContentArea, Logo } from '@darun/ui';
 import { Link } from '@darun/utils-router';
+import { bind } from '@darun/utils-structure-react';
 import { Suspense } from 'react';
 import { HeaderLoginButton } from '../HeaderLoginButton';
 import { HeaderSearchForm } from '../HeaderSearchForm';

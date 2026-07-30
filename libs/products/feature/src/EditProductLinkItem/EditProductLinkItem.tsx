@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
-import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
 import { AdminField, AdminInput, AdminSelect, AdminActions } from '@darun/ui-admin';
+import { bind } from '@darun/utils-structure-react';
 import { useEditProductLinkItem } from './useEditProductLinkItem';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions

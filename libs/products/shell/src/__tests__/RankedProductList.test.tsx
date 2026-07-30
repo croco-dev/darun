@@ -8,7 +8,7 @@ import { useRankedProductList } from '../components/RankedProductList/useRankedP
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-vi.mock('@croco/utils-structure-react', () => ({
+vi.mock('@darun/utils-structure-react', () => ({
   bind: (
     hook: (props: Record<string, unknown>) => Record<string, unknown>,
     component: (props: Record<string, unknown>) => React.ReactNode

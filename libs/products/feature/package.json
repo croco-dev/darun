@@ -26,6 +26,7 @@
     "@darun/companies-feature": "workspace:*",
     "@darun/products-ui": "workspace:*",
     "@darun/translation-service": "workspace:*",
+    "@darun/utils-structure-react": "workspace:*",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@mantine/core": "^7.16.5",

@@ -56,6 +56,7 @@ export { CreateProductFeature } from './usecases/CreateProductFeature';
 export { DeleteProductScreenshot } from './usecases/DeleteProductScreenshot';
 export { EditProduct } from './usecases/EditProduct';
 export { GenerateProductDescription } from './usecases/GenerateProductDescription';
+export { GetCategories } from './usecases/GetCategories';
 export { GetAllProducts } from './usecases/GetAllProducts';
 export { GetProduct } from './usecases/GetProduct';
 export { GetProductFeature } from './usecases/GetProductFeature';

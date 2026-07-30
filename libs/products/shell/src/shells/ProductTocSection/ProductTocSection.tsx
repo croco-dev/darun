@@ -1,7 +1,7 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { ContentArea } from '@darun/ui';
+import { bind } from '@darun/utils-structure-react';
 import { ProductTableOfContent } from '../../components';
 import { useProductTocSection } from './useProductTocSection';
 

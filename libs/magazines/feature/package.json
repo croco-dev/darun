@@ -23,11 +23,11 @@
   },
   "dependencies": {
     "@apollo/client": "4.2.0",
-    "@croco/utils-structure-react": "0.0.1",
     "@darun/magazines-datasource": "workspace:*",
     "@darun/magazines-domain": "workspace:*",
     "@darun/provider-graphql": "workspace:*",
     "@darun/utils-image-upload": "workspace:*",
+    "@darun/utils-structure-react": "workspace:*",
     "@mantine/dropzone": "^8.3.16",
     "@mantine/form": "^8.3.16",
     "@mantine/notifications": "^8.3.16"

@@ -2,10 +2,10 @@
 
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
-import { bind } from '@croco/utils-structure-react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
+import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ProductCard } from '../../components/ProductCard';
 

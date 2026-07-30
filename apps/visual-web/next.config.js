@@ -2,7 +2,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compiler: {},
-  transpilePackages: ['@darun/ui', '@darun/ui-layout'],
+  transpilePackages: ['@darun/ui', '@darun/ui-layout', '@darun/utils-structure-react'],
   images: {
     remotePatterns: [
       {
@@ -26,13 +26,6 @@ const nextConfig = {
   },
   poweredByHeader: false,
   webpack: (config, { isServer }) => {
-    config.resolve ??= {};
-    config.resolve.alias ??= {};
-    config.resolve.alias['@croco/utils-structure-react'] = require('path').resolve(
-      __dirname,
-      '../../libs/shared/utils-structure-react/src/index.ts'
-    );
-
     if (isServer) {
       config.externals = [...(config.externals || []), 'vitest', 'jsdom', '@vitest/runner', '@vitest/utils'];
     }

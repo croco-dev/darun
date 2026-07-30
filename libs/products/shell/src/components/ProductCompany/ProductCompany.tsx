@@ -1,6 +1,6 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
+import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
 import { useProductCompany } from './useProductCompany';
 

@@ -113,9 +113,6 @@ importers:
       '@croco/utils-next-font-pretendard':
         specifier: 0.0.2
         version: 0.0.2(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))
-      '@croco/utils-structure-react':
-        specifier: 0.0.1
-        version: 0.0.1
       '@darun/companies-feature':
         specifier: workspace:*
         version: link:../../libs/companies/feature
@@ -149,6 +146,9 @@ importers:
       '@darun/utils-router':
         specifier: workspace:*
         version: link:../../libs/shared/utils-router
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-structure-react
       '@emoji-mart/data':
         specifier: ^1.2.1
         version: 1.2.1
@@ -385,9 +385,6 @@ importers:
       '@croco/utils-next-font-pretendard':
         specifier: 0.0.2
         version: 0.0.2(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))
-      '@croco/utils-structure-react':
-        specifier: 0.0.1
-        version: 0.0.1
       '@darun/magazines-shell':
         specifier: workspace:*
         version: link:../../libs/magazines/shell
@@ -424,6 +421,9 @@ importers:
       '@darun/utils-auth-service-firebase':
         specifier: workspace:*
         version: link:../../libs/shared/utils-auth-service/firebase
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-structure-react
       '@sentry/nextjs':
         specifier: 10.38.0
         version: 10.38.0(@opentelemetry/context-async-hooks@2.5.1(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.5.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))(react@19.2.6)(webpack@5.98.0)
@@ -488,9 +488,6 @@ importers:
       '@croco/utils-next-font-pretendard':
         specifier: 0.0.2
         version: 0.0.2(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))
-      '@croco/utils-structure-react':
-        specifier: 0.0.1
-        version: 0.0.1
       '@darun/magazines-shell':
         specifier: workspace:*
         version: link:../../libs/magazines/shell
@@ -527,6 +524,9 @@ importers:
       '@darun/utils-auth-service-firebase':
         specifier: workspace:*
         version: link:../../libs/shared/utils-auth-service/firebase
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-structure-react
       date-fns:
         specifier: 3.6.0
         version: 3.6.0
@@ -714,9 +714,6 @@ importers:
       '@apollo/client':
         specifier: 4.2.0
         version: 4.2.0(graphql-ws@6.0.4(graphql@16.12.0)(ws@8.18.0))(graphql@16.12.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(rxjs@7.8.1)
-      '@croco/utils-structure-react':
-        specifier: 0.0.1
-        version: 0.0.1
       '@darun/companies-datasource':
         specifier: workspace:*
         version: link:../datasource
@@ -726,6 +723,9 @@ importers:
       '@darun/utils-apollo-server':
         specifier: workspace:*
         version: link:../../shared/utils-apollo-server
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../../shared/utils-structure-react
       '@mantine/core':
         specifier: ^8.3.16
         version: 8.3.16(@mantine/hooks@8.3.16(react@19.2.6))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -941,9 +941,6 @@ importers:
       '@apollo/client':
         specifier: 4.2.0
         version: 4.2.0(graphql-ws@6.0.4(graphql@16.12.0)(ws@8.18.0))(graphql@16.12.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(rxjs@7.8.1)
-      '@croco/utils-structure-react':
-        specifier: 0.0.1
-        version: 0.0.1
       '@darun/magazines-datasource':
         specifier: workspace:*
         version: link:../datasource
@@ -956,6 +953,9 @@ importers:
       '@darun/utils-image-upload':
         specifier: workspace:*
         version: link:../../shared/utils-image-upload
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../../shared/utils-structure-react
       '@mantine/dropzone':
         specifier: ^8.3.16
         version: 8.3.16(@mantine/core@8.3.16(@mantine/hooks@8.3.16(react@19.2.6))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@mantine/hooks@8.3.16(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1185,6 +1185,9 @@ importers:
       '@darun/translation-service':
         specifier: workspace:*
         version: link:../../translation/service
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../../shared/utils-structure-react
       '@emoji-mart/data':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1244,9 +1247,6 @@ importers:
       '@apollo/client':
         specifier: 4.2.0
         version: 4.2.0(graphql-ws@6.0.4(graphql@16.12.0)(ws@8.18.0))(graphql@16.12.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(rxjs@7.8.1)
-      '@croco/utils-structure-react':
-        specifier: 0.0.1
-        version: 0.0.1
       '@darun/products-feature':
         specifier: workspace:*
         version: link:../feature
@@ -1259,6 +1259,9 @@ importers:
       '@darun/utils-router':
         specifier: workspace:*
         version: link:../../shared/utils-router
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../../shared/utils-structure-react
       '@kuma-ui/core':
         specifier: 1.5.7
         version: 1.5.7(@types/react@19.2.14)(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))(react@19.2.6)
@@ -1536,6 +1539,9 @@ importers:
       '@darun/utils-router':
         specifier: workspace:*
         version: link:../../shared/utils-router
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../../shared/utils-structure-react
       next:
         specifier: ^16.2.6
         version: 16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3)
@@ -1778,9 +1784,6 @@ importers:
 
   libs/shared/ui-layout:
     dependencies:
-      '@croco/utils-structure-react':
-        specifier: 0.0.1
-        version: 0.0.1
       '@darun/provider-auth/client':
         specifier: workspace:*
         version: link:../provider-auth/client
@@ -1790,18 +1793,24 @@ importers:
       '@darun/utils-router':
         specifier: workspace:*
         version: link:../utils-router
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../utils-structure-react
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@19.2.6)
       next:
         specifier: ^16.2.6
-        version: 16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.6))(react@19.2.6)(sass@1.97.3)
+        version: 16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3)
       next-intl:
         specifier: '>=4'
-        version: 4.8.2(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.6))(react@19.2.6)(sass@1.97.3))(react@19.2.6)(typescript@6.0.3)
+        version: 4.8.2(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))(react@19.2.6)(typescript@6.0.3)
+      react:
+        specifier: ^19.2.6
+        version: 19.2.6
       react-dom:
-        specifier: '>=19.0.0'
-        version: 19.2.4(react@19.2.6)
+        specifier: ^19.2.6
+        version: 19.2.6(react@19.2.6)
     devDependencies:
       '@darun/eslint-config':
         specifier: workspace:*
@@ -1821,9 +1830,9 @@ importers:
       '@apollo/client':
         specifier: 4.2.0
         version: 4.2.0(graphql-ws@6.0.4(graphql@16.12.0)(ws@8.18.0))(graphql@16.12.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(rxjs@7.8.1)
-      '@croco/utils-structure-react':
-        specifier: 0.0.1
-        version: 0.0.1
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../../utils-structure-react
       next-client-cookies:
         specifier: 2.1.0
         version: 2.1.0(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))(react@19.2.6)
@@ -1846,9 +1855,9 @@ importers:
       '@apollo/client':
         specifier: 4.2.0
         version: 4.2.0(graphql-ws@6.0.4(graphql@16.12.0)(ws@8.18.0))(graphql@16.12.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(rxjs@7.8.1)
-      '@croco/utils-structure-react':
-        specifier: 0.0.1
-        version: 0.0.1
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../../utils-structure-react
       next-client-cookies:
         specifier: 2.1.0
         version: 2.1.0(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))(react@19.2.6)
@@ -1942,9 +1951,9 @@ importers:
       '@croco/utils-next-font-pretendard':
         specifier: 0.0.2
         version: 0.0.2(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))
-      '@croco/utils-structure-react':
-        specifier: 0.0.1
-        version: 0.0.1
+      '@darun/utils-structure-react':
+        specifier: workspace:*
+        version: link:../utils-structure-react
       next:
         specifier: ^15.0.0 || ^16.0.0
         version: 16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3)
@@ -2992,9 +3001,6 @@ packages:
     resolution: {integrity: sha512-X+vWapgkOK3YFVCZxRg/JrZM2HH0c4zfeFoJU3ShitnrLFWILNB0rKOanpi2zb8SNfJCQh4OnXnuik0EJGvIUA==}
     peerDependencies:
       next: ^14.0.0
-
-  '@croco/utils-structure-react@0.0.1':
-    resolution: {integrity: sha512-KmlIpcvvLVplZ9bIhLCvI7kGtg4JTzOFxTUkheX8VPTlAl4+nUrdFhKeFQrT46kk1B80UNMis0SdrLfPDCAfoQ==}
 
   '@csstools/color-helpers@6.0.2':
     resolution: {integrity: sha512-LMGQLS9EuADloEFkcTBR3BwV/CGHV7zyDxVRtVDTwdI2Ca4it0CCVTT9wCkxSgokjE5Ho41hEPgb8OEUwoXr6Q==}
@@ -9913,11 +9919,6 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
 
-  react-dom@19.2.4:
-    resolution: {integrity: sha512-AXJdLo8kgMbimY95O2aKQqsz2iWi9jMgKJhRBAxECE4IFxfcazB2LmzloIoibJI3C12IlY20+KFaLv+71bUJeQ==}
-    peerDependencies:
-      react: ^19.2.4
-
   react-dom@19.2.6:
     resolution: {integrity: sha512-0prMI+hvBbPjsWnxDLxlCGyM8PN6UuWjEUCYmZhO67xIV9Xasa/r/vDnq+Xyq4Lo27g8QSbO5YzARu0D1Sps3g==}
     peerDependencies:
@@ -12482,8 +12483,6 @@ snapshots:
   '@croco/utils-next-font-pretendard@0.0.2(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))':
     dependencies:
       next: 16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3)
-
-  '@croco/utils-structure-react@0.0.1': {}
 
   '@csstools/color-helpers@6.0.2': {}
 
@@ -19587,23 +19586,6 @@ snapshots:
 
   next-intl-swc-plugin-extractor@4.8.2: {}
 
-  next-intl@4.8.2(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.6))(react@19.2.6)(sass@1.97.3))(react@19.2.6)(typescript@6.0.3):
-    dependencies:
-      '@formatjs/intl-localematcher': 0.5.10
-      '@parcel/watcher': 2.5.6
-      '@swc/core': 1.15.11
-      icu-minify: 4.8.2
-      negotiator: 1.0.0
-      next: 16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.6))(react@19.2.6)(sass@1.97.3)
-      next-intl-swc-plugin-extractor: 4.8.2
-      po-parser: 2.1.1
-      react: 19.2.6
-      use-intl: 4.8.2(react@19.2.6)
-    optionalDependencies:
-      typescript: 6.0.3
-    transitivePeerDependencies:
-      - '@swc/helpers'
-
   next-intl@4.8.2(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))(react@19.2.6)(typescript@6.0.3):
     dependencies:
       '@formatjs/intl-localematcher': 0.5.10
@@ -19620,34 +19602,6 @@ snapshots:
       typescript: 6.0.3
     transitivePeerDependencies:
       - '@swc/helpers'
-
-  next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.6))(react@19.2.6)(sass@1.97.3):
-    dependencies:
-      '@next/env': 16.2.6
-      '@swc/helpers': 0.5.15
-      baseline-browser-mapping: 2.9.19
-      caniuse-lite: 1.0.30001777
-      postcss: 8.4.31
-      react: 19.2.6
-      react-dom: 19.2.4(react@19.2.6)
-      styled-jsx: 5.1.6(@babel/core@7.29.0)(react@19.2.6)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 16.2.6
-      '@next/swc-darwin-x64': 16.2.6
-      '@next/swc-linux-arm64-gnu': 16.2.6
-      '@next/swc-linux-arm64-musl': 16.2.6
-      '@next/swc-linux-x64-gnu': 16.2.6
-      '@next/swc-linux-x64-musl': 16.2.6
-      '@next/swc-win32-arm64-msvc': 16.2.6
-      '@next/swc-win32-x64-msvc': 16.2.6
-      '@opentelemetry/api': 1.9.0
-      '@playwright/test': 1.59.1
-      babel-plugin-react-compiler: 1.0.0
-      sass: 1.97.3
-      sharp: 0.34.5
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-plugin-macros
 
   next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3):
     dependencies:
@@ -20235,11 +20189,6 @@ snapshots:
       date-fns: 4.1.0
       date-fns-jalali: 4.1.0-0
       react: 19.2.6
-
-  react-dom@19.2.4(react@19.2.6):
-    dependencies:
-      react: 19.2.6
-      scheduler: 0.27.0
 
   react-dom@19.2.6(react@19.2.6):
     dependencies:

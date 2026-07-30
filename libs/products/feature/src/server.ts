@@ -1,3 +1,4 @@
+export { CategoryQueryResolver } from './Category.query.resolver';
 export { FeatureMutationResolver } from './Feature.mutation.resolver';
 export { FeatureQueryResolver } from './Feature.query.resolver';
 export { ProductConnection } from './graphs/ProductPagination';

@@ -1,6 +1,6 @@
-import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
 import { AdminEmptyState, AdminLoadingState } from '@darun/ui-admin';
+import { bind } from '@darun/utils-structure-react';
 import { Pencil } from 'lucide-react';
 import { useProductFeatureTable } from './useProductFeatureTable';
 

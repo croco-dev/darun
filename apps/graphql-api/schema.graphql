@@ -28,6 +28,13 @@ type Author {
   name: String!
 }
 
+type Category {
+  id: ID!
+  labelEn: String!
+  labelKo: String!
+  slug: String!
+}
+
 type Company {
   address: String!
   id: ID!
@@ -254,6 +261,7 @@ type PublishProductPayload {
 type Query {
   allCompanies(page: Int!): CompanyPagination!
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
+  categories(first: Int!, locale: String! = "ko"): [Category!]!
   feature(id: ID!): Feature
   hello: String!
   magazine(id: ID!): Magazine

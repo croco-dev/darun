@@ -4,7 +4,6 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 });
 const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
-const path = require('path');
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
@@ -12,13 +11,6 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const nextConfig = {
   compiler: {},
   webpack: (config, { isServer }) => {
-    config.resolve ??= {};
-    config.resolve.alias ??= {};
-    config.resolve.alias['@croco/utils-structure-react'] = path.resolve(
-      __dirname,
-      '../../libs/shared/utils-structure-react/src/index.ts'
-    );
-
     if (isServer) {
       config.externals = [...(config.externals || []), 'vitest', 'jsdom', '@vitest/runner', '@vitest/utils'];
     }
@@ -48,7 +40,7 @@ const nextConfig = {
       : {}),
   },
   poweredByHeader: false,
-  transpilePackages: ['@darun/ui', '@darun/ui-layout'],
+  transpilePackages: ['@darun/ui', '@darun/ui-layout', '@darun/utils-structure-react'],
 
   async headers() {
     return [

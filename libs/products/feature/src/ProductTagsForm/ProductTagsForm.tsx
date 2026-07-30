@@ -1,8 +1,8 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
 import { AdminInput } from '@darun/ui-admin';
+import { bind } from '@darun/utils-structure-react';
 import { useProductTagsForm } from './useProductTagsForm';
 
 export const ProductTagsForm = bind(useProductTagsForm, ({ tags, updateTags, applyTags }) => (

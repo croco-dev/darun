@@ -13,7 +13,6 @@
   "dependencies": {
     "@apollo/client": "4.2.0",
     "@croco/utils-next-font-pretendard": "0.0.2",
-    "@croco/utils-structure-react": "0.0.1",
     "@darun/companies-feature": "workspace:*",
     "@darun/magazines-feature": "workspace:*",
     "@darun/products-feature": "workspace:*",
@@ -25,6 +24,7 @@
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@darun/utils-router": "workspace:*",
+    "@darun/utils-structure-react": "workspace:*",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@mantine/core": "^8.3.16",

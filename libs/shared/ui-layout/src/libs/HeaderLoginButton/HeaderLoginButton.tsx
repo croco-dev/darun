@@ -1,7 +1,7 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
+import { bind } from '@darun/utils-structure-react';
 import { useHeaderLoginButton } from './useHeaderLoginButton';
 
 export const HeaderLoginButton = bind(useHeaderLoginButton, ({ isLoading, isLoggedIn, login, logout }) =>

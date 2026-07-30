@@ -1,5 +1,5 @@
-import { bind } from '@croco/utils-structure-react';
 import { ContentArea } from '@darun/ui';
+import { bind } from '@darun/utils-structure-react';
 import { useFooter } from './useFooter';
 
 export const Footer = bind(useFooter, () => (

@@ -1,6 +1,6 @@
-import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
 import { AdminField, AdminInput, AdminSelect, AdminActions } from '@darun/ui-admin';
+import { bind } from '@darun/utils-structure-react';
 import { useEditAlternativeProducts } from './useEditAlternativeProducts';
 
 export const EditAlternativeProducts = bind(useEditAlternativeProducts, ({ form, submit, selectData, updateQuery }) => (

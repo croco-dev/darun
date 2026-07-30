@@ -21,7 +21,7 @@
     "@croco/framework-context": "0.0.2",
     "@croco/problems-core": "0.0.2",
     "@croco/utils-next-font-pretendard": "0.0.2",
-    "@croco/utils-structure-react": "0.0.1"
+    "@darun/utils-structure-react": "workspace:*"
   },
   "peerDependencies": {
     "next": "^15.0.0 || ^16.0.0",

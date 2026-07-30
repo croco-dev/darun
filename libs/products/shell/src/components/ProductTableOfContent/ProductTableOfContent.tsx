@@ -1,7 +1,7 @@
 'use client';
 
-import { bind } from '@croco/utils-structure-react';
 import { Button } from '@darun/ui';
+import { bind } from '@darun/utils-structure-react';
 
 import { useProductTableOfContent } from './useProductTableOfContent';
 
