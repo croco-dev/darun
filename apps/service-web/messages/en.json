@@ -42,7 +42,8 @@
     "list": {
       "empty": {
         "title": "No search results found.",
-        "description": "Try using a more specific query. e.g.) 'Toss', 'Naver', etc..."
+        "description": "Try using a more specific query. e.g.) 'Toss', 'Naver', etc...",
+        "noResults": "No search results found for '{query}'."
       },
       "feature": {
         "title": "Features"
