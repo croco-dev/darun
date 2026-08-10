@@ -178,7 +178,7 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
 
 3. **배포 실행**:
    품질 검사를 모두 통과하면 백엔드 리소스가 자동으로 배포됩니다.
-   배포 명령: `serverless deploy --stage prod`
+   배포 명령: `sst deploy --stage prod`
    이때 `RUNNING_ENV=prod` 값은 Sentry 환경 분류와 Cloudinary 업로드 폴더 규칙에 영향을 주므로 그대로 유지해야 합니다.
 
 ## 외부 정리 체크리스트 (수동 작업)
@@ -197,6 +197,8 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
   Cloudinary 미디어 라이브러리에서 dev 전용으로 사용하던 업로드 폴더를 정리합니다. 프로덕션 환경(`RUNNING_ENV=prod`)에 영향을 주지 않도록 주의합니다.
 - [ ] **개발용 시크릿(Secrets) 정리**:
   외부 서비스나 GitHub Secrets에 등록되어 있던 dev 환경용 API 키와 인증 토큰 정보를 삭제합니다.
+- [ ] **Serverless Framework 정리**:
+  GitHub Secrets의 `SERVERLESS_ACCESS_KEY`를 삭제합니다. Serverless Dashboard `croco/darun` 앱을 정리합니다. SST 마이그레이션 전환 완료 후 기존 `prod-graphql-api` CloudFormation 스택을 AWS 콘솔 또는 `serverless remove --stage prod`로 삭제하고, `darun-deploy-bucket` S3 버킷의 serverless 배포 아티팩트를 비웁니다.
 
 ## 코드 품질
 

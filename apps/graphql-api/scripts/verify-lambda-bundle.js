@@ -6,8 +6,7 @@ const os = require('os');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const outDir = path.join(root, '.serverless/local-reflect-check');
-const logPath = path.join(__dirname, '../../../.cursor/debug-b48481.log');
+const outDir = path.join(root, '.build/reflect-check');
 const plugins = require('../esbuild.plugins.js');
 
 process.env.INFRA_ENV = 'prod';
@@ -30,18 +29,6 @@ process.env.VOTE_IP_SALT = 'local-vote-salt';
 process.env.SENTRY_AUTH_TOKEN = '';
 
 const log = (message, data = {}) => {
-  fs.appendFileSync(
-    logPath,
-    `${JSON.stringify({
-      sessionId: 'b48481',
-      runId: 'local-esbuild',
-      hypothesisId: 'H-local',
-      location: 'apps/graphql-api/scripts/verify-lambda-bundle.js',
-      message,
-      data,
-      timestamp: Date.now(),
-    })}\n`
-  );
   console.log(`[verify] ${message}`, data);
 };
 

@@ -1,12 +1,12 @@
 # package directories
 node_modules
 
-# Serverless directories
-.serverless
+# Build output
+.build
 
-.esbuild
+# SST
+.sst
 
 .env.dev
 .env.prod
-# Sentry Config File
 .env.sentry-build-plugin
