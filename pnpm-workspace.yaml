@@ -77,7 +77,7 @@ catalog:
   # Serverless / Backend tools
   serverless: 4.25.0
   serverless-esbuild: 1.55.1
-  serverless-offline: 14.4.0
+  serverless-offline: 14.8.0
   serverless-prune-plugin: 2.1.0
   '@as-integrations/aws-lambda': 4.0.1
   cloudinary: 2.10.0
