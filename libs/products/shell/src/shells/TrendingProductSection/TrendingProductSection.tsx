@@ -87,14 +87,14 @@ const TrendingProductsView = ({
           moreLink={
             <Link
               href={rankingMoreHref}
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 transition-colors duration-200 ease-out hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transition-none"
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
             >
               {moreLabel}
             </Link>
           }
         />
         {products.length === 0 ? (
-          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-surface-300 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
+          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-dark-200 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
             {emptyLabel}
           </div>
         ) : (

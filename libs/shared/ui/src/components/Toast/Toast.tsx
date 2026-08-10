@@ -49,7 +49,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             data-testid={`toast-${toast.type}`}
             role={toast.type === 'error' ? 'alert' : 'status'}
             aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
-            className={`px-4 py-2 rounded-lg shadow-lg text-white ${
+            className={`px-4 py-2 rounded-lg shadow-card text-white ${
               toast.type === 'success' ? 'bg-leaf-700' : 'bg-cherry-700'
             }`}
           >

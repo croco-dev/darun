@@ -12,10 +12,10 @@ type FeatureItemProps = {
 };
 
 export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureItemProps) => (
-  <div className="rounded-card border border-dark-100 bg-white px-4 py-3 shadow-button">
+  <div className="rounded-card border border-dark-200 bg-white px-4 py-3 shadow-card transition-colors hover:border-dark-400 hover:shadow-card-hover motion-reduce:transition-none">
     <div className="flex w-full flex-col gap-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-dark-100 bg-dark-100">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-dark-200 bg-surface-100">
           <span className="text-2xl">{emoji ?? '💎'}</span>
         </div>
         <div className="flex flex-col">
@@ -33,7 +33,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
               sizes="800px"
               width={800}
               height={220}
-              className="h-[220px] w-auto rounded border border-dark-100 object-contain"
+              className="h-[220px] w-auto rounded-lg border border-dark-200 object-contain"
             />
           ))}
         </div>
