@@ -21,7 +21,7 @@
     "@apollo/client": "4.2.0",
     "@darun/provider-graphql": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
-    "@kuma-ui/core": "1.5.7",
+    "@kuma-ui/core": "1.5.9",
     "next": "^16.2.6",
     "next-intl": ">=4",
     "react": "^19.2.6",
