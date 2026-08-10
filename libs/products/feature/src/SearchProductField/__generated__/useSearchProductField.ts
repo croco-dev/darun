@@ -1,25 +1,24 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type SearchProductsOnSearchProductFieldQueryVariables = Types.Exact<{
-  query: Types.Scalars["String"]["input"];
+  query: Types.Scalars['String']['input'];
 }>;
 
-export type SearchProductsOnSearchProductFieldQuery = {
-  __typename?: "Query";
-  searchProducts: Array<{ __typename?: "Product"; id: string; name: string }>;
-};
+
+export type SearchProductsOnSearchProductFieldQuery = { __typename?: 'Query', searchProducts: Array<{ __typename?: 'Product', id: string, name: string }> };
+
 
 export const SearchProductsOnSearchProductFieldDocument = gql`
-  query SearchProductsOnSearchProductField($query: String!) {
-    searchProducts(query: $query) {
-      id
-      name
-    }
+    query SearchProductsOnSearchProductField($query: String!) {
+  searchProducts(query: $query) {
+    id
+    name
   }
-`;
+}
+    `;
 
 /**
  * __useSearchProductsOnSearchProductFieldQuery__
@@ -37,55 +36,19 @@ export const SearchProductsOnSearchProductFieldDocument = gql`
  *   },
  * });
  */
-export function useSearchProductsOnSearchProductFieldQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    SearchProductsOnSearchProductFieldQuery,
-    SearchProductsOnSearchProductFieldQueryVariables
-  > &
-    (
-      | {
-          variables: SearchProductsOnSearchProductFieldQueryVariables;
-          skip?: boolean;
+export function useSearchProductsOnSearchProductFieldQuery(baseOptions: Apollo.QueryHookOptions<SearchProductsOnSearchProductFieldQuery, SearchProductsOnSearchProductFieldQueryVariables> & ({ variables: SearchProductsOnSearchProductFieldQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<SearchProductsOnSearchProductFieldQuery, SearchProductsOnSearchProductFieldQueryVariables>(SearchProductsOnSearchProductFieldDocument, options);
+      }
+export function useSearchProductsOnSearchProductFieldLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<SearchProductsOnSearchProductFieldQuery, SearchProductsOnSearchProductFieldQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<SearchProductsOnSearchProductFieldQuery, SearchProductsOnSearchProductFieldQueryVariables>(SearchProductsOnSearchProductFieldDocument, options);
         }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    SearchProductsOnSearchProductFieldQuery,
-    SearchProductsOnSearchProductFieldQueryVariables
-  >(SearchProductsOnSearchProductFieldDocument, options);
-}
-export function useSearchProductsOnSearchProductFieldLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    SearchProductsOnSearchProductFieldQuery,
-    SearchProductsOnSearchProductFieldQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    SearchProductsOnSearchProductFieldQuery,
-    SearchProductsOnSearchProductFieldQueryVariables
-  >(SearchProductsOnSearchProductFieldDocument, options);
-}
-export function useSearchProductsOnSearchProductFieldSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<SearchProductsOnSearchProductFieldQuery, SearchProductsOnSearchProductFieldQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    SearchProductsOnSearchProductFieldQuery,
-    SearchProductsOnSearchProductFieldQueryVariables
-  >(SearchProductsOnSearchProductFieldDocument, options);
-}
-export type SearchProductsOnSearchProductFieldQueryHookResult = ReturnType<
-  typeof useSearchProductsOnSearchProductFieldQuery
->;
-export type SearchProductsOnSearchProductFieldLazyQueryHookResult = ReturnType<
-  typeof useSearchProductsOnSearchProductFieldLazyQuery
->;
-export type SearchProductsOnSearchProductFieldSuspenseQueryHookResult =
-  ReturnType<typeof useSearchProductsOnSearchProductFieldSuspenseQuery>;
-export type SearchProductsOnSearchProductFieldQueryResult = Apollo.QueryResult<
-  SearchProductsOnSearchProductFieldQuery,
-  SearchProductsOnSearchProductFieldQueryVariables
->;
+export function useSearchProductsOnSearchProductFieldSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchProductsOnSearchProductFieldQuery, SearchProductsOnSearchProductFieldQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<SearchProductsOnSearchProductFieldQuery, SearchProductsOnSearchProductFieldQueryVariables>(SearchProductsOnSearchProductFieldDocument, options);
+        }
+export type SearchProductsOnSearchProductFieldQueryHookResult = ReturnType<typeof useSearchProductsOnSearchProductFieldQuery>;
+export type SearchProductsOnSearchProductFieldLazyQueryHookResult = ReturnType<typeof useSearchProductsOnSearchProductFieldLazyQuery>;
+export type SearchProductsOnSearchProductFieldSuspenseQueryHookResult = ReturnType<typeof useSearchProductsOnSearchProductFieldSuspenseQuery>;
+export type SearchProductsOnSearchProductFieldQueryResult = Apollo.QueryResult<SearchProductsOnSearchProductFieldQuery, SearchProductsOnSearchProductFieldQueryVariables>;

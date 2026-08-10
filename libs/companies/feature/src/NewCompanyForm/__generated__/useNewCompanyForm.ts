@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client/react';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type CreateCompanyOnNewCompanyFormMutationVariables = Types.Exact<{
   input: Types.CreateCompanyInput;
@@ -20,7 +20,7 @@ export const CreateCompanyOnNewCompanyFormDocument = gql`
   }
 }
     `;
-export type CreateCompanyOnNewCompanyFormMutationFn = Apollo.MutationFunctionOptions<CreateCompanyOnNewCompanyFormMutation, CreateCompanyOnNewCompanyFormMutationVariables>;
+export type CreateCompanyOnNewCompanyFormMutationFn = Apollo.MutationFunction<CreateCompanyOnNewCompanyFormMutation, CreateCompanyOnNewCompanyFormMutationVariables>;
 
 /**
  * __useCreateCompanyOnNewCompanyFormMutation__
@@ -45,4 +45,4 @@ export function useCreateCompanyOnNewCompanyFormMutation(baseOptions?: Apollo.Mu
       }
 export type CreateCompanyOnNewCompanyFormMutationHookResult = ReturnType<typeof useCreateCompanyOnNewCompanyFormMutation>;
 export type CreateCompanyOnNewCompanyFormMutationResult = Apollo.MutationResult<CreateCompanyOnNewCompanyFormMutation>;
-export type CreateCompanyOnNewCompanyFormMutationOptions = Apollo.MutationHookOptions<CreateCompanyOnNewCompanyFormMutation, CreateCompanyOnNewCompanyFormMutationVariables>;
+export type CreateCompanyOnNewCompanyFormMutationOptions = Apollo.BaseMutationOptions<CreateCompanyOnNewCompanyFormMutation, CreateCompanyOnNewCompanyFormMutationVariables>;

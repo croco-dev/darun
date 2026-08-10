@@ -1,58 +1,35 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type AddProductLinkOnNewProductLinkFormMutationVariables = Types.Exact<{
-  slug: Types.Scalars["String"]["input"];
+  slug: Types.Scalars['String']['input'];
   input: Types.AddProductLinkInput;
 }>;
 
-export type AddProductLinkOnNewProductLinkFormMutation = {
-  __typename?: "Mutation";
-  addProductLink: {
-    __typename?: "AddProductLinkPayload";
-    product?: {
-      __typename?: "Product";
-      id: string;
-      links: Array<{
-        __typename?: "Link";
-        id: string;
-        isPrimary: boolean;
-        title: string;
-        link: string;
-        displayLink: string;
-        iconUrl: string;
-      }>;
-    } | null;
-  };
-};
+
+export type AddProductLinkOnNewProductLinkFormMutation = { __typename?: 'Mutation', addProductLink: { __typename?: 'AddProductLinkPayload', product?: { __typename?: 'Product', id: string, links: Array<{ __typename?: 'Link', id: string, isPrimary: boolean, title: string, link: string, displayLink: string, iconUrl: string }> } | null } };
+
 
 export const AddProductLinkOnNewProductLinkFormDocument = gql`
-  mutation AddProductLinkOnNewProductLinkForm(
-    $slug: String!
-    $input: AddProductLinkInput!
-  ) {
-    addProductLink(slug: $slug, input: $input) {
-      product {
+    mutation AddProductLinkOnNewProductLinkForm($slug: String!, $input: AddProductLinkInput!) {
+  addProductLink(slug: $slug, input: $input) {
+    product {
+      id
+      links {
         id
-        links {
-          id
-          isPrimary
-          title
-          link
-          displayLink
-          iconUrl
-        }
+        isPrimary
+        title
+        link
+        displayLink
+        iconUrl
       }
     }
   }
-`;
-export type AddProductLinkOnNewProductLinkFormMutationFn =
-  Apollo.MutationFunctionOptions<
-    AddProductLinkOnNewProductLinkFormMutation,
-    AddProductLinkOnNewProductLinkFormMutationVariables
-  >;
+}
+    `;
+export type AddProductLinkOnNewProductLinkFormMutationFn = Apollo.MutationFunction<AddProductLinkOnNewProductLinkFormMutation, AddProductLinkOnNewProductLinkFormMutationVariables>;
 
 /**
  * __useAddProductLinkOnNewProductLinkFormMutation__
@@ -72,25 +49,10 @@ export type AddProductLinkOnNewProductLinkFormMutationFn =
  *   },
  * });
  */
-export function useAddProductLinkOnNewProductLinkFormMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    AddProductLinkOnNewProductLinkFormMutation,
-    AddProductLinkOnNewProductLinkFormMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    AddProductLinkOnNewProductLinkFormMutation,
-    AddProductLinkOnNewProductLinkFormMutationVariables
-  >(AddProductLinkOnNewProductLinkFormDocument, options);
-}
-export type AddProductLinkOnNewProductLinkFormMutationHookResult = ReturnType<
-  typeof useAddProductLinkOnNewProductLinkFormMutation
->;
-export type AddProductLinkOnNewProductLinkFormMutationResult =
-  Apollo.MutationResult<AddProductLinkOnNewProductLinkFormMutation>;
-export type AddProductLinkOnNewProductLinkFormMutationOptions =
-  Apollo.MutationHookOptions<
-    AddProductLinkOnNewProductLinkFormMutation,
-    AddProductLinkOnNewProductLinkFormMutationVariables
-  >;
+export function useAddProductLinkOnNewProductLinkFormMutation(baseOptions?: Apollo.MutationHookOptions<AddProductLinkOnNewProductLinkFormMutation, AddProductLinkOnNewProductLinkFormMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<AddProductLinkOnNewProductLinkFormMutation, AddProductLinkOnNewProductLinkFormMutationVariables>(AddProductLinkOnNewProductLinkFormDocument, options);
+      }
+export type AddProductLinkOnNewProductLinkFormMutationHookResult = ReturnType<typeof useAddProductLinkOnNewProductLinkFormMutation>;
+export type AddProductLinkOnNewProductLinkFormMutationResult = Apollo.MutationResult<AddProductLinkOnNewProductLinkFormMutation>;
+export type AddProductLinkOnNewProductLinkFormMutationOptions = Apollo.BaseMutationOptions<AddProductLinkOnNewProductLinkFormMutation, AddProductLinkOnNewProductLinkFormMutationVariables>;

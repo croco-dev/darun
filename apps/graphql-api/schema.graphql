@@ -268,6 +268,7 @@ type Query {
   magazineBySlug(slug: String!): Magazine
   product(id: ID!, locale: String! = "ko"): Product
   productBySlug(locale: String! = "ko", slug: String!): Product
+  productsByCategory(slug: String!, locale: String! = "ko"): [Product!]!
   productsCount: Int!
   rankedProducts(first: Int!, locale: String! = "ko"): [Product!]!
   recentProducts(first: Int!, locale: String! = "ko"): [Product!]!

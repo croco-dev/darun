@@ -1,53 +1,32 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
-export type AddProductScreenshotOnNewProductScreenshotFormMutationVariables =
-  Types.Exact<{
-    slug: Types.Scalars["String"]["input"];
-    input: Types.AddProductScreenshotInput;
-  }>;
+export type AddProductScreenshotOnNewProductScreenshotFormMutationVariables = Types.Exact<{
+  slug: Types.Scalars['String']['input'];
+  input: Types.AddProductScreenshotInput;
+}>;
 
-export type AddProductScreenshotOnNewProductScreenshotFormMutation = {
-  __typename?: "Mutation";
-  addProductScreenshot: {
-    __typename?: "AddProductScreenshotPayload";
-    product?: {
-      __typename?: "Product";
-      id: string;
-      screenshots: Array<{
-        __typename?: "Screenshot";
-        id: string;
-        imageAlt: string;
-        imageUrl: string;
-      }>;
-    } | null;
-  };
-};
+
+export type AddProductScreenshotOnNewProductScreenshotFormMutation = { __typename?: 'Mutation', addProductScreenshot: { __typename?: 'AddProductScreenshotPayload', product?: { __typename?: 'Product', id: string, screenshots: Array<{ __typename?: 'Screenshot', id: string, imageAlt: string, imageUrl: string }> } | null } };
+
 
 export const AddProductScreenshotOnNewProductScreenshotFormDocument = gql`
-  mutation AddProductScreenshotOnNewProductScreenshotForm(
-    $slug: String!
-    $input: AddProductScreenshotInput!
-  ) {
-    addProductScreenshot(slug: $slug, input: $input) {
-      product {
+    mutation AddProductScreenshotOnNewProductScreenshotForm($slug: String!, $input: AddProductScreenshotInput!) {
+  addProductScreenshot(slug: $slug, input: $input) {
+    product {
+      id
+      screenshots {
         id
-        screenshots {
-          id
-          imageAlt
-          imageUrl
-        }
+        imageAlt
+        imageUrl
       }
     }
   }
-`;
-export type AddProductScreenshotOnNewProductScreenshotFormMutationFn =
-  Apollo.MutationFunctionOptions<
-    AddProductScreenshotOnNewProductScreenshotFormMutation,
-    AddProductScreenshotOnNewProductScreenshotFormMutationVariables
-  >;
+}
+    `;
+export type AddProductScreenshotOnNewProductScreenshotFormMutationFn = Apollo.MutationFunction<AddProductScreenshotOnNewProductScreenshotFormMutation, AddProductScreenshotOnNewProductScreenshotFormMutationVariables>;
 
 /**
  * __useAddProductScreenshotOnNewProductScreenshotFormMutation__
@@ -67,24 +46,10 @@ export type AddProductScreenshotOnNewProductScreenshotFormMutationFn =
  *   },
  * });
  */
-export function useAddProductScreenshotOnNewProductScreenshotFormMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    AddProductScreenshotOnNewProductScreenshotFormMutation,
-    AddProductScreenshotOnNewProductScreenshotFormMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    AddProductScreenshotOnNewProductScreenshotFormMutation,
-    AddProductScreenshotOnNewProductScreenshotFormMutationVariables
-  >(AddProductScreenshotOnNewProductScreenshotFormDocument, options);
-}
-export type AddProductScreenshotOnNewProductScreenshotFormMutationHookResult =
-  ReturnType<typeof useAddProductScreenshotOnNewProductScreenshotFormMutation>;
-export type AddProductScreenshotOnNewProductScreenshotFormMutationResult =
-  Apollo.MutationResult<AddProductScreenshotOnNewProductScreenshotFormMutation>;
-export type AddProductScreenshotOnNewProductScreenshotFormMutationOptions =
-  Apollo.MutationHookOptions<
-    AddProductScreenshotOnNewProductScreenshotFormMutation,
-    AddProductScreenshotOnNewProductScreenshotFormMutationVariables
-  >;
+export function useAddProductScreenshotOnNewProductScreenshotFormMutation(baseOptions?: Apollo.MutationHookOptions<AddProductScreenshotOnNewProductScreenshotFormMutation, AddProductScreenshotOnNewProductScreenshotFormMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<AddProductScreenshotOnNewProductScreenshotFormMutation, AddProductScreenshotOnNewProductScreenshotFormMutationVariables>(AddProductScreenshotOnNewProductScreenshotFormDocument, options);
+      }
+export type AddProductScreenshotOnNewProductScreenshotFormMutationHookResult = ReturnType<typeof useAddProductScreenshotOnNewProductScreenshotFormMutation>;
+export type AddProductScreenshotOnNewProductScreenshotFormMutationResult = Apollo.MutationResult<AddProductScreenshotOnNewProductScreenshotFormMutation>;
+export type AddProductScreenshotOnNewProductScreenshotFormMutationOptions = Apollo.BaseMutationOptions<AddProductScreenshotOnNewProductScreenshotFormMutation, AddProductScreenshotOnNewProductScreenshotFormMutationVariables>;

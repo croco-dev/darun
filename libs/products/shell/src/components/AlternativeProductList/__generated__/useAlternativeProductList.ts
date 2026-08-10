@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client/react';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type ProductBySlugOnAlternativeProductListQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -56,15 +56,10 @@ export function useProductBySlugOnAlternativeProductListLazyQuery(baseOptions?: 
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables>(ProductBySlugOnAlternativeProductListDocument, options);
         }
-export function useProductBySlugOnAlternativeProductListSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    ProductBySlugOnAlternativeProductListQuery,
-    ProductBySlugOnAlternativeProductListQueryVariables
-  >(ProductBySlugOnAlternativeProductListDocument, options);
-}
+export function useProductBySlugOnAlternativeProductListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ProductBySlugOnAlternativeProductListQuery, ProductBySlugOnAlternativeProductListQueryVariables>(ProductBySlugOnAlternativeProductListDocument, options);
+        }
 export type ProductBySlugOnAlternativeProductListQueryHookResult = ReturnType<typeof useProductBySlugOnAlternativeProductListQuery>;
 export type ProductBySlugOnAlternativeProductListLazyQueryHookResult = ReturnType<typeof useProductBySlugOnAlternativeProductListLazyQuery>;
 export type ProductBySlugOnAlternativeProductListSuspenseQueryHookResult = ReturnType<typeof useProductBySlugOnAlternativeProductListSuspenseQuery>;

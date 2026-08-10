@@ -1,47 +1,34 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type FeatureOnEditProductFeatureItemQueryVariables = Types.Exact<{
-  id: Types.Scalars["ID"]["input"];
+  id: Types.Scalars['ID']['input'];
 }>;
 
-export type FeatureOnEditProductFeatureItemQuery = {
-  __typename?: "Query";
-  feature?: {
-    __typename?: "Feature";
-    id: string;
-    emoji: string;
-    name: string;
-    summary?: string | null;
-  } | null;
-};
 
-export type UpdateProductFeatureOnEditProductFeatureItemMutationVariables =
-  Types.Exact<{
-    input: Types.UpdateProductFeatureInput;
-    featureId: Types.Scalars["String"]["input"];
-  }>;
+export type FeatureOnEditProductFeatureItemQuery = { __typename?: 'Query', feature?: { __typename?: 'Feature', id: string, emoji: string, name: string, summary?: string | null } | null };
 
-export type UpdateProductFeatureOnEditProductFeatureItemMutation = {
-  __typename?: "Mutation";
-  updateProductFeature: {
-    __typename?: "UpdateProductFeaturePayload";
-    feature: { __typename?: "Feature"; id: string };
-  };
-};
+export type UpdateProductFeatureOnEditProductFeatureItemMutationVariables = Types.Exact<{
+  input: Types.UpdateProductFeatureInput;
+  featureId: Types.Scalars['String']['input'];
+}>;
+
+
+export type UpdateProductFeatureOnEditProductFeatureItemMutation = { __typename?: 'Mutation', updateProductFeature: { __typename?: 'UpdateProductFeaturePayload', feature: { __typename?: 'Feature', id: string } } };
+
 
 export const FeatureOnEditProductFeatureItemDocument = gql`
-  query FeatureOnEditProductFeatureItem($id: ID!) {
-    feature(id: $id) {
-      id
-      emoji
-      name
-      summary
-    }
+    query FeatureOnEditProductFeatureItem($id: ID!) {
+  feature(id: $id) {
+    id
+    emoji
+    name
+    summary
   }
-`;
+}
+    `;
 
 /**
  * __useFeatureOnEditProductFeatureItemQuery__
@@ -59,76 +46,32 @@ export const FeatureOnEditProductFeatureItemDocument = gql`
  *   },
  * });
  */
-export function useFeatureOnEditProductFeatureItemQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    FeatureOnEditProductFeatureItemQuery,
-    FeatureOnEditProductFeatureItemQueryVariables
-  > &
-    (
-      | {
-          variables: FeatureOnEditProductFeatureItemQueryVariables;
-          skip?: boolean;
-        }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    FeatureOnEditProductFeatureItemQuery,
-    FeatureOnEditProductFeatureItemQueryVariables
-  >(FeatureOnEditProductFeatureItemDocument, options);
-}
-export function useFeatureOnEditProductFeatureItemLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    FeatureOnEditProductFeatureItemQuery,
-    FeatureOnEditProductFeatureItemQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    FeatureOnEditProductFeatureItemQuery,
-    FeatureOnEditProductFeatureItemQueryVariables
-  >(FeatureOnEditProductFeatureItemDocument, options);
-}
-export function useFeatureOnEditProductFeatureItemSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    FeatureOnEditProductFeatureItemQuery,
-    FeatureOnEditProductFeatureItemQueryVariables
-  >(FeatureOnEditProductFeatureItemDocument, options);
-}
-export type FeatureOnEditProductFeatureItemQueryHookResult = ReturnType<
-  typeof useFeatureOnEditProductFeatureItemQuery
->;
-export type FeatureOnEditProductFeatureItemLazyQueryHookResult = ReturnType<
-  typeof useFeatureOnEditProductFeatureItemLazyQuery
->;
-export type FeatureOnEditProductFeatureItemSuspenseQueryHookResult = ReturnType<
-  typeof useFeatureOnEditProductFeatureItemSuspenseQuery
->;
-export type FeatureOnEditProductFeatureItemQueryResult = Apollo.QueryResult<
-  FeatureOnEditProductFeatureItemQuery,
-  FeatureOnEditProductFeatureItemQueryVariables
->;
-export const UpdateProductFeatureOnEditProductFeatureItemDocument = gql`
-  mutation UpdateProductFeatureOnEditProductFeatureItem(
-    $input: UpdateProductFeatureInput!
-    $featureId: String!
-  ) {
-    updateProductFeature(input: $input, id: $featureId) {
-      feature {
-        id
+export function useFeatureOnEditProductFeatureItemQuery(baseOptions: Apollo.QueryHookOptions<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables> & ({ variables: FeatureOnEditProductFeatureItemQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>(FeatureOnEditProductFeatureItemDocument, options);
       }
+export function useFeatureOnEditProductFeatureItemLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>(FeatureOnEditProductFeatureItemDocument, options);
+        }
+export function useFeatureOnEditProductFeatureItemSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>(FeatureOnEditProductFeatureItemDocument, options);
+        }
+export type FeatureOnEditProductFeatureItemQueryHookResult = ReturnType<typeof useFeatureOnEditProductFeatureItemQuery>;
+export type FeatureOnEditProductFeatureItemLazyQueryHookResult = ReturnType<typeof useFeatureOnEditProductFeatureItemLazyQuery>;
+export type FeatureOnEditProductFeatureItemSuspenseQueryHookResult = ReturnType<typeof useFeatureOnEditProductFeatureItemSuspenseQuery>;
+export type FeatureOnEditProductFeatureItemQueryResult = Apollo.QueryResult<FeatureOnEditProductFeatureItemQuery, FeatureOnEditProductFeatureItemQueryVariables>;
+export const UpdateProductFeatureOnEditProductFeatureItemDocument = gql`
+    mutation UpdateProductFeatureOnEditProductFeatureItem($input: UpdateProductFeatureInput!, $featureId: String!) {
+  updateProductFeature(input: $input, id: $featureId) {
+    feature {
+      id
     }
   }
-`;
-export type UpdateProductFeatureOnEditProductFeatureItemMutationFn =
-  Apollo.MutationFunctionOptions<
-    UpdateProductFeatureOnEditProductFeatureItemMutation,
-    UpdateProductFeatureOnEditProductFeatureItemMutationVariables
-  >;
+}
+    `;
+export type UpdateProductFeatureOnEditProductFeatureItemMutationFn = Apollo.MutationFunction<UpdateProductFeatureOnEditProductFeatureItemMutation, UpdateProductFeatureOnEditProductFeatureItemMutationVariables>;
 
 /**
  * __useUpdateProductFeatureOnEditProductFeatureItemMutation__
@@ -148,24 +91,10 @@ export type UpdateProductFeatureOnEditProductFeatureItemMutationFn =
  *   },
  * });
  */
-export function useUpdateProductFeatureOnEditProductFeatureItemMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    UpdateProductFeatureOnEditProductFeatureItemMutation,
-    UpdateProductFeatureOnEditProductFeatureItemMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    UpdateProductFeatureOnEditProductFeatureItemMutation,
-    UpdateProductFeatureOnEditProductFeatureItemMutationVariables
-  >(UpdateProductFeatureOnEditProductFeatureItemDocument, options);
-}
-export type UpdateProductFeatureOnEditProductFeatureItemMutationHookResult =
-  ReturnType<typeof useUpdateProductFeatureOnEditProductFeatureItemMutation>;
-export type UpdateProductFeatureOnEditProductFeatureItemMutationResult =
-  Apollo.MutationResult<UpdateProductFeatureOnEditProductFeatureItemMutation>;
-export type UpdateProductFeatureOnEditProductFeatureItemMutationOptions =
-  Apollo.MutationHookOptions<
-    UpdateProductFeatureOnEditProductFeatureItemMutation,
-    UpdateProductFeatureOnEditProductFeatureItemMutationVariables
-  >;
+export function useUpdateProductFeatureOnEditProductFeatureItemMutation(baseOptions?: Apollo.MutationHookOptions<UpdateProductFeatureOnEditProductFeatureItemMutation, UpdateProductFeatureOnEditProductFeatureItemMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateProductFeatureOnEditProductFeatureItemMutation, UpdateProductFeatureOnEditProductFeatureItemMutationVariables>(UpdateProductFeatureOnEditProductFeatureItemDocument, options);
+      }
+export type UpdateProductFeatureOnEditProductFeatureItemMutationHookResult = ReturnType<typeof useUpdateProductFeatureOnEditProductFeatureItemMutation>;
+export type UpdateProductFeatureOnEditProductFeatureItemMutationResult = Apollo.MutationResult<UpdateProductFeatureOnEditProductFeatureItemMutation>;
+export type UpdateProductFeatureOnEditProductFeatureItemMutationOptions = Apollo.BaseMutationOptions<UpdateProductFeatureOnEditProductFeatureItemMutation, UpdateProductFeatureOnEditProductFeatureItemMutationVariables>;
