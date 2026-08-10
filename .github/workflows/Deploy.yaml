@@ -13,7 +13,7 @@ jobs:
     name: quality
     runs-on: ubuntu-latest
     steps:
-- uses: actions/checkout@v6
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - name: Use Node.js 22.x
         uses: actions/setup-node@v6
@@ -36,7 +36,7 @@ jobs:
     environment:
       name: prod-graphql
     steps:
-- uses: actions/checkout@v6
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - name: Use Node.js 22.x
         uses: actions/setup-node@v6
