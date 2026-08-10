@@ -42,10 +42,16 @@ export default $config({
     });
 
     const api = new sst.aws.ApiGatewayV2('GraphqlApi', {
+      domain: {
+        nameId: 'api.darun.io',
+      },
       accessLog: { retention: '1 week' },
-      cors: false,
+      cors: {
+        allowOrigins: ['https://www.darun.io', 'https://admin.darun.io', 'https://visual.darun.io'],
+        allowMethods: ['GET', 'POST'],
+        allowHeaders: ['authorization', 'content-type'],
+      },
     });
-
     api.route('POST /graphql', fn.arn);
     api.route('GET /graphql', fn.arn);
 
