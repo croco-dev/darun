@@ -29,7 +29,7 @@ export const AlternativeProductList = bind(
         {alternatives.map((alternative: AlternativeProduct) => (
           <div
             key={alternative.id}
-            className="flex items-center justify-between gap-4 rounded-card border border-surface-300 bg-white px-5 py-4 shadow-card transition-colors hover:border-brand-300 motion-reduce:transition-none"
+            className="flex items-center justify-between gap-4 rounded-card border border-dark-200 bg-white px-5 py-4 shadow-card transition-colors hover:border-dark-400 hover:shadow-card-hover motion-reduce:transition-none"
           >
             <Link href={`/products/${alternative.slug}?from=related`} className="flex-1 min-w-0">
               <ProductItem

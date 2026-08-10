@@ -45,14 +45,14 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
   }, [isOpen, answer]);
 
   return (
-    <div className="w-full overflow-hidden rounded-xl border border-surface-300 bg-white">
+    <div className="w-full overflow-hidden rounded-card border border-dark-200 bg-white">
       <button
         type="button"
         onClick={() => setIsOpen(prev => !prev)}
         id={buttonId}
         aria-expanded={isOpen}
         aria-controls={panelId}
-        className="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
       >
         <p className="flex-1 pr-4 text-base font-semibold text-dark-900">{question}</p>
         <div

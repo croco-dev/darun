@@ -12,21 +12,21 @@ export const Footer = bind(useFooter, () => (
             <span className="text-sm font-medium text-dark-400">•</span>
             <a
               href="#"
-              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2"
+              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2"
             >
               개인정보처리방침
             </a>
             <span className="text-sm font-medium text-dark-400">•</span>
             <a
               href="#"
-              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2"
+              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2"
             >
               서비스 약관
             </a>
             <span className="text-sm font-medium text-dark-400">•</span>
             <a
               href="#"
-              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2"
+              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2"
             >
               문의
             </a>

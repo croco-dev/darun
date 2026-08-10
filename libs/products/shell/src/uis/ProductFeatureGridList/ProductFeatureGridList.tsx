@@ -12,7 +12,7 @@ export const ProductFeatureGridList = ({ features }: ProductFeatureGridListProps
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {features.map(feature => (
         <div className="flex w-full items-start gap-2 lg:gap-3" key={feature.id}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dark-100 bg-surface-100 lg:h-11 lg:w-11">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dark-200 bg-surface-100 lg:h-11 lg:w-11">
             <span className="text-base lg:text-xl">{feature.emoji ?? '💎'}</span>
           </div>
           <div className="flex flex-col gap-0.5">

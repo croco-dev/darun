@@ -50,7 +50,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
           moreLink={
             <Link
               href="/magazines"
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 transition-colors duration-200 ease-out hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-100 motion-reduce:transition-none"
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-100 motion-reduce:transition-none"
             >
               {t('home.magazine.more')}
             </Link>

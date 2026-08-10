@@ -45,7 +45,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
       <MenuBar editor={editor} />
       <EditorContent
         editor={editor}
-        className="min-h-72 rounded-card border border-dark-100 bg-white p-4 [&_.ProseMirror]:min-h-60 [&_.ProseMirror]:outline-none"
+        className="min-h-72 rounded-card border border-dark-200 bg-white p-4 [&_.ProseMirror]:min-h-60 [&_.ProseMirror]:outline-none"
       />
     </div>
   );

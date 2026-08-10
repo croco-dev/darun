@@ -62,7 +62,7 @@ export const ProductItem = ({
         alt={t('productItem.logoAlt', { name })}
         width={logoSizes[logoSize].imageSize}
         height={logoSizes[logoSize].imageSize}
-        className={`shadow-sm object-contain ${logoSize === 'small' ? 'rounded-xl' : 'rounded-2xl'}`}
+        className={`object-contain ${logoSize === 'small' ? 'rounded-xl' : 'rounded-2xl'}`}
       />
       <div className="flex min-w-0 flex-col gap-1 overflow-hidden">
         <div className="flex flex-col gap-1">

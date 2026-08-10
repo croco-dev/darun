@@ -9,7 +9,7 @@ type ArticleCardProps = {
 
 export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, summary }: ArticleCardProps) => {
   return (
-    <div className="rounded-card border border-surface-300 bg-white shadow-card overflow-hidden transition-all duration-200 ease-out hover:-translate-y-1 hover:border-brand-300 hover:shadow-card-hover focus-within:-translate-y-1 focus-within:border-brand-300 focus-within:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none">
+    <div className="rounded-card border border-dark-200 bg-white shadow-card overflow-hidden transition-all duration-200 ease-out hover:-translate-y-1 hover:border-dark-400 hover:shadow-card-hover focus-within:-translate-y-1 focus-within:border-dark-400 focus-within:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none">
       <div className="flex">
         {thumbnailImageUri && (
           <img src={thumbnailImageUri} alt={title} className="h-36 w-auto flex-shrink-0 object-cover" />

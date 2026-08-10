@@ -53,7 +53,7 @@ export const CategoryShortcutGrid = () => {
           type="button"
           role="listitem"
           onClick={() => handleClick(cat.slug)}
-          className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-medium text-dark-700 transition-colors hover:bg-brand-100 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/70 focus-visible:ring-offset-2"
+          className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-medium text-dark-700 transition-colors hover:bg-dark-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2"
         >
           {locale === 'ko' ? cat.labelKo : cat.labelEn}
         </button>

@@ -6,7 +6,7 @@ export const CategoryNavigationSkeleton = () => {
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={String(i)}
-            className="flex min-h-36 flex-col justify-between rounded-card border border-dark-100 bg-white p-4 motion-reduce:animate-none sm:p-5"
+            className="flex min-h-36 flex-col justify-between rounded-card border border-dark-200 bg-white p-4 motion-reduce:animate-none sm:p-5"
           >
             <div className="flex h-12 w-12 animate-pulse motion-reduce:animate-none rounded-xl bg-dark-100" />
             <div className="flex flex-col gap-1">

@@ -129,11 +129,11 @@ function ProductCard({
   };
 }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-card border border-surface-300 bg-white p-6 shadow-card">
+    <div className="flex flex-col items-center gap-4 rounded-card border border-dark-200 bg-white p-6 shadow-card">
       <img
         src={product.logoUrl || '/images/default-product-icon.svg'}
         alt={product.name}
-        className="h-20 w-20 rounded-card object-contain"
+        className="h-20 w-20 rounded-xl object-contain"
       />
       <h2 className="text-center text-xl font-bold text-dark-900">{product.name}</h2>
       {product.summary && <p className="text-center text-sm text-dark-500">{product.summary}</p>}
@@ -153,7 +153,7 @@ function CompareRow({
   testid: string;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-4 border-b border-surface-300 pb-4 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 border-b border-dark-200 pb-4 md:grid-cols-3">
       <div className="font-medium text-dark-900">{label}</div>
       <div className="text-dark-700" data-testid={`compare-row-${testid}-1`}>
         {value1 || '-'}
