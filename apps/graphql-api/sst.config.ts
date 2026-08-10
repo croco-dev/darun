@@ -29,6 +29,7 @@ export default $config({
       CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET!,
       OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY!,
       CURSOR_SIGNATURE_SECRET: process.env.CURSOR_SIGNATURE_SECRET!,
+      VOTE_IP_SALT: process.env.VOTE_IP_SALT!,
     };
 
     const fn = new sst.aws.Function('GraphqlHandler', {
