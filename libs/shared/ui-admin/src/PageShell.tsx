@@ -16,7 +16,7 @@ export function PageShell({ title, rightSide, children, onBack }: PageShellProps
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex items-center justify-center rounded-lg p-2 text-dark-500 hover:bg-dark-100 hover:text-dark-900 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
+              className="inline-flex items-center justify-center rounded-lg p-2 text-dark-500 hover:bg-dark-100 hover:text-dark-900 transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
               aria-label="뒤로가기"
             >
               <svg
@@ -31,7 +31,7 @@ export function PageShell({ title, rightSide, children, onBack }: PageShellProps
               </svg>
             </button>
           ) : null}
-          <h1 className="text-xl font-semibold tracking-[-0.2px] text-dark-900">{title}</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-dark-900">{title}</h1>
         </div>
         {rightSide ? <div className="shrink-0">{rightSide}</div> : null}
       </div>

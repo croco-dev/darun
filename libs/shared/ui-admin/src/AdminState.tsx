@@ -13,7 +13,7 @@ export function AdminLoadingState({
   className,
 }: AdminStateProps) {
   return (
-    <div className={cn('flex flex-col items-center justify-center text-center p-8 min-h-[200px]', className)}>
+    <div className={cn('flex flex-col items-center justify-center text-center p-8 min-h-52', className)}>
       <svg
         className="animate-spin motion-reduce:animate-none h-8 w-8 text-dark-500 mb-3"
         xmlns="http://www.w3.org/2000/svg"
@@ -39,7 +39,7 @@ type AdminEmptyStateProps = AdminStateProps & {
 
 export function AdminEmptyState({ title = '데이터가 없습니다.', description, icon, className }: AdminEmptyStateProps) {
   return (
-    <div className={cn('flex flex-col items-center justify-center text-center p-8 min-h-[200px]', className)}>
+    <div className={cn('flex flex-col items-center justify-center text-center p-8 min-h-52', className)}>
       {icon ?? (
         <svg
           className="h-8 w-8 text-dark-400 mb-3"
@@ -74,9 +74,9 @@ export function AdminErrorState({
   className,
 }: AdminErrorStateProps) {
   return (
-    <div className={cn('flex flex-col items-center justify-center text-center p-8 min-h-[200px]', className)}>
+    <div className={cn('flex flex-col items-center justify-center text-center p-8 min-h-52', className)}>
       <svg
-        className="h-8 w-8 text-red-600 mb-3"
+        className="h-8 w-8 text-cherry-700 mb-3"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -89,7 +89,7 @@ export function AdminErrorState({
           d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
         />
       </svg>
-      <h3 className="text-sm font-medium text-red-600">{title}</h3>
+      <h3 className="text-sm font-medium text-cherry-700">{title}</h3>
       {description && <p className="text-xs text-dark-500 mt-1">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>

@@ -25,6 +25,8 @@
     "@apollo/client": "4.2.0",
     "@darun/companies-datasource": "workspace:*",
     "@darun/companies-domain": "workspace:*",
+    "@darun/ui": "workspace:*",
+    "@darun/ui-admin": "workspace:*",
     "@darun/utils-apollo-server": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
     "@mantine/core": "^8.3.16",

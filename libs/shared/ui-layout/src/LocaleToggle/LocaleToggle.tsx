@@ -16,12 +16,8 @@ export const LocaleToggle = () => {
   };
 
   return (
-    <div
-      role="radiogroup"
-      aria-label="Change language"
-      className="inline-flex gap-1 rounded-full bg-brand-100 p-0.5"
-    >
-      {LOCALES.map((loc) => {
+    <div role="radiogroup" aria-label="Change language" className="inline-flex gap-1 rounded-full bg-brand-100 p-0.5">
+      {LOCALES.map(loc => {
         const isActive = locale === loc;
         return (
           <button
@@ -33,9 +29,8 @@ export const LocaleToggle = () => {
             aria-label={loc === 'ko' ? '한국어' : 'English'}
             disabled={isActive}
             className={`
-              cursor-pointer rounded-full px-3 py-1 text-sm font-medium transition-colors duration-200
-              ${isActive ? 'bg-brand-500 text-white' : 'bg-transparent text-brand-700 hover:bg-brand-200'}
-              ${!isActive ? 'cursor-pointer' : 'cursor-default'}
+              rounded-full px-3 py-1 text-sm font-medium transition-colors duration-200
+              ${isActive ? 'bg-brand-500 text-white cursor-default' : 'bg-transparent text-brand-700 hover:bg-brand-200 cursor-pointer'}
             `}
           >
             {loc === 'ko' ? 'Ko' : 'En'}

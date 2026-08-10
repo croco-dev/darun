@@ -4,7 +4,7 @@ import { LogoutSection } from '../../../features/auth/LogoutSection';
 
 export default function LogoutPage() {
   return (
-    <div className="w-full min-h-screen bg-dark-50 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="w-full min-h-screen bg-surface-100 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-[400px] w-[340px] space-y-6">
         <AdminPanel>
           <AdminSection>
@@ -15,7 +15,7 @@ export default function LogoutPage() {
                 <Link href="/">
                   <button
                     type="button"
-                    className="rounded-lg border border-dark-200 bg-white px-4 py-2 text-sm font-medium text-dark-700 hover:bg-dark-50 transition motion-reduce:transition-none outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
+                    className="rounded-lg border border-dark-200 bg-white px-4 py-2 text-sm font-medium text-dark-700 hover:bg-surface-100 transition motion-reduce:transition-none outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
                   >
                     취소
                   </button>

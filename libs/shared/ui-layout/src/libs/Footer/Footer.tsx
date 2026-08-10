@@ -32,7 +32,7 @@ export const Footer = bind(useFooter, () => (
             </a>
           </div>
           <div className="flex">
-            <p className="text-[13px] font-normal text-dark-500">
+            <p className="text-sm font-normal text-dark-500">
               ‘다른’ 서비스는 단순 정보를 제공하며, 각 개별 컨텐츠의 저작권과 소유권을 보유하고 있지 않습니다. <br />
               ‘다른’ 서비스는 공신력 있는 매체가 아닙니다. 사이트에 있는 내용을 맹신하지 마세요.
             </p>

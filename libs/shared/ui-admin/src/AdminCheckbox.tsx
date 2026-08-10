@@ -14,7 +14,7 @@ export const AdminCheckbox = forwardRef<HTMLInputElement, AdminCheckboxProps>(
           type="checkbox"
           id={id}
           className={cn(
-            'h-4 w-4 rounded border-dark-200 text-dark-900 transition focus:ring-2 motion-reduce:transition-none focus:ring-dark-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 disabled:cursor-not-allowed disabled:opacity-50',
+            'h-4 w-4 rounded border-dark-200 text-dark-900 transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 disabled:cursor-not-allowed disabled:opacity-50',
             className
           )}
           {...props}

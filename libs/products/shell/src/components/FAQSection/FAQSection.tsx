@@ -90,7 +90,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         }}
         className="overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out motion-reduce:transition-none"
       >
-        <div ref={panelRef} className="px-5 pb-5 pt-0 text-dark-700 leading-[1.6]">
+        <div ref={panelRef} className="px-5 pb-5 pt-0 text-dark-700 leading-relaxed">
           <p className="whitespace-pre-wrap">{answer}</p>
         </div>
       </section>

@@ -4,7 +4,6 @@ import { useImageUpload } from '@darun/utils-image-upload';
 import { Editor } from '@tiptap/react';
 import { useCallback, useMemo, useRef } from 'react';
 import { MenuItem } from './MenuItem';
-import './MenuBar.scss';
 
 type MenuBarProps = {
   editor: Editor;
@@ -71,7 +70,7 @@ export function MenuBar({ editor }: MenuBarProps) {
   );
 
   return (
-    <div className="menu-bar">
+    <div className="flex flex-wrap gap-2">
       {menuItems.map(({ label, action, active }) => (
         <MenuItem key={label} label={label} onClick={action} active={active} />
       ))}

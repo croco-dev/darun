@@ -73,13 +73,13 @@ export const ProductItem = ({
           </NameTag>
           {summary &&
             (isStacked ? (
-              <p className="line-clamp-2 text-xs leading-[1.5] text-dark-500 md:text-sm">{summary}</p>
+              <p className="line-clamp-2 text-xs leading-snug text-dark-500 md:text-sm">{summary}</p>
             ) : isSummaryNoWrap ? (
-              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-[1.5] text-dark-500 md:text-sm">
+              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-snug text-dark-500 md:text-sm">
                 {summary}
               </p>
             ) : (
-              <p className="text-xs leading-[1.5] text-dark-500 md:text-sm">{summary}</p>
+              <p className="text-xs leading-snug text-dark-500 md:text-sm">{summary}</p>
             ))}
         </div>
         {(tags || specialTags) && (

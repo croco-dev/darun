@@ -50,7 +50,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             role={toast.type === 'error' ? 'alert' : 'status'}
             aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
             className={`px-4 py-2 rounded-lg shadow-lg text-white ${
-              toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+              toast.type === 'success' ? 'bg-leaf-700' : 'bg-cherry-700'
             }`}
           >
             {toast.message}

@@ -37,7 +37,7 @@ test.describe('FAQ Accordion Accessibility & Motion', () => {
             class="overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out motion-reduce:transition-none"
             style="max-height: 0px; opacity: 0;"
           >
-            <div id="faq-inner-test" class="px-5 pb-5 pt-0 text-dark-700 leading-[1.6]">
+            <div id="faq-inner-test" class="px-5 pb-5 pt-0 text-dark-700 leading-relaxed">
               <p class="whitespace-pre-wrap">예, 그렇습니다. 긴 답변이더라도 절대 잘리지 않고 원활하게 렌더링됩니다.</p>
             </div>
           </section>

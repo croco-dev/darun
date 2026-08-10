@@ -131,9 +131,9 @@ importers:
       '@darun/ui':
         specifier: workspace:*
         version: link:../../libs/shared/ui
-      '@darun/ui-layout':
+      '@darun/ui-admin':
         specifier: workspace:*
-        version: link:../../libs/shared/ui-layout
+        version: link:../../libs/shared/ui-admin
       '@darun/utils-apollo-client/client':
         specifier: workspace:*
         version: link:../../libs/shared/utils-apollo-client/client
@@ -170,9 +170,6 @@ importers:
       '@mantine/notifications':
         specifier: ^8.3.16
         version: 8.3.16(@mantine/core@8.3.16(@mantine/hooks@8.3.16(react@19.2.6))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@mantine/hooks@8.3.16(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@tabler/icons-react':
-        specifier: ^3.34.1
-        version: 3.40.0(react@19.2.6)
       dayjs:
         specifier: 1.11.19
         version: 1.11.19
@@ -191,9 +188,6 @@ importers:
       react-dom:
         specifier: ^19.2.6
         version: 19.2.6(react@19.2.6)
-      remixicon:
-        specifier: ^4.6.0
-        version: 4.9.1
     devDependencies:
       '@types/react':
         specifier: ^19.2.14
@@ -488,27 +482,9 @@ importers:
       '@croco/utils-next-font-pretendard':
         specifier: 0.0.2
         version: 0.0.2(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))
-      '@darun/magazines-shell':
-        specifier: workspace:*
-        version: link:../../libs/magazines/shell
-      '@darun/opengraph-shell':
-        specifier: workspace:*
-        version: link:../../libs/opengraph/shell
-      '@darun/pages-shell':
-        specifier: workspace:*
-        version: link:../../libs/pages/shell
-      '@darun/products-shell':
-        specifier: workspace:*
-        version: link:../../libs/products/shell
       '@darun/provider-auth/client':
         specifier: workspace:*
         version: link:../../libs/shared/provider-auth/client
-      '@darun/provider-auth/server':
-        specifier: workspace:*
-        version: link:../../libs/shared/provider-auth/server
-      '@darun/search-shell':
-        specifier: workspace:*
-        version: link:../../libs/search/shell
       '@darun/ui':
         specifier: workspace:*
         version: link:../../libs/shared/ui
@@ -720,6 +696,12 @@ importers:
       '@darun/companies-domain':
         specifier: workspace:*
         version: link:../domain
+      '@darun/ui':
+        specifier: workspace:*
+        version: link:../../shared/ui
+      '@darun/ui-admin':
+        specifier: workspace:*
+        version: link:../../shared/ui-admin
       '@darun/utils-apollo-server':
         specifier: workspace:*
         version: link:../../shared/utils-apollo-server
@@ -950,6 +932,12 @@ importers:
       '@darun/provider-graphql':
         specifier: workspace:*
         version: link:../../shared/provider-graphql
+      '@darun/ui':
+        specifier: workspace:*
+        version: link:../../shared/ui
+      '@darun/ui-admin':
+        specifier: workspace:*
+        version: link:../../shared/ui-admin
       '@darun/utils-image-upload':
         specifier: workspace:*
         version: link:../../shared/utils-image-upload
@@ -1185,6 +1173,12 @@ importers:
       '@darun/translation-service':
         specifier: workspace:*
         version: link:../../translation/service
+      '@darun/ui':
+        specifier: workspace:*
+        version: link:../../shared/ui
+      '@darun/ui-admin':
+        specifier: workspace:*
+        version: link:../../shared/ui-admin
       '@darun/utils-structure-react':
         specifier: workspace:*
         version: link:../../shared/utils-structure-react
@@ -5816,14 +5810,6 @@ packages:
     resolution: {integrity: sha512-r5bClKrcIusDoo049dSL8CawnHR6mRdDwhlQuIgZRNty68q0x8k3Lf1BtPAMxRf/GgnHBnIO4ujd3+GQdLWzxQ==}
     engines: {node: '>=16.0.0'}
 
-  '@tabler/icons-react@3.40.0':
-    resolution: {integrity: sha512-oO5+6QCnna4a//mYubx4euZfECtzQZFDGsDMIdzZUhbdyBCT+3bRVFBPueGIcemWld4Vb/0UQ39C/cmGfGylAg==}
-    peerDependencies:
-      react: '>= 16'
-
-  '@tabler/icons@3.40.0':
-    resolution: {integrity: sha512-V/Q4VgNPKubRTiLdmWjV/zscYcj5IIk+euicUtaVVqF6luSC9rDngYWgST5/yh3Mrg/mYUwRv1YVTk71Jp0twQ==}
-
   '@tailwindcss/node@4.3.3':
     resolution: {integrity: sha512-/T8IKEsf9VTU6tLjgC7+sv2mOPtQxzE2jMw7u4Tt40Tx+QSZxpzh95/H6cMKoja9XuW7iMdLJYBB0o9G1CaAgg==}
 
@@ -10042,9 +10028,6 @@ packages:
 
   remedial@1.0.8:
     resolution: {integrity: sha512-/62tYiOe6DzS5BqVsNpH/nkGlX45C/Sp6V+NtiN6JQNS1Viay7cWkazmRkrQrdFj2eshDe96SIQNIoMxqhzBOg==}
-
-  remixicon@4.9.1:
-    resolution: {integrity: sha512-36gLSoujkabnCFZFDyP17VNh9piuBA/rsXUb4auSJWLGsHVXtmxLj/EM5FjaEAGnk8oIAj1Azob/DZ2N+90lAQ==}
 
   remove-trailing-separator@1.1.0:
     resolution: {integrity: sha512-/hS+Y0u3aOfIETiaiirUFwDBDzmXPvO+jAfKTitUngIPzdKc6Z0LoFjM/CK5PL4C+eKwHohlHAb6H0VFfmmUsw==}
@@ -15576,13 +15559,6 @@ snapshots:
 
   '@tabby_ai/hijri-converter@1.0.5': {}
 
-  '@tabler/icons-react@3.40.0(react@19.2.6)':
-    dependencies:
-      '@tabler/icons': 3.40.0
-      react: 19.2.6
-
-  '@tabler/icons@3.40.0': {}
-
   '@tailwindcss/node@4.3.3':
     dependencies:
       '@jridgewell/remapping': 2.3.5
@@ -20336,8 +20312,6 @@ snapshots:
       - encoding
 
   remedial@1.0.8: {}
-
-  remixicon@4.9.1: {}
 
   remove-trailing-separator@1.1.0: {}
 
