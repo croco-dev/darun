@@ -1,47 +1,32 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
-export type TempProductBySlugOnEditProductDescriptionQueryVariables =
-  Types.Exact<{
-    slug: Types.Scalars["String"]["input"];
-  }>;
+export type TempProductBySlugOnEditProductDescriptionQueryVariables = Types.Exact<{
+  slug: Types.Scalars['String']['input'];
+}>;
 
-export type TempProductBySlugOnEditProductDescriptionQuery = {
-  __typename?: "Query";
-  tempProductBySlug?: {
-    __typename?: "Product";
-    id: string;
-    description?: string | null;
-  } | null;
-};
+
+export type TempProductBySlugOnEditProductDescriptionQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, description?: string | null } | null };
 
 export type EditProductOnEditProductDescriptionMutationVariables = Types.Exact<{
   input: Types.EditProductInput;
-  slug: Types.Scalars["String"]["input"];
+  slug: Types.Scalars['String']['input'];
 }>;
 
-export type EditProductOnEditProductDescriptionMutation = {
-  __typename?: "Mutation";
-  editProduct: {
-    __typename?: "EditProductPayload";
-    product: {
-      __typename?: "Product";
-      id: string;
-      description?: string | null;
-    };
-  };
-};
+
+export type EditProductOnEditProductDescriptionMutation = { __typename?: 'Mutation', editProduct: { __typename?: 'EditProductPayload', product: { __typename?: 'Product', id: string, description?: string | null } } };
+
 
 export const TempProductBySlugOnEditProductDescriptionDocument = gql`
-  query TempProductBySlugOnEditProductDescription($slug: String!) {
-    tempProductBySlug(slug: $slug) {
-      id
-      description
-    }
+    query TempProductBySlugOnEditProductDescription($slug: String!) {
+  tempProductBySlug(slug: $slug) {
+    id
+    description
   }
-`;
+}
+    `;
 
 /**
  * __useTempProductBySlugOnEditProductDescriptionQuery__
@@ -59,75 +44,33 @@ export const TempProductBySlugOnEditProductDescriptionDocument = gql`
  *   },
  * });
  */
-export function useTempProductBySlugOnEditProductDescriptionQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    TempProductBySlugOnEditProductDescriptionQuery,
-    TempProductBySlugOnEditProductDescriptionQueryVariables
-  > &
-    (
-      | {
-          variables: TempProductBySlugOnEditProductDescriptionQueryVariables;
-          skip?: boolean;
-        }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    TempProductBySlugOnEditProductDescriptionQuery,
-    TempProductBySlugOnEditProductDescriptionQueryVariables
-  >(TempProductBySlugOnEditProductDescriptionDocument, options);
-}
-export function useTempProductBySlugOnEditProductDescriptionLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    TempProductBySlugOnEditProductDescriptionQuery,
-    TempProductBySlugOnEditProductDescriptionQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    TempProductBySlugOnEditProductDescriptionQuery,
-    TempProductBySlugOnEditProductDescriptionQueryVariables
-  >(TempProductBySlugOnEditProductDescriptionDocument, options);
-}
-export function useTempProductBySlugOnEditProductDescriptionSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnEditProductDescriptionQuery, TempProductBySlugOnEditProductDescriptionQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    TempProductBySlugOnEditProductDescriptionQuery,
-    TempProductBySlugOnEditProductDescriptionQueryVariables
-  >(TempProductBySlugOnEditProductDescriptionDocument, options);
-}
-export type TempProductBySlugOnEditProductDescriptionQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnEditProductDescriptionQuery>;
-export type TempProductBySlugOnEditProductDescriptionLazyQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnEditProductDescriptionLazyQuery>;
-export type TempProductBySlugOnEditProductDescriptionSuspenseQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnEditProductDescriptionSuspenseQuery>;
-export type TempProductBySlugOnEditProductDescriptionQueryResult =
-  Apollo.QueryResult<
-    TempProductBySlugOnEditProductDescriptionQuery,
-    TempProductBySlugOnEditProductDescriptionQueryVariables
-  >;
-export const EditProductOnEditProductDescriptionDocument = gql`
-  mutation EditProductOnEditProductDescription(
-    $input: EditProductInput!
-    $slug: String!
-  ) {
-    editProduct(input: $input, slug: $slug) {
-      product {
-        id
-        description
+export function useTempProductBySlugOnEditProductDescriptionQuery(baseOptions: Apollo.QueryHookOptions<TempProductBySlugOnEditProductDescriptionQuery, TempProductBySlugOnEditProductDescriptionQueryVariables> & ({ variables: TempProductBySlugOnEditProductDescriptionQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<TempProductBySlugOnEditProductDescriptionQuery, TempProductBySlugOnEditProductDescriptionQueryVariables>(TempProductBySlugOnEditProductDescriptionDocument, options);
       }
+export function useTempProductBySlugOnEditProductDescriptionLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductBySlugOnEditProductDescriptionQuery, TempProductBySlugOnEditProductDescriptionQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<TempProductBySlugOnEditProductDescriptionQuery, TempProductBySlugOnEditProductDescriptionQueryVariables>(TempProductBySlugOnEditProductDescriptionDocument, options);
+        }
+export function useTempProductBySlugOnEditProductDescriptionSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TempProductBySlugOnEditProductDescriptionQuery, TempProductBySlugOnEditProductDescriptionQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<TempProductBySlugOnEditProductDescriptionQuery, TempProductBySlugOnEditProductDescriptionQueryVariables>(TempProductBySlugOnEditProductDescriptionDocument, options);
+        }
+export type TempProductBySlugOnEditProductDescriptionQueryHookResult = ReturnType<typeof useTempProductBySlugOnEditProductDescriptionQuery>;
+export type TempProductBySlugOnEditProductDescriptionLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnEditProductDescriptionLazyQuery>;
+export type TempProductBySlugOnEditProductDescriptionSuspenseQueryHookResult = ReturnType<typeof useTempProductBySlugOnEditProductDescriptionSuspenseQuery>;
+export type TempProductBySlugOnEditProductDescriptionQueryResult = Apollo.QueryResult<TempProductBySlugOnEditProductDescriptionQuery, TempProductBySlugOnEditProductDescriptionQueryVariables>;
+export const EditProductOnEditProductDescriptionDocument = gql`
+    mutation EditProductOnEditProductDescription($input: EditProductInput!, $slug: String!) {
+  editProduct(input: $input, slug: $slug) {
+    product {
+      id
+      description
     }
   }
-`;
-export type EditProductOnEditProductDescriptionMutationFn =
-  Apollo.MutationFunctionOptions<
-    EditProductOnEditProductDescriptionMutation,
-    EditProductOnEditProductDescriptionMutationVariables
-  >;
+}
+    `;
+export type EditProductOnEditProductDescriptionMutationFn = Apollo.MutationFunction<EditProductOnEditProductDescriptionMutation, EditProductOnEditProductDescriptionMutationVariables>;
 
 /**
  * __useEditProductOnEditProductDescriptionMutation__
@@ -147,25 +90,10 @@ export type EditProductOnEditProductDescriptionMutationFn =
  *   },
  * });
  */
-export function useEditProductOnEditProductDescriptionMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    EditProductOnEditProductDescriptionMutation,
-    EditProductOnEditProductDescriptionMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    EditProductOnEditProductDescriptionMutation,
-    EditProductOnEditProductDescriptionMutationVariables
-  >(EditProductOnEditProductDescriptionDocument, options);
-}
-export type EditProductOnEditProductDescriptionMutationHookResult = ReturnType<
-  typeof useEditProductOnEditProductDescriptionMutation
->;
-export type EditProductOnEditProductDescriptionMutationResult =
-  Apollo.MutationResult<EditProductOnEditProductDescriptionMutation>;
-export type EditProductOnEditProductDescriptionMutationOptions =
-  Apollo.MutationHookOptions<
-    EditProductOnEditProductDescriptionMutation,
-    EditProductOnEditProductDescriptionMutationVariables
-  >;
+export function useEditProductOnEditProductDescriptionMutation(baseOptions?: Apollo.MutationHookOptions<EditProductOnEditProductDescriptionMutation, EditProductOnEditProductDescriptionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<EditProductOnEditProductDescriptionMutation, EditProductOnEditProductDescriptionMutationVariables>(EditProductOnEditProductDescriptionDocument, options);
+      }
+export type EditProductOnEditProductDescriptionMutationHookResult = ReturnType<typeof useEditProductOnEditProductDescriptionMutation>;
+export type EditProductOnEditProductDescriptionMutationResult = Apollo.MutationResult<EditProductOnEditProductDescriptionMutation>;
+export type EditProductOnEditProductDescriptionMutationOptions = Apollo.BaseMutationOptions<EditProductOnEditProductDescriptionMutation, EditProductOnEditProductDescriptionMutationVariables>;

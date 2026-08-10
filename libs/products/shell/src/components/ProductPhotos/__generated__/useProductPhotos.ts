@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client/react';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type GetPhotosOnProductPhotosQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -49,15 +49,10 @@ export function useGetPhotosOnProductPhotosLazyQuery(baseOptions?: Apollo.LazyQu
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>(GetPhotosOnProductPhotosDocument, options);
         }
-export function useGetPhotosOnProductPhotosSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    GetPhotosOnProductPhotosQuery,
-    GetPhotosOnProductPhotosQueryVariables
-  >(GetPhotosOnProductPhotosDocument, options);
-}
+export function useGetPhotosOnProductPhotosSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>(GetPhotosOnProductPhotosDocument, options);
+        }
 export type GetPhotosOnProductPhotosQueryHookResult = ReturnType<typeof useGetPhotosOnProductPhotosQuery>;
 export type GetPhotosOnProductPhotosLazyQueryHookResult = ReturnType<typeof useGetPhotosOnProductPhotosLazyQuery>;
 export type GetPhotosOnProductPhotosSuspenseQueryHookResult = ReturnType<typeof useGetPhotosOnProductPhotosSuspenseQuery>;

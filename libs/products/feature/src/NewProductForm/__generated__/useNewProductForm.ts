@@ -1,34 +1,27 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type CreateProductOnNewProductFormMutationVariables = Types.Exact<{
   input: Types.CreateProductInput;
 }>;
 
-export type CreateProductOnNewProductFormMutation = {
-  __typename?: "Mutation";
-  createProduct: {
-    __typename?: "CreateProductPayload";
-    product: { __typename?: "Product"; id: string; slug: string };
-  };
-};
+
+export type CreateProductOnNewProductFormMutation = { __typename?: 'Mutation', createProduct: { __typename?: 'CreateProductPayload', product: { __typename?: 'Product', id: string, slug: string } } };
+
 
 export const CreateProductOnNewProductFormDocument = gql`
-  mutation CreateProductOnNewProductForm($input: CreateProductInput!) {
-    createProduct(input: $input) {
-      product {
-        id
-        slug
-      }
+    mutation CreateProductOnNewProductForm($input: CreateProductInput!) {
+  createProduct(input: $input) {
+    product {
+      id
+      slug
     }
   }
-`;
-export type CreateProductOnNewProductFormMutationFn = Apollo.MutationFunctionOptions<
-  CreateProductOnNewProductFormMutation,
-  CreateProductOnNewProductFormMutationVariables
->;
+}
+    `;
+export type CreateProductOnNewProductFormMutationFn = Apollo.MutationFunction<CreateProductOnNewProductFormMutation, CreateProductOnNewProductFormMutationVariables>;
 
 /**
  * __useCreateProductOnNewProductFormMutation__
@@ -47,25 +40,10 @@ export type CreateProductOnNewProductFormMutationFn = Apollo.MutationFunctionOpt
  *   },
  * });
  */
-export function useCreateProductOnNewProductFormMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    CreateProductOnNewProductFormMutation,
-    CreateProductOnNewProductFormMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    CreateProductOnNewProductFormMutation,
-    CreateProductOnNewProductFormMutationVariables
-  >(CreateProductOnNewProductFormDocument, options);
-}
-export type CreateProductOnNewProductFormMutationHookResult = ReturnType<
-  typeof useCreateProductOnNewProductFormMutation
->;
-export type CreateProductOnNewProductFormMutationResult =
-  Apollo.MutationResult<CreateProductOnNewProductFormMutation>;
-export type CreateProductOnNewProductFormMutationOptions =
-  Apollo.MutationHookOptions<
-    CreateProductOnNewProductFormMutation,
-    CreateProductOnNewProductFormMutationVariables
-  >;
+export function useCreateProductOnNewProductFormMutation(baseOptions?: Apollo.MutationHookOptions<CreateProductOnNewProductFormMutation, CreateProductOnNewProductFormMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateProductOnNewProductFormMutation, CreateProductOnNewProductFormMutationVariables>(CreateProductOnNewProductFormDocument, options);
+      }
+export type CreateProductOnNewProductFormMutationHookResult = ReturnType<typeof useCreateProductOnNewProductFormMutation>;
+export type CreateProductOnNewProductFormMutationResult = Apollo.MutationResult<CreateProductOnNewProductFormMutation>;
+export type CreateProductOnNewProductFormMutationOptions = Apollo.BaseMutationOptions<CreateProductOnNewProductFormMutation, CreateProductOnNewProductFormMutationVariables>;

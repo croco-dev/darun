@@ -1,61 +1,42 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
-export type TempProductBySlugOnEditAlternativeProductsQueryVariables =
-  Types.Exact<{
-    slug: Types.Scalars["String"]["input"];
-  }>;
+export type TempProductBySlugOnEditAlternativeProductsQueryVariables = Types.Exact<{
+  slug: Types.Scalars['String']['input'];
+}>;
 
-export type TempProductBySlugOnEditAlternativeProductsQuery = {
-  __typename?: "Query";
-  tempProductBySlug?: {
-    __typename?: "Product";
-    id: string;
-    alternatives: Array<{ __typename?: "Product"; id: string; name: string }>;
-  } | null;
-};
 
-export type SearchProductsOnEditAlternativeProductsQueryVariables =
-  Types.Exact<{
-    query: Types.Scalars["String"]["input"];
-  }>;
+export type TempProductBySlugOnEditAlternativeProductsQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, alternatives: Array<{ __typename?: 'Product', id: string, name: string }> } | null };
 
-export type SearchProductsOnEditAlternativeProductsQuery = {
-  __typename?: "Query";
-  searchProducts: Array<{ __typename?: "Product"; id: string; name: string }>;
-};
+export type SearchProductsOnEditAlternativeProductsQueryVariables = Types.Exact<{
+  query: Types.Scalars['String']['input'];
+}>;
 
-export type EditProductOnEditAlternativeProductsMutationVariables =
-  Types.Exact<{
-    input: Types.UpdateAlternativeProductInput;
-    slug: Types.Scalars["String"]["input"];
-  }>;
 
-export type EditProductOnEditAlternativeProductsMutation = {
-  __typename?: "Mutation";
-  updateAlternativeProduct: {
-    __typename?: "UpdateAlternativeProductPayload";
-    product?: {
-      __typename?: "Product";
-      id: string;
-      alternatives: Array<{ __typename?: "Product"; id: string }>;
-    } | null;
-  };
-};
+export type SearchProductsOnEditAlternativeProductsQuery = { __typename?: 'Query', searchProducts: Array<{ __typename?: 'Product', id: string, name: string }> };
+
+export type EditProductOnEditAlternativeProductsMutationVariables = Types.Exact<{
+  input: Types.UpdateAlternativeProductInput;
+  slug: Types.Scalars['String']['input'];
+}>;
+
+
+export type EditProductOnEditAlternativeProductsMutation = { __typename?: 'Mutation', updateAlternativeProduct: { __typename?: 'UpdateAlternativeProductPayload', product?: { __typename?: 'Product', id: string, alternatives: Array<{ __typename?: 'Product', id: string }> } | null } };
+
 
 export const TempProductBySlugOnEditAlternativeProductsDocument = gql`
-  query TempProductBySlugOnEditAlternativeProducts($slug: String!) {
-    tempProductBySlug(slug: $slug) {
+    query TempProductBySlugOnEditAlternativeProducts($slug: String!) {
+  tempProductBySlug(slug: $slug) {
+    id
+    alternatives {
       id
-      alternatives {
-        id
-        name
-      }
+      name
     }
   }
-`;
+}
+    `;
 
 /**
  * __useTempProductBySlugOnEditAlternativeProductsQuery__
@@ -73,65 +54,30 @@ export const TempProductBySlugOnEditAlternativeProductsDocument = gql`
  *   },
  * });
  */
-export function useTempProductBySlugOnEditAlternativeProductsQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    TempProductBySlugOnEditAlternativeProductsQuery,
-    TempProductBySlugOnEditAlternativeProductsQueryVariables
-  > &
-    (
-      | {
-          variables: TempProductBySlugOnEditAlternativeProductsQueryVariables;
-          skip?: boolean;
+export function useTempProductBySlugOnEditAlternativeProductsQuery(baseOptions: Apollo.QueryHookOptions<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables> & ({ variables: TempProductBySlugOnEditAlternativeProductsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>(TempProductBySlugOnEditAlternativeProductsDocument, options);
+      }
+export function useTempProductBySlugOnEditAlternativeProductsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>(TempProductBySlugOnEditAlternativeProductsDocument, options);
         }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    TempProductBySlugOnEditAlternativeProductsQuery,
-    TempProductBySlugOnEditAlternativeProductsQueryVariables
-  >(TempProductBySlugOnEditAlternativeProductsDocument, options);
-}
-export function useTempProductBySlugOnEditAlternativeProductsLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    TempProductBySlugOnEditAlternativeProductsQuery,
-    TempProductBySlugOnEditAlternativeProductsQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    TempProductBySlugOnEditAlternativeProductsQuery,
-    TempProductBySlugOnEditAlternativeProductsQueryVariables
-  >(TempProductBySlugOnEditAlternativeProductsDocument, options);
-}
-export function useTempProductBySlugOnEditAlternativeProductsSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    TempProductBySlugOnEditAlternativeProductsQuery,
-    TempProductBySlugOnEditAlternativeProductsQueryVariables
-  >(TempProductBySlugOnEditAlternativeProductsDocument, options);
-}
-export type TempProductBySlugOnEditAlternativeProductsQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnEditAlternativeProductsQuery>;
-export type TempProductBySlugOnEditAlternativeProductsLazyQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnEditAlternativeProductsLazyQuery>;
-export type TempProductBySlugOnEditAlternativeProductsSuspenseQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnEditAlternativeProductsSuspenseQuery>;
-export type TempProductBySlugOnEditAlternativeProductsQueryResult =
-  Apollo.QueryResult<
-    TempProductBySlugOnEditAlternativeProductsQuery,
-    TempProductBySlugOnEditAlternativeProductsQueryVariables
-  >;
+export function useTempProductBySlugOnEditAlternativeProductsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>(TempProductBySlugOnEditAlternativeProductsDocument, options);
+        }
+export type TempProductBySlugOnEditAlternativeProductsQueryHookResult = ReturnType<typeof useTempProductBySlugOnEditAlternativeProductsQuery>;
+export type TempProductBySlugOnEditAlternativeProductsLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnEditAlternativeProductsLazyQuery>;
+export type TempProductBySlugOnEditAlternativeProductsSuspenseQueryHookResult = ReturnType<typeof useTempProductBySlugOnEditAlternativeProductsSuspenseQuery>;
+export type TempProductBySlugOnEditAlternativeProductsQueryResult = Apollo.QueryResult<TempProductBySlugOnEditAlternativeProductsQuery, TempProductBySlugOnEditAlternativeProductsQueryVariables>;
 export const SearchProductsOnEditAlternativeProductsDocument = gql`
-  query SearchProductsOnEditAlternativeProducts($query: String!) {
-    searchProducts(query: $query) {
-      id
-      name
-    }
+    query SearchProductsOnEditAlternativeProducts($query: String!) {
+  searchProducts(query: $query) {
+    id
+    name
   }
-`;
+}
+    `;
 
 /**
  * __useSearchProductsOnEditAlternativeProductsQuery__
@@ -149,78 +95,35 @@ export const SearchProductsOnEditAlternativeProductsDocument = gql`
  *   },
  * });
  */
-export function useSearchProductsOnEditAlternativeProductsQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    SearchProductsOnEditAlternativeProductsQuery,
-    SearchProductsOnEditAlternativeProductsQueryVariables
-  > &
-    (
-      | {
-          variables: SearchProductsOnEditAlternativeProductsQueryVariables;
-          skip?: boolean;
+export function useSearchProductsOnEditAlternativeProductsQuery(baseOptions: Apollo.QueryHookOptions<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables> & ({ variables: SearchProductsOnEditAlternativeProductsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>(SearchProductsOnEditAlternativeProductsDocument, options);
+      }
+export function useSearchProductsOnEditAlternativeProductsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>(SearchProductsOnEditAlternativeProductsDocument, options);
         }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    SearchProductsOnEditAlternativeProductsQuery,
-    SearchProductsOnEditAlternativeProductsQueryVariables
-  >(SearchProductsOnEditAlternativeProductsDocument, options);
-}
-export function useSearchProductsOnEditAlternativeProductsLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    SearchProductsOnEditAlternativeProductsQuery,
-    SearchProductsOnEditAlternativeProductsQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    SearchProductsOnEditAlternativeProductsQuery,
-    SearchProductsOnEditAlternativeProductsQueryVariables
-  >(SearchProductsOnEditAlternativeProductsDocument, options);
-}
-export function useSearchProductsOnEditAlternativeProductsSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    SearchProductsOnEditAlternativeProductsQuery,
-    SearchProductsOnEditAlternativeProductsQueryVariables
-  >(SearchProductsOnEditAlternativeProductsDocument, options);
-}
-export type SearchProductsOnEditAlternativeProductsQueryHookResult = ReturnType<
-  typeof useSearchProductsOnEditAlternativeProductsQuery
->;
-export type SearchProductsOnEditAlternativeProductsLazyQueryHookResult =
-  ReturnType<typeof useSearchProductsOnEditAlternativeProductsLazyQuery>;
-export type SearchProductsOnEditAlternativeProductsSuspenseQueryHookResult =
-  ReturnType<typeof useSearchProductsOnEditAlternativeProductsSuspenseQuery>;
-export type SearchProductsOnEditAlternativeProductsQueryResult =
-  Apollo.QueryResult<
-    SearchProductsOnEditAlternativeProductsQuery,
-    SearchProductsOnEditAlternativeProductsQueryVariables
-  >;
+export function useSearchProductsOnEditAlternativeProductsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>(SearchProductsOnEditAlternativeProductsDocument, options);
+        }
+export type SearchProductsOnEditAlternativeProductsQueryHookResult = ReturnType<typeof useSearchProductsOnEditAlternativeProductsQuery>;
+export type SearchProductsOnEditAlternativeProductsLazyQueryHookResult = ReturnType<typeof useSearchProductsOnEditAlternativeProductsLazyQuery>;
+export type SearchProductsOnEditAlternativeProductsSuspenseQueryHookResult = ReturnType<typeof useSearchProductsOnEditAlternativeProductsSuspenseQuery>;
+export type SearchProductsOnEditAlternativeProductsQueryResult = Apollo.QueryResult<SearchProductsOnEditAlternativeProductsQuery, SearchProductsOnEditAlternativeProductsQueryVariables>;
 export const EditProductOnEditAlternativeProductsDocument = gql`
-  mutation EditProductOnEditAlternativeProducts(
-    $input: UpdateAlternativeProductInput!
-    $slug: String!
-  ) {
-    updateAlternativeProduct(input: $input, slug: $slug) {
-      product {
+    mutation EditProductOnEditAlternativeProducts($input: UpdateAlternativeProductInput!, $slug: String!) {
+  updateAlternativeProduct(input: $input, slug: $slug) {
+    product {
+      id
+      alternatives {
         id
-        alternatives {
-          id
-        }
       }
     }
   }
-`;
-export type EditProductOnEditAlternativeProductsMutationFn =
-  Apollo.MutationFunctionOptions<
-    EditProductOnEditAlternativeProductsMutation,
-    EditProductOnEditAlternativeProductsMutationVariables
-  >;
+}
+    `;
+export type EditProductOnEditAlternativeProductsMutationFn = Apollo.MutationFunction<EditProductOnEditAlternativeProductsMutation, EditProductOnEditAlternativeProductsMutationVariables>;
 
 /**
  * __useEditProductOnEditAlternativeProductsMutation__
@@ -240,25 +143,10 @@ export type EditProductOnEditAlternativeProductsMutationFn =
  *   },
  * });
  */
-export function useEditProductOnEditAlternativeProductsMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    EditProductOnEditAlternativeProductsMutation,
-    EditProductOnEditAlternativeProductsMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    EditProductOnEditAlternativeProductsMutation,
-    EditProductOnEditAlternativeProductsMutationVariables
-  >(EditProductOnEditAlternativeProductsDocument, options);
-}
-export type EditProductOnEditAlternativeProductsMutationHookResult = ReturnType<
-  typeof useEditProductOnEditAlternativeProductsMutation
->;
-export type EditProductOnEditAlternativeProductsMutationResult =
-  Apollo.MutationResult<EditProductOnEditAlternativeProductsMutation>;
-export type EditProductOnEditAlternativeProductsMutationOptions =
-  Apollo.MutationHookOptions<
-    EditProductOnEditAlternativeProductsMutation,
-    EditProductOnEditAlternativeProductsMutationVariables
-  >;
+export function useEditProductOnEditAlternativeProductsMutation(baseOptions?: Apollo.MutationHookOptions<EditProductOnEditAlternativeProductsMutation, EditProductOnEditAlternativeProductsMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<EditProductOnEditAlternativeProductsMutation, EditProductOnEditAlternativeProductsMutationVariables>(EditProductOnEditAlternativeProductsDocument, options);
+      }
+export type EditProductOnEditAlternativeProductsMutationHookResult = ReturnType<typeof useEditProductOnEditAlternativeProductsMutation>;
+export type EditProductOnEditAlternativeProductsMutationResult = Apollo.MutationResult<EditProductOnEditAlternativeProductsMutation>;
+export type EditProductOnEditAlternativeProductsMutationOptions = Apollo.BaseMutationOptions<EditProductOnEditAlternativeProductsMutation, EditProductOnEditAlternativeProductsMutationVariables>;

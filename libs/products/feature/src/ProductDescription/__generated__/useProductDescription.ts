@@ -1,29 +1,24 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type TempProductBySlugOnProductDescriptionQueryVariables = Types.Exact<{
-  slug: Types.Scalars["String"]["input"];
+  slug: Types.Scalars['String']['input'];
 }>;
 
-export type TempProductBySlugOnProductDescriptionQuery = {
-  __typename?: "Query";
-  tempProductBySlug?: {
-    __typename?: "Product";
-    id: string;
-    description?: string | null;
-  } | null;
-};
+
+export type TempProductBySlugOnProductDescriptionQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, description?: string | null } | null };
+
 
 export const TempProductBySlugOnProductDescriptionDocument = gql`
-  query TempProductBySlugOnProductDescription($slug: String!) {
-    tempProductBySlug(slug: $slug) {
-      id
-      description
-    }
+    query TempProductBySlugOnProductDescription($slug: String!) {
+  tempProductBySlug(slug: $slug) {
+    id
+    description
   }
-`;
+}
+    `;
 
 /**
  * __useTempProductBySlugOnProductDescriptionQuery__
@@ -41,55 +36,19 @@ export const TempProductBySlugOnProductDescriptionDocument = gql`
  *   },
  * });
  */
-export function useTempProductBySlugOnProductDescriptionQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    TempProductBySlugOnProductDescriptionQuery,
-    TempProductBySlugOnProductDescriptionQueryVariables
-  > &
-    (
-      | {
-          variables: TempProductBySlugOnProductDescriptionQueryVariables;
-          skip?: boolean;
+export function useTempProductBySlugOnProductDescriptionQuery(baseOptions: Apollo.QueryHookOptions<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables> & ({ variables: TempProductBySlugOnProductDescriptionQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>(TempProductBySlugOnProductDescriptionDocument, options);
+      }
+export function useTempProductBySlugOnProductDescriptionLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>(TempProductBySlugOnProductDescriptionDocument, options);
         }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    TempProductBySlugOnProductDescriptionQuery,
-    TempProductBySlugOnProductDescriptionQueryVariables
-  >(TempProductBySlugOnProductDescriptionDocument, options);
-}
-export function useTempProductBySlugOnProductDescriptionLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    TempProductBySlugOnProductDescriptionQuery,
-    TempProductBySlugOnProductDescriptionQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    TempProductBySlugOnProductDescriptionQuery,
-    TempProductBySlugOnProductDescriptionQueryVariables
-  >(TempProductBySlugOnProductDescriptionDocument, options);
-}
-export function useTempProductBySlugOnProductDescriptionSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    TempProductBySlugOnProductDescriptionQuery,
-    TempProductBySlugOnProductDescriptionQueryVariables
-  >(TempProductBySlugOnProductDescriptionDocument, options);
-}
-export type TempProductBySlugOnProductDescriptionQueryHookResult = ReturnType<
-  typeof useTempProductBySlugOnProductDescriptionQuery
->;
-export type TempProductBySlugOnProductDescriptionLazyQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnProductDescriptionLazyQuery>;
-export type TempProductBySlugOnProductDescriptionSuspenseQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnProductDescriptionSuspenseQuery>;
-export type TempProductBySlugOnProductDescriptionQueryResult =
-  Apollo.QueryResult<
-    TempProductBySlugOnProductDescriptionQuery,
-    TempProductBySlugOnProductDescriptionQueryVariables
-  >;
+export function useTempProductBySlugOnProductDescriptionSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>(TempProductBySlugOnProductDescriptionDocument, options);
+        }
+export type TempProductBySlugOnProductDescriptionQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductDescriptionQuery>;
+export type TempProductBySlugOnProductDescriptionLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductDescriptionLazyQuery>;
+export type TempProductBySlugOnProductDescriptionSuspenseQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductDescriptionSuspenseQuery>;
+export type TempProductBySlugOnProductDescriptionQueryResult = Apollo.QueryResult<TempProductBySlugOnProductDescriptionQuery, TempProductBySlugOnProductDescriptionQueryVariables>;

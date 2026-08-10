@@ -1,42 +1,28 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type GenerateProductDescriptionMutationVariables = Types.Exact<{
   input: Types.GenerateProductDescriptionInput;
 }>;
 
-export type GenerateProductDescriptionMutation = {
-  __typename?: "Mutation";
-  generateProductDescription: {
-    __typename?: "GenerateProductDescriptionPayload";
-    product: {
-      __typename?: "Product";
-      id: string;
-      name: string;
-      description?: string | null;
-    };
-  };
-};
+
+export type GenerateProductDescriptionMutation = { __typename?: 'Mutation', generateProductDescription: { __typename?: 'GenerateProductDescriptionPayload', product: { __typename?: 'Product', id: string, name: string, description?: string | null } } };
+
 
 export const GenerateProductDescriptionDocument = gql`
-  mutation GenerateProductDescription(
-    $input: GenerateProductDescriptionInput!
-  ) {
-    generateProductDescription(input: $input) {
-      product {
-        id
-        name
-        description
-      }
+    mutation GenerateProductDescription($input: GenerateProductDescriptionInput!) {
+  generateProductDescription(input: $input) {
+    product {
+      id
+      name
+      description
     }
   }
-`;
-export type GenerateProductDescriptionMutationFn = Apollo.MutationFunctionOptions<
-  GenerateProductDescriptionMutation,
-  GenerateProductDescriptionMutationVariables
->;
+}
+    `;
+export type GenerateProductDescriptionMutationFn = Apollo.MutationFunction<GenerateProductDescriptionMutation, GenerateProductDescriptionMutationVariables>;
 
 /**
  * __useGenerateProductDescriptionMutation__
@@ -55,25 +41,10 @@ export type GenerateProductDescriptionMutationFn = Apollo.MutationFunctionOption
  *   },
  * });
  */
-export function useGenerateProductDescriptionMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    GenerateProductDescriptionMutation,
-    GenerateProductDescriptionMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    GenerateProductDescriptionMutation,
-    GenerateProductDescriptionMutationVariables
-  >(GenerateProductDescriptionDocument, options);
-}
-export type GenerateProductDescriptionMutationHookResult = ReturnType<
-  typeof useGenerateProductDescriptionMutation
->;
-export type GenerateProductDescriptionMutationResult =
-  Apollo.MutationResult<GenerateProductDescriptionMutation>;
-export type GenerateProductDescriptionMutationOptions =
-  Apollo.MutationHookOptions<
-    GenerateProductDescriptionMutation,
-    GenerateProductDescriptionMutationVariables
-  >;
+export function useGenerateProductDescriptionMutation(baseOptions?: Apollo.MutationHookOptions<GenerateProductDescriptionMutation, GenerateProductDescriptionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<GenerateProductDescriptionMutation, GenerateProductDescriptionMutationVariables>(GenerateProductDescriptionDocument, options);
+      }
+export type GenerateProductDescriptionMutationHookResult = ReturnType<typeof useGenerateProductDescriptionMutation>;
+export type GenerateProductDescriptionMutationResult = Apollo.MutationResult<GenerateProductDescriptionMutation>;
+export type GenerateProductDescriptionMutationOptions = Apollo.BaseMutationOptions<GenerateProductDescriptionMutation, GenerateProductDescriptionMutationVariables>;

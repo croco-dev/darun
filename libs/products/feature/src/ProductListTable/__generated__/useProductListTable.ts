@@ -1,70 +1,42 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type AllProductsOnProductListTableQueryVariables = Types.Exact<{
-  first?: Types.InputMaybe<Types.Scalars["Int"]["input"]>;
-  after?: Types.InputMaybe<Types.Scalars["String"]["input"]>;
-  last?: Types.InputMaybe<Types.Scalars["Int"]["input"]>;
-  before?: Types.InputMaybe<Types.Scalars["String"]["input"]>;
+  first?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  after?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  last?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  before?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
-export type AllProductsOnProductListTableQuery = {
-  __typename?: "Query";
-  allProducts: {
-    __typename?: "ProductConnection";
-    totalCount: number;
-    edges: Array<{
-      __typename?: "ProductEdge";
-      cursor: string;
-      node: {
-        __typename?: "Product";
-        id: string;
-        logoUrl: string;
-        slug: string;
-        name: string;
-        summary: string;
-      };
-    }>;
-    pageInfo: {
-      __typename?: "PageInfo";
-      endCursor?: string | null;
-      hasNextPage: boolean;
-      startCursor?: string | null;
-      hasPreviousPage: boolean;
-    };
-  };
-};
+
+export type AllProductsOnProductListTableQuery = { __typename?: 'Query', allProducts: { __typename?: 'ProductConnection', totalCount: number, edges: Array<{ __typename?: 'ProductEdge', cursor: string, node: { __typename?: 'Product', id: string, logoUrl: string, slug: string, name: string, summary: string } }>, pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean, startCursor?: string | null, hasPreviousPage: boolean } } };
+
 
 export const AllProductsOnProductListTableDocument = gql`
-  query AllProductsOnProductListTable(
-    $first: Int
-    $after: String
-    $last: Int
-    $before: String
-  ) {
-    allProducts(first: $first, after: $after, last: $last, before: $before) {
-      edges {
-        cursor
-        node {
-          id
-          logoUrl
-          slug
-          name
-          summary
-        }
+    query AllProductsOnProductListTable($first: Int, $after: String, $last: Int, $before: String) {
+  allProducts(first: $first, after: $after, last: $last, before: $before) {
+    edges {
+      cursor
+      node {
+        id
+        logoUrl
+        slug
+        name
+        summary
       }
-      pageInfo {
-        endCursor
-        hasNextPage
-        startCursor
-        hasPreviousPage
-      }
-      totalCount
     }
+    pageInfo {
+      endCursor
+      hasNextPage
+      startCursor
+      hasPreviousPage
+    }
+    totalCount
   }
-`;
+}
+    `;
 
 /**
  * __useAllProductsOnProductListTableQuery__
@@ -85,49 +57,19 @@ export const AllProductsOnProductListTableDocument = gql`
  *   },
  * });
  */
-export function useAllProductsOnProductListTableQuery(
-  baseOptions?: Apollo.QueryHookOptions<
-    AllProductsOnProductListTableQuery,
-    AllProductsOnProductListTableQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    AllProductsOnProductListTableQuery,
-    AllProductsOnProductListTableQueryVariables
-  >(AllProductsOnProductListTableDocument, options);
-}
-export function useAllProductsOnProductListTableLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    AllProductsOnProductListTableQuery,
-    AllProductsOnProductListTableQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    AllProductsOnProductListTableQuery,
-    AllProductsOnProductListTableQueryVariables
-  >(AllProductsOnProductListTableDocument, options);
-}
-export function useAllProductsOnProductListTableSuspenseQuery(
-  baseOptions?: Apollo.SuspenseQueryHookOptions<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>,
-) {
-  const options = baseOptions ? { ...defaultOptions, ...baseOptions } : defaultOptions;
-  return Apollo.useSuspenseQuery<
-    AllProductsOnProductListTableQuery,
-    AllProductsOnProductListTableQueryVariables
-  >(AllProductsOnProductListTableDocument, options);
-}
-export type AllProductsOnProductListTableQueryHookResult = ReturnType<
-  typeof useAllProductsOnProductListTableQuery
->;
-export type AllProductsOnProductListTableLazyQueryHookResult = ReturnType<
-  typeof useAllProductsOnProductListTableLazyQuery
->;
-export type AllProductsOnProductListTableSuspenseQueryHookResult = ReturnType<
-  typeof useAllProductsOnProductListTableSuspenseQuery
->;
-export type AllProductsOnProductListTableQueryResult = Apollo.QueryResult<
-  AllProductsOnProductListTableQuery,
-  AllProductsOnProductListTableQueryVariables
->;
+export function useAllProductsOnProductListTableQuery(baseOptions?: Apollo.QueryHookOptions<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>(AllProductsOnProductListTableDocument, options);
+      }
+export function useAllProductsOnProductListTableLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>(AllProductsOnProductListTableDocument, options);
+        }
+export function useAllProductsOnProductListTableSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>(AllProductsOnProductListTableDocument, options);
+        }
+export type AllProductsOnProductListTableQueryHookResult = ReturnType<typeof useAllProductsOnProductListTableQuery>;
+export type AllProductsOnProductListTableLazyQueryHookResult = ReturnType<typeof useAllProductsOnProductListTableLazyQuery>;
+export type AllProductsOnProductListTableSuspenseQueryHookResult = ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>;
+export type AllProductsOnProductListTableQueryResult = Apollo.QueryResult<AllProductsOnProductListTableQuery, AllProductsOnProductListTableQueryVariables>;

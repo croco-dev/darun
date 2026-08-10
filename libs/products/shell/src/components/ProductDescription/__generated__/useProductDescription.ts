@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client/react';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type ProductBySlugOnProductSummaryQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -46,15 +46,10 @@ export function useProductBySlugOnProductSummaryLazyQuery(baseOptions?: Apollo.L
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables>(ProductBySlugOnProductSummaryDocument, options);
         }
-export function useProductBySlugOnProductSummarySuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    ProductBySlugOnProductSummaryQuery,
-    ProductBySlugOnProductSummaryQueryVariables
-  >(ProductBySlugOnProductSummaryDocument, options);
-}
+export function useProductBySlugOnProductSummarySuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ProductBySlugOnProductSummaryQuery, ProductBySlugOnProductSummaryQueryVariables>(ProductBySlugOnProductSummaryDocument, options);
+        }
 export type ProductBySlugOnProductSummaryQueryHookResult = ReturnType<typeof useProductBySlugOnProductSummaryQuery>;
 export type ProductBySlugOnProductSummaryLazyQueryHookResult = ReturnType<typeof useProductBySlugOnProductSummaryLazyQuery>;
 export type ProductBySlugOnProductSummarySuspenseQueryHookResult = ReturnType<typeof useProductBySlugOnProductSummarySuspenseQuery>;

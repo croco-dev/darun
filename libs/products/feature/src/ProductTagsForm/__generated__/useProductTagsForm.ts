@@ -1,49 +1,35 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type TempProductBySlugOnProductTagsFormQueryVariables = Types.Exact<{
-  slug: Types.Scalars["String"]["input"];
+  slug: Types.Scalars['String']['input'];
 }>;
 
-export type TempProductBySlugOnProductTagsFormQuery = {
-  __typename?: "Query";
-  tempProductBySlug?: {
-    __typename?: "Product";
-    id: string;
-    tags: Array<{ __typename?: "Tag"; id: string; name: string }>;
-  } | null;
-};
+
+export type TempProductBySlugOnProductTagsFormQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, tags: Array<{ __typename?: 'Tag', id: string, name: string }> } | null };
 
 export type UpdateProductTagsOnProductTagFormMutationVariables = Types.Exact<{
-  slug: Types.Scalars["String"]["input"];
+  slug: Types.Scalars['String']['input'];
   input: Types.UpdateProductTagsInput;
 }>;
 
-export type UpdateProductTagsOnProductTagFormMutation = {
-  __typename?: "Mutation";
-  updateProductTags: {
-    __typename?: "UpdateProductTagsPayload";
-    product?: {
-      __typename?: "Product";
-      id: string;
-      tags: Array<{ __typename?: "Tag"; id: string; name: string }>;
-    } | null;
-  };
-};
+
+export type UpdateProductTagsOnProductTagFormMutation = { __typename?: 'Mutation', updateProductTags: { __typename?: 'UpdateProductTagsPayload', product?: { __typename?: 'Product', id: string, tags: Array<{ __typename?: 'Tag', id: string, name: string }> } | null } };
+
 
 export const TempProductBySlugOnProductTagsFormDocument = gql`
-  query TempProductBySlugOnProductTagsForm($slug: String!) {
-    tempProductBySlug(slug: $slug) {
+    query TempProductBySlugOnProductTagsForm($slug: String!) {
+  tempProductBySlug(slug: $slug) {
+    id
+    tags {
       id
-      tags {
-        id
-        name
-      }
+      name
     }
   }
-`;
+}
+    `;
 
 /**
  * __useTempProductBySlugOnProductTagsFormQuery__
@@ -61,79 +47,36 @@ export const TempProductBySlugOnProductTagsFormDocument = gql`
  *   },
  * });
  */
-export function useTempProductBySlugOnProductTagsFormQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    TempProductBySlugOnProductTagsFormQuery,
-    TempProductBySlugOnProductTagsFormQueryVariables
-  > &
-    (
-      | {
-          variables: TempProductBySlugOnProductTagsFormQueryVariables;
-          skip?: boolean;
+export function useTempProductBySlugOnProductTagsFormQuery(baseOptions: Apollo.QueryHookOptions<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables> & ({ variables: TempProductBySlugOnProductTagsFormQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>(TempProductBySlugOnProductTagsFormDocument, options);
+      }
+export function useTempProductBySlugOnProductTagsFormLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>(TempProductBySlugOnProductTagsFormDocument, options);
         }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    TempProductBySlugOnProductTagsFormQuery,
-    TempProductBySlugOnProductTagsFormQueryVariables
-  >(TempProductBySlugOnProductTagsFormDocument, options);
-}
-export function useTempProductBySlugOnProductTagsFormLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    TempProductBySlugOnProductTagsFormQuery,
-    TempProductBySlugOnProductTagsFormQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    TempProductBySlugOnProductTagsFormQuery,
-    TempProductBySlugOnProductTagsFormQueryVariables
-  >(TempProductBySlugOnProductTagsFormDocument, options);
-}
-export function useTempProductBySlugOnProductTagsFormSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    TempProductBySlugOnProductTagsFormQuery,
-    TempProductBySlugOnProductTagsFormQueryVariables
-  >(TempProductBySlugOnProductTagsFormDocument, options);
-}
-export type TempProductBySlugOnProductTagsFormQueryHookResult = ReturnType<
-  typeof useTempProductBySlugOnProductTagsFormQuery
->;
-export type TempProductBySlugOnProductTagsFormLazyQueryHookResult = ReturnType<
-  typeof useTempProductBySlugOnProductTagsFormLazyQuery
->;
-export type TempProductBySlugOnProductTagsFormSuspenseQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnProductTagsFormSuspenseQuery>;
-export type TempProductBySlugOnProductTagsFormQueryResult = Apollo.QueryResult<
-  TempProductBySlugOnProductTagsFormQuery,
-  TempProductBySlugOnProductTagsFormQueryVariables
->;
+export function useTempProductBySlugOnProductTagsFormSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>(TempProductBySlugOnProductTagsFormDocument, options);
+        }
+export type TempProductBySlugOnProductTagsFormQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductTagsFormQuery>;
+export type TempProductBySlugOnProductTagsFormLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductTagsFormLazyQuery>;
+export type TempProductBySlugOnProductTagsFormSuspenseQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductTagsFormSuspenseQuery>;
+export type TempProductBySlugOnProductTagsFormQueryResult = Apollo.QueryResult<TempProductBySlugOnProductTagsFormQuery, TempProductBySlugOnProductTagsFormQueryVariables>;
 export const UpdateProductTagsOnProductTagFormDocument = gql`
-  mutation UpdateProductTagsOnProductTagForm(
-    $slug: String!
-    $input: UpdateProductTagsInput!
-  ) {
-    updateProductTags(slug: $slug, input: $input) {
-      product {
+    mutation UpdateProductTagsOnProductTagForm($slug: String!, $input: UpdateProductTagsInput!) {
+  updateProductTags(slug: $slug, input: $input) {
+    product {
+      id
+      tags {
         id
-        tags {
-          id
-          name
-        }
+        name
       }
     }
   }
-`;
-export type UpdateProductTagsOnProductTagFormMutationFn =
-  Apollo.MutationFunctionOptions<
-    UpdateProductTagsOnProductTagFormMutation,
-    UpdateProductTagsOnProductTagFormMutationVariables
-  >;
+}
+    `;
+export type UpdateProductTagsOnProductTagFormMutationFn = Apollo.MutationFunction<UpdateProductTagsOnProductTagFormMutation, UpdateProductTagsOnProductTagFormMutationVariables>;
 
 /**
  * __useUpdateProductTagsOnProductTagFormMutation__
@@ -153,25 +96,10 @@ export type UpdateProductTagsOnProductTagFormMutationFn =
  *   },
  * });
  */
-export function useUpdateProductTagsOnProductTagFormMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    UpdateProductTagsOnProductTagFormMutation,
-    UpdateProductTagsOnProductTagFormMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    UpdateProductTagsOnProductTagFormMutation,
-    UpdateProductTagsOnProductTagFormMutationVariables
-  >(UpdateProductTagsOnProductTagFormDocument, options);
-}
-export type UpdateProductTagsOnProductTagFormMutationHookResult = ReturnType<
-  typeof useUpdateProductTagsOnProductTagFormMutation
->;
-export type UpdateProductTagsOnProductTagFormMutationResult =
-  Apollo.MutationResult<UpdateProductTagsOnProductTagFormMutation>;
-export type UpdateProductTagsOnProductTagFormMutationOptions =
-  Apollo.MutationHookOptions<
-    UpdateProductTagsOnProductTagFormMutation,
-    UpdateProductTagsOnProductTagFormMutationVariables
-  >;
+export function useUpdateProductTagsOnProductTagFormMutation(baseOptions?: Apollo.MutationHookOptions<UpdateProductTagsOnProductTagFormMutation, UpdateProductTagsOnProductTagFormMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateProductTagsOnProductTagFormMutation, UpdateProductTagsOnProductTagFormMutationVariables>(UpdateProductTagsOnProductTagFormDocument, options);
+      }
+export type UpdateProductTagsOnProductTagFormMutationHookResult = ReturnType<typeof useUpdateProductTagsOnProductTagFormMutation>;
+export type UpdateProductTagsOnProductTagFormMutationResult = Apollo.MutationResult<UpdateProductTagsOnProductTagFormMutation>;
+export type UpdateProductTagsOnProductTagFormMutationOptions = Apollo.BaseMutationOptions<UpdateProductTagsOnProductTagFormMutation, UpdateProductTagsOnProductTagFormMutationVariables>;
