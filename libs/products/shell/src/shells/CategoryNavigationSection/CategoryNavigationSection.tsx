@@ -38,7 +38,7 @@ export const CategoryNavigationSection = () => {
           moreLink={
             <Link
               href={`/${locale}/search/product`}
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 transition-colors duration-200 ease-out hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transition-none"
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
             >
               {t('home.category.more')}
             </Link>
@@ -56,14 +56,14 @@ export const CategoryNavigationSection = () => {
                     source: 'home-bar',
                   })
                 }
-                className="flex min-h-[80px] items-center justify-center rounded-card border border-surface-300 bg-white px-4 py-3 text-center text-sm font-semibold tracking-tight text-dark-900 transition-colors duration-200 ease-out hover:border-brand-300 hover:text-brand-800 focus-visible:border-brand-300 focus-visible:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transition-none sm:text-base"
+                className="flex min-h-20 items-center justify-center rounded-card border border-dark-200 bg-white px-4 py-3 text-center text-sm font-semibold tracking-tight text-dark-900 transition-colors duration-200 ease-out hover:border-dark-400 hover:text-dark-900 focus-visible:border-dark-400 focus-visible:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none sm:text-base"
               >
                 {locale === 'ko' ? category.labelKo : category.labelEn}
               </Link>
             ))}
           </div>
         ) : (
-          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-surface-300 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
+          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-dark-200 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
             {t('home.category.empty')}
           </div>
         )}

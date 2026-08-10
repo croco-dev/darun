@@ -83,7 +83,7 @@ export const WriteMagazine = bind(
                   };
                   input.click();
                 }}
-                className="flex min-h-[220px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-dark-200 bg-white transition hover:border-dark-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
+                className="flex min-h-56 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-dark-200 bg-white transition hover:border-dark-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
               >
                 <div className="flex flex-col items-center gap-4 p-8">
                   <svg

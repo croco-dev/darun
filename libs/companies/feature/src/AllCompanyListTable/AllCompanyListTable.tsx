@@ -60,7 +60,7 @@ export const AllCompanyListTable = bind(
       <div className="flex flex-col gap-3">
         <AdminPanel className="overflow-hidden">
           <table className="w-full border-collapse table-fixed">
-            <thead className="bg-dark-50">
+            <thead className="bg-surface-100">
               <tr>
                 {dataTableColumns.map(col => (
                   <th
@@ -77,8 +77,8 @@ export const AllCompanyListTable = bind(
               {(companies ?? []).map((record, index) => (
                 <tr
                   key={record.id}
-                  className={`border-b border-dark-200 transition hover:bg-dark-50 ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-dark-50/30'
+                  className={`border-b border-dark-200 transition hover:bg-surface-100 ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-surface-100/30'
                   }`}
                 >
                   {dataTableColumns.map(col => (

@@ -42,6 +42,7 @@ cp apps/visual-web/.env.sample apps/visual-web/.env.local
 | `CLOUDINARY_API_SECRET` | Cloudinary API 시크릿 | 필수 |
 | `SENTRY_AUTH_TOKEN` | Sentry 소스맵 업로드 토큰 | 선택 |
 | `OPEN_ROUTER_API_KEY` | OpenRouter AI API 키 | 선택 |
+| `VOTE_IP_SALT` | IP 기반 투표 중복 방지를 위한 해시 salt | 필수 |
 
 #### `apps/service-web`
 

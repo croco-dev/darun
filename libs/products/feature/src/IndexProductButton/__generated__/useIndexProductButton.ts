@@ -1,29 +1,24 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type IndexProductOnIndexProductButtonMutationVariables = Types.Exact<{
   input: Types.IndexProductInput;
 }>;
 
-export type IndexProductOnIndexProductButtonMutation = {
-  __typename?: "Mutation";
-  indexProduct: { __typename?: "IndexProductPayload"; indexed: boolean };
-};
+
+export type IndexProductOnIndexProductButtonMutation = { __typename?: 'Mutation', indexProduct: { __typename?: 'IndexProductPayload', indexed: boolean } };
+
 
 export const IndexProductOnIndexProductButtonDocument = gql`
-  mutation IndexProductOnIndexProductButton($input: IndexProductInput!) {
-    indexProduct(input: $input) {
-      indexed
-    }
+    mutation IndexProductOnIndexProductButton($input: IndexProductInput!) {
+  indexProduct(input: $input) {
+    indexed
   }
-`;
-export type IndexProductOnIndexProductButtonMutationFn =
-  Apollo.MutationFunctionOptions<
-    IndexProductOnIndexProductButtonMutation,
-    IndexProductOnIndexProductButtonMutationVariables
-  >;
+}
+    `;
+export type IndexProductOnIndexProductButtonMutationFn = Apollo.MutationFunction<IndexProductOnIndexProductButtonMutation, IndexProductOnIndexProductButtonMutationVariables>;
 
 /**
  * __useIndexProductOnIndexProductButtonMutation__
@@ -42,25 +37,10 @@ export type IndexProductOnIndexProductButtonMutationFn =
  *   },
  * });
  */
-export function useIndexProductOnIndexProductButtonMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    IndexProductOnIndexProductButtonMutation,
-    IndexProductOnIndexProductButtonMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    IndexProductOnIndexProductButtonMutation,
-    IndexProductOnIndexProductButtonMutationVariables
-  >(IndexProductOnIndexProductButtonDocument, options);
-}
-export type IndexProductOnIndexProductButtonMutationHookResult = ReturnType<
-  typeof useIndexProductOnIndexProductButtonMutation
->;
-export type IndexProductOnIndexProductButtonMutationResult =
-  Apollo.MutationResult<IndexProductOnIndexProductButtonMutation>;
-export type IndexProductOnIndexProductButtonMutationOptions =
-  Apollo.MutationHookOptions<
-    IndexProductOnIndexProductButtonMutation,
-    IndexProductOnIndexProductButtonMutationVariables
-  >;
+export function useIndexProductOnIndexProductButtonMutation(baseOptions?: Apollo.MutationHookOptions<IndexProductOnIndexProductButtonMutation, IndexProductOnIndexProductButtonMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<IndexProductOnIndexProductButtonMutation, IndexProductOnIndexProductButtonMutationVariables>(IndexProductOnIndexProductButtonDocument, options);
+      }
+export type IndexProductOnIndexProductButtonMutationHookResult = ReturnType<typeof useIndexProductOnIndexProductButtonMutation>;
+export type IndexProductOnIndexProductButtonMutationResult = Apollo.MutationResult<IndexProductOnIndexProductButtonMutation>;
+export type IndexProductOnIndexProductButtonMutationOptions = Apollo.BaseMutationOptions<IndexProductOnIndexProductButtonMutation, IndexProductOnIndexProductButtonMutationVariables>;

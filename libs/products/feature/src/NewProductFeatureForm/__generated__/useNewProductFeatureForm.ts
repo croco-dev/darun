@@ -1,38 +1,27 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
-export type CreateProductFeatureOnNewProductFeatureFormMutationVariables =
-  Types.Exact<{
-    input: Types.CreateProductFeatureInput;
-  }>;
+export type CreateProductFeatureOnNewProductFeatureFormMutationVariables = Types.Exact<{
+  input: Types.CreateProductFeatureInput;
+}>;
 
-export type CreateProductFeatureOnNewProductFeatureFormMutation = {
-  __typename?: "Mutation";
-  createProductFeature: {
-    __typename?: "CreateProductFeaturePayload";
-    feature: { __typename?: "Feature"; id: string; name: string };
-  };
-};
+
+export type CreateProductFeatureOnNewProductFeatureFormMutation = { __typename?: 'Mutation', createProductFeature: { __typename?: 'CreateProductFeaturePayload', feature: { __typename?: 'Feature', id: string, name: string } } };
+
 
 export const CreateProductFeatureOnNewProductFeatureFormDocument = gql`
-  mutation CreateProductFeatureOnNewProductFeatureForm(
-    $input: CreateProductFeatureInput!
-  ) {
-    createProductFeature(input: $input) {
-      feature {
-        id
-        name
-      }
+    mutation CreateProductFeatureOnNewProductFeatureForm($input: CreateProductFeatureInput!) {
+  createProductFeature(input: $input) {
+    feature {
+      id
+      name
     }
   }
-`;
-export type CreateProductFeatureOnNewProductFeatureFormMutationFn =
-  Apollo.MutationFunctionOptions<
-    CreateProductFeatureOnNewProductFeatureFormMutation,
-    CreateProductFeatureOnNewProductFeatureFormMutationVariables
-  >;
+}
+    `;
+export type CreateProductFeatureOnNewProductFeatureFormMutationFn = Apollo.MutationFunction<CreateProductFeatureOnNewProductFeatureFormMutation, CreateProductFeatureOnNewProductFeatureFormMutationVariables>;
 
 /**
  * __useCreateProductFeatureOnNewProductFeatureFormMutation__
@@ -51,24 +40,10 @@ export type CreateProductFeatureOnNewProductFeatureFormMutationFn =
  *   },
  * });
  */
-export function useCreateProductFeatureOnNewProductFeatureFormMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    CreateProductFeatureOnNewProductFeatureFormMutation,
-    CreateProductFeatureOnNewProductFeatureFormMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    CreateProductFeatureOnNewProductFeatureFormMutation,
-    CreateProductFeatureOnNewProductFeatureFormMutationVariables
-  >(CreateProductFeatureOnNewProductFeatureFormDocument, options);
-}
-export type CreateProductFeatureOnNewProductFeatureFormMutationHookResult =
-  ReturnType<typeof useCreateProductFeatureOnNewProductFeatureFormMutation>;
-export type CreateProductFeatureOnNewProductFeatureFormMutationResult =
-  Apollo.MutationResult<CreateProductFeatureOnNewProductFeatureFormMutation>;
-export type CreateProductFeatureOnNewProductFeatureFormMutationOptions =
-  Apollo.MutationHookOptions<
-    CreateProductFeatureOnNewProductFeatureFormMutation,
-    CreateProductFeatureOnNewProductFeatureFormMutationVariables
-  >;
+export function useCreateProductFeatureOnNewProductFeatureFormMutation(baseOptions?: Apollo.MutationHookOptions<CreateProductFeatureOnNewProductFeatureFormMutation, CreateProductFeatureOnNewProductFeatureFormMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateProductFeatureOnNewProductFeatureFormMutation, CreateProductFeatureOnNewProductFeatureFormMutationVariables>(CreateProductFeatureOnNewProductFeatureFormDocument, options);
+      }
+export type CreateProductFeatureOnNewProductFeatureFormMutationHookResult = ReturnType<typeof useCreateProductFeatureOnNewProductFeatureFormMutation>;
+export type CreateProductFeatureOnNewProductFeatureFormMutationResult = Apollo.MutationResult<CreateProductFeatureOnNewProductFeatureFormMutation>;
+export type CreateProductFeatureOnNewProductFeatureFormMutationOptions = Apollo.BaseMutationOptions<CreateProductFeatureOnNewProductFeatureFormMutation, CreateProductFeatureOnNewProductFeatureFormMutationVariables>;

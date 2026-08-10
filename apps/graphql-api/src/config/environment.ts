@@ -19,6 +19,7 @@ export const FIREBASE_PROJECT_ID = requireEnv('FIREBASE_PROJECT_ID');
 export const FIREBASE_PRIVATE_KEY = (IS_LOCAL ? optionalEnv : requireEnv)('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n');
 export const FIREBASE_CLIENT_EMAIL = (IS_LOCAL ? optionalEnv : requireEnv)('FIREBASE_CLIENT_EMAIL');
 export const MONGODB_URI = requireEnv('MONGODB_URI');
+export const VOTE_IP_SALT = requireEnv('VOTE_IP_SALT');
 export const CLOUDINARY_CLOUD_NAME = (IS_LOCAL ? optionalEnv : requireEnv)('CLOUDINARY_CLOUD_NAME');
 export const CLOUDINARY_API_KEY = (IS_LOCAL ? optionalEnv : requireEnv)('CLOUDINARY_API_KEY');
 export const CLOUDINARY_API_SECRET = (IS_LOCAL ? optionalEnv : requireEnv)('CLOUDINARY_API_SECRET');

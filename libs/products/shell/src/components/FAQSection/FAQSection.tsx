@@ -45,14 +45,14 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
   }, [isOpen, answer]);
 
   return (
-    <div className="w-full overflow-hidden rounded-xl border border-surface-300 bg-white">
+    <div className="w-full overflow-hidden rounded-card border border-dark-200 bg-white">
       <button
         type="button"
         onClick={() => setIsOpen(prev => !prev)}
         id={buttonId}
         aria-expanded={isOpen}
         aria-controls={panelId}
-        className="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
       >
         <p className="flex-1 pr-4 text-base font-semibold text-dark-900">{question}</p>
         <div
@@ -90,7 +90,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         }}
         className="overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out motion-reduce:transition-none"
       >
-        <div ref={panelRef} className="px-5 pb-5 pt-0 text-dark-700 leading-[1.6]">
+        <div ref={panelRef} className="px-5 pb-5 pt-0 text-dark-700 leading-relaxed">
           <p className="whitespace-pre-wrap">{answer}</p>
         </div>
       </section>

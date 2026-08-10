@@ -64,6 +64,7 @@ services:
       MONGODB_URI: mongodb://darun:darun@mongo:27017/darun?authSource=admin
       FIREBASE_PROJECT_ID: darun-local
       FIREBASE_AUTH_EMULATOR_HOST: firebase-auth:9099
+      VOTE_IP_SALT: ${VOTE_IP_SALT:-local-salt}
     env_file:
       - path: apps/graphql-api/.env.local
         required: false

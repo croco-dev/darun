@@ -25,6 +25,7 @@ process.env.CLOUDINARY_API_KEY = 'local';
 process.env.CLOUDINARY_API_SECRET = 'local';
 process.env.OPEN_ROUTER_API_KEY = 'local';
 process.env.CURSOR_SIGNATURE_SECRET = 'local-cursor-secret';
+process.env.VOTE_IP_SALT = 'local-vote-salt';
 process.env.SENTRY_AUTH_TOKEN = '';
 
 const log = (message, data = {}) => {

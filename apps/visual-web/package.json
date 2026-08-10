@@ -13,13 +13,8 @@
   "dependencies": {
     "@apollo/client": "4.2.0",
     "@croco/utils-next-font-pretendard": "0.0.2",
-    "@darun/magazines-shell": "workspace:*",
-    "@darun/opengraph-shell": "workspace:*",
-    "@darun/pages-shell": "workspace:*",
-    "@darun/products-shell": "workspace:*",
     "@darun/provider-auth/client": "workspace:*",
     "@darun/provider-auth/server": "workspace:*",
-    "@darun/search-shell": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/ui-layout": "workspace:*",
     "@darun/utils-apollo-client/client": "workspace:*",

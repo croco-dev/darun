@@ -13,10 +13,10 @@ jobs:
     name: quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+- uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - name: Use Node.js 22.x
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 22.x
           cache: 'pnpm'
@@ -36,10 +36,10 @@ jobs:
     environment:
       name: prod-graphql
     steps:
-      - uses: actions/checkout@v5
+- uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - name: Use Node.js 22.x
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 22.x
           cache: 'pnpm'
@@ -71,3 +71,4 @@ jobs:
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
           CURSOR_SIGNATURE_SECRET: ${{ secrets.CURSOR_SIGNATURE_SECRET }}
+          VOTE_IP_SALT: ${{ secrets.VOTE_IP_SALT }}

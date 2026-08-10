@@ -1,42 +1,31 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type TempProductOnPublishProductButtonQueryVariables = Types.Exact<{
-  slug: Types.Scalars["String"]["input"];
+  slug: Types.Scalars['String']['input'];
 }>;
 
-export type TempProductOnPublishProductButtonQuery = {
-  __typename?: "Query";
-  tempProductBySlug?: {
-    __typename?: "Product";
-    id: string;
-    publishedAt?: any | null;
-  } | null;
-};
 
-export type PublishProductOnPublishProductButtonMutationVariables =
-  Types.Exact<{
-    input: Types.PublishProductInput;
-  }>;
+export type TempProductOnPublishProductButtonQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, publishedAt?: any | null } | null };
 
-export type PublishProductOnPublishProductButtonMutation = {
-  __typename?: "Mutation";
-  publishProduct: {
-    __typename?: "PublishProductPayload";
-    product: { __typename?: "Product"; id: string; publishedAt?: any | null };
-  };
-};
+export type PublishProductOnPublishProductButtonMutationVariables = Types.Exact<{
+  input: Types.PublishProductInput;
+}>;
+
+
+export type PublishProductOnPublishProductButtonMutation = { __typename?: 'Mutation', publishProduct: { __typename?: 'PublishProductPayload', product: { __typename?: 'Product', id: string, publishedAt?: any | null } } };
+
 
 export const TempProductOnPublishProductButtonDocument = gql`
-  query TempProductOnPublishProductButton($slug: String!) {
-    tempProductBySlug(slug: $slug) {
-      id
-      publishedAt
-    }
+    query TempProductOnPublishProductButton($slug: String!) {
+  tempProductBySlug(slug: $slug) {
+    id
+    publishedAt
   }
-`;
+}
+    `;
 
 /**
  * __useTempProductOnPublishProductButtonQuery__
@@ -54,73 +43,33 @@ export const TempProductOnPublishProductButtonDocument = gql`
  *   },
  * });
  */
-export function useTempProductOnPublishProductButtonQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    TempProductOnPublishProductButtonQuery,
-    TempProductOnPublishProductButtonQueryVariables
-  > &
-    (
-      | {
-          variables: TempProductOnPublishProductButtonQueryVariables;
-          skip?: boolean;
-        }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    TempProductOnPublishProductButtonQuery,
-    TempProductOnPublishProductButtonQueryVariables
-  >(TempProductOnPublishProductButtonDocument, options);
-}
-export function useTempProductOnPublishProductButtonLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    TempProductOnPublishProductButtonQuery,
-    TempProductOnPublishProductButtonQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    TempProductOnPublishProductButtonQuery,
-    TempProductOnPublishProductButtonQueryVariables
-  >(TempProductOnPublishProductButtonDocument, options);
-}
-export function useTempProductOnPublishProductButtonSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    TempProductOnPublishProductButtonQuery,
-    TempProductOnPublishProductButtonQueryVariables
-  >(TempProductOnPublishProductButtonDocument, options);
-}
-export type TempProductOnPublishProductButtonQueryHookResult = ReturnType<
-  typeof useTempProductOnPublishProductButtonQuery
->;
-export type TempProductOnPublishProductButtonLazyQueryHookResult = ReturnType<
-  typeof useTempProductOnPublishProductButtonLazyQuery
->;
-export type TempProductOnPublishProductButtonSuspenseQueryHookResult =
-  ReturnType<typeof useTempProductOnPublishProductButtonSuspenseQuery>;
-export type TempProductOnPublishProductButtonQueryResult = Apollo.QueryResult<
-  TempProductOnPublishProductButtonQuery,
-  TempProductOnPublishProductButtonQueryVariables
->;
-export const PublishProductOnPublishProductButtonDocument = gql`
-  mutation PublishProductOnPublishProductButton($input: PublishProductInput!) {
-    publishProduct(input: $input) {
-      product {
-        id
-        publishedAt
+export function useTempProductOnPublishProductButtonQuery(baseOptions: Apollo.QueryHookOptions<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables> & ({ variables: TempProductOnPublishProductButtonQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>(TempProductOnPublishProductButtonDocument, options);
       }
+export function useTempProductOnPublishProductButtonLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>(TempProductOnPublishProductButtonDocument, options);
+        }
+export function useTempProductOnPublishProductButtonSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>(TempProductOnPublishProductButtonDocument, options);
+        }
+export type TempProductOnPublishProductButtonQueryHookResult = ReturnType<typeof useTempProductOnPublishProductButtonQuery>;
+export type TempProductOnPublishProductButtonLazyQueryHookResult = ReturnType<typeof useTempProductOnPublishProductButtonLazyQuery>;
+export type TempProductOnPublishProductButtonSuspenseQueryHookResult = ReturnType<typeof useTempProductOnPublishProductButtonSuspenseQuery>;
+export type TempProductOnPublishProductButtonQueryResult = Apollo.QueryResult<TempProductOnPublishProductButtonQuery, TempProductOnPublishProductButtonQueryVariables>;
+export const PublishProductOnPublishProductButtonDocument = gql`
+    mutation PublishProductOnPublishProductButton($input: PublishProductInput!) {
+  publishProduct(input: $input) {
+    product {
+      id
+      publishedAt
     }
   }
-`;
-export type PublishProductOnPublishProductButtonMutationFn =
-  Apollo.MutationFunctionOptions<
-    PublishProductOnPublishProductButtonMutation,
-    PublishProductOnPublishProductButtonMutationVariables
-  >;
+}
+    `;
+export type PublishProductOnPublishProductButtonMutationFn = Apollo.MutationFunction<PublishProductOnPublishProductButtonMutation, PublishProductOnPublishProductButtonMutationVariables>;
 
 /**
  * __usePublishProductOnPublishProductButtonMutation__
@@ -139,25 +88,10 @@ export type PublishProductOnPublishProductButtonMutationFn =
  *   },
  * });
  */
-export function usePublishProductOnPublishProductButtonMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    PublishProductOnPublishProductButtonMutation,
-    PublishProductOnPublishProductButtonMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    PublishProductOnPublishProductButtonMutation,
-    PublishProductOnPublishProductButtonMutationVariables
-  >(PublishProductOnPublishProductButtonDocument, options);
-}
-export type PublishProductOnPublishProductButtonMutationHookResult = ReturnType<
-  typeof usePublishProductOnPublishProductButtonMutation
->;
-export type PublishProductOnPublishProductButtonMutationResult =
-  Apollo.MutationResult<PublishProductOnPublishProductButtonMutation>;
-export type PublishProductOnPublishProductButtonMutationOptions =
-  Apollo.MutationHookOptions<
-    PublishProductOnPublishProductButtonMutation,
-    PublishProductOnPublishProductButtonMutationVariables
-  >;
+export function usePublishProductOnPublishProductButtonMutation(baseOptions?: Apollo.MutationHookOptions<PublishProductOnPublishProductButtonMutation, PublishProductOnPublishProductButtonMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<PublishProductOnPublishProductButtonMutation, PublishProductOnPublishProductButtonMutationVariables>(PublishProductOnPublishProductButtonDocument, options);
+      }
+export type PublishProductOnPublishProductButtonMutationHookResult = ReturnType<typeof usePublishProductOnPublishProductButtonMutation>;
+export type PublishProductOnPublishProductButtonMutationResult = Apollo.MutationResult<PublishProductOnPublishProductButtonMutation>;
+export type PublishProductOnPublishProductButtonMutationOptions = Apollo.BaseMutationOptions<PublishProductOnPublishProductButtonMutation, PublishProductOnPublishProductButtonMutationVariables>;

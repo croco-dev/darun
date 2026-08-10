@@ -1,7 +1,7 @@
 import * as Types from '@darun/provider-graphql';
 
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client/react';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type ProductWithFeaturesOnProductAlternativeListQueryVariables = Types.Exact<{
   slug: Types.Scalars['String']['input'];
@@ -63,15 +63,10 @@ export function useProductWithFeaturesOnProductAlternativeListLazyQuery(baseOpti
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>(ProductWithFeaturesOnProductAlternativeListDocument, options);
         }
-export function useProductWithFeaturesOnProductAlternativeListSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    ProductWithFeaturesOnProductAlternativeListQuery,
-    ProductWithFeaturesOnProductAlternativeListQueryVariables
-  >(ProductWithFeaturesOnProductAlternativeListDocument, options);
-}
+export function useProductWithFeaturesOnProductAlternativeListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ProductWithFeaturesOnProductAlternativeListQuery, ProductWithFeaturesOnProductAlternativeListQueryVariables>(ProductWithFeaturesOnProductAlternativeListDocument, options);
+        }
 export type ProductWithFeaturesOnProductAlternativeListQueryHookResult = ReturnType<typeof useProductWithFeaturesOnProductAlternativeListQuery>;
 export type ProductWithFeaturesOnProductAlternativeListLazyQueryHookResult = ReturnType<typeof useProductWithFeaturesOnProductAlternativeListLazyQuery>;
 export type ProductWithFeaturesOnProductAlternativeListSuspenseQueryHookResult = ReturnType<typeof useProductWithFeaturesOnProductAlternativeListSuspenseQuery>;

@@ -41,7 +41,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <div className="flex flex-col gap-3">
           <div className="flex w-fit flex-col gap-1">
-            <p className="text-[16px] font-bold tracking-[-0.024em] text-dark-500">{t('company.basicInfo')}</p>
+            <p className="text-base font-bold tracking-tight text-dark-500">{t('company.basicInfo')}</p>
             <div className="h-[2px] bg-dark-400" />
           </div>
           <div className="flex flex-col gap-1.5">

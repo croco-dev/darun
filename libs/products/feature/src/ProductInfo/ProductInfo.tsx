@@ -22,7 +22,7 @@ export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, summary, slug 
         <p className="text-sm text-dark-500">{summary}</p>
       </div>
       {slug && (
-        <code className="inline-flex w-fit rounded-md bg-dark-50 px-2 py-1 text-sm font-bold text-dark-900">
+        <code className="inline-flex w-fit rounded-md bg-surface-100 px-2 py-1 text-sm font-bold text-dark-900">
           {slug}
         </code>
       )}

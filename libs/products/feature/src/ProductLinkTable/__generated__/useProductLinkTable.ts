@@ -1,39 +1,25 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import { ProductLinkTableFragmentDoc } from "./ProductLinkTable";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import { ProductLinkTableFragmentDoc } from './ProductLinkTable';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type TempProductBySlugOnProductLinkTableQueryVariables = Types.Exact<{
-  slug: Types.Scalars["String"]["input"];
+  slug: Types.Scalars['String']['input'];
 }>;
 
-export type TempProductBySlugOnProductLinkTableQuery = {
-  __typename?: "Query";
-  tempProductBySlug?: {
-    __typename?: "Product";
-    id: string;
-    links: Array<{
-      __typename?: "Link";
-      id: string;
-      isPrimary: boolean;
-      title: string;
-      link: string;
-      displayLink: string;
-      iconUrl: string;
-    }>;
-  } | null;
-};
+
+export type TempProductBySlugOnProductLinkTableQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, links: Array<{ __typename?: 'Link', id: string, isPrimary: boolean, title: string, link: string, displayLink: string, iconUrl: string }> } | null };
+
 
 export const TempProductBySlugOnProductLinkTableDocument = gql`
-  query TempProductBySlugOnProductLinkTable($slug: String!) {
-    tempProductBySlug(slug: $slug) {
-      id
-      ...ProductLinkTable
-    }
+    query TempProductBySlugOnProductLinkTable($slug: String!) {
+  tempProductBySlug(slug: $slug) {
+    id
+    ...ProductLinkTable
   }
-  ${ProductLinkTableFragmentDoc}
-`;
+}
+    ${ProductLinkTableFragmentDoc}`;
 
 /**
  * __useTempProductBySlugOnProductLinkTableQuery__
@@ -51,55 +37,19 @@ export const TempProductBySlugOnProductLinkTableDocument = gql`
  *   },
  * });
  */
-export function useTempProductBySlugOnProductLinkTableQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    TempProductBySlugOnProductLinkTableQuery,
-    TempProductBySlugOnProductLinkTableQueryVariables
-  > &
-    (
-      | {
-          variables: TempProductBySlugOnProductLinkTableQueryVariables;
-          skip?: boolean;
+export function useTempProductBySlugOnProductLinkTableQuery(baseOptions: Apollo.QueryHookOptions<TempProductBySlugOnProductLinkTableQuery, TempProductBySlugOnProductLinkTableQueryVariables> & ({ variables: TempProductBySlugOnProductLinkTableQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<TempProductBySlugOnProductLinkTableQuery, TempProductBySlugOnProductLinkTableQueryVariables>(TempProductBySlugOnProductLinkTableDocument, options);
+      }
+export function useTempProductBySlugOnProductLinkTableLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductBySlugOnProductLinkTableQuery, TempProductBySlugOnProductLinkTableQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<TempProductBySlugOnProductLinkTableQuery, TempProductBySlugOnProductLinkTableQueryVariables>(TempProductBySlugOnProductLinkTableDocument, options);
         }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    TempProductBySlugOnProductLinkTableQuery,
-    TempProductBySlugOnProductLinkTableQueryVariables
-  >(TempProductBySlugOnProductLinkTableDocument, options);
-}
-export function useTempProductBySlugOnProductLinkTableLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    TempProductBySlugOnProductLinkTableQuery,
-    TempProductBySlugOnProductLinkTableQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    TempProductBySlugOnProductLinkTableQuery,
-    TempProductBySlugOnProductLinkTableQueryVariables
-  >(TempProductBySlugOnProductLinkTableDocument, options);
-}
-export function useTempProductBySlugOnProductLinkTableSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductLinkTableQuery, TempProductBySlugOnProductLinkTableQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    TempProductBySlugOnProductLinkTableQuery,
-    TempProductBySlugOnProductLinkTableQueryVariables
-  >(TempProductBySlugOnProductLinkTableDocument, options);
-}
-export type TempProductBySlugOnProductLinkTableQueryHookResult = ReturnType<
-  typeof useTempProductBySlugOnProductLinkTableQuery
->;
-export type TempProductBySlugOnProductLinkTableLazyQueryHookResult = ReturnType<
-  typeof useTempProductBySlugOnProductLinkTableLazyQuery
->;
-export type TempProductBySlugOnProductLinkTableSuspenseQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnProductLinkTableSuspenseQuery>;
-export type TempProductBySlugOnProductLinkTableQueryResult = Apollo.QueryResult<
-  TempProductBySlugOnProductLinkTableQuery,
-  TempProductBySlugOnProductLinkTableQueryVariables
->;
+export function useTempProductBySlugOnProductLinkTableSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductLinkTableQuery, TempProductBySlugOnProductLinkTableQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<TempProductBySlugOnProductLinkTableQuery, TempProductBySlugOnProductLinkTableQueryVariables>(TempProductBySlugOnProductLinkTableDocument, options);
+        }
+export type TempProductBySlugOnProductLinkTableQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductLinkTableQuery>;
+export type TempProductBySlugOnProductLinkTableLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductLinkTableLazyQuery>;
+export type TempProductBySlugOnProductLinkTableSuspenseQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductLinkTableSuspenseQuery>;
+export type TempProductBySlugOnProductLinkTableQueryResult = Apollo.QueryResult<TempProductBySlugOnProductLinkTableQuery, TempProductBySlugOnProductLinkTableQueryVariables>;

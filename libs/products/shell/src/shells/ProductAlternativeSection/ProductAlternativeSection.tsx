@@ -16,7 +16,7 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
   return (
     <section className="flex flex-col gap-5 py-4 md:py-6" id="darun">
       <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
-      <div className="[&_div.rounded-card]:hover:!shadow-card-hover [&_div.rounded-card]:hover:!border-brand-300 [&_p.text-dark-900]:!text-base [&_p.text-dark-900]:!text-surface-900 [&_p.text-dark-900]:!font-bold [&_p.text-dark-600]:!text-sm [&_p.text-dark-600]:!text-surface-500 [&_p.text-dark-600]:!font-normal [&_span.text-dark-500]:!text-surface-400 [&_p.text-dark-500]:!text-surface-500">
+      <div>
         <AlternativeProductList slug={slug} />
       </div>
       <div className="flex justify-center">

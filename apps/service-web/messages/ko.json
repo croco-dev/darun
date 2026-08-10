@@ -42,7 +42,8 @@
     "list": {
       "empty": {
         "title": "검색 결과가 없습니다.",
-        "description": "더 상세한 검색어를 이용해보세요. ex) ‘토스’, ‘네이버’ 등..."
+        "description": "더 상세한 검색어를 이용해보세요. ex) ‘토스’, ‘네이버’ 등...",
+        "noResults": "‘{query}’에 대한 검색 결과가 없습니다."
       },
       "feature": {
         "title": "기능"

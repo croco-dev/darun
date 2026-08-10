@@ -1,7 +1,7 @@
 'use client';
 
-import { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import { ReactNode } from 'react';
 import { Navbar } from '../Navbar';
 
 export const AppShell = ({ children }: { children: ReactNode }) => {
@@ -9,15 +9,13 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   const isAuthPage = pathname?.startsWith('/auth');
 
   if (isAuthPage) {
-    return <div className="w-full min-h-screen bg-dark-50">{children}</div>;
+    return <div className="w-full min-h-screen bg-surface-100">{children}</div>;
   }
 
   return (
-    <div className="flex min-h-screen bg-dark-50 overflow-hidden">
+    <div className="flex min-h-screen bg-surface-100 overflow-hidden">
       <Navbar />
-      <main className="flex-1 h-screen overflow-auto motion-reduce:transition-none">
-        {children}
-      </main>
+      <main className="flex-1 h-screen overflow-auto motion-reduce:transition-none">{children}</main>
     </div>
   );
 };

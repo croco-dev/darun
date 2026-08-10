@@ -5,7 +5,7 @@ import { ButtonHTMLAttributes, ElementType, ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex h-fit w-fit items-center justify-center rounded-xl border text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/70 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex h-fit w-fit items-center justify-center rounded-xl border text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -17,7 +17,7 @@ const buttonVariants = cva(
       size: {
         sm: 'px-3 py-1.5',
         md: 'px-3 py-1.5 sm:px-3.5 sm:py-2',
-        lg: 'px-4 py-2 sm:px-[18px] sm:py-2.5 text-sm',
+        lg: 'px-4 py-2 sm:px-5 sm:py-2.5 text-sm',
       },
       color: {
         primary: '',
@@ -47,7 +47,7 @@ const buttonVariants = cva(
       {
         variant: 'contained',
         color: 'secondary',
-        className: 'border-dark-100 bg-dark-100 text-dark-900',
+        className: 'border-dark-200 bg-dark-100 text-dark-900',
       },
       {
         variant: 'text',
@@ -67,12 +67,12 @@ const buttonVariants = cva(
       {
         variant: 'shadow',
         color: 'primary',
-        className: 'border-dark-100 bg-dark-900 text-white',
+        className: 'border-dark-200 bg-dark-900 text-white',
       },
       {
         variant: 'shadow',
         color: 'secondary',
-        className: 'border-dark-100 bg-transparent text-dark-900',
+        className: 'border-dark-200 bg-transparent text-dark-900',
       },
     ],
     defaultVariants: {

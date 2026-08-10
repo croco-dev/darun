@@ -44,6 +44,14 @@ export type Author = {
   readonly name: Scalars['String']['output'];
 };
 
+export type Category = {
+  readonly __typename?: 'Category';
+  readonly id: Scalars['ID']['output'];
+  readonly labelEn: Scalars['String']['output'];
+  readonly labelKo: Scalars['String']['output'];
+  readonly slug: Scalars['String']['output'];
+};
+
 export type Company = {
   readonly __typename?: 'Company';
   readonly address: Scalars['String']['output'];
@@ -216,6 +224,7 @@ export type Mutation = {
   readonly publishMagazine: PublishMagazinePayload;
   readonly publishProduct: PublishProductPayload;
   readonly registerProductCompany: RegisterProductCompanyPayload;
+  readonly requestTranslation: TranslationJob;
   readonly signImageUpload: SignImageUploadPayload;
   readonly updateAlternativeProduct: UpdateAlternativeProductPayload;
   readonly updateProductFeature: UpdateProductFeaturePayload;
@@ -292,6 +301,13 @@ export type MutationpublishProductArgs = {
 export type MutationregisterProductCompanyArgs = {
   input: RegisterProductCompanyInput;
   slug: Scalars['String']['input'];
+};
+
+
+export type MutationrequestTranslationArgs = {
+  entityId: Scalars['String']['input'];
+  entityType: Scalars['String']['input'];
+  fields: ReadonlyArray<Scalars['String']['input']>;
 };
 
 
@@ -392,12 +408,14 @@ export type Query = {
   readonly __typename?: 'Query';
   readonly allCompanies: CompanyPagination;
   readonly allProducts: ProductConnection;
+  readonly categories: ReadonlyArray<Category>;
   readonly feature?: Maybe<Feature>;
   readonly hello: Scalars['String']['output'];
   readonly magazine?: Maybe<Magazine>;
   readonly magazineBySlug?: Maybe<Magazine>;
   readonly product?: Maybe<Product>;
   readonly productBySlug?: Maybe<Product>;
+  readonly productsByCategory: ReadonlyArray<Product>;
   readonly productsCount: Scalars['Int']['output'];
   readonly rankedProducts: ReadonlyArray<Product>;
   readonly recentProducts: ReadonlyArray<Product>;
@@ -422,6 +440,12 @@ export type QueryallProductsArgs = {
 };
 
 
+export type QuerycategoriesArgs = {
+  first: Scalars['Int']['input'];
+  locale?: Scalars['String']['input'];
+};
+
+
 export type QueryfeatureArgs = {
   id: Scalars['ID']['input'];
 };
@@ -429,37 +453,41 @@ export type QueryfeatureArgs = {
 
 export type QuerymagazineArgs = {
   id: Scalars['ID']['input'];
-  locale?: InputMaybe<Scalars['String']['input']>;
 };
 
 
 export type QuerymagazineBySlugArgs = {
-  locale?: InputMaybe<Scalars['String']['input']>;
   slug: Scalars['String']['input'];
 };
 
 
 export type QueryproductArgs = {
   id: Scalars['ID']['input'];
-  locale?: InputMaybe<Scalars['String']['input']>;
+  locale?: Scalars['String']['input'];
 };
 
 
 export type QueryproductBySlugArgs = {
-  locale?: InputMaybe<Scalars['String']['input']>;
+  locale?: Scalars['String']['input'];
+  slug: Scalars['String']['input'];
+};
+
+
+export type QueryproductsByCategoryArgs = {
+  locale?: Scalars['String']['input'];
   slug: Scalars['String']['input'];
 };
 
 
 export type QueryrankedProductsArgs = {
   first: Scalars['Int']['input'];
-  locale?: InputMaybe<Scalars['String']['input']>;
+  locale?: Scalars['String']['input'];
 };
 
 
 export type QueryrecentProductsArgs = {
   first: Scalars['Int']['input'];
-  locale?: InputMaybe<Scalars['String']['input']>;
+  locale?: Scalars['String']['input'];
 };
 
 
@@ -469,25 +497,23 @@ export type QuerysearchCompaniesArgs = {
 
 
 export type QuerysearchProductsArgs = {
-  locale?: InputMaybe<Scalars['String']['input']>;
+  locale?: Scalars['String']['input'];
   query: Scalars['String']['input'];
 };
 
 
 export type QuerytempAllMagazinesArgs = {
-  locale?: InputMaybe<Scalars['String']['input']>;
   page: Scalars['Int']['input'];
 };
 
 
 export type QuerytempMagazineBySlugArgs = {
-  locale?: InputMaybe<Scalars['String']['input']>;
   slug: Scalars['String']['input'];
 };
 
 
 export type QuerytempProductBySlugArgs = {
-  locale?: InputMaybe<Scalars['String']['input']>;
+  locale?: Scalars['String']['input'];
   slug: Scalars['String']['input'];
 };
 
@@ -524,6 +550,16 @@ export type Tag = {
   readonly count: Scalars['Int']['output'];
   readonly id: Scalars['ID']['output'];
   readonly name: Scalars['String']['output'];
+};
+
+export type TranslationJob = {
+  readonly __typename?: 'TranslationJob';
+  readonly entityId: Scalars['String']['output'];
+  readonly entityType: Scalars['String']['output'];
+  readonly fields: ReadonlyArray<Scalars['String']['output']>;
+  readonly locale: Scalars['String']['output'];
+  readonly message?: Maybe<Scalars['String']['output']>;
+  readonly status: Scalars['String']['output'];
 };
 
 export type UpdateAlternativeProductInput = {

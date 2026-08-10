@@ -33,7 +33,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             {t('Main.hero.title.countSuffix')} <span className="text-brown-600">{t('Main.hero.title.highlight')}</span>{' '}
             <Link
               href={popularPath}
-              className="text-dark-000 underline decoration-dark-500 underline-offset-8 transition-colors hover:decoration-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transition-none"
+              className="text-dark-000 underline decoration-dark-500 underline-offset-8 transition-colors hover:decoration-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
             >
               {t('Main.hero.title.ending')}
             </Link>

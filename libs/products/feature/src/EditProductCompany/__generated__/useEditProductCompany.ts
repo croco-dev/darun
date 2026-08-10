@@ -1,48 +1,34 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
-export type RegisterProductCompanyOnEditProductCompanyMutationVariables =
-  Types.Exact<{
-    input: Types.RegisterProductCompanyInput;
-    slug: Types.Scalars["String"]["input"];
-  }>;
-
-export type RegisterProductCompanyOnEditProductCompanyMutation = {
-  __typename?: "Mutation";
-  registerProductCompany: {
-    __typename?: "RegisterProductCompanyPayload";
-    product?: { __typename?: "Product"; id: string } | null;
-  };
-};
-
-export type SearchCompaniesOnEditProductCompanyQueryVariables = Types.Exact<{
-  query: Types.Scalars["String"]["input"];
+export type RegisterProductCompanyOnEditProductCompanyMutationVariables = Types.Exact<{
+  input: Types.RegisterProductCompanyInput;
+  slug: Types.Scalars['String']['input'];
 }>;
 
-export type SearchCompaniesOnEditProductCompanyQuery = {
-  __typename?: "Query";
-  searchCompanies: Array<{ __typename?: "Company"; id: string; name: string }>;
-};
+
+export type RegisterProductCompanyOnEditProductCompanyMutation = { __typename?: 'Mutation', registerProductCompany: { __typename?: 'RegisterProductCompanyPayload', product?: { __typename?: 'Product', id: string } | null } };
+
+export type SearchCompaniesOnEditProductCompanyQueryVariables = Types.Exact<{
+  query: Types.Scalars['String']['input'];
+}>;
+
+
+export type SearchCompaniesOnEditProductCompanyQuery = { __typename?: 'Query', searchCompanies: Array<{ __typename?: 'Company', id: string, name: string }> };
+
 
 export const RegisterProductCompanyOnEditProductCompanyDocument = gql`
-  mutation RegisterProductCompanyOnEditProductCompany(
-    $input: RegisterProductCompanyInput!
-    $slug: String!
-  ) {
-    registerProductCompany(input: $input, slug: $slug) {
-      product {
-        id
-      }
+    mutation RegisterProductCompanyOnEditProductCompany($input: RegisterProductCompanyInput!, $slug: String!) {
+  registerProductCompany(input: $input, slug: $slug) {
+    product {
+      id
     }
   }
-`;
-export type RegisterProductCompanyOnEditProductCompanyMutationFn =
-  Apollo.MutationFunctionOptions<
-    RegisterProductCompanyOnEditProductCompanyMutation,
-    RegisterProductCompanyOnEditProductCompanyMutationVariables
-  >;
+}
+    `;
+export type RegisterProductCompanyOnEditProductCompanyMutationFn = Apollo.MutationFunction<RegisterProductCompanyOnEditProductCompanyMutation, RegisterProductCompanyOnEditProductCompanyMutationVariables>;
 
 /**
  * __useRegisterProductCompanyOnEditProductCompanyMutation__
@@ -62,35 +48,21 @@ export type RegisterProductCompanyOnEditProductCompanyMutationFn =
  *   },
  * });
  */
-export function useRegisterProductCompanyOnEditProductCompanyMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    RegisterProductCompanyOnEditProductCompanyMutation,
-    RegisterProductCompanyOnEditProductCompanyMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    RegisterProductCompanyOnEditProductCompanyMutation,
-    RegisterProductCompanyOnEditProductCompanyMutationVariables
-  >(RegisterProductCompanyOnEditProductCompanyDocument, options);
-}
-export type RegisterProductCompanyOnEditProductCompanyMutationHookResult =
-  ReturnType<typeof useRegisterProductCompanyOnEditProductCompanyMutation>;
-export type RegisterProductCompanyOnEditProductCompanyMutationResult =
-  Apollo.MutationResult<RegisterProductCompanyOnEditProductCompanyMutation>;
-export type RegisterProductCompanyOnEditProductCompanyMutationOptions =
-  Apollo.MutationHookOptions<
-    RegisterProductCompanyOnEditProductCompanyMutation,
-    RegisterProductCompanyOnEditProductCompanyMutationVariables
-  >;
+export function useRegisterProductCompanyOnEditProductCompanyMutation(baseOptions?: Apollo.MutationHookOptions<RegisterProductCompanyOnEditProductCompanyMutation, RegisterProductCompanyOnEditProductCompanyMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RegisterProductCompanyOnEditProductCompanyMutation, RegisterProductCompanyOnEditProductCompanyMutationVariables>(RegisterProductCompanyOnEditProductCompanyDocument, options);
+      }
+export type RegisterProductCompanyOnEditProductCompanyMutationHookResult = ReturnType<typeof useRegisterProductCompanyOnEditProductCompanyMutation>;
+export type RegisterProductCompanyOnEditProductCompanyMutationResult = Apollo.MutationResult<RegisterProductCompanyOnEditProductCompanyMutation>;
+export type RegisterProductCompanyOnEditProductCompanyMutationOptions = Apollo.BaseMutationOptions<RegisterProductCompanyOnEditProductCompanyMutation, RegisterProductCompanyOnEditProductCompanyMutationVariables>;
 export const SearchCompaniesOnEditProductCompanyDocument = gql`
-  query SearchCompaniesOnEditProductCompany($query: String!) {
-    searchCompanies(query: $query) {
-      id
-      name
-    }
+    query SearchCompaniesOnEditProductCompany($query: String!) {
+  searchCompanies(query: $query) {
+    id
+    name
   }
-`;
+}
+    `;
 
 /**
  * __useSearchCompaniesOnEditProductCompanyQuery__
@@ -108,55 +80,19 @@ export const SearchCompaniesOnEditProductCompanyDocument = gql`
  *   },
  * });
  */
-export function useSearchCompaniesOnEditProductCompanyQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    SearchCompaniesOnEditProductCompanyQuery,
-    SearchCompaniesOnEditProductCompanyQueryVariables
-  > &
-    (
-      | {
-          variables: SearchCompaniesOnEditProductCompanyQueryVariables;
-          skip?: boolean;
+export function useSearchCompaniesOnEditProductCompanyQuery(baseOptions: Apollo.QueryHookOptions<SearchCompaniesOnEditProductCompanyQuery, SearchCompaniesOnEditProductCompanyQueryVariables> & ({ variables: SearchCompaniesOnEditProductCompanyQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<SearchCompaniesOnEditProductCompanyQuery, SearchCompaniesOnEditProductCompanyQueryVariables>(SearchCompaniesOnEditProductCompanyDocument, options);
+      }
+export function useSearchCompaniesOnEditProductCompanyLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<SearchCompaniesOnEditProductCompanyQuery, SearchCompaniesOnEditProductCompanyQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<SearchCompaniesOnEditProductCompanyQuery, SearchCompaniesOnEditProductCompanyQueryVariables>(SearchCompaniesOnEditProductCompanyDocument, options);
         }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    SearchCompaniesOnEditProductCompanyQuery,
-    SearchCompaniesOnEditProductCompanyQueryVariables
-  >(SearchCompaniesOnEditProductCompanyDocument, options);
-}
-export function useSearchCompaniesOnEditProductCompanyLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    SearchCompaniesOnEditProductCompanyQuery,
-    SearchCompaniesOnEditProductCompanyQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    SearchCompaniesOnEditProductCompanyQuery,
-    SearchCompaniesOnEditProductCompanyQueryVariables
-  >(SearchCompaniesOnEditProductCompanyDocument, options);
-}
-export function useSearchCompaniesOnEditProductCompanySuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<SearchCompaniesOnEditProductCompanyQuery, SearchCompaniesOnEditProductCompanyQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    SearchCompaniesOnEditProductCompanyQuery,
-    SearchCompaniesOnEditProductCompanyQueryVariables
-  >(SearchCompaniesOnEditProductCompanyDocument, options);
-}
-export type SearchCompaniesOnEditProductCompanyQueryHookResult = ReturnType<
-  typeof useSearchCompaniesOnEditProductCompanyQuery
->;
-export type SearchCompaniesOnEditProductCompanyLazyQueryHookResult = ReturnType<
-  typeof useSearchCompaniesOnEditProductCompanyLazyQuery
->;
-export type SearchCompaniesOnEditProductCompanySuspenseQueryHookResult =
-  ReturnType<typeof useSearchCompaniesOnEditProductCompanySuspenseQuery>;
-export type SearchCompaniesOnEditProductCompanyQueryResult = Apollo.QueryResult<
-  SearchCompaniesOnEditProductCompanyQuery,
-  SearchCompaniesOnEditProductCompanyQueryVariables
->;
+export function useSearchCompaniesOnEditProductCompanySuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchCompaniesOnEditProductCompanyQuery, SearchCompaniesOnEditProductCompanyQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<SearchCompaniesOnEditProductCompanyQuery, SearchCompaniesOnEditProductCompanyQueryVariables>(SearchCompaniesOnEditProductCompanyDocument, options);
+        }
+export type SearchCompaniesOnEditProductCompanyQueryHookResult = ReturnType<typeof useSearchCompaniesOnEditProductCompanyQuery>;
+export type SearchCompaniesOnEditProductCompanyLazyQueryHookResult = ReturnType<typeof useSearchCompaniesOnEditProductCompanyLazyQuery>;
+export type SearchCompaniesOnEditProductCompanySuspenseQueryHookResult = ReturnType<typeof useSearchCompaniesOnEditProductCompanySuspenseQuery>;
+export type SearchCompaniesOnEditProductCompanyQueryResult = Apollo.QueryResult<SearchCompaniesOnEditProductCompanyQuery, SearchCompaniesOnEditProductCompanyQueryVariables>;

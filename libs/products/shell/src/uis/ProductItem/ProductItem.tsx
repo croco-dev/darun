@@ -62,7 +62,7 @@ export const ProductItem = ({
         alt={t('productItem.logoAlt', { name })}
         width={logoSizes[logoSize].imageSize}
         height={logoSizes[logoSize].imageSize}
-        className={`shadow-sm object-contain ${logoSize === 'small' ? 'rounded-xl' : 'rounded-2xl'}`}
+        className={`object-contain ${logoSize === 'small' ? 'rounded-xl' : 'rounded-2xl'}`}
       />
       <div className="flex min-w-0 flex-col gap-1 overflow-hidden">
         <div className="flex flex-col gap-1">
@@ -73,13 +73,13 @@ export const ProductItem = ({
           </NameTag>
           {summary &&
             (isStacked ? (
-              <p className="line-clamp-2 text-xs leading-[1.5] text-dark-500 md:text-sm">{summary}</p>
+              <p className="line-clamp-2 text-xs leading-snug text-dark-500 md:text-sm">{summary}</p>
             ) : isSummaryNoWrap ? (
-              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-[1.5] text-dark-500 md:text-sm">
+              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-snug text-dark-500 md:text-sm">
                 {summary}
               </p>
             ) : (
-              <p className="text-xs leading-[1.5] text-dark-500 md:text-sm">{summary}</p>
+              <p className="text-xs leading-snug text-dark-500 md:text-sm">{summary}</p>
             ))}
         </div>
         {(tags || specialTags) && (

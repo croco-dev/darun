@@ -3,7 +3,9 @@
 @config '../../../tailwind.config.ts';
 @source './**/*.{js,ts,jsx,tsx,mdx}';
 @source '../../../libs/*/shell/src/**/*.{js,ts,jsx,tsx}';
+@source '../../../libs/*/feature/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/shared/ui/src/**/*.{js,ts,jsx,tsx}';
+@source '../../../libs/shared/ui-admin/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/shared/ui-layout/src/**/*.{js,ts,jsx,tsx}';
 
 @layer base {
@@ -38,22 +40,4 @@
   }
 }
 
-@utility rounded-card {
-  border-radius: 20px;
-}
 
-@utility rounded-card-lg {
-  border-radius: 24px;
-}
-
-@utility rounded-card-xl {
-  border-radius: 28px;
-}
-
-@utility shadow-card {
-  box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.18);
-}
-
-@utility shadow-card-hover {
-  box-shadow: 0 22px 40px -26px rgba(53, 63, 174, 0.28);
-}

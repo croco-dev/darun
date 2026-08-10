@@ -6,7 +6,6 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useEffect } from 'react';
 import { MenuBar } from './MenuBar';
-import './Editor.scss';
 
 type EditorProps = {
   defaultValue?: string;
@@ -42,9 +41,12 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   }
 
   return (
-    <div className="editor-container">
+    <div className="flex flex-col gap-3">
       <MenuBar editor={editor} />
-      <EditorContent editor={editor} className="editor-content" />
+      <EditorContent
+        editor={editor}
+        className="min-h-72 rounded-card border border-dark-200 bg-white p-4 [&_.ProseMirror]:min-h-60 [&_.ProseMirror]:outline-none"
+      />
     </div>
   );
 }

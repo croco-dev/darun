@@ -17,7 +17,7 @@ export const LanguageSwitcher = () => {
     <button
       type="button"
       onClick={toggle}
-      className="cursor-pointer rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-sm font-semibold text-[#1A202C] transition-colors duration-200 hover:bg-[#F7FAFC]"
+      className="cursor-pointer rounded-lg border border-dark-200 bg-white px-3 py-1.5 text-sm font-semibold text-dark-900 transition-colors duration-200 hover:bg-surface-100"
     >
       {locale === 'ko' ? '🇰🇷 KO' : '🇺🇸 EN'}
     </button>

@@ -3,8 +3,8 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
-import { ProductCard, ProductItem } from '@darun/products-shell';
-import { Link, useNavigate } from '@darun/utils-router';
+import { ProductCard } from '@darun/products-shell';
+import { useNavigate } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -139,7 +139,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
                 type="button"
                 role="listitem"
                 onClick={() => navigateToSearch(popularQuery)}
-                className="rounded-full bg-surface-100 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-dark-700 transition-colors hover:bg-brand-100 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/70 focus-visible:ring-offset-2 motion-reduce:transition-none"
+                className="rounded-full bg-surface-100 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-dark-700 transition-colors hover:bg-dark-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 motion-reduce:transition-none"
               >
                 {popularQuery}
               </button>
@@ -158,7 +158,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
                 type="button"
                 role="listitem"
                 onClick={() => navigateToCategory(category.slug)}
-                className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-medium text-dark-700 transition-colors hover:bg-brand-100 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/70 focus-visible:ring-offset-2 motion-reduce:transition-none"
+                className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-medium text-dark-700 transition-colors hover:bg-dark-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 motion-reduce:transition-none"
               >
                 {locale === 'ko' ? category.labelKo : category.labelEn}
               </button>
@@ -183,24 +183,12 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
   return (
     <div className="flex flex-col gap-5">
       {products.map(product => (
-        <Link
-          href={`/products/${product.slug}?from=search`}
+        <ProductCard
           key={product.id}
-          data-testid="search-card"
-          className="group h-full focus-visible:outline-none"
-        >
-          <div className="relative rounded-card border border-surface-300 bg-white p-4 shadow-card transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:border-brand-300 group-hover:shadow-card-hover group-focus-visible:-translate-y-1 group-focus-visible:border-brand-300 group-focus-visible:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-brand-500/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none md:rounded-card-lg">
-            <ProductItem
-              name={product.name}
-              summary={product.summary}
-              logoSize={'small'}
-              logoUrl={product.logoUrl}
-              tagVariant={'circle'}
-              tags={product.tags.map(tag => tag.name)}
-              maxTagItems={3}
-            />
-          </div>
-        </Link>
+          product={product}
+          href={`/products/${product.slug}?from=search`}
+          source="search"
+        />
       ))}
     </div>
   );

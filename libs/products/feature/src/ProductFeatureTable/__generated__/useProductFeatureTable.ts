@@ -1,40 +1,29 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type TempProductBySlugOnProductFeatureTableQueryVariables = Types.Exact<{
-  slug: Types.Scalars["String"]["input"];
+  slug: Types.Scalars['String']['input'];
 }>;
 
-export type TempProductBySlugOnProductFeatureTableQuery = {
-  __typename?: "Query";
-  tempProductBySlug?: {
-    __typename?: "Product";
-    id: string;
-    features: Array<{
-      __typename?: "Feature";
-      id: string;
-      name: string;
-      emoji: string;
-      summary?: string | null;
-    }>;
-  } | null;
-};
+
+export type TempProductBySlugOnProductFeatureTableQuery = { __typename?: 'Query', tempProductBySlug?: { __typename?: 'Product', id: string, features: Array<{ __typename?: 'Feature', id: string, name: string, emoji: string, summary?: string | null }> } | null };
+
 
 export const TempProductBySlugOnProductFeatureTableDocument = gql`
-  query TempProductBySlugOnProductFeatureTable($slug: String!) {
-    tempProductBySlug(slug: $slug) {
+    query TempProductBySlugOnProductFeatureTable($slug: String!) {
+  tempProductBySlug(slug: $slug) {
+    id
+    features {
       id
-      features {
-        id
-        name
-        emoji
-        summary
-      }
+      name
+      emoji
+      summary
     }
   }
-`;
+}
+    `;
 
 /**
  * __useTempProductBySlugOnProductFeatureTableQuery__
@@ -52,55 +41,19 @@ export const TempProductBySlugOnProductFeatureTableDocument = gql`
  *   },
  * });
  */
-export function useTempProductBySlugOnProductFeatureTableQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    TempProductBySlugOnProductFeatureTableQuery,
-    TempProductBySlugOnProductFeatureTableQueryVariables
-  > &
-    (
-      | {
-          variables: TempProductBySlugOnProductFeatureTableQueryVariables;
-          skip?: boolean;
+export function useTempProductBySlugOnProductFeatureTableQuery(baseOptions: Apollo.QueryHookOptions<TempProductBySlugOnProductFeatureTableQuery, TempProductBySlugOnProductFeatureTableQueryVariables> & ({ variables: TempProductBySlugOnProductFeatureTableQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<TempProductBySlugOnProductFeatureTableQuery, TempProductBySlugOnProductFeatureTableQueryVariables>(TempProductBySlugOnProductFeatureTableDocument, options);
+      }
+export function useTempProductBySlugOnProductFeatureTableLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TempProductBySlugOnProductFeatureTableQuery, TempProductBySlugOnProductFeatureTableQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<TempProductBySlugOnProductFeatureTableQuery, TempProductBySlugOnProductFeatureTableQueryVariables>(TempProductBySlugOnProductFeatureTableDocument, options);
         }
-      | { skip: boolean }
-    ),
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    TempProductBySlugOnProductFeatureTableQuery,
-    TempProductBySlugOnProductFeatureTableQueryVariables
-  >(TempProductBySlugOnProductFeatureTableDocument, options);
-}
-export function useTempProductBySlugOnProductFeatureTableLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    TempProductBySlugOnProductFeatureTableQuery,
-    TempProductBySlugOnProductFeatureTableQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    TempProductBySlugOnProductFeatureTableQuery,
-    TempProductBySlugOnProductFeatureTableQueryVariables
-  >(TempProductBySlugOnProductFeatureTableDocument, options);
-}
-export function useTempProductBySlugOnProductFeatureTableSuspenseQuery(
-  baseOptions: Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductFeatureTableQuery, TempProductBySlugOnProductFeatureTableQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSuspenseQuery<
-    TempProductBySlugOnProductFeatureTableQuery,
-    TempProductBySlugOnProductFeatureTableQueryVariables
-  >(TempProductBySlugOnProductFeatureTableDocument, options);
-}
-export type TempProductBySlugOnProductFeatureTableQueryHookResult = ReturnType<
-  typeof useTempProductBySlugOnProductFeatureTableQuery
->;
-export type TempProductBySlugOnProductFeatureTableLazyQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnProductFeatureTableLazyQuery>;
-export type TempProductBySlugOnProductFeatureTableSuspenseQueryHookResult =
-  ReturnType<typeof useTempProductBySlugOnProductFeatureTableSuspenseQuery>;
-export type TempProductBySlugOnProductFeatureTableQueryResult =
-  Apollo.QueryResult<
-    TempProductBySlugOnProductFeatureTableQuery,
-    TempProductBySlugOnProductFeatureTableQueryVariables
-  >;
+export function useTempProductBySlugOnProductFeatureTableSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TempProductBySlugOnProductFeatureTableQuery, TempProductBySlugOnProductFeatureTableQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<TempProductBySlugOnProductFeatureTableQuery, TempProductBySlugOnProductFeatureTableQueryVariables>(TempProductBySlugOnProductFeatureTableDocument, options);
+        }
+export type TempProductBySlugOnProductFeatureTableQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductFeatureTableQuery>;
+export type TempProductBySlugOnProductFeatureTableLazyQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductFeatureTableLazyQuery>;
+export type TempProductBySlugOnProductFeatureTableSuspenseQueryHookResult = ReturnType<typeof useTempProductBySlugOnProductFeatureTableSuspenseQuery>;
+export type TempProductBySlugOnProductFeatureTableQueryResult = Apollo.QueryResult<TempProductBySlugOnProductFeatureTableQuery, TempProductBySlugOnProductFeatureTableQueryVariables>;

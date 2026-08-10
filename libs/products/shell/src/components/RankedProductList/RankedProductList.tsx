@@ -20,7 +20,7 @@ export const RankedProductList = bind(useRankedProductList, ({ products }) => (
         }
       >
         <div className="flex items-center gap-3">
-          <p className="min-w-7 text-center text-[18px] font-bold text-dark-400">{index + 1}</p>
+          <p className="min-w-7 text-center text-lg font-bold text-dark-400">{index + 1}</p>
           <ProductItem
             name={product.name}
             logoUrl={product.logoUrl}

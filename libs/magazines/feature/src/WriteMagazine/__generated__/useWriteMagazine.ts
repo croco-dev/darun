@@ -1,34 +1,27 @@
-import * as Types from "@darun/provider-graphql";
+import * as Types from '@darun/provider-graphql';
 
-import { gql } from "@apollo/client";
-import * as Apollo from "@apollo/client/react";
+import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type CreateMagazineOnWriteMagazineMutationVariables = Types.Exact<{
   input: Types.CreateMagazineInput;
 }>;
 
-export type CreateMagazineOnWriteMagazineMutation = {
-  __typename?: "Mutation";
-  createMagazine: {
-    __typename?: "CreateMagazinePayload";
-    magazine: { __typename?: "Magazine"; id: string; slug: string };
-  };
-};
+
+export type CreateMagazineOnWriteMagazineMutation = { __typename?: 'Mutation', createMagazine: { __typename?: 'CreateMagazinePayload', magazine: { __typename?: 'Magazine', id: string, slug: string } } };
+
 
 export const CreateMagazineOnWriteMagazineDocument = gql`
-  mutation CreateMagazineOnWriteMagazine($input: CreateMagazineInput!) {
-    createMagazine(input: $input) {
-      magazine {
-        id
-        slug
-      }
+    mutation CreateMagazineOnWriteMagazine($input: CreateMagazineInput!) {
+  createMagazine(input: $input) {
+    magazine {
+      id
+      slug
     }
   }
-`;
-export type CreateMagazineOnWriteMagazineMutationFn = Apollo.MutationFunctionOptions<
-  CreateMagazineOnWriteMagazineMutation,
-  CreateMagazineOnWriteMagazineMutationVariables
->;
+}
+    `;
+export type CreateMagazineOnWriteMagazineMutationFn = Apollo.MutationFunction<CreateMagazineOnWriteMagazineMutation, CreateMagazineOnWriteMagazineMutationVariables>;
 
 /**
  * __useCreateMagazineOnWriteMagazineMutation__
@@ -47,25 +40,10 @@ export type CreateMagazineOnWriteMagazineMutationFn = Apollo.MutationFunctionOpt
  *   },
  * });
  */
-export function useCreateMagazineOnWriteMagazineMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    CreateMagazineOnWriteMagazineMutation,
-    CreateMagazineOnWriteMagazineMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
-    CreateMagazineOnWriteMagazineMutation,
-    CreateMagazineOnWriteMagazineMutationVariables
-  >(CreateMagazineOnWriteMagazineDocument, options);
-}
-export type CreateMagazineOnWriteMagazineMutationHookResult = ReturnType<
-  typeof useCreateMagazineOnWriteMagazineMutation
->;
-export type CreateMagazineOnWriteMagazineMutationResult =
-  Apollo.MutationResult<CreateMagazineOnWriteMagazineMutation>;
-export type CreateMagazineOnWriteMagazineMutationOptions =
-  Apollo.MutationHookOptions<
-    CreateMagazineOnWriteMagazineMutation,
-    CreateMagazineOnWriteMagazineMutationVariables
-  >;
+export function useCreateMagazineOnWriteMagazineMutation(baseOptions?: Apollo.MutationHookOptions<CreateMagazineOnWriteMagazineMutation, CreateMagazineOnWriteMagazineMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateMagazineOnWriteMagazineMutation, CreateMagazineOnWriteMagazineMutationVariables>(CreateMagazineOnWriteMagazineDocument, options);
+      }
+export type CreateMagazineOnWriteMagazineMutationHookResult = ReturnType<typeof useCreateMagazineOnWriteMagazineMutation>;
+export type CreateMagazineOnWriteMagazineMutationResult = Apollo.MutationResult<CreateMagazineOnWriteMagazineMutation>;
+export type CreateMagazineOnWriteMagazineMutationOptions = Apollo.BaseMutationOptions<CreateMagazineOnWriteMagazineMutation, CreateMagazineOnWriteMagazineMutationVariables>;

@@ -3,9 +3,8 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { SectionHeader, SectionWrapper } from '@darun/ui';
-import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
-import { ProductItem } from '../../uis';
+import { ProductCard } from '../../components';
 
 const PRODUCTS_BY_CATEGORY_QUERY = gql`
   query ProductsByCategoryOnSection($slug: String!, $locale: String!) {
@@ -60,30 +59,18 @@ export function CategoryProductSection({ slug }: { slug: string }) {
       <div className="flex flex-col gap-5 md:gap-6">
         <SectionHeader title={categoryLabel} />
         {products.length === 0 ? (
-          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-surface-300 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
+          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-dark-200 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
             {emptyLabel}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
             {products.map(product => (
-              <Link
+              <ProductCard
                 key={product.id}
+                product={product}
                 href={`/products/${product.slug}?from=category`}
-                className="group h-full focus-visible:outline-none"
-              >
-                <div className="relative flex h-full flex-col rounded-card border border-surface-300 bg-white p-3.5 shadow-card transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:border-brand-300 group-hover:shadow-card-hover group-focus-visible:-translate-y-1 group-focus-visible:border-brand-300 group-focus-visible:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-brand-300/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none md:rounded-card-lg md:p-4">
-                  <div className="transition-transform duration-200 ease-out group-hover:translate-y-0.5 group-focus-visible:translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none [&>div>div:last-child>div:last-child]:transition-transform [&>div>div:last-child>div:last-child]:duration-200 [&>div>div:last-child>div:last-child]:ease-out group-hover:[&>div>div:last-child>div:last-child]:translate-x-0.5 group-focus-visible:[&>div>div:last-child>div:last-child]:translate-x-0.5 motion-reduce:[&>div>div:last-child>div:last-child]:transform-none motion-reduce:[&>div>div:last-child>div:last-child]:transition-none">
-                    <ProductItem
-                      name={product.name}
-                      logoUrl={product.logoUrl ?? undefined}
-                      logoSize="small"
-                      summary={product.summary ?? undefined}
-                      tags={product.tags.map(tag => tag.name)}
-                      maxTagItems={2}
-                    />
-                  </div>
-                </div>
-              </Link>
+                source="category"
+              />
             ))}
           </div>
         )}

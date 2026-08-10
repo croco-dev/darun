@@ -21,12 +21,12 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       <Button onClick={() => reset()}>다시 시도</Button>
 
       {isDev && (
-        <div className="mt-8 w-full max-w-2xl overflow-auto rounded-lg bg-[#f5f5f5] p-4 font-mono text-xs">
+        <div className="mt-8 w-full max-w-2xl overflow-auto rounded-lg bg-surface-100 p-4 font-mono text-xs">
           <p className="mb-2 font-bold">
             {error.name}: {error.message}
           </p>
           <pre>{error.stack}</pre>
-          {error.digest && <p className="mt-2 text-[#666]">Digest: {error.digest}</p>}
+          {error.digest && <p className="mt-2 text-dark-500">Digest: {error.digest}</p>}
         </div>
       )}
     </div>
