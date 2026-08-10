@@ -9,7 +9,7 @@ import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';
 
 const pretendardFont = localFont({
-  src: '../../../node_modules/@croco/utils-next-font-pretendard/PretendardVariable.woff2',
+  src: '../public/fonts/PretendardVariable.woff2',
   display: 'swap',
   weight: '45 920',
 });
