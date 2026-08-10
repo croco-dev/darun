@@ -23,11 +23,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Lint
-        run: pnpm run lint --filter graphql-api
+        run: pnpm --filter graphql-api exec eslint **/*.ts*
       - name: Typecheck
-        run: pnpm run typecheck --filter graphql-api
+        run: pnpm --filter graphql-api exec tsc --noEmit
       - name: Test
-        run: pnpm run test --filter graphql-api
+        run: pnpm --filter graphql-api exec vitest run
 
   deploy:
     name: deploy
