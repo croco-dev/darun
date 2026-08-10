@@ -56,7 +56,7 @@ export const CategoryNavigationSection = () => {
                     source: 'home-bar',
                   })
                 }
-                className="flex min-h-[80px] items-center justify-center rounded-card border border-surface-300 bg-white px-4 py-3 text-center text-sm font-semibold tracking-tight text-dark-900 transition-colors duration-200 ease-out hover:border-brand-300 hover:text-brand-800 focus-visible:border-brand-300 focus-visible:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transition-none sm:text-base"
+                className="flex min-h-20 items-center justify-center rounded-card border border-surface-300 bg-white px-4 py-3 text-center text-sm font-semibold tracking-tight text-dark-900 transition-colors duration-200 ease-out hover:border-brand-300 hover:text-brand-800 focus-visible:border-brand-300 focus-visible:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transition-none sm:text-base"
               >
                 {locale === 'ko' ? category.labelKo : category.labelEn}
               </Link>

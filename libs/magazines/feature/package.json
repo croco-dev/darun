@@ -26,6 +26,8 @@
     "@darun/magazines-datasource": "workspace:*",
     "@darun/magazines-domain": "workspace:*",
     "@darun/provider-graphql": "workspace:*",
+    "@darun/ui": "workspace:*",
+    "@darun/ui-admin": "workspace:*",
     "@darun/utils-image-upload": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
     "@mantine/dropzone": "^8.3.16",

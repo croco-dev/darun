@@ -39,7 +39,7 @@ export function Navbar() {
               <Link
                 key={item.link}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition motion-reduce:transition-none outline-none select-none focus-visible:ring-2 focus-visible:ring-dark-900/40 ${
-                  isActive ? 'bg-dark-900 text-white' : 'text-dark-600 hover:bg-dark-50 hover:text-dark-900'
+                  isActive ? 'bg-dark-900 text-white' : 'text-dark-600 hover:bg-surface-100 hover:text-dark-900'
                 }`}
                 href={item.link}
               >

@@ -1,5 +1,0 @@
-.table_row {
-  &:hover {
-    background: var(--code-bg, var(--mantine-color-gray-1));
-  }
-}

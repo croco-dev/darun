@@ -20,7 +20,7 @@ export const ProductDetailInfoSection = ({ slug }: ProductDetailInfoSectionProps
             <ProductInfo slug={slug} />
           </div>
         </div>
-        <div className="px-5 py-3 bg-dark-50/30 flex justify-between items-center">
+        <div className="px-5 py-3 bg-surface-100/30 flex justify-between items-center">
           <div></div>
           <div className="flex gap-2">
             <Button onClick={openEditModal} variant="base" color="secondary" size="sm">

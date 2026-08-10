@@ -19,7 +19,7 @@ type ProductCardProps = {
   product: ProductFragment;
   rank?: number;
   href: string;
-  source: 'trending' | 'search-empty' | 'related' | 'recent';
+  source: 'trending' | 'search-empty' | 'related' | 'recent' | 'search' | 'category';
   layoutId?: string;
   onClick?: () => void;
 };

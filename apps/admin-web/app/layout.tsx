@@ -1,7 +1,6 @@
 import 'normalize.css/normalize.css';
 import '@mantine/core/styles.css';
 import './globals.css';
-import 'remixicon/fonts/remixicon.css';
 
 import { Metadata } from 'next';
 import localFont from 'next/font/local';

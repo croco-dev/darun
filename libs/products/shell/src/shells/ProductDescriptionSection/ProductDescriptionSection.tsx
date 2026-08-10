@@ -14,7 +14,7 @@ export const ProductDescriptionSection = ({ slug }: ProductDescriptionSectionPro
   return (
     <section className="flex flex-col gap-5 py-4 md:py-6" id="description">
       <SectionHeader title={t('description.title')} />
-      <div className="[&_div]:text-surface-700">
+      <div className="[&_div]:text-dark-700">
         <ProductDescription slug={slug} />
       </div>
     </section>

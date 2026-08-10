@@ -36,7 +36,7 @@ export const ProductLinkTable = bind(
       <>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse table-fixed">
-            <thead className="bg-dark-50 text-left text-dark-900">
+            <thead className="bg-surface-100 text-left text-dark-900">
               <tr>
                 <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[80px]">
                   아이콘
@@ -53,7 +53,7 @@ export const ProductLinkTable = bind(
             </thead>
             <tbody className="bg-white">
               {links.map(link => (
-                <tr key={link.id} className="border-b border-dark-200 hover:bg-dark-50 transition last:border-b-0">
+                <tr key={link.id} className="border-b border-dark-200 hover:bg-surface-100 transition last:border-b-0">
                   <td className="border-r border-dark-200 px-4 py-3">
                     <div className="flex justify-center">
                       <div

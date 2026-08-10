@@ -21,7 +21,7 @@ export const ProductAlternativeList = bind(
         {products.map(product => (
           <div
             key={product.id}
-            className="rounded-card border border-surface-300 bg-white px-[18px] py-4 shadow-card transition-colors hover:border-brand-300 motion-reduce:transition-none"
+            className="rounded-card border border-surface-300 bg-white px-5 py-4 shadow-card transition-colors hover:border-brand-300 motion-reduce:transition-none"
           >
             <div className="flex w-full flex-col gap-3">
               <div className="flex flex-row justify-between items-center">
@@ -45,9 +45,7 @@ export const ProductAlternativeList = bind(
                   <>
                     <div className="flex flex-col gap-3">
                       <div className="flex w-fit flex-col gap-1">
-                        <p className="text-[16px] font-bold tracking-[-0.024em] text-dark-500">
-                          {t('list.feature.title')}
-                        </p>
+                        <p className="text-base font-bold tracking-tight text-dark-500">{t('list.feature.title')}</p>
                         <div className="h-[2px] bg-dark-400" />
                       </div>
                       <ProductFeatureGridList

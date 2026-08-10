@@ -92,7 +92,7 @@ export function ProductListTable() {
     <div className="flex flex-col gap-3">
       <AdminPanel className="overflow-hidden">
         <table className="w-full border-collapse table-fixed">
-          <thead className="bg-dark-50">
+          <thead className="bg-surface-100">
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map(header => (
@@ -112,8 +112,8 @@ export function ProductListTable() {
               <tr
                 key={row.id}
                 onClick={() => handleRowClick({ record: row.original })}
-                className={`cursor-pointer border-b border-dark-200 transition hover:bg-dark-50 ${
-                  index % 2 === 0 ? 'bg-white' : 'bg-dark-50/30'
+                className={`cursor-pointer border-b border-dark-200 transition hover:bg-surface-100 ${
+                  index % 2 === 0 ? 'bg-white' : 'bg-surface-100/30'
                 }`}
               >
                 {row.getVisibleCells().map(cell => (

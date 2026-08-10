@@ -58,10 +58,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
         />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {articles.slice(0, 3).map(article => (
-            <div
-              key={article.id}
-              className="group h-full transition-transform duration-200 ease-out hover:-translate-y-1 focus-within:-translate-y-1 motion-reduce:transform-none motion-reduce:transition-none [&>div]:h-full [&>div]:transition-[border-color,box-shadow] [&>div]:duration-200 [&>div]:ease-out hover:[&>div]:border-brand-200 hover:[&>div]:shadow-[0_24px_40px_-28px_rgba(53,63,174,0.24)] focus-within:[&>div]:border-brand-200 focus-within:[&>div]:shadow-[0_24px_40px_-28px_rgba(53,63,174,0.24)] motion-reduce:[&>div]:transition-none [&>div>div]:flex-col [&>div>div>img]:transition-transform [&>div>div>img]:duration-200 [&>div>div>img]:ease-out hover:[&>div>div>img]:scale-[1.02] focus-within:[&>div>div>img]:scale-[1.02] motion-reduce:[&>div>div>img]:transform-none motion-reduce:[&>div>div>img]:transition-none [&>div>div>img]:h-44 [&>div>div>img]:w-full [&>div>div>img]:max-w-none [&>div>div>div]:p-4 sm:[&>div>div>img]:h-48 md:[&>div>div]:flex-row md:[&>div>div>img]:h-36 md:[&>div>div>img]:w-auto md:[&>div>div>img]:max-w-[168px]"
-            >
+            <div key={article.id} className="group h-full">
               <ArticleCard
                 thumbnailImageUri={article.thumbnailImageUri}
                 category={article.category}

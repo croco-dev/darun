@@ -12,15 +12,15 @@ type FeatureItemProps = {
 };
 
 export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureItemProps) => (
-  <div className="rounded-lg border border-black/10 bg-white px-4 py-3 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.08)]">
+  <div className="rounded-card border border-dark-100 bg-white px-4 py-3 shadow-button">
     <div className="flex w-full flex-col gap-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-black/10 bg-dark-100">
-          <span className="text-[22px]">{emoji ?? '💎'}</span>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-dark-100 bg-dark-100">
+          <span className="text-2xl">{emoji ?? '💎'}</span>
         </div>
         <div className="flex flex-col">
-          <p className="text-[18px] font-bold tracking-[-0.072px] text-dark-900">{name}</p>
-          {description && <p className="text-[14px] font-normal text-dark-600">{description}</p>}
+          <p className="text-lg font-bold tracking-tight text-dark-900">{name}</p>
+          {description && <p className="text-sm font-normal text-dark-600">{description}</p>}
         </div>
       </div>
       {screenshots && screenshots.length > 0 && (
@@ -33,7 +33,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
               sizes="800px"
               width={800}
               height={220}
-              className="h-[220px] w-auto rounded border border-black/[0.04] object-contain"
+              className="h-[220px] w-auto rounded border border-dark-100 object-contain"
             />
           ))}
         </div>
