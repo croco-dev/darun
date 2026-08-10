@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const REQUIRED_VARS = ['INFRA_ENV', 'RUNNING_ENV', 'DATABASE_URL', 'FIREBASE_PROJECT_ID', 'MONGODB_URI'] as const;
+const REQUIRED_VARS = [
+  'INFRA_ENV',
+  'RUNNING_ENV',
+  'DATABASE_URL',
+  'FIREBASE_PROJECT_ID',
+  'MONGODB_URI',
+  'VOTE_IP_SALT',
+] as const;
 
 const OPTIONAL_WHEN_LOCAL_VARS = [
   'FIREBASE_PRIVATE_KEY',
@@ -18,6 +25,7 @@ function setAllRequiredVars(infraEnv: string) {
   process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
   process.env.FIREBASE_PROJECT_ID = 'test-project';
   process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
+  process.env.VOTE_IP_SALT = 'test-salt';
 }
 
 function setAllVars(infraEnv: string) {
