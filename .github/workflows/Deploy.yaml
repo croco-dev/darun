@@ -52,9 +52,12 @@ jobs:
           region: ap-northeast-2
           access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Install SST providers
+        run: pnpm --filter graphql-api exec sst install
       - name: Deploy
         run: pnpm run --filter graphql-api deploy
         env:
+          AWS_PROFILE: darun
           INFRA_ENV: prod
           RUNNING_ENV: ${{ secrets.RUNNING_ENV }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -66,6 +69,5 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
           OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
           CURSOR_SIGNATURE_SECRET: ${{ secrets.CURSOR_SIGNATURE_SECRET }}

@@ -5,8 +5,9 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "deploy": "serverless deploy --stage prod",
-    "dev": "serverless offline --stage local",
+    "build:lambda": "node scripts/build-lambda.cjs",
+    "deploy": "pnpm run build:lambda && sst deploy --stage prod",
+    "dev": "node scripts/dev.cjs",
     "lint": "eslint **/*.ts*",
     "local:bootstrap": "tsx scripts/bootstrap-local.ts",
     "seed:e2e": "tsx scripts/seed-e2e.ts",
@@ -62,10 +63,7 @@
     "@darun/utils-vitest-config": "workspace:*",
     "@types/aws-lambda": "8.10.134",
     "esbuild": "0.27.3",
-    "serverless": "4.25.0",
-    "serverless-esbuild": "1.55.1",
-    "serverless-offline": "14.4.0",
-    "serverless-prune-plugin": "2.1.0",
+    "sst": "4.17.1",
     "vitest": "4.1.10"
   }
 }

@@ -50,6 +50,7 @@ services:
       retries: 10
 
   graphql-api:
+    user: "${UID:-1000}:${GID:-1000}"
     build:
       context: .
       dockerfile: apps/graphql-api/Dockerfile.local

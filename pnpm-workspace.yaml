@@ -23,9 +23,6 @@ overrides:
   velocityjs: ">=2.1.7"
   websocket-driver: ">=0.7.5"
 
-onlyBuiltDependencies:
-  - serverless
-
 allowBuilds:
   '@apollo/protobufjs': true
   '@firebase/util': true
@@ -37,7 +34,6 @@ allowBuilds:
   esbuild: true
   lefthook: true
   protobufjs: true
-  serverless: true
   sharp: true
   type-graphql: true
   unrs-resolver: true
