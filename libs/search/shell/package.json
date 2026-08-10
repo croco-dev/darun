@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/client": "4.2.0",
+    "@apollo/client": "catalog:",
     "@darun/products-shell": "workspace:*",
     "@darun/search-feature": "workspace:*",
     "@darun/ui": "workspace:*",
@@ -18,16 +18,16 @@
     "@darun/utils-structure-react": "workspace:*"
   },
   "peerDependencies": {
-    "next": "^16.2.6",
-    "next-intl": "*",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "next": "catalog:",
+    "next-intl": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.0.0",
-    "typescript": "^6.0.3"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:"
   }
 }

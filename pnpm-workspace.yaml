@@ -15,7 +15,6 @@ minimumReleaseAge: 0
 strictDepBuilds: false
 
 overrides:
-  graphql: "16.12.0"
   form-data: ">=2.5.4"
   fast-xml-parser: ">=4.5.5"
   protobufjs: ">=7.5.5"
@@ -34,6 +33,90 @@ allowBuilds:
   esbuild: true
   lefthook: true
   protobufjs: true
+  serverless: set this to true or false
   sharp: true
   type-graphql: true
   unrs-resolver: true
+
+catalog:
+  # Toolchain
+  typescript: 6.0.3
+  vitest: 4.1.10
+  '@vitest/coverage-v8': 4.1.10
+  '@vitest/ui': 4.1.10
+  eslint: 10.8.0
+  prettier: 3.9.6
+  turbo: 2.10.7
+  lefthook: 1.12.3
+  typescript-eslint: 8.66.0
+
+  # React / Next
+  react: 19.2.6
+  react-dom: 19.2.6
+  '@types/react': 19.2.14
+  '@types/react-dom': 19.2.4
+  next: 16.2.6
+  next-intl: 4.8.2
+  next-client-cookies: 2.1.0
+  eslint-config-next: 16.2.12
+
+  # Apollo / GraphQL
+  '@apollo/client': 4.2.0
+  '@apollo/server': 5.5.1
+  graphql: 16.12.0
+  type-graphql: 2.0.0-rc.2
+
+  # DI / reflect
+  reflect-metadata: 0.2.2
+  typedi: 0.10.0
+
+  # DB / ORM
+  drizzle-orm: 0.45.2
+  mongoose: 9.2.1
+
+  # Serverless / Backend tools
+  serverless: 4.25.0
+  serverless-esbuild: 1.55.1
+  serverless-offline: 14.4.0
+  serverless-prune-plugin: 2.1.0
+  '@as-integrations/aws-lambda': 4.0.1
+  cloudinary: 2.10.0
+  firebase: 10.8.1
+  firebase-admin: 13.6.1
+
+  # Sentry
+  '@sentry/nextjs': 10.38.0
+  '@sentry/aws-serverless': 10.38.0
+  '@sentry/esbuild-plugin': 4.9.1
+  '@sentry/profiling-node': 10.38.0
+
+  # Styling / UI primitives
+  tailwindcss: 4.3.3
+  '@tailwindcss/postcss': 4.3.3
+  autoprefixer: 10.4.21
+  class-variance-authority: 0.7.1
+  clsx: 2.1.1
+  tailwind-merge: 2.6.0
+  lucide-react: 0.468.0
+
+  # Mantine
+  '@mantine/core': 9.5.1
+  '@mantine/hooks': 9.5.1
+  '@mantine/form': 9.5.1
+  '@mantine/dropzone': 9.5.1
+  '@mantine/notifications': 9.5.1
+
+  # React form / date
+  react-hook-form: 7.71.2
+  react-day-picker: 9.14.0
+  react-dropzone: 15.0.0
+  sonner: 2.0.7
+
+  # Testing
+  '@testing-library/jest-dom': 6.9.1
+  '@playwright/test': 1.59.1
+
+  # Build tools
+  esbuild: 0.27.3
+  babel-plugin-react-compiler: 1.0.0
+  graphql-tag-swc-plugin: 1.1.0

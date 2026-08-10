@@ -11,8 +11,8 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "@apollo/server": "^5.5.1",
-    "graphql": "^16"
+    "@apollo/server": "catalog:",
+    "graphql": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

@@ -22,33 +22,33 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/client": "4.2.0",
+    "@apollo/client": "catalog:",
     "@darun/companies-datasource": "workspace:*",
     "@darun/companies-domain": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/ui-admin": "workspace:*",
     "@darun/utils-apollo-server": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
-    "@mantine/core": "^8.3.16",
-    "@mantine/form": "^8.3.16",
-    "@mantine/hooks": "^8.3.16",
-    "@mantine/notifications": "^8.3.16",
-    "reflect-metadata": "0.2.2",
-    "type-graphql": "2.0.0-rc.2",
-    "typedi": "0.10.0"
+    "@mantine/core": "catalog:",
+    "@mantine/form": "catalog:",
+    "@mantine/hooks": "catalog:",
+    "@mantine/notifications": "catalog:",
+    "reflect-metadata": "catalog:",
+    "type-graphql": "catalog:",
+    "typedi": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@darun/utils-vitest-config": "workspace:*",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.1.9",
-    "typescript": "^6.0.3",
-    "vitest": "4.1.10"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
-    "next": "^16.2.6",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }

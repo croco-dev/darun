@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/client": "4.2.0",
+    "@apollo/client": "catalog:",
     "@darun/magazines-datasource": "workspace:*",
     "@darun/magazines-domain": "workspace:*",
     "@darun/provider-graphql": "workspace:*",
@@ -30,25 +30,25 @@
     "@darun/ui-admin": "workspace:*",
     "@darun/utils-image-upload": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
-    "@mantine/dropzone": "^8.3.16",
-    "@mantine/form": "^8.3.16",
-    "@mantine/notifications": "^8.3.16"
+    "@mantine/dropzone": "catalog:",
+    "@mantine/form": "catalog:",
+    "@mantine/notifications": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@darun/utils-vitest-config": "workspace:*",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.1.9",
-    "typescript": "^6.0.3",
-    "vitest": "4.1.10"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
-    "next": "^16.2.6",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "reflect-metadata": "*",
-    "type-graphql": "*",
-    "typedi": "*"
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "reflect-metadata": "catalog:",
+    "type-graphql": "catalog:",
+    "typedi": "catalog:"
   }
 }

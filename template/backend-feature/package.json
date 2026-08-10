@@ -11,8 +11,8 @@
   "dependencies": {
     "@darun/{domain}-datasource": "workspace:*",
     "@darun/{domain}-domain": "workspace:*",
-    "reflect-metadata": "^0.1.14",
-    "typedi": "^0.10.0"
+    "reflect-metadata": "catalog:",
+    "typedi": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

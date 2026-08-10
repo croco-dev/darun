@@ -15,9 +15,9 @@
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
     "@typegoose/typegoose": "*",
-    "drizzle-orm": "0.45.2",
-    "reflect-metadata": "*",
-    "typedi": "*"
+    "drizzle-orm": "catalog:",
+    "reflect-metadata": "catalog:",
+    "typedi": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

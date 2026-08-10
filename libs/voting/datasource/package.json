@@ -11,17 +11,17 @@
   },
   "dependencies": {
     "@darun/voting-domain": "workspace:*",
-    "drizzle-orm": "0.45.2"
+    "drizzle-orm": "catalog:"
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
-    "reflect-metadata": "*",
-    "typedi": "*"
+    "reflect-metadata": "catalog:",
+    "typedi": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@darun/utils-vitest-config": "workspace:*",
-    "vitest": "4.1.10"
+    "vitest": "catalog:"
   }
 }

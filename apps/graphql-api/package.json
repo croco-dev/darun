@@ -15,8 +15,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/server": "5.5.1",
-    "@as-integrations/aws-lambda": "4.0.1",
+    "@apollo/server": "catalog:",
+    "@as-integrations/aws-lambda": "catalog:",
     "@darun/accounts-datasource": "workspace:*",
     "@darun/accounts-domain": "workspace:*",
     "@darun/companies-datasource": "workspace:*",
@@ -43,27 +43,27 @@
     "@darun/utils-sentry": "workspace:*",
     "@darun/voting-datasource": "workspace:*",
     "@darun/voting-domain": "workspace:*",
-    "@sentry/aws-serverless": "10.38.0",
-    "@sentry/esbuild-plugin": "4.9.1",
-    "@sentry/profiling-node": "10.38.0",
+    "@sentry/aws-serverless": "catalog:",
+    "@sentry/esbuild-plugin": "catalog:",
+    "@sentry/profiling-node": "catalog:",
     "@typegoose/typegoose": "13.1.0",
-    "cloudinary": "2.9.0",
+    "cloudinary": "catalog:",
     "drizzle-kit": "0.31.10",
-    "drizzle-orm": "0.45.2",
-    "firebase-admin": "13.6.1",
-    "graphql": "16.12.0",
+    "drizzle-orm": "catalog:",
+    "firebase-admin": "catalog:",
+    "graphql": "catalog:",
     "graphql-scalars": "1.25.0",
-    "mongoose": "9.2.1",
+    "mongoose": "catalog:",
     "postgres": "3.4.8",
-    "reflect-metadata": "0.2.2",
-    "type-graphql": "2.0.0-rc.2",
-    "typedi": "0.10.0"
+    "reflect-metadata": "catalog:",
+    "type-graphql": "catalog:",
+    "typedi": "catalog:"
   },
   "devDependencies": {
     "@darun/utils-vitest-config": "workspace:*",
     "@types/aws-lambda": "8.10.134",
-    "esbuild": "0.27.3",
+    "esbuild": "catalog:",
     "sst": "4.17.1",
-    "vitest": "4.1.10"
+    "vitest": "catalog:"
   }
 }

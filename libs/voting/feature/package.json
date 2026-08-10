@@ -14,9 +14,9 @@
     "@darun/voting-domain": "workspace:*"
   },
   "peerDependencies": {
-    "reflect-metadata": "*",
-    "type-graphql": "*",
-    "typedi": "*"
+    "reflect-metadata": "catalog:",
+    "type-graphql": "catalog:",
+    "typedi": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

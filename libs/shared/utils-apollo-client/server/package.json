@@ -10,14 +10,14 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@apollo/client": "4.2.0",
+    "@apollo/client": "catalog:",
     "@darun/utils-structure-react": "workspace:*",
-    "next-client-cookies": "2.1.0"
+    "next-client-cookies": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:"
   }
 }

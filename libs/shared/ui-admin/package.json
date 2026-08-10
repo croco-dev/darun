@@ -27,12 +27,12 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.1.9",
-    "typescript": "^6.0.3"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }

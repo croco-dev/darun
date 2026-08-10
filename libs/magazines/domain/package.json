@@ -1,23 +1,23 @@
 {
-	"name": "@darun/magazines-domain",
-	"version": "0.0.0",
-	"type": "commonjs",
-	"main": "./src/index.ts",
-	"types": "./src/index.ts",
-	"scripts": {
-		"lint": "eslint **/*.ts*",
-		"test": "vitest run",
-		"typecheck": "tsc --noEmit"
-	},
-	"dependencies": {
-		"@darun/utils-error": "workspace:*",
-		"reflect-metadata": "^0.2.2",
-		"typedi": "^0.10.0"
-	},
-	"devDependencies": {
-		"@darun/eslint-config": "workspace:*",
-		"@darun/utils-tsconfig": "workspace:*",
-		"@darun/utils-vitest-config": "workspace:*",
-		"vitest": "4.1.10"
-	}
+  "name": "@darun/magazines-domain",
+  "version": "0.0.0",
+  "type": "commonjs",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint **/*.ts*",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@darun/utils-error": "workspace:*",
+    "reflect-metadata": "catalog:",
+    "typedi": "catalog:"
+  },
+  "devDependencies": {
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*",
+    "@darun/utils-vitest-config": "workspace:*",
+    "vitest": "catalog:"
+  }
 }

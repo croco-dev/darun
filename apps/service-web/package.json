@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/client": "4.2.0",
+    "@apollo/client": "catalog:",
     "@croco/utils-next-font-pretendard": "0.0.2",
     "@darun/magazines-shell": "workspace:*",
     "@darun/opengraph-shell": "workspace:*",
@@ -29,25 +29,25 @@
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
-    "@sentry/nextjs": "10.38.0",
+    "@sentry/nextjs": "catalog:",
     "date-fns": "3.6.0",
     "framer-motion": "12.38.0",
-    "lucide-react": "^0.468.0",
-    "next": "^16.2.6",
-    "next-client-cookies": "2.1.0",
-    "next-intl": "4.8.2",
+    "lucide-react": "catalog:",
+    "next": "catalog:",
+    "next-client-cookies": "catalog:",
+    "next-intl": "catalog:",
     "normalize.css": "8.0.1",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "16.2.12",
-    "@playwright/test": "1.59.1",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "eslint-config-next": "16.2.12",
-    "graphql-tag-swc-plugin": "1.1.0",
-    "typescript-eslint": "8.59.4",
-    "vitest": "4.1.10"
+    "@playwright/test": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint-config-next": "catalog:",
+    "graphql-tag-swc-plugin": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
   }
 }

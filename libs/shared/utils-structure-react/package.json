@@ -13,14 +13,14 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "react": ">=19.0.0"
+    "react": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@darun/utils-vitest-config": "workspace:*",
-    "@types/react": "^19.2.14",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }

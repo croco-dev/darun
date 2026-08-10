@@ -14,25 +14,25 @@
     "@darun/ui": "workspace:*",
     "@darun/utils-router": "workspace:*",
     "isomorphic-dompurify": "3.8.0",
-    "lucide-react": "^0.468.0",
+    "lucide-react": "catalog:",
     "react-medium-image-zoom": "5.2.10"
   },
   "peerDependencies": {
-    "@apollo/client": "4.2.0",
+    "@apollo/client": "catalog:",
     "@darun/provider-graphql": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
     "@kuma-ui/core": "1.5.9",
-    "next": "^16.2.6",
-    "next-intl": ">=4",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "next": "catalog:",
+    "next-intl": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@darun/utils-vitest-config": "workspace:*",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.0.0",
-    "typescript": "^6.0.3"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:"
   }
 }

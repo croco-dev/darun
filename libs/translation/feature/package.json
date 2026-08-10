@@ -20,14 +20,14 @@
     "@darun/translation-service": "workspace:*"
   },
   "peerDependencies": {
-    "reflect-metadata": "*",
-    "type-graphql": "*",
-    "typedi": "*"
+    "reflect-metadata": "catalog:",
+    "type-graphql": "catalog:",
+    "typedi": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@darun/utils-vitest-config": "workspace:*",
-    "vitest": "4.1.10"
+    "vitest": "catalog:"
   }
 }

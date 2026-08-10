@@ -11,13 +11,13 @@
   },
   "dependencies": {
     "@darun/images-domain": "workspace:*",
-    "cloudinary": "2.4.0"
+    "cloudinary": "catalog:"
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
-    "cloudinary": "*",
-    "reflect-metadata": "*",
-    "typedi": "*"
+    "cloudinary": "catalog:",
+    "reflect-metadata": "catalog:",
+    "typedi": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

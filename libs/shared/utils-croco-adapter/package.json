@@ -24,12 +24,12 @@
     "@darun/utils-structure-react": "workspace:*"
   },
   "peerDependencies": {
-    "next": "^15.0.0 || ^16.0.0",
-    "react": ">=19.0.0"
+    "next": "catalog:",
+    "react": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^19.2.14"
+    "@types/react": "catalog:"
   }
 }

@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "reflect-metadata": "^0.1.14"
+    "reflect-metadata": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

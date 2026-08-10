@@ -11,16 +11,16 @@
   },
   "dependencies": {
     "@darun/utils-auth-service-core": "workspace:*",
-    "firebase": "10.8.1",
+    "firebase": "catalog:",
     "next-firebase-auth-edge": "1.0.1"
   },
   "peerDependencies": {
-    "next": "^16.2.6"
+    "next": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:"
   }
 }

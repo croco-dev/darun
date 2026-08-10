@@ -12,12 +12,12 @@
   "dependencies": {
     "@darun/search-domain": "workspace:*",
     "@typegoose/typegoose": "13.1.0",
-    "mongoose": "9.2.1"
+    "mongoose": "catalog:"
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
-    "reflect-metadata": "*",
-    "typedi": "*"
+    "reflect-metadata": "catalog:",
+    "typedi": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

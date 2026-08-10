@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/client": "4.2.0",
+    "@apollo/client": "catalog:",
     "@croco/utils-next-font-pretendard": "0.0.2",
     "@darun/companies-feature": "workspace:*",
     "@darun/magazines-feature": "workspace:*",
@@ -20,6 +20,7 @@
     "@darun/provider-auth/server": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/ui-admin": "workspace:*",
+    "@darun/ui-layout": "workspace:*",
     "@darun/utils-apollo-client/client": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
@@ -27,26 +28,26 @@
     "@darun/utils-structure-react": "workspace:*",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
-    "@mantine/core": "^8.3.16",
-    "@mantine/dropzone": "^8.3.16",
-    "@mantine/form": "^8.3.16",
-    "@mantine/hooks": "^8.3.16",
-    "@mantine/notifications": "^8.3.16",
+    "@mantine/core": "catalog:",
+    "@mantine/dropzone": "catalog:",
+    "@mantine/form": "catalog:",
+    "@mantine/hooks": "catalog:",
+    "@mantine/notifications": "catalog:",
     "dayjs": "1.11.19",
-    "lucide-react": "^0.468.0",
-    "next": "^16.2.6",
-    "next-client-cookies": "2.1.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "lucide-react": "catalog:",
+    "next": "catalog:",
+    "next-client-cookies": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "eslint-config-next": "16.2.12",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint-config-next": "catalog:",
     "postcss": "8.5.6",
     "postcss-simple-vars": "7.0.1",
     "sass": "1.97.3",
-    "typescript-eslint": "8.59.4",
-    "vitest": "4.1.10"
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
   }
 }

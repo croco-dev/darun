@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apollo/client": "4.2.0",
+    "@apollo/client": "catalog:",
     "@darun/companies-feature": "workspace:*",
     "@darun/products-ui": "workspace:*",
     "@darun/translation-service": "workspace:*",
@@ -31,7 +31,7 @@
     "@darun/utils-structure-react": "workspace:*",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
-    "@mantine/core": "^7.16.5",
+    "@mantine/core": "catalog:",
     "dompurify": "^3.2.0"
   },
   "devDependencies": {
@@ -39,12 +39,12 @@
     "@darun/utils-tsconfig": "workspace:*",
     "@darun/utils-vitest-config": "workspace:*",
     "@testing-library/react": "16.3.2",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.1.9",
-    "typescript": "^6.0.3"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@darun/{domain}-domain": "workspace:*",
-    "reflect-metadata": "^0.1.14"
+    "reflect-metadata": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
