@@ -72,3 +72,5 @@ jobs:
           OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
           CURSOR_SIGNATURE_SECRET: ${{ secrets.CURSOR_SIGNATURE_SECRET }}
           VOTE_IP_SALT: ${{ secrets.VOTE_IP_SALT }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

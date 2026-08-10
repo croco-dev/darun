@@ -10,6 +10,9 @@ export default $config({
         aws: {
           region: 'ap-northeast-2',
         },
+        cloudflare: {
+          accountId: process.env.CLOUDFLARE_ACCOUNT_ID!,
+        },
       },
       removal: input?.stage === 'prod' ? 'retain' : 'remove',
       protect: input?.stage === 'prod',
@@ -42,10 +45,13 @@ export default $config({
     });
 
     const api = new sst.aws.ApiGatewayV2('GraphqlApi', {
+      domain: {
+        name: 'api.darun.io',
+        dns: sst.cloudflare.dns(),
+      },
       accessLog: { retention: '1 week' },
       cors: false,
     });
-
     api.route('POST /graphql', fn.arn);
     api.route('GET /graphql', fn.arn);
 
