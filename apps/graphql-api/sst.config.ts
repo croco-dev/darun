@@ -29,6 +29,7 @@ export default $config({
       CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET!,
       OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY!,
       CURSOR_SIGNATURE_SECRET: process.env.CURSOR_SIGNATURE_SECRET!,
+      VOTE_IP_SALT: process.env.VOTE_IP_SALT!,
     };
 
     const fn = new sst.aws.Function('GraphqlHandler', {
@@ -42,10 +43,16 @@ export default $config({
     });
 
     const api = new sst.aws.ApiGatewayV2('GraphqlApi', {
+      domain: {
+        nameId: 'api.darun.io',
+      },
       accessLog: { retention: '1 week' },
-      cors: false,
+      cors: {
+        allowOrigins: ['https://www.darun.io', 'https://admin.darun.io', 'https://visual.darun.io'],
+        allowMethods: ['GET', 'POST'],
+        allowHeaders: ['authorization', 'content-type'],
+      },
     });
-
     api.route('POST /graphql', fn.arn);
     api.route('GET /graphql', fn.arn);
 
