@@ -4,6 +4,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 });
 const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
+const path = require('path');
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
@@ -33,6 +34,9 @@ const nextConfig = {
   },
   experimental: {
     viewTransition: true,
+    turbopack: {
+      root: path.resolve(__dirname, '../..'),
+    },
     ...(process.env.ENABLE_EXPERIMENTAL_REACT_COMPILER === 'true'
       ? {
           reactCompiler: true,

@@ -7,6 +7,24 @@ import { CompareButton } from './CompareButton';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
 const { mockTrack, mockAnalyticsEvents } = vi.hoisted(() => ({
   mockTrack: vi.fn(),
   mockAnalyticsEvents: { COMPARE_CTA_CLICKED: 'compare_cta_clicked' },

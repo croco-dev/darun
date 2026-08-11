@@ -29,10 +29,19 @@ export function SearchProductPage({ searchParams }: Props) {
     return (
       <Layout>
         <main className="flex w-full flex-col">
-          <ContentArea className="flex flex-col gap-5 py-6 md:py-8">
-            <PopularQueriesStripe />
-            <CategoryShortcutGrid />
-            <TrendingProductPreview />
+          <ContentArea className="flex flex-col gap-8 py-6 md:gap-10 md:py-8">
+            <div className="flex flex-col gap-4">
+              <SectionHeader title={t('page.popularQueriesTitle')} />
+              <PopularQueriesStripe />
+            </div>
+            <div className="flex flex-col gap-4">
+              <SectionHeader title={t('page.categoriesTitle')} />
+              <CategoryShortcutGrid />
+            </div>
+            <div className="flex flex-col gap-4">
+              <SectionHeader title={t('page.trendingTitle')} />
+              <TrendingProductPreview />
+            </div>
           </ContentArea>
         </main>
       </Layout>
@@ -42,7 +51,7 @@ export function SearchProductPage({ searchParams }: Props) {
   return (
     <Layout>
       <main className="flex w-full flex-col">
-        <ContentArea className="flex flex-col gap-5 py-6 md:py-8">
+        <ContentArea className="flex flex-col gap-6 py-6 md:gap-8 md:py-8">
           <SectionHeader title={t('page.resultTitle', { query })} />
           <SearchProductResult query={query} />
         </ContentArea>

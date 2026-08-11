@@ -33,7 +33,7 @@ export const CategoryShortcutGrid = () => {
   return (
     <div
       data-testid="category-shortcut-grid"
-      className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+      className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:gap-3"
       role="list"
       aria-label="Browse by category"
     >
@@ -43,7 +43,7 @@ export const CategoryShortcutGrid = () => {
           type="button"
           role="listitem"
           onClick={() => handleClick(cat.slug)}
-          className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-medium text-dark-700 transition-colors hover:bg-dark-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2"
+          className="rounded-xl border border-dark-150 bg-white px-4 py-3 text-sm font-medium text-dark-700 transition-colors hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:border-dark-300 focus-visible:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70"
         >
           {locale === 'ko' ? cat.labelKo : cat.labelEn}
         </button>

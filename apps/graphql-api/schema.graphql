@@ -100,6 +100,10 @@ A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `dat
 """
 scalar DateTimeISO
 
+type DeleteProductScreenshotPayload {
+  success: Boolean!
+}
+
 input EditMagazineInput {
   backgroundImageUrl: String
   content: String
@@ -189,6 +193,7 @@ type Mutation {
   createMagazine(input: CreateMagazineInput!): CreateMagazinePayload!
   createProduct(input: CreateProductInput!): CreateProductPayload!
   createProductFeature(input: CreateProductFeatureInput!): CreateProductFeaturePayload!
+  deleteProductScreenshot(id: String!): DeleteProductScreenshotPayload!
   editMagazine(input: EditMagazineInput!, slug: String!): EditMagazinePayload!
   editProduct(input: EditProductInput!, slug: String!): EditProductPayload!
   generateProductDescription(input: GenerateProductDescriptionInput!): GenerateProductDescriptionPayload!
@@ -268,7 +273,7 @@ type Query {
   magazineBySlug(slug: String!): Magazine
   product(id: ID!, locale: String! = "ko"): Product
   productBySlug(locale: String! = "ko", slug: String!): Product
-  productsByCategory(slug: String!, locale: String! = "ko"): [Product!]!
+  productsByCategory(locale: String! = "ko", slug: String!): [Product!]!
   productsCount: Int!
   rankedProducts(first: Int!, locale: String! = "ko"): [Product!]!
   recentProducts(first: Int!, locale: String! = "ko"): [Product!]!

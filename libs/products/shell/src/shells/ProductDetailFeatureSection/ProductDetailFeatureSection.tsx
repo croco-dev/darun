@@ -12,11 +12,9 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
   const t = useTranslations('ProductDetail');
 
   return (
-    <section className="flex flex-col gap-5 py-4 md:py-6" id="features">
+    <section className="flex flex-col gap-4 py-4 md:gap-5 md:py-6" id="features">
       <SectionHeader title={t('feature.title')} />
-      <div className="[&_img]:!rounded-md">
-        <ProductFeatureList slug={slug} />
-      </div>
+      <ProductFeatureList slug={slug} />
     </section>
   );
 };

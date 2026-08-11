@@ -3,8 +3,8 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
-import { TrendingPreviewDocument } from '@darun/provider-graphql';
 import { ProductCard } from '@darun/products-shell';
+import { TrendingPreviewDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 
 const TRENDING_PREVIEW_QUERY = gql`
@@ -34,7 +34,7 @@ export const TrendingProductPreview = () => {
 
   return (
     <div data-testid="trending-preview">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:gap-5">
         {products.slice(0, 6).map((product, index) => (
           <ProductCard
             key={product.id}

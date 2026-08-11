@@ -20,6 +20,12 @@ const PRODUCTS_BY_CATEGORY_QUERY = gql`
         name
       }
     }
+    categories(first: 100, locale: $locale) {
+      id
+      slug
+      labelKo
+      labelEn
+    }
   }
 `;
 
@@ -36,13 +42,21 @@ type Product = {
   }>;
 };
 
+type Category = {
+  id: string;
+  slug: string;
+  labelKo: string;
+  labelEn: string;
+};
+
 type ProductsByCategoryQueryData = {
   productsByCategory?: Product[] | null;
+  categories?: Category[] | null;
 };
 
 export function CategoryProductSection({ slug }: { slug: string }) {
   const locale = useLocale();
-  const t = useTranslations('Category');
+  const t = useTranslations('category');
   const { data } = useSuspenseQuery<ProductsByCategoryQueryData>(PRODUCTS_BY_CATEGORY_QUERY, {
     variables: {
       slug,
@@ -51,7 +65,8 @@ export function CategoryProductSection({ slug }: { slug: string }) {
   });
 
   const products = data?.productsByCategory ?? [];
-  const categoryLabel = t('title', { category: slug });
+  const category = data?.categories?.find(c => c.slug === slug);
+  const categoryLabel = category ? (locale === 'ko' ? category.labelKo : category.labelEn) : slug;
   const emptyLabel = t('empty');
 
   return (
@@ -63,7 +78,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
             {emptyLabel}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 xl:gap-5">
             {products.map(product => (
               <ProductCard
                 key={product.id}

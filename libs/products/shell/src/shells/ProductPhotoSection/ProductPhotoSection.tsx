@@ -10,11 +10,9 @@ export const ProductPhotoSection = ({ slug }: ProductPhotoSectionProps) => {
   const t = useTranslations('ProductDetail');
 
   return (
-    <section className="flex flex-col gap-5 py-4 md:py-6" id="screenshot">
+    <section className="flex flex-col gap-4 py-4 md:gap-5 md:py-6" id="screenshot">
       <SectionHeader title={t('photo.title')} />
-      <div className="[&_img]:!rounded-md">
-        <ProductPhotos slug={slug} />
-      </div>
+      <ProductPhotos slug={slug} />
     </section>
   );
 };

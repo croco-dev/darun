@@ -52,7 +52,7 @@ export const ProductItem = ({
     <Component
       className={
         isStacked
-          ? 'flex w-full flex-col gap-3 overflow-visible'
+          ? 'flex w-full flex-col gap-3.5 overflow-visible md:gap-4'
           : `flex w-full gap-3 overflow-visible ${isAlignCenter ? 'items-center' : 'items-start'}`
       }
     >
@@ -62,31 +62,31 @@ export const ProductItem = ({
         alt={t('productItem.logoAlt', { name })}
         width={logoSizes[logoSize].imageSize}
         height={logoSizes[logoSize].imageSize}
-        className={`object-contain ${logoSize === 'small' ? 'rounded-xl' : 'rounded-2xl'}`}
+        className={`shrink-0 object-contain ${logoSize === 'small' ? 'rounded-xl' : 'rounded-2xl'}`}
       />
-      <div className="flex min-w-0 flex-col gap-1 overflow-hidden">
-        <div className="flex flex-col gap-1">
+      <div className="flex min-w-0 flex-col gap-2 overflow-hidden">
+        <div className="flex flex-col gap-0.5">
           <NameTag
-            className={`m-0 text-lg font-bold tracking-tight text-dark-900 md:text-xl ${isStacked ? 'line-clamp-2' : ''}`}
+            className={`m-0 text-base font-semibold tracking-tight text-dark-900 ${isStacked ? 'line-clamp-2' : 'md:text-lg'}`}
           >
             {name}
           </NameTag>
           {summary &&
             (isStacked ? (
-              <p className="line-clamp-2 text-xs leading-snug text-dark-500 md:text-sm">{summary}</p>
+              <p className="line-clamp-2 text-sm leading-snug text-dark-500">{summary}</p>
             ) : isSummaryNoWrap ? (
-              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-snug text-dark-500 md:text-sm">
+              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-snug text-dark-500">
                 {summary}
               </p>
             ) : (
-              <p className="text-xs leading-snug text-dark-500 md:text-sm">{summary}</p>
+              <p className="text-sm leading-snug text-dark-500">{summary}</p>
             ))}
         </div>
         {(tags || specialTags) && (
-          <div className={`flex items-center gap-1 overflow-x-auto ${isStacked ? '' : 'mr-3'}`}>
+          <div className={`flex items-center gap-1.5 overflow-x-auto ${isStacked ? '' : 'mr-3'}`}>
             {tags &&
               (maxTagItems && tags.length > maxTagItems ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   {tags.slice(0, maxTagItems).map(tag => (
                     <Chip
                       key={`tag-${tag}`}
@@ -96,7 +96,7 @@ export const ProductItem = ({
                       {tag}
                     </Chip>
                   ))}
-                  <span className="text-xs text-dark-500">+{tags.length - maxTagItems}</span>
+                  <span className="text-xs font-medium text-dark-400">+{tags.length - maxTagItems}</span>
                 </div>
               ) : (
                 tags.map(tag => (
@@ -111,7 +111,7 @@ export const ProductItem = ({
               ))}
             {specialTags && (
               <>
-                <span className="text-dark-500">•</span>
+                <span className="text-dark-400">•</span>
                 {specialTags.map(tag => (
                   <Chip key={`special-tag-${tag}`} variant={tagVariant} color="filledDark">
                     {tag}

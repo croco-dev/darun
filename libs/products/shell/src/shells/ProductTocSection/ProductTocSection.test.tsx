@@ -34,7 +34,7 @@ describe('ProductTocSection', () => {
       root?.render(<ProductTocSection.ViewComponent isFixed={true} />);
     });
     expect(container.querySelector('[data-testid="mock-toc"]')).not.toBeNull();
-    expect(container.innerHTML).toContain('h-10');
+    expect(container.innerHTML).toContain('h-12');
   });
 
   it('renders relative section without offset spacer', () => {
@@ -42,6 +42,6 @@ describe('ProductTocSection', () => {
       root?.render(<ProductTocSection.ViewComponent isFixed={false} />);
     });
     expect(container.querySelector('[data-testid="mock-toc"]')).not.toBeNull();
-    expect(container.innerHTML).not.toContain('h-10');
+    expect(container.innerHTML).not.toContain('h-12');
   });
 });

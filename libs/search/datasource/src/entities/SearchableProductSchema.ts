@@ -11,34 +11,34 @@ import { ObjectId } from 'mongoose';
 export class SearchableProductSchema {
   public _id: ObjectId;
 
-  @prop()
+  @prop({ type: () => String })
   public productId: string;
 
-  @prop()
+  @prop({ type: () => String })
   public name: string;
 
-  @prop()
+  @prop({ type: () => String })
   public slug: string;
 
-  @prop()
+  @prop({ type: () => String })
   public summary: string;
 
-  @prop()
+  @prop({ type: () => String })
   public description?: string;
 
   @prop({ type: () => [String], default: [] })
   public tags: string[];
 
-  @prop({ default: '' })
+  @prop({ type: () => String, default: '' })
   public category: string;
 
-  @prop({ default: 0 })
+  @prop({ type: () => Number, default: 0 })
   public votes: number;
 
-  @prop()
+  @prop({ type: () => Date })
   public createdAt?: Date;
 
-  @prop()
+  @prop({ type: () => Date })
   public publishedAt?: Date;
 }
 

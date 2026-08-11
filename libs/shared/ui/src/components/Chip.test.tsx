@@ -29,6 +29,6 @@ describe('Chip', () => {
   it('applies color variant classes', () => {
     const { container } = render(<Chip color="filledDark">어두운 칩</Chip>);
 
-    expect(container.firstChild).toHaveClass('border-dark-900', 'bg-dark-900', 'text-dark-100');
+    expect(container.firstChild).toHaveClass('border-transparent', 'bg-dark-900', 'text-dark-100');
   });
 });

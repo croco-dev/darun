@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 import { ProductAlternativePage } from '@darun/pages-shell';
 import { Metadata } from 'next';
-import { cache } from 'react';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import { getClient } from '../../../../getServerClient';
 
 const productQuery = gql`
@@ -145,7 +145,7 @@ export default async function ProductAlternativePageWrapper({ params }: Props) {
   return (
     <>
       <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd).replace(/</g, '\\u003c')}</script>
-      <ProductAlternativePage params={resolvedParams} />
+      <ProductAlternativePage params={resolvedParams} productName={productName} />
     </>
   );
 }

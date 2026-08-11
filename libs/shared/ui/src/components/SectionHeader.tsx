@@ -32,11 +32,11 @@ export type SectionHeaderProps = HTMLAttributes<HTMLHeadingElement> & {
 export function SectionHeader({ title, subtitle, moreLink, size, align, className, ...props }: SectionHeaderProps) {
   return (
     <div className={cn(sectionHeaderVariants({ size, align }), className)} {...props}>
-      <div className="flex items-center gap-2">
-        <h2 className="text-xl font-bold text-dark-900 sm:text-2xl">{title}</h2>
-        {moreLink && <span className="ml-auto">{moreLink}</span>}
+      <div className="flex items-baseline gap-3">
+        <h2 className="text-xl font-bold tracking-tight text-dark-900 sm:text-2xl">{title}</h2>
+        {moreLink && <span className="ml-auto shrink-0">{moreLink}</span>}
       </div>
-      {subtitle && <p className="text-sm text-dark-600 sm:text-base">{subtitle}</p>}
+      {subtitle && <p className="text-sm leading-relaxed text-dark-500 sm:text-base">{subtitle}</p>}
     </div>
   );
 }

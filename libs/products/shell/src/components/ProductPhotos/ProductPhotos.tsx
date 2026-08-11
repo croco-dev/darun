@@ -17,15 +17,15 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
 
   if (!photos || photos.length === 0) {
     return (
-      <div className="rounded-card border border-dark-200 bg-white px-4 py-4 shadow-card">
+      <div className="rounded-card border border-dark-150 bg-surface-100 px-5 py-6 text-center">
         <p className="text-sm text-dark-500">{t('photo.empty')}</p>
       </div>
     );
   }
   return (
-    <div className="rounded-card border border-dark-200 bg-white px-2 py-2 shadow-card">
+    <div className="rounded-card border border-dark-150 bg-white p-3 shadow-card">
       {photos && (
-        <div className="relative flex w-max gap-2 overflow-auto">
+        <div className="relative flex w-max gap-3 overflow-auto">
           {photos.map(photo => (
             <Zoom key={photo.imageUrl}>
               <Image
@@ -33,7 +33,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
                 alt={photo.imageAlt}
                 sizes="350px"
                 fill={true}
-                className="!relative !h-[220px] !w-auto rounded-lg border border-dark-200 object-contain"
+                className="!relative !h-[220px] !w-auto rounded-lg border border-dark-150 object-contain"
               />
             </Zoom>
           ))}

@@ -73,6 +73,22 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
         '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 소프트웨어, 웹사이트, 어플리케이션를 검색하고 리뷰를 확인해보세요.',
       images: ['https://darun-image.doda.dev/?format=png'],
     },
+    other: {
+      'script:ld+json': JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: '다른(darun)',
+        url: 'https://www.darun.io',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: 'https://www.darun.io/search/product?query={search_term_string}',
+          },
+          'query-input': 'required name=search_term_string',
+        },
+      }),
+    },
   };
 }
 
@@ -101,25 +117,6 @@ export default async function RootLayout({ children, params }: LayoutProps) {
         <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
         <meta name="naver-site-verification" content="9df72f43242db6a7b1048dee830cef5b44e00a7a" />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'WebSite',
-              name: '다른(darun)',
-              url: 'https://www.darun.io',
-              potentialAction: {
-                '@type': 'SearchAction',
-                target: {
-                  '@type': 'EntryPoint',
-                  urlTemplate: 'https://www.darun.io/search/product?query={search_term_string}',
-                },
-                'query-input': 'required name=search_term_string',
-              },
-            }),
-          }}
-        />
       </head>
       <body className={pretendardFont.className}>
         <NextIntlClientProvider messages={messages}>

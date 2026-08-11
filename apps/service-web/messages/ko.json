@@ -37,7 +37,10 @@
         "title": "위 검색 창에 검색어를 입력해주세요.",
         "description": "ex) 서비스 이름: ‘토스’, ‘네이버’ 혹은 카테고리: ‘금융’, ‘영상’ 등..."
       },
-      "resultTitle": "‘{query}’ 검색 결과"
+      "resultTitle": "‘{query}’ 검색 결과",
+      "popularQueriesTitle": "인기 검색어",
+      "categoriesTitle": "카테고리",
+      "trendingTitle": "인기 서비스"
     },
     "list": {
       "empty": {
