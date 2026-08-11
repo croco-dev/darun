@@ -52,7 +52,7 @@ describe('FAQSection Accessibility & Motion', () => {
       expect(button).not.toBeNull();
       expect(button!.className).toContain('focus-visible:outline-none');
       expect(button!.className).toContain('focus-visible:ring-2');
-      expect(button!.className).toContain('focus-visible:ring-brand-500/70');
+      expect(button!.className).toContain('focus-visible:ring-dark-900/70');
     });
   });
 
