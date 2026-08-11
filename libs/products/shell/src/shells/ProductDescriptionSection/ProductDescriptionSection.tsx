@@ -12,9 +12,9 @@ export const ProductDescriptionSection = ({ slug }: ProductDescriptionSectionPro
   const t = useTranslations('ProductDetail');
 
   return (
-    <section className="flex flex-col gap-5 py-4 md:py-6" id="description">
+    <section className="flex flex-col gap-4 py-4 md:gap-5 md:py-6" id="description">
       <SectionHeader title={t('description.title')} />
-      <div className="[&_div]:text-dark-700">
+      <div className="rounded-card border border-dark-150 bg-white p-5 shadow-card">
         <ProductDescription slug={slug} />
       </div>
     </section>

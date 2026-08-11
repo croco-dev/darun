@@ -6,11 +6,12 @@ import { bind } from '@darun/utils-structure-react';
 import { useProductTableOfContent } from './useProductTableOfContent';
 
 export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings, activeHeadingId }) => (
-  <div className="flex gap-0.5 overflow-x-auto py-2 md:gap-1">
+  <div className="flex gap-1 overflow-x-auto py-2.5 md:gap-2">
     {headings.map(({ id, text }) => (
       <Button
         key={id}
         kind={activeHeadingId === id ? 'textActive' : 'text'}
+        size="sm"
         onClick={() => {
           const target = document.getElementById(id);
 
@@ -18,7 +19,7 @@ export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings,
             return;
           }
 
-          const location = target.getBoundingClientRect().top + window.scrollY - 40;
+          const location = target.getBoundingClientRect().top + window.scrollY - 48;
           window.scrollTo({ top: Math.max(location, 0), behavior: 'smooth' });
         }}
       >

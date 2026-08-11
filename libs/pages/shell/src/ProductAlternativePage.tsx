@@ -1,4 +1,3 @@
-import { useProductInfo } from '@darun/products-feature';
 import { FAQItem } from '@darun/products-shell';
 import { AlternativeProductSection, FAQSection, ProductSummary } from '@darun/products-shell';
 import { Breadcrumb, ContentArea } from '@darun/ui';
@@ -7,13 +6,13 @@ import { Link } from '@darun/utils-router';
 
 export const ProductAlternativePage = ({
   params: { slug },
+  productName,
   faqItems,
 }: {
   params: { slug: string };
+  productName: string;
   faqItems?: FAQItem[];
 }) => {
-  const product = useProductInfo({ slug });
-
   return (
     <Layout>
       <main className="flex w-full flex-col">
@@ -22,7 +21,7 @@ export const ProductAlternativePage = ({
             data-testid="breadcrumb-alternatives"
             items={[
               { label: '홈', href: '/ko/' },
-              { label: product.name, href: `/ko/products/${slug}` },
+              { label: productName, href: `/ko/products/${slug}` },
               { label: '대안', ariaCurrent: 'page' },
             ]}
           />

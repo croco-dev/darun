@@ -12,6 +12,7 @@ export const ProductInformation = bind(useProductInformation, ({ name, logoUrl, 
     isSummaryNoWrap={true}
     isAlignCenter
     nameAs="h1"
+    tagVariant="circle"
     tags={tags && tags.map(tag => tag.name)}
   />
 ));

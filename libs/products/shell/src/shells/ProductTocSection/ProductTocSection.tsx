@@ -7,9 +7,9 @@ import { useProductTocSection } from './useProductTocSection';
 
 export const ProductTocSection = bind(useProductTocSection, ({ isFixed }) => (
   <>
-    {isFixed && <div className="h-10" />}
+    {isFixed && <div className="h-12" />}
     <div
-      className={`${isFixed ? 'fixed shadow-card' : 'relative'} w-full z-[100] bg-dark-000 border-y border-dark-100 top-0`}
+      className={`${isFixed ? 'fixed shadow-card' : 'relative'} w-full z-[100] bg-white/95 backdrop-blur-sm border-b border-dark-150 top-0`}
     >
       <ContentArea>
         <ProductTableOfContent />

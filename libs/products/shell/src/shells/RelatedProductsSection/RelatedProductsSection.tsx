@@ -63,9 +63,9 @@ export const RelatedProductsSection = ({ slug }: { slug: string }) => {
   };
 
   return (
-    <div data-testid="related-products-section" className="py-4">
+    <div data-testid="related-products-section">
       <SectionHeader title={t('related.title')} />
-      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-3 md:mt-4 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:gap-5">
         {alternatives.slice(0, 4).map((alt, index) => (
           <ProductCard
             key={alt.id}

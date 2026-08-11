@@ -12,8 +12,9 @@ const config: Config = {
       colors: {
         dark: {
           '000': '#ffffff',
-          100: '#e5e5e5',
-          200: '#cacaca',
+          100: '#f2f2f2',
+          150: '#e8e8e8',
+          200: '#d4d4d4',
           300: '#b0b0b0',
           400: '#959595',
           500: '#7b7b7b',
@@ -118,8 +119,8 @@ const config: Config = {
         pill: '9999px',
       },
       boxShadow: {
-        card: '0 1px 3px rgba(0, 0, 0, 0.06)',
-        'card-hover': '0 4px 12px rgba(0, 0, 0, 0.08)',
+        card: '0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04)',
+        'card-hover': '0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04)',
         button: '0 1px 2px rgba(0, 0, 0, 0.06)',
         hero: '0 24px 60px -24px rgba(0, 0, 0, 0.12)',
       },

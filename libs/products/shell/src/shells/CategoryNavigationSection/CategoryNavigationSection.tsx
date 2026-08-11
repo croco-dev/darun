@@ -45,7 +45,7 @@ export const CategoryNavigationSection = () => {
           }
         />
         {categories.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
+          <div className="flex flex-wrap gap-2 md:gap-3">
             {categories.map(category => (
               <Link
                 key={category.id}
@@ -56,14 +56,14 @@ export const CategoryNavigationSection = () => {
                     source: 'home-bar',
                   })
                 }
-                className="flex min-h-20 items-center justify-center rounded-card border border-dark-200 bg-white px-4 py-3 text-center text-sm font-semibold tracking-tight text-dark-900 transition-colors duration-200 ease-out hover:border-dark-400 hover:text-dark-900 focus-visible:border-dark-400 focus-visible:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none sm:text-base"
+                className="inline-flex items-center rounded-full border border-dark-150 bg-white px-4 py-2 text-sm font-medium text-dark-700 transition-colors hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:border-dark-300 focus-visible:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none sm:px-5 sm:py-2.5"
               >
                 {locale === 'ko' ? category.labelKo : category.labelEn}
               </Link>
             ))}
           </div>
         ) : (
-          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-dark-200 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
+          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-dark-150 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
             {t('home.category.empty')}
           </div>
         )}
