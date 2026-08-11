@@ -1,8 +1,8 @@
 import { type ApolloCache, type DocumentNode } from '@apollo/client';
 import { useMutation, type MutationHookOptions } from '@apollo/client/react';
-import { print } from 'graphql';
 import { notifications } from '@mantine/notifications';
 import { renderHook, act } from '@testing-library/react';
+import { print } from 'graphql';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@apollo/client/react', async importOriginal => {

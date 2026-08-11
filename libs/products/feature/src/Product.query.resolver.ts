@@ -150,7 +150,7 @@ export class ProductQueryResolver {
       name: translatedFields.get(`${product.id}:name`) ?? product.name,
       description:
         typeof product.description === 'string'
-          ? translatedFields.get(`${product.id}:description`) ?? product.description
+          ? (translatedFields.get(`${product.id}:description`) ?? product.description)
           : undefined,
     }));
   }
