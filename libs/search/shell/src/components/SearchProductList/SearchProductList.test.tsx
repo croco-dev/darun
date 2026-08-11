@@ -85,7 +85,7 @@ describe('SearchProductList', () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
-    localStorage.clear();
+    localStorage?.clear();
     mockPush.mockClear();
     mockNavigate.mockClear();
   });
@@ -119,7 +119,7 @@ describe('SearchProductList', () => {
       root?.render(<SearchProductList query="notion" />);
     });
 
-    const searchCard = container.querySelector('[data-testid="search-card"]');
+    const searchCard = container.querySelector('[data-source="search"]');
     expect(searchCard).not.toBeNull();
   });
 

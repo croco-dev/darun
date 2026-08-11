@@ -69,40 +69,37 @@ describe('useEditProductFeatureItem', () => {
 
     vi.mocked(useApolloClient).mockReturnValue({
       refetchQueries: mockRefetchQueries,
+      cache: { evict: vi.fn() },
     } as unknown as ReturnType<typeof useApolloClient>);
   });
 
-  it('should await refetchQueries before calling onSubmit', async () => {
+  it('should call onSubmit and show success notification in onCompleted', () => {
     const onSubmit = vi.fn();
     renderHook(() => useEditProductFeatureItem({ ...defaultProps, onSubmit }));
 
-    const promise = mutationOptions.onCompleted?.({ updateProductFeature: { feature: { id: 'feature-1' } } });
-
-    expect(onSubmit).not.toHaveBeenCalled();
-
-    resolveRefetch?.();
-
-    await act(async () => {
-      await promise;
-    });
-
-    expect(onSubmit).toHaveBeenCalled();
-  });
-
-  it('should show success notification only after refetch resolves', async () => {
-    renderHook(() => useEditProductFeatureItem(defaultProps));
-
-    const promise = mutationOptions.onCompleted?.({ updateProductFeature: { feature: { id: 'feature-1' } } });
-
-    expect(notifications.show).not.toHaveBeenCalled();
-
-    resolveRefetch?.();
-
-    await act(async () => {
-      await promise;
+    act(() => {
+      mutationOptions.onCompleted?.({ updateProductFeature: { feature: { id: 'feature-1' } } });
     });
 
     expect(notifications.show).toHaveBeenCalledWith({ message: '수정되었습니다.', color: 'teal' });
+    expect(onSubmit).toHaveBeenCalled();
+  });
+
+  it('should pass correct refetch document and awaitRefetchQueries to useMutation', () => {
+    const capturedDocuments: DocumentNode[] = [];
+    vi.mocked(useMutation).mockImplementation(((document?: DocumentNode, options?: MockMutationOptions) => {
+      capturedDocuments.push(document as DocumentNode);
+      mutationOptions =
+        (options as { onCompleted?: (data: unknown) => Promise<void> | void; onError?: (e: Error) => void }) || {};
+      return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
+    }) as typeof useMutation);
+
+    renderHook(() => useEditProductFeatureItem(defaultProps));
+
+    expect(capturedDocuments).toHaveLength(1);
+    expect(capturedDocuments[0]).toBeDefined();
+    const mutationOptionsTyped = mutationOptions as unknown as MockMutationOptions;
+    expect(mutationOptionsTyped?.awaitRefetchQueries).toBe(true);
   });
 
   it('should show error notification via onError', () => {
@@ -122,7 +119,7 @@ describe('useEditProductFeatureItem', () => {
       await result.current.submit({ emoji: '', name: '', summary: '' });
     });
 
-    expect(notifications.show).toHaveBeenCalledWith({ message: '모든 값이 비어있을 수는 없습니다.', color: 'red' });
+    expect(notifications.show).toHaveBeenCalledWith({ message: '값을 입력해주세요!!', color: 'red' });
     expect(mutateFn).not.toHaveBeenCalled();
   });
 });

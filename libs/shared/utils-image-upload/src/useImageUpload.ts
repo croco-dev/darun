@@ -2,10 +2,11 @@
 
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { Mutation, MutationsignImageUploadArgs } from '@darun/provider-graphql';
+import { SignImageUploadDocument, SignImageUploadMutation, SignImageUploadMutationVariables } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 
-const SIGN_IMAGE_UPLOAD = gql`
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+gql`
   mutation SignImageUpload($input: SignImageUploadInput!) {
     signImageUpload(input: $input) {
       signature
@@ -36,8 +37,8 @@ function getUploadErrorMessage(payload: CloudinaryUploadResponse) {
 }
 
 export function useImageUpload() {
-  const [signImageUpload] = useMutation<Pick<Mutation, 'signImageUpload'>, MutationsignImageUploadArgs>(
-    SIGN_IMAGE_UPLOAD
+  const [signImageUpload] = useMutation<SignImageUploadMutation, SignImageUploadMutationVariables>(
+    SignImageUploadDocument
   );
 
   async function upload(folder: string, file: File, displayName: string) {

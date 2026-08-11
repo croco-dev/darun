@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client';
-import { useTempProductBySlugOnProductCompanyInfoQuery } from './__generated__/useProductCompanyInfo';
+import { useQuery } from '@apollo/client/react';
+import { TempProductBySlugOnProductCompanyInfoDocument } from '@darun/provider-graphql';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -18,7 +19,7 @@ gql`
 `;
 
 export function useProductCompanyInfo({ slug }: { slug: string }) {
-  const { data } = useTempProductBySlugOnProductCompanyInfoQuery({
+  const { data } = useQuery(TempProductBySlugOnProductCompanyInfoDocument, {
     variables: { slug },
   });
   return { company: data?.tempProductBySlug?.ownedCompany };

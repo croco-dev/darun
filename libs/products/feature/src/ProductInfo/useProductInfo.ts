@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client';
-import { useTempProductBySlugOnProductInfoQuery } from './__generated__/useProductInfo';
+import { useQuery } from '@apollo/client/react';
+import { TempProductBySlugOnProductInfoDocument } from '@darun/provider-graphql';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -19,7 +20,7 @@ type ProductInfoProps = {
 };
 
 export function useProductInfo({ slug }: ProductInfoProps) {
-  const { data } = useTempProductBySlugOnProductInfoQuery({
+  const { data } = useQuery(TempProductBySlugOnProductInfoDocument, {
     variables: {
       slug,
     },

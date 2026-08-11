@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
+import { IndexProductOnIndexProductButtonDocument } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
-import { useIndexProductOnIndexProductButtonMutation } from './__generated__/useIndexProductButton';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -16,7 +17,7 @@ type IndexProductButtonProps = {
 };
 
 export function useIndexProductButton({ slug }: IndexProductButtonProps) {
-  const [indexProductMutation] = useIndexProductOnIndexProductButtonMutation({
+  const [indexProductMutation] = useMutation(IndexProductOnIndexProductButtonDocument, {
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },

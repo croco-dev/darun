@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client';
-import { useTempAllMagazinesOnMagazinesListSuspenseQuery } from './__generated__/useMagazinesList';
+import { useSuspenseQuery } from '@apollo/client/react';
+import { TempAllMagazinesOnMagazinesListDocument } from '@darun/provider-graphql';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -26,7 +27,7 @@ gql`
 `;
 
 export function useMagazinesList() {
-  const { data } = useTempAllMagazinesOnMagazinesListSuspenseQuery({
+  const { data } = useSuspenseQuery(TempAllMagazinesOnMagazinesListDocument, {
     variables: { page: 1 },
   });
 

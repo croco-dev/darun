@@ -1,10 +1,11 @@
 'use client';
 
 import { gql } from '@apollo/client';
+import { useLazyQuery } from '@apollo/client/react';
+import { SearchProductsOnSearchProductFieldDocument } from '@darun/provider-graphql';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
-import { useSearchProductsOnSearchProductFieldLazyQuery } from './__generated__/useSearchProductField';
 
 export const searchProductsOnSearchProductFieldQueryDocument = gql`
   query SearchProductsOnSearchProductField($query: String!) {
@@ -19,7 +20,7 @@ type SearchProductFieldProps = {
 };
 
 export function useSearchProductField({ onSelect }: SearchProductFieldProps) {
-  const [search] = useSearchProductsOnSearchProductFieldLazyQuery();
+  const [search] = useLazyQuery(SearchProductsOnSearchProductFieldDocument);
   const [products, setProducts] = useState<{ label: string; value: string }[]>([]);
   const latestSearchRequestId = useRef(0);
 

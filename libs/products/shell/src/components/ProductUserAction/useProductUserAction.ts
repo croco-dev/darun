@@ -1,10 +1,9 @@
 import { gql } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client/react';
+import { ProductBySlugOnProductUserActionDocument, UpvoteProductOnProductUserActionDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
-import {
-  useProductBySlugOnProductUserActionQuery,
-  useUpvoteProductOnProductUserActionMutation,
-} from './__generated__/useProductUserAction';
+
 
 void gql`
   query ProductBySlugOnProductUserAction($slug: String!, $locale: String!) {
@@ -30,13 +29,13 @@ type ProductUserActionProps = {
 
 export function useProductUserAction({ slug }: ProductUserActionProps) {
   const locale = useLocale();
-  const { data } = useProductBySlugOnProductUserActionQuery({
+  const { data } = useQuery(ProductBySlugOnProductUserActionDocument, {
     variables: {
       slug,
       locale,
     },
   });
-  const [upvoteProductMutation] = useUpvoteProductOnProductUserActionMutation({
+  const [upvoteProductMutation] = useMutation(UpvoteProductOnProductUserActionDocument, {
     variables: {
       slug,
     },

@@ -2,6 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
+import { CategoriesForEmptyStateDocument } from '@darun/provider-graphql';
 import { useNavigate } from '@darun/utils-router';
 import { useLocale } from 'next-intl';
 
@@ -16,25 +17,14 @@ const CATEGORIES_QUERY = gql`
   }
 `;
 
-type Category = {
-  id: string;
-  slug: string;
-  labelKo: string;
-  labelEn: string;
-};
-
-type CategoriesQueryResult = {
-  categories: Category[];
-};
-
 export const CategoryShortcutGrid = () => {
   const locale = useLocale();
   const navigate = useNavigate();
-  const { data } = useSuspenseQuery(CATEGORIES_QUERY, {
+  const { data } = useSuspenseQuery(CategoriesForEmptyStateDocument, {
     variables: { first: 8, locale },
   });
 
-  const categories = (data as unknown as CategoriesQueryResult)?.categories ?? [];
+  const categories = data?.categories ?? [];
 
   const handleClick = (slug: string) => {
     navigate(`/${locale}/categories/${slug}`);

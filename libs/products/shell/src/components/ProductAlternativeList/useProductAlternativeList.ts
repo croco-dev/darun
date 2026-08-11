@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
+import { useSuspenseQuery } from '@apollo/client/react';
+import { ProductWithFeaturesOnProductAlternativeListDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
-import { useProductWithFeaturesOnProductAlternativeListSuspenseQuery } from './__generated__/useProductAlternativeList';
 
 gql`
   query ProductWithFeaturesOnProductAlternativeList($slug: String!, $locale: String!) {
@@ -34,7 +35,7 @@ type ProductAlternativeListProps = {
 
 export const useProductAlternativeList = ({ slug }: ProductAlternativeListProps) => {
   const locale = useLocale();
-  const { data } = useProductWithFeaturesOnProductAlternativeListSuspenseQuery({
+  const { data } = useSuspenseQuery(ProductWithFeaturesOnProductAlternativeListDocument, {
     variables: { slug, locale },
   });
   return {

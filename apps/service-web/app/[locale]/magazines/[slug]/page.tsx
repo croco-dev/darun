@@ -6,8 +6,8 @@ import { notFound } from 'next/navigation';
 import { getClient } from '../../../getServerClient';
 
 const magazineQuery = gql`
-  query MagazineBySlugOnMagazinePageMetadata($slug: String!, $locale: String!) {
-    magazineBySlug(slug: $slug, locale: $locale) {
+  query MagazineBySlugOnMagazinePageMetadata($slug: String!) {
+    magazineBySlug(slug: $slug) {
       title
       summary
       backgroundImageUrl
@@ -40,7 +40,7 @@ type Props = {
 const getMagazine = cache(async (slug: string, locale: string) => {
   const { data } = await getClient().query<MagazineQueryData>({
     query: magazineQuery,
-    variables: { slug, locale },
+    variables: { slug },
   });
   return data;
 });

@@ -1,2 +1,2 @@
 export { ProductListTable } from './ProductListTable';
-export { AllProductsOnProductListTableDocument } from './__generated__/useProductListTable';
+export { AllProductsOnProductListTableDocument } from '@darun/provider-graphql';

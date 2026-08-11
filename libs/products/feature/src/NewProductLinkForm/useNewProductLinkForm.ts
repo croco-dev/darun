@@ -1,8 +1,9 @@
 import { gql } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
+import { AddProductLinkOnNewProductLinkFormDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
-import { useAddProductLinkOnNewProductLinkFormMutation } from './__generated__/useNewProductLinkForm';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -50,7 +51,7 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
       iconUrl: value => (!value ? '아이콘을 선택해주세요.' : null),
     },
   });
-  const [addProductLink] = useAddProductLinkOnNewProductLinkFormMutation({
+  const [addProductLink] = useMutation(AddProductLinkOnNewProductLinkFormDocument, {
     onCompleted: ({ addProductLink }) => {
       if (addProductLink.product?.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });

@@ -6,23 +6,17 @@ vi.mock('next/navigation', () => ({
   useRouter: vi.fn(() => ({ push: vi.fn() })),
 }));
 
-// ── Mock: @apollo/client to isolate the hook ─────────────────────
-vi.mock('@apollo/client', async importOriginal => {
+// ── Mock: @apollo/client/react to isolate the hook ───────────────
+vi.mock('@apollo/client/react', async importOriginal => {
   const actual = await importOriginal();
   return {
     ...(actual as Record<string, unknown>),
-    gql: vi.fn(),
     useSuspenseQuery: vi.fn(),
   };
 });
 
-// ── Mock: generated Suspense query ───────────────────────────────
-vi.mock('../__generated__/useProductListTable', () => ({
-  useAllProductsOnProductListTableSuspenseQuery: vi.fn(),
-}));
-
 // ── Import after mocks ───────────────────────────────────────────
-import { useAllProductsOnProductListTableSuspenseQuery } from '../__generated__/useProductListTable';
+import { useSuspenseQuery } from '@apollo/client/react';
 import { useProductListTable } from '../useProductListTable';
 
 describe('useProductListTable', () => {
@@ -91,10 +85,10 @@ describe('useProductListTable', () => {
     vi.clearAllMocks();
     refetchMock = vi.fn().mockResolvedValue({ data: defaultData });
 
-    vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+    vi.mocked(useSuspenseQuery).mockReturnValue({
       data: defaultData,
       refetch: refetchMock,
-    } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+    } as unknown as ReturnType<typeof useSuspenseQuery>);
   });
 
   describe('pageCount — stale closure 방지 (functional update)', () => {
@@ -134,7 +128,7 @@ describe('useProductListTable', () => {
     });
 
     it('should handle mixed next/previous calls correctly', () => {
-      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+      vi.mocked(useSuspenseQuery).mockReturnValue({
         data: {
           ...defaultData,
           allProducts: {
@@ -147,7 +141,7 @@ describe('useProductListTable', () => {
           },
         },
         refetch: refetchMock,
-      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+      } as unknown as ReturnType<typeof useSuspenseQuery>);
 
       const { result } = renderHook(() => useProductListTable());
 
@@ -175,7 +169,7 @@ describe('useProductListTable', () => {
       });
 
       // Simulate data arriving from refetch (re-render with new data)
-      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+      vi.mocked(useSuspenseQuery).mockReturnValue({
         data: {
           ...defaultData,
           allProducts: {
@@ -184,7 +178,7 @@ describe('useProductListTable', () => {
           },
         },
         refetch: refetchMock,
-      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+      } as unknown as ReturnType<typeof useSuspenseQuery>);
 
       rerender();
 
@@ -206,10 +200,10 @@ describe('useProductListTable', () => {
       });
 
       // Simulate refetch resolving with page 2 data (re-render)
-      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+      vi.mocked(useSuspenseQuery).mockReturnValue({
         data: mockPage2Data,
         refetch: refetchMock,
-      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+      } as unknown as ReturnType<typeof useSuspenseQuery>);
 
       rerender();
 
@@ -236,7 +230,7 @@ describe('useProductListTable', () => {
     });
 
     it('should use latest cursor for loadPreviousPage after data changes', () => {
-      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+      vi.mocked(useSuspenseQuery).mockReturnValue({
         data: {
           ...defaultData,
           allProducts: {
@@ -249,7 +243,7 @@ describe('useProductListTable', () => {
           },
         },
         refetch: refetchMock,
-      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+      } as unknown as ReturnType<typeof useSuspenseQuery>);
 
       const { result, rerender } = renderHook(() => useProductListTable());
 
@@ -257,7 +251,7 @@ describe('useProductListTable', () => {
         result.current.loadPreviousPage();
       });
 
-      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+      vi.mocked(useSuspenseQuery).mockReturnValue({
         data: {
           ...defaultData,
           allProducts: {
@@ -270,7 +264,7 @@ describe('useProductListTable', () => {
           },
         },
         refetch: refetchMock,
-      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+      } as unknown as ReturnType<typeof useSuspenseQuery>);
 
       rerender();
 
@@ -292,7 +286,8 @@ describe('useProductListTable', () => {
     it('should start with initial query { first: 50 }', () => {
       renderHook(() => useProductListTable());
 
-      expect(vi.mocked(useAllProductsOnProductListTableSuspenseQuery)).toHaveBeenCalledWith(
+      expect(vi.mocked(useSuspenseQuery)).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ variables: { first: 50 } })
       );
     });
@@ -313,7 +308,7 @@ describe('useProductListTable', () => {
     });
 
     it('should use correct previous page refetch variables when hasPreviousPage is true', () => {
-      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+      vi.mocked(useSuspenseQuery).mockReturnValue({
         data: {
           ...defaultData,
           allProducts: {
@@ -326,7 +321,7 @@ describe('useProductListTable', () => {
           },
         },
         refetch: refetchMock,
-      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+      } as unknown as ReturnType<typeof useSuspenseQuery>);
 
       const { result } = renderHook(() => useProductListTable());
 
@@ -354,7 +349,7 @@ describe('useProductListTable', () => {
     });
 
     it('should not refetch when startCursor is absent', () => {
-      vi.mocked(useAllProductsOnProductListTableSuspenseQuery).mockReturnValue({
+      vi.mocked(useSuspenseQuery).mockReturnValue({
         data: {
           ...defaultData,
           allProducts: {
@@ -367,7 +362,7 @@ describe('useProductListTable', () => {
           },
         },
         refetch: refetchMock,
-      } as unknown as ReturnType<typeof useAllProductsOnProductListTableSuspenseQuery>);
+      } as unknown as ReturnType<typeof useSuspenseQuery>);
 
       const { result } = renderHook(() => useProductListTable());
 

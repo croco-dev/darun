@@ -12,6 +12,7 @@
   "dependencies": {
     "@apollo/client": "catalog:",
     "@darun/products-shell": "workspace:*",
+    "@darun/provider-graphql": "workspace:*",
     "@darun/search-feature": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/utils-router": "workspace:*",

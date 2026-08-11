@@ -1,11 +1,12 @@
 'use client';
 
 import { gql } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
+import { AddProductScreenshotOnNewProductScreenshotFormDocument } from '@darun/provider-graphql';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
-import { useAddProductScreenshotOnNewProductScreenshotFormMutation } from './__generated__/useNewProductScreenshotForm';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -42,7 +43,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
   });
   const { upload } = useImageUpload();
 
-  const [createProductFeature] = useAddProductScreenshotOnNewProductScreenshotFormMutation({
+  const [createProductFeature] = useMutation(AddProductScreenshotOnNewProductScreenshotFormDocument, {
     onCompleted: ({ addProductScreenshot }) => {
       if (addProductScreenshot.product?.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });

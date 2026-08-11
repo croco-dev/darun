@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
+import { GenerateProductDescriptionDocument } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
-import { useGenerateProductDescriptionMutation } from './__generated__/useGenerateProductDescriptionButton';
 
 gql(`
   mutation GenerateProductDescription($input: GenerateProductDescriptionInput!) {
@@ -15,7 +16,7 @@ gql(`
 `);
 
 export function useGenerateProductDescriptionButton(slug: string) {
-  const [generateDescription, { loading }] = useGenerateProductDescriptionMutation({
+  const [generateDescription, { loading }] = useMutation(GenerateProductDescriptionDocument, {
     onCompleted: () => {
       notifications.show({
         message: 'AI 소개를 생성했어요.',

@@ -1,6 +1,8 @@
 import { gql } from '@apollo/client';
+import { useSuspenseQuery } from '@apollo/client/react';
+import { RankedProductsOnRankedProductListDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
-import { useRankedProductsOnRankedProductListSuspenseQuery } from './__generated__/useRankedProductList';
+
 
 gql`
   query RankedProductsOnRankedProductList($locale: String!) {
@@ -21,7 +23,7 @@ gql`
 
 export function useRankedProductList() {
   const locale = useLocale();
-  const { data } = useRankedProductsOnRankedProductListSuspenseQuery({
+  const { data } = useSuspenseQuery(RankedProductsOnRankedProductListDocument, {
     variables: {
       locale,
     },

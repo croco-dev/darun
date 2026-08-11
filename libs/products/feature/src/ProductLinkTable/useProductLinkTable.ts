@@ -1,9 +1,13 @@
 import { gql } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
+import {
+  EditProductLinkItemFragment,
+  ProductLinkTableFragmentDoc,
+  TempProductBySlugOnProductLinkTableDocument as TempProductBySlugOnProductLinkTableGeneratedDocument,
+  useFragment,
+} from '@darun/provider-graphql';
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useState } from 'react';
-import { EditProductLinkItemFragment } from '../EditProductLinkItem/__generated__/EditProductLinkItem';
-import { ProductLinkTableFragmentDoc } from './__generated__/ProductLinkTable';
-import { useTempProductBySlugOnProductLinkTableQuery } from './__generated__/useProductLinkTable';
 
 export const TempProductBySlugOnProductLinkTableDocument = gql`
   query TempProductBySlugOnProductLinkTable($slug: String!) {
@@ -21,9 +25,10 @@ type ProductLinkTableProps = {
 };
 
 export function useProductLinkTable({ slug }: ProductLinkTableProps) {
-  const { data, loading } = useTempProductBySlugOnProductLinkTableQuery({
+  const { data, loading } = useQuery(TempProductBySlugOnProductLinkTableGeneratedDocument, {
     variables: { slug },
   });
+  const product = useFragment(ProductLinkTableFragmentDoc, data?.tempProductBySlug ?? null);
 
   const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
   const [link, setLink] = useState<EditProductLinkItemFragment | null>(null);
@@ -37,7 +42,7 @@ export function useProductLinkTable({ slug }: ProductLinkTableProps) {
   );
 
   return {
-    links: data?.tempProductBySlug?.links,
+    links: product?.links,
     loading,
     editLink,
     isEditModalOpened,

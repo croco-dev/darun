@@ -1,5 +1,7 @@
 import { gql } from '@apollo/client';
-import { useProductsCountOnProductsCountSuspenseQuery } from './__generated__/useProductsCount';
+import { useSuspenseQuery } from '@apollo/client/react';
+import { ProductsCountOnProductsCountDocument } from '@darun/provider-graphql';
+
 
 gql`
   query ProductsCountOnProductsCount {
@@ -8,7 +10,7 @@ gql`
 `;
 
 export function useProductsCount() {
-  const { data } = useProductsCountOnProductsCountSuspenseQuery();
+  const { data } = useSuspenseQuery(ProductsCountOnProductsCountDocument);
   return {
     count: data?.productsCount,
   };

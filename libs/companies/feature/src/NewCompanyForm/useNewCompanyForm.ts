@@ -1,10 +1,12 @@
 import { gql } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
+import { CreateCompanyOnNewCompanyFormDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
-import { useCreateCompanyOnNewCompanyFormMutation } from './__generated__/useNewCompanyForm';
 
-export const createCompanyOnNewCompanyFormMutationDocument = gql`
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+gql`
   mutation CreateCompanyOnNewCompanyForm($input: CreateCompanyInput!) {
     createCompany(input: $input) {
       company {
@@ -40,7 +42,7 @@ export function useNewCompanyForm() {
   });
   const { push } = useRouter();
 
-  const [mutate] = useCreateCompanyOnNewCompanyFormMutation({
+  const [mutate] = useMutation(CreateCompanyOnNewCompanyFormDocument, {
     onCompleted: ({ createCompany }) => {
       if (createCompany.company.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
