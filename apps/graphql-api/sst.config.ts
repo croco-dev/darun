@@ -51,6 +51,7 @@ export default $config({
         allowOrigins: ['https://www.darun.io', 'https://admin.darun.io', 'https://visual.darun.io'],
         allowMethods: ['GET', 'POST'],
         allowHeaders: ['authorization', 'content-type'],
+        allowCredentials: true,
       },
     });
     api.route('POST /graphql', fn.arn);
