@@ -1,9 +1,8 @@
 import { gql } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
+import { EditProductLinkItemFragment, UpdateProductLinkOnEditProductLinkItemDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { ProductLinkTableFragmentDoc } from '../ProductLinkTable/__generated__/ProductLinkTable';
-import { EditProductLinkItemFragment } from './__generated__/EditProductLinkItem';
-import { useUpdateProductLinkOnEditProductLinkItemMutation } from './__generated__/useEditProductLinkItem';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -15,8 +14,6 @@ gql`
       }
     }
   }
-
-  ${ProductLinkTableFragmentDoc}
 `;
 
 type EditProductLinkItemProps = {
@@ -33,7 +30,7 @@ type FormValues = {
 };
 
 export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLinkItemProps) {
-  const [updateLink, { loading }] = useUpdateProductLinkOnEditProductLinkItemMutation({
+  const [updateLink, { loading }] = useMutation(UpdateProductLinkOnEditProductLinkItemDocument, {
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },

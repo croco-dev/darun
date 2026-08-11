@@ -1,13 +1,14 @@
 'use client';
 
 import { gql } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
+import { CreateMagazineOnWriteMagazineDocument } from '@darun/provider-graphql';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { FileWithPath } from '@mantine/dropzone';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useCreateMagazineOnWriteMagazineMutation } from './__generated__/useWriteMagazine';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -31,7 +32,7 @@ type FormValues = {
 
 export function useWriteMagazine() {
   const { push } = useRouter();
-  const [createMagazine] = useCreateMagazineOnWriteMagazineMutation({
+  const [createMagazine] = useMutation(CreateMagazineOnWriteMagazineDocument, {
     onCompleted: ({ createMagazine }) => {
       notifications.show({ message: '생성되었습니다.', color: 'teal' });
       push(`/magazines/${createMagazine.magazine.slug}`);

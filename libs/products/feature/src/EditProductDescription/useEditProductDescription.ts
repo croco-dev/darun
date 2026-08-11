@@ -1,13 +1,12 @@
-'use client';
-
 import { gql } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client/react';
+import {
+  EditProductOnEditProductDescriptionDocument,
+  TempProductBySlugOnEditProductDescriptionDocument,
+} from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useEffect } from 'react';
-import {
-  useEditProductOnEditProductDescriptionMutation,
-  useTempProductBySlugOnEditProductDescriptionQuery,
-} from './__generated__/useEditProductDescription';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -33,7 +32,7 @@ type FormValues = {
 };
 
 export function useEditProductDescription({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
-  const { data } = useTempProductBySlugOnEditProductDescriptionQuery({
+  const { data } = useQuery(TempProductBySlugOnEditProductDescriptionDocument, {
     variables: { slug },
   });
 
@@ -46,7 +45,7 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
     form.setInitialValues({ description: data?.tempProductBySlug?.description ?? '' });
   }, [data, form]);
 
-  const [editDescription] = useEditProductOnEditProductDescriptionMutation({
+  const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument, {
     onCompleted: ({ editProduct }) => {
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });

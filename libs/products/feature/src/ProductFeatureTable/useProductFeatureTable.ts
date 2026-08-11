@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client';
-import { useTempProductBySlugOnProductFeatureTableQuery } from './__generated__/useProductFeatureTable';
+import { useQuery } from '@apollo/client/react';
+import { TempProductBySlugOnProductFeatureTableDocument } from '@darun/provider-graphql';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -22,7 +23,7 @@ type ProductFeatureTableProps = {
 };
 
 export function useProductFeatureTable({ slug, editFeature }: ProductFeatureTableProps) {
-  const { data, loading } = useTempProductBySlugOnProductFeatureTableQuery({
+  const { data, loading } = useQuery(TempProductBySlugOnProductFeatureTableDocument, {
     variables: { slug },
   });
   return { features: data?.tempProductBySlug?.features, loading, editFeature };

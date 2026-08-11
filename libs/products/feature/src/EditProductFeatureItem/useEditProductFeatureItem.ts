@@ -2,14 +2,15 @@
 
 import { gql } from '@apollo/client';
 import { useApolloClient } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
+import {
+  FeatureOnEditProductFeatureItemDocument,
+  TempProductBySlugOnProductFeatureTableDocument,
+  UpdateProductFeatureOnEditProductFeatureItemDocument,
+} from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useEffect } from 'react';
-import { TempProductBySlugOnProductFeatureTableDocument } from '../ProductFeatureTable/__generated__/useProductFeatureTable';
-import {
-  useFeatureOnEditProductFeatureItemQuery,
-  useUpdateProductFeatureOnEditProductFeatureItemMutation,
-} from './__generated__/useEditProductFeatureItem';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -42,18 +43,16 @@ type FormValues = {
 export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFeatureItemProps) {
   const apolloClient = useApolloClient();
 
-  const { data, loading: queryLoading } = useFeatureOnEditProductFeatureItemQuery({
+  const { data, loading: queryLoading } = useQuery(FeatureOnEditProductFeatureItemDocument, {
     variables: { id: featureId },
   });
-  const [updateFeature, { loading: mutationLoading }] = useUpdateProductFeatureOnEditProductFeatureItemMutation({
-    onCompleted: async ({ updateProductFeature }) => {
-      if (updateProductFeature) {
-        await apolloClient.refetchQueries({
-          include: [TempProductBySlugOnProductFeatureTableDocument],
-        });
-        notifications.show({ message: '수정되었습니다.', color: 'teal' });
-        onSubmit?.();
-      }
+  const [updateFeature, { loading: mutationLoading }] = useMutation(UpdateProductFeatureOnEditProductFeatureItemDocument, {
+    refetchQueries: [TempProductBySlugOnProductFeatureTableDocument],
+    awaitRefetchQueries: true,
+    onCompleted: () => {
+      notifications.show({ message: '수정되었습니다.', color: 'teal' });
+      apolloClient.cache.evict({ fieldName: 'feature' });
+      onSubmit?.();
     },
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
@@ -70,24 +69,16 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
   });
 
   useEffect(() => {
-    const feature = data?.feature;
-    if (!feature?.id) {
-      return;
-    }
-
     form.setValues({
-      emoji: feature.emoji,
-      name: feature.name,
-      summary: feature.summary ?? '',
+      emoji: data?.feature?.emoji ?? '',
+      name: data?.feature?.name ?? '',
+      summary: data?.feature?.summary ?? '',
     });
   }, [data, form]);
 
   const submit = async (values: FormValues) => {
-    if (!values.name && !values.summary && !values.emoji) {
-      notifications.show({
-        message: '모든 값이 비어있을 수는 없습니다.',
-        color: 'red',
-      });
+    if (!values.emoji || !values.name || !values.summary) {
+      notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
 

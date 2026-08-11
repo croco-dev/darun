@@ -23,7 +23,7 @@ export const MagazinesList = bind(useMagazinesList, ({ magazines }) => {
           summary={item.summary ?? undefined}
           author={item.author?.name}
           category={item.publishedAt ? '발행' : '미발행'}
-          date={item.publishedAt ? new Date(item.publishedAt) : new Date(item.updatedAt)}
+          date={item.publishedAt ? new Date(item.publishedAt) : new Date(item.updatedAt ?? '')}
           thumbnailImageUri={item.backgroundImageUrl}
         />
       ))}

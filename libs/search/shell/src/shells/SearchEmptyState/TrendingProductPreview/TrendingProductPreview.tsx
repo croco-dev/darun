@@ -3,6 +3,7 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
+import { TrendingPreviewDocument } from '@darun/provider-graphql';
 import { ProductCard } from '@darun/products-shell';
 import { useLocale } from 'next-intl';
 
@@ -23,25 +24,13 @@ const TRENDING_PREVIEW_QUERY = gql`
   }
 `;
 
-type TrendingPreviewQueryResult = {
-  rankedProducts: Array<{
-    id: string;
-    name: string;
-    slug: string;
-    logoUrl?: string | null;
-    summary?: string | null;
-    voteCount: number;
-    tags: Array<{ id: string; name: string }>;
-  }>;
-};
-
 export const TrendingProductPreview = () => {
   const locale = useLocale();
-  const { data } = useSuspenseQuery(TRENDING_PREVIEW_QUERY, {
+  const { data } = useSuspenseQuery(TrendingPreviewDocument, {
     variables: { first: 8, locale },
   });
 
-  const products = (data as unknown as TrendingPreviewQueryResult)?.rankedProducts ?? [];
+  const products = data?.rankedProducts ?? [];
 
   return (
     <div data-testid="trending-preview">

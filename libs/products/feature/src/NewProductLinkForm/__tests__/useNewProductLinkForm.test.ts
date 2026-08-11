@@ -1,5 +1,6 @@
 import { type ApolloCache, type DocumentNode } from '@apollo/client';
 import { useMutation, type MutationHookOptions } from '@apollo/client/react';
+import { print } from 'graphql';
 import { notifications } from '@mantine/notifications';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -105,7 +106,7 @@ describe('useNewProductLinkForm', () => {
   it('should request links field in mutation selection instead of screenshots', () => {
     renderHook(() => useNewProductLinkForm(defaultProps));
 
-    const docStr = capturedDocument?.loc?.source?.body || '';
+    const docStr = capturedDocument ? print(capturedDocument) : '';
     expect(docStr).toContain('links');
     expect(docStr).not.toContain('screenshots');
   });

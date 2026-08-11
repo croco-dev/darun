@@ -1,7 +1,8 @@
 import { gql } from '@apollo/client';
+import { useSuspenseQuery } from '@apollo/client/react';
+import { AllProductsOnProductListTableDocument } from '@darun/provider-graphql';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { useAllProductsOnProductListTableSuspenseQuery } from './__generated__/useProductListTable';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -33,7 +34,7 @@ const defaultViewCount = 50;
 export function useProductListTable() {
   const { push } = useRouter();
   const [pageCount, setPageCount] = useState(1);
-  const { data, refetch } = useAllProductsOnProductListTableSuspenseQuery({
+  const { data, refetch } = useSuspenseQuery(AllProductsOnProductListTableDocument, {
     variables: { first: defaultViewCount },
   });
 

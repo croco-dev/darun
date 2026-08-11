@@ -1,8 +1,9 @@
 import { gql } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
+import { CreateProductFeatureOnNewProductFeatureFormDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
-import { useCreateProductFeatureOnNewProductFeatureFormMutation } from './__generated__/useNewProductFeatureForm';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -43,7 +44,7 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
       summary: value => (!value ? '짧은 설명을 입력해주세요.' : null),
     },
   });
-  const [createProductFeature] = useCreateProductFeatureOnNewProductFeatureFormMutation({
+  const [createProductFeature] = useMutation(CreateProductFeatureOnNewProductFeatureFormDocument, {
     onCompleted: ({ createProductFeature }) => {
       if (createProductFeature.feature.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });

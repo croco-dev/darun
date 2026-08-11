@@ -1,10 +1,11 @@
 import { gql } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client/react';
+import {
+  TempProductBySlugOnProductTagsFormDocument,
+  UpdateProductTagsOnProductTagFormDocument,
+} from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
-import {
-  useTempProductBySlugOnProductTagsFormQuery,
-  useUpdateProductTagsOnProductTagFormMutation,
-} from './__generated__/useProductTagsForm';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -37,7 +38,7 @@ type ProductTagsFormProps = {
 export function useProductTagsForm({ slug }: ProductTagsFormProps) {
   const [editedTags, setEditedTags] = useState<string[] | undefined>();
 
-  const { data } = useTempProductBySlugOnProductTagsFormQuery({
+  const { data } = useQuery(TempProductBySlugOnProductTagsFormDocument, {
     variables: {
       slug,
     },
@@ -45,7 +46,7 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
 
   const fetchedTags = data?.tempProductBySlug?.tags.map(tag => tag.name) ?? [];
   const tags = editedTags ?? fetchedTags;
-  const [updateProductTags] = useUpdateProductTagsOnProductTagFormMutation({
+  const [updateProductTags] = useMutation(UpdateProductTagsOnProductTagFormDocument, {
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },

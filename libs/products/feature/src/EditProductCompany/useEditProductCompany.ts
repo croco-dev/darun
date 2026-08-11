@@ -1,16 +1,17 @@
 'use client';
 
 import { gql } from '@apollo/client';
+import { useMutation, useLazyQuery } from '@apollo/client/react';
+import {
+  RegisterProductCompanyOnEditProductCompanyDocument,
+  SearchCompaniesOnEditProductCompanyDocument,
+  TempProductBySlugOnProductCompanyInfoDocument,
+} from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition } from 'react';
-import { TempProductBySlugOnProductCompanyInfoDocument } from '../ProductCompanyInfo/__generated__/useProductCompanyInfo';
-import {
-  useRegisterProductCompanyOnEditProductCompanyMutation,
-  useSearchCompaniesOnEditProductCompanyLazyQuery,
-} from './__generated__/useEditProductCompany';
 
 export const registerProductCompanyOnEditProductCompanyMutationDocument = gql`
   mutation RegisterProductCompanyOnEditProductCompany($input: RegisterProductCompanyInput!, $slug: String!) {
@@ -37,7 +38,7 @@ type FormValues = {
 
 export function useEditProductCompany({ slug }: { slug: string }) {
   const { push } = useRouter();
-  const [registerProductCompany] = useRegisterProductCompanyOnEditProductCompanyMutation({
+  const [registerProductCompany] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
     onCompleted: ({ registerProductCompany }) => {
       if (registerProductCompany.product?.id) {
         notifications.show({ message: '저장되었습니다.', color: 'green' });
@@ -54,7 +55,7 @@ export function useEditProductCompany({ slug }: { slug: string }) {
     refetchQueries: [TempProductBySlugOnProductCompanyInfoDocument],
   });
 
-  const [search] = useSearchCompaniesOnEditProductCompanyLazyQuery();
+  const [search] = useLazyQuery(SearchCompaniesOnEditProductCompanyDocument);
   const [companies, setCompanies] = useState<{ label: string; value: string }[]>([]);
   const latestSearchRequestId = useRef(0);
 

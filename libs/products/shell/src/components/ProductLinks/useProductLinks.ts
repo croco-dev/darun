@@ -1,6 +1,8 @@
 import { gql } from '@apollo/client';
+import { useSuspenseQuery } from '@apollo/client/react';
+import { ProductOnProductLinksDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
-import { useProductOnProductLinksSuspenseQuery } from './__generated__/useProductLinks';
+
 
 gql`
   query ProductOnProductLinks($slug: String!, $locale: String!) {
@@ -21,7 +23,7 @@ type ProductLinksProps = { slug: string };
 
 export function useProductLinks({ slug }: ProductLinksProps) {
   const locale = useLocale();
-  const { data } = useProductOnProductLinksSuspenseQuery({
+  const { data } = useSuspenseQuery(ProductOnProductLinksDocument, {
     variables: { slug, locale },
   });
   return { links: data?.productBySlug?.links ?? [] };

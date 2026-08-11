@@ -1,9 +1,10 @@
 import { gql } from '@apollo/client';
-import { notifications } from '@mantine/notifications';
+import { useMutation, useQuery } from '@apollo/client/react';
 import {
-  usePublishProductOnPublishProductButtonMutation,
-  useTempProductOnPublishProductButtonQuery,
-} from './__generated__/usePublishProductButton';
+  PublishProductOnPublishProductButtonDocument,
+  TempProductOnPublishProductButtonDocument,
+} from '@darun/provider-graphql';
+import { notifications } from '@mantine/notifications';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -28,12 +29,12 @@ type PublishProductButtonProps = {
 };
 
 export function usePublishProductButton({ slug }: PublishProductButtonProps) {
-  const { data, loading } = useTempProductOnPublishProductButtonQuery({
+  const { data, loading } = useQuery(TempProductOnPublishProductButtonDocument, {
     variables: {
       slug,
     },
   });
-  const [publishProductMutation] = usePublishProductOnPublishProductButtonMutation({
+  const [publishProductMutation] = useMutation(PublishProductOnPublishProductButtonDocument, {
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },

@@ -1,6 +1,8 @@
 import { gql } from '@apollo/client';
+import { useSuspenseQuery } from '@apollo/client/react';
+import { RecentProductsOnRecentProductListDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
-import { useRecentProductsOnRecentProductListSuspenseQuery } from './__generated__/useRecentProductList';
+
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -21,7 +23,7 @@ gql`
 
 export function useRecentProductList() {
   const locale = useLocale();
-  const { data } = useRecentProductsOnRecentProductListSuspenseQuery({
+  const { data } = useSuspenseQuery(RecentProductsOnRecentProductListDocument, {
     variables: {
       locale,
     },

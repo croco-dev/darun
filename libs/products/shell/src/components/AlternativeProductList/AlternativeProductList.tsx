@@ -4,7 +4,7 @@ import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { ProductItem } from '../../uis';
 import { CompareButton } from '../CompareButton';
-import type { ProductBySlugOnAlternativeProductListQuery } from './__generated__/useAlternativeProductList';
+import type { ProductBySlugOnAlternativeProductListQuery } from '@darun/provider-graphql';
 import { useAlternativeProductList } from './useAlternativeProductList';
 
 type AlternativeProduct = NonNullable<

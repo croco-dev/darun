@@ -1,8 +1,10 @@
 import { gql } from '@apollo/client';
+import { useSuspenseQuery } from '@apollo/client/react';
+import { ProductBySlugOnAlternativeProductListDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
-import { useProductBySlugOnAlternativeProductListSuspenseQuery } from './__generated__/useAlternativeProductList';
 
-void gql`
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+gql`
   query ProductBySlugOnAlternativeProductList($slug: String!, $locale: String!) {
     productBySlug(slug: $slug, locale: $locale) {
       id
@@ -27,7 +29,7 @@ type AlternativeProductListProps = {
 
 export function useAlternativeProductList({ slug }: AlternativeProductListProps) {
   const locale = useLocale();
-  const { data } = useProductBySlugOnAlternativeProductListSuspenseQuery({
+  const { data } = useSuspenseQuery(ProductBySlugOnAlternativeProductListDocument, {
     variables: { slug, locale },
   });
 

@@ -1,17 +1,18 @@
 'use client';
 
 import { gql } from '@apollo/client';
+import { useLazyQuery, useMutation, useQuery } from '@apollo/client/react';
+import {
+  EditProductOnEditAlternativeProductsDocument,
+  SearchProductsOnEditAlternativeProductsDocument,
+  TempProductBySlugOnEditAlternativeProductsDocument,
+} from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { ChangeEvent } from 'react';
 import { useCallback } from 'react';
 import { useEffect } from 'react';
-import {
-  useEditProductOnEditAlternativeProductsMutation,
-  useSearchProductsOnEditAlternativeProductsLazyQuery,
-  useTempProductBySlugOnEditAlternativeProductsQuery,
-} from './__generated__/useEditAlternativeProducts';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -49,7 +50,7 @@ type FormValues = {
 };
 
 export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
-  const { data } = useTempProductBySlugOnEditAlternativeProductsQuery({
+  const { data } = useQuery(TempProductBySlugOnEditAlternativeProductsDocument, {
     variables: { slug },
   });
 
@@ -59,7 +60,7 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
       alternativeIds: [],
     },
   });
-  const [searchProducts, { data: searchData }] = useSearchProductsOnEditAlternativeProductsLazyQuery();
+  const [searchProducts, { data: searchData }] = useLazyQuery(SearchProductsOnEditAlternativeProductsDocument);
 
   useEffect(() => {
     form.setValues({
@@ -67,7 +68,7 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
     });
   }, [data, form]);
 
-  const [updateAlternativeProducts] = useEditProductOnEditAlternativeProductsMutation({
+  const [updateAlternativeProducts] = useMutation(EditProductOnEditAlternativeProductsDocument, {
     onCompleted: ({ updateAlternativeProduct }) => {
       if (updateAlternativeProduct.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });

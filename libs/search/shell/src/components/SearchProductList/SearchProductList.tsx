@@ -3,13 +3,17 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
+import {
+  CompactCategoriesForSearchProductListDocument,
+  CompactTrendingPreviewForSearchProductListDocument,
+} from '@darun/provider-graphql';
 import { ProductCard } from '@darun/products-shell';
 import { useNavigate } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
-import { useSearchProductList } from './useSearchProductList';
+import { SearchProduct, useSearchProductList } from './useSearchProductList';
 
 const POPULAR_QUERIES: Record<string, string[]> = {
   ko: ['프로덕트헌트', '노션', '피그마'],
@@ -44,33 +48,8 @@ const TRENDING_PREVIEW_QUERY = gql`
   }
 `;
 
-type Category = {
-  id: string;
-  slug: string;
-  labelKo: string;
-  labelEn: string;
-};
-
-type CategoriesQueryResult = {
-  categories: Category[];
-};
-
-type TrendingProduct = {
-  id: string;
-  name: string;
-  slug: string;
-  logoUrl?: string | null;
-  summary?: string | null;
-  voteCount: number;
-  tags: Array<{ id: string; name: string }>;
-};
-
-type TrendingPreviewQueryResult = {
-  rankedProducts: TrendingProduct[];
-};
-
 type SearchProductListViewProps = {
-  products: NonNullable<ReturnType<typeof useSearchProductList>['products']>;
+  products: SearchProduct[];
 };
 
 export const SearchProductList = bind(useSearchProductList, ({ products }: SearchProductListViewProps) => {
@@ -86,15 +65,15 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
   }, [query, products]);
 
   const popularQueries = POPULAR_QUERIES[locale] ?? POPULAR_QUERIES.ko;
-  const { data: categoriesData } = useSuspenseQuery(CATEGORIES_QUERY, {
+  const { data: categoriesData } = useSuspenseQuery(CompactCategoriesForSearchProductListDocument, {
     variables: { first: 4, locale },
   });
-  const { data: trendingData } = useSuspenseQuery(TRENDING_PREVIEW_QUERY, {
+  const { data: trendingData } = useSuspenseQuery(CompactTrendingPreviewForSearchProductListDocument, {
     variables: { first: 3, locale },
   });
 
-  const categories = (categoriesData as CategoriesQueryResult | undefined)?.categories ?? [];
-  const trendingProducts = (trendingData as TrendingPreviewQueryResult | undefined)?.rankedProducts ?? [];
+  const categories = categoriesData?.categories ?? [];
+  const trendingProducts = trendingData?.rankedProducts ?? [];
 
   const trackEmptySearchClick = (queryText: string) => {
     track(AnalyticsEvents.EMPTY_SEARCH_STRIPE_CLICKED, { queryText });
