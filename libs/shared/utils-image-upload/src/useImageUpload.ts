@@ -2,7 +2,11 @@
 
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { SignImageUploadDocument, SignImageUploadMutation, SignImageUploadMutationVariables } from '@darun/provider-graphql';
+import {
+  SignImageUploadDocument,
+  SignImageUploadMutation,
+  SignImageUploadMutationVariables,
+} from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
