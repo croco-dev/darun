@@ -17,7 +17,7 @@ function getNormalizedQuery(query: string | string[] | undefined): string {
     return '';
   }
 
-  const resolvedQuery = Array.isArray(query) ? query.find(Boolean) ?? '' : query;
+  const resolvedQuery = Array.isArray(query) ? (query.find(Boolean) ?? '') : query;
   return resolvedQuery.trim();
 }
 

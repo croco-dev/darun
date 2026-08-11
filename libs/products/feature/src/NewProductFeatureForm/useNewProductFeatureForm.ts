@@ -1,7 +1,9 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { CreateProductFeatureOnNewProductFeatureFormDocument } from '@darun/provider-graphql';
-import { useForm } from '@mantine/form';
+import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
 
@@ -25,7 +27,7 @@ type FormValues = {
 type NewProductFormProps = {
   productSlug: string;
   children: (props: {
-    form: ReturnType<typeof useForm<FormValues>>;
+    form: UseFormReturnType<FormValues>;
     pickEmoji: (emoji: { native: string }) => void;
   }) => ReactNode;
 };

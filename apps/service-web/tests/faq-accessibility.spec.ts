@@ -17,7 +17,7 @@ test.describe('FAQ Accordion Accessibility & Motion', () => {
             id="faq-button-test"
             aria-expanded="false"
             aria-controls="faq-panel-test"
-            class="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            class="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           >
             <p class="flex-1 pr-4 text-base font-semibold text-dark-900">자주 묻는 질문인가요?</p>
             <div

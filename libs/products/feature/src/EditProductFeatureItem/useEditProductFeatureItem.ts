@@ -46,18 +46,21 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
   const { data, loading: queryLoading } = useQuery(FeatureOnEditProductFeatureItemDocument, {
     variables: { id: featureId },
   });
-  const [updateFeature, { loading: mutationLoading }] = useMutation(UpdateProductFeatureOnEditProductFeatureItemDocument, {
-    refetchQueries: [TempProductBySlugOnProductFeatureTableDocument],
-    awaitRefetchQueries: true,
-    onCompleted: () => {
-      notifications.show({ message: '수정되었습니다.', color: 'teal' });
-      apolloClient.cache.evict({ fieldName: 'feature' });
-      onSubmit?.();
-    },
-    onError: error => {
-      notifications.show({ message: error.message, color: 'red' });
-    },
-  });
+  const [updateFeature, { loading: mutationLoading }] = useMutation(
+    UpdateProductFeatureOnEditProductFeatureItemDocument,
+    {
+      refetchQueries: [TempProductBySlugOnProductFeatureTableDocument],
+      awaitRefetchQueries: true,
+      onCompleted: () => {
+        notifications.show({ message: '수정되었습니다.', color: 'teal' });
+        apolloClient.cache.evict({ fieldName: 'feature' });
+        onSubmit?.();
+      },
+      onError: error => {
+        notifications.show({ message: error.message, color: 'red' });
+      },
+    }
+  );
 
   const form = useForm<FormValues>({
     mode: 'uncontrolled',

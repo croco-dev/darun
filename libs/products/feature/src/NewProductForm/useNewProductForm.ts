@@ -5,7 +5,7 @@ import { useMutation } from '@apollo/client/react';
 import { CreateProductOnNewProductFormDocument } from '@darun/provider-graphql';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
-import { useForm } from '@mantine/form';
+import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
 
@@ -27,7 +27,7 @@ type FormValues = {
   file?: File;
 };
 type NewProductFormProps = {
-  children: (props: { form: ReturnType<typeof useForm<FormValues>> }) => ReactNode;
+  children: (props: { form: UseFormReturnType<FormValues> }) => ReactNode;
 };
 
 export function useNewProductForm({ children }: NewProductFormProps) {

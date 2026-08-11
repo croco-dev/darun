@@ -1,3 +1,4 @@
+import { useSuspenseQuery } from '@apollo/client/react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -16,7 +17,6 @@ vi.mock('@apollo/client/react', async importOriginal => {
 });
 
 // ── Import after mocks ───────────────────────────────────────────
-import { useSuspenseQuery } from '@apollo/client/react';
 import { useProductListTable } from '../useProductListTable';
 
 describe('useProductListTable', () => {

@@ -37,8 +37,7 @@ describe('useEditProductDescription', () => {
   const defaultSlug = 'test-product-slug';
   type MockMutationOptions = MutationHookOptions<unknown, OperationVariables, unknown, ApolloCache>;
   let mutationOnCompleted:
-    | ((data: { editProduct: { product: { id: string; description?: string | null } } }) => void)
-    | null = null;
+    ((data: { editProduct: { product: { id: string; description?: string | null } } }) => void) | null = null;
   let mutateFn: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {

@@ -1,7 +1,9 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { AddProductLinkOnNewProductLinkFormDocument } from '@darun/provider-graphql';
-import { useForm } from '@mantine/form';
+import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
 
@@ -32,7 +34,7 @@ type FormValues = {
 };
 type NewProductFormProps = {
   productSlug: string;
-  children: (props: { form: ReturnType<typeof useForm<FormValues>> }) => ReactNode;
+  children: (props: { form: UseFormReturnType<FormValues> }) => ReactNode;
 };
 
 export function useNewProductLinkForm({ productSlug, children }: NewProductFormProps) {

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {},
-  transpilePackages: ['@darun/ui', '@darun/ui-admin', '@darun/utils-structure-react'],
+  transpilePackages: ['@darun/ui', '@darun/ui-admin', '@darun/ui-layout', '@darun/utils-structure-react'],
   experimental: {
     ...(process.env.ENABLE_EXPERIMENTAL_REACT_COMPILER === 'true'
       ? {

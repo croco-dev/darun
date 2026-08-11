@@ -1,15 +1,11 @@
 'use client';
 
 import { gql } from '@apollo/client';
+import { EditProductLinkItemFragment, EditProductLinkItemFragmentDoc, useFragment } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
 import { AdminEmptyState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { Pencil } from 'lucide-react';
-import {
-  EditProductLinkItemFragment,
-  EditProductLinkItemFragmentDoc,
-  useFragment,
-} from '@darun/provider-graphql';
 import { EditProductLinkItem } from '../EditProductLinkItem';
 import { useProductLinkTable } from './useProductLinkTable';
 
@@ -49,12 +45,7 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
               background: linkRef.isPrimary ? '#000' : '#fff',
             }}
           >
-            <img
-              src={link.iconUrl}
-              alt={`${link.title} 아이콘`}
-              loading="lazy"
-              className="h-6 w-6 object-contain"
-            />
+            <img src={link.iconUrl} alt={`${link.title} 아이콘`} loading="lazy" className="h-6 w-6 object-contain" />
           </div>
         </div>
       </td>
@@ -81,13 +72,7 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-end gap-0">
-          <Button
-            type="button"
-            variant="base"
-            size="sm"
-            onClick={() => onEdit(link)}
-            className="shrink-0"
-          >
+          <Button type="button" variant="base" size="sm" onClick={() => onEdit(link)} className="shrink-0">
             <span className="inline-flex items-center gap-2">
               <Pencil className="h-4 w-4" />
               정보 수정

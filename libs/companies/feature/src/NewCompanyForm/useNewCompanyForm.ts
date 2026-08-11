@@ -68,7 +68,7 @@ export function useNewCompanyForm() {
           name: values.name,
           type: values.type,
           address: values.address,
-          startAt: values.startAtIsDisabled ? undefined : values.startAt?.toISOString() ?? undefined,
+          startAt: values.startAtIsDisabled ? undefined : (values.startAt?.toISOString() ?? undefined),
         },
       },
     });
