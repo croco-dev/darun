@@ -4,7 +4,7 @@ import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { AddProductScreenshotOnNewProductScreenshotFormDocument } from '@darun/provider-graphql';
 import { useImageUpload } from '@darun/utils-image-upload';
-import { useForm } from '@mantine/form';
+import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode } from 'react';
 
@@ -30,7 +30,7 @@ type FormValues = {
 };
 type NewProductFormProps = {
   productSlug: string;
-  children: (props: { form: ReturnType<typeof useForm<FormValues>> }) => ReactNode;
+  children: (props: { form: UseFormReturnType<FormValues> }) => ReactNode;
 };
 
 export function useNewProductScreenshotForm({ productSlug, children }: NewProductFormProps) {
