@@ -1,8 +1,8 @@
-import { ContentArea } from '@darun/ui';
-import { Layout } from '@darun/ui-layout';
 import { CategoryNavigationSkeleton } from '@darun/products-shell/src/shells/CategoryNavigationSection/CategoryNavigationSkeleton';
 import { RecentProductSkeleton } from '@darun/products-shell/src/shells/RecentProductSection/RecentProductSkeleton';
 import { TrendingProductSkeleton } from '@darun/products-shell/src/shells/TrendingProductSection/TrendingProductSkeleton';
+import { ContentArea } from '@darun/ui';
+import { Layout } from '@darun/ui-layout';
 
 export default function Loading() {
   return (
