@@ -14,8 +14,8 @@ const sectionWrapperVariants = cva('w-full', {
     spacing: {
       none: '',
       sm: 'py-8',
-      md: 'py-12',
-      lg: 'py-16',
+      md: 'py-12 lg:py-14',
+      lg: 'py-16 lg:py-20',
     },
   },
   defaultVariants: {

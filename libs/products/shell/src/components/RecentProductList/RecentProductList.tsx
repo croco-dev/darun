@@ -5,7 +5,7 @@ import { ProductCard } from '../ProductCard';
 import { useRecentProductList } from './useRecentProductList';
 
 export const RecentProductList = bind(useRecentProductList, ({ products, locale }) => (
-  <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:gap-5">
+  <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
     {products.map(product => (
       <ProductCard
         key={product.id}

@@ -50,10 +50,10 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
   const magazine = data?.magazineBySlug;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl py-6 sm:py-11 lg:py-11">
+    <div className="relative overflow-hidden rounded-card-xl py-8 sm:py-12 lg:py-14">
       {magazine?.backgroundImageUrl ? (
         <Image
-          className="absolute inset-0 rounded-3xl object-cover"
+          className="absolute inset-0 rounded-card-xl object-cover"
           src={magazine.backgroundImageUrl}
           alt={magazine.title ?? 'Magazine background'}
           fill
@@ -61,24 +61,24 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
           priority
         />
       ) : (
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-dark-800 to-dark-900" />
+        <div className="absolute inset-0 rounded-card-xl bg-gradient-to-br from-dark-800 to-dark-900" />
       )}
-      <div className="absolute inset-0 rounded-3xl bg-dark-900/60" />
-      <div className="relative z-10 flex flex-col gap-5 px-7 sm:px-7 lg:px-11">
-        <div className="flex w-fit flex-row items-center rounded-full border border-white/60 px-3 py-1">
-          <p className="text-xs font-normal leading-normal tracking-tight text-white/80 sm:text-sm">
+      <div className="absolute inset-0 rounded-card-xl bg-gradient-to-t from-dark-900/80 via-dark-900/60 to-dark-900/40" />
+      <div className="relative z-10 flex flex-col gap-5 px-6 sm:px-8 lg:px-12">
+        <div className="flex w-fit flex-row items-center rounded-full border border-white/40 bg-white/10 px-3 py-1 backdrop-blur-sm">
+          <p className="text-xs font-medium leading-normal tracking-tight text-white/90 sm:text-sm">
             {t('info.badge')}
           </p>
         </div>
-        <div className="flex flex-col gap-3">
-          <p className="text-xl font-semibold leading-normal tracking-tight text-white sm:text-2xl lg:text-4xl">
+        <div className="flex max-w-3xl flex-col gap-3">
+          <p className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl lg:text-4xl">
             {magazine?.title ?? t('info.title')}
           </p>
-          <p className="text-sm font-normal leading-snug tracking-tight text-white/70 sm:text-base">
+          <p className="text-sm font-normal leading-relaxed tracking-tight text-white/80 sm:text-base">
             {magazine?.summary ?? t('info.summary')}
           </p>
-          <p className="text-sm font-normal tracking-tight text-white/80 sm:text-base">
-            {formatDate(magazine?.publishedAt)} {magazine?.author?.name ? `∙ by ${magazine.author.name}` : ''}
+          <p className="text-sm font-medium tracking-tight text-white/70 sm:text-base">
+            {formatDate(magazine?.publishedAt)} {magazine?.author?.name ? `∙ ${magazine.author.name}` : ''}
           </p>
         </div>
       </div>

@@ -12,10 +12,11 @@ export default function NotFound() {
   return (
     <Layout>
       <ContentArea>
-        <div className="flex flex-col items-center justify-center gap-6 py-40 text-center">
-          <div>
-            <h1 className="text-2xl font-bold">페이지를 찾을 수 없습니다</h1>
-            <p className="mt-2 text-base text-dark-600">요청하신 페이지가 사라졌거나 잘못된 경로입니다.</p>
+        <div className="flex flex-col items-center justify-center gap-6 py-32 text-center md:py-40">
+          <div className="flex flex-col items-center gap-3">
+            <span className="text-5xl font-bold text-dark-200 md:text-6xl">404</span>
+            <h1 className="text-2xl font-bold tracking-tight text-dark-900">페이지를 찾을 수 없습니다</h1>
+            <p className="text-base text-dark-600">요청하신 페이지가 사라졌거나 잘못된 경로입니다.</p>
           </div>
           <Link href="/">
             <Button variant="shadow" color="primary">

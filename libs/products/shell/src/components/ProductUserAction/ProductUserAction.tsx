@@ -1,8 +1,7 @@
 'use client';
 
-import { Button, useToast } from '@darun/ui';
+import { Button, Heart, useToast } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
-import { Heart } from 'lucide-react';
 import { useEffect } from 'react';
 import { CompareButton } from '../CompareButton';
 import { useProductUserAction } from './useProductUserAction';
@@ -34,16 +33,19 @@ export const ProductUserAction = bind(
             {loading ? (
               <div
                 data-testid="upvote-loading"
-                className="h-4 w-4 animate-spin rounded-full border-2 border-current border-b-transparent"
+                className="h-4 w-4 animate-spin rounded-full border-2 border-current border-b-transparent motion-reduce:animate-none"
               />
             ) : error ? (
               <span data-testid="upvote-error" className="text-xs text-red-500">
                 !
               </span>
             ) : (
-              <Heart size={18} className={voted ? 'fill-pink-500 text-pink-500' : 'fill-transparent text-dark-500'} />
+              <Heart
+                size={18}
+                className={voted ? 'fill-cherry-600 text-cherry-600' : 'fill-transparent text-dark-500'}
+              />
             )}
-            <span className="break-keep text-sm font-semibold text-dark-700">{voteCount}</span>
+            <span className="break-keep text-sm font-semibold tabular-nums text-dark-700">{voteCount}</span>
           </div>
         </Button>
         <CompareButton slug={slug} source="direct" />

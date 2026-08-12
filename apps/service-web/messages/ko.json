@@ -46,7 +46,10 @@
       "empty": {
         "title": "검색 결과가 없습니다.",
         "description": "더 상세한 검색어를 이용해보세요. ex) ‘토스’, ‘네이버’ 등...",
-        "noResults": "‘{query}’에 대한 검색 결과가 없습니다."
+        "noResults": "‘{query}’에 대한 검색 결과가 없습니다.",
+        "popularQueries": "인기 검색어",
+        "categories": "카테고리",
+        "trending": "인기 서비스"
       },
       "feature": {
         "title": "기능"

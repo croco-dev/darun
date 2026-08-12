@@ -9,11 +9,11 @@ export const TrendingProductSkeleton = () => {
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={String(i)}
-              className="flex h-full flex-col gap-4 rounded-card border border-dark-200 bg-white p-5 shadow-card"
+              className="flex h-full flex-col gap-4 rounded-card border border-dark-150 bg-white p-5 shadow-card"
             >
               <div className="flex items-center gap-2.5">
-                <div className="h-3 w-2 animate-pulse rounded bg-dark-100 motion-reduce:animate-none" />
-                <div className="h-px flex-1 bg-dark-200" />
+                <div className="h-5 w-5 animate-pulse rounded-md bg-dark-100 motion-reduce:animate-none" />
+                <div className="h-px flex-1 bg-dark-150" />
               </div>
               <div className="flex flex-col gap-3">
                 <div className="h-14 w-14 animate-pulse rounded-xl bg-dark-100 motion-reduce:animate-none" />

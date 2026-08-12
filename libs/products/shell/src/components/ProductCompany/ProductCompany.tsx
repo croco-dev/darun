@@ -33,16 +33,16 @@ function formatStartAt(startAt: unknown) {
 export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompanyViewProps) => {
   const t = useTranslations('ProductDetail');
 
-  const labelClassName = 'w-[72px] shrink-0 text-sm font-medium text-dark-500';
-  const valueClassName = 'text-sm text-dark-800';
+  const labelClassName = 'w-[76px] shrink-0 text-sm font-medium tabular-nums text-dark-500';
+  const valueClassName = 'text-sm font-medium text-dark-800';
 
   return (
     <div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
         <div className="flex flex-col gap-3">
-          <div className="mb-1 flex w-fit flex-col gap-1">
+          <div className="mb-2 flex w-fit flex-col gap-1">
             <p className="text-sm font-semibold text-dark-900">{t('company.basicInfo')}</p>
-            <div className="h-[2px] bg-dark-400" />
+            <div className="h-[2px] w-full rounded-full bg-dark-400" />
           </div>
           <div className="flex flex-col gap-2">
             {company?.name && (

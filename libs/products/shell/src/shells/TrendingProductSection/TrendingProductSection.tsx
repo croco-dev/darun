@@ -94,11 +94,11 @@ const TrendingProductsView = ({
           }
         />
         {products.length === 0 ? (
-          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-dark-200 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
+          <div className="flex min-h-48 items-center justify-center rounded-card-lg border border-dark-150 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
             {emptyLabel}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:gap-5">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
             {products.map((product, index) => (
               <ProductCard
                 key={product.id}

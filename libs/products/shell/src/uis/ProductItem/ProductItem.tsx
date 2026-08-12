@@ -2,6 +2,7 @@
 
 import { Chip } from '@darun/ui';
 import Image from 'next/image';
+import React from 'react';
 import { useTranslations } from 'next-intl';
 
 type ProductItemProps = {
@@ -47,27 +48,29 @@ export const ProductItem = ({
   const t = useTranslations('ProductDetail');
   const Component = as;
   const NameTag = nameAs;
+  const [resolvedLogoUrl, setResolvedLogoUrl] = React.useState(logoUrl);
 
   return (
     <Component
       className={
         isStacked
-          ? 'flex w-full flex-col gap-3.5 overflow-visible md:gap-4'
+          ? 'flex w-full flex-col gap-3 overflow-visible md:gap-4'
           : `flex w-full gap-3 overflow-visible ${isAlignCenter ? 'items-center' : 'items-start'}`
       }
     >
       <Image
-        src={logoUrl ?? '/images/default-product-icon.svg'}
-        unoptimized={!logoUrl}
+        src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}
+        unoptimized={!resolvedLogoUrl}
         alt={t('productItem.logoAlt', { name })}
         width={logoSizes[logoSize].imageSize}
         height={logoSizes[logoSize].imageSize}
-        className={`shrink-0 object-contain ${logoSize === 'small' ? 'rounded-xl' : 'rounded-2xl'}`}
+        className={`shrink-0 object-contain shadow-button ${logoSize === 'small' ? 'rounded-xl' : 'rounded-2xl'}`}
+        onError={() => setResolvedLogoUrl(undefined)}
       />
-      <div className="flex min-w-0 flex-col gap-2 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden">
         <div className="flex flex-col gap-0.5">
           <NameTag
-            className={`m-0 text-base font-semibold tracking-tight text-dark-900 ${isStacked ? 'line-clamp-2' : 'md:text-lg'}`}
+            className={`m-0 text-base font-semibold leading-tight tracking-tight text-dark-900 ${isStacked ? 'line-clamp-2' : 'md:text-lg'}`}
           >
             {name}
           </NameTag>
@@ -83,10 +86,10 @@ export const ProductItem = ({
             ))}
         </div>
         {(tags || specialTags) && (
-          <div className={`flex items-center gap-1.5 overflow-x-auto ${isStacked ? '' : 'mr-3'}`}>
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
             {tags &&
               (maxTagItems && tags.length > maxTagItems ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {tags.slice(0, maxTagItems).map(tag => (
                     <Chip
                       key={`tag-${tag}`}
@@ -96,7 +99,7 @@ export const ProductItem = ({
                       {tag}
                     </Chip>
                   ))}
-                  <span className="text-xs font-medium text-dark-400">+{tags.length - maxTagItems}</span>
+                  <span className="text-xs font-medium tabular-nums text-dark-400">+{tags.length - maxTagItems}</span>
                 </div>
               ) : (
                 tags.map(tag => (

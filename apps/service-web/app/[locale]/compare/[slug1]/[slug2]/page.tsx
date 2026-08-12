@@ -81,9 +81,9 @@ export default async function ComparePage({ params }: Props) {
 
   return (
     <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
-      <SectionHeader title="서비스 비교" align="center" />
+      <SectionHeader title="서비스 비교" subtitle="두 서비스의 핵심 정보를 나란히 확인해보세요" align="center" />
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
         <div data-testid="compare-column">
           <ProductCard product={product1} />
         </div>
@@ -92,7 +92,7 @@ export default async function ComparePage({ params }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 md:gap-5">
+      <div className="rounded-card-xl border border-dark-150 bg-white p-1 shadow-card">
         <CompareRow label="서비스명" value1={product1.name} value2={product2.name} testid="name" />
         <CompareRow label="설명" value1={product1.summary} value2={product2.summary} testid="summary" />
         <CompareRow
@@ -112,6 +112,7 @@ export default async function ComparePage({ params }: Props) {
           value1={product1.tags.map((t: { name: string }) => t.name).join(', ')}
           value2={product2.tags.map((t: { name: string }) => t.name).join(', ')}
           testid="tags"
+          isLast
         />
       </div>
     </ContentArea>
@@ -129,14 +130,18 @@ function ProductCard({
   };
 }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-card border border-dark-200 bg-white p-6 shadow-card">
+    <div className="flex flex-col items-center gap-4 rounded-card-xl border border-dark-150 bg-white p-6 shadow-card">
       <img
         src={product.logoUrl || '/images/default-product-icon.svg'}
         alt={product.name}
-        className="h-20 w-20 rounded-xl object-contain"
+        className="h-20 w-20 rounded-2xl object-contain shadow-button"
       />
-      <h2 className="text-center text-xl font-bold text-dark-900">{product.name}</h2>
-      {product.summary && <p className="text-center text-sm text-dark-500">{product.summary}</p>}
+      <h2 className="text-center text-xl font-bold leading-tight tracking-tight text-dark-900">{product.name}</h2>
+      {product.summary && <p className="max-w-xs text-center text-sm leading-snug text-dark-500">{product.summary}</p>}
+      <div className="flex items-center gap-1.5 text-sm font-semibold tabular-nums text-dark-700">
+        <span className="text-dark-400">투표</span>
+        <span>{product.voteCount}</span>
+      </div>
     </div>
   );
 }
@@ -146,19 +151,23 @@ function CompareRow({
   value1,
   value2,
   testid,
+  isLast,
 }: {
   label: string;
   value1?: string;
   value2?: string;
   testid: string;
+  isLast?: boolean;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-4 border-b border-dark-200 pb-4 md:grid-cols-3">
-      <div className="font-medium text-dark-900">{label}</div>
-      <div className="text-dark-700" data-testid={`compare-row-${testid}-1`}>
+    <div
+      className={`grid grid-cols-1 gap-2 p-4 md:grid-cols-3 md:items-center md:gap-4 ${isLast ? '' : 'border-b border-dark-100'}`}
+    >
+      <div className="text-sm font-semibold text-dark-900">{label}</div>
+      <div className="text-sm leading-relaxed text-dark-700" data-testid={`compare-row-${testid}-1`}>
         {value1 || '-'}
       </div>
-      <div className="text-dark-700" data-testid={`compare-row-${testid}-2`}>
+      <div className="text-sm leading-relaxed text-dark-700" data-testid={`compare-row-${testid}-2`}>
         {value2 || '-'}
       </div>
     </div>

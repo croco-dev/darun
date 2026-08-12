@@ -119,15 +119,38 @@ const config: Config = {
         pill: '9999px',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04)',
-        'card-hover': '0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04)',
-        button: '0 1px 2px rgba(0, 0, 0, 0.06)',
-        hero: '0 24px 60px -24px rgba(0, 0, 0, 0.12)',
+        card: '0 0 0 1px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04)',
+        'card-hover': '0 0 0 1px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.10), 0 4px 8px rgba(0, 0, 0, 0.04)',
+        button: '0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.03)',
+        'button-hover': '0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06)',
+        elevated: '0 0 0 1px rgba(0, 0, 0, 0.05), 0 16px 40px rgba(0, 0, 0, 0.12), 0 6px 12px rgba(0, 0, 0, 0.05)',
+        hero: '0 24px 80px -24px rgba(0, 0, 0, 0.18)',
+        'glow-subtle': '0 0 24px rgba(224, 162, 104, 0.20)',
+      },
+      dropShadow: {
+        'glow-subtle': '0 0 16px rgba(224, 162, 104, 0.18)',
       },
       letterSpacing: {
         tight: '-0.02em',
         tighter: '-0.04em',
         tightest: '-0.06em',
+      },
+      transitionTimingFunction: {
+        'ease-out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
+      },
+      keyframes: {
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        'fade-in-up': {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 2s linear infinite',
+        'fade-in-up': 'fade-in-up 0.4s ease-out-expo forwards',
       },
     },
   },

@@ -99,68 +99,77 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
 
   if (products.length === 0)
     return (
-      <div className="flex flex-col gap-6 py-6 md:py-8">
-        <div className="flex flex-col gap-1 text-center">
-          <p className="text-xl font-bold text-dark-900 sm:text-2xl">{getNoResultsMessage()}</p>
+      <div className="flex flex-col gap-8 py-6 md:py-8">
+        <div className="flex flex-col gap-2 text-center">
+          <p className="text-xl font-bold leading-tight text-dark-900 sm:text-2xl">{getNoResultsMessage()}</p>
           <p className="text-sm text-dark-600 sm:text-base">{t('list.empty.description')}</p>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div
-            data-testid="search-empty-popular-queries"
-            className="flex gap-2 overflow-x-auto px-1 scrollbar-hide"
-            role="list"
-            aria-label="Popular searches"
-          >
-            {popularQueries.map(popularQuery => (
-              <button
-                key={popularQuery}
-                type="button"
-                role="listitem"
-                onClick={() => navigateToSearch(popularQuery)}
-                className="rounded-full bg-surface-100 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-dark-700 transition-colors hover:bg-dark-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 motion-reduce:transition-none"
-              >
-                {popularQuery}
-              </button>
-            ))}
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-3">
+            <p className="text-sm font-semibold text-dark-900">{t('list.empty.popularQueries')}</p>
+            <div
+              data-testid="search-empty-popular-queries"
+              className="flex gap-2 overflow-x-auto px-1 scrollbar-hide"
+              role="list"
+              aria-label="Popular searches"
+            >
+              {popularQueries.map(popularQuery => (
+                <button
+                  key={popularQuery}
+                  type="button"
+                  role="listitem"
+                  onClick={() => navigateToSearch(popularQuery)}
+                  className="rounded-full bg-surface-100 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-dark-700 transition-colors duration-200 hover:bg-dark-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transition-none"
+                >
+                  {popularQuery}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div
-            data-testid="search-empty-categories"
-            className="grid grid-cols-2 gap-2 sm:grid-cols-4"
-            role="list"
-            aria-label="Browse by category"
-          >
-            {categories.map(category => (
-              <button
-                key={category.id}
-                type="button"
-                role="listitem"
-                onClick={() => navigateToCategory(category.slug)}
-                className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-medium text-dark-700 transition-colors hover:bg-dark-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 motion-reduce:transition-none"
-              >
-                {locale === 'ko' ? category.labelKo : category.labelEn}
-              </button>
-            ))}
+          <div className="flex flex-col gap-3">
+            <p className="text-sm font-semibold text-dark-900">{t('list.empty.categories')}</p>
+            <div
+              data-testid="search-empty-categories"
+              className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+              role="list"
+              aria-label="Browse by category"
+            >
+              {categories.map(category => (
+                <button
+                  key={category.id}
+                  type="button"
+                  role="listitem"
+                  onClick={() => navigateToCategory(category.slug)}
+                  className="rounded-xl bg-surface-100 px-4 py-3 text-left text-sm font-medium text-dark-700 transition-colors duration-200 hover:bg-dark-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transition-none"
+                >
+                  {locale === 'ko' ? category.labelKo : category.labelEn}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div data-testid="search-empty-trending" className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {trendingProducts.map((product, index) => (
-              <div key={product.id} onClickCapture={() => trackEmptySearchClick(product.slug)}>
-                <ProductCard
-                  product={product}
-                  rank={index + 1}
-                  href={`/${locale}/products/${product.slug}`}
-                  source="search-empty"
-                />
-              </div>
-            ))}
+          <div className="flex flex-col gap-3">
+            <p className="text-sm font-semibold text-dark-900">{t('list.empty.trending')}</p>
+            <div data-testid="search-empty-trending" className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              {trendingProducts.map((product, index) => (
+                <div key={product.id} onClickCapture={() => trackEmptySearchClick(product.slug)}>
+                  <ProductCard
+                    product={product}
+                    rank={index + 1}
+                    href={`/${locale}/products/${product.slug}`}
+                    source="search-empty"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
     );
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {products.map(product => (
         <ProductCard
           key={product.id}

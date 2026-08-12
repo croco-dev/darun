@@ -4,11 +4,11 @@ import { HTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
 
-const sectionHeaderVariants = cva('flex flex-col gap-2', {
+const sectionHeaderVariants = cva('flex flex-col', {
   variants: {
     size: {
-      sm: 'gap-1',
-      lg: 'gap-2',
+      sm: 'gap-1.5',
+      lg: 'gap-2.5',
     },
     align: {
       left: 'items-start text-left',
@@ -32,11 +32,15 @@ export type SectionHeaderProps = HTMLAttributes<HTMLHeadingElement> & {
 export function SectionHeader({ title, subtitle, moreLink, size, align, className, ...props }: SectionHeaderProps) {
   return (
     <div className={cn(sectionHeaderVariants({ size, align }), className)} {...props}>
-      <div className="flex items-baseline gap-3">
-        <h2 className="text-xl font-bold tracking-tight text-dark-900 sm:text-2xl">{title}</h2>
-        {moreLink && <span className="ml-auto shrink-0">{moreLink}</span>}
+      <div className="flex w-full items-start justify-between gap-4">
+        <h2 className="text-xl font-bold leading-tight tracking-tight text-dark-900 sm:text-2xl">{title}</h2>
+        {moreLink && (
+          <span className="shrink-0 pt-0.5">
+            {moreLink}
+          </span>
+        )}
       </div>
-      {subtitle && <p className="text-sm leading-relaxed text-dark-500 sm:text-base">{subtitle}</p>}
+      {subtitle && <p className="max-w-2xl text-sm leading-relaxed text-dark-500 sm:text-base">{subtitle}</p>}
     </div>
   );
 }

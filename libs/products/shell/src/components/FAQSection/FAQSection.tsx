@@ -19,7 +19,7 @@ export function FAQSection({ items }: FAQSectionProps) {
   if (!items || items.length === 0) return null;
 
   return (
-    <section className="flex w-full flex-col gap-5 py-4 md:py-6">
+    <section className="flex w-full flex-col gap-4 md:gap-5">
       <SectionHeader title={t('faq.title')} />
       <div className="flex w-full flex-col gap-3">
         {items.map(item => (
@@ -45,25 +45,25 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
   }, [isOpen, answer]);
 
   return (
-    <div className="w-full overflow-hidden rounded-card border border-dark-200 bg-white">
+    <div className="w-full overflow-hidden rounded-card border border-dark-150 bg-white shadow-card">
       <button
         type="button"
         onClick={() => setIsOpen(prev => !prev)}
         id={buttonId}
         aria-expanded={isOpen}
         aria-controls={panelId}
-        className="flex w-full cursor-pointer items-center justify-between bg-transparent p-5 text-left transition-colors hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="flex w-full cursor-pointer items-center justify-between gap-4 bg-transparent p-5 text-left transition-colors duration-200 hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transition-none"
       >
-        <p className="flex-1 pr-4 text-base font-semibold text-dark-900">{question}</p>
+        <p className="flex-1 text-base font-semibold leading-snug tracking-tight text-dark-900">{question}</p>
         <div
           aria-hidden="true"
-          className={`text-dark-400 transition-transform duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none ${
+          className={`shrink-0 rounded-full bg-surface-100 p-1 text-dark-500 transition-transform duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none ${
             isOpen ? 'rotate-180' : 'rotate-0'
           }`}
         >
           <svg
-            width="24"
-            height="24"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -73,7 +73,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
             <path
               d="M6 9L12 15L18 9"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -88,10 +88,10 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
           maxHeight: isOpen ? `${scrollHeight}px` : '0px',
           opacity: isOpen ? 1 : 0,
         }}
-        className="overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out motion-reduce:transition-none"
+        className="overflow-hidden border-t border-dark-100 transition-[max-height,opacity] duration-300 ease-out motion-reduce:transition-none"
       >
-        <div ref={panelRef} className="px-5 pb-5 pt-0 text-dark-700 leading-relaxed">
-          <p className="whitespace-pre-wrap">{answer}</p>
+        <div ref={panelRef} className="px-5 pb-5 pt-4 text-dark-700">
+          <p className="whitespace-pre-wrap leading-relaxed">{answer}</p>
         </div>
       </section>
     </div>

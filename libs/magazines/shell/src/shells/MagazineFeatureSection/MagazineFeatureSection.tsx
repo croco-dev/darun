@@ -25,14 +25,17 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
   if (articles.length === 0) {
     return (
       <SectionWrapper background="subtle" spacing="md">
-        <div className="flex w-full flex-col gap-6">
+        <div className="flex w-full flex-col gap-5 md:gap-6">
           <SectionHeader title={t('home.magazine.title')} />
-          <div data-testid="magazine-empty" className="py-8 text-center">
-            <p className="text-lg font-semibold text-dark-700">{t('magazine.empty.title')}</p>
+          <div
+            data-testid="magazine-empty"
+            className="flex flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-12 text-center shadow-card"
+          >
+            <p className="text-lg font-semibold text-dark-900">{t('magazine.empty.title')}</p>
             <p className="mt-1 text-sm text-dark-500">{t('magazine.empty.description')}</p>
             <Link
               href="/ranking"
-              className="mt-4 inline-flex items-center justify-center rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-100"
+              className="mt-5 inline-flex items-center justify-center rounded-xl bg-dark-900 px-6 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-dark-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               {t('magazine.empty.cta')}
             </Link>
@@ -44,13 +47,13 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
 
   return (
     <SectionWrapper background="subtle" spacing="md">
-      <div className="flex w-full flex-col gap-6">
+      <div className="flex w-full flex-col gap-5 md:gap-6">
         <SectionHeader
           title={t('home.magazine.title')}
           moreLink={
             <Link
               href="/magazines"
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-100 motion-reduce:transition-none"
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-100 motion-reduce:transition-none"
             >
               {t('home.magazine.more')}
             </Link>
@@ -58,7 +61,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
         />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {articles.slice(0, 3).map(article => (
-            <div key={article.id} className="group h-full">
+            <div key={article.id} className="h-full">
               <ArticleCard
                 thumbnailImageUri={article.thumbnailImageUri}
                 category={article.category}

@@ -3,42 +3,41 @@ import { bind } from '@darun/utils-structure-react';
 import { useFooter } from './useFooter';
 
 export const Footer = bind(useFooter, () => (
-  <footer className="py-7">
+  <footer className="border-t border-dark-150 py-8 md:py-10">
     <ContentArea>
-      <div className="flex flex-col justify-between gap-6 sm:flex-row">
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-sm font-medium text-dark-600">&copy; 2024 Croco</span>
-            <span className="text-sm font-medium text-dark-400">•</span>
+      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-start">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold text-dark-900">다른</span>
+            <span className="text-xs text-dark-400">/</span>
+            <span className="text-sm text-dark-500">&copy; {new Date().getFullYear()} Croco</span>
+          </div>
+          <nav className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <a
               href="#"
-              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2"
+              className="text-sm text-dark-600 transition-colors duration-200 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               개인정보처리방침
             </a>
-            <span className="text-sm font-medium text-dark-400">•</span>
             <a
               href="#"
-              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2"
+              className="text-sm text-dark-600 transition-colors duration-200 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               서비스 약관
             </a>
-            <span className="text-sm font-medium text-dark-400">•</span>
             <a
               href="#"
-              className="text-sm font-medium text-dark-600 hover:text-dark-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2"
+              className="text-sm text-dark-600 transition-colors duration-200 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               문의
             </a>
-          </div>
-          <div className="flex">
-            <p className="text-sm font-normal text-dark-500">
-              ‘다른’ 서비스는 단순 정보를 제공하며, 각 개별 컨텐츠의 저작권과 소유권을 보유하고 있지 않습니다. <br />
-              ‘다른’ 서비스는 공신력 있는 매체가 아닙니다. 사이트에 있는 내용을 맹신하지 마세요.
-            </p>
-          </div>
+          </nav>
+          <p className="max-w-xl text-sm leading-relaxed text-dark-500">
+            ‘다른’ 서비스는 단순 정보를 제공하며, 각 개별 컨텐츠의 저작권과 소유권을 보유하고 있지 않습니다. ‘다른’
+            서비스는 공신력 있는 매체가 아닙니다. 사이트에 있는 내용을 맹신하지 마세요.
+          </p>
         </div>
-        <div className="flex gap-2"></div>
+        <div className="flex items-center gap-2"></div>
       </div>
     </ContentArea>
   </footer>

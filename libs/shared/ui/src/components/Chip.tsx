@@ -17,6 +17,16 @@ const chipColors = {
   outlineCherry: 'border-cherry-300 bg-transparent text-cherry-900',
 } as const;
 
+const chipHoverColors: Partial<Record<ChipColor, string>> = {
+  filledGray: 'hover:bg-surface-300',
+  filledDark: 'hover:bg-dark-800',
+  outlineGray: 'hover:border-dark-200 hover:bg-surface-100',
+  outlineBrown: 'hover:bg-brown-100',
+  outlineLeaf: 'hover:bg-leaf-100',
+  outlineYellow: 'hover:bg-yellow-100',
+  outlineCherry: 'hover:bg-cherry-100',
+};
+
 type ChipVariant = keyof typeof chipVariants;
 type ChipColor = keyof typeof chipColors;
 
@@ -42,10 +52,10 @@ export function Chip({
   ...props
 }: ChipProps) {
   const chipClassName = cn(
-    'inline-flex shrink-0 items-center border leading-none',
+    'inline-flex shrink-0 items-center border leading-none transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transition-none',
     chipVariants[variant],
     chipColors[color],
-    as === 'button' && 'cursor-pointer',
+    as === 'button' && ['cursor-pointer', chipHoverColors[color]].filter(Boolean),
     className
   );
 

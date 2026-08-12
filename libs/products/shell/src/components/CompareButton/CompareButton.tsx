@@ -1,8 +1,7 @@
 'use client';
 
 import { AnalyticsEvents, track, type ProductAttributionSource } from '@darun/analytics-client';
-import { Button } from '@darun/ui';
-import { Plus } from 'lucide-react';
+import { Button, Check, Plus } from '@darun/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -86,7 +85,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       data-testid="compare-button"
     >
       <div className="flex items-center gap-1.5">
-        <Plus size={16} />
+        {isAdded ? <Check size={16} className="text-current" /> : <Plus size={16} />}
         <span>{isAdded ? '비교 취소' : '비교에 추가'}</span>
       </div>
     </Button>

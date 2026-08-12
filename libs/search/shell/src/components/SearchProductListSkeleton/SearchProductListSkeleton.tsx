@@ -5,7 +5,7 @@ export const SearchProductListSkeleton = () => {
     <div className="flex flex-col gap-5">
       {Array.from({ length: 5 }).map((_, index) => (
         <div key={String(index)}>
-          <div className="bg-white rounded-card border border-dark-200 p-4 shadow-card">
+          <div className="bg-white rounded-card border border-dark-150 p-4 shadow-card">
             <div className="flex w-full flex-col gap-3">
               <div className="flex flex-row animate-pulse motion-reduce:animate-none">
                 <div className="h-[56px] w-[56px] rounded-xl bg-dark-100" />
@@ -18,11 +18,11 @@ export const SearchProductListSkeleton = () => {
                   </div>
                 </div>
               </div>
-              <div className="my-[2px] h-px w-full bg-dark-100" />
+              <div className="my-[2px] h-px w-full bg-dark-150" />
               <div className="flex flex-col gap-3 animate-pulse motion-reduce:animate-none">
                 <div className="flex w-fit flex-col gap-1">
                   <div className="h-[16px] w-[100px] rounded bg-dark-100" />
-                  <div className="h-[2px] w-[100px] bg-dark-400" />
+                  <div className="h-[2px] w-[100px] rounded-full bg-dark-400" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="h-[60px] rounded bg-dark-100" />

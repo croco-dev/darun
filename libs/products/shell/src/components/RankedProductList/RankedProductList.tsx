@@ -7,7 +7,7 @@ import { ProductItem } from '../../uis';
 import { useRankedProductList } from './useRankedProductList';
 
 export const RankedProductList = bind(useRankedProductList, ({ products }) => (
-  <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+  <div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
     {products.map((product, index) => {
       const rank = index + 1;
       const isTopThree = rank <= 3;
@@ -22,13 +22,13 @@ export const RankedProductList = bind(useRankedProductList, ({ products }) => (
               source: 'ranking',
             })
           }
-          className="group block rounded-card border border-transparent p-3 transition-all hover:border-dark-150 hover:bg-white hover:shadow-card motion-reduce:transition-none"
+          className="group block rounded-card border border-transparent p-3 transition-all duration-200 ease-out hover:-translate-y-px hover:border-dark-150 hover:bg-white hover:shadow-card motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
           <div className="flex items-center gap-3">
             <span
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold tabular-nums ${
-                isTopThree ? 'bg-dark-900 text-white' : 'bg-surface-100 text-dark-500'
-              }`}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold tabular-nums transition-colors duration-200 ${
+                isTopThree ? 'bg-dark-900 text-white group-hover:bg-brown-600' : 'bg-surface-100 text-dark-500 group-hover:bg-dark-100'
+              } motion-reduce:transition-none`}
             >
               {rank}
             </span>

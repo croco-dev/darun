@@ -45,8 +45,11 @@
     "list": {
       "empty": {
         "title": "No search results found.",
-        "description": "Try using a more specific query. e.g.) 'Toss', 'Naver', etc...",
-        "noResults": "No search results found for '{query}'."
+        "description": "Try a more specific query, e.g. ‘Toss’, ‘Naver’...",
+        "noResults": "No results found for ‘{query}'.",
+        "popularQueries": "Popular searches",
+        "categories": "Categories",
+        "trending": "Trending services"
       },
       "feature": {
         "title": "Features"

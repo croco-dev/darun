@@ -34,10 +34,10 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
       {...(layoutId ? { 'data-layout-id': layoutId } : {})}
       {...{ 'data-source': source }}
     >
-      <div className="flex h-full flex-col gap-4 rounded-card border border-dark-150 bg-white p-4 shadow-card transition-all duration-200 ease-out group-hover:-translate-y-0.5 group-hover:border-dark-200 group-hover:shadow-card-hover group-focus-visible:-translate-y-0.5 group-focus-visible:border-dark-200 group-focus-visible:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-dark-900/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none md:gap-5 md:p-5">
+      <div className="flex h-full flex-col gap-4 rounded-card border border-dark-150 bg-white p-4 shadow-card transition-all duration-200 ease-out-expo group-hover:-translate-y-1 group-hover:border-dark-200 group-hover:shadow-card-hover group-focus-visible:-translate-y-1 group-focus-visible:border-dark-200 group-focus-visible:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-dark-900/60 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none md:gap-5 md:p-5">
         {rank !== undefined && (
           <div className="flex items-center gap-3">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-dark-900 text-2xs font-bold tabular-nums text-white transition-colors duration-200 ease-out group-hover:bg-dark-700 motion-reduce:transition-none">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-dark-900 text-2xs font-bold tabular-nums text-white transition-colors duration-200 ease-out group-hover:bg-brown-600 motion-reduce:transition-none">
               {rank}
             </span>
             <span
@@ -47,6 +47,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
           </div>
         )}
         <div
+          className="flex-1"
           style={{
             viewTransitionName: layoutId ? `product-${layoutId}` : `product-${product.slug}`,
           }}

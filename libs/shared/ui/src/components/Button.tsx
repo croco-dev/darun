@@ -5,14 +5,14 @@ import { ButtonHTMLAttributes, ElementType, ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex h-fit w-fit items-center justify-center rounded-xl border text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex h-fit w-fit items-center justify-center rounded-xl border text-sm font-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none',
   {
     variants: {
       variant: {
         base: '',
         contained: '',
         text: 'border-transparent bg-transparent shadow-none',
-        shadow: 'shadow-button',
+        shadow: 'shadow-button hover:shadow-button-hover',
       },
       size: {
         sm: 'px-3 py-1.5',
@@ -32,47 +32,47 @@ const buttonVariants = cva(
       {
         variant: 'base',
         color: 'primary',
-        className: 'border-dark-900 bg-dark-900 text-white',
+        className: 'border-dark-900 bg-dark-900 text-white hover:bg-dark-800 hover:border-dark-800 active:bg-dark-900',
       },
       {
         variant: 'base',
         color: 'secondary',
-        className: 'border-transparent bg-transparent text-dark-900',
+        className: 'border-transparent bg-transparent text-dark-900 hover:bg-dark-100 active:bg-dark-150',
       },
       {
         variant: 'contained',
         color: 'primary',
-        className: 'border-dark-900 bg-dark-900 text-white',
+        className: 'border-dark-900 bg-dark-900 text-white hover:bg-dark-800 hover:border-dark-800 active:bg-dark-900',
       },
       {
         variant: 'contained',
         color: 'secondary',
-        className: 'border-dark-200 bg-dark-100 text-dark-900',
+        className: 'border-dark-200 bg-dark-100 text-dark-900 hover:bg-dark-150 hover:border-dark-300 active:bg-dark-200',
       },
       {
         variant: 'text',
         color: 'primary',
-        className: 'text-dark-900',
+        className: 'text-dark-900 hover:bg-dark-100 active:bg-dark-150',
       },
       {
         variant: 'text',
         color: 'secondary',
-        className: 'text-dark-900',
+        className: 'text-dark-900 hover:bg-dark-100 active:bg-dark-150',
       },
       {
         variant: 'text',
         active: true,
-        className: 'bg-dark-100',
+        className: 'bg-dark-100 hover:bg-dark-150 active:bg-dark-200',
       },
       {
         variant: 'shadow',
         color: 'primary',
-        className: 'border-dark-200 bg-dark-900 text-white',
+        className: 'border-dark-200 bg-dark-900 text-white hover:bg-dark-800 hover:border-dark-300 active:bg-dark-900',
       },
       {
         variant: 'shadow',
         color: 'secondary',
-        className: 'border-dark-200 bg-transparent text-dark-900',
+        className: 'border-dark-200 bg-white text-dark-900 hover:bg-surface-100 hover:border-dark-300 active:bg-dark-100',
       },
     ],
     defaultVariants: {

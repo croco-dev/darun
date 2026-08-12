@@ -11,7 +11,7 @@ export function ContentArea({ as, children, className, ...props }: ContentAreaPr
   const Component = as ?? 'section';
 
   return (
-    <Component className={cn('mx-auto box-border w-full max-w-[1120px] px-4 md:px-8', className)} {...props}>
+    <Component className={cn('mx-auto box-border w-full max-w-[1120px] px-4 sm:px-6 lg:px-8', className)} {...props}>
       {children}
     </Component>
   );

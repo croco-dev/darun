@@ -56,7 +56,7 @@ export const CategoryNavigationSection = () => {
                     source: 'home-bar',
                   })
                 }
-                className="inline-flex items-center rounded-full border border-dark-150 bg-white px-4 py-2 text-sm font-medium text-dark-700 transition-colors hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:border-dark-300 focus-visible:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none sm:px-5 sm:py-2.5"
+                className="inline-flex items-center rounded-full border border-dark-150 bg-white px-4 py-2 text-sm font-medium text-dark-700 shadow-button transition-all duration-200 ease-out hover:-translate-y-px hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 hover:shadow-button-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none sm:px-5 sm:py-2.5"
               >
                 {locale === 'ko' ? category.labelKo : category.labelEn}
               </Link>

@@ -9,7 +9,7 @@ export const ProductTocSection = bind(useProductTocSection, ({ isFixed }) => (
   <>
     {isFixed && <div className="h-12" />}
     <div
-      className={`${isFixed ? 'fixed shadow-card' : 'relative'} w-full z-[100] bg-white/95 backdrop-blur-sm border-b border-dark-150 top-0`}
+      className={`${isFixed ? 'fixed shadow-elevated' : 'relative'} w-full z-[100] border-b border-dark-150 bg-white/90 backdrop-blur top-0 transition-shadow duration-200 motion-reduce:transition-none`}
     >
       <ContentArea>
         <ProductTableOfContent />

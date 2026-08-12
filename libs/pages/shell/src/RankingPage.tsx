@@ -3,7 +3,7 @@ import { Layout } from '@darun/ui-layout';
 
 export const RankingPage = () => (
   <Layout>
-    <main>
+    <main className="flex w-full flex-col">
       <RankedProductSection />
     </main>
   </Layout>

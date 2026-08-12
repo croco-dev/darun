@@ -49,11 +49,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             data-testid={`toast-${toast.type}`}
             role={toast.type === 'error' ? 'alert' : 'status'}
             aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
-            className={`px-4 py-2 rounded-lg shadow-card text-white ${
+            className={`animate-fade-in-up px-4 py-3 rounded-xl shadow-elevated text-white motion-reduce:animate-none ${
               toast.type === 'success' ? 'bg-leaf-700' : 'bg-cherry-700'
             }`}
           >
-            {toast.message}
+            <span className="text-sm font-medium">{toast.message}</span>
           </div>
         ))}
       </div>
