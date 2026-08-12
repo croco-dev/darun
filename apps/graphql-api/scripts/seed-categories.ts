@@ -1,11 +1,11 @@
 import 'reflect-metadata';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq, isNotNull } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { categories } from '../../../libs/products/datasource/src/entities/CategorySchema';
 import { products } from '../../../libs/products/datasource/src/entities/ProductSchema';
-import { tags } from '../../../libs/products/datasource/src/entities/TagSchema';
 import { productTags } from '../../../libs/products/datasource/src/entities/ProductTagsSchema';
+import { tags } from '../../../libs/products/datasource/src/entities/TagSchema';
 
 /**
  * categories 테이블 시드 + products.categoryIds 역채우기
@@ -94,10 +94,7 @@ async function main() {
   // --- 3. 각 product의 categoryIds 갱신 ---
   console.log('🌱 products.categoryIds 갱신 시작...');
 
-  const publishedProducts = await db
-    .select({ id: products.id })
-    .from(products)
-    .where(isNotNull(products.publishedAt));
+  const publishedProducts = await db.select({ id: products.id }).from(products).where(isNotNull(products.publishedAt));
 
   let updatedCount = 0;
 
