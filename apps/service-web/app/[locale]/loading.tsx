@@ -1,68 +1,26 @@
 import { ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
-
-const SKELETON_ROW_KEYS = ['row-1', 'row-2', 'row-3', 'row-4'] as const;
-
-const Skeleton = ({
-  width = '100%',
-  height = '20px',
-  radius = '4px',
-}: {
-  width?: string | number;
-  height?: string | number;
-  radius?: string | number;
-}) => (
-  <div
-    aria-hidden="true"
-    className="bg-surface-100 motion-reduce:animate-none"
-    style={{
-      width: typeof width === 'number' ? `${width}px` : width,
-      height: typeof height === 'number' ? `${height}px` : height,
-      borderRadius: typeof radius === 'number' ? `${radius}px` : radius,
-      animation: 'pulse 1.5s ease-in-out infinite',
-    }}
-  />
-);
+import { CategoryNavigationSkeleton } from '@darun/products-shell/src/shells/CategoryNavigationSection/CategoryNavigationSkeleton';
+import { RecentProductSkeleton } from '@darun/products-shell/src/shells/RecentProductSection/RecentProductSkeleton';
+import { TrendingProductSkeleton } from '@darun/products-shell/src/shells/TrendingProductSection/TrendingProductSkeleton';
 
 export default function Loading() {
   return (
     <Layout>
-      <main className="mt-8 w-full gap-5" aria-busy="true" aria-live="polite" aria-label="페이지를 불러오는 중입니다">
-        <ContentArea>
-          <div className="mb-8 flex flex-col gap-4">
-            <Skeleton height={200} radius="8px" />
-            <div className="flex flex-row gap-4">
-              <Skeleton width="60%" height={24} />
-              <Skeleton width="30%" height={24} />
+      <main className="flex flex-col" aria-busy="true" aria-live="polite" aria-label="페이지를 불러오는 중입니다">
+        <section className="relative isolate overflow-hidden border-b border-dark-800 bg-dark-900">
+          <ContentArea className="relative z-10 py-14 md:py-20">
+            <div className="flex flex-col gap-5 md:max-w-2xl">
+              <div className="h-5 w-64 animate-pulse rounded bg-dark-700 motion-reduce:animate-none" />
+              <div className="h-10 w-80 animate-pulse rounded-lg bg-dark-700 motion-reduce:animate-none md:h-12" />
             </div>
-          </div>
+          </ContentArea>
+        </section>
 
-          <div className="flex flex-col gap-4">
-            {SKELETON_ROW_KEYS.map(rowKey => (
-              <div key={rowKey} className="flex w-full flex-row gap-4">
-                <Skeleton width={80} height={80} radius="8px" />
-                <div className="flex flex-1 flex-col justify-center gap-2">
-                  <Skeleton width="80%" height={20} />
-                  <Skeleton width="40%" height={16} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </ContentArea>
+        <CategoryNavigationSkeleton />
+        <TrendingProductSkeleton />
+        <RecentProductSkeleton />
       </main>
-      <style>{`
-        @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.5; }
-          100% { opacity: 1; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          * {
-            animation: none !important;
-          }
-        }
-      `}</style>
     </Layout>
   );
 }
