@@ -11,6 +11,7 @@
     "lint": "eslint **/*.ts*",
     "local:bootstrap": "tsx scripts/bootstrap-local.ts",
     "seed:e2e": "tsx scripts/seed-e2e.ts",
+    "seed:categories": "tsx scripts/seed-categories.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
