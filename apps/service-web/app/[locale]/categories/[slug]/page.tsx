@@ -31,7 +31,7 @@ const getCategory = cache(async (slug: string, locale: string) => {
     variables: { first: 100, locale },
   });
 
-  return data.categories.find(c => c.slug === slug) ?? null;
+  return data?.categories.find(c => c.slug === slug) ?? null;
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
