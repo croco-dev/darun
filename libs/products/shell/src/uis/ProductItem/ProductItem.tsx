@@ -19,15 +19,13 @@ type ProductItemProps = {
   nameAs?: 'h3' | 'h2' | 'h1';
   isSummaryNoWrap?: boolean;
   isStacked?: boolean;
+  isHero?: boolean;
 };
 
 const logoSizes = {
-  small: {
-    imageSize: 56,
-  },
-  medium: {
-    imageSize: 72,
-  },
+  small: { imageSize: 56 },
+  medium: { imageSize: 72 },
+  large: { imageSize: 96 },
 };
 
 export const ProductItem = ({
@@ -44,11 +42,13 @@ export const ProductItem = ({
   nameAs = 'h3',
   isSummaryNoWrap = false,
   isStacked = false,
+  isHero = false,
 }: ProductItemProps) => {
   const t = useTranslations('ProductDetail');
   const Component = as;
   const NameTag = nameAs;
   const [resolvedLogoUrl, setResolvedLogoUrl] = React.useState(logoUrl);
+  const effectiveLogoSize = isHero ? 'large' : logoSize;
 
   return (
     <Component
@@ -62,27 +62,31 @@ export const ProductItem = ({
         src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}
         unoptimized={!resolvedLogoUrl}
         alt={t('productItem.logoAlt', { name })}
-        width={logoSizes[logoSize].imageSize}
-        height={logoSizes[logoSize].imageSize}
-        className={`shrink-0 object-contain shadow-button ${logoSize === 'small' ? 'rounded-xl' : 'rounded-2xl'}`}
+        width={logoSizes[effectiveLogoSize].imageSize}
+        height={logoSizes[effectiveLogoSize].imageSize}
+        className={`shrink-0 object-contain shadow-button ${effectiveLogoSize === 'small' ? 'rounded-xl' : 'rounded-2xl'}`}
         onError={() => setResolvedLogoUrl(undefined)}
       />
       <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden">
         <div className="flex flex-col gap-0.5">
           <NameTag
-            className={`m-0 text-base font-semibold leading-tight tracking-tight text-dark-900 ${isStacked ? 'line-clamp-2' : 'md:text-lg'}`}
+            className={
+              isHero
+                ? 'm-0 text-xl font-bold leading-tight tracking-tight text-dark-900 md:text-2xl'
+                : `m-0 text-base font-semibold leading-tight tracking-tight text-dark-900 ${isStacked ? 'line-clamp-2' : 'md:text-lg'}`
+            }
           >
             {name}
           </NameTag>
           {summary &&
             (isStacked ? (
-              <p className="line-clamp-2 text-sm leading-snug text-dark-500">{summary}</p>
-            ) : isSummaryNoWrap ? (
-              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-snug text-dark-500">
+              <p className="line-clamp-2 text-sm leading-snug text-dark-600">{summary}</p>
+            ) : isSummaryNoWrap && !isHero ? (
+              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-snug text-dark-600">
                 {summary}
               </p>
             ) : (
-              <p className="text-sm leading-snug text-dark-500">{summary}</p>
+              <p className="text-sm leading-snug text-dark-600">{summary}</p>
             ))}
         </div>
         {(tags || specialTags) && (
@@ -99,7 +103,7 @@ export const ProductItem = ({
                       {tag}
                     </Chip>
                   ))}
-                  <span className="text-xs font-medium tabular-nums text-dark-400">+{tags.length - maxTagItems}</span>
+                  <span className="text-xs font-medium tabular-nums text-dark-500">+{tags.length - maxTagItems}</span>
                 </div>
               ) : (
                 tags.map(tag => (

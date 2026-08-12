@@ -35,12 +35,12 @@ export function SectionHeader({ title, subtitle, moreLink, size, align, classNam
       <div className="flex w-full items-start justify-between gap-4">
         <h2 className="text-xl font-bold leading-tight tracking-tight text-dark-900 sm:text-2xl">{title}</h2>
         {moreLink && (
-          <span className="shrink-0 pt-0.5">
+          <span className="shrink-0 inline-flex items-center">
             {moreLink}
           </span>
         )}
       </div>
-      {subtitle && <p className="max-w-2xl text-sm leading-relaxed text-dark-500 sm:text-base">{subtitle}</p>}
+      {subtitle && <p className="max-w-2xl text-sm leading-relaxed text-dark-600 sm:text-base">{subtitle}</p>}
     </div>
   );
 }

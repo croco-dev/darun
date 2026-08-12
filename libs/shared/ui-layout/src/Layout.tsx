@@ -5,7 +5,7 @@ import { Header } from './libs/Header';
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-dvh flex-col">
       <Header />
       {children}
       <Footer />

@@ -9,7 +9,7 @@ export const ProductInformation = bind(useProductInformation, ({ name, logoUrl, 
     name={name ?? ''}
     logoUrl={logoUrl}
     summary={summary}
-    isSummaryNoWrap={true}
+    isHero
     isAlignCenter
     nameAs="h1"
     tagVariant="circle"

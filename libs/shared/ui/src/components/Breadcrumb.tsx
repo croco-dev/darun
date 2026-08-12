@@ -1,5 +1,6 @@
 import { HTMLAttributes, ReactNode } from 'react';
 
+import { Link } from '@darun/utils-router';
 import { cn } from '../lib/utils';
 
 export type BreadcrumbItem = {
@@ -23,15 +24,15 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
           return (
             <li key={String(index)} className="flex items-center gap-1">
               {item.href ? (
-                <a
+                <Link
                   href={item.href}
-                  className="text-dark-600 hover:text-dark-900 hover:underline"
+                  className="text-dark-600 hover:text-dark-900 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   {...(item.ariaCurrent && {
                     'aria-current': item.ariaCurrent,
                   })}
                 >
                   {item.label}
-                </a>
+                </Link>
               ) : (
                 <span
                   className="text-dark-900"
@@ -42,7 +43,7 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
                   {item.label}
                 </span>
               )}
-              {!isLast && <span className="text-dark-400">/</span>}
+              {!isLast && <span className="text-dark-500">/</span>}
             </li>
           );
         })}
