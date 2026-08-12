@@ -15,7 +15,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
       aria-label="검색어"
       type="text"
       placeholder="현재 사용 중인 서비스를 찾아보세요"
-      className="w-full border-none bg-transparent text-sm tracking-tight text-dark-900 outline-none placeholder:text-dark-400 focus-visible:outline-none md:text-base"
+      className="w-full border-none bg-transparent text-sm tracking-tight text-dark-900 outline-none placeholder:text-dark-500 focus-visible:outline-none md:text-base"
       value={query}
       onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
     />

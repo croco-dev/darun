@@ -31,6 +31,8 @@
     "typescript": "catalog:"
   },
   "peerDependencies": {
+    "@darun/utils-router": "workspace:*",
+    "next": "catalog:",
     "react": "catalog:"
   }
 }

@@ -22,7 +22,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => (
             />
             <div className="flex flex-col items-start gap-0">
               <span className="w-max break-keep text-sm font-semibold text-current">{link.title}</span>
-              {index === 0 && <span className="break-keep text-xs text-dark-400">{link.displayLink}</span>}
+              {index === 0 && <span className="break-keep text-xs text-dark-500">{link.displayLink}</span>}
             </div>
           </div>
         </Button>

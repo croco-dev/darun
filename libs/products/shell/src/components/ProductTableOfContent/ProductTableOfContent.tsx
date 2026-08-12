@@ -19,7 +19,7 @@ export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings,
             return;
           }
 
-          const location = target.getBoundingClientRect().top + window.scrollY - 48;
+          const location = target.getBoundingClientRect().top + window.scrollY - 64;
           window.scrollTo({ top: Math.max(location, 0), behavior: 'smooth' });
         }}
       >

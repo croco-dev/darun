@@ -33,7 +33,7 @@ function formatStartAt(startAt: unknown) {
 export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompanyViewProps) => {
   const t = useTranslations('ProductDetail');
 
-  const labelClassName = 'w-[76px] shrink-0 text-sm font-medium tabular-nums text-dark-500';
+  const labelClassName = 'w-[76px] shrink-0 text-sm font-medium tabular-nums text-dark-600';
   const valueClassName = 'text-sm font-medium text-dark-800';
 
   return (
