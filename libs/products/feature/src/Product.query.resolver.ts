@@ -133,6 +133,14 @@ export class ProductQueryResolver {
           },
         ];
 
+        if (typeof product.summary === 'string') {
+          entries.push({
+            entityId: product.id,
+            field: 'summary',
+            koreanValue: product.summary,
+          });
+        }
+
         if (typeof product.description === 'string') {
           entries.push({
             entityId: product.id,
@@ -148,6 +156,10 @@ export class ProductQueryResolver {
     return localizedProducts.map(product => ({
       ...product,
       name: translatedFields.get(`${product.id}:name`) ?? product.name,
+      summary:
+        typeof product.summary === 'string'
+          ? (translatedFields.get(`${product.id}:summary`) ?? product.summary)
+          : product.summary,
       description:
         typeof product.description === 'string'
           ? (translatedFields.get(`${product.id}:description`) ?? product.description)

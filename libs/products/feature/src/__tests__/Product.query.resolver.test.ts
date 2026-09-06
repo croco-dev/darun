@@ -500,4 +500,99 @@ describe('ProductQueryResolver', () => {
       expect(features).toEqual([]);
     });
   });
+
+  describe('translateProducts with summary', () => {
+    it('returns translated summary when en locale is requested and translation exists', async () => {
+      const product = new DomainProduct({
+        id: 'p1',
+        name: '노션',
+        slug: 'notion',
+        summary: '올인원 생산성 도구',
+        description: '한국어 설명',
+        logoUrl: 'https://example.com/logo.png',
+      });
+
+      const publishedProductRepository = createProductRepository({
+        findPublishedOneBySlug: vi.fn().mockResolvedValue(product),
+      });
+      const getPublishedProductUseCase = new GetPublishedProduct(publishedProductRepository);
+
+      const translationRepository = createTranslationRepository({
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 't1',
+            entityType: 'Product',
+            entityId: 'p1',
+            locale: 'en',
+            field: 'name',
+            value: 'Notion',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: 't2',
+            entityType: 'Product',
+            entityId: 'p1',
+            locale: 'en',
+            field: 'summary',
+            value: 'All-in-one productivity tool',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: 't3',
+            entityType: 'Product',
+            entityId: 'p1',
+            locale: 'en',
+            field: 'description',
+            value: 'English description',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ]),
+      });
+
+      const resolver = createProductQueryResolver({
+        getPublishedProductUseCase,
+        translationService: new TranslationService(translationRepository),
+      });
+
+      const result = await resolver.productBySlug('notion', 'en');
+
+      expect(result).not.toBeNull();
+      expect(result?.name).toBe('Notion');
+      expect(result?.summary).toBe('All-in-one productivity tool');
+      expect(result?.description).toBe('English description');
+    });
+
+    it('falls back to original Korean summary when translation is absent', async () => {
+      const product = new DomainProduct({
+        id: 'p1',
+        name: '노션',
+        slug: 'notion',
+        summary: '올인원 생산성 도구',
+        logoUrl: 'https://example.com/logo.png',
+      });
+
+      const publishedProductRepository = createProductRepository({
+        findPublishedOneBySlug: vi.fn().mockResolvedValue(product),
+      });
+      const getPublishedProductUseCase = new GetPublishedProduct(publishedProductRepository);
+
+      const translationRepository = createTranslationRepository({
+        findMany: vi.fn().mockResolvedValue([]),
+      });
+
+      const resolver = createProductQueryResolver({
+        getPublishedProductUseCase,
+        translationService: new TranslationService(translationRepository),
+      });
+
+      const result = await resolver.productBySlug('notion', 'en');
+
+      expect(result).not.toBeNull();
+      expect(result?.name).toBe('노션');
+      expect(result?.summary).toBe('올인원 생산성 도구');
+    });
+  });
 });

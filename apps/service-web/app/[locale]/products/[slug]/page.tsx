@@ -3,6 +3,9 @@ import { ProductDetailPage } from '@darun/pages-shell';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
+import { JsonLd } from '../../../../lib/seo/json-ld';
+import { getOgLocale } from '../../../../lib/seo/metadata';
+import { absolutePublicUrl, buildAlternates, normalizeLocale } from '../../../../lib/seo/url';
 import { getClient } from '../../../getServerClient';
 
 const productQuery = gql`
@@ -48,8 +51,12 @@ const getProductBySlug = cache(async ({ slug, locale }: Awaited<Props['params']>
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
+  const currentLocale = normalizeLocale(resolvedParams.locale);
 
-  const product = await getProductBySlug(resolvedParams);
+  const product = await getProductBySlug({
+    slug: resolvedParams.slug,
+    locale: currentLocale,
+  });
 
   if (!product?.name) {
     return notFound();
@@ -59,24 +66,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const summary = product.summary;
   const logoUrl = product.logoUrl;
 
-  const tags = product.tags.map(tag => tag.name);
+  const titleSuffix = currentLocale === 'en' ? 'Darun: Compare Services in One Place' : '다른: 서비스 비교를 한 곳에서';
+  const pageTitle = `${name} - ${titleSuffix}`;
+  const defaultDesc =
+    currentLocale === 'en'
+      ? `Discover features, company info, and alternatives for ${name} on Darun.`
+      : `${name}의 주요 기능, 회사 정보, 대안 서비스를 다른(darun)에서 확인해보세요.`;
+  const description = summary || defaultDesc;
 
-  const pageTitle = `${name} - 다른: 서비스 비교를 한 곳에서`;
-  const description = summary || '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다';
-  const canonicalUrl = `https://www.darun.io/products/${resolvedParams.slug}`;
+  const alternates = buildAlternates({
+    locale: currentLocale,
+    pathname: `/products/${resolvedParams.slug}`,
+    includeMarkdownAlternate: true,
+  });
+  const canonicalUrl = alternates.canonical;
   const ogImageUrl = createOgImageUrl({ name, summary, logoUrl });
 
   return {
     title: pageTitle,
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    description,
+    alternates,
     openGraph: {
       title: pageTitle,
       description,
       url: canonicalUrl,
       siteName: '다른(darun)',
       type: 'website',
+      locale: getOgLocale(currentLocale),
       images: [
         {
           url: ogImageUrl,
@@ -107,21 +123,28 @@ const createOgImageUrl = ({ name, summary, logoUrl }: { name: string; summary?: 
 
 async function ProductDetailPageWithJsonLd({ params }: Props) {
   const resolvedParams = await params;
+  const currentLocale = normalizeLocale(resolvedParams.locale);
 
-  const product = await getProductBySlug(resolvedParams);
+  const product = await getProductBySlug({
+    slug: resolvedParams.slug,
+    locale: currentLocale,
+  });
 
   if (!product?.name) {
     return notFound();
   }
 
-  const jsonLd = {
+  const canonicalUrl = absolutePublicUrl(currentLocale, `/products/${resolvedParams.slug}`);
+  const titleSuffix = currentLocale === 'en' ? 'Darun: Compare Services in One Place' : '다른: 서비스 비교를 한 곳에서';
+  const pageTitle = `${product.name} - ${titleSuffix}`;
+
+  const webPageJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: product.name,
-    description: product.description || product.summary || '',
-    image: product.logoUrl || '',
-    url: `https://www.darun.io/products/${resolvedParams.slug}`,
-    applicationCategory: 'WebApplication',
+    '@type': 'ItemPage',
+    name: pageTitle,
+    description: product.summary || product.description || '',
+    url: canonicalUrl,
+    ...(product.logoUrl && { image: product.logoUrl }),
     ...(product.ownedCompany && {
       author: {
         '@type': 'Organization',
@@ -137,26 +160,22 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
       {
         '@type': 'ListItem',
         position: 1,
-        name: '홈',
-        item: 'https://www.darun.io/',
+        name: currentLocale === 'en' ? 'Home' : '홈',
+        item: absolutePublicUrl(currentLocale, '/'),
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: product.name,
+        item: canonicalUrl,
       },
     ],
   };
 
-  const allJsonLd = [jsonLd, breadcrumbList];
-
   return (
     <>
-      {allJsonLd.map(ld => (
-        <script key={`${ld['@type']}-${resolvedParams.slug}`} type="application/ld+json">
-          {JSON.stringify(ld).replace(/</g, '\\u003c')}
-        </script>
-      ))}
+      <JsonLd data={webPageJsonLd} />
+      <JsonLd data={breadcrumbList} />
       <ProductDetailPage params={resolvedParams} />
     </>
   );

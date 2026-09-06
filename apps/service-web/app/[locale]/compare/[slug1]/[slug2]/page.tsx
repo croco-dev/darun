@@ -5,6 +5,9 @@ import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
+import { NO_INDEX_ROBOTS } from '../../../../../lib/seo/indexability';
+import { getOgLocale } from '../../../../../lib/seo/metadata';
+import { buildAlternates, normalizeLocale } from '../../../../../lib/seo/url';
 import { getClient } from '../../../../getServerClient';
 
 const productsQuery = gql`
@@ -70,14 +73,45 @@ const getCompareProducts = cache(async ({ slug1, slug2, locale }: Awaited<Props[
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
-  const data = await getCompareProducts(resolvedParams);
+  const currentLocale = normalizeLocale(resolvedParams.locale);
+  const data = await getCompareProducts({
+    slug1: resolvedParams.slug1,
+    slug2: resolvedParams.slug2,
+    locale: currentLocale,
+  });
 
   const name1 = data?.product1?.name ?? resolvedParams.slug1;
   const name2 = data?.product2?.name ?? resolvedParams.slug2;
 
+  const title = currentLocale === 'en' ? `${name1} vs ${name2} Comparison - Darun` : `${name1} vs ${name2} 비교 - 다른`;
+  const description =
+    currentLocale === 'en'
+      ? `Compare ${name1} and ${name2} side-by-side on Darun.`
+      : `${name1}와 ${name2}를 나란히 비교해보세요.`;
+
+  const alternates = buildAlternates({
+    locale: currentLocale,
+    pathname: `/compare/${resolvedParams.slug1}/${resolvedParams.slug2}`,
+    includeMarkdownAlternate: true,
+  });
+
   return {
-    title: `${name1} vs ${name2} 비교 - 다른`,
-    description: `${name1}와 ${name2}를 나란히 비교해보세요.`,
+    title,
+    description,
+    alternates,
+    robots: NO_INDEX_ROBOTS,
+    openGraph: {
+      title,
+      description,
+      url: alternates.canonical,
+      siteName: '다른(darun)',
+      locale: getOgLocale(currentLocale),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
   };
 }
 
@@ -115,8 +149,22 @@ export default async function ComparePage({ params }: Props) {
           </div>
 
           <div className="rounded-card-xl border border-dark-150 bg-white p-1 shadow-card">
-            <CompareRow label="서비스명" colLabel1={product1.name} colLabel2={product2.name} value1={product1.name} value2={product2.name} testid="name" />
-            <CompareRow label="설명" colLabel1={product1.name} colLabel2={product2.name} value1={product1.summary ?? undefined} value2={product2.summary ?? undefined} testid="summary" />
+            <CompareRow
+              label="서비스명"
+              colLabel1={product1.name}
+              colLabel2={product2.name}
+              value1={product1.name}
+              value2={product2.name}
+              testid="name"
+            />
+            <CompareRow
+              label="설명"
+              colLabel1={product1.name}
+              colLabel2={product2.name}
+              value1={product1.summary ?? undefined}
+              value2={product2.summary ?? undefined}
+              testid="summary"
+            />
             <CompareRow
               label="회사"
               colLabel1={product1.name}

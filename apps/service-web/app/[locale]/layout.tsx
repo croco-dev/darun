@@ -9,6 +9,8 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { ReactNode } from 'react';
 import { routing } from '../../i18n/routing';
+import { SITE_COPY } from '../../lib/seo/metadata';
+import { normalizeLocale, PUBLIC_ORIGIN } from '../../lib/seo/url';
 import { ClientRootProvider } from '../client';
 import { ServerRootProvider } from '../server';
 
@@ -30,31 +32,21 @@ type LayoutProps = {
 
 export async function generateMetadata({ params }: LayoutProps): Promise<Metadata> {
   const { locale } = await params;
-
-  const alternatesLanguages: Record<string, string> = {};
-  for (const loc of routing.locales) {
-    alternatesLanguages[loc] = `/${loc}`;
-  }
-  alternatesLanguages['x-default'] = `/${routing.defaultLocale}`;
-
-  const ogLocale = LOCALE_TO_OG_LOCALE[locale];
+  const currentLocale = normalizeLocale(locale);
+  const copy = SITE_COPY[currentLocale];
+  const ogLocale = LOCALE_TO_OG_LOCALE[locale] ?? 'ko_KR';
 
   return {
-    metadataBase: new URL('https://www.darun.io'),
-    title: '다른 - 서비스 비교를 한 곳에서',
-    description:
-      '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 소프트웨어, 웹사이트, 어플리케이션를 검색하고 리뷰를 확인해보세요.',
-    keywords: ['비교', '대안', '비슷한', '장단점', '다른 사이트', '다른 서비스', '다른 앱'],
-    alternates: {
-      canonical: `/${locale}`,
-      languages: alternatesLanguages,
+    metadataBase: new URL(PUBLIC_ORIGIN),
+    title: {
+      default: copy.title,
+      template: `%s`,
     },
+    description: copy.description,
     openGraph: {
       siteName: '다른(darun)',
-      url: 'https://www.darun.io',
-      title: '다른 - 서비스 비교를 한 곳에서',
-      description:
-        '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 소프트웨어, 웹사이트, 어플리케이션를 검색하고 리뷰를 확인해보세요.',
+      title: copy.title,
+      description: copy.description,
       type: 'website',
       locale: ogLocale,
       images: [
@@ -62,32 +54,15 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
           url: 'https://darun-image.doda.dev/?format=png',
           width: 1200,
           height: 630,
-          alt: '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다',
+          alt: copy.ogImageAlt,
         },
       ],
     },
     twitter: {
       card: 'summary_large_image',
-      title: '다른 - 서비스 비교를 한 곳에서',
-      description:
-        '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 소프트웨어, 웹사이트, 어플리케이션를 검색하고 리뷰를 확인해보세요.',
+      title: copy.title,
+      description: copy.description,
       images: ['https://darun-image.doda.dev/?format=png'],
-    },
-    other: {
-      'script:ld+json': JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        name: '다른(darun)',
-        url: 'https://www.darun.io',
-        potentialAction: {
-          '@type': 'SearchAction',
-          target: {
-            '@type': 'EntryPoint',
-            urlTemplate: 'https://www.darun.io/search/product?query={search_term_string}',
-          },
-          'query-input': 'required name=search_term_string',
-        },
-      }),
     },
   };
 }

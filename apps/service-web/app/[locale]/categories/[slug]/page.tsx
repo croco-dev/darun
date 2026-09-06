@@ -1,9 +1,12 @@
+import { gql } from '@apollo/client';
 import { CategoryProductSection } from '@darun/products-shell';
 import { Layout } from '@darun/ui-layout';
-import { gql } from '@apollo/client';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
+import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
+import { getOgLocale } from '../../../../lib/seo/metadata';
+import { buildAlternates, normalizeLocale } from '../../../../lib/seo/url';
 import { getClient } from '../../../getServerClient';
 
 type Props = {
@@ -36,23 +39,44 @@ const getCategory = cache(async (slug: string, locale: string) => {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params;
-  const category = await getCategory(slug, locale);
+  const currentLocale = normalizeLocale(locale);
+  const category = await getCategory(slug, currentLocale);
 
   if (!category) {
     return {
-      title: '카테고리 - 다른',
-      description: '서비스 카테고리입니다.',
+      title: currentLocale === 'en' ? 'Category - Darun' : '카테고리 - 다른',
+      description: currentLocale === 'en' ? 'Service category on Darun.' : '서비스 카테고리입니다.',
+      robots: NO_INDEX_ROBOTS,
     };
   }
 
-  const label = locale === 'ko' ? category.labelKo : category.labelEn;
-  const title = `${label} 카테고리 - 다른`;
-  const description = `${label} 서비스들을 모아놓은 카테고리입니다.`;
+  const label = currentLocale === 'ko' ? category.labelKo : category.labelEn;
+  const title = currentLocale === 'ko' ? `${label} 카테고리 - 다른` : `${label} Category - Darun`;
+  const description =
+    currentLocale === 'ko'
+      ? `${label} 서비스들의 특징과 대안을 확인해보세요.`
+      : `Explore ${label} software, tools, and alternatives on Darun.`;
+
+  const alternates = buildAlternates({
+    locale: currentLocale,
+    pathname: `/categories/${slug}`,
+    includeMarkdownAlternate: true,
+  });
+  const canonicalUrl = alternates.canonical;
 
   return {
     title,
     description,
+    alternates,
     openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: '다른(darun)',
+      locale: getOgLocale(currentLocale),
+    },
+    twitter: {
+      card: 'summary_large_image',
       title,
       description,
     },
