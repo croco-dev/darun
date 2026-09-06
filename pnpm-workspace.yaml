@@ -63,7 +63,7 @@ catalog:
   # Apollo / GraphQL
   '@apollo/client': 4.2.0
   '@apollo/server': 5.5.1
-  graphql: 16.12.0
+  graphql: 17.0.2
   type-graphql: 2.0.0-rc.2
 
   # DI / reflect
