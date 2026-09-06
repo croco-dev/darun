@@ -1,3 +1,5 @@
+skip_lfs: true
+
 pre-commit:
   parallel: true
   commands:
@@ -24,3 +26,9 @@ post-merge:
   commands:
     install:
       run: pnpm install
+
+post-rewrite:
+  commands:
+    install:
+      run: pnpm install
+
