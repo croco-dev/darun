@@ -46,6 +46,7 @@ import {
   GetProductScreenshots,
   GetProductTags,
   GetPublishedProduct,
+  GetPublishedProductsForSitemap,
   GetRankedProducts,
   GetRecentProducts,
   Product as DomainProduct,
@@ -79,12 +80,14 @@ type ResolverOverrides = Partial<{
   getVoteCountUseCase: GetVoteCount;
   getProductLinksUseCase: GetProductLinks;
   getProductScreenshotsUseCase: GetProductScreenshots;
+  getPublishedProductsForSitemapUseCase: GetPublishedProductsForSitemap;
 }>;
 
 const createProductRepository = (overrides: Partial<ProductRepository> = {}): ProductRepository => ({
   updateById: vi.fn<ProductRepository['updateById']>(),
   findAllByBeforeIdAndLimit: vi.fn<ProductRepository['findAllByBeforeIdAndLimit']>().mockResolvedValue([]),
   findAllByAfterIdAndLimit: vi.fn<ProductRepository['findAllByAfterIdAndLimit']>().mockResolvedValue([]),
+  findPublishedByAfterIdAndLimit: vi.fn<ProductRepository['findPublishedByAfterIdAndLimit']>().mockResolvedValue([]),
   findTopNSortByPublishedAtDesc: vi.fn<ProductRepository['findTopNSortByPublishedAtDesc']>().mockResolvedValue([]),
   findPublishedByIds: vi.fn<ProductRepository['findPublishedByIds']>().mockResolvedValue([]),
   findPublishedOneById: vi.fn<ProductRepository['findPublishedOneById']>().mockResolvedValue(null),
@@ -218,7 +221,8 @@ const createProductQueryResolver = (overrides: ResolverOverrides = {}) => {
     overrides.getAlternativeProductsUseCase ?? new GetAlternativeProducts(createAlternativeProductRepository()),
     overrides.getVoteCountUseCase ?? new GetVoteCount(voteRepository),
     new GetProductsByCategory(productRepository, createCategoryRepository()),
-    overrides.translationService ?? createTranslationService()
+    overrides.translationService ?? createTranslationService(),
+    overrides.getPublishedProductsForSitemapUseCase ?? new GetPublishedProductsForSitemap(productRepository)
   );
 };
 
@@ -593,6 +597,33 @@ describe('ProductQueryResolver', () => {
       expect(result).not.toBeNull();
       expect(result?.name).toBe('노션');
       expect(result?.summary).toBe('올인원 생산성 도구');
+    });
+  });
+
+  describe('publishedProductsForSitemap', () => {
+    it('returns published products for sitemap without requiring admin authorization', async () => {
+      const mockProducts = [
+        new DomainProduct({
+          id: 'p1',
+          name: 'Product 1',
+          slug: 'product-1',
+          summary: 'Summary 1',
+          publishedAt: new Date(),
+        }),
+      ];
+
+      const publishedProductRepository = createProductRepository({
+        findPublishedByAfterIdAndLimit: vi.fn().mockResolvedValue(mockProducts),
+      });
+
+      const resolver = createProductQueryResolver({
+        getPublishedProductsForSitemapUseCase: new GetPublishedProductsForSitemap(publishedProductRepository),
+      });
+
+      const result = await resolver.publishedProductsForSitemap(100);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].slug).toBe('product-1');
     });
   });
 });

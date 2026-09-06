@@ -1,17 +1,17 @@
 import { gql } from '@apollo/client';
 import { MetadataRoute } from 'next';
 import { getClient } from './getServerClient';
-import { container } from './serverContainer';
-import { makeEntries } from './sitemap-entries';
+import { buildSitemapEntries, SitemapCategory, SitemapMagazine, SitemapProduct } from './sitemap-entries';
 
 export const revalidate = 3600; // 1 hour
 
-const productQuery = gql`
-  query GetPublishedProductsOnSitemap($locale: String!) {
-    recentProducts(first: 100, locale: $locale) {
-      name
+const publishedProductsQuery = gql`
+  query PublishedProductsForSitemap($first: Int!, $after: String) {
+    publishedProductsForSitemap(first: $first, after: $after) {
+      id
       slug
       updatedAt
+      publishedAt
       alternatives {
         slug
       }
@@ -19,44 +19,82 @@ const productQuery = gql`
   }
 `;
 
-const createProductSearchUrl = (locale: 'ko' | 'en', query: string) =>
-  `${container.baseUrl}/${locale}/search/product?query=${encodeURIComponent(query)}`;
+const categoriesQuery = gql`
+  query CategoriesForSitemap($first: Int!, $locale: String!) {
+    categories(first: $first, locale: $locale) {
+      id
+      slug
+    }
+  }
+`;
 
-const baseUrl = container.baseUrl;
+const publishedMagazinesQuery = gql`
+  query PublishedMagazinesForSitemap {
+    publishedMagazines {
+      id
+      slug
+      updatedAt
+      publishedAt
+    }
+  }
+`;
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const entries: MetadataRoute.Sitemap = [];
+async function fetchAllPublishedProducts(): Promise<SitemapProduct[]> {
+  const client = getClient({ static: true });
+  const allProducts: SitemapProduct[] = [];
+  let cursor: string | undefined = undefined;
+  const pageSize = 100;
+  let hasMore = true;
 
-  entries.push(...makeEntries(`${baseUrl}/ko`, `${baseUrl}/en`, new Date()));
-
-  try {
-    const { data } = await getClient({ static: true }).query<{
-      recentProducts: { slug: string; updatedAt: string; name: string }[];
+  while (hasMore) {
+    const result = await client.query<{
+      publishedProductsForSitemap: SitemapProduct[];
     }>({
-      query: productQuery,
-      variables: {
-        locale: 'ko',
-      },
+      query: publishedProductsQuery,
+      variables: { first: pageSize, after: cursor },
+      fetchPolicy: 'no-cache',
     });
 
-    for (const product of data?.recentProducts ?? []) {
-      const lastModified = product.updatedAt ? new Date(product.updatedAt) : new Date();
-      const { slug, name } = product;
+    const products: SitemapProduct[] = result.data?.publishedProductsForSitemap ?? [];
+    allProducts.push(...products);
 
-      entries.push(
-        ...makeEntries(`${baseUrl}/ko/products/${slug}`, `${baseUrl}/en/products/${slug}`, lastModified),
-        ...makeEntries(
-          `${baseUrl}/ko/products/${slug}/alternatives`,
-          `${baseUrl}/en/products/${slug}/alternatives`,
-          lastModified
-        ),
-        ...makeEntries(createProductSearchUrl('ko', slug), createProductSearchUrl('en', slug), lastModified),
-        ...makeEntries(createProductSearchUrl('ko', name), createProductSearchUrl('en', name), lastModified)
-      );
+    if (products.length < pageSize) {
+      hasMore = false;
+    } else {
+      cursor = products[products.length - 1].id;
     }
-  } catch {
-    return entries;
   }
 
-  return entries;
+  return allProducts;
+}
+
+async function fetchCategories(): Promise<SitemapCategory[]> {
+  const client = getClient({ static: true });
+  const { data } = await client.query<{
+    categories: SitemapCategory[];
+  }>({
+    query: categoriesQuery,
+    variables: { first: 1000, locale: 'ko' },
+    fetchPolicy: 'no-cache',
+  });
+  return data?.categories ?? [];
+}
+
+async function fetchMagazines(): Promise<SitemapMagazine[]> {
+  const client = getClient({ static: true });
+  const { data } = await client.query<{
+    publishedMagazines: SitemapMagazine[];
+  }>({
+    query: publishedMagazinesQuery,
+    fetchPolicy: 'no-cache',
+  });
+  return data?.publishedMagazines ?? [];
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  return buildSitemapEntries({
+    fetchProducts: fetchAllPublishedProducts,
+    fetchCategories,
+    fetchMagazines,
+  });
 }

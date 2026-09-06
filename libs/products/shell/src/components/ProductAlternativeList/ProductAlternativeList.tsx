@@ -11,7 +11,7 @@ type ProductAlternativeListViewProps = ReturnType<typeof useProductAlternativeLi
 
 export const ProductAlternativeList = bind(
   useProductAlternativeList,
-  ({ products }: ProductAlternativeListViewProps) => {
+  ({ products, locale = 'ko' }: ProductAlternativeListViewProps & { locale?: string }) => {
     const t = useTranslations('Alternative');
 
     if (!products) return <></>;
@@ -25,7 +25,7 @@ export const ProductAlternativeList = bind(
           >
             <div className="flex w-full flex-col gap-4">
               <div className="flex flex-row items-start justify-between gap-4">
-                <Link href={`/products/${product.slug}?from=related`} className="min-w-0 flex-1">
+                <Link href={`/${locale}/products/${product.slug}?from=related`} className="min-w-0 flex-1">
                   <ProductItem
                     name={product.name}
                     summary={product.summary}
@@ -58,7 +58,7 @@ export const ProductAlternativeList = bind(
         ))}
         <div className="flex justify-center pt-1">
           <Link
-            href="/categories"
+            href={`/${locale}/search/product`}
             className="inline-flex items-center justify-center rounded-md border border-dark-200 bg-white px-4 py-2 text-sm font-medium text-dark-700 transition-colors hover:bg-surface-100"
           >
             {t('empty.button')}

@@ -83,7 +83,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
               <ProductCard
                 key={product.id}
                 product={product}
-                href={`/products/${product.slug}?from=category`}
+                href={`/${locale}/products/${product.slug}?from=category`}
                 source="category"
               />
             ))}

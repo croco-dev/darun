@@ -3,11 +3,11 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
+import { ProductCard } from '@darun/products-shell';
 import {
   CompactCategoriesForSearchProductListDocument,
   CompactTrendingPreviewForSearchProductListDocument,
 } from '@darun/provider-graphql';
-import { ProductCard } from '@darun/products-shell';
 import { useNavigate } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useSearchParams } from 'next/navigation';
@@ -174,7 +174,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
         <ProductCard
           key={product.id}
           product={product}
-          href={`/products/${product.slug}?from=search`}
+          href={`/${locale}/products/${product.slug}?from=search`}
           source="search"
         />
       ))}

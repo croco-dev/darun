@@ -57,7 +57,9 @@ describe('AlternativeProductList', () => {
     ];
 
     act(() => {
-      root?.render(<AlternativeProductList.ViewComponent slug="base-slug" alternatives={mockAlternatives} />);
+      root?.render(
+        <AlternativeProductList.ViewComponent slug="base-slug" alternatives={mockAlternatives} locale="ko" />
+      );
     });
 
     const compareButton = container.querySelector('[data-testid="compare-button"]');

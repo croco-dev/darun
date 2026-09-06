@@ -54,7 +54,7 @@ describe('RankedProductList', () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
-    vi.mocked(useRankedProductList).mockReturnValue({ products: mockProducts });
+    vi.mocked(useRankedProductList).mockReturnValue({ products: mockProducts, locale: 'ko' });
   });
 
   afterEach(() => {
@@ -76,18 +76,18 @@ describe('RankedProductList', () => {
     expect(items[1]?.textContent).toBe('Figma');
   });
 
-  it('각 상품 링크가 /products/{slug}?from=trending 경로를 가진다', () => {
+  it('각 상품 링크가 /{locale}/products/{slug}?from=trending 경로를 가진다', () => {
     act(() => {
       root?.render(<RankedProductList />);
     });
 
     const links = container.querySelectorAll('a');
-    expect(links[0]?.getAttribute('href')).toBe('/products/notion?from=trending');
-    expect(links[1]?.getAttribute('href')).toBe('/products/figma?from=trending');
+    expect(links[0]?.getAttribute('href')).toBe('/ko/products/notion?from=trending');
+    expect(links[1]?.getAttribute('href')).toBe('/ko/products/figma?from=trending');
   });
 
   it('빈 목록이면 아무것도 렌더링하지 않는다', () => {
-    vi.mocked(useRankedProductList).mockReturnValue({ products: [] });
+    vi.mocked(useRankedProductList).mockReturnValue({ products: [], locale: 'ko' });
 
     act(() => {
       root?.render(<RankedProductList />);

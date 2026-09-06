@@ -66,7 +66,7 @@ describe('ProductAlternativeList', () => {
     ];
 
     act(() => {
-      root?.render(<ProductAlternativeList.ViewComponent products={mockProducts} />);
+      root?.render(<ProductAlternativeList.ViewComponent products={mockProducts} locale="ko" />);
     });
 
     const compareButton = container.querySelector('[data-testid="compare-button"]');

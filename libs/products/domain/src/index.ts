@@ -69,6 +69,7 @@ export { GetProductTags } from './usecases/GetProductTags';
 export { GetPublishedProduct } from './usecases/GetPublishedProduct';
 export { GetRankedProducts } from './usecases/GetRankedProducts';
 export { GetRecentProducts } from './usecases/GetRecentProducts';
+export { GetPublishedProductsForSitemap } from './usecases/GetPublishedProductsForSitemap';
 export { GetProductsByCategory } from './usecases/GetProductsByCategory';
 export { PublishProduct } from './usecases/PublishProduct';
 export { RegisterProductCompany } from './usecases/RegisterProductCompany';

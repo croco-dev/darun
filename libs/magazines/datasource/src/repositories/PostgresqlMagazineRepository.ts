@@ -2,7 +2,7 @@ import { MagazineRepository } from '@darun/magazines-domain';
 import { Magazine, MagazineRepositoryToken, magazineNotFound, magazineUpdateFailed } from '@darun/magazines-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
-import { and, count, eq, isNotNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNotNull } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { magazines } from '../entities/MagazineSchema';
 
@@ -87,6 +87,15 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
       data: data.map(item => this.mapper(item)),
       total,
     };
+  }
+
+  async findAllPublished(): Promise<Magazine[]> {
+    return this.db
+      .select()
+      .from(magazines)
+      .where(isNotNull(magazines.publishedAt))
+      .orderBy(desc(magazines.publishedAt))
+      .then(rows => rows.map(item => this.mapper(item)));
   }
 
   async insert(values: Magazine): Promise<Magazine | null> {

@@ -86,6 +86,16 @@ export class PostgresqlProductRepository implements ProductRepository {
       .then(rows => rows.map(row => this.mapper(row)));
   }
 
+  async findPublishedByAfterIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+    return this.db
+      .select()
+      .from(products)
+      .where(and(isNotNull(products.publishedAt), id ? lt(products.id, id) : undefined))
+      .limit(limit)
+      .orderBy(desc(products.id))
+      .then(rows => rows.map(row => this.mapper(row)));
+  }
+
   async countAll(): Promise<number> {
     return this.db
       .select({ value: count() })
@@ -171,7 +181,9 @@ export class PostgresqlProductRepository implements ProductRepository {
     return this.db
       .select()
       .from(products)
-      .where(and(isNotNull(products.publishedAt), sql`${products.categoryIds}::jsonb @> ${JSON.stringify([categoryId])}`))
+      .where(
+        and(isNotNull(products.publishedAt), sql`${products.categoryIds}::jsonb @> ${JSON.stringify([categoryId])}`)
+      )
       .orderBy(desc(products.publishedAt))
       .limit(limit)
       .then(rows => rows.map(row => this.mapper(row)));

@@ -5,6 +5,7 @@ export interface ProductRepository {
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product>;
   findAllByBeforeIdAndLimit(limit: number, id?: string): Promise<Product[]>;
   findAllByAfterIdAndLimit(limit: number, id?: string): Promise<Product[]>;
+  findPublishedByAfterIdAndLimit(limit: number, id?: string): Promise<Product[]>;
   findTopNSortByPublishedAtDesc(n: number): Promise<Product[]>;
   findPublishedByIds(ids: string[]): Promise<(Product | null)[]>;
   findPublishedOneById(id: string): Promise<Product | null>;

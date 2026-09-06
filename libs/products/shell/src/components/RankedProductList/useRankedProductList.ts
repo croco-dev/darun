@@ -3,7 +3,7 @@ import { useSuspenseQuery } from '@apollo/client/react';
 import { RankedProductsOnRankedProductListDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 
-
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query RankedProductsOnRankedProductList($locale: String!) {
     rankedProducts(first: 30, locale: $locale) {
@@ -30,5 +30,6 @@ export function useRankedProductList() {
   });
   return {
     products: data?.rankedProducts ?? [],
+    locale,
   };
 }
