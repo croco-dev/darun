@@ -22,7 +22,7 @@ export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, 
       <div className="flex flex-1 flex-col gap-2 p-4 md:p-5">
         {category && <span className="text-xs font-semibold uppercase tracking-wide text-brown-600">{category}</span>}
         <h3 className="text-base font-bold leading-tight tracking-tight text-dark-900 md:text-lg">{title}</h3>
-        {summary && <p className="line-clamp-2 text-sm leading-snug text-dark-500">{summary}</p>}
+        {summary && <p className="line-clamp-2 text-sm leading-snug text-dark-600">{summary}</p>}
         <div className="mt-auto flex items-center gap-x-2 pt-2 text-xs text-dark-500">
           <span>{author}</span>
           <span>•</span>

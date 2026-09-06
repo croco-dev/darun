@@ -22,14 +22,18 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
               source: 'ranking',
             })
           }
-          className="group block rounded-card border border-transparent p-3 transition-all duration-200 ease-out hover:-translate-y-px hover:border-dark-150 hover:bg-white hover:shadow-card motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+          className="group block rounded-card border border-dark-150/70 bg-white/70 p-3 transition-all duration-200 ease-out hover:-translate-y-px hover:border-dark-200 hover:bg-white hover:shadow-card motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
           <div className="flex items-center gap-3">
             <span
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold tabular-nums transition-colors duration-200 ${
-                isTopThree
-                  ? 'bg-dark-900 text-white group-hover:bg-brown-600'
-                  : 'bg-surface-100 text-dark-500 group-hover:bg-dark-100'
+                rank === 1
+                  ? 'bg-yellow-600 text-white group-hover:bg-yellow-700 shadow-sm'
+                  : rank === 2
+                    ? 'bg-dark-800 text-white group-hover:bg-dark-900 shadow-sm'
+                    : rank === 3
+                      ? 'bg-brown-600 text-white group-hover:bg-brown-700 shadow-sm'
+                      : 'bg-surface-100 text-dark-500 group-hover:bg-dark-100'
               } motion-reduce:transition-none`}
             >
               {rank}

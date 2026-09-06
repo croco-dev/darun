@@ -20,7 +20,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
         </div>
         <div className="flex flex-col">
           <p className="text-base font-semibold leading-tight tracking-tight text-dark-900">{name}</p>
-          {description && <p className="mt-1 text-sm leading-relaxed text-dark-500">{description}</p>}
+          {description && <p className="mt-1 text-sm leading-relaxed text-dark-600">{description}</p>}
         </div>
       </div>
       {screenshots && screenshots.length > 0 && (

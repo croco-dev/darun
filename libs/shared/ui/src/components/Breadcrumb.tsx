@@ -43,7 +43,11 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
                   {item.label}
                 </span>
               )}
-              {!isLast && <span className="text-dark-500">/</span>}
+              {!isLast && (
+                <span className="text-dark-500" aria-hidden="true">
+                  /
+                </span>
+              )}
             </li>
           );
         })}

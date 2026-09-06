@@ -17,25 +17,27 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
 
   if (!photos || photos.length === 0) {
     return (
-      <div className="rounded-card border border-dark-150 bg-surface-100 px-5 py-8 text-center">
+      <div className="rounded-card-lg border border-dark-150 bg-surface-100 px-5 py-8 text-center">
         <p className="text-sm text-dark-500">{t('photo.empty')}</p>
       </div>
     );
   }
   return (
-    <div className="rounded-card border border-dark-150 bg-white p-3 shadow-card">
+    <div className="overflow-hidden rounded-card-lg border border-dark-150 bg-white p-4 shadow-card md:p-5">
       {photos && (
-        <div className="relative flex w-max gap-3 overflow-x-auto scrollbar-hide">
+        <div className="flex w-full gap-3 overflow-x-auto scrollbar-hide">
           {photos.map(photo => (
-            <Zoom key={photo.imageUrl}>
-              <Image
-                src={photo.imageUrl}
-                alt={photo.imageAlt}
-                sizes="350px"
-                fill={true}
-                className="!relative !h-[220px] !w-auto rounded-lg border border-dark-150 object-contain"
-              />
-            </Zoom>
+            <div key={photo.imageUrl} className="shrink-0">
+              <Zoom>
+                <Image
+                  src={photo.imageUrl}
+                  alt={photo.imageAlt}
+                  sizes="350px"
+                  fill={true}
+                  className="!relative !h-[220px] !w-auto rounded-lg border border-dark-150 object-contain"
+                />
+              </Zoom>
+            </div>
           ))}
         </div>
       )}
