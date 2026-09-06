@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
 import { ProductCard } from '@darun/products-shell';
-import { ContentArea, SectionHeader } from '@darun/ui';
+import { ContentArea, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -129,7 +129,19 @@ export default async function ComparePage({ params }: Props) {
     <Layout>
       <main className="flex w-full flex-col">
         <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
-          <SectionHeader title="서비스 비교" subtitle="두 서비스의 핵심 정보를 나란히 확인해보세요" align="center" />
+          <PageHeading
+            title={
+              resolvedParams.locale === 'en'
+                ? `${product1.name} vs ${product2.name} Comparison`
+                : `${product1.name} vs ${product2.name} 비교`
+            }
+            subtitle={
+              resolvedParams.locale === 'en'
+                ? 'Compare features and details side-by-side'
+                : '두 서비스의 핵심 정보를 나란히 확인해보세요'
+            }
+            align="center"
+          />
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
             <div data-testid="compare-column">

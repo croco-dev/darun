@@ -1,6 +1,6 @@
 'use client';
 
-import { SectionHeader, SectionWrapper } from '@darun/ui';
+import { PageHeading, SectionWrapper } from '@darun/ui';
 import { useTranslations } from 'next-intl';
 import { RankedProductList } from '../../components';
 
@@ -10,7 +10,7 @@ export const RankedProductSection = () => {
   return (
     <SectionWrapper background="white" spacing="md">
       <div className="flex flex-col gap-5">
-        <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
+        <PageHeading title={t('section.title')} subtitle={t('section.description')} />
         <RankedProductList />
       </div>
     </SectionWrapper>
