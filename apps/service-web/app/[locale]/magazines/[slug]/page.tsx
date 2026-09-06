@@ -1,8 +1,11 @@
 import { gql } from '@apollo/client';
 import { MagazineContentPage } from '@darun/pages-shell';
 import { Metadata } from 'next';
-import { cache } from 'react';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
+import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
+import { JsonLd } from '../../../../lib/seo/json-ld';
+import { absolutePublicUrl, normalizeLocale } from '../../../../lib/seo/url';
 import { getClient } from '../../../getServerClient';
 
 const magazineQuery = gql`
@@ -47,26 +50,34 @@ const getMagazine = cache(async (slug: string, locale: string) => {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
+  const currentLocale = normalizeLocale(resolvedParams.locale);
+  const isEn = currentLocale === 'en';
 
-  const data = await getMagazine(resolvedParams.slug, resolvedParams.locale);
+  const data = await getMagazine(resolvedParams.slug, currentLocale);
 
   if (!data?.magazineBySlug?.title) {
     return notFound();
   }
 
   const { title, summary, backgroundImageUrl, author } = data.magazineBySlug;
-  const description = summary || '다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다';
+  const description = summary || '다양한 서비스의 비교와 분석 매거진입니다.';
+  const canonicalUrl = absolutePublicUrl('ko', `/magazines/${resolvedParams.slug}`);
 
   return {
     title: `${title} - 다른: 서비스 비교를 한 곳에서`,
     description,
-    keywords: ['서비스 비교', '비교 매거진', '서비스 리뷰', '다른', 'darun'],
+    alternates: {
+      canonical: canonicalUrl,
+      // Note: magazine is ko-only content; en hreflang alternate is intentionally omitted
+    },
+    robots: isEn ? NO_INDEX_ROBOTS : undefined,
     openGraph: {
       title: `${title} - 다른`,
       description,
       siteName: '다른(darun)',
-      url: `https://www.darun.io/magazines/${resolvedParams.slug}`,
+      url: canonicalUrl,
       type: 'article',
+      locale: 'ko_KR',
       images: backgroundImageUrl
         ? [
             {
@@ -90,18 +101,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 async function MagazineContentPageWithJsonLd({ params }: Props) {
   const resolvedParams = await params;
+  const currentLocale = normalizeLocale(resolvedParams.locale);
 
-  const data = await getMagazine(resolvedParams.slug, resolvedParams.locale);
-
+  const data = await getMagazine(resolvedParams.slug, currentLocale);
   const magazine = data?.magazineBySlug;
 
-  const jsonLd = magazine
+  const canonicalUrl = absolutePublicUrl('ko', `/magazines/${resolvedParams.slug}`);
+
+  const articleJsonLd = magazine
     ? {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: magazine.title,
         description: magazine.summary || '',
-        image: magazine.backgroundImageUrl || '',
+        mainEntityOfPage: canonicalUrl,
+        ...(magazine.backgroundImageUrl && { image: magazine.backgroundImageUrl }),
         datePublished: magazine.publishedAt,
         dateModified: magazine.updatedAt || magazine.publishedAt,
         ...(magazine.author && {
@@ -110,14 +124,6 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
             name: magazine.author.name,
           },
         }),
-        publisher: {
-          '@type': 'Organization',
-          name: '다른',
-          logo: {
-            '@type': 'ImageObject',
-            url: 'https://www.darun.io/images/favicon.svg',
-          },
-        },
       }
     : null;
 
@@ -130,7 +136,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
             '@type': 'ListItem',
             position: 1,
             name: '홈',
-            item: 'https://www.darun.io/',
+            item: absolutePublicUrl(currentLocale, '/'),
           },
           {
             '@type': 'ListItem',
@@ -141,20 +147,16 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
             '@type': 'ListItem',
             position: 3,
             name: magazine.title,
+            item: canonicalUrl,
           },
         ],
       }
     : null;
 
-  const allJsonLd = [jsonLd, breadcrumbList].filter((value): value is NonNullable<typeof value> => value !== null);
-
   return (
     <>
-      {allJsonLd.map(ld => (
-        <script key={`${ld['@type']}-${resolvedParams.slug}`} type="application/ld+json">
-          {JSON.stringify(ld).replace(/</g, '\\u003c')}
-        </script>
-      ))}
+      {articleJsonLd && <JsonLd data={articleJsonLd} />}
+      {breadcrumbList && <JsonLd data={breadcrumbList} />}
       <MagazineContentPage params={resolvedParams} />
     </>
   );

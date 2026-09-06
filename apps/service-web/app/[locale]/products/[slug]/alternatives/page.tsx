@@ -3,6 +3,10 @@ import { ProductAlternativePage } from '@darun/pages-shell';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
+import { NO_INDEX_ROBOTS } from '../../../../../lib/seo/indexability';
+import { JsonLd } from '../../../../../lib/seo/json-ld';
+import { getOgLocale } from '../../../../../lib/seo/metadata';
+import { absolutePublicUrl, buildAlternates, normalizeLocale } from '../../../../../lib/seo/url';
 import { getClient } from '../../../../getServerClient';
 
 const productQuery = gql`
@@ -48,33 +52,45 @@ const getProduct = cache(async (slug: string, locale: string) => {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
+  const currentLocale = normalizeLocale(resolvedParams.locale);
 
-  const data = await getProduct(resolvedParams.slug, resolvedParams.locale);
+  const data = await getProduct(resolvedParams.slug, currentLocale);
 
   if (!data?.productBySlug?.name) {
     return notFound();
   }
 
-  const { name, summary, logoUrl, tags: productTags } = data.productBySlug;
-  const tags = productTags.map(tag => tag.name);
+  const { name, summary, logoUrl } = data.productBySlug;
+  const alternatives = data.productBySlug.alternatives ?? [];
+  const hasAlternatives = alternatives.length > 0;
 
-  const description = `${name}의 다른 서비스를 찾아보세요. 다른(darun)에서는 ${name}과 비슷한 다양한 서비스들을 비교하고, 사용자들이 평가한 서비스들을 찾아볼 수 있습니다.`;
-  const pageTitle = `${name}의 다른 서비스 - 다른: 서비스 비교를 한 곳에서`;
-  const canonicalUrl = `https://www.darun.io/products/${resolvedParams.slug}/alternatives`;
+  const titleSuffix = currentLocale === 'en' ? 'Darun: Compare Services in One Place' : '다른: 서비스 비교를 한 곳에서';
+  const pageTitle =
+    currentLocale === 'en' ? `${name} Alternatives - ${titleSuffix}` : `${name}의 다른 서비스 - ${titleSuffix}`;
+  const description =
+    currentLocale === 'en'
+      ? `Explore alternative and similar services to ${name} on Darun.`
+      : `${name}의 다른 서비스를 찾아보세요. 다른(darun)에서는 ${name}과 비슷한 다양한 서비스들을 비교하고 정보를 찾아볼 수 있습니다.`;
 
+  const alternates = buildAlternates({
+    locale: currentLocale,
+    pathname: `/products/${resolvedParams.slug}/alternatives`,
+    includeMarkdownAlternate: true,
+  });
+  const canonicalUrl = alternates.canonical;
   const ogImageUrl = createOgImageUrl({ name, summary, logoUrl });
 
   return {
     title: pageTitle,
-
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    description,
+    alternates,
+    robots: hasAlternatives ? undefined : NO_INDEX_ROBOTS,
     openGraph: {
       title: pageTitle,
       description,
       url: canonicalUrl,
       siteName: '다른(darun)',
+      locale: getOgLocale(currentLocale),
       images: [
         {
           url: ogImageUrl,
@@ -105,20 +121,16 @@ const createOgImageUrl = ({ name, summary, logoUrl }: { name: string; summary?: 
 
 export default async function ProductAlternativePageWrapper({ params }: Props) {
   const resolvedParams = await params;
+  const currentLocale = normalizeLocale(resolvedParams.locale);
 
-  const data = await getProduct(resolvedParams.slug, resolvedParams.locale);
+  const data = await getProduct(resolvedParams.slug, currentLocale);
 
   if (!data?.productBySlug?.name) {
     notFound();
   }
 
   const productName = data.productBySlug.name;
-  const alternatives = data.productBySlug.alternatives ?? [];
-  const altNames = alternatives.map(a => a.name);
-  const altCount = alternatives.length;
-  const altPreview = altNames.slice(0, 5).join(', ');
-  const altTags = [...new Set(alternatives.flatMap(a => a.tags.map(t => t.name)))];
-  const altTagPreview = altTags.slice(0, 3).join(', ');
+
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -126,25 +138,27 @@ export default async function ProductAlternativePageWrapper({ params }: Props) {
       {
         '@type': 'ListItem',
         position: 1,
-        name: '홈',
-        item: 'https://www.darun.io/',
+        name: currentLocale === 'en' ? 'Home' : '홈',
+        item: absolutePublicUrl(currentLocale, '/'),
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: productName,
-        item: `https://www.darun.io/products/${resolvedParams.slug}`,
+        item: absolutePublicUrl(currentLocale, `/products/${resolvedParams.slug}`),
       },
       {
         '@type': 'ListItem',
         position: 3,
-        name: '다른 서비스',
+        name: currentLocale === 'en' ? 'Alternatives' : '다른 서비스',
+        item: absolutePublicUrl(currentLocale, `/products/${resolvedParams.slug}/alternatives`),
       },
     ],
   };
+
   return (
     <>
-      <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd).replace(/</g, '\\u003c')}</script>
+      <JsonLd data={breadcrumbJsonLd} />
       <ProductAlternativePage params={resolvedParams} productName={productName} />
     </>
   );

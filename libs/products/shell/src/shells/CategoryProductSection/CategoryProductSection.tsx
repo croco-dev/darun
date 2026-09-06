@@ -2,7 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
-import { SectionHeader, SectionWrapper } from '@darun/ui';
+import { PageHeading, SectionWrapper } from '@darun/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { ProductCard } from '../../components';
 
@@ -65,14 +65,14 @@ export function CategoryProductSection({ slug }: { slug: string }) {
   });
 
   const products = data?.productsByCategory ?? [];
-  const category = data?.categories?.find(c => c.slug === slug);
-  const categoryLabel = category ? (locale === 'ko' ? category.labelKo : category.labelEn) : slug;
+  const category = (data?.categories ?? []).find(c => c.slug === slug);
+  const categoryLabel = category ? (locale === 'ko' ? category.labelKo : category.labelEn) : '';
   const emptyLabel = t('empty');
 
   return (
     <SectionWrapper background="white" spacing="md">
       <div className="flex flex-col gap-5 md:gap-6">
-        <SectionHeader title={categoryLabel} />
+        <PageHeading title={categoryLabel} />
         {products.length === 0 ? (
           <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-dark-200 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
             {emptyLabel}
@@ -83,7 +83,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
               <ProductCard
                 key={product.id}
                 product={product}
-                href={`/products/${product.slug}?from=category`}
+                href={`/${locale}/products/${product.slug}?from=category`}
                 source="category"
               />
             ))}

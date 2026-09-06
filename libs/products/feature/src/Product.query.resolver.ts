@@ -9,6 +9,7 @@ import {
   GetProductsCount,
   GetProductTags,
   GetPublishedProduct,
+  GetPublishedProductsForSitemap,
   GetRankedProducts,
   GetRecentProducts,
   GetProductsByCategory,
@@ -62,7 +63,8 @@ export class ProductQueryResolver {
     private readonly getAlternativeProductsUseCase: GetAlternativeProducts,
     private readonly getVoteCountUseCase: GetVoteCount,
     private readonly getProductsByCategoryUseCase: GetProductsByCategory,
-    private readonly translationService: TranslationService
+    private readonly translationService: TranslationService,
+    private readonly getPublishedProductsForSitemapUseCase: GetPublishedProductsForSitemap
   ) {}
 
   private normalizeLocale(locale: string): 'ko' | 'en' {
@@ -133,6 +135,14 @@ export class ProductQueryResolver {
           },
         ];
 
+        if (typeof product.summary === 'string') {
+          entries.push({
+            entityId: product.id,
+            field: 'summary',
+            koreanValue: product.summary,
+          });
+        }
+
         if (typeof product.description === 'string') {
           entries.push({
             entityId: product.id,
@@ -148,6 +158,10 @@ export class ProductQueryResolver {
     return localizedProducts.map(product => ({
       ...product,
       name: translatedFields.get(`${product.id}:name`) ?? product.name,
+      summary:
+        typeof product.summary === 'string'
+          ? (translatedFields.get(`${product.id}:summary`) ?? product.summary)
+          : product.summary,
       description:
         typeof product.description === 'string'
           ? (translatedFields.get(`${product.id}:description`) ?? product.description)
@@ -254,6 +268,18 @@ export class ProductQueryResolver {
         limit,
       },
     });
+  }
+
+  @Query(() => [Product])
+  public async publishedProductsForSitemap(
+    @Arg('first', () => Int, { defaultValue: 100 }) first: number,
+    @Arg('after', () => String, { nullable: true }) after?: string
+  ) {
+    const { products } = await this.getPublishedProductsForSitemapUseCase.execute({
+      limit: first,
+      cursor: after,
+    });
+    return products;
   }
 
   @FieldResolver(() => [Link])

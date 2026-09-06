@@ -36,5 +36,6 @@ export function useAlternativeProductList({ slug }: AlternativeProductListProps)
   return {
     slug,
     alternatives: data?.productBySlug?.alternatives ?? [],
+    locale,
   };
 }

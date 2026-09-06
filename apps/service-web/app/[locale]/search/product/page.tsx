@@ -2,46 +2,42 @@ import { SearchProductPage } from '@darun/pages-shell';
 import { sanitizeQuery, TITLE_MAX_LENGTH } from '@darun/sanitize';
 import { Metadata } from 'next';
 
+import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
+import { SITE_COPY } from '../../../../lib/seo/metadata';
+import { normalizeLocale } from '../../../../lib/seo/url';
+
 type Props = {
+  params: Promise<{ locale: string }>;
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const currentLocale = normalizeLocale(locale);
+  const copy = SITE_COPY[currentLocale];
   const resolvedSearchParams = (await searchParams) ?? {};
   const rawQuery = resolvedSearchParams.query;
   const query = typeof rawQuery === 'string' ? rawQuery : Array.isArray(rawQuery) ? rawQuery[0] : undefined;
 
-  if (!query) {
-    return {
-      title: '서비스 검색 - 다른',
-      description: '다른 팀이 손수 비교한 서비스들을 검색해보세요.',
-      robots: {
-        index: false,
-        follow: true,
-      },
-    };
-  }
+  const sanitizedQuery = query ? sanitizeQuery(query) : undefined;
 
-  const sanitizedQuery = sanitizeQuery(query);
+  const title = sanitizedQuery
+    ? (currentLocale === 'en'
+        ? `${sanitizedQuery} Search Results - Darun`
+        : `${sanitizedQuery} 검색 결과 - 다른`
+      ).slice(0, TITLE_MAX_LENGTH)
+    : copy.searchTitle;
 
-  if (!sanitizedQuery) {
-    return {
-      title: '서비스 검색 - 다른',
-      description: '다른 팀이 손수 비교한 서비스들을 검색해보세요.',
-      robots: {
-        index: false,
-        follow: true,
-      },
-    };
-  }
-
-  const title = `${sanitizedQuery} 검색 결과 - 다른`;
-  const description = `${sanitizedQuery}와 관련된 서비스 검색 결과입니다. 다른 팀이 손수 비교한 서비스들을 확인해보세요.`;
+  const description = sanitizedQuery
+    ? currentLocale === 'en'
+      ? `Search results for ${sanitizedQuery} on Darun.`
+      : `${sanitizedQuery}와 관련된 서비스 검색 결과입니다.`
+    : copy.searchDescription;
 
   return {
-    title: title.slice(0, TITLE_MAX_LENGTH),
+    title,
     description,
-    keywords: [sanitizedQuery, `${sanitizedQuery} 검색`, `${sanitizedQuery} 서비스`, `${sanitizedQuery} 비교`],
+    robots: NO_INDEX_ROBOTS,
     openGraph: {
       title,
       description,

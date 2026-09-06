@@ -19,6 +19,9 @@ const productRepository = (products: Product[]) =>
     updateById: vi.fn<ProductRepository['updateById']>(),
     findAllByBeforeIdAndLimit: vi.fn<ProductRepository['findAllByBeforeIdAndLimit']>().mockResolvedValue(products),
     findAllByAfterIdAndLimit: vi.fn<ProductRepository['findAllByAfterIdAndLimit']>().mockResolvedValue(products),
+    findPublishedByAfterIdAndLimit: vi
+      .fn<ProductRepository['findPublishedByAfterIdAndLimit']>()
+      .mockResolvedValue(products),
     findTopNSortByPublishedAtDesc: vi.fn<ProductRepository['findTopNSortByPublishedAtDesc']>().mockResolvedValue([]),
     findPublishedByIds: vi.fn<ProductRepository['findPublishedByIds']>().mockResolvedValue([]),
     findPublishedOneById: vi.fn<ProductRepository['findPublishedOneById']>().mockResolvedValue(null),

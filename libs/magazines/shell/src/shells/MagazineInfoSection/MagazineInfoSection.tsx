@@ -71,9 +71,9 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
           </p>
         </div>
         <div className="flex max-w-3xl flex-col gap-3">
-          <p className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl lg:text-4xl">
+          <h1 className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl lg:text-4xl">
             {magazine?.title ?? t('info.title')}
-          </p>
+          </h1>
           <p className="text-sm font-normal leading-relaxed tracking-tight text-white/80 sm:text-base">
             {magazine?.summary ?? t('info.summary')}
           </p>

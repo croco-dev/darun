@@ -15,4 +15,5 @@ export { EditMagazine } from './usecases/EditMagazine';
 export { GetMagazine } from './usecases/GetMagazine';
 export { GetMagazineList } from './usecases/GetMagazineList';
 export { GetPublishedMagazine } from './usecases/GetPublishedMagazine';
+export { GetPublishedMagazineList } from './usecases/GetPublishedMagazineList';
 export { PublishMagazine } from './usecases/PublishMagazine';

@@ -3,7 +3,7 @@
 import { Button } from '@darun/ui';
 import { SectionHeader } from '@darun/ui';
 import { Link } from '@darun/utils-router';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { AlternativeProductList } from '../../components';
 
 type ProductAlternativeSectionProps = {
@@ -12,13 +12,14 @@ type ProductAlternativeSectionProps = {
 
 export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionProps) => {
   const t = useTranslations('Alternative');
+  const locale = useLocale();
 
   return (
     <section className="flex flex-col gap-5" id="darun">
       <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
       <AlternativeProductList slug={slug} />
       <div className="flex justify-center pt-2">
-        <Link href={`/products/${slug}/alternatives`}>
+        <Link href={`/${locale}/products/${slug}/alternatives`}>
           <Button variant="shadow" color="secondary">
             <div className="flex items-center justify-center gap-1.5">
               <svg

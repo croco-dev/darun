@@ -5,6 +5,7 @@ export * from './components/ContentArea';
 export * from './components/Logo';
 export * from './components/Breadcrumb';
 export * from './components/SectionHeader';
+export * from './components/PageHeading';
 export * from './components/SectionWrapper';
 export * from './components/Toast';
 export * from './components/icons';

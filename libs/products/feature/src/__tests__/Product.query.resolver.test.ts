@@ -46,6 +46,7 @@ import {
   GetProductScreenshots,
   GetProductTags,
   GetPublishedProduct,
+  GetPublishedProductsForSitemap,
   GetRankedProducts,
   GetRecentProducts,
   Product as DomainProduct,
@@ -79,12 +80,14 @@ type ResolverOverrides = Partial<{
   getVoteCountUseCase: GetVoteCount;
   getProductLinksUseCase: GetProductLinks;
   getProductScreenshotsUseCase: GetProductScreenshots;
+  getPublishedProductsForSitemapUseCase: GetPublishedProductsForSitemap;
 }>;
 
 const createProductRepository = (overrides: Partial<ProductRepository> = {}): ProductRepository => ({
   updateById: vi.fn<ProductRepository['updateById']>(),
   findAllByBeforeIdAndLimit: vi.fn<ProductRepository['findAllByBeforeIdAndLimit']>().mockResolvedValue([]),
   findAllByAfterIdAndLimit: vi.fn<ProductRepository['findAllByAfterIdAndLimit']>().mockResolvedValue([]),
+  findPublishedByAfterIdAndLimit: vi.fn<ProductRepository['findPublishedByAfterIdAndLimit']>().mockResolvedValue([]),
   findTopNSortByPublishedAtDesc: vi.fn<ProductRepository['findTopNSortByPublishedAtDesc']>().mockResolvedValue([]),
   findPublishedByIds: vi.fn<ProductRepository['findPublishedByIds']>().mockResolvedValue([]),
   findPublishedOneById: vi.fn<ProductRepository['findPublishedOneById']>().mockResolvedValue(null),
@@ -218,7 +221,8 @@ const createProductQueryResolver = (overrides: ResolverOverrides = {}) => {
     overrides.getAlternativeProductsUseCase ?? new GetAlternativeProducts(createAlternativeProductRepository()),
     overrides.getVoteCountUseCase ?? new GetVoteCount(voteRepository),
     new GetProductsByCategory(productRepository, createCategoryRepository()),
-    overrides.translationService ?? createTranslationService()
+    overrides.translationService ?? createTranslationService(),
+    overrides.getPublishedProductsForSitemapUseCase ?? new GetPublishedProductsForSitemap(productRepository)
   );
 };
 
@@ -498,6 +502,129 @@ describe('ProductQueryResolver', () => {
 
       const features = await resolver.features(result[0]);
       expect(features).toEqual([]);
+    });
+  });
+
+  describe('translateProducts with summary', () => {
+    it('returns translated summary when en locale is requested and translation exists', async () => {
+      const product = new DomainProduct({
+        id: 'p1',
+        name: '노션',
+        slug: 'notion',
+        summary: '올인원 생산성 도구',
+        description: '한국어 설명',
+        logoUrl: 'https://example.com/logo.png',
+      });
+
+      const publishedProductRepository = createProductRepository({
+        findPublishedOneBySlug: vi.fn().mockResolvedValue(product),
+      });
+      const getPublishedProductUseCase = new GetPublishedProduct(publishedProductRepository);
+
+      const translationRepository = createTranslationRepository({
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 't1',
+            entityType: 'Product',
+            entityId: 'p1',
+            locale: 'en',
+            field: 'name',
+            value: 'Notion',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: 't2',
+            entityType: 'Product',
+            entityId: 'p1',
+            locale: 'en',
+            field: 'summary',
+            value: 'All-in-one productivity tool',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: 't3',
+            entityType: 'Product',
+            entityId: 'p1',
+            locale: 'en',
+            field: 'description',
+            value: 'English description',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ]),
+      });
+
+      const resolver = createProductQueryResolver({
+        getPublishedProductUseCase,
+        translationService: new TranslationService(translationRepository),
+      });
+
+      const result = await resolver.productBySlug('notion', 'en');
+
+      expect(result).not.toBeNull();
+      expect(result?.name).toBe('Notion');
+      expect(result?.summary).toBe('All-in-one productivity tool');
+      expect(result?.description).toBe('English description');
+    });
+
+    it('falls back to original Korean summary when translation is absent', async () => {
+      const product = new DomainProduct({
+        id: 'p1',
+        name: '노션',
+        slug: 'notion',
+        summary: '올인원 생산성 도구',
+        logoUrl: 'https://example.com/logo.png',
+      });
+
+      const publishedProductRepository = createProductRepository({
+        findPublishedOneBySlug: vi.fn().mockResolvedValue(product),
+      });
+      const getPublishedProductUseCase = new GetPublishedProduct(publishedProductRepository);
+
+      const translationRepository = createTranslationRepository({
+        findMany: vi.fn().mockResolvedValue([]),
+      });
+
+      const resolver = createProductQueryResolver({
+        getPublishedProductUseCase,
+        translationService: new TranslationService(translationRepository),
+      });
+
+      const result = await resolver.productBySlug('notion', 'en');
+
+      expect(result).not.toBeNull();
+      expect(result?.name).toBe('노션');
+      expect(result?.summary).toBe('올인원 생산성 도구');
+    });
+  });
+
+  describe('publishedProductsForSitemap', () => {
+    it('returns published products for sitemap without requiring admin authorization', async () => {
+      const mockProducts = [
+        new DomainProduct({
+          id: 'p1',
+          name: 'Product 1',
+          slug: 'product-1',
+          summary: 'Summary 1',
+          logoUrl: 'https://example.com/logo.png',
+          publishedAt: new Date(),
+        }),
+      ];
+
+      const publishedProductRepository = createProductRepository({
+        findPublishedByAfterIdAndLimit: vi.fn().mockResolvedValue(mockProducts),
+      });
+
+      const resolver = createProductQueryResolver({
+        getPublishedProductsForSitemapUseCase: new GetPublishedProductsForSitemap(publishedProductRepository),
+      });
+
+      const result = await resolver.publishedProductsForSitemap(100);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].slug).toBe('product-1');
     });
   });
 });

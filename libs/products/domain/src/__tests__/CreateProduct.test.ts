@@ -8,6 +8,7 @@ function createMockRepository(): ProductRepository {
     updateById: vi.fn(),
     findAllByBeforeIdAndLimit: vi.fn(),
     findAllByAfterIdAndLimit: vi.fn(),
+    findPublishedByAfterIdAndLimit: vi.fn(),
     findTopNSortByPublishedAtDesc: vi.fn(),
     findPublishedByIds: vi.fn(),
     findPublishedOneById: vi.fn(),
