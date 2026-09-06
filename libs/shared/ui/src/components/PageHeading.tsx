@@ -28,15 +28,7 @@ export type PageHeadingProps = HTMLAttributes<HTMLHeadingElement> & {
   align?: VariantProps<typeof pageHeadingVariants>['align'];
 };
 
-export function PageHeading({
-  title,
-  subtitle,
-  moreLink,
-  size,
-  align,
-  className,
-  ...props
-}: PageHeadingProps) {
+export function PageHeading({ title, subtitle, moreLink, size, align, className, ...props }: PageHeadingProps) {
   return (
     <div className={cn(pageHeadingVariants({ size, align }), className)} {...props}>
       <div className="flex w-full items-start justify-between gap-4">

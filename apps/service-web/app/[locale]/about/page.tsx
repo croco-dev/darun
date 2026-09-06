@@ -63,9 +63,7 @@ export default async function AboutPage({ params }: Props) {
 
           <article className="prose prose-neutral max-w-3xl text-dark-700">
             <section className="flex flex-col gap-3">
-              <h2 className="text-xl font-bold text-dark-900">
-                {isKo ? '1. 플랫폼 소개' : '1. About the Platform'}
-              </h2>
+              <h2 className="text-xl font-bold text-dark-900">{isKo ? '1. 플랫폼 소개' : '1. About the Platform'}</h2>
               <p className="leading-relaxed text-dark-700">
                 {isKo
                   ? '다른(darun)은 사용자가 자신의 업무, 개발, 창작 활동에 가장 적합한 소프트웨어와 디지털 도구를 손쉽게 발견하고, 나란히 비교하며, 직접 사용해보고 평가할 수 있도록 설계된 소프트웨어 디스커버리 플랫폼입니다. 수많은 도구들이 매일 쏟아지는 환경 속에서, 실제 사용자의 워크플로우에 진정한 가치를 더할 수 있는 양질의 서비스를 찾아내는 과정을 돕습니다.'

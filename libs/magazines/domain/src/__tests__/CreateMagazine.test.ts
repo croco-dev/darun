@@ -10,6 +10,7 @@ function createMockRepository(): MagazineRepository {
     findOneById: vi.fn(),
     findOneBySlug: vi.fn(),
     findAllWithPagination: vi.fn(),
+    findAllPublished: vi.fn(),
     insert: vi.fn(),
     updateById: vi.fn(),
   };

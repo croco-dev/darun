@@ -33,9 +33,7 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
                 {t('contact')}
               </a>
             </nav>
-            <p className="max-w-xl text-sm leading-relaxed text-dark-500">
-              {t('disclaimer')}
-            </p>
+            <p className="max-w-xl text-sm leading-relaxed text-dark-500">{t('disclaimer')}</p>
           </div>
         </div>
       </ContentArea>

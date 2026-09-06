@@ -608,6 +608,7 @@ describe('ProductQueryResolver', () => {
           name: 'Product 1',
           slug: 'product-1',
           summary: 'Summary 1',
+          logoUrl: 'https://example.com/logo.png',
           publishedAt: new Date(),
         }),
       ];

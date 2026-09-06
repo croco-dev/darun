@@ -12,6 +12,7 @@ describe('GetPublishedProductsForSitemap', () => {
         name: 'Product 2',
         slug: 'p2',
         summary: 'Summary 2',
+        logoUrl: 'https://example.com/logo2.png',
         publishedAt: new Date(),
       }),
       new Product({
@@ -19,6 +20,7 @@ describe('GetPublishedProductsForSitemap', () => {
         name: 'Product 1',
         slug: 'p1',
         summary: 'Summary 1',
+        logoUrl: 'https://example.com/logo1.png',
         publishedAt: new Date(),
       }),
     ];
@@ -42,6 +44,7 @@ describe('GetPublishedProductsForSitemap', () => {
         name: 'Product 1',
         slug: 'p1',
         summary: 'Summary 1',
+        logoUrl: 'https://example.com/logo1.png',
         publishedAt: new Date(),
       }),
     ];

@@ -8,6 +8,7 @@ import {
 import { CategoryNavigationSkeleton } from '@darun/products-shell/src/shells/CategoryNavigationSection/CategoryNavigationSkeleton';
 import { RecentProductSkeleton } from '@darun/products-shell/src/shells/RecentProductSection/RecentProductSkeleton';
 import { TrendingProductSkeleton } from '@darun/products-shell/src/shells/TrendingProductSection/TrendingProductSkeleton';
+import { ContentArea, SectionHeader, SectionWrapper } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 
 import { Metadata } from 'next';
@@ -42,8 +43,6 @@ const webSiteJsonLd = {
   name: '다른(darun)',
   alternateName: ['darun', 'darun.io', '다른'],
 };
-
-import { ContentArea, SectionHeader, SectionWrapper } from '@darun/ui';
 
 export default async function HomePage({ params }: HomePageProps) {
   const { locale } = await params;

@@ -40,61 +40,85 @@ const publishedMagazinesQuery = gql`
 `;
 
 async function fetchAllPublishedProducts(): Promise<SitemapProduct[]> {
-  const client = getClient({ static: true });
-  const allProducts: SitemapProduct[] = [];
-  let cursor: string | undefined = undefined;
-  const pageSize = 100;
-  let hasMore = true;
+  try {
+    const client = getClient({ static: true });
+    const allProducts: SitemapProduct[] = [];
+    let cursor: string | undefined = undefined;
+    const pageSize = 100;
+    let hasMore = true;
 
-  while (hasMore) {
-    const result = await client.query<{
-      publishedProductsForSitemap: SitemapProduct[];
-    }>({
-      query: publishedProductsQuery,
-      variables: { first: pageSize, after: cursor },
-      fetchPolicy: 'no-cache',
-    });
+    while (hasMore) {
+      const result = await client.query<{
+        publishedProductsForSitemap: SitemapProduct[];
+      }>({
+        query: publishedProductsQuery,
+        variables: { first: pageSize, after: cursor },
+        fetchPolicy: 'no-cache',
+      });
 
-    const products: SitemapProduct[] = result.data?.publishedProductsForSitemap ?? [];
-    allProducts.push(...products);
+      const products: SitemapProduct[] = result.data?.publishedProductsForSitemap ?? [];
+      allProducts.push(...products);
 
-    if (products.length < pageSize) {
-      hasMore = false;
-    } else {
-      cursor = products[products.length - 1].id;
+      if (products.length < pageSize) {
+        hasMore = false;
+      } else {
+        cursor = products[products.length - 1].id;
+      }
     }
-  }
 
-  return allProducts;
+    return allProducts;
+  } catch (error) {
+    console.warn('Failed to fetch published products for sitemap:', error);
+    return [];
+  }
 }
 
 async function fetchCategories(): Promise<SitemapCategory[]> {
-  const client = getClient({ static: true });
-  const { data } = await client.query<{
-    categories: SitemapCategory[];
-  }>({
-    query: categoriesQuery,
-    variables: { first: 1000, locale: 'ko' },
-    fetchPolicy: 'no-cache',
-  });
-  return data?.categories ?? [];
+  try {
+    const client = getClient({ static: true });
+    const { data } = await client.query<{
+      categories: SitemapCategory[];
+    }>({
+      query: categoriesQuery,
+      variables: { first: 1000, locale: 'ko' },
+      fetchPolicy: 'no-cache',
+    });
+    return data?.categories ?? [];
+  } catch (error) {
+    console.warn('Failed to fetch categories for sitemap:', error);
+    return [];
+  }
 }
 
 async function fetchMagazines(): Promise<SitemapMagazine[]> {
-  const client = getClient({ static: true });
-  const { data } = await client.query<{
-    publishedMagazines: SitemapMagazine[];
-  }>({
-    query: publishedMagazinesQuery,
-    fetchPolicy: 'no-cache',
-  });
-  return data?.publishedMagazines ?? [];
+  try {
+    const client = getClient({ static: true });
+    const { data } = await client.query<{
+      publishedMagazines: SitemapMagazine[];
+    }>({
+      query: publishedMagazinesQuery,
+      fetchPolicy: 'no-cache',
+    });
+    return data?.publishedMagazines ?? [];
+  } catch (error) {
+    console.warn('Failed to fetch magazines for sitemap:', error);
+    return [];
+  }
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  return buildSitemapEntries({
-    fetchProducts: fetchAllPublishedProducts,
-    fetchCategories,
-    fetchMagazines,
-  });
+  try {
+    return await buildSitemapEntries({
+      fetchProducts: fetchAllPublishedProducts,
+      fetchCategories,
+      fetchMagazines,
+    });
+  } catch (error) {
+    console.warn('Failed to build sitemap entries:', error);
+    return buildSitemapEntries({
+      fetchProducts: async () => [],
+      fetchCategories: async () => [],
+      fetchMagazines: async () => [],
+    });
+  }
 }

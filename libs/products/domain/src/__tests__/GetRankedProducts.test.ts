@@ -47,6 +47,9 @@ describe('GetRankedProducts', () => {
         updateById: vi.fn<ProductRepository['updateById']>(),
         findAllByBeforeIdAndLimit: vi.fn<ProductRepository['findAllByBeforeIdAndLimit']>().mockResolvedValue([]),
         findAllByAfterIdAndLimit: vi.fn<ProductRepository['findAllByAfterIdAndLimit']>().mockResolvedValue([]),
+        findPublishedByAfterIdAndLimit: vi
+          .fn<ProductRepository['findPublishedByAfterIdAndLimit']>()
+          .mockResolvedValue([]),
         findTopNSortByPublishedAtDesc: vi
           .fn<ProductRepository['findTopNSortByPublishedAtDesc']>()
           .mockResolvedValue([]),
@@ -196,6 +199,7 @@ describe('GetRankedProducts', () => {
       findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
       findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
       findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
+      findPublishedByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
       findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
       updateById: vi.fn(),
       findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
@@ -246,6 +250,7 @@ describe('GetRankedProducts', () => {
       findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
       findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
       findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
+      findPublishedByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
       findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
       updateById: vi.fn(),
       findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
@@ -445,6 +450,7 @@ describe('GetRankedProducts', () => {
       findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
       findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
       findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
+      findPublishedByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
       findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
       updateById: vi.fn(),
       findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
@@ -497,6 +503,7 @@ describe('GetRankedProducts', () => {
         findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
         findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
         findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
+        findPublishedByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
         findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
         updateById: vi.fn(),
         findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
