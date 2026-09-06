@@ -99,7 +99,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
 
   if (products.length === 0)
     return (
-      <div className="flex flex-col gap-8 py-6 md:py-8">
+      <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2 text-center">
           <p className="text-xl font-bold leading-tight text-dark-900 sm:text-2xl">{getNoResultsMessage()}</p>
           <p className="text-sm text-dark-600 sm:text-base">{t('list.empty.description')}</p>
@@ -169,7 +169,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
       </div>
     );
   return (
-    <div className="flex flex-col gap-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 xl:gap-5">
       {products.map(product => (
         <ProductCard
           key={product.id}

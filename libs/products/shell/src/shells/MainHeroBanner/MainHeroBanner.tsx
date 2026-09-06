@@ -31,7 +31,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             {t('Main.hero.description')}
           </span>
           <h1 className="text-3xl font-bold leading-[1.15] tracking-tightest text-white sm:text-4xl md:text-5xl">
-            {productsCount ?? 0}
+            {productsCount?.toLocaleString(locale) ?? 0}
             {t('Main.hero.title.countSuffix')}{' '}
             <span className="text-brown-500 drop-shadow-glow-subtle">{t('Main.hero.title.highlight')}</span>{' '}
             <Link

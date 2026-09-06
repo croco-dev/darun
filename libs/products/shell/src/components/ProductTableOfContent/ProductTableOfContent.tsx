@@ -6,7 +6,7 @@ import { bind } from '@darun/utils-structure-react';
 import { useProductTableOfContent } from './useProductTableOfContent';
 
 export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings, activeHeadingId }) => (
-  <div className="flex gap-1 overflow-x-auto py-2.5 md:gap-2">
+  <div className="flex gap-1 overflow-x-auto py-2.5 scrollbar-hide md:gap-2">
     {headings.map(({ id, text }) => (
       <Button
         key={id}

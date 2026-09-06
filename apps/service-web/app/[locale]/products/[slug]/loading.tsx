@@ -32,17 +32,21 @@ export default function Loading() {
         aria-live="polite"
         aria-label="페이지를 불러오는 중입니다"
       >
-        <div className="mb-3 flex flex-col gap-0.5">
+        <div className="py-6 md:py-8">
           <ContentArea>
-            <div className="flex flex-col gap-2">
-              {/* Product Summary Skeleton */}
-              <div data-testid="skel-product-hero" className="flex flex-col gap-3">
-                <div className="flex items-start gap-4">
-                  <Skeleton width={80} height={80} radius="12px" />
-                  <div className="flex flex-1 flex-col gap-2">
-                    <Skeleton width="60%" height={28} radius="4px" />
-                    <Skeleton width="100%" height={16} radius="4px" />
-                    <Skeleton width="80%" height={16} radius="4px" />
+            {/* Product Summary Skeleton */}
+            <div
+              data-testid="skel-product-hero"
+              className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6"
+            >
+              <div className="flex items-start gap-3">
+                <Skeleton width={96} height={96} radius="16px" />
+                <div className="flex flex-1 flex-col gap-2">
+                  <Skeleton width="180px" height={28} radius="6px" />
+                  <Skeleton width="280px" height={18} radius="4px" />
+                  <div className="flex gap-1.5 pt-1">
+                    <Skeleton width="72px" height={22} radius="9999px" />
+                    <Skeleton width="72px" height={22} radius="9999px" />
                   </div>
                 </div>
               </div>
@@ -50,36 +54,47 @@ export default function Loading() {
           </ContentArea>
         </div>
 
-        <ContentArea>
-          <div className="flex flex-col">
-            {/* Product Photo Section Skeleton */}
-            <div data-testid="skel-product-image" className="mb-6">
-              <Skeleton width="100%" height={300} radius="8px" />
+        <ContentArea id="detail-content" className="flex flex-col gap-8 py-6 md:gap-10 md:py-8">
+          {/* Product Description Section Skeleton */}
+          <div data-testid="skel-product-desc" className="flex flex-col gap-4 md:gap-5">
+            <Skeleton width="120px" height={24} radius="6px" />
+            <div className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card md:p-6">
+              <div className="flex flex-col gap-2.5">
+                <Skeleton width="100%" height={16} radius="4px" />
+                <Skeleton width="90%" height={16} radius="4px" />
+                <Skeleton width="75%" height={16} radius="4px" />
+              </div>
             </div>
+          </div>
 
-            {/* Product Description Section Skeleton */}
-            <div data-testid="skel-product-desc" className="mb-6 flex flex-col gap-3">
-              <Skeleton width="40%" height={24} radius="4px" />
-              <Skeleton width="100%" height={16} radius="4px" />
-              <Skeleton width="100%" height={16} radius="4px" />
-              <Skeleton width="80%" height={16} radius="4px" />
+          {/* Product Photo Section Skeleton */}
+          <div data-testid="skel-product-image" className="flex flex-col gap-4 md:gap-5">
+            <Skeleton width="100px" height={24} radius="6px" />
+            <div className="overflow-hidden rounded-card border border-dark-150 bg-white p-3 shadow-card">
+              <Skeleton width="100%" height={220} radius="8px" />
             </div>
+          </div>
 
-            {/* Product Feature Section Skeleton */}
-            <div data-testid="skel-product-feature" className="flex flex-col gap-3">
-              <Skeleton width="30%" height={24} radius="4px" />
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-2">
-                  <Skeleton width="100%" height={60} radius="8px" />
+          {/* Product Feature Section Skeleton */}
+          <div data-testid="skel-product-feature" className="flex flex-col gap-4 md:gap-5">
+            <Skeleton width="80px" height={24} radius="6px" />
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="rounded-card border border-dark-150 bg-white p-5 shadow-card">
+                <div className="flex items-start gap-3">
+                  <Skeleton width={40} height={40} radius="12px" />
+                  <div className="flex flex-1 flex-col gap-2">
+                    <Skeleton width="120px" height={20} radius="4px" />
+                    <Skeleton width="100%" height={14} radius="4px" />
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Skeleton width="100%" height={60} radius="8px" />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Skeleton width="100%" height={60} radius="8px" />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Skeleton width="100%" height={60} radius="8px" />
+              </div>
+              <div className="rounded-card border border-dark-150 bg-white p-5 shadow-card">
+                <div className="flex items-start gap-3">
+                  <Skeleton width={40} height={40} radius="12px" />
+                  <div className="flex flex-1 flex-col gap-2">
+                    <Skeleton width="120px" height={20} radius="4px" />
+                    <Skeleton width="100%" height={14} radius="4px" />
+                  </div>
                 </div>
               </div>
             </div>

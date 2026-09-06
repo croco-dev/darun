@@ -6,10 +6,8 @@ export const MagazineContentPage = ({ params: { slug } }: { params: { slug: stri
   <Layout>
     <div className="flex flex-col">
       <main className="flex w-full flex-col">
-        <ContentArea>
-          <div className="flex flex-col py-3">
-            <MagazineInfoSection slug={slug} />
-          </div>
+        <ContentArea className="py-6 md:py-8">
+          <MagazineInfoSection slug={slug} />
         </ContentArea>
       </main>
     </div>

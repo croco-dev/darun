@@ -4,6 +4,7 @@ import { ContentArea } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
+import { LocaleToggle } from '../../LocaleToggle';
 import { useFooter } from './useFooter';
 
 export const Footer = bind(useFooter, ({ aboutUrl }) => {
@@ -36,6 +37,9 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
               </a>
             </nav>
             <p className="max-w-xl text-sm leading-relaxed text-dark-500">{t('disclaimer')}</p>
+          </div>
+          <div className="flex shrink-0 items-center">
+            <LocaleToggle />
           </div>
         </div>
       </ContentArea>

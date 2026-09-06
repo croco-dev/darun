@@ -5,7 +5,10 @@
       "browse": "Browse",
       "submit": "Submit",
       "login": "Login",
-      "searchPlaceholder": "Find the service you're currently using!"
+      "logout": "Logout",
+      "searchPlaceholder": "Find the service you're currently using!",
+      "searchAriaLabel": "Search query",
+      "mainMenuAriaLabel": "Main menu"
     },
     "footer": {
       "about": "About & Editorial Policy",
@@ -160,6 +163,17 @@
       "title": "No magazines registered yet",
       "description": "Check out the popular services ranking.",
       "cta": "View Ranking"
+    }
+  },
+  "Compare": {
+    "title": "{name1} vs {name2} Comparison",
+    "subtitle": "Compare features and details side-by-side",
+    "table": {
+      "name": "Service Name",
+      "summary": "Overview",
+      "company": "Company",
+      "voteCount": "Votes",
+      "tags": "Tags"
     }
   }
 }

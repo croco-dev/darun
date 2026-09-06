@@ -16,21 +16,21 @@ export const ProductAlternativePage = ({
   faqItems?: FAQItem[];
 }) => {
   const locale = useLocale();
+  const isKo = locale === 'ko';
+
   return (
     <Layout>
       <main className="flex w-full flex-col">
-        <ContentArea className="flex flex-col gap-6 py-6 md:py-8">
+        <ContentArea className="flex flex-col gap-6 py-6 md:gap-8 md:py-8">
           <Breadcrumb
             data-testid="breadcrumb-alternatives"
             items={[
-              { label: '홈', href: `/${locale}/` },
+              { label: isKo ? '홈' : 'Home', href: `/${locale}/` },
               { label: productName, href: `/${locale}/products/${slug}` },
-              { label: '대안', ariaCurrent: 'page' },
+              { label: isKo ? '대안' : 'Alternatives', ariaCurrent: 'page' },
             ]}
           />
           <ProductSummary slug={slug} infoLinkHref={`/${locale}/products/${slug}`} />
-        </ContentArea>
-        <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
           <AlternativeProductSection slug={slug} />
           {faqItems && faqItems.length > 0 && <FAQSection items={faqItems} />}
         </ContentArea>

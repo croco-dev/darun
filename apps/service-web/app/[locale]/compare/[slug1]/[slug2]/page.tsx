@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
 import { ProductCard } from '@darun/products-shell';
-import { ContentArea, PageHeading } from '@darun/ui';
+import { Chip, ContentArea, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -124,6 +124,7 @@ export default async function ComparePage({ params }: Props) {
   }
 
   const { product1, product2 } = data;
+  const isKo = resolvedParams.locale === 'ko';
 
   return (
     <Layout>
@@ -160,9 +161,17 @@ export default async function ComparePage({ params }: Props) {
             </div>
           </div>
 
-          <div className="rounded-card-xl border border-dark-150 bg-white p-1 shadow-card">
+          <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
+            <div className="hidden border-b border-dark-150 bg-surface-100/60 p-4 md:grid md:grid-cols-2 md:divide-x md:divide-dark-150 md:p-5">
+              <div className="pr-4 md:pr-5">
+                <span className="text-sm font-bold text-dark-900">{product1.name}</span>
+              </div>
+              <div className="pl-4 md:pl-5">
+                <span className="text-sm font-bold text-dark-900">{product2.name}</span>
+              </div>
+            </div>
             <CompareRow
-              label="서비스명"
+              label={isKo ? '서비스명' : 'Service Name'}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.name}
@@ -170,7 +179,7 @@ export default async function ComparePage({ params }: Props) {
               testid="name"
             />
             <CompareRow
-              label="설명"
+              label={isKo ? '설명' : 'Overview'}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.summary ?? undefined}
@@ -178,7 +187,7 @@ export default async function ComparePage({ params }: Props) {
               testid="summary"
             />
             <CompareRow
-              label="회사"
+              label={isKo ? '회사' : 'Company'}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.ownedCompany?.name}
@@ -186,19 +195,21 @@ export default async function ComparePage({ params }: Props) {
               testid="company"
             />
             <CompareRow
-              label="투표 수"
+              label={isKo ? '투표 수' : 'Votes'}
               colLabel1={product1.name}
               colLabel2={product2.name}
-              value1={product1.voteCount.toString()}
-              value2={product2.voteCount.toString()}
+              value1={product1.voteCount.toLocaleString(resolvedParams.locale)}
+              value2={product2.voteCount.toLocaleString(resolvedParams.locale)}
               testid="vote-count"
             />
             <CompareRow
-              label="태그"
+              label={isKo ? '태그' : 'Tags'}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.tags.map(t => t.name).join(', ')}
               value2={product2.tags.map(t => t.name).join(', ')}
+              tags1={product1.tags.map(t => t.name)}
+              tags2={product2.tags.map(t => t.name)}
               testid="tags"
               isLast
             />
@@ -215,6 +226,8 @@ function CompareRow({
   colLabel2,
   value1,
   value2,
+  tags1,
+  tags2,
   testid,
   isLast,
 }: {
@@ -223,23 +236,45 @@ function CompareRow({
   colLabel2: string;
   value1?: string;
   value2?: string;
+  tags1?: string[];
+  tags2?: string[];
   testid: string;
   isLast?: boolean;
 }) {
   return (
-    <div className={`p-4 ${isLast ? '' : 'border-b border-dark-100'}`}>
+    <div className={`p-4 md:p-5 ${isLast ? '' : 'border-b border-dark-100'}`}>
       <div className="mb-3 border-b border-dark-100 pb-2 text-sm font-semibold text-dark-900">{label}</div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-100">
-        <div className="md:pr-4">
+        <div className="md:pr-5">
           <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel1}</div>
           <div className="text-sm leading-relaxed text-dark-800" data-testid={`compare-row-${testid}-1`}>
-            {value1 || '-'}
+            {tags1 && tags1.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {tags1.map(tag => (
+                  <Chip key={tag} color="outlineGray" variant="circle">
+                    {tag}
+                  </Chip>
+                ))}
+              </div>
+            ) : (
+              value1 || '-'
+            )}
           </div>
         </div>
-        <div className="md:pl-4">
+        <div className="md:pl-5">
           <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel2}</div>
           <div className="text-sm leading-relaxed text-dark-800" data-testid={`compare-row-${testid}-2`}>
-            {value2 || '-'}
+            {tags2 && tags2.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {tags2.map(tag => (
+                  <Chip key={tag} color="outlineGray" variant="circle">
+                    {tag}
+                  </Chip>
+                ))}
+              </div>
+            ) : (
+              value2 || '-'
+            )}
           </div>
         </div>
       </div>

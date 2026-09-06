@@ -29,7 +29,7 @@ export const ProductUserAction = bind(
           disabled={loading}
           data-testid="upvote-btn"
         >
-          <div className="flex items-center justify-center gap-1.5 px-0.5 py-0.5">
+          <div className="flex items-center justify-center gap-1.5">
             {loading ? (
               <div
                 data-testid="upvote-loading"

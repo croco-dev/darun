@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
@@ -56,12 +57,11 @@ export const ProductAlternativeList = bind(
             </div>
           </div>
         ))}
-        <div className="flex justify-center pt-1">
-          <Link
-            href={`/${locale}/search/product`}
-            className="inline-flex items-center justify-center rounded-md border border-dark-200 bg-white px-4 py-2 text-sm font-medium text-dark-700 transition-colors hover:bg-surface-100"
-          >
-            {t('empty.button')}
+        <div className="flex justify-center pt-2">
+          <Link href={`/${locale}/search/product`}>
+            <Button variant="contained" color="secondary" size="md">
+              {t('empty.button')}
+            </Button>
           </Link>
         </div>
       </div>
