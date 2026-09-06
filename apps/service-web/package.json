@@ -30,7 +30,7 @@
     "@darun/utils-auth-service-firebase": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
     "@sentry/nextjs": "catalog:",
-    "date-fns": "3.6.0",
+    "date-fns": "4.4.0",
     "framer-motion": "12.38.0",
     "lucide-react": "catalog:",
     "next": "catalog:",
