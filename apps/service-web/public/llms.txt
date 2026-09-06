@@ -1,0 +1,20 @@
+# darun.io
+
+> darun.io is a curated platform for discovering, evaluating, and comparing software tools and online services.
+
+## Canonical Resources
+
+- [Home (Korean)](https://www.darun.io/ko): Korean homepage with featured categories and popular services
+- [Home (English)](https://www.darun.io/en): English homepage with featured categories and popular services
+- [Rankings (Korean)](https://www.darun.io/ko/ranking): Most popular curated services ranked by community votes
+- [Rankings (English)](https://www.darun.io/en/ranking): Most popular curated services ranked by community votes
+- [About & Editorial Policy (Korean)](https://www.darun.io/ko/about): About Darun, transparency, and curation principles
+- [About & Editorial Policy (English)](https://www.darun.io/en/about): About Darun, transparency, and curation principles
+- [Sitemap](https://www.darun.io/sitemap.xml): Complete machine-readable inventory of all indexable canonical URLs
+
+## Content Negotiation (AcceptMarkdown)
+
+All public document URLs on darun.io support HTTP Content Negotiation via the Accept header:
+- `Accept: text/markdown`: Returns clean, semantic Markdown representations without UI chrome or scripts.
+- `Accept: text/html`: Returns standard responsive web application HTML.
+- Explicit `.md` sibling URLs are available for direct compatibility, e.g. `https://www.darun.io/ko/products/{slug}.md`.
