@@ -1,3 +1,5 @@
+'use client';
+
 import { ContentArea } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
