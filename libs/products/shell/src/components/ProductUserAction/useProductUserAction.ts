@@ -1,9 +1,11 @@
 import { gql } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
-import { ProductBySlugOnProductUserActionDocument, UpvoteProductOnProductUserActionDocument } from '@darun/provider-graphql';
+import {
+  ProductBySlugOnProductUserActionDocument,
+  UpvoteProductOnProductUserActionDocument,
+} from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
-
 
 void gql`
   query ProductBySlugOnProductUserAction($slug: String!, $locale: String!) {
