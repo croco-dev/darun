@@ -28,7 +28,7 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
                 ? 'border-slate-300 bg-gradient-to-br from-slate-50/30 via-white to-white hover:border-slate-400'
                 : rank === 3
                   ? 'border-amber-200 bg-gradient-to-br from-amber-50/20 via-white to-white hover:border-amber-300'
-                  : 'border-dark-150 bg-white hover:border-dark-250'
+                  : 'border-dark-150 bg-white hover:border-dark-300'
           }`}
         >
           <ProductItem

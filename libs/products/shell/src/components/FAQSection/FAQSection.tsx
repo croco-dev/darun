@@ -45,7 +45,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
   }, [isOpen, answer]);
 
   return (
-    <div className="w-full overflow-hidden rounded-card border border-dark-150 bg-white shadow-card">
+    <div className="w-full overflow-hidden rounded-card border border-dark-150 bg-white shadow-card transition-colors duration-200 hover:border-dark-200">
       <button
         type="button"
         onClick={() => setIsOpen(prev => !prev)}

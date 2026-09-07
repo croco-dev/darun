@@ -50,7 +50,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
   const magazine = data?.magazineBySlug;
 
   return (
-    <div className="relative overflow-hidden rounded-card-xl py-8 sm:py-12 lg:py-14">
+    <div className="relative overflow-hidden rounded-card-xl border border-dark-150 py-8 shadow-card sm:py-12 lg:py-14">
       {magazine?.backgroundImageUrl ? (
         <Image
           className="absolute inset-0 rounded-card-xl object-cover"
@@ -65,7 +65,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
       )}
       <div className="absolute inset-0 rounded-card-xl bg-gradient-to-t from-dark-900/80 via-dark-900/60 to-dark-900/40" />
       <div className="relative z-10 flex flex-col gap-5 px-6 sm:px-8 lg:px-12">
-        <div className="flex w-fit flex-row items-center rounded-full border border-white/40 bg-white/10 px-3 py-1 backdrop-blur-sm">
+        <div className="flex w-fit flex-row items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 backdrop-blur-sm">
           <p className="text-xs font-medium leading-normal tracking-tight text-white/90 sm:text-sm">
             {t('info.badge')}
           </p>
