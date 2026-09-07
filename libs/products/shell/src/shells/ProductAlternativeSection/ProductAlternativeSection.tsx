@@ -15,7 +15,7 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
   const locale = useLocale();
 
   return (
-    <section className="flex flex-col gap-5" id="darun">
+    <section className="flex flex-col gap-5 scroll-mt-32" id="darun">
       <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
       <AlternativeProductList slug={slug} />
       <div className="flex justify-center pt-2">

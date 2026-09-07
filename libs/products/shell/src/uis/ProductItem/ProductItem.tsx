@@ -98,7 +98,9 @@ export const ProductItem = ({
                 {summary}
               </p>
             ) : (
-              <p className="text-sm leading-relaxed text-dark-600">{summary}</p>
+              <p className={isHero ? 'text-base leading-relaxed text-dark-600 md:text-lg' : 'text-sm leading-relaxed text-dark-600'}>
+                {summary}
+              </p>
             ))}
         </div>
         {(tags || specialTags || footerRight) && (

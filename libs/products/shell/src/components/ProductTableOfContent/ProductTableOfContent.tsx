@@ -12,6 +12,7 @@ export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings,
         key={id}
         kind={activeHeadingId === id ? 'textActive' : 'text'}
         size="sm"
+        className={activeHeadingId === id ? 'font-semibold text-dark-950' : 'text-dark-600'}
         onClick={() => {
           const target = document.getElementById(id);
 
@@ -19,7 +20,7 @@ export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings,
             return;
           }
 
-          const location = target.getBoundingClientRect().top + window.scrollY - 64;
+          const location = target.getBoundingClientRect().top + window.scrollY - 124;
           window.scrollTo({ top: Math.max(location, 0), behavior: 'smooth' });
         }}
       >
