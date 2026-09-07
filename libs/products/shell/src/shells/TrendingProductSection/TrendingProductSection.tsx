@@ -3,7 +3,7 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
-import { SectionHeader, SectionWrapper } from '@darun/ui';
+import { ChevronRight, SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -87,9 +87,13 @@ const TrendingProductsView = ({
           moreLink={
             <Link
               href={rankingMoreHref}
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
+              className="group inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
             >
-              {moreLabel}
+              <span>{moreLabel}</span>
+              <ChevronRight
+                size={16}
+                className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+              />
             </Link>
           }
         />

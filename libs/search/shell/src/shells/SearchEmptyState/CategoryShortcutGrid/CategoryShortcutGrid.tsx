@@ -17,6 +17,29 @@ const CATEGORIES_QUERY = gql`
   }
 `;
 
+const CATEGORY_ICONS: Record<string, string> = {
+  ai: '🤖',
+  productivity: '⚡️',
+  design: '🎨',
+  development: '💻',
+  marketing: '📈',
+  collaboration: '💬',
+  business: '💼',
+  analytics: '📊',
+  security: '🔒',
+  finance: '💳',
+  writing: '✍️',
+  education: '📚',
+};
+
+function getCategoryIcon(slug: string): string {
+  const normalized = slug.toLowerCase();
+  for (const [key, icon] of Object.entries(CATEGORY_ICONS)) {
+    if (normalized.includes(key)) return icon;
+  }
+  return '✨';
+}
+
 export const CategoryShortcutGrid = () => {
   const locale = useLocale();
   const navigate = useNavigate();
@@ -33,7 +56,7 @@ export const CategoryShortcutGrid = () => {
   return (
     <div
       data-testid="category-shortcut-grid"
-      className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:gap-3"
+      className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 md:gap-3"
       role="list"
       aria-label="Browse by category"
     >
@@ -43,9 +66,12 @@ export const CategoryShortcutGrid = () => {
           type="button"
           role="listitem"
           onClick={() => handleClick(cat.slug)}
-          className="rounded-xl border border-dark-150 bg-white px-4 py-3 text-left text-sm font-medium text-dark-700 shadow-button transition-all duration-200 ease-out hover:-translate-y-px hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 hover:shadow-button-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+          className="group flex items-center gap-2.5 rounded-xl border border-dark-150/80 bg-white p-3.5 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
         >
-          {locale === 'ko' ? cat.labelKo : cat.labelEn}
+          <span className="text-xl leading-none transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none">
+            {getCategoryIcon(cat.slug)}
+          </span>
+          <span className="truncate">{locale === 'ko' ? cat.labelKo : cat.labelEn}</span>
         </button>
       ))}
     </div>

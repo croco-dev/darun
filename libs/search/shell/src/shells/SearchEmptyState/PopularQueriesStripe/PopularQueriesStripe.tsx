@@ -43,7 +43,7 @@ export const PopularQueriesStripe = () => {
   return (
     <div
       data-testid="popular-queries-stripe"
-      className="flex gap-2 overflow-x-auto scrollbar-hide"
+      className="flex gap-2 overflow-x-auto py-1 scrollbar-hide"
       role="list"
       aria-label="Popular searches"
     >
@@ -53,9 +53,10 @@ export const PopularQueriesStripe = () => {
           type="button"
           role="listitem"
           onClick={() => handleClick(query)}
-          className="inline-flex items-center rounded-full border border-dark-150 bg-white px-4 py-2 text-sm font-medium text-dark-700 shadow-button transition-all duration-200 ease-out hover:-translate-y-px hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 hover:shadow-button-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+          className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150/80 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 hover:shadow-button-hover active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
         >
-          {query}
+          <span className="text-dark-350 transition-colors group-hover:text-dark-500">#</span>
+          <span>{query}</span>
         </button>
       ))}
     </div>

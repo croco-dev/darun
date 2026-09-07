@@ -22,18 +22,18 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
               source: 'ranking',
             })
           }
-          className="group block rounded-card border border-dark-150/70 bg-white/70 p-3 transition-all duration-200 ease-out hover:-translate-y-px hover:border-dark-200 hover:bg-white hover:shadow-card motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+          className="group block rounded-card-lg border border-dark-150/80 bg-white p-3.5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-250 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
           <div className="flex items-center gap-3">
             <span
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold tabular-nums transition-colors duration-200 ${
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold tabular-nums transition-all duration-200 ${
                 rank === 1
-                  ? 'bg-yellow-600 text-white group-hover:bg-yellow-700 shadow-sm'
+                  ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 text-white shadow-xs ring-1 ring-amber-400/50'
                   : rank === 2
-                    ? 'bg-dark-800 text-white group-hover:bg-dark-900 shadow-sm'
+                    ? 'bg-gradient-to-br from-slate-600 to-slate-800 text-white shadow-xs ring-1 ring-slate-400/40'
                     : rank === 3
-                      ? 'bg-brown-600 text-white group-hover:bg-brown-700 shadow-sm'
-                      : 'bg-surface-100 text-dark-500 group-hover:bg-dark-100'
+                      ? 'bg-gradient-to-br from-amber-800 to-stone-900 text-amber-100 shadow-xs ring-1 ring-amber-700/40'
+                      : 'border border-dark-150/70 bg-surface-100 text-dark-600 group-hover:border-dark-300 group-hover:bg-white group-hover:text-dark-900'
               } motion-reduce:transition-none`}
             >
               {rank}

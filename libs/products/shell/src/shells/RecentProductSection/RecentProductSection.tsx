@@ -1,6 +1,6 @@
 'use client';
 
-import { SectionHeader, SectionWrapper } from '@darun/ui';
+import { ChevronRight, SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
 import { RecentProductList } from '../../components';
@@ -18,9 +18,13 @@ export const RecentProductSection = () => {
           moreLink={
             <Link
               href={`/${locale}/search/product`}
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
+              className="group inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
             >
-              {t('home.category.more')}
+              <span>{t('home.category.more')}</span>
+              <ChevronRight
+                size={16}
+                className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+              />
             </Link>
           }
         />
