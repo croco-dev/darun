@@ -158,10 +158,15 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        'fade-out-down': {
+          '0%': { opacity: '1', transform: 'translateY(0)' },
+          '100%': { opacity: '0', transform: 'translateY(8px)' },
+        },
       },
       animation: {
         shimmer: 'shimmer 2s linear infinite',
-        'fade-in-up': 'fade-in-up 0.4s ease-out-expo forwards',
+        'fade-in-up': 'fade-in-up 0.3s ease-out-expo forwards',
+        'fade-out-down': 'fade-out-down 0.25s ease-out forwards',
       },
     },
   },

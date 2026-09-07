@@ -75,7 +75,7 @@ const buttonVariants = cva(
         variant: 'shadow',
         color: 'secondary',
         className:
-          'border-dark-200/80 bg-white text-dark-900 shadow-button hover:bg-surface-100 hover:border-dark-300 hover:shadow-button-hover active:bg-dark-100',
+          'border-dark-200 bg-white text-dark-900 shadow-button hover:bg-surface-100 hover:border-dark-300 hover:shadow-button-hover active:bg-dark-100',
       },
     ],
     defaultVariants: {

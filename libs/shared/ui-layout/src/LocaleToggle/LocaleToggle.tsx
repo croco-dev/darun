@@ -16,7 +16,11 @@ export const LocaleToggle = () => {
   };
 
   return (
-    <div role="radiogroup" aria-label="Change language" className="inline-flex gap-1 rounded-full bg-surface-100 p-0.5">
+    <div
+      role="radiogroup"
+      aria-label="Change language"
+      className="inline-flex gap-1 rounded-full border border-dark-150 bg-surface-100 p-0.5 shadow-2xs"
+    >
       {LOCALES.map(loc => {
         const isActive = locale === loc;
         return (

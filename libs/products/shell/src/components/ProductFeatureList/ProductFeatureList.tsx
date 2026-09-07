@@ -5,7 +5,7 @@ import { FeatureItem } from '../../uis';
 import { useProductFeatureList } from './useProductFeatureList';
 
 export const ProductFeatureList = bind(useProductFeatureList, ({ features }) => (
-  <div className="flex flex-col gap-2">
+  <div className="flex flex-col gap-3.5">
     {features.map(feature => (
       <FeatureItem
         key={feature.id}

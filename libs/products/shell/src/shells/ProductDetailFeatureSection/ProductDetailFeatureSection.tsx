@@ -12,7 +12,7 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
   const t = useTranslations('ProductDetail');
 
   return (
-    <section className="flex flex-col gap-4 md:gap-5" id="features">
+    <section className="flex flex-col gap-4 scroll-mt-32 md:gap-5" id="features">
       <SectionHeader title={t('feature.title')} />
       <ProductFeatureList slug={slug} />
     </section>

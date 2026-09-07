@@ -29,7 +29,7 @@ const columns = [
           alt={`서비스 로고`}
           width={32}
           height={32}
-          className="h-8 w-8 rounded-lg border border-black/15 object-contain"
+          className="h-8 w-8 rounded-lg border border-dark-150 object-contain"
         />
       </div>
     ),

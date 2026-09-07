@@ -22,7 +22,7 @@ export const ProductAlternativeList = bind(
         {products.map(product => (
           <div
             key={product.id}
-            className="rounded-card border border-dark-150 bg-white p-5 shadow-card transition-all hover:border-dark-200 hover:shadow-card-hover motion-reduce:transition-none"
+            className="rounded-card border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none"
           >
             <div className="flex w-full flex-col gap-4">
               <div className="flex flex-row items-start justify-between gap-4">

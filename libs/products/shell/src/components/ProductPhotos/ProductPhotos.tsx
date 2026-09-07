@@ -32,9 +32,9 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
                 <Image
                   src={photo.imageUrl}
                   alt={photo.imageAlt}
-                  sizes="350px"
-                  fill={true}
-                  className="!relative !h-[220px] !w-auto rounded-lg border border-dark-150 object-contain"
+                  width={600}
+                  height={220}
+                  className="h-[220px] w-auto rounded-lg border border-dark-150 object-contain"
                 />
               </Zoom>
             </div>

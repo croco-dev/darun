@@ -26,7 +26,7 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
               {item.href ? (
                 <Link
                   href={item.href}
-                  className="text-dark-600 hover:text-dark-900 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  className="text-dark-500 transition-colors duration-150 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   {...(item.ariaCurrent && {
                     'aria-current': item.ariaCurrent,
                   })}
@@ -35,7 +35,7 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
                 </Link>
               ) : (
                 <span
-                  className="text-dark-900"
+                  className="font-medium text-dark-900"
                   {...(item.ariaCurrent && {
                     'aria-current': item.ariaCurrent,
                   })}
@@ -44,7 +44,7 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
                 </span>
               )}
               {!isLast && (
-                <span className="text-dark-500" aria-hidden="true">
+                <span className="select-none text-xs text-dark-400" aria-hidden="true">
                   /
                 </span>
               )}

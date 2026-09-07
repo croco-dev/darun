@@ -3,7 +3,7 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
-import { SectionHeader, SectionWrapper } from '@darun/ui';
+import { ChevronRight, SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
 
@@ -22,18 +22,39 @@ type Category = { id: string; slug: string; labelKo: string; labelEn: string };
 type CategoriesQueryResult = { categories?: Category[] | null };
 
 const CATEGORY_ICONS: Record<string, string> = {
-  ai: '🤖',
-  productivity: '⚡️',
-  design: '🎨',
+  'developer-tools': '💻',
   development: '💻',
-  marketing: '📈',
-  collaboration: '💬',
+  'health-fitness': '💪',
+  health: '💪',
+  fitness: '💪',
+  games: '🎮',
+  game: '🎮',
+  education: '📚',
+  reference: '📖',
+  finance: '💳',
+  navigation: '🧭',
+  news: '📰',
+  lifestyle: '🪴',
   business: '💼',
+  'photo-video': '📸',
+  photo: '📸',
+  video: '🎬',
+  productivity: '⚡️',
+  'social-networking': '💬',
+  social: '💬',
+  collaboration: '💬',
+  shopping: '🛍️',
+  entertainment: '🍿',
+  utilities: '🛠️',
+  utility: '🛠️',
+  'food-drink': '☕️',
+  food: '☕️',
+  ai: '🤖',
+  design: '🎨',
+  marketing: '📈',
   analytics: '📊',
   security: '🔒',
-  finance: '💳',
   writing: '✍️',
-  education: '📚',
 };
 
 function getCategoryIcon(slug: string): string {
@@ -61,9 +82,13 @@ export const CategoryNavigationSection = () => {
           moreLink={
             <Link
               href={`/${locale}/search/product`}
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
+              className="group inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
             >
-              {t('home.category.more')}
+              <span>{t('home.category.more')}</span>
+              <ChevronRight
+                size={16}
+                className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+              />
             </Link>
           }
         />
@@ -79,11 +104,9 @@ export const CategoryNavigationSection = () => {
                     source: 'home-bar',
                   })
                 }
-                className="group inline-flex items-center gap-2 rounded-full border border-dark-150/80 bg-white px-4 py-2 text-sm font-semibold text-dark-800 shadow-button transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none sm:px-4.5 sm:py-2.5"
+                className="group inline-flex items-center gap-2 rounded-full border border-dark-150 bg-white px-4 py-2 text-sm font-semibold text-dark-800 shadow-button transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none sm:px-5 sm:py-2.5"
               >
-                <span className="text-base leading-none transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none">
-                  {getCategoryIcon(category.slug)}
-                </span>
+                <span className="text-base leading-none">{getCategoryIcon(category.slug)}</span>
                 <span>{locale === 'ko' ? category.labelKo : category.labelEn}</span>
               </Link>
             ))}

@@ -14,7 +14,7 @@ const Skeleton = ({
 }) => (
   <div
     aria-hidden="true"
-    className={`${className} bg-gradient-to-r from-dark-100 via-dark-200 to-dark-100 animate-pulse`}
+    className={`${className} bg-gradient-to-r from-dark-100 via-dark-200 to-dark-100 animate-pulse motion-reduce:animate-none`}
     style={{
       width: typeof width === 'number' ? `${width}px` : width,
       height: typeof height === 'number' ? `${height}px` : height,
@@ -70,7 +70,7 @@ export default function Loading() {
           {/* Product Photo Section Skeleton */}
           <div data-testid="skel-product-image" className="flex flex-col gap-4 md:gap-5">
             <Skeleton width="100px" height={24} radius="6px" />
-            <div className="overflow-hidden rounded-card border border-dark-150 bg-white p-3 shadow-card">
+            <div className="overflow-hidden rounded-card-lg border border-dark-150 bg-white p-4 shadow-card md:p-5">
               <Skeleton width="100%" height={220} radius="8px" />
             </div>
           </div>
@@ -78,7 +78,7 @@ export default function Loading() {
           {/* Product Feature Section Skeleton */}
           <div data-testid="skel-product-feature" className="flex flex-col gap-4 md:gap-5">
             <Skeleton width="80px" height={24} radius="6px" />
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
               <div className="rounded-card border border-dark-150 bg-white p-5 shadow-card">
                 <div className="flex items-start gap-3">
                   <Skeleton width={40} height={40} radius="12px" />

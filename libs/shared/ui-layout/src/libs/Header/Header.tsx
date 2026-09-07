@@ -13,7 +13,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl }) => 
   const t = useTranslations('Layout.header');
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-dark-150/80 bg-white/85 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+    <header className="sticky top-0 z-40 w-full border-b border-dark-150 bg-white/85 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       <ContentArea>
         <div className="flex w-full items-center gap-4 py-3 md:gap-6">
           <div className="flex shrink-0 items-center gap-4 md:gap-6">

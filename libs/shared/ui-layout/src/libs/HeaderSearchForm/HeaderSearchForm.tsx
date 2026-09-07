@@ -35,7 +35,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
       ) : (
         <kbd
           aria-hidden="true"
-          className="hidden select-none items-center rounded border border-dark-200/80 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-400 font-mono shadow-2xs sm:inline-flex"
+          className="hidden select-none items-center rounded border border-dark-200 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-400 font-mono shadow-2xs sm:inline-flex"
         >
           ⌘K
         </kbd>

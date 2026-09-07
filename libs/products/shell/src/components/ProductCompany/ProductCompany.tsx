@@ -33,44 +33,39 @@ function formatStartAt(startAt: unknown) {
 export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompanyViewProps) => {
   const t = useTranslations('ProductDetail');
 
-  const labelClassName = 'w-[76px] shrink-0 text-sm font-medium tabular-nums text-dark-600';
+  const labelClassName = 'w-24 shrink-0 text-sm font-medium text-dark-500';
   const valueClassName = 'text-sm font-medium text-dark-800';
 
   return (
-    <div>
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
-        <div className="flex flex-col gap-3">
-          <div className="mb-2 flex w-fit flex-col gap-1">
-            <p className="text-sm font-semibold text-dark-900">{t('company.basicInfo')}</p>
-            <div className="h-[2px] w-full rounded-full bg-dark-400" />
-          </div>
-          <div className="flex flex-col gap-2">
-            {company?.name && (
-              <div className="flex">
-                <p className={labelClassName}>{t('company.field.name')}</p>
-                <p className={valueClassName}>{company.name}</p>
-              </div>
-            )}
-            {company?.type && (
-              <div className="flex">
-                <p className={labelClassName}>{t('company.field.status')}</p>
-                <p className={valueClassName}>{company.type}</p>
-              </div>
-            )}
-            {company?.address && (
-              <div className="flex">
-                <p className={labelClassName}>{t('company.field.address')}</p>
-                <p className={valueClassName}>{company.address}</p>
-              </div>
-            )}
-            {company?.startAt && (
-              <div className="flex">
-                <p className={labelClassName}>{t('company.field.foundedAt')}</p>
-                <p className={valueClassName}>{formatStartAt(company.startAt)}</p>
-              </div>
-            )}
-          </div>
-        </div>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
+        <p className="text-xs font-bold uppercase tracking-wider text-dark-400">{t('company.basicInfo')}</p>
+        <dl className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-3">
+          {company?.name && (
+            <div className="flex items-baseline">
+              <dt className={labelClassName}>{t('company.field.name')}</dt>
+              <dd className={valueClassName}>{company.name}</dd>
+            </div>
+          )}
+          {company?.type && (
+            <div className="flex items-baseline">
+              <dt className={labelClassName}>{t('company.field.status')}</dt>
+              <dd className={valueClassName}>{company.type}</dd>
+            </div>
+          )}
+          {company?.address && (
+            <div className="flex items-baseline">
+              <dt className={labelClassName}>{t('company.field.address')}</dt>
+              <dd className={valueClassName}>{company.address}</dd>
+            </div>
+          )}
+          {company?.startAt && (
+            <div className="flex items-baseline">
+              <dt className={labelClassName}>{t('company.field.foundedAt')}</dt>
+              <dd className={valueClassName}>{formatStartAt(company.startAt)}</dd>
+            </div>
+          )}
+        </dl>
       </div>
     </div>
   );

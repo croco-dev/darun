@@ -8,9 +8,9 @@ const chipVariants = {
 } as const;
 
 const chipColors = {
-  filledGray: 'border-transparent bg-surface-200/90 text-dark-800',
+  filledGray: 'border-transparent bg-surface-200 text-dark-800',
   filledDark: 'border-transparent bg-dark-900 text-dark-100',
-  outlineGray: 'border-dark-150/90 bg-surface-100/60 text-dark-700',
+  outlineGray: 'border-dark-150 bg-surface-100 text-dark-700',
   outlineBrown: 'border-brown-300 bg-brown-50/50 text-brown-900',
   outlineLeaf: 'border-leaf-300 bg-leaf-50/50 text-leaf-900',
   outlineYellow: 'border-yellow-300 bg-yellow-50/50 text-yellow-900',

@@ -28,7 +28,7 @@ export const ProductUserAction = bind(
           onClick={upvoteProduct}
           disabled={loading}
           data-testid="upvote-btn"
-          className={voted ? 'border-cherry-300/80 bg-cherry-100/40 text-cherry-900 shadow-xs' : ''}
+          className={voted ? 'border-cherry-300 bg-cherry-50 text-cherry-900 shadow-xs' : ''}
         >
           <div className="flex items-center justify-center gap-1.5">
             {loading ? (

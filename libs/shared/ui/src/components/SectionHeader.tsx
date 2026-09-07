@@ -33,7 +33,7 @@ export function SectionHeader({ title, subtitle, moreLink, size, align, classNam
   return (
     <div className={cn(sectionHeaderVariants({ size, align }), className)} {...props}>
       <div className="flex w-full items-center justify-between gap-4">
-        <h2 className="text-xl font-bold leading-tight tracking-tight text-dark-900 sm:text-2xl sm:tracking-tightest">
+        <h2 className="text-xl font-bold leading-tight tracking-tight text-dark-900 sm:text-2xl sm:tracking-tight">
           {title}
         </h2>
         {moreLink && <span className="shrink-0 inline-flex items-center">{moreLink}</span>}

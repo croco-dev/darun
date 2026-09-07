@@ -1,6 +1,6 @@
 'use client';
 
-import { ContentArea } from '@darun/ui';
+import { ChevronRight, ContentArea } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
@@ -40,7 +40,10 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
       <ContentArea className="relative z-10 py-14 sm:py-18 md:py-22">
         <div className="flex max-w-2xl flex-col gap-5 md:gap-6">
           {/* Badge Pill */}
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3.5 py-1.5 backdrop-blur-md shadow-xs transition-colors hover:border-white/20">
+          <Link
+            href={popularPath}
+            className="group inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3.5 py-1.5 backdrop-blur-md shadow-xs transition-all duration-200 hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          >
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brown-400 opacity-75 motion-reduce:animate-none" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-brown-500" />
@@ -48,24 +51,23 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             <span className="text-xs font-semibold tracking-tight text-white/90 sm:text-sm">
               {isKo ? '실시간 소프트웨어 비교 & 디스커버리' : 'Curated Software Discovery & Comparison'}
             </span>
-          </div>
+            <ChevronRight
+              size={14}
+              className="text-white/60 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+            />
+          </Link>
 
           <div className="flex flex-col gap-3">
             <span className="text-sm font-medium tracking-tight text-dark-300 md:text-base">
               {t('Main.hero.description')}
             </span>
-            <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tightest text-white sm:text-4xl md:text-5xl lg:text-[52px]">
+            <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[52px]">
               {productsCount?.toLocaleString(locale) ?? 0}
               {t('Main.hero.title.countSuffix')}{' '}
               <span className="bg-gradient-to-r from-brown-400 via-amber-300 to-brown-500 bg-clip-text text-transparent drop-shadow-glow-subtle">
                 {t('Main.hero.title.highlight')}
               </span>{' '}
-              <Link
-                href={popularPath}
-                className="text-white underline decoration-dark-400 underline-offset-[6px] transition-colors duration-200 hover:decoration-brown-400 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
-              >
-                {t('Main.hero.title.ending')}
-              </Link>
+              <span>{t('Main.hero.title.ending')}</span>
             </h1>
           </div>
 

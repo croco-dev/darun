@@ -162,7 +162,7 @@ export default async function ComparePage({ params }: Props) {
           </div>
 
           <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
-            <div className="hidden border-b border-dark-150 bg-surface-100/60 p-4 md:grid md:grid-cols-2 md:divide-x md:divide-dark-150 md:p-5">
+            <div className="hidden border-b border-dark-150 bg-surface-100 p-4 md:grid md:grid-cols-2 md:divide-x md:divide-dark-150 md:p-5">
               <div className="pr-4 md:pr-5">
                 <span className="text-sm font-bold text-dark-900">{product1.name}</span>
               </div>
@@ -243,7 +243,7 @@ function CompareRow({
 }) {
   return (
     <div className={`p-4 md:p-5 ${isLast ? '' : 'border-b border-dark-100'}`}>
-      <div className="mb-3 border-b border-dark-100 pb-2 text-sm font-semibold text-dark-900">{label}</div>
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-dark-500">{label}</div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-100">
         <div className="md:pr-5">
           <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel1}</div>

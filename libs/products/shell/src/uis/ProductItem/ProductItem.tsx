@@ -20,6 +20,9 @@ type ProductItemProps = {
   isSummaryNoWrap?: boolean;
   isStacked?: boolean;
   isHero?: boolean;
+  isRanked?: boolean;
+  rank?: number;
+  headerRight?: React.ReactNode;
   footerRight?: React.ReactNode;
 };
 
@@ -44,6 +47,9 @@ export const ProductItem = ({
   isSummaryNoWrap = false,
   isStacked = false,
   isHero = false,
+  isRanked = false,
+  rank,
+  headerRight,
   footerRight,
 }: ProductItemProps) => {
   const t = useTranslations('ProductDetail');
@@ -51,6 +57,58 @@ export const ProductItem = ({
   const NameTag = nameAs;
   const [resolvedLogoUrl, setResolvedLogoUrl] = React.useState(logoUrl);
   const effectiveLogoSize = isHero ? 'large' : logoSize;
+
+  if (isRanked) {
+    return (
+      <Component className="flex w-full flex-col gap-2.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {rank !== undefined && (
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold tabular-nums transition-all duration-200 ${
+                  rank === 1
+                    ? 'bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 text-white shadow-xs ring-1 ring-amber-400/60'
+                    : rank === 2
+                      ? 'bg-gradient-to-b from-slate-400 via-slate-500 to-slate-600 text-white shadow-xs ring-1 ring-slate-400/60'
+                      : rank === 3
+                        ? 'bg-gradient-to-b from-amber-700 via-amber-800 to-amber-900 text-amber-100 shadow-xs ring-1 ring-amber-700/60'
+                        : 'border border-dark-150 bg-surface-100 font-bold text-dark-700 group-hover:border-dark-300 group-hover:bg-white group-hover:text-dark-900'
+                }`}
+              >
+                {rank}
+              </span>
+            )}
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dark-150 bg-white p-1 shadow-2xs">
+              <Image
+                src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}
+                unoptimized={!resolvedLogoUrl}
+                alt={t('productItem.logoAlt', { name })}
+                width={44}
+                height={44}
+                className="h-full w-full rounded-lg object-contain"
+                onError={() => setResolvedLogoUrl(undefined)}
+              />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col justify-center">
+              <NameTag className="m-0 truncate text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950">
+                {name}
+              </NameTag>
+              {tags && tags.length > 0 && (
+                <div className="flex items-center gap-1.5 overflow-hidden">
+                  <span className="truncate text-2xs font-medium text-dark-500">{tags[0]}</span>
+                  {tags.length > 1 && <span className="shrink-0 text-2xs text-dark-400">+{tags.length - 1}</span>}
+                </div>
+              )}
+            </div>
+          </div>
+          {headerRight && <div className="shrink-0">{headerRight}</div>}
+        </div>
+        <p className="line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-dark-600 break-keep sm:text-sm">
+          {summary || ''}
+        </p>
+      </Component>
+    );
+  }
 
   return (
     <Component
@@ -61,7 +119,7 @@ export const ProductItem = ({
       }
     >
       <div
-        className={`flex shrink-0 items-center justify-center overflow-hidden border border-dark-150/70 bg-white transition-transform duration-200 ease-out group-hover:scale-[1.03] ${
+        className={`flex shrink-0 items-center justify-center overflow-hidden border border-dark-150 bg-white ${
           isHero
             ? 'h-24 w-24 rounded-2xl p-2.5 shadow-card'
             : effectiveLogoSize === 'small'
@@ -84,7 +142,7 @@ export const ProductItem = ({
           <NameTag
             className={
               isHero
-                ? 'm-0 text-2xl font-extrabold leading-tight tracking-tightest text-dark-900 md:text-3xl'
+                ? 'm-0 text-2xl font-bold leading-tight tracking-tight text-dark-900 md:text-3xl'
                 : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
             }
           >
@@ -98,7 +156,15 @@ export const ProductItem = ({
                 {summary}
               </p>
             ) : (
-              <p className="text-sm leading-relaxed text-dark-600">{summary}</p>
+              <p
+                className={
+                  isHero
+                    ? 'text-base leading-relaxed text-dark-600 md:text-lg'
+                    : 'text-sm leading-relaxed text-dark-600'
+                }
+              >
+                {summary}
+              </p>
             ))}
         </div>
         {(tags || specialTags || footerRight) && (
