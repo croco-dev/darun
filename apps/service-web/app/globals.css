@@ -13,19 +13,22 @@
     navigation: auto;
   }
 
-  ::view-transition-image-pair(*),
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
     animation: none;
   }
 
+  ::view-transition-group(*) {
+    animation-duration: 0.35s;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    ::view-transition-image-pair(*),
     ::view-transition-group(*),
     ::view-transition-old(*),
     ::view-transition-new(*) {
-      animation-duration: 0s;
+      animation: none !important;
+      animation-duration: 0s !important;
     }
   }
 

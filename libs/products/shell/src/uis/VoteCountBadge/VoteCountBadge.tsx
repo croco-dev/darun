@@ -7,10 +7,10 @@ type VoteCountBadgeProps = {
 
 export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' }) => (
   <div
-    className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-dark-150/70 bg-surface-100/80 px-2.5 py-0.5 text-2xs font-semibold tabular-nums text-dark-700 transition-colors group-hover:border-cherry-200 group-hover:bg-cherry-50 group-hover:text-cherry-700 ${className}`}
+    className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-dark-150/70 bg-surface-100/80 px-2.5 py-0.5 text-2xs font-semibold tabular-nums text-dark-700 transition-colors duration-200 group-hover:border-dark-200 group-hover:bg-white group-hover:text-dark-900 ${className}`}
   >
     <svg
-      className="h-3 w-3 text-dark-400 transition-colors group-hover:text-cherry-600"
+      className="h-3 w-3 text-dark-400 transition-colors duration-200 group-hover:text-dark-600"
       fill="currentColor"
       viewBox="0 0 24 24"
       aria-hidden="true"

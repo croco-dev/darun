@@ -35,11 +35,11 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
       {...(layoutId ? { 'data-layout-id': layoutId } : {})}
       {...{ 'data-source': source }}
     >
-      <div className="relative flex h-full flex-col justify-between rounded-card-lg border border-dark-150/80 bg-white p-4 shadow-card transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:border-dark-300 group-hover:shadow-card-hover group-focus-visible:-translate-y-1 group-focus-visible:border-dark-300 group-focus-visible:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-dark-900/60 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:p-4.5">
+      <div className="relative flex h-full flex-col justify-between rounded-card-lg border border-dark-150/80 bg-white p-4 shadow-card transition-all duration-200 ease-out group-hover:-translate-y-0.5 group-hover:border-dark-300 group-hover:shadow-card-hover group-focus-visible:-translate-y-0.5 group-focus-visible:border-dark-300 group-focus-visible:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-dark-900/60 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:p-4.5">
         {rank !== undefined && (
           <div className="absolute right-3.5 top-3.5 z-10 sm:right-4 sm:top-4">
             <span
-              className={`flex h-6 min-w-6 items-center justify-center rounded-lg px-2 text-2xs font-extrabold tabular-nums transition-transform duration-200 ease-out group-hover:scale-105 motion-reduce:transition-none ${
+              className={`flex h-6 min-w-6 items-center justify-center rounded-lg px-2 text-2xs font-extrabold tabular-nums transition-colors duration-200 ease-out motion-reduce:transition-none ${
                 rank === 1
                   ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-xs ring-1 ring-amber-400/40'
                   : rank === 2
@@ -72,7 +72,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
               product.voteCount !== undefined && product.voteCount !== null ? (
                 <VoteCountBadge count={product.voteCount} />
               ) : (
-                <span className="inline-flex items-center text-dark-300 transition-all duration-200 ease-out group-hover:translate-x-0.5 group-hover:text-dark-700">
+                <span className="inline-flex items-center text-dark-300 transition-colors duration-200 ease-out group-hover:text-dark-700">
                   <svg
                     className="h-3.5 w-3.5"
                     fill="none"

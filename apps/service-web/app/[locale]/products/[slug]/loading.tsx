@@ -14,7 +14,7 @@ const Skeleton = ({
 }) => (
   <div
     aria-hidden="true"
-    className={`${className} bg-gradient-to-r from-dark-100 via-dark-200 to-dark-100 animate-pulse`}
+    className={`${className} bg-gradient-to-r from-dark-100 via-dark-200 to-dark-100 animate-pulse motion-reduce:animate-none`}
     style={{
       width: typeof width === 'number' ? `${width}px` : width,
       height: typeof height === 'number' ? `${height}px` : height,

@@ -17,7 +17,11 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
       color="secondary"
       className="gap-2 border-violet-200 bg-violet-50 text-violet-700"
     >
-      {isGenerating ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
+      {isGenerating ? (
+        <RefreshCw size={16} className="animate-spin motion-reduce:animate-none" />
+      ) : (
+        <Sparkles size={16} />
+      )}
       {isGenerating ? 'AI 소개 생성 중...' : 'AI 소개 생성'}
     </Button>
   );

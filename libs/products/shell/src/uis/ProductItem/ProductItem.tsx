@@ -61,7 +61,7 @@ export const ProductItem = ({
       }
     >
       <div
-        className={`flex shrink-0 items-center justify-center overflow-hidden border border-dark-150/70 bg-white transition-transform duration-200 ease-out group-hover:scale-[1.03] ${
+        className={`flex shrink-0 items-center justify-center overflow-hidden border border-dark-150/70 bg-white ${
           isHero
             ? 'h-24 w-24 rounded-2xl p-2.5 shadow-card'
             : effectiveLogoSize === 'small'
@@ -98,7 +98,13 @@ export const ProductItem = ({
                 {summary}
               </p>
             ) : (
-              <p className={isHero ? 'text-base leading-relaxed text-dark-600 md:text-lg' : 'text-sm leading-relaxed text-dark-600'}>
+              <p
+                className={
+                  isHero
+                    ? 'text-base leading-relaxed text-dark-600 md:text-lg'
+                    : 'text-sm leading-relaxed text-dark-600'
+                }
+              >
                 {summary}
               </p>
             ))}

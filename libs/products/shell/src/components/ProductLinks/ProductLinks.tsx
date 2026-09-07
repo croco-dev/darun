@@ -34,9 +34,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => (
               <ExternalLink
                 size={14}
                 className={`shrink-0 transition-opacity ${
-                  isPrimary
-                    ? 'text-dark-400 group-hover:text-white'
-                    : 'text-dark-400 group-hover:text-dark-800'
+                  isPrimary ? 'text-dark-400 group-hover:text-white' : 'text-dark-400 group-hover:text-dark-800'
                 }`}
               />
             </div>

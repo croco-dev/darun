@@ -14,7 +14,7 @@ export const PublishProductButton = bind(usePublishProductButton, ({ loading, is
     size="sm"
     className="gap-2"
   >
-    {loading ? <RefreshCw size={14} className="animate-spin" /> : null}
+    {loading ? <RefreshCw size={14} className="animate-spin motion-reduce:animate-none" /> : null}
     {isPublished ? '노출 중' : '서비스 노출하기'}
   </Button>
 ));
