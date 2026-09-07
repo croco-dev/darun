@@ -117,7 +117,9 @@ export const ProductItem = ({
                           {tag}
                         </Chip>
                       ))}
-                      <span className="text-2xs font-medium tabular-nums text-dark-500">+{tags.length - maxTagItems}</span>
+                      <span className="text-2xs font-medium tabular-nums text-dark-500">
+                        +{tags.length - maxTagItems}
+                      </span>
                     </div>
                   ) : (
                     tags.map(tag => (
