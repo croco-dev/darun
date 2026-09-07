@@ -1,4 +1,4 @@
-import { ProductLinks } from "../../components";
+import { ProductLinks } from '../../components';
 
 type ProductSummaryLinkProps = { slug: string };
 

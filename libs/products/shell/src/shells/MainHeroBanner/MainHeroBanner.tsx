@@ -1,32 +1,22 @@
-"use client";
+'use client';
 
-import { ChevronRight, ContentArea } from "@darun/ui";
-import { Link } from "@darun/utils-router";
-import Image from "next/image";
-import { useLocale, useTranslations } from "next-intl";
+import { ChevronRight, ContentArea } from '@darun/ui';
+import { Link } from '@darun/utils-router';
+import Image from 'next/image';
+import { useLocale, useTranslations } from 'next-intl';
 
 type MainHeroBannerProps = { productsCount?: number };
 
-const POPULAR_SEARCH_TAGS = [
-  "Notion",
-  "Figma",
-  "Slack",
-  "Linear",
-  "ChatGPT",
-  "Supabase",
-];
+const POPULAR_SEARCH_TAGS = ['Notion', 'Figma', 'Slack', 'Linear', 'ChatGPT', 'Supabase'];
 
 export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
   const t = useTranslations();
   const locale = useLocale();
-  const isKo = locale === "ko";
+  const isKo = locale === 'ko';
   const popularPath = `/${locale}/ranking`;
 
   return (
-    <section
-      data-testid="home-hero"
-      className="relative isolate overflow-hidden bg-dark-900"
-    >
+    <section data-testid="home-hero" className="relative isolate overflow-hidden bg-dark-900">
       {/* Ambient background glow and grid */}
       <div
         aria-hidden="true"
@@ -59,9 +49,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-brown-500" />
             </span>
             <span className="text-xs font-semibold tracking-tight text-white/90 sm:text-sm">
-              {isKo
-                ? "실시간 소프트웨어 비교 & 디스커버리"
-                : "Curated Software Discovery & Comparison"}
+              {isKo ? '실시간 소프트웨어 비교 & 디스커버리' : 'Curated Software Discovery & Comparison'}
             </span>
             <ChevronRight
               size={14}
@@ -71,30 +59,28 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
 
           <div className="flex flex-col gap-3">
             <span className="text-sm font-medium tracking-tight text-dark-300 md:text-base">
-              {t("Main.hero.description")}
+              {t('Main.hero.description')}
             </span>
             <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[52px]">
               {productsCount?.toLocaleString(locale) ?? 0}
-              {t("Main.hero.title.countSuffix")}{" "}
+              {t('Main.hero.title.countSuffix')}{' '}
               <span className="bg-gradient-to-r from-brown-400 via-amber-300 to-brown-500 bg-clip-text text-transparent drop-shadow-glow-subtle">
-                {t("Main.hero.title.highlight")}
-              </span>{" "}
-              <span>{t("Main.hero.title.ending")}</span>
+                {t('Main.hero.title.highlight')}
+              </span>{' '}
+              <span>{t('Main.hero.title.ending')}</span>
             </h1>
           </div>
 
           <p className="max-w-xl text-sm leading-relaxed text-dark-300 sm:text-base">
             {isKo
-              ? "팀과 개인의 생산성을 극대화할 최적의 도구를 나란히 비교하고, 실제 커뮤니티 추천 랭킹으로 검증된 서비스를 찾아보세요."
-              : "Discover and compare verified digital tools side-by-side with real community ratings to find what fits your needs."}
+              ? '팀과 개인의 생산성을 극대화할 최적의 도구를 나란히 비교하고, 실제 커뮤니티 추천 랭킹으로 검증된 서비스를 찾아보세요.'
+              : 'Discover and compare verified digital tools side-by-side with real community ratings to find what fits your needs.'}
           </p>
 
           {/* Quick Search Recommendation Tags */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-xs font-medium text-dark-400 sm:text-sm">
-              {isKo ? "인기 탐색:" : "Popular:"}
-            </span>
-            {POPULAR_SEARCH_TAGS.map((keyword) => (
+            <span className="text-xs font-medium text-dark-400 sm:text-sm">{isKo ? '인기 탐색:' : 'Popular:'}</span>
+            {POPULAR_SEARCH_TAGS.map(keyword => (
               <Link
                 key={keyword}
                 href={`/${locale}/search/product?query=${encodeURIComponent(keyword)}`}

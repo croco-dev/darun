@@ -1,11 +1,11 @@
-import { ContentArea } from "@darun/ui";
-import { Layout } from "@darun/ui-layout";
+import { ContentArea } from '@darun/ui';
+import { Layout } from '@darun/ui-layout';
 
 const Skeleton = ({
-  width = "100%",
-  height = "20px",
-  radius = "4px",
-  className = "",
+  width = '100%',
+  height = '20px',
+  radius = '4px',
+  className = '',
 }: {
   width?: string | number;
   height?: string | number;
@@ -16,9 +16,9 @@ const Skeleton = ({
     aria-hidden="true"
     className={`${className} bg-gradient-to-r from-dark-100 via-dark-200 to-dark-100 animate-pulse motion-reduce:animate-none`}
     style={{
-      width: typeof width === "number" ? `${width}px` : width,
-      height: typeof height === "number" ? `${height}px` : height,
-      borderRadius: typeof radius === "number" ? `${radius}px` : radius,
+      width: typeof width === 'number' ? `${width}px` : width,
+      height: typeof height === 'number' ? `${height}px` : height,
+      borderRadius: typeof radius === 'number' ? `${radius}px` : radius,
     }}
   />
 );
@@ -54,15 +54,9 @@ export default function Loading() {
           </ContentArea>
         </div>
 
-        <ContentArea
-          id="detail-content"
-          className="flex flex-col gap-8 py-6 md:gap-10 md:py-8"
-        >
+        <ContentArea id="detail-content" className="flex flex-col gap-8 py-6 md:gap-10 md:py-8">
           {/* Product Description Section Skeleton */}
-          <div
-            data-testid="skel-product-desc"
-            className="flex flex-col gap-4 md:gap-5"
-          >
+          <div data-testid="skel-product-desc" className="flex flex-col gap-4 md:gap-5">
             <Skeleton width="120px" height={24} radius="6px" />
             <div className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card md:p-6">
               <div className="flex flex-col gap-2.5">
@@ -74,10 +68,7 @@ export default function Loading() {
           </div>
 
           {/* Product Photo Section Skeleton */}
-          <div
-            data-testid="skel-product-image"
-            className="flex flex-col gap-4 md:gap-5"
-          >
+          <div data-testid="skel-product-image" className="flex flex-col gap-4 md:gap-5">
             <Skeleton width="100px" height={24} radius="6px" />
             <div className="overflow-hidden rounded-card-lg border border-dark-150 bg-white p-4 shadow-card md:p-5">
               <Skeleton width="100%" height={220} radius="8px" />
@@ -85,10 +76,7 @@ export default function Loading() {
           </div>
 
           {/* Product Feature Section Skeleton */}
-          <div
-            data-testid="skel-product-feature"
-            className="flex flex-col gap-4 md:gap-5"
-          >
+          <div data-testid="skel-product-feature" className="flex flex-col gap-4 md:gap-5">
             <Skeleton width="80px" height={24} radius="6px" />
             <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
               <div className="rounded-card border border-dark-150 bg-white p-5 shadow-card">

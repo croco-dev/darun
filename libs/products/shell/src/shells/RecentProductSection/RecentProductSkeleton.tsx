@@ -1,12 +1,9 @@
-import { SectionWrapper } from "@darun/ui";
+import { SectionWrapper } from '@darun/ui';
 
 export const RecentProductSkeleton = () => {
   return (
     <SectionWrapper background="white" spacing="md">
-      <div
-        data-testid="skel-recent"
-        className="flex w-full flex-col gap-5 md:gap-6"
-      >
+      <div data-testid="skel-recent" className="flex w-full flex-col gap-5 md:gap-6">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div className="h-7 w-48 animate-pulse rounded-lg bg-dark-100 motion-reduce:animate-none" />

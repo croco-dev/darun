@@ -1,12 +1,9 @@
-import { SectionWrapper } from "@darun/ui";
+import { SectionWrapper } from '@darun/ui';
 
 export const TrendingProductSkeleton = () => {
   return (
     <SectionWrapper background="subtle" spacing="md">
-      <div
-        data-testid="skel-trending"
-        className="flex w-full flex-col gap-5 md:gap-6"
-      >
+      <div data-testid="skel-trending" className="flex w-full flex-col gap-5 md:gap-6">
         <div className="flex items-center justify-between">
           <div className="h-7 w-48 animate-pulse rounded-lg bg-dark-100 motion-reduce:animate-none" />
           <div className="h-5 w-16 animate-pulse rounded bg-dark-100 motion-reduce:animate-none" />
