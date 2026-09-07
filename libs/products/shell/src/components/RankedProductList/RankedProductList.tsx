@@ -1,61 +1,65 @@
-'use client';
+"use client";
 
-import { AnalyticsEvents, track } from '@darun/analytics-client';
-import { Link } from '@darun/utils-router';
-import { bind } from '@darun/utils-structure-react';
-import { ProductItem, VoteCountBadge } from '../../uis';
-import { useRankedProductList } from './useRankedProductList';
+import { AnalyticsEvents, track } from "@darun/analytics-client";
+import { Link } from "@darun/utils-router";
+import { bind } from "@darun/utils-structure-react";
+import { ProductItem, VoteCountBadge } from "../../uis";
+import { useRankedProductList } from "./useRankedProductList";
 
-export const RankedProductList = bind(useRankedProductList, ({ products, locale = 'ko' }) => (
-  <div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
-    {products.map((product, index) => {
-      const rank = index + 1;
-      const isTopThree = rank <= 3;
+export const RankedProductList = bind(
+  useRankedProductList,
+  ({ products, locale = "ko" }) => (
+    <div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
+      {products.map((product, index) => {
+        const rank = index + 1;
+        const isTopThree = rank <= 3;
 
-      return (
-        <Link
-          key={product.id}
-          href={`/${locale}/products/${product.slug}?from=trending`}
-          onClick={() =>
-            track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
-              productSlug: product.slug,
-              source: 'ranking',
-            })
-          }
-          className="group block rounded-card-lg border border-dark-150/80 bg-white p-3.5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-250 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold tabular-nums transition-all duration-200 ${
-                  rank === 1
-                    ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 text-white shadow-xs ring-1 ring-amber-400/50'
-                    : rank === 2
-                      ? 'bg-gradient-to-br from-slate-600 to-slate-800 text-white shadow-xs ring-1 ring-slate-400/40'
-                      : rank === 3
-                        ? 'bg-gradient-to-br from-amber-800 to-stone-900 text-amber-100 shadow-xs ring-1 ring-amber-700/40'
-                        : 'border border-dark-150/70 bg-surface-100 text-dark-600 group-hover:border-dark-300 group-hover:bg-white group-hover:text-dark-900'
-                } motion-reduce:transition-none`}
-              >
-                {rank}
-              </span>
-              <div className="min-w-0 flex-1">
-                <ProductItem
-                  name={product.name}
-                  logoUrl={product.logoUrl}
-                  logoSize="small"
-                  summary={product.summary}
-                  tags={product.tags.map(tag => tag.name)}
-                  maxTagItems={1}
-                />
+        return (
+          <Link
+            key={product.id}
+            href={`/${locale}/products/${product.slug}?from=trending`}
+            onClick={() =>
+              track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
+                productSlug: product.slug,
+                source: "ranking",
+              })
+            }
+            className="group block rounded-card-lg border border-dark-150 bg-white p-3.5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-250 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold tabular-nums transition-all duration-200 ${
+                    rank === 1
+                      ? "bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 text-white shadow-xs ring-1 ring-amber-400/50"
+                      : rank === 2
+                        ? "bg-gradient-to-br from-slate-600 to-slate-800 text-white shadow-xs ring-1 ring-slate-400/40"
+                        : rank === 3
+                          ? "bg-gradient-to-br from-amber-800 to-stone-900 text-amber-100 shadow-xs ring-1 ring-amber-700/40"
+                          : "border border-dark-150 bg-surface-100 text-dark-600 group-hover:border-dark-300 group-hover:bg-white group-hover:text-dark-900"
+                  } motion-reduce:transition-none`}
+                >
+                  {rank}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <ProductItem
+                    name={product.name}
+                    logoUrl={product.logoUrl}
+                    logoSize="small"
+                    summary={product.summary}
+                    tags={product.tags.map((tag) => tag.name)}
+                    maxTagItems={1}
+                  />
+                </div>
               </div>
+              {product.voteCount !== undefined &&
+                product.voteCount !== null && (
+                  <VoteCountBadge count={product.voteCount} className="py-1" />
+                )}
             </div>
-            {product.voteCount !== undefined && product.voteCount !== null && (
-              <VoteCountBadge count={product.voteCount} className="py-1" />
-            )}
-          </div>
-        </Link>
-      );
-    })}
-  </div>
-));
+          </Link>
+        );
+      })}
+    </div>
+  ),
+);

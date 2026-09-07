@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { Button, Heart, useToast } from '@darun/ui';
-import { bind } from '@darun/utils-structure-react';
-import { useEffect } from 'react';
-import { CompareButton } from '../CompareButton';
-import { useProductUserAction } from './useProductUserAction';
+import { Button, Heart, useToast } from "@darun/ui";
+import { bind } from "@darun/utils-structure-react";
+import { useEffect } from "react";
+import { CompareButton } from "../CompareButton";
+import { useProductUserAction } from "./useProductUserAction";
 
 export const ProductUserAction = bind(
   useProductUserAction,
@@ -13,9 +13,9 @@ export const ProductUserAction = bind(
 
     useEffect(() => {
       if (error) {
-        addToast(error, 'error');
+        addToast(error, "error");
       } else if (voted && !loading) {
-        addToast('투표가 완료되었습니다!', 'success');
+        addToast("투표가 완료되었습니다!", "success");
       }
     }, [error, voted, loading, addToast]);
 
@@ -28,7 +28,11 @@ export const ProductUserAction = bind(
           onClick={upvoteProduct}
           disabled={loading}
           data-testid="upvote-btn"
-          className={voted ? 'border-cherry-300/80 bg-cherry-100/40 text-cherry-900 shadow-xs' : ''}
+          className={
+            voted
+              ? "border-cherry-300 bg-cherry-50 text-cherry-900 shadow-xs"
+              : ""
+          }
         >
           <div className="flex items-center justify-center gap-1.5">
             {loading ? (
@@ -43,11 +47,15 @@ export const ProductUserAction = bind(
             ) : (
               <Heart
                 size={18}
-                className={voted ? 'fill-cherry-600 text-cherry-600' : 'fill-transparent text-dark-500'}
+                className={
+                  voted
+                    ? "fill-cherry-600 text-cherry-600"
+                    : "fill-transparent text-dark-500"
+                }
               />
             )}
             <span
-              className={`break-keep text-sm font-semibold tabular-nums ${voted ? 'text-cherry-700' : 'text-dark-700'}`}
+              className={`break-keep text-sm font-semibold tabular-nums ${voted ? "text-cherry-700" : "text-dark-700"}`}
             >
               {voteCount}
             </span>
@@ -56,5 +64,5 @@ export const ProductUserAction = bind(
         <CompareButton slug={slug} source="direct" />
       </div>
     );
-  }
+  },
 );
