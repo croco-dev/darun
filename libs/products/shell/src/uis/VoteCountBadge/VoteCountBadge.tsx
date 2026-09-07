@@ -1,19 +1,16 @@
-import type { FC } from "react";
+import type { FC } from 'react';
 
 type VoteCountBadgeProps = {
   count: number;
   className?: string;
 };
 
-export const VoteCountBadge: FC<VoteCountBadgeProps> = ({
-  count,
-  className = "",
-}) => (
+export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' }) => (
   <div
-    className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-dark-150 bg-surface-100 px-2.5 py-0.5 text-2xs font-semibold tabular-nums text-dark-700 transition-colors duration-200 group-hover:border-dark-200 group-hover:bg-white group-hover:text-dark-900 ${className}`}
+    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-surface-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-dark-700 transition-all duration-200 group-hover:border-dark-250 group-hover:bg-white group-hover:text-dark-900 group-hover:shadow-2xs ${className}`}
   >
     <svg
-      className="h-3 w-3 text-dark-400 transition-colors duration-200 group-hover:text-dark-600"
+      className="h-3.5 w-3.5 text-cherry-500 fill-cherry-500/25 transition-colors duration-200 group-hover:fill-cherry-500/50"
       fill="currentColor"
       viewBox="0 0 24 24"
       aria-hidden="true"
