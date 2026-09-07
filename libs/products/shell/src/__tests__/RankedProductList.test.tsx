@@ -39,6 +39,7 @@ vi.mock('../components/RankedProductList/useRankedProductList', () => ({
 
 vi.mock('../uis', () => ({
   ProductItem: ({ name }: { name: string }) => <div data-testid="product-item">{name}</div>,
+  VoteCountBadge: ({ count }: { count: number }) => <div data-testid="vote-count">{count}</div>,
 }));
 
 const mockProducts = [

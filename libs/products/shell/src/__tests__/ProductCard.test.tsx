@@ -46,6 +46,7 @@ vi.mock('../uis', () => ({
       ))}
     </div>
   ),
+  VoteCountBadge: ({ count }: { count: number }) => <div data-testid="vote-count">{count}</div>,
 }));
 
 const mockProduct = {
