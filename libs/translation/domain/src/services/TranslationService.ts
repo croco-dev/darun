@@ -38,15 +38,19 @@ export class TranslationService {
       return koreanValue;
     }
 
-    const translated = await this.translationRepository.findOne({
-      entityType,
-      entityId,
-      locale,
-      field,
-    });
+    try {
+      const translated = await this.translationRepository.findOne({
+        entityType,
+        entityId,
+        locale,
+        field,
+      });
 
-    if (translated?.value) {
-      return translated.value;
+      if (translated?.value) {
+        return translated.value;
+      }
+    } catch (error) {
+      console.error('Failed to fetch translation, falling back to default value:', error);
     }
 
     return koreanValue;
@@ -69,16 +73,20 @@ export class TranslationService {
       return fallbackTranslations;
     }
 
-    const translatedRows = await this.translationRepository.findMany({
-      entityType,
-      locale,
-      entities: entries.map(({ entityId, field }) => ({ entityId, field })),
-    });
+    try {
+      const translatedRows = await this.translationRepository.findMany({
+        entityType,
+        locale,
+        entities: entries.map(({ entityId, field }) => ({ entityId, field })),
+      });
 
-    for (const translatedRow of translatedRows) {
-      if (translatedRow.value) {
-        fallbackTranslations.set(`${translatedRow.entityId}:${translatedRow.field}`, translatedRow.value);
+      for (const translatedRow of translatedRows) {
+        if (translatedRow.value) {
+          fallbackTranslations.set(`${translatedRow.entityId}:${translatedRow.field}`, translatedRow.value);
+        }
       }
+    } catch (error) {
+      console.error('Failed to fetch translations, falling back to default values:', error);
     }
 
     return fallbackTranslations;

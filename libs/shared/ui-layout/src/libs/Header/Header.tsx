@@ -13,7 +13,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl }) => 
   const t = useTranslations('Layout.header');
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-dark-150 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-40 w-full border-b border-dark-150/80 bg-white/85 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       <ContentArea>
         <div className="flex w-full items-center gap-4 py-3 md:gap-6">
           <div className="flex shrink-0 items-center gap-4 md:gap-6">
@@ -23,13 +23,13 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl }) => 
             <nav className="hidden items-center gap-1 sm:flex" aria-label={t('mainMenuAriaLabel')}>
               <Link
                 href={rankingUrl}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-dark-700 transition-colors duration-200 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-dark-700 transition-all duration-200 hover:bg-surface-100 hover:text-dark-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
               >
                 {t('ranking')}
               </Link>
               <Link
                 href={browseUrl}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-dark-700 transition-colors duration-200 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-dark-700 transition-all duration-200 hover:bg-surface-100 hover:text-dark-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
               >
                 {t('browse')}
               </Link>

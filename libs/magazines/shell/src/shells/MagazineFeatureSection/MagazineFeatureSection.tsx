@@ -32,13 +32,13 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
             data-testid="magazine-empty"
             className="flex flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-12 text-center shadow-card"
           >
-            <p className="text-lg font-semibold text-dark-900">{t('magazine.empty.title')}</p>
-            <p className="mt-1 text-sm text-dark-600">{t('magazine.empty.description')}</p>
+            <p className="text-lg font-semibold text-dark-900">{t('Magazine.empty.title')}</p>
+            <p className="mt-1 text-sm text-dark-600">{t('Magazine.empty.description')}</p>
             <Link
               href={`/${locale}/ranking`}
               className="mt-5 inline-flex items-center justify-center rounded-xl bg-dark-900 px-6 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-dark-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
-              {t('magazine.empty.cta')}
+              {t('Magazine.empty.cta')}
             </Link>
           </div>
         </div>

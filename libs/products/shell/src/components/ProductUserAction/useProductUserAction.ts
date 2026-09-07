@@ -1,9 +1,11 @@
 import { gql } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
-import { ProductBySlugOnProductUserActionDocument, UpvoteProductOnProductUserActionDocument } from '@darun/provider-graphql';
+import {
+  ProductBySlugOnProductUserActionDocument,
+  UpvoteProductOnProductUserActionDocument,
+} from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
-
 
 void gql`
   query ProductBySlugOnProductUserAction($slug: String!, $locale: String!) {
@@ -61,11 +63,26 @@ export function useProductUserAction({ slug }: ProductUserActionProps) {
       await upvoteProductMutation({ variables: { slug } });
       // Success: keep the optimistic count
       setOptimisticCount(null);
-    } catch (err) {
+    } catch (err: unknown) {
       // Error: revert optimistic update
       setOptimisticCount(null);
-      setVoted(false);
-      setError('투표에 실패했습니다. 다시 시도해주세요.');
+      const message = err instanceof Error ? err.message : '';
+      const isEn = locale === 'en';
+
+      if (message.includes('duplicate-vote')) {
+        setVoted(true);
+        setError(isEn ? 'You have already voted for this product.' : '이미 투표한 서비스입니다.');
+      } else if (message.includes('rate-limit-exceeded')) {
+        setVoted(false);
+        setError(
+          isEn
+            ? 'Too many vote attempts. Please try again in a minute.'
+            : '단시간에 너무 많은 투표를 시도했습니다. 잠시 후 다시 시도해주세요.'
+        );
+      } else {
+        setVoted(false);
+        setError(isEn ? 'Failed to vote. Please try again.' : '투표에 실패했습니다. 다시 시도해주세요.');
+      }
     } finally {
       setLoading(false);
     }

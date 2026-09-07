@@ -3,24 +3,24 @@ import { AnchorHTMLAttributes, ButtonHTMLAttributes, HTMLAttributes, ReactNode }
 import { cn } from '../lib/utils';
 
 const chipVariants = {
-  square: 'rounded-chip px-2 py-1 text-xs',
-  circle: 'rounded-pill px-2.5 py-1 text-xs',
+  square: 'rounded-md px-2 py-0.5 text-xs font-medium tracking-tight',
+  circle: 'rounded-full px-2.5 py-0.5 text-xs font-medium tracking-tight',
 } as const;
 
 const chipColors = {
-  filledGray: 'border-transparent bg-surface-200 text-dark-700',
+  filledGray: 'border-transparent bg-surface-200/90 text-dark-800',
   filledDark: 'border-transparent bg-dark-900 text-dark-100',
-  outlineGray: 'border-dark-150 bg-white text-dark-500',
-  outlineBrown: 'border-brown-300 bg-transparent text-brown-900',
-  outlineLeaf: 'border-leaf-300 bg-transparent text-leaf-900',
-  outlineYellow: 'border-yellow-300 bg-transparent text-yellow-900',
-  outlineCherry: 'border-cherry-300 bg-transparent text-cherry-900',
+  outlineGray: 'border-dark-150/90 bg-surface-100/60 text-dark-700',
+  outlineBrown: 'border-brown-300 bg-brown-50/50 text-brown-900',
+  outlineLeaf: 'border-leaf-300 bg-leaf-50/50 text-leaf-900',
+  outlineYellow: 'border-yellow-300 bg-yellow-50/50 text-yellow-900',
+  outlineCherry: 'border-cherry-300 bg-cherry-50/50 text-cherry-900',
 } as const;
 
 const chipHoverColors: Partial<Record<ChipColor, string>> = {
   filledGray: 'hover:bg-surface-300',
   filledDark: 'hover:bg-dark-800',
-  outlineGray: 'hover:border-dark-200 hover:bg-surface-100',
+  outlineGray: 'hover:border-dark-300 hover:bg-surface-200',
   outlineBrown: 'hover:bg-brown-100',
   outlineLeaf: 'hover:bg-leaf-100',
   outlineYellow: 'hover:bg-yellow-100',

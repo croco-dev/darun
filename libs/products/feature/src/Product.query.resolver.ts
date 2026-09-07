@@ -123,50 +123,55 @@ export class ProductQueryResolver {
       return localizedProducts;
     }
 
-    const translatedFields = await this.translationService.getTranslations({
-      entityType: 'Product',
-      locale: normalizedLocale,
-      entries: localizedProducts.flatMap(product => {
-        const entries = [
-          {
-            entityId: product.id,
-            field: 'name',
-            koreanValue: product.name,
-          },
-        ];
+    try {
+      const translatedFields = await this.translationService.getTranslations({
+        entityType: 'Product',
+        locale: normalizedLocale,
+        entries: localizedProducts.flatMap(product => {
+          const entries = [
+            {
+              entityId: product.id,
+              field: 'name',
+              koreanValue: product.name,
+            },
+          ];
 
-        if (typeof product.summary === 'string') {
-          entries.push({
-            entityId: product.id,
-            field: 'summary',
-            koreanValue: product.summary,
-          });
-        }
+          if (typeof product.summary === 'string') {
+            entries.push({
+              entityId: product.id,
+              field: 'summary',
+              koreanValue: product.summary,
+            });
+          }
 
-        if (typeof product.description === 'string') {
-          entries.push({
-            entityId: product.id,
-            field: 'description',
-            koreanValue: product.description,
-          });
-        }
+          if (typeof product.description === 'string') {
+            entries.push({
+              entityId: product.id,
+              field: 'description',
+              koreanValue: product.description,
+            });
+          }
 
-        return entries;
-      }),
-    });
+          return entries;
+        }),
+      });
 
-    return localizedProducts.map(product => ({
-      ...product,
-      name: translatedFields.get(`${product.id}:name`) ?? product.name,
-      summary:
-        typeof product.summary === 'string'
-          ? (translatedFields.get(`${product.id}:summary`) ?? product.summary)
-          : product.summary,
-      description:
-        typeof product.description === 'string'
-          ? (translatedFields.get(`${product.id}:description`) ?? product.description)
-          : undefined,
-    }));
+      return localizedProducts.map(product => ({
+        ...product,
+        name: translatedFields.get(`${product.id}:name`) ?? product.name,
+        summary:
+          typeof product.summary === 'string'
+            ? (translatedFields.get(`${product.id}:summary`) ?? product.summary)
+            : product.summary,
+        description:
+          typeof product.description === 'string'
+            ? (translatedFields.get(`${product.id}:description`) ?? product.description)
+            : undefined,
+      }));
+    } catch (error) {
+      console.error('Failed to translate products, returning default products:', error);
+      return localizedProducts;
+    }
   }
 
   @Query(() => [Product])

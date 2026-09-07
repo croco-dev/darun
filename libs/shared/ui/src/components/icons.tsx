@@ -1,1 +1,15 @@
-export { Check, Heart, Plus, Search, X } from 'lucide-react';
+export {
+  ArrowRight,
+  Check,
+  ChevronRight,
+  Compass,
+  ExternalLink,
+  Heart,
+  Layers,
+  Plus,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  X,
+} from 'lucide-react';
