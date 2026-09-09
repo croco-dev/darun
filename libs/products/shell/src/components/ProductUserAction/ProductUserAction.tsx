@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Heart, useToast } from '@darun/ui';
+import { AlertCircle, Button, Heart, useToast } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import { useEffect } from 'react';
 import { CompareButton } from '../CompareButton';
@@ -28,7 +28,9 @@ export const ProductUserAction = bind(
           onClick={upvoteProduct}
           disabled={loading}
           data-testid="upvote-btn"
-          className={voted ? 'border-cherry-300 bg-cherry-50 text-cherry-900 shadow-xs' : ''}
+          className={`group transition-all duration-200 active:scale-[0.98] ${
+            voted ? 'border-cherry-300 bg-cherry-50/80 text-cherry-900 shadow-xs hover:bg-cherry-100/70' : 'hover:border-dark-300'
+          }`}
         >
           <div className="flex items-center justify-center gap-1.5">
             {loading ? (
@@ -37,13 +39,19 @@ export const ProductUserAction = bind(
                 className="h-4 w-4 animate-spin rounded-full border-2 border-current border-b-transparent motion-reduce:animate-none"
               />
             ) : error ? (
-              <span data-testid="upvote-error" className="text-xs text-red-500">
-                !
+              <span
+                data-testid="upvote-error"
+                className="inline-flex items-center justify-center text-cherry-600"
+                title={error}
+              >
+                <AlertCircle size={16} className="stroke-[2.25]" />
               </span>
             ) : (
               <Heart
                 size={18}
-                className={voted ? 'fill-cherry-600 text-cherry-600' : 'fill-transparent text-dark-500'}
+                className={`transition-transform duration-200 group-hover:scale-110 active:scale-95 ${
+                  voted ? 'fill-cherry-600 text-cherry-600' : 'fill-transparent text-dark-500 group-hover:text-cherry-500'
+                }`}
               />
             )}
             <span

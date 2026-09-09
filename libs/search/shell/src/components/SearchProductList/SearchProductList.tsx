@@ -8,11 +8,13 @@ import {
   CompactCategoriesForSearchProductListDocument,
   CompactTrendingPreviewForSearchProductListDocument,
 } from '@darun/provider-graphql';
+import { Search } from '@darun/ui';
 import { useNavigate } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { getCategoryIcon } from '../../shells/SearchEmptyState/CategoryShortcutGrid/CategoryShortcutGrid';
 import { SearchProduct, useSearchProductList } from './useSearchProductList';
 
 const POPULAR_QUERIES: Record<string, string[]> = {
@@ -100,12 +102,17 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
   if (products.length === 0)
     return (
       <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-2 text-center">
-          <p className="text-xl font-bold leading-tight text-dark-900 sm:text-2xl">{getNoResultsMessage()}</p>
-          <p className="text-sm text-dark-600 sm:text-base">{t('list.empty.description')}</p>
+        <div className="flex flex-col items-center justify-center gap-3 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-400 shadow-2xs">
+            <Search size={22} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xl font-bold leading-tight text-dark-900 break-keep sm:text-2xl">{getNoResultsMessage()}</p>
+            <p className="text-sm text-dark-600 break-keep sm:text-base">{t('list.empty.description')}</p>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-3">
             <p className="text-sm font-semibold text-dark-900">{t('list.empty.popularQueries')}</p>
             <div
@@ -133,7 +140,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
             <p className="text-sm font-semibold text-dark-900">{t('list.empty.categories')}</p>
             <div
               data-testid="search-empty-categories"
-              className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+              className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
               role="list"
               aria-label="Browse by category"
             >
@@ -143,8 +150,9 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
                   type="button"
                   role="listitem"
                   onClick={() => navigateToCategory(category.slug)}
-                  className="group flex items-center gap-2 rounded-xl border border-dark-150 bg-white p-3.5 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+                  className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3.5 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
                 >
+                  <span className="text-xl leading-none">{getCategoryIcon(category.slug)}</span>
                   <span className="truncate">{locale === 'ko' ? category.labelKo : category.labelEn}</span>
                 </button>
               ))}

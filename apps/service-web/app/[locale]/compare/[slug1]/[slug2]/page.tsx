@@ -3,6 +3,7 @@ import { ProductCard } from '@darun/products-shell';
 import { Chip, ContentArea, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../../lib/seo/indexability';
@@ -144,13 +145,18 @@ export default async function ComparePage({ params }: Props) {
             align="center"
           />
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+          <div className="relative flex flex-col gap-3 md:grid md:grid-cols-2 md:gap-6">
             <div data-testid="compare-column">
               <ProductCard
                 product={product1}
                 href={`/${resolvedParams.locale}/products/${product1.slug}`}
                 source="compare"
               />
+            </div>
+            <div className="flex items-center justify-center -my-1 md:hidden">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-dark-900 text-2xs font-black tracking-wider text-white shadow-sm">
+                VS
+              </span>
             </div>
             <div data-testid="compare-column">
               <ProductCard
@@ -159,15 +165,41 @@ export default async function ComparePage({ params }: Props) {
                 source="compare"
               />
             </div>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 items-center justify-center md:flex"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-dark-900 text-xs font-black tracking-wider text-white shadow-elevated">
+                VS
+              </span>
+            </div>
           </div>
 
           <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
-            <div className="hidden border-b border-dark-150 bg-surface-100 p-4 md:grid md:grid-cols-2 md:divide-x md:divide-dark-150 md:p-5">
-              <div className="pr-4 md:pr-5">
-                <span className="text-sm font-bold text-dark-900">{product1.name}</span>
+            <div className="grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/70 p-3.5 sm:p-4 md:p-5">
+              <div className="flex items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
+                {product1.logoUrl && (
+                  <Image
+                    src={product1.logoUrl}
+                    alt={product1.name}
+                    width={24}
+                    height={24}
+                    className="h-6 w-6 shrink-0 rounded-md border border-dark-150 bg-white object-contain p-0.5"
+                  />
+                )}
+                <span className="truncate text-xs font-bold text-dark-900 sm:text-sm">{product1.name}</span>
               </div>
-              <div className="pl-4 md:pl-5">
-                <span className="text-sm font-bold text-dark-900">{product2.name}</span>
+              <div className="flex items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
+                {product2.logoUrl && (
+                  <Image
+                    src={product2.logoUrl}
+                    alt={product2.name}
+                    width={24}
+                    height={24}
+                    className="h-6 w-6 shrink-0 rounded-md border border-dark-150 bg-white object-contain p-0.5"
+                  />
+                )}
+                <span className="truncate text-xs font-bold text-dark-900 sm:text-sm">{product2.name}</span>
               </div>
             </div>
             <CompareRow
@@ -242,16 +274,16 @@ function CompareRow({
   isLast?: boolean;
 }) {
   return (
-    <div className={`p-4 md:p-5 ${isLast ? '' : 'border-b border-dark-100'}`}>
+    <div className={`p-4 md:p-5 ${isLast ? '' : 'border-b border-dark-150/70'}`}>
       <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-dark-500">{label}</div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-100">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-150/70">
         <div className="md:pr-5">
           <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel1}</div>
           <div className="text-sm leading-relaxed text-dark-800" data-testid={`compare-row-${testid}-1`}>
             {tags1 && tags1.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {tags1.map(tag => (
-                  <Chip key={tag} color="outlineGray" variant="circle">
+                  <Chip key={tag} color="filledGray" variant="square">
                     {tag}
                   </Chip>
                 ))}
@@ -267,7 +299,7 @@ function CompareRow({
             {tags2 && tags2.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {tags2.map(tag => (
-                  <Chip key={tag} color="outlineGray" variant="circle">
+                  <Chip key={tag} color="filledGray" variant="square">
                     {tag}
                   </Chip>
                 ))}

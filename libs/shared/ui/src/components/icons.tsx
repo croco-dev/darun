@@ -1,6 +1,11 @@
 export {
+  AlertCircle,
   ArrowRight,
+  BookOpen,
+  Calendar,
   Check,
+  CheckCircle2,
+  ChevronDown,
   ChevronRight,
   Compass,
   ExternalLink,

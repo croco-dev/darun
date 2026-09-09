@@ -9,17 +9,19 @@ type ProductFeatureGridListProps = {
 
 export const ProductFeatureGridList = ({ features }: ProductFeatureGridListProps) => {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3.5 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
       {features.map(feature => (
-        <div className="flex w-full items-start gap-2 lg:gap-3" key={feature.id}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-100 lg:h-11 lg:w-11">
-            <span className="text-base lg:text-xl">{feature.emoji ?? '💎'}</span>
+        <div className="flex w-full items-start gap-2.5 sm:gap-3" key={feature.id}>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dark-150 bg-surface-100 shadow-2xs">
+            <span className="text-lg leading-none sm:text-xl">{feature.emoji ?? '💎'}</span>
           </div>
-          <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-semibold tracking-tight text-dark-800">{feature.name}</p>
-            <p className="text-xs font-normal tracking-tight text-dark-600 [overflow-wrap:anywhere] leading-snug text-justify">
-              {feature.summary}
-            </p>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <p className="text-sm font-semibold tracking-tight text-dark-900 break-keep">{feature.name}</p>
+            {feature.summary && (
+              <p className="text-xs font-normal leading-relaxed text-dark-600 break-keep">
+                {feature.summary}
+              </p>
+            )}
           </div>
         </div>
       ))}

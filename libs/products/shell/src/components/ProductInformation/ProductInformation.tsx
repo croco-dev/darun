@@ -12,7 +12,7 @@ export const ProductInformation = bind(useProductInformation, ({ name, logoUrl, 
     isHero
     isAlignCenter
     nameAs="h1"
-    tagVariant="circle"
+    tagVariant="square"
     tags={tags && tags.map(tag => tag.name)}
   />
 ));

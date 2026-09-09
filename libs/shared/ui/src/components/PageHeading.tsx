@@ -32,10 +32,10 @@ export function PageHeading({ title, subtitle, moreLink, size, align, className,
   return (
     <div className={cn(pageHeadingVariants({ size, align }), className)} {...props}>
       <div className="flex w-full items-start justify-between gap-4">
-        <h1 className="text-2xl font-bold leading-tight tracking-tight text-dark-900 sm:text-3xl">{title}</h1>
+        <h1 className="break-keep text-2xl font-bold leading-tight tracking-tight text-dark-900 sm:text-3xl">{title}</h1>
         {moreLink && <span className="inline-flex shrink-0 items-center">{moreLink}</span>}
       </div>
-      {subtitle && <p className="max-w-2xl text-sm leading-relaxed text-dark-600 sm:text-base">{subtitle}</p>}
+      {subtitle && <p className="max-w-2xl break-keep text-sm leading-relaxed text-dark-600 sm:text-base">{subtitle}</p>}
     </div>
   );
 }

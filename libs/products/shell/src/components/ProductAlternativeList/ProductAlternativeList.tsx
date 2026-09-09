@@ -32,7 +32,7 @@ export const ProductAlternativeList = bind(
                     summary={product.summary}
                     logoSize="small"
                     logoUrl={product.logoUrl}
-                    tagVariant="circle"
+                    tagVariant="square"
                     tags={product.tags.map(tag => tag.name)}
                   />
                 </Link>

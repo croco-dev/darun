@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, ContentArea } from '@darun/ui';
+import { ChevronRight, ContentArea, Search } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
@@ -71,7 +71,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             </h1>
           </div>
 
-          <p className="max-w-xl text-sm leading-relaxed text-dark-300 sm:text-base">
+          <p className="max-w-xl text-sm leading-relaxed text-dark-300 break-keep sm:text-base">
             {isKo
               ? '팀과 개인의 생산성을 극대화할 최적의 도구를 나란히 비교하고, 실제 커뮤니티 추천 랭킹으로 검증된 서비스를 찾아보세요.'
               : 'Discover and compare verified digital tools side-by-side with real community ratings to find what fits your needs.'}
@@ -84,16 +84,22 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
               <Link
                 key={keyword}
                 href={`/${locale}/search/product?query=${encodeURIComponent(keyword)}`}
-                className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/80 transition-all duration-200 hover:border-brown-400/50 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-400/60"
+                className="group inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white/80 backdrop-blur-xs transition-all duration-200 hover:border-brown-400/60 hover:bg-white/12 hover:text-white hover:shadow-xs active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-400/60"
               >
-                {keyword}
+                <Search size={11} className="shrink-0 text-white/40 transition-colors group-hover:text-brown-400" />
+                <span>{keyword}</span>
               </Link>
             ))}
           </div>
         </div>
       </ContentArea>
 
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      {/* Ambient bottom transition glow to ease into light canvas */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-0 left-1/2 h-20 w-3/4 -translate-x-1/2 bg-[radial-gradient(ellipse_at_bottom,rgba(217,144,73,0.14),transparent_70%)]"
+      />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brown-500/25 to-transparent" />
     </section>
   );
 };

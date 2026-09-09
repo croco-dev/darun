@@ -127,9 +127,9 @@ const config: Config = {
         '2xl': '0 24px 48px -12px rgba(0, 0, 0, 0.16)',
         '2xs': '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
         xs: '0 1px 2px 0 rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02)',
-        card: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 4px 16px -2px rgba(0, 0, 0, 0.05)',
+        card: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 4px 16px -2px rgba(0, 0, 0, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.85)',
         'card-hover':
-          '0 4px 8px -2px rgba(0, 0, 0, 0.03), 0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 20px 32px -8px rgba(0, 0, 0, 0.04)',
+          '0 4px 12px -2px rgba(0, 0, 0, 0.04), 0 16px 32px -4px rgba(217, 144, 73, 0.09), 0 0 0 1px rgba(217, 144, 73, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 1)',
         button: '0 1px 2px 0 rgba(0, 0, 0, 0.04), 0 1px 3px -1px rgba(0, 0, 0, 0.03)',
         'button-hover': '0 3px 8px -1px rgba(0, 0, 0, 0.08), 0 1px 3px 0 rgba(0, 0, 0, 0.03)',
         elevated:

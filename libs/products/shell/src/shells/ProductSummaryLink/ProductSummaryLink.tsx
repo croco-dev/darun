@@ -3,7 +3,7 @@ import { ProductLinks } from '../../components';
 type ProductSummaryLinkProps = { slug: string };
 
 export const ProductSummaryLink = ({ slug }: ProductSummaryLinkProps) => (
-  <div className="flex flex-wrap items-center gap-2.5">
+  <div className="flex flex-wrap items-center gap-2.5 empty:hidden">
     <ProductLinks slug={slug} />
   </div>
 );

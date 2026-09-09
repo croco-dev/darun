@@ -1,6 +1,6 @@
 'use client';
 
-import { ContentArea } from '@darun/ui';
+import { ContentArea, ExternalLink, Logo } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
@@ -11,12 +11,13 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
   const t = useTranslations('Layout.footer');
 
   return (
-    <footer className="mt-auto border-t border-dark-150 py-8 md:py-10">
+    <footer className="mt-auto border-t border-dark-150 bg-surface-50/75 py-8 backdrop-blur-xs md:py-10">
       <ContentArea>
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-start">
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-dark-900">다른</span>
+              <Logo size={20} />
+              <span className="text-sm font-bold text-dark-900">다른</span>
               <span className="text-xs text-dark-400">/</span>
               <span className="text-sm text-dark-500">&copy; {new Date().getFullYear()} Croco</span>
             </div>
@@ -31,12 +32,13 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
                 href="https://forms.gle/nDPFKAYSuoGg2J3MA"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-dark-600 transition-colors duration-200 hover:text-dark-900 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="group inline-flex items-center gap-1 text-sm text-dark-600 transition-colors duration-200 hover:text-dark-900 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
-                {t('contact')}
+                <span>{t('contact')}</span>
+                <ExternalLink size={12} className="stroke-[2] text-dark-400 transition-colors group-hover:text-dark-900" />
               </a>
             </nav>
-            <p className="max-w-xl text-sm leading-relaxed text-dark-500">{t('disclaimer')}</p>
+            <p className="max-w-xl text-sm leading-relaxed text-dark-500 break-keep">{t('disclaimer')}</p>
           </div>
           <div className="flex shrink-0 items-center">
             <LocaleToggle />
