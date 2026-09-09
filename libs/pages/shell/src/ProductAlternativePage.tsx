@@ -27,7 +27,7 @@ export const ProductAlternativePage = ({
             items={[
               { label: isKo ? '홈' : 'Home', href: `/${locale}/` },
               { label: productName, href: `/${locale}/products/${slug}` },
-              { label: isKo ? '대안' : 'Alternatives', ariaCurrent: 'page' },
+              { label: isKo ? '대안 서비스' : 'Alternatives', ariaCurrent: 'page' },
             ]}
           />
           <ProductSummary slug={slug} infoLinkHref={`/${locale}/products/${slug}`} />

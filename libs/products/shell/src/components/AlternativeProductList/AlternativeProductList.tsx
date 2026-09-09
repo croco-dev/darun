@@ -39,6 +39,7 @@ export const AlternativeProductList = bind(
                 logoSize="small"
                 summary={alternative.summary}
                 tags={alternative.tags.map((tag: Tag) => tag.name)}
+                tagVariant="square"
                 maxTagItems={1}
               />
             </Link>

@@ -28,12 +28,12 @@ export default function Loading() {
                       <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-dark-100 motion-reduce:animate-none" />
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <div className="h-5 w-28 animate-pulse rounded bg-dark-100 motion-reduce:animate-none" />
-                        <div className="h-3.5 w-16 animate-pulse rounded bg-dark-100 motion-reduce:animate-none" />
+                        <div className="h-4 w-16 animate-pulse rounded-md bg-dark-100 motion-reduce:animate-none" />
                       </div>
                     </div>
-                    <div className="h-6 w-14 shrink-0 animate-pulse rounded-full bg-dark-100 motion-reduce:animate-none" />
+                    <div className="h-7 w-16 shrink-0 animate-pulse rounded-xl bg-dark-100 motion-reduce:animate-none" />
                   </div>
-                  <div className="flex min-h-[2.5rem] flex-col gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     <div className="h-4 w-full animate-pulse rounded bg-dark-100 motion-reduce:animate-none" />
                     <div className="h-4 w-3/4 animate-pulse rounded bg-dark-100 motion-reduce:animate-none" />
                   </div>

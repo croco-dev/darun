@@ -45,8 +45,8 @@ export default function Loading() {
                   <Skeleton width="180px" height={28} radius="6px" />
                   <Skeleton width="280px" height={18} radius="4px" />
                   <div className="flex gap-1.5 pt-1">
-                    <Skeleton width="72px" height={22} radius="9999px" />
-                    <Skeleton width="72px" height={22} radius="9999px" />
+                    <Skeleton width="72px" height={22} radius="6px" />
+                    <Skeleton width="72px" height={22} radius="6px" />
                   </div>
                 </div>
               </div>

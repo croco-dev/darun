@@ -41,7 +41,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl }) => 
           <div className="hidden h-max shrink-0 items-center gap-2 md:flex">
             <HeaderLoginButton />
             <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/nDPFKAYSuoGg2J3MA">
-              <Button size="sm">{t('submit')}</Button>
+              <Button variant="shadow" color="primary" size="sm">{t('submit')}</Button>
             </a>
           </div>
         </div>

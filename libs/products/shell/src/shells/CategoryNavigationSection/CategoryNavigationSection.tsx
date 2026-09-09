@@ -21,7 +21,7 @@ const CATEGORIES_QUERY = gql`
 type Category = { id: string; slug: string; labelKo: string; labelEn: string };
 type CategoriesQueryResult = { categories?: Category[] | null };
 
-const CATEGORY_ICONS: Record<string, string> = {
+export const CATEGORY_ICONS: Record<string, string> = {
   'developer-tools': '💻',
   development: '💻',
   'health-fitness': '💪',
@@ -57,7 +57,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   writing: '✍️',
 };
 
-function getCategoryIcon(slug: string): string {
+export function getCategoryIcon(slug: string): string {
   const normalized = slug.toLowerCase();
   for (const [key, icon] of Object.entries(CATEGORY_ICONS)) {
     if (normalized.includes(key)) return icon;
@@ -112,8 +112,9 @@ export const CategoryNavigationSection = () => {
             ))}
           </div>
         ) : (
-          <div className="flex min-h-40 items-center justify-center rounded-card-lg border border-dark-150 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
-            {t('home.category.empty')}
+          <div className="flex min-h-36 flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-10 text-center shadow-card">
+            <span className="mb-2 text-2xl" aria-hidden="true">🪴</span>
+            <p className="text-sm font-semibold text-dark-900 break-keep">{t('home.category.empty')}</p>
           </div>
         )}
       </div>

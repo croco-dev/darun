@@ -17,7 +17,7 @@ const CATEGORIES_QUERY = gql`
   }
 `;
 
-const CATEGORY_ICONS: Record<string, string> = {
+export const CATEGORY_ICONS: Record<string, string> = {
   ai: '🤖',
   productivity: '⚡️',
   design: '🎨',
@@ -32,13 +32,14 @@ const CATEGORY_ICONS: Record<string, string> = {
   education: '📚',
 };
 
-function getCategoryIcon(slug: string): string {
+export function getCategoryIcon(slug: string): string {
   const normalized = slug.toLowerCase();
   for (const [key, icon] of Object.entries(CATEGORY_ICONS)) {
     if (normalized.includes(key)) return icon;
   }
   return '✨';
 }
+
 
 export const CategoryShortcutGrid = () => {
   const locale = useLocale();

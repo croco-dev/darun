@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+
 export interface Toast {
   id: string;
   message: string;
@@ -50,18 +52,27 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      <div className="pointer-events-none fixed bottom-4 inset-x-4 z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:right-4 sm:items-end">
         {toasts.map(toast => (
           <div
             key={toast.id}
             data-testid={`toast-${toast.type}`}
             role={toast.type === 'error' ? 'alert' : 'status'}
             aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
-            className={`px-4 py-3 rounded-xl shadow-elevated text-white motion-reduce:animate-none ${
+            className={`pointer-events-auto flex items-center gap-2.5 rounded-xl px-4 py-3 shadow-elevated transition-all motion-reduce:animate-none ${
               toast.exiting ? 'animate-fade-out-down' : 'animate-fade-in-up'
-            } ${toast.type === 'success' ? 'bg-leaf-700' : 'bg-cherry-700'}`}
+            } ${
+              toast.type === 'success'
+                ? 'border border-leaf-600/30 bg-leaf-700 text-white shadow-card-hover'
+                : 'border border-cherry-600/30 bg-cherry-700 text-white shadow-card-hover'
+            }`}
           >
-            <span className="text-sm font-medium">{toast.message}</span>
+            {toast.type === 'success' ? (
+              <CheckCircle2 size={18} className="shrink-0 stroke-[2.25] text-leaf-200" aria-hidden="true" />
+            ) : (
+              <AlertCircle size={18} className="shrink-0 stroke-[2.25] text-cherry-200" aria-hidden="true" />
+            )}
+            <span className="text-sm font-medium tracking-tight break-keep">{toast.message}</span>
           </div>
         ))}
       </div>

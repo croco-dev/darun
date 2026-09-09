@@ -65,13 +65,13 @@ export const ProductItem = ({
           <div className="flex min-w-0 flex-1 items-center gap-3">
             {rank !== undefined && (
               <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold tabular-nums transition-all duration-200 ${
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black tabular-nums transition-all duration-200 ${
                   rank === 1
-                    ? 'bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 text-white shadow-xs ring-1 ring-amber-400/60'
+                    ? 'bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-950 shadow-xs ring-1 ring-amber-300/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.7)]'
                     : rank === 2
-                      ? 'bg-gradient-to-b from-slate-400 via-slate-500 to-slate-600 text-white shadow-xs ring-1 ring-slate-400/60'
+                      ? 'bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 text-slate-800 shadow-xs ring-1 ring-slate-300/90 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.9)]'
                       : rank === 3
-                        ? 'bg-gradient-to-b from-amber-700 via-amber-800 to-amber-900 text-amber-100 shadow-xs ring-1 ring-amber-700/60'
+                        ? 'bg-gradient-to-b from-amber-600 via-amber-700 to-orange-800 text-amber-50 shadow-xs ring-1 ring-amber-600/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35)]'
                         : 'border border-dark-150 bg-surface-100 font-bold text-dark-700 group-hover:border-dark-300 group-hover:bg-white group-hover:text-dark-900'
                 }`}
               >
@@ -103,9 +103,11 @@ export const ProductItem = ({
           </div>
           {headerRight && <div className="shrink-0">{headerRight}</div>}
         </div>
-        <p className="line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-dark-600 break-keep sm:text-sm">
-          {summary || ''}
-        </p>
+        {summary && (
+          <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-keep sm:text-sm sm:leading-relaxed">
+            {summary}
+          </p>
+        )}
       </Component>
     );
   }
@@ -150,7 +152,9 @@ export const ProductItem = ({
           </NameTag>
           {summary &&
             (isStacked ? (
-              <p className="line-clamp-2 text-xs md:text-sm leading-relaxed text-dark-600 min-h-[2.5rem]">{summary}</p>
+              <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-keep sm:text-sm sm:leading-relaxed">
+                {summary}
+              </p>
             ) : isSummaryNoWrap && !isHero ? (
               <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-relaxed text-dark-600">
                 {summary}
@@ -159,8 +163,8 @@ export const ProductItem = ({
               <p
                 className={
                   isHero
-                    ? 'text-base leading-relaxed text-dark-600 md:text-lg'
-                    : 'text-sm leading-relaxed text-dark-600'
+                    ? 'text-base leading-relaxed text-dark-600 break-keep md:text-lg'
+                    : 'text-sm leading-relaxed text-dark-600 break-keep'
                 }
               >
                 {summary}

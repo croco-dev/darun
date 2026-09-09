@@ -9,11 +9,11 @@ export const HeaderLoginButton = bind(useHeaderLoginButton, ({ isLoading, isLogg
   const t = useTranslations('Layout.header');
 
   return isLoading ? null : isLoggedIn ? (
-    <Button type="button" kind="text" onClick={logout}>
+    <Button type="button" kind="text" size="sm" onClick={logout}>
       {t('logout')}
     </Button>
   ) : (
-    <Button type="button" kind="text" onClick={login}>
+    <Button type="button" kind="text" size="sm" onClick={login}>
       {t('login')}
     </Button>
   );

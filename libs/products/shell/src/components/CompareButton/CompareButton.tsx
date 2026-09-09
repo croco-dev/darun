@@ -78,15 +78,20 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
 
   return (
     <Button
-      variant={isAdded ? 'contained' : 'shadow'}
-      color="secondary"
+      variant="shadow"
+      color={isAdded ? 'primary' : 'secondary'}
       size="md"
       onClick={handleClick}
       data-testid="compare-button"
+      className="group transition-all duration-200 active:scale-[0.98]"
     >
       <div className="flex items-center gap-1.5">
-        {isAdded ? <Check size={16} className="text-current" /> : <Plus size={16} />}
-        <span>{isAdded ? '비교 취소' : '비교에 추가'}</span>
+        {isAdded ? (
+          <Check size={16} className="text-current stroke-[2.25] transition-transform duration-200 group-hover:scale-110" />
+        ) : (
+          <Plus size={16} className="text-dark-600 stroke-[2] transition-transform duration-200 group-hover:scale-110 group-hover:text-dark-900" />
+        )}
+        <span className="break-keep font-semibold">{isAdded ? '비교 취소' : '비교에 추가'}</span>
       </div>
     </Button>
   );

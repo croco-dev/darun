@@ -176,7 +176,7 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
     <>
       <JsonLd data={webPageJsonLd} />
       <JsonLd data={breadcrumbList} />
-      <ProductDetailPage params={resolvedParams} />
+      <ProductDetailPage params={resolvedParams} productName={product.name} />
     </>
   );
 }

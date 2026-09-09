@@ -12,7 +12,11 @@ export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings,
         key={id}
         kind={activeHeadingId === id ? 'textActive' : 'text'}
         size="sm"
-        className={activeHeadingId === id ? 'font-semibold text-dark-950' : 'text-dark-600'}
+        className={
+          activeHeadingId === id
+            ? 'font-bold text-dark-950 bg-white border-dark-200/90 shadow-xs hover:bg-white'
+            : 'text-dark-600 transition-colors hover:text-dark-900'
+        }
         onClick={() => {
           const target = document.getElementById(id);
 

@@ -8,7 +8,7 @@ const chipVariants = {
 } as const;
 
 const chipColors = {
-  filledGray: 'border-transparent bg-surface-200 text-dark-800',
+  filledGray: 'border-transparent bg-surface-200/90 text-dark-700',
   filledDark: 'border-transparent bg-dark-900 text-dark-100',
   outlineGray: 'border-dark-150 bg-surface-100 text-dark-700',
   outlineBrown: 'border-brown-300 bg-brown-50/50 text-brown-900',
@@ -18,7 +18,7 @@ const chipColors = {
 } as const;
 
 const chipHoverColors: Partial<Record<ChipColor, string>> = {
-  filledGray: 'hover:bg-surface-300',
+  filledGray: 'hover:bg-surface-300 hover:text-dark-900',
   filledDark: 'hover:bg-dark-800',
   outlineGray: 'hover:border-dark-300 hover:bg-surface-200',
   outlineBrown: 'hover:bg-brown-100',
@@ -52,7 +52,7 @@ export function Chip({
   ...props
 }: ChipProps) {
   const chipClassName = cn(
-    'inline-flex shrink-0 items-center border leading-none transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transition-none',
+    'inline-flex shrink-0 items-center truncate max-w-[200px] sm:max-w-xs border leading-none transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transition-none',
     chipVariants[variant],
     chipColors[color],
     as !== 'div' && chipHoverColors[color],
@@ -60,11 +60,13 @@ export function Chip({
     className
   );
 
+  const defaultTitle = typeof children === 'string' ? children : undefined;
+
   if (as === 'a') {
     const anchorProps = props as AnchorHTMLAttributes<HTMLAnchorElement>;
 
     return (
-      <a className={chipClassName} {...anchorProps}>
+      <a title={anchorProps.title ?? defaultTitle} className={chipClassName} {...anchorProps}>
         {children}
       </a>
     );
@@ -74,7 +76,7 @@ export function Chip({
     const buttonProps = props as ButtonHTMLAttributes<HTMLButtonElement>;
 
     return (
-      <button className={chipClassName} {...buttonProps}>
+      <button title={buttonProps.title ?? defaultTitle} className={chipClassName} {...buttonProps}>
         {children}
       </button>
     );
@@ -83,7 +85,7 @@ export function Chip({
   const divProps = props as HTMLAttributes<HTMLDivElement>;
 
   return (
-    <div className={chipClassName} {...divProps}>
+    <div title={divProps.title ?? defaultTitle} className={chipClassName} {...divProps}>
       {children}
     </div>
   );

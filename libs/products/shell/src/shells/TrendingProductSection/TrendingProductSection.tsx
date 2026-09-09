@@ -3,7 +3,7 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
-import { ChevronRight, SectionHeader, SectionWrapper } from '@darun/ui';
+import { ChevronRight, SectionHeader, SectionWrapper, TrendingUp } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -98,8 +98,11 @@ const TrendingProductsView = ({
           }
         />
         {products.length === 0 ? (
-          <div className="flex min-h-48 items-center justify-center rounded-card-lg border border-dark-150 bg-surface-100 px-6 py-10 text-center text-sm font-medium text-dark-600 sm:text-base">
-            {emptyLabel}
+          <div className="flex min-h-44 flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-10 text-center shadow-card">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-400 shadow-2xs">
+              <TrendingUp size={22} className="stroke-[2]" />
+            </div>
+            <p className="text-sm font-semibold text-dark-900 break-keep">{emptyLabel}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">

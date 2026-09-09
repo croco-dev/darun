@@ -2,6 +2,7 @@ import { HTMLAttributes, ReactNode } from 'react';
 
 import { Link } from '@darun/utils-router';
 import { cn } from '../lib/utils';
+import { ChevronRight } from './icons';
 
 export type BreadcrumbItem = {
   label: ReactNode;
@@ -16,13 +17,18 @@ export type BreadcrumbProps = HTMLAttributes<HTMLElement> & {
 
 export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbProps) {
   return (
-    <nav aria-label="Breadcrumb" className={cn('flex items-center gap-1', className)} {...props} data-testid={testId}>
-      <ol className="flex items-center gap-1 text-sm">
+    <nav
+      aria-label="Breadcrumb"
+      className={cn('flex items-center gap-1.5 text-xs sm:text-sm', className)}
+      {...props}
+      data-testid={testId}
+    >
+      <ol className="flex flex-wrap items-center gap-1.5">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
 
           return (
-            <li key={String(index)} className="flex items-center gap-1">
+            <li key={String(index)} className="flex items-center gap-1.5">
               {item.href ? (
                 <Link
                   href={item.href}
@@ -35,7 +41,7 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
                 </Link>
               ) : (
                 <span
-                  className="font-medium text-dark-900"
+                  className="max-w-[200px] truncate font-semibold text-dark-900 sm:max-w-xs"
                   {...(item.ariaCurrent && {
                     'aria-current': item.ariaCurrent,
                   })}
@@ -44,9 +50,11 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
                 </span>
               )}
               {!isLast && (
-                <span className="select-none text-xs text-dark-400" aria-hidden="true">
-                  /
-                </span>
+                <ChevronRight
+                  size={12}
+                  className="shrink-0 text-dark-400 stroke-[2.25] select-none"
+                  aria-hidden="true"
+                />
               )}
             </li>
           );
@@ -55,3 +63,4 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
     </nav>
   );
 }
+

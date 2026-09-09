@@ -24,8 +24,8 @@ export const RecentProductSkeleton = () => {
                   <div className="h-4 w-full animate-pulse rounded bg-dark-100 motion-reduce:animate-none" />
                 </div>
                 <div className="flex items-center justify-between gap-2 pt-1">
-                  <div className="h-5 w-16 animate-pulse rounded-full bg-dark-100 motion-reduce:animate-none" />
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-dark-100 motion-reduce:animate-none" />
+                  <div className="h-5 w-16 animate-pulse rounded-md bg-dark-100 motion-reduce:animate-none" />
+                  <div className="h-6 w-12 animate-pulse rounded-lg bg-dark-100 motion-reduce:animate-none" />
                 </div>
               </div>
             </div>
