@@ -92,7 +92,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                 {categoryLabel}
               </h1>
               {products.length > 0 && (
-                <span className="inline-flex items-center rounded-md border border-dark-150 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold text-dark-700">
+                <span className="inline-flex items-center rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs">
                   {locale === 'ko' ? `${products.length}개 도구` : `${products.length} tools`}
                 </span>
               )}
@@ -140,4 +140,3 @@ export function CategoryProductSection({ slug }: { slug: string }) {
     </SectionWrapper>
   );
 }
-

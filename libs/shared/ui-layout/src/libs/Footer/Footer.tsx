@@ -21,10 +21,10 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
               <span className="text-xs text-dark-400">/</span>
               <span className="text-sm text-dark-500">&copy; {new Date().getFullYear()} Croco</span>
             </div>
-            <nav className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <nav className="flex flex-wrap items-center gap-x-4 gap-y-1.5" aria-label="Footer navigation">
               <Link
                 href={aboutUrl}
-                className="text-sm text-dark-600 transition-colors duration-200 hover:text-dark-900 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="text-sm font-medium text-dark-600 transition-colors duration-200 hover:text-dark-950 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 {t('about')}
               </Link>
@@ -32,13 +32,16 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
                 href="https://forms.gle/nDPFKAYSuoGg2J3MA"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex items-center gap-1 text-sm text-dark-600 transition-colors duration-200 hover:text-dark-900 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="group inline-flex items-center gap-1 text-sm font-medium text-dark-600 transition-colors duration-200 hover:text-dark-950 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <span>{t('contact')}</span>
-                <ExternalLink size={12} className="stroke-[2] text-dark-400 transition-colors group-hover:text-dark-900" />
+                <ExternalLink
+                  size={12}
+                  className="stroke-[2] text-dark-400 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-dark-950"
+                />
               </a>
             </nav>
-            <p className="max-w-xl text-sm leading-relaxed text-dark-500 break-keep">{t('disclaimer')}</p>
+            <p className="max-w-xl text-xs leading-relaxed text-dark-500 break-keep sm:text-sm">{t('disclaimer')}</p>
           </div>
           <div className="flex shrink-0 items-center">
             <LocaleToggle />

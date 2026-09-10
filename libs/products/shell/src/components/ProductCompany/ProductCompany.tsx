@@ -1,6 +1,7 @@
 'use client';
 
 import { bind } from '@darun/utils-structure-react';
+import { Building2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useProductCompany } from './useProductCompany';
 
@@ -36,7 +37,10 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
 
   if (!hasAnyInfo) {
     return (
-      <div className="flex min-h-24 flex-col items-center justify-center rounded-xl border border-dashed border-dark-200 bg-surface-100/40 px-4 py-6 text-center">
+      <div className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-4 py-8 text-center sm:min-h-36">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
+          <Building2 size={18} className="stroke-[2]" />
+        </div>
         <p className="text-sm font-medium text-dark-500 break-keep">{t('company.empty')}</p>
       </div>
     );

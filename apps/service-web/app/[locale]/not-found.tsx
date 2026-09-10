@@ -1,7 +1,7 @@
 import { Button, Compass, ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
-import Link from 'next/link';
+import { Link } from '../../i18n/navigation';
 
 export const metadata: Metadata = {
   title: '페이지를 찾을 수 없습니다 - 다른',
@@ -18,7 +18,7 @@ export default function NotFound() {
             </div>
 
             <div className="flex flex-col items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-dark-200 bg-surface-100 px-3 py-0.5 font-mono text-xs font-bold tracking-widest text-dark-600">
+              <span className="inline-flex items-center rounded-full border border-dark-150 bg-surface-100 px-3 py-0.5 font-mono text-xs font-bold tracking-widest text-dark-600 shadow-2xs">
                 ERROR 404
               </span>
               <h1 className="mt-1 text-2xl font-bold tracking-tight text-dark-900 break-keep sm:text-3xl">
@@ -30,12 +30,12 @@ export default function NotFound() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <Link href="/">
+              <Link href="/" className="focus-visible:outline-none">
                 <Button variant="shadow" color="primary" size="md">
                   홈으로 이동
                 </Button>
               </Link>
-              <Link href="/ranking">
+              <Link href="/ranking" className="focus-visible:outline-none">
                 <Button variant="shadow" color="secondary" size="md">
                   인기 랭킹 보기
                 </Button>
@@ -47,4 +47,3 @@ export default function NotFound() {
     </Layout>
   );
 }
-

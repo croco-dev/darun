@@ -29,16 +29,39 @@ export type SectionHeaderProps = HTMLAttributes<HTMLHeadingElement> & {
   align?: VariantProps<typeof sectionHeaderVariants>['align'];
 };
 
-export function SectionHeader({ title, subtitle, moreLink, size, align, className, ...props }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  subtitle,
+  moreLink,
+  size,
+  align = 'left',
+  className,
+  ...props
+}: SectionHeaderProps) {
+  const isCentered = align === 'center';
   return (
     <div className={cn(sectionHeaderVariants({ size, align }), className)} {...props}>
-      <div className="flex w-full items-center justify-between gap-4">
+      <div
+        className={cn(
+          'flex w-full gap-4',
+          isCentered ? 'items-center justify-center text-center' : 'items-center justify-between'
+        )}
+      >
         <h2 className="break-keep text-xl font-bold leading-tight tracking-tight text-dark-900 sm:text-2xl sm:tracking-tight">
           {title}
         </h2>
-        {moreLink && <span className="shrink-0 inline-flex items-center">{moreLink}</span>}
+        {moreLink && <span className="inline-flex shrink-0 items-center">{moreLink}</span>}
       </div>
-      {subtitle && <p className="max-w-2xl break-keep text-sm leading-relaxed text-dark-600 sm:text-base">{subtitle}</p>}
+      {subtitle && (
+        <p
+          className={cn(
+            'max-w-2xl break-keep text-sm leading-relaxed text-dark-600 sm:text-base',
+            isCentered && 'mx-auto'
+          )}
+        >
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }

@@ -33,8 +33,8 @@ export const LocaleToggle = () => {
             aria-label={loc === 'ko' ? '한국어' : 'English'}
             disabled={isActive}
             className={`
-              rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 ease-out motion-reduce:transition-none
-              ${isActive ? 'bg-dark-900 text-white shadow-xs cursor-default' : 'bg-transparent text-dark-600 hover:bg-surface-200/80 hover:text-dark-900 cursor-pointer'}
+              rounded-full px-3 py-1 text-xs font-semibold select-none transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none
+              ${isActive ? 'bg-dark-900 text-white shadow-xs cursor-default' : 'bg-transparent text-dark-600 hover:bg-surface-200/80 hover:text-dark-900 cursor-pointer active:scale-95'}
             `}
           >
             {loc === 'ko' ? 'Ko' : 'En'}
