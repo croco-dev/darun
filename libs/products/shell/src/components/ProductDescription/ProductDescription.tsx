@@ -2,14 +2,17 @@
 
 import { bind } from '@darun/utils-structure-react';
 import DOMPurify from 'isomorphic-dompurify';
+import { useTranslations } from 'next-intl';
 
 import { useProductDescription } from './useProductDescription';
 
 export const ProductDescription = bind(useProductDescription, ({ description }) => {
+  const t = useTranslations('ProductDetail');
+
   if (!description) {
     return (
       <div className="flex min-h-24 flex-col items-center justify-center rounded-xl border border-dashed border-dark-200 bg-surface-100/40 px-4 py-6 text-center">
-        <p className="text-sm font-medium text-dark-500">소개 정보가 아직 준비되지 않았습니다.</p>
+        <p className="text-sm font-medium text-dark-500 break-keep">{t('description.empty')}</p>
       </div>
     );
   }

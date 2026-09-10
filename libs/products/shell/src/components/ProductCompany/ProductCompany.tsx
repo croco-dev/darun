@@ -37,7 +37,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
   if (!hasAnyInfo) {
     return (
       <div className="flex min-h-24 flex-col items-center justify-center rounded-xl border border-dashed border-dark-200 bg-surface-100/40 px-4 py-6 text-center">
-        <p className="text-sm font-medium text-dark-500">운영사 정보가 등록되지 않았습니다.</p>
+        <p className="text-sm font-medium text-dark-500 break-keep">{t('company.empty')}</p>
       </div>
     );
   }
@@ -75,7 +75,9 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <dt className="shrink-0 text-xs font-semibold uppercase tracking-wider text-dark-500">
               {t('company.field.foundedAt')}
             </dt>
-            <dd className="text-right text-sm font-semibold text-dark-900 break-keep">{formatStartAt(company.startAt)}</dd>
+            <dd className="text-right text-sm font-semibold text-dark-900 break-keep">
+              {formatStartAt(company.startAt)}
+            </dd>
           </div>
         )}
       </dl>

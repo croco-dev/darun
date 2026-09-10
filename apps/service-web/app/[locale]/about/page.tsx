@@ -1,4 +1,4 @@
-import { Button, ContentArea, ExternalLink, PageHeading, ShieldCheck, Sparkles } from '@darun/ui';
+import { Breadcrumb, Button, ContentArea, ExternalLink, PageHeading, ShieldCheck, Sparkles } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import { getOgLocale } from '../../../lib/seo/metadata';
@@ -95,6 +95,13 @@ export default async function AboutPage({ params }: Props) {
     <Layout>
       <main className="flex w-full flex-col">
         <ContentArea className="flex max-w-4xl flex-col gap-8 py-10 md:gap-10 md:py-16">
+          <Breadcrumb
+            data-testid="breadcrumb-about"
+            items={[
+              { label: isKo ? '홈' : 'Home', href: `/${currentLocale}` },
+              { label: isKo ? '소개' : 'About', ariaCurrent: 'page' },
+            ]}
+          />
           <div className="flex flex-col gap-3">
             <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dark-150 bg-surface-100 px-3 py-1 text-xs font-semibold text-dark-700">
               <ShieldCheck size={14} className="text-dark-500" />
@@ -184,4 +191,3 @@ export default async function AboutPage({ params }: Props) {
     </Layout>
   );
 }
-

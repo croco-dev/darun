@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
 import { ProductCard } from '@darun/products-shell';
-import { Chip, ContentArea, PageHeading } from '@darun/ui';
+import { Breadcrumb, Chip, ContentArea, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import Image from 'next/image';
@@ -131,6 +131,16 @@ export default async function ComparePage({ params }: Props) {
     <Layout>
       <main className="flex w-full flex-col">
         <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
+          <Breadcrumb
+            data-testid="breadcrumb-compare"
+            items={[
+              { label: isKo ? '홈' : 'Home', href: `/${resolvedParams.locale}` },
+              {
+                label: isKo ? '서비스 비교' : 'Compare',
+                ariaCurrent: 'page',
+              },
+            ]}
+          />
           <PageHeading
             title={
               resolvedParams.locale === 'en'
@@ -274,12 +284,16 @@ function CompareRow({
   isLast?: boolean;
 }) {
   return (
-    <div className={`p-4 md:p-5 ${isLast ? '' : 'border-b border-dark-150/70'}`}>
+    <div
+      className={`p-4 md:p-5 transition-colors duration-150 hover:bg-surface-50/60 ${
+        isLast ? '' : 'border-b border-dark-150/70'
+      }`}
+    >
       <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-dark-500">{label}</div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-150/70">
         <div className="md:pr-5">
           <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel1}</div>
-          <div className="text-sm leading-relaxed text-dark-800" data-testid={`compare-row-${testid}-1`}>
+          <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-1`}>
             {tags1 && tags1.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {tags1.map(tag => (
@@ -288,14 +302,16 @@ function CompareRow({
                   </Chip>
                 ))}
               </div>
+            ) : value1 ? (
+              value1
             ) : (
-              value1 || '-'
+              <span className="text-dark-400 font-mono">-</span>
             )}
           </div>
         </div>
         <div className="md:pl-5">
           <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel2}</div>
-          <div className="text-sm leading-relaxed text-dark-800" data-testid={`compare-row-${testid}-2`}>
+          <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-2`}>
             {tags2 && tags2.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {tags2.map(tag => (
@@ -304,8 +320,10 @@ function CompareRow({
                   </Chip>
                 ))}
               </div>
+            ) : value2 ? (
+              value2
             ) : (
-              value2 || '-'
+              <span className="text-dark-400 font-mono">-</span>
             )}
           </div>
         </div>

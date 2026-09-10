@@ -15,6 +15,11 @@ export default function Loading() {
               <div className="h-10 w-80 animate-pulse rounded-lg bg-dark-700 motion-reduce:animate-none md:h-12" />
             </div>
           </ContentArea>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-0 left-1/2 h-20 w-3/4 -translate-x-1/2 bg-[radial-gradient(ellipse_at_bottom,rgba(217,144,73,0.14),transparent_70%)]"
+          />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brown-500/25 to-transparent" />
         </section>
 
         <CategoryNavigationSkeleton />

@@ -7,6 +7,7 @@ type ArticleCardProps = {
   summary?: string;
   author?: string;
   date?: Date;
+  href?: string;
 };
 
 function formatDate(date?: Date): string {
@@ -19,9 +20,9 @@ function formatDate(date?: Date): string {
   return `${year}.${month}.${day}`;
 }
 
-export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, summary }: ArticleCardProps) => {
-  return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-card-lg border border-dark-150/80 bg-white shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover focus-within:-translate-y-0.5 focus-within:border-dark-300 focus-within:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none">
+export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, summary, href }: ArticleCardProps) => {
+  const content = (
+    <>
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-100">
         {thumbnailImageUri ? (
           <img
@@ -53,6 +54,28 @@ export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, 
           {date && <span>{formatDate(date)}</span>}
         </div>
       </div>
+    </>
+  );
+
+  const baseClassName =
+    'group flex h-full flex-col overflow-hidden rounded-card-lg border border-dark-150/80 bg-white shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none';
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        className={`${baseClassName} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2`}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <article
+      className={`${baseClassName} focus-within:-translate-y-0.5 focus-within:border-dark-300 focus-within:shadow-card-hover`}
+    >
+      {content}
     </article>
   );
 };

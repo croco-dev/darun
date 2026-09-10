@@ -28,9 +28,14 @@ function withLocale(pathname: string | null, target: string): string {
 export function useHeader() {
   const pathname = usePathname();
 
+  const isRanking = Boolean(pathname && pathname.includes('/ranking'));
+  const isBrowse = Boolean(pathname && (pathname.includes('/search') || pathname.includes('/category')));
+
   return {
     headerUrl: withLocale(pathname, '/'),
     rankingUrl: withLocale(pathname, '/ranking'),
     browseUrl: withLocale(pathname, '/search/product'),
+    isRanking,
+    isBrowse,
   };
 }

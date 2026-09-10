@@ -27,7 +27,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
         <button
           type="button"
           onClick={() => setQuery('')}
-          className="shrink-0 rounded-full p-0.5 text-dark-400 hover:bg-surface-200 hover:text-dark-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+          className="shrink-0 rounded-full p-0.5 text-dark-400 transition-transform duration-150 hover:bg-surface-200 hover:text-dark-700 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transform-none"
           aria-label="검색어 지우기"
         >
           <X size={14} />
@@ -35,7 +35,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
       ) : (
         <kbd
           aria-hidden="true"
-          className="hidden select-none items-center rounded border border-dark-200 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-400 font-mono shadow-2xs sm:inline-flex"
+          className="hidden select-none items-center rounded border border-dark-150 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-400 font-mono shadow-2xs sm:inline-flex"
         >
           ⌘K
         </kbd>

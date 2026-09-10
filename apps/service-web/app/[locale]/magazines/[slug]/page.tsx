@@ -157,7 +157,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
     <>
       {articleJsonLd && <JsonLd data={articleJsonLd} />}
       {breadcrumbList && <JsonLd data={breadcrumbList} />}
-      <MagazineContentPage params={resolvedParams} />
+      <MagazineContentPage params={resolvedParams} title={magazine?.title} />
     </>
   );
 }

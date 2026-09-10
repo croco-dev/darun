@@ -5,7 +5,7 @@ import { ButtonHTMLAttributes, ElementType, ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex h-fit w-fit items-center justify-center rounded-xl border text-sm font-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none',
+  'inline-flex h-fit w-fit items-center justify-center rounded-xl border text-sm font-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transform-none motion-reduce:transition-none',
   {
     variants: {
       variant: {
@@ -75,7 +75,7 @@ const buttonVariants = cva(
         variant: 'shadow',
         color: 'secondary',
         className:
-          'border-dark-200 bg-white text-dark-900 shadow-button hover:bg-surface-100 hover:border-dark-300 hover:shadow-button-hover active:bg-dark-100',
+          'border-dark-150 bg-white text-dark-900 shadow-button hover:bg-surface-100 hover:border-dark-300 hover:shadow-button-hover active:bg-dark-100',
       },
     ],
     defaultVariants: {

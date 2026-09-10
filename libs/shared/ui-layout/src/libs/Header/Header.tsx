@@ -9,7 +9,7 @@ import { HeaderLoginButton } from '../HeaderLoginButton';
 import { HeaderSearchForm } from '../HeaderSearchForm';
 import { useHeader } from './useHeader';
 
-export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl }) => {
+export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRanking, isBrowse }) => {
   const t = useTranslations('Layout.header');
 
   return (
@@ -23,13 +23,23 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl }) => 
             <nav className="hidden items-center gap-1 sm:flex" aria-label={t('mainMenuAriaLabel')}>
               <Link
                 href={rankingUrl}
-                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-dark-700 transition-all duration-200 hover:bg-surface-100 hover:text-dark-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+                aria-current={isRanking ? 'page' : undefined}
+                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                  isRanking
+                    ? 'bg-surface-100 font-bold text-dark-950 shadow-2xs'
+                    : 'text-dark-700 hover:bg-surface-100 hover:text-dark-950'
+                }`}
               >
                 {t('ranking')}
               </Link>
               <Link
                 href={browseUrl}
-                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-dark-700 transition-all duration-200 hover:bg-surface-100 hover:text-dark-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+                aria-current={isBrowse ? 'page' : undefined}
+                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                  isBrowse
+                    ? 'bg-surface-100 font-bold text-dark-950 shadow-2xs'
+                    : 'text-dark-700 hover:bg-surface-100 hover:text-dark-950'
+                }`}
               >
                 {t('browse')}
               </Link>
@@ -41,7 +51,9 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl }) => 
           <div className="hidden h-max shrink-0 items-center gap-2 md:flex">
             <HeaderLoginButton />
             <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/nDPFKAYSuoGg2J3MA">
-              <Button variant="shadow" color="primary" size="sm">{t('submit')}</Button>
+              <Button variant="shadow" color="primary" size="sm">
+                {t('submit')}
+              </Button>
             </a>
           </div>
         </div>

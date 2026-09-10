@@ -2,10 +2,15 @@
 
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProductFeatureList } from './ProductFeatureList';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => (key === 'empty' ? '등록된 상세 기능 정보가 아직 없습니다.' : key),
+  useLocale: () => 'ko',
+}));
 
 describe('ProductFeatureList', () => {
   let root: Root | undefined;
@@ -29,7 +34,7 @@ describe('ProductFeatureList', () => {
     act(() => {
       root?.render(<ProductFeatureList.ViewComponent features={[]} />);
     });
-    expect(container.textContent).toBe('');
+    expect(container.textContent).toContain('등록된 상세 기능 정보가 아직 없습니다.');
   });
 
   it('renders list of features', () => {
