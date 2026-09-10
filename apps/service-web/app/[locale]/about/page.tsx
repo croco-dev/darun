@@ -103,7 +103,7 @@ export default async function AboutPage({ params }: Props) {
             ]}
           />
           <div className="flex flex-col gap-3">
-            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dark-150 bg-surface-100 px-3 py-1 text-xs font-semibold text-dark-700">
+            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dark-150 bg-surface-100 px-3 py-1 text-xs font-semibold text-dark-700 shadow-2xs">
               <ShieldCheck size={14} className="text-dark-500" />
               <span>{isKo ? '편집 방침 및 가이드라인' : 'Editorial Guidelines'}</span>
             </div>
@@ -175,11 +175,20 @@ export default async function AboutPage({ params }: Props) {
                     href="https://forms.gle/nDPFKAYSuoGg2J3MA"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex"
+                    className="group inline-flex"
                   >
-                    <Button variant="shadow" color="secondary" size="sm" className="gap-1.5">
-                      <span>{isKo ? '문의 및 피드백 보내기' : 'Submit Feedback'}</span>
-                      <ExternalLink size={14} className="text-dark-400" />
+                    <Button
+                      as="span"
+                      variant="shadow"
+                      color="secondary"
+                      size="md"
+                      className="gap-2 transition-all duration-200 active:scale-[0.98]"
+                    >
+                      <span className="font-semibold">{isKo ? '문의 및 피드백 보내기' : 'Submit Feedback'}</span>
+                      <ExternalLink
+                        size={14}
+                        className="text-dark-400 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-900"
+                      />
                     </Button>
                   </a>
                 </div>

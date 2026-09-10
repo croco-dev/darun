@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { ProductCard } from '@darun/products-shell';
+import { ProductCard, VoteCountBadge } from '@darun/products-shell';
 import { Breadcrumb, Chip, ContentArea, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
@@ -240,8 +240,8 @@ export default async function ComparePage({ params }: Props) {
               label={isKo ? '투표 수' : 'Votes'}
               colLabel1={product1.name}
               colLabel2={product2.name}
-              value1={product1.voteCount.toLocaleString(resolvedParams.locale)}
-              value2={product2.voteCount.toLocaleString(resolvedParams.locale)}
+              custom1={<VoteCountBadge count={product1.voteCount} />}
+              custom2={<VoteCountBadge count={product2.voteCount} />}
               testid="vote-count"
             />
             <CompareRow
@@ -270,6 +270,8 @@ function CompareRow({
   value2,
   tags1,
   tags2,
+  custom1,
+  custom2,
   testid,
   isLast,
 }: {
@@ -280,6 +282,8 @@ function CompareRow({
   value2?: string;
   tags1?: string[];
   tags2?: string[];
+  custom1?: React.ReactNode;
+  custom2?: React.ReactNode;
   testid: string;
   isLast?: boolean;
 }) {
@@ -294,7 +298,9 @@ function CompareRow({
         <div className="md:pr-5">
           <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel1}</div>
           <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-1`}>
-            {tags1 && tags1.length > 0 ? (
+            {custom1 ? (
+              custom1
+            ) : tags1 && tags1.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {tags1.map(tag => (
                   <Chip key={tag} color="filledGray" variant="square">
@@ -312,7 +318,9 @@ function CompareRow({
         <div className="md:pl-5">
           <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel2}</div>
           <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-2`}>
-            {tags2 && tags2.length > 0 ? (
+            {custom2 ? (
+              custom2
+            ) : tags2 && tags2.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {tags2.map(tag => (
                   <Chip key={tag} color="filledGray" variant="square">

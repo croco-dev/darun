@@ -24,7 +24,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={rankingUrl}
                 aria-current={isRanking ? 'page' : undefined}
-                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isRanking
                     ? 'bg-surface-100 font-bold text-dark-950 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100 hover:text-dark-950'
@@ -35,7 +35,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={browseUrl}
                 aria-current={isBrowse ? 'page' : undefined}
-                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isBrowse
                     ? 'bg-surface-100 font-bold text-dark-950 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100 hover:text-dark-950'
@@ -51,7 +51,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
           <div className="hidden h-max shrink-0 items-center gap-2 md:flex">
             <HeaderLoginButton />
             <a target="_blank" rel="noopener noreferrer" href="https://forms.gle/nDPFKAYSuoGg2J3MA">
-              <Button variant="shadow" color="primary" size="sm">
+              <Button as="span" variant="shadow" color="primary" size="sm">
                 {t('submit')}
               </Button>
             </a>

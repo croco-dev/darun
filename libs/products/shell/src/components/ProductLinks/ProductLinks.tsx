@@ -18,6 +18,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
         return (
           <Link key={link.id} href={link.link} target="_blank" rel="noopener noreferrer" className="group">
             <Button
+              as="span"
               variant="shadow"
               color={isPrimary ? 'primary' : 'secondary'}
               size="md"
@@ -42,8 +43,8 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                   size={14}
                   className={`shrink-0 transition-all duration-200 ${
                     isPrimary
-                      ? 'text-dark-400 group-hover:translate-x-0.5 group-hover:text-white'
-                      : 'text-dark-400 group-hover:translate-x-0.5 group-hover:text-dark-800'
+                      ? 'text-dark-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white'
+                      : 'text-dark-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-800'
                   }`}
                 />
               </div>

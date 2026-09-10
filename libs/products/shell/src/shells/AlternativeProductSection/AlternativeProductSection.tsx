@@ -29,7 +29,7 @@ export const AlternativeProductSection = ({ slug }: AlternativeProductSectionPro
           <p className="text-base font-semibold text-dark-900 break-keep">{t('empty.title')}</p>
           <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">{t('empty.description')}</p>
           <Link href={`/${locale}/search/product`} className="mt-6">
-            <Button variant="shadow" color="primary" size="md">
+            <Button as="span" variant="shadow" color="primary" size="md">
               {t('empty.button')}
             </Button>
           </Link>

@@ -8,6 +8,9 @@ type VoteCountBadgeProps = {
 
 export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' }) => (
   <div
+    role="status"
+    aria-label={`추천 ${count}`}
+    title={`추천 ${count}`}
     className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cherry-200/70 bg-cherry-50/60 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-cherry-900 shadow-2xs transition-all duration-200 ease-out group-hover:border-cherry-300 group-hover:bg-cherry-50 group-hover:shadow-xs motion-reduce:transition-none ${className}`}
   >
     <Heart

@@ -107,7 +107,9 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
             <Search size={22} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <p className="text-xl font-bold leading-tight text-dark-900 break-keep sm:text-2xl">{getNoResultsMessage()}</p>
+            <p className="text-xl font-bold leading-tight text-dark-900 break-keep sm:text-2xl">
+              {getNoResultsMessage()}
+            </p>
             <p className="text-sm text-dark-600 break-keep sm:text-base">{t('list.empty.description')}</p>
           </div>
         </div>
@@ -127,7 +129,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
                   type="button"
                   role="listitem"
                   onClick={() => navigateToSearch(popularQuery)}
-                  className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 hover:shadow-button-hover active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+                  className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 hover:shadow-button-hover active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
                 >
                   <span className="text-dark-400 transition-colors group-hover:text-dark-600">#</span>
                   {popularQuery}
@@ -150,9 +152,11 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
                   type="button"
                   role="listitem"
                   onClick={() => navigateToCategory(category.slug)}
-                  className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3.5 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+                  className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
                 >
-                  <span className="text-xl leading-none">{getCategoryIcon(category.slug)}</span>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-100 text-lg leading-none shadow-2xs transition-colors group-hover:bg-white">
+                    {getCategoryIcon(category.slug)}
+                  </span>
                   <span className="truncate">{locale === 'ko' ? category.labelKo : category.labelEn}</span>
                 </button>
               ))}
@@ -178,15 +182,30 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
       </div>
     );
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
-      {products.map(product => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          href={`/${locale}/products/${product.slug}?from=search`}
-          source="search"
-        />
-      ))}
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-dark-500 sm:text-sm">
+          {locale === 'ko' ? (
+            <>
+              총 <span className="font-bold tabular-nums text-dark-900">{products.length}</span>개의 서비스
+            </>
+          ) : (
+            <>
+              <span className="font-bold tabular-nums text-dark-900">{products.length}</span> services found
+            </>
+          )}
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
+        {products.map(product => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            href={`/${locale}/products/${product.slug}?from=search`}
+            source="search"
+          />
+        ))}
+      </div>
     </div>
   );
 });

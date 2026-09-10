@@ -118,7 +118,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
             </p>
             <div className="mt-5">
               <Link href={`/${locale}/search/product`}>
-                <Button variant="shadow" color="primary" size="md">
+                <Button as="span" variant="shadow" color="primary" size="md">
                   {locale === 'ko' ? '전체 도구 둘러보기' : 'Browse All Software'}
                 </Button>
               </Link>

@@ -42,7 +42,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
           {/* Badge Pill */}
           <Link
             href={popularPath}
-            className="group inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3.5 py-1.5 backdrop-blur-md shadow-xs transition-all duration-200 hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="group inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3.5 py-1.5 backdrop-blur-md shadow-xs transition-all duration-200 hover:border-white/25 hover:bg-white/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           >
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brown-400 opacity-75 motion-reduce:animate-none" />
