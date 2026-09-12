@@ -14,7 +14,7 @@ const Skeleton = ({
 }) => (
   <div
     aria-hidden="true"
-    className={`${className} bg-gradient-to-r from-dark-100 via-dark-200 to-dark-100 animate-pulse motion-reduce:animate-none`}
+    className={`${className} bg-gradient-to-r from-surface-100 via-surface-200 to-surface-100 animate-pulse motion-reduce:animate-none`}
     style={{
       width: typeof width === 'number' ? `${width}px` : width,
       height: typeof height === 'number' ? `${height}px` : height,
@@ -34,6 +34,13 @@ export default function Loading() {
       >
         <div className="py-6 md:py-8">
           <ContentArea>
+            {/* Breadcrumb Skeleton */}
+            <div className="flex items-center gap-1.5 pb-4" aria-hidden="true">
+              <div className="h-4 w-8 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
+              <span className="text-dark-300 text-xs select-none">/</span>
+              <div className="h-4 w-28 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
+            </div>
+
             {/* Product Summary Skeleton */}
             <div
               data-testid="skel-product-hero"
@@ -79,7 +86,7 @@ export default function Loading() {
           <div data-testid="skel-product-feature" className="flex flex-col gap-4 md:gap-5">
             <Skeleton width="80px" height={24} radius="6px" />
             <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
-              <div className="rounded-card border border-dark-150 bg-white p-5 shadow-card">
+              <div className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card">
                 <div className="flex items-start gap-3">
                   <Skeleton width={40} height={40} radius="12px" />
                   <div className="flex flex-1 flex-col gap-2">
@@ -88,7 +95,7 @@ export default function Loading() {
                   </div>
                 </div>
               </div>
-              <div className="rounded-card border border-dark-150 bg-white p-5 shadow-card">
+              <div className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card">
                 <div className="flex items-start gap-3">
                   <Skeleton width={40} height={40} radius="12px" />
                   <div className="flex flex-1 flex-col gap-2">

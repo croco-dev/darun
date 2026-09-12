@@ -155,7 +155,7 @@ export default async function AboutPage({ params }: Props) {
               </section>
             ))}
 
-            <section className="flex flex-col gap-4 rounded-card-lg border border-dark-150/80 bg-surface-100/60 p-6 shadow-card md:p-7">
+            <section className="flex flex-col gap-4 rounded-card-lg border border-dark-150/80 bg-surface-100/60 p-6 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover md:p-7">
               <div className="flex items-center gap-3">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-dark-150 bg-white font-mono text-xs font-bold text-dark-700">
                   05
@@ -175,7 +175,7 @@ export default async function AboutPage({ params }: Props) {
                     href="https://forms.gle/nDPFKAYSuoGg2J3MA"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group inline-flex"
+                    className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
                     <Button
                       as="span"

@@ -188,7 +188,7 @@ export default async function ComparePage({ params }: Props) {
           <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
             <div className="grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/70 p-3.5 sm:p-4 md:p-5">
               <div className="flex items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
-                {product1.logoUrl && (
+                {product1.logoUrl ? (
                   <Image
                     src={product1.logoUrl}
                     alt={product1.name}
@@ -196,11 +196,18 @@ export default async function ComparePage({ params }: Props) {
                     height={24}
                     className="h-6 w-6 shrink-0 rounded-md border border-dark-150 bg-white object-contain p-0.5"
                   />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600"
+                  >
+                    {product1.name.slice(0, 1).toUpperCase()}
+                  </span>
                 )}
                 <span className="truncate text-xs font-bold text-dark-900 sm:text-sm">{product1.name}</span>
               </div>
               <div className="flex items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
-                {product2.logoUrl && (
+                {product2.logoUrl ? (
                   <Image
                     src={product2.logoUrl}
                     alt={product2.name}
@@ -208,6 +215,13 @@ export default async function ComparePage({ params }: Props) {
                     height={24}
                     className="h-6 w-6 shrink-0 rounded-md border border-dark-150 bg-white object-contain p-0.5"
                   />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600"
+                  >
+                    {product2.name.slice(0, 1).toUpperCase()}
+                  </span>
                 )}
                 <span className="truncate text-xs font-bold text-dark-900 sm:text-sm">{product2.name}</span>
               </div>

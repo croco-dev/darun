@@ -54,19 +54,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
   return (
     <SectionWrapper background="subtle" spacing="md">
       <div className="flex w-full flex-col gap-5 md:gap-6">
-        <SectionHeader
-          title={t('home.magazine.title')}
-          moreLink={
-            articles.length > 3 ? (
-              <Link
-                href={`/${locale}/magazines`}
-                className="inline-flex min-h-11 items-center text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-100 motion-reduce:transition-none"
-              >
-                {t('home.magazine.more')}
-              </Link>
-            ) : undefined
-          }
-        />
+        <SectionHeader title={t('home.magazine.title')} />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {articles.slice(0, 3).map(article => (
             <div key={article.id} className="h-full">

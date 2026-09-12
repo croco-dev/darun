@@ -17,21 +17,19 @@ export const MagazineContentPage = ({
 
   return (
     <Layout>
-      <div className="flex flex-col">
-        <main className="flex w-full flex-col">
-          <ContentArea className="flex flex-col gap-6 py-6 md:gap-8 md:py-8">
-            <Breadcrumb
-              data-testid="breadcrumb-magazine"
-              items={[
-                { label: isKo ? '홈' : 'Home', href: `/${locale}/` },
-                { label: isKo ? '매거진' : 'Magazine' },
-                { label: title ?? slug, ariaCurrent: 'page' },
-              ]}
-            />
-            <MagazineInfoSection slug={slug} />
-          </ContentArea>
-        </main>
-      </div>
+      <main className="flex w-full flex-col">
+        <ContentArea className="flex flex-col gap-6 py-6 md:gap-8 md:py-8">
+          <Breadcrumb
+            data-testid="breadcrumb-magazine"
+            items={[
+              { label: isKo ? '홈' : 'Home', href: `/${locale}/` },
+              { label: isKo ? '매거진' : 'Magazine' },
+              { label: title ?? slug, ariaCurrent: 'page' },
+            ]}
+          />
+          <MagazineInfoSection slug={slug} />
+        </ContentArea>
+      </main>
     </Layout>
   );
 };

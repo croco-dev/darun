@@ -30,6 +30,7 @@ export const ProductUserAction = bind(
           data-testid="upvote-btn"
           aria-label={voted ? '추천 취소' : '추천하기'}
           aria-pressed={voted}
+          title={voted ? '추천 취소' : '추천하기'}
           className={`group transition-all duration-200 active:scale-[0.98] ${
             voted
               ? 'border-cherry-300 bg-cherry-50/80 text-cherry-900 shadow-xs hover:bg-cherry-100/70'

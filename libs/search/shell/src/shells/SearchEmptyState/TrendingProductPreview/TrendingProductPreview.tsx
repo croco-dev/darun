@@ -5,6 +5,7 @@ import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { ProductCard } from '@darun/products-shell';
 import { TrendingPreviewDocument } from '@darun/provider-graphql';
+import { TrendingUp } from '@darun/ui';
 import { useLocale } from 'next-intl';
 
 const TRENDING_PREVIEW_QUERY = gql`
@@ -31,6 +32,21 @@ export const TrendingProductPreview = () => {
   });
 
   const products = data?.rankedProducts ?? [];
+
+  if (products.length === 0) {
+    return (
+      <div data-testid="trending-preview">
+        <div className="flex min-h-36 flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-8 text-center shadow-card">
+          <div className="mb-2.5 flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-400 shadow-2xs">
+            <TrendingUp size={20} className="stroke-[2]" />
+          </div>
+          <p className="text-sm font-semibold text-dark-900 break-keep">
+            {locale === 'ko' ? '집계된 인기 서비스가 없습니다' : 'No trending software found'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div data-testid="trending-preview">

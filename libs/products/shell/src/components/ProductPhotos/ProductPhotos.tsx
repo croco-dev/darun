@@ -32,7 +32,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
   return (
     <div className="overflow-hidden rounded-card-lg border border-dark-150/80 bg-white p-4 shadow-card md:p-5">
       {photos && (
-        <div className="flex w-full gap-3.5 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="flex w-full gap-3.5 overflow-x-auto pb-1 scrollbar-hide touch-pan-x">
           {photos.map(photo => (
             <div
               key={photo.imageUrl}
