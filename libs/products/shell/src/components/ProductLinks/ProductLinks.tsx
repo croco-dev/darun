@@ -16,7 +16,13 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
       {links.map((link, index) => {
         const isPrimary = index === 0;
         return (
-          <Link key={link.id} href={link.link} target="_blank" rel="noopener noreferrer" className="group">
+          <Link
+            key={link.id}
+            href={link.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+          >
             <Button
               as="span"
               variant="shadow"
@@ -44,7 +50,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                   className={`shrink-0 transition-all duration-200 ${
                     isPrimary
                       ? 'text-dark-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white'
-                      : 'text-dark-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-800'
+                      : 'text-dark-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-900'
                   }`}
                 />
               </div>

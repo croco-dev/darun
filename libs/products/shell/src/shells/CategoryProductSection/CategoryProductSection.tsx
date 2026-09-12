@@ -77,7 +77,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
       <div className="flex flex-col gap-6 md:gap-8">
         <Breadcrumb
           items={[
-            { label: locale === 'ko' ? '홈' : 'Home', href: `/${locale}/` },
+            { label: locale === 'ko' ? '홈' : 'Home', href: `/${locale}` },
             { label: categoryLabel, ariaCurrent: 'page' },
           ]}
         />
@@ -106,7 +106,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
         </div>
 
         {products.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-14 text-center shadow-card sm:py-16">
+          <div className="flex flex-col items-center justify-center rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-14 text-center sm:py-16">
             <div className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl shadow-2xs">
               {categoryIcon}
             </div>
@@ -117,7 +117,10 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                 : 'No services registered yet. Explore tools in other categories.'}
             </p>
             <div className="mt-5">
-              <Link href={`/${locale}/search/product`}>
+              <Link
+                href={`/${locale}/search/product`}
+                className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              >
                 <Button as="span" variant="shadow" color="primary" size="md">
                   {locale === 'ko' ? '전체 도구 둘러보기' : 'Browse All Software'}
                 </Button>

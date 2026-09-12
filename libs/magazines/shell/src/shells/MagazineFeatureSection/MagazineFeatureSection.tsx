@@ -40,7 +40,10 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
             <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-dark-600 break-keep">
               {t('Magazine.empty.description')}
             </p>
-            <Link href={`/${locale}/ranking`} className="mt-5 focus-visible:outline-none">
+            <Link
+              href={`/${locale}/ranking`}
+              className="mt-5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            >
               <Button as="span" variant="shadow" color="primary">
                 {t('Magazine.empty.cta')}
               </Button>

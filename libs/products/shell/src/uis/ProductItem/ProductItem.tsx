@@ -141,7 +141,7 @@ export const ProductItem = ({
           alt={t('productItem.logoAlt', { name })}
           width={logoSizes[effectiveLogoSize].imageSize}
           height={logoSizes[effectiveLogoSize].imageSize}
-          className="h-full w-full object-contain rounded-lg"
+          className={`h-full w-full object-contain ${isHero ? 'rounded-xl' : 'rounded-lg'}`}
           onError={() => setResolvedLogoUrl(undefined)}
         />
       </div>
@@ -180,7 +180,7 @@ export const ProductItem = ({
         {(tags || specialTags || footerRight) && (
           <div className="flex items-center justify-between gap-2 pt-1 mt-auto w-full">
             {tags || specialTags ? (
-              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide touch-pan-x">
                 {tags &&
                   (maxTagItems && tags.length > maxTagItems ? (
                     <div className="flex items-center gap-1.5">
@@ -193,7 +193,7 @@ export const ProductItem = ({
                           {tag}
                         </Chip>
                       ))}
-                      <span className="text-2xs font-medium tabular-nums text-dark-500">
+                      <span className="shrink-0 rounded-md bg-dark-100/80 px-1.5 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
                         +{tags.length - maxTagItems}
                       </span>
                     </div>

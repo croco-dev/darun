@@ -22,7 +22,7 @@ export const MagazineContentPage = ({
           <Breadcrumb
             data-testid="breadcrumb-magazine"
             items={[
-              { label: isKo ? '홈' : 'Home', href: `/${locale}/` },
+              { label: isKo ? '홈' : 'Home', href: `/${locale}` },
               { label: isKo ? '매거진' : 'Magazine' },
               { label: title ?? slug, ariaCurrent: 'page' },
             ]}

@@ -43,7 +43,7 @@ export const PopularQueriesStripe = () => {
   return (
     <div
       data-testid="popular-queries-stripe"
-      className="flex gap-2 overflow-x-auto py-1 scrollbar-hide"
+      className="flex gap-2 overflow-x-auto py-1 scrollbar-hide touch-pan-x"
       role="list"
       aria-label="Popular searches"
     >

@@ -37,7 +37,7 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
                 <span>{t('contact')}</span>
                 <ExternalLink
                   size={12}
-                  className="stroke-[2] text-dark-400 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-dark-900"
+                  className="stroke-[2] text-dark-400 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-900"
                 />
               </a>
             </nav>

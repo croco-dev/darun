@@ -62,7 +62,7 @@ export const ProductUserAction = bind(
               />
             )}
             <span
-              className={`break-keep text-sm font-semibold tabular-nums ${voted ? 'text-cherry-700' : 'text-dark-700'}`}
+              className={`break-keep text-sm font-semibold tabular-nums transition-colors duration-200 ${voted ? 'text-cherry-700' : 'text-dark-700 group-hover:text-dark-900'}`}
             >
               {voteCount}
             </span>

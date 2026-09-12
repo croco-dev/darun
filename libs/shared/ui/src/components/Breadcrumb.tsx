@@ -41,7 +41,7 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
                 </Link>
               ) : (
                 <span
-                  className="max-w-[200px] truncate font-semibold text-dark-900 sm:max-w-xs"
+                  className="inline-block max-w-[200px] truncate align-bottom font-semibold text-dark-900 sm:max-w-xs"
                   {...(item.ariaCurrent && {
                     'aria-current': item.ariaCurrent,
                   })}

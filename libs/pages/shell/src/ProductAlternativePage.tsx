@@ -25,7 +25,7 @@ export const ProductAlternativePage = ({
           <Breadcrumb
             data-testid="breadcrumb-alternatives"
             items={[
-              { label: isKo ? '홈' : 'Home', href: `/${locale}/` },
+              { label: isKo ? '홈' : 'Home', href: `/${locale}` },
               { label: productName, href: `/${locale}/products/${slug}` },
               { label: isKo ? '대안 서비스' : 'Alternatives', ariaCurrent: 'page' },
             ]}
