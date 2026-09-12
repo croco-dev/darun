@@ -59,7 +59,7 @@ export const ProductAlternativeList = bind(
         ))}
         <div className="flex justify-center pt-2">
           <Link href={`/${locale}/search/product`}>
-            <Button variant="shadow" color="secondary" size="md">
+            <Button as="span" variant="shadow" color="secondary" size="md">
               {t('empty.button')}
             </Button>
           </Link>

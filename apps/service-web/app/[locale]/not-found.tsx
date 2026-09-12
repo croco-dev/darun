@@ -31,12 +31,12 @@ export default function NotFound() {
 
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <Link href="/" className="focus-visible:outline-none">
-                <Button variant="shadow" color="primary" size="md">
+                <Button as="span" variant="shadow" color="primary" size="md">
                   홈으로 이동
                 </Button>
               </Link>
               <Link href="/ranking" className="focus-visible:outline-none">
-                <Button variant="shadow" color="secondary" size="md">
+                <Button as="span" variant="shadow" color="secondary" size="md">
                   인기 랭킹 보기
                 </Button>
               </Link>

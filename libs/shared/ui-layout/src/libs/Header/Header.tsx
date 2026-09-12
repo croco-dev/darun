@@ -26,8 +26,8 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
                 aria-current={isRanking ? 'page' : undefined}
                 className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isRanking
-                    ? 'bg-surface-100 font-bold text-dark-950 shadow-2xs'
-                    : 'text-dark-700 hover:bg-surface-100 hover:text-dark-950'
+                    ? 'bg-surface-100 font-bold text-dark-900 shadow-2xs'
+                    : 'text-dark-700 hover:bg-surface-100 hover:text-dark-900'
                 }`}
               >
                 {t('ranking')}
@@ -37,8 +37,8 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
                 aria-current={isBrowse ? 'page' : undefined}
                 className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isBrowse
-                    ? 'bg-surface-100 font-bold text-dark-950 shadow-2xs'
-                    : 'text-dark-700 hover:bg-surface-100 hover:text-dark-950'
+                    ? 'bg-surface-100 font-bold text-dark-900 shadow-2xs'
+                    : 'text-dark-700 hover:bg-surface-100 hover:text-dark-900'
                 }`}
               >
                 {t('browse')}

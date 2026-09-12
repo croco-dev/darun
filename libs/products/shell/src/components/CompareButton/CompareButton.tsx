@@ -84,6 +84,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       onClick={handleClick}
       data-testid="compare-button"
       aria-pressed={isAdded}
+      title={isAdded ? '비교 취소' : '비교에 추가'}
       className="group transition-all duration-200 active:scale-[0.98]"
     >
       <div className="flex items-center gap-1.5">

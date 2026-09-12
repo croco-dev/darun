@@ -36,7 +36,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
       {...(layoutId ? { 'data-layout-id': layoutId } : {})}
       {...{ 'data-source': source }}
     >
-      <div className="relative flex h-full flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card transition-all duration-200 ease-out group-hover:-translate-y-0.5 group-hover:border-dark-300 group-hover:shadow-card-hover group-focus-visible:-translate-y-0.5 group-focus-visible:border-dark-300 group-focus-visible:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-dark-900/60 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:p-5">
+      <div className="relative flex h-full flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card transition-all duration-200 ease-out group-hover:-translate-y-0.5 group-hover:border-dark-300 group-hover:shadow-card-hover group-focus-visible:-translate-y-0.5 group-focus-visible:border-dark-300 group-focus-visible:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-dark-900/60 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-white active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none sm:p-5">
         {rank !== undefined && (
           <div className="absolute right-3.5 top-3.5 z-10 sm:right-4 sm:top-4">
             <span

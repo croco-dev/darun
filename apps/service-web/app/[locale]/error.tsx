@@ -31,7 +31,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
             다시 시도
           </Button>
           <Link href="/" className="focus-visible:outline-none">
-            <Button variant="shadow" color="secondary" size="md">
+            <Button as="span" variant="shadow" color="secondary" size="md">
               홈으로 이동
             </Button>
           </Link>

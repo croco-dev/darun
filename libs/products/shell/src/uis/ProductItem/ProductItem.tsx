@@ -90,7 +90,7 @@ export const ProductItem = ({
               />
             </div>
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-              <NameTag className="m-0 truncate text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950">
+              <NameTag className="m-0 truncate text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-900">
                 {name}
               </NameTag>
               {tags && tags.length > 0 && (
@@ -151,7 +151,7 @@ export const ProductItem = ({
             className={
               isHero
                 ? 'm-0 text-2xl font-bold leading-tight tracking-tight text-dark-900 md:text-3xl'
-                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
+                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-900 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
             }
           >
             {name}

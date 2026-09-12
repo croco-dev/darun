@@ -16,7 +16,7 @@ export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings,
         size="sm"
         className={
           activeHeadingId === id
-            ? 'font-bold text-dark-950 bg-white border-dark-150 shadow-xs hover:bg-white'
+            ? 'font-bold text-dark-900 bg-white border-dark-150 shadow-xs hover:bg-white'
             : 'text-dark-600 transition-colors hover:text-dark-900'
         }
         onClick={() => {

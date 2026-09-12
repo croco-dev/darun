@@ -11,6 +11,8 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
 
   return (
     <form
+      role="search"
+      aria-label={t('searchAriaLabel')}
       className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-solid border-dark-150 bg-white px-3.5 py-2 shadow-button transition-all duration-200 ease-out focus-within:border-dark-900 focus-within:ring-2 focus-within:ring-dark-900/10 focus-within:shadow-button-hover motion-reduce:transition-none"
       onSubmit={onSubmit}
     >

@@ -24,7 +24,7 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
             <nav className="flex flex-wrap items-center gap-x-4 gap-y-1.5" aria-label="Footer navigation">
               <Link
                 href={aboutUrl}
-                className="text-sm font-medium text-dark-600 transition-colors duration-200 hover:text-dark-950 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="text-sm font-medium text-dark-600 transition-colors duration-200 hover:text-dark-900 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 {t('about')}
               </Link>
@@ -32,12 +32,12 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
                 href="https://forms.gle/nDPFKAYSuoGg2J3MA"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex items-center gap-1 text-sm font-medium text-dark-600 transition-colors duration-200 hover:text-dark-950 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="group inline-flex items-center gap-1 text-sm font-medium text-dark-600 transition-colors duration-200 hover:text-dark-900 hover:underline focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <span>{t('contact')}</span>
                 <ExternalLink
                   size={12}
-                  className="stroke-[2] text-dark-400 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-dark-950"
+                  className="stroke-[2] text-dark-400 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-dark-900"
                 />
               </a>
             </nav>
