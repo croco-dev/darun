@@ -1,13 +1,10 @@
 // @vitest-environment jsdom
 
 import { FAQSection, type FAQItem } from '@darun/products-shell';
+import { NextIntlClientProvider } from 'next-intl';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
-}));
 
 vi.mock('@darun/ui', () => ({
   SectionHeader: ({ title }: { title: string }) =>
@@ -41,7 +38,13 @@ describe('FAQSection Accessibility & Motion', () => {
 
   function renderFAQ() {
     act(() => {
-      root?.render(React.createElement(FAQSection, { items: mockItems }));
+      root?.render(
+        React.createElement(NextIntlClientProvider, {
+          locale: 'ko',
+          messages: { ProductDetail: { faq: { title: '자주 묻는 질문' } } },
+          children: React.createElement(FAQSection, { items: mockItems }),
+        })
+      );
     });
   }
 

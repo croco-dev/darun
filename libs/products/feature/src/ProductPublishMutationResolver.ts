@@ -4,6 +4,8 @@ import { IndexProduct } from '@darun/search-domain';
 import { TranslationJobService } from '@darun/translation-service';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
+import { EditProductInput } from './graphs/EditProduct';
+import { EditProductPayload } from './graphs/EditProduct';
 import { Product } from './graphs/Product';
 import { PublishProductInput } from './graphs/PublishProduct';
 import { PublishProductPayload } from './graphs/PublishProduct';
@@ -47,6 +49,26 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
   }
 
   @Authorized([AuthRole.Admin])
+  @Mutation(() => EditProductPayload)
+  async editProduct(@Arg('slug') slug: string, @Arg('input') input: EditProductInput): Promise<EditProductPayload> {
+    const result = await super.editProduct(slug, input);
+    const updatedProduct = result.product;
+
+    if (updatedProduct.publishedAt !== undefined) {
+      const hasContentChange =
+        input.name !== undefined || input.summary !== undefined || input.description !== undefined;
+
+      if (hasContentChange) {
+        await this.runDegradedSideEffect('editProduct', 'translation-job-trigger', async () => {
+          await this.translationJobService.translateProductWithFeatures(updatedProduct.id);
+        });
+      }
+    }
+
+    return result;
+  }
+
+  @Authorized([AuthRole.Admin])
   @Mutation(() => PublishProductPayload)
   async publishProduct(@Arg('input') input: PublishProductInput): Promise<PublishProductPayload> {
     const product = await this.getProductUseCase.execute({ slug: input.slug });
@@ -75,11 +97,7 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
     });
 
     await this.runDegradedSideEffect('publishProduct', 'translation-job-trigger', async () => {
-      await this.translationJobService.translateEntity('Product', updatedProduct.id, [
-        'name',
-        'summary',
-        'description',
-      ]);
+      await this.translationJobService.translateProductWithFeatures(updatedProduct.id);
     });
 
     return {

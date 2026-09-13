@@ -76,6 +76,7 @@ const createCompanyRepository = (): CompanyRepository => ({
 const createMockTranslationJobService = () =>
   ({
     translateEntity: vi.fn().mockResolvedValue(undefined),
+    translateProductWithFeatures: vi.fn().mockResolvedValue(undefined),
   }) as unknown as TranslationJobService;
 
 describe('ProductPublishMutationResolver', () => {
@@ -204,6 +205,58 @@ describe('ProductPublishMutationResolver', () => {
           category: '',
         })
       );
+    });
+  });
+
+  describe('editProduct', () => {
+    it('triggers translation when published product content changes', async () => {
+      const product = new DomainProduct({
+        id: 'p1',
+        slug: 'product-1',
+        name: 'Product 1',
+        summary: 'Summary 1',
+        logoUrl: 'https://example.com/logo.png',
+        description: 'Description 1',
+        categoryIds: [],
+        publishedAt: new Date(),
+      });
+
+      const updatedProduct = new DomainProduct({
+        ...product,
+        name: 'Updated Name',
+      });
+
+      const getProductUseCase = createMockUseCase<GetProduct>();
+      getProductUseCase.execute.mockResolvedValue(product);
+
+      const editProductUseCase = createMockUseCase<EditProduct>();
+      editProductUseCase.execute.mockResolvedValue(updatedProduct);
+
+      const mockTranslationJobService = createMockTranslationJobService();
+
+      const resolver = new ProductPublishMutationResolver(
+        new GetCompany(createCompanyRepository()),
+        createMockUseCase<CreateProduct>() as unknown as CreateProduct,
+        editProductUseCase as unknown as EditProduct,
+        createMockUseCase<IndexProduct>() as unknown as IndexProduct,
+        createMockUseCase<UpdateProductTag>() as unknown as UpdateProductTag,
+        getProductUseCase as unknown as GetProduct,
+        createMockUseCase<GetProductTags>() as unknown as GetProductTags,
+        createMockUseCase<AddProductScreenshot>() as unknown as AddProductScreenshot,
+        createMockUseCase<DeleteProductScreenshot>() as unknown as DeleteProductScreenshot,
+        createMockUseCase<AddProductLink>() as unknown as AddProductLink,
+        createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
+        createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
+        createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
+        createMockUseCase<PublishProduct>() as unknown as PublishProduct,
+        createMockUseCase<IndexProduct>() as unknown as IndexProduct,
+        mockTranslationJobService
+      );
+
+      await resolver.editProduct('product-1', { name: 'Updated Name' });
+
+      expect(mockTranslationJobService.translateProductWithFeatures).toHaveBeenCalledTimes(1);
+      expect(mockTranslationJobService.translateProductWithFeatures).toHaveBeenCalledWith('p1');
     });
   });
 });

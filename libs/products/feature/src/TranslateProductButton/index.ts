@@ -1,0 +1,1 @@
+export { TranslateProductButton } from './TranslateProductButton';
