@@ -20,7 +20,7 @@ export const RecentProductSection = () => {
               href={`/${locale}/search/product`}
               className="group inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
             >
-              <span>{t('home.category.more')}</span>
+              <span>{t('home.recent.more')}</span>
               <ChevronRight
                 size={16}
                 className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"

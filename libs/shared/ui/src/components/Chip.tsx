@@ -56,6 +56,7 @@ export function Chip({
     chipVariants[variant],
     chipColors[color],
     as !== 'div' && chipHoverColors[color],
+    as !== 'div' && 'active:scale-95 transition-all',
     as === 'button' && 'cursor-pointer',
     className
   );
@@ -76,7 +77,12 @@ export function Chip({
     const buttonProps = props as ButtonHTMLAttributes<HTMLButtonElement>;
 
     return (
-      <button title={buttonProps.title ?? defaultTitle} className={chipClassName} {...buttonProps}>
+      <button
+        type={buttonProps.type ?? 'button'}
+        title={buttonProps.title ?? defaultTitle}
+        className={chipClassName}
+        {...buttonProps}
+      >
         {children}
       </button>
     );

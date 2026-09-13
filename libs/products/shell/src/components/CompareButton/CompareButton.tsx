@@ -83,13 +83,21 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       size="md"
       onClick={handleClick}
       data-testid="compare-button"
+      aria-pressed={isAdded}
+      title={isAdded ? '비교 취소' : '비교에 추가'}
       className="group transition-all duration-200 active:scale-[0.98]"
     >
       <div className="flex items-center gap-1.5">
         {isAdded ? (
-          <Check size={16} className="text-current stroke-[2.25] transition-transform duration-200 group-hover:scale-110" />
+          <Check
+            size={16}
+            className="text-current stroke-[2.25] transition-transform duration-200 group-hover:scale-110"
+          />
         ) : (
-          <Plus size={16} className="text-dark-600 stroke-[2] transition-transform duration-200 group-hover:scale-110 group-hover:text-dark-900" />
+          <Plus
+            size={16}
+            className="text-dark-600 stroke-[2] transition-transform duration-200 group-hover:scale-110 group-hover:text-dark-900"
+          />
         )}
         <span className="break-keep font-semibold">{isAdded ? '비교 취소' : '비교에 추가'}</span>
       </div>

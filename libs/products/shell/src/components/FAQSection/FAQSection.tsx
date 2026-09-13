@@ -20,7 +20,7 @@ export function FAQSection({ items }: FAQSectionProps) {
   if (!items || items.length === 0) return null;
 
   return (
-    <section className="flex w-full flex-col gap-4 md:gap-5">
+    <section id="faq" className="flex w-full flex-col gap-4 scroll-mt-32 md:gap-5">
       <SectionHeader title={t('faq.title')} />
       <div className="flex w-full flex-col gap-3">
         {items.map(item => (
@@ -53,12 +53,14 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         id={buttonId}
         aria-expanded={isOpen}
         aria-controls={panelId}
-        className="group flex w-full cursor-pointer items-center justify-between gap-4 bg-transparent p-5 text-left transition-colors duration-200 hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transition-none"
+        className="group flex w-full cursor-pointer items-center justify-between gap-4 bg-transparent p-5 text-left transition-colors duration-200 hover:bg-surface-100 active:bg-surface-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transition-none"
       >
-        <p className="flex-1 text-base font-semibold leading-snug tracking-tight text-dark-900 break-keep">{question}</p>
+        <p className="flex-1 text-base font-semibold leading-snug tracking-tight text-dark-900 break-keep">
+          {question}
+        </p>
         <div
           aria-hidden="true"
-          className={`shrink-0 rounded-full bg-surface-100 p-1.5 text-dark-500 transition-transform duration-300 ease-out group-hover:text-dark-800 motion-reduce:transition-none motion-reduce:transform-none ${
+          className={`shrink-0 rounded-full bg-surface-100 p-1.5 text-dark-500 transition-all duration-300 ease-out group-hover:bg-surface-200/80 group-hover:text-dark-900 motion-reduce:transition-none motion-reduce:transform-none ${
             isOpen ? 'rotate-180' : 'rotate-0'
           }`}
         >

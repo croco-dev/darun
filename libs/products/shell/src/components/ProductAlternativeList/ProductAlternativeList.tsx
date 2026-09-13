@@ -22,11 +22,14 @@ export const ProductAlternativeList = bind(
         {products.map(product => (
           <div
             key={product.id}
-            className="rounded-card border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none"
+            className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none"
           >
             <div className="flex w-full flex-col gap-4">
               <div className="flex flex-row items-start justify-between gap-4">
-                <Link href={`/${locale}/products/${product.slug}?from=related`} className="min-w-0 flex-1">
+                <Link
+                  href={`/${locale}/products/${product.slug}?from=related`}
+                  className="group min-w-0 flex-1 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                >
                   <ProductItem
                     name={product.name}
                     summary={product.summary}
@@ -42,7 +45,7 @@ export const ProductAlternativeList = bind(
               </div>
               {product.features && product.features.length > 0 && (
                 <>
-                  <div className="h-px w-full bg-dark-100" />
+                  <div className="h-px w-full bg-dark-150/70" />
                   <div className="flex flex-col gap-3">
                     <p className="text-sm font-semibold text-dark-900">{t('list.feature.title')}</p>
                     <ProductFeatureGridList
@@ -58,8 +61,11 @@ export const ProductAlternativeList = bind(
           </div>
         ))}
         <div className="flex justify-center pt-2">
-          <Link href={`/${locale}/search/product`}>
-            <Button variant="contained" color="secondary" size="md">
+          <Link
+            href={`/${locale}/search/product`}
+            className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+          >
+            <Button as="span" variant="shadow" color="secondary" size="md">
               {t('empty.button')}
             </Button>
           </Link>

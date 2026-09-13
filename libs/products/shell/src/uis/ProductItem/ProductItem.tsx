@@ -61,8 +61,8 @@ export const ProductItem = ({
   if (isRanked) {
     return (
       <Component className="flex w-full flex-col gap-2.5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-start gap-3 pt-0.5">
             {rank !== undefined && (
               <span
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black tabular-nums transition-all duration-200 ${
@@ -89,19 +89,25 @@ export const ProductItem = ({
                 onError={() => setResolvedLogoUrl(undefined)}
               />
             </div>
-            <div className="flex min-w-0 flex-1 flex-col justify-center">
-              <NameTag className="m-0 truncate text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950">
+            <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+              <NameTag className="m-0 truncate text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-900">
                 {name}
               </NameTag>
               {tags && tags.length > 0 && (
                 <div className="flex items-center gap-1.5 overflow-hidden">
-                  <span className="truncate text-2xs font-medium text-dark-500">{tags[0]}</span>
-                  {tags.length > 1 && <span className="shrink-0 text-2xs text-dark-400">+{tags.length - 1}</span>}
+                  <span className="inline-block truncate rounded-md bg-dark-100/80 px-1.5 py-0.5 text-2xs font-semibold text-dark-600 group-hover:bg-dark-150/70">
+                    {tags[0]}
+                  </span>
+                  {tags.length > 1 && (
+                    <span className="shrink-0 rounded-md bg-dark-100/80 px-1.5 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
+                      +{tags.length - 1}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
           </div>
-          {headerRight && <div className="shrink-0">{headerRight}</div>}
+          {headerRight && <div className="shrink-0 pt-0.5">{headerRight}</div>}
         </div>
         {summary && (
           <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-keep sm:text-sm sm:leading-relaxed">
@@ -135,7 +141,7 @@ export const ProductItem = ({
           alt={t('productItem.logoAlt', { name })}
           width={logoSizes[effectiveLogoSize].imageSize}
           height={logoSizes[effectiveLogoSize].imageSize}
-          className="h-full w-full object-contain rounded-lg"
+          className={`h-full w-full object-contain ${isHero ? 'rounded-xl' : 'rounded-lg'}`}
           onError={() => setResolvedLogoUrl(undefined)}
         />
       </div>
@@ -145,7 +151,7 @@ export const ProductItem = ({
             className={
               isHero
                 ? 'm-0 text-2xl font-bold leading-tight tracking-tight text-dark-900 md:text-3xl'
-                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
+                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-900 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
             }
           >
             {name}
@@ -174,7 +180,7 @@ export const ProductItem = ({
         {(tags || specialTags || footerRight) && (
           <div className="flex items-center justify-between gap-2 pt-1 mt-auto w-full">
             {tags || specialTags ? (
-              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide touch-pan-x">
                 {tags &&
                   (maxTagItems && tags.length > maxTagItems ? (
                     <div className="flex items-center gap-1.5">
@@ -187,7 +193,7 @@ export const ProductItem = ({
                           {tag}
                         </Chip>
                       ))}
-                      <span className="text-2xs font-medium tabular-nums text-dark-500">
+                      <span className="shrink-0 rounded-md bg-dark-100/80 px-1.5 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
                         +{tags.length - maxTagItems}
                       </span>
                     </div>

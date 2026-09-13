@@ -22,7 +22,7 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
           아직 투표가 집계된 서비스가 없습니다. 다양한 서비스를 탐색하고 첫 번째 표를 남겨보세요!
         </p>
         <Link href={`/${locale}/search/product`} className="mt-6">
-          <Button variant="shadow" color="primary" size="md">
+          <Button as="span" variant="shadow" color="primary" size="md">
             서비스 둘러보기
           </Button>
         </Link>
@@ -32,46 +32,46 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
 
   return (
     <div className="grid w-full grid-cols-1 gap-3.5 sm:gap-4 md:grid-cols-2">
-    {products.map((product, index) => {
-      const rank = index + 1;
+      {products.map((product, index) => {
+        const rank = index + 1;
 
-      return (
-        <Link
-          key={product.id}
-          href={`/${locale}/products/${product.slug}?from=trending`}
-          onClick={() =>
-            track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
-              productSlug: product.slug,
-              source: 'ranking',
-            })
-          }
-          className={`group block rounded-card-lg border p-4 sm:p-5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 ${
-            rank === 1
-              ? 'border-amber-300/80 bg-gradient-to-br from-amber-50/60 via-white to-white hover:border-amber-400'
-              : rank === 2
-                ? 'border-slate-300/80 bg-gradient-to-br from-slate-50/50 via-white to-white hover:border-slate-400'
-                : rank === 3
-                  ? 'border-amber-600/30 bg-gradient-to-br from-orange-50/40 via-white to-white hover:border-orange-300'
-                  : 'border-dark-150/90 bg-white hover:border-dark-300'
-          }`}
-        >
-          <ProductItem
-            name={product.name}
-            logoUrl={product.logoUrl}
-            logoSize="small"
-            summary={product.summary}
-            tags={product.tags.map(tag => tag.name)}
-            rank={rank}
-            headerRight={
-              product.voteCount !== undefined && product.voteCount !== null ? (
-                <VoteCountBadge count={product.voteCount} />
-              ) : null
+        return (
+          <Link
+            key={product.id}
+            href={`/${locale}/products/${product.slug}?from=trending`}
+            onClick={() =>
+              track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
+                productSlug: product.slug,
+                source: 'ranking',
+              })
             }
-            isRanked
-          />
-        </Link>
-      );
-    })}
+            className={`group block rounded-card-lg border p-4 sm:p-5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 ${
+              rank === 1
+                ? 'border-amber-300/80 bg-gradient-to-br from-amber-50/60 via-white to-white hover:border-amber-400'
+                : rank === 2
+                  ? 'border-slate-300/80 bg-gradient-to-br from-slate-50/50 via-white to-white hover:border-slate-400'
+                  : rank === 3
+                    ? 'border-amber-600/30 bg-gradient-to-br from-orange-50/40 via-white to-white hover:border-orange-300'
+                    : 'border-dark-150/90 bg-white hover:border-dark-300'
+            }`}
+          >
+            <ProductItem
+              name={product.name}
+              logoUrl={product.logoUrl}
+              logoSize="small"
+              summary={product.summary}
+              tags={product.tags.map(tag => tag.name)}
+              rank={rank}
+              headerRight={
+                product.voteCount !== undefined && product.voteCount !== null ? (
+                  <VoteCountBadge count={product.voteCount} />
+                ) : null
+              }
+              isRanked
+            />
+          </Link>
+        );
+      })}
     </div>
   );
 });

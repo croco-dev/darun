@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 
 export interface Toast {
   id: string;
@@ -73,6 +73,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               <AlertCircle size={18} className="shrink-0 stroke-[2.25] text-cherry-200" aria-hidden="true" />
             )}
             <span className="text-sm font-medium tracking-tight break-keep">{toast.message}</span>
+            <button
+              type="button"
+              onClick={() => removeToast(toast.id)}
+              className="-mr-1 ml-1.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              aria-label="알림 닫기"
+            >
+              <X size={14} className="stroke-[2.5]" aria-hidden="true" />
+            </button>
           </div>
         ))}
       </div>

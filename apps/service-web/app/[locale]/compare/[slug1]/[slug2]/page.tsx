@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
-import { ProductCard } from '@darun/products-shell';
-import { Chip, ContentArea, PageHeading } from '@darun/ui';
+import { ProductCard, VoteCountBadge } from '@darun/products-shell';
+import { Breadcrumb, Chip, ContentArea, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import Image from 'next/image';
@@ -131,6 +131,16 @@ export default async function ComparePage({ params }: Props) {
     <Layout>
       <main className="flex w-full flex-col">
         <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
+          <Breadcrumb
+            data-testid="breadcrumb-compare"
+            items={[
+              { label: isKo ? '홈' : 'Home', href: `/${resolvedParams.locale}` },
+              {
+                label: isKo ? '서비스 비교' : 'Compare',
+                ariaCurrent: 'page',
+              },
+            ]}
+          />
           <PageHeading
             title={
               resolvedParams.locale === 'en'
@@ -178,7 +188,7 @@ export default async function ComparePage({ params }: Props) {
           <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
             <div className="grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/70 p-3.5 sm:p-4 md:p-5">
               <div className="flex items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
-                {product1.logoUrl && (
+                {product1.logoUrl ? (
                   <Image
                     src={product1.logoUrl}
                     alt={product1.name}
@@ -186,11 +196,18 @@ export default async function ComparePage({ params }: Props) {
                     height={24}
                     className="h-6 w-6 shrink-0 rounded-md border border-dark-150 bg-white object-contain p-0.5"
                   />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600"
+                  >
+                    {product1.name.slice(0, 1).toUpperCase()}
+                  </span>
                 )}
                 <span className="truncate text-xs font-bold text-dark-900 sm:text-sm">{product1.name}</span>
               </div>
               <div className="flex items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
-                {product2.logoUrl && (
+                {product2.logoUrl ? (
                   <Image
                     src={product2.logoUrl}
                     alt={product2.name}
@@ -198,6 +215,13 @@ export default async function ComparePage({ params }: Props) {
                     height={24}
                     className="h-6 w-6 shrink-0 rounded-md border border-dark-150 bg-white object-contain p-0.5"
                   />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600"
+                  >
+                    {product2.name.slice(0, 1).toUpperCase()}
+                  </span>
                 )}
                 <span className="truncate text-xs font-bold text-dark-900 sm:text-sm">{product2.name}</span>
               </div>
@@ -230,8 +254,8 @@ export default async function ComparePage({ params }: Props) {
               label={isKo ? '투표 수' : 'Votes'}
               colLabel1={product1.name}
               colLabel2={product2.name}
-              value1={product1.voteCount.toLocaleString(resolvedParams.locale)}
-              value2={product2.voteCount.toLocaleString(resolvedParams.locale)}
+              custom1={<VoteCountBadge count={product1.voteCount} />}
+              custom2={<VoteCountBadge count={product2.voteCount} />}
               testid="vote-count"
             />
             <CompareRow
@@ -260,6 +284,8 @@ function CompareRow({
   value2,
   tags1,
   tags2,
+  custom1,
+  custom2,
   testid,
   isLast,
 }: {
@@ -270,17 +296,25 @@ function CompareRow({
   value2?: string;
   tags1?: string[];
   tags2?: string[];
+  custom1?: React.ReactNode;
+  custom2?: React.ReactNode;
   testid: string;
   isLast?: boolean;
 }) {
   return (
-    <div className={`p-4 md:p-5 ${isLast ? '' : 'border-b border-dark-150/70'}`}>
+    <div
+      className={`p-4 md:p-5 transition-colors duration-150 hover:bg-surface-50/60 ${
+        isLast ? '' : 'border-b border-dark-150/70'
+      }`}
+    >
       <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-dark-500">{label}</div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-150/70">
         <div className="md:pr-5">
           <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel1}</div>
-          <div className="text-sm leading-relaxed text-dark-800" data-testid={`compare-row-${testid}-1`}>
-            {tags1 && tags1.length > 0 ? (
+          <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-1`}>
+            {custom1 ? (
+              custom1
+            ) : tags1 && tags1.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {tags1.map(tag => (
                   <Chip key={tag} color="filledGray" variant="square">
@@ -288,15 +322,19 @@ function CompareRow({
                   </Chip>
                 ))}
               </div>
+            ) : value1 ? (
+              value1
             ) : (
-              value1 || '-'
+              <span className="text-dark-400 font-mono">-</span>
             )}
           </div>
         </div>
         <div className="md:pl-5">
           <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel2}</div>
-          <div className="text-sm leading-relaxed text-dark-800" data-testid={`compare-row-${testid}-2`}>
-            {tags2 && tags2.length > 0 ? (
+          <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-2`}>
+            {custom2 ? (
+              custom2
+            ) : tags2 && tags2.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {tags2.map(tag => (
                   <Chip key={tag} color="filledGray" variant="square">
@@ -304,8 +342,10 @@ function CompareRow({
                   </Chip>
                 ))}
               </div>
+            ) : value2 ? (
+              value2
             ) : (
-              value2 || '-'
+              <span className="text-dark-400 font-mono">-</span>
             )}
           </div>
         </div>

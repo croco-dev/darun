@@ -1,6 +1,7 @@
 'use client';
 
 import { bind } from '@darun/utils-structure-react';
+import { Building2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useProductCompany } from './useProductCompany';
 
@@ -36,8 +37,11 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
 
   if (!hasAnyInfo) {
     return (
-      <div className="flex min-h-24 flex-col items-center justify-center rounded-xl border border-dashed border-dark-200 bg-surface-100/40 px-4 py-6 text-center">
-        <p className="text-sm font-medium text-dark-500">운영사 정보가 등록되지 않았습니다.</p>
+      <div className="flex min-h-28 flex-col items-center justify-center gap-2 py-4 text-center sm:min-h-32">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
+          <Building2 size={18} className="stroke-[2]" />
+        </div>
+        <p className="text-sm font-medium text-dark-500 break-keep">{t('company.empty')}</p>
       </div>
     );
   }
@@ -75,7 +79,9 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <dt className="shrink-0 text-xs font-semibold uppercase tracking-wider text-dark-500">
               {t('company.field.foundedAt')}
             </dt>
-            <dd className="text-right text-sm font-semibold text-dark-900 break-keep">{formatStartAt(company.startAt)}</dd>
+            <dd className="text-right text-sm font-semibold text-dark-900 break-keep">
+              {formatStartAt(company.startAt)}
+            </dd>
           </div>
         )}
       </dl>

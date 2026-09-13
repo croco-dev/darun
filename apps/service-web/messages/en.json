@@ -65,10 +65,12 @@
       "title": "Frequently Asked Questions"
     },
     "feature": {
-      "title": "Features"
+      "title": "Features",
+      "empty": "No feature information available yet."
     },
     "description": {
-      "title": "Overview"
+      "title": "Overview",
+      "empty": "Overview information is not available yet."
     },
     "photo": {
       "title": "Screenshots",
@@ -77,6 +79,7 @@
     "company": {
       "title": "Company Information",
       "description": "We provide information about the company operating this service. Since it may differ from actual information, please use it for reference only.",
+      "empty": "Company information is not registered yet.",
       "basicInfo": "Basic Information",
       "field": {
         "name": "Name",
@@ -129,7 +132,8 @@
   },
   "home": {
     "recent": {
-      "title": "Recently Added"
+      "title": "Recently Added",
+      "more": "View More"
     },
     "category": {
       "title": "Categories",

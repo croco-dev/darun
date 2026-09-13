@@ -93,7 +93,7 @@ export default async function CategoryPage({ params }: Props) {
 
   return (
     <Layout>
-      <main>
+      <main className="flex w-full flex-col">
         <CategoryProductSection slug={slug} />
       </main>
     </Layout>

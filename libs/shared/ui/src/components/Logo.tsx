@@ -1,13 +1,23 @@
 type LogoProps = {
   size: number;
   scheme?: 'light' | 'dark';
+  className?: string;
+  ariaHidden?: boolean;
 };
 
 const dark = '#111111';
 
-export function Logo({ size, scheme = 'dark' }: LogoProps) {
+export function Logo({ size, scheme = 'dark', className, ariaHidden = true }: LogoProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 36 36"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden={ariaHidden}
+    >
       <title>다른 로고</title>
       <path
         fillRule="evenodd"

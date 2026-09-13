@@ -9,14 +9,14 @@ export const SearchProductListSkeleton = () => {
           className="relative flex h-full flex-col justify-between rounded-card-lg border border-dark-150 bg-white p-4 shadow-card sm:p-5"
         >
           <div className="flex flex-col gap-3">
-            <div className="h-12 w-12 animate-pulse rounded-xl bg-dark-100 motion-reduce:animate-none" />
+            <div className="h-12 w-12 animate-pulse rounded-xl bg-surface-200 motion-reduce:animate-none" />
             <div className="flex flex-col gap-1">
-              <div className="h-5 w-3/4 animate-pulse rounded bg-dark-100 motion-reduce:animate-none" />
-              <div className="h-4 w-full animate-pulse rounded bg-dark-100 motion-reduce:animate-none" />
+              <div className="h-5 w-3/4 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
+              <div className="h-4 w-full animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
             </div>
             <div className="flex items-center justify-between gap-2 pt-1">
-              <div className="h-5 w-16 animate-pulse rounded-md bg-dark-100 motion-reduce:animate-none" />
-              <div className="h-6 w-12 animate-pulse rounded-lg bg-dark-100 motion-reduce:animate-none" />
+              <div className="h-5 w-16 animate-pulse rounded-md bg-surface-200 motion-reduce:animate-none" />
+              <div className="h-6 w-12 animate-pulse rounded-lg bg-surface-200 motion-reduce:animate-none" />
             </div>
           </div>
         </div>

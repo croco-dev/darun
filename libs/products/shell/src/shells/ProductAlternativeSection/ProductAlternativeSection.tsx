@@ -29,7 +29,7 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
           <p className="text-sm font-semibold text-dark-900 break-keep">{t('empty.title')}</p>
           <p className="mt-1 max-w-xs text-xs text-dark-500 break-keep">{t('empty.description')}</p>
           <Link href={`/${locale}/search/product`} className="mt-4">
-            <Button variant="shadow" color="primary" size="sm">
+            <Button as="span" variant="shadow" color="primary" size="sm">
               {t('empty.button')}
             </Button>
           </Link>
@@ -43,10 +43,16 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
       <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
       <AlternativeProductList slug={slug} />
       <div className="flex justify-center pt-2">
-        <Link href={`/${locale}/products/${slug}/alternatives`}>
-          <Button variant="shadow" color="secondary">
+        <Link
+          href={`/${locale}/products/${slug}/alternatives`}
+          className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+        >
+          <Button as="span" variant="shadow" color="secondary">
             <div className="flex items-center justify-center gap-2">
-              <Layers size={16} className="shrink-0 text-dark-500" />
+              <Layers
+                size={16}
+                className="shrink-0 text-dark-500 transition-colors duration-200 group-hover:text-dark-900"
+              />
               <span>{t('section.moreButton')}</span>
             </div>
           </Button>

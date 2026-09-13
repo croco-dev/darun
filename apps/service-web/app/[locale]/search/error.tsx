@@ -3,8 +3,8 @@
 import { Button, Search } from '@darun/ui';
 import * as Sentry from '@sentry/nextjs';
 import { AlertCircle } from 'lucide-react';
-import Link from 'next/link';
 import { useEffect } from 'react';
+import { Link } from '../../../i18n/navigation';
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -34,8 +34,8 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
           <Button onClick={() => reset()} variant="shadow" color="primary" size="md">
             다시 시도
           </Button>
-          <Link href="/">
-            <Button variant="shadow" color="secondary" size="md">
+          <Link href="/" className="focus-visible:outline-none">
+            <Button as="span" variant="shadow" color="secondary" size="md">
               홈으로 이동
             </Button>
           </Link>
@@ -54,4 +54,3 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
     </div>
   );
 }
-

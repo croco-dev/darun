@@ -8,7 +8,9 @@ import { useHeaderLoginButton } from './useHeaderLoginButton';
 export const HeaderLoginButton = bind(useHeaderLoginButton, ({ isLoading, isLoggedIn, login, logout }) => {
   const t = useTranslations('Layout.header');
 
-  return isLoading ? null : isLoggedIn ? (
+  return isLoading ? (
+    <div className="h-8 w-14 animate-pulse rounded-xl bg-surface-200 motion-reduce:animate-none" aria-hidden="true" />
+  ) : isLoggedIn ? (
     <Button type="button" kind="text" size="sm" onClick={logout}>
       {t('logout')}
     </Button>

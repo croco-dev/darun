@@ -1,4 +1,4 @@
-import { Button, ContentArea, ExternalLink, PageHeading, ShieldCheck, Sparkles } from '@darun/ui';
+import { Breadcrumb, Button, ContentArea, ExternalLink, PageHeading, ShieldCheck, Sparkles } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import { getOgLocale } from '../../../lib/seo/metadata';
@@ -95,8 +95,15 @@ export default async function AboutPage({ params }: Props) {
     <Layout>
       <main className="flex w-full flex-col">
         <ContentArea className="flex max-w-4xl flex-col gap-8 py-10 md:gap-10 md:py-16">
+          <Breadcrumb
+            data-testid="breadcrumb-about"
+            items={[
+              { label: isKo ? '홈' : 'Home', href: `/${currentLocale}` },
+              { label: isKo ? '소개' : 'About', ariaCurrent: 'page' },
+            ]}
+          />
           <div className="flex flex-col gap-3">
-            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dark-150 bg-surface-100 px-3 py-1 text-xs font-semibold text-dark-700">
+            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dark-150 bg-surface-100 px-3 py-1 text-xs font-semibold text-dark-700 shadow-2xs">
               <ShieldCheck size={14} className="text-dark-500" />
               <span>{isKo ? '편집 방침 및 가이드라인' : 'Editorial Guidelines'}</span>
             </div>
@@ -148,7 +155,7 @@ export default async function AboutPage({ params }: Props) {
               </section>
             ))}
 
-            <section className="flex flex-col gap-4 rounded-card-lg border border-dark-150/80 bg-surface-100/60 p-6 shadow-card md:p-7">
+            <section className="flex flex-col gap-4 rounded-card-lg border border-dark-150/80 bg-surface-100/60 p-6 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover md:p-7">
               <div className="flex items-center gap-3">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-dark-150 bg-white font-mono text-xs font-bold text-dark-700">
                   05
@@ -168,11 +175,20 @@ export default async function AboutPage({ params }: Props) {
                     href="https://forms.gle/nDPFKAYSuoGg2J3MA"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex"
+                    className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
-                    <Button variant="shadow" color="secondary" size="sm" className="gap-1.5">
-                      <span>{isKo ? '문의 및 피드백 보내기' : 'Submit Feedback'}</span>
-                      <ExternalLink size={14} className="text-dark-400" />
+                    <Button
+                      as="span"
+                      variant="shadow"
+                      color="secondary"
+                      size="md"
+                      className="gap-2 transition-all duration-200 active:scale-[0.98]"
+                    >
+                      <span className="font-semibold">{isKo ? '문의 및 피드백 보내기' : 'Submit Feedback'}</span>
+                      <ExternalLink
+                        size={14}
+                        className="text-dark-400 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-900"
+                      />
                     </Button>
                   </a>
                 </div>
@@ -184,4 +200,3 @@ export default async function AboutPage({ params }: Props) {
     </Layout>
   );
 }
-
