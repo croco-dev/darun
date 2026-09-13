@@ -18,6 +18,7 @@
     "@darun/products-feature": "workspace:*",
     "@darun/provider-auth/client": "workspace:*",
     "@darun/provider-auth/server": "workspace:*",
+    "@darun/provider-graphql": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/ui-admin": "workspace:*",
     "@darun/ui-layout": "workspace:*",

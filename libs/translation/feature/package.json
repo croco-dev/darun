@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@darun/translation-service": "workspace:*"
+    "@darun/translation-service": "workspace:*",
+    "@darun/utils-apollo-server": "workspace:*"
   },
   "peerDependencies": {
     "reflect-metadata": "catalog:",

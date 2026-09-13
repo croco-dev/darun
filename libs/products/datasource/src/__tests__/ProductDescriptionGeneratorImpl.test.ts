@@ -34,7 +34,8 @@ describe('ProductDescriptionGeneratorImpl', () => {
 
     await generator.generate(createProduct());
 
-    const messages = llmClient.completion.mock.calls[0]?.[1] ?? [];
+    const firstCall = llmClient.completion.mock.calls[0] ?? [];
+    const messages = (Array.isArray(firstCall[0]) ? firstCall[0] : firstCall[1]) ?? [];
     const systemPrompt = messages.find(message => message.role === 'system')?.content ?? '';
     const userPrompt = messages.find(message => message.role === 'user')?.content ?? '';
 
@@ -57,7 +58,8 @@ describe('ProductDescriptionGeneratorImpl', () => {
 
     await generator.generate(createProduct(), { categoryLabels: ['협업 도구', '업무 자동화'] });
 
-    const messages = llmClient.completion.mock.calls[0]?.[1] ?? [];
+    const secondCall = llmClient.completion.mock.calls[0] ?? [];
+    const messages = (Array.isArray(secondCall[0]) ? secondCall[0] : secondCall[1]) ?? [];
     const userPrompt = messages.find(message => message.role === 'user')?.content ?? '';
 
     expect(userPrompt).toContain('카테고리: 협업 도구, 업무 자동화');
@@ -76,7 +78,8 @@ describe('ProductDescriptionGeneratorImpl', () => {
 
     await generator.generate(productWithMachineIds);
 
-    const messages = llmClient.completion.mock.calls[0]?.[1] ?? [];
+    const thirdCall = llmClient.completion.mock.calls[0] ?? [];
+    const messages = (Array.isArray(thirdCall[0]) ? thirdCall[0] : thirdCall[1]) ?? [];
     const userPrompt = messages.find(message => message.role === 'user')?.content ?? '';
 
     expect(userPrompt).toContain('카테고리: 확인된 정보 없음');

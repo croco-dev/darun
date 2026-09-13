@@ -27,7 +27,9 @@ import { TranslationMutationResolver } from '../Translation.mutation.resolver';
 describe('TranslationMutationResolver', () => {
   describe('requestTranslation', () => {
     it('번역 작업을 요청하고 완료 상태를 반환한다', async () => {
-      const translationJobService = { translateEntity: vi.fn().mockResolvedValue(undefined) };
+      const translationJobService = {
+        translateEntity: vi.fn().mockResolvedValue(undefined),
+      };
 
       const resolver = new TranslationMutationResolver(translationJobService as never);
       const result = await resolver.requestTranslation('Product', 'prod-1', ['name', 'summary']);
@@ -53,7 +55,9 @@ describe('TranslationMutationResolver', () => {
     });
 
     it('중복 field를 제거하고 처리한다', async () => {
-      const translationJobService = { translateEntity: vi.fn().mockResolvedValue(undefined) };
+      const translationJobService = {
+        translateEntity: vi.fn().mockResolvedValue(undefined),
+      };
       const resolver = new TranslationMutationResolver(translationJobService as never);
 
       const result = await resolver.requestTranslation('Magazine', 'mag-1', ['name', 'name', 'summary']);
@@ -63,7 +67,9 @@ describe('TranslationMutationResolver', () => {
     });
 
     it('ProductFeature entityType 번역 작업을 정상 요청한다', async () => {
-      const translationJobService = { translateEntity: vi.fn().mockResolvedValue(undefined) };
+      const translationJobService = {
+        translateEntity: vi.fn().mockResolvedValue(undefined),
+      };
 
       const resolver = new TranslationMutationResolver(translationJobService as never);
       const result = await resolver.requestTranslation('ProductFeature', 'feat-1', ['name', 'summary']);

@@ -290,6 +290,9 @@ importers:
       '@darun/provider-auth/server':
         specifier: workspace:*
         version: link:../../libs/shared/provider-auth/server
+      '@darun/provider-graphql':
+        specifier: workspace:*
+        version: link:../../libs/shared/provider-graphql
       '@darun/ui':
         specifier: workspace:*
         version: link:../../libs/shared/ui
@@ -447,6 +450,9 @@ importers:
       '@darun/translation-feature':
         specifier: workspace:*
         version: link:../../libs/translation/feature
+      '@darun/translation-service':
+        specifier: workspace:*
+        version: link:../../libs/translation/service
       '@darun/utils-apollo-server':
         specifier: workspace:*
         version: link:../../libs/shared/utils-apollo-server
@@ -2339,6 +2345,9 @@ importers:
       '@darun/translation-service':
         specifier: workspace:*
         version: link:../service
+      '@darun/utils-apollo-server':
+        specifier: workspace:*
+        version: link:../../shared/utils-apollo-server
       reflect-metadata:
         specifier: 'catalog:'
         version: 0.2.2

@@ -158,6 +158,15 @@ type IndexProductPayload {
   indexed: Boolean!
 }
 
+type LlmSetting {
+  apiKeyMasked: String
+  endpoint: String!
+  id: ID!
+  model: String!
+  thinkingLevel: String
+  updatedAt: DateTimeISO!
+}
+
 type Link {
   displayLink: String!
   iconUrl: String!
@@ -205,6 +214,7 @@ type Mutation {
   requestTranslation(entityId: String!, entityType: String!, fields: [String!]!): TranslationJob!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
+  updateLlmSetting(apiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
   updateProductLink(id: String!, input: UpdateProductLinkInput!, slug: String!): UpdateProductLinkPayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
@@ -270,6 +280,7 @@ type Query {
   categories(first: Int!, locale: String! = "ko"): [Category!]!
   feature(id: ID!): Feature
   hello: String!
+  llmSetting: LlmSetting!
   magazine(id: ID!): Magazine
   magazineBySlug(slug: String!): Magazine
   product(id: ID!, locale: String! = "ko"): Product

@@ -10,7 +10,7 @@ import {
   ProductMutationResolver,
   ProductQueryResolver,
 } from '@darun/products-feature/server';
-import { TranslationMutationResolver } from '@darun/translation-feature/server';
+import { LlmSettingResolver, TranslationMutationResolver } from '@darun/translation-feature/server';
 import { NonEmptyArray } from 'type-graphql';
 import { HealthResolver } from './graphql/Health.resolver';
 
@@ -28,4 +28,5 @@ export const resolvers: NonEmptyArray<Function> = [
   MagazineMutationResolver,
   MagazineQueryResolver,
   TranslationMutationResolver,
+  LlmSettingResolver,
 ];

@@ -2,7 +2,7 @@
 
 import { Logo } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
-import { Archive, Building2, Newspaper } from 'lucide-react';
+import { Archive, Building2, Newspaper, Sliders } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { LogoutButton } from '../../features/auth/LogoutButton';
 
@@ -10,6 +10,7 @@ const data = [
   { link: '/products', label: '서비스', icon: Archive },
   { link: '/companies', label: '회사 관리', icon: Building2 },
   { link: '/magazines', label: '매거진', icon: Newspaper },
+  { link: '/settings/llm', label: 'LLM 설정', icon: Sliders },
 ];
 
 export function Navbar() {

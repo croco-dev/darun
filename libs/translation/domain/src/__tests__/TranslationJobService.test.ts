@@ -23,15 +23,18 @@ const createTranslationService = () =>
     upsertTranslation: vi.fn<TranslationService['upsertTranslation']>().mockResolvedValue(undefined),
   }) satisfies Pick<TranslationService, 'upsertTranslation'>;
 
-const createLlmClient = (
-  customImplementation?: (
-    _model: string,
-    messages: Array<{ role?: string; content: string }>
-  ) => Promise<{ content: string }>
-) => ({
+type CustomLlmImplementation = (
+  modelOrMessages: unknown,
+  maybeMessages?: unknown
+) => Promise<{ content: string }>;
+
+const createLlmClient = (customImplementation?: CustomLlmImplementation) => ({
   completion: vi.fn().mockImplementation(
     customImplementation ??
-      (async (_model: string, messages: Array<{ role?: string; content: string }>) => {
+      (async (modelOrMessages: unknown, maybeMessages?: unknown) => {
+        const messages: Array<{ role?: string; content: string }> = Array.isArray(modelOrMessages)
+          ? (modelOrMessages as Array<{ role?: string; content: string }>)
+          : ((maybeMessages as Array<{ role?: string; content: string }>) ?? []);
         const userMessage = messages.find(m => m.role === 'user') ?? messages[0];
         return {
           content: `en:${userMessage?.content.split(': ').pop()}`,
@@ -41,10 +44,14 @@ const createLlmClient = (
 });
 
 const createProductUseCase = (product?: Product) =>
-  ({ execute: vi.fn<GetProduct['execute']>().mockResolvedValue(product ?? null) }) as unknown as GetProduct;
+  ({
+    execute: vi.fn<GetProduct['execute']>().mockResolvedValue(product ?? null),
+  }) as unknown as GetProduct;
 
 const createMagazineUseCase = (magazine?: Magazine) =>
-  ({ execute: vi.fn<GetMagazine['execute']>().mockResolvedValue(magazine ?? null) }) as unknown as GetMagazine;
+  ({
+    execute: vi.fn<GetMagazine['execute']>().mockResolvedValue(magazine ?? null),
+  }) as unknown as GetMagazine;
 
 const createProductFeatureUseCase = (feature?: ProductFeature | null) =>
   ({
@@ -67,10 +74,7 @@ const createService = ({
   magazine?: Magazine;
   feature?: ProductFeature;
   features?: ProductFeature[];
-  customLlmImplementation?: (
-    _model: string,
-    messages: Array<{ role?: string; content: string }>
-  ) => Promise<{ content: string }>;
+  customLlmImplementation?: CustomLlmImplementation;
 } = {}) => {
   const translationService = createTranslationService();
   const llmClient = createLlmClient(customLlmImplementation);
@@ -163,7 +167,9 @@ describe('TranslationJobService', () => {
       }),
       { tagline: '한 줄 소개' }
     );
-    TRANSLATABLE_FIELD_METADATA.Product.fields.tagline = { property: 'tagline' };
+    TRANSLATABLE_FIELD_METADATA.Product.fields.tagline = {
+      property: 'tagline',
+    };
     const { service, translationService } = createService({ product });
 
     await service.translateEntity('Product', product.id, ['tagline']);
@@ -242,7 +248,9 @@ describe('TranslationJobService', () => {
     const { service, translationService, llmClient } = createService({
       product,
       features,
-      customLlmImplementation: async () => ({ content: `\`\`\`json\n${mockJsonResponse}\n\`\`\`` }),
+      customLlmImplementation: async () => ({
+        content: `\`\`\`json\n${mockJsonResponse}\n\`\`\``,
+      }),
     });
 
     await service.translateProductWithFeatures(product.id);

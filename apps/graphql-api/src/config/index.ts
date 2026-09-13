@@ -13,7 +13,8 @@ import '@darun/magazines-datasource';
 import '@darun/translation-datasource';
 import '@darun/products-datasource';
 import { CloudinaryImageRepositoryConfig } from '@darun/images-datasource';
-import { LlmClient } from '@darun/utils-llm/src/libs/LlmClient';
+import { LlmSettingService } from '@darun/translation-service';
+import { LlmClient } from '@darun/utils-llm';
 import { Container } from 'typedi';
 import { RUNNING_ENV } from './environment';
 import { registerRepositoryAliases } from './repositoryAliases';
@@ -22,5 +23,6 @@ registerRepositoryAliases();
 
 Container.set(CloudinaryImageRepositoryConfig, new CloudinaryImageRepositoryConfig(RUNNING_ENV));
 
-// LLM 서비스 등록
-Container.set(LlmClient, new LlmClient());
+// LLM 서비스 등록 (DB 설정 연동)
+const llmConfigProvider = Container.get(LlmSettingService);
+Container.set(LlmClient, new LlmClient(llmConfigProvider));

@@ -42,7 +42,7 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
       const response = await withRetry(
         () =>
           this.withTimeout(
-            this.llmClient.completion('x-ai/grok-4-fast', [
+            this.llmClient.completion([
               { role: 'system', content: SYSTEM_PROMPT },
               { role: 'user', content: this.createUserPrompt(product, context) },
             ]),
