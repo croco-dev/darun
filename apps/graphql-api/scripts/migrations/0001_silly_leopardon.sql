@@ -1,4 +1,4 @@
-CREATE TABLE "llm_settings" (
+CREATE TABLE IF NOT EXISTS "llm_settings" (
 	"id" text PRIMARY KEY NOT NULL,
 	"endpoint" text DEFAULT 'https://openrouter.ai/api/v1' NOT NULL,
 	"api_key" text,

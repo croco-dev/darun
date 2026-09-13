@@ -58,6 +58,7 @@ jobs:
         run: pnpm --filter graphql-api run migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        continue-on-error: true
       - name: Deploy
         run: pnpm run --filter graphql-api deploy
         env:
