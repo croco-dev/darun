@@ -54,6 +54,10 @@ jobs:
           secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Install SST providers
         run: pnpm --filter graphql-api exec sst install
+      - name: Run Database Migrations
+        run: pnpm --filter graphql-api run migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - name: Deploy
         run: pnpm run --filter graphql-api deploy
         env:

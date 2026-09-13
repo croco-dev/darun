@@ -34,6 +34,7 @@ export function createServer({ options, config }: CreateApolloServerParams): Apo
     allowBatchedHttpRequests: true,
     introspection: config.playground,
     formatError: (formattedError, error) => {
+      console.error('[GraphQL Error]', error);
       if (isDomainError(error)) {
         return {
           ...formattedError,

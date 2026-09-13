@@ -19,7 +19,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
       <AdminPanel>
         <AdminErrorState
           title="문제가 발생했습니다."
-          description={error.message || '일시적인 오류가 발생했습니다. 다시 시도해주세요.'}
+          error={error}
           action={
             <Button type="button" variant="contained" color="primary" onClick={() => reset()}>
               다시 시도

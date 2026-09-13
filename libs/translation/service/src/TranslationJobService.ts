@@ -62,7 +62,7 @@ export class TranslationJobService {
     private readonly getProductUseCase: GetProduct,
     private readonly getMagazineUseCase: GetMagazine,
     private readonly translationService: TranslationService,
-    @Inject() private readonly llmClient: LlmClient,
+    @Inject(() => LlmClient) private readonly llmClient: LlmClient,
     private readonly getProductFeatureUseCase?: GetProductFeature,
     private readonly getProductFeaturesUseCase?: GetProductFeatures
   ) {}
