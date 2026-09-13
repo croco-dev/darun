@@ -1,6 +1,12 @@
 'use client';
 
-import { EditProductInfo, IndexProductButton, ProductInfo, PublishProductButton } from '@darun/products-feature';
+import {
+  EditProductInfo,
+  IndexProductButton,
+  ProductInfo,
+  PublishProductButton,
+  TranslateProductButton,
+} from '@darun/products-feature';
 import { Button } from '@darun/ui';
 import { AdminPanel } from '@darun/ui-admin';
 import { useDisclosure } from '@mantine/hooks';
@@ -26,6 +32,7 @@ export const ProductDetailInfoSection = ({ slug }: ProductDetailInfoSectionProps
             <Button onClick={openEditModal} variant="base" color="secondary" size="sm">
               기본 정보 수정
             </Button>
+            <TranslateProductButton slug={slug} />
             <IndexProductButton slug={slug} />
             <PublishProductButton slug={slug} />
           </div>

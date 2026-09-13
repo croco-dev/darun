@@ -1,10 +1,10 @@
 import 'reflect-metadata';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { Magazine } from '@darun/magazines-domain';
-import { Product } from '@darun/products-domain';
 import type { GetMagazine } from '@darun/magazines-domain';
-import type { GetProduct } from '@darun/products-domain';
+import { Product, ProductFeature } from '@darun/products-domain';
+import type { GetProduct, GetProductFeature, GetProductFeatures } from '@darun/products-domain';
 import type { LlmClient } from '@darun/utils-llm';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { TranslationService } from '../services/TranslationService';
 
 vi.mock('typedi', async importOriginal => ({
@@ -18,14 +18,26 @@ let TRANSLATABLE_FIELD_METADATA: typeof import('@darun/translation-service').TRA
 
 type UpsertParams = Parameters<TranslationService['upsertTranslation']>[0];
 
-const createTranslationService = () => ({
-  upsertTranslation: vi.fn<TranslationService['upsertTranslation']>().mockResolvedValue(undefined),
-} satisfies Pick<TranslationService, 'upsertTranslation'>);
+const createTranslationService = () =>
+  ({
+    upsertTranslation: vi.fn<TranslationService['upsertTranslation']>().mockResolvedValue(undefined),
+  }) satisfies Pick<TranslationService, 'upsertTranslation'>;
 
-const createLlmClient = () => ({
-  completion: vi.fn().mockImplementation(async (_model: string, messages: Array<{ content: string }>) => ({
-    content: `en:${messages[0]?.content.split(': ').pop()}`,
-  })),
+const createLlmClient = (
+  customImplementation?: (
+    _model: string,
+    messages: Array<{ role?: string; content: string }>
+  ) => Promise<{ content: string }>
+) => ({
+  completion: vi.fn().mockImplementation(
+    customImplementation ??
+      (async (_model: string, messages: Array<{ role?: string; content: string }>) => {
+        const userMessage = messages.find(m => m.role === 'user') ?? messages[0];
+        return {
+          content: `en:${userMessage?.content.split(': ').pop()}`,
+        };
+      })
+  ),
 });
 
 const createProductUseCase = (product?: Product) =>
@@ -34,16 +46,43 @@ const createProductUseCase = (product?: Product) =>
 const createMagazineUseCase = (magazine?: Magazine) =>
   ({ execute: vi.fn<GetMagazine['execute']>().mockResolvedValue(magazine ?? null) }) as unknown as GetMagazine;
 
-const createService = ({ product, magazine }: { product?: Product; magazine?: Magazine }) => {
+const createProductFeatureUseCase = (feature?: ProductFeature | null) =>
+  ({
+    execute: vi.fn<GetProductFeature['execute']>().mockResolvedValue(feature ?? null),
+  }) as unknown as GetProductFeature;
+
+const createProductFeaturesUseCase = (features?: ProductFeature[]) =>
+  ({
+    execute: vi.fn<GetProductFeatures['execute']>().mockResolvedValue(features ?? []),
+  }) as unknown as GetProductFeatures;
+
+const createService = ({
+  product,
+  magazine,
+  feature,
+  features,
+  customLlmImplementation,
+}: {
+  product?: Product;
+  magazine?: Magazine;
+  feature?: ProductFeature;
+  features?: ProductFeature[];
+  customLlmImplementation?: (
+    _model: string,
+    messages: Array<{ role?: string; content: string }>
+  ) => Promise<{ content: string }>;
+} = {}) => {
   const translationService = createTranslationService();
-  const llmClient = createLlmClient();
+  const llmClient = createLlmClient(customLlmImplementation);
 
   return {
     service: new TranslationJobService(
       createProductUseCase(product),
       createMagazineUseCase(magazine),
       translationService as unknown as TranslationService,
-      llmClient as unknown as LlmClient
+      llmClient as unknown as LlmClient,
+      createProductFeatureUseCase(feature),
+      createProductFeaturesUseCase(features)
     ),
     translationService,
     llmClient,
@@ -137,5 +176,112 @@ describe('TranslationJobService', () => {
       value: 'en:한 줄 소개',
     });
     delete TRANSLATABLE_FIELD_METADATA.Product.fields.tagline;
+  });
+
+  it('translates product feature fields declared in metadata', async () => {
+    const feature = new ProductFeature({
+      id: 'feature-1',
+      productId: 'product-1',
+      name: '핵심 기능',
+      summary: '기능 요약 설명',
+      emoji: '✨',
+    });
+    const { service, translationService } = createService({ feature });
+
+    await service.translateEntity('ProductFeature', feature.id, ['name', 'summary']);
+
+    expect(translationService.upsertTranslation).toHaveBeenCalledTimes(2);
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
+      entityType: 'ProductFeature',
+      entityId: feature.id,
+      locale: 'en',
+      field: 'name',
+      value: 'en:핵심 기능',
+    });
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
+      entityType: 'ProductFeature',
+      entityId: feature.id,
+      locale: 'en',
+      field: 'summary',
+      value: 'en:기능 요약 설명',
+    });
+  });
+
+  it('translates product with features in a single contextual JSON LLM call', async () => {
+    const product = new Product({
+      id: 'product-1',
+      slug: 'toss',
+      name: '토스',
+      summary: '금융의 모든 것을 한 곳에서',
+      description: '<p>간편 송금과 결제 서비스</p>',
+      logoUrl: 'https://example.com/logo.png',
+    });
+    const features = [
+      new ProductFeature({
+        id: 'feat-1',
+        productId: 'product-1',
+        name: '간편 송금',
+        summary: '무료 송금',
+        emoji: '💸',
+      }),
+    ];
+
+    const mockJsonResponse = JSON.stringify({
+      name: 'Toss',
+      summary: 'All-in-one finance platform',
+      description: '<p>Simple money transfer and payments</p>',
+      features: [
+        {
+          id: 'feat-1',
+          name: 'Easy Transfer',
+          summary: 'Free money transfers',
+        },
+      ],
+    });
+
+    const { service, translationService, llmClient } = createService({
+      product,
+      features,
+      customLlmImplementation: async () => ({ content: `\`\`\`json\n${mockJsonResponse}\n\`\`\`` }),
+    });
+
+    await service.translateProductWithFeatures(product.id);
+
+    expect(llmClient.completion).toHaveBeenCalledTimes(1);
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
+      entityType: 'Product',
+      entityId: product.id,
+      locale: 'en',
+      field: 'name',
+      value: 'Toss',
+    });
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
+      entityType: 'Product',
+      entityId: product.id,
+      locale: 'en',
+      field: 'summary',
+      value: 'All-in-one finance platform',
+    });
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
+      entityType: 'Product',
+      entityId: product.id,
+      locale: 'en',
+      field: 'description',
+      value: '<p>Simple money transfer and payments</p>',
+    });
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
+      entityType: 'ProductFeature',
+      entityId: 'feat-1',
+      locale: 'en',
+      field: 'name',
+      value: 'Easy Transfer',
+    });
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
+      entityType: 'ProductFeature',
+      entityId: 'feat-1',
+      locale: 'en',
+      field: 'summary',
+      value: 'Free money transfers',
+    });
   });
 });

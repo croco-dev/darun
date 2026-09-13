@@ -4,7 +4,7 @@ import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { TranslationJob } from './graphs/TranslationJob';
 
-const SUPPORTED_ENTITY_TYPES: TranslationEntityType[] = ['Product', 'Magazine'];
+const SUPPORTED_ENTITY_TYPES: TranslationEntityType[] = ['Product', 'Magazine', 'ProductFeature'];
 
 @Resolver()
 @Service()
@@ -30,6 +30,30 @@ export class TranslationMutationResolver {
       locale: 'en',
       status: 'completed',
       message: '번역이 완료되었습니다.',
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => TranslationJob)
+  async requestProductTranslation(
+    @Arg('productId', () => String, { nullable: true }) productId?: string,
+    @Arg('slug', () => String, { nullable: true }) slug?: string
+  ): Promise<TranslationJob> {
+    if (!productId && !slug) {
+      throw new Error('productId 또는 slug가 필요합니다.');
+    }
+
+    const resolvedProductId = await this.translationJobService.translateProductWithFeatures(
+      productId ? { id: productId } : { slug: slug! }
+    );
+
+    return {
+      entityType: 'Product',
+      entityId: resolvedProductId,
+      fields: ['name', 'summary', 'description', 'features'],
+      locale: 'en',
+      status: 'completed',
+      message: '상품 및 주요 기능 번역이 완료되었습니다.',
     };
   }
 
