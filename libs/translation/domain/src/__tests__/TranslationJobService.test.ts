@@ -23,10 +23,7 @@ const createTranslationService = () =>
     upsertTranslation: vi.fn<TranslationService['upsertTranslation']>().mockResolvedValue(undefined),
   }) satisfies Pick<TranslationService, 'upsertTranslation'>;
 
-type CustomLlmImplementation = (
-  modelOrMessages: unknown,
-  maybeMessages?: unknown
-) => Promise<{ content: string }>;
+type CustomLlmImplementation = (modelOrMessages: unknown, maybeMessages?: unknown) => Promise<{ content: string }>;
 
 const createLlmClient = (customImplementation?: CustomLlmImplementation) => ({
   completion: vi.fn().mockImplementation(
@@ -291,5 +288,30 @@ describe('TranslationJobService', () => {
       field: 'summary',
       value: 'Free money transfers',
     });
+  });
+
+  it('fails fast and throws descriptive error when LLM completion fails without cascading fallback', async () => {
+    const product = new Product({
+      id: 'product-timeout',
+      slug: 'timeout-prod',
+      name: '타임아웃 상품',
+      summary: '요약',
+      description: '설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+
+    const { service, llmClient, translationService } = createService({
+      product,
+      customLlmImplementation: async () => {
+        throw new Error('LLM 통합 번역 요청이 시간 초과되었습니다.');
+      },
+    });
+
+    await expect(service.translateProductWithFeatures(product.id)).rejects.toThrow(
+      '상품 번역에 실패했습니다: LLM 통합 번역 요청이 시간 초과되었습니다.'
+    );
+
+    expect(llmClient.completion).toHaveBeenCalledTimes(1);
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
   });
 });

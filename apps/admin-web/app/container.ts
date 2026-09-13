@@ -39,6 +39,19 @@ const httpLink = new BatchHttpLink({
   batchInterval: 20,
 });
 
+export const shouldRetryOperation = (
+  error: unknown,
+  operation: { query: { definitions: ReadonlyArray<{ kind: string; operation?: string }> } }
+): boolean => {
+  const isMutation = operation.query.definitions.some(
+    definition => definition?.kind === 'OperationDefinition' && definition.operation === 'mutation'
+  );
+  if (isMutation) {
+    return false;
+  }
+  return !!error;
+};
+
 const apolloClient = new ApolloClient({
   cache: new InMemoryCache(),
   link: ApolloLink.from([
@@ -48,7 +61,8 @@ const apolloClient = new ApolloClient({
         jitter: true,
       },
       attempts: {
-        max: 5,
+        max: 3,
+        retryIf: shouldRetryOperation,
       },
     }),
     httpErrorLink,
