@@ -9,6 +9,8 @@ const config: CodegenConfig = {
     '!../../../libs/**/__generated__/*.{ts,tsx}',
     '!../../../libs/**/node_modules/**',
     '!../../../apps/**/node_modules/**',
+    '!../../../apps/service-web/app/api/markdown/**',
+    '!../../../apps/service-web/app/sitemap.ts',
   ],
   generates: {
     '../../../libs/__generated__/': {

@@ -118,7 +118,7 @@ export class TranslationJobService {
       const response = await withRetry(
         () =>
           this.withTimeout(
-            this.llmClient.completion('x-ai/grok-4-fast', [
+            this.llmClient.completion([
               { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
               { role: 'user', content: prompt },
             ]),
@@ -252,7 +252,9 @@ export class TranslationJobService {
       if (!this.getProductFeatureUseCase) {
         throw new Error('GetProductFeature usecase가 주입되지 않았습니다.');
       }
-      const feature = await this.getProductFeatureUseCase.execute({ id: entityId });
+      const feature = await this.getProductFeatureUseCase.execute({
+        id: entityId,
+      });
       if (!feature) {
         throw new Error('ProductFeature가 존재하지 않습니다.');
       }
@@ -287,7 +289,7 @@ export class TranslationJobService {
       const response = await withRetry(
         () =>
           this.withTimeout(
-            this.llmClient.completion('x-ai/grok-4-fast', [
+            this.llmClient.completion([
               { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
               {
                 role: 'user',

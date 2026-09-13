@@ -8,7 +8,7 @@ module.exports = defineConfig({
     '../../libs/magazines/datasource/src/entities/MagazineSchema.ts',
     '../../libs/products/datasource/src/entities/*.ts',
     '../../libs/recommendation/datasource/src/entities/AlternativeProductSchema.ts',
-    '../../libs/translation/datasource/src/entities/TranslationSchema.ts',
+    '../../libs/translation/datasource/src/entities/*.ts',
     '../../libs/voting/datasource/src/entities/*.ts',
   ],
   out: './scripts/migrations',

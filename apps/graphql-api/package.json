@@ -10,8 +10,8 @@
     "dev": "node scripts/dev.cjs",
     "lint": "eslint **/*.ts*",
     "local:bootstrap": "tsx scripts/bootstrap-local.ts",
-    "seed:e2e": "tsx scripts/seed-e2e.ts",
     "seed:categories": "tsx scripts/seed-categories.ts",
+    "seed:e2e": "tsx scripts/seed-e2e.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -38,6 +38,7 @@
     "@darun/translation-datasource": "workspace:*",
     "@darun/translation-domain": "workspace:*",
     "@darun/translation-feature": "workspace:*",
+    "@darun/translation-service": "workspace:*",
     "@darun/utils-apollo-server": "workspace:*",
     "@darun/utils-croco-adapter": "workspace:*",
     "@darun/utils-llm": "workspace:*",
