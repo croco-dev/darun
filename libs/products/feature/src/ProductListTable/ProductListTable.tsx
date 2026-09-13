@@ -21,18 +21,21 @@ const columns = [
   columnHelper.accessor('logoUrl', {
     header: '로고',
     size: 70,
-    cell: info => (
-      <div className="flex justify-center">
-        <Image
-          src={info.getValue()}
-          unoptimized={!info.getValue()}
-          alt={`서비스 로고`}
-          width={32}
-          height={32}
-          className="h-8 w-8 rounded-lg border border-dark-150 object-contain"
-        />
-      </div>
-    ),
+    cell: info => {
+      const logoUrl = info.getValue() || '/images/default-product-icon.svg';
+      return (
+        <div className="flex justify-center">
+          <Image
+            src={logoUrl}
+            unoptimized={!info.getValue()}
+            alt="서비스 로고"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-lg border border-dark-150 object-contain"
+          />
+        </div>
+      );
+    },
   }),
   columnHelper.accessor('name', {
     header: '이름',
