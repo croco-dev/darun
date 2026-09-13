@@ -23,9 +23,12 @@ const createTranslationService = () =>
     upsertTranslation: vi.fn<TranslationService['upsertTranslation']>().mockResolvedValue(undefined),
   }) satisfies Pick<TranslationService, 'upsertTranslation'>;
 
-const createLlmClient = (
-  customImplementation?: (modelOrMessages: unknown, maybeMessages?: unknown) => Promise<{ content: string }>
-) => ({
+type CustomLlmImplementation = (
+  modelOrMessages: unknown,
+  maybeMessages?: unknown
+) => Promise<{ content: string }>;
+
+const createLlmClient = (customImplementation?: CustomLlmImplementation) => ({
   completion: vi.fn().mockImplementation(
     customImplementation ??
       (async (modelOrMessages: unknown, maybeMessages?: unknown) => {
@@ -71,10 +74,7 @@ const createService = ({
   magazine?: Magazine;
   feature?: ProductFeature;
   features?: ProductFeature[];
-  customLlmImplementation?: (
-    _model: string,
-    messages: Array<{ role?: string; content: string }>
-  ) => Promise<{ content: string }>;
+  customLlmImplementation?: CustomLlmImplementation;
 } = {}) => {
   const translationService = createTranslationService();
   const llmClient = createLlmClient(customLlmImplementation);

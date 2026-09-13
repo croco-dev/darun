@@ -137,130 +137,130 @@ function LlmSettingForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-2xl">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="endpoint" className="text-sm font-medium text-dark-800">
-              API 엔드포인트 URL
-            </label>
-            <input
-              id="endpoint"
-              type="text"
-              value={endpoint}
-              onChange={e => setEndpoint(e.target.value)}
-              placeholder="https://openrouter.ai/api/v1"
-              className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
-              required
-            />
-            <p className="text-xs text-dark-500">
-              OpenAI 호환 API 엔드포인트입니다. (기본값: https://openrouter.ai/api/v1)
-            </p>
-          </div>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="endpoint" className="text-sm font-medium text-dark-800">
+          API 엔드포인트 URL
+        </label>
+        <input
+          id="endpoint"
+          type="text"
+          value={endpoint}
+          onChange={e => setEndpoint(e.target.value)}
+          placeholder="https://openrouter.ai/api/v1"
+          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
+          required
+        />
+        <p className="text-xs text-dark-500">
+          OpenAI 호환 API 엔드포인트입니다. (기본값: https://openrouter.ai/api/v1)
+        </p>
+      </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="apiKey" className="text-sm font-medium text-dark-800">
-              API 키 (Secret Key)
-            </label>
-            <input
-              id="apiKey"
-              type="password"
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
-              placeholder={
-                currentSetting?.apiKeyMasked
-                  ? `현재 등록됨 (${currentSetting.apiKeyMasked}) - 변경 시에만 입력`
-                  : '등록된 키 없음 (입력하지 않으면 환경변수 OPEN_ROUTER_API_KEY 사용)'
-              }
-              className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
-            />
-            <p className="text-xs text-dark-500">
-              새 API 키를 입력하면 DB에 갱신됩니다. 비워두면 기존 등록된 키 또는 환경변수가 유지됩니다.
-            </p>
-          </div>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="apiKey" className="text-sm font-medium text-dark-800">
+          API 키 (Secret Key)
+        </label>
+        <input
+          id="apiKey"
+          type="password"
+          value={apiKey}
+          onChange={e => setApiKey(e.target.value)}
+          placeholder={
+            currentSetting?.apiKeyMasked
+              ? `현재 등록됨 (${currentSetting.apiKeyMasked}) - 변경 시에만 입력`
+              : '등록된 키 없음 (입력하지 않으면 환경변수 OPEN_ROUTER_API_KEY 사용)'
+          }
+          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
+        />
+        <p className="text-xs text-dark-500">
+          새 API 키를 입력하면 DB에 갱신됩니다. 비워두면 기존 등록된 키 또는 환경변수가 유지됩니다.
+        </p>
+      </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="model" className="text-sm font-medium text-dark-800">
-              사용할 LLM 모델명
-            </label>
-            <input
-              id="model"
-              type="text"
-              value={model}
-              onChange={e => setModel(e.target.value)}
-              placeholder="nvidia/nemotron-3-ultra-550b-a55b:free"
-              className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
-              required
-            />
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs text-dark-500">추천 모델:</span>
-              <button
-                type="button"
-                onClick={() => setModel('nvidia/nemotron-3-ultra-550b-a55b:free')}
-                className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 text-dark-800 font-mono transition"
-              >
-                nvidia/nemotron-3-ultra-550b-a55b:free
-              </button>
-              <button
-                type="button"
-                onClick={() => setModel('x-ai/grok-4-fast')}
-                className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 text-dark-800 font-mono transition"
-              >
-                x-ai/grok-4-fast
-              </button>
-            </div>
-          </div>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="model" className="text-sm font-medium text-dark-800">
+          사용할 LLM 모델명
+        </label>
+        <input
+          id="model"
+          type="text"
+          value={model}
+          onChange={e => setModel(e.target.value)}
+          placeholder="nvidia/nemotron-3-ultra-550b-a55b:free"
+          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
+          required
+        />
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs text-dark-500">추천 모델:</span>
+          <button
+            type="button"
+            onClick={() => setModel('nvidia/nemotron-3-ultra-550b-a55b:free')}
+            className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 text-dark-800 font-mono transition"
+          >
+            nvidia/nemotron-3-ultra-550b-a55b:free
+          </button>
+          <button
+            type="button"
+            onClick={() => setModel('x-ai/grok-4-fast')}
+            className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 text-dark-800 font-mono transition"
+          >
+            x-ai/grok-4-fast
+          </button>
+        </div>
+      </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="thinkingLevel" className="text-sm font-medium text-dark-800">
-              추론 강도 (Thinking Level / Reasoning Effort)
-            </label>
-            <input
-              id="thinkingLevel"
-              type="text"
-              value={thinkingLevel}
-              onChange={e => setThinkingLevel(e.target.value)}
-              placeholder="예: low, medium, high, none (비워두면 모델 기본값)"
-              className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
-            />
-            <div className="flex flex-wrap items-center gap-1.5 mt-1">
-              <span className="text-xs text-dark-500">빠른 선택:</span>
-              {[
-                { label: '기본값', value: '' },
-                { label: 'none (추론 끄기)', value: 'none' },
-                { label: 'minimal', value: 'minimal' },
-                { label: 'low', value: 'low' },
-                { label: 'medium', value: 'medium' },
-                { label: 'high', value: 'high' },
-                { label: 'max', value: 'max' },
-              ].map(opt => (
-                <button
-                  key={opt.label}
-                  type="button"
-                  onClick={() => setThinkingLevel(opt.value)}
-                  className={`text-xs px-2 py-0.5 rounded font-mono transition border ${
-                    thinkingLevel === opt.value
-                      ? 'bg-dark-900 text-white border-dark-900'
-                      : 'bg-dark-50 hover:bg-dark-100 text-dark-700 border-dark-200'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-dark-500">
-              OpenRouter/Gemini/OpenAI 추론 모델(o-series, Claude thinking, Gemini 3 thinkingLevel, Nemotron 등)에
-              적용되는 추론 강도입니다.
-            </p>
-          </div>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="thinkingLevel" className="text-sm font-medium text-dark-800">
+          추론 강도 (Thinking Level / Reasoning Effort)
+        </label>
+        <input
+          id="thinkingLevel"
+          type="text"
+          value={thinkingLevel}
+          onChange={e => setThinkingLevel(e.target.value)}
+          placeholder="예: low, medium, high, none (비워두면 모델 기본값)"
+          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
+        />
+        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+          <span className="text-xs text-dark-500">빠른 선택:</span>
+          {[
+            { label: '기본값', value: '' },
+            { label: 'none (추론 끄기)', value: 'none' },
+            { label: 'minimal', value: 'minimal' },
+            { label: 'low', value: 'low' },
+            { label: 'medium', value: 'medium' },
+            { label: 'high', value: 'high' },
+            { label: 'max', value: 'max' },
+          ].map(opt => (
+            <button
+              key={opt.label}
+              type="button"
+              onClick={() => setThinkingLevel(opt.value)}
+              className={`text-xs px-2 py-0.5 rounded font-mono transition border ${
+                thinkingLevel === opt.value
+                  ? 'bg-dark-900 text-white border-dark-900'
+                  : 'bg-dark-50 hover:bg-dark-100 text-dark-700 border-dark-200'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-dark-500">
+          OpenRouter/Gemini/OpenAI 추론 모델(o-series, Claude thinking, Gemini 3 thinkingLevel, Nemotron 등)에 적용되는
+          추론 강도입니다.
+        </p>
+      </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-dark-100">
-            <div className="text-xs text-dark-400">
-              {currentSetting?.updatedAt && (
-                <span>마지막 변경: {new Date(currentSetting.updatedAt).toLocaleString('ko-KR')}</span>
-              )}
-            </div>
-            <Button type="submit" variant="contained" color="primary" disabled={isUpdating}>
-              {isUpdating ? '저장 중...' : '설정 저장'}
-            </Button>
-          </div>
-        </form>
+      <div className="flex items-center justify-between pt-4 border-t border-dark-100">
+        <div className="text-xs text-dark-400">
+          {currentSetting?.updatedAt && (
+            <span>마지막 변경: {new Date(currentSetting.updatedAt).toLocaleString('ko-KR')}</span>
+          )}
+        </div>
+        <Button type="submit" variant="contained" color="primary" disabled={isUpdating}>
+          {isUpdating ? '저장 중...' : '설정 저장'}
+        </Button>
+      </div>
+    </form>
   );
 }
