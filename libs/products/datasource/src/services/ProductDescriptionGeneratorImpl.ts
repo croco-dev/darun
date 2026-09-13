@@ -4,7 +4,7 @@ import {
   ProductDescriptionGenerator,
   ProductDescriptionGeneratorToken,
 } from '@darun/products-domain';
-import { LlmClient, withRetry } from '@darun/utils-llm';
+import { LlmClient, withRetry, withTimeout } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 
 const SYSTEM_PROMPT = `당신은 서비스/앱 리뷰 콘텐츠를 작성하는 전문 에디터입니다.
@@ -41,7 +41,7 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
     try {
       const response = await withRetry(
         () =>
-          this.withTimeout(
+          withTimeout(
             this.llmClient.completion([
               { role: 'system', content: SYSTEM_PROMPT },
               { role: 'user', content: this.createUserPrompt(product, context) },
@@ -109,20 +109,5 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
         return tag.startsWith('</') ? `</${tagName}>` : `<${tagName}>`;
       })
       .trim();
-  }
-
-  private withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-    let timeoutId: NodeJS.Timeout | undefined;
-    const timeout = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error(message)), ms);
-    });
-    return Promise.race([
-      promise.finally(() => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-      }),
-      timeout,
-    ]);
   }
 }

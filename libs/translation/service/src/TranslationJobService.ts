@@ -1,7 +1,7 @@
 import { GetMagazine, Magazine } from '@darun/magazines-domain';
 import { GetProduct, GetProductFeature, GetProductFeatures, Product, ProductFeature } from '@darun/products-domain';
 import { TranslationService } from '@darun/translation-domain';
-import { LlmClient, withRetry } from '@darun/utils-llm';
+import { LlmClient, withRetry, withTimeout } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 
 export type TranslationEntityType = 'Product' | 'Magazine' | 'ProductFeature';
@@ -115,7 +115,7 @@ export class TranslationJobService {
         JSON.stringify(inputPayload, null, 2),
       ].join('\n');
 
-      const response = await this.withTimeout(
+      const response = await withTimeout(
         this.llmClient.completion([
           { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
           { role: 'user', content: prompt },
@@ -282,7 +282,7 @@ export class TranslationJobService {
     try {
       const response = await withRetry(
         () =>
-          this.withTimeout(
+          withTimeout(
             this.llmClient.completion([
               { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
               {
@@ -310,20 +310,5 @@ export class TranslationJobService {
       }
       throw new Error(`번역 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     }
-  }
-
-  private withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-    let timeoutId: NodeJS.Timeout | undefined;
-    const timeout = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error(message)), ms);
-    });
-    return Promise.race([
-      promise.finally(() => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-      }),
-      timeout,
-    ]);
   }
 }
