@@ -45,7 +45,7 @@ export const AllCompanyListTable = bind(
     }
 
     if (error) {
-      return <AdminErrorState description={error.message} />;
+      return <AdminErrorState error={error} />;
     }
 
     if (!companies || companies.length === 0) {

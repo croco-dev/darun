@@ -7,17 +7,29 @@ import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 
 const httpErrorLink = new ErrorLink(({ error }) => {
   if (CombinedGraphQLErrors.is(error)) {
-    error.errors.forEach(({ message, locations, path }) => {
+    error.errors.forEach(({ message, locations, path, extensions }) => {
       const locationText = locations?.map(location => `${location.line}:${location.column}`).join(', ') ?? '-';
       const pathText = path?.join('.') ?? '-';
+      const code = extensions?.['code'] ? ` [code: ${extensions['code']}]` : '';
 
-      console.error(`[GraphQL error] ${message} | location=${locationText} | path=${pathText}`);
+      console.error(`[GraphQL error]${code} ${message} | location=${locationText} | path=${pathText}`);
     });
 
     return;
   }
 
-  console.error(`[Network error]: ${error}`);
+  const serverError = error as { statusCode?: number; result?: unknown; message?: string };
+  if (serverError?.statusCode || serverError?.result) {
+    console.error(
+      `[Server error HTTP ${serverError.statusCode ?? 'unknown'}]:`,
+      serverError.result ?? serverError.message,
+      '\nFull error:',
+      error
+    );
+    return;
+  }
+
+  console.error(`[Network error]:`, error);
 });
 
 const httpLink = new BatchHttpLink({

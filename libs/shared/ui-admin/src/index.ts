@@ -9,7 +9,13 @@ export { AdminPanel } from './AdminPanel';
 export { AdminSection, AdminSectionHeader, AdminSectionBody } from './AdminSection';
 export { AdminField } from './AdminField';
 export { AdminInput, AdminTextarea } from './AdminInput';
-export { AdminLoadingState, AdminEmptyState, AdminErrorState } from './AdminState';
+export {
+  AdminLoadingState,
+  AdminEmptyState,
+  AdminErrorState,
+  parseErrorInfo,
+  type ParsedErrorInfo,
+} from './AdminState';
 export { AdminActions } from './AdminActions';
 export { AdminCheckbox } from './AdminCheckbox';
 export { AdminSelect } from './AdminSelect';

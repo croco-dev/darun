@@ -10,6 +10,7 @@
     "dev": "node scripts/dev.cjs",
     "lint": "eslint **/*.ts*",
     "local:bootstrap": "tsx scripts/bootstrap-local.ts",
+    "migrate": "tsx scripts/migrate.ts",
     "seed:categories": "tsx scripts/seed-categories.ts",
     "seed:e2e": "tsx scripts/seed-e2e.ts",
     "test": "vitest run",

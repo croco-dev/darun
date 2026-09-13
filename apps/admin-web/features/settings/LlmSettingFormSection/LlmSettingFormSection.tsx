@@ -55,7 +55,7 @@ export function LlmSettingFormSection() {
     return (
       <AdminErrorState
         title="설정을 불러오지 못했습니다"
-        description={error.message}
+        error={error}
         action={
           <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
             다시 시도
