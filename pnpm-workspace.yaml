@@ -21,6 +21,7 @@ overrides:
   shell-quote: ">=1.8.4"
   velocityjs: ">=2.1.7"
   websocket-driver: ">=0.7.5"
+  next: ">=16.3.5"
 
 allowBuilds:
   '@apollo/protobufjs': true
@@ -55,10 +56,10 @@ catalog:
   react-dom: 19.2.6
   '@types/react': 19.2.14
   '@types/react-dom': 19.2.4
-  next: 16.2.6
+  next: 16.3.5
   next-intl: 4.8.2
   next-client-cookies: 2.1.0
-  eslint-config-next: 16.2.12
+  eslint-config-next: 16.3.5
 
   # Apollo / GraphQL
   '@apollo/client': 4.2.0

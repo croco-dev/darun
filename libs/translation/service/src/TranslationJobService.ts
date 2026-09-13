@@ -49,21 +49,6 @@ const TRANSLATION_SYSTEM_PROMPT = `당신은 글로벌 IT 서비스 및 SaaS 전
    - 공식 영문명이 없는 한국어 제품명은 가장 자연스럽고 널리 통용되는 로마자 표기를 적용합니다.
 4. 과장 표현 지양 및 직관적 전달: 불필요한 미사여구는 줄이고 핵심 기능과 가치를 직관적으로 전달합니다.`;
 
-const ALLOWED_HTML_TAGS = new Set(['p', 'h2', 'h3', 'ul', 'li', 'strong', 'em', 'br', 'a']);
-
-function sanitizeHtml(html: string): string {
-  return html
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (tag, rawTagName: string) => {
-      const tagName = rawTagName.toLowerCase();
-      if (!ALLOWED_HTML_TAGS.has(tagName)) {
-        return '';
-      }
-      return tag.startsWith('</') ? `</${tagName}>` : `<${tagName}>`;
-    })
-    .trim();
-}
-
 function parseJsonFromLlmResponse(raw: string): unknown {
   const trimmed = raw.trim();
   const jsonMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
@@ -176,7 +161,7 @@ export class TranslationJobService {
           entityId: productId,
           locale: 'en',
           field: 'description',
-          value: sanitizeHtml(parsed.description),
+          value: parsed.description.trim(),
         });
       }
 
@@ -322,7 +307,7 @@ export class TranslationJobService {
         throw new Error('LLM 번역 응답이 비어 있습니다.');
       }
 
-      return isHtml ? sanitizeHtml(content) : content;
+      return content;
     } catch (error) {
       if (error instanceof Error && error.message.includes('시간 초과')) {
         throw error;
