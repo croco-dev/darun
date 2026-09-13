@@ -9,7 +9,8 @@ import { Pencil } from 'lucide-react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
 import { useProductLinkTable } from './useProductLinkTable';
 
-export const ProductLinkTableFragmentDocument = gql`
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+gql`
   fragment ProductLinkTable on Product {
     links {
       id
@@ -17,8 +18,6 @@ export const ProductLinkTableFragmentDocument = gql`
       ...EditProductLinkItem
     }
   }
-
-  ${EditProductLinkItemFragmentDoc}
 `;
 
 type ProductLinkTableLinkRef = {

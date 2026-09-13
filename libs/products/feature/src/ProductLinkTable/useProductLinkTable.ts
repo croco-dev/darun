@@ -3,21 +3,20 @@ import { useQuery } from '@apollo/client/react';
 import {
   EditProductLinkItemFragment,
   ProductLinkTableFragmentDoc,
-  TempProductBySlugOnProductLinkTableDocument as TempProductBySlugOnProductLinkTableGeneratedDocument,
+  TempProductBySlugOnProductLinkTableDocument,
   useFragment,
 } from '@darun/provider-graphql';
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useState } from 'react';
 
-export const TempProductBySlugOnProductLinkTableDocument = gql`
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+gql`
   query TempProductBySlugOnProductLinkTable($slug: String!) {
     tempProductBySlug(slug: $slug) {
       id
       ...ProductLinkTable
     }
   }
-
-  ${ProductLinkTableFragmentDoc}
 `;
 
 type ProductLinkTableProps = {
@@ -25,7 +24,7 @@ type ProductLinkTableProps = {
 };
 
 export function useProductLinkTable({ slug }: ProductLinkTableProps) {
-  const { data, loading } = useQuery(TempProductBySlugOnProductLinkTableGeneratedDocument, {
+  const { data, loading } = useQuery(TempProductBySlugOnProductLinkTableDocument, {
     variables: { slug },
   });
   const product = useFragment(ProductLinkTableFragmentDoc, data?.tempProductBySlug ?? null);

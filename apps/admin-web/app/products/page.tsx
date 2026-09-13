@@ -1,8 +1,9 @@
 import { ProductListRefreshButton } from '@darun/products-feature';
 import { Button } from '@darun/ui';
-import { PageShell } from '@darun/ui-admin';
+import { AdminLoadingState, PageShell } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { Plus } from 'lucide-react';
+import { Suspense } from 'react';
 import { ProductListSection } from '../../features/products/ProductListSection';
 
 export default function ProductListPage() {
@@ -26,7 +27,9 @@ export default function ProductListPage() {
         </div>
       }
     >
-      <ProductListSection />
+      <Suspense fallback={<AdminLoadingState />}>
+        <ProductListSection />
+      </Suspense>
     </PageShell>
   );
 }
