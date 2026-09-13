@@ -39,7 +39,7 @@ describe('useProductLinkTable', () => {
 
     vi.mocked(useFragment).mockReturnValue({
       links: [{ id: 'link-1', isPrimary: true }],
-    });
+    } as never);
 
     const { result } = renderHook(() => useProductLinkTable({ slug: 'test-slug' }));
 
