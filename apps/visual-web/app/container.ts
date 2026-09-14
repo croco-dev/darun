@@ -3,6 +3,7 @@ import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { BatchHttpLink } from '@apollo/client/link/batch-http';
 import { ErrorLink } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
+import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 
 const httpErrorLink = new ErrorLink(({ error }) => {
@@ -37,9 +38,11 @@ const apolloClient = new ApolloClient({
       },
       attempts: {
         max: 2,
+        retryIf: shouldRetryOperation,
       },
     }),
     httpErrorLink,
+    createTimeoutLink(),
     httpLink,
   ]),
 });

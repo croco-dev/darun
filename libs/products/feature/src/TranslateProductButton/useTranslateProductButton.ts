@@ -56,7 +56,11 @@ export function useTranslateProductButton({ slug }: TranslateProductButtonProps)
         variables: {
           slug,
         },
+        context: {
+          timeout: CLIENT_TIMEOUT_MS,
+        },
       });
+
       mutationPromise.catch(() => {
         // Prevent unhandled promise rejection if mutation fails after client timeout
       });
@@ -74,7 +78,15 @@ export function useTranslateProductButton({ slug }: TranslateProductButtonProps)
       }
     } catch (error) {
       notifications.hide(notificationId);
-      const errorMessage = error instanceof Error ? error.message : '영문 번역 생성 중 오류가 발생했습니다.';
+      let errorMessage = '영문 번역 생성 중 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        const lower = error.message.toLowerCase();
+        if (error.name === 'TimeoutError' || lower.includes('timed out') || lower.includes('timeout')) {
+          errorMessage = '번역 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
       notifications.show({
         title: '번역 실패',
         message: errorMessage,

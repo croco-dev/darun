@@ -2005,6 +2005,9 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../utils-tsconfig
+      '@darun/utils-vitest-config':
+        specifier: workspace:*
+        version: link:../../utils-vitest-config
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
