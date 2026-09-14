@@ -4,7 +4,7 @@ import {
   ProductDescriptionGenerator,
   ProductDescriptionGeneratorToken,
 } from '@darun/products-domain';
-import { LlmClient, withRetry } from '@darun/utils-llm';
+import { LlmClient, withRetry, withTimeout } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 
 const SYSTEM_PROMPT = `당신은 서비스/앱 리뷰 콘텐츠를 작성하는 전문 에디터입니다.
@@ -41,15 +41,15 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
     try {
       const response = await withRetry(
         () =>
-          this.withTimeout(
+          withTimeout(
             this.llmClient.completion([
               { role: 'system', content: SYSTEM_PROMPT },
               { role: 'user', content: this.createUserPrompt(product, context) },
             ]),
-            25_000,
+            18_000,
             '상품 설명 생성 요청이 시간 초과되었습니다. 잠시 후 다시 시도해주세요.'
           ),
-        { maxRetries: 2, baseDelay: 1000, maxDelay: 10000 }
+        { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
       );
 
       const content = response.content?.trim();
@@ -60,7 +60,10 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
 
       return this.sanitizeHtml(content);
     } catch (error) {
-      if (error instanceof Error && error.message.includes('시간 초과')) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('시간 초과') || error.message.toLowerCase().includes('timeout'))
+      ) {
         throw error;
       }
       throw new Error(
@@ -106,10 +109,5 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
         return tag.startsWith('</') ? `</${tagName}>` : `<${tagName}>`;
       })
       .trim();
-  }
-
-  private withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error(message)), ms));
-    return Promise.race([promise, timeout]);
   }
 }

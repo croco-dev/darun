@@ -1,7 +1,7 @@
 import { GetMagazine, Magazine } from '@darun/magazines-domain';
 import { GetProduct, GetProductFeature, GetProductFeatures, Product, ProductFeature } from '@darun/products-domain';
 import { TranslationService } from '@darun/translation-domain';
-import { LlmClient, withRetry } from '@darun/utils-llm';
+import { LlmClient, withRetry, withTimeout } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 
 export type TranslationEntityType = 'Product' | 'Magazine' | 'ProductFeature';
@@ -115,17 +115,13 @@ export class TranslationJobService {
         JSON.stringify(inputPayload, null, 2),
       ].join('\n');
 
-      const response = await withRetry(
-        () =>
-          this.withTimeout(
-            this.llmClient.completion([
-              { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
-              { role: 'user', content: prompt },
-            ]),
-            35_000,
-            'LLM 통합 번역 요청이 시간 초과되었습니다.'
-          ),
-        { maxRetries: 2, baseDelay: 1000, maxDelay: 20000 }
+      const response = await withTimeout(
+        this.llmClient.completion([
+          { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
+          { role: 'user', content: prompt },
+        ]),
+        20_000,
+        'LLM 통합 번역 요청이 시간 초과되었습니다.'
       );
 
       const parsed = parseJsonFromLlmResponse(response.content || '') as {
@@ -189,11 +185,9 @@ export class TranslationJobService {
         }
       }
     } catch (error) {
-      console.warn('Single-turn contextual translation failed, falling back to individual fields:', error);
-      await this.translateEntity('Product', productId, ['name', 'summary', 'description']);
-      for (const feature of features) {
-        await this.translateEntity('ProductFeature', feature.id, ['name', 'summary']);
-      }
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      console.error(`[TranslationJobService] Product translation failed for ${productId}:`, error);
+      throw new Error(`상품 번역에 실패했습니다: ${errorMessage}`);
     }
 
     return productId;
@@ -288,7 +282,7 @@ export class TranslationJobService {
     try {
       const response = await withRetry(
         () =>
-          this.withTimeout(
+          withTimeout(
             this.llmClient.completion([
               { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
               {
@@ -298,10 +292,10 @@ export class TranslationJobService {
                   : `Translate the following Korean text to English: ${text}`,
               },
             ]),
-            25_000,
+            15_000,
             'LLM 번역 요청이 시간 초과되었습니다. 잠시 후 다시 시도해주세요.'
           ),
-        { maxRetries: 3, baseDelay: 1000, maxDelay: 30000 }
+        { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
       );
 
       const content = response.content?.trim();
@@ -316,10 +310,5 @@ export class TranslationJobService {
       }
       throw new Error(`번역 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     }
-  }
-
-  private withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error(message)), ms));
-    return Promise.race([promise, timeout]);
   }
 }
