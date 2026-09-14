@@ -70,6 +70,48 @@ describe('useEditProductCompany', () => {
     >);
   });
 
+  it('negative control: initializes with loading: false', () => {
+    const { result } = renderHook(() => useEditProductCompany({ slug }));
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('prevents submission when loading is true', async () => {
+    vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: true }] as unknown as ReturnType<typeof useMutation>);
+    const { result } = renderHook(() => useEditProductCompany({ slug }));
+
+    await act(async () => {
+      await result.current.handleSubmit({ companyId: 'company-1' });
+    });
+
+    expect(mutateFn).not.toHaveBeenCalled();
+  });
+
+  it('prevents synchronous double-clicks while mutation is in-flight', async () => {
+    let resolveMutation: () => void;
+    mutateFn.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveMutation = () => resolve({ data: { registerProductCompany: { product: { id: 'p1' } } } });
+        })
+    );
+
+    const { result } = renderHook(() => useEditProductCompany({ slug }));
+
+    let p1: Promise<void>;
+    let p2: Promise<void>;
+    act(() => {
+      p1 = result.current.handleSubmit({ companyId: 'company-1' });
+      p2 = result.current.handleSubmit({ companyId: 'company-1' });
+    });
+
+    expect(mutateFn).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveMutation!();
+      await Promise.all([p1, p2]);
+    });
+  });
+
   it('should search companies and update companies state via handleSearchChange', async () => {
     const { result } = renderHook(() => useEditProductCompany({ slug }));
 

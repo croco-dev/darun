@@ -1,8 +1,11 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { EditProductLinkItemFragment, UpdateProductLinkOnEditProductLinkItemDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { useRef } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -46,7 +49,10 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
     },
   });
 
+  const isSubmittingRef = useRef(false);
+
   const submit = async (values: FormValues) => {
+    if (isSubmittingRef.current || loading) return;
     if (!values.title && !values.link && !values.displayLink && !values.iconUrl) {
       notifications.show({
         message: '모든 값이 비어있을 수는 없습니다.',
@@ -55,22 +61,27 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
       return;
     }
 
-    await updateLink({
-      variables: {
-        slug,
-        id: link.id,
-        input: {
-          title: values.title,
-          link: values.link,
-          displayLink: values.displayLink,
-          iconUrl: values.iconUrl,
+    isSubmittingRef.current = true;
+    try {
+      await updateLink({
+        variables: {
+          slug,
+          id: link.id,
+          input: {
+            title: values.title,
+            link: values.link,
+            displayLink: values.displayLink,
+            iconUrl: values.iconUrl,
+          },
         },
-      },
-    });
+      });
 
-    notifications.show({ message: '수정되었습니다.', color: 'teal' });
-    if (onSubmit) {
-      onSubmit();
+      notifications.show({ message: '수정되었습니다.', color: 'teal' });
+      if (onSubmit) {
+        onSubmit();
+      }
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 

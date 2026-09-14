@@ -7,7 +7,7 @@ import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { ReactNode } from 'react';
+import { ReactNode, useRef, useState } from 'react';
 
 gql(`
   mutation CreateProductOnNewProductForm($input: CreateProductInput!) {
@@ -27,10 +27,12 @@ type FormValues = {
   file?: File;
 };
 type NewProductFormProps = {
-  children: (props: { form: UseFormReturnType<FormValues> }) => ReactNode;
+  children: (props: { form: UseFormReturnType<FormValues>; loading: boolean }) => ReactNode;
 };
 
 export function useNewProductForm({ children }: NewProductFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: {
@@ -42,7 +44,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
   });
   const navigate = useNavigate();
   const { upload } = useImageUpload();
-  const [createProduct] = useMutation(CreateProductOnNewProductFormDocument, {
+  const [createProduct, { loading: isMutating }] = useMutation(CreateProductOnNewProductFormDocument, {
     onCompleted: ({ createProduct }) => {
       if (createProduct.product.slug) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
@@ -58,8 +60,13 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       });
     },
   });
+  const loading = isSubmitting || isMutating;
 
   const submit = async (values: FormValues) => {
+    if (isSubmittingRef.current || loading) {
+      return;
+    }
+
     const name = values.name?.trim();
     const slug = values.slug?.trim();
     const summary = values.summary?.trim();
@@ -72,23 +79,20 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       return;
     }
 
-    let url: string | undefined;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     try {
-      url = await upload('images/logos', values.file, slug);
-    } catch {
-      notifications.show({
-        title: '업로드 실패',
-        message: '이미지 업로드에 실패했습니다.',
-        color: 'red',
-      });
-      return;
-    }
+      const url = await upload('images/logos', values.file, slug);
 
-    if (!url) {
-      return;
-    }
+      if (!url) {
+        notifications.show({
+          title: '업로드 실패',
+          message: '이미지 업로드에 실패했습니다.',
+          color: 'red',
+        });
+        return;
+      }
 
-    try {
       await createProduct({
         variables: {
           input: {
@@ -100,10 +104,17 @@ export function useNewProductForm({ children }: NewProductFormProps) {
         },
       });
     } catch (error) {
-      console.error('mutation failed:', error);
-      throw error;
+      console.error('submission failed:', error);
+      notifications.show({
+        title: '생성 실패',
+        message: error instanceof Error ? error.message : '상품 생성에 실패했습니다.',
+        color: 'red',
+      });
+    } finally {
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
   };
 
-  return { form, children, submit };
+  return { form, children, submit, loading };
 }

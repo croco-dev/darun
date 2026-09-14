@@ -5,7 +5,7 @@ import { useMutation } from '@apollo/client/react';
 import { CreateProductFeatureOnNewProductFeatureFormDocument } from '@darun/provider-graphql';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { ReactNode } from 'react';
+import { ReactNode, useRef } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -29,6 +29,7 @@ type NewProductFormProps = {
   children: (props: {
     form: UseFormReturnType<FormValues>;
     pickEmoji: (emoji: { native: string }) => void;
+    loading: boolean;
   }) => ReactNode;
 };
 
@@ -46,7 +47,7 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
       summary: value => (!value ? '짧은 설명을 입력해주세요.' : null),
     },
   });
-  const [createProductFeature] = useMutation(CreateProductFeatureOnNewProductFeatureFormDocument, {
+  const [createProductFeature, { loading }] = useMutation(CreateProductFeatureOnNewProductFeatureFormDocument, {
     onCompleted: ({ createProductFeature }) => {
       if (createProductFeature.feature.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
@@ -62,20 +63,29 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
     form.setFieldValue('emoji', emoji.native);
   };
 
-  const submit = async (values: FormValues) => {
-    if (!values.name || !values.emoji || !values.summary) return;
+  const isSubmittingRef = useRef(false);
 
-    await createProductFeature({
-      variables: {
-        input: {
-          productSlug,
-          name: values.name,
-          emoji: values.emoji,
-          summary: values.summary,
+  const submit = async (values: FormValues) => {
+    if (isSubmittingRef.current || loading || !values.name || !values.emoji || !values.summary) return;
+    isSubmittingRef.current = true;
+
+    try {
+      await createProductFeature({
+        variables: {
+          input: {
+            productSlug,
+            name: values.name,
+            emoji: values.emoji,
+            summary: values.summary,
+          },
         },
-      },
-    });
+      });
+    } catch {
+      // Handled by onError callback
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
-  return { form, children, submit, pickEmoji };
+  return { form, children, submit, pickEmoji, loading };
 }

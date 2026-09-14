@@ -12,7 +12,7 @@ type NewProductFeatureFormSectionProps = {
 
 export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureFormSectionProps) => (
   <NewProductFeatureForm productSlug={productSlug}>
-    {({ form, pickEmoji }) => (
+    {({ form, pickEmoji, loading }) => (
       <div className="flex flex-col gap-3">
         <AdminField label="이름" error={form.errors.name}>
           <AdminInput
@@ -50,7 +50,7 @@ export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureF
           />
         </AdminField>
         <AdminActions>
-          <Button type="submit" size="md" variant="contained" color="primary">
+          <Button type="submit" size="md" variant="contained" color="primary" loading={loading}>
             등록
           </Button>
         </AdminActions>

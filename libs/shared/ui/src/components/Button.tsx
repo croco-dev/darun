@@ -1,6 +1,7 @@
 import { VariantProps } from 'class-variance-authority';
 import { cva } from 'class-variance-authority';
 import { ButtonHTMLAttributes, ElementType, ReactNode } from 'react';
+import { Loader2 } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 
@@ -103,6 +104,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   active?: boolean;
   isActive?: boolean;
   kind?: ButtonKind;
+  loading?: boolean;
 };
 
 const buttonColorByVariant: Record<ButtonVariant, ButtonColor> = {
@@ -162,15 +164,31 @@ export function Button({
   active,
   isActive,
   kind,
+  loading = false,
+  disabled,
+  onClick,
+  tabIndex,
   ...props
 }: ButtonProps) {
   const Component = as ?? 'button';
+  const isEffectivelyDisabled = disabled || loading;
   const resolvedVariant = resolveButtonVariant(variant, kind);
   const resolvedColor = resolveButtonColor(resolvedVariant, color, kind);
   const resolvedActive = resolveButtonActive(active, isActive, kind);
+  const spinnerSizeClass = size === 'sm' ? 'h-3.5 w-3.5 mr-1.5' : size === 'lg' ? 'h-5 w-5 mr-2' : 'h-4 w-4 mr-2';
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (isEffectivelyDisabled) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    onClick?.(event);
+  };
 
   return (
     <Component
+      {...props}
       className={cn(
         buttonVariants({
           variant: resolvedVariant,
@@ -178,10 +196,16 @@ export function Button({
           color: resolvedColor,
           active: resolvedActive,
         }),
+        loading && '!pointer-events-auto cursor-wait !opacity-70',
         className
       )}
-      {...props}
+      disabled={Component === 'button' ? isEffectivelyDisabled : undefined}
+      aria-disabled={isEffectivelyDisabled ? 'true' : undefined}
+      aria-busy={loading ? 'true' : undefined}
+      tabIndex={isEffectivelyDisabled && Component !== 'button' ? -1 : tabIndex}
+      onClick={handleClick}
     >
+      {loading && <Loader2 className={cn('animate-spin', spinnerSizeClass)} aria-hidden="true" />}
       {children}
     </Component>
   );

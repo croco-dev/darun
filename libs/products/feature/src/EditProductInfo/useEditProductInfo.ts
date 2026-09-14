@@ -1,3 +1,5 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
@@ -6,7 +8,7 @@ import {
 } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -54,7 +56,7 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
     });
   }, [data, form]);
 
-  const [editInformation] = useMutation(EditProductOnEditProductInfoDocument, {
+  const [editInformation, { loading }] = useMutation(EditProductOnEditProductInfoDocument, {
     onCompleted: ({ editProduct }) => {
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
@@ -67,21 +69,31 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
     },
   });
 
+  const isSubmittingRef = useRef(false);
+
   const submit = async (values: FormValues) => {
+    if (isSubmittingRef.current || loading) return;
     if (!values.name && !values.summary) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
-    await editInformation({
-      variables: {
-        slug,
-        input: {
-          name: values.name || undefined,
-          summary: values.summary || undefined,
+    isSubmittingRef.current = true;
+    try {
+      await editInformation({
+        variables: {
+          slug,
+          input: {
+            name: values.name || undefined,
+            summary: values.summary || undefined,
+          },
         },
-      },
-    });
+      });
+    } catch {
+      // Handled by onError callback
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
-  return { form, submit };
+  return { form, submit, loading };
 }

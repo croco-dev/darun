@@ -38,7 +38,7 @@ type FormValues = {
 
 export function useEditProductCompany({ slug }: { slug: string }) {
   const { push } = useRouter();
-  const [registerProductCompany] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
+  const [registerProductCompany, { loading }] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
     onCompleted: ({ registerProductCompany }) => {
       if (registerProductCompany.product?.id) {
         notifications.show({ message: '저장되었습니다.', color: 'green' });
@@ -110,14 +110,24 @@ export function useEditProductCompany({ slug }: { slug: string }) {
     },
   });
 
-  const handleSubmit = (values: FormValues) => {
+  const isSubmittingRef = useRef(false);
+
+  const handleSubmit = async (values: FormValues) => {
+    if (isSubmittingRef.current || loading) return;
     if (!values.companyId) {
       notifications.show({ message: '회사를 선택해주세요.', color: 'red' });
       return;
     }
-    registerProductCompany({
-      variables: { input: { companyId: values.companyId }, slug },
-    });
+    isSubmittingRef.current = true;
+    try {
+      await registerProductCompany({
+        variables: { input: { companyId: values.companyId }, slug },
+      });
+    } catch {
+      // Handled by onError callback
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
   return {
@@ -126,5 +136,6 @@ export function useEditProductCompany({ slug }: { slug: string }) {
     companies,
     searchValue,
     handleSearchChange,
+    loading,
   };
 }

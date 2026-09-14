@@ -8,7 +8,7 @@ import {
 } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -47,7 +47,7 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
     form.setInitialValues({ description: data?.tempProductBySlug?.description ?? '' });
   }, [data, form]);
 
-  const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument, {
+  const [editDescription, { loading }] = useMutation(EditProductOnEditProductDescriptionDocument, {
     onCompleted: ({ editProduct }) => {
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
@@ -60,25 +60,34 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
     },
   });
 
+  const isSubmittingRef = useRef(false);
+
   const submit = async (values: FormValues) => {
+    if (isSubmittingRef.current || loading) return;
     if (!values.description) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
 
-    await editDescription({
-      variables: {
-        slug,
-        input: {
-          description: values.description || '',
+    isSubmittingRef.current = true;
+    try {
+      await editDescription({
+        variables: {
+          slug,
+          input: {
+            description: values.description || '',
+          },
         },
-      },
-    });
+      });
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
   return {
     form,
     submit,
     defaultValue: data?.tempProductBySlug?.description ?? '',
+    loading,
   };
 }

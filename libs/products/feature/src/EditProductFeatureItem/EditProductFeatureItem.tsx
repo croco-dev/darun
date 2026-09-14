@@ -45,7 +45,7 @@ export const EditProductFeatureItem = bind(useEditProductFeatureItem, ({ form, s
       </div>
 
       <AdminActions>
-        <Button type="submit" variant="contained" color="primary" disabled={loading}>
+        <Button type="submit" variant="contained" color="primary" loading={loading}>
           저장
         </Button>
       </AdminActions>

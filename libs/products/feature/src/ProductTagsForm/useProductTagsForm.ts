@@ -1,3 +1,5 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
@@ -5,7 +7,7 @@ import {
   UpdateProductTagsOnProductTagFormDocument,
 } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -46,7 +48,7 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
 
   const fetchedTags = data?.tempProductBySlug?.tags.map(tag => tag.name) ?? [];
   const tags = editedTags ?? fetchedTags;
-  const [updateProductTags] = useMutation(UpdateProductTagsOnProductTagFormDocument, {
+  const [updateProductTags, { loading }] = useMutation(UpdateProductTagsOnProductTagFormDocument, {
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },
@@ -60,11 +62,15 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
     },
   });
 
+  const isSubmittingRef = useRef(false);
+
   const updateTags = (newTags: string[]) => {
     setEditedTags(newTags);
   };
 
   const applyTags = async () => {
+    if (isSubmittingRef.current || loading) return;
+    isSubmittingRef.current = true;
     try {
       await updateProductTags({
         variables: {
@@ -74,14 +80,16 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
           },
         },
       });
-    } catch (error) {
-      console.error('mutation failed:', error);
-      throw error;
+    } catch {
+      // Handled by onError callback
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
   return {
     tags,
     updateTags,
     applyTags,
+    loading,
   };
 }

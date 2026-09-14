@@ -1,5 +1,5 @@
 import { Button } from '@darun/ui';
-import { RefreshCw, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useGenerateProductDescriptionButton } from './useGenerateProductDescriptionButton';
 
 interface GenerateProductDescriptionButtonProps {
@@ -9,19 +9,19 @@ interface GenerateProductDescriptionButtonProps {
 export function GenerateProductDescriptionButton({ slug }: GenerateProductDescriptionButtonProps) {
   const { handleGenerate, isGenerating } = useGenerateProductDescriptionButton(slug);
 
+  const handleClick = () => {
+    handleGenerate().catch(() => {});
+  };
+
   return (
     <Button
-      onClick={handleGenerate}
-      disabled={isGenerating}
+      onClick={handleClick}
+      loading={isGenerating}
       variant="contained"
       color="secondary"
       className="gap-2 border-violet-200 bg-violet-50 text-violet-700"
     >
-      {isGenerating ? (
-        <RefreshCw size={16} className="animate-spin motion-reduce:animate-none" />
-      ) : (
-        <Sparkles size={16} />
-      )}
+      {!isGenerating && <Sparkles size={16} />}
       {isGenerating ? 'AI 소개 생성 중...' : 'AI 소개 생성'}
     </Button>
   );

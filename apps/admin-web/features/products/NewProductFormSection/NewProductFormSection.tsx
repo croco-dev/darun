@@ -6,7 +6,7 @@ import { AdminPanel, AdminSectionHeader, AdminSectionBody, AdminField, AdminInpu
 
 export const NewProductFormSection = () => (
   <NewProductForm>
-    {({ form }) => (
+    {({ form, loading }) => (
       <AdminPanel>
         <AdminSectionHeader title="서비스 등록" />
         <AdminSectionBody>
@@ -43,7 +43,7 @@ export const NewProductFormSection = () => (
             />
           </AdminField>
           <AdminActions>
-            <Button type="submit" size="md" variant="contained" color="primary">
+            <Button type="submit" size="md" variant="contained" color="primary" loading={loading}>
               등록
             </Button>
           </AdminActions>

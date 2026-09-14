@@ -1,7 +1,10 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { IndexProductOnIndexProductButtonDocument } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
+import { useRef } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -17,7 +20,7 @@ type IndexProductButtonProps = {
 };
 
 export function useIndexProductButton({ slug }: IndexProductButtonProps) {
-  const [indexProductMutation] = useMutation(IndexProductOnIndexProductButtonDocument, {
+  const [indexProductMutation, { loading }] = useMutation(IndexProductOnIndexProductButtonDocument, {
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },
@@ -30,8 +33,11 @@ export function useIndexProductButton({ slug }: IndexProductButtonProps) {
       }
     },
   });
+  const isIndexingRef = useRef(false);
 
   const indexProduct = async () => {
+    if (isIndexingRef.current || loading) return;
+    isIndexingRef.current = true;
     try {
       await indexProductMutation({
         variables: {
@@ -42,10 +48,12 @@ export function useIndexProductButton({ slug }: IndexProductButtonProps) {
       });
     } catch (error) {
       console.error('mutation failed:', error);
-      throw error;
+    } finally {
+      isIndexingRef.current = false;
     }
   };
   return {
     indexProduct,
+    loading,
   };
 }
