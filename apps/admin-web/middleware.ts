@@ -76,6 +76,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
+  if (
+    (request.method === 'GET' || request.method === 'HEAD') &&
+    request.nextUrl.searchParams.has('_rsc') &&
+    request.headers.get('rsc') !== '1'
+  ) {
+    const cleanUrl = request.nextUrl.clone();
+    cleanUrl.searchParams.delete('_rsc');
+    const redirectResponse = NextResponse.redirect(cleanUrl);
+    for (const cookie of response.cookies.getAll()) {
+      redirectResponse.cookies.set(cookie);
+    }
+    return redirectResponse;
+  }
+
   return response;
 }
 

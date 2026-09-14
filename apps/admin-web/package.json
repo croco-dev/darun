@@ -25,6 +25,7 @@
     "@darun/utils-apollo-client/client": "workspace:*",
     "@darun/utils-apollo-client/server": "workspace:*",
     "@darun/utils-auth-service-firebase": "workspace:*",
+    "@darun/utils-llm": "workspace:*",
     "@darun/utils-router": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
     "@emoji-mart/data": "^1.2.1",

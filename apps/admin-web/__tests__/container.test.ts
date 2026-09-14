@@ -91,12 +91,13 @@ describe('admin-web container', () => {
 
     let foundTimeoutLink = false;
     for (const link of links) {
-      if (typeof link.request === 'function') {
+      if (typeof link.request === 'function' && link !== container.httpLink) {
+        let setContextCalled = false;
         const fakeOp = {
-          getContext: () => ({ timeout: 100 }),
+          getContext: () => ({ timeout: 5000 }),
           setContext: (ctx: { fetchOptions?: { signal?: unknown }; __darunOriginalSignal?: unknown }) => {
             if (ctx.fetchOptions?.signal || ctx.__darunOriginalSignal !== undefined) {
-              foundTimeoutLink = true;
+              setContextCalled = true;
             }
           },
           operationName: 'ProbeTimeout',
@@ -105,8 +106,16 @@ describe('admin-web container', () => {
           subscribe: () => ({ unsubscribe: () => {} }),
         });
         try {
-          const obs = link.request(fakeOp, fakeForward) as { subscribe?: (observer: unknown) => unknown } | undefined;
-          obs?.subscribe?.({});
+          const obs = link.request(fakeOp, fakeForward) as
+            | {
+                subscribe?: (observer: unknown) => { unsubscribe: () => void };
+              }
+            | undefined;
+          const sub = obs?.subscribe?.({ next: () => {}, error: () => {}, complete: () => {} });
+          if (setContextCalled) {
+            foundTimeoutLink = true;
+          }
+          sub?.unsubscribe?.();
         } catch {
           // ignore potential errors from other link types
         }
