@@ -80,7 +80,7 @@ catalog:
   serverless-esbuild: 1.55.1
   serverless-offline: 14.4.0
   serverless-prune-plugin: 2.1.0
-  '@as-integrations/aws-lambda': 4.0.1
+  '@as-integrations/aws-lambda': 4.1.0
   cloudinary: 2.10.0
   firebase: 10.8.1
   firebase-admin: 13.6.1
