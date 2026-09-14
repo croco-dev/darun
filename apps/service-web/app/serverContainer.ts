@@ -1,6 +1,6 @@
 import { HttpLink, InMemoryCache } from '@apollo/client';
 
-import { createApolloClient } from '@darun/utils-apollo-client/client';
+import { createApolloClient, createTimeoutLink } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 
 const FIREBASE_PRIVATE_KEY = process.env['FIREBASE_PRIVATE_KEY'];
@@ -35,7 +35,7 @@ class Container {
     });
   }
   get serverApolloClient() {
-    return createApolloClient([this.httpLink], new InMemoryCache());
+    return createApolloClient([createTimeoutLink(), this.httpLink], new InMemoryCache());
   }
 
   get baseUrl() {

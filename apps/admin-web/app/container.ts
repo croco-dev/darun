@@ -3,6 +3,7 @@ import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { BatchHttpLink } from '@apollo/client/link/batch-http';
 import { ErrorLink } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
+import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 
 const httpErrorLink = new ErrorLink(({ error }) => {
@@ -18,7 +19,11 @@ const httpErrorLink = new ErrorLink(({ error }) => {
     return;
   }
 
-  const serverError = error as { statusCode?: number; result?: unknown; message?: string };
+  const serverError = error as {
+    statusCode?: number;
+    result?: unknown;
+    message?: string;
+  };
   if (serverError?.statusCode || serverError?.result) {
     console.error(
       `[Server error HTTP ${serverError.statusCode ?? 'unknown'}]:`,
@@ -39,18 +44,7 @@ const httpLink = new BatchHttpLink({
   batchInterval: 20,
 });
 
-export const shouldRetryOperation = (
-  error: unknown,
-  operation: { query: { definitions: ReadonlyArray<{ kind: string; operation?: string }> } }
-): boolean => {
-  const isMutation = operation.query.definitions.some(
-    definition => definition?.kind === 'OperationDefinition' && definition.operation === 'mutation'
-  );
-  if (isMutation) {
-    return false;
-  }
-  return !!error;
-};
+export { shouldRetryOperation };
 
 const apolloClient = new ApolloClient({
   cache: new InMemoryCache(),
@@ -66,6 +60,7 @@ const apolloClient = new ApolloClient({
       },
     }),
     httpErrorLink,
+    createTimeoutLink(),
     httpLink,
   ]),
 });

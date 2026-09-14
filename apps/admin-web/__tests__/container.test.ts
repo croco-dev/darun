@@ -43,6 +43,11 @@ describe('admin-web container', () => {
     expect(shouldRetryOperation(new Error('Network error'), queryOp)).toBe(true);
     expect(shouldRetryOperation(null, queryOp)).toBe(false);
 
+    // Timeout and abort error checks
+    expect(shouldRetryOperation(new Error('operation timed out after 15000ms'), queryOp)).toBe(false);
+    expect(shouldRetryOperation({ name: 'TimeoutError' }, queryOp)).toBe(false);
+    expect(shouldRetryOperation({ name: 'AbortError' }, queryOp)).toBe(false);
+
     interface ChainedLink {
       left?: ChainedLink;
       right?: ChainedLink;
@@ -62,5 +67,52 @@ describe('admin-web container', () => {
     expect(retryLink?.retryIf?.(1, mutationOp, new Error('Network error'))).toBe(false);
     expect(retryLink?.retryIf?.(1, mutationWithFragmentOp, new Error('Network error'))).toBe(false);
     expect(retryLink?.retryIf?.(1, queryOp, new Error('Network error'))).toBe(true);
+    expect(retryLink?.retryIf?.(1, queryOp, { name: 'TimeoutError' })).toBe(false);
+    expect(retryLink?.retryIf?.(1, queryOp, { name: 'AbortError' })).toBe(false);
+  });
+
+  it('includes createTimeoutLink in the Apollo Client link chain', () => {
+    interface ChainedLink {
+      left?: ChainedLink;
+      right?: ChainedLink;
+      request?: (operation: unknown, forward: unknown) => unknown;
+    }
+
+    const collectLinks = (link: ChainedLink | undefined): ChainedLink[] => {
+      if (!link) return [];
+      if (link.left || link.right) {
+        return [...collectLinks(link.left), ...collectLinks(link.right)];
+      }
+      return [link];
+    };
+
+    const links = collectLinks(container.apolloClient.link as ChainedLink);
+    expect(links.length).toBeGreaterThanOrEqual(4);
+
+    let foundTimeoutLink = false;
+    for (const link of links) {
+      if (typeof link.request === 'function') {
+        const fakeOp = {
+          getContext: () => ({ timeout: 100 }),
+          setContext: (ctx: { fetchOptions?: { signal?: unknown }; __darunOriginalSignal?: unknown }) => {
+            if (ctx.fetchOptions?.signal || ctx.__darunOriginalSignal !== undefined) {
+              foundTimeoutLink = true;
+            }
+          },
+          operationName: 'ProbeTimeout',
+        };
+        const fakeForward = () => ({
+          subscribe: () => ({ unsubscribe: () => {} }),
+        });
+        try {
+          const obs = link.request(fakeOp, fakeForward) as { subscribe?: (observer: unknown) => unknown } | undefined;
+          obs?.subscribe?.({});
+        } catch {
+          // ignore potential errors from other link types
+        }
+      }
+    }
+
+    expect(foundTimeoutLink).toBe(true);
   });
 });

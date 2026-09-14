@@ -51,7 +51,11 @@ describe('useTranslateProductButton', () => {
       variables: {
         slug: defaultSlug,
       },
+      context: {
+        timeout: 25000,
+      },
     });
+
     expect(notifications.show).toHaveBeenCalledWith(
       expect.objectContaining({
         title: '번역 진행 중',
@@ -156,8 +160,15 @@ describe('useTranslateProductButton', () => {
 
     expect(result.current.loading).toBe(true);
 
+    // Negative control: 1ms before timeout, operation is still pending
     await act(async () => {
-      vi.advanceTimersByTime(25_000);
+      vi.advanceTimersByTime(24_999);
+    });
+    expect(result.current.loading).toBe(true);
+
+    // Exactly at timeout: operation fails
+    await act(async () => {
+      vi.advanceTimersByTime(1);
       await translatePromise;
     });
 
@@ -169,11 +180,13 @@ describe('useTranslateProductButton', () => {
       })
     );
     expect(result.current.loading).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
     vi.useRealTimers();
     consoleSpy.mockRestore();
   });
 
-  it('displays exactly one success notification on completion without duplicates', async () => {
+  it('displays exactly one success notification on completion and cleans up timeout timer', async () => {
+    vi.useFakeTimers();
     mutateFn.mockResolvedValueOnce({
       data: {
         requestProductTranslation: {
@@ -192,5 +205,35 @@ describe('useTranslateProductButton', () => {
 
     const successToasts = vi.mocked(notifications.show).mock.calls.filter(call => call[0]?.title === '번역 완료');
     expect(successToasts).toHaveLength(1);
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
+
+  it('handles Apollo TimeoutError gracefully with Korean error toast and cleans up timer', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.useFakeTimers();
+    const apolloTimeoutErr = new Error(
+      "GraphQL operation 'RequestProductTranslationOnTranslateButton' timed out after 25000ms"
+    );
+    apolloTimeoutErr.name = 'TimeoutError';
+    mutateFn.mockRejectedValueOnce(apolloTimeoutErr);
+
+    const { result } = renderHook(() => useTranslateProductButton({ slug: defaultSlug }));
+
+    await act(async () => {
+      await result.current.translateProduct();
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: '번역 실패',
+        message: '번역 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.',
+        color: 'red',
+      })
+    );
+    expect(result.current.loading).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+    consoleSpy.mockRestore();
   });
 });
