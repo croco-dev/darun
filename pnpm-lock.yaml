@@ -311,6 +311,9 @@ importers:
       '@darun/utils-auth-service-firebase':
         specifier: workspace:*
         version: link:../../libs/shared/utils-auth-service/firebase
+      '@darun/utils-llm':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-llm
       '@darun/utils-router':
         specifier: workspace:*
         version: link:../../libs/shared/utils-router

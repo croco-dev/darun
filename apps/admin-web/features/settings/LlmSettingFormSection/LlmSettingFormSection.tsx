@@ -8,6 +8,7 @@ import {
 } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
 import { AdminErrorState, AdminLoadingState, AdminPanel, AdminSectionBody, AdminSectionHeader } from '@darun/ui-admin';
+import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
@@ -93,6 +94,14 @@ type LlmSettingData = {
   updatedAt: string;
 };
 
+export function resolveLlmFormDefaults(setting?: Partial<Pick<LlmSettingData, 'endpoint' | 'model' | 'thinkingLevel'>>) {
+  return {
+    endpoint: setting?.endpoint || DEFAULT_LLM_ENDPOINT,
+    model: setting?.model || DEFAULT_LLM_MODEL,
+    thinkingLevel: setting?.thinkingLevel ?? '',
+  };
+}
+
 function LlmSettingForm({
   currentSetting,
   onUpdated,
@@ -102,10 +111,11 @@ function LlmSettingForm({
 }) {
   const [updateLlmSetting, { loading: isUpdating }] = useMutation(UpdateLlmSettingOnLlmSettingFormSectionDocument);
 
-  const [endpoint, setEndpoint] = useState(currentSetting?.endpoint ?? '');
+  const defaults = resolveLlmFormDefaults(currentSetting);
+  const [endpoint, setEndpoint] = useState(defaults.endpoint);
   const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState(currentSetting?.model ?? '');
-  const [thinkingLevel, setThinkingLevel] = useState(currentSetting?.thinkingLevel ?? '');
+  const [model, setModel] = useState(defaults.model);
+  const [thinkingLevel, setThinkingLevel] = useState(defaults.thinkingLevel);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
