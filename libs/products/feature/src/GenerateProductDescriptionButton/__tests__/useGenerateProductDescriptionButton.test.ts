@@ -35,6 +35,11 @@ describe('useGenerateProductDescriptionButton', () => {
     }) as typeof useMutation);
   });
 
+  it('negative control: initializes with isGenerating: false when mutation is not loading', () => {
+    const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
+    expect(result.current.isGenerating).toBe(false);
+  });
+
   it('should show success notification on completed', () => {
     renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
 
@@ -95,6 +100,47 @@ describe('useGenerateProductDescriptionButton', () => {
 
     expect(mutateFn).toHaveBeenCalledWith({
       variables: { input: { slug: defaultSlug } },
+    });
+  });
+
+  it('should reflect loading state and prevent duplicate calls when loading', async () => {
+    vi.mocked(useMutation).mockImplementation((() => {
+      return [mutateFn, { loading: true }] as unknown as ReturnType<typeof useMutation>;
+    }) as typeof useMutation);
+
+    const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
+    expect(result.current.isGenerating).toBe(true);
+
+    await act(async () => {
+      await result.current.handleGenerate();
+    });
+
+    expect(mutateFn).not.toHaveBeenCalled();
+  });
+
+  it('should prevent synchronous duplicate concurrent executions', async () => {
+    let resolveMutation: () => void;
+    mutateFn.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveMutation = () => resolve({ data: {} });
+        })
+    );
+
+    const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
+
+    let p1: Promise<void>;
+    let p2: Promise<void>;
+    act(() => {
+      p1 = result.current.handleGenerate();
+      p2 = result.current.handleGenerate();
+    });
+
+    expect(mutateFn).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveMutation();
+      await Promise.all([p1, p2]);
     });
   });
 });

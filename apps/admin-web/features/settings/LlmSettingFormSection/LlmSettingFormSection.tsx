@@ -9,7 +9,7 @@ import {
 import { Button } from '@darun/ui';
 import { AdminErrorState, AdminLoadingState, AdminPanel, AdminSectionBody, AdminSectionHeader } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -106,9 +106,12 @@ function LlmSettingForm({
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState(currentSetting?.model ?? '');
   const [thinkingLevel, setThinkingLevel] = useState(currentSetting?.thinkingLevel ?? '');
+  const isUpdatingRef = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUpdatingRef.current || isUpdating) return;
+    isUpdatingRef.current = true;
 
     try {
       await updateLlmSetting({
@@ -132,6 +135,8 @@ function LlmSettingForm({
         message: err instanceof Error ? err.message : '알 수 없는 오류',
         color: 'red',
       });
+    } finally {
+      isUpdatingRef.current = false;
     }
   };
 
@@ -257,7 +262,7 @@ function LlmSettingForm({
             <span>마지막 변경: {new Date(currentSetting.updatedAt).toLocaleString('ko-KR')}</span>
           )}
         </div>
-        <Button type="submit" variant="contained" color="primary" disabled={isUpdating}>
+        <Button type="submit" variant="contained" color="primary" loading={isUpdating}>
           {isUpdating ? '저장 중...' : '설정 저장'}
         </Button>
       </div>

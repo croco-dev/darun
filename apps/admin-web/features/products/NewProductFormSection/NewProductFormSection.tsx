@@ -2,28 +2,27 @@
 
 import { NewProductForm } from '@darun/products-feature';
 import { Button } from '@darun/ui';
-import { AdminPanel, AdminSectionHeader, AdminSectionBody, AdminField, AdminInput, AdminTextarea, AdminActions } from '@darun/ui-admin';
+import {
+  AdminPanel,
+  AdminSectionHeader,
+  AdminSectionBody,
+  AdminField,
+  AdminInput,
+  AdminTextarea,
+  AdminActions,
+} from '@darun/ui-admin';
 
 export const NewProductFormSection = () => (
   <NewProductForm>
-    {({ form }) => (
+    {({ form, loading }) => (
       <AdminPanel>
         <AdminSectionHeader title="서비스 등록" />
         <AdminSectionBody>
           <AdminField label="이름">
-            <AdminInput
-              name="name"
-              form="new-product-form"
-              placeholder="ex) NAVER"
-              {...form.getInputProps('name')}
-            />
+            <AdminInput name="name" form="new-product-form" placeholder="ex) NAVER" {...form.getInputProps('name')} />
           </AdminField>
           <AdminField label="slug">
-            <AdminInput
-              name="slug"
-              placeholder="ex) naver"
-              {...form.getInputProps('slug')}
-            />
+            <AdminInput name="slug" placeholder="ex) naver" {...form.getInputProps('slug')} />
           </AdminField>
           <AdminField label="짧은 설명">
             <AdminTextarea
@@ -43,7 +42,7 @@ export const NewProductFormSection = () => (
             />
           </AdminField>
           <AdminActions>
-            <Button type="submit" size="md" variant="contained" color="primary">
+            <Button type="submit" size="md" variant="contained" color="primary" loading={loading}>
               등록
             </Button>
           </AdminActions>

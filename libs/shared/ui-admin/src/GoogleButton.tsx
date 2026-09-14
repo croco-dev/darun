@@ -3,7 +3,6 @@ import { Button } from '@darun/ui';
 
 type GoogleButtonProps = ButtonProps & {
   fullWidth?: boolean;
-  loading?: boolean;
 };
 
 function GoogleIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
@@ -41,15 +40,9 @@ export function GoogleButton({ children, className, disabled, fullWidth, loading
   const mergedClassName = [fullWidth ? 'w-full' : '', className].filter(Boolean).join(' ');
 
   return (
-    <Button
-      variant="base"
-      className={mergedClassName || undefined}
-      disabled={disabled || loading}
-      aria-busy={loading}
-      {...props}
-    >
+    <Button variant="base" className={mergedClassName || undefined} disabled={disabled} loading={loading} {...props}>
       <span className="inline-flex items-center gap-2">
-        <GoogleIcon />
+        {!loading && <GoogleIcon />}
         {children}
       </span>
     </Button>

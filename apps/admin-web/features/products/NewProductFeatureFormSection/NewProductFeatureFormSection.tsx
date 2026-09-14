@@ -12,23 +12,14 @@ type NewProductFeatureFormSectionProps = {
 
 export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureFormSectionProps) => (
   <NewProductFeatureForm productSlug={productSlug}>
-    {({ form, pickEmoji }) => (
+    {({ form, pickEmoji, loading }) => (
       <div className="flex flex-col gap-3">
         <AdminField label="이름" error={form.errors.name}>
-          <AdminInput
-            name="name"
-            form="new-product-form"
-            placeholder={'ex) 검색'}
-            {...form.getInputProps('name')}
-          />
+          <AdminInput name="name" form="new-product-form" placeholder={'ex) 검색'} {...form.getInputProps('name')} />
         </AdminField>
         <AdminField label="이모지" error={form.errors.emoji}>
           <div className="relative">
-            <AdminInput
-              name="emoji"
-              className="pr-28"
-              {...form.getInputProps('emoji')}
-            />
+            <AdminInput name="emoji" className="pr-28" {...form.getInputProps('emoji')} />
             <details className="absolute right-2 top-1/2 -translate-y-1/2">
               <summary className="list-none">
                 <Button type="button" variant="contained" color="secondary" size="sm">
@@ -50,7 +41,7 @@ export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureF
           />
         </AdminField>
         <AdminActions>
-          <Button type="submit" size="md" variant="contained" color="primary">
+          <Button type="submit" size="md" variant="contained" color="primary" loading={loading}>
             등록
           </Button>
         </AdminActions>

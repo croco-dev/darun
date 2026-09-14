@@ -7,7 +7,7 @@ import { useWriteMagazine } from './useWriteMagazine';
 
 export const WriteMagazine = bind(
   useWriteMagazine,
-  ({ form, handleSubmit, handleFileDrop, file, handleFileRemove }) => {
+  ({ form, handleSubmit, handleFileDrop, file, handleFileRemove, loading }) => {
     const ImagePreview = () => {
       if (!file) return null;
       const imageUrl = URL.createObjectURL(file);
@@ -129,7 +129,7 @@ export const WriteMagazine = bind(
         <p className="mt-4 text-xs text-dark-500">글 작성은 저장 후, 수정 기능을 이용하여 가능합니다.</p>
 
         <AdminActions>
-          <Button type="submit" variant="contained" color="primary">
+          <Button type="submit" variant="contained" color="primary" loading={loading}>
             저장
           </Button>
         </AdminActions>

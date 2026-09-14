@@ -5,7 +5,7 @@ import { useEditProductCompany } from './useEditProductCompany';
 
 export const EditProductCompany = bind(
   useEditProductCompany,
-  ({ form, handleSubmit, companies, searchValue, handleSearchChange }) => {
+  ({ form, handleSubmit, companies, searchValue, handleSearchChange, loading }) => {
     return (
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <div className="flex flex-col gap-3">
@@ -32,7 +32,7 @@ export const EditProductCompany = bind(
         </div>
 
         <AdminActions>
-          <Button type="submit" variant="contained" color="primary">
+          <Button type="submit" variant="contained" color="primary" loading={loading}>
             저장
           </Button>
         </AdminActions>

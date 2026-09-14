@@ -110,4 +110,24 @@ describe('useNewProductLinkForm', () => {
     expect(docStr).toContain('links');
     expect(docStr).not.toContain('screenshots');
   });
+
+  it('should expose loading state and prevent duplicate submissions when loading', async () => {
+    vi.mocked(useMutation).mockImplementation((() => {
+      return [mutateFn, { loading: true }] as unknown as ReturnType<typeof useMutation>;
+    }) as typeof useMutation);
+
+    const { result } = renderHook(() => useNewProductLinkForm(defaultProps));
+    expect(result.current.loading).toBe(true);
+
+    await act(async () => {
+      await result.current.submit({
+        title: 'Test Title',
+        link: 'https://example.com',
+        displayLink: 'Example Display',
+        iconUrl: 'https://example.com/icon.png',
+      });
+    });
+
+    expect(mutateFn).not.toHaveBeenCalled();
+  });
 });

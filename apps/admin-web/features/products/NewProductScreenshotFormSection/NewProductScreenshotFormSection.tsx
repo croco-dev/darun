@@ -10,7 +10,7 @@ type NewProductFeatureFormSectionProps = {
 
 export const NewProductScreenshotFormSection = ({ productSlug }: NewProductFeatureFormSectionProps) => (
   <NewProductScreenForm productSlug={productSlug}>
-    {({ form }) => (
+    {({ form, loading }) => (
       <div className="flex flex-col gap-3">
         <AdminField label="이미지" error={form.errors.file}>
           <AdminInput
@@ -22,14 +22,10 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductFeatu
           />
         </AdminField>
         <AdminField label="이미지 alt" error={form.errors.imageAlt}>
-          <AdminInput
-            name="imageAlt"
-            placeholder={'ex) 서비스 화면 이미지'}
-            {...form.getInputProps('imageAlt')}
-          />
+          <AdminInput name="imageAlt" placeholder={'ex) 서비스 화면 이미지'} {...form.getInputProps('imageAlt')} />
         </AdminField>
         <AdminActions>
-          <Button type="submit" size="md" variant="contained" color="primary">
+          <Button type="submit" size="md" variant="contained" color="primary" loading={loading}>
             추가!
           </Button>
         </AdminActions>

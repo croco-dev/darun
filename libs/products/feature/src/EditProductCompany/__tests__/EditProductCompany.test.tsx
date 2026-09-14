@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { createElement, memo } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -79,9 +80,26 @@ describe('EditProductCompany', () => {
     expect(screen.getByText('카카오')).toBeTruthy();
   });
 
-  it('should render save button', () => {
+  it('should render save button in enabled state by default (negative control)', () => {
     render(<EditProductCompany slug="test-slug" />);
 
-    expect(screen.getByRole('button', { name: '저장' })).toBeTruthy();
+    const saveButton = screen.getByRole('button', { name: '저장' });
+    expect(saveButton).toBeTruthy();
+    expect(saveButton).not.toBeDisabled();
+    expect(saveButton).not.toHaveAttribute('aria-busy');
+  });
+
+  it('should render save button in disabled loading state when loading is true', () => {
+    vi.mocked(useEditProductCompany).mockReturnValue({
+      ...defaultHookReturn,
+      loading: true,
+    } as unknown as ReturnType<typeof useEditProductCompany>);
+
+    render(<EditProductCompany slug="test-slug" />);
+
+    const saveButton = screen.getByRole('button', { name: '저장' });
+    expect(saveButton).toBeTruthy();
+    expect(saveButton).toBeDisabled();
+    expect(saveButton).toHaveAttribute('aria-busy', 'true');
   });
 });

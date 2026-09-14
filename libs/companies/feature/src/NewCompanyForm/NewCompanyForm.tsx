@@ -5,7 +5,7 @@ import { AdminActions, AdminField, AdminInput, AdminCheckbox } from '@darun/ui-a
 import { bind } from '@darun/utils-structure-react';
 import { useNewCompanyForm } from './useNewCompanyForm';
 
-export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) => (
+export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit, loading }) => (
   <form onSubmit={form.onSubmit(handleSubmit)}>
     <div className="flex flex-col gap-4">
       <AdminField label="회사 이름" error={form.errors.name}>
@@ -45,7 +45,7 @@ export const NewCompanyForm = bind(useNewCompanyForm, ({ form, handleSubmit }) =
     </div>
 
     <AdminActions>
-      <Button type="submit" variant="contained" color="primary">
+      <Button type="submit" variant="contained" color="primary" loading={loading}>
         저장
       </Button>
     </AdminActions>

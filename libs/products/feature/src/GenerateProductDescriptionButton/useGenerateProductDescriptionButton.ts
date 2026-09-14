@@ -1,7 +1,10 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { GenerateProductDescriptionDocument } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
+import { useRef } from 'react';
 
 gql(`
   mutation GenerateProductDescription($input: GenerateProductDescriptionInput!) {
@@ -32,7 +35,11 @@ export function useGenerateProductDescriptionButton(slug: string) {
     },
   });
 
+  const isGeneratingRef = useRef(false);
+
   const handleGenerate = async () => {
+    if (isGeneratingRef.current || loading) return;
+    isGeneratingRef.current = true;
     try {
       await generateDescription({
         variables: {
@@ -44,6 +51,8 @@ export function useGenerateProductDescriptionButton(slug: string) {
     } catch (error) {
       console.error('generate description failed:', error);
       throw error;
+    } finally {
+      isGeneratingRef.current = false;
     }
   };
 

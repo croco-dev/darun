@@ -10,8 +10,7 @@ type NewProductLinkSectionProps = {
 
 export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProps) => (
   <NewProductLinkForm productSlug={productSlug}>
-    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-    {({ form }: any) => (
+    {({ form, loading }) => (
       <div className="flex flex-col gap-3">
         <AdminField label="표시 링크" error={form.errors.displayLink}>
           <AdminInput type="text" placeholder="ex) toss.im" {...form.getInputProps('displayLink')} />
@@ -37,7 +36,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
         </AdminField>
 
         <AdminActions>
-          <Button type="submit" variant="contained" color="primary" size="md">
+          <Button type="submit" variant="contained" color="primary" size="md" loading={loading}>
             등록
           </Button>
         </AdminActions>

@@ -5,7 +5,7 @@ import { AdminInput } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useProductTagsForm } from './useProductTagsForm';
 
-export const ProductTagsForm = bind(useProductTagsForm, ({ tags, updateTags, applyTags }) => (
+export const ProductTagsForm = bind(useProductTagsForm, ({ tags, updateTags, applyTags, loading }) => (
   <div className="flex flex-row gap-2">
     <AdminInput
       className="min-w-0 flex-1"
@@ -20,7 +20,7 @@ export const ProductTagsForm = bind(useProductTagsForm, ({ tags, updateTags, app
       }
       placeholder="태그를 쉼표로 구분해 입력하세요."
     />
-    <Button onClick={applyTags} variant="contained" color="primary">
+    <Button onClick={applyTags} variant="contained" color="primary" loading={loading}>
       저장
     </Button>
   </div>

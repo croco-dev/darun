@@ -1,3 +1,5 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { RequestProductTranslationOnTranslateButtonDocument } from '@darun/provider-graphql';

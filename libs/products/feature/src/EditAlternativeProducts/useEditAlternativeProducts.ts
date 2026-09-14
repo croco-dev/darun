@@ -10,9 +10,7 @@ import {
 import { useForm } from '@mantine/form';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { ChangeEvent } from 'react';
-import { useCallback } from 'react';
-import { useEffect } from 'react';
+import { ChangeEvent, useCallback, useEffect, useRef } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -68,7 +66,7 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
     });
   }, [data, form]);
 
-  const [updateAlternativeProducts] = useMutation(EditProductOnEditAlternativeProductsDocument, {
+  const [updateAlternativeProducts, { loading }] = useMutation(EditProductOnEditAlternativeProductsDocument, {
     onCompleted: ({ updateAlternativeProduct }) => {
       if (updateAlternativeProduct.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
@@ -77,14 +75,21 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
         onSubmit?.();
       }
     },
+    onError: error => {
+      notifications.show({ message: error.message, color: 'red' });
+    },
   });
 
+  const isSubmittingRef = useRef(false);
+
   const submit = async (values: FormValues) => {
+    if (isSubmittingRef.current || loading) return;
     if (!values.alternativeIds) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
 
+    isSubmittingRef.current = true;
     try {
       await updateAlternativeProducts({
         variables: {
@@ -96,7 +101,8 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
       });
     } catch (error) {
       console.error('mutation failed:', error);
-      throw error;
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 
@@ -149,5 +155,6 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
         items: searchItems,
       },
     ],
+    loading,
   };
 }

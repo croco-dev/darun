@@ -57,7 +57,7 @@ export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit,
           </AdminSelect>
         </AdminField>
         <AdminActions>
-          <Button type="submit" variant="contained" color="primary" disabled={loading}>
+          <Button type="submit" variant="contained" color="primary" loading={loading}>
             저장
           </Button>
         </AdminActions>

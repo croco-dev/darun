@@ -10,7 +10,7 @@ import {
 } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -79,22 +79,32 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
     });
   }, [data, form]);
 
+  const isSubmittingRef = useRef(false);
+
   const submit = async (values: FormValues) => {
+    if (isSubmittingRef.current || queryLoading || mutationLoading) return;
     if (!values.emoji || !values.name || !values.summary) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
 
-    await updateFeature({
-      variables: {
-        featureId,
-        input: {
-          emoji: values.emoji,
-          name: values.name,
-          summary: values.summary,
+    isSubmittingRef.current = true;
+    try {
+      await updateFeature({
+        variables: {
+          featureId,
+          input: {
+            emoji: values.emoji,
+            name: values.name,
+            summary: values.summary,
+          },
         },
-      },
-    });
+      });
+    } catch {
+      // Handled by onError callback
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
   return { loading: queryLoading || mutationLoading, form, submit };

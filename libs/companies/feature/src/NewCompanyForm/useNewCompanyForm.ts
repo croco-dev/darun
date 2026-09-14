@@ -1,9 +1,12 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { CreateCompanyOnNewCompanyFormDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -42,7 +45,7 @@ export function useNewCompanyForm() {
   });
   const { push } = useRouter();
 
-  const [mutate] = useMutation(CreateCompanyOnNewCompanyFormDocument, {
+  const [mutate, { loading }] = useMutation(CreateCompanyOnNewCompanyFormDocument, {
     onCompleted: ({ createCompany }) => {
       if (createCompany.company.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
@@ -59,20 +62,29 @@ export function useNewCompanyForm() {
     },
   });
 
-  const handleSubmit = (values: FormValues) => {
-    if (!values.name || !values.type || !values.address) return;
+  const isSubmittingRef = useRef(false);
 
-    mutate({
-      variables: {
-        input: {
-          name: values.name,
-          type: values.type,
-          address: values.address,
-          startAt: values.startAtIsDisabled ? undefined : (values.startAt?.toISOString() ?? undefined),
+  const handleSubmit = async (values: FormValues) => {
+    if (isSubmittingRef.current || loading || !values.name || !values.type || !values.address) return;
+    isSubmittingRef.current = true;
+
+    try {
+      await mutate({
+        variables: {
+          input: {
+            name: values.name,
+            type: values.type,
+            address: values.address,
+            startAt: values.startAtIsDisabled ? undefined : (values.startAt?.toISOString() ?? undefined),
+          },
         },
-      },
-    });
+      });
+    } catch {
+      // Handled by onError callback
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
-  return { handleSubmit, form };
+  return { handleSubmit, form, loading };
 }

@@ -8,7 +8,7 @@ import { FileWithPath } from '@mantine/dropzone';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -32,7 +32,7 @@ type FormValues = {
 
 export function useWriteMagazine() {
   const { push } = useRouter();
-  const [createMagazine] = useMutation(CreateMagazineOnWriteMagazineDocument, {
+  const [createMagazine, { loading: isMutating }] = useMutation(CreateMagazineOnWriteMagazineDocument, {
     onCompleted: ({ createMagazine }) => {
       notifications.show({ message: '생성되었습니다.', color: 'teal' });
       push(`/magazines/${createMagazine.magazine.slug}`);
@@ -50,8 +50,12 @@ export function useWriteMagazine() {
   const { upload } = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const loading = isUploading || isMutating;
+  const isSubmittingRef = useRef(false);
 
   const handleSubmit = async (values: FormValues) => {
+    if (isSubmittingRef.current || loading) return;
+    isSubmittingRef.current = true;
     try {
       await createMagazine({
         variables: {
@@ -65,7 +69,9 @@ export function useWriteMagazine() {
       });
     } catch (error) {
       console.error('mutation failed:', error);
-      throw error;
+      notifications.show({ message: '매거진 생성에 실패했습니다.', color: 'red' });
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 
@@ -104,5 +110,6 @@ export function useWriteMagazine() {
     handleFileRemove,
     file,
     isUploading,
+    loading,
   };
 }
