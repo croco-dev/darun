@@ -2,7 +2,15 @@
 
 import { NewProductForm } from '@darun/products-feature';
 import { Button } from '@darun/ui';
-import { AdminPanel, AdminSectionHeader, AdminSectionBody, AdminField, AdminInput, AdminTextarea, AdminActions } from '@darun/ui-admin';
+import {
+  AdminPanel,
+  AdminSectionHeader,
+  AdminSectionBody,
+  AdminField,
+  AdminInput,
+  AdminTextarea,
+  AdminActions,
+} from '@darun/ui-admin';
 
 export const NewProductFormSection = () => (
   <NewProductForm>
@@ -10,22 +18,13 @@ export const NewProductFormSection = () => (
       <AdminPanel>
         <AdminSectionHeader title="서비스 등록" />
         <AdminSectionBody>
-          <AdminField label="이름">
-            <AdminInput
-              name="name"
-              form="new-product-form"
-              placeholder="ex) NAVER"
-              {...form.getInputProps('name')}
-            />
+          <AdminField label="이름" error={form.errors.name}>
+            <AdminInput name="name" placeholder="ex) NAVER" {...form.getInputProps('name')} />
           </AdminField>
-          <AdminField label="slug">
-            <AdminInput
-              name="slug"
-              placeholder="ex) naver"
-              {...form.getInputProps('slug')}
-            />
+          <AdminField label="slug" error={form.errors.slug}>
+            <AdminInput name="slug" placeholder="ex) naver" {...form.getInputProps('slug')} />
           </AdminField>
-          <AdminField label="짧은 설명">
+          <AdminField label="짧은 설명" error={form.errors.summary}>
             <AdminTextarea
               name="summary"
               rows={4}
@@ -33,7 +32,7 @@ export const NewProductFormSection = () => (
               {...form.getInputProps('summary')}
             />
           </AdminField>
-          <AdminField label="로고">
+          <AdminField label="로고" error={form.errors.file}>
             <AdminInput
               name="file"
               type="file"

@@ -2,9 +2,13 @@
 
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { CreateProductFeatureOnNewProductFeatureFormDocument } from '@darun/provider-graphql';
+import {
+  CreateProductFeatureOnNewProductFeatureFormDocument,
+  TempProductBySlugOnProductFeatureTableDocument,
+} from '@darun/provider-graphql';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -33,6 +37,7 @@ type NewProductFormProps = {
 };
 
 export function useNewProductFeatureForm({ productSlug, children }: NewProductFormProps) {
+  const router = useRouter();
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: {
@@ -47,10 +52,12 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
     },
   });
   const [createProductFeature] = useMutation(CreateProductFeatureOnNewProductFeatureFormDocument, {
+    refetchQueries: [{ query: TempProductBySlugOnProductFeatureTableDocument, variables: { slug: productSlug } }],
     onCompleted: ({ createProductFeature }) => {
       if (createProductFeature.feature.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
         form.reset();
+        router.push(`/products/${productSlug}`);
       }
     },
     onError: error => {

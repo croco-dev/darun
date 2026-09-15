@@ -3,7 +3,7 @@
 import { gql } from '@apollo/client';
 import { EditProductLinkItemFragment, EditProductLinkItemFragmentDoc, useFragment } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
-import { AdminEmptyState, AdminLoadingState } from '@darun/ui-admin';
+import { AdminEmptyState, AdminLoadingState, AdminModal } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { Pencil } from 'lucide-react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
@@ -120,25 +120,15 @@ export const ProductLinkTable = bind(
             </tbody>
           </table>
         </div>
-        {isEditModalOpened && (
-          <dialog open={isEditModalOpened} className="rounded-xl bg-white p-6 shadow-lg backdrop:bg-black/50 z-50">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">링크 정보 수정</h2>
-              <button
-                type="button"
-                onClick={closeEditModal}
-                className="text-dark-900 hover:text-dark-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
-              >
-                ✕
-              </button>
+        <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="링크 정보 수정">
+          {link ? (
+            <EditProductLinkItem slug={slug} link={link} onSubmit={closeEditModal} />
+          ) : (
+            <div className="py-4 text-center text-sm text-dark-500">
+              오류가 발생했습니다. 새로고침 후 다시 시도해 주세요.
             </div>
-            {link ? (
-              <EditProductLinkItem slug={slug} link={link} onSubmit={closeEditModal} />
-            ) : (
-              <>오류 발생. 새로고침 후 시도.</>
-            )}
-          </dialog>
-        )}
+          )}
+        </AdminModal>
       </>
     );
   }

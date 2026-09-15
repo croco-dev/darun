@@ -4,6 +4,7 @@ import { CreateCompanyOnNewCompanyFormDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -39,6 +40,7 @@ export function parseStartAtToIso(startAt?: string | Date | null): string | unde
 }
 
 export function useNewCompanyForm() {
+  const [startAtIsDisabled, setStartAtIsDisabled] = useState(false);
   const form = useForm<FormValues>({
     initialValues: {
       name: '',
@@ -73,10 +75,15 @@ export function useNewCompanyForm() {
     },
   });
 
+  const handleToggleStartAtDisabled = (checked: boolean) => {
+    setStartAtIsDisabled(checked);
+    form.setFieldValue('startAtIsDisabled', checked);
+  };
+
   const handleSubmit = (values: FormValues) => {
     if (!values.name || !values.type || !values.address) return;
 
-    const startAt = values.startAtIsDisabled ? undefined : parseStartAtToIso(values.startAt);
+    const startAt = startAtIsDisabled || values.startAtIsDisabled ? undefined : parseStartAtToIso(values.startAt);
 
     mutate({
       variables: {
@@ -90,5 +97,5 @@ export function useNewCompanyForm() {
     });
   };
 
-  return { handleSubmit, form };
+  return { handleSubmit, form, startAtIsDisabled, handleToggleStartAtDisabled };
 }

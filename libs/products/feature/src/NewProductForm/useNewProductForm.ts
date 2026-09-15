@@ -39,6 +39,12 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       summary: '',
       file: undefined,
     },
+    validate: {
+      name: value => (!value?.trim() ? '서비스 이름을 입력해주세요.' : null),
+      slug: value => (!value?.trim() ? '슬러그를 입력해주세요.' : null),
+      summary: value => (!value?.trim() ? '짧은 설명을 입력해주세요.' : null),
+      file: value => (!value ? '로고 이미지를 첨부해주세요.' : null),
+    },
   });
   const navigate = useNavigate();
   const { upload } = useImageUpload();
@@ -101,7 +107,6 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       });
     } catch (error) {
       console.error('mutation failed:', error);
-      throw error;
     }
   };
 

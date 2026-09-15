@@ -94,7 +94,9 @@ type LlmSettingData = {
   updatedAt: string;
 };
 
-export function resolveLlmFormDefaults(setting?: Partial<Pick<LlmSettingData, 'endpoint' | 'model' | 'thinkingLevel'>>) {
+export function resolveLlmFormDefaults(
+  setting?: Partial<Pick<LlmSettingData, 'endpoint' | 'model' | 'thinkingLevel'>>
+) {
   return {
     endpoint: setting?.endpoint || DEFAULT_LLM_ENDPOINT,
     model: setting?.model || DEFAULT_LLM_MODEL,
@@ -126,7 +128,7 @@ function LlmSettingForm({
           endpoint: endpoint.trim() || undefined,
           apiKey: apiKey.trim() || undefined,
           model: model.trim() || undefined,
-          thinkingLevel: thinkingLevel.trim() || undefined,
+          thinkingLevel: thinkingLevel.trim(),
         },
       });
 

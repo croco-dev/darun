@@ -2,7 +2,12 @@ import { useAuthService } from '@darun/provider-auth/client';
 import { useNavigate } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 
-export function useLogoutButton() {
+export type LogoutButtonProps = {
+  variant?: 'sidebar' | 'contained';
+};
+
+export function useLogoutButton(props: LogoutButtonProps = {}) {
+  const variant = props?.variant ?? 'sidebar';
   const authService = useAuthService();
   const navigate = useNavigate();
 
@@ -14,5 +19,6 @@ export function useLogoutButton() {
 
   return {
     logout,
+    variant,
   };
 }

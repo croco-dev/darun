@@ -31,6 +31,10 @@ type FormValues = {
 
 export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLinkItemProps) {
   const [updateLink, { loading }] = useMutation(UpdateProductLinkOnEditProductLinkItemDocument, {
+    onCompleted: () => {
+      notifications.show({ message: '수정되었습니다.', color: 'teal' });
+      onSubmit?.();
+    },
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },
@@ -55,22 +59,21 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
       return;
     }
 
-    await updateLink({
-      variables: {
-        slug,
-        id: link.id,
-        input: {
-          title: values.title,
-          link: values.link,
-          displayLink: values.displayLink,
-          iconUrl: values.iconUrl,
+    try {
+      await updateLink({
+        variables: {
+          slug,
+          id: link.id,
+          input: {
+            title: values.title,
+            link: values.link,
+            displayLink: values.displayLink,
+            iconUrl: values.iconUrl,
+          },
         },
-      },
-    });
-
-    notifications.show({ message: '수정되었습니다.', color: 'teal' });
-    if (onSubmit) {
-      onSubmit();
+      });
+    } catch {
+      // Handled by onError callback
     }
   };
 

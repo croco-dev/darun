@@ -48,6 +48,9 @@ export function useProductListTable() {
   }, [data]);
 
   const loadNextPage = () => {
+    if (!data?.allProducts.pageInfo.hasNextPage || !endCursorRef.current) {
+      return;
+    }
     setPageCount(prev => prev + defaultViewCount);
     refetch({
       first: defaultViewCount,

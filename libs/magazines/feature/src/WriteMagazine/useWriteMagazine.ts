@@ -37,6 +37,13 @@ export function useWriteMagazine() {
       notifications.show({ message: '매거진이 성공적으로 발행되었습니다.', color: 'teal' });
       push('/magazines');
     },
+    onError: error => {
+      notifications.show({
+        title: '발행 실패',
+        message: error.message,
+        color: 'red',
+      });
+    },
   });
   const form = useForm<FormValues>({
     initialValues: {
@@ -46,26 +53,32 @@ export function useWriteMagazine() {
       content: '',
       backgroundImageUrl: '',
     },
+    validate: {
+      title: value => (!value?.trim() ? '글 제목을 입력해주세요.' : null),
+    },
   });
   const { upload } = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
   const handleSubmit = async (values: FormValues) => {
+    if (!values.title?.trim()) {
+      return;
+    }
+
     try {
       await createMagazine({
         variables: {
           input: {
-            title: values.title,
-            slug: values.slug,
-            summary: values.summary || '',
-            backgroundImageUrl: values.backgroundImageUrl || '',
+            title: values.title.trim(),
+            slug: values.slug?.trim() || undefined,
+            summary: values.summary?.trim() || '',
+            backgroundImageUrl: values.backgroundImageUrl?.trim() || '',
           },
         },
       });
     } catch (error) {
       console.error('mutation failed:', error);
-      throw error;
     }
   };
 
