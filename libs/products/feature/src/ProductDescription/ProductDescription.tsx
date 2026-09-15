@@ -27,8 +27,8 @@ export const ProductDescription = bind(useProductDescription, ({ description }) 
     };
   }, [domPurify]);
 
-  if (!description) {
-    return <p className="text-xs text-black/60">설명이 없습니다.</p>;
+  if (!description || !description.trim()) {
+    return <p className="text-xs text-dark-500">설명이 없습니다.</p>;
   }
 
   if (!domPurify) {

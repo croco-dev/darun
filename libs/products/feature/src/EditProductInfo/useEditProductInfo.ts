@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@apollo/client/react';
 import {
   EditProductOnEditProductInfoDocument,
   TempProductBySlugOnEditProductInfoDocument,
+  TempProductBySlugOnProductInfoDocument,
 } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
@@ -56,8 +57,9 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
     form.setValues(values);
   }, [data, form]);
 
-  const [editInformation] = useMutation(EditProductOnEditProductInfoDocument, {
-    refetchQueries: [TempProductBySlugOnEditProductInfoDocument],
+  const [editInformation, { loading }] = useMutation(EditProductOnEditProductInfoDocument, {
+    refetchQueries: [TempProductBySlugOnEditProductInfoDocument, TempProductBySlugOnProductInfoDocument],
+    awaitRefetchQueries: true,
     onCompleted: ({ editProduct }) => {
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
@@ -75,6 +77,9 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
   });
 
   const submit = async (values: FormValues) => {
+    if (loading) {
+      return;
+    }
     if (!values.name && !values.summary) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
@@ -90,5 +95,5 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
     });
   };
 
-  return { form, submit };
+  return { form, submit, loading };
 }

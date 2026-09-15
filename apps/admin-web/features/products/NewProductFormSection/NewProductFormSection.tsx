@@ -11,6 +11,7 @@ import {
   AdminTextarea,
   AdminActions,
 } from '@darun/ui-admin';
+import { notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
 
 export const NewProductFormSection = () => {
@@ -53,6 +54,19 @@ export const NewProductFormSection = () => {
                   className="file:mr-3 file:rounded-lg file:border-0 file:bg-black/5 file:px-3 file:py-1.5 file:text-sm file:font-medium"
                   onChange={event => {
                     const file = event.currentTarget.files?.[0] ?? undefined;
+                    if (file && !file.type.startsWith('image/')) {
+                      notifications.show({
+                        message: '이미지 파일(PNG, JPEG, WebP)만 업로드할 수 있습니다.',
+                        color: 'red',
+                      });
+                      event.currentTarget.value = '';
+                      form.getInputProps('file').onChange(undefined);
+                      if (previewUrl) {
+                        URL.revokeObjectURL(previewUrl);
+                        setPreviewUrl(null);
+                      }
+                      return;
+                    }
                     form.getInputProps('file').onChange(file);
                     if (previewUrl) {
                       URL.revokeObjectURL(previewUrl);

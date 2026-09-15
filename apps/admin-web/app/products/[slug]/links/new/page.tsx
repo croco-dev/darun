@@ -1,8 +1,4 @@
-'use client';
-
 import { PageShell, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
-import { useRouter } from 'next/navigation';
-import { use } from 'react';
 import { NewProductLinkSection } from '../../../../../features/products/NewProductLinkSection';
 
 type PageProps = {
@@ -11,11 +7,10 @@ type PageProps = {
   }>;
 };
 
-export default function NewProductLinkPage({ params }: PageProps) {
-  const router = useRouter();
-  const { slug } = use(params);
+export default async function NewProductLinkPage({ params }: PageProps) {
+  const { slug } = await params;
   return (
-    <PageShell title={'서비스에 링크 추가'} onBack={() => router.push(`/products/${slug}`)}>
+    <PageShell title="서비스에 링크 추가" backHref={`/products/${slug}`}>
       <AdminPanel>
         <AdminSectionHeader title="링크" />
         <AdminSectionBody>

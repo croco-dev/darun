@@ -1,8 +1,4 @@
-'use client';
-
 import { PageShell, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
-import { useRouter } from 'next/navigation';
-import { use } from 'react';
 import { NewProductFeatureFormSection } from '../../../../../features/products/NewProductFeatureFormSection';
 
 type PageProps = {
@@ -11,11 +7,10 @@ type PageProps = {
   }>;
 };
 
-export default function NewProductFeaturePage({ params }: PageProps) {
-  const router = useRouter();
-  const { slug } = use(params);
+export default async function NewProductFeaturePage({ params }: PageProps) {
+  const { slug } = await params;
   return (
-    <PageShell title={'서비스에 기능 추가'} onBack={() => router.push(`/products/${slug}`)}>
+    <PageShell title="서비스에 기능 추가" backHref={`/products/${slug}`}>
       <AdminPanel>
         <AdminSectionHeader title="기능" />
         <AdminSectionBody>

@@ -104,6 +104,13 @@ export function resolveLlmFormDefaults(
   };
 }
 
+function formatUpdatedAt(dateStr?: string | null): string | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString('ko-KR');
+}
+
 function LlmSettingForm({
   currentSetting,
   onUpdated,
@@ -121,6 +128,9 @@ function LlmSettingForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUpdating) {
+      return;
+    }
 
     try {
       await updateLlmSetting({
@@ -205,15 +215,17 @@ function LlmSettingForm({
           <span className="text-xs text-dark-500">추천 모델:</span>
           <button
             type="button"
+            disabled={isUpdating}
             onClick={() => setModel('nvidia/nemotron-3-ultra-550b-a55b:free')}
-            className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 text-dark-800 font-mono transition"
+            className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 disabled:opacity-50 text-dark-800 font-mono transition"
           >
             nvidia/nemotron-3-ultra-550b-a55b:free
           </button>
           <button
             type="button"
+            disabled={isUpdating}
             onClick={() => setModel('x-ai/grok-4-fast')}
-            className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 text-dark-800 font-mono transition"
+            className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 disabled:opacity-50 text-dark-800 font-mono transition"
           >
             x-ai/grok-4-fast
           </button>
@@ -246,8 +258,9 @@ function LlmSettingForm({
             <button
               key={opt.label}
               type="button"
+              disabled={isUpdating}
               onClick={() => setThinkingLevel(opt.value)}
-              className={`text-xs px-2 py-0.5 rounded font-mono transition border ${
+              className={`text-xs px-2 py-0.5 rounded font-mono transition border disabled:opacity-50 ${
                 thinkingLevel === opt.value
                   ? 'bg-dark-900 text-white border-dark-900'
                   : 'bg-dark-50 hover:bg-dark-100 text-dark-700 border-dark-200'
@@ -265,8 +278,8 @@ function LlmSettingForm({
 
       <div className="flex items-center justify-between pt-4 border-t border-dark-100">
         <div className="text-xs text-dark-400">
-          {currentSetting?.updatedAt && (
-            <span>마지막 변경: {new Date(currentSetting.updatedAt).toLocaleString('ko-KR')}</span>
+          {formatUpdatedAt(currentSetting?.updatedAt) && (
+            <span>마지막 변경: {formatUpdatedAt(currentSetting?.updatedAt)}</span>
           )}
         </div>
         <Button type="submit" variant="contained" color="primary" disabled={isUpdating}>

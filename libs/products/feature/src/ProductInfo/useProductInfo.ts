@@ -20,7 +20,7 @@ type ProductInfoProps = {
 };
 
 export function useProductInfo({ slug }: ProductInfoProps) {
-  const { data } = useQuery(TempProductBySlugOnProductInfoDocument, {
+  const { data, loading } = useQuery(TempProductBySlugOnProductInfoDocument, {
     variables: {
       slug,
     },
@@ -30,5 +30,6 @@ export function useProductInfo({ slug }: ProductInfoProps) {
     slug: data?.tempProductBySlug?.slug,
     summary: data?.tempProductBySlug?.summary,
     logoUrl: data?.tempProductBySlug?.logoUrl,
+    loading,
   };
 }
