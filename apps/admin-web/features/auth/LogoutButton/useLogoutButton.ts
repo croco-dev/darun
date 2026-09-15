@@ -9,7 +9,7 @@ export function useLogoutButton() {
   const logout = async () => {
     await authService.signOut();
     notifications.show({ message: '로그아웃되었습니다.', color: 'teal' });
-    navigate('/');
+    navigate('/auth/login');
   };
 
   return {
