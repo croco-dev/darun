@@ -14,6 +14,8 @@ vi.mock('@apollo/client/react', async importOriginal => {
 
 const mockForm = {
   reset: vi.fn(),
+  setValues: vi.fn(),
+  setInitialValues: vi.fn(),
   getInputProps: vi.fn(() => ({ key: 'test-form-key', defaultValue: '' })),
   onSubmit: vi.fn((handler: (values: Record<string, string>) => Promise<void>) => handler),
 };
@@ -121,5 +123,33 @@ describe('useEditProductLinkItem', () => {
     expect(notifications.show).toHaveBeenCalledWith({ message: 'Network error', color: 'red' });
     expect(notifications.show).not.toHaveBeenCalledWith({ message: '수정되었습니다.', color: 'teal' });
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('should sync form values when link prop updates', () => {
+    const { rerender } = renderHook(props => useEditProductLinkItem(props), {
+      initialProps: defaultProps,
+    });
+
+    expect(mockForm.setValues).toHaveBeenCalledWith({
+      title: defaultProps.link.title,
+      link: defaultProps.link.link,
+      displayLink: defaultProps.link.displayLink,
+      iconUrl: defaultProps.link.iconUrl,
+    });
+
+    const updatedLink = {
+      ...defaultProps.link,
+      title: 'New Link Title',
+      link: 'https://newlink.com',
+    };
+
+    rerender({ ...defaultProps, link: updatedLink });
+
+    expect(mockForm.setValues).toHaveBeenCalledWith({
+      title: updatedLink.title,
+      link: updatedLink.link,
+      displayLink: updatedLink.displayLink,
+      iconUrl: updatedLink.iconUrl,
+    });
   });
 });

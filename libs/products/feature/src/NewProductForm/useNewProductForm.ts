@@ -2,12 +2,12 @@
 
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { CreateProductOnNewProductFormDocument } from '@darun/provider-graphql';
+import { AllProductsOnProductListTableDocument, CreateProductOnNewProductFormDocument } from '@darun/provider-graphql';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 
 gql(`
   mutation CreateProductOnNewProductForm($input: CreateProductInput!) {
@@ -27,7 +27,7 @@ type FormValues = {
   file?: File;
 };
 type NewProductFormProps = {
-  children: (props: { form: UseFormReturnType<FormValues> }) => ReactNode;
+  children: (props: { form: UseFormReturnType<FormValues>; loading: boolean }) => ReactNode;
 };
 
 export function useNewProductForm({ children }: NewProductFormProps) {
@@ -48,7 +48,9 @@ export function useNewProductForm({ children }: NewProductFormProps) {
   });
   const navigate = useNavigate();
   const { upload } = useImageUpload();
-  const [createProduct] = useMutation(CreateProductOnNewProductFormDocument, {
+  const [isUploading, setIsUploading] = useState(false);
+  const [createProduct, { loading: isCreating }] = useMutation(CreateProductOnNewProductFormDocument, {
+    refetchQueries: [AllProductsOnProductListTableDocument],
     onCompleted: ({ createProduct }) => {
       if (createProduct.product.slug) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
@@ -80,6 +82,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
 
     let url: string | undefined;
     try {
+      setIsUploading(true);
       url = await upload('images/logos', values.file, slug);
     } catch {
       notifications.show({
@@ -88,6 +91,8 @@ export function useNewProductForm({ children }: NewProductFormProps) {
         color: 'red',
       });
       return;
+    } finally {
+      setIsUploading(false);
     }
 
     if (!url) {
@@ -110,5 +115,5 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     }
   };
 
-  return { form, children, submit };
+  return { form, children, submit, loading: isUploading || isCreating };
 }

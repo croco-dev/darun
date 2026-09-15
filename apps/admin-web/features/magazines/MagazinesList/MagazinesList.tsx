@@ -1,8 +1,9 @@
 'use client';
 
+import { Button } from '@darun/ui';
 import { AdminEmptyState, AdminPanel } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
-import { Calendar, CheckCircle2, Clock, ExternalLink, Sparkles, User } from 'lucide-react';
+import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, ExternalLink, Sparkles, User } from 'lucide-react';
 import { useMagazinesList } from './useMagazinesList';
 
 function formatDate(dateString?: string | null): string {
@@ -15,7 +16,7 @@ function formatDate(dateString?: string | null): string {
   return `${year}.${month}.${day}`;
 }
 
-export const MagazinesList = bind(useMagazinesList, ({ magazines }) => {
+export const MagazinesList = bind(useMagazinesList, ({ magazines, page, setPage, totalCount, totalPages }) => {
   if (!magazines || magazines.length === 0) {
     return (
       <AdminPanel className="p-8">
@@ -28,6 +29,7 @@ export const MagazinesList = bind(useMagazinesList, ({ magazines }) => {
   }
 
   return (
+    <div className="flex flex-col gap-5">
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
       {magazines.map(item => {
         const isPublished = Boolean(item.publishedAt);
@@ -118,6 +120,43 @@ export const MagazinesList = bind(useMagazinesList, ({ magazines }) => {
           </div>
         );
       })}
+      </div>
+
+      {totalPages > 1 && (
+        <AdminPanel className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-dark-900">
+              총 {totalCount}개의 매거진 중 {page} / {totalPages} 페이지
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="base"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <ChevronLeft className="h-4 w-4" />
+                  이전
+                </span>
+              </Button>
+              <Button
+                type="button"
+                variant="base"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <ChevronRight className="h-4 w-4" />
+                  다음
+                </span>
+              </Button>
+            </div>
+          </div>
+        </AdminPanel>
+      )}
     </div>
   );
 });

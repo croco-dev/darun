@@ -1,12 +1,16 @@
 import { Button } from '@darun/ui';
-import { AdminEmptyState, AdminLoadingState } from '@darun/ui-admin';
+import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { Pencil } from 'lucide-react';
 import { useProductFeatureTable } from './useProductFeatureTable';
 
-export const ProductFeatureTable = bind(useProductFeatureTable, ({ features, loading, editFeature }) => {
+export const ProductFeatureTable = bind(useProductFeatureTable, ({ features, loading, error, editFeature }) => {
   if (loading) {
     return <AdminLoadingState />;
+  }
+
+  if (error) {
+    return <AdminErrorState error={error} />;
   }
 
   if (!features || features.length === 0) {

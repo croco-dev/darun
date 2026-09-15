@@ -1,8 +1,11 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { EditProductLinkItemFragment, UpdateProductLinkOnEditProductLinkItemDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { useEffect } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -49,6 +52,17 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
       iconUrl: link.iconUrl,
     },
   });
+
+  useEffect(() => {
+    const values = {
+      title: link.title,
+      link: link.link,
+      displayLink: link.displayLink,
+      iconUrl: link.iconUrl,
+    };
+    form.setInitialValues(values);
+    form.setValues(values);
+  }, [link, form]);
 
   const submit = async (values: FormValues) => {
     if (!values.title && !values.link && !values.displayLink && !values.iconUrl) {

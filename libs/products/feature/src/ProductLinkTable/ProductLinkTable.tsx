@@ -3,7 +3,7 @@
 import { gql } from '@apollo/client';
 import { EditProductLinkItemFragment, EditProductLinkItemFragmentDoc, useFragment } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
-import { AdminEmptyState, AdminLoadingState, AdminModal } from '@darun/ui-admin';
+import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { Pencil } from 'lucide-react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
@@ -85,9 +85,13 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
 
 export const ProductLinkTable = bind(
   useProductLinkTable,
-  ({ links, loading, editLink, isEditModalOpened, closeEditModal, link, slug }) => {
+  ({ links, loading, error, editLink, isEditModalOpened, closeEditModal, link, slug }) => {
     if (loading) {
       return <AdminLoadingState />;
+    }
+
+    if (error) {
+      return <AdminErrorState error={error} />;
     }
 
     if (!links || links.length === 0) {

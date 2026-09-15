@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockForm = {
   setValues: vi.fn(),
+  setInitialValues: vi.fn(),
   getInputProps: vi.fn(() => ({ key: 'test-form-key', defaultValue: '' })),
   onSubmit: vi.fn((handler: (values: Record<string, string>) => Promise<void>) => handler),
 };

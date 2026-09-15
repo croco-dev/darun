@@ -33,6 +33,7 @@ type NewProductFormProps = {
   children: (props: {
     form: UseFormReturnType<FormValues>;
     pickEmoji: (emoji: { native: string }) => void;
+    loading: boolean;
   }) => ReactNode;
 };
 
@@ -51,19 +52,22 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
       summary: value => (!value ? '짧은 설명을 입력해주세요.' : null),
     },
   });
-  const [createProductFeature] = useMutation(CreateProductFeatureOnNewProductFeatureFormDocument, {
-    refetchQueries: [{ query: TempProductBySlugOnProductFeatureTableDocument, variables: { slug: productSlug } }],
-    onCompleted: ({ createProductFeature }) => {
-      if (createProductFeature.feature.id) {
-        notifications.show({ message: '생성되었습니다.', color: 'teal' });
-        form.reset();
-        router.push(`/products/${productSlug}`);
-      }
-    },
-    onError: error => {
-      notifications.show({ message: error.message, color: 'red' });
-    },
-  });
+  const [createProductFeature, { loading: isCreating }] = useMutation(
+    CreateProductFeatureOnNewProductFeatureFormDocument,
+    {
+      refetchQueries: [{ query: TempProductBySlugOnProductFeatureTableDocument, variables: { slug: productSlug } }],
+      onCompleted: ({ createProductFeature }) => {
+        if (createProductFeature.feature.id) {
+          notifications.show({ message: '생성되었습니다.', color: 'teal' });
+          form.reset();
+          router.push(`/products/${productSlug}`);
+        }
+      },
+      onError: error => {
+        notifications.show({ message: error.message, color: 'red' });
+      },
+    }
+  );
 
   const pickEmoji = (emoji: { native: string }) => {
     form.setFieldValue('emoji', emoji.native);
@@ -72,17 +76,21 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
   const submit = async (values: FormValues) => {
     if (!values.name || !values.emoji || !values.summary) return;
 
-    await createProductFeature({
-      variables: {
-        input: {
-          productSlug,
-          name: values.name,
-          emoji: values.emoji,
-          summary: values.summary,
+    try {
+      await createProductFeature({
+        variables: {
+          input: {
+            productSlug,
+            name: values.name,
+            emoji: values.emoji,
+            summary: values.summary,
+          },
         },
-      },
-    });
+      });
+    } catch {
+      // Handled by onError
+    }
   };
 
-  return { form, children, submit, pickEmoji };
+  return { form, children, submit, pickEmoji, loading: isCreating };
 }

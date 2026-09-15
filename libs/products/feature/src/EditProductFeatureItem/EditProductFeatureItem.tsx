@@ -1,11 +1,16 @@
+'use client';
+
 import { Button } from '@darun/ui';
 import { AdminField, AdminInput, AdminTextarea, AdminActions } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
+import { useRef } from 'react';
 import { useEditProductFeatureItem } from './useEditProductFeatureItem';
 
 export const EditProductFeatureItem = bind(useEditProductFeatureItem, ({ form, submit, loading }) => {
+  const detailsRef = useRef<HTMLDetailsElement | null>(null);
+
   return (
     <form onSubmit={form.onSubmit(submit)}>
       <div className="flex flex-col gap-2">
@@ -16,7 +21,7 @@ export const EditProductFeatureItem = bind(useEditProductFeatureItem, ({ form, s
               key={form.key('emoji')}
               {...form.getInputProps('emoji')}
             />
-            <details className="absolute right-2 top-1/2 -translate-y-1/2">
+            <details ref={detailsRef} className="absolute right-2 top-1/2 -translate-y-1/2">
               <summary className="list-none">
                 <Button type="button" variant="contained" color="secondary" size="sm">
                   👆
@@ -25,7 +30,12 @@ export const EditProductFeatureItem = bind(useEditProductFeatureItem, ({ form, s
               <div className="absolute right-0 top-full z-10 mt-2 overflow-hidden rounded-xl border border-dark-200 bg-white shadow-lg">
                 <Picker
                   data={data}
-                  onEmojiSelect={({ native }: { native: string }) => form.setValues({ emoji: native })}
+                  onEmojiSelect={({ native }: { native: string }) => {
+                    form.setValues({ emoji: native });
+                    if (detailsRef.current) {
+                      detailsRef.current.open = false;
+                    }
+                  }}
                 />
               </div>
             </details>

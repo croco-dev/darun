@@ -45,5 +45,21 @@ describe('useProductLinkTable', () => {
 
     expect(result.current.loading).toBe(false);
     expect(result.current.links).toHaveLength(1);
+    expect(result.current.error).toBeUndefined();
+  });
+
+  it('should return error when query fails', () => {
+    const error = new Error('Query error');
+    vi.mocked(useQuery).mockReturnValue({
+      data: undefined,
+      loading: false,
+      error,
+    } as unknown as ReturnType<typeof useQuery>);
+
+    vi.mocked(useFragment).mockReturnValue(null as never);
+
+    const { result } = renderHook(() => useProductLinkTable({ slug: 'test-slug' }));
+
+    expect(result.current.error).toBe(error);
   });
 });

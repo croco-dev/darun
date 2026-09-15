@@ -32,7 +32,12 @@ export const ProductDescription = bind(useProductDescription, ({ description }) 
   }
 
   if (!domPurify) {
-    return <div className="whitespace-pre-wrap text-sm leading-6 text-dark-900">{description}</div>;
+    return (
+      <div className="flex flex-col gap-2 animate-pulse py-2">
+        <div className="h-4 w-3/4 rounded bg-surface-200" />
+        <div className="h-4 w-1/2 rounded bg-surface-200" />
+      </div>
+    );
   }
 
   const sanitizedDescription = domPurify.sanitize(description);

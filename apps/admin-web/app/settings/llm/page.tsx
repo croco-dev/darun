@@ -4,7 +4,7 @@ import { LlmSettingFormSection } from '../../../features/settings/LlmSettingForm
 
 export default function LlmSettingPage() {
   return (
-    <PageShell title="LLM 설정">
+    <PageShell title="LLM 설정" backHref="/">
       <Suspense fallback={<AdminLoadingState />}>
         <LlmSettingFormSection />
       </Suspense>

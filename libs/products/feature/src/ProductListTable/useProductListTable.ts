@@ -57,6 +57,8 @@ export function useProductListTable() {
       after: endCursorRef.current,
       last: undefined,
       before: undefined,
+    }).catch(() => {
+      setPageCount(prev => Math.max(1, prev - defaultViewCount));
     });
   };
 
@@ -70,6 +72,8 @@ export function useProductListTable() {
       after: undefined,
       last: defaultViewCount,
       before: startCursorRef.current,
+    }).catch(() => {
+      setPageCount(prev => prev + defaultViewCount);
     });
   };
 

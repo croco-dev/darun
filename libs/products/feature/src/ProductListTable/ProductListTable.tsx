@@ -135,7 +135,9 @@ export function ProductListTable() {
       <AdminPanel className="p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-dark-900">
-            {totalCount}개의 서비스 중 {pageCount}개부터 표시합니다.
+            총 {totalCount}개의 서비스 중 {products.length > 0 ? pageCount : 0}-
+            {products.length > 0 ? Math.min(totalCount, pageCount + products.length - 1) : 0}번째 항목을 표시하고
+            있습니다.
           </p>
           <div className="flex gap-2">
             <Button type="button" variant="base" size="sm" disabled={!hasPreviousPage} onClick={loadPreviousPage}>
