@@ -132,6 +132,27 @@ function LlmSettingForm({
       return;
     }
 
+    if (endpoint.trim()) {
+      try {
+        const url = new URL(endpoint.trim());
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          notifications.show({
+            title: '유효하지 않은 URL',
+            message: 'API 엔드포인트는 http:// 또는 https:// 로 시작해야 합니다.',
+            color: 'red',
+          });
+          return;
+        }
+      } catch {
+        notifications.show({
+          title: '유효하지 않은 URL',
+          message: '올바른 URL 형식(예: https://openrouter.ai/api/v1)으로 입력해주세요.',
+          color: 'red',
+        });
+        return;
+      }
+    }
+
     try {
       await updateLlmSetting({
         variables: {
@@ -167,9 +188,10 @@ function LlmSettingForm({
           id="endpoint"
           type="text"
           value={endpoint}
+          disabled={isUpdating}
           onChange={e => setEndpoint(e.target.value)}
           placeholder="https://openrouter.ai/api/v1"
-          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
+          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
           required
         />
         <p className="text-xs text-dark-500">
@@ -185,13 +207,14 @@ function LlmSettingForm({
           id="apiKey"
           type="password"
           value={apiKey}
+          disabled={isUpdating}
           onChange={e => setApiKey(e.target.value)}
           placeholder={
             currentSetting?.apiKeyMasked
               ? `현재 등록됨 (${currentSetting.apiKeyMasked}) - 변경 시에만 입력`
               : '등록된 키 없음 (입력하지 않으면 환경변수 OPEN_ROUTER_API_KEY 사용)'
           }
-          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
+          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
         />
         <p className="text-xs text-dark-500">
           새 API 키를 입력하면 DB에 갱신됩니다. 비워두면 기존 등록된 키 또는 환경변수가 유지됩니다.
@@ -206,9 +229,10 @@ function LlmSettingForm({
           id="model"
           type="text"
           value={model}
+          disabled={isUpdating}
           onChange={e => setModel(e.target.value)}
           placeholder="nvidia/nemotron-3-ultra-550b-a55b:free"
-          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
+          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
           required
         />
         <div className="flex items-center gap-2 mt-1">
@@ -240,9 +264,10 @@ function LlmSettingForm({
           id="thinkingLevel"
           type="text"
           value={thinkingLevel}
+          disabled={isUpdating}
           onChange={e => setThinkingLevel(e.target.value)}
           placeholder="예: low, medium, high, none (비워두면 모델 기본값)"
-          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
+          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
         />
         <div className="flex flex-wrap items-center gap-1.5 mt-1">
           <span className="text-xs text-dark-500">빠른 선택:</span>

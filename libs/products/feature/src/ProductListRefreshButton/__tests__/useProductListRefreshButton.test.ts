@@ -81,4 +81,21 @@ describe('useProductListRefreshButton', () => {
 
     expect(result.current.isRefreshing).toBe(false);
   });
+
+  it('shows error notification and resets isRefreshing when refetch fails', async () => {
+    refetchQueriesMock.mockRejectedValueOnce(new Error('Network error'));
+
+    const { result } = renderHook(() => useProductListRefreshButton());
+
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith({
+      title: '새로고침 실패',
+      message: 'Network error',
+      color: 'red',
+    });
+    expect(result.current.isRefreshing).toBe(false);
+  });
 });

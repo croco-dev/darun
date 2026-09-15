@@ -75,7 +75,7 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
           </AdminField>
           <AdminActions>
             <Button type="submit" size="md" variant="contained" color="primary" disabled={loading}>
-              {loading ? '추가 중...' : '추가!'}
+              {loading ? '추가 중...' : '추가'}
             </Button>
           </AdminActions>
         </div>

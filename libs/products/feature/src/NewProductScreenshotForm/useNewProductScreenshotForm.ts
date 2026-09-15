@@ -57,6 +57,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     AddProductScreenshotOnNewProductScreenshotFormDocument,
     {
       refetchQueries: [{ query: GetProductScreenshotsOnDetailSectionDocument, variables: { slug: productSlug } }],
+      awaitRefetchQueries: true,
       onCompleted: ({ addProductScreenshot }) => {
         if (addProductScreenshot.product?.id) {
           notifications.show({ message: '생성되었습니다.', color: 'teal' });
@@ -71,6 +72,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
   );
 
   const submit = async (values: FormValues) => {
+    if (isUploading || isAdding) return;
     if (!values.file || !values.imageAlt?.trim()) {
       notifications.show({
         message: '이미지와 설명(alt)을 모두 입력해주세요.',

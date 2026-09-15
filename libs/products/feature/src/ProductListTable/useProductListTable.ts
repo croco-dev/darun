@@ -34,6 +34,7 @@ const defaultViewCount = 50;
 export function useProductListTable() {
   const { push } = useRouter();
   const [pageCount, setPageCount] = useState(1);
+  const [isNavigating, setIsNavigating] = useState(false);
   const { data, refetch } = useSuspenseQuery(AllProductsOnProductListTableDocument, {
     variables: { first: defaultViewCount },
   });
@@ -51,30 +52,40 @@ export function useProductListTable() {
     if (!data?.allProducts.pageInfo.hasNextPage || !endCursorRef.current) {
       return;
     }
+    setIsNavigating(true);
     setPageCount(prev => prev + defaultViewCount);
     refetch({
       first: defaultViewCount,
       after: endCursorRef.current,
       last: undefined,
       before: undefined,
-    }).catch(() => {
-      setPageCount(prev => Math.max(1, prev - defaultViewCount));
-    });
+    })
+      .catch(() => {
+        setPageCount(prev => Math.max(1, prev - defaultViewCount));
+      })
+      .finally(() => {
+        setIsNavigating(false);
+      });
   };
 
   const loadPreviousPage = () => {
     if (!data?.allProducts.pageInfo.hasPreviousPage || !startCursorRef.current) {
       return;
     }
+    setIsNavigating(true);
     setPageCount(prev => Math.max(1, prev - defaultViewCount));
     refetch({
       first: undefined,
       after: undefined,
       last: defaultViewCount,
       before: startCursorRef.current,
-    }).catch(() => {
-      setPageCount(prev => prev + defaultViewCount);
-    });
+    })
+      .catch(() => {
+        setPageCount(prev => prev + defaultViewCount);
+      })
+      .finally(() => {
+        setIsNavigating(false);
+      });
   };
 
   const handleRowClick = ({ record: { slug } }: { record: { slug: string } }) => {
@@ -87,6 +98,7 @@ export function useProductListTable() {
     hasNextPage: data?.allProducts.pageInfo.hasNextPage,
     hasPreviousPage: data?.allProducts.pageInfo.hasPreviousPage,
     pageCount,
+    isNavigating,
     loadNextPage,
     loadPreviousPage,
     handleRowClick,

@@ -41,7 +41,11 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     },
     validate: {
       name: value => (!value?.trim() ? '서비스 이름을 입력해주세요.' : null),
-      slug: value => (!value?.trim() ? '슬러그를 입력해주세요.' : null),
+      slug: value => {
+        if (!value?.trim()) return '슬러그를 입력해주세요.';
+        if (/\s/.test(value.trim())) return '슬러그에는 공백(띄어쓰기)을 포함할 수 없습니다.';
+        return null;
+      },
       summary: value => (!value?.trim() ? '짧은 설명을 입력해주세요.' : null),
       file: value => (!value ? '로고 이미지를 첨부해주세요.' : null),
     },
@@ -51,6 +55,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [createProduct, { loading: isCreating }] = useMutation(CreateProductOnNewProductFormDocument, {
     refetchQueries: [AllProductsOnProductListTableDocument],
+    awaitRefetchQueries: true,
     onCompleted: ({ createProduct }) => {
       if (createProduct.product.slug) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
@@ -68,6 +73,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
   });
 
   const submit = async (values: FormValues) => {
+    if (isUploading || isCreating) return;
     const name = values.name?.trim();
     const slug = values.slug?.trim();
     const summary = values.summary?.trim();

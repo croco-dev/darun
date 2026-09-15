@@ -47,15 +47,16 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
       summary: '',
     },
     validate: {
-      name: value => (!value ? '이름을 입력해주세요.' : null),
-      emoji: value => (!value ? '이모지를 선택해주세요.' : null),
-      summary: value => (!value ? '짧은 설명을 입력해주세요.' : null),
+      name: value => (!value?.trim() ? '이름을 입력해주세요.' : null),
+      emoji: value => (!value?.trim() ? '이모지를 선택해주세요.' : null),
+      summary: value => (!value?.trim() ? '짧은 설명을 입력해주세요.' : null),
     },
   });
   const [createProductFeature, { loading: isCreating }] = useMutation(
     CreateProductFeatureOnNewProductFeatureFormDocument,
     {
       refetchQueries: [{ query: TempProductBySlugOnProductFeatureTableDocument, variables: { slug: productSlug } }],
+      awaitRefetchQueries: true,
       onCompleted: ({ createProductFeature }) => {
         if (createProductFeature.feature.id) {
           notifications.show({ message: '생성되었습니다.', color: 'teal' });
@@ -74,16 +75,21 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
   };
 
   const submit = async (values: FormValues) => {
-    if (!values.name || !values.emoji || !values.summary) return;
+    if (isCreating) return;
+    const name = values.name?.trim();
+    const emoji = values.emoji?.trim();
+    const summary = values.summary?.trim();
+
+    if (!name || !emoji || !summary) return;
 
     try {
       await createProductFeature({
         variables: {
           input: {
             productSlug,
-            name: values.name,
-            emoji: values.emoji,
-            summary: values.summary,
+            name,
+            emoji,
+            summary,
           },
         },
       });

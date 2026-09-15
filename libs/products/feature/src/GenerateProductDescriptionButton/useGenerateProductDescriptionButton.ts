@@ -22,6 +22,7 @@ gql(`
 export function useGenerateProductDescriptionButton(slug: string) {
   const [generateDescription, { loading }] = useMutation(GenerateProductDescriptionDocument, {
     refetchQueries: [TempProductBySlugOnEditProductDescriptionDocument, TempProductBySlugOnProductDescriptionDocument],
+    awaitRefetchQueries: true,
     onCompleted: () => {
       notifications.show({
         message: 'AI 소개를 생성했어요.',

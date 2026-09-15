@@ -35,6 +35,7 @@ export function useWriteMagazine() {
   const { push } = useRouter();
   const [createMagazine, { loading: isCreating }] = useMutation(CreateMagazineOnWriteMagazineDocument, {
     refetchQueries: [TempAllMagazinesOnMagazinesListDocument],
+    awaitRefetchQueries: true,
     onCompleted: () => {
       notifications.show({ message: '매거진이 성공적으로 발행되었습니다.', color: 'teal' });
       push('/magazines');
@@ -73,6 +74,7 @@ export function useWriteMagazine() {
   }, [previewUrl]);
 
   const handleSubmit = async (values: FormValues) => {
+    if (isCreating || isUploading) return;
     if (!values.title?.trim()) {
       return;
     }
@@ -94,8 +96,17 @@ export function useWriteMagazine() {
   };
 
   const handleFileDrop = async (files: FileWithPath[]) => {
+    if (isUploading || isCreating) return;
     const droppedFile = files[0];
     if (!droppedFile) return;
+
+    if (!droppedFile.type.startsWith('image/')) {
+      notifications.show({
+        message: '이미지 파일만 업로드할 수 있습니다.',
+        color: 'red',
+      });
+      return;
+    }
 
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -122,6 +133,7 @@ export function useWriteMagazine() {
   };
 
   const handleFileRemove = () => {
+    if (isUploading || isCreating) return;
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
