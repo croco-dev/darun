@@ -36,13 +36,17 @@ type FormValues = {
   companyId: string;
 };
 
-export function useEditProductCompany({ slug }: { slug: string }) {
+export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
   const { push } = useRouter();
-  const [registerProductCompany] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
+  const [registerProductCompany, { loading }] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
     onCompleted: ({ registerProductCompany }) => {
       if (registerProductCompany.product?.id) {
         notifications.show({ message: '저장되었습니다.', color: 'green' });
-        push(`/products/${slug}`);
+        if (onSubmit) {
+          onSubmit();
+        } else {
+          push(`/products/${slug}`);
+        }
       }
     },
     onError: error => {
@@ -53,6 +57,7 @@ export function useEditProductCompany({ slug }: { slug: string }) {
       });
     },
     refetchQueries: [TempProductBySlugOnProductCompanyInfoDocument],
+    awaitRefetchQueries: true,
   });
 
   const [search] = useLazyQuery(SearchCompaniesOnEditProductCompanyDocument);
@@ -111,8 +116,10 @@ export function useEditProductCompany({ slug }: { slug: string }) {
   });
 
   const handleSubmit = (values: FormValues) => {
-    if (!values.companyId) {
-      notifications.show({ message: '회사를 선택해주세요.', color: 'red' });
+    if (loading || !values.companyId) {
+      if (!values.companyId) {
+        notifications.show({ message: '회사를 선택해주세요.', color: 'red' });
+      }
       return;
     }
     registerProductCompany({
@@ -126,5 +133,6 @@ export function useEditProductCompany({ slug }: { slug: string }) {
     companies,
     searchValue,
     handleSearchChange,
+    loading,
   };
 }

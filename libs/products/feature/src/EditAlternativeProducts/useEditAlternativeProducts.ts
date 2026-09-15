@@ -63,23 +63,32 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
   const [searchProducts, { data: searchData }] = useLazyQuery(SearchProductsOnEditAlternativeProductsDocument);
 
   useEffect(() => {
-    form.setValues({
-      alternativeIds: data?.tempProductBySlug?.alternatives.map(({ id }) => id) ?? [],
-    });
+    const alternativeIds = data?.tempProductBySlug?.alternatives.map(({ id }) => id) ?? [];
+    form.setInitialValues({ alternativeIds });
+    form.setValues({ alternativeIds });
   }, [data, form]);
 
-  const [updateAlternativeProducts] = useMutation(EditProductOnEditAlternativeProductsDocument, {
+  const [updateAlternativeProducts, { loading }] = useMutation(EditProductOnEditAlternativeProductsDocument, {
+    refetchQueries: [TempProductBySlugOnEditAlternativeProductsDocument],
     onCompleted: ({ updateAlternativeProduct }) => {
       if (updateAlternativeProduct.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
+        const alternativeIds = updateAlternativeProduct.product.alternatives.map(({ id }) => id);
+        form.setInitialValues({ alternativeIds });
         form.reset();
 
         onSubmit?.();
       }
     },
+    onError: error => {
+      console.error('mutation failed:', error);
+      notifications.show({ message: '수정에 실패했습니다.', color: 'red' });
+    },
   });
 
   const submit = async (values: FormValues) => {
+    if (loading) return;
+
     if (!values.alternativeIds) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
@@ -96,7 +105,6 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
       });
     } catch (error) {
       console.error('mutation failed:', error);
-      throw error;
     }
   };
 
@@ -121,6 +129,8 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
     [search]
   );
 
+  const currentProductId = data?.tempProductBySlug?.id;
+
   const selectedItems =
     data?.tempProductBySlug?.alternatives.map(({ id, name }) => ({
       label: name,
@@ -133,12 +143,16 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
         label: name,
         value: id,
       }))
-      .filter(({ value }) => selectedItems.every(({ value: selectedValue }) => selectedValue !== value)) ?? [];
+      .filter(
+        ({ value }) =>
+          value !== currentProductId && selectedItems.every(({ value: selectedValue }) => selectedValue !== value)
+      ) ?? [];
 
   return {
     form,
     submit,
     updateQuery,
+    loading,
     selectData: [
       {
         group: '선택됨',

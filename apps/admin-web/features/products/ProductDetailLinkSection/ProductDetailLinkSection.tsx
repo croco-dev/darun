@@ -2,6 +2,8 @@ import { ProductLinkTable } from '@darun/products-feature';
 import { Button } from '@darun/ui';
 import { AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
 
+import Link from 'next/link';
+
 type ProductDetailLinkSectionProps = {
   slug: string;
 };
@@ -10,7 +12,7 @@ export const ProductDetailLinkSection = ({ slug }: ProductDetailLinkSectionProps
   <AdminPanel>
     <AdminSectionHeader
       rightSide={
-        <Button variant="contained" color="primary" as="a" href={`/products/${slug}/links/new`}>
+        <Button as={Link} href={`/products/${slug}/links/new`} variant="contained" color="primary">
           새 링크 추가
         </Button>
       }

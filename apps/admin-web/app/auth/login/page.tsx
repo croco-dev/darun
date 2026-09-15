@@ -1,4 +1,5 @@
 import { Logo, AdminPanel } from '@darun/ui-admin';
+import { Suspense } from 'react';
 import { LoginSection } from '../../../features/auth/LoginSection';
 
 export default function LoginPage() {
@@ -8,13 +9,15 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-3">
           <Logo size={40} />
           <div className="text-center">
-            <h2 className="text-xl font-bold tracking-tight text-dark-900">다른 관리자</h2>
+            <h1 className="text-xl font-bold tracking-tight text-dark-900">다른 관리자</h1>
             <p className="mt-1 text-sm text-dark-500">관리자 계정으로 로그인해 주세요.</p>
           </div>
         </div>
 
         <AdminPanel className="p-8">
-          <LoginSection />
+          <Suspense fallback={<div className="h-10 animate-pulse bg-surface-200 rounded-lg" />}>
+            <LoginSection />
+          </Suspense>
         </AdminPanel>
       </div>
     </div>

@@ -14,6 +14,8 @@ vi.mock('@apollo/client/react', async importOriginal => {
 
 const mockForm = {
   reset: vi.fn(),
+  setValues: vi.fn(),
+  setInitialValues: vi.fn(),
   getInputProps: vi.fn(() => ({ key: 'test-form-key', defaultValue: '' })),
   onSubmit: vi.fn((handler: (values: Record<string, string>) => Promise<void>) => handler),
 };
@@ -51,6 +53,11 @@ describe('useEditProductLinkItem', () => {
 
     vi.mocked(useMutation).mockImplementation(((_document?: DocumentNode, options?: MockMutationOptions) => {
       mutationOptions = (options as { onCompleted?: (data: unknown) => void; onError?: (e: Error) => void }) || {};
+      mutateFn.mockImplementation(async () => {
+        const data = { updateProductLink: { product: { id: 'product-1' } } };
+        mutationOptions.onCompleted?.(data);
+        return { data };
+      });
       return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
     }) as typeof useMutation);
   });
@@ -68,8 +75,6 @@ describe('useEditProductLinkItem', () => {
   it('should call mutation with the correct variables and show success notification and call onSubmit', async () => {
     const onSubmit = vi.fn();
     const { result } = renderHook(() => useEditProductLinkItem({ ...defaultProps, onSubmit }));
-
-    mutateFn.mockResolvedValueOnce({ data: { updateProductLink: { product: { id: 'product-1' } } } });
 
     await act(async () => {
       await result.current.submit({
@@ -96,20 +101,55 @@ describe('useEditProductLinkItem', () => {
     expect(onSubmit).toHaveBeenCalled();
   });
 
-  it('should throw when mutation fails (promise rejects)', async () => {
-    const { result } = renderHook(() => useEditProductLinkItem(defaultProps));
+  it('should not show success notification or call onSubmit when mutation fails', async () => {
+    const onSubmit = vi.fn();
+    mutateFn.mockImplementationOnce(async () => {
+      const error = new Error('Network error');
+      mutationOptions.onError?.(error);
+      throw error;
+    });
 
-    mutateFn.mockRejectedValueOnce(new Error('Network error'));
+    const { result } = renderHook(() => useEditProductLinkItem({ ...defaultProps, onSubmit }));
 
-    await expect(
-      act(async () => {
-        await result.current.submit({
-          title: 'Updated',
-          link: 'https://example.com',
-          displayLink: 'Example',
-          iconUrl: 'https://example.com/icon.png',
-        });
-      })
-    ).rejects.toThrow('Network error');
+    await act(async () => {
+      await result.current.submit({
+        title: 'Updated',
+        link: 'https://example.com',
+        displayLink: 'Example',
+        iconUrl: 'https://example.com/icon.png',
+      });
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith({ message: 'Network error', color: 'red' });
+    expect(notifications.show).not.toHaveBeenCalledWith({ message: '수정되었습니다.', color: 'teal' });
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('should sync form values when link prop updates', () => {
+    const { rerender } = renderHook(props => useEditProductLinkItem(props), {
+      initialProps: defaultProps,
+    });
+
+    expect(mockForm.setValues).toHaveBeenCalledWith({
+      title: defaultProps.link.title,
+      link: defaultProps.link.link,
+      displayLink: defaultProps.link.displayLink,
+      iconUrl: defaultProps.link.iconUrl,
+    });
+
+    const updatedLink = {
+      ...defaultProps.link,
+      title: 'New Link Title',
+      link: 'https://newlink.com',
+    };
+
+    rerender({ ...defaultProps, link: updatedLink });
+
+    expect(mockForm.setValues).toHaveBeenCalledWith({
+      title: updatedLink.title,
+      link: updatedLink.link,
+      displayLink: updatedLink.displayLink,
+      iconUrl: updatedLink.iconUrl,
+    });
   });
 });

@@ -23,13 +23,7 @@ const nextConfig = {
       },
     ],
   },
-  redirects: () => [
-    {
-      source: '/',
-      destination: '/products',
-      permanent: false,
-    },
-  ],
+  redirects: () => [],
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals = [

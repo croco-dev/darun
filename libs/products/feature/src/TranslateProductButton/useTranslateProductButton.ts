@@ -75,6 +75,14 @@ export function useTranslateProductButton({ slug }: TranslateProductButtonProps)
           message: result.data.requestProductTranslation.message || '상품 및 기능의 영문 번역이 완료되었습니다.',
           color: 'teal',
         });
+      } else {
+        notifications.show({
+          title: '번역 실패',
+          message:
+            result?.data?.requestProductTranslation?.message ||
+            '영문 번역 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
+          color: 'red',
+        });
       }
     } catch (error) {
       notifications.hide(notificationId);

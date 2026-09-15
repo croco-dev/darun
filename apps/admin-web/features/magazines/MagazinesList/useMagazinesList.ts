@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { TempAllMagazinesOnMagazinesListDocument } from '@darun/provider-graphql';
+import { useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -27,9 +28,16 @@ gql`
 `;
 
 export function useMagazinesList() {
+  const [page, setPage] = useState(1);
   const { data } = useSuspenseQuery(TempAllMagazinesOnMagazinesListDocument, {
-    variables: { page: 1 },
+    variables: { page },
   });
 
-  return { magazines: data?.tempAllMagazines.magazines ?? [] };
+  return {
+    magazines: data?.tempAllMagazines.magazines ?? [],
+    page,
+    setPage,
+    totalCount: data?.tempAllMagazines.totalCount ?? 0,
+    totalPages: data?.tempAllMagazines.totalPages ?? 1,
+  };
 }

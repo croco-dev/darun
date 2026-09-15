@@ -387,5 +387,16 @@ describe('useProductListTable', () => {
       expect(typeof result.current.loadPreviousPage).toBe('function');
       expect(typeof result.current.handleRowClick).toBe('function');
     });
+
+    it('should roll back pageCount when refetch fails on loadNextPage', async () => {
+      refetchMock.mockRejectedValueOnce(new Error('Network error'));
+      const { result } = renderHook(() => useProductListTable());
+
+      await act(async () => {
+        result.current.loadNextPage();
+      });
+
+      expect(result.current.pageCount).toBe(1);
+    });
   });
 });

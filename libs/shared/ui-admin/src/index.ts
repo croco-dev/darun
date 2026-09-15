@@ -19,3 +19,4 @@ export {
 export { AdminActions } from './AdminActions';
 export { AdminCheckbox } from './AdminCheckbox';
 export { AdminSelect } from './AdminSelect';
+export { AdminModal, type AdminModalProps } from './AdminModal';

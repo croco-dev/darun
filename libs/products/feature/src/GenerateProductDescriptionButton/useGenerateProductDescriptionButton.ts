@@ -1,6 +1,10 @@
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { GenerateProductDescriptionDocument } from '@darun/provider-graphql';
+import {
+  GenerateProductDescriptionDocument,
+  TempProductBySlugOnEditProductDescriptionDocument,
+  TempProductBySlugOnProductDescriptionDocument,
+} from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 
 gql(`
@@ -17,6 +21,7 @@ gql(`
 
 export function useGenerateProductDescriptionButton(slug: string) {
   const [generateDescription, { loading }] = useMutation(GenerateProductDescriptionDocument, {
+    refetchQueries: [TempProductBySlugOnEditProductDescriptionDocument, TempProductBySlugOnProductDescriptionDocument],
     onCompleted: () => {
       notifications.show({
         message: 'AI 소개를 생성했어요.',
@@ -33,6 +38,8 @@ export function useGenerateProductDescriptionButton(slug: string) {
   });
 
   const handleGenerate = async () => {
+    if (loading) return;
+
     try {
       await generateDescription({
         variables: {

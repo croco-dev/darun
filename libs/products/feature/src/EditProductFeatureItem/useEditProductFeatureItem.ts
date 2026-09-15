@@ -72,11 +72,13 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
   });
 
   useEffect(() => {
-    form.setValues({
+    const values = {
       emoji: data?.feature?.emoji ?? '',
       name: data?.feature?.name ?? '',
       summary: data?.feature?.summary ?? '',
-    });
+    };
+    form.setInitialValues(values);
+    form.setValues(values);
   }, [data, form]);
 
   const submit = async (values: FormValues) => {

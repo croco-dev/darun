@@ -12,13 +12,11 @@ export default function LogoutPage() {
             <AdminSectionBody>
               <p className="text-sm text-dark-600">정말로 로그아웃 하시겠습니까?</p>
               <AdminActions>
-                <Link href="/">
-                  <button
-                    type="button"
-                    className="rounded-lg border border-dark-200 bg-white px-4 py-2 text-sm font-medium text-dark-700 hover:bg-surface-100 transition motion-reduce:transition-none outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
-                  >
-                    취소
-                  </button>
+                <Link
+                  href="/"
+                  className="rounded-lg border border-dark-200 bg-white px-4 py-2 text-sm font-medium text-dark-700 hover:bg-surface-100 transition motion-reduce:transition-none outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 inline-flex items-center justify-center"
+                >
+                  취소
                 </Link>
                 <LogoutSection />
               </AdminActions>

@@ -13,12 +13,16 @@ export default function ProductListPage() {
       rightSide={
         <div className="flex gap-2">
           <ProductListRefreshButton />
-          <Link href="/products/new">
-            <Button type="button" variant="contained" color="primary" className="flex items-center gap-2">
-              <Plus size={16} />
-              추가하기
-            </Button>
-          </Link>
+          <Button
+            as={Link}
+            href="/products/new"
+            variant="contained"
+            color="primary"
+            className="flex items-center gap-2"
+          >
+            <Plus size={16} />
+            추가하기
+          </Button>
         </div>
       }
     >

@@ -2,9 +2,13 @@
 
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { AddProductLinkOnNewProductLinkFormDocument } from '@darun/provider-graphql';
+import {
+  AddProductLinkOnNewProductLinkFormDocument,
+  TempProductBySlugOnProductLinkTableDocument,
+} from '@darun/provider-graphql';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -34,10 +38,11 @@ type FormValues = {
 };
 type NewProductFormProps = {
   productSlug: string;
-  children: (props: { form: UseFormReturnType<FormValues> }) => ReactNode;
+  children: (props: { form: UseFormReturnType<FormValues>; loading: boolean }) => ReactNode;
 };
 
 export function useNewProductLinkForm({ productSlug, children }: NewProductFormProps) {
+  const router = useRouter();
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: {
@@ -53,11 +58,14 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
       iconUrl: value => (!value ? '아이콘을 선택해주세요.' : null),
     },
   });
-  const [addProductLink] = useMutation(AddProductLinkOnNewProductLinkFormDocument, {
+  const [addProductLink, { loading }] = useMutation(AddProductLinkOnNewProductLinkFormDocument, {
+    refetchQueries: [TempProductBySlugOnProductLinkTableDocument],
+    awaitRefetchQueries: true,
     onCompleted: ({ addProductLink }) => {
       if (addProductLink.product?.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
         form.reset();
+        router.push(`/products/${productSlug}`);
       }
     },
     onError: error => {
@@ -66,20 +74,24 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
   });
 
   const submit = async (values: FormValues) => {
-    if (!values.displayLink || !values.link || !values.title || !values.iconUrl) return;
+    if (loading || !values.displayLink || !values.link || !values.title || !values.iconUrl) return;
 
-    await addProductLink({
-      variables: {
-        slug: productSlug,
-        input: {
-          displayLink: values.displayLink,
-          iconUrl: values.iconUrl,
-          link: values.link,
-          title: values.title,
+    try {
+      await addProductLink({
+        variables: {
+          slug: productSlug,
+          input: {
+            displayLink: values.displayLink,
+            iconUrl: values.iconUrl,
+            link: values.link,
+            title: values.title,
+          },
         },
-      },
-    });
+      });
+    } catch {
+      // Handled in onError
+    }
   };
 
-  return { form, children, submit };
+  return { form, children, submit, loading };
 }

@@ -1,9 +1,13 @@
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { CreateCompanyOnNewCompanyFormDocument } from '@darun/provider-graphql';
+import {
+  AllCompaniesOnAllCompanyListTableDocument,
+  CreateCompanyOnNewCompanyFormDocument,
+} from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -20,11 +24,26 @@ type FormValues = {
   name?: string;
   type?: string;
   address?: string;
-  startAt?: Date | null;
+  startAt?: string | Date | null;
   startAtIsDisabled: boolean;
 };
 
+export function parseStartAtToIso(startAt?: string | Date | null): string | undefined {
+  if (!startAt) return undefined;
+  if (startAt instanceof Date) {
+    return Number.isNaN(startAt.getTime()) ? undefined : startAt.toISOString();
+  }
+  if (typeof startAt === 'string') {
+    const trimmed = startAt.trim();
+    if (!trimmed) return undefined;
+    const date = new Date(trimmed);
+    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+  }
+  return undefined;
+}
+
 export function useNewCompanyForm() {
+  const [startAtIsDisabled, setStartAtIsDisabled] = useState(false);
   const form = useForm<FormValues>({
     initialValues: {
       name: '',
@@ -42,7 +61,9 @@ export function useNewCompanyForm() {
   });
   const { push } = useRouter();
 
-  const [mutate] = useMutation(CreateCompanyOnNewCompanyFormDocument, {
+  const [mutate, { loading }] = useMutation(CreateCompanyOnNewCompanyFormDocument, {
+    refetchQueries: [AllCompaniesOnAllCompanyListTableDocument],
+    awaitRefetchQueries: true,
     onCompleted: ({ createCompany }) => {
       if (createCompany.company.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
@@ -59,8 +80,15 @@ export function useNewCompanyForm() {
     },
   });
 
+  const handleToggleStartAtDisabled = (checked: boolean) => {
+    setStartAtIsDisabled(checked);
+    form.setFieldValue('startAtIsDisabled', checked);
+  };
+
   const handleSubmit = (values: FormValues) => {
-    if (!values.name || !values.type || !values.address) return;
+    if (loading || !values.name || !values.type || !values.address) return;
+
+    const startAt = startAtIsDisabled || values.startAtIsDisabled ? undefined : parseStartAtToIso(values.startAt);
 
     mutate({
       variables: {
@@ -68,11 +96,11 @@ export function useNewCompanyForm() {
           name: values.name,
           type: values.type,
           address: values.address,
-          startAt: values.startAtIsDisabled ? undefined : (values.startAt?.toISOString() ?? undefined),
+          startAt,
         },
       },
     });
   };
 
-  return { handleSubmit, form };
+  return { handleSubmit, form, startAtIsDisabled, handleToggleStartAtDisabled, loading };
 }

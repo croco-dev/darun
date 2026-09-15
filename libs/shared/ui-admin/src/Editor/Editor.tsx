@@ -9,7 +9,7 @@ import { MenuBar } from './MenuBar';
 
 type EditorProps = {
   defaultValue?: string;
-  onChange: (content: string) => void;
+  onChange?: (content: string) => void;
 };
 
 export function Editor({ defaultValue, onChange }: EditorProps) {
@@ -17,7 +17,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
     extensions: [StarterKit, Image, Typography],
     content: defaultValue ?? '',
     onUpdate: ({ editor: currentEditor }) => {
-      onChange(currentEditor.getHTML());
+      onChange?.(currentEditor.getHTML());
     },
     immediatelyRender: false,
   });
@@ -37,7 +37,12 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   }, [defaultValue, editor]);
 
   if (!editor) {
-    return null;
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="h-9 w-64 animate-pulse rounded-lg bg-surface-100" />
+        <div className="min-h-72 rounded-card border border-dark-200 bg-surface-100/40 p-4" />
+      </div>
+    );
   }
 
   return (

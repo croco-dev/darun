@@ -23,8 +23,8 @@ type ProductFeatureTableProps = {
 };
 
 export function useProductFeatureTable({ slug, editFeature }: ProductFeatureTableProps) {
-  const { data, loading } = useQuery(TempProductBySlugOnProductFeatureTableDocument, {
+  const { data, loading, error } = useQuery(TempProductBySlugOnProductFeatureTableDocument, {
     variables: { slug },
   });
-  return { features: data?.tempProductBySlug?.features, loading, editFeature };
+  return { features: data?.tempProductBySlug?.features, loading, error, editFeature };
 }

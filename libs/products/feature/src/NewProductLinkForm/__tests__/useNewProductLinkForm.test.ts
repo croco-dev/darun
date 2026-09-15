@@ -27,6 +27,13 @@ vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn() },
 }));
 
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
+
 import { useNewProductLinkForm } from '../useNewProductLinkForm';
 
 describe('useNewProductLinkForm', () => {
@@ -91,6 +98,7 @@ describe('useNewProductLinkForm', () => {
 
     expect(notifications.show).toHaveBeenCalledWith({ message: '생성되었습니다.', color: 'teal' });
     expect(mockForm.reset).toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith('/products/test-slug');
   });
 
   it('should show error notification when mutation fails', () => {

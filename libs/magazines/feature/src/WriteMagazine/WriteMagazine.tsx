@@ -7,20 +7,7 @@ import { useWriteMagazine } from './useWriteMagazine';
 
 export const WriteMagazine = bind(
   useWriteMagazine,
-  ({ form, handleSubmit, handleFileDrop, file, handleFileRemove }) => {
-    const ImagePreview = () => {
-      if (!file) return null;
-      const imageUrl = URL.createObjectURL(file);
-      return (
-        <img
-          src={imageUrl}
-          alt="Preview"
-          onLoad={() => URL.revokeObjectURL(imageUrl)}
-          className="h-48 w-auto rounded-lg border border-dark-200 object-contain"
-        />
-      );
-    };
-
+  ({ form, handleSubmit, handleFileDrop, file, previewUrl, handleFileRemove, isSubmitting }) => {
     return (
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <div className="flex flex-col gap-4">
@@ -111,7 +98,13 @@ export const WriteMagazine = bind(
               </button>
             ) : (
               <div className="flex items-center gap-4">
-                <ImagePreview />
+                {previewUrl && (
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="h-48 w-auto rounded-lg border border-dark-200 object-contain"
+                  />
+                )}
                 <Button
                   type="button"
                   variant="contained"
@@ -129,8 +122,8 @@ export const WriteMagazine = bind(
         <p className="mt-4 text-xs text-dark-500">글 작성은 저장 후, 수정 기능을 이용하여 가능합니다.</p>
 
         <AdminActions>
-          <Button type="submit" variant="contained" color="primary">
-            저장
+          <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+            {isSubmitting ? '저장 중...' : '저장'}
           </Button>
         </AdminActions>
       </form>

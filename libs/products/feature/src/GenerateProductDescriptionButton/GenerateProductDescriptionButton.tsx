@@ -9,9 +9,13 @@ interface GenerateProductDescriptionButtonProps {
 export function GenerateProductDescriptionButton({ slug }: GenerateProductDescriptionButtonProps) {
   const { handleGenerate, isGenerating } = useGenerateProductDescriptionButton(slug);
 
+  const handleClick = () => {
+    handleGenerate().catch(() => {});
+  };
+
   return (
     <Button
-      onClick={handleGenerate}
+      onClick={handleClick}
       disabled={isGenerating}
       variant="contained"
       color="secondary"

@@ -1,8 +1,11 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { EditProductLinkItemFragment, UpdateProductLinkOnEditProductLinkItemDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { useEffect } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -31,6 +34,10 @@ type FormValues = {
 
 export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLinkItemProps) {
   const [updateLink, { loading }] = useMutation(UpdateProductLinkOnEditProductLinkItemDocument, {
+    onCompleted: () => {
+      notifications.show({ message: '수정되었습니다.', color: 'teal' });
+      onSubmit?.();
+    },
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },
@@ -46,6 +53,17 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
     },
   });
 
+  useEffect(() => {
+    const values = {
+      title: link.title,
+      link: link.link,
+      displayLink: link.displayLink,
+      iconUrl: link.iconUrl,
+    };
+    form.setInitialValues(values);
+    form.setValues(values);
+  }, [link, form]);
+
   const submit = async (values: FormValues) => {
     if (!values.title && !values.link && !values.displayLink && !values.iconUrl) {
       notifications.show({
@@ -55,22 +73,21 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
       return;
     }
 
-    await updateLink({
-      variables: {
-        slug,
-        id: link.id,
-        input: {
-          title: values.title,
-          link: values.link,
-          displayLink: values.displayLink,
-          iconUrl: values.iconUrl,
+    try {
+      await updateLink({
+        variables: {
+          slug,
+          id: link.id,
+          input: {
+            title: values.title,
+            link: values.link,
+            displayLink: values.displayLink,
+            iconUrl: values.iconUrl,
+          },
         },
-      },
-    });
-
-    notifications.show({ message: '수정되었습니다.', color: 'teal' });
-    if (onSubmit) {
-      onSubmit();
+      });
+    } catch {
+      // Handled by onError callback
     }
   };
 

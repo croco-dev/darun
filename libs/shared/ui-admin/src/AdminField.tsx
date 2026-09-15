@@ -1,5 +1,5 @@
 import { cn } from '@darun/ui';
-import { Children, ReactNode, cloneElement, isValidElement, useId } from 'react';
+import { ReactNode, cloneElement, isValidElement, useId } from 'react';
 
 type AdminFieldProps = {
   label?: ReactNode;
@@ -17,19 +17,17 @@ export function AdminField({ label, htmlFor, error, help, children, className }:
   const describedBy =
     [help ? `${inputId}-help` : '', error ? `${inputId}-error` : ''].filter(Boolean).join(' ').trim() || undefined;
 
-  const child = Children.only(children) as React.ReactElement<Record<string, unknown>>;
-  const enhancedChild = isValidElement(child)
-    ? cloneElement(child, {
-        id: inputId,
-        ...(describedBy
-          ? {
-              'aria-describedby': child.props['aria-describedby']
-                ? `${child.props['aria-describedby']} ${describedBy}`
-                : describedBy,
-            }
-          : {}),
+  const isSingleElement = isValidElement(children);
+  const childProps = isSingleElement ? (children as React.ReactElement<Record<string, unknown>>).props || {} : {};
+  const existingDescribedBy = childProps['aria-describedby'];
+  const finalDescribedBy = [existingDescribedBy, describedBy].filter(Boolean).join(' ').trim() || undefined;
+
+  const enhancedChild = isSingleElement
+    ? cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+        id: childProps['id'] ?? inputId,
+        ...(finalDescribedBy ? { 'aria-describedby': finalDescribedBy } : {}),
       })
-    : child;
+    : children;
 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>

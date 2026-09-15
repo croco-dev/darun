@@ -17,6 +17,7 @@ vi.mock('@apollo/client/react', async importOriginal => {
 const mockForm = {
   reset: vi.fn(),
   setInitialValues: vi.fn(),
+  setValues: vi.fn(),
   getInputProps: vi.fn(() => ({ key: 'test-form-key', defaultValue: '' })),
   onSubmit: vi.fn((handler: (values: { description?: string }) => Promise<void>) => handler),
 };

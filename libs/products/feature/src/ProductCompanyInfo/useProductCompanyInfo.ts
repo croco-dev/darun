@@ -19,8 +19,11 @@ gql`
 `;
 
 export function useProductCompanyInfo({ slug }: { slug: string }) {
-  const { data } = useQuery(TempProductBySlugOnProductCompanyInfoDocument, {
+  const { data, loading } = useQuery(TempProductBySlugOnProductCompanyInfoDocument, {
     variables: { slug },
   });
-  return { company: data?.tempProductBySlug?.ownedCompany };
+  return {
+    company: data?.tempProductBySlug?.ownedCompany,
+    loading,
+  };
 }

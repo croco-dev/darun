@@ -236,4 +236,31 @@ describe('useTranslateProductButton', () => {
     vi.useRealTimers();
     consoleSpy.mockRestore();
   });
+
+  it('shows error notification when status is failed', async () => {
+    mutateFn.mockResolvedValueOnce({
+      data: {
+        requestProductTranslation: {
+          entityId: 'prod-1',
+          status: 'failed',
+          message: 'LLM context overflow',
+        },
+      },
+    });
+
+    const { result } = renderHook(() => useTranslateProductButton({ slug: defaultSlug }));
+
+    await act(async () => {
+      await result.current.translateProduct();
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: '번역 실패',
+        message: 'LLM context overflow',
+        color: 'red',
+      })
+    );
+    expect(result.current.loading).toBe(false);
+  });
 });

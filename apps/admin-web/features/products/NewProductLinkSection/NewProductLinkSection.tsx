@@ -11,23 +11,35 @@ type NewProductLinkSectionProps = {
 export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProps) => (
   <NewProductLinkForm productSlug={productSlug}>
     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-    {({ form }: any) => (
+    {({ form, loading }: any) => (
       <div className="flex flex-col gap-3">
         <AdminField label="표시 링크" error={form.errors.displayLink}>
-          <AdminInput type="text" placeholder="ex) toss.im" {...form.getInputProps('displayLink')} />
+          <AdminInput
+            type="text"
+            placeholder="ex) toss.im"
+            key={form.key('displayLink')}
+            {...form.getInputProps('displayLink')}
+          />
         </AdminField>
         <AdminField label="링크" error={form.errors.link}>
-          <AdminInput type="text" placeholder="ex) https://toss.im/" {...form.getInputProps('link')} />
+          <AdminInput
+            type="text"
+            placeholder="ex) https://toss.im/"
+            key={form.key('link')}
+            {...form.getInputProps('link')}
+          />
         </AdminField>
         <AdminField label="이름" error={form.errors.title}>
-          <AdminInput type="text" placeholder="ex) 공식 홈페이지" {...form.getInputProps('title')} />
+          <AdminInput
+            type="text"
+            placeholder="ex) 공식 홈페이지"
+            key={form.key('title')}
+            {...form.getInputProps('title')}
+          />
         </AdminField>
         <AdminField label="아이콘" error={form.errors.iconUrl}>
-          <AdminSelect {...form.getInputProps('iconUrl')}>
-            <option value="">
-              ex)
-              https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg
-            </option>
+          <AdminSelect key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
+            <option value="">아이콘을 선택해 주세요</option>
             {iconData.map(icon => (
               <option key={icon.value} value={icon.value}>
                 {icon.label}
@@ -37,8 +49,8 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
         </AdminField>
 
         <AdminActions>
-          <Button type="submit" variant="contained" color="primary" size="md">
-            등록
+          <Button type="submit" variant="contained" color="primary" size="md" disabled={loading}>
+            {loading ? '등록 중...' : '등록'}
           </Button>
         </AdminActions>
       </div>

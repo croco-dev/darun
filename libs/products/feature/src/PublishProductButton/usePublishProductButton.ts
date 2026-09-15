@@ -29,24 +29,28 @@ type PublishProductButtonProps = {
 };
 
 export function usePublishProductButton({ slug }: PublishProductButtonProps) {
-  const { data, loading } = useQuery(TempProductOnPublishProductButtonDocument, {
+  const { data, loading: isQueryLoading } = useQuery(TempProductOnPublishProductButtonDocument, {
     variables: {
       slug,
     },
   });
-  const [publishProductMutation] = useMutation(PublishProductOnPublishProductButtonDocument, {
-    onError: error => {
-      notifications.show({ message: error.message, color: 'red' });
-    },
-    onCompleted: data => {
-      if (data.publishProduct.product.publishedAt) {
-        notifications.show({
-          message: '서비스가 노출 설정되었습니다.',
-          color: 'teal',
-        });
-      }
-    },
-  });
+  const [publishProductMutation, { loading: isPublishing }] = useMutation(
+    PublishProductOnPublishProductButtonDocument,
+    {
+      refetchQueries: [TempProductOnPublishProductButtonDocument],
+      onError: error => {
+        notifications.show({ message: error.message, color: 'red' });
+      },
+      onCompleted: data => {
+        if (data.publishProduct.product.publishedAt) {
+          notifications.show({
+            message: '서비스가 노출 설정되었습니다.',
+            color: 'teal',
+          });
+        }
+      },
+    }
+  );
 
   const publishProduct = async () => {
     try {
@@ -63,7 +67,7 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
     }
   };
   return {
-    loading,
+    loading: isQueryLoading || isPublishing,
     isPublished: Boolean(data?.tempProductBySlug?.publishedAt),
     publishProduct,
   };

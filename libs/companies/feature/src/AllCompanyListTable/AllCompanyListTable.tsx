@@ -39,8 +39,8 @@ function formatStartAt(startAt: unknown) {
 
 export const AllCompanyListTable = bind(
   useAllCompanyListTable,
-  ({ companies, totalCount, page, handlePage, loading, error }) => {
-    if (loading) {
+  ({ companies, totalCount, totalPages, page, handlePage, loading, error }) => {
+    if (loading && (!companies || companies.length === 0)) {
       return <AdminLoadingState />;
     }
 
@@ -56,78 +56,86 @@ export const AllCompanyListTable = bind(
       );
     }
 
+    const calculatedTotalPages = totalPages ?? (totalCount ? Math.ceil(totalCount / 50) : 1);
+
     return (
       <div className="flex flex-col gap-3">
         <AdminPanel className="overflow-hidden">
-          <table className="w-full border-collapse table-fixed">
-            <thead className="bg-surface-100">
-              <tr>
-                {dataTableColumns.map(col => (
-                  <th
-                    key={col.accessor}
-                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
-                    style={{ width: col.accessor === 'id' ? 100 : col.accessor === 'startAt' ? 150 : undefined }}
-                  >
-                    {col.title}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(companies ?? []).map((record, index) => (
-                <tr
-                  key={record.id}
-                  className={`border-b border-dark-200 transition hover:bg-surface-100 ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-surface-100/30'
-                  }`}
-                >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse table-fixed">
+              <thead className="bg-surface-100">
+                <tr>
                   {dataTableColumns.map(col => (
-                    <td
+                    <th
                       key={col.accessor}
-                      className="border-r border-dark-200 px-4 py-3 text-sm text-dark-900 last:border-r-0 truncate"
-                      title={col.render ? undefined : String(record[col.accessor as keyof CompanyRecord] ?? '-')}
+                      className="border-b border-r border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
+                      style={{ width: col.accessor === 'id' ? 100 : col.accessor === 'startAt' ? 150 : undefined }}
                     >
-                      {col.render ? col.render(record) : String(record[col.accessor as keyof CompanyRecord] ?? '-')}
-                    </td>
+                      {col.title}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(companies ?? []).map((record, index) => (
+                  <tr
+                    key={record.id}
+                    className={`border-b border-dark-200 transition hover:bg-surface-100 ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-surface-100/30'
+                    }`}
+                  >
+                    {dataTableColumns.map(col => (
+                      <td
+                        key={col.accessor}
+                        className="border-r border-dark-200 px-4 py-3 text-sm text-dark-900 last:border-r-0 truncate"
+                        title={col.render ? undefined : String(record[col.accessor as keyof CompanyRecord] ?? '-')}
+                      >
+                        {col.render ? col.render(record) : String(record[col.accessor as keyof CompanyRecord] ?? '-')}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </AdminPanel>
-        {totalCount && totalCount > 50 ? (
+        {totalCount !== undefined && totalCount > 0 ? (
           <AdminPanel className="p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-dark-900">
                 총 {totalCount}개 중 {(page - 1) * 50 + 1}-{Math.min(page * 50, totalCount)}
               </p>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="base"
-                  size="sm"
-                  onClick={() => handlePage(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <ChevronLeft className="h-4 w-4" />
-                    이전
+              {calculatedTotalPages > 1 ? (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="base"
+                    size="sm"
+                    onClick={() => handlePage(Math.max(1, page - 1))}
+                    disabled={page === 1}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <ChevronLeft className="h-4 w-4" />
+                      이전
+                    </span>
+                  </Button>
+                  <span className="px-3 py-1 text-sm text-dark-900 font-medium">
+                    {page} / {calculatedTotalPages}
                   </span>
-                </Button>
-                <span className="px-3 py-1 text-sm text-dark-900 font-medium">{page}</span>
-                <Button
-                  type="button"
-                  variant="base"
-                  size="sm"
-                  onClick={() => handlePage(Math.min(Math.ceil(totalCount / 50), page + 1))}
-                  disabled={page >= Math.ceil(totalCount / 50)}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    다음
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                </Button>
-              </div>
+                  <Button
+                    type="button"
+                    variant="base"
+                    size="sm"
+                    onClick={() => handlePage(Math.min(calculatedTotalPages, page + 1))}
+                    disabled={page >= calculatedTotalPages}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      다음
+                      <ChevronRight className="h-4 w-4" />
+                    </span>
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </AdminPanel>
         ) : null}
@@ -147,7 +155,7 @@ const dataTableColumns: Array<{
   { accessor: 'address', title: '주소' },
   {
     accessor: 'startAt',
-    title: '설립년도',
+    title: '설립일',
     render: ({ startAt }) => formatStartAt(startAt),
   },
 ];

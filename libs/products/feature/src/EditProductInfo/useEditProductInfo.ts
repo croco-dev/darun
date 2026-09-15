@@ -48,16 +48,23 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
   });
 
   useEffect(() => {
-    form.setValues({
+    const values = {
       name: data?.tempProductBySlug?.name ?? '',
       summary: data?.tempProductBySlug?.summary ?? '',
-    });
+    };
+    form.setInitialValues(values);
+    form.setValues(values);
   }, [data, form]);
 
   const [editInformation] = useMutation(EditProductOnEditProductInfoDocument, {
+    refetchQueries: [TempProductBySlugOnEditProductInfoDocument],
     onCompleted: ({ editProduct }) => {
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
+        form.setInitialValues({
+          name: editProduct.product.name ?? '',
+          summary: editProduct.product.summary ?? '',
+        });
         form.reset();
         onSubmit?.();
       }

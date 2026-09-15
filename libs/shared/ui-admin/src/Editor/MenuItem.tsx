@@ -6,7 +6,7 @@ type MenuItemProps = {
   onClick: () => void;
 };
 
-const menuItemVariants = cva(
+export const menuItemVariants = cva(
   'rounded-lg px-3 py-1.5 text-sm font-medium border transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40',
   {
     variants: {

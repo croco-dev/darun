@@ -1,9 +1,10 @@
 'use client';
 
+import { cn } from '@darun/ui';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { Editor } from '@tiptap/react';
 import { useCallback, useMemo, useRef } from 'react';
-import { MenuItem } from './MenuItem';
+import { MenuItem, menuItemVariants } from './MenuItem';
 
 type MenuBarProps = {
   editor: Editor;
@@ -74,7 +75,7 @@ export function MenuBar({ editor }: MenuBarProps) {
       {menuItems.map(({ label, action, active }) => (
         <MenuItem key={label} label={label} onClick={action} active={active} />
       ))}
-      <label className="menu-item">
+      <label className={cn(menuItemVariants({ active: false }), 'cursor-pointer inline-flex items-center')}>
         Image
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleSelectImage} />
       </label>

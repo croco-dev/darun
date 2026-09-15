@@ -2,7 +2,7 @@
 
 import { EditAlternativeProducts } from '@darun/products-feature';
 import { Button } from '@darun/ui';
-import { AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
+import { AdminEmptyState, AdminModal, AdminPanel, AdminSectionBody, AdminSectionHeader } from '@darun/ui-admin';
 import { useDisclosure } from '@mantine/hooks';
 
 type ProductDetailAlternativeSectionProps = {
@@ -23,37 +23,16 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
             </Button>
           }
         />
-        <AdminSectionBody>준비중</AdminSectionBody>
+        <AdminSectionBody>
+          <AdminEmptyState
+            title="대체 서비스 관리"
+            description="상단의 '다른 서비스 추가' 버튼을 눌러 이 서비스와 유사하거나 비교 가능한 대안 서비스를 연결하세요."
+          />
+        </AdminSectionBody>
       </AdminPanel>
-      {isEditModalOpened && (
-        <dialog
-          open={isEditModalOpened}
-          className="p-6 rounded-xl border border-dark-200 bg-white shadow-lg backdrop:bg-black/50 z-50 focus-visible:outline-none min-w-[500px]"
-          onClick={e => {
-            if (e.target === e.currentTarget) {
-              closeEditModal();
-            }
-          }}
-          onKeyDown={e => {
-            if (e.key === 'Escape') {
-              closeEditModal();
-            }
-          }}
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-dark-900">다른 서비스 관리</h2>
-            <button
-              type="button"
-              onClick={closeEditModal}
-              className="text-dark-500 hover:text-dark-900 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 rounded-lg p-1.5"
-              aria-label="닫기"
-            >
-              ✕
-            </button>
-          </div>
-          <EditAlternativeProducts slug={slug} onSubmit={closeEditModal} />
-        </dialog>
-      )}
+      <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="다른 서비스(대안) 관리">
+        <EditAlternativeProducts slug={slug} onSubmit={closeEditModal} />
+      </AdminModal>
     </>
   );
 };
