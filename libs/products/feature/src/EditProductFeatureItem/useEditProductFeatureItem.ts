@@ -82,7 +82,8 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
   }, [data, form]);
 
   const submit = async (values: FormValues) => {
-    if (!values.emoji || !values.name || !values.summary) {
+    if (mutationLoading) return;
+    if (!values.emoji?.trim() || !values.name?.trim() || !values.summary?.trim()) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
@@ -91,9 +92,9 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
       variables: {
         featureId,
         input: {
-          emoji: values.emoji,
-          name: values.name,
-          summary: values.summary,
+          emoji: values.emoji.trim(),
+          name: values.name.trim(),
+          summary: values.summary.trim(),
         },
       },
     });

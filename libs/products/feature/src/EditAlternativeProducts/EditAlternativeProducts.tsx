@@ -9,11 +9,12 @@ export const EditAlternativeProducts = bind(
     <form onSubmit={form.onSubmit(submit)}>
       <div className="flex flex-col gap-3">
         <AdminField label="서비스 검색">
-          <AdminInput type="text" placeholder="ex) 토스" onChange={updateQuery} />
+          <AdminInput type="text" placeholder="ex) 토스" onChange={updateQuery} disabled={loading} />
         </AdminField>
         <AdminField label="다른 서비스 (alternatives)">
           <AdminSelect
             multiple
+            disabled={loading}
             key={form.key('alternativeIds')}
             {...form.getInputProps('alternativeIds')}
             onChange={e => {

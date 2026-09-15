@@ -8,7 +8,7 @@ export function LoginButton() {
   const { login, isLoading } = useLoginButton();
 
   return (
-    <GoogleButton fullWidth onClick={login} loading={isLoading}>
+    <GoogleButton fullWidth onClick={login} loading={isLoading} disabled={isLoading}>
       Google로 로그인
     </GoogleButton>
   );

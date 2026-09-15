@@ -92,6 +92,9 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
   });
 
   const handleDelete = async (id: string) => {
+    if (deletingId !== null) {
+      return;
+    }
     if (!window.confirm('이 스크린샷을 삭제하시겠습니까?')) {
       return;
     }

@@ -1,5 +1,7 @@
 'use client';
 
+import { Button } from '@darun/ui';
+import { AdminErrorState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -7,7 +9,7 @@ import { useProductInfo } from './useProductInfo';
 
 const DEFAULT_LOGO = '/images/default-product-icon.svg';
 
-export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, summary, slug, loading }) => {
+export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, summary, slug, loading, error, refetch }) => {
   const [imgSrc, setImgSrc] = useState(logoUrl || DEFAULT_LOGO);
 
   useEffect(() => {
@@ -24,6 +26,20 @@ export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, summary, slug,
           <div className="h-6 w-24 rounded bg-surface-200" />
         </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminErrorState
+        title="서비스 정보를 불러오지 못했습니다."
+        error={error}
+        action={
+          <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+            다시 시도
+          </Button>
+        }
+      />
     );
   }
 

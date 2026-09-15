@@ -17,6 +17,7 @@ export const WriteMagazine = bind(
               type="text"
               placeholder="ex) 다른의 서비스 종료 발표, 대안 서비스는 뭐가 있을까?"
               key={form.key('title')}
+              disabled={isSubmitting}
               {...form.getInputProps('title')}
             />
           </AdminField>
@@ -31,6 +32,7 @@ export const WriteMagazine = bind(
               type="text"
               placeholder="ex) darun-io-service-jongryo"
               key={form.key('slug')}
+              disabled={isSubmitting}
               {...form.getInputProps('slug')}
             />
           </AdminField>
@@ -41,6 +43,7 @@ export const WriteMagazine = bind(
               type="text"
               placeholder="ex) 사용자가 없기에 종료의 영향이 없지만, 제가 슬프니 정리해봤습니다."
               key={form.key('summary')}
+              disabled={isSubmitting}
               {...form.getInputProps('summary')}
             />
           </AdminField>
@@ -50,15 +53,18 @@ export const WriteMagazine = bind(
               <button
                 id="magazine-background-image"
                 type="button"
+                disabled={isSubmitting}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => {
                   e.preventDefault();
+                  if (isSubmitting) return;
                   const droppedFile = e.dataTransfer.files[0];
                   if (droppedFile) {
                     handleFileDrop([droppedFile]);
                   }
                 }}
                 onClick={() => {
+                  if (isSubmitting) return;
                   const input = document.createElement('input');
                   input.type = 'file';
                   input.accept = 'image/png,image/jpeg,image/webp,image/bmp,image/avif';
@@ -70,7 +76,7 @@ export const WriteMagazine = bind(
                   };
                   input.click();
                 }}
-                className="flex min-h-56 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-dark-200 bg-white transition hover:border-dark-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
+                className="flex min-h-56 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-dark-200 bg-white transition hover:border-dark-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex flex-col items-center gap-4 p-8">
                   <svg
@@ -109,6 +115,7 @@ export const WriteMagazine = bind(
                   type="button"
                   variant="contained"
                   color="secondary"
+                  disabled={isSubmitting}
                   onClick={() => handleFileRemove()}
                   className="!bg-red-600 hover:!bg-red-700 !text-white !border-transparent"
                 >

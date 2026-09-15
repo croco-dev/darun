@@ -1,5 +1,4 @@
-'use client';
-
+import { Link } from '@darun/utils-router';
 import { ReactNode } from 'react';
 
 type PageShellProps = {
@@ -32,9 +31,9 @@ export function PageShell({ title, rightSide, children, onBack, backHref }: Page
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           {backHref ? (
-            <a href={backHref} className={backButtonClasses} aria-label="뒤로가기">
+            <Link href={backHref} className={backButtonClasses} aria-label="뒤로가기">
               {backIcon}
-            </a>
+            </Link>
           ) : onBack ? (
             <button type="button" onClick={onBack} className={backButtonClasses} aria-label="뒤로가기">
               {backIcon}

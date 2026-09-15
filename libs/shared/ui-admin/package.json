@@ -19,6 +19,7 @@
   "dependencies": {
     "@darun/ui": "workspace:*",
     "@darun/utils-image-upload": "workspace:*",
+    "@darun/utils-router": "workspace:*",
     "@tiptap/extension-image": "^2.7.4",
     "@tiptap/extension-typography": "^2.7.4",
     "@tiptap/react": "^2.7.4",
