@@ -1,6 +1,6 @@
 'use client';
 
-import { AdminEmptyState } from '@darun/ui-admin';
+import { AdminEmptyState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useProductCompanyInfo } from './useProductCompanyInfo';
 
@@ -26,7 +26,11 @@ function formatStartAt(startAt: unknown) {
   return `${year}. ${month}. ${day}`;
 }
 
-export const ProductCompanyInfo = bind(useProductCompanyInfo, ({ company }) => {
+export const ProductCompanyInfo = bind(useProductCompanyInfo, ({ company, loading }) => {
+  if (loading) {
+    return <AdminLoadingState title="회사 정보를 불러오는 중..." />;
+  }
+
   if (!company) {
     return <AdminEmptyState title="회사 정보가 없습니다." description="회사를 연결해 보세요." />;
   }
@@ -50,7 +54,7 @@ export const ProductCompanyInfo = bind(useProductCompanyInfo, ({ company }) => {
           </div>
 
           <div className="mt-1 flex flex-nowrap items-center gap-2.5 text-xs">
-            <span className="font-bold text-dark-900">상장일</span>
+            <span className="font-bold text-dark-900">설립일</span>
             <span className="text-dark-500">{formatStartAt(company.startAt)}</span>
           </div>
         </div>

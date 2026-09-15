@@ -167,4 +167,25 @@ describe('useEditProductCompany', () => {
     });
     expect(mockPush).toHaveBeenCalledWith(`/products/${slug}`);
   });
+
+  it('should call onSubmit instead of push when onSubmit is provided', () => {
+    const onSubmit = vi.fn();
+    renderHook(() => useEditProductCompany({ slug, onSubmit }));
+
+    act(() => {
+      mutationOptions.onCompleted?.({
+        registerProductCompany: {
+          __typename: 'RegisterProductCompanyPayload',
+          product: { id: 'product-1', __typename: 'Product' },
+        },
+      });
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith({
+      message: '저장되었습니다.',
+      color: 'green',
+    });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(mockPush).not.toHaveBeenCalled();
+  });
 });

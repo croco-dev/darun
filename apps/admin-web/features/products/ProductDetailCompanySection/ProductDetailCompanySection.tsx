@@ -1,23 +1,31 @@
-import { ProductCompanyInfo } from '@darun/products-feature';
-import { Button } from '@darun/ui';
-import { AdminPanel, AdminSectionHeader, AdminSectionBody, AdminActions } from '@darun/ui-admin';
+'use client';
 
-import Link from 'next/link';
+import { EditProductCompany, ProductCompanyInfo } from '@darun/products-feature';
+import { Button } from '@darun/ui';
+import { AdminModal, AdminPanel, AdminSectionBody, AdminSectionHeader } from '@darun/ui-admin';
+import { useDisclosure } from '@mantine/hooks';
 
 export const ProductDetailCompanySection = ({ slug }: { slug: string }) => {
+  const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
+
   return (
-    <AdminPanel>
-      <AdminSectionHeader title="운영사 관리" />
-      <AdminSectionBody>
-        <ProductCompanyInfo slug={slug} />
-        <AdminActions>
-          <Link href={`/products/${slug}/company/new`}>
-            <Button variant="contained" color="primary">
+    <>
+      <AdminPanel>
+        <AdminSectionHeader
+          title="운영사 관리"
+          rightSide={
+            <Button type="button" variant="contained" color="primary" onClick={openEditModal}>
               정보 수정
             </Button>
-          </Link>
-        </AdminActions>
-      </AdminSectionBody>
-    </AdminPanel>
+          }
+        />
+        <AdminSectionBody>
+          <ProductCompanyInfo slug={slug} />
+        </AdminSectionBody>
+      </AdminPanel>
+      <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="운영사 수정">
+        <EditProductCompany slug={slug} onSubmit={closeEditModal} />
+      </AdminModal>
+    </>
   );
 };

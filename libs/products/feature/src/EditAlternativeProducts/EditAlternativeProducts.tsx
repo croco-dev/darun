@@ -10,7 +10,15 @@ export const EditAlternativeProducts = bind(useEditAlternativeProducts, ({ form,
         <AdminInput type="text" placeholder="ex) 토스" onChange={updateQuery} />
       </AdminField>
       <AdminField label="다른 서비스 (alternatives)">
-        <AdminSelect multiple key={form.key('alternativeIds')} {...form.getInputProps('alternativeIds')}>
+        <AdminSelect
+          multiple
+          key={form.key('alternativeIds')}
+          {...form.getInputProps('alternativeIds')}
+          onChange={e => {
+            const selected = Array.from(e.currentTarget.selectedOptions, o => o.value);
+            form.setFieldValue('alternativeIds', selected);
+          }}
+        >
           {selectData.flatMap(group =>
             group.items.map(option => (
               <option key={option.value} value={option.value}>

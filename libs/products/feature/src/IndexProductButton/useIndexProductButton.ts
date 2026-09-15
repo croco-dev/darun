@@ -17,7 +17,7 @@ type IndexProductButtonProps = {
 };
 
 export function useIndexProductButton({ slug }: IndexProductButtonProps) {
-  const [indexProductMutation] = useMutation(IndexProductOnIndexProductButtonDocument, {
+  const [indexProductMutation, { loading }] = useMutation(IndexProductOnIndexProductButtonDocument, {
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },
@@ -47,5 +47,6 @@ export function useIndexProductButton({ slug }: IndexProductButtonProps) {
   };
   return {
     indexProduct,
+    loading,
   };
 }

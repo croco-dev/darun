@@ -20,12 +20,12 @@ export function AdminField({ label, htmlFor, error, help, children, className }:
   const isSingleElement = isValidElement(children);
   const childProps = isSingleElement ? (children as React.ReactElement<Record<string, unknown>>).props || {} : {};
   const existingDescribedBy = childProps['aria-describedby'];
-  const finalDescribedBy = existingDescribedBy ? `${existingDescribedBy} ${describedBy}` : describedBy;
+  const finalDescribedBy = [existingDescribedBy, describedBy].filter(Boolean).join(' ').trim() || undefined;
 
   const enhancedChild = isSingleElement
     ? cloneElement(children as React.ReactElement<Record<string, unknown>>, {
         id: childProps['id'] ?? inputId,
-        ...(describedBy ? { 'aria-describedby': finalDescribedBy } : {}),
+        ...(finalDescribedBy ? { 'aria-describedby': finalDescribedBy } : {}),
       })
     : children;
 

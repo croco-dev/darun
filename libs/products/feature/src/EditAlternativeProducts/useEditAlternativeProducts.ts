@@ -63,19 +63,26 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
   const [searchProducts, { data: searchData }] = useLazyQuery(SearchProductsOnEditAlternativeProductsDocument);
 
   useEffect(() => {
-    form.setValues({
-      alternativeIds: data?.tempProductBySlug?.alternatives.map(({ id }) => id) ?? [],
-    });
+    const alternativeIds = data?.tempProductBySlug?.alternatives.map(({ id }) => id) ?? [];
+    form.setInitialValues({ alternativeIds });
+    form.setValues({ alternativeIds });
   }, [data, form]);
 
   const [updateAlternativeProducts] = useMutation(EditProductOnEditAlternativeProductsDocument, {
+    refetchQueries: [TempProductBySlugOnEditAlternativeProductsDocument],
     onCompleted: ({ updateAlternativeProduct }) => {
       if (updateAlternativeProduct.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
+        const alternativeIds = updateAlternativeProduct.product.alternatives.map(({ id }) => id);
+        form.setInitialValues({ alternativeIds });
         form.reset();
 
         onSubmit?.();
       }
+    },
+    onError: error => {
+      console.error('mutation failed:', error);
+      notifications.show({ message: '수정에 실패했습니다.', color: 'red' });
     },
   });
 
@@ -96,7 +103,6 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
       });
     } catch (error) {
       console.error('mutation failed:', error);
-      throw error;
     }
   };
 

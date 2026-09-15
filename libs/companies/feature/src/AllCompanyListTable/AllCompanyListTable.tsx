@@ -39,7 +39,7 @@ function formatStartAt(startAt: unknown) {
 
 export const AllCompanyListTable = bind(
   useAllCompanyListTable,
-  ({ companies, totalCount, page, handlePage, loading, error }) => {
+  ({ companies, totalCount, totalPages, page, handlePage, loading, error }) => {
     if (loading && (!companies || companies.length === 0)) {
       return <AdminLoadingState />;
     }
@@ -55,6 +55,8 @@ export const AllCompanyListTable = bind(
         </AdminPanel>
       );
     }
+
+    const calculatedTotalPages = totalPages ?? (totalCount ? Math.ceil(totalCount / 50) : 1);
 
     return (
       <div className="flex flex-col gap-3">
@@ -95,39 +97,43 @@ export const AllCompanyListTable = bind(
             </tbody>
           </table>
         </AdminPanel>
-        {totalCount && totalCount > 50 ? (
+        {totalCount !== undefined && totalCount > 0 ? (
           <AdminPanel className="p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-dark-900">
                 총 {totalCount}개 중 {(page - 1) * 50 + 1}-{Math.min(page * 50, totalCount)}
               </p>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="base"
-                  size="sm"
-                  onClick={() => handlePage(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <ChevronLeft className="h-4 w-4" />
-                    이전
+              {calculatedTotalPages > 1 ? (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="base"
+                    size="sm"
+                    onClick={() => handlePage(Math.max(1, page - 1))}
+                    disabled={page === 1}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <ChevronLeft className="h-4 w-4" />
+                      이전
+                    </span>
+                  </Button>
+                  <span className="px-3 py-1 text-sm text-dark-900 font-medium">
+                    {page} / {calculatedTotalPages}
                   </span>
-                </Button>
-                <span className="px-3 py-1 text-sm text-dark-900 font-medium">{page}</span>
-                <Button
-                  type="button"
-                  variant="base"
-                  size="sm"
-                  onClick={() => handlePage(Math.min(Math.ceil(totalCount / 50), page + 1))}
-                  disabled={page >= Math.ceil(totalCount / 50)}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    다음
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                </Button>
-              </div>
+                  <Button
+                    type="button"
+                    variant="base"
+                    size="sm"
+                    onClick={() => handlePage(Math.min(calculatedTotalPages, page + 1))}
+                    disabled={page >= calculatedTotalPages}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      다음
+                      <ChevronRight className="h-4 w-4" />
+                    </span>
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </AdminPanel>
         ) : null}
@@ -147,7 +153,7 @@ const dataTableColumns: Array<{
   { accessor: 'address', title: '주소' },
   {
     accessor: 'startAt',
-    title: '설립년도',
+    title: '설립일',
     render: ({ startAt }) => formatStartAt(startAt),
   },
 ];

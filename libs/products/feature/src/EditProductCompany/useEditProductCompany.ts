@@ -36,13 +36,17 @@ type FormValues = {
   companyId: string;
 };
 
-export function useEditProductCompany({ slug }: { slug: string }) {
+export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
   const { push } = useRouter();
   const [registerProductCompany] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
     onCompleted: ({ registerProductCompany }) => {
       if (registerProductCompany.product?.id) {
         notifications.show({ message: '저장되었습니다.', color: 'green' });
-        push(`/products/${slug}`);
+        if (onSubmit) {
+          onSubmit();
+        } else {
+          push(`/products/${slug}`);
+        }
       }
     },
     onError: error => {

@@ -5,6 +5,7 @@ import { useMutation, useQuery } from '@apollo/client/react';
 import {
   EditProductOnEditProductDescriptionDocument,
   TempProductBySlugOnEditProductDescriptionDocument,
+  TempProductBySlugOnProductDescriptionDocument,
 } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
@@ -44,14 +45,19 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
   });
 
   useEffect(() => {
-    form.setInitialValues({ description: data?.tempProductBySlug?.description ?? '' });
+    const description = data?.tempProductBySlug?.description ?? '';
+    form.setInitialValues({ description });
+    form.setValues({ description });
   }, [data, form]);
 
   const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument, {
+    refetchQueries: [TempProductBySlugOnEditProductDescriptionDocument, TempProductBySlugOnProductDescriptionDocument],
     onCompleted: ({ editProduct }) => {
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
-        form.setInitialValues({ description: editProduct.product.description ?? '' });
+        const description = editProduct.product.description ?? '';
+        form.setInitialValues({ description });
+        form.setValues({ description });
         onSubmit?.();
       }
     },
