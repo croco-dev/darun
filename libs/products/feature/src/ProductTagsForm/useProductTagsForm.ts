@@ -35,18 +35,23 @@ gql`
 type ProductTagsFormProps = {
   slug: string;
 };
-export function useProductTagsForm({ slug }: ProductTagsFormProps) {
-  const [editedTags, setEditedTags] = useState<string[] | undefined>();
 
-  const { data } = useQuery(TempProductBySlugOnProductTagsFormDocument, {
-    variables: {
-      slug,
-    },
+export function useProductTagsForm({ slug }: ProductTagsFormProps) {
+  const [inputValue, setInputValue] = useState<string | null>(null);
+
+  const { data, loading: isLoading } = useQuery(TempProductBySlugOnProductTagsFormDocument, {
+    variables: { slug },
   });
 
   const fetchedTags = data?.tempProductBySlug?.tags.map(tag => tag.name) ?? [];
-  const tags = editedTags ?? fetchedTags;
-  const [updateProductTags] = useMutation(UpdateProductTagsOnProductTagFormDocument, {
+  const currentInputValue = inputValue !== null ? inputValue : fetchedTags.join(', ');
+
+  const currentTags = currentInputValue
+    .split(',')
+    .map(t => t.trim())
+    .filter(Boolean);
+
+  const [updateProductTags, { loading: isSaving }] = useMutation(UpdateProductTagsOnProductTagFormDocument, {
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },
@@ -56,12 +61,19 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
           message: '태그 수정이 반영되었어요.',
           color: 'teal',
         });
+        const updated = data.updateProductTags.product.tags.map(t => t.name);
+        setInputValue(updated.join(', '));
       }
     },
   });
 
-  const updateTags = (newTags: string[]) => {
-    setEditedTags(newTags);
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    const nextTags = currentTags.filter(t => t !== tagToRemove);
+    setInputValue(nextTags.join(', '));
   };
 
   const applyTags = async () => {
@@ -70,7 +82,7 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
         variables: {
           slug,
           input: {
-            tagNames: tags,
+            tagNames: currentTags,
           },
         },
       });
@@ -79,9 +91,14 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
       throw error;
     }
   };
+
   return {
-    tags,
-    updateTags,
+    inputValue: currentInputValue,
+    tags: currentTags,
+    handleInputChange,
+    removeTag,
     applyTags,
+    isSaving,
+    isLoading,
   };
 }

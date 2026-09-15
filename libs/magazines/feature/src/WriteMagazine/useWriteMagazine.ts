@@ -33,9 +33,9 @@ type FormValues = {
 export function useWriteMagazine() {
   const { push } = useRouter();
   const [createMagazine] = useMutation(CreateMagazineOnWriteMagazineDocument, {
-    onCompleted: ({ createMagazine }) => {
-      notifications.show({ message: '생성되었습니다.', color: 'teal' });
-      push(`/magazines/${createMagazine.magazine.slug}`);
+    onCompleted: () => {
+      notifications.show({ message: '매거진이 성공적으로 발행되었습니다.', color: 'teal' });
+      push('/magazines');
     },
   });
   const form = useForm<FormValues>({

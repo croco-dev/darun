@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
-import { useLazyQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client/react';
 import { AllCompaniesOnAllCompanyListTableDocument } from '@darun/provider-graphql';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -22,17 +22,13 @@ gql`
 
 export function useAllCompanyListTable() {
   const [page, setPage] = useState(1);
-  const [tableQuery, { data, loading, error }] = useLazyQuery(AllCompaniesOnAllCompanyListTableDocument);
+  const { data, loading, error } = useQuery(AllCompaniesOnAllCompanyListTableDocument, {
+    variables: { page },
+  });
 
   const handlePage = (p: number) => {
     setPage(p);
   };
-
-  useEffect(() => {
-    if (page) {
-      tableQuery({ variables: { page } });
-    }
-  }, [page, tableQuery]);
 
   return {
     companies: data?.allCompanies.companies,

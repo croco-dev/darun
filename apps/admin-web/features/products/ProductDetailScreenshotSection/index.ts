@@ -1,0 +1,1 @@
+export { ProductDetailScreenshotSection } from './ProductDetailScreenshotSection';

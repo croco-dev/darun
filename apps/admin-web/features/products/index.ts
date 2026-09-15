@@ -4,3 +4,4 @@ export { ProductDetailDescriptionSection } from './ProductDetailDescriptionSecti
 export { ProductDetailFeatureSection } from './ProductDetailFeatureSection';
 export { ProductDetailInfoSection } from './ProductDetailInfoSection';
 export { ProductDetailLinkSection } from './ProductDetailLinkSection';
+export { ProductDetailScreenshotSection } from './ProductDetailScreenshotSection';

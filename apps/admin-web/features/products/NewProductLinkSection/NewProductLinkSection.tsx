@@ -24,10 +24,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
         </AdminField>
         <AdminField label="아이콘" error={form.errors.iconUrl}>
           <AdminSelect {...form.getInputProps('iconUrl')}>
-            <option value="">
-              ex)
-              https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg
-            </option>
+            <option value="">아이콘을 선택해 주세요 (선택 사항)</option>
             {iconData.map(icon => (
               <option key={icon.value} value={icon.value}>
                 {icon.label}

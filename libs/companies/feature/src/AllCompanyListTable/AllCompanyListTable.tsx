@@ -40,7 +40,7 @@ function formatStartAt(startAt: unknown) {
 export const AllCompanyListTable = bind(
   useAllCompanyListTable,
   ({ companies, totalCount, page, handlePage, loading, error }) => {
-    if (loading) {
+    if (loading && (!companies || companies.length === 0)) {
       return <AdminLoadingState />;
     }
 

@@ -20,9 +20,23 @@ type FormValues = {
   name?: string;
   type?: string;
   address?: string;
-  startAt?: Date | null;
+  startAt?: string | Date | null;
   startAtIsDisabled: boolean;
 };
+
+export function parseStartAtToIso(startAt?: string | Date | null): string | undefined {
+  if (!startAt) return undefined;
+  if (startAt instanceof Date) {
+    return Number.isNaN(startAt.getTime()) ? undefined : startAt.toISOString();
+  }
+  if (typeof startAt === 'string') {
+    const trimmed = startAt.trim();
+    if (!trimmed) return undefined;
+    const date = new Date(trimmed);
+    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+  }
+  return undefined;
+}
 
 export function useNewCompanyForm() {
   const form = useForm<FormValues>({
@@ -62,13 +76,15 @@ export function useNewCompanyForm() {
   const handleSubmit = (values: FormValues) => {
     if (!values.name || !values.type || !values.address) return;
 
+    const startAt = values.startAtIsDisabled ? undefined : parseStartAtToIso(values.startAt);
+
     mutate({
       variables: {
         input: {
           name: values.name,
           type: values.type,
           address: values.address,
-          startAt: values.startAtIsDisabled ? undefined : (values.startAt?.toISOString() ?? undefined),
+          startAt,
         },
       },
     });
