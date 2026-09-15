@@ -7,7 +7,7 @@ import { useNewCompanyForm } from './useNewCompanyForm';
 
 export const NewCompanyForm = bind(
   useNewCompanyForm,
-  ({ form, handleSubmit, startAtIsDisabled, handleToggleStartAtDisabled }) => (
+  ({ form, handleSubmit, startAtIsDisabled, handleToggleStartAtDisabled, loading }) => (
     <form onSubmit={form.onSubmit(handleSubmit)}>
       <div className="flex flex-col gap-4">
         <AdminField label="회사 이름" error={form.errors.name}>
@@ -52,8 +52,8 @@ export const NewCompanyForm = bind(
       </div>
 
       <AdminActions>
-        <Button type="submit" variant="contained" color="primary">
-          저장
+        <Button type="submit" variant="contained" color="primary" disabled={loading}>
+          {loading ? '저장 중...' : '저장'}
         </Button>
       </AdminActions>
     </form>

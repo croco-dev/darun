@@ -38,6 +38,8 @@ export function useGenerateProductDescriptionButton(slug: string) {
   });
 
   const handleGenerate = async () => {
+    if (loading) return;
+
     try {
       await generateDescription({
         variables: {

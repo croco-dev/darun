@@ -13,12 +13,16 @@ export default function CompanyListPage() {
       rightSide={
         <div className="flex gap-2">
           <CompanyListRefreshButton />
-          <Link href="/companies/new">
-            <Button type="button" variant="contained" color="primary" className="flex items-center gap-2">
-              <Plus size={16} />
-              기업 추가
-            </Button>
-          </Link>
+          <Button
+            as={Link}
+            href="/companies/new"
+            variant="contained"
+            color="primary"
+            className="flex items-center gap-2"
+          >
+            <Plus size={16} />
+            기업 추가
+          </Button>
         </div>
       }
     >

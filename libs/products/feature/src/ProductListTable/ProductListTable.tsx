@@ -94,43 +94,45 @@ export function ProductListTable() {
   return (
     <div className="flex flex-col gap-3">
       <AdminPanel className="overflow-hidden">
-        <table className="w-full border-collapse table-fixed">
-          <thead className="bg-surface-100">
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <th
-                    key={header.id}
-                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
-                    style={{ width: header.column.columnDef.size }}
-                  >
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row, index) => (
-              <tr
-                key={row.id}
-                onClick={() => handleRowClick({ record: row.original })}
-                className={`cursor-pointer border-b border-dark-200 transition hover:bg-surface-100 ${
-                  index % 2 === 0 ? 'bg-white' : 'bg-surface-100/30'
-                }`}
-              >
-                {row.getVisibleCells().map(cell => (
-                  <td
-                    key={cell.id}
-                    className="border-r border-dark-200 px-4 py-3 text-sm text-dark-900 last:border-r-0"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse table-fixed">
+            <thead className="bg-surface-100">
+              {table.getHeaderGroups().map(headerGroup => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map(header => (
+                    <th
+                      key={header.id}
+                      className="border-b border-r border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
+                      style={{ width: header.column.columnDef.size }}
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row, index) => (
+                <tr
+                  key={row.id}
+                  onClick={() => handleRowClick({ record: row.original })}
+                  className={`cursor-pointer border-b border-dark-200 transition hover:bg-surface-100 ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-surface-100/30'
+                  }`}
+                >
+                  {row.getVisibleCells().map(cell => (
+                    <td
+                      key={cell.id}
+                      className="border-r border-dark-200 px-4 py-3 text-sm text-dark-900 last:border-r-0"
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </AdminPanel>
       <AdminPanel className="p-4">
         <div className="flex items-center justify-between">

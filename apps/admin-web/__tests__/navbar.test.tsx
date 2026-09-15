@@ -75,7 +75,7 @@ describe('Navbar Component', () => {
     expect(navItems).toHaveLength(5);
     expect(screen.getByText('대시보드')).toBeDefined();
     expect(screen.getByText('서비스')).toBeDefined();
-    expect(screen.getByText('회사 관리')).toBeDefined();
+    expect(screen.getByText('기업 관리')).toBeDefined();
     expect(screen.getByText('매거진')).toBeDefined();
     expect(screen.getByText('LLM 설정')).toBeDefined();
   });

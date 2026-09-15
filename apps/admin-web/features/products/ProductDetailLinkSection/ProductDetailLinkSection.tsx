@@ -12,11 +12,9 @@ export const ProductDetailLinkSection = ({ slug }: ProductDetailLinkSectionProps
   <AdminPanel>
     <AdminSectionHeader
       rightSide={
-        <Link href={`/products/${slug}/links/new`}>
-          <Button variant="contained" color="primary">
-            새 링크 추가
-          </Button>
-        </Link>
+        <Button as={Link} href={`/products/${slug}/links/new`} variant="contained" color="primary">
+          새 링크 추가
+        </Button>
       }
     >
       <div className="flex flex-col gap-0.5">

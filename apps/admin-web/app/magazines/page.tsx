@@ -11,12 +11,16 @@ export default function MagazineListPage() {
       title={'다른 매거진'}
       rightSide={
         <div className="flex gap-2">
-          <Link href="/magazines/create">
-            <Button type="button" variant="contained" color="primary" className="flex items-center gap-2">
-              새로운 매거진 발행
-              <Plus size={16} />
-            </Button>
-          </Link>
+          <Button
+            as={Link}
+            href="/magazines/create"
+            variant="contained"
+            color="primary"
+            className="flex items-center gap-2"
+          >
+            새로운 매거진 발행
+            <Plus size={16} />
+          </Button>
         </div>
       }
     >

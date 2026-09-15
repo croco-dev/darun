@@ -22,6 +22,16 @@ describe('admin-web middleware', () => {
     const response = await middleware(request);
 
     expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('https://admin.darun.io/auth/login?redirect=%2Fsettings%2Fllm');
+  });
+
+  it('redirects unauthenticated requests to /auth/login without redirect query when requesting root', async () => {
+    vi.mocked(authChecker.getIsAdmin).mockResolvedValue(false);
+
+    const request = new NextRequest('https://admin.darun.io/');
+    const response = await middleware(request);
+
+    expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe('https://admin.darun.io/auth/login');
   });
 

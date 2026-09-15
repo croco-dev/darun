@@ -38,7 +38,7 @@ type FormValues = {
 
 export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
   const { push } = useRouter();
-  const [registerProductCompany] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
+  const [registerProductCompany, { loading }] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
     onCompleted: ({ registerProductCompany }) => {
       if (registerProductCompany.product?.id) {
         notifications.show({ message: '저장되었습니다.', color: 'green' });
@@ -57,6 +57,7 @@ export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubm
       });
     },
     refetchQueries: [TempProductBySlugOnProductCompanyInfoDocument],
+    awaitRefetchQueries: true,
   });
 
   const [search] = useLazyQuery(SearchCompaniesOnEditProductCompanyDocument);
@@ -115,8 +116,10 @@ export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubm
   });
 
   const handleSubmit = (values: FormValues) => {
-    if (!values.companyId) {
-      notifications.show({ message: '회사를 선택해주세요.', color: 'red' });
+    if (loading || !values.companyId) {
+      if (!values.companyId) {
+        notifications.show({ message: '회사를 선택해주세요.', color: 'red' });
+      }
       return;
     }
     registerProductCompany({
@@ -130,5 +133,6 @@ export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubm
     companies,
     searchValue,
     handleSearchChange,
+    loading,
   };
 }

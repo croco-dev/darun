@@ -29,11 +29,9 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
         <AdminSectionHeader
           title="기능 관리"
           rightSide={
-            <Link href={`/products/${slug}/features/new`}>
-              <Button type="button" variant="contained" color="primary">
-                새 기능 추가
-              </Button>
-            </Link>
+            <Button as={Link} href={`/products/${slug}/features/new`} variant="contained" color="primary">
+              새 기능 추가
+            </Button>
           }
         />
         <AdminSectionBody className="p-0">

@@ -1,6 +1,9 @@
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { CreateCompanyOnNewCompanyFormDocument } from '@darun/provider-graphql';
+import {
+  AllCompaniesOnAllCompanyListTableDocument,
+  CreateCompanyOnNewCompanyFormDocument,
+} from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
@@ -58,7 +61,9 @@ export function useNewCompanyForm() {
   });
   const { push } = useRouter();
 
-  const [mutate] = useMutation(CreateCompanyOnNewCompanyFormDocument, {
+  const [mutate, { loading }] = useMutation(CreateCompanyOnNewCompanyFormDocument, {
+    refetchQueries: [AllCompaniesOnAllCompanyListTableDocument],
+    awaitRefetchQueries: true,
     onCompleted: ({ createCompany }) => {
       if (createCompany.company.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
@@ -81,7 +86,7 @@ export function useNewCompanyForm() {
   };
 
   const handleSubmit = (values: FormValues) => {
-    if (!values.name || !values.type || !values.address) return;
+    if (loading || !values.name || !values.type || !values.address) return;
 
     const startAt = startAtIsDisabled || values.startAtIsDisabled ? undefined : parseStartAtToIso(values.startAt);
 
@@ -97,5 +102,5 @@ export function useNewCompanyForm() {
     });
   };
 
-  return { handleSubmit, form, startAtIsDisabled, handleToggleStartAtDisabled };
+  return { handleSubmit, form, startAtIsDisabled, handleToggleStartAtDisabled, loading };
 }

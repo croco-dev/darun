@@ -73,7 +73,14 @@ export async function middleware(request: NextRequest) {
   const isAdmin = await authChecker.getIsAdmin(cookies);
 
   if (!isAdmin) {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
+    const loginUrl = new URL('/auth/login', request.url);
+    const cleanUrl = request.nextUrl.clone();
+    cleanUrl.searchParams.delete('_rsc');
+    const destination = cleanUrl.pathname + cleanUrl.search;
+    if (destination && destination !== '/' && !destination.startsWith('/auth')) {
+      loginUrl.searchParams.set('redirect', destination);
+    }
+    return NextResponse.redirect(loginUrl);
   }
 
   if (

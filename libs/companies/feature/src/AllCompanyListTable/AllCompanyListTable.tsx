@@ -61,41 +61,43 @@ export const AllCompanyListTable = bind(
     return (
       <div className="flex flex-col gap-3">
         <AdminPanel className="overflow-hidden">
-          <table className="w-full border-collapse table-fixed">
-            <thead className="bg-surface-100">
-              <tr>
-                {dataTableColumns.map(col => (
-                  <th
-                    key={col.accessor}
-                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
-                    style={{ width: col.accessor === 'id' ? 100 : col.accessor === 'startAt' ? 150 : undefined }}
-                  >
-                    {col.title}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(companies ?? []).map((record, index) => (
-                <tr
-                  key={record.id}
-                  className={`border-b border-dark-200 transition hover:bg-surface-100 ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-surface-100/30'
-                  }`}
-                >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse table-fixed">
+              <thead className="bg-surface-100">
+                <tr>
                   {dataTableColumns.map(col => (
-                    <td
+                    <th
                       key={col.accessor}
-                      className="border-r border-dark-200 px-4 py-3 text-sm text-dark-900 last:border-r-0 truncate"
-                      title={col.render ? undefined : String(record[col.accessor as keyof CompanyRecord] ?? '-')}
+                      className="border-b border-r border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
+                      style={{ width: col.accessor === 'id' ? 100 : col.accessor === 'startAt' ? 150 : undefined }}
                     >
-                      {col.render ? col.render(record) : String(record[col.accessor as keyof CompanyRecord] ?? '-')}
-                    </td>
+                      {col.title}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(companies ?? []).map((record, index) => (
+                  <tr
+                    key={record.id}
+                    className={`border-b border-dark-200 transition hover:bg-surface-100 ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-surface-100/30'
+                    }`}
+                  >
+                    {dataTableColumns.map(col => (
+                      <td
+                        key={col.accessor}
+                        className="border-r border-dark-200 px-4 py-3 text-sm text-dark-900 last:border-r-0 truncate"
+                        title={col.render ? undefined : String(record[col.accessor as keyof CompanyRecord] ?? '-')}
+                      >
+                        {col.render ? col.render(record) : String(record[col.accessor as keyof CompanyRecord] ?? '-')}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </AdminPanel>
         {totalCount !== undefined && totalCount > 0 ? (
           <AdminPanel className="p-4">

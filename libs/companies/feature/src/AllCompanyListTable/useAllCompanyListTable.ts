@@ -1,3 +1,5 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
 import { AllCompaniesOnAllCompanyListTableDocument } from '@darun/provider-graphql';

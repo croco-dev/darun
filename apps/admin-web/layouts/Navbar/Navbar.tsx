@@ -9,7 +9,7 @@ import { LogoutButton } from '../../features/auth/LogoutButton';
 export const navItems = [
   { link: '/', label: '대시보드', icon: Home },
   { link: '/products', label: '서비스', icon: Archive },
-  { link: '/companies', label: '회사 관리', icon: Building2 },
+  { link: '/companies', label: '기업 관리', icon: Building2 },
   { link: '/magazines', label: '매거진', icon: Newspaper },
   { link: '/settings/llm', label: 'LLM 설정', icon: Sliders },
 ];

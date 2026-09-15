@@ -16,7 +16,7 @@ import {
   AdminSectionHeader,
 } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
-import { Plus, Trash2 } from 'lucide-react';
+import { ImageOff, Loader2, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -43,6 +43,29 @@ gql`
 type ProductDetailScreenshotSectionProps = {
   slug: string;
 };
+
+function ScreenshotImage({ src, alt }: { src: string; alt: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-surface-200 text-dark-400 p-2 text-center">
+        <ImageOff size={24} />
+        <span className="text-[11px] text-dark-500">이미지를 불러올 수 없음</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setHasError(true)}
+      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+      loading="lazy"
+    />
+  );
+}
 
 export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshotSectionProps) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -88,12 +111,17 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
       <AdminSectionHeader
         title="스크린샷 관리"
         rightSide={
-          <Link href={`/products/${slug}/screenshots/new`}>
-            <Button type="button" variant="contained" color="primary" size="sm" className="flex items-center gap-1.5">
-              <Plus size={16} />
-              스크린샷 추가
-            </Button>
-          </Link>
+          <Button
+            as={Link}
+            href={`/products/${slug}/screenshots/new`}
+            variant="contained"
+            color="primary"
+            size="sm"
+            className="flex items-center gap-1.5"
+          >
+            <Plus size={16} />
+            스크린샷 추가
+          </Button>
         }
       />
       <AdminSectionBody>
@@ -121,12 +149,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                 className="group relative flex flex-col overflow-hidden rounded-lg border border-dark-200 bg-surface-100/30 p-2 transition hover:border-dark-300 hover:shadow-card"
               >
                 <div className="aspect-video w-full overflow-hidden rounded-md bg-dark-100">
-                  <img
-                    src={screenshot.imageUrl}
-                    alt={screenshot.imageAlt || '서비스 스크린샷'}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                    loading="lazy"
-                  />
+                  <ScreenshotImage src={screenshot.imageUrl} alt={screenshot.imageAlt || '서비스 스크린샷'} />
                 </div>
                 <div className="mt-2.5 flex items-center justify-between gap-2 px-1">
                   <span className="truncate text-xs font-medium text-dark-700" title={screenshot.imageAlt}>
@@ -135,12 +158,16 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                   <button
                     type="button"
                     onClick={() => handleDelete(screenshot.id)}
-                    disabled={deletingId === screenshot.id}
+                    disabled={deletingId !== null}
                     className="rounded p-1 text-dark-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                    title="스크린샷 삭제"
-                    aria-label="스크린샷 삭제"
+                    title={deletingId === screenshot.id ? '삭제 중...' : '스크린샷 삭제'}
+                    aria-label={deletingId === screenshot.id ? '삭제 중' : '스크린샷 삭제'}
                   >
-                    <Trash2 size={16} />
+                    {deletingId === screenshot.id ? (
+                      <Loader2 size={16} className="animate-spin text-red-600 motion-reduce:animate-none" />
+                    ) : (
+                      <Trash2 size={16} />
+                    )}
                   </button>
                 </div>
               </div>
