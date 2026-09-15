@@ -44,7 +44,15 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
               background: linkRef.isPrimary ? '#000' : '#fff',
             }}
           >
-            <img src={link.iconUrl} alt={`${link.title} 아이콘`} loading="lazy" className="h-6 w-6 object-contain" />
+            <img
+              src={link.iconUrl}
+              alt={`${link.title} 아이콘`}
+              loading="lazy"
+              onError={e => {
+                e.currentTarget.style.visibility = 'hidden';
+              }}
+              className="h-6 w-6 object-contain"
+            />
           </div>
         </div>
       </td>
@@ -55,15 +63,21 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
       </td>
       <td className="border-r border-dark-200 px-4 py-3">
         <div className="truncate text-sm text-dark-900">
-          <a
-            href={link.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:underline"
-            title={`${link.displayLink} (${link.link})`}
-          >
-            {link.displayLink} ({link.link})
-          </a>
+          {link.link?.startsWith('http://') || link.link?.startsWith('https://') ? (
+            <a
+              href={link.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline text-primary-700 hover:text-primary-800"
+              title={`${link.displayLink} (${link.link})`}
+            >
+              {link.displayLink} ({link.link})
+            </a>
+          ) : (
+            <span className="text-dark-500" title={link.link}>
+              {link.displayLink || link.link || '-'}
+            </span>
+          )}
         </div>
       </td>
       <td className="border-r border-dark-200 px-4 py-3 text-center">

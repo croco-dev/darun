@@ -38,6 +38,7 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
     PublishProductOnPublishProductButtonDocument,
     {
       refetchQueries: [TempProductOnPublishProductButtonDocument],
+      awaitRefetchQueries: true,
       onError: error => {
         notifications.show({ message: error.message, color: 'red' });
       },
@@ -53,6 +54,9 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
   );
 
   const publishProduct = async () => {
+    if (isPublishing || Boolean(data?.tempProductBySlug?.publishedAt)) {
+      return;
+    }
     try {
       await publishProductMutation({
         variables: {

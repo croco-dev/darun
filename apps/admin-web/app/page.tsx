@@ -1,17 +1,44 @@
+import { gql } from '@apollo/client';
 import { PageShell } from '@darun/ui-admin';
+import { getClient } from '@darun/utils-apollo-client/server';
 import { Archive, ArrowRight, Building2, ExternalLink, Newspaper, Plus, Sliders, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
-export default function HomePage() {
+const productsCountQuery = gql`
+  query ProductsCountOnAdminDashboard {
+    productsCount
+  }
+`;
+
+async function getProductsCount(): Promise<number | null> {
+  try {
+    const { data } = await getClient({ static: true }).query<{
+      productsCount: number;
+    }>({
+      query: productsCountQuery,
+    });
+    return data?.productsCount ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function HomePage() {
+  const productsCount = await getProductsCount();
+
   const sections = [
     {
       title: '서비스 관리',
-      description: '등록된 프로덕트 및 기능 정보, 스크린샷, 대안 서비스를 관리합니다.',
+      description:
+        productsCount !== null
+          ? `현재 총 ${productsCount.toLocaleString()}개의 프로덕트가 등록되어 관리 중입니다.`
+          : '등록된 프로덕트 및 기능 정보, 스크린샷, 대안 서비스를 관리합니다.',
       icon: Archive,
       iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
       listHref: '/products',
       newHref: '/products/new',
       newLabel: '서비스 추가',
+      newIcon: Plus,
     },
     {
       title: '기업(운영사) 관리',
@@ -21,6 +48,7 @@ export default function HomePage() {
       listHref: '/companies',
       newHref: '/companies/new',
       newLabel: '기업 추가',
+      newIcon: Plus,
     },
     {
       title: '매거진 발행',
@@ -30,6 +58,7 @@ export default function HomePage() {
       listHref: '/magazines',
       newHref: '/magazines/create',
       newLabel: '매거진 작성',
+      newIcon: Plus,
     },
     {
       title: 'LLM & AI 설정',
@@ -39,6 +68,7 @@ export default function HomePage() {
       listHref: '/settings/llm',
       newHref: '/settings/llm',
       newLabel: '설정 확인',
+      newIcon: Sliders,
     },
   ];
 
@@ -61,39 +91,42 @@ export default function HomePage() {
 
         {/* Quick Hub Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {sections.map(section => (
-            <div
-              key={section.title}
-              className="flex flex-col justify-between rounded-2xl border border-dark-200 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-2.5 rounded-xl border ${section.iconBg}`}>
-                    <section.icon size={22} strokeWidth={1.75} />
+          {sections.map(section => {
+            const ActionIcon = section.newIcon;
+            return (
+              <div
+                key={section.title}
+                className="flex flex-col justify-between rounded-2xl border border-dark-200 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`p-2.5 rounded-xl border ${section.iconBg}`}>
+                      <section.icon size={22} strokeWidth={1.75} />
+                    </div>
+                    <Link
+                      href={section.newHref}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-dark-700 hover:text-dark-900 bg-surface-100 hover:bg-dark-100 px-2.5 py-1.5 rounded-lg transition"
+                    >
+                      <ActionIcon size={13} />
+                      {section.newLabel}
+                    </Link>
                   </div>
+                  <h3 className="text-base font-bold text-dark-900 mb-1.5">{section.title}</h3>
+                  <p className="text-xs text-dark-500 leading-relaxed mb-4">{section.description}</p>
+                </div>
+
+                <div className="pt-3 border-t border-dark-150/70 mt-auto">
                   <Link
-                    href={section.newHref}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-dark-700 hover:text-dark-900 bg-surface-100 hover:bg-dark-100 px-2.5 py-1.5 rounded-lg transition"
+                    href={section.listHref}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-dark-900 hover:text-blue-600 transition"
                   >
-                    <Plus size={13} />
-                    {section.newLabel}
+                    <span>관리 바로가기</span>
+                    <ArrowRight size={13} />
                   </Link>
                 </div>
-                <h3 className="text-base font-bold text-dark-900 mb-1.5">{section.title}</h3>
-                <p className="text-xs text-dark-500 leading-relaxed mb-4">{section.description}</p>
               </div>
-
-              <div className="pt-3 border-t border-dark-150/70 mt-auto">
-                <Link
-                  href={section.listHref}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-dark-900 hover:text-blue-600 transition"
-                >
-                  <span>관리 바로가기</span>
-                  <ArrowRight size={13} />
-                </Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* System Status & Environment Info */}
@@ -111,7 +144,11 @@ export default function HomePage() {
             </div>
             <div className="p-3.5 rounded-xl bg-surface-100/60 border border-dark-150/70">
               <span className="text-dark-500 block mb-1">데이터 동기화</span>
-              <span className="font-medium text-dark-800">GraphQL API 정상 연동 중</span>
+              <span className="font-medium text-dark-800">
+                {productsCount !== null
+                  ? `GraphQL 정상 연동 (${productsCount.toLocaleString()}개 서비스)`
+                  : 'GraphQL API 정상 연동 중'}
+              </span>
             </div>
             <div className="p-3.5 rounded-xl bg-surface-100/60 border border-dark-150/70 flex items-center justify-between">
               <div>
@@ -121,7 +158,7 @@ export default function HomePage() {
               <a
                 href="https://darun.io"
                 target="_blank"
-                rel="noreferrer"
+                rel="noreferrer noopener"
                 className="p-1.5 rounded-lg text-dark-500 hover:text-dark-900 hover:bg-dark-100 transition"
                 aria-label="사용자 웹사이트 열기"
               >

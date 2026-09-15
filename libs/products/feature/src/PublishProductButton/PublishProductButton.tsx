@@ -7,7 +7,9 @@ import { usePublishProductButton } from './usePublishProductButton';
 
 export const PublishProductButton = bind(usePublishProductButton, ({ loading, isPublished, publishProduct }) => (
   <Button
-    onClick={publishProduct}
+    onClick={() => {
+      publishProduct().catch(() => {});
+    }}
     variant="contained"
     color="secondary"
     disabled={isPublished || loading}

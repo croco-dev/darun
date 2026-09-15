@@ -29,8 +29,8 @@ export function PageShell({ title, rightSide, children, onBack, backHref }: Page
 
   return (
     <div className="w-full p-5">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
           {backHref ? (
             <a href={backHref} className={backButtonClasses} aria-label="뒤로가기">
               {backIcon}
@@ -40,9 +40,9 @@ export function PageShell({ title, rightSide, children, onBack, backHref }: Page
               {backIcon}
             </button>
           ) : null}
-          <h1 className="text-xl font-semibold tracking-tight text-dark-900">{title}</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-dark-900 truncate">{title}</h1>
         </div>
-        {rightSide ? <div className="shrink-0">{rightSide}</div> : null}
+        {rightSide ? <div className="shrink-0 flex items-center gap-2">{rightSide}</div> : null}
       </div>
       {children}
     </div>

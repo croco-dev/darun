@@ -1,6 +1,6 @@
 'use client';
 
-import { AdminEmptyState, AdminLoadingState } from '@darun/ui-admin';
+import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useProductCompanyInfo } from './useProductCompanyInfo';
 
@@ -26,9 +26,13 @@ function formatStartAt(startAt: unknown) {
   return `${year}. ${month}. ${day}`;
 }
 
-export const ProductCompanyInfo = bind(useProductCompanyInfo, ({ company, loading }) => {
+export const ProductCompanyInfo = bind(useProductCompanyInfo, ({ company, loading, error }) => {
   if (loading) {
     return <AdminLoadingState title="회사 정보를 불러오는 중..." />;
+  }
+
+  if (error) {
+    return <AdminErrorState error={error} title="회사 정보를 불러오지 못했습니다." />;
   }
 
   if (!company) {

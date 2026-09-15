@@ -1,9 +1,7 @@
-'use client';
-
+import { gql } from '@apollo/client';
 import { ProductTagsForm } from '@darun/products-feature';
 import { PageShell, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
-import { useRouter } from 'next/navigation';
-import { use } from 'react';
+import { getClient } from '@darun/utils-apollo-client/server';
 import {
   ProductDetailAlternativeSection,
   ProductDetailCompanySection,
@@ -20,11 +18,45 @@ type PageProps = {
   }>;
 };
 
-export default function ProductDetailPage({ params }: PageProps) {
-  const router = useRouter();
-  const { slug } = use(params);
+const productBasicQuery = gql`
+  query ProductBasicOnAdminDetailPage($slug: String!) {
+    tempProductBySlug(slug: $slug) {
+      id
+      name
+      slug
+    }
+  }
+`;
+
+async function getProductBasic(slug: string) {
+  try {
+    const { data } = await getClient({ static: true }).query<{
+      tempProductBySlug?: { id: string; name: string; slug: string } | null;
+    }>({
+      query: productBasicQuery,
+      variables: { slug },
+    });
+    return data?.tempProductBySlug ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({ params }: PageProps) {
+  const { slug } = await params;
+  const product = await getProductBasic(slug);
+  return {
+    title: product?.name ? `${product.name} | 다른 관리자` : '서비스 상세 | 다른 관리자',
+  };
+}
+
+export default async function ProductDetailPage({ params }: PageProps) {
+  const { slug } = await params;
+  const product = await getProductBasic(slug);
+  const title = product?.name ? `${product.name} 상세` : '서비스 상세';
+
   return (
-    <PageShell title={'서비스 상세'} onBack={() => router.push('/products')}>
+    <PageShell title={title} backHref="/products">
       <ProductDetailInfoSection slug={slug} />
       <div className="flex flex-col gap-8 mt-6">
         <ProductDetailDescriptionSection slug={slug} />

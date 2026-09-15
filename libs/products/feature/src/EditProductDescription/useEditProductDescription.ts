@@ -50,8 +50,9 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
     form.setValues({ description });
   }, [data, form]);
 
-  const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument, {
+  const [editDescription, { loading }] = useMutation(EditProductOnEditProductDescriptionDocument, {
     refetchQueries: [TempProductBySlugOnEditProductDescriptionDocument, TempProductBySlugOnProductDescriptionDocument],
+    awaitRefetchQueries: true,
     onCompleted: ({ editProduct }) => {
       if (editProduct.product.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
@@ -67,6 +68,9 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
   });
 
   const submit = async (values: FormValues) => {
+    if (loading) {
+      return;
+    }
     if (!values.description) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
@@ -86,5 +90,6 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
     form,
     submit,
     defaultValue: data?.tempProductBySlug?.description ?? '',
+    loading,
   };
 }

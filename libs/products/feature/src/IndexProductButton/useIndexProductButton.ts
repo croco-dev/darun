@@ -32,6 +32,9 @@ export function useIndexProductButton({ slug }: IndexProductButtonProps) {
   });
 
   const indexProduct = async () => {
+    if (loading) {
+      return;
+    }
     try {
       await indexProductMutation({
         variables: {

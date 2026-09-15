@@ -7,12 +7,25 @@ import { useProductInfo } from './useProductInfo';
 
 const DEFAULT_LOGO = '/images/default-product-icon.svg';
 
-export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, summary, slug }) => {
+export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, summary, slug, loading }) => {
   const [imgSrc, setImgSrc] = useState(logoUrl || DEFAULT_LOGO);
 
   useEffect(() => {
     setImgSrc(logoUrl || DEFAULT_LOGO);
   }, [logoUrl]);
+
+  if (loading && !name) {
+    return (
+      <div className="flex items-start gap-3 animate-pulse" aria-busy="true" aria-label="서비스 정보 불러오는 중">
+        <div className="h-16 w-16 rounded-xl border border-dark-200 bg-surface-200 shrink-0" />
+        <div className="flex flex-col gap-2 flex-1">
+          <div className="h-7 w-48 rounded bg-surface-200" />
+          <div className="h-4 w-72 rounded bg-surface-200" />
+          <div className="h-6 w-24 rounded bg-surface-200" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-start gap-3">

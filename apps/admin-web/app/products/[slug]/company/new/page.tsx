@@ -1,8 +1,4 @@
-'use client';
-
 import { PageShell } from '@darun/ui-admin';
-import { useRouter } from 'next/navigation';
-import { use } from 'react';
 import { ProductCompanyEditSection } from '../../../../../features/products/ProductCompanyEditSection';
 
 type PageProps = {
@@ -11,11 +7,10 @@ type PageProps = {
   }>;
 };
 
-export default function ProductCompanyEditPage({ params }: PageProps) {
-  const router = useRouter();
-  const { slug } = use(params);
+export default async function ProductCompanyEditPage({ params }: PageProps) {
+  const { slug } = await params;
   return (
-    <PageShell title={'서비스에 회사 연결하기'} onBack={() => router.push(`/products/${slug}`)}>
+    <PageShell title="서비스에 회사 연결하기" backHref={`/products/${slug}`}>
       <ProductCompanyEditSection slug={slug} />
     </PageShell>
   );
