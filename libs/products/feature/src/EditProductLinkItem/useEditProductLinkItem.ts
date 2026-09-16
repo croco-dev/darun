@@ -23,10 +23,11 @@ gql`
   }
 `;
 
-type EditProductLinkItemProps = {
+export type EditProductLinkItemProps = {
   slug: string;
   link: EditProductLinkItemFragment;
   onSubmit?: () => void;
+  onCancel?: () => void;
 };
 
 type FormValues = {
@@ -36,7 +37,7 @@ type FormValues = {
   iconUrl?: string;
 };
 
-export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLinkItemProps) {
+export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditProductLinkItemProps) {
   const [updateLink, { loading }] = useMutation(UpdateProductLinkOnEditProductLinkItemDocument, {
     refetchQueries: [TempProductBySlugOnProductLinkTableDocument],
     awaitRefetchQueries: true,
@@ -119,5 +120,5 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
     }
   };
 
-  return { form, submit, loading };
+  return { form, submit, onCancel, loading };
 }

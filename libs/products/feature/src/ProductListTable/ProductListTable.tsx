@@ -158,7 +158,8 @@ export function ProductListTable() {
           <div className="flex gap-2">
             <Button
               type="button"
-              variant="base"
+              variant="contained"
+              color="secondary"
               size="sm"
               disabled={!hasPreviousPage || isNavigating}
               onClick={loadPreviousPage}
@@ -170,7 +171,8 @@ export function ProductListTable() {
             </Button>
             <Button
               type="button"
-              variant="base"
+              variant="contained"
+              color="secondary"
               size="sm"
               disabled={!hasNextPage || isNavigating}
               onClick={loadNextPage}

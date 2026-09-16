@@ -11,13 +11,15 @@ describe('Button', () => {
 
   it('renders as an anchor when href is provided', () => {
     render(
-      <Button href="/path" as="a">
+      <Button href="/path" as="a" target="_blank" rel="noopener noreferrer">
         링크
       </Button>
     );
 
     const link = screen.getByRole('link', { name: '링크' });
     expect(link).toHaveAttribute('href', '/path');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('maps kind to variant and color without explicit variant props', () => {

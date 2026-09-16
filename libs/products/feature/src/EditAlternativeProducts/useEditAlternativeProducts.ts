@@ -47,7 +47,13 @@ type FormValues = {
   alternativeIds?: string[];
 };
 
-export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
+export type UseEditAlternativeProductsProps = {
+  slug: string;
+  onSubmit?: () => void;
+  onCancel?: () => void;
+};
+
+export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEditAlternativeProductsProps) {
   const [searchedProducts, setSearchedProducts] = useState<Array<{ id: string; name: string }>>([]);
 
   const { data } = useQuery(TempProductBySlugOnEditAlternativeProductsDocument, {
@@ -95,7 +101,7 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
     if (loading) return;
 
     if (!values.alternativeIds) {
-      notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
+      notifications.show({ message: '대안 서비스를 선택해주세요.', color: 'red' });
       return;
     }
 
@@ -177,6 +183,7 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
   return {
     form,
     submit,
+    onCancel,
     updateQuery,
     loading,
     selectData: [

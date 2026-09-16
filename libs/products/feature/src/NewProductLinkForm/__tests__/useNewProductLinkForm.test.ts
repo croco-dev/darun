@@ -118,4 +118,23 @@ describe('useNewProductLinkForm', () => {
     expect(docStr).toContain('links');
     expect(docStr).not.toContain('screenshots');
   });
+
+  it('should show error notification and skip mutation when link has invalid protocol', async () => {
+    const { result } = renderHook(() => useNewProductLinkForm(defaultProps));
+
+    await act(async () => {
+      await result.current.submit({
+        title: 'Test Title',
+        link: 'javascript:alert(1)',
+        displayLink: 'Example Display',
+        iconUrl: 'https://example.com/icon.png',
+      });
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith({
+      message: '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.',
+      color: 'red',
+    });
+    expect(mutateFn).not.toHaveBeenCalled();
+  });
 });

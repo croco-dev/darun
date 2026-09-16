@@ -17,7 +17,7 @@ gql`
   }
 `;
 
-export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit, loading }) => {
+export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit, onCancel, loading }) => {
   return (
     <form onSubmit={form.onSubmit(submit)}>
       <div className="flex flex-col gap-2">
@@ -59,6 +59,11 @@ export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit,
           </AdminSelect>
         </AdminField>
         <AdminActions>
+          {onCancel && (
+            <Button type="button" variant="contained" color="secondary" onClick={onCancel} disabled={loading}>
+              취소
+            </Button>
+          )}
           <Button type="submit" variant="contained" color="primary" disabled={loading}>
             {loading ? '저장 중...' : '저장'}
           </Button>

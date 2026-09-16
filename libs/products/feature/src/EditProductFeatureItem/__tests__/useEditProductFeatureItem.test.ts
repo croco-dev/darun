@@ -120,7 +120,7 @@ describe('useEditProductFeatureItem', () => {
       await result.current.submit({ emoji: '', name: '', summary: '' });
     });
 
-    expect(notifications.show).toHaveBeenCalledWith({ message: '값을 입력해주세요!!', color: 'red' });
+    expect(notifications.show).toHaveBeenCalledWith({ message: '기능 정보를 모두 입력해주세요.', color: 'red' });
     expect(mutateFn).not.toHaveBeenCalled();
   });
 
@@ -131,7 +131,14 @@ describe('useEditProductFeatureItem', () => {
       await result.current.submit({ emoji: '   ', name: '  ', summary: ' ' });
     });
 
-    expect(notifications.show).toHaveBeenCalledWith({ message: '값을 입력해주세요!!', color: 'red' });
+    expect(notifications.show).toHaveBeenCalledWith({ message: '기능 정보를 모두 입력해주세요.', color: 'red' });
     expect(mutateFn).not.toHaveBeenCalled();
+  });
+
+  it('should pass through onCancel callback', () => {
+    const onCancel = vi.fn();
+    const { result } = renderHook(() => useEditProductFeatureItem({ ...defaultProps, onCancel }));
+
+    expect(result.current.onCancel).toBe(onCancel);
   });
 });

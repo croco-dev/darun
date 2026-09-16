@@ -6,8 +6,15 @@ import { RefreshCw } from 'lucide-react';
 import { useCompanyListRefreshButton } from './useCompanyListRefreshButton';
 
 export const CompanyListRefreshButton = bind(useCompanyListRefreshButton, ({ refresh, isRefreshing }) => (
-  <Button onClick={refresh} variant="contained" color="secondary" className="gap-2" disabled={isRefreshing}>
+  <Button
+    type="button"
+    onClick={refresh}
+    variant="contained"
+    color="secondary"
+    className="inline-flex items-center gap-2"
+    disabled={isRefreshing}
+  >
+    <RefreshCw size={16} className={isRefreshing ? 'animate-spin motion-reduce:animate-none' : undefined} />
     {isRefreshing ? '불러오는 중...' : '새로고침'}
-    <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : undefined} />
   </Button>
 ));

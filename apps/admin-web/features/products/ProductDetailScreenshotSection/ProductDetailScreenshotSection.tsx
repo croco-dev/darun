@@ -149,6 +149,19 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
           <AdminEmptyState
             title="등록된 스크린샷이 없습니다."
             description="서비스의 주요 기능 및 화면을 보여주는 스크린샷을 등록해 보세요."
+            action={
+              <Button
+                as={Link}
+                href={`/products/${slug}/screenshots/new`}
+                variant="contained"
+                color="primary"
+                size="sm"
+                className="flex items-center gap-1.5"
+              >
+                <Plus size={16} />
+                스크린샷 추가
+              </Button>
+            }
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -157,9 +170,15 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                 key={screenshot.id}
                 className="group relative flex flex-col overflow-hidden rounded-lg border border-dark-200 bg-surface-100/30 p-2 transition hover:border-dark-300 hover:shadow-card"
               >
-                <div className="aspect-video w-full overflow-hidden rounded-md bg-dark-100">
+                <a
+                  href={screenshot.imageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="aspect-video w-full overflow-hidden rounded-md bg-dark-100 block cursor-zoom-in group/img relative"
+                  title="원본 이미지 보기 (새 창)"
+                >
                   <ScreenshotImage src={screenshot.imageUrl} alt={screenshot.imageAlt || '서비스 스크린샷'} />
-                </div>
+                </a>
                 <div className="mt-2.5 flex items-center justify-between gap-2 px-1">
                   <span className="truncate text-xs font-medium text-dark-700" title={screenshot.imageAlt}>
                     {screenshot.imageAlt || '(대체 텍스트 없음)'}

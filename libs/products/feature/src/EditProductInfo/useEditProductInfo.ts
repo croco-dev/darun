@@ -35,7 +35,13 @@ type FormValues = {
   summary?: string;
 };
 
-export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
+export type UseEditProductInfoProps = {
+  slug: string;
+  onSubmit?: () => void;
+  onCancel?: () => void;
+};
+
+export function useEditProductInfo({ slug, onSubmit, onCancel }: UseEditProductInfoProps) {
   const { data } = useQuery(TempProductBySlugOnEditProductInfoDocument, {
     variables: { slug },
   });
@@ -45,6 +51,9 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
     initialValues: {
       name: '',
       summary: '',
+    },
+    validate: {
+      name: value => (!value?.trim() ? '서비스 이름을 입력해주세요.' : null),
     },
   });
 
@@ -82,20 +91,20 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
     }
     const name = values.name?.trim();
     const summary = values.summary?.trim();
-    if (!name && !summary) {
-      notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
+    if (!name) {
+      notifications.show({ message: '서비스 이름을 입력해주세요.', color: 'red' });
       return;
     }
     await editInformation({
       variables: {
         slug,
         input: {
-          name: name || undefined,
+          name,
           summary: summary || undefined,
         },
       },
     });
   };
 
-  return { form, submit, loading };
+  return { form, submit, onCancel, loading };
 }

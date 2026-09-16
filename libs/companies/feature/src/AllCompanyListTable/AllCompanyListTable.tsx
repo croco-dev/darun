@@ -118,7 +118,8 @@ export const AllCompanyListTable = bind(
                 <div className="flex gap-2">
                   <Button
                     type="button"
-                    variant="base"
+                    variant="contained"
+                    color="secondary"
                     size="sm"
                     onClick={() => handlePage(Math.max(1, page - 1))}
                     disabled={loading || page <= 1}
@@ -133,7 +134,8 @@ export const AllCompanyListTable = bind(
                   </span>
                   <Button
                     type="button"
-                    variant="base"
+                    variant="contained"
+                    color="secondary"
                     size="sm"
                     onClick={() => handlePage(Math.min(calculatedTotalPages, page + 1))}
                     disabled={loading || page >= calculatedTotalPages}

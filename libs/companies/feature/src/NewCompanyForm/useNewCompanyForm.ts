@@ -7,7 +7,7 @@ import {
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -44,6 +44,7 @@ export function parseStartAtToIso(startAt?: string | Date | null): string | unde
 
 export function useNewCompanyForm() {
   const [startAtIsDisabled, setStartAtIsDisabled] = useState(false);
+  const isSubmittingRef = useRef(false);
   const form = useForm<FormValues>({
     initialValues: {
       name: '',
@@ -65,6 +66,7 @@ export function useNewCompanyForm() {
     refetchQueries: [AllCompaniesOnAllCompanyListTableDocument],
     awaitRefetchQueries: true,
     onCompleted: ({ createCompany }) => {
+      isSubmittingRef.current = false;
       if (createCompany.company.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
         form.reset();
@@ -72,6 +74,7 @@ export function useNewCompanyForm() {
       }
     },
     onError: error => {
+      isSubmittingRef.current = false;
       notifications.show({
         title: '오류 발생',
         message: error.message,
@@ -89,7 +92,8 @@ export function useNewCompanyForm() {
     const name = values.name?.trim();
     const type = values.type?.trim();
     const address = values.address?.trim();
-    if (loading || !name || !type || !address) return;
+    if (loading || isSubmittingRef.current || !name || !type || !address) return;
+    isSubmittingRef.current = true;
 
     const startAt = startAtIsDisabled || values.startAtIsDisabled ? undefined : parseStartAtToIso(values.startAt);
 

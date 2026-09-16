@@ -14,6 +14,8 @@ export const SearchProductField = bind(useSearchProductField, ({ products, searc
         type="text"
         placeholder="서비스 이름을 검색하세요."
         list={datalistId}
+        aria-autocomplete="list"
+        aria-controls={datalistId}
         onChange={e => {
           const val = e.target.value;
           searchProduct(val);

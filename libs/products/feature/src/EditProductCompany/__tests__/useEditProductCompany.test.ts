@@ -191,4 +191,22 @@ describe('useEditProductCompany', () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(mockPush).not.toHaveBeenCalled();
   });
+
+  it('should redirect to product page when handleCancel is called without onCancel prop', () => {
+    const { result } = renderHook(() => useEditProductCompany({ slug }));
+    act(() => {
+      result.current.handleCancel();
+    });
+    expect(mockPush).toHaveBeenCalledWith(`/products/${slug}`);
+  });
+
+  it('should call onCancel callback when handleCancel is called with onCancel prop', () => {
+    const onCancel = vi.fn();
+    const { result } = renderHook(() => useEditProductCompany({ slug, onCancel }));
+    act(() => {
+      result.current.handleCancel();
+    });
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(mockPush).not.toHaveBeenCalled();
+  });
 });

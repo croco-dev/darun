@@ -83,7 +83,13 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
     const title = values.title?.trim();
     const iconUrl = values.iconUrl?.trim();
     if (loading || !displayLink || !link || !title || !iconUrl) return;
-    if (!/^https?:\/\//i.test(link)) return;
+    if (!/^https?:\/\//i.test(link)) {
+      notifications.show({
+        message: '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.',
+        color: 'red',
+      });
+      return;
+    }
 
     try {
       await addProductLink({

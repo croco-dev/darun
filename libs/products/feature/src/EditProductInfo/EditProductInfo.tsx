@@ -5,7 +5,7 @@ import { AdminField, AdminInput, AdminTextarea, AdminActions } from '@darun/ui-a
 import { bind } from '@darun/utils-structure-react';
 import { useEditProductInfo } from './useEditProductInfo';
 
-export const EditProductInfo = bind(useEditProductInfo, ({ form, submit, loading }) => (
+export const EditProductInfo = bind(useEditProductInfo, ({ form, submit, onCancel, loading }) => (
   <form onSubmit={form.onSubmit(submit)}>
     <div className="flex flex-col gap-3">
       <AdminField label="서비스 이름" error={form.errors.name}>
@@ -22,6 +22,11 @@ export const EditProductInfo = bind(useEditProductInfo, ({ form, submit, loading
     </div>
 
     <AdminActions>
+      {onCancel && (
+        <Button type="button" variant="contained" color="secondary" onClick={onCancel} disabled={loading}>
+          취소
+        </Button>
+      )}
       <Button type="submit" variant="contained" color="primary" disabled={loading}>
         {loading ? '저장 중...' : '저장'}
       </Button>

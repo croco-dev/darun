@@ -55,6 +55,11 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
             <AdminEmptyState
               title="등록된 대안 서비스가 없습니다."
               description="상단의 '대안 서비스 수정/추가' 버튼을 눌러 이 서비스와 유사하거나 비교 가능한 대안 서비스를 연결하세요."
+              action={
+                <Button type="button" onClick={openEditModal} variant="contained" color="primary">
+                  대안 서비스 연결
+                </Button>
+              }
             />
           ) : (
             <div className="flex flex-col gap-3">
@@ -75,7 +80,7 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
         </AdminSectionBody>
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="다른 서비스(대안) 관리">
-        <EditAlternativeProducts slug={slug} onSubmit={closeEditModal} />
+        <EditAlternativeProducts slug={slug} onSubmit={closeEditModal} onCancel={closeEditModal} />
       </AdminModal>
     </>
   );

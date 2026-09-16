@@ -27,7 +27,7 @@ export const ProductFeatureTable = bind(
     }
 
     if (!features || features.length === 0) {
-      return <AdminEmptyState title="기능이 한 개도 없습니다." description="새 기능을 추가해보세요." />;
+      return <AdminEmptyState title="등록된 기능이 없습니다." description="새로운 기능을 추가해 보세요." />;
     }
 
     return (
