@@ -2,7 +2,7 @@
 
 import { AuthUser } from '@darun/utils-auth-service-core';
 import { useNavigate } from '@darun/utils-router';
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthService } from '../AuthServiceProvider';
 
 export type AuthStateProviderProps = {
@@ -26,6 +26,11 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
+
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
 
   const authState: AuthState = useMemo(() => {
     if (authUser) {
@@ -40,7 +45,13 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
 
   useEffect(() => {
     const unsubscribe = authService.onIdTokenChanged(user => {
-      setAuthUser(user ?? null);
+      setAuthUser(prev => {
+        if (!prev && !user) return prev;
+        if (prev && user && prev.id === user.id && prev.email === user.email && prev.isAdmin === user.isAdmin) {
+          return prev;
+        }
+        return user ?? null;
+      });
       setIsLoading(false);
 
       if (!user) {
@@ -54,11 +65,11 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
       }
 
       authService.clearRedirectUrl();
-      navigate(redirectUrl);
+      navigateRef.current(redirectUrl);
     });
 
     return () => unsubscribe();
-  }, [authService, navigate]);
+  }, [authService]);
 
   return (
     <AuthStateContext.Provider

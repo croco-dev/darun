@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client/react';
-import { TempProductBySlugOnEditAlternativeProductsDocument } from '@darun/provider-graphql';
 import { EditAlternativeProducts } from '@darun/products-feature';
+import { TempProductBySlugOnEditAlternativeProductsDocument } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
 import {
   AdminEmptyState,
@@ -56,9 +56,7 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
             />
           ) : (
             <div className="flex flex-col gap-3">
-              <p className="text-xs font-medium text-dark-500">
-                현재 연결된 대안 서비스 ({alternatives.length}개):
-              </p>
+              <p className="text-xs font-medium text-dark-500">현재 연결된 대안 서비스 ({alternatives.length}개):</p>
               <div className="flex flex-wrap gap-2.5">
                 {alternatives.map(alt => (
                   <div

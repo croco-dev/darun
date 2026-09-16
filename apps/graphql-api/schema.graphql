@@ -158,15 +158,6 @@ type IndexProductPayload {
   indexed: Boolean!
 }
 
-type LlmSetting {
-  apiKeyMasked: String
-  endpoint: String!
-  id: ID!
-  model: String!
-  thinkingLevel: String
-  updatedAt: DateTimeISO!
-}
-
 type Link {
   displayLink: String!
   iconUrl: String!
@@ -174,6 +165,15 @@ type Link {
   isPrimary: Boolean!
   link: String!
   title: String!
+}
+
+type LlmSetting {
+  apiKeyMasked: String
+  endpoint: String!
+  id: ID!
+  model: String!
+  thinkingLevel: String
+  updatedAt: DateTimeISO!
 }
 
 type Magazine {
@@ -287,6 +287,8 @@ type Query {
   productBySlug(locale: String! = "ko", slug: String!): Product
   productsByCategory(locale: String! = "ko", slug: String!): [Product!]!
   productsCount: Int!
+  publishedMagazines: [Magazine!]!
+  publishedProductsForSitemap(after: String, first: Int! = 100): [Product!]!
   rankedProducts(first: Int!, locale: String! = "ko"): [Product!]!
   recentProducts(first: Int!, locale: String! = "ko"): [Product!]!
   searchCompanies(query: String!): [Company!]!

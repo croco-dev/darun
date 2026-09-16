@@ -1912,9 +1912,6 @@ importers:
       '@darun/utils-image-upload':
         specifier: workspace:*
         version: link:../utils-image-upload
-      '@darun/utils-router':
-        specifier: workspace:*
-        version: link:../utils-router
       '@tiptap/extension-image':
         specifier: ^2.7.4
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))

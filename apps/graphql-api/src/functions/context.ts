@@ -1,4 +1,5 @@
 import { GetAccount } from '@darun/accounts-domain';
+import { IS_LOCAL } from '../config/environment';
 
 export type GraphQLContext = {
   requestId: string;
@@ -53,6 +54,9 @@ export function createGraphQLContext({
     },
     getRoles: async () => {
       const account = await getAccount();
+      if (IS_LOCAL && account) {
+        return Array.from(new Set([...(account.roles ?? []), 'admin']));
+      }
       return account?.roles ?? [];
     },
   };
