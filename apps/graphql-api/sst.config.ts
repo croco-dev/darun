@@ -41,6 +41,18 @@ export default $config({
       architecture: 'arm64',
       timeout: '5 minutes',
       logging: { retention: '1 week' },
+      permissions: [
+        {
+          actions: [
+            'sqs:ChangeMessageVisibility',
+            'sqs:DeleteMessage',
+            'sqs:GetQueueAttributes',
+            'sqs:GetQueueUrl',
+            'sqs:ReceiveMessage',
+          ],
+          resources: [translationQueue.arn],
+        },
+      ],
       environment,
     });
 
