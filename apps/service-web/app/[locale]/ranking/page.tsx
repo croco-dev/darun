@@ -1,7 +1,7 @@
 import { RankingPage as RankingPageContent } from '@darun/pages-shell';
 import { Metadata } from 'next';
 import { JsonLd } from '../../../lib/seo/json-ld';
-import { getOgLocale, SITE_COPY } from '../../../lib/seo/metadata';
+import { getOgLocale, getSiteName, SITE_COPY } from '../../../lib/seo/metadata';
 import { absolutePublicUrl, buildAlternates, normalizeLocale } from '../../../lib/seo/url';
 
 type Props = {
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: copy.rankingTitle,
       description: copy.rankingDescription,
       url: alternates.canonical,
-      siteName: '다른(darun)',
+      siteName: getSiteName(currentLocale),
       locale: getOgLocale(currentLocale),
     },
     twitter: {

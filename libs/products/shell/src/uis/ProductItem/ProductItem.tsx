@@ -2,8 +2,9 @@
 
 import { Chip } from '@darun/ui';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import React from 'react';
+import { getLocalizedTag } from '../../utils/localization';
 
 type ProductItemProps = {
   as?: 'div' | 'a' | 'button';
@@ -52,7 +53,8 @@ export const ProductItem = ({
   headerRight,
   footerRight,
 }: ProductItemProps) => {
-  const t = useTranslations('ProductDetail');
+  const effectiveT = useTranslations('ProductDetail');
+  const locale = useLocale();
   const Component = as;
   const NameTag = nameAs;
   const [resolvedLogoUrl, setResolvedLogoUrl] = React.useState(logoUrl);
@@ -82,7 +84,7 @@ export const ProductItem = ({
               <Image
                 src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}
                 unoptimized={!resolvedLogoUrl}
-                alt={t('productItem.logoAlt', { name })}
+                alt={effectiveT('productItem.logoAlt', { name })}
                 width={44}
                 height={44}
                 className="h-full w-full rounded-lg object-contain"
@@ -96,7 +98,7 @@ export const ProductItem = ({
               {tags && tags.length > 0 && (
                 <div className="flex items-center gap-1.5 overflow-hidden">
                   <span className="inline-block truncate rounded-md bg-dark-100/80 px-1.5 py-0.5 text-2xs font-semibold text-dark-600 group-hover:bg-dark-150/70">
-                    {tags[0]}
+                    {getLocalizedTag(tags[0], locale)}
                   </span>
                   {tags.length > 1 && (
                     <span className="shrink-0 rounded-md bg-dark-100/80 px-1.5 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
@@ -138,7 +140,7 @@ export const ProductItem = ({
         <Image
           src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}
           unoptimized={!resolvedLogoUrl}
-          alt={t('productItem.logoAlt', { name })}
+          alt={effectiveT('productItem.logoAlt', { name })}
           width={logoSizes[effectiveLogoSize].imageSize}
           height={logoSizes[effectiveLogoSize].imageSize}
           className={`h-full w-full object-contain ${isHero ? 'rounded-xl' : 'rounded-lg'}`}
@@ -190,7 +192,7 @@ export const ProductItem = ({
                           variant={tagVariant}
                           color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}
                         >
-                          {tag}
+                          {getLocalizedTag(tag, locale)}
                         </Chip>
                       ))}
                       <span className="shrink-0 rounded-md bg-dark-100/80 px-1.5 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
@@ -204,7 +206,7 @@ export const ProductItem = ({
                         variant={tagVariant}
                         color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}
                       >
-                        {tag}
+                        {getLocalizedTag(tag, locale)}
                       </Chip>
                     ))
                   ))}

@@ -1,4 +1,5 @@
 import { Heart } from '@darun/ui';
+import { useLocale } from 'next-intl';
 import type { FC } from 'react';
 
 type VoteCountBadgeProps = {
@@ -6,18 +7,24 @@ type VoteCountBadgeProps = {
   className?: string;
 };
 
-export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' }) => (
-  <div
-    role="status"
-    aria-label={`추천 ${count}`}
-    title={`추천 ${count}`}
-    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cherry-200/70 bg-cherry-50/60 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-cherry-900 shadow-2xs transition-all duration-200 ease-out group-hover:border-cherry-300 group-hover:bg-cherry-50 group-hover:shadow-xs motion-reduce:transition-none ${className}`}
-  >
-    <Heart
-      size={13}
-      className="text-cherry-500 fill-cherry-500/40 transition-transform duration-200 ease-out group-hover:scale-110 motion-reduce:transform-none"
-      aria-hidden="true"
-    />
-    <span>{count}</span>
-  </div>
-);
+export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' }) => {
+  const locale = useLocale();
+
+  const label = locale === 'en' ? `${count} upvotes` : `추천 ${count}`;
+
+  return (
+    <div
+      role="status"
+      aria-label={label}
+      title={label}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cherry-200/70 bg-cherry-50/60 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-cherry-900 shadow-2xs transition-all duration-200 ease-out group-hover:border-cherry-300 group-hover:bg-cherry-50 group-hover:shadow-xs motion-reduce:transition-none ${className}`}
+    >
+      <Heart
+        size={13}
+        className="text-cherry-500 fill-cherry-500/40 transition-transform duration-200 ease-out group-hover:scale-110 motion-reduce:transform-none"
+        aria-hidden="true"
+      />
+      <span>{count}</span>
+    </div>
+  );
+};

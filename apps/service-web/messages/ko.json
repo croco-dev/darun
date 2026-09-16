@@ -1,5 +1,6 @@
 {
   "Layout": {
+    "skipToContent": "본문 바로가기",
     "header": {
       "ranking": "랭킹",
       "browse": "둘러보기",
@@ -8,9 +9,12 @@
       "logout": "로그아웃",
       "searchPlaceholder": "현재 사용 중인 서비스를 찾아보세요!",
       "searchAriaLabel": "검색어",
-      "mainMenuAriaLabel": "주요 메뉴"
+      "mainMenuAriaLabel": "주요 메뉴",
+      "clearSearch": "검색어 지우기",
+      "logoTitle": "다른 로고"
     },
     "footer": {
+      "brandName": "다른",
       "about": "소개 및 편집 방침",
       "copyright": "© 2024 Croco",
       "privacyPolicy": "개인정보처리방침",
@@ -93,6 +97,20 @@
     },
     "related": {
       "title": "함께 비교되는 서비스"
+    },
+    "tocAriaLabel": "상세 섹션 목차",
+    "loading": "페이지를 불러오는 중입니다",
+    "action": {
+      "upvote": "추천하기",
+      "cancelUpvote": "추천 취소",
+      "voteSuccess": "투표가 완료되었습니다!",
+      "alreadyVoted": "이미 투표한 서비스입니다.",
+      "rateLimit": "단시간에 너무 많은 투표를 시도했습니다. 잠시 후 다시 시도해주세요.",
+      "voteFailed": "투표에 실패했습니다. 다시 시도해주세요."
+    },
+    "compareButton": {
+      "add": "비교에 추가",
+      "remove": "비교 취소"
     }
   },
   "Alternative": {

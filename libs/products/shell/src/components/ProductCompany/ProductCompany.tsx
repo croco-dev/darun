@@ -2,14 +2,15 @@
 
 import { bind } from '@darun/utils-structure-react';
 import { Building2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { getLocalizedCompanyAddress, getLocalizedCompanyType } from '../../utils/localization';
 import { useProductCompany } from './useProductCompany';
 
 type ProductCompanyViewProps = {
   company: ReturnType<typeof useProductCompany>['company'];
 };
 
-function formatStartAt(startAt: unknown) {
+function formatStartAt(startAt: unknown, locale = 'ko') {
   if (!startAt) {
     return '-';
   }
@@ -24,6 +25,15 @@ function formatStartAt(startAt: unknown) {
     return '-';
   }
 
+  if (locale === 'en') {
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(date);
+  }
+
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -33,6 +43,7 @@ function formatStartAt(startAt: unknown) {
 
 export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompanyViewProps) => {
   const t = useTranslations('ProductDetail');
+  const locale = useLocale();
   const hasAnyInfo = Boolean(company?.name || company?.type || company?.address || company?.startAt);
 
   if (!hasAnyInfo) {
@@ -63,7 +74,9 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <dt className="shrink-0 text-xs font-semibold uppercase tracking-wider text-dark-500">
               {t('company.field.status')}
             </dt>
-            <dd className="text-right text-sm font-semibold text-dark-900 break-keep">{company.type}</dd>
+            <dd className="text-right text-sm font-semibold text-dark-900 break-keep">
+              {getLocalizedCompanyType(company.type, locale) ?? company.type}
+            </dd>
           </div>
         )}
         {company?.address && (
@@ -71,7 +84,9 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <dt className="shrink-0 text-xs font-semibold uppercase tracking-wider text-dark-500">
               {t('company.field.address')}
             </dt>
-            <dd className="text-right text-sm font-semibold text-dark-900 break-keep">{company.address}</dd>
+            <dd className="text-right text-sm font-semibold text-dark-900 break-keep">
+              {getLocalizedCompanyAddress(company.address, locale) ?? company.address}
+            </dd>
           </div>
         )}
         {company?.startAt && (
@@ -80,7 +95,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
               {t('company.field.foundedAt')}
             </dt>
             <dd className="text-right text-sm font-semibold text-dark-900 break-keep">
-              {formatStartAt(company.startAt)}
+              {formatStartAt(company.startAt, locale)}
             </dd>
           </div>
         )}

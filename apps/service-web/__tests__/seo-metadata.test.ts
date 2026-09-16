@@ -12,6 +12,8 @@ describe('SEO Metadata Helpers', () => {
   describe('Site identity and copy', () => {
     it('returns consistent site name', () => {
       expect(getSiteName()).toBe('다른(darun)');
+      expect(getSiteName('ko')).toBe('다른(darun)');
+      expect(getSiteName('en')).toBe('Darun');
     });
 
     it('returns valid OG locales', () => {
@@ -46,6 +48,10 @@ describe('SEO Metadata Helpers', () => {
       });
       expect(enMetadata.description).toBe(SITE_COPY.en.description);
       expect(enMetadata.openGraph?.locale).toBe('en_US');
+      expect(enMetadata.openGraph?.siteName).toBe('Darun');
+
+      const koMetadata = buildRootLayoutMetadata('ko');
+      expect(koMetadata.openGraph?.siteName).toBe('다른(darun)');
     });
   });
 
@@ -58,6 +64,7 @@ describe('SEO Metadata Helpers', () => {
       expect(metadata.alternates?.languages?.['x-default']).toBe('https://www.darun.io/ko');
       expect(metadata.alternates?.types?.['text/markdown']).toBe('https://www.darun.io/ko.md');
       expect(metadata.openGraph?.url).toBe('https://www.darun.io/ko');
+      expect(metadata.openGraph?.siteName).toBe('다른(darun)');
     });
 
     it('sets self-canonical and alternates for English homepage', () => {
@@ -68,6 +75,7 @@ describe('SEO Metadata Helpers', () => {
       expect(metadata.alternates?.languages?.['x-default']).toBe('https://www.darun.io/ko');
       expect(metadata.alternates?.types?.['text/markdown']).toBe('https://www.darun.io/en.md');
       expect(metadata.openGraph?.url).toBe('https://www.darun.io/en');
+      expect(metadata.openGraph?.siteName).toBe('Darun');
     });
   });
 

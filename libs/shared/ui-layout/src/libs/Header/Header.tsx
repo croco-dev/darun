@@ -21,7 +21,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               href={headerUrl}
               className="block rounded-xl transition-opacity duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
-              <Logo size={36} />
+              <Logo size={36} title={t('logoTitle')} />
             </Link>
             <nav className="hidden items-center gap-1 sm:flex" aria-label={t('mainMenuAriaLabel')}>
               <Link

@@ -16,8 +16,8 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-start">
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Logo size={20} />
-              <span className="text-sm font-bold text-dark-900">다른</span>
+              <Logo size={20} title={t('brandName')} />
+              <span className="text-sm font-bold text-dark-900">{t('brandName')}</span>
               <span className="text-xs text-dark-400">/</span>
               <span className="text-sm text-dark-500">&copy; {new Date().getFullYear()} Croco</span>
             </div>

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
 import { JsonLd } from '../../../../lib/seo/json-ld';
+import { getSiteName } from '../../../../lib/seo/metadata';
 import { absolutePublicUrl, normalizeLocale } from '../../../../lib/seo/url';
 import { getClient } from '../../../getServerClient';
 
@@ -74,7 +75,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `${title} - 다른`,
       description,
-      siteName: '다른(darun)',
+      siteName: getSiteName(currentLocale),
       url: canonicalUrl,
       type: 'article',
       locale: 'ko_KR',

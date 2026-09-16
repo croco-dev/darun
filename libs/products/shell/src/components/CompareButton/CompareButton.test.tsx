@@ -43,6 +43,11 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+vi.mock('next-intl', () => ({
+  useLocale: () => 'ko',
+  useTranslations: () => (key: string) => (key === 'remove' ? '비교 취소' : '비교에 추가'),
+}));
+
 const STORAGE_KEY = 'compare-products';
 
 describe('CompareButton', () => {
@@ -139,7 +144,7 @@ describe('CompareButton', () => {
     });
 
     expect(localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(['product-a', 'product-b']));
-    expect(mockPush).toHaveBeenCalledWith('/compare/product-a/product-b');
+    expect(mockPush).toHaveBeenCalledWith('/ko/compare/product-a/product-b');
   });
 
   it('shifts first item when adding a third item and navigates to compare page', () => {
@@ -157,7 +162,7 @@ describe('CompareButton', () => {
     });
 
     expect(localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(['product-b', 'product-c']));
-    expect(mockPush).toHaveBeenCalledWith('/compare/product-b/product-c');
+    expect(mockPush).toHaveBeenCalledWith('/ko/compare/product-b/product-c');
   });
 
   it('emits add event when first product is added to empty compare list', () => {

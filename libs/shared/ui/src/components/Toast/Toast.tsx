@@ -19,7 +19,13 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({
+  children,
+  closeAriaLabel = '알림 닫기',
+}: {
+  children: React.ReactNode;
+  closeAriaLabel?: string;
+}) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timerIdsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -77,7 +83,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => removeToast(toast.id)}
               className="-mr-1 ml-1.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-              aria-label="알림 닫기"
+              aria-label={closeAriaLabel}
             >
               <X size={14} className="stroke-[2.5]" aria-hidden="true" />
             </button>

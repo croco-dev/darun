@@ -25,6 +25,16 @@ vi.mock('../CompareButton', () => ({
   CompareButton: () => <div data-testid="mock-compare-button">Compare</div>,
 }));
 
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => {
+    if (key === 'voteSuccess') return '투표가 완료되었습니다!';
+    if (key === 'cancelUpvote') return '추천 취소';
+    if (key === 'upvote') return '추천하기';
+    return key;
+  },
+  useLocale: () => 'ko',
+}));
+
 describe('ProductUserAction Toast Integration', () => {
   let root: Root | undefined;
   let container: HTMLDivElement;

@@ -2,7 +2,7 @@ import { Breadcrumb, Button, ContentArea, ExternalLink, PageHeading, ShieldCheck
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import { JsonLd } from '../../../lib/seo/json-ld';
-import { getOgLocale } from '../../../lib/seo/metadata';
+import { getOgLocale, getSiteName } from '../../../lib/seo/metadata';
 import { absolutePublicUrl, buildAlternates, normalizeLocale } from '../../../lib/seo/url';
 
 type Props = {
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       url: alternates.canonical,
-      siteName: '다른(darun)',
+      siteName: getSiteName(currentLocale),
       locale: getOgLocale(currentLocale),
     },
     twitter: {
@@ -125,7 +125,7 @@ export default async function AboutPage({ params }: Props) {
     url: canonicalUrl,
     publisher: {
       '@type': 'Organization',
-      name: '다른(darun)',
+      name: getSiteName(currentLocale),
       url: 'https://www.darun.io',
     },
   };
