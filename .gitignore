@@ -41,6 +41,5 @@ yarn-error.log*
 .claude
 .sisyphus
 
-# Next.js agent files
-**/AGENTS.md
+# Agent files
 **/CLAUDE.md

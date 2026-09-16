@@ -41,7 +41,7 @@
         "title": "Please enter a search term in the search box above.",
         "description": "e.g.) Service name: 'Toss', 'Naver' or category: 'Finance', 'Video', etc..."
       },
-      "resultTitle": "'{query}' search results",
+      "resultTitle": "‘{query}’ search results",
       "popularQueriesTitle": "Popular searches",
       "categoriesTitle": "Categories",
       "trendingTitle": "Trending services"
@@ -50,7 +50,7 @@
       "empty": {
         "title": "No search results found.",
         "description": "Try a more specific query, e.g. ‘Toss’, ‘Naver’...",
-        "noResults": "No results found for ‘{query}'.",
+        "noResults": "No results found for ‘{query}’.",
         "popularQueries": "Popular searches",
         "categories": "Categories",
         "trending": "Trending services"
