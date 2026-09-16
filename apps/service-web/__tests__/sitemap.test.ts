@@ -158,4 +158,40 @@ describe('buildSitemapEntries', () => {
       expect(entries.some(e => e.url === `${CANONICAL_ORIGIN}/en/products/product-${i}`)).toBe(true);
     }
   });
+
+  it('각 라우트 유형에 맞는 changeFrequency와 priority를 올바르게 부여한다', async () => {
+    const entries = await buildSitemapEntries({
+      fetchProducts: async () => [{ id: '1', slug: 'notion', alternatives: [{ slug: 'obsidian' }] }],
+      fetchCategories: async () => [{ slug: 'productivity' }],
+      fetchMagazines: async () => [{ slug: 'trends' }],
+    });
+
+    const homeKo = entries.find(e => e.url === `${CANONICAL_ORIGIN}/ko`);
+    expect(homeKo?.changeFrequency).toBe('daily');
+    expect(homeKo?.priority).toBe(1.0);
+
+    const rankingKo = entries.find(e => e.url === `${CANONICAL_ORIGIN}/ko/ranking`);
+    expect(rankingKo?.changeFrequency).toBe('daily');
+    expect(rankingKo?.priority).toBe(0.9);
+
+    const aboutKo = entries.find(e => e.url === `${CANONICAL_ORIGIN}/ko/about`);
+    expect(aboutKo?.changeFrequency).toBe('monthly');
+    expect(aboutKo?.priority).toBe(0.5);
+
+    const catKo = entries.find(e => e.url === `${CANONICAL_ORIGIN}/ko/categories/productivity`);
+    expect(catKo?.changeFrequency).toBe('weekly');
+    expect(catKo?.priority).toBe(0.7);
+
+    const prodKo = entries.find(e => e.url === `${CANONICAL_ORIGIN}/ko/products/notion`);
+    expect(prodKo?.changeFrequency).toBe('weekly');
+    expect(prodKo?.priority).toBe(0.8);
+
+    const altKo = entries.find(e => e.url === `${CANONICAL_ORIGIN}/ko/products/notion/alternatives`);
+    expect(altKo?.changeFrequency).toBe('weekly');
+    expect(altKo?.priority).toBe(0.7);
+
+    const magKo = entries.find(e => e.url === `${CANONICAL_ORIGIN}/ko/magazines/trends`);
+    expect(magKo?.changeFrequency).toBe('weekly');
+    expect(magKo?.priority).toBe(0.7);
+  });
 });

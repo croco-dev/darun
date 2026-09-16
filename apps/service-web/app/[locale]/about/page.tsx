@@ -1,8 +1,9 @@
 import { Breadcrumb, Button, ContentArea, ExternalLink, PageHeading, ShieldCheck, Sparkles } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
+import { JsonLd } from '../../../lib/seo/json-ld';
 import { getOgLocale } from '../../../lib/seo/metadata';
-import { buildAlternates, normalizeLocale } from '../../../lib/seo/url';
+import { absolutePublicUrl, buildAlternates, normalizeLocale } from '../../../lib/seo/url';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -91,8 +92,48 @@ export default async function AboutPage({ params }: Props) {
   const currentLocale = normalizeLocale(locale);
   const isKo = currentLocale === 'ko';
 
+  const canonicalUrl = absolutePublicUrl(currentLocale, '/about');
+  const pageTitle = isKo ? '소개 및 편집 방침 - 다른' : 'About and Editorial Policy - Darun';
+  const pageDescription = isKo
+    ? '다른(darun)의 서비스 목적, 편집 원칙, 데이터 투명성 및 운영 방침을 안내합니다.'
+    : 'Learn about Darun, our editorial curation policy, data transparency, and platform values.';
+
+  const breadcrumbList = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: isKo ? '홈' : 'Home',
+        item: absolutePublicUrl(currentLocale, '/'),
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: isKo ? '소개' : 'About',
+        item: canonicalUrl,
+      },
+    ],
+  };
+
+  const aboutPageJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: pageTitle,
+    description: pageDescription,
+    url: canonicalUrl,
+    publisher: {
+      '@type': 'Organization',
+      name: '다른(darun)',
+      url: 'https://www.darun.io',
+    },
+  };
+
   return (
     <Layout>
+      <JsonLd data={breadcrumbList} />
+      <JsonLd data={aboutPageJsonLd} />
       <main className="flex w-full flex-col">
         <ContentArea className="flex max-w-4xl flex-col gap-8 py-10 md:gap-10 md:py-16">
           <Breadcrumb

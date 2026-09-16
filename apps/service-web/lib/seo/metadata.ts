@@ -64,28 +64,34 @@ export function getOgLocale(locale: PublicLocale): string {
   return LOCALE_TO_OG_LOCALE[locale] ?? 'ko_KR';
 }
 
-export function buildRootLayoutMetadata(): Metadata {
+export function buildRootLayoutMetadata(locale: PublicLocale = 'ko'): Metadata {
+  const copy = SITE_COPY[locale];
   return {
     metadataBase: new URL(PUBLIC_ORIGIN),
     title: {
-      default: SITE_COPY.ko.title,
+      default: copy.title,
       template: '%s',
     },
-    description: SITE_COPY.ko.description,
+    description: copy.description,
     openGraph: {
       siteName: SITE_NAME,
+      title: copy.title,
+      description: copy.description,
       type: 'website',
+      locale: getOgLocale(locale),
       images: [
         {
           url: OG_IMAGE_URL,
           width: 1200,
           height: 630,
-          alt: SITE_COPY.ko.ogImageAlt,
+          alt: copy.ogImageAlt,
         },
       ],
     },
     twitter: {
       card: 'summary_large_image',
+      title: copy.title,
+      description: copy.description,
       images: [OG_IMAGE_URL],
     },
     // We intentionally do not set root canonical here so child pages own their canonical identity
