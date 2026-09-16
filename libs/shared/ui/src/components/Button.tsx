@@ -100,6 +100,8 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   as?: ElementType;
   children?: ReactNode;
   href?: string;
+  target?: string;
+  rel?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
   color?: ButtonColor;

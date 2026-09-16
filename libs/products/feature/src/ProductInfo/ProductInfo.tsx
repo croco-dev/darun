@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@darun/ui';
+import { Button, cn } from '@darun/ui';
 import { AdminErrorState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
@@ -57,7 +57,9 @@ export const ProductInfo = bind(useProductInfo, ({ name, logoUrl, summary, slug,
       <div className="flex flex-col gap-1">
         <div className="flex flex-col gap-px">
           <h2 className="text-2xl font-semibold text-dark-900">{name}</h2>
-          <p className="text-sm text-dark-500">{summary}</p>
+          <p className={cn('text-sm', summary ? 'text-dark-500' : 'text-dark-400 italic')}>
+            {summary || '한 줄 소개가 없습니다.'}
+          </p>
         </div>
         {slug && (
           <code className="inline-flex w-fit rounded-md bg-surface-100 px-2 py-1 text-sm font-bold text-dark-900">

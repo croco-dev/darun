@@ -7,7 +7,7 @@ import { useEditAlternativeProducts } from './useEditAlternativeProducts';
 
 export const EditAlternativeProducts = bind(
   useEditAlternativeProducts,
-  ({ form, submit, selectData, updateQuery, loading }) => (
+  ({ form, submit, onCancel, selectData, updateQuery, loading }) => (
     <form onSubmit={form.onSubmit(submit)}>
       <div className="flex flex-col gap-3">
         <AdminField label="서비스 검색">
@@ -36,6 +36,11 @@ export const EditAlternativeProducts = bind(
       </div>
 
       <AdminActions>
+        {onCancel && (
+          <Button type="button" variant="contained" color="secondary" onClick={onCancel} disabled={loading}>
+            취소
+          </Button>
+        )}
         <Button type="submit" variant="contained" color="primary" disabled={loading}>
           {loading ? '저장 중...' : '저장'}
         </Button>

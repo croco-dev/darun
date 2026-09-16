@@ -32,9 +32,12 @@ const mockForm = {
   errors: {},
 };
 
+const mockHandleCancel = vi.fn();
+
 const defaultHookReturn = {
   form: mockForm,
   handleSubmit: vi.fn(),
+  handleCancel: mockHandleCancel,
   companies: [] as { label: string; value: string }[],
   searchValue: '',
   handleSearchChange: mockHandleSearchChange,
@@ -86,5 +89,14 @@ describe('EditProductCompany', () => {
     render(<EditProductCompany slug="test-slug" />);
 
     expect(screen.getByRole('button', { name: '저장' })).toBeTruthy();
+  });
+
+  it('should render cancel button and call handleCancel when clicked', () => {
+    render(<EditProductCompany slug="test-slug" />);
+
+    const cancelButton = screen.getByRole('button', { name: '취소' });
+    expect(cancelButton).toBeTruthy();
+    fireEvent.click(cancelButton);
+    expect(mockHandleCancel).toHaveBeenCalledTimes(1);
   });
 });

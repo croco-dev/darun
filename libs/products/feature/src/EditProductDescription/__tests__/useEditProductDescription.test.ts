@@ -238,5 +238,26 @@ describe('useEditProductDescription', () => {
 
       expect(onSubmit).toHaveBeenCalled();
     });
+
+    it('should show error notification with description validation message when description is empty', async () => {
+      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug }));
+      const { notifications } = await import('@mantine/notifications');
+
+      await act(async () => {
+        await result.current.submit({ description: '' });
+      });
+
+      expect(notifications.show).toHaveBeenCalledWith({
+        message: '설명 내용을 입력해주세요.',
+        color: 'red',
+      });
+    });
+
+    it('should pass through onCancel callback', () => {
+      const onCancel = vi.fn();
+      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug, onCancel }));
+
+      expect(result.current.onCancel).toBe(onCancel);
+    });
   });
 });

@@ -20,11 +20,11 @@ export const ProductDetailCompanySection = ({ slug }: { slug: string }) => {
           }
         />
         <AdminSectionBody>
-          <ProductCompanyInfo slug={slug} />
+          <ProductCompanyInfo slug={slug} onConnectCompany={openEditModal} />
         </AdminSectionBody>
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="운영사 수정">
-        <EditProductCompany slug={slug} onSubmit={closeEditModal} />
+        <EditProductCompany slug={slug} onSubmit={closeEditModal} onCancel={closeEditModal} />
       </AdminModal>
     </>
   );

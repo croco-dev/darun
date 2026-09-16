@@ -36,7 +36,13 @@ type FormValues = {
   companyId: string;
 };
 
-export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
+export type UseEditProductCompanyProps = {
+  slug: string;
+  onSubmit?: () => void;
+  onCancel?: () => void;
+};
+
+export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProductCompanyProps) {
   const { push } = useRouter();
   const { data: currentProductData } = useQuery(TempProductBySlugOnProductCompanyInfoDocument, {
     variables: { slug },
@@ -150,9 +156,18 @@ export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubm
       ]
     : companies;
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      push(`/products/${slug}`);
+    }
+  };
+
   return {
     form,
     handleSubmit,
+    handleCancel,
     companies: displayedCompanies,
     searchValue,
     handleSearchChange,

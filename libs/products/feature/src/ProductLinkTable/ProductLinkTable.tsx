@@ -174,7 +174,7 @@ export const ProductLinkTable = bind(
         </div>
         <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="링크 정보 수정">
           {link ? (
-            <EditProductLinkItem slug={slug} link={link} onSubmit={closeEditModal} />
+            <EditProductLinkItem slug={slug} link={link} onSubmit={closeEditModal} onCancel={closeEditModal} />
           ) : (
             <div className="py-4 text-center text-sm text-dark-500">
               오류가 발생했습니다. 새로고침 후 다시 시도해 주세요.

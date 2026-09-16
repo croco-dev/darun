@@ -40,9 +40,11 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="기능 정보 수정">
         {featureId ? (
-          <EditProductFeatureItem featureId={featureId} onSubmit={closeEditModal} />
+          <EditProductFeatureItem featureId={featureId} onSubmit={closeEditModal} onCancel={closeEditModal} />
         ) : (
-          <p className="text-sm text-dark-500">오류 발생. 새로고침 후 시도.</p>
+          <p className="text-sm text-dark-500 py-4 text-center">
+            선택된 기능 정보가 없습니다. 새로고침 후 다시 시도해 주세요.
+          </p>
         )}
       </AdminModal>
     </>

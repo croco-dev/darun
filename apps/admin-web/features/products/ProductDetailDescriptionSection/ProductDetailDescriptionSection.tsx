@@ -21,7 +21,7 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
           rightSide={
             <div className="flex gap-2">
               <GenerateProductDescriptionButton slug={slug} />
-              <Button type="button" onClick={openEditModal} variant="base" size="sm">
+              <Button type="button" onClick={openEditModal} variant="contained" color="secondary" size="sm">
                 <span className="inline-flex items-center gap-2">
                   <Pencil className="h-4 w-4" />
                   수정
@@ -35,7 +35,7 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
         </AdminSectionBody>
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="설명 수정">
-        <EditProductDescription slug={slug} onSubmit={closeEditModal} />
+        <EditProductDescription slug={slug} onSubmit={closeEditModal} onCancel={closeEditModal} />
       </AdminModal>
     </>
   );

@@ -309,8 +309,20 @@ export function ModelSelectModal({
         {!isLoading && !error && (
           <div className="max-h-[48vh] overflow-y-auto space-y-2 pr-1">
             {filteredModels.length === 0 ? (
-              <div className="py-12 text-center text-sm text-dark-400">
-                {models.length === 0 ? '불러온 모델이 없습니다.' : '검색 조건과 일치하는 모델이 없습니다.'}
+              <div className="py-12 flex flex-col items-center justify-center gap-2 text-center text-sm text-dark-500">
+                <p>{models.length === 0 ? '불러온 모델이 없습니다.' : '검색 조건과 일치하는 모델이 없습니다.'}</p>
+                {(searchQuery || selectedCategory !== 'all') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedCategory('all');
+                    }}
+                    className="text-xs font-medium text-dark-700 underline hover:text-dark-900 cursor-pointer"
+                  >
+                    검색 및 필터 초기화
+                  </button>
+                )}
               </div>
             ) : (
               filteredModels.map(model => {

@@ -2,6 +2,7 @@
 
 import { Button } from '@darun/ui';
 import { AdminErrorState, AdminPanel } from '@darun/ui-admin';
+import { Link } from '@darun/utils-router';
 import { useEffect } from 'react';
 
 type ErrorPageProps = {
@@ -21,9 +22,14 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           title="문제가 발생했습니다."
           error={error}
           action={
-            <Button type="button" variant="contained" color="primary" onClick={() => reset()}>
-              다시 시도
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button type="button" variant="contained" color="primary" onClick={() => reset()}>
+                다시 시도
+              </Button>
+              <Button as={Link} href="/" variant="contained" color="secondary">
+                대시보드로 이동
+              </Button>
+            </div>
           }
         />
       </AdminPanel>

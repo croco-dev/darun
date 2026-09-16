@@ -187,9 +187,16 @@ export function AdminLoadingState({
 
 type AdminEmptyStateProps = AdminStateProps & {
   icon?: ReactNode;
+  action?: ReactNode;
 };
 
-export function AdminEmptyState({ title = '데이터가 없습니다.', description, icon, className }: AdminEmptyStateProps) {
+export function AdminEmptyState({
+  title = '데이터가 없습니다.',
+  description,
+  icon,
+  action,
+  className,
+}: AdminEmptyStateProps) {
   return (
     <div className={cn('flex flex-col items-center justify-center text-center p-8 min-h-52', className)}>
       {icon ?? (
@@ -211,6 +218,7 @@ export function AdminEmptyState({ title = '데이터가 없습니다.', descript
       )}
       <h3 className="text-sm font-semibold text-dark-800">{title}</h3>
       {description && <p className="text-xs text-dark-500 mt-1">{description}</p>}
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }

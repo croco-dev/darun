@@ -34,7 +34,13 @@ type FormValues = {
   description?: string;
 };
 
-export function useEditProductDescription({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
+export type UseEditProductDescriptionProps = {
+  slug: string;
+  onSubmit?: () => void;
+  onCancel?: () => void;
+};
+
+export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditProductDescriptionProps) {
   const { data } = useQuery(TempProductBySlugOnEditProductDescriptionDocument, {
     variables: { slug },
   });
@@ -82,7 +88,7 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
     })();
 
     if (!hasContent) {
-      notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
+      notifications.show({ message: '설명 내용을 입력해주세요.', color: 'red' });
       return;
     }
 
@@ -99,6 +105,7 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
   return {
     form,
     submit,
+    onCancel,
     defaultValue: data?.tempProductBySlug?.description ?? '',
     loading,
   };

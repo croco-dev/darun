@@ -105,8 +105,15 @@ describe('useEditProductInfo', () => {
       await result.current.submit({});
     });
 
-    expect(notifications.show).toHaveBeenCalledWith({ message: '값을 입력해주세요!!', color: 'red' });
+    expect(notifications.show).toHaveBeenCalledWith({ message: '서비스 이름을 입력해주세요.', color: 'red' });
     expect(mutateFn).not.toHaveBeenCalled();
+  });
+
+  it('should pass through onCancel callback', () => {
+    const onCancel = vi.fn();
+    const { result } = renderHook(() => useEditProductInfo({ slug: defaultSlug, onCancel }));
+
+    expect(result.current.onCancel).toBe(onCancel);
   });
 
   it('should not call onSubmit when onCompleted condition fails', () => {

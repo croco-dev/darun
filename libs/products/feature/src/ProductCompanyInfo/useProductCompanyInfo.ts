@@ -18,7 +18,12 @@ gql`
   }
 `;
 
-export function useProductCompanyInfo({ slug }: { slug: string }) {
+export type UseProductCompanyInfoProps = {
+  slug: string;
+  onConnectCompany?: () => void;
+};
+
+export function useProductCompanyInfo({ slug, onConnectCompany }: UseProductCompanyInfoProps) {
   const { data, loading, error, refetch } = useQuery(TempProductBySlugOnProductCompanyInfoDocument, {
     variables: { slug },
   });
@@ -27,5 +32,6 @@ export function useProductCompanyInfo({ slug }: { slug: string }) {
     loading,
     error,
     refetch,
+    onConnectCompany,
   };
 }

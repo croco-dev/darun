@@ -32,7 +32,11 @@ gql`
   }
 `;
 
-type EditProductFeatureItemProps = { featureId: string; onSubmit?: () => void };
+export type EditProductFeatureItemProps = {
+  featureId: string;
+  onSubmit?: () => void;
+  onCancel?: () => void;
+};
 
 type FormValues = {
   emoji?: string;
@@ -40,7 +44,7 @@ type FormValues = {
   summary?: string;
 };
 
-export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFeatureItemProps) {
+export function useEditProductFeatureItem({ featureId, onSubmit, onCancel }: EditProductFeatureItemProps) {
   const apolloClient = useApolloClient();
 
   const { data, loading: queryLoading } = useQuery(FeatureOnEditProductFeatureItemDocument, {
@@ -89,7 +93,7 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
   const submit = async (values: FormValues) => {
     if (mutationLoading) return;
     if (!values.emoji?.trim() || !values.name?.trim() || !values.summary?.trim()) {
-      notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
+      notifications.show({ message: '기능 정보를 모두 입력해주세요.', color: 'red' });
       return;
     }
 
@@ -105,5 +109,5 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
     });
   };
 
-  return { loading: queryLoading || mutationLoading, form, submit };
+  return { loading: queryLoading || mutationLoading, form, submit, onCancel };
 }

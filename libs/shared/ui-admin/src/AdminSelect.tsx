@@ -10,7 +10,12 @@ export const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
     const selectId = id ?? generatedId;
 
     return (
-      <select ref={ref} id={selectId} className={cn(`${adminInputBaseClasses} bg-white`, className)} {...props}>
+      <select
+        ref={ref}
+        id={selectId}
+        className={cn(`${adminInputBaseClasses} bg-white cursor-pointer disabled:cursor-not-allowed`, className)}
+        {...props}
+      >
         {children}
       </select>
     );
