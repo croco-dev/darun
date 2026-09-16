@@ -3,7 +3,7 @@ import { sanitizeQuery, TITLE_MAX_LENGTH } from '@darun/sanitize';
 import { Metadata } from 'next';
 
 import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
-import { SITE_COPY } from '../../../../lib/seo/metadata';
+import { getSiteName, SITE_COPY } from '../../../../lib/seo/metadata';
 import { normalizeLocale } from '../../../../lib/seo/url';
 
 type Props = {
@@ -41,7 +41,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     openGraph: {
       title,
       description,
-      siteName: '다른(darun)',
+      siteName: getSiteName(currentLocale),
       type: 'website',
     },
   };

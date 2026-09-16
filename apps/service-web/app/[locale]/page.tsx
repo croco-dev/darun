@@ -14,7 +14,7 @@ import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { JsonLd } from '../../lib/seo/json-ld';
-import { buildHomePageMetadata } from '../../lib/seo/metadata';
+import { buildHomePageMetadata, getSiteName } from '../../lib/seo/metadata';
 import { normalizeLocale } from '../../lib/seo/url';
 import { getClient } from '../getServerClient';
 
@@ -41,7 +41,7 @@ function getWebSiteJsonLd(locale: 'ko' | 'en') {
     '@type': 'WebSite',
     '@id': 'https://www.darun.io/#website',
     url: 'https://www.darun.io/',
-    name: '다른(darun)',
+    name: getSiteName(locale),
     alternateName: ['darun', 'darun.io', '다른'],
     potentialAction: {
       '@type': 'SearchAction',

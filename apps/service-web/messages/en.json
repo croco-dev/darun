@@ -1,5 +1,6 @@
 {
   "Layout": {
+    "skipToContent": "Skip to main content",
     "header": {
       "ranking": "Ranking",
       "browse": "Browse",
@@ -8,9 +9,12 @@
       "logout": "Logout",
       "searchPlaceholder": "Find the service you're currently using!",
       "searchAriaLabel": "Search query",
-      "mainMenuAriaLabel": "Main menu"
+      "mainMenuAriaLabel": "Main menu",
+      "clearSearch": "Clear search query",
+      "logoTitle": "Darun logo"
     },
     "footer": {
+      "brandName": "Darun",
       "about": "About & Editorial Policy",
       "copyright": "© 2024 Croco",
       "privacyPolicy": "Privacy Policy",
@@ -93,6 +97,20 @@
     },
     "related": {
       "title": "Compare With"
+    },
+    "tocAriaLabel": "Section table of contents",
+    "loading": "Loading page...",
+    "action": {
+      "upvote": "Upvote",
+      "cancelUpvote": "Cancel upvote",
+      "voteSuccess": "Your vote has been submitted!",
+      "alreadyVoted": "You have already voted for this product.",
+      "rateLimit": "Too many vote attempts. Please try again in a minute.",
+      "voteFailed": "Failed to vote. Please try again."
+    },
+    "compareButton": {
+      "add": "Add to compare",
+      "remove": "Remove from compare"
     }
   },
   "Alternative": {

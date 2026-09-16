@@ -3,11 +3,12 @@ type LogoProps = {
   scheme?: 'light' | 'dark';
   className?: string;
   ariaHidden?: boolean;
+  title?: string;
 };
 
 const dark = '#111111';
 
-export function Logo({ size, scheme = 'dark', className, ariaHidden = true }: LogoProps) {
+export function Logo({ size, scheme = 'dark', className, ariaHidden = true, title = '다른 로고' }: LogoProps) {
   return (
     <svg
       width={size}
@@ -18,7 +19,7 @@ export function Logo({ size, scheme = 'dark', className, ariaHidden = true }: Lo
       className={className}
       aria-hidden={ariaHidden}
     >
-      <title>다른 로고</title>
+      <title>{title}</title>
       <path
         fillRule="evenodd"
         clipRule="evenodd"

@@ -1,5 +1,8 @@
+'use client';
+
 import { ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
+import { useTranslations } from 'next-intl';
 
 const Skeleton = ({
   width = '100%',
@@ -24,14 +27,12 @@ const Skeleton = ({
 );
 
 export default function Loading() {
+  const t = useTranslations('ProductDetail');
+  const loadingText = t('loading');
+
   return (
     <Layout>
-      <main
-        className="flex w-full flex-col"
-        aria-busy="true"
-        aria-live="polite"
-        aria-label="페이지를 불러오는 중입니다"
-      >
+      <main className="flex w-full flex-col" aria-busy="true" aria-live="polite" aria-label={loadingText}>
         <div className="py-6 md:py-8">
           <ContentArea>
             {/* Breadcrumb Skeleton */}

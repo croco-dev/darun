@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../../lib/seo/indexability';
 import { JsonLd } from '../../../../../lib/seo/json-ld';
-import { getOgLocale } from '../../../../../lib/seo/metadata';
+import { getOgLocale, getSiteName } from '../../../../../lib/seo/metadata';
 import { absolutePublicUrl, buildAlternates, normalizeLocale } from '../../../../../lib/seo/url';
 import { getClient } from '../../../../getServerClient';
 
@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: pageTitle,
       description,
       url: canonicalUrl,
-      siteName: '다른(darun)',
+      siteName: getSiteName(currentLocale),
       locale: getOgLocale(currentLocale),
       images: [
         {

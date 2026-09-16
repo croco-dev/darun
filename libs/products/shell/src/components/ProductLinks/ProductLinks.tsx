@@ -4,9 +4,13 @@ import { Button, ExternalLink } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useLocale } from 'next-intl';
+import { getLocalizedLinkTitle } from '../../utils/localization';
 import { useProductLinks } from './useProductLinks';
 
 export const ProductLinks = bind(useProductLinks, ({ links }) => {
+  const locale = useLocale();
+
   if (!links || links.length === 0) {
     return null;
   }
@@ -42,7 +46,9 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                   />
                 )}
                 <div className="flex flex-col items-start gap-0">
-                  <span className="w-max break-keep text-sm font-semibold text-current">{link.title}</span>
+                  <span className="w-max break-keep text-sm font-semibold text-current">
+                    {getLocalizedLinkTitle(link.title, locale)}
+                  </span>
                   {isPrimary && <span className="break-keep text-xs text-dark-300">{link.displayLink}</span>}
                 </div>
                 <ExternalLink

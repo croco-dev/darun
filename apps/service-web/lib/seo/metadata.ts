@@ -56,8 +56,8 @@ export const SITE_COPY: Record<
   },
 };
 
-export function getSiteName(): string {
-  return SITE_NAME;
+export function getSiteName(locale?: PublicLocale): string {
+  return locale === 'en' ? 'Darun' : SITE_NAME;
 }
 
 export function getOgLocale(locale: PublicLocale): string {
@@ -74,7 +74,7 @@ export function buildRootLayoutMetadata(locale: PublicLocale = 'ko'): Metadata {
     },
     description: copy.description,
     openGraph: {
-      siteName: SITE_NAME,
+      siteName: getSiteName(locale),
       title: copy.title,
       description: copy.description,
       type: 'website',
@@ -111,7 +111,7 @@ export function buildHomePageMetadata(locale: PublicLocale): Metadata {
       title: copy.title,
       description: copy.description,
       url: canonicalUrl,
-      siteName: SITE_NAME,
+      siteName: getSiteName(locale),
       type: 'website',
       locale: getOgLocale(locale),
       images: [

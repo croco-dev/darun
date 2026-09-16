@@ -3,6 +3,7 @@
 import { AnalyticsEvents, track, type ProductAttributionSource } from '@darun/analytics-client';
 import { Button, Check, Plus } from '@darun/ui';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 const STORAGE_KEY = 'compare-products';
@@ -15,6 +16,8 @@ type CompareButtonProps = {
 
 export const CompareButton = ({ slug, source }: CompareButtonProps) => {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('ProductDetail.compareButton');
 
   const getStoredList = (): string[] => {
     if (typeof window === 'undefined') return [];
@@ -72,9 +75,11 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
     }
 
     if (newList.length === 2) {
-      router.push(`/compare/${newList[0]}/${newList[1]}`);
+      router.push(`/${locale}/compare/${newList[0]}/${newList[1]}`);
     }
   };
+
+  const buttonLabel = isAdded ? t('remove') : t('add');
 
   return (
     <Button
@@ -84,7 +89,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       onClick={handleClick}
       data-testid="compare-button"
       aria-pressed={isAdded}
-      title={isAdded ? '비교 취소' : '비교에 추가'}
+      title={buttonLabel}
       className="group transition-all duration-200 active:scale-[0.98]"
     >
       <div className="flex items-center gap-1.5">
@@ -99,7 +104,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
             className="text-dark-600 stroke-[2] transition-transform duration-200 group-hover:scale-110 group-hover:text-dark-900"
           />
         )}
-        <span className="break-keep font-semibold">{isAdded ? '비교 취소' : '비교에 추가'}</span>
+        <span className="break-keep font-semibold">{buttonLabel}</span>
       </div>
     </Button>
   );

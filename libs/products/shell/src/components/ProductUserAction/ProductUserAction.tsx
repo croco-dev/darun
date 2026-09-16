@@ -2,6 +2,7 @@
 
 import { AlertCircle, Button, Heart, useToast } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { CompareButton } from '../CompareButton';
 import { useProductUserAction } from './useProductUserAction';
@@ -11,13 +12,17 @@ export const ProductUserAction = bind(
   ({ voteCount, upvoteProduct, voted, loading, error, slug }) => {
     const { addToast } = useToast();
 
+    const t = useTranslations('ProductDetail.action');
+
+    const voteLabel = voted ? t('cancelUpvote') : t('upvote');
+
     useEffect(() => {
       if (error) {
         addToast(error, 'error');
       } else if (voted && !loading) {
-        addToast('투표가 완료되었습니다!', 'success');
+        addToast(t('voteSuccess'), 'success');
       }
-    }, [error, voted, loading, addToast]);
+    }, [error, voted, loading, addToast, t]);
 
     return (
       <div className="flex items-center gap-2">
@@ -28,9 +33,9 @@ export const ProductUserAction = bind(
           onClick={upvoteProduct}
           disabled={loading}
           data-testid="upvote-btn"
-          aria-label={voted ? '추천 취소' : '추천하기'}
+          aria-label={voteLabel}
           aria-pressed={voted}
-          title={voted ? '추천 취소' : '추천하기'}
+          title={voteLabel}
           className={`group transition-all duration-200 active:scale-[0.98] ${
             voted
               ? 'border-cherry-300 bg-cherry-50/80 text-cherry-900 shadow-xs hover:bg-cherry-100/70'

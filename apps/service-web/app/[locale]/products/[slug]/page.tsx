@@ -1,10 +1,11 @@
 import { gql } from '@apollo/client';
 import { ProductDetailPage } from '@darun/pages-shell';
+import { getLocalizedTag } from '@darun/products-shell';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { JsonLd } from '../../../../lib/seo/json-ld';
-import { getOgLocale } from '../../../../lib/seo/metadata';
+import { getOgLocale, getSiteName } from '../../../../lib/seo/metadata';
 import { absolutePublicUrl, buildAlternates, normalizeLocale } from '../../../../lib/seo/url';
 import { getClient } from '../../../getServerClient';
 
@@ -90,7 +91,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: pageTitle,
       description,
       url: canonicalUrl,
-      siteName: '다른(darun)',
+      siteName: getSiteName(currentLocale),
       type: 'website',
       locale: getOgLocale(currentLocale),
       images: [
@@ -144,7 +145,7 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
     name: product.name,
     description: product.summary || product.description || '',
     url: canonicalUrl,
-    applicationCategory: product.tags?.[0]?.name ?? 'Software',
+    applicationCategory: getLocalizedTag(product.tags?.[0]?.name ?? 'Software', currentLocale),
     ...(product.logoUrl && { image: product.logoUrl }),
     ...(product.ownedCompany && {
       author: {
