@@ -32,7 +32,9 @@ export default $config({
       VOTE_IP_SALT: process.env.VOTE_IP_SALT!,
     };
 
-    const translationQueue = new sst.aws.Queue('TranslationQueue');
+    const translationQueue = new sst.aws.Queue('TranslationQueue', {
+      visibilityTimeout: '6 minutes',
+    });
 
     const translationWorker = new sst.aws.Function('TranslationWorker', {
       handler: 'translation-worker.handler',
