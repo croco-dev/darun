@@ -6,6 +6,7 @@ node_modules
 
 # SST
 .sst
+sst-env.d.ts
 
 .env.dev
 .env.prod

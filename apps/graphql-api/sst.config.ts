@@ -60,6 +60,14 @@ export default $config({
 
     translationQueue.subscribe(translationWorker.arn);
 
+    const router = new sst.aws.Router('GraphqlRouter', {
+      domain: {
+        name: 'api.darun.io',
+        dns: false,
+        cert: 'arn:aws:acm:us-east-1:533267434214:certificate/5c2bbe3c-862b-417d-8ca4-1f372b4bbb5a',
+      },
+    });
+
     const fn = new sst.aws.Function('GraphqlHandler', {
       handler: 'graphql.handler',
       bundle: '.build/lambda',
@@ -77,23 +85,27 @@ export default $config({
         ...environment,
         TRANSLATION_QUEUE_URL: translationQueue.url,
       },
+      url: {
+        cors: {
+          allowOrigins: [
+            'https://www.darun.io',
+            'https://admin.darun.io',
+            'https://visual.darun.io',
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'http://localhost:3002',
+            'http://localhost:3003',
+          ],
+          allowMethods: ['GET', 'POST'],
+          allowHeaders: ['authorization', 'content-type'],
+          allowCredentials: true,
+        },
+        router: {
+          instance: router,
+        },
+      },
     });
 
-    const api = new sst.aws.ApiGatewayV2('GraphqlApi', {
-      domain: {
-        nameId: 'api.darun.io',
-      },
-      accessLog: { retention: '1 week' },
-      cors: {
-        allowOrigins: ['https://www.darun.io', 'https://admin.darun.io', 'https://visual.darun.io'],
-        allowMethods: ['GET', 'POST'],
-        allowHeaders: ['authorization', 'content-type'],
-        allowCredentials: true,
-      },
-    });
-    api.route('POST /graphql', fn.arn);
-    api.route('GET /graphql', fn.arn);
-
-    return { api: api.url };
+    return { api: router.url };
   },
 });
