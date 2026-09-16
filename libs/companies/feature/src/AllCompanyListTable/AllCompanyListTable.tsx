@@ -39,13 +39,22 @@ function formatStartAt(startAt: unknown) {
 
 export const AllCompanyListTable = bind(
   useAllCompanyListTable,
-  ({ companies, totalCount, totalPages, page, handlePage, loading, error }) => {
+  ({ companies, totalCount, totalPages, page, handlePage, loading, error, refetch }) => {
     if (loading && (!companies || companies.length === 0)) {
       return <AdminLoadingState />;
     }
 
     if (error) {
-      return <AdminErrorState error={error} />;
+      return (
+        <AdminErrorState
+          error={error}
+          action={
+            <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+              다시 시도
+            </Button>
+          }
+        />
+      );
     }
 
     if (!companies || companies.length === 0) {
@@ -112,7 +121,7 @@ export const AllCompanyListTable = bind(
                     variant="base"
                     size="sm"
                     onClick={() => handlePage(Math.max(1, page - 1))}
-                    disabled={page === 1}
+                    disabled={loading || page <= 1}
                   >
                     <span className="inline-flex items-center gap-2">
                       <ChevronLeft className="h-4 w-4" />
@@ -127,7 +136,7 @@ export const AllCompanyListTable = bind(
                     variant="base"
                     size="sm"
                     onClick={() => handlePage(Math.min(calculatedTotalPages, page + 1))}
-                    disabled={page >= calculatedTotalPages}
+                    disabled={loading || page >= calculatedTotalPages}
                   >
                     <span className="inline-flex items-center gap-2">
                       다음

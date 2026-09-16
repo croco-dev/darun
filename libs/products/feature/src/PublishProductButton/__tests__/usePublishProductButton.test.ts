@@ -36,7 +36,7 @@ describe('usePublishProductButton', () => {
     vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>);
   });
 
-  it('should log error and rethrow when publish mutation fails', async () => {
+  it('should log error and catch safely when publish mutation fails', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { result } = renderHook(() => usePublishProductButton({ slug: defaultSlug }));
 
@@ -46,7 +46,7 @@ describe('usePublishProductButton', () => {
       act(async () => {
         await result.current.publishProduct();
       })
-    ).rejects.toThrow('Network error');
+    ).resolves.not.toThrow();
 
     expect(consoleSpy).toHaveBeenCalledWith('mutation failed:', expect.any(Error));
     consoleSpy.mockRestore();

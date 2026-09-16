@@ -6,7 +6,12 @@ import { useEditProductDescription } from './useEditProductDescription';
 export const EditProductDescription = bind(useEditProductDescription, ({ form, submit, defaultValue, loading }) => (
   <form onSubmit={form.onSubmit(submit)}>
     <div className="flex flex-col gap-2">
-      <Editor {...form.getInputProps('description')} defaultValue={defaultValue} />
+      <Editor
+        {...form.getInputProps('description')}
+        defaultValue={defaultValue}
+        disabled={loading}
+        editable={!loading}
+      />
     </div>
 
     <AdminActions>

@@ -123,4 +123,15 @@ describe('useEditProductFeatureItem', () => {
     expect(notifications.show).toHaveBeenCalledWith({ message: '값을 입력해주세요!!', color: 'red' });
     expect(mutateFn).not.toHaveBeenCalled();
   });
+
+  it('should reject whitespace-only fields and not trigger mutation', async () => {
+    const { result } = renderHook(() => useEditProductFeatureItem(defaultProps));
+
+    await act(async () => {
+      await result.current.submit({ emoji: '   ', name: '  ', summary: ' ' });
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith({ message: '값을 입력해주세요!!', color: 'red' });
+    expect(mutateFn).not.toHaveBeenCalled();
+  });
 });

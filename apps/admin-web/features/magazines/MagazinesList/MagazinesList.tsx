@@ -4,6 +4,7 @@ import { Button } from '@darun/ui';
 import { AdminEmptyState, AdminPanel } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, ExternalLink, Sparkles, User } from 'lucide-react';
+import { useState } from 'react';
 import { useMagazinesList } from './useMagazinesList';
 
 function formatDate(dateString?: string | null): string {
@@ -14,6 +15,28 @@ function formatDate(dateString?: string | null): string {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}.${month}.${day}`;
+}
+
+function MagazineThumbnail({ src, alt }: { src?: string | null; alt: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (!src || hasError) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-100 to-surface-200 text-dark-400">
+        <Sparkles size={28} className="text-dark-300" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+      loading="lazy"
+      onError={() => setHasError(true)}
+    />
+  );
 }
 
 export const MagazinesList = bind(useMagazinesList, ({ magazines, page, setPage, totalCount, totalPages }) => {
@@ -42,18 +65,7 @@ export const MagazinesList = bind(useMagazinesList, ({ magazines, page, setPage,
             >
               {/* Thumbnail */}
               <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-100 border-b border-dark-150">
-                {item.backgroundImageUrl ? (
-                  <img
-                    src={item.backgroundImageUrl}
-                    alt={item.title}
-                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-100 to-surface-200 text-dark-400">
-                    <Sparkles size={28} className="text-dark-300" />
-                  </div>
-                )}
+                <MagazineThumbnail src={item.backgroundImageUrl} alt={item.title} />
                 {/* Publication Status Badge */}
                 <div className="absolute top-3 left-3">
                   <span

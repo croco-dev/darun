@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useProductCompanyInfo } from './useProductCompanyInfo';
@@ -26,13 +27,23 @@ function formatStartAt(startAt: unknown) {
   return `${year}. ${month}. ${day}`;
 }
 
-export const ProductCompanyInfo = bind(useProductCompanyInfo, ({ company, loading, error }) => {
+export const ProductCompanyInfo = bind(useProductCompanyInfo, ({ company, loading, error, refetch }) => {
   if (loading) {
     return <AdminLoadingState title="회사 정보를 불러오는 중..." />;
   }
 
   if (error) {
-    return <AdminErrorState error={error} title="회사 정보를 불러오지 못했습니다." />;
+    return (
+      <AdminErrorState
+        error={error}
+        title="회사 정보를 불러오지 못했습니다."
+        action={
+          <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+            다시 시도
+          </Button>
+        }
+      />
+    );
   }
 
   if (!company) {

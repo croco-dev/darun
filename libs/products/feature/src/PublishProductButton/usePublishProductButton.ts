@@ -67,7 +67,6 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
       });
     } catch (error) {
       console.error('mutation failed:', error);
-      throw error;
     }
   };
   return {

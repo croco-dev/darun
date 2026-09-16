@@ -10,17 +10,31 @@ import { MenuBar } from './MenuBar';
 type EditorProps = {
   defaultValue?: string;
   onChange?: (content: string) => void;
+  editable?: boolean;
+  disabled?: boolean;
 };
 
-export function Editor({ defaultValue, onChange }: EditorProps) {
+export function Editor({ defaultValue, onChange, editable = true, disabled = false }: EditorProps) {
+  const isEditable = editable && !disabled;
   const editor = useEditor({
     extensions: [StarterKit, Image, Typography],
     content: defaultValue ?? '',
+    editable: isEditable,
     onUpdate: ({ editor: currentEditor }) => {
       onChange?.(currentEditor.getHTML());
     },
     immediatelyRender: false,
   });
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    if (editor.isEditable !== isEditable) {
+      editor.setEditable(isEditable);
+    }
+  }, [editor, isEditable]);
 
   useEffect(() => {
     if (!editor) {
@@ -47,7 +61,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <MenuBar editor={editor} />
+      <MenuBar editor={editor} disabled={!isEditable} />
       <EditorContent
         editor={editor}
         className="min-h-72 rounded-card border border-dark-200 bg-white p-4 [&_.ProseMirror]:min-h-60 [&_.ProseMirror]:outline-none"

@@ -71,7 +71,17 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
     if (loading) {
       return;
     }
-    if (!values.description) {
+    const hasContent = (() => {
+      const desc = values.description?.trim();
+      if (!desc) return false;
+      if (typeof DOMParser !== 'undefined') {
+        const doc = new DOMParser().parseFromString(desc, 'text/html');
+        return Boolean(doc.body.textContent?.trim() || doc.body.querySelector('img, video, iframe'));
+      }
+      return Boolean(desc);
+    })();
+
+    if (!hasContent) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }

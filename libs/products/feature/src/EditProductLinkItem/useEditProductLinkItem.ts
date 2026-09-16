@@ -2,7 +2,11 @@
 
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { EditProductLinkItemFragment, UpdateProductLinkOnEditProductLinkItemDocument } from '@darun/provider-graphql';
+import {
+  EditProductLinkItemFragment,
+  TempProductBySlugOnProductLinkTableDocument,
+  UpdateProductLinkOnEditProductLinkItemDocument,
+} from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useEffect } from 'react';
@@ -34,6 +38,8 @@ type FormValues = {
 
 export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLinkItemProps) {
   const [updateLink, { loading }] = useMutation(UpdateProductLinkOnEditProductLinkItemDocument, {
+    refetchQueries: [TempProductBySlugOnProductLinkTableDocument],
+    awaitRefetchQueries: true,
     onCompleted: () => {
       notifications.show({ message: '수정되었습니다.', color: 'teal' });
       onSubmit?.();
@@ -51,6 +57,14 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
       displayLink: link.displayLink,
       iconUrl: link.iconUrl,
     },
+    validate: {
+      link: value => {
+        if (value?.trim() && !/^https?:\/\//i.test(value.trim())) {
+          return '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.';
+        }
+        return null;
+      },
+    },
   });
 
   useEffect(() => {
@@ -66,9 +80,22 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
 
   const submit = async (values: FormValues) => {
     if (loading) return;
-    if (!values.title?.trim() && !values.link?.trim() && !values.displayLink?.trim() && !values.iconUrl?.trim()) {
+    const title = values.title?.trim();
+    const linkUrl = values.link?.trim();
+    const displayLink = values.displayLink?.trim();
+    const iconUrl = values.iconUrl?.trim();
+
+    if (!title && !linkUrl && !displayLink && !iconUrl) {
       notifications.show({
         message: '모든 값이 비어있을 수는 없습니다.',
+        color: 'red',
+      });
+      return;
+    }
+
+    if (linkUrl && !/^https?:\/\//i.test(linkUrl)) {
+      notifications.show({
+        message: '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.',
         color: 'red',
       });
       return;
@@ -80,10 +107,10 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
           slug,
           id: link.id,
           input: {
-            title: values.title,
-            link: values.link,
-            displayLink: values.displayLink,
-            iconUrl: values.iconUrl,
+            title: title || undefined,
+            link: linkUrl || undefined,
+            displayLink: displayLink || undefined,
+            iconUrl: iconUrl || undefined,
           },
         },
       });

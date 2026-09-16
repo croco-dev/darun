@@ -153,6 +153,41 @@ describe('useEditProductDescription', () => {
       expect(mutateFn).not.toHaveBeenCalled();
     });
 
+    it('should show error notification when description contains only empty HTML tags', async () => {
+      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug }));
+      const { notifications } = await import('@mantine/notifications');
+
+      await act(async () => {
+        await result.current.submit({ description: '<p>   <br>  </p>' });
+      });
+
+      expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'red' }));
+      expect(mutateFn).not.toHaveBeenCalled();
+    });
+
+    it('should accept description containing an image tag even without text', async () => {
+      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug }));
+
+      mutateFn.mockResolvedValueOnce({
+        data: {
+          editProduct: {
+            product: { id: 'product-1', description: '<p><img src="https://example.com/img.png" alt="test" /></p>' },
+          },
+        },
+      });
+
+      await act(async () => {
+        await result.current.submit({ description: '<p><img src="https://example.com/img.png" alt="test" /></p>' });
+      });
+
+      expect(mutateFn).toHaveBeenCalledWith({
+        variables: {
+          slug: defaultSlug,
+          input: { description: '<p><img src="https://example.com/img.png" alt="test" /></p>' },
+        },
+      });
+    });
+
     it('should call mutation with description when provided', async () => {
       const onSubmit = vi.fn();
       const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug, onSubmit }));

@@ -14,10 +14,11 @@ export const EditProductFeatureItem = bind(useEditProductFeatureItem, ({ form, s
   return (
     <form onSubmit={form.onSubmit(submit)}>
       <div className="flex flex-col gap-2">
-        <AdminField label="이모지">
+        <AdminField label="이모지" error={form.errors.emoji}>
           <div className="relative">
             <AdminInput
               placeholder="이모지 선택은 우측 버튼으로도 가능 ->"
+              disabled={loading}
               key={form.key('emoji')}
               {...form.getInputProps('emoji')}
             />
@@ -42,13 +43,20 @@ export const EditProductFeatureItem = bind(useEditProductFeatureItem, ({ form, s
             </details>
           </div>
         </AdminField>
-        <AdminField label="기능 이름 (name)">
-          <AdminTextarea placeholder="ex) 송금" rows={2} key={form.key('name')} {...form.getInputProps('name')} />
+        <AdminField label="기능 이름 (name)" error={form.errors.name}>
+          <AdminTextarea
+            placeholder="ex) 송금"
+            rows={2}
+            disabled={loading}
+            key={form.key('name')}
+            {...form.getInputProps('name')}
+          />
         </AdminField>
-        <AdminField label="요약 (summary)">
+        <AdminField label="요약 (summary)" error={form.errors.summary}>
           <AdminTextarea
             placeholder="ex) (앱 이름)은 사용자를 우선하는 송금 경험을 제공합니다. ..."
             rows={2}
+            disabled={loading}
             key={form.key('summary')}
             {...form.getInputProps('summary')}
           />

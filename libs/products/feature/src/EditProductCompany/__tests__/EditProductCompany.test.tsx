@@ -27,6 +27,7 @@ const mockForm = {
   onSubmit: vi.fn((handler: Function) => handler),
   getValues: vi.fn(() => ({ companyId: '' })),
   setFieldValue: vi.fn(),
+  errors: {},
 };
 
 const defaultHookReturn = {

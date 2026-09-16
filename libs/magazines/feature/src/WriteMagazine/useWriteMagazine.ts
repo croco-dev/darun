@@ -58,6 +58,12 @@ export function useWriteMagazine() {
     },
     validate: {
       title: value => (!value?.trim() ? '글 제목을 입력해주세요.' : null),
+      slug: value => {
+        if (value && /\s/.test(value.trim())) {
+          return '슬러그에는 공백(띄어쓰기)을 포함할 수 없습니다.';
+        }
+        return null;
+      },
     },
   });
   const { upload } = useImageUpload();

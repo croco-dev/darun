@@ -62,7 +62,7 @@ describe('useGenerateProductDescriptionButton', () => {
     });
   });
 
-  it('should log error and rethrow when mutation fails with network error', async () => {
+  it('should log error and catch safely when mutation fails with network error', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
 
@@ -72,7 +72,7 @@ describe('useGenerateProductDescriptionButton', () => {
       act(async () => {
         await result.current.handleGenerate();
       })
-    ).rejects.toThrow('Network error');
+    ).resolves.not.toThrow();
 
     expect(consoleSpy).toHaveBeenCalledWith('generate description failed:', expect.any(Error));
     consoleSpy.mockRestore();

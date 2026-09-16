@@ -3,11 +3,12 @@ import { cva } from 'class-variance-authority';
 type MenuItemProps = {
   label: string;
   active?: boolean;
+  disabled?: boolean;
   onClick: () => void;
 };
 
 export const menuItemVariants = cva(
-  'rounded-lg px-3 py-1.5 text-sm font-medium border transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40',
+  'rounded-lg px-3 py-1.5 text-sm font-medium border transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
   {
     variants: {
       active: {
@@ -19,9 +20,9 @@ export const menuItemVariants = cva(
   }
 );
 
-export function MenuItem({ label, active = false, onClick }: MenuItemProps) {
+export function MenuItem({ label, active = false, disabled = false, onClick }: MenuItemProps) {
   return (
-    <button type="button" className={menuItemVariants({ active })} onClick={onClick}>
+    <button type="button" disabled={disabled} className={menuItemVariants({ active })} onClick={onClick}>
       {label}
     </button>
   );

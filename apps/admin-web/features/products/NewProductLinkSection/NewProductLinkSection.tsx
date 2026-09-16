@@ -17,6 +17,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
           <AdminInput
             type="text"
             placeholder="ex) toss.im"
+            disabled={loading}
             key={form.key('displayLink')}
             {...form.getInputProps('displayLink')}
           />
@@ -25,6 +26,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
           <AdminInput
             type="text"
             placeholder="ex) https://toss.im/"
+            disabled={loading}
             key={form.key('link')}
             {...form.getInputProps('link')}
           />
@@ -33,12 +35,13 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
           <AdminInput
             type="text"
             placeholder="ex) 공식 홈페이지"
+            disabled={loading}
             key={form.key('title')}
             {...form.getInputProps('title')}
           />
         </AdminField>
         <AdminField label="아이콘" error={form.errors.iconUrl}>
-          <AdminSelect key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
+          <AdminSelect disabled={loading} key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
             <option value="">아이콘을 선택해 주세요</option>
             {iconData.map(icon => (
               <option key={icon.value} value={icon.value}>

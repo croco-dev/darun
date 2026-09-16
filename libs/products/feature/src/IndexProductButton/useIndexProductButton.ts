@@ -45,7 +45,6 @@ export function useIndexProductButton({ slug }: IndexProductButtonProps) {
       });
     } catch (error) {
       console.error('mutation failed:', error);
-      throw error;
     }
   };
   return {

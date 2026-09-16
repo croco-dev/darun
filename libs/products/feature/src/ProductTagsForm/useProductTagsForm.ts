@@ -52,6 +52,8 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
     .filter(Boolean);
 
   const [updateProductTags, { loading: isSaving }] = useMutation(UpdateProductTagsOnProductTagFormDocument, {
+    refetchQueries: [TempProductBySlugOnProductTagsFormDocument],
+    awaitRefetchQueries: true,
     onError: error => {
       notifications.show({ message: error.message, color: 'red' });
     },
@@ -72,11 +74,13 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
   };
 
   const removeTag = (tagToRemove: string) => {
+    if (isSaving || isLoading) return;
     const nextTags = currentTags.filter(t => t !== tagToRemove);
     setInputValue(nextTags.join(', '));
   };
 
   const applyTags = async () => {
+    if (isSaving || isLoading) return;
     try {
       await updateProductTags({
         variables: {
@@ -88,7 +92,6 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
       });
     } catch (error) {
       console.error('mutation failed:', error);
-      throw error;
     }
   };
 

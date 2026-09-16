@@ -14,6 +14,7 @@ export const NewCompanyForm = bind(
           <AdminInput
             type="text"
             placeholder="ex) 네이버 주식회사"
+            disabled={loading}
             key={form.key('name')}
             {...form.getInputProps('name')}
           />
@@ -22,6 +23,7 @@ export const NewCompanyForm = bind(
           <AdminInput
             type="text"
             placeholder="ex) 비상장 법인"
+            disabled={loading}
             key={form.key('type')}
             {...form.getInputProps('type')}
           />
@@ -30,6 +32,7 @@ export const NewCompanyForm = bind(
           <AdminInput
             type="text"
             placeholder="ex) 서울 강남"
+            disabled={loading}
             key={form.key('address')}
             {...form.getInputProps('address')}
           />
@@ -40,13 +43,14 @@ export const NewCompanyForm = bind(
             key={form.key('startAt')}
             {...form.getInputProps('startAt')}
             placeholder="눌러서 선택해주세요."
-            disabled={startAtIsDisabled}
+            disabled={loading || startAtIsDisabled}
           />
         </AdminField>
         <AdminCheckbox
           id="startAtIsDisabled"
           label="개업일 미상 (체크 시 위 개업일은 무시됨)"
           checked={startAtIsDisabled}
+          disabled={loading}
           onChange={event => handleToggleStartAtDisabled(event.currentTarget.checked)}
         />
       </div>
