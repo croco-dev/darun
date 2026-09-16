@@ -10,6 +10,7 @@ import {
   productNotFound,
   productCompanyNotFound,
 } from '@darun/products-domain';
+import { ProductDescriptionJobService } from '@darun/products-service';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { AddProductLinkInput } from './graphs/AddProductLink';
@@ -50,7 +51,8 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
     protected readonly addProductLinkUseCase: AddProductLink,
     protected readonly updateProductLinkUseCase: UpdateProductLink,
     protected readonly registerProductCompanyUseCase: RegisterProductCompany,
-    protected readonly generateProductDescriptionUseCase: GenerateProductDescription
+    protected readonly generateProductDescriptionUseCase: GenerateProductDescription,
+    protected readonly productDescriptionJobService?: ProductDescriptionJobService
   ) {
     super(
       createProductUseCase,
@@ -161,6 +163,23 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
   async generateProductDescription(
     @Arg('input') input: GenerateProductDescriptionInput
   ): Promise<GenerateProductDescriptionPayload> {
+    if (this.productDescriptionJobService) {
+      const { product, job } = await this.productDescriptionJobService.requestProductDescriptionJob({
+        slug: input.slug,
+      });
+
+      return {
+        product,
+        job: {
+          id: job.id,
+          productId: job.productId,
+          status: job.status,
+          message: job.message ?? undefined,
+          error: job.error ?? undefined,
+        },
+      };
+    }
+
     const product = await this.getProductUseCase.execute({ slug: input.slug });
 
     if (!product) {
@@ -173,6 +192,12 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
 
     return {
       product: updatedProduct,
+      job: {
+        id: updatedProduct.id,
+        productId: updatedProduct.id,
+        status: 'completed',
+        message: 'AI 소개 생성이 완료되었습니다.',
+      },
     };
   }
 

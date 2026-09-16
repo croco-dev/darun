@@ -60,6 +60,34 @@ export default $config({
 
     translationQueue.subscribe(translationWorker.arn);
 
+    const productDescriptionQueue = new sst.aws.Queue('ProductDescriptionQueue', {
+      visibilityTimeout: '6 minutes',
+    });
+
+    const productDescriptionWorker = new sst.aws.Function('ProductDescriptionWorker', {
+      handler: 'product-description-worker.handler',
+      bundle: '.build/lambda',
+      runtime: 'nodejs22.x',
+      architecture: 'arm64',
+      timeout: '5 minutes',
+      logging: { retention: '1 week' },
+      permissions: [
+        {
+          actions: [
+            'sqs:ChangeMessageVisibility',
+            'sqs:DeleteMessage',
+            'sqs:GetQueueAttributes',
+            'sqs:GetQueueUrl',
+            'sqs:ReceiveMessage',
+          ],
+          resources: [productDescriptionQueue.arn],
+        },
+      ],
+      environment,
+    });
+
+    productDescriptionQueue.subscribe(productDescriptionWorker.arn);
+
     const router = new sst.aws.Router('GraphqlRouter', {
       domain: {
         name: 'api.darun.io',
@@ -78,12 +106,13 @@ export default $config({
       permissions: [
         {
           actions: ['sqs:SendMessage'],
-          resources: [translationQueue.arn],
+          resources: [translationQueue.arn, productDescriptionQueue.arn],
         },
       ],
       environment: {
         ...environment,
         TRANSLATION_QUEUE_URL: translationQueue.url,
+        PRODUCT_DESCRIPTION_QUEUE_URL: productDescriptionQueue.url,
       },
       url: {
         cors: {

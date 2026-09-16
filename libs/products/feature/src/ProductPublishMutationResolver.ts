@@ -29,7 +29,8 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
     generateProductDescriptionUseCase: ProductMediaMutationResolver['generateProductDescriptionUseCase'],
     protected readonly publishProductUseCase: PublishProduct,
     protected readonly publishIndexProductUseCase: IndexProduct,
-    protected readonly translationJobService: TranslationJobService
+    protected readonly translationJobService: TranslationJobService,
+    productDescriptionJobService?: ProductMediaMutationResolver['productDescriptionJobService']
   ) {
     super(
       createProductUseCase,
@@ -44,7 +45,8 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
       addProductLinkUseCase,
       updateProductLinkUseCase,
       registerProductCompanyUseCase,
-      generateProductDescriptionUseCase
+      generateProductDescriptionUseCase,
+      productDescriptionJobService
     );
   }
 

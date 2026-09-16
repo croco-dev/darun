@@ -15,6 +15,7 @@ import {
   UpdateProductTag,
 } from '@darun/products-domain';
 import { productNotFound, productInvalidArgs } from '@darun/products-domain';
+import { ProductDescriptionJobService } from '@darun/products-service';
 import { UpdateAlternativeProduct } from '@darun/recommendation-domain';
 import { IndexProduct } from '@darun/search-domain';
 import { TranslationJobService } from '@darun/translation-service';
@@ -57,7 +58,8 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
     updateAlternativeProductUseCase: UpdateAlternativeProduct,
     private readonly standaloneIndexProductUseCase: IndexProduct,
     private readonly getPublishedProductUseCase: GetPublishedProduct,
-    private readonly upvoteProductUseCase: UpvoteProduct
+    private readonly upvoteProductUseCase: UpvoteProduct,
+    productDescriptionJobService?: ProductDescriptionJobService
   ) {
     super(
       getCompanyUseCase,
@@ -76,7 +78,8 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
       publishProductUseCase,
       publishIndexProductUseCase,
       translationJobService,
-      updateAlternativeProductUseCase
+      updateAlternativeProductUseCase,
+      productDescriptionJobService
     );
   }
 

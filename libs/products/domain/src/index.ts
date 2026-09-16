@@ -42,6 +42,9 @@ export type { ProductScreenshotRepository } from './repositories/ProductScreensh
 export { ProductScreenshotRepositoryToken } from './repositories/ProductScreenshotRepository';
 export type { ProductTagRepository } from './repositories/ProductTagRepository';
 export { ProductTagRepositoryToken } from './repositories/ProductTagRepository';
+export type { ProductDescriptionJobEntity, ProductDescriptionJobStatus } from './entities/ProductDescriptionJobEntity';
+export type { ProductDescriptionJobRepository } from './repositories/ProductDescriptionJobRepository';
+export { ProductDescriptionJobRepositoryToken } from './repositories/ProductDescriptionJobRepository';
 export type { RankedProductVoteRepository } from './repositories/RankedProductVoteRepository';
 export { RankedProductVoteRepositoryToken } from './repositories/RankedProductVoteRepository';
 export type {

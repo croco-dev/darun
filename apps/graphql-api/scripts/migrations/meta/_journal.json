@@ -22,6 +22,13 @@
       "when": 1789600000000,
       "tag": "0002_add_translation_jobs",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789700000000,
+      "tag": "0003_add_product_description_jobs",
+      "breakpoints": true
     }
   ]
 }

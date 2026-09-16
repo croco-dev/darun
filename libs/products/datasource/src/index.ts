@@ -6,3 +6,5 @@ export { PostgresqlProductFeatureRepository } from './repositories/PostgresqlPro
 export { PostgresqlProductFeatureScreenshotRepository } from './repositories/PostgresqlProductFeatureScreenshotRepository';
 export { ProductDescriptionGeneratorImpl } from './services/ProductDescriptionGeneratorImpl';
 export { PostgresqlCategoryRepository } from './repositories/PostgresqlCategoryRepository';
+export { PostgresqlProductDescriptionJobRepository } from './repositories/PostgresqlProductDescriptionJobRepository';
+export { productDescriptionJobs } from './entities/ProductDescriptionJobSchema';

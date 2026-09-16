@@ -6,14 +6,17 @@
   "types": "./src/index.ts",
   "scripts": {
     "lint": "eslint **/*.ts*",
-    "test": "echo 1",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@darun/products-domain": "workspace:*"
+    "@aws-sdk/client-sqs": "3.1133.0",
+    "@darun/products-domain": "workspace:*",
+    "typedi": "catalog:"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
-    "@darun/utils-tsconfig": "workspace:*"
+    "@darun/utils-tsconfig": "workspace:*",
+    "@darun/utils-vitest-config": "workspace:*"
   }
 }

@@ -45,6 +45,24 @@ async function main() {
     logLevel: 'info',
   });
 
+  await build({
+    entryPoints: ['src/functions/product-description-worker.ts'],
+    bundle: true,
+    platform: 'node',
+    target: 'node22',
+    format: 'cjs',
+    outfile: `${outDir}/product-description-worker.js`,
+    minify: true,
+    keepNames: true,
+    sourcemap: true,
+    sourcesContent: false,
+    treeShaking: true,
+    ignoreAnnotations: true,
+    external: ['class-validator'],
+    plugins,
+    logLevel: 'info',
+  });
+
   console.log(`Lambda bundles built to ${outDir}`);
 }
 
