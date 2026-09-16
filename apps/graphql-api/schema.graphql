@@ -213,6 +213,7 @@ type Mutation {
   registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
   requestProductTranslation(productId: String, slug: String): TranslationJob!
   requestTranslation(entityId: String!, entityType: String!, fields: [String!]!): TranslationJob!
+  retryTranslationJob(id: String!): TranslationJob!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
   updateLlmSetting(apiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
@@ -307,6 +308,7 @@ type Query {
   tempMagazineBySlug(slug: String!): Magazine
   tempProductBySlug(locale: String! = "ko", slug: String!): Product
   translationJob(id: String!): TranslationJob
+  translationJobs(limit: Int, offset: Int, status: String): [TranslationJob!]!
 }
 
 input RegisterProductCompanyInput {
@@ -341,6 +343,7 @@ type Tag {
 }
 
 type TranslationJob {
+  createdAt: DateTimeISO
   entityId: String!
   entityType: String!
   error: String
@@ -349,6 +352,7 @@ type TranslationJob {
   locale: String!
   message: String
   status: String!
+  updatedAt: DateTimeISO
 }
 
 input UpdateAlternativeProductInput {

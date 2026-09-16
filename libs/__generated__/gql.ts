@@ -16,6 +16,8 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
 type Documents = {
     "\n  query ProductsCountOnAdminDashboard {\n    productsCount\n  }\n": typeof types.ProductsCountOnAdminDashboardDocument,
     "\n  query ProductBasicOnAdminDetailPage($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      name\n      slug\n    }\n  }\n": typeof types.ProductBasicOnAdminDetailPageDocument,
+    "\n  query GetTranslationJobsOnAdmin($status: String, $limit: Int, $offset: Int) {\n    translationJobs(status: $status, limit: $limit, offset: $offset) {\n      id\n      entityType\n      entityId\n      locale\n      status\n      message\n      error\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.GetTranslationJobsOnAdminDocument,
+    "\n  mutation RetryTranslationJobOnAdmin($id: String!) {\n    retryTranslationJob(id: $id) {\n      id\n      entityType\n      entityId\n      locale\n      status\n      message\n      error\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.RetryTranslationJobOnAdminDocument,
     "\n  query TempAllMagazinesOnMagazinesList($page: Int!) {\n    tempAllMagazines(page: $page) {\n      totalCount\n      totalPages\n      magazines {\n        id\n        slug\n        title\n        summary\n        content\n        backgroundImageUrl\n        updatedAt\n        publishedAt\n        author {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.TempAllMagazinesOnMagazinesListDocument,
     "\n  query GetProductScreenshotsOnDetailSection($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      screenshots {\n        id\n        imageUrl\n        imageAlt\n      }\n    }\n  }\n\n  mutation DeleteProductScreenshotOnDetailSection($id: String!) {\n    deleteProductScreenshot(id: $id) {\n      success\n    }\n  }\n": typeof types.GetProductScreenshotsOnDetailSectionDocument,
     "\n  query GetLlmSettingOnLlmSettingFormSection {\n    llmSetting {\n      id\n      endpoint\n      apiKeyMasked\n      model\n      thinkingLevel\n      updatedAt\n    }\n  }\n": typeof types.GetLlmSettingOnLlmSettingFormSectionDocument,
@@ -81,6 +83,8 @@ type Documents = {
 const documents: Documents = {
     "\n  query ProductsCountOnAdminDashboard {\n    productsCount\n  }\n": types.ProductsCountOnAdminDashboardDocument,
     "\n  query ProductBasicOnAdminDetailPage($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      name\n      slug\n    }\n  }\n": types.ProductBasicOnAdminDetailPageDocument,
+    "\n  query GetTranslationJobsOnAdmin($status: String, $limit: Int, $offset: Int) {\n    translationJobs(status: $status, limit: $limit, offset: $offset) {\n      id\n      entityType\n      entityId\n      locale\n      status\n      message\n      error\n      createdAt\n      updatedAt\n    }\n  }\n": types.GetTranslationJobsOnAdminDocument,
+    "\n  mutation RetryTranslationJobOnAdmin($id: String!) {\n    retryTranslationJob(id: $id) {\n      id\n      entityType\n      entityId\n      locale\n      status\n      message\n      error\n      createdAt\n      updatedAt\n    }\n  }\n": types.RetryTranslationJobOnAdminDocument,
     "\n  query TempAllMagazinesOnMagazinesList($page: Int!) {\n    tempAllMagazines(page: $page) {\n      totalCount\n      totalPages\n      magazines {\n        id\n        slug\n        title\n        summary\n        content\n        backgroundImageUrl\n        updatedAt\n        publishedAt\n        author {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.TempAllMagazinesOnMagazinesListDocument,
     "\n  query GetProductScreenshotsOnDetailSection($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      screenshots {\n        id\n        imageUrl\n        imageAlt\n      }\n    }\n  }\n\n  mutation DeleteProductScreenshotOnDetailSection($id: String!) {\n    deleteProductScreenshot(id: $id) {\n      success\n    }\n  }\n": types.GetProductScreenshotsOnDetailSectionDocument,
     "\n  query GetLlmSettingOnLlmSettingFormSection {\n    llmSetting {\n      id\n      endpoint\n      apiKeyMasked\n      model\n      thinkingLevel\n      updatedAt\n    }\n  }\n": types.GetLlmSettingOnLlmSettingFormSectionDocument,
@@ -166,6 +170,14 @@ export function graphql(source: "\n  query ProductsCountOnAdminDashboard {\n    
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query ProductBasicOnAdminDetailPage($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      name\n      slug\n    }\n  }\n"): (typeof documents)["\n  query ProductBasicOnAdminDetailPage($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      name\n      slug\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetTranslationJobsOnAdmin($status: String, $limit: Int, $offset: Int) {\n    translationJobs(status: $status, limit: $limit, offset: $offset) {\n      id\n      entityType\n      entityId\n      locale\n      status\n      message\n      error\n      createdAt\n      updatedAt\n    }\n  }\n"): (typeof documents)["\n  query GetTranslationJobsOnAdmin($status: String, $limit: Int, $offset: Int) {\n    translationJobs(status: $status, limit: $limit, offset: $offset) {\n      id\n      entityType\n      entityId\n      locale\n      status\n      message\n      error\n      createdAt\n      updatedAt\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation RetryTranslationJobOnAdmin($id: String!) {\n    retryTranslationJob(id: $id) {\n      id\n      entityType\n      entityId\n      locale\n      status\n      message\n      error\n      createdAt\n      updatedAt\n    }\n  }\n"): (typeof documents)["\n  mutation RetryTranslationJobOnAdmin($id: String!) {\n    retryTranslationJob(id: $id) {\n      id\n      entityType\n      entityId\n      locale\n      status\n      message\n      error\n      createdAt\n      updatedAt\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

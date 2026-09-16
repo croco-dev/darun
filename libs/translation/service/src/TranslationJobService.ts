@@ -4,6 +4,7 @@ import {
   type TranslationJobEntity,
   type TranslationJobRepository,
   TranslationJobRepositoryToken,
+  type TranslationJobStatus,
   TranslationService,
 } from '@darun/translation-domain';
 import { LlmClient, withRetry, withTimeout } from '@darun/utils-llm';
@@ -124,13 +125,17 @@ export class TranslationJobService {
         JSON.stringify(inputPayload, null, 2),
       ].join('\n');
 
-      const response = await withTimeout(
-        this.llmClient.completion([
-          { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
-          { role: 'user', content: prompt },
-        ]),
-        120_000,
-        'LLM 통합 번역 요청이 시간 초과되었습니다.'
+      const response = await withRetry(
+        () =>
+          withTimeout(
+            this.llmClient.completion([
+              { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
+              { role: 'user', content: prompt },
+            ]),
+            120_000,
+            'LLM 통합 번역 요청이 시간 초과되었습니다.'
+          ),
+        { maxRetries: 2, baseDelay: 2000, maxDelay: 10000 }
       );
 
       const parsed = parseJsonFromLlmResponse(response.content || '') as {
@@ -269,6 +274,57 @@ export class TranslationJobService {
       return null;
     }
     return this.translationJobRepository.findJobById(id);
+  }
+
+  async getJobs(options?: {
+    status?: TranslationJobStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<TranslationJobEntity[]> {
+    if (!this.translationJobRepository) {
+      return [];
+    }
+    return this.translationJobRepository.findJobs(options);
+  }
+
+  async retryProductTranslationJob(jobId: string): Promise<TranslationJobEntity> {
+    if (!this.translationJobRepository) {
+      throw new Error('TranslationJobRepository가 설정되지 않았습니다.');
+    }
+
+    const job = await this.translationJobRepository.findJobById(jobId);
+    if (!job) {
+      throw new Error(`존재하지 않는 번역 작업입니다: ${jobId}`);
+    }
+
+    const updatedJob = await this.translationJobRepository.updateJobStatus(jobId, 'pending', {
+      message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
+      error: null,
+    });
+
+    let isQueued = false;
+    if (this.translationQueueService) {
+      try {
+        isQueued = await this.translationQueueService.sendJob({
+          jobId: job.id,
+          entityType: job.entityType as 'Product' | 'Magazine' | 'ProductFeature',
+          entityId: job.entityId,
+        });
+      } catch (error) {
+        console.warn(
+          `[TranslationJobService] Failed to send retry job ${jobId} to SQS queue, falling back to in-process execution:`,
+          error
+        );
+      }
+    }
+
+    if (!isQueued) {
+      setImmediate(() => {
+        void this.executeProductTranslationJob(job.id, job.entityId);
+      });
+    }
+
+    return updatedJob;
   }
 
   async executeProductTranslationJob(jobId: string, productId: string): Promise<void> {

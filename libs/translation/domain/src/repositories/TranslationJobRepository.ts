@@ -19,4 +19,10 @@ export interface TranslationJobRepository {
     status: TranslationJobStatus,
     options?: { message?: string | null; error?: string | null }
   ): Promise<TranslationJobEntity>;
+
+  findJobs(options?: {
+    status?: TranslationJobStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<TranslationJobEntity[]>;
 }

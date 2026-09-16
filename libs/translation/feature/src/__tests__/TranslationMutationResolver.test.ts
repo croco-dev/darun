@@ -122,4 +122,31 @@ describe('TranslationMutationResolver', () => {
       await expect(resolver.requestProductTranslation()).rejects.toThrow('productId 또는 slug가 필요합니다.');
     });
   });
+
+  describe('retryTranslationJob', () => {
+    it('재시도 대상 작업을 pending 상태로 갱신하고 결과를 반환한다', async () => {
+      const now = new Date();
+      const translationJobService = {
+        retryProductTranslationJob: vi.fn().mockResolvedValue({
+          id: 'job-failed',
+          entityType: 'Product',
+          entityId: 'prod-123',
+          locale: 'en',
+          status: 'pending',
+          message: '재시도 대기 중',
+          error: null,
+          createdAt: now,
+          updatedAt: now,
+        }),
+      };
+
+      const resolver = new TranslationMutationResolver(translationJobService as never);
+      const result = await resolver.retryTranslationJob('job-failed');
+
+      expect(translationJobService.retryProductTranslationJob).toHaveBeenCalledWith('job-failed');
+      expect(result.id).toBe('job-failed');
+      expect(result.status).toBe('pending');
+      expect(result.message).toBe('재시도 대기 중');
+    });
+  });
 });

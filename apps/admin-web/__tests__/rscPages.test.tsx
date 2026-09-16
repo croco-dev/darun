@@ -4,11 +4,16 @@ import LoginPage from '../app/auth/login/page';
 import LogoutPage from '../app/auth/logout/page';
 import NewCompanyPage from '../app/companies/new/page';
 import CompanyListPage from '../app/companies/page';
+import LlmJobsPage from '../app/llm-jobs/page';
 import MagazineCreatePage from '../app/magazines/create/page';
 import HomePage from '../app/page';
 import ProductDetailPage, { generateMetadata } from '../app/products/[slug]/page';
 import NewProductPage from '../app/products/new/page';
 import ProductListPage from '../app/products/page';
+
+vi.mock('../features/llm-jobs', () => ({
+  LlmJobListSection: () => React.createElement('div', { 'data-testid': 'mock-llm-job-list-section' }),
+}));
 
 vi.mock('../features/auth/LoginSection', () => ({
   LoginSection: () => React.createElement('div', { 'data-testid': 'mock-login-section' }),
@@ -99,5 +104,12 @@ describe('Admin RSC Pages', () => {
     expect(React.isValidElement(element)).toBe(true);
     expect(element.props.title).toBe('새로운 매거진 발행');
     expect(element.props.backHref).toBe('/magazines');
+  });
+
+  it('LlmJobsPage renders PageShell with backHref=/ and title LLM 작업', () => {
+    const element = LlmJobsPage();
+    expect(React.isValidElement(element)).toBe(true);
+    expect(element.props.title).toBe('LLM 작업');
+    expect(element.props.backHref).toBe('/');
   });
 });

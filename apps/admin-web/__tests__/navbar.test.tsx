@@ -68,15 +68,16 @@ describe('Navbar Component', () => {
     expect(screen.getByRole('navigation', { name: '관리자 사이드 메뉴' })).toBeDefined();
   });
 
-  it('모든 관리자 메뉴 항목(5개)을 렌더링한다', () => {
+  it('모든 관리자 메뉴 항목(6개)을 렌더링한다', () => {
     mockUsePathname.mockReturnValue('/');
     render(<Navbar />);
 
-    expect(navItems).toHaveLength(5);
+    expect(navItems).toHaveLength(6);
     expect(screen.getByText('대시보드')).toBeDefined();
     expect(screen.getByText('서비스')).toBeDefined();
     expect(screen.getByText('기업 관리')).toBeDefined();
     expect(screen.getByText('매거진')).toBeDefined();
+    expect(screen.getByText('LLM 작업')).toBeDefined();
     expect(screen.getByText('LLM 설정')).toBeDefined();
   });
 
