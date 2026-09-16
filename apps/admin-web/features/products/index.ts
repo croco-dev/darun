@@ -1,3 +1,5 @@
+'use client';
+
 export { ProductDetailAlternativeSection } from './ProductDetailAlternativeSection';
 export { ProductDetailCompanySection } from './ProductDetailCompanySection';
 export { ProductDetailDescriptionSection } from './ProductDetailDescriptionSection';

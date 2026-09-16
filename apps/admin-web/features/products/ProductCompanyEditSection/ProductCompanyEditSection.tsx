@@ -1,3 +1,5 @@
+'use client';
+
 import { EditProductCompany } from '@darun/products-feature';
 import { AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
 

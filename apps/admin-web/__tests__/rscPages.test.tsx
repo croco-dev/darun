@@ -42,6 +42,7 @@ describe('Admin RSC Pages', () => {
       params: Promise.resolve({ slug: 'test-product' }),
     });
     expect(React.isValidElement(element)).toBe(true);
+    expect(element.props.title).toBe('테스트 서비스 상세');
     expect(element.props.backHref).toBe('/products');
   });
 

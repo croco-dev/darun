@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@darun/ui';
 import { RefreshCw, Sparkles } from 'lucide-react';
 import { useGenerateProductDescriptionButton } from './useGenerateProductDescriptionButton';
