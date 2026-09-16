@@ -70,6 +70,7 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
 
   const [updateAlternativeProducts, { loading }] = useMutation(EditProductOnEditAlternativeProductsDocument, {
     refetchQueries: [TempProductBySlugOnEditAlternativeProductsDocument],
+    awaitRefetchQueries: true,
     onCompleted: ({ updateAlternativeProduct }) => {
       if (updateAlternativeProduct.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });

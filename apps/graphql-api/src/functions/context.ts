@@ -53,6 +53,9 @@ export function createGraphQLContext({
     },
     getRoles: async () => {
       const account = await getAccount();
+      if (process.env['INFRA_ENV'] === 'local' && account) {
+        return Array.from(new Set([...(account.roles ?? []), 'admin']));
+      }
       return account?.roles ?? [];
     },
   };

@@ -26,6 +26,7 @@ export function AdminField({ label, htmlFor, error, help, children, className }:
     ? cloneElement(children as React.ReactElement<Record<string, unknown>>, {
         id: childProps['id'] ?? inputId,
         ...(finalDescribedBy ? { 'aria-describedby': finalDescribedBy } : {}),
+        ...(error ? { 'aria-invalid': true } : {}),
       })
     : children;
 

@@ -81,7 +81,15 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
         </div>
       </td>
       <td className="border-r border-dark-200 px-4 py-3 text-center">
-        <p className="text-sm font-medium text-dark-900">{linkRef.isPrimary ? '✅' : '❌'}</p>
+        {linkRef.isPrimary ? (
+          <span className="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-0.5 text-xs font-medium text-primary-700">
+            대표 링크
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-surface-100 px-2.5 py-0.5 text-xs font-medium text-dark-500">
+            일반
+          </span>
+        )}
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-end gap-0">

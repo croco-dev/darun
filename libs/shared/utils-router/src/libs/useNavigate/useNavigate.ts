@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
 
 interface NavigateOptions {
   replace?: boolean;
@@ -8,13 +9,16 @@ interface NavigateOptions {
 }
 
 export function useNavigate() {
-  const { push, replace } = useRouter();
+  const router = useRouter();
 
-  return (to: string, options?: NavigateOptions) => {
-    if (options?.replace) {
-      replace(to, { scroll: !options.preventScrollReset });
-    } else {
-      push(to, { scroll: !options?.preventScrollReset });
-    }
-  };
+  return useCallback(
+    (to: string, options?: NavigateOptions) => {
+      if (options?.replace) {
+        router.replace(to, { scroll: !options.preventScrollReset });
+      } else {
+        router.push(to, { scroll: !options?.preventScrollReset });
+      }
+    },
+    [router]
+  );
 }

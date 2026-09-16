@@ -83,10 +83,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  const isNextRouterRequest =
+    request.headers.get('rsc') === '1' ||
+    Boolean(request.headers.get('next-router-prefetch')) ||
+    Boolean(request.headers.get('next-router-state-tree')) ||
+    Boolean(request.headers.get('next-url'));
+
   if (
     (request.method === 'GET' || request.method === 'HEAD') &&
     request.nextUrl.searchParams.has('_rsc') &&
-    request.headers.get('rsc') !== '1'
+    !isNextRouterRequest
   ) {
     const cleanUrl = request.nextUrl.clone();
     cleanUrl.searchParams.delete('_rsc');

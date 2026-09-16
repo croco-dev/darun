@@ -5,6 +5,7 @@ import { AdminPanel, AdminEmptyState } from '@darun/ui-admin';
 import { useReactTable, getCoreRowModel, createColumnHelper, flexRender } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
+import { useState } from 'react';
 import { useProductListTable } from './useProductListTable';
 
 type Product = {
@@ -15,27 +16,32 @@ type Product = {
   slug: string;
 };
 
+function ProductTableLogo({ logoUrl }: { logoUrl?: string | null }) {
+  const [hasError, setHasError] = useState(false);
+  const src = !hasError && logoUrl ? logoUrl : '/images/default-product-icon.svg';
+
+  return (
+    <div className="flex justify-center">
+      <Image
+        src={src}
+        unoptimized={!logoUrl || hasError}
+        alt="서비스 로고"
+        width={32}
+        height={32}
+        onError={() => setHasError(true)}
+        className="h-8 w-8 rounded-lg border border-dark-150 object-contain"
+      />
+    </div>
+  );
+}
+
 const columnHelper = createColumnHelper<Product>();
 
 const columns = [
   columnHelper.accessor('logoUrl', {
     header: '로고',
     size: 70,
-    cell: info => {
-      const logoUrl = info.getValue() || '/images/default-product-icon.svg';
-      return (
-        <div className="flex justify-center">
-          <Image
-            src={logoUrl}
-            unoptimized={!info.getValue()}
-            alt="서비스 로고"
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-lg border border-dark-150 object-contain"
-          />
-        </div>
-      );
-    },
+    cell: info => <ProductTableLogo logoUrl={info.getValue()} />,
   }),
   columnHelper.accessor('name', {
     header: '이름',
@@ -72,6 +78,7 @@ export function ProductListTable() {
     hasPreviousPage,
     hasNextPage,
     pageCount,
+    isNavigating,
     loadNextPage,
     loadPreviousPage,
     handleRowClick,
@@ -142,13 +149,25 @@ export function ProductListTable() {
             있습니다.
           </p>
           <div className="flex gap-2">
-            <Button type="button" variant="base" size="sm" disabled={!hasPreviousPage} onClick={loadPreviousPage}>
+            <Button
+              type="button"
+              variant="base"
+              size="sm"
+              disabled={!hasPreviousPage || isNavigating}
+              onClick={loadPreviousPage}
+            >
               <span className="inline-flex items-center gap-2">
                 <ChevronLeft className="h-4 w-4" />
                 이전
               </span>
             </Button>
-            <Button type="button" variant="base" size="sm" disabled={!hasNextPage} onClick={loadNextPage}>
+            <Button
+              type="button"
+              variant="base"
+              size="sm"
+              disabled={!hasNextPage || isNavigating}
+              onClick={loadNextPage}
+            >
               <span className="inline-flex items-center gap-2">
                 <ChevronRight className="h-4 w-4" />
                 다음

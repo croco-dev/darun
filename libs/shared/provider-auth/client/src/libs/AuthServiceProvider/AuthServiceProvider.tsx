@@ -3,7 +3,7 @@
 import { useApolloClient } from '@apollo/client/react';
 import { AuthService } from '@darun/utils-auth-service-core';
 import { Cookies } from 'next-client-cookies';
-import { createContext, ReactNode, useContext } from 'react';
+import { createContext, ReactNode, useContext, useEffect } from 'react';
 
 export type AuthServiceProviderProps = {
   cookies: Cookies;
@@ -18,27 +18,30 @@ const AuthServiceContext = createContext<{ authService?: AuthService }>({
 export const AuthServiceProvider = ({ cookies, children, authService }: AuthServiceProviderProps) => {
   const client = useApolloClient();
 
-  authService.setAuthStorage({
-    get: key => cookies.get(key) ?? null,
-    clear() {
-      cookies.remove('idToken');
-      cookies.remove('refreshToken');
-      cookies.remove('redirectUrl');
-      client.resetStore();
-    },
-    set: storage => {
-      const keys = Object.keys(storage) as (keyof typeof storage)[];
+  useEffect(() => {
+    authService.setAuthStorage({
+      get: key => cookies.get(key) ?? null,
+      clear() {
+        cookies.remove('idToken');
+        cookies.remove('refreshToken');
+        cookies.remove('redirectUrl');
+        client.resetStore();
+      },
+      set: storage => {
+        const keys = Object.keys(storage) as (keyof typeof storage)[];
 
-      for (const key of keys) {
-        const value = storage[key];
-        if (value) {
-          cookies.set(key, value, { sameSite: 'strict', expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) });
-        } else {
-          cookies.remove(key);
+        for (const key of keys) {
+          const value = storage[key];
+          if (value) {
+            cookies.set(key, value, { sameSite: 'strict', expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) });
+          } else {
+            cookies.remove(key);
+          }
         }
-      }
-    },
-  });
+      },
+    });
+  }, [authService, client, cookies]);
+
   return <AuthServiceContext.Provider value={{ authService }}>{children}</AuthServiceContext.Provider>;
 };
 

@@ -65,7 +65,8 @@ export function useEditProductLinkItem({ slug, link, onSubmit }: EditProductLink
   }, [link, form]);
 
   const submit = async (values: FormValues) => {
-    if (!values.title && !values.link && !values.displayLink && !values.iconUrl) {
+    if (loading) return;
+    if (!values.title?.trim() && !values.link?.trim() && !values.displayLink?.trim() && !values.iconUrl?.trim()) {
       notifications.show({
         message: '모든 값이 비어있을 수는 없습니다.',
         color: 'red',

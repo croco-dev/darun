@@ -19,6 +19,12 @@ export function useCompanyListRefreshButton() {
           notifications.show({ message: '기업 목록을 새로 불러왔어요.', color: 'teal' });
         },
       });
+    } catch (error) {
+      notifications.show({
+        title: '새로고침 실패',
+        message: error instanceof Error ? error.message : '기업 목록을 새로고침하는 데 실패했습니다.',
+        color: 'red',
+      });
     } finally {
       setIsRefreshing(false);
     }
