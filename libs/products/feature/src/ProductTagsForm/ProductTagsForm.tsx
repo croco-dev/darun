@@ -12,7 +12,13 @@ export const ProductTagsForm = bind(
     const isBusy = isSaving || isLoading;
 
     return (
-      <div className="flex flex-col gap-3">
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          applyTags();
+        }}
+        className="flex flex-col gap-3"
+      >
         <div className="flex flex-row gap-2">
           <div className="relative flex-1">
             <AdminInput
@@ -23,7 +29,7 @@ export const ProductTagsForm = bind(
               placeholder="태그를 쉼표(,)로 구분하여 입력하세요. (예: 핀테크, 결제, 금융)"
             />
           </div>
-          <Button onClick={applyTags} variant="contained" color="primary" disabled={isBusy}>
+          <Button type="submit" variant="contained" color="primary" disabled={isBusy}>
             {isSaving ? '저장 중...' : '저장'}
           </Button>
         </div>
@@ -46,6 +52,7 @@ export const ProductTagsForm = bind(
                   disabled={isBusy}
                   className="text-dark-400 hover:text-dark-700 ml-0.5 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
                   title={`${tag} 태그 제거`}
+                  aria-label={`${tag} 태그 제거`}
                 >
                   <X size={12} />
                 </button>
@@ -53,7 +60,7 @@ export const ProductTagsForm = bind(
             ))}
           </div>
         )}
-      </div>
+      </form>
     );
   }
 );

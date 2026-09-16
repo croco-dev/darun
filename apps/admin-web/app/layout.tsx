@@ -1,4 +1,3 @@
-import 'normalize.css/normalize.css';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import './globals.css';

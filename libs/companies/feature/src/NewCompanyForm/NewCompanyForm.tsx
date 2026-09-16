@@ -2,6 +2,7 @@
 
 import { Button } from '@darun/ui';
 import { AdminActions, AdminField, AdminInput, AdminCheckbox } from '@darun/ui-admin';
+import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useNewCompanyForm } from './useNewCompanyForm';
 
@@ -56,6 +57,9 @@ export const NewCompanyForm = bind(
       </div>
 
       <AdminActions>
+        <Button as={Link} href="/companies" variant="contained" color="secondary" disabled={loading}>
+          취소
+        </Button>
         <Button type="submit" variant="contained" color="primary" disabled={loading}>
           {loading ? '저장 중...' : '저장'}
         </Button>

@@ -1,5 +1,7 @@
+'use client';
+
 import { gql } from '@apollo/client';
-import { useSuspenseQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client/react';
 import { TempAllMagazinesOnMagazinesListDocument } from '@darun/provider-graphql';
 import { useState } from 'react';
 
@@ -29,7 +31,7 @@ gql`
 
 export function useMagazinesList() {
   const [page, setPage] = useState(1);
-  const { data } = useSuspenseQuery(TempAllMagazinesOnMagazinesListDocument, {
+  const { data, loading, error, refetch } = useQuery(TempAllMagazinesOnMagazinesListDocument, {
     variables: { page },
   });
 
@@ -39,5 +41,8 @@ export function useMagazinesList() {
     setPage,
     totalCount: data?.tempAllMagazines.totalCount ?? 0,
     totalPages: data?.tempAllMagazines.totalPages ?? 1,
+    loading,
+    error,
+    refetch,
   };
 }

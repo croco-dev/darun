@@ -3,6 +3,7 @@
 import { NewProductScreenForm } from '@darun/products-feature';
 import { Button } from '@darun/ui';
 import { AdminField, AdminInput, AdminActions } from '@darun/ui-admin';
+import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
 
@@ -48,6 +49,20 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
                     }
                     return;
                   }
+                  const MAX_SCREENSHOT_SIZE = 10 * 1024 * 1024;
+                  if (file && file.size > MAX_SCREENSHOT_SIZE) {
+                    notifications.show({
+                      message: '스크린샷 이미지는 10MB 이하만 업로드할 수 있습니다.',
+                      color: 'red',
+                    });
+                    event.currentTarget.value = '';
+                    form.getInputProps('file').onChange(undefined);
+                    if (previewUrl) {
+                      URL.revokeObjectURL(previewUrl);
+                      setPreviewUrl(null);
+                    }
+                    return;
+                  }
                   form.getInputProps('file').onChange(file);
                   if (previewUrl) {
                     URL.revokeObjectURL(previewUrl);
@@ -80,6 +95,15 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
             />
           </AdminField>
           <AdminActions>
+            <Button
+              as={Link}
+              href={`/products/${productSlug}`}
+              variant="contained"
+              color="secondary"
+              disabled={loading}
+            >
+              취소
+            </Button>
             <Button type="submit" size="md" variant="contained" color="primary" disabled={loading}>
               {loading ? '추가 중...' : '추가'}
             </Button>

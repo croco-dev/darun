@@ -15,9 +15,9 @@ import {
   AdminSectionBody,
   AdminSectionHeader,
 } from '@darun/ui-admin';
+import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import { ImageOff, Loader2, Plus, Trash2 } from 'lucide-react';
-import Link from 'next/link';
 import { useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -46,6 +46,12 @@ type ProductDetailScreenshotSectionProps = {
 
 function ScreenshotImage({ src, alt }: { src: string; alt: string }) {
   const [hasError, setHasError] = useState(false);
+  const [prevSrc, setPrevSrc] = useState(src);
+
+  if (src !== prevSrc) {
+    setPrevSrc(src);
+    setHasError(false);
+  }
 
   if (hasError) {
     return (

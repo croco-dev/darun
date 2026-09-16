@@ -3,6 +3,7 @@
 import { NewProductLinkForm } from '@darun/products-feature';
 import { Button } from '@darun/ui';
 import { AdminField, AdminInput, AdminSelect, AdminActions } from '@darun/ui-admin';
+import { Link } from '@darun/utils-router';
 
 type NewProductLinkSectionProps = {
   productSlug: string;
@@ -10,8 +11,7 @@ type NewProductLinkSectionProps = {
 
 export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProps) => (
   <NewProductLinkForm productSlug={productSlug}>
-    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-    {({ form, loading }: any) => (
+    {({ form, loading }) => (
       <div className="flex flex-col gap-3">
         <AdminField label="표시 링크" error={form.errors.displayLink}>
           <AdminInput
@@ -52,6 +52,9 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
         </AdminField>
 
         <AdminActions>
+          <Button as={Link} href={`/products/${productSlug}`} variant="contained" color="secondary" disabled={loading}>
+            취소
+          </Button>
           <Button type="submit" variant="contained" color="primary" size="md" disabled={loading}>
             {loading ? '등록 중...' : '등록'}
           </Button>

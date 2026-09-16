@@ -2,12 +2,15 @@
 
 import { Button } from '@darun/ui';
 import { AdminActions, AdminField, AdminInput } from '@darun/ui-admin';
+import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
+import { useRef } from 'react';
 import { useWriteMagazine } from './useWriteMagazine';
 
 export const WriteMagazine = bind(
   useWriteMagazine,
-  ({ form, handleSubmit, handleFileDrop, file, previewUrl, handleFileRemove, isSubmitting }) => {
+  ({ form, handleSubmit, handleFileDrop, file, previewUrl, handleFileRemove, isSubmitting, isUploading }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
     return (
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <div className="flex flex-col gap-4">
@@ -65,19 +68,23 @@ export const WriteMagazine = bind(
                 }}
                 onClick={() => {
                   if (isSubmitting) return;
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/png,image/jpeg,image/webp,image/bmp,image/avif';
-                  input.onchange = e => {
-                    const target = e.target as HTMLInputElement;
-                    if (target.files && target.files[0]) {
-                      handleFileDrop([target.files[0]]);
-                    }
-                  };
-                  input.click();
+                  fileInputRef.current?.click();
                 }}
                 className="flex min-h-56 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-dark-200 bg-white transition hover:border-dark-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 disabled:cursor-not-allowed disabled:opacity-60"
               >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/bmp,image/avif"
+                  className="hidden"
+                  onChange={e => {
+                    const target = e.target;
+                    if (target.files && target.files[0]) {
+                      handleFileDrop([target.files[0]]);
+                    }
+                    target.value = '';
+                  }}
+                />
                 <div className="flex flex-col items-center gap-4 p-8">
                   <svg
                     className="h-12 w-12 text-dark-400"
@@ -104,13 +111,23 @@ export const WriteMagazine = bind(
               </button>
             ) : (
               <div className="flex items-center gap-4">
-                {previewUrl && (
-                  <img
-                    src={previewUrl}
-                    alt="Preview"
-                    className="h-48 w-auto rounded-lg border border-dark-200 object-contain"
-                  />
-                )}
+                <div className="relative">
+                  {previewUrl && (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="h-48 w-auto rounded-lg border border-dark-200 object-contain"
+                    />
+                  )}
+                  {isUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-white text-xs font-medium backdrop-blur-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span>업로드 중...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <Button
                   type="button"
                   variant="contained"
@@ -129,6 +146,9 @@ export const WriteMagazine = bind(
         <p className="mt-4 text-xs text-dark-500">글 작성은 저장 후, 수정 기능을 이용하여 가능합니다.</p>
 
         <AdminActions>
+          <Button as={Link} href="/magazines" variant="contained" color="secondary" disabled={isSubmitting}>
+            취소
+          </Button>
           <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
             {isSubmitting ? '저장 중...' : '저장'}
           </Button>

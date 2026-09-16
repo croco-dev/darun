@@ -1,3 +1,5 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { Button } from '@darun/ui';
 import { AdminField, AdminInput, AdminSelect, AdminActions } from '@darun/ui-admin';

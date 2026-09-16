@@ -31,4 +31,15 @@ describe('AdminCheckbox', () => {
     expect(checkbox.id).toBe('custom-checkbox-id');
     expect(label.getAttribute('for')).toBe('custom-checkbox-id');
   });
+
+  it('applies disabled styling to label when disabled is true', () => {
+    render(<AdminCheckbox label="비활성화 체크박스" disabled />);
+
+    const checkbox = screen.getByRole('checkbox');
+    const label = screen.getByText('비활성화 체크박스');
+
+    expect((checkbox as HTMLInputElement).disabled).toBe(true);
+    expect(label.className).toContain('cursor-not-allowed');
+    expect(label.className).toContain('opacity-50');
+  });
 });

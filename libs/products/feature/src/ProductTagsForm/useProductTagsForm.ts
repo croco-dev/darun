@@ -1,3 +1,5 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
@@ -86,7 +88,7 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
         variables: {
           slug,
           input: {
-            tagNames: currentTags,
+            tagNames: Array.from(new Set(currentTags)),
           },
         },
       });

@@ -56,8 +56,8 @@ export function Navbar() {
                 aria-current={isActive ? 'page' : undefined}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition duration-150 motion-reduce:transition-none outline-none select-none focus-visible:ring-2 focus-visible:ring-dark-900/40 ${
                   isActive
-                    ? 'bg-dark-900 text-white shadow-sm font-semibold'
-                    : 'text-dark-600 hover:bg-surface-100 hover:text-dark-900'
+                    ? 'bg-dark-900 text-white visited:text-white shadow-sm font-semibold'
+                    : 'text-dark-600 visited:text-dark-600 hover:bg-surface-100 hover:text-dark-900 hover:visited:text-dark-900'
                 }`}
                 href={item.link}
               >

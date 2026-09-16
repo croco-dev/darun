@@ -1,9 +1,16 @@
 @import "tailwindcss";
 
 @config '../../../tailwind.config.ts';
-@source './**/*.{js,ts,jsx,tsx,mdx}';
+@source '../**/*.{js,ts,jsx,tsx,mdx}';
 @source '../../../libs/*/shell/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/*/feature/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/shared/ui/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/shared/ui-admin/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/shared/ui-layout/src/**/*.{js,ts,jsx,tsx}';
+
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+}

@@ -1,8 +1,7 @@
 import { Button } from '@darun/ui';
-import { AdminLoadingState, PageShell } from '@darun/ui-admin';
+import { PageShell } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { Plus } from 'lucide-react';
-import { Suspense } from 'react';
 import { MagazinesList } from '../../features/magazines/MagazinesList/MagazinesList';
 
 export default function MagazineListPage() {
@@ -18,15 +17,13 @@ export default function MagazineListPage() {
             color="primary"
             className="flex items-center gap-2"
           >
-            새로운 매거진 발행
             <Plus size={16} />
+            새로운 매거진 발행
           </Button>
         </div>
       }
     >
-      <Suspense fallback={<AdminLoadingState />}>
-        <MagazinesList />
-      </Suspense>
+      <MagazinesList />
     </PageShell>
   );
 }

@@ -2,8 +2,9 @@
 
 import { cn } from '@darun/ui';
 import { useImageUpload } from '@darun/utils-image-upload';
+import { notifications } from '@mantine/notifications';
 import { Editor } from '@tiptap/react';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { MenuItem, menuItemVariants } from './MenuItem';
 
 type MenuBarProps = {
@@ -14,9 +15,10 @@ type MenuBarProps = {
 export function MenuBar({ editor, disabled = false }: MenuBarProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { upload } = useImageUpload();
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSelectImage = useCallback(async () => {
-    if (disabled) {
+    if (disabled || isUploading) {
       return;
     }
 
@@ -26,22 +28,39 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
       return;
     }
 
+    if (!file.type.startsWith('image/')) {
+      notifications.show({ message: '이미지 파일만 업로드할 수 있습니다.', color: 'red' });
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      notifications.show({ message: '이미지 크기는 최대 10MB까지 가능합니다.', color: 'red' });
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
+
     try {
+      setIsUploading(true);
       const imageUrl = await upload('images/editor', file, file.name);
 
       if (!imageUrl) {
+        notifications.show({ message: '이미지 업로드에 실패했습니다.', color: 'red' });
         return;
       }
 
       editor.chain().focus().setImage({ src: imageUrl }).run();
+      notifications.show({ message: '이미지가 본문에 추가되었습니다.', color: 'teal' });
     } catch (error) {
       console.error('image upload failed:', error);
+      notifications.show({ message: '이미지 업로드에 실패했습니다.', color: 'red' });
     } finally {
+      setIsUploading(false);
       if (inputRef.current) {
         inputRef.current.value = '';
       }
     }
-  }, [disabled, editor, upload]);
+  }, [disabled, editor, isUploading, upload]);
 
   const menuItems = useMemo(
     () => [
@@ -82,22 +101,22 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {menuItems.map(({ label, action, active }) => (
-        <MenuItem key={label} label={label} disabled={disabled} onClick={action} active={active} />
+        <MenuItem key={label} label={label} disabled={disabled || isUploading} onClick={action} active={active} />
       ))}
       <label
         className={cn(
           menuItemVariants({ active: false }),
-          disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer',
+          disabled || isUploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer',
           'inline-flex items-center'
         )}
       >
-        Image
+        {isUploading ? '업로드 중...' : 'Image'}
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/webp,image/gif"
           className="hidden"
-          disabled={disabled}
+          disabled={disabled || isUploading}
           onChange={handleSelectImage}
         />
       </label>

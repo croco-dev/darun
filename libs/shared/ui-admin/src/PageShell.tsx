@@ -24,7 +24,7 @@ export function PageShell({ title, rightSide, children, onBack, backHref }: Page
   );
 
   const backButtonClasses =
-    'inline-flex items-center justify-center rounded-lg p-2 text-dark-500 hover:bg-dark-100 hover:text-dark-900 transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40';
+    'inline-flex items-center justify-center rounded-lg p-2 text-dark-600 hover:bg-dark-100 hover:text-dark-900 transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40';
 
   return (
     <div className="w-full p-5">

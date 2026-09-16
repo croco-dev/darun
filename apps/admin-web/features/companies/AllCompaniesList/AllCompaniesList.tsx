@@ -1,3 +1,5 @@
+'use client';
+
 import { AllCompanyListTable } from '@darun/companies-feature';
 
 export function AllCompaniesList() {

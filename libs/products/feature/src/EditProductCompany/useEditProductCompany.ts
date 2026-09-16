@@ -1,7 +1,7 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useMutation, useLazyQuery } from '@apollo/client/react';
+import { useMutation, useLazyQuery, useQuery } from '@apollo/client/react';
 import {
   RegisterProductCompanyOnEditProductCompanyDocument,
   SearchCompaniesOnEditProductCompanyDocument,
@@ -11,7 +11,7 @@ import { useForm } from '@mantine/form';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
-import { useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 export const registerProductCompanyOnEditProductCompanyMutationDocument = gql`
   mutation RegisterProductCompanyOnEditProductCompany($input: RegisterProductCompanyInput!, $slug: String!) {
@@ -38,6 +38,10 @@ type FormValues = {
 
 export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
   const { push } = useRouter();
+  const { data: currentProductData } = useQuery(TempProductBySlugOnProductCompanyInfoDocument, {
+    variables: { slug },
+  });
+
   const [registerProductCompany, { loading }] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
     onCompleted: ({ registerProductCompany }) => {
       if (registerProductCompany.product?.id) {
@@ -108,15 +112,24 @@ export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubm
     });
   };
 
+  const currentCompany = currentProductData?.tempProductBySlug?.ownedCompany;
+
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: {
-      companyId: '',
+      companyId: currentCompany?.id ?? '',
     },
     validate: {
       companyId: value => (!value ? '회사를 선택해주세요.' : null),
     },
   });
+
+  useEffect(() => {
+    if (currentCompany?.id) {
+      form.setInitialValues({ companyId: currentCompany.id });
+      form.setValues({ companyId: currentCompany.id });
+    }
+  }, [currentCompany?.id, form]);
 
   const handleSubmit = (values: FormValues) => {
     if (loading || !values.companyId) {
@@ -130,10 +143,17 @@ export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubm
     });
   };
 
+  const displayedCompanies = currentCompany
+    ? [
+        { label: `${currentCompany.name} (현재 연결됨)`, value: currentCompany.id },
+        ...companies.filter(c => c.value !== currentCompany.id),
+      ]
+    : companies;
+
   return {
     form,
     handleSubmit,
-    companies,
+    companies: displayedCompanies,
     searchValue,
     handleSearchChange,
     loading,

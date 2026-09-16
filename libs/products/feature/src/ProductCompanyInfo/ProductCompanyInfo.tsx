@@ -52,26 +52,23 @@ export const ProductCompanyInfo = bind(useProductCompanyInfo, ({ company, loadin
 
   return (
     <div>
-      <div className="flex flex-nowrap">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.08em] text-dark-500">기본 정보</p>
+      <div className="flex flex-col gap-1">
+        <p className="text-xs font-bold uppercase tracking-[0.08em] text-dark-500">기본 정보</p>
+        <p className="text-lg font-medium text-dark-900">{company.name}</p>
 
-          <p className="text-lg font-medium text-dark-900">{company.name}</p>
+        <div className="mt-1 flex flex-wrap items-baseline gap-2.5 text-xs">
+          <span className="font-bold text-dark-900 shrink-0">유형</span>
+          <span className="text-dark-500">{company.type || '-'}</span>
+        </div>
 
-          <div className="mt-1 flex flex-nowrap items-center gap-2.5 text-xs">
-            <span className="font-bold text-dark-900">유형</span>
-            <span className="text-dark-500">{company.type}</span>
-          </div>
+        <div className="mt-1 flex flex-wrap items-baseline gap-2.5 text-xs">
+          <span className="font-bold text-dark-900 shrink-0">주소</span>
+          <span className="text-dark-500 break-words">{company.address || '-'}</span>
+        </div>
 
-          <div className="mt-1 flex flex-nowrap items-center gap-2.5 text-xs">
-            <span className="font-bold text-dark-900">주소</span>
-            <span className="text-dark-500">{company.address}</span>
-          </div>
-
-          <div className="mt-1 flex flex-nowrap items-center gap-2.5 text-xs">
-            <span className="font-bold text-dark-900">설립일</span>
-            <span className="text-dark-500">{formatStartAt(company.startAt)}</span>
-          </div>
+        <div className="mt-1 flex flex-wrap items-baseline gap-2.5 text-xs">
+          <span className="font-bold text-dark-900 shrink-0">설립일</span>
+          <span className="text-dark-500">{formatStartAt(company.startAt)}</span>
         </div>
       </div>
     </div>

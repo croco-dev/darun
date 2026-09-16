@@ -2,10 +2,9 @@
 
 import { EditProductDescription, GenerateProductDescriptionButton, ProductDescription } from '@darun/products-feature';
 import { Button } from '@darun/ui';
-import { AdminModal, AdminPanel, AdminSectionHeader, AdminSectionBody, AdminLoadingState } from '@darun/ui-admin';
+import { AdminModal, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
 import { useDisclosure } from '@mantine/hooks';
 import { Pencil } from 'lucide-react';
-import { Suspense } from 'react';
 
 type ProductDetailDescriptionSectionProps = {
   slug: string;
@@ -32,9 +31,7 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
           }
         />
         <AdminSectionBody>
-          <Suspense fallback={<AdminLoadingState />}>
-            <ProductDescription slug={slug} />
-          </Suspense>
+          <ProductDescription slug={slug} />
         </AdminSectionBody>
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="설명 수정">

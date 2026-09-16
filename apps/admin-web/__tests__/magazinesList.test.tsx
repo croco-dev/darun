@@ -21,6 +21,9 @@ describe('MagazinesList', () => {
   it('renders empty state when there are no magazines', () => {
     vi.mocked(useMagazinesList).mockReturnValue({
       magazines: [],
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
       page: 1,
       setPage: vi.fn(),
       totalCount: 0,
@@ -47,6 +50,9 @@ describe('MagazinesList', () => {
           author: { id: 'u1', name: '작성자' },
         },
       ],
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
       page: 1,
       setPage: vi.fn(),
       totalCount: 1,
@@ -66,5 +72,44 @@ describe('MagazinesList', () => {
 
     // The image should be replaced with the fallback icon
     expect(screen.queryByAltText('테스트 매거진 제목')).toBeNull();
+  });
+
+  it('resets error state when image src changes on the same thumbnail item', () => {
+    let currentSrc = 'https://invalid-image.url/broken.png';
+    vi.mocked(useMagazinesList).mockImplementation(() => ({
+      magazines: [
+        {
+          id: 'mag-1',
+          slug: 'test-magazine',
+          title: '테스트 매거진 제목',
+          summary: '매거진 요약 설명',
+          content: '<p>내용</p>',
+          backgroundImageUrl: currentSrc,
+          publishedAt: '2026-09-01T00:00:00.000Z',
+          updatedAt: '2026-09-01T00:00:00.000Z',
+          author: { id: 'u1', name: '작성자' },
+        },
+      ],
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+      page: 1,
+      setPage: vi.fn(),
+      totalCount: 1,
+      totalPages: 1,
+    }));
+
+    const { rerender } = render(<MagazinesList />);
+
+    const img = screen.getByAltText('테스트 매거진 제목');
+    fireEvent.error(img);
+    expect(screen.queryByAltText('테스트 매거진 제목')).toBeNull();
+
+    // Now update backgroundImageUrl and rerender
+    currentSrc = 'https://valid-image.url/new.png';
+    rerender(<MagazinesList key="updated" />);
+
+    // The new image should be rendered again (hasError reset)
+    expect(screen.getByAltText('테스트 매거진 제목')).toBeTruthy();
   });
 });

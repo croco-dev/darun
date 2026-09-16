@@ -11,6 +11,7 @@ import {
   AdminTextarea,
   AdminActions,
 } from '@darun/ui-admin';
+import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
 
@@ -69,6 +70,20 @@ export const NewProductFormSection = () => {
                       }
                       return;
                     }
+                    const MAX_LOGO_SIZE = 5 * 1024 * 1024;
+                    if (file && file.size > MAX_LOGO_SIZE) {
+                      notifications.show({
+                        message: '로고 이미지는 5MB 이하만 업로드할 수 있습니다.',
+                        color: 'red',
+                      });
+                      event.currentTarget.value = '';
+                      form.getInputProps('file').onChange(undefined);
+                      if (previewUrl) {
+                        URL.revokeObjectURL(previewUrl);
+                        setPreviewUrl(null);
+                      }
+                      return;
+                    }
                     form.getInputProps('file').onChange(file);
                     if (previewUrl) {
                       URL.revokeObjectURL(previewUrl);
@@ -93,6 +108,9 @@ export const NewProductFormSection = () => {
               </div>
             </AdminField>
             <AdminActions>
+              <Button as={Link} href="/products" variant="contained" color="secondary" disabled={loading}>
+                취소
+              </Button>
               <Button type="submit" size="md" variant="contained" color="primary" disabled={loading}>
                 {loading ? '등록 중...' : '등록'}
               </Button>
