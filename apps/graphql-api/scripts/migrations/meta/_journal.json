@@ -15,6 +15,13 @@
       "when": 1789277780921,
       "tag": "0001_silly_leopardon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789600000000,
+      "tag": "0002_add_translation_jobs",
+      "breakpoints": true
     }
   ]
 }

@@ -296,6 +296,7 @@ type Query {
   tempAllMagazines(page: Int!): MagazinePagination!
   tempMagazineBySlug(slug: String!): Magazine
   tempProductBySlug(locale: String! = "ko", slug: String!): Product
+  translationJob(id: String!): TranslationJob
 }
 
 input RegisterProductCompanyInput {
@@ -332,7 +333,9 @@ type Tag {
 type TranslationJob {
   entityId: String!
   entityType: String!
-  fields: [String!]!
+  error: String
+  fields: [String!]
+  id: ID!
   locale: String!
   message: String
   status: String!

@@ -27,7 +27,25 @@ async function main() {
     logLevel: 'info',
   });
 
-  console.log(`Lambda bundle built to ${outDir}/graphql.js`);
+  await build({
+    entryPoints: ['src/functions/translation-worker.ts'],
+    bundle: true,
+    platform: 'node',
+    target: 'node22',
+    format: 'cjs',
+    outfile: `${outDir}/translation-worker.js`,
+    minify: true,
+    keepNames: true,
+    sourcemap: true,
+    sourcesContent: false,
+    treeShaking: true,
+    ignoreAnnotations: true,
+    external: ['class-validator'],
+    plugins,
+    logLevel: 'info',
+  });
+
+  console.log(`Lambda bundles built to ${outDir}`);
 }
 
 main().catch(err => {
