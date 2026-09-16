@@ -9,15 +9,17 @@ export const EditProductCompany = bind(
     return (
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <div className="flex flex-col gap-3">
-          <AdminField label="회사">
+          <AdminField label="회사" error={form.errors.companyId}>
             <div className="flex flex-col gap-2">
               <AdminInput
                 placeholder="회사 이름을 검색하세요"
                 value={searchValue}
+                disabled={loading}
                 onChange={e => handleSearchChange(e.target.value)}
               />
               <AdminSelect
                 value={form.getValues().companyId}
+                disabled={loading}
                 onChange={e => form.setFieldValue('companyId', e.target.value)}
               >
                 <option value="">선택하세요</option>

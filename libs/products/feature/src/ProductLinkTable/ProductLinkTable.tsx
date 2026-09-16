@@ -107,13 +107,22 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
 
 export const ProductLinkTable = bind(
   useProductLinkTable,
-  ({ links, loading, error, editLink, isEditModalOpened, closeEditModal, link, slug }) => {
+  ({ links, loading, error, refetch, editLink, isEditModalOpened, closeEditModal, link, slug }) => {
     if (loading) {
       return <AdminLoadingState />;
     }
 
     if (error) {
-      return <AdminErrorState error={error} />;
+      return (
+        <AdminErrorState
+          error={error}
+          action={
+            <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+              다시 시도
+            </Button>
+          }
+        />
+      );
     }
 
     if (!links || links.length === 0) {

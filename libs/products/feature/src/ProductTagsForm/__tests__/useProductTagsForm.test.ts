@@ -123,4 +123,41 @@ describe('useProductTagsForm', () => {
       color: 'teal',
     });
   });
+
+  it('handles mutation error safely without re-throwing unhandled rejection', async () => {
+    mutateFn.mockRejectedValueOnce(new Error('GraphQL Tag Error'));
+    const { result } = renderHook(() => useProductTagsForm({ slug: defaultSlug }));
+
+    await expect(
+      act(async () => {
+        await result.current.applyTags();
+      })
+    ).resolves.not.toThrow();
+
+    act(() => {
+      mutationOptions.onError?.(new Error('GraphQL Tag Error'));
+    });
+    expect(notifications.show).toHaveBeenCalledWith({
+      message: 'GraphQL Tag Error',
+      color: 'red',
+    });
+  });
+
+  it('prevents applyTags and removeTag when saving', async () => {
+    vi.mocked(useMutation).mockImplementation((() => {
+      return [mutateFn, { loading: true }] as unknown as ReturnType<typeof useMutation>;
+    }) as typeof useMutation);
+
+    const { result } = renderHook(() => useProductTagsForm({ slug: defaultSlug }));
+
+    await act(async () => {
+      await result.current.applyTags();
+    });
+    expect(mutateFn).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.removeTag('핀테크');
+    });
+    expect(result.current.tags).toEqual(['핀테크', '결제']);
+  });
 });

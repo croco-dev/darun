@@ -51,7 +51,6 @@ export function useGenerateProductDescriptionButton(slug: string) {
       });
     } catch (error) {
       console.error('generate description failed:', error);
-      throw error;
     }
   };
 

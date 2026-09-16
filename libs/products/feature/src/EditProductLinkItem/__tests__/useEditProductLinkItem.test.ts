@@ -152,4 +152,42 @@ describe('useEditProductLinkItem', () => {
       iconUrl: updatedLink.iconUrl,
     });
   });
+
+  it('rejects submissions when all fields are empty or whitespace only', async () => {
+    const { result } = renderHook(() => useEditProductLinkItem(defaultProps));
+
+    await act(async () => {
+      await result.current.submit({
+        title: '   ',
+        link: '   ',
+        displayLink: '',
+        iconUrl: '',
+      });
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith({
+      message: '모든 값이 비어있을 수는 없습니다.',
+      color: 'red',
+    });
+    expect(mutateFn).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid link protocol and alerts user', async () => {
+    const { result } = renderHook(() => useEditProductLinkItem(defaultProps));
+
+    await act(async () => {
+      await result.current.submit({
+        title: 'Blog',
+        link: 'javascript:alert(1)',
+        displayLink: 'Blog',
+        iconUrl: 'https://example.com/icon.png',
+      });
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith({
+      message: '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.',
+      color: 'red',
+    });
+    expect(mutateFn).not.toHaveBeenCalled();
+  });
 });

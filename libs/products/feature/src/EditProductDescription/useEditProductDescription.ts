@@ -71,7 +71,8 @@ export function useEditProductDescription({ slug, onSubmit }: { slug: string; on
     if (loading) {
       return;
     }
-    if (!values.description) {
+    const textContent = values.description ? values.description.replace(/<[^>]*>/g, '').trim() : '';
+    if (!values.description || !textContent) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }

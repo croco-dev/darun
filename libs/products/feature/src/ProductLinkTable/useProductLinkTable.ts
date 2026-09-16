@@ -24,7 +24,7 @@ type ProductLinkTableProps = {
 };
 
 export function useProductLinkTable({ slug }: ProductLinkTableProps) {
-  const { data, loading, error } = useQuery(TempProductBySlugOnProductLinkTableDocument, {
+  const { data, loading, error, refetch } = useQuery(TempProductBySlugOnProductLinkTableDocument, {
     variables: { slug },
   });
   const product = useFragment(ProductLinkTableFragmentDoc, data?.tempProductBySlug ?? null);
@@ -44,6 +44,7 @@ export function useProductLinkTable({ slug }: ProductLinkTableProps) {
     links: product?.links,
     loading,
     error,
+    refetch,
     editLink,
     isEditModalOpened,
     closeEditModal,

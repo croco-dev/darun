@@ -52,9 +52,13 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
       title: '',
     },
     validate: {
-      displayLink: value => (!value ? '표시 링크를 입력해주세요.' : null),
-      link: value => (!value ? '링크를 입력해주세요.' : null),
-      title: value => (!value ? '이름을 입력해주세요.' : null),
+      displayLink: value => (!value?.trim() ? '표시 링크를 입력해주세요.' : null),
+      link: value => {
+        if (!value?.trim()) return '링크를 입력해주세요.';
+        if (!/^https?:\/\//i.test(value.trim())) return '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.';
+        return null;
+      },
+      title: value => (!value?.trim() ? '이름을 입력해주세요.' : null),
       iconUrl: value => (!value ? '아이콘을 선택해주세요.' : null),
     },
   });
@@ -74,17 +78,22 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
   });
 
   const submit = async (values: FormValues) => {
-    if (loading || !values.displayLink || !values.link || !values.title || !values.iconUrl) return;
+    const displayLink = values.displayLink?.trim();
+    const link = values.link?.trim();
+    const title = values.title?.trim();
+    const iconUrl = values.iconUrl?.trim();
+    if (loading || !displayLink || !link || !title || !iconUrl) return;
+    if (!/^https?:\/\//i.test(link)) return;
 
     try {
       await addProductLink({
         variables: {
           slug: productSlug,
           input: {
-            displayLink: values.displayLink,
-            iconUrl: values.iconUrl,
-            link: values.link,
-            title: values.title,
+            displayLink,
+            iconUrl,
+            link,
+            title,
           },
         },
       });

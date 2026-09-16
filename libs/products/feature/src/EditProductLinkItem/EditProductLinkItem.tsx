@@ -19,32 +19,35 @@ export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit,
   return (
     <form onSubmit={form.onSubmit(submit)}>
       <div className="flex flex-col gap-2">
-        <AdminField label="표시 링크">
+        <AdminField label="표시 링크" error={form.errors.displayLink}>
           <AdminInput
             type="text"
             placeholder="ex) toss.im"
+            disabled={loading}
             key={form.key('displayLink')}
             {...form.getInputProps('displayLink')}
           />
         </AdminField>
-        <AdminField label="링크">
+        <AdminField label="링크" error={form.errors.link}>
           <AdminInput
             type="text"
             placeholder="ex) https://toss.im/"
+            disabled={loading}
             key={form.key('link')}
             {...form.getInputProps('link')}
           />
         </AdminField>
-        <AdminField label="이름">
+        <AdminField label="이름" error={form.errors.title}>
           <AdminInput
             type="text"
             placeholder="ex) 공식 홈페이지"
+            disabled={loading}
             key={form.key('title')}
             {...form.getInputProps('title')}
           />
         </AdminField>
-        <AdminField label="아이콘">
-          <AdminSelect key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
+        <AdminField label="아이콘" error={form.errors.iconUrl}>
+          <AdminSelect disabled={loading} key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
             <option value="">아이콘을 선택해 주세요</option>
             {iconData.map(icon => (
               <option key={icon.value} value={icon.value}>

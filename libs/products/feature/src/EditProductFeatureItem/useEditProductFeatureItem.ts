@@ -69,6 +69,11 @@ export function useEditProductFeatureItem({ featureId, onSubmit }: EditProductFe
       name: '',
       summary: '',
     },
+    validate: {
+      emoji: value => (!value?.trim() ? '이모지를 입력해주세요.' : null),
+      name: value => (!value?.trim() ? '기능 이름을 입력해주세요.' : null),
+      summary: value => (!value?.trim() ? '요약을 입력해주세요.' : null),
+    },
   });
 
   useEffect(() => {

@@ -54,9 +54,9 @@ export function useNewCompanyForm() {
     },
     mode: 'uncontrolled',
     validate: {
-      name: value => (!value ? '회사 이름을 입력해주세요.' : null),
-      type: value => (!value ? '유형을 입력해주세요.' : null),
-      address: value => (!value ? '주소를 입력해주세요.' : null),
+      name: value => (!value?.trim() ? '회사 이름을 입력해주세요.' : null),
+      type: value => (!value?.trim() ? '유형을 입력해주세요.' : null),
+      address: value => (!value?.trim() ? '주소를 입력해주세요.' : null),
     },
   });
   const { push } = useRouter();
@@ -86,16 +86,19 @@ export function useNewCompanyForm() {
   };
 
   const handleSubmit = (values: FormValues) => {
-    if (loading || !values.name || !values.type || !values.address) return;
+    const name = values.name?.trim();
+    const type = values.type?.trim();
+    const address = values.address?.trim();
+    if (loading || !name || !type || !address) return;
 
     const startAt = startAtIsDisabled || values.startAtIsDisabled ? undefined : parseStartAtToIso(values.startAt);
 
     mutate({
       variables: {
         input: {
-          name: values.name,
-          type: values.type,
-          address: values.address,
+          name,
+          type,
+          address,
           startAt,
         },
       },

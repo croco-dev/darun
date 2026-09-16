@@ -24,7 +24,7 @@ gql`
 
 export function useAllCompanyListTable() {
   const [page, setPage] = useState(1);
-  const { data, loading, error } = useQuery(AllCompaniesOnAllCompanyListTableDocument, {
+  const { data, loading, error, refetch } = useQuery(AllCompaniesOnAllCompanyListTableDocument, {
     variables: { page },
   });
 
@@ -40,5 +40,6 @@ export function useAllCompanyListTable() {
     totalPages: data?.allCompanies.totalPages,
     loading,
     error,
+    refetch,
   };
 }

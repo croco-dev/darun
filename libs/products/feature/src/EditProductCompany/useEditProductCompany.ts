@@ -113,6 +113,9 @@ export function useEditProductCompany({ slug, onSubmit }: { slug: string; onSubm
     initialValues: {
       companyId: '',
     },
+    validate: {
+      companyId: value => (!value ? '회사를 선택해주세요.' : null),
+    },
   });
 
   const handleSubmit = (values: FormValues) => {

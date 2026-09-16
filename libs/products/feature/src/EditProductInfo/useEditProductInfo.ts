@@ -80,7 +80,9 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
     if (loading) {
       return;
     }
-    if (!values.name && !values.summary) {
+    const name = values.name?.trim();
+    const summary = values.summary?.trim();
+    if (!name && !summary) {
       notifications.show({ message: '값을 입력해주세요!!', color: 'red' });
       return;
     }
@@ -88,8 +90,8 @@ export function useEditProductInfo({ slug, onSubmit }: { slug: string; onSubmit?
       variables: {
         slug,
         input: {
-          name: values.name || undefined,
-          summary: values.summary || undefined,
+          name: name || undefined,
+          summary: summary || undefined,
         },
       },
     });

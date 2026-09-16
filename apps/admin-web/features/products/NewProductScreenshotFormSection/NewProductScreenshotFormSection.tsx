@@ -30,8 +30,9 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
               <AdminInput
                 name="file"
                 type="file"
+                disabled={loading}
                 accept="image/png,image/jpeg,image/webp"
-                className="file:mr-3 file:rounded-lg file:border-0 file:bg-black/5 file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                className="file:mr-3 file:rounded-lg file:border-0 file:bg-black/5 file:px-3 file:py-1.5 file:text-sm file:font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 onChange={event => {
                   const file = event.currentTarget.files?.[0] ?? undefined;
                   if (file && !file.type.startsWith('image/')) {
@@ -71,7 +72,12 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
             </div>
           </AdminField>
           <AdminField label="이미지 alt" error={form.errors.imageAlt}>
-            <AdminInput name="imageAlt" placeholder={'ex) 서비스 화면 이미지'} {...form.getInputProps('imageAlt')} />
+            <AdminInput
+              name="imageAlt"
+              disabled={loading}
+              placeholder={'ex) 서비스 화면 이미지'}
+              {...form.getInputProps('imageAlt')}
+            />
           </AdminField>
           <AdminActions>
             <Button type="submit" size="md" variant="contained" color="primary" disabled={loading}>
