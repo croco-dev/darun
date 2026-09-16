@@ -1,8 +1,14 @@
 import { GetMagazine, Magazine } from '@darun/magazines-domain';
 import { GetProduct, GetProductFeature, GetProductFeatures, Product, ProductFeature } from '@darun/products-domain';
-import { TranslationService } from '@darun/translation-domain';
+import {
+  type TranslationJobEntity,
+  type TranslationJobRepository,
+  TranslationJobRepositoryToken,
+  TranslationService,
+} from '@darun/translation-domain';
 import { LlmClient, withRetry, withTimeout } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
+import { TranslationQueueService } from './TranslationQueueService';
 
 export type TranslationEntityType = 'Product' | 'Magazine' | 'ProductFeature';
 
@@ -64,7 +70,10 @@ export class TranslationJobService {
     private readonly translationService: TranslationService,
     @Inject(() => LlmClient) private readonly llmClient: LlmClient,
     private readonly getProductFeatureUseCase?: GetProductFeature,
-    private readonly getProductFeaturesUseCase?: GetProductFeatures
+    private readonly getProductFeaturesUseCase?: GetProductFeatures,
+    @Inject(TranslationJobRepositoryToken)
+    private readonly translationJobRepository?: TranslationJobRepository,
+    private readonly translationQueueService?: TranslationQueueService
   ) {}
 
   async translateProductWithFeatures(identifier: { id?: string; slug?: string } | string): Promise<string> {
@@ -120,7 +129,7 @@ export class TranslationJobService {
           { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
           { role: 'user', content: prompt },
         ]),
-        20_000,
+        120_000,
         'LLM 통합 번역 요청이 시간 초과되었습니다.'
       );
 
@@ -191,6 +200,101 @@ export class TranslationJobService {
     }
 
     return productId;
+  }
+
+  async requestProductTranslationJob(identifier: { id?: string; slug?: string } | string): Promise<{
+    id: string;
+    entityType: string;
+    entityId: string;
+    status: string;
+    message?: string | null;
+  }> {
+    const query = typeof identifier === 'string' ? { id: identifier } : identifier;
+    const product = await this.getProductUseCase.execute(query);
+    if (!product) {
+      throw new Error('Product가 존재하지 않습니다.');
+    }
+
+    const productId = product.id;
+
+    if (!this.translationJobRepository) {
+      await this.translateProductWithFeatures(productId);
+      return {
+        id: productId,
+        entityType: 'Product',
+        entityId: productId,
+        status: 'completed',
+        message: '상품 및 주요 기능 번역이 완료되었습니다.',
+      };
+    }
+
+    const job = await this.translationJobRepository.createJob({
+      entityType: 'Product',
+      entityId: productId,
+      locale: 'en',
+      status: 'pending',
+      message: '번역 작업이 대기열에 등록되었습니다.',
+    });
+
+    let isQueued = false;
+    if (this.translationQueueService) {
+      try {
+        isQueued = await this.translationQueueService.sendJob({
+          jobId: job.id,
+          entityType: 'Product',
+          entityId: productId,
+        });
+      } catch (err) {
+        console.warn('[TranslationJobService] Failed to send job to SQS, falling back to background process:', err);
+      }
+    }
+
+    if (!isQueued) {
+      setImmediate(() => {
+        void this.executeProductTranslationJob(job.id, productId);
+      });
+    }
+
+    return {
+      id: job.id,
+      entityType: 'Product',
+      entityId: productId,
+      status: job.status,
+      message: job.message,
+    };
+  }
+
+  async getJob(id: string): Promise<TranslationJobEntity | null> {
+    if (!this.translationJobRepository) {
+      return null;
+    }
+    return this.translationJobRepository.findJobById(id);
+  }
+
+  async executeProductTranslationJob(jobId: string, productId: string): Promise<void> {
+    if (!this.translationJobRepository) {
+      await this.translateProductWithFeatures(productId);
+      return;
+    }
+
+    try {
+      await this.translationJobRepository.updateJobStatus(jobId, 'in_progress', {
+        message: 'LLM으로 영문 번역을 생성하고 있습니다...',
+      });
+
+      await this.translateProductWithFeatures(productId);
+
+      await this.translationJobRepository.updateJobStatus(jobId, 'completed', {
+        message: '상품 및 기능의 영문 번역이 완료되었습니다.',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      console.error(`[TranslationJobService] Translation job ${jobId} failed:`, error);
+      await this.translationJobRepository.updateJobStatus(jobId, 'failed', {
+        error: errorMessage,
+        message: '상품 번역에 실패했습니다.',
+      });
+    }
   }
 
   async translateEntity(entityType: TranslationEntityType, entityId: string, fields: string[]): Promise<void> {

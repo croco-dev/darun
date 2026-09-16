@@ -1,6 +1,9 @@
 import { gql } from '@apollo/client';
-import { useMutation } from '@apollo/client/react';
-import { RequestProductTranslationOnTranslateButtonDocument } from '@darun/provider-graphql';
+import { useLazyQuery, useMutation } from '@apollo/client/react';
+import {
+  GetTranslationJobOnTranslateButtonDocument,
+  RequestProductTranslationOnTranslateButtonDocument,
+} from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
@@ -8,9 +11,19 @@ import { useRef, useState } from 'react';
 gql`
   mutation RequestProductTranslationOnTranslateButton($slug: String!) {
     requestProductTranslation(slug: $slug) {
+      id
       entityId
       status
       message
+    }
+  }
+
+  query GetTranslationJobOnTranslateButton($id: String!) {
+    translationJob(id: $id) {
+      id
+      status
+      message
+      error
     }
   }
 `;
@@ -20,11 +33,16 @@ type TranslateProductButtonProps = {
 };
 
 const CLIENT_TIMEOUT_MS = 25_000;
+const POLL_INTERVAL_MS = 2_000;
+const MAX_POLL_TIMEOUT_MS = 180_000; // 3 minutes
 
 export function useTranslateProductButton({ slug }: TranslateProductButtonProps) {
   const [loading, setLoading] = useState(false);
   const isSubmittingRef = useRef(false);
   const [requestTranslationMutation] = useMutation(RequestProductTranslationOnTranslateButtonDocument);
+  const [getTranslationJob] = useLazyQuery(GetTranslationJobOnTranslateButtonDocument, {
+    fetchPolicy: 'network-only',
+  });
 
   const translateProduct = async () => {
     if (isSubmittingRef.current || loading) {
@@ -67,23 +85,98 @@ export function useTranslateProductButton({ slug }: TranslateProductButtonProps)
 
       const result = await Promise.race([mutationPromise, timeoutPromise]);
 
-      notifications.hide(notificationId);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
 
-      if (result?.data?.requestProductTranslation?.status === 'completed') {
+      const initialJob = result?.data?.requestProductTranslation;
+
+      // 1. If completed synchronously
+      if (initialJob?.status === 'completed') {
+        notifications.hide(notificationId);
         notifications.show({
           title: '번역 완료',
-          message: result.data.requestProductTranslation.message || '상품 및 기능의 영문 번역이 완료되었습니다.',
+          message: initialJob.message || '상품 및 기능의 영문 번역이 완료되었습니다.',
           color: 'teal',
         });
-      } else {
+        return;
+      }
+
+      // 2. If failed immediately
+      if (initialJob?.status === 'failed') {
+        notifications.hide(notificationId);
         notifications.show({
           title: '번역 실패',
-          message:
-            result?.data?.requestProductTranslation?.message ||
-            '영문 번역 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
+          message: initialJob.message || '영문 번역 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
           color: 'red',
         });
+        return;
       }
+
+      // 3. If asynchronous job (pending / in_progress), poll for completion
+      if (initialJob?.id) {
+        const jobId = initialJob.id;
+        const startTime = Date.now();
+
+        await new Promise<void>(resolve => {
+          const pollInterval = setInterval(async () => {
+            try {
+              if (Date.now() - startTime > MAX_POLL_TIMEOUT_MS) {
+                clearInterval(pollInterval);
+                notifications.hide(notificationId);
+                notifications.show({
+                  title: '번역 진행 중 (시간 소요)',
+                  message: '번역 작업이 백그라운드에서 진행 중입니다. 잠시 후 새로고침해주세요.',
+                  color: 'blue',
+                });
+                resolve();
+                return;
+              }
+
+              const queryResult = await getTranslationJob({
+                variables: { id: jobId },
+              });
+
+              const currentJob = queryResult.data?.translationJob;
+              if (!currentJob) {
+                return;
+              }
+
+              if (currentJob.status === 'completed') {
+                clearInterval(pollInterval);
+                notifications.hide(notificationId);
+                notifications.show({
+                  title: '번역 완료',
+                  message: currentJob.message || '상품 및 기능의 영문 번역이 완료되었습니다.',
+                  color: 'teal',
+                });
+                resolve();
+              } else if (currentJob.status === 'failed') {
+                clearInterval(pollInterval);
+                notifications.hide(notificationId);
+                notifications.show({
+                  title: '번역 실패',
+                  message: currentJob.error || currentJob.message || '영문 번역 생성에 실패했습니다.',
+                  color: 'red',
+                });
+                resolve();
+              }
+            } catch (pollErr) {
+              console.warn('[useTranslateProductButton] Polling error:', pollErr);
+            }
+          }, POLL_INTERVAL_MS);
+        });
+        return;
+      }
+
+      // Fallback
+      notifications.hide(notificationId);
+      notifications.show({
+        title: '번역 완료',
+        message: initialJob?.message || '상품 및 기능의 영문 번역이 완료되었습니다.',
+        color: 'teal',
+      });
     } catch (error) {
       notifications.hide(notificationId);
       let errorMessage = '영문 번역 생성 중 오류가 발생했습니다.';

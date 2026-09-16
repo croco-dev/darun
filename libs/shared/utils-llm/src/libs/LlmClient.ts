@@ -50,7 +50,7 @@ export class LlmClient {
       client = new OpenAI({
         baseURL: endpoint,
         apiKey,
-        timeout: 20_000,
+        timeout: 120_000,
       });
       this.clientCache.set(key, client);
     }

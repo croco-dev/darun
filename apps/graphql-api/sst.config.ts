@@ -32,6 +32,20 @@ export default $config({
       VOTE_IP_SALT: process.env.VOTE_IP_SALT!,
     };
 
+    const translationQueue = new sst.aws.Queue('TranslationQueue');
+
+    const translationWorker = new sst.aws.Function('TranslationWorker', {
+      handler: 'translation-worker.handler',
+      bundle: '.build/lambda',
+      runtime: 'nodejs22.x',
+      architecture: 'arm64',
+      timeout: '5 minutes',
+      logging: { retention: '1 week' },
+      environment,
+    });
+
+    translationQueue.subscribe(translationWorker.arn);
+
     const fn = new sst.aws.Function('GraphqlHandler', {
       handler: 'graphql.handler',
       bundle: '.build/lambda',
@@ -39,7 +53,16 @@ export default $config({
       architecture: 'arm64',
       timeout: '30 seconds',
       logging: { retention: '1 week' },
-      environment,
+      permissions: [
+        {
+          actions: ['sqs:SendMessage'],
+          resources: [translationQueue.arn],
+        },
+      ],
+      environment: {
+        ...environment,
+        TRANSLATION_QUEUE_URL: translationQueue.url,
+      },
     });
 
     const api = new sst.aws.ApiGatewayV2('GraphqlApi', {

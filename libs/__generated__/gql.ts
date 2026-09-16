@@ -14,6 +14,8 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
+    "\n  query ProductsCountOnAdminDashboard {\n    productsCount\n  }\n": typeof types.ProductsCountOnAdminDashboardDocument,
+    "\n  query ProductBasicOnAdminDetailPage($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      name\n      slug\n    }\n  }\n": typeof types.ProductBasicOnAdminDetailPageDocument,
     "\n  query TempAllMagazinesOnMagazinesList($page: Int!) {\n    tempAllMagazines(page: $page) {\n      totalCount\n      totalPages\n      magazines {\n        id\n        slug\n        title\n        summary\n        content\n        backgroundImageUrl\n        updatedAt\n        publishedAt\n        author {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.TempAllMagazinesOnMagazinesListDocument,
     "\n  query GetProductScreenshotsOnDetailSection($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      screenshots {\n        id\n        imageUrl\n        imageAlt\n      }\n    }\n  }\n\n  mutation DeleteProductScreenshotOnDetailSection($id: String!) {\n    deleteProductScreenshot(id: $id) {\n      success\n    }\n  }\n": typeof types.GetProductScreenshotsOnDetailSectionDocument,
     "\n  query GetLlmSettingOnLlmSettingFormSection {\n    llmSetting {\n      id\n      endpoint\n      apiKeyMasked\n      model\n      thinkingLevel\n      updatedAt\n    }\n  }\n": typeof types.GetLlmSettingOnLlmSettingFormSectionDocument,
@@ -52,7 +54,7 @@ type Documents = {
     "\n  query TempProductBySlugOnProductTagsForm($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      tags {\n        id\n        name\n      }\n    }\n  }\n\n  mutation UpdateProductTagsOnProductTagForm($slug: String!, $input: UpdateProductTagsInput!) {\n    updateProductTags(slug: $slug, input: $input) {\n      product {\n        id\n        tags {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.TempProductBySlugOnProductTagsFormDocument,
     "\n  query TempProductOnPublishProductButton($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      publishedAt\n    }\n  }\n  mutation PublishProductOnPublishProductButton($input: PublishProductInput!) {\n    publishProduct(input: $input) {\n      product {\n        id\n        publishedAt\n      }\n    }\n  }\n": typeof types.TempProductOnPublishProductButtonDocument,
     "\n  query SearchProductsOnSearchProductField($query: String!) {\n    searchProducts(query: $query) {\n      id\n      name\n    }\n  }\n": typeof types.SearchProductsOnSearchProductFieldDocument,
-    "\n  mutation RequestProductTranslationOnTranslateButton($slug: String!) {\n    requestProductTranslation(slug: $slug) {\n      entityId\n      status\n      message\n    }\n  }\n": typeof types.RequestProductTranslationOnTranslateButtonDocument,
+    "\n  mutation RequestProductTranslationOnTranslateButton($slug: String!) {\n    requestProductTranslation(slug: $slug) {\n      id\n      entityId\n      status\n      message\n    }\n  }\n\n  query GetTranslationJobOnTranslateButton($id: String!) {\n    translationJob(id: $id) {\n      id\n      status\n      message\n      error\n    }\n  }\n": typeof types.RequestProductTranslationOnTranslateButtonDocument,
     "\n  query ProductBySlugOnAlternativeProductList($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      id\n      alternatives {\n        id\n        name\n        slug\n        summary\n        logoUrl\n        tags {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.ProductBySlugOnAlternativeProductListDocument,
     "\n  query ProductWithFeaturesOnProductAlternativeList($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      id\n      alternatives {\n        id\n        slug\n        name\n        logoUrl\n        summary\n        tags {\n          id\n          name\n        }\n        description\n        features {\n          emoji\n          id\n          name\n          summary\n        }\n      }\n    }\n  }\n": typeof types.ProductWithFeaturesOnProductAlternativeListDocument,
     "\n  query ProductBySlugOnProductCompany($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      id\n      ownedCompany {\n        id\n        name\n        type\n        address\n        startAt\n      }\n    }\n  }\n": typeof types.ProductBySlugOnProductCompanyDocument,
@@ -77,6 +79,8 @@ type Documents = {
     "\n  mutation SignImageUpload($input: SignImageUploadInput!) {\n    signImageUpload(input: $input) {\n      signature\n      folder\n      timestamp\n    }\n  }\n": typeof types.SignImageUploadDocument,
 };
 const documents: Documents = {
+    "\n  query ProductsCountOnAdminDashboard {\n    productsCount\n  }\n": types.ProductsCountOnAdminDashboardDocument,
+    "\n  query ProductBasicOnAdminDetailPage($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      name\n      slug\n    }\n  }\n": types.ProductBasicOnAdminDetailPageDocument,
     "\n  query TempAllMagazinesOnMagazinesList($page: Int!) {\n    tempAllMagazines(page: $page) {\n      totalCount\n      totalPages\n      magazines {\n        id\n        slug\n        title\n        summary\n        content\n        backgroundImageUrl\n        updatedAt\n        publishedAt\n        author {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.TempAllMagazinesOnMagazinesListDocument,
     "\n  query GetProductScreenshotsOnDetailSection($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      screenshots {\n        id\n        imageUrl\n        imageAlt\n      }\n    }\n  }\n\n  mutation DeleteProductScreenshotOnDetailSection($id: String!) {\n    deleteProductScreenshot(id: $id) {\n      success\n    }\n  }\n": types.GetProductScreenshotsOnDetailSectionDocument,
     "\n  query GetLlmSettingOnLlmSettingFormSection {\n    llmSetting {\n      id\n      endpoint\n      apiKeyMasked\n      model\n      thinkingLevel\n      updatedAt\n    }\n  }\n": types.GetLlmSettingOnLlmSettingFormSectionDocument,
@@ -115,7 +119,7 @@ const documents: Documents = {
     "\n  query TempProductBySlugOnProductTagsForm($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      tags {\n        id\n        name\n      }\n    }\n  }\n\n  mutation UpdateProductTagsOnProductTagForm($slug: String!, $input: UpdateProductTagsInput!) {\n    updateProductTags(slug: $slug, input: $input) {\n      product {\n        id\n        tags {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.TempProductBySlugOnProductTagsFormDocument,
     "\n  query TempProductOnPublishProductButton($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      publishedAt\n    }\n  }\n  mutation PublishProductOnPublishProductButton($input: PublishProductInput!) {\n    publishProduct(input: $input) {\n      product {\n        id\n        publishedAt\n      }\n    }\n  }\n": types.TempProductOnPublishProductButtonDocument,
     "\n  query SearchProductsOnSearchProductField($query: String!) {\n    searchProducts(query: $query) {\n      id\n      name\n    }\n  }\n": types.SearchProductsOnSearchProductFieldDocument,
-    "\n  mutation RequestProductTranslationOnTranslateButton($slug: String!) {\n    requestProductTranslation(slug: $slug) {\n      entityId\n      status\n      message\n    }\n  }\n": types.RequestProductTranslationOnTranslateButtonDocument,
+    "\n  mutation RequestProductTranslationOnTranslateButton($slug: String!) {\n    requestProductTranslation(slug: $slug) {\n      id\n      entityId\n      status\n      message\n    }\n  }\n\n  query GetTranslationJobOnTranslateButton($id: String!) {\n    translationJob(id: $id) {\n      id\n      status\n      message\n      error\n    }\n  }\n": types.RequestProductTranslationOnTranslateButtonDocument,
     "\n  query ProductBySlugOnAlternativeProductList($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      id\n      alternatives {\n        id\n        name\n        slug\n        summary\n        logoUrl\n        tags {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.ProductBySlugOnAlternativeProductListDocument,
     "\n  query ProductWithFeaturesOnProductAlternativeList($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      id\n      alternatives {\n        id\n        slug\n        name\n        logoUrl\n        summary\n        tags {\n          id\n          name\n        }\n        description\n        features {\n          emoji\n          id\n          name\n          summary\n        }\n      }\n    }\n  }\n": types.ProductWithFeaturesOnProductAlternativeListDocument,
     "\n  query ProductBySlugOnProductCompany($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      id\n      ownedCompany {\n        id\n        name\n        type\n        address\n        startAt\n      }\n    }\n  }\n": types.ProductBySlugOnProductCompanyDocument,
@@ -154,6 +158,14 @@ const documents: Documents = {
  */
 export function graphql(source: string): unknown;
 
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query ProductsCountOnAdminDashboard {\n    productsCount\n  }\n"): (typeof documents)["\n  query ProductsCountOnAdminDashboard {\n    productsCount\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query ProductBasicOnAdminDetailPage($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      name\n      slug\n    }\n  }\n"): (typeof documents)["\n  query ProductBasicOnAdminDetailPage($slug: String!) {\n    tempProductBySlug(slug: $slug) {\n      id\n      name\n      slug\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -309,7 +321,7 @@ export function graphql(source: "\n  query SearchProductsOnSearchProductField($q
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation RequestProductTranslationOnTranslateButton($slug: String!) {\n    requestProductTranslation(slug: $slug) {\n      entityId\n      status\n      message\n    }\n  }\n"): (typeof documents)["\n  mutation RequestProductTranslationOnTranslateButton($slug: String!) {\n    requestProductTranslation(slug: $slug) {\n      entityId\n      status\n      message\n    }\n  }\n"];
+export function graphql(source: "\n  mutation RequestProductTranslationOnTranslateButton($slug: String!) {\n    requestProductTranslation(slug: $slug) {\n      id\n      entityId\n      status\n      message\n    }\n  }\n\n  query GetTranslationJobOnTranslateButton($id: String!) {\n    translationJob(id: $id) {\n      id\n      status\n      message\n      error\n    }\n  }\n"): (typeof documents)["\n  mutation RequestProductTranslationOnTranslateButton($slug: String!) {\n    requestProductTranslation(slug: $slug) {\n      id\n      entityId\n      status\n      message\n    }\n  }\n\n  query GetTranslationJobOnTranslateButton($id: String!) {\n    translationJob(id: $id) {\n      id\n      status\n      message\n      error\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

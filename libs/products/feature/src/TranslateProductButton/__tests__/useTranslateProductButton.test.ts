@@ -1,4 +1,4 @@
-import { useMutation } from '@apollo/client/react';
+import { useLazyQuery, useMutation } from '@apollo/client/react';
 import { notifications } from '@mantine/notifications';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -8,6 +8,7 @@ vi.mock('@apollo/client/react', async importOriginal => {
   return {
     ...(actual as Record<string, unknown>),
     useMutation: vi.fn(),
+    useLazyQuery: vi.fn(),
   };
 });
 
@@ -23,11 +24,16 @@ import { useTranslateProductButton } from '../useTranslateProductButton';
 describe('useTranslateProductButton', () => {
   const defaultSlug = 'test-product';
   let mutateFn: ReturnType<typeof vi.fn>;
+  let lazyQueryFn: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mutateFn = vi.fn();
+    lazyQueryFn = vi.fn();
     vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>);
+    vi.mocked(useLazyQuery).mockReturnValue([lazyQueryFn, { loading: false }] as unknown as ReturnType<
+      typeof useLazyQuery
+    >);
   });
 
   it('calls requestProductTranslation mutation with slug', async () => {
@@ -262,5 +268,56 @@ describe('useTranslateProductButton', () => {
       })
     );
     expect(result.current.loading).toBe(false);
+  });
+
+  it('polls job status when initial status is pending and completes when completed', async () => {
+    vi.useFakeTimers();
+    mutateFn.mockResolvedValueOnce({
+      data: {
+        requestProductTranslation: {
+          id: 'job-123',
+          entityId: 'prod-1',
+          status: 'pending',
+          message: '대기 중',
+        },
+      },
+    });
+
+    lazyQueryFn.mockResolvedValueOnce({
+      data: {
+        translationJob: {
+          id: 'job-123',
+          status: 'completed',
+          message: '영문 번역이 완료되었습니다.',
+        },
+      },
+    });
+
+    const { result } = renderHook(() => useTranslateProductButton({ slug: defaultSlug }));
+
+    let translatePromise: Promise<void>;
+    act(() => {
+      translatePromise = result.current.translateProduct();
+    });
+
+    // Advance by poll interval (2000ms)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+      await translatePromise;
+    });
+
+    expect(lazyQueryFn).toHaveBeenCalledWith({
+      variables: { id: 'job-123' },
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: '번역 완료',
+        message: '영문 번역이 완료되었습니다.',
+        color: 'teal',
+      })
+    );
+    expect(result.current.loading).toBe(false);
+    vi.useRealTimers();
   });
 });

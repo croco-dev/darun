@@ -1,15 +1,18 @@
-import { Field, ObjectType } from 'type-graphql';
+import { Field, ID, ObjectType } from 'type-graphql';
 
 @ObjectType()
 export class TranslationJob {
+  @Field(() => ID)
+  id: string;
+
   @Field(() => String)
   entityType: string;
 
   @Field(() => String)
   entityId: string;
 
-  @Field(() => [String])
-  fields: string[];
+  @Field(() => [String], { nullable: true })
+  fields?: string[];
 
   @Field(() => String)
   locale: string;
@@ -19,4 +22,7 @@ export class TranslationJob {
 
   @Field(() => String, { nullable: true })
   message?: string;
+
+  @Field(() => String, { nullable: true })
+  error?: string;
 }

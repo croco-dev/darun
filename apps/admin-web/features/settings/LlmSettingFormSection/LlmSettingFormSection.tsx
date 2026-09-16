@@ -9,8 +9,11 @@ import {
 import { Button } from '@darun/ui';
 import { AdminErrorState, AdminLoadingState, AdminPanel, AdminSectionBody, AdminSectionHeader } from '@darun/ui-admin';
 import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm';
+import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
+import { Search } from 'lucide-react';
 import { useState } from 'react';
+import { ModelSelectModal } from './ModelSelectModal';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -125,6 +128,7 @@ function LlmSettingForm({
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState(defaults.model);
   const [thinkingLevel, setThinkingLevel] = useState(defaults.thinkingLevel);
+  const [isModelModalOpened, { open: openModelModal, close: closeModelModal }] = useDisclosure(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,37 +226,59 @@ function LlmSettingForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="model" className="text-sm font-medium text-dark-800">
-          사용할 LLM 모델명
-        </label>
-        <input
-          id="model"
-          type="text"
-          value={model}
-          disabled={isUpdating}
-          onChange={e => setModel(e.target.value)}
-          placeholder="nvidia/nemotron-3-ultra-550b-a55b:free"
-          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
-          required
-        />
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-dark-500">추천 모델:</span>
+        <div className="flex items-center justify-between">
+          <label htmlFor="model" className="text-sm font-medium text-dark-800">
+            사용할 LLM 모델명
+          </label>
           <button
             type="button"
+            onClick={openModelModal}
             disabled={isUpdating}
-            onClick={() => setModel('nvidia/nemotron-3-ultra-550b-a55b:free')}
-            className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 disabled:opacity-50 text-dark-800 font-mono transition"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-dark-800 hover:text-dark-950 px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 transition disabled:opacity-50"
           >
-            nvidia/nemotron-3-ultra-550b-a55b:free
+            <Search className="w-3.5 h-3.5" />
+            /v1/models 검색 및 선택
           </button>
+        </div>
+        <div className="flex gap-2">
+          <input
+            id="model"
+            type="text"
+            value={model}
+            disabled={isUpdating}
+            onChange={e => setModel(e.target.value)}
+            placeholder="nvidia/nemotron-3-ultra-550b-a55b:free"
+            className="flex-1 px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30 disabled:opacity-60 disabled:cursor-not-allowed font-mono"
+            required
+          />
           <button
             type="button"
+            onClick={openModelModal}
             disabled={isUpdating}
-            onClick={() => setModel('x-ai/grok-4-fast')}
-            className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 disabled:opacity-50 text-dark-800 font-mono transition"
+            className="px-3.5 py-2 rounded-lg bg-dark-900 hover:bg-dark-800 text-white text-sm font-medium transition whitespace-nowrap flex items-center gap-1.5 disabled:opacity-60"
           >
-            x-ai/grok-4-fast
+            <Search className="w-4 h-4" />
+            목록에서 찾기
           </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+          <span className="text-xs text-dark-500">빠른 선택:</span>
+          {[
+            { label: 'gemini-2.5-flash (빠름)', value: 'google/gemini-2.5-flash' },
+            { label: 'grok-4-fast (빠름)', value: 'x-ai/grok-4-fast' },
+            { label: 'gpt-4o-mini (빠름)', value: 'openai/gpt-4o-mini' },
+            { label: 'nemotron free (무료)', value: 'nvidia/nemotron-3-ultra-550b-a55b:free' },
+          ].map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              disabled={isUpdating}
+              onClick={() => setModel(opt.value)}
+              className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 disabled:opacity-50 text-dark-800 font-mono transition"
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -311,6 +337,15 @@ function LlmSettingForm({
           {isUpdating ? '저장 중...' : '설정 저장'}
         </Button>
       </div>
+
+      <ModelSelectModal
+        opened={isModelModalOpened}
+        onClose={closeModelModal}
+        endpoint={endpoint}
+        apiKey={apiKey}
+        selectedModel={model}
+        onSelectModel={setModel}
+      />
     </form>
   );
 }

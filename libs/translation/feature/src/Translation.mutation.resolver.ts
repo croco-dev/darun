@@ -24,6 +24,7 @@ export class TranslationMutationResolver {
     await this.translationJobService.translateEntity(normalizedEntityType, entityId, normalizedFields);
 
     return {
+      id: `${normalizedEntityType}:${entityId}`,
       entityType: normalizedEntityType,
       entityId,
       fields: normalizedFields,
@@ -43,17 +44,37 @@ export class TranslationMutationResolver {
       throw new Error('productId 또는 slug가 필요합니다.');
     }
 
-    const resolvedProductId = await this.translationJobService.translateProductWithFeatures(
-      productId ? { id: productId } : { slug: slug! }
-    );
+    let job: {
+      id: string;
+      entityId: string;
+      status: string;
+      message?: string | null;
+    };
+
+    if (typeof this.translationJobService.requestProductTranslationJob === 'function') {
+      job = await this.translationJobService.requestProductTranslationJob(
+        productId ? { id: productId } : { slug: slug! }
+      );
+    } else {
+      const resolvedProductId = await this.translationJobService.translateProductWithFeatures(
+        productId ? { id: productId } : { slug: slug! }
+      );
+      job = {
+        id: resolvedProductId,
+        entityId: resolvedProductId,
+        status: 'completed',
+        message: '상품 및 주요 기능 번역이 완료되었습니다.',
+      };
+    }
 
     return {
+      id: job.id,
       entityType: 'Product',
-      entityId: resolvedProductId,
+      entityId: job.entityId,
       fields: ['name', 'summary', 'description', 'features'],
       locale: 'en',
-      status: 'completed',
-      message: '상품 및 주요 기능 번역이 완료되었습니다.',
+      status: job.status,
+      message: job.message ?? undefined,
     };
   }
 
