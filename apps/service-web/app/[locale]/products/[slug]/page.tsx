@@ -138,12 +138,29 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
   const titleSuffix = currentLocale === 'en' ? 'Darun: Compare Services in One Place' : '다른: 서비스 비교를 한 곳에서';
   const pageTitle = `${product.name} - ${titleSuffix}`;
 
+  const softwareAppJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: product.name,
+    description: product.summary || product.description || '',
+    url: canonicalUrl,
+    applicationCategory: product.tags?.[0]?.name ?? 'Software',
+    ...(product.logoUrl && { image: product.logoUrl }),
+    ...(product.ownedCompany && {
+      author: {
+        '@type': 'Organization',
+        name: product.ownedCompany.name,
+      },
+    }),
+  };
+
   const webPageJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemPage',
     name: pageTitle,
     description: product.summary || product.description || '',
     url: canonicalUrl,
+    mainEntity: softwareAppJsonLd,
     ...(product.logoUrl && { image: product.logoUrl }),
     ...(product.ownedCompany && {
       author: {

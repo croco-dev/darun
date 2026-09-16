@@ -35,14 +35,24 @@ export async function generateMetadata({ params }: HomePageProps): Promise<Metad
   return buildHomePageMetadata(normalizeLocale(locale));
 }
 
-const webSiteJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  '@id': 'https://www.darun.io/#website',
-  url: 'https://www.darun.io/',
-  name: '다른(darun)',
-  alternateName: ['darun', 'darun.io', '다른'],
-};
+function getWebSiteJsonLd(locale: 'ko' | 'en') {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': 'https://www.darun.io/#website',
+    url: 'https://www.darun.io/',
+    name: '다른(darun)',
+    alternateName: ['darun', 'darun.io', '다른'],
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `https://www.darun.io/${locale}/search/product?query={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+}
 
 const whatIsDarunFeatures = [
   {
@@ -96,7 +106,7 @@ export default async function HomePage({ params }: HomePageProps) {
 
   return (
     <Layout>
-      <JsonLd data={webSiteJsonLd} />
+      <JsonLd data={getWebSiteJsonLd(currentLocale)} />
       <main data-testid="home-page" className="flex flex-col">
         <MainHeroBanner productsCount={productsCount} />
         <Suspense fallback={<CategoryNavigationSkeleton />}>

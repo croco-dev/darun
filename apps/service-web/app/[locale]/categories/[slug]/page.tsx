@@ -5,8 +5,9 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
+import { JsonLd } from '../../../../lib/seo/json-ld';
 import { getOgLocale } from '../../../../lib/seo/metadata';
-import { buildAlternates, normalizeLocale } from '../../../../lib/seo/url';
+import { absolutePublicUrl, buildAlternates, normalizeLocale } from '../../../../lib/seo/url';
 import { getClient } from '../../../getServerClient';
 
 type Props = {
@@ -85,14 +86,52 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CategoryPage({ params }: Props) {
   const { slug, locale } = await params;
-  const category = await getCategory(slug, locale);
+  const currentLocale = normalizeLocale(locale);
+  const category = await getCategory(slug, currentLocale);
 
   if (!category) {
     notFound();
   }
 
+  const label = currentLocale === 'ko' ? category.labelKo : category.labelEn;
+  const canonicalUrl = absolutePublicUrl(currentLocale, `/categories/${slug}`);
+  const pageTitle = currentLocale === 'ko' ? `${label} 카테고리 - 다른` : `${label} Category - Darun`;
+  const description =
+    currentLocale === 'ko'
+      ? `${label} 서비스들의 특징과 대안을 확인해보세요.`
+      : `Explore ${label} software, tools, and alternatives on Darun.`;
+
+  const breadcrumbList = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: currentLocale === 'en' ? 'Home' : '홈',
+        item: absolutePublicUrl(currentLocale, '/'),
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: label,
+        item: canonicalUrl,
+      },
+    ],
+  };
+
+  const collectionPageJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: pageTitle,
+    description,
+    url: canonicalUrl,
+  };
+
   return (
     <Layout>
+      <JsonLd data={breadcrumbList} />
+      <JsonLd data={collectionPageJsonLd} />
       <main className="flex w-full flex-col">
         <CategoryProductSection slug={slug} />
       </main>

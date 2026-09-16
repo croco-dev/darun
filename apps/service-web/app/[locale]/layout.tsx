@@ -9,15 +9,10 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { ReactNode } from 'react';
 import { routing } from '../../i18n/routing';
-import { SITE_COPY } from '../../lib/seo/metadata';
-import { normalizeLocale, PUBLIC_ORIGIN } from '../../lib/seo/url';
+import { buildRootLayoutMetadata } from '../../lib/seo/metadata';
+import { normalizeLocale } from '../../lib/seo/url';
 import { ClientRootProvider } from '../client';
 import { ServerRootProvider } from '../server';
-
-const LOCALE_TO_OG_LOCALE: Record<string, string> = {
-  ko: 'ko_KR',
-  en: 'en_US',
-};
 
 const pretendardFont = localFont({
   src: '../../../../node_modules/@croco/utils-next-font-pretendard/PretendardVariable.woff2',
@@ -33,38 +28,7 @@ type LayoutProps = {
 export async function generateMetadata({ params }: LayoutProps): Promise<Metadata> {
   const { locale } = await params;
   const currentLocale = normalizeLocale(locale);
-  const copy = SITE_COPY[currentLocale];
-  const ogLocale = LOCALE_TO_OG_LOCALE[locale] ?? 'ko_KR';
-
-  return {
-    metadataBase: new URL(PUBLIC_ORIGIN),
-    title: {
-      default: copy.title,
-      template: `%s`,
-    },
-    description: copy.description,
-    openGraph: {
-      siteName: '다른(darun)',
-      title: copy.title,
-      description: copy.description,
-      type: 'website',
-      locale: ogLocale,
-      images: [
-        {
-          url: 'https://darun-image.doda.dev/?format=png',
-          width: 1200,
-          height: 630,
-          alt: copy.ogImageAlt,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: copy.title,
-      description: copy.description,
-      images: ['https://darun-image.doda.dev/?format=png'],
-    },
-  };
+  return buildRootLayoutMetadata(currentLocale);
 }
 
 export function generateStaticParams() {

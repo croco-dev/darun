@@ -37,6 +37,16 @@ describe('SEO Metadata Helpers', () => {
       const metadata = buildRootLayoutMetadata();
       expect(metadata.alternates?.canonical).toBeUndefined();
     });
+
+    it('sets localized metadata when locale is provided', () => {
+      const enMetadata = buildRootLayoutMetadata('en');
+      expect(enMetadata.title).toEqual({
+        default: SITE_COPY.en.title,
+        template: '%s',
+      });
+      expect(enMetadata.description).toBe(SITE_COPY.en.description);
+      expect(enMetadata.openGraph?.locale).toBe('en_US');
+    });
   });
 
   describe('buildHomePageMetadata', () => {

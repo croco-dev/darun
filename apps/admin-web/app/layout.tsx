@@ -19,6 +19,10 @@ const pretendardFont = localFont({
 export const metadata: Metadata = {
   title: 'darun admin',
   description: 'darun.io',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
