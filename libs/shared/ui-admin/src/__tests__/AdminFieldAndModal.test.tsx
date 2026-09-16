@@ -70,5 +70,44 @@ describe('AdminField and AdminModal', () => {
 
       expect(onClose).toHaveBeenCalledTimes(1);
     });
+
+    it('calls onClose when Escape key is pressed', () => {
+      const onClose = vi.fn();
+      render(
+        <AdminModal opened={true} onClose={onClose} title="모달 제목">
+          <p>모달 내용</p>
+        </AdminModal>
+      );
+
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('traps focus inside the modal on Tab key navigation', () => {
+      const onClose = vi.fn();
+      render(
+        <AdminModal opened={true} onClose={onClose} title="모달 제목">
+          <button type="button" data-testid="first-btn">
+            첫번째
+          </button>
+          <button type="button" data-testid="second-btn">
+            두번째
+          </button>
+        </AdminModal>
+      );
+
+      const closeButton = screen.getByLabelText('닫기');
+      const secondBtn = screen.getByTestId('second-btn');
+
+      // Focus last element and press Tab -> wraps to closeButton (first focusable)
+      secondBtn.focus();
+      fireEvent.keyDown(document, { key: 'Tab' });
+      expect(document.activeElement).toBe(closeButton);
+
+      // Focus first element and press Shift+Tab -> wraps to secondBtn (last focusable)
+      closeButton.focus();
+      fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+      expect(document.activeElement).toBe(secondBtn);
+    });
   });
 });

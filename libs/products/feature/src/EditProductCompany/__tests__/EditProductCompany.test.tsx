@@ -27,6 +27,8 @@ const mockForm = {
   onSubmit: vi.fn((handler: Function) => handler),
   getValues: vi.fn(() => ({ companyId: '' })),
   setFieldValue: vi.fn(),
+  key: vi.fn(() => 'companyId'),
+  getInputProps: vi.fn(() => ({ defaultValue: '' })),
   errors: {},
 };
 

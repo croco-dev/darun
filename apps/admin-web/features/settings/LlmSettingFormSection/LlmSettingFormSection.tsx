@@ -7,7 +7,14 @@ import {
   UpdateLlmSettingOnLlmSettingFormSectionDocument,
 } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
-import { AdminErrorState, AdminLoadingState, AdminPanel, AdminSectionBody, AdminSectionHeader } from '@darun/ui-admin';
+import {
+  AdminErrorState,
+  AdminInput,
+  AdminLoadingState,
+  AdminPanel,
+  AdminSectionBody,
+  AdminSectionHeader,
+} from '@darun/ui-admin';
 import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
@@ -126,6 +133,7 @@ function LlmSettingForm({
   const defaults = resolveLlmFormDefaults(currentSetting);
   const [endpoint, setEndpoint] = useState(defaults.endpoint);
   const [apiKey, setApiKey] = useState('');
+  const [clearApiKey, setClearApiKey] = useState(false);
   const [model, setModel] = useState(defaults.model);
   const [thinkingLevel, setThinkingLevel] = useState(defaults.thinkingLevel);
   const [isModelModalOpened, { open: openModelModal, close: closeModelModal }] = useDisclosure(false);
@@ -158,10 +166,11 @@ function LlmSettingForm({
     }
 
     try {
+      const resolvedApiKey = clearApiKey ? '' : apiKey.trim() || undefined;
       await updateLlmSetting({
         variables: {
           endpoint: endpoint.trim() || undefined,
-          apiKey: apiKey.trim() || undefined,
+          apiKey: resolvedApiKey,
           model: model.trim() || undefined,
           thinkingLevel: thinkingLevel.trim(),
         },
@@ -171,6 +180,7 @@ function LlmSettingForm({
         message: 'LLM 설정이 데이터베이스에 안전하게 저장되었습니다.',
         color: 'teal',
       });
+      setClearApiKey(false);
       setApiKey('');
       await onUpdated();
     } catch (err) {
@@ -188,39 +198,70 @@ function LlmSettingForm({
         <label htmlFor="endpoint" className="text-sm font-medium text-dark-800">
           API 엔드포인트 URL
         </label>
-        <input
+        <AdminInput
           id="endpoint"
           type="text"
           value={endpoint}
           disabled={isUpdating}
           onChange={e => setEndpoint(e.target.value)}
           placeholder="https://openrouter.ai/api/v1"
-          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
+          aria-describedby="endpoint-help"
           required
         />
-        <p className="text-xs text-dark-500">
+        <p id="endpoint-help" className="text-xs text-dark-500">
           OpenAI 호환 API 엔드포인트입니다. (기본값: https://openrouter.ai/api/v1)
         </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="apiKey" className="text-sm font-medium text-dark-800">
-          API 키 (Secret Key)
-        </label>
-        <input
-          id="apiKey"
-          type="password"
-          value={apiKey}
-          disabled={isUpdating}
-          onChange={e => setApiKey(e.target.value)}
-          placeholder={
-            currentSetting?.apiKeyMasked
-              ? `현재 등록됨 (${currentSetting.apiKeyMasked}) - 변경 시에만 입력`
-              : '등록된 키 없음 (입력하지 않으면 환경변수 OPEN_ROUTER_API_KEY 사용)'
-          }
-          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
-        />
-        <p className="text-xs text-dark-500">
+        <div className="flex items-center justify-between">
+          <label htmlFor="apiKey" className="text-sm font-medium text-dark-800">
+            API 키 (Secret Key)
+          </label>
+          {currentSetting?.apiKeyMasked && !clearApiKey && (
+            <button
+              type="button"
+              disabled={isUpdating}
+              onClick={() => {
+                setClearApiKey(true);
+                setApiKey('');
+              }}
+              className="text-xs text-red-600 hover:text-red-700 underline disabled:opacity-50"
+            >
+              DB 등록 키 삭제
+            </button>
+          )}
+          {clearApiKey && (
+            <button
+              type="button"
+              disabled={isUpdating}
+              onClick={() => setClearApiKey(false)}
+              className="text-xs text-dark-600 hover:text-dark-800 underline disabled:opacity-50"
+            >
+              삭제 취소
+            </button>
+          )}
+        </div>
+        {clearApiKey ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+            DB에 등록된 API 키가 저장 시 삭제됩니다. (기본 환경변수 OPEN_ROUTER_API_KEY 로 복원됨)
+          </div>
+        ) : (
+          <AdminInput
+            id="apiKey"
+            type="password"
+            value={apiKey}
+            disabled={isUpdating}
+            onChange={e => setApiKey(e.target.value)}
+            aria-describedby="apiKey-help"
+            placeholder={
+              currentSetting?.apiKeyMasked
+                ? `현재 등록됨 (${currentSetting.apiKeyMasked}) - 변경 시에만 입력`
+                : '등록된 키 없음 (입력하지 않으면 환경변수 OPEN_ROUTER_API_KEY 사용)'
+            }
+          />
+        )}
+        <p id="apiKey-help" className="text-xs text-dark-500">
           새 API 키를 입력하면 DB에 갱신됩니다. 비워두면 기존 등록된 키 또는 환경변수가 유지됩니다.
         </p>
       </div>
@@ -241,14 +282,15 @@ function LlmSettingForm({
           </button>
         </div>
         <div className="flex gap-2">
-          <input
+          <AdminInput
             id="model"
             type="text"
             value={model}
             disabled={isUpdating}
             onChange={e => setModel(e.target.value)}
             placeholder="nvidia/nemotron-3-ultra-550b-a55b:free"
-            className="flex-1 px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30 disabled:opacity-60 disabled:cursor-not-allowed font-mono"
+            className="flex-1 font-mono"
+            aria-describedby="model-help"
             required
           />
           <button
@@ -280,20 +322,23 @@ function LlmSettingForm({
             </button>
           ))}
         </div>
+        <p id="model-help" className="sr-only">
+          OpenRouter 등에서 지원하는 LLM 모델 식별자입니다.
+        </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="thinkingLevel" className="text-sm font-medium text-dark-800">
           추론 강도 (Thinking Level / Reasoning Effort)
         </label>
-        <input
+        <AdminInput
           id="thinkingLevel"
           type="text"
           value={thinkingLevel}
           disabled={isUpdating}
           onChange={e => setThinkingLevel(e.target.value)}
           placeholder="예: low, medium, high, none (비워두면 모델 기본값)"
-          className="px-3.5 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
+          aria-describedby="thinkingLevel-help"
         />
         <div className="flex flex-wrap items-center gap-1.5 mt-1">
           <span className="text-xs text-dark-500">빠른 선택:</span>
@@ -321,7 +366,7 @@ function LlmSettingForm({
             </button>
           ))}
         </div>
-        <p className="text-xs text-dark-500">
+        <p id="thinkingLevel-help" className="text-xs text-dark-500">
           OpenRouter/Gemini/OpenAI 추론 모델(o-series, Claude thinking, Gemini 3 thinkingLevel, Nemotron 등)에 적용되는
           추론 강도입니다.
         </p>

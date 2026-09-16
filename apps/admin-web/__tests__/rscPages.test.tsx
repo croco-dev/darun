@@ -1,10 +1,22 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import LoginPage from '../app/auth/login/page';
+import LogoutPage from '../app/auth/logout/page';
 import NewCompanyPage from '../app/companies/new/page';
+import CompanyListPage from '../app/companies/page';
 import MagazineCreatePage from '../app/magazines/create/page';
 import HomePage from '../app/page';
 import ProductDetailPage, { generateMetadata } from '../app/products/[slug]/page';
 import NewProductPage from '../app/products/new/page';
+import ProductListPage from '../app/products/page';
+
+vi.mock('../features/auth/LoginSection', () => ({
+  LoginSection: () => React.createElement('div', { 'data-testid': 'mock-login-section' }),
+}));
+
+vi.mock('../features/auth/LogoutSection', () => ({
+  LogoutSection: () => React.createElement('div', { 'data-testid': 'mock-logout-section' }),
+}));
 
 vi.mock('@darun/utils-apollo-client/server', () => ({
   getClient: vi.fn(() => ({
@@ -58,6 +70,28 @@ describe('Admin RSC Pages', () => {
     expect(React.isValidElement(element)).toBe(true);
     expect(element.props.title).toBe('새로운 기업 추가');
     expect(element.props.backHref).toBe('/companies');
+  });
+
+  it('CompanyListPage renders PageShell with title and Suspense boundary', () => {
+    const element = CompanyListPage();
+    expect(React.isValidElement(element)).toBe(true);
+    expect(element.props.title).toBe('기업(업체) 목록');
+  });
+
+  it('ProductListPage renders PageShell with title and Suspense boundary', () => {
+    const element = ProductListPage();
+    expect(React.isValidElement(element)).toBe(true);
+    expect(element.props.title).toBe('서비스 목록');
+  });
+
+  it('LoginPage renders login shell with Suspense boundary without client errors', () => {
+    const element = LoginPage();
+    expect(React.isValidElement(element)).toBe(true);
+  });
+
+  it('LogoutPage renders logout confirmation shell without client errors', () => {
+    const element = LogoutPage();
+    expect(React.isValidElement(element)).toBe(true);
   });
 
   it('MagazineCreatePage renders PageShell with backHref=/magazines without client hooks', () => {

@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';

@@ -8,17 +8,19 @@ import { useEffect } from 'react';
 import { MenuBar } from './MenuBar';
 
 type EditorProps = {
+  value?: string;
   defaultValue?: string;
   onChange?: (content: string) => void;
   editable?: boolean;
   disabled?: boolean;
 };
 
-export function Editor({ defaultValue, onChange, editable = true, disabled = false }: EditorProps) {
+export function Editor({ value, defaultValue, onChange, editable = true, disabled = false }: EditorProps) {
   const isEditable = editable && !disabled;
+  const initialContent = value !== undefined ? value : (defaultValue ?? '');
   const editor = useEditor({
     extensions: [StarterKit, Image, Typography],
-    content: defaultValue ?? '',
+    content: initialContent,
     editable: isEditable,
     onUpdate: ({ editor: currentEditor }) => {
       onChange?.(currentEditor.getHTML());
@@ -41,14 +43,14 @@ export function Editor({ defaultValue, onChange, editable = true, disabled = fal
       return;
     }
 
-    const nextValue = defaultValue ?? '';
+    const nextValue = value !== undefined ? value : (defaultValue ?? '');
 
     if (editor.getHTML() === nextValue) {
       return;
     }
 
     editor.commands.setContent(nextValue, false);
-  }, [defaultValue, editor]);
+  }, [value, defaultValue, editor]);
 
   if (!editor) {
     return (

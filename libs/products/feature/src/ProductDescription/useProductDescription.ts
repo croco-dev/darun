@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { useSuspenseQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client/react';
 import { TempProductBySlugOnProductDescriptionDocument } from '@darun/provider-graphql';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -17,8 +17,13 @@ type ProductDescriptionProps = {
 };
 
 export function useProductDescription({ slug }: ProductDescriptionProps) {
-  const { data } = useSuspenseQuery(TempProductBySlugOnProductDescriptionDocument, {
+  const { data, loading, error, refetch } = useQuery(TempProductBySlugOnProductDescriptionDocument, {
     variables: { slug },
   });
-  return { description: data?.tempProductBySlug?.description };
+  return {
+    description: data?.tempProductBySlug?.description,
+    loading,
+    error,
+    refetch,
+  };
 }

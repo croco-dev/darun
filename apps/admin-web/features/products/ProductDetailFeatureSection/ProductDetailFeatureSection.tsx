@@ -3,8 +3,8 @@
 import { EditProductFeatureItem, ProductFeatureTable } from '@darun/products-feature';
 import { Button } from '@darun/ui';
 import { AdminModal, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
+import { Link } from '@darun/utils-router';
 import { useDisclosure } from '@mantine/hooks';
-import Link from 'next/link';
 import { useCallback, useState } from 'react';
 
 type ProductDetailFeatureSectionProps = {
@@ -29,7 +29,7 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
         <AdminSectionHeader
           title="기능 관리"
           rightSide={
-            <Button as={Link} href={`/products/${slug}/features/new`} variant="contained" color="primary">
+            <Button as={Link} href={`/products/${slug}/features/new`} variant="contained" color="primary" size="sm">
               새 기능 추가
             </Button>
           }

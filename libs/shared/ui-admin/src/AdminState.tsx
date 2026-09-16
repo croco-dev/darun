@@ -209,7 +209,7 @@ export function AdminEmptyState({ title = '데이터가 없습니다.', descript
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5" />
         </svg>
       )}
-      <h3 className="text-sm font-medium text-dark-500">{title}</h3>
+      <h3 className="text-sm font-semibold text-dark-800">{title}</h3>
       {description && <p className="text-xs text-dark-500 mt-1">{description}</p>}
     </div>
   );

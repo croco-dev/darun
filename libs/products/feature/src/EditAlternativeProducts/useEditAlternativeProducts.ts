@@ -10,9 +10,7 @@ import {
 import { useForm } from '@mantine/form';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { ChangeEvent } from 'react';
-import { useCallback } from 'react';
-import { useEffect } from 'react';
+import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -50,6 +48,8 @@ type FormValues = {
 };
 
 export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; onSubmit?: () => void }) {
+  const [searchedProducts, setSearchedProducts] = useState<Array<{ id: string; name: string }>>([]);
+
   const { data } = useQuery(TempProductBySlugOnEditAlternativeProductsDocument, {
     variables: { slug },
   });
@@ -63,7 +63,8 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
   const [searchProducts, { data: searchData }] = useLazyQuery(SearchProductsOnEditAlternativeProductsDocument);
 
   useEffect(() => {
-    const alternativeIds = data?.tempProductBySlug?.alternatives.map(({ id }) => id) ?? [];
+    const rawAlternatives = data?.tempProductBySlug?.alternatives ?? [];
+    const alternativeIds = rawAlternatives.map(item => item.id).filter((id): id is string => typeof id === 'string');
     form.setInitialValues({ alternativeIds });
     form.setValues({ alternativeIds });
   }, [data, form]);
@@ -74,7 +75,10 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
     onCompleted: ({ updateAlternativeProduct }) => {
       if (updateAlternativeProduct.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
-        const alternativeIds = updateAlternativeProduct.product.alternatives.map(({ id }) => id);
+        const rawAlternatives = updateAlternativeProduct.product.alternatives ?? [];
+        const alternativeIds = rawAlternatives
+          .map(item => item.id)
+          .filter((id): id is string => typeof id === 'string');
         form.setInitialValues({ alternativeIds });
         form.reset();
 
@@ -111,7 +115,22 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
 
   const search = useThrottledCallback(async (query: string) => {
     try {
-      await searchProducts({ variables: { query } });
+      const res = await searchProducts({ variables: { query } });
+      const foundProducts = res.data?.searchProducts;
+      if (foundProducts) {
+        setSearchedProducts(prev => {
+          const map = new Map<string, string>();
+          for (const item of prev) {
+            map.set(item.id, item.name);
+          }
+          for (const item of foundProducts) {
+            if (item.id && item.name) {
+              map.set(item.id, item.name);
+            }
+          }
+          return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+        });
+      }
     } catch (error) {
       console.error('Search failed:', error);
       notifications.show({ message: '검색 중 오류가 발생했습니다.', color: 'red' });
@@ -131,23 +150,29 @@ export function useEditAlternativeProducts({ slug, onSubmit }: { slug: string; o
   );
 
   const currentProductId = data?.tempProductBySlug?.id;
+  const currentAlternatives = data?.tempProductBySlug?.alternatives ?? [];
+  const allKnownProducts = [...currentAlternatives, ...searchedProducts];
+  const uniqueProductsMap = new Map<string, string>();
+  for (const p of allKnownProducts) {
+    if (p.id && p.name) {
+      uniqueProductsMap.set(p.id, p.name);
+    }
+  }
 
-  const selectedItems =
-    data?.tempProductBySlug?.alternatives.map(({ id, name }) => ({
-      label: name,
-      value: id,
-    })) ?? [];
+  const currentAlternativeIds = form.getValues().alternativeIds ?? [];
 
-  const searchItems =
-    searchData?.searchProducts
-      .map(({ id, name }) => ({
-        label: name,
-        value: id,
-      }))
-      .filter(
-        ({ value }) =>
-          value !== currentProductId && selectedItems.every(({ value: selectedValue }) => selectedValue !== value)
-      ) ?? [];
+  const selectedItems = currentAlternativeIds.map(id => ({
+    value: id,
+    label: uniqueProductsMap.get(id) ?? id,
+  }));
+
+  const currentSearchList = searchData?.searchProducts ?? [];
+  const searchItems = currentSearchList
+    .filter(p => Boolean(p.id) && p.id !== currentProductId && !currentAlternativeIds.includes(p.id))
+    .map(p => ({
+      label: p.name,
+      value: p.id,
+    }));
 
   return {
     form,

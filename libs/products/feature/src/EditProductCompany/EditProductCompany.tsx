@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@darun/ui';
 import { AdminField, AdminSelect, AdminActions, AdminInput } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
@@ -17,11 +19,7 @@ export const EditProductCompany = bind(
                 disabled={loading}
                 onChange={e => handleSearchChange(e.target.value)}
               />
-              <AdminSelect
-                value={form.getValues().companyId}
-                disabled={loading}
-                onChange={e => form.setFieldValue('companyId', e.target.value)}
-              >
+              <AdminSelect key={form.key('companyId')} disabled={loading} {...form.getInputProps('companyId')}>
                 <option value="">선택하세요</option>
                 {companies.map(company => (
                   <option key={company.value} value={company.value}>

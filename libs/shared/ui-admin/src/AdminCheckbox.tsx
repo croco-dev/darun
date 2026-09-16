@@ -23,7 +23,13 @@ export const AdminCheckbox = forwardRef<HTMLInputElement, AdminCheckboxProps>(
           {...props}
         />
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-dark-900 select-none cursor-pointer">
+          <label
+            htmlFor={inputId}
+            className={cn(
+              'text-sm font-medium text-dark-900 select-none',
+              props.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+            )}
+          >
             {label}
           </label>
         )}

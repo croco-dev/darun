@@ -5,7 +5,7 @@ import { ButtonHTMLAttributes, ElementType, ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex h-fit w-fit items-center justify-center rounded-xl border text-sm font-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transform-none motion-reduce:transition-none',
+  'inline-flex h-fit w-fit items-center justify-center rounded-xl border text-sm font-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transform-none motion-reduce:transition-none no-underline hover:no-underline select-none',
   {
     variants: {
       variant: {
@@ -32,33 +32,36 @@ const buttonVariants = cva(
       {
         variant: 'base',
         color: 'primary',
-        className: 'border-dark-900 bg-dark-900 text-white hover:bg-dark-800 hover:border-dark-800 active:bg-dark-900',
+        className:
+          'border-dark-900 bg-dark-900 text-white visited:text-white hover:bg-dark-800 hover:border-dark-800 active:bg-dark-900',
       },
       {
         variant: 'base',
         color: 'secondary',
-        className: 'border-transparent bg-transparent text-dark-900 hover:bg-dark-100 active:bg-dark-150',
+        className:
+          'border-transparent bg-transparent text-dark-900 visited:text-dark-900 hover:bg-dark-100 active:bg-dark-150',
       },
       {
         variant: 'contained',
         color: 'primary',
-        className: 'border-dark-900 bg-dark-900 text-white hover:bg-dark-800 hover:border-dark-800 active:bg-dark-900',
+        className:
+          'border-dark-900 bg-dark-900 text-white visited:text-white hover:bg-dark-800 hover:border-dark-800 active:bg-dark-900',
       },
       {
         variant: 'contained',
         color: 'secondary',
         className:
-          'border-dark-200 bg-dark-100 text-dark-900 hover:bg-dark-150 hover:border-dark-300 active:bg-dark-200',
+          'border-dark-200 bg-dark-100 text-dark-900 visited:text-dark-900 hover:bg-dark-150 hover:border-dark-300 active:bg-dark-200',
       },
       {
         variant: 'text',
         color: 'primary',
-        className: 'text-dark-900 hover:bg-dark-100 active:bg-dark-150',
+        className: 'text-dark-900 visited:text-dark-900 hover:bg-dark-100 active:bg-dark-150',
       },
       {
         variant: 'text',
         color: 'secondary',
-        className: 'text-dark-900 hover:bg-dark-100 active:bg-dark-150',
+        className: 'text-dark-900 visited:text-dark-900 hover:bg-dark-100 active:bg-dark-150',
       },
       {
         variant: 'text',
@@ -69,13 +72,13 @@ const buttonVariants = cva(
         variant: 'shadow',
         color: 'primary',
         className:
-          'border-dark-800 bg-dark-900 text-white shadow-button hover:bg-dark-800 hover:border-dark-700 hover:shadow-button-hover active:bg-dark-950',
+          'border-dark-800 bg-dark-900 text-white visited:text-white shadow-button hover:bg-dark-800 hover:border-dark-700 hover:shadow-button-hover active:bg-dark-950',
       },
       {
         variant: 'shadow',
         color: 'secondary',
         className:
-          'border-dark-150 bg-white text-dark-900 shadow-button hover:bg-surface-100 hover:border-dark-300 hover:shadow-button-hover active:bg-dark-100',
+          'border-dark-150 bg-white text-dark-900 visited:text-dark-900 shadow-button hover:bg-surface-100 hover:border-dark-300 hover:shadow-button-hover active:bg-dark-100',
       },
     ],
     defaultVariants: {

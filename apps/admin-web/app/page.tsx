@@ -57,7 +57,7 @@ export default async function HomePage() {
       iconBg: 'bg-purple-50 text-purple-600 border-purple-100',
       listHref: '/magazines',
       newHref: '/magazines/create',
-      newLabel: '매거진 작성',
+      newLabel: '매거진 발행',
       newIcon: Plus,
     },
     {

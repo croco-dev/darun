@@ -1,3 +1,5 @@
+'use client';
+
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import {
@@ -114,10 +116,20 @@ export function useWriteMagazine() {
       return;
     }
 
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    if (droppedFile.size > MAX_FILE_SIZE) {
+      notifications.show({
+        message: '10MB 이하의 이미지 파일만 업로드할 수 있습니다.',
+        color: 'red',
+      });
+      return;
+    }
+
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
-    setPreviewUrl(URL.createObjectURL(droppedFile));
+    const objectUrl = URL.createObjectURL(droppedFile);
+    setPreviewUrl(objectUrl);
     setFile(droppedFile);
 
     setIsUploading(true);
@@ -129,6 +141,10 @@ export function useWriteMagazine() {
         color: 'teal',
       });
     } catch (error) {
+      URL.revokeObjectURL(objectUrl);
+      setPreviewUrl(null);
+      setFile(null);
+      form.setFieldValue('backgroundImageUrl', '');
       notifications.show({
         message: '이미지 업로드에 실패했습니다.',
         color: 'red',

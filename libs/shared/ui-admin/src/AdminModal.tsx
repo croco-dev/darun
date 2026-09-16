@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@darun/ui';
-import { ReactNode, useCallback, useEffect } from 'react';
+import { ReactNode, useCallback, useEffect, useRef } from 'react';
 
 export type AdminModalProps = {
   opened: boolean;
@@ -13,10 +13,40 @@ export type AdminModalProps = {
 };
 
 export function AdminModal({ opened, onClose, title, children, className, maxWidth = 'max-w-lg' }: AdminModalProps) {
+  const modalContentRef = useRef<HTMLDivElement | null>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+
+      if (e.key === 'Tab' && modalContentRef.current) {
+        const focusableElements = modalContentRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+
+        if (focusableElements.length === 0) {
+          e.preventDefault();
+          return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement || !modalContentRef.current.contains(document.activeElement)) {
+            e.preventDefault();
+            lastElement?.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement || !modalContentRef.current.contains(document.activeElement)) {
+            e.preventDefault();
+            firstElement?.focus();
+          }
+        }
       }
     },
     [onClose]
@@ -25,13 +55,26 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
   useEffect(() => {
     if (!opened) return;
 
+    previousActiveElementRef.current = document.activeElement as HTMLElement | null;
     document.addEventListener('keydown', handleKeyDown);
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+    // Focus the first focusable element inside the modal on next tick
+    const timer = setTimeout(() => {
+      if (modalContentRef.current) {
+        const firstFocusable = modalContentRef.current.querySelector<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        firstFocusable?.focus();
+      }
+    }, 0);
+
     return () => {
+      clearTimeout(timer);
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = originalOverflow;
+      previousActiveElementRef.current?.focus();
     };
   }, [opened, handleKeyDown]);
 
@@ -52,6 +95,7 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
       }}
     >
       <div
+        ref={modalContentRef}
         className={cn(
           'relative w-full rounded-2xl border border-dark-200 bg-white p-6 shadow-2xl transition-all',
           maxWidth,

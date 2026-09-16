@@ -2,10 +2,11 @@
 
 import { gql } from '@apollo/client';
 import { EditProductLinkItemFragment, EditProductLinkItemFragmentDoc, useFragment } from '@darun/provider-graphql';
-import { Button } from '@darun/ui';
+import { Button, cn } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
-import { Pencil } from 'lucide-react';
+import { Link2, Pencil } from 'lucide-react';
+import { useState } from 'react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
 import { useProductLinkTable } from './useProductLinkTable';
 
@@ -31,6 +32,30 @@ type ProductLinkRowProps = {
   onEdit: (link: EditProductLinkItemFragment) => void;
 };
 
+function LinkIcon({ iconUrl, title, isPrimary }: { iconUrl?: string; title: string; isPrimary: boolean }) {
+  const [hasError, setHasError] = useState(false);
+  const [prevIconUrl, setPrevIconUrl] = useState(iconUrl);
+
+  if (iconUrl !== prevIconUrl) {
+    setPrevIconUrl(iconUrl);
+    setHasError(false);
+  }
+
+  if (!iconUrl || hasError) {
+    return <Link2 className={cn('h-5 w-5', isPrimary ? 'text-white' : 'text-dark-500')} />;
+  }
+
+  return (
+    <img
+      src={iconUrl}
+      alt={`${title} 아이콘`}
+      loading="lazy"
+      onError={() => setHasError(true)}
+      className="h-6 w-6 object-contain"
+    />
+  );
+}
+
 function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
   const link = useFragment(EditProductLinkItemFragmentDoc, linkRef);
 
@@ -39,20 +64,12 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
       <td className="border-r border-dark-200 px-4 py-3">
         <div className="flex justify-center">
           <div
-            className="flex items-center justify-center rounded-xl p-2 text-center h-10 w-10 shrink-0"
-            style={{
-              background: linkRef.isPrimary ? '#000' : '#fff',
-            }}
+            className={cn(
+              'flex items-center justify-center rounded-xl p-2 text-center h-10 w-10 shrink-0 border',
+              linkRef.isPrimary ? 'bg-black border-black text-white' : 'bg-white border-dark-200 text-dark-800'
+            )}
           >
-            <img
-              src={link.iconUrl}
-              alt={`${link.title} 아이콘`}
-              loading="lazy"
-              onError={e => {
-                e.currentTarget.style.visibility = 'hidden';
-              }}
-              className="h-6 w-6 object-contain"
-            />
+            <LinkIcon iconUrl={link.iconUrl} title={link.title} isPrimary={linkRef.isPrimary} />
           </div>
         </div>
       </td>

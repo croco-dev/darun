@@ -18,6 +18,13 @@ type Product = {
 
 function ProductTableLogo({ logoUrl }: { logoUrl?: string | null }) {
   const [hasError, setHasError] = useState(false);
+  const [prevLogoUrl, setPrevLogoUrl] = useState(logoUrl);
+
+  if (logoUrl !== prevLogoUrl) {
+    setPrevLogoUrl(logoUrl);
+    setHasError(false);
+  }
+
   const src = !hasError && logoUrl ? logoUrl : '/images/default-product-icon.svg';
 
   return (
