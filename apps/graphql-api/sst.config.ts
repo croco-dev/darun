@@ -97,7 +97,15 @@ export default $config({
             'http://localhost:3003',
           ],
           allowMethods: ['GET', 'POST'],
-          allowHeaders: ['authorization', 'content-type'],
+          allowHeaders: [
+            'authorization',
+            'content-type',
+            'sentry-trace',
+            'baggage',
+            'x-darun-sibling-md',
+            'x-apollo-operation-name',
+            'apollo-require-preflight',
+          ],
           allowCredentials: true,
         },
         router: {
