@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery } from '@apollo/client/react';
 import { EditAlternativeProducts } from '@darun/products-feature';
 import { TempProductBySlugOnEditAlternativeProductsDocument } from '@darun/provider-graphql';

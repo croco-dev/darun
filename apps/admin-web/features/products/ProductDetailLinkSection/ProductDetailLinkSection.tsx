@@ -1,3 +1,5 @@
+'use client';
+
 import { ProductLinkTable } from '@darun/products-feature';
 import { Button } from '@darun/ui';
 import { AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
