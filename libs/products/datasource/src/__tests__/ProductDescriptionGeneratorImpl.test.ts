@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { Product } from '@darun/products-domain';
-import { LlmClient } from '@darun/utils-llm';
+import { BraveSearchClient, LlmClient } from '@darun/utils-llm';
 import { describe, expect, it, vi } from 'vitest';
 import { ProductDescriptionGeneratorImpl } from '../services/ProductDescriptionGeneratorImpl';
 
@@ -18,12 +18,12 @@ const createProduct = () =>
     categoryIds: ['collaboration', 'automation'],
   });
 
-const createGenerator = (content: string) => {
+const createGenerator = (content: string, searchClient?: BraveSearchClient) => {
   const llmClient = new FakeLlmClient();
   llmClient.completion.mockResolvedValue({ role: 'assistant', content, refusal: null });
 
   return {
-    generator: new ProductDescriptionGeneratorImpl(llmClient),
+    generator: new ProductDescriptionGeneratorImpl(llmClient, searchClient),
     llmClient,
   };
 };
@@ -83,6 +83,75 @@ describe('ProductDescriptionGeneratorImpl', () => {
     const userPrompt = messages.find(message => message.role === 'user')?.content ?? '';
 
     expect(userPrompt).toContain('카테고리: 확인된 정보 없음');
+  });
+
+  it('주요 기능 및 링크가 context로 전달되면 userPrompt에 포함된다', async () => {
+    const { generator, llmClient } = createGenerator('<p>설명</p>');
+
+    await generator.generate(createProduct(), {
+      features: [
+        { name: '칸반 보드', summary: '시각적 태스크 관리' },
+        { name: '웹훅 연동' },
+      ],
+      links: [{ title: '웹사이트', link: 'https://flowdesk.io' }],
+    });
+
+    const call = llmClient.completion.mock.calls[0] ?? [];
+    const messages = (Array.isArray(call[0]) ? call[0] : call[1]) ?? [];
+    const userPrompt = messages.find(message => message.role === 'user')?.content ?? '';
+
+    expect(userPrompt).toContain('[등록된 주요 기능]');
+    expect(userPrompt).toContain('- 칸반 보드: 시각적 태스크 관리');
+    expect(userPrompt).toContain('- 웹훅 연동');
+    expect(userPrompt).toContain('[공식 링크]');
+    expect(userPrompt).toContain('- 웹사이트: https://flowdesk.io');
+  });
+
+  it('BraveSearchClient를 통해 웹 검색 결과를 검색하고 userPrompt에 주입한다', async () => {
+    const mockSearchClient = {
+      search: vi.fn().mockResolvedValue([
+        {
+          title: 'Flowdesk - Smart Collaboration Tool',
+          url: 'https://flowdesk.io',
+          description: 'Flowdesk helps engineering and design teams coordinate tasks seamlessly.',
+          extraSnippets: ['Free tier available', 'Integrates with GitHub'],
+        },
+      ]),
+    } as unknown as BraveSearchClient;
+
+    const { generator, llmClient } = createGenerator('<p>설명</p>', mockSearchClient);
+
+    await generator.generate(createProduct(), { categoryLabels: ['협업 도구'] });
+
+    expect(mockSearchClient.search).toHaveBeenCalledWith('Flowdesk 협업 도구 software review features', { count: 5 });
+
+    const call = llmClient.completion.mock.calls[0] ?? [];
+    const messages = (Array.isArray(call[0]) ? call[0] : call[1]) ?? [];
+    const userPrompt = messages.find(message => message.role === 'user')?.content ?? '';
+
+    expect(userPrompt).toContain('[실시간 웹 검색 참고 정보 (Brave Search)]');
+    expect(userPrompt).toContain('제목: Flowdesk - Smart Collaboration Tool');
+    expect(userPrompt).toContain('출처: https://flowdesk.io');
+    expect(userPrompt).toContain('내용: Flowdesk helps engineering and design teams coordinate tasks seamlessly.');
+    expect(userPrompt).toContain('추가 내용: Free tier available / Integrates with GitHub');
+  });
+
+  it('웹 검색 중 오류가 발생해도 상품 설명 생성은 정상적으로 계속된다', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const mockSearchClient = {
+      search: vi.fn().mockRejectedValue(new Error('Search API rate limited')),
+    } as unknown as BraveSearchClient;
+
+    const { generator, llmClient } = createGenerator('<p>설명</p>', mockSearchClient);
+
+    const result = await generator.generate(createProduct());
+
+    expect(result).toBe('<p>설명</p>');
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[ProductDescriptionGenerator] Web search failed for Flowdesk:'),
+      expect.any(Error)
+    );
+    expect(llmClient.completion).toHaveBeenCalledTimes(1);
   });
 
   it('keeps only allowed HTML tags in the generated description', async () => {

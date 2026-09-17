@@ -1291,6 +1291,9 @@ importers:
       '@darun/provider-database':
         specifier: workspace:*
         version: link:../../shared/provider-database
+      '@darun/utils-llm':
+        specifier: workspace:*
+        version: link:../../shared/utils-llm
       '@typegoose/typegoose':
         specifier: '*'
         version: 13.1.0(mongoose@9.2.1)

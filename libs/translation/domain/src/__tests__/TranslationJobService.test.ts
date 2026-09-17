@@ -290,6 +290,48 @@ describe('TranslationJobService', () => {
     });
   });
 
+  it('handles LLM response containing surrounding commentary around JSON', async () => {
+    const product = new Product({
+      id: 'prod-commentary',
+      slug: 'commentary',
+      name: '도구',
+      summary: '도구 요약',
+      description: '<p>설명</p>',
+      logoUrl: 'https://example.com/logo.png',
+    });
+
+    const mockJsonResponse = JSON.stringify({
+      name: 'Tool',
+      summary: 'Powerful productivity tool for teams',
+      description: '<p>Description</p>',
+      features: [],
+    });
+
+    const { service, translationService } = createService({
+      product,
+      customLlmImplementation: async () => ({
+        content: `Here is the requested translation:\n${mockJsonResponse}\nHope this helps!`,
+      }),
+    });
+
+    await service.translateProductWithFeatures(product.id);
+
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
+      entityType: 'Product',
+      entityId: product.id,
+      locale: 'en',
+      field: 'name',
+      value: 'Tool',
+    });
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
+      entityType: 'Product',
+      entityId: product.id,
+      locale: 'en',
+      field: 'summary',
+      value: 'Powerful productivity tool for teams',
+    });
+  });
+
   it('fails fast and throws descriptive error when LLM completion fails without cascading fallback', async () => {
     const product = new Product({
       id: 'product-timeout',
