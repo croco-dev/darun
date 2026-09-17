@@ -54,19 +54,19 @@ export class LlmSettingService implements LlmConfigProvider {
     const newModel = input.model?.trim() || current.model;
     const newApiKey =
       input.apiKey !== undefined
-        ? input.apiKey === '' || input.apiKey === null
+        ? input.apiKey === null || !input.apiKey.trim()
           ? null
           : input.apiKey.trim()
         : current.apiKey;
     const newThinkingLevel =
       input.thinkingLevel !== undefined
-        ? input.thinkingLevel === '' || input.thinkingLevel === null
+        ? input.thinkingLevel === null || !input.thinkingLevel.trim()
           ? null
           : input.thinkingLevel.trim()
         : current.thinkingLevel;
     const newBraveApiKey =
       input.braveApiKey !== undefined
-        ? input.braveApiKey === '' || input.braveApiKey === null
+        ? input.braveApiKey === null || !input.braveApiKey.trim()
           ? null
           : input.braveApiKey.trim()
         : current.braveApiKey;

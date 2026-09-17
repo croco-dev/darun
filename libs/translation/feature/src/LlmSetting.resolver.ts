@@ -5,7 +5,7 @@ import { Service } from 'typedi';
 import { LlmSettingGraph } from './graphs/LlmSettingGraph';
 
 function maskApiKey(apiKey?: string | null): string | null {
-  if (!apiKey) {
+  if (!apiKey?.trim()) {
     return null;
   }
   const trimmed = apiKey.trim();

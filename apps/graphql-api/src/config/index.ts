@@ -53,6 +53,7 @@ Container.set({
         const config = await container.get(LlmSettingService).getConfig();
         return config.braveApiKey || process.env['BRAVE_API_KEY'] || undefined;
       } catch (error) {
+        console.warn('[BraveSearchClient] Failed to load config from LlmSettingService, falling back to env: ', error);
         return process.env['BRAVE_API_KEY'] || undefined;
       }
     }),

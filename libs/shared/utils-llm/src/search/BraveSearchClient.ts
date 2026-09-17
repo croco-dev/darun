@@ -32,15 +32,14 @@ export class BraveSearchClient {
       return [];
     }
 
-    const rawApiKey = await Promise.resolve(this.apiKeyProvider());
-    const apiKey = rawApiKey?.trim();
-    if (!apiKey) {
-      return [];
-    }
-
-    const count = Math.min(Math.max(options?.count ?? 5, 1), 20);
-
     try {
+      const rawApiKey = await Promise.resolve(this.apiKeyProvider());
+      const apiKey = rawApiKey?.trim();
+      if (!apiKey) {
+        return [];
+      }
+
+      const count = Math.min(Math.max(options?.count ?? 5, 1), 20);
       const url = new URL(this.endpoint);
       url.searchParams.set('q', trimmedQuery);
       url.searchParams.set('count', count.toString());

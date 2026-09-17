@@ -56,6 +56,21 @@ describe('BraveSearchClient', () => {
     expect(results[0]?.title).toBe('Async Test');
   });
 
+  it('apiKeyProvider 가 reject 되거나 에러를 던져도 예외를 던지지 않고 빈 배열을 반환한다', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fetchMock = vi.fn();
+    globalThis.fetch = fetchMock;
+
+    const failingKeyProvider = vi.fn().mockRejectedValue(new Error('Database connection failed'));
+    const client = new BraveSearchClient(failingKeyProvider);
+
+    const results = await client.search('Cursor');
+
+    expect(results).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Error occurred during web search'));
+  });
+
   it('빈 검색어인 경우 검색을 수행하지 않고 빈 배열을 반환한다', async () => {
     const fetchMock = vi.fn();
     globalThis.fetch = fetchMock;

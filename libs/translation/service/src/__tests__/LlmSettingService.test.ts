@@ -134,4 +134,46 @@ describe('LlmSettingService', () => {
 
     expect(result.braveApiKey).toBeNull();
   });
+
+  it('should treat whitespace-only braveApiKey and apiKey as null', async () => {
+    const currentRecord: LlmSetting = {
+      id: 'default',
+      endpoint: 'https://openrouter.ai/api/v1',
+      apiKey: 'old-key',
+      model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+      braveApiKey: 'existing-brave-key',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(currentRecord);
+    vi.mocked(mockRepository.upsertSetting).mockImplementationOnce(async input => ({
+      id: 'default',
+      endpoint: input.endpoint,
+      apiKey: input.apiKey,
+      model: input.model,
+      thinkingLevel: input.thinkingLevel,
+      braveApiKey: input.braveApiKey,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
+    const result = await service.updateSetting({
+      apiKey: '   ',
+      braveApiKey: '   ',
+      thinkingLevel: '   ',
+    });
+
+    expect(mockRepository.upsertSetting).toHaveBeenCalledWith({
+      endpoint: 'https://openrouter.ai/api/v1',
+      apiKey: null,
+      model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+      thinkingLevel: null,
+      braveApiKey: null,
+    });
+
+    expect(result.apiKey).toBeNull();
+    expect(result.braveApiKey).toBeNull();
+    expect(result.thinkingLevel).toBeNull();
+  });
 });
