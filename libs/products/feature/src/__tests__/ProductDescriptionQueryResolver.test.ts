@@ -49,6 +49,47 @@ describe('ProductDescriptionQueryResolver', () => {
       status: 'completed',
       message: 'Done',
       error: undefined,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+  });
+
+  it('resolves product description jobs list with pagination and status filter', async () => {
+    const getJobsMock = vi.fn();
+    const listResolver = new ProductDescriptionQueryResolver({
+      getJob: vi.fn(),
+      getJobs: getJobsMock,
+    } as unknown as ProductDescriptionJobService);
+
+    const timestamp = new Date('2026-09-17T00:00:00Z');
+    getJobsMock.mockResolvedValueOnce([
+      {
+        id: 'job-1',
+        productId: 'prod-1',
+        status: 'failed',
+        message: 'Failed',
+        error: '429 RateLimit',
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      },
+    ]);
+
+    const result = await listResolver.productDescriptionJobs('failed', 10, 0);
+
+    expect(getJobsMock).toHaveBeenCalledWith({
+      status: 'failed',
+      limit: 10,
+      offset: 0,
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      id: 'job-1',
+      productId: 'prod-1',
+      status: 'failed',
+      message: 'Failed',
+      error: '429 RateLimit',
+      createdAt: timestamp,
+      updatedAt: timestamp,
     });
   });
 });

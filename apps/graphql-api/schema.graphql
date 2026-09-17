@@ -213,6 +213,7 @@ type Mutation {
   registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
   requestProductTranslation(productId: String, slug: String): TranslationJob!
   requestTranslation(entityId: String!, entityType: String!, fields: [String!]!): TranslationJob!
+  retryProductDescriptionJob(id: String!): ProductDescriptionJob!
   retryTranslationJob(id: String!): TranslationJob!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
@@ -256,11 +257,13 @@ type ProductConnection {
 }
 
 type ProductDescriptionJob {
+  createdAt: DateTimeISO
   error: String
   id: ID!
   message: String
   productId: String!
   status: String!
+  updatedAt: DateTimeISO
 }
 
 type ProductEdge {
@@ -296,6 +299,7 @@ type Query {
   product(id: ID!, locale: String! = "ko"): Product
   productBySlug(locale: String! = "ko", slug: String!): Product
   productDescriptionJob(id: String!): ProductDescriptionJob
+  productDescriptionJobs(limit: Int, offset: Int, status: String): [ProductDescriptionJob!]!
   productsByCategory(locale: String! = "ko", slug: String!): [Product!]!
   productsCount: Int!
   publishedMagazines: [Magazine!]!

@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from 'type-graphql';
+import { Field, GraphQLISODateTime, ID, ObjectType } from 'type-graphql';
 
 @ObjectType()
 export class ProductDescriptionJob {
@@ -16,4 +16,10 @@ export class ProductDescriptionJob {
 
   @Field(() => String, { nullable: true })
   error?: string;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  createdAt?: Date;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  updatedAt?: Date;
 }

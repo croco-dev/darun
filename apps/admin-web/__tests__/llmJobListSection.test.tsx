@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
 import { useMutation, useQuery } from '@apollo/client/react';
+import {
+  GetProductDescriptionJobsOnAdminDocument,
+  GetTranslationJobsOnAdminDocument,
+  RetryProductDescriptionJobOnAdminDocument,
+  RetryTranslationJobOnAdminDocument,
+} from '@darun/provider-graphql';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -31,14 +37,26 @@ vi.mock('@darun/ui-admin', async importOriginal => {
 });
 
 describe('LlmJobListSection', () => {
-  const mockRetryMutation = vi.fn();
+  const mockRetryTranslation = vi.fn();
+  const mockRetryDescription = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRetryMutation.mockResolvedValue({ data: { retryTranslationJob: { id: 'job-1', status: 'pending' } } });
-    vi.mocked(useMutation).mockReturnValue([mockRetryMutation, { loading: false }] as unknown as ReturnType<
-      typeof useMutation
-    >);
+    mockRetryTranslation.mockResolvedValue({ data: { retryTranslationJob: { id: 'job-1', status: 'pending' } } });
+    mockRetryDescription.mockResolvedValue({
+      data: { retryProductDescriptionJob: { id: 'desc-job-1', status: 'pending' } },
+    });
+
+    vi.mocked(useMutation).mockImplementation(document => {
+      if (document === RetryTranslationJobOnAdminDocument) {
+        return [mockRetryTranslation, { loading: false }] as unknown as ReturnType<typeof useMutation>;
+      }
+      if (document === RetryProductDescriptionJobOnAdminDocument) {
+        return [mockRetryDescription, { loading: false }] as unknown as ReturnType<typeof useMutation>;
+      }
+      return [vi.fn(), { loading: false }] as unknown as ReturnType<typeof useMutation>;
+    });
+
     Object.assign(navigator, {
       clipboard: {
         writeText: vi.fn().mockResolvedValue(undefined),
@@ -82,7 +100,7 @@ describe('LlmJobListSection', () => {
 
   it('작업이 없을 때 빈 상태 메시지를 렌더링한다', () => {
     vi.mocked(useQuery).mockReturnValue({
-      data: { translationJobs: [] },
+      data: undefined,
       loading: false,
       error: undefined,
       refetch: vi.fn(),
@@ -92,12 +110,12 @@ describe('LlmJobListSection', () => {
     expect(screen.getByText('등록된 LLM 작업이 없습니다.')).toBeDefined();
   });
 
-  it('작업 목록을 올바르게 렌더링한다 (성공, 진행중, 실패)', () => {
-    const mockJobs = [
+  it('번역 작업과 소개 생성 작업을 모두 올바르게 통합 렌더링한다', () => {
+    const mockTranslationJobs = [
       {
-        id: 'job-11111111',
+        id: 'trans-job-1',
         entityType: 'Product',
-        entityId: 'prod-aaa',
+        entityId: 'prod-trans',
         locale: 'en',
         status: 'completed',
         message: '번역 완료',
@@ -105,78 +123,100 @@ describe('LlmJobListSection', () => {
         createdAt: '2026-09-17T06:00:00.000Z',
         updatedAt: '2026-09-17T06:00:15.000Z',
       },
+    ];
+
+    const mockDescriptionJobs = [
       {
-        id: 'job-22222222',
-        entityType: 'Product',
-        entityId: 'prod-bbb',
-        locale: 'en',
-        status: 'in_progress',
-        message: 'OpenRouter 번역 중...',
-        error: null,
-        createdAt: '2026-09-17T06:05:00.000Z',
-        updatedAt: '2026-09-17T06:05:10.000Z',
-      },
-      {
-        id: 'job-33333333',
-        entityType: 'Product',
-        entityId: 'prod-ccc',
-        locale: 'en',
+        id: 'desc-job-1',
+        productId: 'prod-desc',
         status: 'failed',
-        message: 'LLM 번역 중 에러 발생',
-        error: 'OpenRouter 429 RateLimitError: rate-limited',
+        message: '소개 생성 실패',
+        error: 'OpenRouter 429 RateLimitError',
         createdAt: '2026-09-17T06:10:00.000Z',
         updatedAt: '2026-09-17T06:10:05.000Z',
       },
     ];
 
-    vi.mocked(useQuery).mockReturnValue({
-      data: { translationJobs: mockJobs },
-      loading: false,
-      error: undefined,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof useQuery>);
+    vi.mocked(useQuery).mockImplementation(document => {
+      if (document === GetTranslationJobsOnAdminDocument) {
+        return {
+          data: { translationJobs: mockTranslationJobs },
+          loading: false,
+          error: undefined,
+          refetch: vi.fn(),
+        } as unknown as ReturnType<typeof useQuery>;
+      }
+      if (document === GetProductDescriptionJobsOnAdminDocument) {
+        return {
+          data: { productDescriptionJobs: mockDescriptionJobs },
+          loading: false,
+          error: undefined,
+          refetch: vi.fn(),
+        } as unknown as ReturnType<typeof useQuery>;
+      }
+      return { data: undefined, loading: false, error: undefined, refetch: vi.fn() } as unknown as ReturnType<
+        typeof useQuery
+      >;
+    });
 
     render(<LlmJobListSection />);
 
-    // Status badges (filter button + table row badge)
-    expect(screen.getAllByText('완료').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText('진행 중').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText('실패').length).toBeGreaterThanOrEqual(2);
+    // Job types rendered
+    expect(screen.getByText('상품 영문 번역')).toBeDefined();
+    expect(screen.getByText('상품 AI 소개 생성')).toBeDefined();
 
     // Entity IDs
-    expect(screen.getByText('prod-aaa')).toBeDefined();
-    expect(screen.getByText('prod-bbb')).toBeDefined();
-    expect(screen.getByText('prod-ccc')).toBeDefined();
+    expect(screen.getByText('prod-trans')).toBeDefined();
+    expect(screen.getByText('prod-desc')).toBeDefined();
 
-    // Error message display
-    expect(screen.getByText('OpenRouter 429 RateLimitError: rate-limited')).toBeDefined();
+    // Error message display for failed description job
+    expect(screen.getByText('OpenRouter 429 RateLimitError')).toBeDefined();
 
-    // Retry button for failed job
-    expect(screen.getByRole('button', { name: /재시도/i })).toBeDefined();
+    // Status badges
+    expect(screen.getAllByText('완료').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText('실패').length).toBeGreaterThanOrEqual(2);
+
+    // Filter buttons
+    expect(screen.getByText('전체 작업')).toBeDefined();
+    expect(screen.getByText('영문 번역')).toBeDefined();
+    expect(screen.getByText('AI 소개 생성')).toBeDefined();
   });
 
-  it('실패한 작업의 재시도 버튼 클릭 시 mutation을 실행한다', async () => {
-    const refetch = vi.fn();
-    const mockJobs = [
+  it('소개 생성 작업 실패 건의 재시도 클릭 시 retryProductDescriptionJob을 실행한다', async () => {
+    const refetchDesc = vi.fn();
+    const mockDescriptionJobs = [
       {
-        id: 'job-failed-1',
-        entityType: 'Product',
-        entityId: 'prod-xxx',
-        locale: 'en',
+        id: 'desc-job-failed',
+        productId: 'prod-desc-fail',
         status: 'failed',
-        message: '번역 에러',
-        error: '429 RateLimitError',
+        message: '소개 생성 에러',
+        error: 'RateLimit',
         createdAt: '2026-09-17T06:10:00.000Z',
         updatedAt: '2026-09-17T06:10:05.000Z',
       },
     ];
 
-    vi.mocked(useQuery).mockReturnValue({
-      data: { translationJobs: mockJobs },
-      loading: false,
-      error: undefined,
-      refetch,
-    } as unknown as ReturnType<typeof useQuery>);
+    vi.mocked(useQuery).mockImplementation(document => {
+      if (document === GetTranslationJobsOnAdminDocument) {
+        return {
+          data: { translationJobs: [] },
+          loading: false,
+          error: undefined,
+          refetch: vi.fn(),
+        } as unknown as ReturnType<typeof useQuery>;
+      }
+      if (document === GetProductDescriptionJobsOnAdminDocument) {
+        return {
+          data: { productDescriptionJobs: mockDescriptionJobs },
+          loading: false,
+          error: undefined,
+          refetch: refetchDesc,
+        } as unknown as ReturnType<typeof useQuery>;
+      }
+      return { data: undefined, loading: false, error: undefined, refetch: vi.fn() } as unknown as ReturnType<
+        typeof useQuery
+      >;
+    });
 
     render(<LlmJobListSection />);
 
@@ -184,53 +224,118 @@ describe('LlmJobListSection', () => {
     fireEvent.click(retryButton);
 
     await waitFor(() => {
-      expect(mockRetryMutation).toHaveBeenCalledWith({
-        variables: { id: 'job-failed-1' },
+      expect(mockRetryDescription).toHaveBeenCalledWith({
+        variables: { id: 'desc-job-failed' },
       });
-      expect(refetch).toHaveBeenCalled();
+      expect(mockRetryTranslation).not.toHaveBeenCalled();
+      expect(refetchDesc).toHaveBeenCalled();
     });
   });
 
-  it('에러 클릭 시 모달이 열리고 모달 내에서 재시도를 실행할 수 있다', async () => {
-    const refetch = vi.fn();
-    const mockJobs = [
+  it('번역 작업 실패 건의 재시도 클릭 시 retryTranslationJob을 실행한다', async () => {
+    const refetchTrans = vi.fn();
+    const mockTranslationJobs = [
       {
-        id: 'job-failed-modal',
+        id: 'trans-job-failed',
         entityType: 'Product',
-        entityId: 'prod-modal',
+        entityId: 'prod-trans-fail',
         locale: 'en',
         status: 'failed',
-        message: '치명적 번역 실패',
-        error: 'OpenRouter upstream error: connection refused',
+        message: '번역 에러',
+        error: 'Translation timeout',
         createdAt: '2026-09-17T06:10:00.000Z',
         updatedAt: '2026-09-17T06:10:05.000Z',
       },
     ];
 
-    vi.mocked(useQuery).mockReturnValue({
-      data: { translationJobs: mockJobs },
-      loading: false,
-      error: undefined,
-      refetch,
-    } as unknown as ReturnType<typeof useQuery>);
+    vi.mocked(useQuery).mockImplementation(document => {
+      if (document === GetTranslationJobsOnAdminDocument) {
+        return {
+          data: { translationJobs: mockTranslationJobs },
+          loading: false,
+          error: undefined,
+          refetch: refetchTrans,
+        } as unknown as ReturnType<typeof useQuery>;
+      }
+      if (document === GetProductDescriptionJobsOnAdminDocument) {
+        return {
+          data: { productDescriptionJobs: [] },
+          loading: false,
+          error: undefined,
+          refetch: vi.fn(),
+        } as unknown as ReturnType<typeof useQuery>;
+      }
+      return { data: undefined, loading: false, error: undefined, refetch: vi.fn() } as unknown as ReturnType<
+        typeof useQuery
+      >;
+    });
 
     render(<LlmJobListSection />);
 
-    // Click on error text to open modal
-    const errorElement = screen.getByText('OpenRouter upstream error: connection refused');
-    fireEvent.click(errorElement);
+    const retryButton = screen.getByRole('button', { name: /재시도/i });
+    fireEvent.click(retryButton);
+
+    await waitFor(() => {
+      expect(mockRetryTranslation).toHaveBeenCalledWith({
+        variables: { id: 'trans-job-failed' },
+      });
+      expect(mockRetryDescription).not.toHaveBeenCalled();
+      expect(refetchTrans).toHaveBeenCalled();
+    });
+  });
+
+  it('에러 클릭 시 모달이 열리고 모달 내에서 지금 재시도를 실행할 수 있다', async () => {
+    const mockDescriptionJobs = [
+      {
+        id: 'desc-modal-job',
+        productId: 'prod-modal-1',
+        status: 'failed',
+        message: '소개 생성 치명적 에러',
+        error: 'OpenRouter internal server error: 502',
+        createdAt: '2026-09-17T06:10:00.000Z',
+        updatedAt: '2026-09-17T06:10:05.000Z',
+      },
+    ];
+
+    vi.mocked(useQuery).mockImplementation(document => {
+      if (document === GetTranslationJobsOnAdminDocument) {
+        return {
+          data: { translationJobs: [] },
+          loading: false,
+          error: undefined,
+          refetch: vi.fn(),
+        } as unknown as ReturnType<typeof useQuery>;
+      }
+      if (document === GetProductDescriptionJobsOnAdminDocument) {
+        return {
+          data: { productDescriptionJobs: mockDescriptionJobs },
+          loading: false,
+          error: undefined,
+          refetch: vi.fn(),
+        } as unknown as ReturnType<typeof useQuery>;
+      }
+      return { data: undefined, loading: false, error: undefined, refetch: vi.fn() } as unknown as ReturnType<
+        typeof useQuery
+      >;
+    });
+
+    render(<LlmJobListSection />);
+
+    // Click error text
+    const errorText = screen.getByText('OpenRouter internal server error: 502');
+    fireEvent.click(errorText);
 
     // Modal opened
     expect(screen.getByTestId('admin-modal')).toBeDefined();
     expect(screen.getByText('LLM 작업 에러 상세')).toBeDefined();
     expect(screen.getByText('지금 재시도')).toBeDefined();
 
-    // Click retry inside modal
+    // Click retry in modal
     fireEvent.click(screen.getByText('지금 재시도'));
 
     await waitFor(() => {
-      expect(mockRetryMutation).toHaveBeenCalledWith({
-        variables: { id: 'job-failed-modal' },
+      expect(mockRetryDescription).toHaveBeenCalledWith({
+        variables: { id: 'desc-modal-job' },
       });
     });
   });

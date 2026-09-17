@@ -9,4 +9,5 @@ export { ProductPublishMutationResolver } from './ProductPublishMutationResolver
 export { ProductQueryResolver } from './Product.query.resolver';
 export { ProductRecommendationMutationResolver } from './ProductRecommendationMutationResolver';
 export { ProductDescriptionQueryResolver } from './ProductDescription.query.resolver';
+export { ProductDescriptionMutationResolver } from './ProductDescription.mutation.resolver';
 export { ProductDescriptionJob } from './graphs/ProductDescriptionJob';

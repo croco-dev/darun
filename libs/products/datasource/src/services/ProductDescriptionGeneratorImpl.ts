@@ -49,7 +49,7 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
             18_000,
             '상품 설명 생성 요청이 시간 초과되었습니다. 잠시 후 다시 시도해주세요.'
           ),
-        { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
+        { maxRetries: 2, baseDelay: 2000, maxDelay: 10000 }
       );
 
       const content = response.content?.trim();

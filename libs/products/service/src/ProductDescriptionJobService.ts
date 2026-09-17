@@ -5,6 +5,7 @@ import {
   type ProductDescriptionJobEntity,
   type ProductDescriptionJobRepository,
   ProductDescriptionJobRepositoryToken,
+  type ProductDescriptionJobStatus,
   productNotFound,
 } from '@darun/products-domain';
 import { Inject, Service } from 'typedi';
@@ -85,6 +86,56 @@ export class ProductDescriptionJobService {
       return null;
     }
     return this.productDescriptionJobRepository.findJobById(id);
+  }
+
+  async getJobs(options?: {
+    status?: ProductDescriptionJobStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<ProductDescriptionJobEntity[]> {
+    if (!this.productDescriptionJobRepository) {
+      return [];
+    }
+    return this.productDescriptionJobRepository.findJobs(options);
+  }
+
+  async retryProductDescriptionJob(jobId: string): Promise<ProductDescriptionJobEntity> {
+    if (!this.productDescriptionJobRepository) {
+      throw new Error('ProductDescriptionJobRepository가 설정되지 않았습니다.');
+    }
+
+    const job = await this.productDescriptionJobRepository.findJobById(jobId);
+    if (!job) {
+      throw new Error(`존재하지 않는 AI 소개 생성 작업입니다: ${jobId}`);
+    }
+
+    const updatedJob = await this.productDescriptionJobRepository.updateJobStatus(jobId, 'pending', {
+      message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
+      error: null,
+    });
+
+    let isQueued = false;
+    if (this.productDescriptionQueueService) {
+      try {
+        isQueued = await this.productDescriptionQueueService.sendJob({
+          jobId: job.id,
+          productId: job.productId,
+        });
+      } catch (err) {
+        console.warn(
+          '[ProductDescriptionJobService] Failed to send retry job to SQS, falling back to background process:',
+          err
+        );
+      }
+    }
+
+    if (!isQueued) {
+      setImmediate(() => {
+        void this.executeJob(job.id, job.productId);
+      });
+    }
+
+    return updatedJob;
   }
 
   async executeJob(jobId: string, productId: string): Promise<void> {

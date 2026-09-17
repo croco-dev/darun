@@ -3,15 +3,16 @@
 import { gql } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
+  GetProductDescriptionJobsOnAdminDocument,
   GetTranslationJobsOnAdminDocument,
-  GetTranslationJobsOnAdminQuery,
+  RetryProductDescriptionJobOnAdminDocument,
   RetryTranslationJobOnAdminDocument,
 } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal, AdminPanel } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
-import { AlertCircle, CheckCircle2, Clock, Copy, Info, RefreshCw, RotateCw, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Copy, Globe, Info, RefreshCw, RotateCw, Sparkles } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -48,7 +49,54 @@ gql`
   }
 `;
 
-type TranslationJob = NonNullable<GetTranslationJobsOnAdminQuery['translationJobs']>[number];
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+gql`
+  query GetProductDescriptionJobsOnAdmin($status: String, $limit: Int, $offset: Int) {
+    productDescriptionJobs(status: $status, limit: $limit, offset: $offset) {
+      id
+      productId
+      status
+      message
+      error
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+gql`
+  mutation RetryProductDescriptionJobOnAdmin($id: String!) {
+    retryProductDescriptionJob(id: $id) {
+      id
+      productId
+      status
+      message
+      error
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export type UnifiedLlmJob = {
+  id: string;
+  jobType: 'translation' | 'description';
+  jobTypeLabel: string;
+  entityType: string;
+  entityId: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | string;
+  message?: string | null;
+  error?: string | null;
+  createdAt?: string | Date | null;
+  updatedAt?: string | Date | null;
+};
+
+const JOB_TYPE_FILTERS = [
+  { value: 'all', label: '전체 작업' },
+  { value: 'translation', label: '영문 번역' },
+  { value: 'description', label: 'AI 소개 생성' },
+] as const;
 
 const STATUS_FILTERS = [
   { value: 'all', label: '전체' },
@@ -110,8 +158,9 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function LlmJobListSection() {
+  const [jobTypeFilter, setJobTypeFilter] = useState<'all' | 'translation' | 'description'>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedErrorJob, setSelectedErrorJob] = useState<TranslationJob | null>(null);
+  const [selectedErrorJob, setSelectedErrorJob] = useState<UnifiedLlmJob | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
   const queryVariables = {
@@ -120,37 +169,107 @@ export function LlmJobListSection() {
     offset: 0,
   };
 
-  const { data, loading, error, refetch } = useQuery(GetTranslationJobsOnAdminDocument, {
+  const {
+    data: translationData,
+    loading: translationLoading,
+    error: translationError,
+    refetch: refetchTranslation,
+  } = useQuery(GetTranslationJobsOnAdminDocument, {
     variables: queryVariables,
     fetchPolicy: 'cache-and-network',
+    skip: jobTypeFilter === 'description',
   });
 
-  const [retryJob] = useMutation(RetryTranslationJobOnAdminDocument);
+  const {
+    data: descriptionData,
+    loading: descriptionLoading,
+    error: descriptionError,
+    refetch: refetchDescription,
+  } = useQuery(GetProductDescriptionJobsOnAdminDocument, {
+    variables: queryVariables,
+    fetchPolicy: 'cache-and-network',
+    skip: jobTypeFilter === 'translation',
+  });
 
-  const jobs = data?.translationJobs ?? [];
+  const [retryTranslation] = useMutation(RetryTranslationJobOnAdminDocument);
+  const [retryDescription] = useMutation(RetryProductDescriptionJobOnAdminDocument);
+
+  const translationJobs: UnifiedLlmJob[] = (translationData?.translationJobs ?? []).map(j => ({
+    id: j.id,
+    jobType: 'translation',
+    jobTypeLabel: j.entityType === 'Product' ? '상품 영문 번역' : `${j.entityType} 번역`,
+    entityType: j.entityType,
+    entityId: j.entityId,
+    status: j.status,
+    message: j.message,
+    error: j.error,
+    createdAt: j.createdAt,
+    updatedAt: j.updatedAt,
+  }));
+
+  const descriptionJobs: UnifiedLlmJob[] = (descriptionData?.productDescriptionJobs ?? []).map(j => ({
+    id: j.id,
+    jobType: 'description',
+    jobTypeLabel: '상품 AI 소개 생성',
+    entityType: 'Product',
+    entityId: j.productId,
+    status: j.status,
+    message: j.message,
+    error: j.error,
+    createdAt: j.createdAt,
+    updatedAt: j.updatedAt,
+  }));
+
+  let jobs: UnifiedLlmJob[] = [];
+  if (jobTypeFilter === 'translation') {
+    jobs = translationJobs;
+  } else if (jobTypeFilter === 'description') {
+    jobs = descriptionJobs;
+  } else {
+    jobs = [...translationJobs, ...descriptionJobs].sort(
+      (a, b) => (dayjs(b.createdAt).valueOf() || 0) - (dayjs(a.createdAt).valueOf() || 0)
+    );
+  }
+
+  const isLoading =
+    (translationLoading && translationJobs.length === 0) || (descriptionLoading && descriptionJobs.length === 0);
+  const queryError = translationError || descriptionError;
+
+  const refetchAll = async () => {
+    const promises: Promise<unknown>[] = [];
+    if (jobTypeFilter !== 'description') promises.push(refetchTranslation());
+    if (jobTypeFilter !== 'translation') promises.push(refetchDescription());
+    await Promise.all(promises);
+  };
 
   // Auto-polling when active jobs exist
   const hasActiveJobs = jobs.some(j => j.status === 'pending' || j.status === 'in_progress');
   useEffect(() => {
     if (!hasActiveJobs) return;
     const timer = setInterval(() => {
-      void refetch();
+      void refetchAll();
     }, 3000);
     return () => clearInterval(timer);
-  }, [hasActiveJobs, refetch]);
+  }, [hasActiveJobs, jobTypeFilter]);
 
-  const handleRetry = async (jobId: string) => {
+  const handleRetry = async (job: UnifiedLlmJob) => {
     try {
-      setRetryingId(jobId);
-      await retryJob({
-        variables: { id: jobId },
-      });
+      setRetryingId(job.id);
+      if (job.jobType === 'translation') {
+        await retryTranslation({
+          variables: { id: job.id },
+        });
+      } else {
+        await retryDescription({
+          variables: { id: job.id },
+        });
+      }
       notifications.show({
         title: '재시도 요청 성공',
         message: '작업이 대기열에 다시 등록되었습니다.',
         color: 'teal',
       });
-      await refetch();
+      await refetchAll();
     } catch (err) {
       notifications.show({
         title: '재시도 요청 실패',
@@ -170,16 +289,16 @@ export function LlmJobListSection() {
     });
   };
 
-  if (loading && jobs.length === 0) {
+  if (isLoading && jobs.length === 0) {
     return <AdminLoadingState />;
   }
 
-  if (error) {
+  if (queryError && jobs.length === 0) {
     return (
       <AdminErrorState
-        error={error}
+        error={queryError}
         action={
-          <Button type="button" onClick={() => void refetch()} variant="contained" color="primary">
+          <Button type="button" onClick={() => void refetchAll()} variant="contained" color="primary">
             다시 시도
           </Button>
         }
@@ -189,26 +308,50 @@ export function LlmJobListSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header controls: Filters + Refresh */}
+      {/* Header controls: Job Types + Status Filters + Refresh */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-dark-200 shadow-xs">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {STATUS_FILTERS.map(filter => {
-            const isActive = statusFilter === filter.value;
-            return (
-              <button
-                key={filter.value}
-                type="button"
-                onClick={() => setStatusFilter(filter.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition cursor-pointer select-none ${
-                  isActive
-                    ? 'bg-dark-900 text-white font-semibold shadow-xs'
-                    : 'text-dark-600 hover:bg-surface-100 hover:text-dark-900'
-                }`}
-              >
-                {filter.label}
-              </button>
-            );
-          })}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Job Type Selector */}
+          <div className="flex items-center gap-1 bg-surface-100 p-1 rounded-lg border border-dark-150">
+            {JOB_TYPE_FILTERS.map(typeFilter => {
+              const isActive = jobTypeFilter === typeFilter.value;
+              return (
+                <button
+                  key={typeFilter.value}
+                  type="button"
+                  onClick={() => setJobTypeFilter(typeFilter.value)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer select-none ${
+                    isActive ? 'bg-white text-dark-900 shadow-xs' : 'text-dark-500 hover:text-dark-800'
+                  }`}
+                >
+                  {typeFilter.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="h-4 w-px bg-dark-200 hidden sm:block" />
+
+          {/* Status Filters */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {STATUS_FILTERS.map(filter => {
+              const isActive = statusFilter === filter.value;
+              return (
+                <button
+                  key={filter.value}
+                  type="button"
+                  onClick={() => setStatusFilter(filter.value)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition cursor-pointer select-none ${
+                    isActive
+                      ? 'bg-dark-900 text-white font-semibold shadow-xs'
+                      : 'text-dark-600 hover:bg-surface-100 hover:text-dark-900'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -222,10 +365,10 @@ export function LlmJobListSection() {
             type="button"
             variant="base"
             color="secondary"
-            onClick={() => void refetch()}
+            onClick={() => void refetchAll()}
             className="flex items-center gap-1.5 py-1.5 px-3 text-xs"
           >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={13} className={translationLoading || descriptionLoading ? 'animate-spin' : ''} />
             새로고침
           </Button>
         </div>
@@ -239,7 +382,7 @@ export function LlmJobListSection() {
             description={
               statusFilter !== 'all'
                 ? `'${STATUS_FILTERS.find(f => f.value === statusFilter)?.label}' 상태인 작업이 없습니다.`
-                : '서비스 편집 페이지 등에서 영문 번역을 요청하면 작업이 등록됩니다.'
+                : '서비스 편집 페이지 등에서 영문 번역이나 AI 소개 생성을 요청하면 작업이 등록됩니다.'
             }
           />
         </AdminPanel>
@@ -252,7 +395,7 @@ export function LlmJobListSection() {
                   <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-24">
                     작업 ID
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-32">
+                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36">
                     작업 유형
                   </th>
                   <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36">
@@ -282,7 +425,7 @@ export function LlmJobListSection() {
 
                   return (
                     <tr
-                      key={job.id}
+                      key={`${job.jobType}-${job.id}`}
                       className={`border-b border-dark-200 transition hover:bg-surface-50 ${
                         index % 2 === 0 ? 'bg-white' : 'bg-surface-100/40'
                       }`}
@@ -305,14 +448,18 @@ export function LlmJobListSection() {
                       {/* Type */}
                       <td className="border-r border-dark-200 px-4 py-3 text-xs text-dark-800 font-medium">
                         <div className="flex items-center gap-1.5">
-                          <Sparkles size={13} className="text-brand-500 shrink-0" />
-                          <span>{job.entityType === 'Product' ? '상품 영문 번역' : `${job.entityType} 번역`}</span>
+                          {job.jobType === 'translation' ? (
+                            <Globe size={13} className="text-teal-600 shrink-0" />
+                          ) : (
+                            <Sparkles size={13} className="text-amber-500 shrink-0" />
+                          )}
+                          <span className="truncate">{job.jobTypeLabel}</span>
                         </div>
                       </td>
 
                       {/* Entity ID */}
                       <td className="border-r border-dark-200 px-4 py-3 text-xs font-mono text-dark-600 truncate">
-                        <div className="flex items-center gap-1" title={job.entityId}>
+                        <div className="flex items-center gap-1" title={`${job.entityType}: ${job.entityId}`}>
                           <span className="truncate">{job.entityId}</span>
                           <button
                             type="button"
@@ -373,7 +520,7 @@ export function LlmJobListSection() {
                             size="sm"
                             variant="base"
                             color="secondary"
-                            onClick={() => void handleRetry(job.id)}
+                            onClick={() => void handleRetry(job)}
                             disabled={isRetrying}
                             className="inline-flex items-center gap-1 py-1 px-2.5 text-xs text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 font-semibold"
                           >
@@ -405,12 +552,18 @@ export function LlmJobListSection() {
         >
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between bg-surface-100 p-3 rounded-lg border border-dark-200 text-xs">
-              <div>
-                <span className="text-dark-500">작업 ID: </span>
-                <span className="font-mono font-semibold text-dark-900">{selectedErrorJob.id}</span>
+              <div className="flex gap-4">
+                <div>
+                  <span className="text-dark-500">작업 ID: </span>
+                  <span className="font-mono font-semibold text-dark-900">{selectedErrorJob.id}</span>
+                </div>
+                <div>
+                  <span className="text-dark-500">작업 유형: </span>
+                  <span className="font-semibold text-dark-900">{selectedErrorJob.jobTypeLabel}</span>
+                </div>
               </div>
               <div>
-                <span className="text-dark-500">엔티티 ID: </span>
+                <span className="text-dark-500">{selectedErrorJob.entityType} ID: </span>
                 <span className="font-mono font-semibold text-dark-900">{selectedErrorJob.entityId}</span>
               </div>
             </div>
@@ -459,9 +612,9 @@ export function LlmJobListSection() {
                     color="primary"
                     size="sm"
                     onClick={() => {
-                      const id = selectedErrorJob.id;
+                      const job = selectedErrorJob;
                       setSelectedErrorJob(null);
-                      void handleRetry(id);
+                      void handleRetry(job);
                     }}
                     className="flex items-center gap-1.5"
                   >
