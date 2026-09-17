@@ -150,7 +150,55 @@ describe('ProductMediaMutationResolver', () => {
       const result = await resolver.generateProductDescription({ slug: 'test' });
 
       expect(generateProductDescription.execute).toHaveBeenCalledWith({ productId: 'prod-1' });
-      expect(result).toEqual({ product: updatedProduct });
+      expect(result).toEqual({
+        product: updatedProduct,
+        job: {
+          id: updatedProduct.id,
+          productId: updatedProduct.id,
+          status: 'completed',
+          message: 'AI 소개 생성이 완료되었습니다.',
+        },
+      });
+    });
+
+    it('productDescriptionJobService가 제공되면 비동기 작업을 요청하고 job과 product를 반환한다', async () => {
+      const mockJobService = {
+        requestProductDescriptionJob: vi.fn().mockResolvedValue({
+          product: createProduct(),
+          job: {
+            id: 'job-1',
+            productId: 'prod-1',
+            status: 'pending',
+            message: '대기 중',
+          },
+        }),
+      };
+      const { getProduct, generateProductDescription } = createResolver();
+      const resolver = new ProductMediaMutationResolver(
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        getProduct as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        generateProductDescription as never,
+        mockJobService as never
+      );
+
+      const result = await resolver.generateProductDescription({ slug: 'test' });
+      expect(mockJobService.requestProductDescriptionJob).toHaveBeenCalledWith({ slug: 'test' });
+      expect(result.job).toEqual({
+        id: 'job-1',
+        productId: 'prod-1',
+        status: 'pending',
+        message: '대기 중',
+      });
     });
   });
 });

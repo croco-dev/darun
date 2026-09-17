@@ -8,3 +8,5 @@ export { ProductMutationResolver } from './Product.mutation.resolver';
 export { ProductPublishMutationResolver } from './ProductPublishMutationResolver';
 export { ProductQueryResolver } from './Product.query.resolver';
 export { ProductRecommendationMutationResolver } from './ProductRecommendationMutationResolver';
+export { ProductDescriptionQueryResolver } from './ProductDescription.query.resolver';
+export { ProductDescriptionJob } from './graphs/ProductDescriptionJob';

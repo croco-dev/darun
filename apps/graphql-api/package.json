@@ -31,6 +31,7 @@
     "@darun/products-datasource": "workspace:*",
     "@darun/products-domain": "workspace:*",
     "@darun/products-feature": "workspace:*",
+    "@darun/products-service": "workspace:*",
     "@darun/provider-database": "workspace:*",
     "@darun/recommendation-datasource": "workspace:*",
     "@darun/recommendation-domain": "workspace:*",

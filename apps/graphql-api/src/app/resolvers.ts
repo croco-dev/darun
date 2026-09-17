@@ -7,6 +7,7 @@ import {
   CategoryQueryResolver,
   FeatureMutationResolver,
   FeatureQueryResolver,
+  ProductDescriptionQueryResolver,
   ProductMutationResolver,
   ProductQueryResolver,
 } from '@darun/products-feature/server';
@@ -24,6 +25,7 @@ export const resolvers: NonEmptyArray<Function> = [
   CategoryQueryResolver,
   ProductQueryResolver,
   ProductMutationResolver,
+  ProductDescriptionQueryResolver,
   FeatureQueryResolver,
   CompanyQueryResolver,
   CompanyMutationResolver,
