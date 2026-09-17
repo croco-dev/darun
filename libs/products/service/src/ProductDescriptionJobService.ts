@@ -112,6 +112,7 @@ export class ProductDescriptionJobService {
     const updatedJob = await this.productDescriptionJobRepository.updateJobStatus(jobId, 'pending', {
       message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
       error: null,
+      resetCreatedAt: true,
     });
 
     let isQueued = false;

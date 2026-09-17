@@ -46,7 +46,7 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
               { role: 'system', content: SYSTEM_PROMPT },
               { role: 'user', content: this.createUserPrompt(product, context) },
             ]),
-            18_000,
+            120_000,
             '상품 설명 생성 요청이 시간 초과되었습니다. 잠시 후 다시 시도해주세요.'
           ),
         { maxRetries: 2, baseDelay: 2000, maxDelay: 10000 }
