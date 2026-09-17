@@ -20,7 +20,7 @@ export class BraveSearchClient {
   private readonly endpoint: string;
 
   constructor(
-    private readonly apiKeyProvider: () => string | undefined = getBraveApiKey,
+    private readonly apiKeyProvider: () => string | undefined | Promise<string | undefined> = getBraveApiKey,
     endpoint?: string
   ) {
     this.endpoint = endpoint || 'https://api.search.brave.com/res/v1/web/search';
@@ -32,14 +32,14 @@ export class BraveSearchClient {
       return [];
     }
 
-    const apiKey = this.apiKeyProvider()?.trim();
-    if (!apiKey) {
-      return [];
-    }
-
-    const count = Math.min(Math.max(options?.count ?? 5, 1), 20);
-
     try {
+      const rawApiKey = await Promise.resolve(this.apiKeyProvider());
+      const apiKey = rawApiKey?.trim();
+      if (!apiKey) {
+        return [];
+      }
+
+      const count = Math.min(Math.max(options?.count ?? 5, 1), 20);
       const url = new URL(this.endpoint);
       url.searchParams.set('q', trimmedQuery);
       url.searchParams.set('count', count.toString());

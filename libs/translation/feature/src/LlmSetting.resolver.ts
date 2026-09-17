@@ -5,7 +5,7 @@ import { Service } from 'typedi';
 import { LlmSettingGraph } from './graphs/LlmSettingGraph';
 
 function maskApiKey(apiKey?: string | null): string | null {
-  if (!apiKey) {
+  if (!apiKey?.trim()) {
     return null;
   }
   const trimmed = apiKey.trim();
@@ -33,6 +33,7 @@ export class LlmSettingResolver {
       apiKeyMasked: maskApiKey(setting.apiKey),
       model: setting.model,
       thinkingLevel: setting.thinkingLevel,
+      braveApiKeyMasked: maskApiKey(setting.braveApiKey),
       updatedAt: setting.updatedAt,
     };
   }
@@ -44,13 +45,16 @@ export class LlmSettingResolver {
     @Arg('apiKey', () => String, { nullable: true }) apiKey?: string,
     @Arg('model', () => String, { nullable: true }) model?: string,
     @Arg('thinkingLevel', () => String, { nullable: true })
-    thinkingLevel?: string
+    thinkingLevel?: string,
+    @Arg('braveApiKey', () => String, { nullable: true })
+    braveApiKey?: string
   ): Promise<LlmSettingGraph> {
     const updated = await this.llmSettingService.updateSetting({
       endpoint,
       apiKey,
       model,
       thinkingLevel,
+      braveApiKey,
     });
 
     return {
@@ -59,6 +63,7 @@ export class LlmSettingResolver {
       apiKeyMasked: maskApiKey(updated.apiKey),
       model: updated.model,
       thinkingLevel: updated.thinkingLevel,
+      braveApiKeyMasked: maskApiKey(updated.braveApiKey),
       updatedAt: updated.updatedAt,
     };
   }

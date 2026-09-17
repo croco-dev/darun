@@ -45,7 +45,7 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
 
   constructor(
     @Inject(() => LlmClient) private readonly llmClient: LlmClient,
-    searchClient?: BraveSearchClient
+    @Inject(() => BraveSearchClient) searchClient?: BraveSearchClient
   ) {
     this.searchClient = searchClient ?? new BraveSearchClient();
   }

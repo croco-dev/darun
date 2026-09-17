@@ -17,6 +17,9 @@ export class LlmSettingGraph {
   @Field(() => String, { nullable: true })
   thinkingLevel?: string | null;
 
+  @Field(() => String, { nullable: true })
+  braveApiKeyMasked?: string | null;
+
   @Field()
   updatedAt: Date;
 }

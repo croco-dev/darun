@@ -170,6 +170,7 @@ type Link {
 
 type LlmSetting {
   apiKeyMasked: String
+  braveApiKeyMasked: String
   endpoint: String!
   id: ID!
   model: String!
@@ -217,7 +218,7 @@ type Mutation {
   retryTranslationJob(id: String!): TranslationJob!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
-  updateLlmSetting(apiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
+  updateLlmSetting(apiKey: String, braveApiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
   updateProductLink(id: String!, input: UpdateProductLinkInput!, slug: String!): UpdateProductLinkPayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
