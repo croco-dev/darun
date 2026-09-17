@@ -5,7 +5,7 @@ import {
   TranslationJobRepositoryToken,
   type TranslationJobStatus,
 } from '@darun/translation-domain';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { translationJobs } from '../entities/TranslationJobSchema';
 
@@ -109,5 +109,38 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
+  }
+
+  async findJobs(options?: {
+    status?: TranslationJobStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<TranslationJobEntity[]> {
+    try {
+      const limit = options?.limit ?? 50;
+      const offset = options?.offset ?? 0;
+
+      let query = this.db.select().from(translationJobs);
+      if (options?.status) {
+        query = query.where(eq(translationJobs.status, options.status)) as typeof query;
+      }
+
+      const rows = await query.orderBy(desc(translationJobs.createdAt)).limit(limit).offset(offset);
+
+      return rows.map(row => ({
+        id: row.id,
+        entityType: row.entityType,
+        entityId: row.entityId,
+        locale: row.locale,
+        status: row.status as TranslationJobStatus,
+        message: row.message,
+        error: row.error,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+      }));
+    } catch (error) {
+      console.warn('[PostgresqlTranslationJobRepository] Failed to find jobs:', error);
+      return [];
+    }
   }
 }

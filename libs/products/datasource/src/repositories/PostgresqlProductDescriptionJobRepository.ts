@@ -5,7 +5,7 @@ import {
   type ProductDescriptionJobStatus,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
 
@@ -107,5 +107,39 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
+  }
+
+  async findJobs(options?: {
+    status?: ProductDescriptionJobStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<ProductDescriptionJobEntity[]> {
+    try {
+      const limit = Math.min(options?.limit ?? 50, 100);
+      const offset = Math.max(options?.offset ?? 0, 0);
+
+      const baseQuery = this.db.select().from(productDescriptionJobs);
+
+      const rows = options?.status
+        ? await baseQuery
+            .where(eq(productDescriptionJobs.status, options.status))
+            .orderBy(desc(productDescriptionJobs.createdAt))
+            .limit(limit)
+            .offset(offset)
+        : await baseQuery.orderBy(desc(productDescriptionJobs.createdAt)).limit(limit).offset(offset);
+
+      return rows.map(row => ({
+        id: row.id,
+        productId: row.productId,
+        status: row.status as ProductDescriptionJobStatus,
+        message: row.message,
+        error: row.error,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+      }));
+    } catch (error) {
+      console.warn('[PostgresqlProductDescriptionJobRepository] Failed to find jobs (table may not exist yet):', error);
+      return [];
+    }
   }
 }

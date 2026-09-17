@@ -19,4 +19,10 @@ export interface ProductDescriptionJobRepository {
     status: ProductDescriptionJobStatus,
     options?: { message?: string | null; error?: string | null }
   ): Promise<ProductDescriptionJobEntity>;
+
+  findJobs(options?: {
+    status?: ProductDescriptionJobStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<ProductDescriptionJobEntity[]>;
 }

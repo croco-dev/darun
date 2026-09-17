@@ -78,6 +78,25 @@ export class TranslationMutationResolver {
     };
   }
 
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => TranslationJob)
+  async retryTranslationJob(@Arg('id', () => String) id: string): Promise<TranslationJob> {
+    const job = await this.translationJobService.retryProductTranslationJob(id);
+
+    return {
+      id: job.id,
+      entityType: job.entityType,
+      entityId: job.entityId,
+      fields: ['name', 'summary', 'description', 'features'],
+      locale: job.locale,
+      status: job.status,
+      message: job.message ?? undefined,
+      error: job.error ?? undefined,
+      createdAt: job.createdAt,
+      updatedAt: job.updatedAt,
+    };
+  }
+
   private validateEntityType(entityType: string): TranslationEntityType {
     if (SUPPORTED_ENTITY_TYPES.includes(entityType as TranslationEntityType)) {
       return entityType as TranslationEntityType;

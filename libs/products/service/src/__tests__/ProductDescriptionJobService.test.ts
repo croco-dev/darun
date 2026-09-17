@@ -59,6 +59,15 @@ describe('ProductDescriptionJobService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       } as ProductDescriptionJobEntity),
+      findJobs: vi.fn().mockResolvedValue([
+        {
+          id: 'job-123',
+          productId: 'prod-123',
+          status: 'pending',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as ProductDescriptionJobEntity,
+      ]),
     };
 
     mockQueueService = {
@@ -173,5 +182,60 @@ describe('ProductDescriptionJobService', () => {
     const job = await service.getJob('job-123');
     expect(mockRepository.findJobById).toHaveBeenCalledWith('job-123');
     expect(job?.id).toBe('job-123');
+  });
+
+  it('getJobs returns list of jobs from repository', async () => {
+    const service = new ProductDescriptionJobService(
+      getProductUseCase,
+      generateProductDescriptionUseCase,
+      mockRepository,
+      mockQueueService
+    );
+
+    const jobs = await service.getJobs({ status: 'pending', limit: 10 });
+    expect(mockRepository.findJobs).toHaveBeenCalledWith({ status: 'pending', limit: 10 });
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0]?.id).toBe('job-123');
+  });
+
+  it('retryProductDescriptionJob updates status to pending and re-queues job', async () => {
+    vi.mocked(mockRepository.findJobById).mockResolvedValue({
+      id: 'job-failed',
+      productId: 'prod-123',
+      status: 'failed',
+      message: '이전 에러',
+      error: '429 RateLimit',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    vi.mocked(mockRepository.updateJobStatus).mockResolvedValue({
+      id: 'job-failed',
+      productId: 'prod-123',
+      status: 'pending',
+      message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
+      error: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const service = new ProductDescriptionJobService(
+      getProductUseCase,
+      generateProductDescriptionUseCase,
+      mockRepository,
+      mockQueueService
+    );
+
+    const retriedJob = await service.retryProductDescriptionJob('job-failed');
+
+    expect(mockRepository.findJobById).toHaveBeenCalledWith('job-failed');
+    expect(mockRepository.updateJobStatus).toHaveBeenCalledWith('job-failed', 'pending', {
+      message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
+      error: null,
+    });
+    expect(mockQueueService.sendJob).toHaveBeenCalledWith({
+      jobId: 'job-failed',
+      productId: 'prod-123',
+    });
+    expect(retriedJob.status).toBe('pending');
   });
 });

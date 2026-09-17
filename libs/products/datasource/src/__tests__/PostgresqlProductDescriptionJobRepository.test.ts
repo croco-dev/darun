@@ -108,4 +108,42 @@ describe('PostgresqlProductDescriptionJobRepository', () => {
     expect(result.status).toBe('completed');
     expect(result.message).toBe('완료');
   });
+
+  it('findJobs returns list of jobs with status filter and pagination', async () => {
+    const fakeRow = {
+      id: 'job-1',
+      productId: 'prod-1',
+      status: 'failed',
+      message: '실패',
+      error: '429 RateLimit',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const offsetMock = vi.fn().mockResolvedValue([fakeRow]);
+    const limitMock = vi.fn().mockReturnValue({ offset: offsetMock });
+    const orderByMock = vi.fn().mockReturnValue({ limit: limitMock });
+    const whereMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
+    const fromMock = vi.fn().mockReturnValue({ where: whereMock, orderBy: orderByMock });
+    mockDb.select.mockReturnValue({ from: fromMock });
+
+    const repo = new PostgresqlProductDescriptionJobRepository(mockDb as never);
+    const results = await repo.findJobs({ status: 'failed', limit: 10, offset: 0 });
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.id).toBe('job-1');
+    expect(results[0]?.status).toBe('failed');
+    expect(whereMock).toHaveBeenCalled();
+  });
+
+  it('findJobs returns empty array if error is thrown', async () => {
+    mockDb.select.mockImplementation(() => {
+      throw new Error('Database connection failed');
+    });
+
+    const repo = new PostgresqlProductDescriptionJobRepository(mockDb as never);
+    const results = await repo.findJobs();
+
+    expect(results).toEqual([]);
+  });
 });

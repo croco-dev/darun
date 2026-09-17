@@ -314,4 +314,101 @@ describe('TranslationJobService', () => {
     expect(llmClient.completion).toHaveBeenCalledTimes(1);
     expect(translationService.upsertTranslation).not.toHaveBeenCalled();
   });
+
+  it('retries product translation job and sets status to pending', async () => {
+    const now = new Date();
+    const mockRepo = {
+      createJob: vi.fn(),
+      findJobById: vi.fn().mockResolvedValue({
+        id: 'job-failed',
+        entityType: 'Product',
+        entityId: 'prod-123',
+        locale: 'en',
+        status: 'failed',
+        message: '실패',
+        error: '429 Rate limit',
+        createdAt: now,
+        updatedAt: now,
+      }),
+      updateJobStatus: vi.fn().mockResolvedValue({
+        id: 'job-failed',
+        entityType: 'Product',
+        entityId: 'prod-123',
+        locale: 'en',
+        status: 'pending',
+        message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
+        error: null,
+        createdAt: now,
+        updatedAt: now,
+      }),
+      findJobs: vi.fn().mockResolvedValue([]),
+    };
+
+    const mockQueueService = {
+      sendJob: vi.fn().mockResolvedValue(true),
+    };
+
+    const translationService = createTranslationService();
+    const llmClient = createLlmClient();
+
+    const service = new TranslationJobService(
+      createProductUseCase(),
+      createMagazineUseCase(),
+      translationService as unknown as TranslationService,
+      llmClient as unknown as LlmClient,
+      createProductFeatureUseCase(),
+      createProductFeaturesUseCase(),
+      mockRepo as never,
+      mockQueueService as never
+    );
+
+    const result = await service.retryProductTranslationJob('job-failed');
+
+    expect(mockRepo.findJobById).toHaveBeenCalledWith('job-failed');
+    expect(mockRepo.updateJobStatus).toHaveBeenCalledWith('job-failed', 'pending', {
+      message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
+      error: null,
+    });
+    expect(mockQueueService.sendJob).toHaveBeenCalledWith({
+      jobId: 'job-failed',
+      entityType: 'Product',
+      entityId: 'prod-123',
+    });
+    expect(result.status).toBe('pending');
+  });
+
+  it('returns list of jobs from repository in getJobs', async () => {
+    const mockRepo = {
+      createJob: vi.fn(),
+      findJobById: vi.fn(),
+      updateJobStatus: vi.fn(),
+      findJobs: vi.fn().mockResolvedValue([
+        {
+          id: 'job-1',
+          entityType: 'Product',
+          entityId: 'prod-1',
+          locale: 'en',
+          status: 'completed',
+        },
+      ]),
+    };
+
+    const translationService = createTranslationService();
+    const llmClient = createLlmClient();
+
+    const service = new TranslationJobService(
+      createProductUseCase(),
+      createMagazineUseCase(),
+      translationService as unknown as TranslationService,
+      llmClient as unknown as LlmClient,
+      createProductFeatureUseCase(),
+      createProductFeaturesUseCase(),
+      mockRepo as never
+    );
+
+    const jobs = await service.getJobs({ status: 'completed', limit: 10 });
+    expect(mockRepo.findJobs).toHaveBeenCalledWith({ status: 'completed', limit: 10 });
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0]?.id).toBe('job-1');
+  });
 });
