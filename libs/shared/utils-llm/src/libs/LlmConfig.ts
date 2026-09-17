@@ -3,6 +3,7 @@ export type LlmConfig = {
   apiKey: string;
   model: string;
   thinkingLevel?: string | null;
+  braveApiKey?: string | null;
 };
 
 export interface LlmConfigProvider {

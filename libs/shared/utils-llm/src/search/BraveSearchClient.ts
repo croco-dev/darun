@@ -20,7 +20,7 @@ export class BraveSearchClient {
   private readonly endpoint: string;
 
   constructor(
-    private readonly apiKeyProvider: () => string | undefined = getBraveApiKey,
+    private readonly apiKeyProvider: () => string | undefined | Promise<string | undefined> = getBraveApiKey,
     endpoint?: string
   ) {
     this.endpoint = endpoint || 'https://api.search.brave.com/res/v1/web/search';
@@ -32,7 +32,8 @@ export class BraveSearchClient {
       return [];
     }
 
-    const apiKey = this.apiKeyProvider()?.trim();
+    const rawApiKey = await Promise.resolve(this.apiKeyProvider());
+    const apiKey = rawApiKey?.trim();
     if (!apiKey) {
       return [];
     }

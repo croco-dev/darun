@@ -143,15 +143,14 @@ export function ModelSelectModal({
     if (!opened || models.length > 0) return;
 
     let ignore = false;
-    const timer = setTimeout(() => {
+    void (async () => {
       if (!ignore) {
-        void fetchModels();
+        await fetchModels();
       }
-    }, 0);
+    })();
 
     return () => {
       ignore = true;
-      clearTimeout(timer);
     };
   }, [opened, models.length, fetchModels]);
 

@@ -14,7 +14,7 @@ import '@darun/translation-datasource';
 import '@darun/products-datasource';
 import { CloudinaryImageRepositoryConfig } from '@darun/images-datasource';
 import { LlmSettingService } from '@darun/translation-service';
-import { LlmClient } from '@darun/utils-llm';
+import { BraveSearchClient, LlmClient } from '@darun/utils-llm';
 import { Container, type ContainerInstance } from 'typedi';
 import { RUNNING_ENV } from './environment';
 import { registerRepositoryAliases } from './repositoryAliases';
@@ -41,5 +41,19 @@ Container.set({
           };
         }
       },
+    }),
+});
+
+// Brave Search 클라이언트 등록 (DB 설정 연동 - lazy factory)
+Container.set({
+  id: BraveSearchClient,
+  factory: (container: ContainerInstance) =>
+    new BraveSearchClient(async () => {
+      try {
+        const config = await container.get(LlmSettingService).getConfig();
+        return config.braveApiKey || process.env['BRAVE_API_KEY'] || undefined;
+      } catch (error) {
+        return process.env['BRAVE_API_KEY'] || undefined;
+      }
     }),
 });

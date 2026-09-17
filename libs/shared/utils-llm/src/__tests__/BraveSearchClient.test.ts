@@ -24,6 +24,38 @@ describe('BraveSearchClient', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('비동기 apiKeyProvider 로부터 API 키를 성공적으로 가져와 사용한다', async () => {
+    const mockApiResponse = {
+      web: {
+        results: [
+          {
+            title: 'Async Test',
+            url: 'https://example.com/async',
+            description: 'Async test description',
+          },
+        ],
+      },
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => mockApiResponse,
+    });
+    globalThis.fetch = fetchMock;
+
+    const asyncKeyProvider = vi.fn().mockResolvedValue('async-brave-token');
+    const client = new BraveSearchClient(asyncKeyProvider);
+
+    const results = await client.search('async query');
+
+    expect(asyncKeyProvider).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const headers = fetchMock.mock.calls[0][1].headers;
+    expect(headers['X-Subscription-Token']).toBe('async-brave-token');
+    expect(results).toHaveLength(1);
+    expect(results[0]?.title).toBe('Async Test');
+  });
+
   it('빈 검색어인 경우 검색을 수행하지 않고 빈 배열을 반환한다', async () => {
     const fetchMock = vi.fn();
     globalThis.fetch = fetchMock;

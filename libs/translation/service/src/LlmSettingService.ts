@@ -18,6 +18,7 @@ export class LlmSettingService implements LlmConfigProvider {
       apiKey: setting?.apiKey || envApiKey,
       model: setting?.model || process.env['OPEN_ROUTER_MODEL'] || DEFAULT_LLM_MODEL,
       thinkingLevel: setting?.thinkingLevel || process.env['OPEN_ROUTER_THINKING_LEVEL'] || null,
+      braveApiKey: setting?.braveApiKey || process.env['BRAVE_API_KEY'] || null,
     };
   }
 
@@ -34,6 +35,7 @@ export class LlmSettingService implements LlmConfigProvider {
       apiKey: process.env['OPEN_ROUTER_API_KEY'] || null,
       model: process.env['OPEN_ROUTER_MODEL'] || DEFAULT_LLM_MODEL,
       thinkingLevel: process.env['OPEN_ROUTER_THINKING_LEVEL'] || null,
+      braveApiKey: process.env['BRAVE_API_KEY'] || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -44,6 +46,7 @@ export class LlmSettingService implements LlmConfigProvider {
     apiKey?: string | null;
     model?: string;
     thinkingLevel?: string | null;
+    braveApiKey?: string | null;
   }): Promise<LlmSetting> {
     const current = await this.getSetting();
 
@@ -61,12 +64,19 @@ export class LlmSettingService implements LlmConfigProvider {
           ? null
           : input.thinkingLevel.trim()
         : current.thinkingLevel;
+    const newBraveApiKey =
+      input.braveApiKey !== undefined
+        ? input.braveApiKey === '' || input.braveApiKey === null
+          ? null
+          : input.braveApiKey.trim()
+        : current.braveApiKey;
 
     return this.llmSettingRepository.upsertSetting({
       endpoint: newEndpoint,
       apiKey: newApiKey,
       model: newModel,
       thinkingLevel: newThinkingLevel,
+      braveApiKey: newBraveApiKey,
     });
   }
 }
