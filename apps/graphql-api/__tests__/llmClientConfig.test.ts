@@ -81,13 +81,24 @@ describe('LlmClient container configuration', () => {
 });
 
 describe('BraveSearchClient container configuration', () => {
+  const originalFetch = globalThis.fetch;
+
   afterEach(() => {
     Container.remove(BraveSearchClient);
     Container.remove(LlmSettingService);
+    globalThis.fetch = originalFetch;
+    delete process.env['BRAVE_API_KEY'];
   });
 
   it('resolves BraveSearchClient and falls back safely to env when LlmSettingService fails', async () => {
     process.env['BRAVE_API_KEY'] = 'env-fallback-brave-key';
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ web: { results: [] } }),
+    });
+    globalThis.fetch = fetchMock;
 
     Container.set({
       id: BraveSearchClient,
@@ -104,9 +115,21 @@ describe('BraveSearchClient container configuration', () => {
 
     const client = Container.get(BraveSearchClient);
     expect(client).toBeInstanceOf(BraveSearchClient);
+
+    await client.search('test query');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const headers = fetchMock.mock.calls[0][1].headers;
+    expect(headers['X-Subscription-Token']).toBe('env-fallback-brave-key');
   });
 
   it('resolves BraveSearchClient with dynamic DB setting when LlmSettingService succeeds', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ web: { results: [] } }),
+    });
+    globalThis.fetch = fetchMock;
+
     const mockSettingService = {
       getConfig: vi.fn().mockResolvedValue({
         endpoint: 'https://openrouter.ai/api/v1',
@@ -134,5 +157,11 @@ describe('BraveSearchClient container configuration', () => {
 
     const client = Container.get(BraveSearchClient);
     expect(client).toBeInstanceOf(BraveSearchClient);
+
+    await client.search('test query');
+    expect(mockSettingService.getConfig).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const headers = fetchMock.mock.calls[0][1].headers;
+    expect(headers['X-Subscription-Token']).toBe('db-brave-key');
   });
 });
