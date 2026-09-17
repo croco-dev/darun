@@ -89,10 +89,7 @@ describe('ProductDescriptionGeneratorImpl', () => {
     const { generator, llmClient } = createGenerator('<p>설명</p>');
 
     await generator.generate(createProduct(), {
-      features: [
-        { name: '칸반 보드', summary: '시각적 태스크 관리' },
-        { name: '웹훅 연동' },
-      ],
+      features: [{ name: '칸반 보드', summary: '시각적 태스크 관리' }, { name: '웹훅 연동' }],
       links: [{ title: '웹사이트', link: 'https://flowdesk.io' }],
     });
 
