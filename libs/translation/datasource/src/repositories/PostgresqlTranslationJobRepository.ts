@@ -77,12 +77,16 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
   async updateJobStatus(
     id: string,
     status: TranslationJobStatus,
-    options?: { message?: string | null; error?: string | null }
+    options?: { message?: string | null; error?: string | null; resetCreatedAt?: boolean }
   ): Promise<TranslationJobEntity> {
     const updateValues: Record<string, unknown> = {
       status,
       updatedAt: new Date(),
     };
+
+    if (options?.resetCreatedAt) {
+      updateValues.createdAt = new Date();
+    }
 
     if (options?.message !== undefined) {
       updateValues.message = options.message;

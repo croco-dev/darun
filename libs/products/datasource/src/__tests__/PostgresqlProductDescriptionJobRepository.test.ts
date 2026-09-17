@@ -109,6 +109,35 @@ describe('PostgresqlProductDescriptionJobRepository', () => {
     expect(result.message).toBe('완료');
   });
 
+  it('updateJobStatus with resetCreatedAt updates createdAt to new date', async () => {
+    const updatedRow = {
+      id: 'job-1',
+      productId: 'prod-1',
+      status: 'pending',
+      message: '재시도',
+      error: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const returningMock = vi.fn().mockResolvedValue([updatedRow]);
+    const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
+    const setMock = vi.fn().mockReturnValue({ where: whereMock });
+    mockDb.update.mockReturnValue({ set: setMock });
+
+    const repo = new PostgresqlProductDescriptionJobRepository(mockDb as never);
+    await repo.updateJobStatus('job-1', 'pending', { message: '재시도', resetCreatedAt: true });
+
+    expect(setMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'pending',
+        message: '재시도',
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      })
+    );
+  });
+
   it('findJobs returns list of jobs with status filter and pagination', async () => {
     const fakeRow = {
       id: 'job-1',

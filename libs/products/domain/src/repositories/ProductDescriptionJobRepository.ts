@@ -17,7 +17,7 @@ export interface ProductDescriptionJobRepository {
   updateJobStatus(
     id: string,
     status: ProductDescriptionJobStatus,
-    options?: { message?: string | null; error?: string | null }
+    options?: { message?: string | null; error?: string | null; resetCreatedAt?: boolean }
   ): Promise<ProductDescriptionJobEntity>;
 
   findJobs(options?: {

@@ -300,6 +300,7 @@ export class TranslationJobService {
     const updatedJob = await this.translationJobRepository.updateJobStatus(jobId, 'pending', {
       message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
       error: null,
+      resetCreatedAt: true,
     });
 
     let isQueued = false;
