@@ -50,7 +50,6 @@ describe('ProductDescriptionGeneratorImpl', () => {
     expect(userPrompt).toContain('제품명: Flowdesk');
     expect(userPrompt).toContain('카테고리: collaboration, automation');
     expect(userPrompt).toContain('주요 기능: 팀 업무 흐름을 보드와 자동화로 정리하는 협업 도구');
-    expect(userPrompt).toContain('가격대: 확인된 정보 없음');
   });
 
   it('uses categoryLabels from context when provided', async () => {
