@@ -16,6 +16,7 @@ vi.mock('@darun/utils-router', () => ({
       {children}
     </a>
   ),
+  usePathname: () => mockUsePathname(),
 }));
 
 vi.mock('@darun/ui-admin', () => ({

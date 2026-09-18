@@ -2,9 +2,9 @@ import { useSuspenseQuery } from '@apollo/client/react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// ── Mock: next/navigation ────────────────────────────────────────
-vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(() => ({ push: vi.fn() })),
+// ── Mock: @darun/utils-router ─────────────────────────────────────
+vi.mock('@darun/utils-router', () => ({
+  useNavigate: vi.fn(() => vi.fn()),
 }));
 
 // ── Mock: @apollo/client/react to isolate the hook ───────────────

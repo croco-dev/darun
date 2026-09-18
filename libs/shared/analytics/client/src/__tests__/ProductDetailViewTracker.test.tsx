@@ -6,7 +6,7 @@ import { ProductDetailViewTracker } from '../ProductDetailViewTracker';
 const mockUseSearchParams = vi.hoisted(() => vi.fn());
 const mockTrack = vi.hoisted(() => vi.fn());
 
-vi.mock('next/navigation', () => ({
+vi.mock('@darun/utils-router', () => ({
   useSearchParams: mockUseSearchParams,
 }));
 

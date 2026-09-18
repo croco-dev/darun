@@ -1,4 +1,4 @@
-import { getLocale } from 'next-intl/server';
+import { useLocale } from 'next-intl';
 
 type RankBadgeProps = {
   rank: number;
@@ -10,8 +10,8 @@ const sizeStyles = {
   md: 'h-9 w-9 shrink-0 text-sm rounded-xl',
 } as const;
 
-export const RankBadge = async ({ rank, size = 'sm' }: RankBadgeProps) => {
-  const locale = await getLocale();
+export const RankBadge = ({ rank, size = 'sm' }: RankBadgeProps) => {
+  const locale = useLocale();
   return (
     <span
       aria-label={locale === 'en' ? `Rank ${rank}` : `${rank}위`}

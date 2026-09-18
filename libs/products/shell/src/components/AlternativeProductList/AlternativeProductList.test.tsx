@@ -24,6 +24,7 @@ vi.mock('@darun/utils-router', () => ({
       {children}
     </a>
   ),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 describe('AlternativeProductList', () => {

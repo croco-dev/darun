@@ -37,6 +37,9 @@ vi.mock('@darun/utils-router', () => ({
     </a>
   ),
   useNavigate: () => mockNavigate,
+  useSearchParams: () => ({
+    get: (key: string) => 'notion',
+  }),
 }));
 
 vi.mock('next-intl', () => ({
