@@ -10,10 +10,9 @@ import {
   type VisualFlowType,
   type VisualPlatform,
 } from '@darun/provider-graphql';
-import { Button } from '@darun/ui';
+import { ArrowDown, ArrowUp, Button, Check, ImageOff, Loader2, Plus, X } from '@darun/ui';
 import { AdminErrorState } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
-import { ArrowDown, ArrowUp, Check, ImageOff, Loader2, Plus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -427,7 +426,7 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
                   <button
                     type="button"
                     onClick={() => removeStep(index)}
-                    className="rounded p-1.5 text-dark-400 transition hover:bg-red-50 hover:text-red-600"
+                    className="rounded p-1.5 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600"
                     title="단계 제거"
                     aria-label={`단계 ${index + 1} 제거`}
                   >

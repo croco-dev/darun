@@ -3,7 +3,7 @@
 import { useQuery } from '@apollo/client/react';
 import { EditAlternativeProducts } from '@darun/products-feature';
 import { TempProductBySlugOnEditAlternativeProductsDocument } from '@darun/provider-graphql';
-import { Button } from '@darun/ui';
+import { Button, Layers } from '@darun/ui';
 import {
   AdminEmptyState,
   AdminErrorState,
@@ -14,7 +14,6 @@ import {
   AdminSectionHeader,
 } from '@darun/ui-admin';
 import { useDisclosure } from '@mantine/hooks';
-import { Layers } from 'lucide-react';
 
 type ProductDetailAlternativeSectionProps = {
   slug: string;
@@ -70,7 +69,7 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
                     key={alt.id}
                     className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-dark-200 bg-surface-100/50 hover:bg-surface-100 hover:border-dark-300 transition shadow-sm"
                   >
-                    <Layers size={14} className="text-blue-500" />
+                    <Layers size={14} className="text-brown-500" />
                     <span className="text-sm font-semibold text-dark-900">{alt.name}</span>
                   </div>
                 ))}

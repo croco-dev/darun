@@ -1,10 +1,8 @@
 'use client';
 
-import { Button, Dialog } from '@darun/ui';
-import { notFound } from '@darun/utils-router';
+import { Button, Dialog, ExternalLink, ImageOff, Maximize2, RefreshCw } from '@darun/ui';
+import { notFound, useRouter } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
-import { ExternalLink, ImageOff, Maximize2, RefreshCw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ScreenshotDetailState, useScreenshotDetail } from './useScreenshotDetail';
 import {

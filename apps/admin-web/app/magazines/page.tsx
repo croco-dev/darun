@@ -1,7 +1,7 @@
 import { Button } from '@darun/ui';
 import { PageShell } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
-import { Plus } from 'lucide-react';
+import { Plus } from '@darun/ui';
 import { MagazinesList } from '../../features/magazines/MagazinesList/MagazinesList';
 
 export default function MagazineListPage() {

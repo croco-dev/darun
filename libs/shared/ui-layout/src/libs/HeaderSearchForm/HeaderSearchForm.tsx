@@ -3,11 +3,23 @@
 import { Search, X } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useEffect, useRef } from 'react';
 import { useHeaderSearchForm } from './useHeaderSearchForm';
 
 export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, onSubmit }) => {
   const t = useTranslations('Layout.header');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <form
@@ -21,6 +33,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
         aria-label={t('searchAriaLabel')}
         type="text"
         placeholder={t('searchPlaceholder')}
+        ref={inputRef}
         className="w-full border-none bg-transparent text-sm tracking-tight text-dark-900 outline-none placeholder:text-dark-500 focus-visible:outline-none md:text-base"
         value={query}
         onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}

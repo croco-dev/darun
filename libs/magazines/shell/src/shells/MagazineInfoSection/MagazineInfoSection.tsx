@@ -2,7 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
-import { BookOpen, Calendar } from '@darun/ui';
+import { BookOpen, Calendar, formatDate } from '@darun/ui';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
@@ -23,16 +23,6 @@ const MAGAZINE_QUERY = gql`
 
 type MagazineInfoSectionProps = { slug: string };
 
-function formatDate(date?: string | Date | null) {
-  if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  if (Number.isNaN(d.getTime())) return '';
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}.${month}.${day}`;
-}
-
 export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
   const t = useTranslations('Magazine');
   const { data } = useSuspenseQuery<{
@@ -49,7 +39,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
   });
 
   const magazine = data?.magazineBySlug;
-  const formattedDate = formatDate(magazine?.publishedAt);
+  const formattedDate = formatDate(magazine?.publishedAt, '');
   const authorName = magazine?.author?.name;
   const authorInitial = authorName ? authorName.trim().charAt(0).toUpperCase() : null;
 

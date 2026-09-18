@@ -1,21 +1,10 @@
 'use client';
 
-import { Button } from '@darun/ui';
+import { Button, Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, ExternalLink, Sparkles, User, formatDate } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminPanel } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
-import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, ExternalLink, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
 import { useMagazinesList } from './useMagazinesList';
-
-function formatDate(dateString?: string | null): string {
-  if (!dateString) return '-';
-  const d = new Date(dateString);
-  if (Number.isNaN(d.getTime())) return '-';
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}.${month}.${day}`;
-}
 
 function MagazineThumbnail({ src, alt }: { src?: string | null; alt: string }) {
   const [hasError, setHasError] = useState(false);
@@ -102,7 +91,7 @@ export const MagazinesList = bind(
                   <div className="absolute top-3 left-3">
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm backdrop-blur-md ${
-                        isPublished ? 'bg-emerald-500/90 text-white' : 'bg-dark-900/80 text-white'
+                        isPublished ? 'bg-leaf-600/90 text-white' : 'bg-dark-900/80 text-white'
                       }`}
                     >
                       {isPublished ? (
@@ -123,7 +112,7 @@ export const MagazinesList = bind(
                 {/* Body Content */}
                 <div className="flex flex-1 flex-col p-5">
                   <div className="mb-2">
-                    <code className="inline-block text-[11px] font-mono text-dark-500 bg-surface-100 px-2 py-0.5 rounded border border-dark-150">
+                    <code className="inline-block text-2xs font-mono text-dark-500 bg-surface-100 px-2 py-0.5 rounded border border-dark-150">
                       /{item.slug}
                     </code>
                   </div>

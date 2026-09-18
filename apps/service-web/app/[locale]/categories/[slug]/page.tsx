@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 import { CategoryProductSection } from '@darun/products-shell';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound } from '@darun/utils-router';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
 import { JsonLd } from '../../../../lib/seo/json-ld';

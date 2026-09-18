@@ -6,7 +6,7 @@ import {
   GetLlmSettingOnLlmSettingFormSectionDocument,
   UpdateLlmSettingOnLlmSettingFormSectionDocument,
 } from '@darun/provider-graphql';
-import { Button } from '@darun/ui';
+import { Button, Search } from '@darun/ui';
 import {
   AdminErrorState,
   AdminInput,
@@ -18,7 +18,6 @@ import {
 import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { ModelSelectModal } from './ModelSelectModal';
 
@@ -226,7 +225,7 @@ function LlmSettingForm({
                 setClearApiKey(true);
                 setApiKey('');
               }}
-              className="text-xs text-red-600 hover:text-red-700 underline disabled:opacity-50"
+              className="text-xs text-cherry-700 hover:text-cherry-800 underline disabled:opacity-50"
             >
               DB 등록 키 삭제
             </button>
@@ -243,7 +242,7 @@ function LlmSettingForm({
           )}
         </div>
         {clearApiKey ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+          <div className="rounded-lg border border-cherry-200 bg-cherry-50 p-2.5 text-xs text-cherry-700">
             DB에 등록된 API 키가 저장 시 삭제됩니다. (기본 환경변수 OPEN_ROUTER_API_KEY 로 복원됨)
           </div>
         ) : (
@@ -359,7 +358,7 @@ function LlmSettingForm({
               className={`text-xs px-2 py-0.5 rounded font-mono transition border disabled:opacity-50 ${
                 thinkingLevel === opt.value
                   ? 'bg-dark-900 text-white border-dark-900'
-                  : 'bg-dark-50 hover:bg-dark-100 text-dark-700 border-dark-200'
+                  : 'bg-surface-50 hover:bg-surface-100 text-dark-700 border-dark-200'
               }`}
             >
               {opt.label}

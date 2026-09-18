@@ -29,6 +29,7 @@
     "@darun/ui": "workspace:*",
     "@darun/ui-admin": "workspace:*",
     "@darun/utils-image-upload": "workspace:*",
+    "@darun/utils-router": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
     "@mantine/dropzone": "catalog:",
     "@mantine/form": "catalog:",

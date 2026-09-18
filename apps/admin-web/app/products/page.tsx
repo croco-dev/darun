@@ -2,7 +2,7 @@ import { ProductListRefreshButton } from '@darun/products-feature';
 import { Button } from '@darun/ui';
 import { AdminLoadingState, PageShell } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
-import { Plus } from 'lucide-react';
+import { Plus } from '@darun/ui';
 import { Suspense } from 'react';
 import { ProductListSection } from '../../features/products/ProductListSection';
 

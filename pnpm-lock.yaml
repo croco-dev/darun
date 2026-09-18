@@ -882,6 +882,9 @@ importers:
       '@darun/utils-apollo-server':
         specifier: workspace:*
         version: link:../../shared/utils-apollo-server
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../../shared/utils-router
       '@darun/utils-structure-react':
         specifier: workspace:*
         version: link:../../shared/utils-structure-react
@@ -1118,6 +1121,9 @@ importers:
       '@darun/utils-image-upload':
         specifier: workspace:*
         version: link:../../shared/utils-image-upload
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../../shared/utils-router
       '@darun/utils-structure-react':
         specifier: workspace:*
         version: link:../../shared/utils-structure-react
@@ -1359,6 +1365,9 @@ importers:
       '@darun/ui-admin':
         specifier: workspace:*
         version: link:../../shared/ui-admin
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../../shared/utils-router
       '@darun/utils-structure-react':
         specifier: workspace:*
         version: link:../../shared/utils-structure-react
@@ -1759,6 +1768,9 @@ importers:
 
   libs/shared/analytics/client:
     dependencies:
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../../utils-router
       posthog-js:
         specifier: ^1.221.0
         version: 1.370.1

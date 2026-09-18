@@ -1,7 +1,6 @@
 'use client';
 
-import { Button } from '@darun/ui';
-import { RefreshCw, Sparkles } from 'lucide-react';
+import { Button, RefreshCw, Sparkles } from '@darun/ui';
 import { useGenerateProductDescriptionButton } from './useGenerateProductDescriptionButton';
 
 interface GenerateProductDescriptionButtonProps {
@@ -21,7 +20,7 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
       disabled={isGenerating}
       variant="contained"
       color="secondary"
-      className="gap-2 border-violet-200 bg-violet-50 text-violet-700"
+      className="gap-2 border-yellow-200 bg-yellow-50 text-yellow-700"
     >
       {isGenerating ? (
         <RefreshCw size={16} className="animate-spin motion-reduce:animate-none" />

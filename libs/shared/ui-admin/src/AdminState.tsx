@@ -281,7 +281,7 @@ export function AdminErrorState({
         <details className="mt-4 w-full text-left text-xs bg-surface-100 border border-dark-200 rounded-lg p-3 group">
           <summary className="cursor-pointer font-medium text-dark-700 hover:text-dark-900 select-none flex items-center justify-between">
             <span>자세한 오류 정보 확인</span>
-            <span className="text-[10px] text-dark-400 group-open:rotate-180 transition-transform">▼</span>
+            <span className="text-2xs text-dark-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
           <div className="mt-2 pt-2 border-t border-dark-200/60 flex flex-col gap-2">
             {typeof technicalContent === 'string' && (
@@ -289,14 +289,14 @@ export function AdminErrorState({
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="text-[11px] px-2 py-0.5 rounded border border-dark-200 bg-white hover:bg-surface-200 text-dark-700 transition"
+                  className="text-2xs px-2 py-0.5 rounded border border-dark-200 bg-white hover:bg-surface-200 text-dark-700 transition"
                 >
                   {copied ? '복사 완료!' : '오류 내용 복사'}
                 </button>
               </div>
             )}
             {typeof technicalContent === 'string' ? (
-              <pre className="max-h-48 overflow-auto font-mono text-[11px] text-dark-700 p-2 bg-white rounded border border-dark-150 whitespace-pre-wrap break-all">
+              <pre className="max-h-48 overflow-auto font-mono text-2xs text-dark-700 p-2 bg-white rounded border border-dark-150 whitespace-pre-wrap break-all">
                 {technicalContent}
               </pre>
             ) : (

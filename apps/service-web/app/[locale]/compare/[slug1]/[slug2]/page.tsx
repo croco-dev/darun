@@ -4,7 +4,7 @@ import { Breadcrumb, Chip, ContentArea, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound } from '@darun/utils-router';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../../lib/seo/indexability';
 import { getOgLocale, getSiteName } from '../../../../../lib/seo/metadata';

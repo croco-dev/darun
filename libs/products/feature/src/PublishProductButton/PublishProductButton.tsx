@@ -1,8 +1,7 @@
 'use client';
 
-import { Button } from '@darun/ui';
+import { Button, RefreshCw } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
-import { RefreshCw } from 'lucide-react';
 import { usePublishProductButton } from './usePublishProductButton';
 
 export const PublishProductButton = bind(usePublishProductButton, ({ loading, isPublished, publishProduct }) => (

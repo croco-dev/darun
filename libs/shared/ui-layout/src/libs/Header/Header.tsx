@@ -23,11 +23,11 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
             >
               <Logo size={36} title={t('logoTitle')} />
             </Link>
-            <nav className="hidden items-center gap-1 sm:flex" aria-label={t('mainMenuAriaLabel')}>
+            <nav className="flex items-center gap-0.5 sm:gap-1" aria-label={t('mainMenuAriaLabel')}>
               <Link
                 href={rankingUrl}
                 aria-current={isRanking ? 'page' : undefined}
-                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isRanking
                     ? 'bg-surface-100 font-bold text-dark-900 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100 hover:text-dark-900'
@@ -38,7 +38,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={browseUrl}
                 aria-current={isBrowse ? 'page' : undefined}
-                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isBrowse
                     ? 'bg-surface-100 font-bold text-dark-900 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100 hover:text-dark-900'

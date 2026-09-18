@@ -6,7 +6,7 @@ import {
   DeleteProductFlowOnDetailSectionDocument,
   GetProductFlowsOnDetailSectionDocument,
 } from '@darun/provider-graphql';
-import { Button } from '@darun/ui';
+import { Button, ImageOff, Layers, Loader2, Pencil, Plus, Trash2 } from '@darun/ui';
 import {
   AdminEmptyState,
   AdminErrorState,
@@ -17,7 +17,6 @@ import {
 } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
-import { ImageOff, Layers, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -230,12 +229,12 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                     type="button"
                     onClick={() => handleDelete(flow.id)}
                     disabled={deletingId !== null}
-                    className="rounded p-1 text-dark-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                    className="rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 disabled:opacity-50"
                     title={deletingId === flow.id ? '삭제 중...' : '플로 삭제'}
                     aria-label={deletingId === flow.id ? `${flow.title} 삭제 중` : `${flow.title} 플로 삭제`}
                   >
                     {deletingId === flow.id ? (
-                      <Loader2 size={16} className="animate-spin text-red-600 motion-reduce:animate-none" />
+                      <Loader2 size={16} className="animate-spin text-cherry-600 motion-reduce:animate-none" />
                     ) : (
                       <Trash2 size={16} />
                     )}

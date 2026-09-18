@@ -1,11 +1,10 @@
 'use client';
 
-import { Button } from '@darun/ui';
+import { Button, Smile } from '@darun/ui';
 import { AdminField, AdminInput, AdminTextarea, AdminActions } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
-import { Smile } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useEditProductFeatureItem } from './useEditProductFeatureItem';
 

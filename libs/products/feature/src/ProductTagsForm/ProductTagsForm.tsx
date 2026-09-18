@@ -1,9 +1,8 @@
 'use client';
 
-import { Button } from '@darun/ui';
+import { Button, Tag, X } from '@darun/ui';
 import { AdminInput } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
-import { Tag, X } from 'lucide-react';
 import { useProductTagsForm } from './useProductTagsForm';
 
 export const ProductTagsForm = bind(

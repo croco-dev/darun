@@ -7,10 +7,10 @@ import {
   TempAllMagazinesOnMagazinesListDocument,
 } from '@darun/provider-graphql';
 import { useImageUpload } from '@darun/utils-image-upload';
+import { useNavigate } from '@darun/utils-router';
 import { FileWithPath } from '@mantine/dropzone';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -34,13 +34,13 @@ type FormValues = {
 };
 
 export function useWriteMagazine() {
-  const { push } = useRouter();
+  const navigate = useNavigate();
   const [createMagazine, { loading: isCreating }] = useMutation(CreateMagazineOnWriteMagazineDocument, {
     refetchQueries: [TempAllMagazinesOnMagazinesListDocument],
     awaitRefetchQueries: true,
     onCompleted: () => {
       notifications.show({ message: '매거진이 성공적으로 발행되었습니다.', color: 'teal' });
-      push('/magazines');
+      navigate('/magazines');
     },
     onError: error => {
       notifications.show({

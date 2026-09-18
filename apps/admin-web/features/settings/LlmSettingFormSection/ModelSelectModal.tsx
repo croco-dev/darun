@@ -1,7 +1,7 @@
 'use client';
 
+import { AlertCircle, Check, Loader2, RefreshCw, Search, X, Zap } from '@darun/ui';
 import { AdminModal } from '@darun/ui-admin';
-import { AlertCircle, Check, Loader2, RefreshCw, Search, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export type LlmModelItem = {
@@ -198,7 +198,7 @@ export function ModelSelectModal({
     <AdminModal opened={opened} onClose={onClose} title="LLM 모델 조회 및 선택 (/v1/models)" maxWidth="max-w-3xl">
       <div className="flex flex-col gap-4">
         {/* Endpoint Information & Timeout Notice */}
-        <div className="p-3 bg-dark-50 rounded-xl border border-dark-100 flex flex-col gap-1.5">
+        <div className="p-3 bg-surface-50 rounded-xl border border-dark-100 flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-xs text-dark-600">
             <span className="font-medium truncate">
               엔드포인트: <span className="font-mono text-dark-900">{endpoint || 'https://openrouter.ai/api/v1'}</span>
@@ -213,8 +213,8 @@ export function ModelSelectModal({
               새로고침
             </button>
           </div>
-          <div className="flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200">
-            <Zap className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-1.5 text-xs text-yellow-800 bg-yellow-50 p-2 rounded-lg border border-yellow-200">
+            <Zap className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
             <span>
               <strong>30초 타임아웃 방지 팁:</strong> 거대 무료 모델(`:free`)이나 추론 모델은 대기열 및 생각 시간으로
               인해 번역 요청 시 20~30초 제한을 초과하기 쉽습니다. 빠른 속도(2~5초)를 지원하는{' '}
@@ -238,6 +238,7 @@ export function ModelSelectModal({
               type="button"
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-dark-700"
+              aria-label="검색어 지우기"
             >
               <X className="w-4 h-4" />
             </button>
@@ -256,7 +257,7 @@ export function ModelSelectModal({
                 className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${
                   isSelected
                     ? 'bg-dark-900 text-white border-dark-900'
-                    : 'bg-white hover:bg-dark-50 text-dark-700 border-dark-200'
+                    : 'bg-white hover:bg-surface-100 text-dark-700 border-dark-200'
                 }`}
               >
                 {cat.label}
@@ -289,15 +290,15 @@ export function ModelSelectModal({
 
         {/* Error View */}
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="p-4 bg-cherry-50 border border-cherry-200 rounded-xl text-cherry-800 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-cherry-600 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="text-sm font-semibold">모델 목록 조회 실패</div>
-              <div className="text-xs text-red-700 mt-0.5">{error}</div>
+              <div className="text-xs text-cherry-700 mt-0.5">{error}</div>
               <button
                 type="button"
                 onClick={() => void fetchModels()}
-                className="mt-2 text-xs font-medium text-red-900 bg-red-100 hover:bg-red-200 px-2.5 py-1 rounded transition"
+                className="mt-2 text-xs font-medium text-cherry-900 bg-cherry-100 hover:bg-cherry-200 px-2.5 py-1 rounded transition"
               >
                 다시 시도
               </button>
@@ -341,8 +342,8 @@ export function ModelSelectModal({
                     onClick={() => handleSelect(model.id)}
                     className={`w-full text-left p-3 rounded-xl border transition flex flex-col gap-1.5 group ${
                       isCurrent
-                        ? 'border-dark-900 bg-dark-50/70 ring-2 ring-dark-900/10'
-                        : 'border-dark-200 bg-white hover:border-dark-400 hover:bg-dark-50/40'
+                        ? 'border-dark-900 bg-surface-50/70 ring-2 ring-dark-900/10'
+                        : 'border-dark-200 bg-white hover:border-dark-400 hover:bg-surface-100/40'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -351,24 +352,24 @@ export function ModelSelectModal({
                           {model.id}
                         </span>
                         {isFast && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                          <span className="inline-flex items-center gap-0.5 text-2xs font-medium px-1.5 py-0.5 rounded bg-brown-50 text-brown-700 border border-brown-200">
                             <Zap className="w-3 h-3" />
                             빠른 응답
                           </span>
                         )}
                         {isFree && (
-                          <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="text-2xs font-medium px-1.5 py-0.5 rounded bg-leaf-50 text-leaf-700 border border-leaf-200">
                             FREE
                           </span>
                         )}
                         {model.context_length && (
-                          <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-dark-100 text-dark-600">
+                          <span className="text-2xs font-mono px-1.5 py-0.5 rounded bg-dark-100 text-dark-600">
                             {Math.round(model.context_length / 1000)}k ctx
                           </span>
                         )}
                       </div>
                       {isCurrent && (
-                        <span className="shrink-0 flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                        <span className="shrink-0 flex items-center gap-1 text-xs font-semibold text-leaf-600">
                           <Check className="w-4 h-4" />
                           선택됨
                         </span>

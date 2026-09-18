@@ -9,7 +9,7 @@ import {
   type VisualPlatform,
   type VisualScreenType,
 } from '@darun/provider-graphql';
-import { Button } from '@darun/ui';
+import { Button, ImageOff, Loader2, Pencil, Plus, Trash2 } from '@darun/ui';
 import {
   AdminEmptyState,
   AdminErrorState,
@@ -20,7 +20,6 @@ import {
 } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
-import { ImageOff, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -125,7 +124,7 @@ function ScreenshotImage({ src, alt }: { src: string; alt: string }) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-surface-200 text-dark-400 p-2 text-center">
         <ImageOff size={24} />
-        <span className="text-[11px] text-dark-500">이미지를 불러올 수 없음</span>
+        <span className="text-2xs text-dark-500">이미지를 불러올 수 없음</span>
       </div>
     );
   }
@@ -199,7 +198,7 @@ function ScreenshotMetadataEditor({
 
   return (
     <form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-2 px-1 pb-1">
-      <label className="flex flex-col gap-1 text-[11px] font-semibold text-dark-600">
+      <label className="flex flex-col gap-1 text-2xs font-semibold text-dark-600">
         이미지 alt
         <input
           value={draft.imageAlt}
@@ -209,7 +208,7 @@ function ScreenshotMetadataEditor({
           className="h-9 rounded-lg border border-dark-200 bg-white px-2.5 text-xs font-normal text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
         />
       </label>
-      <label className="flex flex-col gap-1 text-[11px] font-semibold text-dark-600">
+      <label className="flex flex-col gap-1 text-2xs font-semibold text-dark-600">
         제목
         <input
           value={draft.title}
@@ -220,7 +219,7 @@ function ScreenshotMetadataEditor({
           className="h-9 rounded-lg border border-dark-200 bg-white px-2.5 text-xs font-normal text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
         />
       </label>
-      <label className="flex flex-col gap-1 text-[11px] font-semibold text-dark-600">
+      <label className="flex flex-col gap-1 text-2xs font-semibold text-dark-600">
         플랫폼
         <select
           value={draft.platform}
@@ -240,7 +239,7 @@ function ScreenshotMetadataEditor({
           ))}
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-[11px] font-semibold text-dark-600">
+      <label className="flex flex-col gap-1 text-2xs font-semibold text-dark-600">
         화면 유형
         <select
           value={draft.screenType}
@@ -412,12 +411,12 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                       type="button"
                       onClick={() => handleDelete(screenshot.id)}
                       disabled={deletingId !== null}
-                      className="rounded p-1 text-dark-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                      className="rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 disabled:opacity-50"
                       title={deletingId === screenshot.id ? '삭제 중...' : '스크린샷 삭제'}
                       aria-label={deletingId === screenshot.id ? '삭제 중' : '스크린샷 삭제'}
                     >
                       {deletingId === screenshot.id ? (
-                        <Loader2 size={16} className="animate-spin text-red-600 motion-reduce:animate-none" />
+                        <Loader2 size={16} className="animate-spin text-cherry-600 motion-reduce:animate-none" />
                       ) : (
                         <Trash2 size={16} />
                       )}
