@@ -17,7 +17,7 @@ export const MagazineContentPage = ({
 
   return (
     <Layout>
-      <main className="flex w-full flex-col">
+      <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col bg-gradient-to-b from-surface-50/60 via-white to-white">
         <ContentArea className="flex flex-col gap-6 py-6 md:gap-8 md:py-8">
           <Breadcrumb
             data-testid="breadcrumb-magazine"

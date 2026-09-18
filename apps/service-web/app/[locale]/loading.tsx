@@ -4,6 +4,13 @@ import { TrendingProductSkeleton } from '@darun/products-shell/src/shells/Trendi
 import { ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 
+const DarkSkeleton = ({ className = '' }: { className?: string }) => (
+  <div
+    aria-hidden="true"
+    className={`${className} animate-pulse bg-gradient-to-r from-white/10 via-white/20 to-white/10 motion-reduce:animate-none`}
+  />
+);
+
 export default function Loading() {
   return (
     <Layout>
@@ -11,21 +18,21 @@ export default function Loading() {
         <section className="relative isolate overflow-hidden bg-dark-900">
           <ContentArea className="relative z-10 py-14 sm:py-16 md:py-20">
             <div className="flex max-w-2xl flex-col gap-5 md:gap-6">
-              <div className="h-7 w-64 animate-pulse rounded-full bg-white/10 motion-reduce:animate-none" />
+              <DarkSkeleton className="h-7 w-64 rounded-full" />
               <div className="flex flex-col gap-3">
-                <div className="h-5 w-48 animate-pulse rounded bg-white/10 motion-reduce:animate-none" />
-                <div className="h-10 w-4/5 animate-pulse rounded-lg bg-white/15 motion-reduce:animate-none sm:h-12 md:h-14" />
+                <DarkSkeleton className="h-5 w-48 rounded" />
+                <DarkSkeleton className="h-10 w-4/5 rounded-lg sm:h-12 md:h-14" />
               </div>
               <div className="flex max-w-xl flex-col gap-1.5">
-                <div className="h-4 w-full animate-pulse rounded bg-white/10 motion-reduce:animate-none" />
-                <div className="h-4 w-3/4 animate-pulse rounded bg-white/10 motion-reduce:animate-none" />
+                <DarkSkeleton className="h-4 w-full rounded" />
+                <DarkSkeleton className="h-4 w-3/4 rounded" />
               </div>
               <div className="flex flex-wrap items-center gap-2 pt-1">
-                <div className="h-4 w-12 animate-pulse rounded bg-white/10 motion-reduce:animate-none" />
-                <div className="h-6 w-16 animate-pulse rounded-full bg-white/10 motion-reduce:animate-none" />
-                <div className="h-6 w-20 animate-pulse rounded-full bg-white/10 motion-reduce:animate-none" />
-                <div className="h-6 w-16 animate-pulse rounded-full bg-white/10 motion-reduce:animate-none" />
-                <div className="h-6 w-24 animate-pulse rounded-full bg-white/10 motion-reduce:animate-none" />
+                <DarkSkeleton className="h-4 w-12 rounded" />
+                <DarkSkeleton className="h-6 w-16 rounded-full" />
+                <DarkSkeleton className="h-6 w-20 rounded-full" />
+                <DarkSkeleton className="h-6 w-16 rounded-full" />
+                <DarkSkeleton className="h-6 w-24 rounded-full" />
               </div>
             </div>
           </ContentArea>

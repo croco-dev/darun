@@ -45,22 +45,28 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
   }, [isOpen, answer]);
 
   return (
-    <div className="w-full overflow-hidden rounded-card-lg border border-dark-150/80 bg-white shadow-card transition-all duration-200 hover:border-dark-300 hover:shadow-card-hover">
+    <div
+      className={`w-full overflow-hidden rounded-card-lg border bg-white transition-all duration-200 ${
+        isOpen
+          ? 'border-dark-300 shadow-card-hover'
+          : 'border-dark-150/80 shadow-card hover:border-dark-300 hover:shadow-card-hover'
+      }`}
+    >
       <button
         type="button"
         onClick={() => setIsOpen(prev => !prev)}
         id={buttonId}
         aria-expanded={isOpen}
         aria-controls={panelId}
-        className="group flex w-full cursor-pointer items-center justify-between gap-4 bg-transparent p-5 text-left transition-colors duration-200 hover:bg-surface-100 active:bg-surface-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transition-none"
+        className="group flex w-full cursor-pointer items-center justify-between gap-4 bg-transparent p-5 text-left transition-colors duration-200 hover:bg-surface-100/70 active:bg-surface-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transition-none"
       >
-        <p className="flex-1 text-base font-semibold leading-snug tracking-tight text-dark-900 break-keep">
+        <p className="flex-1 text-base font-bold leading-snug tracking-tight text-dark-900 break-keep">
           {question}
         </p>
         <div
           aria-hidden="true"
-          className={`shrink-0 rounded-full bg-surface-100 p-1.5 text-dark-500 transition-all duration-300 ease-out group-hover:bg-surface-200/80 group-hover:text-dark-900 motion-reduce:transition-none motion-reduce:transform-none ${
-            isOpen ? 'rotate-180' : 'rotate-0'
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-dark-150/70 bg-surface-100 text-dark-600 shadow-2xs transition-all duration-300 ease-out group-hover:border-dark-300 group-hover:bg-surface-200/80 group-hover:text-dark-900 motion-reduce:transition-none motion-reduce:transform-none ${
+            isOpen ? 'rotate-180 bg-surface-200/80 text-dark-900' : 'rotate-0'
           }`}
         >
           <ChevronDown size={16} className="stroke-[2.25]" />
@@ -76,7 +82,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         }}
         className="overflow-hidden transition-[max-height,opacity] duration-300 ease-out motion-reduce:transition-none"
       >
-        <div ref={panelRef} className="border-t border-dark-150/70 bg-surface-50/50 px-5 pb-5 pt-4 text-dark-600">
+        <div ref={panelRef} className="border-t border-dark-150/70 bg-surface-50/70 px-5 pb-5 pt-4 text-dark-700">
           <p className="whitespace-pre-wrap text-sm leading-relaxed break-keep sm:text-base">{answer}</p>
         </div>
       </section>

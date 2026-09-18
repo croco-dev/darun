@@ -25,10 +25,10 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
     <form
       role="search"
       aria-label={t('searchAriaLabel')}
-      className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-solid border-dark-150 bg-white px-3.5 py-2 shadow-button transition-all duration-200 ease-out focus-within:border-dark-900 focus-within:ring-2 focus-within:ring-dark-900/10 focus-within:shadow-button-hover motion-reduce:transition-none"
+      className="group flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-solid border-dark-150 bg-white px-3.5 py-2 shadow-button transition-all duration-200 ease-out focus-within:border-dark-900 focus-within:ring-2 focus-within:ring-dark-900/15 focus-within:shadow-button-hover motion-reduce:transition-none"
       onSubmit={onSubmit}
     >
-      <Search size={18} className="shrink-0 text-dark-400" aria-hidden="true" />
+      <Search size={18} className="shrink-0 text-dark-400 transition-colors duration-200 group-focus-within:text-dark-900" aria-hidden="true" />
       <input
         aria-label={t('searchAriaLabel')}
         type="text"
@@ -42,7 +42,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
         <button
           type="button"
           onClick={() => setQuery('')}
-          className="shrink-0 rounded-full p-0.5 text-dark-400 transition-transform duration-150 hover:bg-surface-200 hover:text-dark-700 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transform-none"
+          className="shrink-0 rounded-full p-1 text-dark-400 transition-all duration-150 hover:bg-surface-200 hover:text-dark-900 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transform-none"
           aria-label={t('clearSearch')}
         >
           <X size={14} />
@@ -50,7 +50,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
       ) : (
         <kbd
           aria-hidden="true"
-          className="hidden select-none items-center rounded border border-dark-150 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-400 font-mono shadow-2xs sm:inline-flex"
+          className="hidden select-none items-center rounded-md border border-dark-150/90 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-500 font-mono shadow-2xs sm:inline-flex"
         >
           ⌘K
         </kbd>

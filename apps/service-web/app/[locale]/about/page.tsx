@@ -134,7 +134,7 @@ export default async function AboutPage({ params }: Props) {
     <Layout>
       <JsonLd data={breadcrumbList} />
       <JsonLd data={aboutPageJsonLd} />
-      <main className="flex w-full flex-col">
+      <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col bg-gradient-to-b from-surface-50/60 via-white to-white">
         <ContentArea className="flex max-w-4xl flex-col gap-8 py-10 md:gap-10 md:py-16">
           <Breadcrumb
             data-testid="breadcrumb-about"
@@ -183,10 +183,10 @@ export default async function AboutPage({ params }: Props) {
                 className="flex flex-col gap-3 rounded-card-lg border border-dark-150/80 bg-white p-6 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover md:p-7"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-dark-150 bg-surface-100 font-mono text-xs font-bold text-dark-700">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150/80 bg-gradient-to-br from-surface-50 to-surface-100 font-mono text-xs font-bold text-dark-700 shadow-2xs">
                     {section.num}
                   </span>
-                  <h2 className="text-lg font-bold tracking-tight text-dark-900 break-keep md:text-xl">
+                  <h2 className="text-lg font-extrabold tracking-tight text-dark-900 break-keep md:text-xl">
                     {isKo ? section.titleKo : section.titleEn}
                   </h2>
                 </div>
@@ -198,10 +198,10 @@ export default async function AboutPage({ params }: Props) {
 
             <section className="flex flex-col gap-4 rounded-card-lg border border-dark-150/80 bg-surface-100/60 p-6 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover md:p-7">
               <div className="flex items-center gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-dark-150 bg-white font-mono text-xs font-bold text-dark-700">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150/80 bg-white font-mono text-xs font-bold text-dark-700 shadow-2xs">
                   05
                 </span>
-                <h2 className="text-lg font-bold tracking-tight text-dark-900 break-keep md:text-xl">
+                <h2 className="text-lg font-extrabold tracking-tight text-dark-900 break-keep md:text-xl">
                   {isKo ? '5. 운영 주체 및 문의' : '5. Operation and Feedback'}
                 </h2>
               </div>

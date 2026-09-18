@@ -90,7 +90,11 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       data-testid="compare-button"
       aria-pressed={isAdded}
       title={buttonLabel}
-      className="group h-10 transition-all duration-200 active:scale-[0.98]"
+      className={`group h-10 sm:h-11 px-3.5 sm:px-4 transition-all duration-200 active:scale-95 ${
+        isAdded
+          ? 'border-dark-900 bg-dark-900 text-white shadow-button hover:border-dark-800 hover:bg-dark-800'
+          : 'border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover'
+      }`}
     >
       <div className="flex items-center gap-1.5">
         {isAdded ? (
@@ -101,7 +105,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
         ) : (
           <Plus
             size={16}
-            className="text-dark-600 stroke-[2] transition-transform duration-200 group-hover:scale-110 group-hover:text-dark-900"
+            className="text-dark-600 stroke-[2.25] transition-transform duration-200 group-hover:scale-110 group-hover:text-dark-900"
           />
         )}
         <span className="break-keep font-semibold">{buttonLabel}</span>

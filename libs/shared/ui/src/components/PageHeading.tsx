@@ -38,6 +38,7 @@ export function PageHeading({
   ...props
 }: PageHeadingProps) {
   const isCentered = align === 'center';
+  const isSmall = size === 'sm';
   return (
     <div className={cn(pageHeadingVariants({ size, align }), className)} {...props}>
       <div
@@ -46,7 +47,12 @@ export function PageHeading({
           isCentered ? 'items-center justify-center text-center' : 'items-start justify-between'
         )}
       >
-        <h1 className="break-keep text-2xl font-bold leading-tight tracking-tight text-dark-900 sm:text-3xl">
+        <h1
+          className={cn(
+            'break-keep font-extrabold leading-tight tracking-tight text-dark-900',
+            isSmall ? 'text-2xl sm:text-3xl' : 'text-2xl sm:text-3xl md:text-4xl'
+          )}
+        >
           {title}
         </h1>
         {moreLink && <span className="inline-flex shrink-0 items-center">{moreLink}</span>}

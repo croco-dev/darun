@@ -5,6 +5,7 @@ import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
+import { LocaleToggle } from '../../LocaleToggle';
 import { HeaderLoginButton } from '../HeaderLoginButton';
 import { HeaderSearchForm } from '../HeaderSearchForm';
 import { useHeader } from './useHeader';
@@ -29,8 +30,8 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
                 aria-current={isRanking ? 'page' : undefined}
                 className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isRanking
-                    ? 'bg-surface-100 font-bold text-dark-900 shadow-2xs'
-                    : 'text-dark-700 hover:bg-surface-100 hover:text-dark-900'
+                    ? 'border border-dark-150/80 bg-surface-100/90 font-bold text-dark-900 shadow-2xs'
+                    : 'text-dark-700 hover:bg-surface-100/80 hover:text-dark-900'
                 }`}
               >
                 {t('ranking')}
@@ -40,8 +41,8 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
                 aria-current={isBrowse ? 'page' : undefined}
                 className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isBrowse
-                    ? 'bg-surface-100 font-bold text-dark-900 shadow-2xs'
-                    : 'text-dark-700 hover:bg-surface-100 hover:text-dark-900'
+                    ? 'border border-dark-150/80 bg-surface-100/90 font-bold text-dark-900 shadow-2xs'
+                    : 'text-dark-700 hover:bg-surface-100/80 hover:text-dark-900'
                 }`}
               >
                 {t('browse')}
@@ -54,14 +55,15 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
                 aria-hidden="true"
                 className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-dark-150 bg-white px-3.5 py-2 shadow-button"
               >
-                <div className="h-4 w-4 animate-pulse rounded-full bg-surface-200 motion-reduce:animate-none" />
-                <div className="h-4 w-32 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
+                <div className="h-4 w-4 animate-pulse rounded-full bg-gradient-to-r from-surface-100 via-surface-200 to-surface-100 motion-reduce:animate-none" />
+                <div className="h-4 w-32 animate-pulse rounded bg-gradient-to-r from-surface-100 via-surface-200 to-surface-100 motion-reduce:animate-none" />
               </div>
             }
           >
             <HeaderSearchForm />
           </Suspense>
-          <div className="hidden h-max shrink-0 items-center gap-2 md:flex">
+          <div className="hidden h-max shrink-0 items-center gap-2.5 md:flex">
+            <LocaleToggle />
             <HeaderLoginButton />
             <a
               target="_blank"

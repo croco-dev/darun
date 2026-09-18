@@ -30,11 +30,11 @@ export const AlternativeProductList = bind(
         {alternatives.map((alternative: AlternativeProduct) => (
           <div
             key={alternative.id}
-            className="flex items-center justify-between gap-4 rounded-card-lg border border-dark-150 bg-white p-4 shadow-card transition-colors duration-200 ease-out sm:p-5"
+            className="flex h-full items-center justify-between gap-3.5 rounded-card-lg border border-dark-150 bg-white p-4 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none sm:gap-4 sm:p-5"
           >
             <Link
               href={`/${locale}/products/${alternative.slug}?from=related`}
-              className="group min-w-0 flex-1 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              className="group flex h-full min-w-0 flex-1 items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               <ProductItem
                 name={alternative.name}

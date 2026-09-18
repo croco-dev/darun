@@ -10,7 +10,6 @@ export const ProductInformation = bind(useProductInformation, ({ name, logoUrl, 
     logoUrl={logoUrl}
     summary={summary}
     isHero
-    isAlignCenter
     nameAs="h1"
     tagVariant="square"
     tags={tags && tags.map(tag => tag.name)}
