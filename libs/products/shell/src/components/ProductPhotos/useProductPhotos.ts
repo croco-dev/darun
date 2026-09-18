@@ -3,8 +3,7 @@ import { useSuspenseQuery } from '@apollo/client/react';
 import { GetPhotosOnProductPhotosDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 
-
-gql`
+void gql`
   query GetPhotosOnProductPhotos($slug: String!, $locale: String!) {
     productBySlug(slug: $slug, locale: $locale) {
       id
@@ -24,9 +23,10 @@ export function useProductPhotos({ slug }: ProductPhotosProps) {
     variables: { slug, locale },
   });
   return {
-    photos: data?.productBySlug?.screenshots.map(screenshot => ({
-      imageUrl: screenshot.imageUrl,
-      imageAlt: screenshot.imageAlt,
-    })),
+    photos:
+      data?.productBySlug?.screenshots?.map(screenshot => ({
+        imageUrl: screenshot.imageUrl,
+        imageAlt: screenshot.imageAlt,
+      })) ?? [],
   };
 }

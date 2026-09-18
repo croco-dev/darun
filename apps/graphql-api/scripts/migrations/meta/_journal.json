@@ -33,8 +33,15 @@
     {
       "idx": 4,
       "version": "7",
-      "when": 1789693717035,
-      "tag": "0004_warm_prima",
+      "when": 1789800000000,
+      "tag": "0004_add_brave_api_key_to_llm_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789900000000,
+      "tag": "0005_warm_prima",
       "breakpoints": true
     }
   ]
