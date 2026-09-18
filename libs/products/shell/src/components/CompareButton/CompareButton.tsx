@@ -2,7 +2,7 @@
 
 import { AnalyticsEvents, track, type ProductAttributionSource } from '@darun/analytics-client';
 import { Button, Check, Plus } from '@darun/ui';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 

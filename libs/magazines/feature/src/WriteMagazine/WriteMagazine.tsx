@@ -131,10 +131,9 @@ export const WriteMagazine = bind(
                 <Button
                   type="button"
                   variant="contained"
-                  color="secondary"
+                  color="danger"
                   disabled={isSubmitting}
                   onClick={() => handleFileRemove()}
-                  className="!bg-red-600 hover:!bg-red-700 !text-white !border-transparent"
                 >
                   이미지 삭제
                 </Button>

@@ -12,7 +12,7 @@ import { Button } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal, AdminPanel } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
-import { AlertCircle, CheckCircle2, Clock, Copy, Globe, Info, RefreshCw, RotateCw, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Copy, Globe, Info, RefreshCw, RotateCw, Sparkles } from '@darun/ui';
 import React, { useEffect, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -122,28 +122,28 @@ function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case 'pending':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200">
           <Clock size={12} />
           대기 중
         </span>
       );
     case 'in_progress':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-brown-50 text-brown-700 border border-brown-200 animate-pulse">
           <RotateCw size={12} className="animate-spin" />
           진행 중
         </span>
       );
     case 'completed':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-leaf-50 text-leaf-700 border border-leaf-200">
           <CheckCircle2 size={12} />
           완료
         </span>
       );
     case 'failed':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-cherry-50 text-cherry-700 border border-cherry-200">
           <AlertCircle size={12} />
           실패
         </span>
@@ -356,7 +356,7 @@ export function LlmJobListSection() {
 
         <div className="flex items-center gap-2">
           {hasActiveJobs && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-brown-600 bg-brown-50 px-2.5 py-1 rounded-full border border-brown-200">
               <RotateCw size={12} className="animate-spin" />
               실시간 갱신 중
             </span>
@@ -439,6 +439,7 @@ export function LlmJobListSection() {
                             onClick={() => copyToClipboard(job.id, '작업 ID가')}
                             className="text-dark-400 hover:text-dark-700 transition"
                             title="전체 ID 복사"
+                            aria-label="작업 ID 복사"
                           >
                             <Copy size={12} />
                           </button>
@@ -449,9 +450,9 @@ export function LlmJobListSection() {
                       <td className="border-r border-dark-200 px-4 py-3 text-xs text-dark-800 font-medium">
                         <div className="flex items-center gap-1.5">
                           {job.jobType === 'translation' ? (
-                            <Globe size={13} className="text-teal-600 shrink-0" />
+                            <Globe size={13} className="text-leaf-700 shrink-0" />
                           ) : (
-                            <Sparkles size={13} className="text-amber-500 shrink-0" />
+                            <Sparkles size={13} className="text-yellow-600 shrink-0" />
                           )}
                           <span className="truncate">{job.jobTypeLabel}</span>
                         </div>
@@ -466,6 +467,7 @@ export function LlmJobListSection() {
                             onClick={() => copyToClipboard(job.entityId, '엔티티 ID가')}
                             className="text-dark-400 hover:text-dark-700 transition shrink-0"
                             title="엔티티 ID 복사"
+                            aria-label="엔티티 ID 복사"
                           >
                             <Copy size={12} />
                           </button>
@@ -481,18 +483,20 @@ export function LlmJobListSection() {
                       <td className="border-r border-dark-200 px-4 py-3 text-xs">
                         {hasError ? (
                           <div className="flex items-start gap-1.5">
-                            <span
-                              className="text-red-600 font-medium line-clamp-2 cursor-pointer hover:underline"
+                            <button
+                              type="button"
+                              className="text-left text-cherry-700 font-medium line-clamp-2 cursor-pointer hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-500/60 focus-visible:ring-offset-1 rounded-sm"
                               onClick={() => setSelectedErrorJob(job)}
                               title="클릭하여 상세 에러 확인"
                             >
                               {job.error}
-                            </span>
+                            </button>
                             <button
                               type="button"
                               onClick={() => setSelectedErrorJob(job)}
-                              className="text-red-500 hover:text-red-700 shrink-0 mt-0.5"
+                              className="text-cherry-500 hover:text-cherry-700 shrink-0 mt-0.5"
                               title="에러 상세 보기"
+                              aria-label="에러 상세 보기"
                             >
                               <Info size={13} />
                             </button>
@@ -522,13 +526,13 @@ export function LlmJobListSection() {
                             color="secondary"
                             onClick={() => void handleRetry(job)}
                             disabled={isRetrying}
-                            className="inline-flex items-center gap-1 py-1 px-2.5 text-xs text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 font-semibold"
+                            className="inline-flex items-center gap-1 py-1 px-2.5 text-xs text-cherry-700 border-cherry-200 hover:bg-cherry-50 hover:border-cherry-300 font-semibold"
                           >
                             <RotateCw size={11} className={isRetrying ? 'animate-spin' : ''} />
                             재시도
                           </Button>
                         ) : job.status === 'pending' || job.status === 'in_progress' ? (
-                          <span className="text-xs text-blue-600 font-medium">처리 중</span>
+                          <span className="text-xs text-brown-600 font-medium">처리 중</span>
                         ) : (
                           <span className="text-xs text-dark-300">-</span>
                         )}
@@ -570,7 +574,7 @@ export function LlmJobListSection() {
 
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold text-dark-700">에러 메시지</span>
-              <pre className="p-3 bg-red-50/60 border border-red-200 rounded-lg text-xs text-red-800 font-mono whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
+              <pre className="p-3 bg-cherry-50/60 border border-cherry-200 rounded-lg text-xs text-cherry-800 font-mono whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
                 {selectedErrorJob.error || '에러 내용이 없습니다.'}
               </pre>
             </div>

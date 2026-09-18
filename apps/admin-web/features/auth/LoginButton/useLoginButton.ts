@@ -1,6 +1,6 @@
 import { useAuthService, useAuthState } from '@darun/provider-auth/client';
 import { notifications } from '@mantine/notifications';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } from '@darun/utils-router';
 
 export function useLoginButton() {
   const { isLoading } = useAuthState();

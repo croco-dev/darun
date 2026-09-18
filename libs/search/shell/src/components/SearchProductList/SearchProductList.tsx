@@ -9,9 +9,8 @@ import {
   CompactTrendingPreviewForSearchProductListDocument,
 } from '@darun/provider-graphql';
 import { Search } from '@darun/ui';
-import { useNavigate } from '@darun/utils-router';
+import { useNavigate, useSearchParams } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
-import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { SearchProduct, useSearchProductList } from './useSearchProductList';

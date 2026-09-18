@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@darun/utils-router';
 import { ReactNode } from 'react';
 import { Navbar } from '../Navbar';
 

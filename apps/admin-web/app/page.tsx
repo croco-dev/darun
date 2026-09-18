@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
+import { Archive, ArrowRight, Building2, ExternalLink, Newspaper, Plus, Sliders, Sparkles } from '@darun/ui';
 import { PageShell } from '@darun/ui-admin';
 import { getClient } from '@darun/utils-apollo-client/server';
-import { Archive, ArrowRight, Building2, ExternalLink, Newspaper, Plus, Sliders, Sparkles } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@darun/utils-router';
 
 const productsCountQuery = gql`
   query ProductsCountOnAdminDashboard {
@@ -34,7 +34,7 @@ export default async function HomePage() {
           ? `현재 총 ${productsCount.toLocaleString()}개의 프로덕트가 등록되어 관리 중입니다.`
           : '등록된 프로덕트 및 기능 정보, 스크린샷, 대안 서비스를 관리합니다.',
       icon: Archive,
-      iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
+      iconBg: 'bg-brown-50 text-brown-600 border-brown-100',
       listHref: '/products',
       newHref: '/products/new',
       newLabel: '서비스 추가',
@@ -44,7 +44,7 @@ export default async function HomePage() {
       title: '기업(운영사) 관리',
       description: '서비스 운영사 및 파트너 기업의 기본 정보와 개업일을 관리합니다.',
       icon: Building2,
-      iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+      iconBg: 'bg-leaf-50 text-leaf-600 border-leaf-100',
       listHref: '/companies',
       newHref: '/companies/new',
       newLabel: '기업 추가',
@@ -54,7 +54,7 @@ export default async function HomePage() {
       title: '매거진 발행',
       description: '다른 매거진 아티클과 테크 트렌드 콘텐츠를 작성하고 발행합니다.',
       icon: Newspaper,
-      iconBg: 'bg-purple-50 text-purple-600 border-purple-100',
+      iconBg: 'bg-yellow-50 text-yellow-600 border-yellow-100',
       listHref: '/magazines',
       newHref: '/magazines/create',
       newLabel: '매거진 발행',
@@ -64,7 +64,7 @@ export default async function HomePage() {
       title: 'LLM & AI 설정',
       description: '번역 및 콘텐츠 자동 생성에 사용되는 LLM 엔드포인트와 API 키를 설정합니다.',
       icon: Sliders,
-      iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
+      iconBg: 'bg-cherry-50 text-cherry-600 border-cherry-100',
       listHref: '/settings/llm',
       newHref: '/settings/llm',
       newLabel: '설정 확인',
@@ -118,7 +118,7 @@ export default async function HomePage() {
                 <div className="pt-3 border-t border-dark-150/70 mt-auto">
                   <Link
                     href={section.listHref}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-dark-900 hover:text-blue-600 transition"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-dark-900 hover:text-brown-600 transition"
                   >
                     <span>관리 바로가기</span>
                     <ArrowRight size={13} />
@@ -132,7 +132,7 @@ export default async function HomePage() {
         {/* System Status & Environment Info */}
         <div className="rounded-2xl border border-dark-200 bg-white p-6 shadow-card">
           <h3 className="text-sm font-bold text-dark-900 mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-teal-500" />
+            <span className="w-2 h-2 rounded-full bg-leaf-500" />
             시스템 상태 및 운영 가이드
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">

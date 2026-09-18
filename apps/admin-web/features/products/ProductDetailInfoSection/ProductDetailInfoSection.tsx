@@ -7,10 +7,9 @@ import {
   PublishProductButton,
   TranslateProductButton,
 } from '@darun/products-feature';
-import { Button } from '@darun/ui';
+import { Button, ExternalLink } from '@darun/ui';
 import { AdminModal, AdminPanel } from '@darun/ui-admin';
 import { useDisclosure } from '@mantine/hooks';
-import { ExternalLink } from 'lucide-react';
 
 type ProductDetailInfoSectionProps = {
   slug: string;

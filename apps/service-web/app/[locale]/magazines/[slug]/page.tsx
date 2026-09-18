@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 import { MagazineContentPage } from '@darun/pages-shell';
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound } from '@darun/utils-router';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
 import { JsonLd } from '../../../../lib/seo/json-ld';

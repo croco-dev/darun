@@ -1,6 +1,6 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } from '@darun/utils-router';
 import { useEffect, useRef } from 'react';
 import { AnalyticsEvents, normalizeProductAttributionSource } from './events';
 import { track } from './posthog';

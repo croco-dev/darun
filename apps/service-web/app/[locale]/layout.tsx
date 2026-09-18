@@ -3,7 +3,7 @@ import '../globals.css';
 
 import { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { notFound } from 'next/navigation';
+import { notFound } from '@darun/utils-router';
 import { CookiesProvider } from 'next-client-cookies/server';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';

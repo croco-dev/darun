@@ -6,9 +6,9 @@ import {
   AddProductLinkOnNewProductLinkFormDocument,
   TempProductBySlugOnProductLinkTableDocument,
 } from '@darun/provider-graphql';
+import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -42,7 +42,7 @@ type NewProductFormProps = {
 };
 
 export function useNewProductLinkForm({ productSlug, children }: NewProductFormProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: {
@@ -69,7 +69,7 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
       if (addProductLink.product?.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
         form.reset();
-        router.push(`/products/${productSlug}`);
+        navigate(`/products/${productSlug}`);
       }
     },
     onError: error => {

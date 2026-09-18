@@ -1,4 +1,4 @@
-import { Chip, Sparkles } from '@darun/ui';
+import { Chip, formatDate, Sparkles } from '@darun/ui';
 
 type ArticleCardProps = {
   thumbnailImageUri?: string;
@@ -9,16 +9,6 @@ type ArticleCardProps = {
   date?: Date;
   href?: string;
 };
-
-function formatDate(date?: Date): string {
-  if (!date) return '';
-  const d = new Date(date);
-  if (Number.isNaN(d.getTime())) return '';
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}.${month}.${day}`;
-}
 
 export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, summary, href }: ArticleCardProps) => {
   const content = (
@@ -53,7 +43,7 @@ export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, 
         <div className="mt-auto flex items-center gap-x-2 pt-3 text-xs text-dark-500">
           {author && <span className="font-medium text-dark-700">{author}</span>}
           {author && date && <span>•</span>}
-          {date && <span>{formatDate(date)}</span>}
+          {date && <span>{formatDate(date, '')}</span>}
         </div>
       </div>
     </>

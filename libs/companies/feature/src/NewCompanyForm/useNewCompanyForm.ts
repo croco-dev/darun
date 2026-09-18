@@ -4,9 +4,9 @@ import {
   AllCompaniesOnAllCompanyListTableDocument,
   CreateCompanyOnNewCompanyFormDocument,
 } from '@darun/provider-graphql';
+import { useNavigate } from '@darun/utils-router';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -60,7 +60,7 @@ export function useNewCompanyForm() {
       address: value => (!value?.trim() ? '주소를 입력해주세요.' : null),
     },
   });
-  const { push } = useRouter();
+  const navigate = useNavigate();
 
   const [mutate, { loading }] = useMutation(CreateCompanyOnNewCompanyFormDocument, {
     refetchQueries: [AllCompaniesOnAllCompanyListTableDocument],
@@ -70,7 +70,7 @@ export function useNewCompanyForm() {
       if (createCompany.company.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
         form.reset();
-        push(`/companies`);
+        navigate('/companies');
       }
     },
     onError: error => {

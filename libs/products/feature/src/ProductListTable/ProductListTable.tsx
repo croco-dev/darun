@@ -1,9 +1,8 @@
 'use client';
 
-import { Button } from '@darun/ui';
+import { Button, ChevronLeft, ChevronRight } from '@darun/ui';
 import { AdminPanel, AdminEmptyState } from '@darun/ui-admin';
 import { useReactTable, getCoreRowModel, createColumnHelper, flexRender } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useProductListTable } from './useProductListTable';
@@ -129,8 +128,12 @@ export function ProductListTable() {
               {table.getRowModel().rows.map((row, index) => (
                 <tr
                   key={row.id}
+                  tabIndex={0}
                   onClick={() => handleRowClick({ record: row.original })}
-                  className={`cursor-pointer border-b border-dark-200 transition hover:bg-surface-100 ${
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleRowClick({ record: row.original });
+                  }}
+                  className={`cursor-pointer border-b border-dark-200 transition hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-dark-900/40 ${
                     index % 2 === 0 ? 'bg-white' : 'bg-surface-100/30'
                   }`}
                 >

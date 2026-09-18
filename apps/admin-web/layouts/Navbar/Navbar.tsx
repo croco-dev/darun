@@ -1,9 +1,8 @@
 'use client';
 
+import { Archive, Building2, Home, Newspaper, Sliders, Sparkles } from '@darun/ui';
 import { Logo } from '@darun/ui-admin';
-import { Link } from '@darun/utils-router';
-import { Archive, Building2, Home, Newspaper, Sliders, Sparkles } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { Link, usePathname } from '@darun/utils-router';
 import { LogoutButton } from '../../features/auth/LogoutButton';
 
 export const navItems = [
@@ -76,10 +75,10 @@ export function Navbar() {
       <div className="pt-4 mt-auto border-t border-dark-200 shrink-0 flex flex-col gap-2">
         <div className="px-3 py-2 rounded-lg bg-surface-100/60 border border-dark-150/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-leaf-500 animate-pulse" />
             <span className="text-xs font-medium text-dark-700">관리자 접속 중</span>
           </div>
-          <span className="text-[10px] text-dark-400 font-mono font-semibold uppercase">
+          <span className="text-2xs text-dark-400 font-mono font-semibold uppercase">
             {process.env['NEXT_PUBLIC_INFRA_ENV'] || process.env['NODE_ENV'] || 'local'}
           </span>
         </div>

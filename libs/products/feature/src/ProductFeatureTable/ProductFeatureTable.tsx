@@ -1,9 +1,8 @@
 'use client';
 
-import { Button } from '@darun/ui';
+import { Button, Pencil } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
-import { Pencil } from 'lucide-react';
 import { useProductFeatureTable } from './useProductFeatureTable';
 
 export const ProductFeatureTable = bind(

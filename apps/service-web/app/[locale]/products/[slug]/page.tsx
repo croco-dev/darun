@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 import { ProductDetailPage } from '@darun/pages-shell';
 import { getLocalizedTag } from '@darun/products-shell';
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound } from '@darun/utils-router';
 import { cache } from 'react';
 import { JsonLd } from '../../../../lib/seo/json-ld';
 import { getOgLocale, getSiteName } from '../../../../lib/seo/metadata';

@@ -7,9 +7,9 @@ import {
   GetProductScreenshotsOnDetailSectionDocument,
 } from '@darun/provider-graphql';
 import { useImageUpload } from '@darun/utils-image-upload';
+import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -56,7 +56,7 @@ type NewProductFormProps = {
 };
 
 export function useNewProductScreenshotForm({ productSlug, children }: NewProductFormProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
@@ -86,7 +86,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
         if (addProductScreenshot.product?.id) {
           notifications.show({ message: '생성되었습니다.', color: 'teal' });
           form.reset();
-          router.push(`/products/${productSlug}`);
+          navigate(`/products/${productSlug}`);
         }
       },
       onError: error => {

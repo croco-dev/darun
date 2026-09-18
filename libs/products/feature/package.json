@@ -29,6 +29,7 @@
     "@darun/translation-service": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/ui-admin": "workspace:*",
+    "@darun/utils-router": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",

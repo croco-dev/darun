@@ -5,7 +5,7 @@ import { LogoutSection } from '../../../features/auth/LogoutSection';
 export default function LogoutPage() {
   return (
     <div className="w-full min-h-screen bg-surface-100 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-[400px] w-[340px] space-y-6">
+      <div className="w-full max-w-sm space-y-6">
         <AdminPanel>
           <AdminSection>
             <AdminSectionHeader title="로그아웃" />

@@ -57,7 +57,7 @@ function getWebSiteJsonLd(locale: 'ko' | 'en') {
 const whatIsDarunFeatures = [
   {
     icon: Compass,
-    iconColor: 'border-amber-500/20 bg-amber-500/10 text-amber-600',
+    iconColor: 'border-yellow-500/20 bg-yellow-500/10 text-yellow-600',
     titleKo: '서비스 탐색과 나란한 비교',
     titleEn: 'Discovery and Comparison',
     descKo:
@@ -67,7 +67,7 @@ const whatIsDarunFeatures = [
   },
   {
     icon: Layers,
-    iconColor: 'border-blue-500/20 bg-blue-500/10 text-blue-600',
+    iconColor: 'border-brown-500/20 bg-brown-500/10 text-brown-600',
     titleKo: '상세 정보와 대안 추천',
     titleEn: 'In-Depth Details & Alternatives',
     descKo:
@@ -77,7 +77,7 @@ const whatIsDarunFeatures = [
   },
   {
     icon: ShieldCheck,
-    iconColor: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600',
+    iconColor: 'border-leaf-500/20 bg-leaf-500/10 text-leaf-600',
     titleKo: '공식 링크 및 최신성 확인',
     titleEn: 'Verified Links & Freshness',
     descKo:

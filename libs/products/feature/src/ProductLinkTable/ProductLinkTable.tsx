@@ -2,10 +2,9 @@
 
 import { gql } from '@apollo/client';
 import { EditProductLinkItemFragment, EditProductLinkItemFragmentDoc, useFragment } from '@darun/provider-graphql';
-import { Button, cn } from '@darun/ui';
+import { Button, cn, Link2, Pencil } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
-import { Link2, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
 import { useProductLinkTable } from './useProductLinkTable';

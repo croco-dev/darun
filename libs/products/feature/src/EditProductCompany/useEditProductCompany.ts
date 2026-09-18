@@ -7,10 +7,10 @@ import {
   SearchCompaniesOnEditProductCompanyDocument,
   TempProductBySlugOnProductCompanyInfoDocument,
 } from '@darun/provider-graphql';
+import { useNavigate } from '@darun/utils-router';
 import { useForm } from '@mantine/form';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
 export const registerProductCompanyOnEditProductCompanyMutationDocument = gql`
@@ -43,7 +43,7 @@ export type UseEditProductCompanyProps = {
 };
 
 export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProductCompanyProps) {
-  const { push } = useRouter();
+  const navigate = useNavigate();
   const { data: currentProductData } = useQuery(TempProductBySlugOnProductCompanyInfoDocument, {
     variables: { slug },
   });
@@ -55,7 +55,7 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
         if (onSubmit) {
           onSubmit();
         } else {
-          push(`/products/${slug}`);
+          navigate(`/products/${slug}`);
         }
       }
     },
@@ -160,7 +160,7 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
     if (onCancel) {
       onCancel();
     } else {
-      push(`/products/${slug}`);
+      navigate(`/products/${slug}`);
     }
   };
 

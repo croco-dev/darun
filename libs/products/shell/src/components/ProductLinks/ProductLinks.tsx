@@ -3,7 +3,7 @@
 import { Button, ExternalLink } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@darun/utils-router';
 import { useLocale } from 'next-intl';
 import { getLocalizedLinkTitle } from '../../utils/localization';
 import { useProductLinks } from './useProductLinks';

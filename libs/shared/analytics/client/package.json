@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@darun/utils-router": "workspace:*",
     "posthog-js": "^1.221.0"
   },
   "devDependencies": {

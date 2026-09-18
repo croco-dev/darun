@@ -1,9 +1,8 @@
 'use client';
 
-import { Button } from '@darun/ui';
+import { Button, ChevronLeft, ChevronRight, ExternalLink, ImageOff, Layers, RefreshCw } from '@darun/ui';
 import { notFound, useNavigate, useSearchParams } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
-import { ChevronLeft, ChevronRight, ExternalLink, ImageOff, Layers, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { VISUAL_PLATFORM_LABELS, VISUAL_FLOW_TYPE_LABELS } from './flowClassifications';
 import { FlowDetailState, useFlowDetail } from './useFlowDetail';
@@ -243,7 +242,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                       }`}
                     >
                       <span className="sr-only">단계 {stepNumber}로 이동</span>
-                      <span className={`text-[10px] font-bold ${isActive ? 'text-dark-900' : 'text-dark-400'}`}>
+                      <span className={`text-2xs font-bold ${isActive ? 'text-dark-900' : 'text-dark-400'}`}>
                         {stepNumber}
                       </span>
                       <img

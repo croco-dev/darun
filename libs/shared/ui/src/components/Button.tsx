@@ -22,6 +22,7 @@ const buttonVariants = cva(
       color: {
         primary: '',
         secondary: '',
+        danger: '',
       },
       active: {
         true: '',
@@ -52,6 +53,18 @@ const buttonVariants = cva(
         color: 'secondary',
         className:
           'border-dark-200 bg-dark-100 text-dark-900 visited:text-dark-900 hover:bg-dark-150 hover:border-dark-300 active:bg-dark-200',
+      },
+      {
+        variant: 'base',
+        color: 'danger',
+        className:
+          'border-cherry-600 bg-cherry-600 text-white visited:text-white hover:bg-cherry-700 hover:border-cherry-700 active:bg-cherry-800',
+      },
+      {
+        variant: 'contained',
+        color: 'danger',
+        className:
+          'border-cherry-600 bg-cherry-600 text-white visited:text-white hover:bg-cherry-700 hover:border-cherry-700 active:bg-cherry-800',
       },
       {
         variant: 'text',
