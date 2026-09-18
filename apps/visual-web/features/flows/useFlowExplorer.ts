@@ -6,6 +6,8 @@ import { VisualFlowsOnExplorerDocument } from '@darun/provider-graphql';
 import type { VisualFlowType, VisualPlatform } from '@darun/provider-graphql';
 import { useNavigate, useSearchParams } from '@darun/utils-router';
 import { useEffect, useMemo, useState } from 'react';
+import { useProductSearchSuggest } from '../product-search/useProductSearchSuggest';
+import type { ProductSuggestion } from '../product-search/useProductSearchSuggest';
 import { VISUAL_FLOWS_PAGE_SIZE } from './explorerDocuments';
 import { isVisualFlowTypeValue, isVisualPlatformValue } from './flowClassifications';
 
@@ -44,6 +46,11 @@ export type FlowExplorerState = {
   onClearFilters: () => void;
   onLoadMore: () => void;
   retry: () => void;
+  suggestions: ProductSuggestion[];
+  isSearchingSuggestions: boolean;
+  onSuggestionSelect: (product: ProductSuggestion) => void;
+  onSuggestClose: () => void;
+  onSearchInputFocus: () => void;
 };
 
 function readFilterParams(searchParams: URLSearchParams) {
@@ -63,6 +70,8 @@ export function useFlowExplorer(): FlowExplorerState {
   const searchParams = useSearchParams();
   const navigate = useNavigate();
   const apolloClient = useApolloClient();
+
+  const { suggestions, isSearching: isSearchingSuggestions, clearSuggestions, suggest } = useProductSearchSuggest();
 
   const filters = useMemo(() => readFilterParams(searchParams), [searchParams]);
   const { query, platform, flowType, product } = filters;
@@ -143,11 +152,17 @@ export function useFlowExplorer(): FlowExplorerState {
   const showQueryLengthError = queryLengthError || hasQueryLengthError;
   const networkError = result.error !== undefined && !hasQueryLengthError;
 
-  const buildUrl = (next: { q?: string | null; platform?: string | null; flowType?: string | null }) => {
+  const buildUrl = (next: {
+    q?: string | null;
+    platform?: string | null;
+    flowType?: string | null;
+    product?: string | null;
+  }) => {
     const params = new URLSearchParams();
     const nextQuery = next.q !== undefined ? next.q : query;
     const nextPlatform = next.platform !== undefined ? next.platform : platform;
     const nextFlowType = next.flowType !== undefined ? next.flowType : flowType;
+    const nextProduct = next.product !== undefined ? next.product : product;
     if (nextQuery !== null) {
       params.set('q', nextQuery);
     }
@@ -157,8 +172,8 @@ export function useFlowExplorer(): FlowExplorerState {
     if (nextFlowType !== null) {
       params.set('flowType', nextFlowType);
     }
-    if (product !== null) {
-      params.set('product', product);
+    if (nextProduct !== null) {
+      params.set('product', nextProduct);
     }
     const queryString = params.toString();
     return queryString.length > 0 ? `/flows?${queryString}` : '/flows';
@@ -202,9 +217,29 @@ export function useFlowExplorer(): FlowExplorerState {
       });
   };
 
+  const handleSearchInputChange = (value: string) => {
+    setSearchInput(value);
+    if (product === null) {
+      suggest(value);
+    }
+  };
+
   const onSearchSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    clearSuggestions();
     navigate(buildUrl({ q: searchInput.trim().length > 0 ? searchInput : null }));
+  };
+
+  const onSuggestionSelect = (selected: ProductSuggestion) => {
+    clearSuggestions();
+    setSearchInput('');
+    navigate(buildUrl({ q: null, product: selected.slug }));
+  };
+
+  const onSearchInputFocus = () => {
+    if (product === null && searchInput.trim().length > 0) {
+      suggest(searchInput);
+    }
   };
 
   const onPlatformChange = (value: string) => {
@@ -217,6 +252,7 @@ export function useFlowExplorer(): FlowExplorerState {
 
   const onClearFilters = () => {
     setSearchInput('');
+    clearSuggestions();
     navigate(product !== null ? `/flows?product=${encodeURIComponent(product)}` : '/flows');
   };
 
@@ -240,12 +276,17 @@ export function useFlowExplorer(): FlowExplorerState {
     flowType,
     product,
     query,
-    onSearchInputChange: setSearchInput,
+    onSearchInputChange: handleSearchInputChange,
     onSearchSubmit,
     onPlatformChange,
     onFlowTypeChange,
     onClearFilters,
     onLoadMore,
     retry,
+    suggestions,
+    isSearchingSuggestions,
+    onSuggestionSelect,
+    onSuggestClose: clearSuggestions,
+    onSearchInputFocus,
   };
 }

@@ -4,6 +4,8 @@ import { Button } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import { ImageOff, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { useRef } from 'react';
+import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
 import { ScreenshotExplorerState, ScreenshotCard, useScreenshotExplorer } from './useScreenshotExplorer';
 import {
   UNCLASSIFIED_LABEL,
@@ -97,7 +99,13 @@ const View = ({
   onClearFilters,
   onLoadMore,
   retry,
+  suggestions,
+  isSearchingSuggestions,
+  onSuggestionSelect,
+  onSuggestClose,
+  onSearchInputFocus,
 }: ScreenshotExplorerState) => {
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const hasFilters = searchInput.trim().length > 0 || platform !== null || screenType !== null || product !== null;
 
   return (
@@ -114,17 +122,31 @@ const View = ({
 
         <form onSubmit={onSearchSubmit} className="flex flex-col gap-3" role="search">
           <div className="flex flex-wrap items-end gap-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:max-w-md">
+            <div className="relative flex min-w-0 flex-1 flex-col gap-1.5 sm:max-w-md">
               <label htmlFor="screenshot-search" className="text-sm font-semibold text-dark-700">
                 스크린샷 검색
               </label>
               <input
+                ref={searchInputRef}
                 id="screenshot-search"
                 type="search"
+                autoComplete="off"
+                aria-expanded={suggestions.length > 0 || (searchInput.trim().length > 0 && isSearchingSuggestions)}
+                aria-controls="screenshot-search-suggest-listbox"
                 value={searchInput}
                 onChange={event => onSearchInputChange(event.currentTarget.value)}
+                onFocus={onSearchInputFocus}
                 placeholder="서비스명, 화면 제목, 설명으로 검색"
                 className="w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-900 shadow-2xs placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+              />
+              <ProductSearchSuggest
+                inputId="screenshot-search"
+                inputRef={searchInputRef}
+                inputValue={searchInput}
+                suggestions={suggestions}
+                isSearching={isSearchingSuggestions}
+                onSelect={onSuggestionSelect}
+                onClose={onSuggestClose}
               />
             </div>
             <Button type="submit" variant="contained" color="primary" size="md">

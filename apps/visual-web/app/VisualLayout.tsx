@@ -23,12 +23,6 @@ export function VisualLayout({ children }: { children: ReactNode }) {
                 다른 <span className="font-medium text-dark-400">Visual</span>
               </span>
             </Link>
-            <a
-              href="https://darun.io/ko"
-              className="rounded-xl px-3 py-1.5 text-sm font-semibold text-dark-700 transition-colors duration-200 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-            >
-              darun.io 서비스 비교
-            </a>
           </div>
         </ContentArea>
       </header>
@@ -37,9 +31,17 @@ export function VisualLayout({ children }: { children: ReactNode }) {
       </div>
       <footer className="border-t border-dark-150 bg-surface-50/75 py-6">
         <ContentArea>
-          <p className="text-xs text-dark-400">
-            © {new Date().getFullYear()} Croco · 다른 Visual은 서비스 화면과 UX를 소개하는 다른(darun)의 공간입니다.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-dark-400">
+              © {new Date().getFullYear()} Croco · 다른 Visual은 서비스 화면과 UX를 소개하는 다른(darun)의 공간입니다.
+            </p>
+            <a
+              href="https://darun.io/ko"
+              className="rounded-lg font-semibold text-dark-500 transition-colors duration-200 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            >
+              darun.io 서비스 비교
+            </a>
+          </div>
         </ContentArea>
       </footer>
     </div>

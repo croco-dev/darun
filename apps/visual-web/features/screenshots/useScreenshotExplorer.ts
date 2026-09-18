@@ -6,6 +6,8 @@ import { VisualScreenshotsOnExplorerDocument } from '@darun/provider-graphql';
 import type { VisualPlatform, VisualScreenType } from '@darun/provider-graphql';
 import { useNavigate, useSearchParams } from '@darun/utils-router';
 import { useEffect, useMemo, useState } from 'react';
+import { useProductSearchSuggest } from '../product-search/useProductSearchSuggest';
+import type { ProductSuggestion } from '../product-search/useProductSearchSuggest';
 import { VISUAL_SCREENSHOTS_PAGE_SIZE } from './documents';
 import { isVisualPlatformValue, isVisualScreenTypeValue } from './visualClassifications';
 
@@ -43,6 +45,11 @@ export type ScreenshotExplorerState = {
   onClearFilters: () => void;
   onLoadMore: () => void;
   retry: () => void;
+  suggestions: ProductSuggestion[];
+  isSearchingSuggestions: boolean;
+  onSuggestionSelect: (product: ProductSuggestion) => void;
+  onSuggestClose: () => void;
+  onSearchInputFocus: () => void;
 };
 
 function readFilterParams(searchParams: URLSearchParams) {
@@ -63,6 +70,8 @@ export function useScreenshotExplorer(): ScreenshotExplorerState {
   const searchParams = useSearchParams();
   const navigate = useNavigate();
   const apolloClient = useApolloClient();
+
+  const { suggestions, isSearching: isSearchingSuggestions, clearSuggestions, suggest } = useProductSearchSuggest();
 
   const filters = useMemo(() => readFilterParams(searchParams), [searchParams]);
   const { query, platform, screenType, product } = filters;
@@ -140,11 +149,17 @@ export function useScreenshotExplorer(): ScreenshotExplorerState {
   const showQueryLengthError = queryLengthError || hasQueryLengthError;
   const networkError = result.error !== undefined && !hasQueryLengthError;
 
-  const buildUrl = (next: { q?: string | null; platform?: string | null; screenType?: string | null }) => {
+  const buildUrl = (next: {
+    q?: string | null;
+    platform?: string | null;
+    screenType?: string | null;
+    product?: string | null;
+  }) => {
     const params = new URLSearchParams();
     const nextQuery = next.q !== undefined ? next.q : query;
     const nextPlatform = next.platform !== undefined ? next.platform : platform;
     const nextScreenType = next.screenType !== undefined ? next.screenType : screenType;
+    const nextProduct = next.product !== undefined ? next.product : product;
     if (nextQuery !== null) {
       params.set('q', nextQuery);
     }
@@ -154,8 +169,8 @@ export function useScreenshotExplorer(): ScreenshotExplorerState {
     if (nextScreenType !== null) {
       params.set('screenType', nextScreenType);
     }
-    if (product !== null) {
-      params.set('product', product);
+    if (nextProduct !== null) {
+      params.set('product', nextProduct);
     }
     const queryString = params.toString();
     return queryString.length > 0 ? `/?${queryString}` : '/';
@@ -199,9 +214,29 @@ export function useScreenshotExplorer(): ScreenshotExplorerState {
       });
   };
 
+  const handleSearchInputChange = (value: string) => {
+    setSearchInput(value);
+    if (product === null) {
+      suggest(value);
+    }
+  };
+
   const onSearchSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    clearSuggestions();
     navigate(buildUrl({ q: searchInput.trim().length > 0 ? searchInput : null }));
+  };
+
+  const onSuggestionSelect = (selected: ProductSuggestion) => {
+    clearSuggestions();
+    setSearchInput('');
+    navigate(buildUrl({ q: null, product: selected.slug }));
+  };
+
+  const onSearchInputFocus = () => {
+    if (product === null && searchInput.trim().length > 0) {
+      suggest(searchInput);
+    }
   };
 
   const onPlatformChange = (value: string) => {
@@ -214,6 +249,7 @@ export function useScreenshotExplorer(): ScreenshotExplorerState {
 
   const onClearFilters = () => {
     setSearchInput('');
+    clearSuggestions();
     navigate(product !== null ? `/?product=${encodeURIComponent(product)}` : '/');
   };
 
@@ -238,12 +274,17 @@ export function useScreenshotExplorer(): ScreenshotExplorerState {
     screenType,
     product,
     query,
-    onSearchInputChange: setSearchInput,
+    onSearchInputChange: handleSearchInputChange,
     onSearchSubmit,
     onPlatformChange,
     onScreenTypeChange,
     onClearFilters,
     onLoadMore,
     retry,
+    suggestions,
+    isSearchingSuggestions,
+    onSuggestionSelect,
+    onSuggestClose: clearSuggestions,
+    onSearchInputFocus,
   };
 }
