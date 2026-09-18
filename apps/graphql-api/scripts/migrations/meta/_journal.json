@@ -29,6 +29,13 @@
       "when": 1789700000000,
       "tag": "0003_add_product_description_jobs",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789693717035,
+      "tag": "0004_warm_prima",
+      "breakpoints": true
     }
   ]
 }
