@@ -231,7 +231,6 @@ describe('ProductDescriptionJobService', () => {
     expect(mockRepository.updateJobStatus).toHaveBeenCalledWith('job-failed', 'pending', {
       message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
       error: null,
-      resetCreatedAt: true,
     });
     expect(mockQueueService.sendJob).toHaveBeenCalledWith({
       jobId: 'job-failed',

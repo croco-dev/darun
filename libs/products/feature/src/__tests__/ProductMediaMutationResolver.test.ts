@@ -30,6 +30,7 @@ vi.mock('type-graphql', () => {
     Mutation: methodDecorator,
     ObjectType: () => () => {},
     Query: methodDecorator,
+    registerEnumType: () => {},
     Resolver: () => () => {},
     Root: () => () => {},
   };
@@ -53,6 +54,7 @@ function createResolver() {
   const deleteProductScreenshot = createMockUseCase();
   const addProductLink = createMockUseCase();
   const updateProductLink = createMockUseCase();
+  const updateProductScreenshot = createMockUseCase();
   const registerProductCompany = createMockUseCase();
   const generateProductDescription = createMockUseCase();
 
@@ -68,6 +70,7 @@ function createResolver() {
     deleteProductScreenshot as never,
     addProductLink as never,
     updateProductLink as never,
+    updateProductScreenshot as never,
     registerProductCompany as never,
     generateProductDescription as never
   );
@@ -115,6 +118,9 @@ describe('ProductMediaMutationResolver', () => {
         productId: 'prod-1',
         imageUrl: 'https://example.com/img.png',
         imageAlt: '이미지',
+        title: null,
+        platform: null,
+        screenType: null,
       });
       expect(result).toEqual({ product });
     });
@@ -180,6 +186,7 @@ describe('ProductMediaMutationResolver', () => {
         {} as never,
         {} as never,
         getProduct as never,
+        {} as never,
         {} as never,
         {} as never,
         {} as never,

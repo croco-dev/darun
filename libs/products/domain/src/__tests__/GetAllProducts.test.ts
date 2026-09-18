@@ -59,6 +59,11 @@ const relatedRepositories = () => ({
     findById: vi.fn(),
     insert: vi.fn(),
     deleteById: vi.fn(),
+    deleteWithLock: vi.fn(),
+    updateById: vi.fn(),
+    findManyVisualPublishedByFilterAndAfterIdAndLimit: vi.fn(),
+    findVisualPublishedById: vi.fn(),
+    countVisualPublishedByFilter: vi.fn(),
   } satisfies ProductScreenshotRepository,
   features: {
     updateById: vi.fn(),

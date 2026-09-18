@@ -4,7 +4,6 @@ export type LlmSetting = {
   apiKey?: string | null;
   model: string;
   thinkingLevel?: string | null;
-  braveApiKey?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -12,6 +12,7 @@ import {
   PublishProduct,
   RegisterProductCompany,
   UpdateProductLink,
+  UpdateProductScreenshot,
   UpdateProductTag,
 } from '@darun/products-domain';
 import { productNotFound, productInvalidArgs } from '@darun/products-domain';
@@ -50,6 +51,7 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
     deleteProductScreenshotUseCase: DeleteProductScreenshot,
     addProductLinkUseCase: AddProductLink,
     updateProductLinkUseCase: UpdateProductLink,
+    updateProductScreenshotUseCase: UpdateProductScreenshot,
     registerProductCompanyUseCase: RegisterProductCompany,
     generateProductDescriptionUseCase: GenerateProductDescription,
     publishProductUseCase: PublishProduct,
@@ -73,6 +75,7 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
       deleteProductScreenshotUseCase,
       addProductLinkUseCase,
       updateProductLinkUseCase,
+      updateProductScreenshotUseCase,
       registerProductCompanyUseCase,
       generateProductDescriptionUseCase,
       publishProductUseCase,

@@ -5,17 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModelSelectModal } from '../features/settings/LlmSettingFormSection/ModelSelectModal';
 
 describe('ModelSelectModal', () => {
-  const originalFetch = globalThis.fetch;
+  const originalFetch = global.fetch;
 
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
-    globalThis.fetch = originalFetch;
-    if (typeof window !== 'undefined') {
-      window.fetch = originalFetch;
-    }
+    global.fetch = originalFetch;
   });
 
   it('renders null when opened is false', () => {
@@ -50,12 +47,10 @@ describe('ModelSelectModal', () => {
       ],
     };
 
-    const fetchMock = vi.fn().mockResolvedValue({
+    global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockModels,
     });
-    globalThis.fetch = fetchMock;
-    window.fetch = fetchMock;
 
     const onSelectModel = vi.fn();
     const onClose = vi.fn();

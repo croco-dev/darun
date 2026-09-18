@@ -94,6 +94,48 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
               {...form.getInputProps('imageAlt')}
             />
           </AdminField>
+          <AdminField label="제목 (선택)" error={form.errors.title}>
+            <AdminInput
+              name="title"
+              disabled={loading}
+              placeholder="ex) 회원가입 화면"
+              maxLength={100}
+              {...form.getInputProps('title')}
+            />
+          </AdminField>
+          <AdminField label="플랫폼 (선택)" error={form.errors.platform}>
+            <select
+              name="platform"
+              disabled={loading}
+              className="h-11 w-full rounded-xl border border-dark-200 bg-white px-3.5 text-sm text-dark-900 disabled:opacity-50"
+              {...form.getInputProps('platform')}
+            >
+              <option value="">미분류</option>
+              <option value="WEB">웹</option>
+              <option value="IOS">iOS</option>
+              <option value="ANDROID">Android</option>
+            </select>
+          </AdminField>
+          <AdminField label="화면 유형 (선택)" error={form.errors.screenType}>
+            <select
+              name="screenType"
+              disabled={loading}
+              className="h-11 w-full rounded-xl border border-dark-200 bg-white px-3.5 text-sm text-dark-900 disabled:opacity-50"
+              {...form.getInputProps('screenType')}
+            >
+              <option value="">미분류</option>
+              <option value="HOME">홈</option>
+              <option value="ONBOARDING">온보딩</option>
+              <option value="SIGN_UP">회원가입</option>
+              <option value="SIGN_IN">로그인</option>
+              <option value="SEARCH">검색</option>
+              <option value="LIST">목록</option>
+              <option value="DETAIL">상세</option>
+              <option value="CHECKOUT">결제</option>
+              <option value="SETTINGS">설정</option>
+              <option value="OTHER">기타</option>
+            </select>
+          </AdminField>
           <AdminActions>
             <Button
               as={Link}

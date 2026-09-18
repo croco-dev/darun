@@ -1,19 +1,16 @@
-import { Inject, Service } from "typedi";
-import { Product } from "../entities/Product";
-import {
-  productCreateFailed,
-  productSlugAlreadyExists,
-} from "../errors/productError";
-import type { ProductRepository } from "../repositories/ProductRepository";
-import { ProductRepositoryToken } from "../repositories/ProductRepository";
+import { Inject, Service } from 'typedi';
+import { Product } from '../entities/Product';
+import { productCreateFailed, productSlugAlreadyExists } from '../errors/productError';
+import type { ProductRepository } from '../repositories/ProductRepository';
+import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
-const PG_UNIQUE_VIOLATION = "23505";
+const PG_UNIQUE_VIOLATION = '23505';
 
 function isUniqueViolationError(error: unknown): boolean {
   return (
-    typeof error === "object" &&
+    typeof error === 'object' &&
     error !== null &&
-    "code" in error &&
+    'code' in error &&
     (error as { code: string }).code === PG_UNIQUE_VIOLATION
   );
 }
@@ -22,7 +19,7 @@ function isUniqueViolationError(error: unknown): boolean {
 export class CreateProduct {
   constructor(
     @Inject(ProductRepositoryToken)
-    private readonly productRepository: ProductRepository,
+    private readonly productRepository: ProductRepository
   ) {}
 
   async execute({

@@ -181,6 +181,40 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
    배포 명령: `sst deploy --stage prod`
    이때 `RUNNING_ENV=prod` 값은 Sentry 환경 분류와 Cloudinary 업로드 폴더 규칙에 영향을 주므로 그대로 유지해야 합니다.
 
+## UX 플로 기능 출시 절차 (VISUAL_FLOW_WRITES_ENABLED)
+
+UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어합니다. 값이 정확히 `true`일 때만 플로 생성·수정·삭제 mutation이 동작하고, 값이 없거나 `false`, 그 외 어떤 값이어도 Admin 권한 검사를 통과한 뒤 DB 작업 전에 `product-flow/writes-disabled` 오류로 거절합니다. 조회와 "플로가 참조 중인 스크린샷 삭제·플랫폼 변경 거절" 방어는 flag 값과 무관하게 항상 동작합니다. 기본값은 `false`이며 `.env.sample`, `sst.config.ts`, GitHub Actions `Deploy.yaml` 모두 `false`를 전달합니다.
+
+이 기능의 DB 확장과 두 Vercel 웹(admin-web, visual-web) 배포가 겹치지 않도록, 아래 순서를 그대로 따릅니다. 각 단계에서 확인이 실패하면 해당 시점 이후 단계를 진행하지 않습니다.
+
+### 사전 확인
+
+1. Vercel 콘솔에서 두 웹(production `darun-admin`, `darun-visual`)의 **domain assignment(자동 도메인 할당)을 중지**합니다. 출시 절차가 끝날 때까지 자동 할당이 새 deployment를 프로덕션 도메인에 붙이지 않아야 합니다.
+2. 두 웹의 현재 프로덕션 deployment URL과 커밋을 기록해 둡니다. 승격 실패 시 Instant Rollback 대상입니다.
+3. 플로 스키마 확장 migration을 격리 환경에서 먼저 실행해 성공을 확인합니다. migration이 실패하면 이후 단계를 진행할 수 없습니다. GitHub Actions의 `Run Database Migrations` 단계는 `continue-on-error`가 없으므로 migration 실패 시 배포가 중단됩니다.
+4. GitHub Secrets(`DATABASE_URL`, Vercel 토큰, AWS 자격 증명)과 Vercel 권한이 현재 계정에서 유효한지, 두 웹과 API의 기존 프로덕션 상태가 정상인지 확인합니다. 하나라도 확인되지 않으면 병합·승격을 진행하지 않습니다.
+
+### 배포
+
+1. `trunk`에 병합하면 품질 검사 → migration 순으로 실행됩니다. 이 시점의 새 API는 `VISUAL_FLOW_WRITES_ENABLED=false`로 배포되므로 플로 쓰기는 거절 상태이며, 기존 기능은 그대로 동작합니다.
+2. 새 API 배포가 끝나면 Lambda의 `CodeSha256`이 GitHub Actions 로그의 배포 결과와 일치하는지, CloudFormation `LastUpdateStatus`가 `COMPLETE`인지, Lambda가 전체 트래픽을 받고 있는지(별칭 가중치 100%), 최대 `Timeout` 설정이 의도한 값인지를 AWS 콘솔에서 확인합니다.
+3. 확인이 모두 끝나면 Lambda 환경 변수 `VISUAL_FLOW_WRITES_ENABLED`를 `true`로 바꾸고 배포합니다. 값은 정확히 `true`여야 합니다(대소문자·공백 구분).
+4. Vercel 콘솔에서 같은 커밋의 새 deployment가 두 웹 모두 **staged** 상태로 존재하는지 확인합니다. 커밋 해시가 일치하지 않으면 승격하지 않습니다.
+5. **admin 승격**: admin-web의 staged deployment를 프로덕션으로 승격하고, admin-web에서 제품 상세 → 플로 등록·수정·삭제가 동작하는지 확인합니다.
+6. **visual 승격**: visual-web의 staged deployment를 프로덕션으로 승격하고, `/flows` 목록·검색·필터와 `/flows/[id]` 단계 탐색이 동작하는지 확인합니다.
+7. 두 웹의 검증이 모두 끝났을 때만 domain assignment를 복구합니다.
+
+### 승격·검증 실패 시 복구
+
+- 두 웹 중 하나라도 승격이 실패하거나 검증이 실패하면, **바뀐 두 웹 모두** 사전에 기록해 둔 기존 deployment로 Instant Rollback합니다.
+- 롤백 후에도 새 API, DB 확장, 스크린샷 삭제 방어는 그대로 유지하고 `VISUAL_FLOW_WRITES_ENABLED`만 `false`로 되돌립니다.
+- 복구와 재시도 동안 domain assignment는 계속 꺼 둡니다. 재시도는 사전 확인부터 다시 시작하며, 두 신규 웹이 모두 성공한 뒤에만 자동 할당을 복원합니다.
+- Instant Rollback 자체가 실패하면 이후 승격을 시도하지 않고 운영 장애로 처리합니다. (장애 처리 절차를 따릅니다.)
+
+### 비고
+
+- 격리 환경 검증은 flag 기본 동작(true/false/누락·오타), flag `false`에서도 참조 화면 삭제 방어가 유지됨, mutation 실패 시 입력 보존을 확인합니다. 위 절차의 AWS/Vercel 콘솔 조작은 실제 프로덕션에서 수행하는 작업이므로 격리 환경 검증과 혼동하지 않습니다.
+
 ## 외부 정리 체크리스트 (수동 작업)
 
 원격 `dev` 환경을 제거함에 따라, 저장소 외부의 클라우드 리소스와 설정을 정리해야 합니다. 아래 항목은 수동으로 진행하며, 서비스 영향도를 꼭 확인하고 실행해야 합니다.

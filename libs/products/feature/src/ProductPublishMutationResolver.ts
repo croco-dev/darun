@@ -25,6 +25,7 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
     deleteProductScreenshotUseCase: ProductMediaMutationResolver['deleteProductScreenshotUseCase'],
     addProductLinkUseCase: ProductMediaMutationResolver['addProductLinkUseCase'],
     updateProductLinkUseCase: ProductMediaMutationResolver['updateProductLinkUseCase'],
+    updateProductScreenshotUseCase: ProductMediaMutationResolver['updateProductScreenshotUseCase'],
     registerProductCompanyUseCase: ProductMediaMutationResolver['registerProductCompanyUseCase'],
     generateProductDescriptionUseCase: ProductMediaMutationResolver['generateProductDescriptionUseCase'],
     protected readonly publishProductUseCase: PublishProduct,
@@ -44,6 +45,7 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
       deleteProductScreenshotUseCase,
       addProductLinkUseCase,
       updateProductLinkUseCase,
+      updateProductScreenshotUseCase,
       registerProductCompanyUseCase,
       generateProductDescriptionUseCase,
       productDescriptionJobService

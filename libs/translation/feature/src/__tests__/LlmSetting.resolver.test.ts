@@ -42,13 +42,12 @@ describe('LlmSettingResolver', () => {
     resolver = new LlmSettingResolver(mockService as LlmSettingService);
   });
 
-  it('queries llmSetting with masked api key and brave api key', async () => {
+  it('queries llmSetting with masked api key', async () => {
     vi.mocked(mockService.getSetting!).mockResolvedValueOnce({
       id: 'default',
       endpoint: 'https://openrouter.ai/api/v1',
       apiKey: 'sk-or-v1-abcdef1234567890xyz',
       model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
-      braveApiKey: 'BSA-secret-token-987654321',
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -59,7 +58,6 @@ describe('LlmSettingResolver', () => {
     expect(result.endpoint).toBe('https://openrouter.ai/api/v1');
     expect(result.model).toBe('nvidia/nemotron-3-ultra-550b-a55b:free');
     expect(result.apiKeyMasked).toBe('sk-o...****0xyz');
-    expect(result.braveApiKeyMasked).toBe('BSA-...****4321');
   });
 
   it('updates llmSetting and returns masked api key', async () => {
@@ -69,7 +67,6 @@ describe('LlmSettingResolver', () => {
       apiKey: 'sk-secret-new-key-1234',
       model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
       thinkingLevel: 'high',
-      braveApiKey: 'BSA-updated-token-5678',
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -78,8 +75,7 @@ describe('LlmSettingResolver', () => {
       'https://custom-endpoint.com/v1',
       'sk-secret-new-key-1234',
       'nvidia/nemotron-3-ultra-550b-a55b:free',
-      'high',
-      'BSA-updated-token-5678'
+      'high'
     );
 
     expect(mockService.updateSetting).toHaveBeenCalledWith({
@@ -87,29 +83,10 @@ describe('LlmSettingResolver', () => {
       apiKey: 'sk-secret-new-key-1234',
       model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
       thinkingLevel: 'high',
-      braveApiKey: 'BSA-updated-token-5678',
     });
 
     expect(result.endpoint).toBe('https://custom-endpoint.com/v1');
     expect(result.apiKeyMasked).toBe('sk-s...****1234');
-    expect(result.braveApiKeyMasked).toBe('BSA-...****5678');
     expect(result.thinkingLevel).toBe('high');
-  });
-
-  it('returns null for masked api keys when key is whitespace-only or empty', async () => {
-    vi.mocked(mockService.getSetting!).mockResolvedValueOnce({
-      id: 'default',
-      endpoint: 'https://openrouter.ai/api/v1',
-      apiKey: '   ',
-      model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
-      braveApiKey: '   ',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    const result = await resolver.llmSetting();
-
-    expect(result.apiKeyMasked).toBeNull();
-    expect(result.braveApiKeyMasked).toBeNull();
   });
 });

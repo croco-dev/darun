@@ -17,8 +17,18 @@ type CreateApolloServerParams = {
   };
 };
 
-function isDomainError(error: unknown): error is DomainError {
-  return error instanceof Error && 'code' in error;
+function findDomainError(error: unknown): DomainError | undefined {
+  let current: unknown = error;
+  for (let depth = 0; depth < 5; depth += 1) {
+    if (current instanceof Error && 'code' in current && typeof current.code === 'string') {
+      return current as DomainError;
+    }
+    if (!(current instanceof Error) || !('originalError' in current)) {
+      return undefined;
+    }
+    current = current.originalError;
+  }
+  return undefined;
 }
 
 let schema: GraphQLSchema | undefined = undefined;
@@ -35,12 +45,13 @@ export function createServer({ options, config }: CreateApolloServerParams): Apo
     introspection: config.playground,
     formatError: (formattedError, error) => {
       console.error('[GraphQL Error]', error);
-      if (isDomainError(error)) {
+      const domainError = findDomainError(error);
+      if (domainError) {
         return {
           ...formattedError,
           extensions: {
             ...formattedError.extensions,
-            code: error.code,
+            code: domainError.code,
           },
         };
       }

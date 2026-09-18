@@ -1,8 +1,8 @@
 import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
+import { productInvalidArgs } from '../errors/productError';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
-import { productInvalidArgs } from '../errors/productError';
 
 @Service()
 export class GetPublishedProduct {

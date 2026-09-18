@@ -30,6 +30,7 @@ vi.mock('type-graphql', () => {
     Mutation: methodDecorator,
     ObjectType: () => () => {},
     Query: methodDecorator,
+    registerEnumType: () => {},
     Resolver: () => () => {},
     Root: () => () => {},
   };
@@ -133,6 +134,15 @@ const createProductScreenshotRepository = (): ProductScreenshotRepository => ({
   findById: vi.fn<ProductScreenshotRepository['findById']>().mockResolvedValue(null),
   insert: vi.fn<ProductScreenshotRepository['insert']>(),
   deleteById: vi.fn<ProductScreenshotRepository['deleteById']>(),
+  deleteWithLock: vi.fn<ProductScreenshotRepository['deleteWithLock']>(),
+  updateById: vi.fn<ProductScreenshotRepository['updateById']>(),
+  findManyVisualPublishedByFilterAndAfterIdAndLimit: vi
+    .fn<ProductScreenshotRepository['findManyVisualPublishedByFilterAndAfterIdAndLimit']>()
+    .mockResolvedValue([]),
+  findVisualPublishedById: vi.fn<ProductScreenshotRepository['findVisualPublishedById']>().mockResolvedValue(null),
+  countVisualPublishedByFilter: vi
+    .fn<ProductScreenshotRepository['countVisualPublishedByFilter']>()
+    .mockResolvedValue(0),
 });
 
 const createCompanyRepository = (): CompanyRepository => ({

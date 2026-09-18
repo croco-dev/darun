@@ -656,6 +656,9 @@ importers:
       '@darun/provider-auth/server':
         specifier: workspace:*
         version: link:../../libs/shared/provider-auth/server
+      '@darun/provider-graphql':
+        specifier: workspace:*
+        version: link:../../libs/shared/provider-graphql
       '@darun/ui':
         specifier: workspace:*
         version: link:../../libs/shared/ui
@@ -671,6 +674,9 @@ importers:
       '@darun/utils-auth-service-firebase':
         specifier: workspace:*
         version: link:../../libs/shared/utils-auth-service/firebase
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-router
       '@darun/utils-structure-react':
         specifier: workspace:*
         version: link:../../libs/shared/utils-structure-react
@@ -1291,9 +1297,6 @@ importers:
       '@darun/provider-database':
         specifier: workspace:*
         version: link:../../shared/provider-database
-      '@darun/utils-llm':
-        specifier: workspace:*
-        version: link:../../shared/utils-llm
       '@typegoose/typegoose':
         specifier: '*'
         version: 13.1.0(mongoose@9.2.1)

@@ -40,18 +40,21 @@ describe('PostgresqlProductScreenshotRepository', () => {
 
   it('should call clearAll() after insert()', async () => {
     const repo = new PostgresqlProductScreenshotRepository(mockDb as any); // eslint-disable-line @typescript-eslint/no-explicit-any
-    const screenshot = {
+    const row = {
       id: 'test-1',
       productId: 'product-1',
       imageUrl: 'https://example.com/img.png',
       imageAlt: 'Test image',
+      title: null,
+      platform: null,
+      screenType: null,
     };
 
-    mockTx.returning.mockResolvedValue([screenshot]);
+    mockTx.returning.mockResolvedValue([row]);
 
-    const result = await repo.insert(screenshot as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const result = await repo.insert(row as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
-    expect(result).toEqual(screenshot);
+    expect(result).toEqual(row);
     expect(mockClearAll).toHaveBeenCalledTimes(1);
   });
 

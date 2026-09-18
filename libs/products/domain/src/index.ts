@@ -7,6 +7,17 @@ export { ProductTag } from './entities/ProductTag';
 export { Tag } from './entities/Tag';
 export { TagType } from './entities/TagType';
 export { Category } from './entities/Category';
+export { ProductFlow } from './entities/ProductFlow';
+export type { ProductFlowStep } from './entities/ProductFlow';
+export {
+  VISUAL_PLATFORMS,
+  VISUAL_SCREEN_TYPES,
+  isVisualPlatform,
+  isVisualScreenType,
+} from './entities/VisualClassification';
+export type { VisualPlatform, VisualScreenType } from './entities/VisualClassification';
+export { VISUAL_FLOW_TYPES, isVisualFlowType } from './entities/VisualFlowType';
+export type { VisualFlowType } from './entities/VisualFlowType';
 export {
   ProductError,
   productCategoryNotFound,
@@ -28,6 +39,13 @@ export {
   productFeatureNotFound,
   productFeatureUpdateFailed,
 } from './errors/productFeatureError';
+export {
+  ProductFlowError,
+  productFlowNotFound,
+  productFlowInvalidArgs,
+  productFlowWritesDisabled,
+  productScreenshotInUse,
+} from './errors/productFlowError';
 export type { ProductFeatureRepository } from './repositories/ProductFeatureRepository';
 export { ProductFeatureRepositoryToken } from './repositories/ProductFeatureRepository';
 export type { ProductFeatureScreenshotRepository } from './repositories/ProductFeatureScreenshotRepository';
@@ -38,10 +56,22 @@ export type { CategoryRepository } from './repositories/CategoryRepository';
 export { CategoryRepositoryToken } from './repositories/CategoryRepository';
 export type { ProductRepository } from './repositories/ProductRepository';
 export { ProductRepositoryToken } from './repositories/ProductRepository';
-export type { ProductScreenshotRepository } from './repositories/ProductScreenshotRepository';
+export type {
+  ProductScreenshotRepository,
+  VisualScreenshotFilter,
+  VisualScreenshotWithProduct,
+} from './repositories/ProductScreenshotRepository';
 export { ProductScreenshotRepositoryToken } from './repositories/ProductScreenshotRepository';
 export type { ProductTagRepository } from './repositories/ProductTagRepository';
 export { ProductTagRepositoryToken } from './repositories/ProductTagRepository';
+export type {
+  ProductFlowRepository,
+  VisualFlowDetail,
+  VisualFlowDetailStep,
+  VisualFlowFilter,
+  VisualFlowSummary,
+} from './repositories/ProductFlowRepository';
+export { ProductFlowRepositoryToken } from './repositories/ProductFlowRepository';
 export type { ProductDescriptionJobEntity, ProductDescriptionJobStatus } from './entities/ProductDescriptionJobEntity';
 export type { ProductDescriptionJobRepository } from './repositories/ProductDescriptionJobRepository';
 export { ProductDescriptionJobRepositoryToken } from './repositories/ProductDescriptionJobRepository';
@@ -82,3 +112,32 @@ export { RegisterProductCompany } from './usecases/RegisterProductCompany';
 export { UpdateProductFeature } from './usecases/UpdateProductFeature';
 export { UpdateProductLink } from './usecases/UpdateProductLink';
 export { UpdateProductTag } from './usecases/UpdateProductTag';
+export {
+  normalizeScreenshotTitle,
+  normalizeScreenshotImageAlt,
+  normalizeVisualPlatform,
+  normalizeVisualScreenType,
+  normalizeVisualQuery,
+  VISUAL_QUERY_MAX_LENGTH,
+} from './usecases/ProductScreenshotMetadata';
+export { UpdateProductScreenshot } from './usecases/UpdateProductScreenshot';
+export { GetVisualScreenshots, VISUAL_SCREENSHOTS_MAX_FIRST } from './usecases/GetVisualScreenshots';
+export { GetVisualScreenshotById } from './usecases/GetVisualScreenshotById';
+export { CreateProductFlow, buildFlowDraft, validateFlowSteps } from './usecases/CreateProductFlow';
+export type { ProductFlowStepInput } from './usecases/CreateProductFlow';
+export { UpdateProductFlow } from './usecases/UpdateProductFlow';
+export { DeleteProductFlow } from './usecases/DeleteProductFlow';
+export { GetVisualFlows, VISUAL_FLOWS_MAX_FIRST } from './usecases/GetVisualFlows';
+export { GetAdminProductFlow } from './usecases/GetAdminProductFlow';
+export { GetVisualFlowById } from './usecases/GetVisualFlowById';
+export { GetVisualScreenshotFlows } from './usecases/GetVisualScreenshotFlows';
+export { GetAdminProductFlows } from './usecases/GetAdminProductFlows';
+export {
+  FLOW_MIN_STEPS,
+  FLOW_MAX_STEPS,
+  normalizeFlowTitle,
+  normalizeFlowDescription,
+  normalizeFlowPlatform,
+  normalizeFlowType,
+  normalizeFlowCaption,
+} from './usecases/ProductFlowMetadata';

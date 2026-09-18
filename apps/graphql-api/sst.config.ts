@@ -28,9 +28,9 @@ export default $config({
       CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY!,
       CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET!,
       OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY!,
-      BRAVE_API_KEY: process.env.BRAVE_API_KEY ?? '',
       CURSOR_SIGNATURE_SECRET: process.env.CURSOR_SIGNATURE_SECRET!,
       VOTE_IP_SALT: process.env.VOTE_IP_SALT!,
+      VISUAL_FLOW_WRITES_ENABLED: process.env.VISUAL_FLOW_WRITES_ENABLED ?? 'false',
     };
 
     const translationQueue = new sst.aws.Queue('TranslationQueue', {

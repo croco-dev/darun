@@ -106,8 +106,7 @@ const STATUS_FILTERS = [
   { value: 'completed', label: '완료' },
 ] as const;
 
-function formatDuration(status: string, createdAt?: string | Date | null, updatedAt?: string | Date | null) {
-  if (status === 'pending' || status === 'in_progress') return '-';
+function formatDuration(createdAt?: string | Date | null, updatedAt?: string | Date | null) {
   if (!createdAt || !updatedAt) return '-';
   const start = dayjs(createdAt);
   const end = dayjs(updatedAt);
@@ -510,7 +509,7 @@ export function LlmJobListSection() {
 
                       {/* Duration */}
                       <td className="border-r border-dark-200 px-4 py-3 text-xs text-dark-600 whitespace-nowrap font-mono">
-                        {formatDuration(job.status, job.createdAt, job.updatedAt)}
+                        {formatDuration(job.createdAt, job.updatedAt)}
                       </td>
 
                       {/* Actions */}

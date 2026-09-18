@@ -6,6 +6,7 @@ const config: CodegenConfig = {
     '../../../libs/**/*.{ts,tsx}',
     '../../../apps/admin-web/**/*.{ts,tsx}',
     '../../../apps/service-web/**/*.{ts,tsx}',
+    '../../../apps/visual-web/**/*.{ts,tsx}',
     '!../../../libs/**/__generated__/*.{ts,tsx}',
     '!../../../libs/**/node_modules/**',
     '!../../../apps/**/node_modules/**',

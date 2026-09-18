@@ -19,3 +19,7 @@
     color: inherit;
   }
 }
+
+dialog::backdrop {
+  background: rgba(15, 15, 20, 0.85);
+}

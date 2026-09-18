@@ -10,8 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@darun/products-domain": "workspace:*",
-    "@darun/utils-llm": "workspace:*"
+    "@darun/products-domain": "workspace:*"
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",

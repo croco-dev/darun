@@ -9,8 +9,11 @@ import {
   FeatureQueryResolver,
   ProductDescriptionMutationResolver,
   ProductDescriptionQueryResolver,
+  ProductFlowMutationResolver,
   ProductMutationResolver,
   ProductQueryResolver,
+  VisualFlowQueryResolver,
+  VisualScreenshotQueryResolver,
 } from '@darun/products-feature/server';
 import {
   LlmSettingResolver,
@@ -25,7 +28,10 @@ export const resolvers: NonEmptyArray<Function> = [
   HealthResolver,
   CategoryQueryResolver,
   ProductQueryResolver,
+  VisualFlowQueryResolver,
+  ProductFlowMutationResolver,
   ProductMutationResolver,
+  VisualScreenshotQueryResolver,
   ProductDescriptionQueryResolver,
   ProductDescriptionMutationResolver,
   FeatureQueryResolver,

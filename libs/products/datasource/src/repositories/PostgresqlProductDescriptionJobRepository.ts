@@ -73,16 +73,12 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
   async updateJobStatus(
     id: string,
     status: ProductDescriptionJobStatus,
-    options?: { message?: string | null; error?: string | null; resetCreatedAt?: boolean }
+    options?: { message?: string | null; error?: string | null }
   ): Promise<ProductDescriptionJobEntity> {
     const updateValues: Record<string, unknown> = {
       status,
       updatedAt: new Date(),
     };
-
-    if (options?.resetCreatedAt) {
-      updateValues.createdAt = new Date();
-    }
 
     if (options?.message !== undefined) {
       updateValues.message = options.message;

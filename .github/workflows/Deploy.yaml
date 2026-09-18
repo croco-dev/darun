@@ -58,7 +58,6 @@ jobs:
         run: pnpm --filter graphql-api run migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        continue-on-error: true
       - name: Deploy
         run: pnpm run --filter graphql-api deploy
         env:
@@ -76,4 +75,5 @@ jobs:
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
           CURSOR_SIGNATURE_SECRET: ${{ secrets.CURSOR_SIGNATURE_SECRET }}
+          VISUAL_FLOW_WRITES_ENABLED: 'false'
           VOTE_IP_SALT: ${{ secrets.VOTE_IP_SALT }}

@@ -17,6 +17,9 @@ type AddProductLinkPayload {
 input AddProductScreenshotInput {
   imageAlt: String!
   imageUrl: String!
+  platform: VisualPlatform
+  screenType: VisualScreenType
+  title: String
 }
 
 type AddProductScreenshotPayload {
@@ -83,6 +86,19 @@ type CreateProductFeaturePayload {
   feature: Feature!
 }
 
+input CreateProductFlowInput {
+  description: String!
+  flowType: VisualFlowType!
+  platform: VisualPlatform!
+  productSlug: String!
+  steps: [ProductFlowStepInput!]!
+  title: String!
+}
+
+type CreateProductFlowPayload {
+  flow: VisualFlow!
+}
+
 input CreateProductInput {
   description: String
   logoUrl: String!
@@ -99,6 +115,14 @@ type CreateProductPayload {
 A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.This scalar is serialized to a string in ISO 8601 format and parsed from a string in ISO 8601 format.
 """
 scalar DateTimeISO
+
+input DeleteProductFlowInput {
+  id: ID!
+}
+
+type DeleteProductFlowPayload {
+  success: Boolean!
+}
 
 type DeleteProductScreenshotPayload {
   success: Boolean!
@@ -170,7 +194,6 @@ type Link {
 
 type LlmSetting {
   apiKeyMasked: String
-  braveApiKeyMasked: String
   endpoint: String!
   id: ID!
   model: String!
@@ -204,6 +227,8 @@ type Mutation {
   createMagazine(input: CreateMagazineInput!): CreateMagazinePayload!
   createProduct(input: CreateProductInput!): CreateProductPayload!
   createProductFeature(input: CreateProductFeatureInput!): CreateProductFeaturePayload!
+  createProductFlow(input: CreateProductFlowInput!): CreateProductFlowPayload!
+  deleteProductFlow(input: DeleteProductFlowInput!): DeleteProductFlowPayload!
   deleteProductScreenshot(id: String!): DeleteProductScreenshotPayload!
   editMagazine(input: EditMagazineInput!, slug: String!): EditMagazinePayload!
   editProduct(input: EditProductInput!, slug: String!): EditProductPayload!
@@ -218,9 +243,11 @@ type Mutation {
   retryTranslationJob(id: String!): TranslationJob!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
-  updateLlmSetting(apiKey: String, braveApiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
+  updateLlmSetting(apiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
+  updateProductFlow(input: UpdateProductFlowInput!): UpdateProductFlowPayload!
   updateProductLink(id: String!, input: UpdateProductLinkInput!, slug: String!): UpdateProductLinkPayload!
+  updateProductScreenshot(input: UpdateProductScreenshotInput!): UpdateProductScreenshotPayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
   upvoteProduct(slug: String!): UpvoteProductPayload!
 }
@@ -272,6 +299,11 @@ type ProductEdge {
   node: Product!
 }
 
+input ProductFlowStepInput {
+  caption: String!
+  screenshotId: ID!
+}
+
 input PublishMagazineInput {
   slug: String!
 }
@@ -289,6 +321,8 @@ type PublishProductPayload {
 }
 
 type Query {
+  adminProductFlow(id: String!): VisualFlow
+  adminProductFlows(productSlug: String!): [VisualFlow!]!
   allCompanies(page: Int!): CompanyPagination!
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
   categories(first: Int!, locale: String! = "ko"): [Category!]!
@@ -314,6 +348,10 @@ type Query {
   tempProductBySlug(locale: String! = "ko", slug: String!): Product
   translationJob(id: String!): TranslationJob
   translationJobs(limit: Int, offset: Int, status: String): [TranslationJob!]!
+  visualFlow(id: String!): VisualFlow
+  visualFlows(after: String, first: Int! = 24, flowType: VisualFlowType, platform: VisualPlatform, productSlug: String, query: String): VisualFlowConnection!
+  visualScreenshot(id: String!): VisualScreenshot
+  visualScreenshots(after: String, first: Int! = 24, platform: VisualPlatform, productSlug: String, query: String, screenType: VisualScreenType): VisualScreenshotConnection!
 }
 
 input RegisterProductCompanyInput {
@@ -324,10 +362,14 @@ type RegisterProductCompanyPayload {
   product: Product
 }
 
+"""제품 스크린샷"""
 type Screenshot {
   id: ID!
   imageAlt: String!
   imageUrl: String!
+  platform: VisualPlatform
+  screenType: VisualScreenType
+  title: String
 }
 
 input SignImageUploadInput {
@@ -378,6 +420,19 @@ type UpdateProductFeaturePayload {
   feature: Feature!
 }
 
+input UpdateProductFlowInput {
+  description: String!
+  flowType: VisualFlowType!
+  id: ID!
+  platform: VisualPlatform!
+  steps: [ProductFlowStepInput!]!
+  title: String!
+}
+
+type UpdateProductFlowPayload {
+  flow: VisualFlow!
+}
+
 input UpdateProductLinkInput {
   displayLink: String
   iconUrl: String
@@ -387,6 +442,18 @@ input UpdateProductLinkInput {
 
 type UpdateProductLinkPayload {
   product: Product
+}
+
+input UpdateProductScreenshotInput {
+  id: ID!
+  imageAlt: String!
+  platform: VisualPlatform
+  screenType: VisualScreenType
+  title: String
+}
+
+type UpdateProductScreenshotPayload {
+  screenshot: Screenshot!
 }
 
 input UpdateProductTagsInput {
@@ -399,4 +466,90 @@ type UpdateProductTagsPayload {
 
 type UpvoteProductPayload {
   product: Product
+}
+
+"""공개 제품에 속한 UX 플로"""
+type VisualFlow {
+  coverScreenshot: Screenshot!
+  description: String!
+  flowType: VisualFlowType!
+  id: ID!
+  platform: VisualPlatform!
+  product: Product!
+  stepCount: Int!
+  steps: [VisualFlowStep!]!
+  title: String!
+}
+
+type VisualFlowConnection {
+  edges: [VisualFlowEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type VisualFlowEdge {
+  cursor: String!
+  node: VisualFlow!
+}
+
+"""플로의 한 단계. position은 0부터 시작한다"""
+type VisualFlowStep {
+  caption: String!
+  position: Int!
+  screenshot: Screenshot!
+}
+
+"""UX 플로가 담고 있는 흐름의 종류"""
+enum VisualFlowType {
+  CHECKOUT
+  ONBOARDING
+  OTHER
+  SEARCH
+  SETTINGS
+  SIGN_IN
+  SIGN_UP
+}
+
+"""스크린샷이 속한 제품 플랫폼"""
+enum VisualPlatform {
+  ANDROID
+  IOS
+  WEB
+}
+
+"""스크린샷이 담고 있는 화면의 종류"""
+enum VisualScreenType {
+  CHECKOUT
+  DETAIL
+  HOME
+  LIST
+  ONBOARDING
+  OTHER
+  SEARCH
+  SETTINGS
+  SIGN_IN
+  SIGN_UP
+}
+
+"""공개 제품에 속한 스크린샷과 제품 정보"""
+type VisualScreenshot {
+  flows: [VisualFlow!]!
+  id: ID!
+  imageAlt: String!
+  imageUrl: String!
+  platform: VisualPlatform
+  product: Product!
+  screenType: VisualScreenType
+  title: String
+}
+
+type VisualScreenshotConnection {
+  edges: [VisualScreenshotEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type VisualScreenshotEdge {
+  cursor: String!
+  node: VisualScreenshot!
 }

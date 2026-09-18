@@ -23,3 +23,9 @@ export const VOTE_IP_SALT = requireEnv('VOTE_IP_SALT');
 export const CLOUDINARY_CLOUD_NAME = (IS_LOCAL ? optionalEnv : requireEnv)('CLOUDINARY_CLOUD_NAME');
 export const CLOUDINARY_API_KEY = (IS_LOCAL ? optionalEnv : requireEnv)('CLOUDINARY_API_KEY');
 export const CLOUDINARY_API_SECRET = (IS_LOCAL ? optionalEnv : requireEnv)('CLOUDINARY_API_SECRET');
+
+/**
+ * UX 플로 쓰기 허용 여부. 정확히 문자열 'true'일 때만 mutation을 허용하고
+ * 누락·false·오타는 product-flow/writes-disabled로 거절한다.
+ */
+export const VISUAL_FLOW_WRITES_ENABLED = process.env.VISUAL_FLOW_WRITES_ENABLED === 'true';

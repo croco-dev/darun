@@ -29,13 +29,6 @@
       "when": 1789700000000,
       "tag": "0003_add_product_description_jobs",
       "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1789800000000,
-      "tag": "0004_add_brave_api_key_to_llm_settings",
-      "breakpoints": true
     }
   ]
 }

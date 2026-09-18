@@ -47,27 +47,20 @@ const TRANSLATION_SYSTEM_PROMPT = `당신은 글로벌 IT 서비스 및 SaaS 전
 한국어로 작성된 제품 및 서비스 정보를 자연스럽고 직관적인 영문으로 번역합니다.
 
 핵심 원칙:
-1. 전문 테크 제품 톤앤매너:
-   - Product Hunt, G2, TechCrunch 등에서 통용되는 명확하고 세련되며 간결한 B2B/B2C 프로덕트 카피라이팅 스타일을 유지합니다.
-   - summary는 주어를 생략하고 핵심 효용을 강조하는 능동적인 가치 제안(Value Proposition) 형태로 작성합니다.
+1. 전문 테크 제품 톤앤매너: Product Hunt, G2 등에서 통용되는 명확하고 세련되며 간결한 B2B/B2C 프로덕트 카피라이팅 스타일을 유지합니다.
 2. HTML 구조 및 마크업 엄격 보존:
-   - 입력에 HTML 태그(p, h2, h3, ul, li, strong, em, br, a 등)가 포함된 경우 모든 태그와 계층 구조, 속성을 100% 그대로 유지하고 내부 텍스트만 번역합니다.
-   - 새로운 태그를 임의로 추가하거나 기존 태그를 누락하지 마십시오.
+   - 입력에 HTML 태그(p, h2, h3, ul, li, strong, em, br, a 등)가 포함된 경우 모든 태그와 구조를 100% 그대로 유지하고 내부 텍스트만 번역합니다.
+   - 새로운 태그나 속성을 임의로 추가하거나 삭제하지 마십시오.
 3. 고유명사 및 브랜드명 원칙:
    - 잘 알려진 글로벌/국내 테크 서비스명 및 브랜드는 공식 영문 표기를 사용합니다 (예: "슬랙" -> "Slack", "노션" -> "Notion", "피그마" -> "Figma", "카카오톡" -> "KakaoTalk", "토스" -> "Toss").
-   - 원문에 이미 영문으로 표기된 브랜드, 라이브러리, 도구명(Linear, Cursor, Supabase, Next.js 등)은 대소문자를 포함하여 원형 그대로 보존합니다.
    - 공식 영문명이 없는 한국어 제품명은 가장 자연스럽고 널리 통용되는 로마자 표기를 적용합니다.
-4. JSON 형식 및 이스케이프 엄수:
-   - JSON 형태로 요청받은 경우, 반드시 유효한 단일 JSON 객체 하나만 출력합니다.
-   - 문자열 내부의 큰따옴표(\")와 줄바꿈(\\n)은 JSON 문법에 맞게 반드시 올바르게 이스케이프 처리합니다.
-5. 과장 표현 지양 및 군더더기 배제: 불필요한 미사여구나 서두/결미("Here is the translation:") 없이 번역 결과만 직관적으로 전달합니다.`;
+4. 과장 표현 지양 및 직관적 전달: 불필요한 미사여구는 줄이고 핵심 기능과 가치를 직관적으로 전달합니다.`;
 
 function parseJsonFromLlmResponse(raw: string): unknown {
   const trimmed = raw.trim();
   const jsonMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   const target = jsonMatch ? jsonMatch[1].trim() : trimmed;
-  const objectMatch = target.match(/(\{[\s\S]*\})/);
-  return JSON.parse(objectMatch ? objectMatch[1] : target);
+  return JSON.parse(target);
 }
 
 @Service()
@@ -115,15 +108,14 @@ export class TranslationJobService {
       };
 
       const prompt = [
-        '다음 제품 정보와 주요 기능 목록을 글로벌 SaaS 기준의 자연스럽고 명확한 영어로 번역해주세요.',
-        '반드시 아래와 같은 JSON 형식으로만 응답하고, 마크다운 코드블록이나 다른 설명 문구는 일절 포함하지 마세요.',
-        'JSON 문자열 내의 큰따옴표(")와 개행(\\n)은 올바르게 이스케이프해야 합니다.',
+        '다음 제품 정보와 주요 기능 목록을 영어로 번역해주세요.',
+        '반드시 아래와 같은 JSON 형식으로만 응답하고, 마크다운 코드블록이나 다른 설명은 일절 포함하지 마세요.',
         '',
         'JSON 응답 포맷:',
         '{',
-        '  "name": "영문 제품명 (브랜드/고유명사 공식 영문 표기 유지)",',
-        '  "summary": "영문 한 줄 요약 (Product Hunt 스타일의 간결하고 능동적인 가치 제안)",',
-        '  "description": "영문 본문 설명 (HTML 태그 구조 100% 보존)",',
+        '  "name": "영문 제품명",',
+        '  "summary": "영문 한 줄 요약",',
+        '  "description": "영문 본문 설명 (HTML 태그 보존)",',
         '  "features": [',
         '    { "id": "기능ID", "name": "영문 기능명", "summary": "영문 기능 설명" }',
         '  ]',
@@ -308,7 +300,6 @@ export class TranslationJobService {
     const updatedJob = await this.translationJobRepository.updateJobStatus(jobId, 'pending', {
       message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
       error: null,
-      resetCreatedAt: true,
     });
 
     let isQueued = false;
@@ -457,14 +448,14 @@ export class TranslationJobService {
               {
                 role: 'user',
                 content: isHtml
-                  ? `Translate the following Korean HTML text to English, preserving all HTML tags and attributes without conversational filler: ${text}`
-                  : `Translate the following Korean text to English with a natural, concise tech-product tone without conversational filler: ${text}`,
+                  ? `Translate the following Korean HTML text to English, preserving all HTML tags: ${text}`
+                  : `Translate the following Korean text to English: ${text}`,
               },
             ]),
-            60_000,
+            15_000,
             'LLM 번역 요청이 시간 초과되었습니다. 잠시 후 다시 시도해주세요.'
           ),
-        { maxRetries: 2, baseDelay: 1500, maxDelay: 8000 }
+        { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
       );
 
       const content = response.content?.trim();

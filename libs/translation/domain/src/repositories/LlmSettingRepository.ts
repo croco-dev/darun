@@ -10,6 +10,5 @@ export interface LlmSettingRepository {
     apiKey?: string | null;
     model: string;
     thinkingLevel?: string | null;
-    braveApiKey?: string | null;
   }): Promise<LlmSetting>;
 }

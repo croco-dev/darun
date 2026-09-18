@@ -8,7 +8,6 @@ export const llmSettings = pgTable('llm_settings', {
   apiKey: text('api_key'),
   model: text('model').notNull().default('nvidia/nemotron-3-ultra-550b-a55b:free'),
   thinkingLevel: text('thinking_level'),
-  braveApiKey: text('brave_api_key'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -30,6 +30,7 @@ vi.mock('type-graphql', () => {
     Mutation: methodDecorator,
     ObjectType: () => () => {},
     Query: methodDecorator,
+    registerEnumType: () => {},
     Resolver: () => () => {},
     Root: () => () => {},
   };
@@ -51,6 +52,7 @@ import {
   RegisterProductCompany,
   Tag,
   UpdateProductLink,
+  UpdateProductScreenshot,
   UpdateProductTag,
 } from '@darun/products-domain';
 import { IndexProduct } from '@darun/search-domain';
@@ -127,6 +129,7 @@ describe('ProductPublishMutationResolver', () => {
         createMockUseCase<DeleteProductScreenshot>() as unknown as DeleteProductScreenshot,
         createMockUseCase<AddProductLink>() as unknown as AddProductLink,
         createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
+        createMockUseCase<UpdateProductScreenshot>() as unknown as UpdateProductScreenshot,
         createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
         createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
         publishProductUseCase as unknown as PublishProduct,
@@ -190,6 +193,7 @@ describe('ProductPublishMutationResolver', () => {
         createMockUseCase<DeleteProductScreenshot>() as unknown as DeleteProductScreenshot,
         createMockUseCase<AddProductLink>() as unknown as AddProductLink,
         createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
+        createMockUseCase<UpdateProductScreenshot>() as unknown as UpdateProductScreenshot,
         createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
         createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
         publishProductUseCase as unknown as PublishProduct,
@@ -246,6 +250,7 @@ describe('ProductPublishMutationResolver', () => {
         createMockUseCase<DeleteProductScreenshot>() as unknown as DeleteProductScreenshot,
         createMockUseCase<AddProductLink>() as unknown as AddProductLink,
         createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
+        createMockUseCase<UpdateProductScreenshot>() as unknown as UpdateProductScreenshot,
         createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
         createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
         createMockUseCase<PublishProduct>() as unknown as PublishProduct,

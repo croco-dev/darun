@@ -7,6 +7,7 @@ import {
   GetProduct,
   RegisterProductCompany,
   UpdateProductLink,
+  UpdateProductScreenshot,
   productNotFound,
   productCompanyNotFound,
 } from '@darun/products-domain';
@@ -25,6 +26,8 @@ import { RegisterProductCompanyInput } from './graphs/RegisterProductCompany';
 import { RegisterProductCompanyPayload } from './graphs/RegisterProductCompany';
 import { UpdateProductLinkInput } from './graphs/UpdateProductLink';
 import { UpdateProductLinkPayload } from './graphs/UpdateProductLink';
+import { UpdateProductScreenshotInput } from './graphs/UpdateProductScreenshot';
+import { UpdateProductScreenshotPayload } from './graphs/UpdateProductScreenshot';
 import { ProductCoreMutationResolver } from './ProductCoreMutationResolver';
 
 @Resolver(() => Product)
@@ -36,6 +39,7 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
     registerProductCompany: 'fatal',
     generateProductDescription: 'fatal',
     deleteProductScreenshot: 'fatal',
+    updateProductScreenshot: 'fatal',
   } as const;
 
   constructor(
@@ -50,6 +54,7 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
     protected readonly deleteProductScreenshotUseCase: DeleteProductScreenshot,
     protected readonly addProductLinkUseCase: AddProductLink,
     protected readonly updateProductLinkUseCase: UpdateProductLink,
+    protected readonly updateProductScreenshotUseCase: UpdateProductScreenshot,
     protected readonly registerProductCompanyUseCase: RegisterProductCompany,
     protected readonly generateProductDescriptionUseCase: GenerateProductDescription,
     protected readonly productDescriptionJobService?: ProductDescriptionJobService
@@ -80,10 +85,31 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
       productId: product.id,
       imageUrl: input.imageUrl,
       imageAlt: input.imageAlt,
+      title: input.title ?? null,
+      platform: input.platform ?? null,
+      screenType: input.screenType ?? null,
     });
 
     return {
       product: await this.getProductUseCase.execute({ slug }),
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => UpdateProductScreenshotPayload)
+  async updateProductScreenshot(
+    @Arg('input') input: UpdateProductScreenshotInput
+  ): Promise<UpdateProductScreenshotPayload> {
+    const screenshot = await this.updateProductScreenshotUseCase.execute({
+      id: input.id,
+      imageAlt: input.imageAlt,
+      title: input.title ?? null,
+      platform: input.platform ?? null,
+      screenType: input.screenType ?? null,
+    });
+
+    return {
+      screenshot,
     };
   }
 

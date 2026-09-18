@@ -28,9 +28,27 @@ gql`
   }
 `;
 
+const PLATFORM_OPTIONS = ['', 'WEB', 'IOS', 'ANDROID'] as const;
+const SCREEN_TYPE_OPTIONS = [
+  '',
+  'HOME',
+  'ONBOARDING',
+  'SIGN_UP',
+  'SIGN_IN',
+  'SEARCH',
+  'LIST',
+  'DETAIL',
+  'CHECKOUT',
+  'SETTINGS',
+  'OTHER',
+] as const;
+
 type FormValues = {
   file?: File;
   imageAlt?: string;
+  title?: string;
+  platform?: (typeof PLATFORM_OPTIONS)[number];
+  screenType?: (typeof SCREEN_TYPE_OPTIONS)[number];
 };
 type NewProductFormProps = {
   productSlug: string;
@@ -45,10 +63,16 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     initialValues: {
       file: undefined,
       imageAlt: '',
+      title: '',
+      platform: '',
+      screenType: '',
     },
     validate: {
       file: value => (!value ? '이미지를 선택해주세요.' : null),
       imageAlt: value => (!value?.trim() ? '이미지 대체 텍스트(alt)를 입력해주세요.' : null),
+      title: value => (value && value.trim().length > 100 ? '제목은 100자 이하로 입력해주세요.' : null),
+      platform: value => (value && !PLATFORM_OPTIONS.includes(value) ? '지원하지 않는 플랫폼 값입니다.' : null),
+      screenType: value => (value && !SCREEN_TYPE_OPTIONS.includes(value) ? '지원하지 않는 화면 유형 값입니다.' : null),
     },
   });
   const { upload } = useImageUpload();
@@ -110,6 +134,9 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
           input: {
             imageUrl: url,
             imageAlt: values.imageAlt.trim(),
+            title: values.title?.trim() ? values.title.trim() : null,
+            platform: values.platform ? values.platform : null,
+            screenType: values.screenType ? values.screenType : null,
           },
         },
       });

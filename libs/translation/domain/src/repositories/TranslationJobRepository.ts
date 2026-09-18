@@ -17,7 +17,7 @@ export interface TranslationJobRepository {
   updateJobStatus(
     id: string,
     status: TranslationJobStatus,
-    options?: { message?: string | null; error?: string | null; resetCreatedAt?: boolean }
+    options?: { message?: string | null; error?: string | null }
   ): Promise<TranslationJobEntity>;
 
   findJobs(options?: {

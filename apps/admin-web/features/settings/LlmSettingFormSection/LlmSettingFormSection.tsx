@@ -31,7 +31,6 @@ gql`
       apiKeyMasked
       model
       thinkingLevel
-      braveApiKeyMasked
       updatedAt
     }
   }
@@ -44,21 +43,13 @@ gql`
     $apiKey: String
     $model: String
     $thinkingLevel: String
-    $braveApiKey: String
   ) {
-    updateLlmSetting(
-      endpoint: $endpoint
-      apiKey: $apiKey
-      model: $model
-      thinkingLevel: $thinkingLevel
-      braveApiKey: $braveApiKey
-    ) {
+    updateLlmSetting(endpoint: $endpoint, apiKey: $apiKey, model: $model, thinkingLevel: $thinkingLevel) {
       id
       endpoint
       apiKeyMasked
       model
       thinkingLevel
-      braveApiKeyMasked
       updatedAt
     }
   }
@@ -89,10 +80,10 @@ export function LlmSettingFormSection() {
 
   return (
     <AdminPanel>
-      <AdminSectionHeader title="LLM & 검색 API 연동 및 모델 설정" />
+      <AdminSectionHeader title="LLM API 연동 및 모델 설정" />
       <AdminSectionBody>
         <p className="text-sm text-dark-500 mb-2">
-          번역 및 상품 소개 자동 생성에 사용할 LLM 엔드포인트, API 키, 기본 모델 및 Brave Search API 키를 데이터베이스에 동적으로 설정합니다.
+          번역 및 콘텐츠 자동 생성에 사용할 LLM 엔드포인트, API 키, 기본 모델을 데이터베이스에 동적으로 설정합니다.
         </p>
         <LlmSettingForm
           key={currentSetting?.updatedAt ?? 'default'}
@@ -110,7 +101,6 @@ type LlmSettingData = {
   apiKeyMasked?: string | null;
   model: string;
   thinkingLevel?: string | null;
-  braveApiKeyMasked?: string | null;
   updatedAt: string;
 };
 
@@ -144,8 +134,6 @@ function LlmSettingForm({
   const [endpoint, setEndpoint] = useState(defaults.endpoint);
   const [apiKey, setApiKey] = useState('');
   const [clearApiKey, setClearApiKey] = useState(false);
-  const [braveApiKey, setBraveApiKey] = useState('');
-  const [clearBraveApiKey, setClearBraveApiKey] = useState(false);
   const [model, setModel] = useState(defaults.model);
   const [thinkingLevel, setThinkingLevel] = useState(defaults.thinkingLevel);
   const [isModelModalOpened, { open: openModelModal, close: closeModelModal }] = useDisclosure(false);
@@ -179,25 +167,21 @@ function LlmSettingForm({
 
     try {
       const resolvedApiKey = clearApiKey ? '' : apiKey.trim() || undefined;
-      const resolvedBraveApiKey = clearBraveApiKey ? '' : braveApiKey.trim() || undefined;
       await updateLlmSetting({
         variables: {
           endpoint: endpoint.trim() || undefined,
           apiKey: resolvedApiKey,
           model: model.trim() || undefined,
           thinkingLevel: thinkingLevel.trim(),
-          braveApiKey: resolvedBraveApiKey,
         },
       });
 
       notifications.show({
-        message: 'LLM 및 검색 API 설정이 데이터베이스에 안전하게 저장되었습니다.',
+        message: 'LLM 설정이 데이터베이스에 안전하게 저장되었습니다.',
         color: 'teal',
       });
       setClearApiKey(false);
       setApiKey('');
-      setClearBraveApiKey(false);
-      setBraveApiKey('');
       await onUpdated();
     } catch (err) {
       notifications.show({
@@ -232,7 +216,7 @@ function LlmSettingForm({
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <label htmlFor="apiKey" className="text-sm font-medium text-dark-800">
-            LLM API 키 (Secret Key)
+            API 키 (Secret Key)
           </label>
           {currentSetting?.apiKeyMasked && !clearApiKey && (
             <button
@@ -279,59 +263,6 @@ function LlmSettingForm({
         )}
         <p id="apiKey-help" className="text-xs text-dark-500">
           새 API 키를 입력하면 DB에 갱신됩니다. 비워두면 기존 등록된 키 또는 환경변수가 유지됩니다.
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <label htmlFor="braveApiKey" className="text-sm font-medium text-dark-800">
-            Brave Search API 키 (웹 검색)
-          </label>
-          {currentSetting?.braveApiKeyMasked && !clearBraveApiKey && (
-            <button
-              type="button"
-              disabled={isUpdating}
-              onClick={() => {
-                setClearBraveApiKey(true);
-                setBraveApiKey('');
-              }}
-              className="text-xs text-red-600 hover:text-red-700 underline disabled:opacity-50"
-            >
-              DB 등록 키 삭제
-            </button>
-          )}
-          {clearBraveApiKey && (
-            <button
-              type="button"
-              disabled={isUpdating}
-              onClick={() => setClearBraveApiKey(false)}
-              className="text-xs text-dark-600 hover:text-dark-800 underline disabled:opacity-50"
-            >
-              삭제 취소
-            </button>
-          )}
-        </div>
-        {clearBraveApiKey ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
-            DB에 등록된 Brave Search API 키가 저장 시 삭제됩니다. (기본 환경변수 BRAVE_API_KEY 로 복원됨)
-          </div>
-        ) : (
-          <AdminInput
-            id="braveApiKey"
-            type="password"
-            value={braveApiKey}
-            disabled={isUpdating}
-            onChange={e => setBraveApiKey(e.target.value)}
-            aria-describedby="braveApiKey-help"
-            placeholder={
-              currentSetting?.braveApiKeyMasked
-                ? `현재 등록됨 (${currentSetting.braveApiKeyMasked}) - 변경 시에만 입력`
-                : '등록된 키 없음 (입력하지 않으면 환경변수 BRAVE_API_KEY 사용)'
-            }
-          />
-        )}
-        <p id="braveApiKey-help" className="text-xs text-dark-500">
-          상품 설명 생성 시 실시간 웹 검색(Brave Search)에 사용되는 API 키입니다. 미입력 시 환경변수(BRAVE_API_KEY)가 적용됩니다.
         </p>
       </div>
 

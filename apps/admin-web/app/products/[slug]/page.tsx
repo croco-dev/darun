@@ -10,6 +10,7 @@ import {
   ProductDetailInfoSection,
   ProductDetailLinkSection,
   ProductDetailScreenshotSection,
+  ProductDetailFlowSection,
 } from '../../../features/products';
 
 type PageProps = {
@@ -62,6 +63,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         <ProductDetailDescriptionSection slug={slug} />
         <ProductDetailFeatureSection slug={slug} />
         <ProductDetailLinkSection slug={slug} />
+        <ProductDetailFlowSection slug={slug} />
         <ProductDetailScreenshotSection slug={slug} />
         <ProductDetailAlternativeSection slug={slug} />
         <AdminPanel>

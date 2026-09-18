@@ -8,4 +8,5 @@ export * from './components/SectionHeader';
 export * from './components/PageHeading';
 export * from './components/SectionWrapper';
 export * from './components/Toast';
+export * from './components/Dialog';
 export * from './components/icons';

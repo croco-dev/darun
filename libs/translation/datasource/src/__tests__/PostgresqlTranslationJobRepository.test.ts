@@ -93,35 +93,4 @@ describe('PostgresqlTranslationJobRepository', () => {
       expect(result?.id).toBe('job-1');
     });
   });
-
-  describe('updateJobStatus', () => {
-    it('resetCreatedAt이 true이면 createdAt도 갱신한다', async () => {
-      let capturedSetValues: Record<string, unknown> = {};
-      const mockDb = {
-        update: vi.fn().mockReturnValue({
-          set: vi.fn().mockImplementation((values: Record<string, unknown>) => {
-            capturedSetValues = values;
-            return {
-              where: vi.fn().mockReturnValue({
-                returning: vi.fn().mockReturnValue({
-                  then: vi.fn().mockImplementation(async (fn: (rows: unknown[]) => unknown) => fn([makeJobRow()])),
-                }),
-              }),
-            };
-          }),
-        }),
-      } as unknown as Drizzle;
-
-      const repository = new PostgresqlTranslationJobRepository(mockDb);
-      await repository.updateJobStatus('job-1', 'pending', {
-        message: '재시도',
-        resetCreatedAt: true,
-      });
-
-      expect(capturedSetValues['status']).toBe('pending');
-      expect(capturedSetValues['message']).toBe('재시도');
-      expect(capturedSetValues['createdAt']).toBeInstanceOf(Date);
-      expect(capturedSetValues['updatedAt']).toBeInstanceOf(Date);
-    });
-  });
 });
