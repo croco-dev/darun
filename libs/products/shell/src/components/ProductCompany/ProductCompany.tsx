@@ -59,11 +59,11 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs font-bold uppercase tracking-wider text-dark-400">{t('company.basicInfo')}</p>
+      <p className="text-xs font-bold text-dark-400">{t('company.basicInfo')}</p>
       <dl className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
         {company?.name && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-dark-150/70 bg-surface-100/50 px-4 py-3">
-            <dt className="shrink-0 text-xs font-semibold uppercase tracking-wider text-dark-500">
+            <dt className="shrink-0 text-xs font-semibold text-dark-500">
               {t('company.field.name')}
             </dt>
             <dd className="text-right text-sm font-semibold text-dark-900 break-keep">{company.name}</dd>
@@ -71,7 +71,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
         )}
         {company?.type && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-dark-150/70 bg-surface-100/50 px-4 py-3">
-            <dt className="shrink-0 text-xs font-semibold uppercase tracking-wider text-dark-500">
+            <dt className="shrink-0 text-xs font-semibold text-dark-500">
               {t('company.field.status')}
             </dt>
             <dd className="text-right text-sm font-semibold text-dark-900 break-keep">
@@ -81,7 +81,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
         )}
         {company?.address && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-dark-150/70 bg-surface-100/50 px-4 py-3">
-            <dt className="shrink-0 text-xs font-semibold uppercase tracking-wider text-dark-500">
+            <dt className="shrink-0 text-xs font-semibold text-dark-500">
               {t('company.field.address')}
             </dt>
             <dd className="text-right text-sm font-semibold text-dark-900 break-keep">
@@ -91,7 +91,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
         )}
         {company?.startAt && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-dark-150/70 bg-surface-100/50 px-4 py-3">
-            <dt className="shrink-0 text-xs font-semibold uppercase tracking-wider text-dark-500">
+            <dt className="shrink-0 text-xs font-semibold text-dark-500">
               {t('company.field.foundedAt')}
             </dt>
             <dd className="text-right text-sm font-semibold text-dark-900 break-keep">

@@ -36,7 +36,7 @@ export const ProductUserAction = bind(
           aria-label={voteLabel}
           aria-pressed={voted}
           title={voteLabel}
-          className={`group transition-all duration-200 active:scale-[0.98] ${
+          className={`group h-10 transition-all duration-200 active:scale-[0.98] ${
             voted
               ? 'border-cherry-300 bg-cherry-50/80 text-cherry-900 shadow-xs hover:bg-cherry-100/70'
               : 'hover:border-dark-300'

@@ -49,7 +49,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                   <span className="w-max break-keep text-sm font-semibold text-current">
                     {getLocalizedLinkTitle(link.title, locale)}
                   </span>
-                  {isPrimary && <span className="break-keep text-xs text-dark-300">{link.displayLink}</span>}
+                  {isPrimary && <span className="break-keep text-xs text-dark-400">{link.displayLink}</span>}
                 </div>
                 <ExternalLink
                   size={14}

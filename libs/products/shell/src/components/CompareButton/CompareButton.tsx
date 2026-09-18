@@ -90,7 +90,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       data-testid="compare-button"
       aria-pressed={isAdded}
       title={buttonLabel}
-      className="group transition-all duration-200 active:scale-[0.98]"
+      className="group h-10 transition-all duration-200 active:scale-[0.98]"
     >
       <div className="flex items-center gap-1.5">
         {isAdded ? (
