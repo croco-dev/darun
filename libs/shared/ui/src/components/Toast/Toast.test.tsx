@@ -26,7 +26,7 @@ describe('ToastProvider', () => {
     expect(screen.getByRole('status')).toHaveTextContent('저장 완료');
 
     act(() => {
-      vi.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(5000);
     });
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument();

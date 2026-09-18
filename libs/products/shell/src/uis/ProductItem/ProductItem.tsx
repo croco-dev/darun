@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import React from 'react';
 import { getLocalizedTag } from '../../utils/localization';
+import { RankBadge } from '../RankBadge';
 
 type ProductItemProps = {
   as?: 'div' | 'a' | 'button';
@@ -65,21 +66,7 @@ export const ProductItem = ({
       <Component className="flex w-full flex-col gap-2.5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-start gap-3 pt-0.5">
-            {rank !== undefined && (
-              <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black tabular-nums transition-all duration-200 ${
-                  rank === 1
-                    ? 'bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-950 shadow-xs ring-1 ring-amber-300/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.7)]'
-                    : rank === 2
-                      ? 'bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 text-slate-800 shadow-xs ring-1 ring-slate-300/90 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.9)]'
-                      : rank === 3
-                        ? 'bg-gradient-to-b from-amber-600 via-amber-700 to-orange-800 text-amber-50 shadow-xs ring-1 ring-amber-600/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35)]'
-                        : 'border border-dark-150 bg-surface-100 font-bold text-dark-700 group-hover:border-dark-300 group-hover:bg-white group-hover:text-dark-900'
-                }`}
-              >
-                {rank}
-              </span>
-            )}
+            {rank !== undefined && <RankBadge rank={rank} size="md" />}
             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dark-150 bg-white p-1 shadow-2xs">
               <Image
                 src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}

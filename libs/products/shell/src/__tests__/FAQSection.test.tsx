@@ -12,6 +12,7 @@ vi.mock('next-intl', () => ({
 }));
 
 vi.mock('@darun/ui', () => ({
+  ChevronDown: () => <svg data-testid="chevron-down" />,
   SectionHeader: ({ title }: { title: string }) => <div data-testid="section-header">{title}</div>,
 }));
 

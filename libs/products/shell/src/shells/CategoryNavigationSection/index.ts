@@ -1,1 +1,1 @@
-export { CategoryNavigationSection } from './CategoryNavigationSection';
+export { CategoryNavigationSection, getCategoryIcon } from './CategoryNavigationSection';

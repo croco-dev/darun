@@ -7,6 +7,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@darun/ui', () => ({
+  ChevronDown: () => React.createElement('svg', { 'data-testid': 'chevron-down' }),
   SectionHeader: ({ title }: { title: string }) =>
     React.createElement('div', { 'data-testid': 'section-header' }, title),
 }));

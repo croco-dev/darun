@@ -20,9 +20,9 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
     return (
       <div
         data-testid="product-photos-empty"
-        className="flex min-h-32 flex-col items-center justify-center rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-8 text-center"
+        className="flex flex-col items-center justify-center gap-2 rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-8 text-center"
       >
-        <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-surface-100 text-dark-400">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
           <Sparkles size={16} className="stroke-[1.75]" />
         </div>
         <p className="text-sm text-dark-500 break-keep">{t('photo.empty')}</p>
@@ -44,7 +44,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
                   alt={photo.imageAlt}
                   width={600}
                   height={220}
-                  className="h-[220px] w-auto rounded-xl border border-dark-150/80 bg-surface-100 object-contain shadow-2xs transition-all duration-200 hover:border-dark-300 hover:shadow-sm"
+                  className="h-56 w-auto rounded-xl border border-dark-150/80 bg-surface-100 object-contain shadow-2xs transition-all duration-200 hover:border-dark-300 hover:shadow-sm"
                 />
               </Zoom>
             </div>

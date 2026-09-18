@@ -9,7 +9,7 @@ export default function Loading() {
     <Layout>
       <main className="flex flex-col" aria-busy="true" aria-live="polite" aria-label="페이지를 불러오는 중입니다">
         <section className="relative isolate overflow-hidden bg-dark-900">
-          <ContentArea className="relative z-10 py-14 sm:py-18 md:py-22">
+          <ContentArea className="relative z-10 py-14 sm:py-16 md:py-20">
             <div className="flex max-w-2xl flex-col gap-5 md:gap-6">
               <div className="h-7 w-64 animate-pulse rounded-full bg-white/10 motion-reduce:animate-none" />
               <div className="flex flex-col gap-3">

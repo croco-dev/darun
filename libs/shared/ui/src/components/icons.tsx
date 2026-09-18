@@ -1,7 +1,9 @@
 export {
   AlertCircle,
+  AlertTriangle,
   ArrowRight,
   BookOpen,
+  Building2,
   Calendar,
   Check,
   CheckCircle2,
@@ -9,6 +11,7 @@ export {
   ChevronRight,
   Compass,
   ExternalLink,
+  FileText,
   Heart,
   Layers,
   Plus,

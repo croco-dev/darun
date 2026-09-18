@@ -2,7 +2,7 @@
 
 import { bind } from '@darun/utils-structure-react';
 import DOMPurify from 'isomorphic-dompurify';
-import { FileText } from 'lucide-react';
+import { FileText } from '@darun/ui';
 import { useTranslations } from 'next-intl';
 
 import { useProductDescription } from './useProductDescription';
@@ -12,7 +12,7 @@ export const ProductDescription = bind(useProductDescription, ({ description }) 
 
   if (!description) {
     return (
-      <div className="flex min-h-28 flex-col items-center justify-center gap-2 py-4 text-center sm:min-h-32">
+      <div className="flex flex-col items-center justify-center gap-2 rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-8 text-center">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
           <FileText size={18} className="stroke-[2]" />
         </div>

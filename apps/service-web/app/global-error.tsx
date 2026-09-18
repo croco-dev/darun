@@ -1,8 +1,9 @@
 'use client';
 
-import { Button } from '@darun/ui';
+import './globals.css';
+
+import { AlertTriangle, Button } from '@darun/ui';
 import * as Sentry from '@sentry/nextjs';
-import { AlertTriangle } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {

@@ -37,7 +37,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
       />
       <div className="absolute inset-0 bg-gradient-to-r from-dark-900 via-dark-900/90 to-transparent" />
 
-      <ContentArea className="relative z-10 py-14 sm:py-18 md:py-22">
+      <ContentArea className="relative z-10 py-14 sm:py-16 md:py-20">
         <div className="flex max-w-2xl flex-col gap-5 md:gap-6">
           {/* Badge Pill */}
           <Link
@@ -61,7 +61,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             <span className="text-sm font-medium tracking-tight text-dark-300 md:text-base">
               {t('Main.hero.description')}
             </span>
-            <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[52px]">
+            <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-5xl">
               {productsCount?.toLocaleString(locale) ?? 0}
               {t('Main.hero.title.countSuffix')}{' '}
               <span className="bg-gradient-to-r from-brown-400 via-amber-300 to-brown-500 bg-clip-text text-transparent drop-shadow-glow-subtle">

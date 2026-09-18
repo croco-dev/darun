@@ -112,7 +112,7 @@ export const CategoryNavigationSection = () => {
             ))}
           </div>
         ) : (
-          <div className="flex min-h-36 flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-10 text-center shadow-card">
+          <div className="flex min-h-44 flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-10 text-center shadow-card">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl shadow-2xs">
               <span aria-hidden="true">🪴</span>
             </div>

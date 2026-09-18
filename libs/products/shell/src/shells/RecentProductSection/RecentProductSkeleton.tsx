@@ -15,7 +15,7 @@ export const RecentProductSkeleton = () => {
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={String(i)}
-              className="flex h-full flex-col justify-between rounded-card-lg border border-dark-150 bg-white p-4 shadow-card sm:p-5"
+              className="flex h-full flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card sm:p-5"
             >
               <div className="flex flex-col gap-3">
                 <div className="h-12 w-12 animate-pulse rounded-xl bg-surface-200 motion-reduce:animate-none" />

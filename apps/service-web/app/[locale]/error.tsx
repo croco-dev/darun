@@ -1,8 +1,7 @@
 'use client';
 
-import { Button } from '@darun/ui';
+import { AlertTriangle, Button } from '@darun/ui';
 import * as Sentry from '@sentry/nextjs';
-import { AlertTriangle } from 'lucide-react';
 import { useEffect } from 'react';
 import { Link } from '../../i18n/navigation';
 
@@ -30,7 +29,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
           <Button onClick={() => reset()} variant="shadow" color="primary" size="md">
             다시 시도
           </Button>
-          <Link href="/" className="focus-visible:outline-none">
+          <Link href="/" className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2">
             <Button as="span" variant="shadow" color="secondary" size="md">
               홈으로 이동
             </Button>

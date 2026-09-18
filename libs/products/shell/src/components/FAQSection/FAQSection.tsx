@@ -1,7 +1,6 @@
 'use client';
 
-import { SectionHeader } from '@darun/ui';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, SectionHeader } from '@darun/ui';
 import { useTranslations } from 'next-intl';
 import { useId, useState, useRef, useEffect } from 'react';
 

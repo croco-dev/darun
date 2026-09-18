@@ -1,5 +1,5 @@
 export { AlternativeProductSection } from './AlternativeProductSection';
-export { CategoryNavigationSection } from './CategoryNavigationSection';
+export { CategoryNavigationSection, getCategoryIcon } from './CategoryNavigationSection';
 export { CategoryProductSection } from './CategoryProductSection';
 export { MainHeroBanner } from './MainHeroBanner';
 export { ProductAlternativeSection } from './ProductAlternativeSection';

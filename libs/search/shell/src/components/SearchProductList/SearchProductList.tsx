@@ -3,7 +3,7 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
-import { ProductCard } from '@darun/products-shell';
+import { ProductCard, getCategoryIcon } from '@darun/products-shell';
 import {
   CompactCategoriesForSearchProductListDocument,
   CompactTrendingPreviewForSearchProductListDocument,
@@ -14,7 +14,6 @@ import { bind } from '@darun/utils-structure-react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
-import { getCategoryIcon } from '../../shells/SearchEmptyState/CategoryShortcutGrid/CategoryShortcutGrid';
 import { SearchProduct, useSearchProductList } from './useSearchProductList';
 
 const POPULAR_QUERIES: Record<string, string[]> = {
@@ -120,14 +119,13 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
             <div
               data-testid="search-empty-popular-queries"
               className="flex gap-2 overflow-x-auto px-1 scrollbar-hide"
-              role="list"
+              role="group"
               aria-label="Popular searches"
             >
               {popularQueries.map(popularQuery => (
                 <button
                   key={popularQuery}
                   type="button"
-                  role="listitem"
                   onClick={() => navigateToSearch(popularQuery)}
                   className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 hover:shadow-button-hover active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
                 >
@@ -143,14 +141,13 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
             <div
               data-testid="search-empty-categories"
               className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
-              role="list"
+              role="group"
               aria-label="Browse by category"
             >
               {categories.map(category => (
                 <button
                   key={category.id}
                   type="button"
-                  role="listitem"
                   onClick={() => navigateToCategory(category.slug)}
                   className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 hover:shadow-button-hover active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
                 >

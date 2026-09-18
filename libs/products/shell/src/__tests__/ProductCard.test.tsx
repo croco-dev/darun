@@ -46,6 +46,7 @@ vi.mock('../uis', () => ({
       ))}
     </div>
   ),
+  RankBadge: ({ rank }: { rank: number }) => <span>{rank}</span>,
   VoteCountBadge: ({ count }: { count: number }) => <div data-testid="vote-count">{count}</div>,
 }));
 

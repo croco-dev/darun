@@ -26,6 +26,7 @@ const config: Config = {
           1000: '#000000',
         },
         brown: {
+          50: '#FCF5EF',
           100: '#f9ece1',
           200: '#f2dac2',
           300: '#ecc7a4',
@@ -37,6 +38,7 @@ const config: Config = {
           900: '#96591F',
         },
         yellow: {
+          50: '#FDFBF0',
           100: '#FCF6DF',
           200: '#F9ECBF',
           300: '#F6E39F',
@@ -48,6 +50,7 @@ const config: Config = {
           900: '#B38F10',
         },
         leaf: {
+          50: '#F2F7F4',
           100: '#E7F0EC',
           200: '#CFE1D9',
           300: '#B7D3C6',
@@ -59,6 +62,7 @@ const config: Config = {
           900: '#3E6452',
         },
         cherry: {
+          50: '#F9F0F1',
           100: '#F3E4E6',
           200: '#E8CACD',
           300: '#DCAFB4',
@@ -81,6 +85,7 @@ const config: Config = {
           900: '#3B3732',
         },
         surface: {
+          50: '#FAFBFD',
           100: '#F6F8FC',
           200: '#EEF2F8',
           300: '#E3E9F3',

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 
-import { AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, X } from '../icons';
 
 export interface Toast {
   id: string;
@@ -42,10 +42,10 @@ export function ToastProvider({
     setToasts(prev => [...prev, { id, message, type }]);
     const exitTimerId = setTimeout(() => {
       setToasts(prev => prev.map(t => (t.id === id ? { ...t, exiting: true } : t)));
-    }, 2750);
+    }, 4500);
     const removeTimerId = setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
+    }, 5000);
     timerIdsRef.current = [...timerIdsRef.current, exitTimerId, removeTimerId];
   }, []);
 

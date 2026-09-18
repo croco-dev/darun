@@ -1,7 +1,7 @@
 'use client';
 
 import { bind } from '@darun/utils-structure-react';
-import { Building2 } from 'lucide-react';
+import { Building2 } from '@darun/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedCompanyAddress, getLocalizedCompanyType } from '../../utils/localization';
 import { useProductCompany } from './useProductCompany';
@@ -48,7 +48,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
 
   if (!hasAnyInfo) {
     return (
-      <div className="flex min-h-28 flex-col items-center justify-center gap-2 py-4 text-center sm:min-h-32">
+      <div className="flex flex-col items-center justify-center gap-2 rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-8 text-center">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
           <Building2 size={18} className="stroke-[2]" />
         </div>

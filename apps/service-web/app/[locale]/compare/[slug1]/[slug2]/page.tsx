@@ -163,7 +163,7 @@ export default async function ComparePage({ params }: Props) {
                 source="compare"
               />
             </div>
-            <div className="flex items-center justify-center -my-1 md:hidden">
+            <div aria-hidden="true" className="flex items-center justify-center -my-1 md:hidden">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-dark-900 text-2xs font-black tracking-wider text-white shadow-sm">
                 VS
               </span>

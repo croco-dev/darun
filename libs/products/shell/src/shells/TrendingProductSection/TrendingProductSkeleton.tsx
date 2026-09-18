@@ -12,7 +12,7 @@ export const TrendingProductSkeleton = () => {
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={String(i)}
-              className="relative flex h-full flex-col justify-between rounded-card-lg border border-dark-150 bg-white p-4 shadow-card sm:p-5"
+              className="relative flex h-full flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card sm:p-5"
             >
               <div className="absolute right-3.5 top-3.5 z-10 sm:right-4 sm:top-4">
                 <div className="h-6 w-6 animate-pulse rounded-lg bg-surface-200 motion-reduce:animate-none" />
