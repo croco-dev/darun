@@ -28,10 +28,8 @@ vi.mock('@mantine/notifications', () => ({
 }));
 
 const mockPush = vi.fn();
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
+vi.mock('@darun/utils-router', () => ({
+  useNavigate: () => mockPush,
 }));
 
 import { useNewProductLinkForm } from '../useNewProductLinkForm';

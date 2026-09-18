@@ -32,8 +32,8 @@ vi.mock('@mantine/notifications', () => ({
 }));
 
 const mockPush = vi.fn();
-vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(() => ({ push: mockPush })),
+vi.mock('@darun/utils-router', () => ({
+  useNavigate: () => mockPush,
 }));
 
 vi.mock('@mantine/hooks', () => ({
