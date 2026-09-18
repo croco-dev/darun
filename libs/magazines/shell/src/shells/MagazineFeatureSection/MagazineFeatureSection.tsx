@@ -31,9 +31,9 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
           <SectionHeader title={t('home.magazine.title')} />
           <div
             data-testid="magazine-empty"
-            className="flex flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-12 text-center shadow-card"
+            className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-12 text-center"
           >
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150/80 bg-gradient-to-br from-surface-50 to-surface-100 text-dark-500 shadow-2xs">
               <BookOpen size={22} className="stroke-[1.75]" />
             </div>
             <p className="text-lg font-bold text-dark-900 break-keep">{t('Magazine.empty.title')}</p>
@@ -42,7 +42,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
             </p>
             <Link
               href={`/${locale}/ranking`}
-              className="mt-5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              className="mt-5 inline-flex rounded-xl transition-transform duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               <Button as="span" variant="shadow" color="primary">
                 {t('Magazine.empty.cta')}

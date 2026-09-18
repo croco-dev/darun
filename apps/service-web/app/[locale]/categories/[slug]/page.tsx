@@ -132,7 +132,7 @@ export default async function CategoryPage({ params }: Props) {
     <Layout>
       <JsonLd data={breadcrumbList} />
       <JsonLd data={collectionPageJsonLd} />
-      <main className="flex w-full flex-col">
+      <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col bg-gradient-to-b from-surface-50/60 via-white to-white">
         <CategoryProductSection slug={slug} />
       </main>
     </Layout>

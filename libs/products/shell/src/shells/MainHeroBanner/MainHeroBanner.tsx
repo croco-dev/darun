@@ -57,8 +57,8 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             />
           </Link>
 
-          <div className="flex flex-col gap-3">
-            <span className="text-sm font-medium tracking-tight text-dark-300 md:text-base">
+          <div className="flex flex-col gap-2 sm:gap-2.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-brown-400/90 sm:text-sm">
               {t('Main.hero.description')}
             </span>
             <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-5xl">

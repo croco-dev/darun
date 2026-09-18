@@ -39,6 +39,7 @@ export function SectionHeader({
   ...props
 }: SectionHeaderProps) {
   const isCentered = align === 'center';
+  const isSmall = size === 'sm';
   return (
     <div className={cn(sectionHeaderVariants({ size, align }), className)} {...props}>
       <div
@@ -47,7 +48,12 @@ export function SectionHeader({
           isCentered ? 'items-center justify-center text-center' : 'items-center justify-between'
         )}
       >
-        <h2 className="break-keep text-xl font-bold leading-tight tracking-tight text-dark-900 sm:text-2xl sm:tracking-tight">
+        <h2
+          className={cn(
+            'break-keep font-extrabold leading-tight tracking-tight text-dark-900',
+            isSmall ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'
+          )}
+        >
           {title}
         </h2>
         {moreLink && <span className="inline-flex shrink-0 items-center">{moreLink}</span>}

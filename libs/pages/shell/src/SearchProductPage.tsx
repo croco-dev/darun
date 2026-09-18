@@ -6,7 +6,7 @@ import {
   SearchProductResult,
   TrendingProductPreview,
 } from '@darun/search-shell';
-import { Breadcrumb, ContentArea, SectionHeader } from '@darun/ui';
+import { Breadcrumb, ContentArea, PageHeading, SectionHeader } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { useLocale, useTranslations } from 'next-intl';
 
@@ -30,8 +30,8 @@ export function SearchProductPage({ searchParams }: Props) {
   if (!query) {
     return (
       <Layout>
-        <main className="flex w-full flex-col">
-          <ContentArea className="flex flex-col gap-8 py-6 md:gap-10 md:py-8">
+        <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col bg-gradient-to-b from-surface-50/60 via-white to-white">
+          <ContentArea className="flex flex-col gap-8 pt-5 pb-12 sm:pt-6 sm:pb-16 md:gap-10 md:pt-8 md:pb-20">
             <Breadcrumb
               data-testid="breadcrumb-search-empty"
               items={[
@@ -59,17 +59,17 @@ export function SearchProductPage({ searchParams }: Props) {
 
   return (
     <Layout>
-      <main className="flex w-full flex-col">
-        <ContentArea className="flex flex-col gap-6 py-6 md:gap-8 md:py-8">
+      <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col bg-gradient-to-b from-surface-50/60 via-white to-white">
+        <ContentArea className="flex flex-col gap-6 pt-5 pb-12 sm:pt-6 sm:pb-16 md:gap-8 md:pt-8 md:pb-20">
           <Breadcrumb
             data-testid="breadcrumb-search-result"
             items={[
               { label: isKo ? '홈' : 'Home', href: `/${locale}/` },
               { label: isKo ? '검색' : 'Search', href: `/${locale}/search/product` },
-              { label: `"${query}"`, ariaCurrent: 'page' },
+              { label: `‘${query}’`, ariaCurrent: 'page' },
             ]}
           />
-          <SectionHeader title={t('page.resultTitle', { query })} />
+          <PageHeading title={t('page.resultTitle', { query })} />
           <SearchProductResult query={query} />
         </ContentArea>
       </main>

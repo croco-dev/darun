@@ -11,7 +11,7 @@ export const RankedProductSection = () => {
 
   return (
     <SectionWrapper background="white" spacing="md">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">
         <Breadcrumb
           data-testid="breadcrumb-ranking"
           items={[

@@ -21,15 +21,15 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
         <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
         <div
           data-testid="alt-empty"
-          className="flex flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-10 text-center shadow-card"
+          className="flex flex-col items-center justify-center rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-10 text-center"
         >
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-400 shadow-2xs">
-            <Layers size={22} className="stroke-[2]" />
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
+            <Layers size={18} className="stroke-[2]" />
           </div>
           <p className="text-sm font-semibold text-dark-900 break-keep">{t('empty.title')}</p>
           <p className="mt-1 max-w-xs text-xs text-dark-500 break-keep">{t('empty.description')}</p>
           <Link href={`/${locale}/search/product`} className="mt-4">
-            <Button as="span" variant="shadow" color="primary" size="sm">
+            <Button as="span" variant="shadow" color="primary" size="sm" className="h-10 px-4">
               {t('empty.button')}
             </Button>
           </Link>
@@ -47,7 +47,13 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
           href={`/${locale}/products/${slug}/alternatives`}
           className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
-          <Button as="span" variant="shadow" color="secondary">
+          <Button
+            as="span"
+            variant="shadow"
+            color="secondary"
+            size="md"
+            className="h-10 sm:h-11 px-4 sm:px-5 transition-all duration-200 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover active:scale-95"
+          >
             <div className="flex items-center justify-center gap-2">
               <Layers
                 size={16}

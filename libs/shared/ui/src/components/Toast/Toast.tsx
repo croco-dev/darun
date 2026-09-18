@@ -65,24 +65,28 @@ export function ToastProvider({
             data-testid={`toast-${toast.type}`}
             role={toast.type === 'error' ? 'alert' : 'status'}
             aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
-            className={`pointer-events-auto flex items-center gap-2.5 rounded-xl px-4 py-3 shadow-elevated transition-all motion-reduce:animate-none ${
+            className={`pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/12 bg-dark-900/95 px-4 py-3 text-white shadow-elevated backdrop-blur-md transition-all motion-reduce:animate-none ${
               toast.exiting ? 'animate-fade-out-down' : 'animate-fade-in-up'
-            } ${
-              toast.type === 'success'
-                ? 'border border-leaf-600/30 bg-leaf-700 text-white shadow-card-hover'
-                : 'border border-cherry-600/30 bg-cherry-700 text-white shadow-card-hover'
             }`}
           >
-            {toast.type === 'success' ? (
-              <CheckCircle2 size={18} className="shrink-0 stroke-[2.25] text-leaf-200" aria-hidden="true" />
-            ) : (
-              <AlertCircle size={18} className="shrink-0 stroke-[2.25] text-cherry-200" aria-hidden="true" />
-            )}
-            <span className="text-sm font-medium tracking-tight break-keep">{toast.message}</span>
+            <div
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                toast.type === 'success'
+                  ? 'border-leaf-500/30 bg-leaf-500/20 text-leaf-400'
+                  : 'border-cherry-500/30 bg-cherry-500/20 text-cherry-400'
+              }`}
+            >
+              {toast.type === 'success' ? (
+                <CheckCircle2 size={14} className="stroke-[2.5]" aria-hidden="true" />
+              ) : (
+                <AlertCircle size={14} className="stroke-[2.5]" aria-hidden="true" />
+              )}
+            </div>
+            <span className="text-sm font-semibold tracking-tight text-white/95 break-keep">{toast.message}</span>
             <button
               type="button"
               onClick={() => removeToast(toast.id)}
-              className="-mr-1 ml-1.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              className="-mr-1 ml-1.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
               aria-label={closeAriaLabel}
             >
               <X size={14} className="stroke-[2.5]" aria-hidden="true" />

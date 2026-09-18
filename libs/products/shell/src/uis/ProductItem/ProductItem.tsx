@@ -67,7 +67,7 @@ export const ProductItem = ({
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-start gap-3 pt-0.5">
             {rank !== undefined && <RankBadge rank={rank} size="md" />}
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dark-150 bg-white p-1 shadow-2xs">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dark-150/90 bg-white p-1 shadow-2xs ring-1 ring-black/5">
               <Image
                 src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}
                 unoptimized={!resolvedLogoUrl}
@@ -112,13 +112,13 @@ export const ProductItem = ({
       className={
         isStacked
           ? 'flex w-full flex-col gap-3 overflow-visible'
-          : `flex w-full gap-3 overflow-visible ${isAlignCenter ? 'items-center' : 'items-start'}`
+          : `flex w-full overflow-visible ${isHero ? 'gap-3.5 sm:gap-4 md:gap-5' : 'gap-3'} ${isAlignCenter ? 'items-center' : 'items-start'}`
       }
     >
       <div
-        className={`flex shrink-0 items-center justify-center overflow-hidden border border-dark-150 bg-white ${
+        className={`flex shrink-0 items-center justify-center overflow-hidden border border-dark-150 bg-white ring-1 ring-black/5 ${
           isHero
-            ? 'h-24 w-24 rounded-2xl p-2.5 shadow-card'
+            ? 'h-20 w-20 rounded-2xl p-2 shadow-card sm:h-24 sm:w-24 sm:p-2.5'
             : effectiveLogoSize === 'small'
               ? 'h-12 w-12 rounded-xl p-1.5 shadow-2xs'
               : 'h-16 w-16 rounded-2xl p-2 shadow-xs'
@@ -135,11 +135,11 @@ export const ProductItem = ({
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden w-full">
-        <div className="flex flex-col gap-0.5">
+        <div className={isHero ? 'flex flex-col gap-1.5 sm:gap-2' : 'flex flex-col gap-0.5'}>
           <NameTag
             className={
               isHero
-                ? 'm-0 text-2xl font-bold leading-tight tracking-tight text-dark-900 md:text-3xl'
+                ? 'm-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-900 sm:text-3xl'
                 : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-900 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
             }
           >
@@ -158,8 +158,8 @@ export const ProductItem = ({
               <p
                 className={
                   isHero
-                    ? 'text-base leading-relaxed text-dark-600 break-keep md:text-lg'
-                    : 'text-sm leading-relaxed text-dark-600 break-keep'
+                    ? 'text-sm leading-relaxed text-dark-600 break-keep sm:text-base md:text-lg'
+                    : 'line-clamp-2 text-sm leading-relaxed text-dark-600 break-keep'
                 }
               >
                 {summary}
@@ -169,7 +169,7 @@ export const ProductItem = ({
         {(tags || specialTags || footerRight) && (
           <div className="flex items-center justify-between gap-2 pt-1 mt-auto w-full">
             {tags || specialTags ? (
-              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide touch-pan-x">
+              <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide touch-pan-x py-0.5">
                 {tags &&
                   (maxTagItems && tags.length > maxTagItems ? (
                     <div className="flex items-center gap-1.5">

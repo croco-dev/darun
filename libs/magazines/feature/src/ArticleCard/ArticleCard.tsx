@@ -36,13 +36,13 @@ export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, 
             </Chip>
           </div>
         )}
-        <h3 className="text-base font-bold leading-tight tracking-tight text-dark-900 break-keep transition-colors duration-200 group-hover:text-dark-900 md:text-lg">
+        <h3 className="text-base font-extrabold leading-snug tracking-tight text-dark-900 break-keep transition-colors duration-200 group-hover:text-dark-950 md:text-lg">
           {title}
         </h3>
         {summary && <p className="line-clamp-2 text-sm leading-relaxed text-dark-600 break-keep">{summary}</p>}
         <div className="mt-auto flex items-center gap-x-2 pt-3 text-xs text-dark-500">
-          {author && <span className="font-medium text-dark-700">{author}</span>}
-          {author && date && <span>•</span>}
+          {author && <span className="font-semibold text-dark-800">{author}</span>}
+          {author && date && <span className="text-dark-300">•</span>}
           {date && <span>{formatDate(date, '')}</span>}
         </div>
       </div>

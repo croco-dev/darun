@@ -13,18 +13,18 @@ export const ProductFeatureList = bind(useProductFeatureList, ({ features }) => 
     return (
       <div
         data-testid="product-features-empty"
-        className="flex flex-col items-center justify-center gap-2 rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-8 text-center"
+        className="flex flex-col items-center justify-center gap-2.5 rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-10 text-center"
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
-          <Sparkles size={16} className="stroke-[1.75]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
+          <Sparkles size={18} className="stroke-[1.75]" />
         </div>
-        <p className="text-sm text-dark-500 break-keep">{t('empty')}</p>
+        <p className="text-sm font-medium text-dark-500 break-keep">{t('empty')}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-3.5 sm:gap-4">
       {features.map(feature => (
         <FeatureItem
           key={feature.id}

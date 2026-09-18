@@ -102,7 +102,7 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
       ref={dialogRef}
       aria-labelledby={labelledBy}
       className={cn(
-        'm-auto max-h-[calc(100dvh-3rem)] max-w-[min(96rem,100vw-2rem)] bg-transparent p-0 text-dark-900',
+        'm-auto max-h-[calc(100dvh-3rem)] max-w-[min(96rem,100vw-2rem)] rounded-3xl bg-transparent p-0 text-dark-900 shadow-elevated backdrop:bg-dark-950/60 backdrop:backdrop-blur-sm backdrop:transition-opacity',
         className
       )}
     >

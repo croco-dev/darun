@@ -3,12 +3,12 @@ import { AnchorHTMLAttributes, ButtonHTMLAttributes, HTMLAttributes, ReactNode }
 import { cn } from '../lib/utils';
 
 const chipVariants = {
-  square: 'rounded-md px-2 py-0.5 text-xs font-medium tracking-tight',
-  circle: 'rounded-full px-2.5 py-0.5 text-xs font-medium tracking-tight',
+  square: 'rounded-md px-2 py-0.5 text-xs font-semibold tracking-tight',
+  circle: 'rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-tight',
 } as const;
 
 const chipColors = {
-  filledGray: 'border-transparent bg-surface-200/90 text-dark-700',
+  filledGray: 'border-dark-150/70 bg-surface-100 text-dark-700 shadow-2xs',
   filledDark: 'border-transparent bg-dark-900 text-dark-100',
   outlineGray: 'border-dark-150 bg-surface-100 text-dark-700',
   outlineBrown: 'border-brown-300 bg-brown-50/50 text-brown-900',
@@ -18,7 +18,7 @@ const chipColors = {
 } as const;
 
 const chipHoverColors: Partial<Record<ChipColor, string>> = {
-  filledGray: 'hover:bg-surface-300 hover:text-dark-900',
+  filledGray: 'hover:border-dark-300 hover:bg-surface-200 hover:text-dark-900',
   filledDark: 'hover:bg-dark-800',
   outlineGray: 'hover:border-dark-300 hover:bg-surface-200',
   outlineBrown: 'hover:bg-brown-100',

@@ -129,7 +129,7 @@ export default async function ComparePage({ params }: Props) {
 
   return (
     <Layout>
-      <main className="flex w-full flex-col">
+      <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col bg-gradient-to-b from-surface-50/60 via-white to-white">
         <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
           <Breadcrumb
             data-testid="breadcrumb-compare"
@@ -164,7 +164,7 @@ export default async function ComparePage({ params }: Props) {
               />
             </div>
             <div aria-hidden="true" className="flex items-center justify-center -my-1 md:hidden">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-dark-900 text-2xs font-black tracking-wider text-white shadow-sm">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-dark-900 to-dark-950 text-2xs font-black tracking-wider text-white shadow-md ring-1 ring-black/10">
                 VS
               </span>
             </div>
@@ -179,51 +179,51 @@ export default async function ComparePage({ params }: Props) {
               aria-hidden="true"
               className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 items-center justify-center md:flex"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-dark-900 text-xs font-black tracking-wider text-white shadow-elevated">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-dark-900 to-dark-950 text-xs font-black tracking-wider text-white shadow-elevated ring-1 ring-black/10">
                 VS
               </span>
             </div>
           </div>
 
           <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
-            <div className="grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/70 p-3.5 sm:p-4 md:p-5">
+            <div className="sticky top-16 z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
               <div className="flex items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
                 {product1.logoUrl ? (
                   <Image
                     src={product1.logoUrl}
                     alt={product1.name}
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 shrink-0 rounded-md border border-dark-150 bg-white object-contain p-0.5"
+                    width={32}
+                    height={32}
+                    className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-lg border border-dark-150/90 bg-white object-contain p-0.5 shadow-2xs ring-1 ring-black/5"
                   />
                 ) : (
                   <span
                     aria-hidden="true"
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600"
+                    className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600"
                   >
                     {product1.name.slice(0, 1).toUpperCase()}
                   </span>
                 )}
-                <span className="truncate text-xs font-bold text-dark-900 sm:text-sm">{product1.name}</span>
+                <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">{product1.name}</span>
               </div>
               <div className="flex items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
                 {product2.logoUrl ? (
                   <Image
                     src={product2.logoUrl}
                     alt={product2.name}
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 shrink-0 rounded-md border border-dark-150 bg-white object-contain p-0.5"
+                    width={32}
+                    height={32}
+                    className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-lg border border-dark-150/90 bg-white object-contain p-0.5 shadow-2xs ring-1 ring-black/5"
                   />
                 ) : (
                   <span
                     aria-hidden="true"
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600"
+                    className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600"
                   >
                     {product2.name.slice(0, 1).toUpperCase()}
                   </span>
                 )}
-                <span className="truncate text-xs font-bold text-dark-900 sm:text-sm">{product2.name}</span>
+                <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">{product2.name}</span>
               </div>
             </div>
             <CompareRow
@@ -307,10 +307,12 @@ function CompareRow({
         isLast ? '' : 'border-b border-dark-150/70'
       }`}
     >
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-dark-500">{label}</div>
+      <div className="mb-2 text-xs font-bold uppercase tracking-wider text-dark-400">{label}</div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-150/70">
         <div className="md:pr-5">
-          <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel1}</div>
+          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
+            {colLabel1}
+          </div>
           <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-1`}>
             {custom1 ? (
               custom1
@@ -330,7 +332,9 @@ function CompareRow({
           </div>
         </div>
         <div className="md:pl-5">
-          <div className="mb-1 text-xs font-medium text-dark-500 md:hidden">{colLabel2}</div>
+          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
+            {colLabel2}
+          </div>
           <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-2`}>
             {custom2 ? (
               custom2

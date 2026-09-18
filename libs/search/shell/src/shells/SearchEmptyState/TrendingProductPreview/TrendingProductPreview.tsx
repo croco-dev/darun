@@ -36,8 +36,8 @@ export const TrendingProductPreview = () => {
   if (products.length === 0) {
     return (
       <div data-testid="trending-preview">
-        <div className="flex min-h-36 flex-col items-center justify-center rounded-card-lg border border-dark-150 bg-white px-6 py-8 text-center shadow-card">
-          <div className="mb-2.5 flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-400 shadow-2xs">
+        <div className="flex min-h-36 flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-10 text-center">
+          <div className="mb-2.5 flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-150/80 bg-gradient-to-br from-surface-50 to-surface-100 text-dark-500 shadow-2xs">
             <TrendingUp size={20} className="stroke-[2]" />
           </div>
           <p className="text-sm font-semibold text-dark-900 break-keep">

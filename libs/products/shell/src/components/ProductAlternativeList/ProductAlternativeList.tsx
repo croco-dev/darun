@@ -22,7 +22,7 @@ export const ProductAlternativeList = bind(
         {products.map(product => (
           <div
             key={product.id}
-            className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-colors duration-200 ease-out"
+            className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none"
           >
             <div className="flex w-full flex-col gap-4">
               <div className="flex flex-row items-start justify-between gap-4">
@@ -45,7 +45,7 @@ export const ProductAlternativeList = bind(
               </div>
               {product.features && product.features.length > 0 && (
                 <>
-                  <div className="h-px w-full bg-dark-150/70" />
+                  <div className="w-full border-t border-dashed border-dark-200/80" />
                   <div className="flex flex-col gap-3">
                     <p className="text-sm font-semibold text-dark-900">{t('list.feature.title')}</p>
                     <ProductFeatureGridList
@@ -65,7 +65,7 @@ export const ProductAlternativeList = bind(
             href={`/${locale}/search/product`}
             className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
-            <Button as="span" variant="shadow" color="secondary" size="md">
+            <Button as="span" variant="shadow" color="secondary" size="md" className="transition-all duration-200 active:scale-95">
               {t('empty.button')}
             </Button>
           </Link>
