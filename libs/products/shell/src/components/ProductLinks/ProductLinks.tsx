@@ -19,12 +19,16 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
     <>
       {links.map((link, index) => {
         const isPrimary = index === 0;
+        const localizedTitle = getLocalizedLinkTitle(link.title, locale);
+        const tooltipTitle = link.displayLink ? `${localizedTitle} (${link.displayLink})` : localizedTitle;
+
         return (
           <Link
             key={link.id}
             href={link.link}
             target="_blank"
             rel="noopener noreferrer"
+            title={tooltipTitle}
             className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <Button
@@ -32,7 +36,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
               variant="shadow"
               color={isPrimary ? 'primary' : 'secondary'}
               size="md"
-              className={`min-h-[42px] sm:min-h-[44px] px-3.5 sm:px-4 transition-all duration-200 active:scale-[0.98] motion-reduce:transform-none ${
+              className={`h-10 sm:h-11 px-3.5 sm:px-4 transition-all duration-200 active:scale-[0.98] motion-reduce:transform-none ${
                 isPrimary
                   ? 'border-dark-800 bg-dark-900 text-white shadow-button hover:border-dark-700 hover:bg-dark-800 hover:shadow-button-hover'
                   : 'border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover'
@@ -40,7 +44,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
             >
               <div className="flex items-center justify-center gap-2">
                 {link.iconUrl && (
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dark-150/70 bg-surface-100 p-0.5 shadow-2xs">
+                  <div className="flex h-5 w-5 sm:h-5.5 sm:w-5.5 shrink-0 items-center justify-center rounded-md border border-dark-150/70 bg-surface-100 p-0.5 shadow-2xs">
                     <Image
                       src={link.iconUrl}
                       alt={link.title}
@@ -51,22 +55,13 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                     />
                   </div>
                 )}
-                <div className="flex flex-col items-start leading-tight">
-                  <span className="w-max break-keep text-sm font-semibold text-current">
-                    {getLocalizedLinkTitle(link.title, locale)}
-                  </span>
-                  {isPrimary && link.displayLink && (
-                    <span className="break-keep text-2xs text-dark-400 transition-colors group-hover:text-dark-300">
-                      {link.displayLink}
-                    </span>
-                  )}
-                </div>
+                <span className="w-max break-keep text-xs sm:text-sm font-semibold text-current">
+                  {localizedTitle}
+                </span>
                 <ExternalLink
                   size={14}
                   className={`shrink-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none ${
-                    isPrimary
-                      ? 'text-dark-400 group-hover:text-white'
-                      : 'text-dark-400 group-hover:text-dark-900'
+                    isPrimary ? 'text-dark-400 group-hover:text-white' : 'text-dark-400 group-hover:text-dark-900'
                   }`}
                 />
               </div>
