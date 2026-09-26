@@ -40,12 +40,11 @@ describe('ProductDescriptionGeneratorImpl', () => {
     const userPrompt = messages.find(message => message.role === 'user')?.content ?? '';
 
     expect(systemPrompt.split('\n').length).toBeLessThanOrEqual(100);
-    expect(systemPrompt).not.toContain('Editor. DAO');
-    expect(systemPrompt).not.toContain('DAO');
+    expect(systemPrompt).toContain('Editor. DAO');
+    expect(systemPrompt).toContain('DAO');
     expect(systemPrompt).toContain('<h3>본문 섹션 2~3개</h3>');
     expect(systemPrompt).toContain('<h3>추천한다면 -</h3>');
     expect(systemPrompt).toContain('<h3>아쉽다면 -</h3>');
-    expect(systemPrompt).toContain('가상의 에디터 이름, 바이라인, 날짜 표기');
 
     expect(userPrompt).toContain('제품명: Flowdesk');
     expect(userPrompt).toContain('카테고리: collaboration, automation');

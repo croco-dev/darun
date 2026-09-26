@@ -57,7 +57,7 @@ function getWebSiteJsonLd(locale: 'ko' | 'en') {
 const whatIsDarunFeatures = [
   {
     icon: Compass,
-    iconColor: 'border-yellow-500/20 bg-yellow-500/10 text-yellow-600',
+    iconColor: 'border-dark-150/90 bg-surface-100 text-dark-900',
     titleKo: '서비스 탐색과 나란한 비교',
     titleEn: 'Discovery and Comparison',
     descKo:
@@ -67,7 +67,7 @@ const whatIsDarunFeatures = [
   },
   {
     icon: Layers,
-    iconColor: 'border-brown-500/20 bg-brown-500/10 text-brown-600',
+    iconColor: 'border-dark-150/90 bg-surface-100 text-dark-900',
     titleKo: '상세 정보와 대안 추천',
     titleEn: 'In-Depth Details & Alternatives',
     descKo:
@@ -77,7 +77,7 @@ const whatIsDarunFeatures = [
   },
   {
     icon: ShieldCheck,
-    iconColor: 'border-leaf-500/20 bg-leaf-500/10 text-leaf-600',
+    iconColor: 'border-dark-150/90 bg-surface-100 text-dark-900',
     titleKo: '공식 링크 및 최신성 확인',
     titleEn: 'Verified Links & Freshness',
     descKo:
@@ -118,7 +118,7 @@ export default async function HomePage({ params }: HomePageProps) {
         <Suspense fallback={<RecentProductSkeleton />}>
           <RecentProductSection />
         </Suspense>
-        <SectionWrapper background="subtle" spacing="md">
+        <SectionWrapper background="white" spacing="md" className="border-t border-dark-100/80">
           <div className="flex flex-col gap-6">
             <SectionHeader
               title={isKo ? '다른(darun)은 어떤 서비스인가요?' : 'What is Darun?'}

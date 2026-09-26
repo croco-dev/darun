@@ -155,7 +155,7 @@ export default async function ComparePage({ params }: Props) {
             align="center"
           />
 
-          <div className="relative flex flex-col gap-3 md:grid md:grid-cols-2 md:gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
             <div data-testid="compare-column">
               <ProductCard
                 product={product1}
@@ -163,25 +163,12 @@ export default async function ComparePage({ params }: Props) {
                 source="compare"
               />
             </div>
-            <div aria-hidden="true" className="flex items-center justify-center -my-1 md:hidden">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-dark-900 to-dark-950 text-2xs font-black tracking-wider text-white shadow-md ring-1 ring-black/10">
-                VS
-              </span>
-            </div>
             <div data-testid="compare-column">
               <ProductCard
                 product={product2}
                 href={`/${resolvedParams.locale}/products/${product2.slug}`}
                 source="compare"
               />
-            </div>
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 items-center justify-center md:flex"
-            >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-dark-900 to-dark-950 text-xs font-black tracking-wider text-white shadow-elevated ring-1 ring-black/10">
-                VS
-              </span>
             </div>
           </div>
 

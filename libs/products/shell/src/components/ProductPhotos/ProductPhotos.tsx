@@ -22,7 +22,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
         data-testid="product-photos-empty"
         className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-10 text-center"
       >
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-150/80 bg-gradient-to-br from-surface-50 to-surface-100 text-dark-500 shadow-2xs">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
           <Sparkles size={18} className="stroke-[1.75]" />
         </div>
         <p className="text-sm font-semibold text-dark-900 break-keep">{t('photo.empty')}</p>
@@ -31,13 +31,11 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
   }
   return (
     <div className="overflow-hidden rounded-card-lg border border-dark-150 bg-white p-4 shadow-card sm:p-5 md:p-6">
-      <div className="mb-3.5 flex items-center justify-between border-b border-dark-100/80 pb-3">
-        <div className="flex items-center gap-1.5" aria-hidden="true">
-          <span className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
-          <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
-        </div>
-        <span className="text-2xs font-semibold uppercase tracking-wider text-dark-400 select-none">
+      <div className="mb-3.5 flex items-center justify-between border-b border-dark-150/70 pb-3">
+        <span className="text-xs font-semibold text-dark-700">
+          {t('photo.title')}
+        </span>
+        <span className="rounded-md bg-surface-100 px-2 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
           {photos.length} {photos.length === 1 ? 'Preview' : 'Previews'}
         </span>
       </div>

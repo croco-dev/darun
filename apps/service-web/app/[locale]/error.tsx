@@ -15,7 +15,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center bg-gradient-to-b from-surface-50/60 via-white to-white p-6">
       <div className="flex w-full max-w-lg flex-col items-center gap-6 rounded-card-xl border border-dark-150/80 bg-white/95 p-8 text-center shadow-card backdrop-blur-xs md:p-10">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-cherry-200/80 bg-gradient-to-br from-cherry-50 to-cherry-100 text-cherry-600 shadow-2xs">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-cherry-200 bg-cherry-50 text-cherry-600 shadow-2xs">
           <AlertTriangle className="h-8 w-8 stroke-[2]" aria-hidden="true" />
         </div>
         <div className="flex flex-col items-center gap-2">
@@ -34,7 +34,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
           </Button>
           <Link
             href="/"
-            className="transition-transform duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <Button as="span" variant="shadow" color="secondary" size="md">
               홈으로 이동

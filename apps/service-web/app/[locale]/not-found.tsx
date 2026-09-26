@@ -13,7 +13,7 @@ export default function NotFound() {
       <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col justify-center bg-gradient-to-b from-surface-50/60 via-white to-white">
         <ContentArea className="flex items-center justify-center py-20 md:py-28">
           <div className="flex w-full max-w-lg flex-col items-center gap-6 rounded-card-xl border border-dark-150/80 bg-white/95 p-8 text-center shadow-card backdrop-blur-xs md:p-12">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150/80 bg-gradient-to-br from-surface-50 to-surface-100 text-dark-700 shadow-2xs">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-700 shadow-2xs">
               <Compass size={28} className="stroke-[1.75]" />
             </div>
 
@@ -32,7 +32,7 @@ export default function NotFound() {
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <Link
                 href="/"
-                className="transition-transform duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <Button as="span" variant="shadow" color="primary" size="md">
                   홈으로 이동
@@ -40,7 +40,7 @@ export default function NotFound() {
               </Link>
               <Link
                 href="/ranking"
-                className="transition-transform duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <Button as="span" variant="shadow" color="secondary" size="md">
                   인기 랭킹 보기

@@ -10,7 +10,7 @@ export const RecentProductSection = () => {
   const locale = useLocale();
 
   return (
-    <SectionWrapper background="white" spacing="md">
+    <SectionWrapper background="white" spacing="md" className="border-t border-dark-100/70">
       <div className="flex w-full flex-col gap-5 md:gap-6">
         <SectionHeader
           title={t('home.recent.title')}

@@ -42,11 +42,11 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
           {/* Badge Pill */}
           <Link
             href={popularPath}
-            className="group inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3.5 py-1.5 backdrop-blur-md shadow-xs transition-all duration-200 hover:border-white/25 hover:bg-white/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-900"
+            className="group inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3.5 py-1.5 backdrop-blur-md shadow-xs transition-all duration-200 hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-900"
           >
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brown-400 opacity-75 motion-reduce:animate-none" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-brown-500" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
             </span>
             <span className="text-xs font-semibold tracking-tight text-white/90 sm:text-sm">
               {isKo ? '실시간 소프트웨어 비교 & 디스커버리' : 'Curated Software Discovery & Comparison'}
@@ -62,9 +62,9 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
               {t('Main.hero.description')}
             </span>
             <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-5xl">
-              {productsCount?.toLocaleString(locale) ?? 0}
+              <span className="tabular-nums">{productsCount?.toLocaleString(locale) ?? 0}</span>
               {t('Main.hero.title.countSuffix')}{' '}
-              <span className="bg-gradient-to-r from-brown-400 via-amber-300 to-brown-500 bg-clip-text text-transparent drop-shadow-glow-subtle">
+              <span className="bg-gradient-to-r from-amber-300 via-amber-100 to-amber-300 bg-clip-text text-transparent">
                 {t('Main.hero.title.highlight')}
               </span>{' '}
               <span>{t('Main.hero.title.ending')}</span>
@@ -84,22 +84,16 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
               <Link
                 key={keyword}
                 href={`/${locale}/search/product?query=${encodeURIComponent(keyword)}`}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white/80 backdrop-blur-xs transition-all duration-200 hover:border-brown-400/60 hover:bg-white/12 hover:text-white hover:shadow-xs active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-900"
+                className="group inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white/80 backdrop-blur-xs transition-colors duration-150 hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-900"
               >
-                <Search size={11} className="shrink-0 text-white/40 transition-colors group-hover:text-brown-400" />
+                <Search size={11} className="shrink-0 text-white/40 transition-colors group-hover:text-white/80" />
                 <span>{keyword}</span>
               </Link>
             ))}
           </div>
         </div>
       </ContentArea>
-
-      {/* Ambient bottom transition glow to ease into light canvas */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 left-1/2 h-20 w-3/4 -translate-x-1/2 bg-[radial-gradient(ellipse_at_bottom,rgba(217,144,73,0.14),transparent_70%)]"
-      />
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brown-500/25 to-transparent" />
+      <div className="border-b border-white/10" />
     </section>
   );
 };

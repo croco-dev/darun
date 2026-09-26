@@ -83,7 +83,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
         />
 
         <div className="flex items-start gap-4 sm:gap-5">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-dark-150/80 bg-gradient-to-br from-surface-50 to-surface-100 shadow-2xs sm:h-14 sm:w-14">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 shadow-2xs sm:h-14 sm:w-14">
             <span className="text-2xl leading-none sm:text-3xl">{categoryIcon}</span>
           </div>
           <div className="flex flex-1 flex-col gap-1.5">
@@ -107,7 +107,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
 
         {products.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-14 text-center sm:py-16">
-            <div className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150/80 bg-gradient-to-br from-surface-50 to-surface-100 text-2xl shadow-2xs">
+            <div className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl shadow-2xs">
               {categoryIcon}
             </div>
             <p className="text-base font-extrabold text-dark-900 sm:text-lg">{emptyLabel}</p>
@@ -119,7 +119,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
             <div className="mt-5">
               <Link
                 href={`/${locale}/search/product`}
-                className="group inline-flex rounded-xl transition-transform duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <Button as="span" variant="shadow" color="primary" size="md">
                   {locale === 'ko' ? '전체 도구 둘러보기' : 'Browse All Software'}

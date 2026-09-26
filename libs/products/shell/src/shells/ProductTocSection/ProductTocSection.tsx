@@ -7,9 +7,9 @@ import { useProductTocSection } from './useProductTocSection';
 
 export const ProductTocSection = bind(useProductTocSection, ({ isFixed }) => (
   <>
-    {isFixed && <div aria-hidden="true" className="h-14" />}
+    {isFixed && <div aria-hidden="true" className="h-11 sm:h-12" />}
     <div
-      className={`${isFixed ? 'fixed top-16 shadow-xs border-b' : 'relative border-y'} w-full z-30 border-dark-150 bg-white/90 backdrop-blur-md transition-shadow duration-200 motion-reduce:transition-none`}
+      className={`${isFixed ? 'fixed top-14 sm:top-16 shadow-2xs border-b' : 'relative border-y'} w-full z-30 border-dark-150/80 bg-white/90 backdrop-blur-md transition-shadow duration-200 motion-reduce:transition-none`}
     >
       <ContentArea>
         <ProductTableOfContent />

@@ -5,7 +5,6 @@ import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
-import { LocaleToggle } from '../../LocaleToggle';
 import { HeaderLoginButton } from '../HeaderLoginButton';
 import { HeaderSearchForm } from '../HeaderSearchForm';
 import { useHeader } from './useHeader';
@@ -28,7 +27,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={rankingUrl}
                 aria-current={isRanking ? 'page' : undefined}
-                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isRanking
                     ? 'border border-dark-150/80 bg-surface-100/90 font-bold text-dark-900 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100/80 hover:text-dark-900'
@@ -39,7 +38,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={browseUrl}
                 aria-current={isBrowse ? 'page' : undefined}
-                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isBrowse
                     ? 'border border-dark-150/80 bg-surface-100/90 font-bold text-dark-900 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100/80 hover:text-dark-900'
@@ -63,7 +62,6 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
             <HeaderSearchForm />
           </Suspense>
           <div className="hidden h-max shrink-0 items-center gap-2.5 md:flex">
-            <LocaleToggle />
             <HeaderLoginButton />
             <a
               target="_blank"
