@@ -2,10 +2,14 @@
 
 import { AlertTriangle, Button } from '@darun/ui';
 import * as Sentry from '@sentry/nextjs';
+import { useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { Link } from '../../i18n/navigation';
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const params = useParams();
+  const isKo = params?.locale !== 'en';
+
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -22,22 +26,26 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
           <span className="inline-flex items-center rounded-full border border-cherry-200/80 bg-cherry-50 px-3 py-0.5 font-mono text-xs font-bold tracking-widest text-cherry-700 shadow-2xs">
             ERROR
           </span>
-          <h2 className="text-2xl font-extrabold tracking-tight text-dark-900 break-keep sm:text-3xl">문제가 발생했습니다</h2>
+          <h2 className="text-2xl font-extrabold tracking-tight text-dark-900 break-keep sm:text-3xl">
+            {isKo ? '문제가 발생했습니다' : 'Something went wrong'}
+          </h2>
           <p className="max-w-md text-sm leading-relaxed text-dark-600 break-keep sm:text-base">
-            일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+            {isKo
+              ? '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+              : 'An unexpected error occurred. Please try again in a moment.'}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
           <Button onClick={() => reset()} variant="shadow" color="primary" size="md">
-            다시 시도
+            {isKo ? '다시 시도' : 'Try again'}
           </Button>
           <Link
             href="/"
             className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <Button as="span" variant="shadow" color="secondary" size="md">
-              홈으로 이동
+              {isKo ? '홈으로 이동' : 'Go to Home'}
             </Button>
           </Link>
         </div>

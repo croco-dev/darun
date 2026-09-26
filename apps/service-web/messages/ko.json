@@ -106,7 +106,10 @@
       "voteSuccess": "투표가 완료되었습니다!",
       "alreadyVoted": "이미 투표한 서비스입니다.",
       "rateLimit": "단시간에 너무 많은 투표를 시도했습니다. 잠시 후 다시 시도해주세요.",
-      "voteFailed": "투표에 실패했습니다. 다시 시도해주세요."
+      "voteFailed": "투표에 실패했습니다. 다시 시도해주세요.",
+      "copyLink": "링크 복사",
+      "copied": "복사됨",
+      "copySuccess": "링크가 복사되었습니다."
     },
     "compareButton": {
       "add": "비교에 추가",
@@ -172,6 +175,11 @@
     "section": {
       "title": "인기 서비스 Top 30",
       "description": "가장 많은 관심을 받은 서비스들입니다."
+    },
+    "empty": {
+      "title": "집계된 랭킹 서비스가 없습니다",
+      "description": "아직 투표가 집계된 서비스가 없습니다. 다양한 서비스를 탐색하고 첫 번째 표를 남겨보세요!",
+      "button": "서비스 둘러보기"
     }
   },
   "Magazine": {

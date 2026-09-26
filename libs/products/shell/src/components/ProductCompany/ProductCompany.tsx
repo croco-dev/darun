@@ -60,7 +60,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
   return (
     <div className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card sm:p-6 md:p-8">
       <div className="flex flex-col gap-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-dark-400">{t('company.basicInfo')}</p>
+        <p className="text-xs font-bold tracking-tight text-dark-500">{t('company.basicInfo')}</p>
         <dl className="grid grid-cols-1 divide-y divide-dark-100/80 sm:grid-cols-2 sm:divide-y-0 sm:gap-x-8 sm:gap-y-4">
           {company?.name && (
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">

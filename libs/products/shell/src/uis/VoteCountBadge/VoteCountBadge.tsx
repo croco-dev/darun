@@ -10,7 +10,8 @@ type VoteCountBadgeProps = {
 export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' }) => {
   const locale = useLocale();
 
-  const label = locale === 'en' ? `${count} upvotes` : `추천 ${count}`;
+  const formattedCount = count.toLocaleString(locale);
+  const label = locale === 'en' ? `${formattedCount} upvotes` : `추천 ${formattedCount}`;
 
   return (
     <div
@@ -24,7 +25,7 @@ export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' 
         className="text-dark-400 fill-dark-400/30 transition-colors duration-150 group-hover:text-dark-700 group-hover:fill-dark-700/40"
         aria-hidden="true"
       />
-      <span>{count}</span>
+      <span>{formattedCount}</span>
     </div>
   );
 };

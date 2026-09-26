@@ -1,13 +1,17 @@
 import { Button, Compass, ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
+import { getLocale } from 'next-intl/server';
 import { Link } from '../../i18n/navigation';
 
 export const metadata: Metadata = {
   title: '페이지를 찾을 수 없습니다 - 다른',
 };
 
-export default function NotFound() {
+export default async function NotFound() {
+  const locale = await getLocale();
+  const isKo = locale === 'ko';
+
   return (
     <Layout>
       <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col justify-center bg-gradient-to-b from-surface-50/60 via-white to-white">
@@ -22,10 +26,12 @@ export default function NotFound() {
                 ERROR 404
               </span>
               <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-dark-900 break-keep sm:text-3xl">
-                페이지를 찾을 수 없습니다
+                {isKo ? '페이지를 찾을 수 없습니다' : 'Page Not Found'}
               </h1>
               <p className="max-w-sm text-sm leading-relaxed text-dark-600 break-keep sm:text-base">
-                요청하신 페이지가 삭제되었거나 잘못된 경로입니다. 아래 링크를 통해 다시 탐색해 보세요.
+                {isKo
+                  ? '요청하신 페이지가 삭제되었거나 잘못된 경로입니다. 아래 링크를 통해 다시 탐색해 보세요.'
+                  : 'The page you are looking for does not exist or has been moved.'}
               </p>
             </div>
 
@@ -35,7 +41,7 @@ export default function NotFound() {
                 className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <Button as="span" variant="shadow" color="primary" size="md">
-                  홈으로 이동
+                  {isKo ? '홈으로 이동' : 'Go to Home'}
                 </Button>
               </Link>
               <Link
@@ -43,7 +49,7 @@ export default function NotFound() {
                 className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <Button as="span" variant="shadow" color="secondary" size="md">
-                  인기 랭킹 보기
+                  {isKo ? '인기 랭킹 보기' : 'Explore Ranking'}
                 </Button>
               </Link>
             </div>

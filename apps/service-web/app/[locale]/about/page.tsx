@@ -180,7 +180,7 @@ export default async function AboutPage({ params }: Props) {
             {SECTIONS.map(section => (
               <section
                 key={section.id}
-                className="flex flex-col gap-3 rounded-card-lg border border-dark-150/80 bg-white p-6 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover md:p-7"
+                className="flex flex-col gap-3 rounded-card-lg border border-dark-150/80 bg-white p-6 shadow-card md:p-7"
               >
                 <div className="flex items-center gap-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-100 font-mono text-xs font-bold text-dark-700 shadow-2xs">
@@ -196,7 +196,7 @@ export default async function AboutPage({ params }: Props) {
               </section>
             ))}
 
-            <section className="flex flex-col gap-4 rounded-card-lg border border-dark-150/80 bg-surface-100/60 p-6 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover md:p-7">
+            <section className="flex flex-col gap-4 rounded-card-lg border border-dark-150/80 bg-surface-100/60 p-6 shadow-card md:p-7">
               <div className="flex items-center gap-3">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150/80 bg-white font-mono text-xs font-bold text-dark-700 shadow-2xs">
                   05

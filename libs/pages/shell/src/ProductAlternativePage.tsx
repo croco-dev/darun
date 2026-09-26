@@ -1,7 +1,6 @@
 'use client';
 
-import { FAQItem } from '@darun/products-shell';
-import { AlternativeProductSection, FAQSection, ProductSummary } from '@darun/products-shell';
+import { AlternativeProductSection, FAQItem, FAQSection, ProductSummary } from '@darun/products-shell';
 import { Breadcrumb, ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { useLocale } from 'next-intl';

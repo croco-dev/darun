@@ -4,10 +4,13 @@ import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { Button, TrendingUp } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
+import { useTranslations } from 'next-intl';
 import { ProductItem, VoteCountBadge } from '../../uis';
 import { useRankedProductList } from './useRankedProductList';
 
 export const RankedProductList = bind(useRankedProductList, ({ products, locale = 'ko' }) => {
+  const t = useTranslations('Ranking');
+
   if (products.length === 0) {
     return (
       <div
@@ -17,13 +20,13 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
           <TrendingUp size={24} className="stroke-[2]" />
         </div>
-        <p className="text-base font-extrabold tracking-tight text-dark-900 break-keep">집계된 랭킹 서비스가 없습니다</p>
+        <p className="text-base font-extrabold tracking-tight text-dark-900 break-keep">{t('empty.title')}</p>
         <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">
-          아직 투표가 집계된 서비스가 없습니다. 다양한 서비스를 탐색하고 첫 번째 표를 남겨보세요!
+          {t('empty.description')}
         </p>
         <Link href={`/${locale}/search/product`} className="mt-6">
           <Button as="span" variant="shadow" color="primary" size="md">
-            서비스 둘러보기
+            {t('empty.button')}
           </Button>
         </Link>
       </div>

@@ -30,20 +30,14 @@ export const ProductUserAction = bind(
       try {
         await navigator.clipboard.writeText(window.location.href);
         setCopied(true);
-        addToast(locale === 'ko' ? '링크가 복사되었습니다.' : 'Link copied.', 'success');
+        addToast(t('copySuccess'), 'success');
         setTimeout(() => setCopied(false), 2000);
       } catch {
         // clipboard unavailable
       }
     };
 
-    const copyLabel = copied
-      ? locale === 'ko'
-        ? '복사됨'
-        : 'Copied'
-      : locale === 'ko'
-        ? '링크 복사'
-        : 'Copy link';
+    const copyLabel = copied ? t('copied') : t('copyLink');
 
     return (
       <div className="flex items-center gap-2">
@@ -90,7 +84,7 @@ export const ProductUserAction = bind(
             <span
               className={`break-keep text-sm font-semibold tabular-nums transition-colors duration-150 ${voted ? 'text-white' : 'text-dark-700 group-hover:text-dark-900'}`}
             >
-              {voteCount}
+              {voteCount.toLocaleString(locale)}
             </span>
           </div>
         </Button>
