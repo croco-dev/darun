@@ -62,7 +62,7 @@ export default function Loading() {
 
             {/* Primary Link Button Skeleton */}
             <div className="flex items-center gap-2.5">
-              <Skeleton className="h-11 w-40 rounded-xl" />
+              <Skeleton className="h-10 sm:h-11 w-36 sm:w-40 rounded-xl" />
             </div>
           </ContentArea>
         </div>
