@@ -60,10 +60,10 @@ export const ProductAlternativeList = bind(
         <div className="flex justify-center pt-2">
           <Link
             href={`/${locale}/search/product`}
-            className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="group rounded-xl transition-transform active:scale-[0.98] motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <Button as="span" variant="shadow" color="secondary" size="md">
-              {t('empty.button')}
+              {t('list.browseMore')}
             </Button>
           </Link>
         </div>

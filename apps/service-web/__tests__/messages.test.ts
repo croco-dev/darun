@@ -31,4 +31,16 @@ describe('messages i18n formatting', () => {
     expect(formatted).toContain('test-query');
     expect(formatted).not.toContain('{query}');
   });
+
+  it('en Compare title interpolates name1 and name2 correctly', () => {
+    const t = createTranslator({ locale: 'en', messages: enMessages });
+    const formatted = t('Compare.title', { name1: 'Figma', name2: 'Sketch' });
+    expect(formatted).toBe('Figma vs Sketch Comparison');
+  });
+
+  it('ko Compare title interpolates name1 and name2 correctly', () => {
+    const t = createTranslator({ locale: 'ko', messages: koMessages });
+    const formatted = t('Compare.title', { name1: '피그마', name2: '스케치' });
+    expect(formatted).toBe('피그마 vs 스케치 비교');
+  });
 });

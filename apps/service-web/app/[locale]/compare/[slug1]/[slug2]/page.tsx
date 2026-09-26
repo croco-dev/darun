@@ -2,6 +2,7 @@ import { gql } from '@apollo/client';
 import { ProductCard, VoteCountBadge, getLocalizedTag } from '@darun/products-shell';
 import { Breadcrumb, Chip, ContentArea, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from '@darun/utils-router';
 import { Metadata } from 'next';
 import Image from 'next/image';
@@ -125,7 +126,7 @@ export default async function ComparePage({ params }: Props) {
   }
 
   const { product1, product2 } = data;
-  const isKo = resolvedParams.locale === 'ko';
+  const t = await getTranslations({ locale: resolvedParams.locale, namespace: 'Compare' });
 
   return (
     <Layout>
@@ -135,26 +136,18 @@ export default async function ComparePage({ params }: Props) {
             data-testid="breadcrumb-compare"
             items={[
               {
-                label: isKo ? '홈' : 'Home',
+                label: t('breadcrumb.home'),
                 href: `/${resolvedParams.locale}`,
               },
               {
-                label: isKo ? '서비스 비교' : 'Compare',
+                label: t('breadcrumb.compare'),
                 ariaCurrent: 'page',
               },
             ]}
           />
           <PageHeading
-            title={
-              resolvedParams.locale === 'en'
-                ? `${product1.name} vs ${product2.name} Comparison`
-                : `${product1.name} vs ${product2.name} 비교`
-            }
-            subtitle={
-              resolvedParams.locale === 'en'
-                ? 'Compare features and details side-by-side'
-                : '두 서비스의 핵심 정보를 나란히 확인해보세요'
-            }
+            title={t('title', { name1: product1.name, name2: product2.name })}
+            subtitle={t('subtitle')}
             align="center"
           />
 
@@ -217,7 +210,7 @@ export default async function ComparePage({ params }: Props) {
               </div>
             </div>
             <CompareRow
-              label={isKo ? '서비스명' : 'Service Name'}
+              label={t('table.name')}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.name}
@@ -226,7 +219,7 @@ export default async function ComparePage({ params }: Props) {
               testid="name"
             />
             <CompareRow
-              label={isKo ? '설명' : 'Overview'}
+              label={t('table.summary')}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.summary ?? undefined}
@@ -235,7 +228,7 @@ export default async function ComparePage({ params }: Props) {
               testid="summary"
             />
             <CompareRow
-              label={isKo ? '회사' : 'Company'}
+              label={t('table.company')}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.ownedCompany?.name}
@@ -244,7 +237,7 @@ export default async function ComparePage({ params }: Props) {
               testid="company"
             />
             <CompareRow
-              label={isKo ? '투표 수' : 'Votes'}
+              label={t('table.voteCount')}
               colLabel1={product1.name}
               colLabel2={product2.name}
               custom1={<VoteCountBadge count={product1.voteCount} />}
@@ -253,7 +246,7 @@ export default async function ComparePage({ params }: Props) {
               testid="vote-count"
             />
             <CompareRow
-              label={isKo ? '태그' : 'Tags'}
+              label={t('table.tags')}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.tags.map(t => t.name).join(', ')}

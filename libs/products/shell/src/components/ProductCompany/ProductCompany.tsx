@@ -1,7 +1,7 @@
 'use client';
 
+import { Building2, Calendar, Compass, ShieldCheck, formatDate } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
-import { Building2, Calendar, Compass, ShieldCheck } from '@darun/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedCompanyAddress, getLocalizedCompanyType } from '../../utils/localization';
 import { useProductCompany } from './useProductCompany';
@@ -9,37 +9,6 @@ import { useProductCompany } from './useProductCompany';
 type ProductCompanyViewProps = {
   company: ReturnType<typeof useProductCompany>['company'];
 };
-
-function formatStartAt(startAt: unknown, locale = 'ko') {
-  if (!startAt) {
-    return '-';
-  }
-
-  if (typeof startAt !== 'string' && typeof startAt !== 'number' && !(startAt instanceof Date)) {
-    return '-';
-  }
-
-  const date = startAt instanceof Date ? startAt : new Date(startAt);
-
-  if (Number.isNaN(date.getTime())) {
-    return '-';
-  }
-
-  if (locale === 'en') {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      timeZone: 'UTC',
-    }).format(date);
-  }
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}. ${month}. ${day}`;
-}
 
 export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompanyViewProps) => {
   const t = useTranslations('ProductDetail');
@@ -108,7 +77,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
                 </dt>
               </div>
               <dd className="text-right text-sm font-bold text-dark-900 break-keep">
-                {formatStartAt(company.startAt, locale)}
+                {formatDate(company.startAt, '-', locale)}
               </dd>
             </div>
           )}

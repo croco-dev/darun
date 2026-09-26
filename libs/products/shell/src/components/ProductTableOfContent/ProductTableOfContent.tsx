@@ -15,8 +15,10 @@ export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings,
       {headings.map(({ id, text }) => (
         <Button
           key={id}
+          id={`tab-${id}`}
           role="tab"
           aria-selected={activeHeadingId === id}
+          aria-controls={id}
           kind={activeHeadingId === id ? 'textActive' : 'text'}
           size="sm"
           className={

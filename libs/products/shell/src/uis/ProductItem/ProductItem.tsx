@@ -87,7 +87,7 @@ export const ProductItem = ({
               />
             </div>
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-              <NameTag className="m-0 truncate text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-900">
+              <NameTag className="m-0 truncate text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950">
                 {name}
               </NameTag>
               {tags && tags.length > 0 && (
@@ -148,7 +148,7 @@ export const ProductItem = ({
             className={
               isHero
                 ? 'm-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-900 sm:text-3xl'
-                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-900 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
+                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
             }
           >
             {name}
@@ -190,9 +190,12 @@ export const ProductItem = ({
                           {getLocalizedTag(tag, locale)}
                         </Chip>
                       ))}
-                      <span className="shrink-0 rounded-md bg-dark-100/80 px-1.5 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
+                      <Chip
+                        variant={tagVariant}
+                        color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}
+                      >
                         +{tags.length - maxTagItems}
-                      </span>
+                      </Chip>
                     </div>
                   ) : (
                     tags.map(tag => (
