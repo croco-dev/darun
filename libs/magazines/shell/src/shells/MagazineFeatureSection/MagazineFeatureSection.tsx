@@ -72,6 +72,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
                   summary={article.summary}
                   author={article.author}
                   date={article.publishedAt}
+                  locale={locale}
                 />
               </Link>
             </div>

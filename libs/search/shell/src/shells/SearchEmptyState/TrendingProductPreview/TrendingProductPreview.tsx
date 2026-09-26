@@ -6,7 +6,7 @@ import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { ProductCard } from '@darun/products-shell';
 import { TrendingPreviewDocument } from '@darun/provider-graphql';
 import { TrendingUp } from '@darun/ui';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 const TRENDING_PREVIEW_QUERY = gql`
   query TrendingPreview($first: Int!, $locale: String!) {
@@ -27,6 +27,7 @@ const TRENDING_PREVIEW_QUERY = gql`
 
 export const TrendingProductPreview = () => {
   const locale = useLocale();
+  const t = useTranslations('Search');
   const { data } = useSuspenseQuery(TrendingPreviewDocument, {
     variables: { first: 8, locale },
   });
@@ -41,7 +42,7 @@ export const TrendingProductPreview = () => {
             <TrendingUp size={20} className="stroke-[2]" />
           </div>
           <p className="text-sm font-semibold text-dark-900 break-keep">
-            {locale === 'ko' ? '집계된 인기 서비스가 없습니다' : 'No trending software found'}
+            {t('page.trendingEmpty')}
           </p>
         </div>
       </div>

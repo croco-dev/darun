@@ -3,12 +3,13 @@
 import { ContentArea, ExternalLink, Logo } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { LocaleToggle } from '../../LocaleToggle';
 import { useFooter } from './useFooter';
 
 export const Footer = bind(useFooter, ({ aboutUrl }) => {
   const t = useTranslations('Layout.footer');
+  const locale = useLocale();
 
   return (
     <footer className="mt-auto border-t border-dark-150/80 bg-surface-50/90 py-8 backdrop-blur-xs md:py-10">
@@ -21,7 +22,7 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
               <span className="text-xs text-dark-300">/</span>
               <span className="text-xs sm:text-sm text-dark-500 tabular-nums">&copy; {new Date().getFullYear()} Croco</span>
             </div>
-            <nav className="flex flex-wrap items-center gap-x-4 gap-y-1.5" aria-label="Footer navigation">
+            <nav className="flex flex-wrap items-center gap-x-4 gap-y-1.5" aria-label={locale === 'ko' ? '푸터 내비게이션' : 'Footer navigation'}>
               <Link
                 href={aboutUrl}
                 className="text-sm font-medium text-dark-600 transition-colors duration-200 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"

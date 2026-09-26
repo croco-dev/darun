@@ -14,13 +14,13 @@ type Section = {
   html: string;
 };
 
-const RECOMMEND_KEYWORDS = ['추천한다면'];
-const REGRET_KEYWORDS = ['아쉽다면'];
+const RECOMMEND_KEYWORDS = ['추천한다면', 'Recommended if', 'Who should use', 'Best for', 'Pros'];
+const REGRET_KEYWORDS = ['아쉽다면', 'Limitations', 'Drawbacks', 'Cons', 'Not recommended if', 'Things to consider'];
 
 function classifySection(headingText: string): Section['type'] {
-  const trimmed = headingText.trim();
-  if (RECOMMEND_KEYWORDS.some(kw => trimmed.startsWith(kw))) return 'recommend';
-  if (REGRET_KEYWORDS.some(kw => trimmed.startsWith(kw))) return 'regret';
+  const trimmed = headingText.trim().toLowerCase();
+  if (RECOMMEND_KEYWORDS.some(kw => trimmed.startsWith(kw.toLowerCase()))) return 'recommend';
+  if (REGRET_KEYWORDS.some(kw => trimmed.startsWith(kw.toLowerCase()))) return 'regret';
   return 'default';
 }
 

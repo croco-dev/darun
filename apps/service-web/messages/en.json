@@ -41,6 +41,7 @@
   },
   "Search": {
     "page": {
+      "title": "Explore Services",
       "empty": {
         "title": "Please enter a search term in the search box above.",
         "description": "e.g.) Service name: 'Toss', 'Naver' or category: 'Finance', 'Video', etc..."
@@ -48,7 +49,8 @@
       "resultTitle": "‘{query}’ search results",
       "popularQueriesTitle": "Popular searches",
       "categoriesTitle": "Categories",
-      "trendingTitle": "Trending services"
+      "trendingTitle": "Trending services",
+      "trendingEmpty": "No trending services found"
     },
     "list": {
       "empty": {
@@ -66,7 +68,8 @@
   },
   "ProductDetail": {
     "faq": {
-      "title": "Frequently Asked Questions"
+      "title": "Frequently Asked Questions",
+      "description": "Frequently asked questions regarding service features and usage."
     },
     "feature": {
       "title": "Features",
@@ -96,7 +99,8 @@
       "logoAlt": "{name} service logo"
     },
     "related": {
-      "title": "Compare With"
+      "title": "Compare With",
+      "description": "Recommended similar services frequently explored together."
     },
     "tocAriaLabel": "Section table of contents",
     "loading": "Loading page...",
@@ -154,7 +158,8 @@
   "home": {
     "recent": {
       "title": "Recently Added",
-      "more": "View More"
+      "more": "View More",
+      "empty": "No recently added services"
     },
     "category": {
       "title": "Categories",
@@ -163,6 +168,7 @@
     },
     "trending": {
       "title": "Top Picks",
+      "description": "Popular services currently receiving interest from users.",
       "more": "See All",
       "empty": "Top Picks Coming Soon"
     },
@@ -207,6 +213,9 @@
     }
   },
   "category": {
-    "empty": "No services in this category yet"
+    "empty": "No services in this category yet",
+    "emptyDescription": "No services registered in this category yet.",
+    "browseAll": "Browse all services",
+    "subtitle": "Explore recommended and alternative software in {category}."
   }
 }

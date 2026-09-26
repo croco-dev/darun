@@ -34,7 +34,7 @@ export const ProductDetailPage = ({
             <Breadcrumb
               data-testid="breadcrumb-product-detail"
               items={[
-                { label: isKo ? '홈' : 'Home', href: `/${locale}/` },
+                { label: isKo ? '홈' : 'Home', href: `/${locale}` },
                 { label: productName ?? slug, ariaCurrent: 'page' },
               ]}
             />

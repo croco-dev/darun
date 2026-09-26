@@ -1,5 +1,8 @@
+'use client';
+
 import { SectionWrapper } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
+import { useTranslations } from 'next-intl';
 
 const Skeleton = ({ className = '' }: { className?: string }) => (
   <div
@@ -9,13 +12,15 @@ const Skeleton = ({ className = '' }: { className?: string }) => (
 );
 
 export default function Loading() {
+  const t = useTranslations('ProductDetail');
+
   return (
     <Layout>
       <main
         className="flex min-h-[calc(100vh-4rem)] w-full flex-col bg-gradient-to-b from-surface-50/60 via-white to-white"
         aria-busy="true"
         aria-live="polite"
-        aria-label="페이지를 불러오는 중입니다"
+        aria-label={t('loading')}
       >
         <SectionWrapper background="white" spacing="md">
           <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">

@@ -4,7 +4,7 @@ import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { BookOpen, Calendar, formatDate } from '@darun/ui';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 const MAGAZINE_QUERY = gql`
   query MagazineBySlugOnInfoSection($slug: String!) {
@@ -25,6 +25,7 @@ type MagazineInfoSectionProps = { slug: string };
 
 export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
   const t = useTranslations('Magazine');
+  const locale = useLocale();
   const { data } = useSuspenseQuery<{
     magazineBySlug?: {
       id: string;
@@ -39,7 +40,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
   });
 
   const magazine = data?.magazineBySlug;
-  const formattedDate = formatDate(magazine?.publishedAt, '');
+  const formattedDate = formatDate(magazine?.publishedAt, '', locale);
   const authorName = magazine?.author?.name;
   const authorInitial = authorName ? authorName.trim().charAt(0).toUpperCase() : null;
 

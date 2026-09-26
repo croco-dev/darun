@@ -8,8 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@darun/ui', () => ({
   ChevronDown: () => React.createElement('svg', { 'data-testid': 'chevron-down' }),
-  SectionHeader: ({ title }: { title: string }) =>
-    React.createElement('div', { 'data-testid': 'section-header' }, title),
+  SectionHeader: ({ title, subtitle }: { title: string; subtitle?: string }) =>
+    React.createElement('div', { 'data-testid': 'section-header' }, title, subtitle),
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -42,7 +42,14 @@ describe('FAQSection Accessibility & Motion', () => {
       root?.render(
         React.createElement(NextIntlClientProvider, {
           locale: 'ko',
-          messages: { ProductDetail: { faq: { title: '자주 묻는 질문' } } },
+          messages: {
+            ProductDetail: {
+              faq: {
+                title: '자주 묻는 질문',
+                description: '서비스 이용 및 기능에 관해 자주 묻는 질문입니다.',
+              },
+            },
+          },
           children: React.createElement(FAQSection, { items: mockItems }),
         })
       );

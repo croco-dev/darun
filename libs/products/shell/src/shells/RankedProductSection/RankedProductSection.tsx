@@ -15,7 +15,7 @@ export const RankedProductSection = () => {
         <Breadcrumb
           data-testid="breadcrumb-ranking"
           items={[
-            { label: isKo ? '홈' : 'Home', href: `/${locale}/` },
+            { label: isKo ? '홈' : 'Home', href: `/${locale}` },
             { label: isKo ? '인기 랭킹' : 'Ranking', ariaCurrent: 'page' },
           ]}
         />

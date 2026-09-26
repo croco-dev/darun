@@ -46,6 +46,7 @@ type TrendingProductsQueryData = {
 type TrendingProductsViewProps = {
   products: TrendingProduct[];
   title: string;
+  subtitle: string;
   moreLabel: string;
   emptyLabel: string;
   rankingMoreHref: string;
@@ -64,6 +65,7 @@ function useTrendingProducts(): TrendingProductsViewProps {
   return {
     products: data?.rankedProducts ?? [],
     title: t('trending.title'),
+    subtitle: t('trending.description'),
     moreLabel: t('trending.more'),
     emptyLabel: t('trending.empty'),
     rankingMoreHref: `/${locale}/ranking`,
@@ -74,6 +76,7 @@ function useTrendingProducts(): TrendingProductsViewProps {
 const TrendingProductsView = ({
   products,
   title,
+  subtitle,
   moreLabel,
   emptyLabel,
   rankingMoreHref,
@@ -84,6 +87,7 @@ const TrendingProductsView = ({
       <div className="flex flex-col gap-5 md:gap-6">
         <SectionHeader
           title={title}
+          subtitle={subtitle}
           moreLink={
             <Link
               href={rankingMoreHref}

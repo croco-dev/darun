@@ -8,9 +8,19 @@ type ArticleCardProps = {
   author?: string;
   date?: Date;
   href?: string;
+  locale?: string;
 };
 
-export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, summary, href }: ArticleCardProps) => {
+export const ArticleCard = ({
+  thumbnailImageUri,
+  category,
+  title,
+  date,
+  author,
+  summary,
+  href,
+  locale,
+}: ArticleCardProps) => {
   const content = (
     <>
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-100">
@@ -45,7 +55,7 @@ export const ArticleCard = ({ thumbnailImageUri, category, title, date, author, 
         <div className="mt-auto flex items-center gap-x-2 pt-3 text-xs text-dark-500">
           {author && <span className="font-semibold text-dark-800">{author}</span>}
           {author && date && <span className="text-dark-300">•</span>}
-          {date && <span>{formatDate(date, '')}</span>}
+          {date && <span>{formatDate(date, '', locale)}</span>}
         </div>
       </div>
     </>
