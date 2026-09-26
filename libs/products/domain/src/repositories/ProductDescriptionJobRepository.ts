@@ -5,11 +5,28 @@ export const ProductDescriptionJobRepositoryToken = new Token<ProductDescription
   'ProductDescriptionJobRepository'
 );
 
+export type UpdateProductDescriptionJobOptions = {
+  message?: string | null;
+  error?: string | null;
+  evidenceHash?: string | null;
+  baseDescriptionHash?: string | null;
+  candidateDocument?: string | null;
+  candidateHtml?: string | null;
+  writerModel?: string | null;
+  reviewerModel?: string | null;
+  writerPromptVersion?: string | null;
+  reviewerPromptVersion?: string | null;
+  rendererVersion?: string | null;
+  appliedAt?: Date | null;
+};
+
 export interface ProductDescriptionJobRepository {
   createJob(job: {
     productId: string;
     status?: ProductDescriptionJobStatus;
     message?: string;
+    evidenceHash?: string;
+    baseDescriptionHash?: string;
   }): Promise<ProductDescriptionJobEntity>;
 
   findJobById(id: string): Promise<ProductDescriptionJobEntity | null>;
@@ -17,8 +34,10 @@ export interface ProductDescriptionJobRepository {
   updateJobStatus(
     id: string,
     status: ProductDescriptionJobStatus,
-    options?: { message?: string | null; error?: string | null }
+    options?: UpdateProductDescriptionJobOptions
   ): Promise<ProductDescriptionJobEntity>;
+
+  markApplied(id: string, appliedAt: Date): Promise<ProductDescriptionJobEntity>;
 
   findJobs(options?: {
     status?: ProductDescriptionJobStatus;

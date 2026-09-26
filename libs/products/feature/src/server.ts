@@ -13,3 +13,4 @@ export { ProductFlowMutationResolver } from './ProductFlow.mutation.resolver';
 export { ProductDescriptionQueryResolver } from './ProductDescription.query.resolver';
 export { ProductDescriptionMutationResolver } from './ProductDescription.mutation.resolver';
 export { ProductDescriptionJob } from './graphs/ProductDescriptionJob';
+export { ApplyProductDescriptionCandidatePayload } from './graphs/ApplyProductDescriptionCandidate';

@@ -1,4 +1,5 @@
 import { useApolloClient, useLazyQuery, useMutation } from '@apollo/client/react';
+import { ApplyProductDescriptionCandidateDocument } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -24,13 +25,15 @@ import { useGenerateProductDescriptionButton } from '../useGenerateProductDescri
 
 describe('useGenerateProductDescriptionButton', () => {
   const defaultSlug = 'test-product';
-  let mutateFn: ReturnType<typeof vi.fn>;
+  let generateMutateFn: ReturnType<typeof vi.fn>;
+  let applyMutateFn: ReturnType<typeof vi.fn>;
   let lazyQueryFn: ReturnType<typeof vi.fn>;
   let refetchQueriesFn: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mutateFn = vi.fn();
+    generateMutateFn = vi.fn();
+    applyMutateFn = vi.fn();
     lazyQueryFn = vi.fn();
     refetchQueriesFn = vi.fn().mockResolvedValue([]);
 
@@ -38,24 +41,31 @@ describe('useGenerateProductDescriptionButton', () => {
       refetchQueries: refetchQueriesFn,
     } as unknown as ReturnType<typeof useApolloClient>);
 
-    vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>);
+    vi.mocked(useMutation).mockImplementation((document: unknown) => {
+      if (document === ApplyProductDescriptionCandidateDocument) {
+        return [applyMutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
+      }
+      return [generateMutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
+    });
+
     vi.mocked(useLazyQuery).mockReturnValue([lazyQueryFn, { loading: false }] as unknown as ReturnType<
       typeof useLazyQuery
     >);
   });
 
-  it('calls generateProductDescription mutation with slug and handles immediate completion', async () => {
+  it('calls generateProductDescription mutation with slug and opens preview on immediate completion', async () => {
     const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
 
-    mutateFn.mockResolvedValueOnce({
+    generateMutateFn.mockResolvedValueOnce({
       data: {
         generateProductDescription: {
-          product: { id: 'prod-1', name: 'Test', description: 'Generated' },
+          product: { id: 'prod-1', name: 'Test', description: null },
           job: {
             id: 'job-1',
             productId: 'prod-1',
             status: 'completed',
             message: 'AI 소개를 생성했어요.',
+            candidateHtml: '<p>후보 설명</p>',
           },
         },
       },
@@ -65,7 +75,7 @@ describe('useGenerateProductDescriptionButton', () => {
       await result.current.handleGenerate();
     });
 
-    expect(mutateFn).toHaveBeenCalledWith({
+    expect(generateMutateFn).toHaveBeenCalledWith({
       variables: {
         input: { slug: defaultSlug },
       },
@@ -76,18 +86,23 @@ describe('useGenerateProductDescriptionButton', () => {
 
     expect(notifications.show).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: '생성 완료',
-        message: 'AI 소개를 생성했어요.',
+        title: 'AI 소개 초안 생성 완료',
         color: 'teal',
       })
     );
-    expect(refetchQueriesFn).toHaveBeenCalled();
+    expect(result.current.candidateJob).toEqual({
+      id: 'job-1',
+      candidateHtml: '<p>후보 설명</p>',
+      message: 'AI 소개를 생성했어요.',
+    });
+    expect(result.current.isPreviewOpen).toBe(true);
+    expect(refetchQueriesFn).not.toHaveBeenCalled();
   });
 
   it('handles immediate failure when job status is failed', async () => {
     const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
 
-    mutateFn.mockResolvedValueOnce({
+    generateMutateFn.mockResolvedValueOnce({
       data: {
         generateProductDescription: {
           product: { id: 'prod-1', name: 'Test', description: null },
@@ -113,13 +128,15 @@ describe('useGenerateProductDescriptionButton', () => {
       })
     );
     expect(result.current.isGenerating).toBe(false);
+    expect(result.current.candidateJob).toBeNull();
+    expect(result.current.isPreviewOpen).toBe(false);
   });
 
   it('handles mutation error gracefully', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
 
-    mutateFn.mockRejectedValueOnce(new Error('Network error'));
+    generateMutateFn.mockRejectedValueOnce(new Error('Network error'));
 
     await act(async () => {
       await result.current.handleGenerate();
@@ -139,7 +156,7 @@ describe('useGenerateProductDescriptionButton', () => {
 
   it('prevents rapid double-clicks synchronously via ref guard', async () => {
     let resolveMutation: (val: unknown) => void = () => {};
-    mutateFn.mockReturnValue(
+    generateMutateFn.mockReturnValue(
       new Promise(resolve => {
         resolveMutation = resolve;
       })
@@ -154,14 +171,14 @@ describe('useGenerateProductDescriptionButton', () => {
       secondPromise = result.current.handleGenerate();
     });
 
-    expect(mutateFn).toHaveBeenCalledTimes(1);
+    expect(generateMutateFn).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       resolveMutation({
         data: {
           generateProductDescription: {
             product: { id: 'prod-1' },
-            job: { status: 'completed' },
+            job: { status: 'completed', id: 'job-1', candidateHtml: '<p>test</p>' },
           },
         },
       });
@@ -175,7 +192,7 @@ describe('useGenerateProductDescriptionButton', () => {
   it('handles client timeout gracefully when mutation hangs', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.useFakeTimers();
-    mutateFn.mockReturnValue(new Promise(() => {}));
+    generateMutateFn.mockReturnValue(new Promise(() => {}));
 
     const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
 
@@ -211,9 +228,9 @@ describe('useGenerateProductDescriptionButton', () => {
     consoleSpy.mockRestore();
   });
 
-  it('polls job status when initial status is pending and completes when completed', async () => {
+  it('polls job status when initial status is pending and opens preview when completed', async () => {
     vi.useFakeTimers();
-    mutateFn.mockResolvedValueOnce({
+    generateMutateFn.mockResolvedValueOnce({
       data: {
         generateProductDescription: {
           product: { id: 'prod-1', name: 'Test', description: null },
@@ -233,6 +250,7 @@ describe('useGenerateProductDescriptionButton', () => {
           id: 'job-123',
           status: 'completed',
           message: 'AI 소개를 생성했어요.',
+          candidateHtml: '<p>폴링 완료 설명</p>',
         },
       },
     });
@@ -256,121 +274,111 @@ describe('useGenerateProductDescriptionButton', () => {
 
     expect(notifications.show).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: '생성 완료',
-        message: 'AI 소개를 생성했어요.',
+        title: 'AI 소개 초안 생성 완료',
         color: 'teal',
       })
     );
-    expect(refetchQueriesFn).toHaveBeenCalled();
+    expect(result.current.candidateJob).toEqual({
+      id: 'job-123',
+      candidateHtml: '<p>폴링 완료 설명</p>',
+      message: 'AI 소개를 생성했어요.',
+    });
+    expect(result.current.isPreviewOpen).toBe(true);
     expect(result.current.isGenerating).toBe(false);
     vi.useRealTimers();
   });
 
-  it('polls job status and handles job failure', async () => {
-    vi.useFakeTimers();
-    mutateFn.mockResolvedValueOnce({
+  it('applies candidate successfully and refetches product queries', async () => {
+    generateMutateFn.mockResolvedValueOnce({
       data: {
         generateProductDescription: {
           product: { id: 'prod-1', name: 'Test', description: null },
           job: {
-            id: 'job-123',
+            id: 'job-apply',
             productId: 'prod-1',
-            status: 'in_progress',
-            message: '진행 중',
+            status: 'completed',
+            candidateHtml: '<p>적용할 내용</p>',
           },
         },
       },
     });
 
-    lazyQueryFn.mockResolvedValueOnce({
+    applyMutateFn.mockResolvedValueOnce({
       data: {
-        productDescriptionJob: {
-          id: 'job-123',
-          status: 'failed',
-          error: 'LLM Timeout',
-          message: 'AI 소개 생성에 실패했습니다.',
+        applyProductDescriptionCandidate: {
+          product: { id: 'prod-1', name: 'Test', description: '<p>적용할 내용</p>' },
+          job: {
+            id: 'job-apply',
+            productId: 'prod-1',
+            status: 'completed',
+            appliedAt: new Date().toISOString(),
+          },
         },
       },
     });
 
     const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
 
-    let generatePromise: Promise<void>;
-    act(() => {
-      generatePromise = result.current.handleGenerate();
+    await act(async () => {
+      await result.current.handleGenerate();
+    });
+
+    expect(result.current.isPreviewOpen).toBe(true);
+    expect(result.current.candidateJob?.id).toBe('job-apply');
+
+    await act(async () => {
+      await result.current.handleApply();
+    });
+
+    expect(applyMutateFn).toHaveBeenCalledWith({
+      variables: { jobId: 'job-apply' },
+    });
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: '적용 완료',
+        color: 'teal',
+      })
+    );
+    expect(result.current.isPreviewOpen).toBe(false);
+    expect(result.current.candidateJob).toBeNull();
+    expect(refetchQueriesFn).toHaveBeenCalled();
+  });
+
+  it('handles error when applying candidate fails', async () => {
+    generateMutateFn.mockResolvedValueOnce({
+      data: {
+        generateProductDescription: {
+          product: { id: 'prod-1', name: 'Test', description: null },
+          job: {
+            id: 'job-stale',
+            productId: 'prod-1',
+            status: 'completed',
+            candidateHtml: '<p>stale candidate</p>',
+          },
+        },
+      },
+    });
+
+    applyMutateFn.mockRejectedValueOnce(new Error('Base description has changed since candidate was generated'));
+
+    const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
+
+    await act(async () => {
+      await result.current.handleGenerate();
     });
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-      await generatePromise;
+      await result.current.handleApply();
     });
 
     expect(notifications.show).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: '생성 실패',
-        message: 'LLM Timeout',
+        title: '적용 실패',
+        message: 'Base description has changed since candidate was generated',
         color: 'red',
       })
     );
-    expect(result.current.isGenerating).toBe(false);
-    vi.useRealTimers();
-  });
-
-  it('handles polling timeout when job takes longer than 3 minutes', async () => {
-    vi.useFakeTimers();
-    let currentTime = 1000;
-    const dateSpy = vi.spyOn(Date, 'now').mockImplementation(() => currentTime);
-
-    mutateFn.mockResolvedValueOnce({
-      data: {
-        generateProductDescription: {
-          product: { id: 'prod-1', name: 'Test', description: null },
-          job: {
-            id: 'job-123',
-            productId: 'prod-1',
-            status: 'pending',
-          },
-        },
-      },
-    });
-
-    lazyQueryFn.mockResolvedValue({
-      data: {
-        productDescriptionJob: {
-          id: 'job-123',
-          status: 'in_progress',
-        },
-      },
-    });
-
-    const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
-
-    let generatePromise: Promise<void>;
-    act(() => {
-      generatePromise = result.current.handleGenerate();
-    });
-
-    // Let the mutation resolve so startTime is captured at currentTime = 1000
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    // Advance time past 3 minutes (180_000ms)
-    currentTime += 180_001;
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-      await generatePromise;
-    });
-
-    expect(notifications.show).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: '생성 진행 중 (시간 소요)',
-        color: 'blue',
-      })
-    );
-    expect(result.current.isGenerating).toBe(false);
-    dateSpy.mockRestore();
-    vi.useRealTimers();
+    expect(result.current.isApplying).toBe(false);
+    expect(result.current.isPreviewOpen).toBe(true); // remains open so admin sees what happened
   });
 });

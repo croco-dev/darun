@@ -10,6 +10,9 @@ export interface TranslationJobRepository {
     locale?: string;
     status?: TranslationJobStatus;
     message?: string;
+    sourceHash?: string | null;
+    model?: string | null;
+    promptVersion?: string | null;
   }): Promise<TranslationJobEntity>;
 
   findJobById(id: string): Promise<TranslationJobEntity | null>;
@@ -17,7 +20,13 @@ export interface TranslationJobRepository {
   updateJobStatus(
     id: string,
     status: TranslationJobStatus,
-    options?: { message?: string | null; error?: string | null }
+    options?: {
+      message?: string | null;
+      error?: string | null;
+      sourceHash?: string | null;
+      model?: string | null;
+      promptVersion?: string | null;
+    }
   ): Promise<TranslationJobEntity>;
 
   findJobs(options?: {

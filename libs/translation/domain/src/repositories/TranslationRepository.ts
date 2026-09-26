@@ -7,8 +7,22 @@ export interface TranslationRow {
   locale: string;
   field: string;
   value: string;
+  sourceHash?: string | null;
+  model?: string | null;
+  promptVersion?: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface UpsertTranslationParams {
+  entityType: string;
+  entityId: string;
+  locale: string;
+  field: string;
+  value: string;
+  sourceHash?: string | null;
+  model?: string | null;
+  promptVersion?: string | null;
 }
 
 export interface TranslationRepository {
@@ -26,13 +40,8 @@ export interface TranslationRepository {
       field: string;
     }>;
   }): Promise<TranslationRow[]>;
-  upsert(params: {
-    entityType: string;
-    entityId: string;
-    locale: string;
-    field: string;
-    value: string;
-  }): Promise<TranslationRow>;
+  upsert(params: UpsertTranslationParams): Promise<TranslationRow>;
+  upsertMany(rows: UpsertTranslationParams[]): Promise<TranslationRow[]>;
   findByEntity(params: { entityType: string; entityId: string; locale: string }): Promise<TranslationRow[]>;
 }
 

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "hedge-preservation",
+    "description": "불확실성 표현 및 단서 조항(~일 수 있습니다, 지원 예정)이 단정적 표현으로 왜곡되지 않고 보존되는지 검증",
+    "koreanText": "현재는 한국어만 지원하며, 영문 지원은 올해 4분기에 추가될 예정입니다. 환경에 따라 측정 오차가 발생할 수 있습니다.",
+    "isHtml": false,
+    "mode": "product_copy",
+    "negativeHypeKeywords": ["best", "unbeatable", "guaranteed", "perfect"]
+  },
+  {
+    "id": "html-nested-preservation",
+    "description": "복합 중첩 HTML 태그 구조가 100% 손실 없이 정확히 보존되는지 검증",
+    "koreanText": "<div class=\"feature-box\"><p><strong>핵심 안내:</strong> 자세한 내용은 <a href=\"https://darun.io/docs\" target=\"_blank\">공식 문서</a>를 참고하세요.</p></div>",
+    "isHtml": true,
+    "mode": "editorial",
+    "negativeHypeKeywords": []
+  },
+  {
+    "id": "promotional-prevention",
+    "description": "외부 플랫폼(Product Hunt, G2) 레퍼런스나 과장 광고가 번역기에 의해 임의 주입되지 않는지 검증",
+    "koreanText": "팀원들과 실시간으로 회의록을 공유하고 댓글을 남길 수 있는 웹 서비스입니다.",
+    "isHtml": false,
+    "mode": "product_copy",
+    "negativeHypeKeywords": ["Product Hunt", "G2", "#1", "award-winning", "revolutionary"]
+  },
+  {
+    "id": "terminology-attachment",
+    "description": "소프트웨어 표준 용어(웹훅, 대시보드, 온프레미스)가 정확히 매핑되는지 검증",
+    "koreanText": "웹훅을 통한 이벤트 알림 및 온프레미스 배포 환경을 지원하는 관리자 대시보드입니다.",
+    "isHtml": false,
+    "mode": "product_copy",
+    "negativeHypeKeywords": []
+  }
+]

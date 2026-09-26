@@ -30,6 +30,7 @@ export class ProductRecommendationMutationResolver extends ProductPublishMutatio
     publishIndexProductUseCase: IndexProduct,
     translationJobService: ProductPublishMutationResolver['translationJobService'],
     protected readonly updateAlternativeProductUseCase: UpdateAlternativeProduct,
+    applyProductDescriptionCandidateUseCase?: ProductPublishMutationResolver['applyProductDescriptionCandidateUseCase'],
     productDescriptionJobService?: ProductPublishMutationResolver['productDescriptionJobService']
   ) {
     super(
@@ -50,6 +51,7 @@ export class ProductRecommendationMutationResolver extends ProductPublishMutatio
       publishProductUseCase,
       publishIndexProductUseCase,
       translationJobService,
+      applyProductDescriptionCandidateUseCase,
       productDescriptionJobService
     );
   }

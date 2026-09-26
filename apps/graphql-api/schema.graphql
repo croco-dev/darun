@@ -26,6 +26,11 @@ type AddProductScreenshotPayload {
   product: Product
 }
 
+type ApplyProductDescriptionCandidatePayload {
+  job: ProductDescriptionJob!
+  product: Product!
+}
+
 type Author {
   id: ID!
   name: String!
@@ -223,6 +228,7 @@ type MagazinePagination {
 type Mutation {
   addProductLink(input: AddProductLinkInput!, slug: String!): AddProductLinkPayload!
   addProductScreenshot(input: AddProductScreenshotInput!, slug: String!): AddProductScreenshotPayload!
+  applyProductDescriptionCandidate(jobId: String!): ApplyProductDescriptionCandidatePayload!
   createCompany(input: CreateCompanyInput!): CreateCompanyPayload!
   createMagazine(input: CreateMagazineInput!): CreateMagazinePayload!
   createProduct(input: CreateProductInput!): CreateProductPayload!
@@ -285,8 +291,12 @@ type ProductConnection {
 }
 
 type ProductDescriptionJob {
+  appliedAt: DateTimeISO
+  baseDescriptionHash: String
+  candidateHtml: String
   createdAt: DateTimeISO
   error: String
+  evidenceHash: String
   id: ID!
   message: String
   productId: String!

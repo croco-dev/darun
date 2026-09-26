@@ -1,115 +1,114 @@
 import {
-  Product,
-  ProductDescriptionGenerationContext,
-  ProductDescriptionGenerator,
+  type ProductDescriptionEvidence,
+  type ProductDescriptionGenerationResult,
+  type ProductDescriptionGenerator,
   ProductDescriptionGeneratorToken,
 } from '@darun/products-domain';
 import { LlmClient, withRetry, withTimeout } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
+import {
+  PRODUCT_DESCRIPTION_REVIEWER_PROMPT_VERSION,
+  PRODUCT_DESCRIPTION_WRITER_PROMPT_VERSION,
+  createProductDescriptionReviewerPrompt,
+  createProductDescriptionWriterPrompt,
+} from '../prompts/productDescriptionPrompt';
+import { validateProductDescriptionDocument } from '../validators/productDescriptionDocumentValidator';
+import { PRODUCT_DESCRIPTION_RENDERER_VERSION, renderProductDescriptionDocument } from './ProductDescriptionRenderer';
 
-const SYSTEM_PROMPT = `당신은 서비스/앱 리뷰 콘텐츠를 작성하는 전문 에디터입니다.
+const CALL_TIMEOUT_MS = 25_000;
 
-핵심 원칙:
-- 입력된 제품 정보만 사용하고, 확인되지 않은 기능·가격·지원 환경을 만들지 않습니다.
-- 친근하지만 객관적인 톤을 유지하고 과장 표현을 피합니다.
-- 정보가 부족한 항목은 자연스럽게 생략하거나 제한점으로만 짧게 언급합니다.
-- 출력은 HTML 본문만 제공합니다. Markdown, 코드블록, 설명 문구는 쓰지 않습니다.
-
-허용 HTML 태그:
-- p, h2, h3, ul, li, strong, em
-- 모든 태그는 올바르게 열고 닫고, 속성은 사용하지 않습니다.
-
-구성:
-1. <p>도입부: 제품명을 자연스럽게 언급하고 한두 문장으로 맥락을 엽니다.</p>
-2. <h3>본문 섹션 2~3개</h3>와 <p>설명</p>: 주요 기능과 사용자 경험을 다룹니다.
-3. <h3>추천한다면 -</h3><ul><li>추천 대상 2~3개</li></ul>
-4. <h3>아쉽다면 -</h3><ul><li>확인된 제약 또는 정보 부족 1~3개</li></ul>
-5. <p>마무리: 전체 경험을 요약하고 균형 잡힌 결론을 내립니다.</p>
-6. <p><em>YYYY년 M월 - Editor. DAO</em></p>: 마지막 줄에는 반드시 현재 연월과 에디터 서명(DAO는 AI 에디터 에이전트 이름)을 이 포맷(예: 2025년 9월 - Editor. DAO)으로 작성합니다.
-
-금지:
-- Editor. DAO 외의 임의의 가상 에디터 이름 표기
-- "제공된 정보", "확인 가능한 사실", "정보 부족으로 평가 불가" 같은 보고서식 표현
-- "최고", "완벽", "혁신적", "압도적" 같은 과장 표현
-- 입력에 없는 가격·기능·카테고리·지원 환경 추정`;
-
-const ALLOWED_TAGS = new Set(['p', 'h2', 'h3', 'ul', 'li', 'strong', 'em']);
+export function parseStrictJson(raw: string): unknown {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('```') || trimmed.endsWith('```')) {
+    throw new Error('LLM 응답에 마크다운 코드 블록이 포함되어 있어 파싱할 수 없습니다.');
+  }
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+    throw new Error('LLM 응답이 JSON 객체 형식이 아닙니다.');
+  }
+  try {
+    return JSON.parse(trimmed);
+  } catch (err) {
+    throw new Error(`JSON 파싱 실패: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
 
 @Service({ id: ProductDescriptionGeneratorToken })
+@Service()
 export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenerator {
   constructor(@Inject(() => LlmClient) private readonly llmClient: LlmClient) {}
 
-  async generate(product: Product, context?: ProductDescriptionGenerationContext): Promise<string> {
-    try {
-      const response = await withRetry(
-        () =>
-          withTimeout(
-            this.llmClient.completion([
-              { role: 'system', content: SYSTEM_PROMPT },
-              { role: 'user', content: this.createUserPrompt(product, context) },
-            ]),
-            18_000,
-            '상품 설명 생성 요청이 시간 초과되었습니다. 잠시 후 다시 시도해주세요.'
+  async generate(
+    evidence: ProductDescriptionEvidence,
+    options?: { model?: string }
+  ): Promise<ProductDescriptionGenerationResult> {
+    const config = await this.llmClient.getConfig();
+    const model = options?.model ?? config.model;
+    const thinkingLevel = config.thinkingLevel;
+
+    // 1. Pass 1: Writer
+    const writerPrompts = createProductDescriptionWriterPrompt(evidence);
+    const writerResponse = await withRetry(
+      () =>
+        withTimeout(
+          this.llmClient.completion(
+            model,
+            [
+              { role: 'system', content: writerPrompts.systemPrompt },
+              { role: 'user', content: writerPrompts.userPrompt },
+            ],
+            { thinkingLevel }
           ),
-        { maxRetries: 2, baseDelay: 2000, maxDelay: 10000 }
-      );
+          CALL_TIMEOUT_MS,
+          '상품 설명 초안 생성 요청이 시간 초과되었습니다.'
+        ),
+      { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
+    );
 
-      const content = response.content?.trim();
-
-      if (!content) {
-        throw new Error('LLM description response is empty');
-      }
-
-      return this.sanitizeHtml(content);
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.message.includes('시간 초과') || error.message.toLowerCase().includes('timeout'))
-      ) {
-        throw error;
-      }
-      throw new Error(
-        `상품 설명 생성 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`
-      );
-    }
-  }
-
-  private createUserPrompt(product: Product, context?: ProductDescriptionGenerationContext): string {
-    let categoryDisplay = '확인된 정보 없음';
-
-    if (context?.categoryLabels && context.categoryLabels.length > 0) {
-      categoryDisplay = context.categoryLabels.join(', ');
-    } else if (product.categoryIds.length > 0) {
-      const isMachineId = (id: string) =>
-        /^(?:c[a-z0-9]{20,}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(id);
-      const validLabels = product.categoryIds.filter(id => !isMachineId(id));
-      if (validLabels.length > 0) {
-        categoryDisplay = validLabels.join(', ');
-      }
+    const writerContent = writerResponse.content?.trim();
+    if (!writerContent) {
+      throw new Error('LLM 초안 생성 응답이 비어 있습니다.');
     }
 
-    return [
-      '아래 구조화된 제품 정보만 바탕으로 서비스 리뷰 HTML을 작성해주세요.',
-      '',
-      `제품명: ${product.name}`,
-      `카테고리: ${categoryDisplay}`,
-      `주요 기능: ${product.summary}`,
-      '가격대: 확인된 정보 없음',
-    ].join('\n');
-  }
+    const writerParsed = parseStrictJson(writerContent);
+    const writerDoc = validateProductDescriptionDocument(writerParsed, evidence);
 
-  private sanitizeHtml(html: string): string {
-    return html
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (tag, rawTagName: string) => {
-        const tagName = rawTagName.toLowerCase();
+    // 2. Pass 2: Reviewer
+    const reviewerPrompts = createProductDescriptionReviewerPrompt(evidence, writerDoc);
+    const reviewerResponse = await withRetry(
+      () =>
+        withTimeout(
+          this.llmClient.completion(
+            model,
+            [
+              { role: 'system', content: reviewerPrompts.systemPrompt },
+              { role: 'user', content: reviewerPrompts.userPrompt },
+            ],
+            { thinkingLevel }
+          ),
+          CALL_TIMEOUT_MS,
+          '상품 설명 검수 요청이 시간 초과되었습니다.'
+        ),
+      { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
+    );
 
-        if (!ALLOWED_TAGS.has(tagName)) {
-          return '';
-        }
+    const reviewerContent = reviewerResponse.content?.trim();
+    if (!reviewerContent) {
+      throw new Error('LLM 검수 응답이 비어 있습니다.');
+    }
 
-        return tag.startsWith('</') ? `</${tagName}>` : `<${tagName}>`;
-      })
-      .trim();
+    const reviewerParsed = parseStrictJson(reviewerContent);
+    const reviewedDoc = validateProductDescriptionDocument(reviewerParsed, evidence);
+
+    const candidateHtml = renderProductDescriptionDocument(reviewedDoc);
+
+    return {
+      document: reviewedDoc,
+      candidateHtml,
+      writerModel: model,
+      reviewerModel: model,
+      writerPromptVersion: PRODUCT_DESCRIPTION_WRITER_PROMPT_VERSION,
+      reviewerPromptVersion: PRODUCT_DESCRIPTION_REVIEWER_PROMPT_VERSION,
+      rendererVersion: PRODUCT_DESCRIPTION_RENDERER_VERSION,
+    };
   }
 }

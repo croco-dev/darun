@@ -9,3 +9,10 @@ export { ProductDescriptionGeneratorImpl } from './services/ProductDescriptionGe
 export { PostgresqlCategoryRepository } from './repositories/PostgresqlCategoryRepository';
 export { PostgresqlProductDescriptionJobRepository } from './repositories/PostgresqlProductDescriptionJobRepository';
 export { productDescriptionJobs } from './entities/ProductDescriptionJobSchema';
+export {
+  renderProductDescriptionDocument,
+  formatEditorByline,
+  escapeHtml,
+  PRODUCT_DESCRIPTION_RENDERER_VERSION,
+} from './services/ProductDescriptionRenderer';
+export { validateProductDescriptionDocument } from './validators/productDescriptionDocumentValidator';

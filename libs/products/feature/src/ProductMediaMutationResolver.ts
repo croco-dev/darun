@@ -212,17 +212,20 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
       throw productNotFound();
     }
 
-    const updatedProduct = await this.generateProductDescriptionUseCase.execute({
+    const candidateResult = await this.generateProductDescriptionUseCase.execute({
       productId: product.id,
     });
 
     return {
-      product: updatedProduct,
+      product,
       job: {
-        id: updatedProduct.id,
-        productId: updatedProduct.id,
+        id: `candidate-${product.id}`,
+        productId: product.id,
         status: 'completed',
-        message: 'AI 소개 생성이 완료되었습니다.',
+        message: 'AI 소개 초안 생성이 완료되었습니다.',
+        candidateHtml: candidateResult.candidateHtml,
+        evidenceHash: candidateResult.evidenceHash,
+        baseDescriptionHash: candidateResult.baseDescriptionHash,
       },
     };
   }

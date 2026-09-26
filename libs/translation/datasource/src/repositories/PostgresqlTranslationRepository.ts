@@ -1,8 +1,11 @@
-import { Drizzle } from '@darun/provider-database';
-import { DrizzleToken } from '@darun/provider-database';
-import { TranslationRepository, TranslationRow } from '@darun/translation-domain';
-import { TranslationRepositoryToken } from '@darun/translation-domain';
-import { and, eq, or } from 'drizzle-orm';
+import { Drizzle, DrizzleToken } from '@darun/provider-database';
+import {
+  type TranslationRepository,
+  type TranslationRow,
+  type UpsertTranslationParams,
+  TranslationRepositoryToken,
+} from '@darun/translation-domain';
+import { and, eq, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { translations } from '../entities/TranslationSchema';
 
@@ -67,21 +70,21 @@ export class PostgresqlTranslationRepository implements TranslationRepository {
       );
   }
 
-  async upsert(params: {
-    entityType: string;
-    entityId: string;
-    locale: string;
-    field: string;
-    value: string;
-  }): Promise<TranslationRow> {
-    const { entityType, entityId, locale, field, value } = params;
+  async upsert(params: UpsertTranslationParams): Promise<TranslationRow> {
+    const { entityType, entityId, locale, field, value, sourceHash, model, promptVersion } = params;
 
     const rows = await this.db
       .insert(translations)
-      .values({ entityType, entityId, locale, field, value })
+      .values({ entityType, entityId, locale, field, value, sourceHash, model, promptVersion })
       .onConflictDoUpdate({
         target: [translations.entityType, translations.entityId, translations.locale, translations.field],
-        set: { value, updatedAt: new Date() },
+        set: {
+          value,
+          sourceHash: sourceHash !== undefined ? sourceHash : sql`${translations.sourceHash}`,
+          model: model !== undefined ? model : sql`${translations.model}`,
+          promptVersion: promptVersion !== undefined ? promptVersion : sql`${translations.promptVersion}`,
+          updatedAt: new Date(),
+        },
       })
       .returning();
 
@@ -90,6 +93,38 @@ export class PostgresqlTranslationRepository implements TranslationRepository {
     }
 
     return rows[0];
+  }
+
+  async upsertMany(paramsList: UpsertTranslationParams[]): Promise<TranslationRow[]> {
+    if (paramsList.length === 0) {
+      return [];
+    }
+
+    const values = paramsList.map(p => ({
+      entityType: p.entityType,
+      entityId: p.entityId,
+      locale: p.locale,
+      field: p.field,
+      value: p.value,
+      sourceHash: p.sourceHash ?? null,
+      model: p.model ?? null,
+      promptVersion: p.promptVersion ?? null,
+    }));
+
+    return this.db
+      .insert(translations)
+      .values(values)
+      .onConflictDoUpdate({
+        target: [translations.entityType, translations.entityId, translations.locale, translations.field],
+        set: {
+          value: sql`excluded.value`,
+          sourceHash: sql`excluded.source_hash`,
+          model: sql`excluded.model`,
+          promptVersion: sql`excluded.prompt_version`,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
   }
 
   async findByEntity(params: { entityType: string; entityId: string; locale: string }): Promise<TranslationRow[]> {

@@ -27,13 +27,31 @@ describe('ProductDescriptionJobService', () => {
     updatedAt: new Date(),
   });
 
+  const mockCandidateResult = {
+    candidateHtml: '<p>생성된 설명</p>',
+    candidateDocument: {
+      intro: { text: '도입', evidenceRefs: ['product:summary'] },
+      sections: [],
+      recommendedIf: [],
+      limitations: [] as [],
+      closing: { text: '마무리', evidenceRefs: ['product:summary'] },
+    },
+    evidenceHash: 'ev-hash-123',
+    baseDescriptionHash: 'desc-hash-123',
+    writerModel: 'google/gemini-2.5-flash',
+    reviewerModel: 'google/gemini-2.5-flash',
+    writerPromptVersion: 'v1',
+    reviewerPromptVersion: 'v1',
+    rendererVersion: 'v1',
+  };
+
   beforeEach(() => {
     getProductUseCase = {
       execute: vi.fn().mockResolvedValue(mockProduct),
     } as unknown as GetProduct;
 
     generateProductDescriptionUseCase = {
-      execute: vi.fn().mockResolvedValue(mockProduct),
+      execute: vi.fn().mockResolvedValue(mockCandidateResult),
     } as unknown as GenerateProductDescription;
 
     mockRepository = {
@@ -59,6 +77,7 @@ describe('ProductDescriptionJobService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       } as ProductDescriptionJobEntity),
+      markApplied: vi.fn(),
       findJobs: vi.fn().mockResolvedValue([
         {
           id: 'job-123',
@@ -89,6 +108,7 @@ describe('ProductDescriptionJobService', () => {
 
     expect(generateProductDescriptionUseCase.execute).toHaveBeenCalledWith({ productId: 'prod-123' });
     expect(result.job.status).toBe('completed');
+    expect(result.job.candidateHtml).toBe('<p>생성된 설명</p>');
     expect(result.product).toEqual(mockProduct);
   });
 
@@ -134,7 +154,7 @@ describe('ProductDescriptionJobService', () => {
     expect(executeSpy).toHaveBeenCalledWith('job-123', 'prod-123');
   });
 
-  it('executes job and updates status to completed', async () => {
+  it('executes job and updates status to completed with candidate fields', async () => {
     const service = new ProductDescriptionJobService(
       getProductUseCase,
       generateProductDescriptionUseCase,
@@ -150,10 +170,38 @@ describe('ProductDescriptionJobService', () => {
     expect(generateProductDescriptionUseCase.execute).toHaveBeenCalledWith({ productId: 'prod-123' });
     expect(mockRepository.updateJobStatus).toHaveBeenCalledWith('job-123', 'completed', {
       message: 'AI 소개 생성이 완료되었습니다.',
+      candidateHtml: '<p>생성된 설명</p>',
+      candidateDocument: JSON.stringify(mockCandidateResult.candidateDocument),
+      evidenceHash: 'ev-hash-123',
+      baseDescriptionHash: 'desc-hash-123',
+      writerModel: 'google/gemini-2.5-flash',
+      reviewerModel: 'google/gemini-2.5-flash',
+      writerPromptVersion: 'v1',
+      reviewerPromptVersion: 'v1',
+      rendererVersion: 'v1',
     });
   });
 
-  it('updates status to failed when execution throws error', async () => {
+  it('updates status to superseded when stale error occurs during generation', async () => {
+    vi.mocked(generateProductDescriptionUseCase.execute).mockRejectedValue(
+      new Error('stale: 제품 정보가 생성 도중 변경되었습니다.')
+    );
+
+    const service = new ProductDescriptionJobService(
+      getProductUseCase,
+      generateProductDescriptionUseCase,
+      mockRepository,
+      mockQueueService
+    );
+
+    await service.executeJob('job-123', 'prod-123');
+
+    expect(mockRepository.updateJobStatus).toHaveBeenCalledWith('job-123', 'superseded', {
+      message: '제품 정보 변경으로 결과가 폐기되었습니다.',
+    });
+  });
+
+  it('updates status to failed when execution throws non-stale error', async () => {
     vi.mocked(generateProductDescriptionUseCase.execute).mockRejectedValue(new Error('LLM Timeout'));
 
     const service = new ProductDescriptionJobService(
@@ -231,6 +279,7 @@ describe('ProductDescriptionJobService', () => {
     expect(mockRepository.updateJobStatus).toHaveBeenCalledWith('job-failed', 'pending', {
       message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
       error: null,
+      appliedAt: null,
     });
     expect(mockQueueService.sendJob).toHaveBeenCalledWith({
       jobId: 'job-failed',

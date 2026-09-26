@@ -146,23 +146,41 @@ describe('ProductMediaMutationResolver', () => {
       await expect(resolver.generateProductDescription({ slug: 'test' })).rejects.toThrow();
     });
 
-    it('설명을 생성하고 업데이트된 제품을 반환한다', async () => {
+    it('설명 초안 후보를 생성하고 job 정보를 반환한다', async () => {
       const { resolver, getProduct, generateProductDescription } = createResolver();
       const product = createProduct();
-      const updatedProduct = { ...product, description: 'AI 설명' } as DomainProduct;
+      const candidateResult = {
+        candidateHtml: '<p>AI 설명</p>',
+        evidenceHash: 'hash-1',
+        baseDescriptionHash: 'base-hash-1',
+        document: {
+          intro: { text: 'intro', evidenceRefs: [] },
+          sections: [],
+          recommendedIf: [],
+          closing: { text: 'closing', evidenceRefs: [] },
+        },
+        writerModel: 'writer',
+        reviewerModel: 'reviewer',
+        writerPromptVersion: 'v1',
+        reviewerPromptVersion: 'v1',
+        rendererVersion: 'v1',
+      };
       getProduct.execute.mockResolvedValue(product);
-      generateProductDescription.execute.mockResolvedValue(updatedProduct);
+      generateProductDescription.execute.mockResolvedValue(candidateResult);
 
       const result = await resolver.generateProductDescription({ slug: 'test' });
 
       expect(generateProductDescription.execute).toHaveBeenCalledWith({ productId: 'prod-1' });
       expect(result).toEqual({
-        product: updatedProduct,
+        product,
         job: {
-          id: updatedProduct.id,
-          productId: updatedProduct.id,
+          id: `candidate-${product.id}`,
+          productId: product.id,
           status: 'completed',
-          message: 'AI 소개 생성이 완료되었습니다.',
+          message: 'AI 소개 초안 생성이 완료되었습니다.',
+          candidateHtml: '<p>AI 설명</p>',
+          evidenceHash: 'hash-1',
+          baseDescriptionHash: 'base-hash-1',
         },
       });
     });

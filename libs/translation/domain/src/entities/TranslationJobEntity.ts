@@ -1,4 +1,4 @@
-export type TranslationJobStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
+export type TranslationJobStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'superseded';
 
 export type TranslationJobEntity = {
   id: string;
@@ -8,6 +8,9 @@ export type TranslationJobEntity = {
   status: TranslationJobStatus;
   message?: string | null;
   error?: string | null;
+  sourceHash?: string | null;
+  model?: string | null;
+  promptVersion?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

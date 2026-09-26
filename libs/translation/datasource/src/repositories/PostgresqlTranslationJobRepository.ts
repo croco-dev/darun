@@ -19,6 +19,9 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
     locale?: string;
     status?: TranslationJobStatus;
     message?: string;
+    sourceHash?: string | null;
+    model?: string | null;
+    promptVersion?: string | null;
   }): Promise<TranslationJobEntity> {
     const rows = await this.db
       .insert(translationJobs)
@@ -28,6 +31,9 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
         locale: job.locale ?? 'en',
         status: job.status ?? 'pending',
         message: job.message ?? '번역 작업이 대기 중입니다.',
+        sourceHash: job.sourceHash ?? null,
+        model: job.model ?? null,
+        promptVersion: job.promptVersion ?? null,
       })
       .returning();
 
@@ -44,6 +50,9 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
       status: row.status as TranslationJobStatus,
       message: row.message,
       error: row.error,
+      sourceHash: row.sourceHash,
+      model: row.model,
+      promptVersion: row.promptVersion,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -65,6 +74,9 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
         status: row.status as TranslationJobStatus,
         message: row.message,
         error: row.error,
+        sourceHash: row.sourceHash,
+        model: row.model,
+        promptVersion: row.promptVersion,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       };
@@ -77,7 +89,13 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
   async updateJobStatus(
     id: string,
     status: TranslationJobStatus,
-    options?: { message?: string | null; error?: string | null }
+    options?: {
+      message?: string | null;
+      error?: string | null;
+      sourceHash?: string | null;
+      model?: string | null;
+      promptVersion?: string | null;
+    }
   ): Promise<TranslationJobEntity> {
     const updateValues: Record<string, unknown> = {
       status,
@@ -89,6 +107,15 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
     }
     if (options?.error !== undefined) {
       updateValues.error = options.error;
+    }
+    if (options?.sourceHash !== undefined) {
+      updateValues.sourceHash = options.sourceHash;
+    }
+    if (options?.model !== undefined) {
+      updateValues.model = options.model;
+    }
+    if (options?.promptVersion !== undefined) {
+      updateValues.promptVersion = options.promptVersion;
     }
 
     const rows = await this.db.update(translationJobs).set(updateValues).where(eq(translationJobs.id, id)).returning();
@@ -106,6 +133,9 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
       status: row.status as TranslationJobStatus,
       message: row.message,
       error: row.error,
+      sourceHash: row.sourceHash,
+      model: row.model,
+      promptVersion: row.promptVersion,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -135,6 +165,9 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
         status: row.status as TranslationJobStatus,
         message: row.message,
         error: row.error,
+        sourceHash: row.sourceHash,
+        model: row.model,
+        promptVersion: row.promptVersion,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       }));

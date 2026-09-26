@@ -1,9 +1,10 @@
-import { GetProduct, PublishProduct } from '@darun/products-domain';
+import { ApplyProductDescriptionCandidate, GetProduct, PublishProduct } from '@darun/products-domain';
 import { productNotFound } from '@darun/products-domain';
 import { IndexProduct } from '@darun/search-domain';
 import { TranslationJobService } from '@darun/translation-service';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
+import { ApplyProductDescriptionCandidatePayload } from './graphs/ApplyProductDescriptionCandidate';
 import { EditProductInput } from './graphs/EditProduct';
 import { EditProductPayload } from './graphs/EditProduct';
 import { Product } from './graphs/Product';
@@ -31,6 +32,7 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
     protected readonly publishProductUseCase: PublishProduct,
     protected readonly publishIndexProductUseCase: IndexProduct,
     protected readonly translationJobService: TranslationJobService,
+    protected readonly applyProductDescriptionCandidateUseCase?: ApplyProductDescriptionCandidate,
     productDescriptionJobService?: ProductMediaMutationResolver['productDescriptionJobService']
   ) {
     super(
@@ -52,6 +54,34 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
     );
   }
 
+  protected async syncPublishedContent(product: Product): Promise<void> {
+    if (product.publishedAt === undefined) {
+      return;
+    }
+
+    await this.runDegradedSideEffect('syncPublishedContent', 'search-index-sync', async () => {
+      const [productTag, domainProduct] = await Promise.all([
+        this.getProductTagsUseCase.execute({ productId: product.id }),
+        this.getProductUseCase.execute({ slug: product.slug }),
+      ]);
+
+      await this.publishIndexProductUseCase.execute({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        summary: product.summary,
+        description: product.description,
+        tags: productTag ? productTag.tags.map(tag => tag.name) : [],
+        category: domainProduct?.categoryIds[0] ?? '',
+        publishedAt: product.publishedAt,
+      });
+    });
+
+    await this.runDegradedSideEffect('syncPublishedContent', 'translation-job-trigger', async () => {
+      await this.translationJobService.translateProductWithFeatures(product.id);
+    });
+  }
+
   @Authorized([AuthRole.Admin])
   @Mutation(() => EditProductPayload)
   async editProduct(@Arg('slug') slug: string, @Arg('input') input: EditProductInput): Promise<EditProductPayload> {
@@ -63,13 +93,46 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
         input.name !== undefined || input.summary !== undefined || input.description !== undefined;
 
       if (hasContentChange) {
-        await this.runDegradedSideEffect('editProduct', 'translation-job-trigger', async () => {
-          await this.translationJobService.translateProductWithFeatures(updatedProduct.id);
-        });
+        await this.syncPublishedContent(updatedProduct);
       }
     }
 
     return result;
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => ApplyProductDescriptionCandidatePayload)
+  async applyProductDescriptionCandidate(
+    @Arg('jobId') jobId: string
+  ): Promise<ApplyProductDescriptionCandidatePayload> {
+    if (!this.applyProductDescriptionCandidateUseCase) {
+      throw new Error('ApplyProductDescriptionCandidate usecase가 주입되지 않았습니다.');
+    }
+
+    const { product: updatedProduct, job } = await this.applyProductDescriptionCandidateUseCase.execute({
+      jobId,
+    });
+
+    if (updatedProduct.publishedAt !== undefined) {
+      await this.syncPublishedContent(updatedProduct);
+    }
+
+    return {
+      product: updatedProduct,
+      job: {
+        id: job.id,
+        productId: job.productId,
+        status: job.status,
+        message: job.message ?? undefined,
+        error: job.error ?? undefined,
+        evidenceHash: job.evidenceHash ?? undefined,
+        baseDescriptionHash: job.baseDescriptionHash ?? undefined,
+        candidateHtml: job.candidateHtml ?? undefined,
+        appliedAt: job.appliedAt ?? undefined,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+      },
+    };
   }
 
   @Authorized([AuthRole.Admin])
