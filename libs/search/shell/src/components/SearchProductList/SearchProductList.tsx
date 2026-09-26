@@ -108,14 +108,14 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
               data-testid="search-empty-popular-queries"
               className="flex gap-2 overflow-x-auto px-1 scrollbar-hide scroll-smooth scroll-pl-1 touch-pan-x"
               role="group"
-              aria-label="Popular searches"
+              aria-label={t('list.empty.popularQueries')}
             >
               {popularQueries.map(popularQuery => (
                 <Link
                   key={popularQuery}
                   href={`/${locale}/search/product?query=${encodeURIComponent(popularQuery)}`}
                   onClick={() => trackEmptySearchClick(popularQuery)}
-                  className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-colors duration-150 ease-out hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <span className="text-dark-400 transition-colors group-hover:text-dark-600">#</span>
                   {popularQuery}
@@ -130,14 +130,14 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
               data-testid="search-empty-categories"
               className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
               role="group"
-              aria-label="Browse by category"
+              aria-label={t('list.empty.categories')}
             >
               {categories.map(category => (
                 <Link
                   key={category.id}
                   href={`/${locale}/categories/${category.slug}`}
                   onClick={() => trackEmptySearchClick(category.slug)}
-                  className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-colors duration-150 ease-out hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dark-150/70 bg-surface-100 text-lg leading-none shadow-2xs transition-colors group-hover:border-dark-300 group-hover:bg-white">
                     {getCategoryIcon(category.slug)}
@@ -172,7 +172,8 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
         <span className="inline-flex items-center gap-1.5 rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs">
           {locale === 'ko' ? (
             <>
-              총 <strong className="font-bold text-dark-900">{products.length.toLocaleString(locale)}</strong>개의 서비스
+              총 <strong className="font-bold text-dark-900">{products.length.toLocaleString(locale)}</strong>개의
+              서비스
             </>
           ) : (
             <>

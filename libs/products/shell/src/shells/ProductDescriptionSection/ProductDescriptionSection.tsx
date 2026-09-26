@@ -13,7 +13,7 @@ export const ProductDescriptionSection = ({ slug }: ProductDescriptionSectionPro
 
   return (
     <section className="flex flex-col gap-4 scroll-mt-32 md:gap-5" id="description">
-      <SectionHeader title={t('description.title')} />
+      <SectionHeader title={t('description.title')} subtitle={t('description.description')} />
       <ProductDescription slug={slug} />
     </section>
   );

@@ -12,7 +12,6 @@ const POPULAR_SEARCH_TAGS = ['Notion', 'Figma', 'Slack', 'Linear', 'ChatGPT', 'S
 export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
   const t = useTranslations();
   const locale = useLocale();
-  const isKo = locale === 'ko';
   const popularPath = `/${locale}/ranking`;
 
   return (
@@ -49,7 +48,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
             </span>
             <span className="text-xs font-semibold tracking-tight text-white/90 sm:text-sm">
-              {isKo ? '실시간 소프트웨어 비교 & 디스커버리' : 'Curated Software Discovery & Comparison'}
+              {t('Main.hero.badge')}
             </span>
             <ChevronRight
               size={14}
@@ -72,14 +71,12 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
           </div>
 
           <p className="max-w-xl text-sm leading-relaxed text-dark-300 break-keep sm:text-base">
-            {isKo
-              ? '팀과 개인의 생산성을 극대화할 최적의 도구를 나란히 비교하고, 실제 커뮤니티 추천 랭킹으로 검증된 서비스를 찾아보세요.'
-              : 'Discover and compare verified digital tools side-by-side with real community ratings to find what fits your needs.'}
+            {t('Main.hero.subDescription')}
           </p>
 
           {/* Quick Search Recommendation Tags */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-xs font-medium text-dark-400 sm:text-sm">{isKo ? '인기 탐색:' : 'Popular:'}</span>
+            <span className="text-xs font-medium text-dark-400 sm:text-sm">{t('Main.hero.popularSearch')}</span>
             {POPULAR_SEARCH_TAGS.map(keyword => (
               <Link
                 key={keyword}

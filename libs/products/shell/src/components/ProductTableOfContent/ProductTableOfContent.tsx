@@ -11,12 +11,18 @@ export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings,
   const ariaLabel = t('tocAriaLabel');
 
   return (
-    <div className="flex gap-1 overflow-x-auto py-2 scrollbar-hide scroll-smooth scroll-pl-1 sm:gap-1.5 touch-pan-x" role="tablist" aria-label={ariaLabel}>
+    <div
+      className="flex gap-1 overflow-x-auto py-2 scrollbar-hide scroll-smooth scroll-pl-1 sm:gap-1.5 touch-pan-x"
+      role="tablist"
+      aria-label={ariaLabel}
+    >
       {headings.map(({ id, text }) => (
         <Button
           key={id}
+          id={`tab-${id}`}
           role="tab"
           aria-selected={activeHeadingId === id}
+          aria-controls={id}
           kind={activeHeadingId === id ? 'textActive' : 'text'}
           size="sm"
           className={

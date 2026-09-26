@@ -1,7 +1,7 @@
 'use client';
 
+import { Building2, Calendar, Compass, ShieldCheck, formatDate } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
-import { Building2, Calendar, Compass, ShieldCheck } from '@darun/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedCompanyAddress, getLocalizedCompanyType } from '../../utils/localization';
 import { useProductCompany } from './useProductCompany';
@@ -9,37 +9,6 @@ import { useProductCompany } from './useProductCompany';
 type ProductCompanyViewProps = {
   company: ReturnType<typeof useProductCompany>['company'];
 };
-
-function formatStartAt(startAt: unknown, locale = 'ko') {
-  if (!startAt) {
-    return '-';
-  }
-
-  if (typeof startAt !== 'string' && typeof startAt !== 'number' && !(startAt instanceof Date)) {
-    return '-';
-  }
-
-  const date = startAt instanceof Date ? startAt : new Date(startAt);
-
-  if (Number.isNaN(date.getTime())) {
-    return '-';
-  }
-
-  if (locale === 'en') {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      timeZone: 'UTC',
-    }).format(date);
-  }
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}. ${month}. ${day}`;
-}
 
 export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompanyViewProps) => {
   const t = useTranslations('ProductDetail');
@@ -66,9 +35,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
               <div className="flex items-center gap-2 text-dark-500">
                 <Building2 size={15} className="shrink-0 stroke-[1.75]" />
-                <dt className="text-xs font-semibold text-dark-600">
-                  {t('company.field.name')}
-                </dt>
+                <dt className="text-xs font-semibold text-dark-600">{t('company.field.name')}</dt>
               </div>
               <dd className="text-right text-sm font-bold text-dark-900 break-keep">{company.name}</dd>
             </div>
@@ -77,9 +44,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
               <div className="flex items-center gap-2 text-dark-500">
                 <ShieldCheck size={15} className="shrink-0 stroke-[1.75]" />
-                <dt className="text-xs font-semibold text-dark-600">
-                  {t('company.field.status')}
-                </dt>
+                <dt className="text-xs font-semibold text-dark-600">{t('company.field.status')}</dt>
               </div>
               <dd className="text-right text-sm font-bold text-dark-900 break-keep">
                 {getLocalizedCompanyType(company.type, locale) ?? company.type}
@@ -90,9 +55,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
               <div className="flex items-center gap-2 text-dark-500">
                 <Compass size={15} className="shrink-0 stroke-[1.75]" />
-                <dt className="text-xs font-semibold text-dark-600">
-                  {t('company.field.address')}
-                </dt>
+                <dt className="text-xs font-semibold text-dark-600">{t('company.field.address')}</dt>
               </div>
               <dd className="text-right text-sm font-bold text-dark-900 break-keep">
                 {getLocalizedCompanyAddress(company.address, locale) ?? company.address}
@@ -103,12 +66,10 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
               <div className="flex items-center gap-2 text-dark-500">
                 <Calendar size={15} className="shrink-0 stroke-[1.75]" />
-                <dt className="text-xs font-semibold text-dark-600">
-                  {t('company.field.foundedAt')}
-                </dt>
+                <dt className="text-xs font-semibold text-dark-600">{t('company.field.foundedAt')}</dt>
               </div>
               <dd className="text-right text-sm font-bold text-dark-900 break-keep">
-                {formatStartAt(company.startAt, locale)}
+                {formatDate(company.startAt, '-', locale)}
               </dd>
             </div>
           )}

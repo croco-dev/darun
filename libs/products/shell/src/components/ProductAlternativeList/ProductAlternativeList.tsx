@@ -20,7 +20,10 @@ export const ProductAlternativeList = bind(
     return (
       <div className="flex flex-col gap-5">
         {products.map(product => (
-          <div key={product.id} className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover">
+          <div
+            key={product.id}
+            className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover"
+          >
             <div className="flex w-full flex-col gap-4">
               <div className="flex flex-row items-start justify-between gap-4">
                 <Link
@@ -60,10 +63,10 @@ export const ProductAlternativeList = bind(
         <div className="flex justify-center pt-2">
           <Link
             href={`/${locale}/search/product`}
-            className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="group rounded-xl transition-transform active:scale-[0.98] motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <Button as="span" variant="shadow" color="secondary" size="md">
-              {t('empty.button')}
+              {t('list.browseMore')}
             </Button>
           </Link>
         </div>

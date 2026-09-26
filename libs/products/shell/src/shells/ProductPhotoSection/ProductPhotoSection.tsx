@@ -11,7 +11,7 @@ export const ProductPhotoSection = ({ slug }: ProductPhotoSectionProps) => {
 
   return (
     <section className="flex flex-col gap-4 scroll-mt-32 md:gap-5" id="screenshot">
-      <SectionHeader title={t('photo.title')} />
+      <SectionHeader title={t('photo.title')} subtitle={t('photo.description')} />
       <ProductPhotos slug={slug} />
     </section>
   );

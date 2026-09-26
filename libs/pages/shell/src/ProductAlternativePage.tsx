@@ -3,7 +3,7 @@
 import { AlternativeProductSection, FAQItem, FAQSection, ProductSummary } from '@darun/products-shell';
 import { Breadcrumb, ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export const ProductAlternativePage = ({
   params: { slug },
@@ -15,7 +15,7 @@ export const ProductAlternativePage = ({
   faqItems?: FAQItem[];
 }) => {
   const locale = useLocale();
-  const isKo = locale === 'ko';
+  const t = useTranslations('Alternative');
 
   return (
     <Layout>
@@ -25,9 +25,9 @@ export const ProductAlternativePage = ({
             <Breadcrumb
               data-testid="breadcrumb-alternatives"
               items={[
-                { label: isKo ? '홈' : 'Home', href: `/${locale}` },
+                { label: t('breadcrumb.home'), href: `/${locale}` },
                 { label: productName, href: `/${locale}/products/${slug}` },
-                { label: isKo ? '대안 서비스' : 'Alternatives', ariaCurrent: 'page' },
+                { label: t('breadcrumb.alternatives'), ariaCurrent: 'page' },
               ]}
             />
             <ProductSummary slug={slug} infoLinkHref={`/${locale}/products/${slug}`} />

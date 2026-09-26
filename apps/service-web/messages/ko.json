@@ -73,14 +73,17 @@
     },
     "feature": {
       "title": "기능",
+      "description": "제공되는 주요 핵심 기능들을 한눈에 확인해보세요.",
       "empty": "등록된 상세 기능 정보가 아직 없습니다."
     },
     "description": {
       "title": "소개",
+      "description": "서비스의 주요 특징과 상세 소개를 확인해보세요.",
       "empty": "소개 정보가 아직 준비되지 않았습니다."
     },
     "photo": {
       "title": "스크린샷",
+      "description": "서비스의 실제 화면과 사용자 인터페이스를 살펴보세요.",
       "empty": "스크린샷이 준비되지 않았습니다."
     },
     "company": {
@@ -121,6 +124,10 @@
     }
   },
   "Alternative": {
+    "breadcrumb": {
+      "home": "홈",
+      "alternatives": "대안 서비스"
+    },
     "section": {
       "title": "다른 서비스",
       "description": "비슷한 기능을 제공하는 서비스들을 보여드립니다.",
@@ -131,6 +138,7 @@
       "description": "‘다른’ 팀이 직접 엄선한 정확한 대안 서비스들입니다."
     },
     "list": {
+      "browseMore": "더 많은 서비스 탐색하기",
       "feature": {
         "title": "기능"
       }
@@ -143,7 +151,10 @@
   },
   "Main": {
     "hero": {
+      "badge": "실시간 소프트웨어 비교 & 디스커버리",
       "description": "다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다",
+      "subDescription": "팀과 개인의 생산성을 극대화할 최적의 도구를 나란히 비교하고, 실제 커뮤니티 추천 랭킹으로 검증된 서비스를 찾아보세요.",
+      "popularSearch": "인기 탐색:",
       "title": {
         "countSuffix": "개의",
         "highlight": "다른",
@@ -158,11 +169,13 @@
   "home": {
     "recent": {
       "title": "최근 등록 서비스",
+      "description": "‘다른’ 팀이 엄격한 기준으로 선별한 신규 등록 서비스를 찾아보세요.",
       "more": "더 보기",
       "empty": "최근 등록된 서비스가 없습니다"
     },
     "category": {
       "title": "카테고리",
+      "description": "다양한 분야별 소프트웨어와 웹 서비스를 둘러보세요.",
       "more": "더 보기",
       "empty": "카테고리 준비 중입니다"
     },
@@ -174,6 +187,7 @@
     },
     "magazine": {
       "title": "매거진",
+      "description": "주목할 만한 테크 트렌드와 심층 분석 아티클을 만나보세요.",
       "more": "더 보기"
     }
   },
@@ -204,6 +218,10 @@
   "Compare": {
     "title": "{name1} vs {name2} 비교",
     "subtitle": "두 서비스의 핵심 정보를 나란히 확인해보세요",
+    "breadcrumb": {
+      "home": "홈",
+      "compare": "서비스 비교"
+    },
     "table": {
       "name": "서비스명",
       "summary": "설명",

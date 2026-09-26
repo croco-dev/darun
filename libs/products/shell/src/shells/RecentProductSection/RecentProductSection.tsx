@@ -14,7 +14,7 @@ export const RecentProductSection = () => {
       <div className="flex w-full flex-col gap-5 md:gap-6">
         <SectionHeader
           title={t('home.recent.title')}
-          subtitle={t('Main.recentSection.description')}
+          subtitle={t('home.recent.description')}
           moreLink={
             <Link
               href={`/${locale}/search/product`}

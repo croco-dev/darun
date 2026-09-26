@@ -28,7 +28,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
     return (
       <SectionWrapper background="white" spacing="md" className="border-t border-dark-100/70">
         <div className="flex w-full flex-col gap-5 md:gap-6">
-          <SectionHeader title={t('home.magazine.title')} />
+          <SectionHeader title={t('home.magazine.title')} subtitle={t('home.magazine.description')} />
           <div
             data-testid="magazine-empty"
             className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-12 text-center"
@@ -57,7 +57,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
   return (
     <SectionWrapper background="white" spacing="md" className="border-t border-dark-100/70">
       <div className="flex w-full flex-col gap-5 md:gap-6">
-        <SectionHeader title={t('home.magazine.title')} />
+        <SectionHeader title={t('home.magazine.title')} subtitle={t('home.magazine.description')} />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {articles.slice(0, 3).map(article => (
             <div key={article.id} className="h-full">

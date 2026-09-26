@@ -73,14 +73,17 @@
     },
     "feature": {
       "title": "Features",
+      "description": "Discover the core capabilities and key features provided.",
       "empty": "No feature information available yet."
     },
     "description": {
       "title": "Overview",
+      "description": "Explore the key characteristics and detailed introduction of the service.",
       "empty": "Overview information is not available yet."
     },
     "photo": {
       "title": "Screenshots",
+      "description": "Explore the actual interface and product screenshots.",
       "empty": "Screenshots are not yet available."
     },
     "company": {
@@ -121,6 +124,10 @@
     }
   },
   "Alternative": {
+    "breadcrumb": {
+      "home": "Home",
+      "alternatives": "Alternatives"
+    },
     "section": {
       "title": "Alternative Services",
       "description": "We show services that offer similar features.",
@@ -131,6 +138,7 @@
       "description": "These are accurate alternative services hand-picked by the Darun team."
     },
     "list": {
+      "browseMore": "Explore more services",
       "feature": {
         "title": "Features"
       }
@@ -143,7 +151,10 @@
   },
   "Main": {
     "hero": {
+      "badge": "Curated Software Discovery & Comparison",
       "description": "Find, use, and evaluate services carefully compared by the Darun team",
+      "subDescription": "Discover and compare verified digital tools side-by-side with real community ratings to find what fits your needs.",
+      "popularSearch": "Popular:",
       "title": {
         "countSuffix": "",
         "highlight": "alternative",
@@ -158,11 +169,13 @@
   "home": {
     "recent": {
       "title": "Recently Added",
+      "description": "Explore newly registered services curated with strict criteria by the Darun team.",
       "more": "View More",
       "empty": "No recently added services"
     },
     "category": {
       "title": "Categories",
+      "description": "Browse software and web services by category.",
       "more": "See All",
       "empty": "Categories Coming Soon"
     },
@@ -174,6 +187,7 @@
     },
     "magazine": {
       "title": "Magazine",
+      "description": "Explore noteworthy tech trends and in-depth analytical articles.",
       "more": "See All"
     }
   },
@@ -204,6 +218,10 @@
   "Compare": {
     "title": "{name1} vs {name2} Comparison",
     "subtitle": "Compare features and details side-by-side",
+    "breadcrumb": {
+      "home": "Home",
+      "compare": "Compare"
+    },
     "table": {
       "name": "Service Name",
       "summary": "Overview",
