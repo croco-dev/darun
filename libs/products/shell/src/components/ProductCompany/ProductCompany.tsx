@@ -35,9 +35,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
               <div className="flex items-center gap-2 text-dark-500">
                 <Building2 size={15} className="shrink-0 stroke-[1.75]" />
-                <dt className="text-xs font-semibold text-dark-600">
-                  {t('company.field.name')}
-                </dt>
+                <dt className="text-xs font-semibold text-dark-600">{t('company.field.name')}</dt>
               </div>
               <dd className="text-right text-sm font-bold text-dark-900 break-keep">{company.name}</dd>
             </div>
@@ -46,9 +44,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
               <div className="flex items-center gap-2 text-dark-500">
                 <ShieldCheck size={15} className="shrink-0 stroke-[1.75]" />
-                <dt className="text-xs font-semibold text-dark-600">
-                  {t('company.field.status')}
-                </dt>
+                <dt className="text-xs font-semibold text-dark-600">{t('company.field.status')}</dt>
               </div>
               <dd className="text-right text-sm font-bold text-dark-900 break-keep">
                 {getLocalizedCompanyType(company.type, locale) ?? company.type}
@@ -59,9 +55,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
               <div className="flex items-center gap-2 text-dark-500">
                 <Compass size={15} className="shrink-0 stroke-[1.75]" />
-                <dt className="text-xs font-semibold text-dark-600">
-                  {t('company.field.address')}
-                </dt>
+                <dt className="text-xs font-semibold text-dark-600">{t('company.field.address')}</dt>
               </div>
               <dd className="text-right text-sm font-bold text-dark-900 break-keep">
                 {getLocalizedCompanyAddress(company.address, locale) ?? company.address}
@@ -72,9 +66,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
               <div className="flex items-center gap-2 text-dark-500">
                 <Calendar size={15} className="shrink-0 stroke-[1.75]" />
-                <dt className="text-xs font-semibold text-dark-600">
-                  {t('company.field.foundedAt')}
-                </dt>
+                <dt className="text-xs font-semibold text-dark-600">{t('company.field.foundedAt')}</dt>
               </div>
               <dd className="text-right text-sm font-bold text-dark-900 break-keep">
                 {formatDate(company.startAt, '-', locale)}

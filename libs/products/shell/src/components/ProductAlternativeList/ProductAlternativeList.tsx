@@ -20,7 +20,10 @@ export const ProductAlternativeList = bind(
     return (
       <div className="flex flex-col gap-5">
         {products.map(product => (
-          <div key={product.id} className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover">
+          <div
+            key={product.id}
+            className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover"
+          >
             <div className="flex w-full flex-col gap-4">
               <div className="flex flex-row items-start justify-between gap-4">
                 <Link

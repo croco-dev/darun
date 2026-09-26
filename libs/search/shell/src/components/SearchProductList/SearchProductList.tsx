@@ -172,7 +172,8 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
         <span className="inline-flex items-center gap-1.5 rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs">
           {locale === 'ko' ? (
             <>
-              총 <strong className="font-bold text-dark-900">{products.length.toLocaleString(locale)}</strong>개의 서비스
+              총 <strong className="font-bold text-dark-900">{products.length.toLocaleString(locale)}</strong>개의
+              서비스
             </>
           ) : (
             <>
