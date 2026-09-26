@@ -60,9 +60,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         aria-controls={panelId}
         className="group flex w-full cursor-pointer items-center justify-between gap-4 bg-transparent p-5 text-left transition-colors duration-200 hover:bg-surface-100/70 active:bg-surface-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transition-none"
       >
-        <p className="flex-1 text-base font-bold leading-snug tracking-tight text-dark-900 break-keep">
-          {question}
-        </p>
+        <p className="flex-1 text-base font-bold leading-snug tracking-tight text-dark-900 break-keep">{question}</p>
         <div
           aria-hidden="true"
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-dark-150/70 bg-surface-100 text-dark-600 shadow-2xs transition-all duration-300 ease-out group-hover:border-dark-300 group-hover:bg-surface-200/80 group-hover:text-dark-900 motion-reduce:transition-none motion-reduce:transform-none ${
@@ -82,7 +80,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         }}
         className="overflow-hidden transition-[max-height,opacity] duration-300 ease-out motion-reduce:transition-none"
       >
-        <div ref={panelRef} className="border-t border-dark-150/70 bg-surface-50/70 px-5 pb-5 pt-4 text-dark-700">
+        <div ref={panelRef} className="border-t border-dark-150/70 bg-white px-5 pb-5 pt-4 text-dark-700">
           <p className="whitespace-pre-wrap text-sm leading-relaxed break-keep sm:text-base">{answer}</p>
         </div>
       </section>

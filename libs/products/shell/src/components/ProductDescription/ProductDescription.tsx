@@ -1,14 +1,13 @@
 'use client';
 
+import { FileText } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import DOMPurify from 'isomorphic-dompurify';
-import { FileText } from '@darun/ui';
 import { useTranslations } from 'next-intl';
 
 import { useProductDescription } from './useProductDescription';
 
-const DESCRIPTION_STYLES =
-  `max-w-none text-dark-700 break-keep leading-relaxed [&>*:first-child]:mt-0 [&_h2:first-child]:mt-0 [&_h3:first-child]:mt-0 [&_p:first-child]:mt-0 [&_a]:font-semibold [&_a]:text-dark-900 [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-dark-600 [&_blockquote]:my-5 [&_blockquote]:rounded-r-xl [&_blockquote]:border-l-4 [&_blockquote]:border-brown-500 [&_blockquote]:bg-surface-100/80 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:text-dark-800 [&_blockquote_p]:my-1 [&_br]:block [&_br]:content-[''] [&_br]:mb-1 [&_code]:rounded-md [&_code]:border [&_code]:border-dark-150 [&_code]:bg-surface-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_code]:font-mono [&_code]:font-medium [&_code]:text-dark-800 [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:text-lg sm:[&_h2]:text-xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-dark-900 [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-base sm:[&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-dark-900 [&_hr]:my-6 [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-solid [&_hr]:border-dark-150 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol>li]:my-1 [&_p]:my-2.5 [&_p]:leading-relaxed [&_p.blank]:hidden [&_strong]:font-semibold [&_strong]:text-dark-900 [&_table]:my-5 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-dark-150 [&_th]:bg-surface-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-xs sm:[&_th]:text-sm [&_th]:font-semibold [&_th]:text-dark-900 [&_td]:border [&_td]:border-dark-150 [&_td]:px-3 [&_td]:py-2 [&_td]:text-xs sm:[&_td]:text-sm [&_td]:text-dark-700 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-1 [&_em]:not-italic [&_em]:text-xs sm:[&_em]:text-sm [&_em]:font-medium [&_em]:text-dark-500 [&_em]:tracking-tight`;
+const DESCRIPTION_STYLES = `max-w-none text-dark-700 break-keep leading-relaxed [&>*:first-child]:mt-0 [&_h2:first-child]:mt-0 [&_h3:first-child]:mt-0 [&_p:first-child]:mt-0 [&_a]:font-semibold [&_a]:text-dark-900 [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-dark-600 [&_blockquote]:my-5 [&_blockquote]:rounded-r-xl [&_blockquote]:border-l-4 [&_blockquote]:border-brown-500 [&_blockquote]:bg-surface-100/80 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:text-dark-800 [&_blockquote_p]:my-1 [&_br]:block [&_br]:content-[''] [&_br]:mb-1 [&_code]:rounded-md [&_code]:border [&_code]:border-dark-150 [&_code]:bg-surface-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_code]:font-mono [&_code]:font-medium [&_code]:text-dark-800 [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:text-lg sm:[&_h2]:text-xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-dark-900 [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-base sm:[&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-dark-900 [&_hr]:my-6 [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-solid [&_hr]:border-dark-150 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol>li]:my-1 [&_p]:my-2.5 [&_p]:leading-relaxed [&_p.blank]:hidden [&_strong]:font-semibold [&_strong]:text-dark-900 [&_table]:my-5 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-dark-150 [&_th]:bg-surface-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-xs sm:[&_th]:text-sm [&_th]:font-semibold [&_th]:text-dark-900 [&_td]:border [&_td]:border-dark-150 [&_td]:px-3 [&_td]:py-2 [&_td]:text-xs sm:[&_td]:text-sm [&_td]:text-dark-700 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-1 [&_em]:not-italic [&_em]:text-xs sm:[&_em]:text-sm [&_em]:font-medium [&_em]:text-dark-500 [&_em]:tracking-tight`;
 
 type Section = {
   type: 'default' | 'recommend' | 'regret';
@@ -105,7 +104,7 @@ export const ProductDescription = bind(useProductDescription, ({ description }) 
     recommend:
       'my-5 rounded-xl border border-leaf-200/90 bg-leaf-50/40 p-4 sm:p-5 shadow-2xs first:mt-0 last:mb-0 [&_h2]:mt-0 [&_h2]:mb-2.5 [&_h2]:text-leaf-950 [&_h2]:text-base sm:[&_h2]:text-lg [&_h2]:font-bold [&_h3]:mt-0 [&_h3]:mb-2 [&_h3]:text-leaf-950 [&_h3]:text-base sm:[&_h3]:text-lg [&_h3]:font-bold [&_p]:text-leaf-900/90 [&_p:last-child]:mb-0 [&_ul]:text-leaf-900/90 [&_li]:my-1.5',
     regret:
-      'my-5 rounded-xl border border-amber-200/90 bg-amber-50/30 p-4 sm:p-5 shadow-2xs first:mt-0 last:mb-0 [&_h2]:mt-0 [&_h2]:mb-2.5 [&_h2]:text-amber-950 [&_h2]:text-base sm:[&_h2]:text-lg [&_h2]:font-bold [&_h3]:mt-0 [&_h3]:mb-2 [&_h3]:text-amber-950 [&_h3]:text-base sm:[&_h3]:text-lg [&_h3]:font-bold [&_p]:text-amber-900/90 [&_p:last-child]:mb-0 [&_ul]:text-amber-900/90 [&_li]:my-1.5',
+      'my-5 rounded-xl border border-yellow-200/90 bg-yellow-50/40 p-4 sm:p-5 shadow-2xs first:mt-0 last:mb-0 [&_h2]:mt-0 [&_h2]:mb-2.5 [&_h2]:text-yellow-900 [&_h2]:text-base sm:[&_h2]:text-lg [&_h2]:font-bold [&_h3]:mt-0 [&_h3]:mb-2 [&_h3]:text-yellow-900 [&_h3]:text-base sm:[&_h3]:text-lg [&_h3]:font-bold [&_p]:text-yellow-900/90 [&_p:last-child]:mb-0 [&_ul]:text-yellow-900/90 [&_li]:my-1.5',
   };
 
   return (
@@ -113,9 +112,7 @@ export const ProductDescription = bind(useProductDescription, ({ description }) 
       <div className={DESCRIPTION_STYLES}>
         {sections.map((section, i) => {
           if (section.type === 'default') {
-            return (
-              <div key={i} dangerouslySetInnerHTML={{ __html: section.html }} />
-            );
+            return <div key={i} dangerouslySetInnerHTML={{ __html: section.html }} />;
           }
           return (
             <div key={i} className={cardStyles[section.type]}>

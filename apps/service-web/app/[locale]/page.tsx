@@ -134,7 +134,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 return (
                   <div
                     key={item.titleEn}
-                    className="flex flex-col gap-3 rounded-card-lg border border-dark-150 bg-white p-6 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none"
+                    className="flex flex-col gap-3 rounded-card-lg border border-dark-150 bg-white p-6 shadow-card"
                   >
                     <div
                       className={`flex h-11 w-11 items-center justify-center rounded-xl border shadow-2xs ${item.iconColor}`}

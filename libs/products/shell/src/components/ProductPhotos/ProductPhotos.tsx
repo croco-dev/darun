@@ -32,9 +32,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
   return (
     <div className="overflow-hidden rounded-card-lg border border-dark-150 bg-white p-4 shadow-card sm:p-5 md:p-6">
       <div className="mb-3.5 flex items-center justify-between border-b border-dark-150/70 pb-3">
-        <span className="text-xs font-semibold text-dark-700">
-          {t('photo.title')}
-        </span>
+        <span className="text-xs font-semibold text-dark-700">{t('photo.title')}</span>
         <span className="rounded-md bg-surface-100 px-2 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
           {photos.length} {photos.length === 1 ? 'Preview' : 'Previews'}
         </span>
@@ -42,10 +40,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
       {photos && (
         <div className="flex w-full gap-3.5 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x">
           {photos.map(photo => (
-            <div
-              key={photo.imageUrl}
-              className="group relative shrink-0 snap-start transition-transform duration-200 ease-out hover:-translate-y-1 motion-reduce:transform-none"
-            >
+            <div key={photo.imageUrl} className="group relative shrink-0 snap-start">
               <Zoom>
                 <Image
                   src={photo.imageUrl}

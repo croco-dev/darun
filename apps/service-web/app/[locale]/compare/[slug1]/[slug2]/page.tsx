@@ -1,10 +1,10 @@
 import { gql } from '@apollo/client';
-import { ProductCard, VoteCountBadge } from '@darun/products-shell';
+import { ProductCard, VoteCountBadge, getLocalizedTag } from '@darun/products-shell';
 import { Breadcrumb, Chip, ContentArea, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
+import { notFound } from '@darun/utils-router';
 import { Metadata } from 'next';
 import Image from 'next/image';
-import { notFound } from '@darun/utils-router';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../../lib/seo/indexability';
 import { getOgLocale, getSiteName } from '../../../../../lib/seo/metadata';
@@ -134,7 +134,10 @@ export default async function ComparePage({ params }: Props) {
           <Breadcrumb
             data-testid="breadcrumb-compare"
             items={[
-              { label: isKo ? '홈' : 'Home', href: `/${resolvedParams.locale}` },
+              {
+                label: isKo ? '홈' : 'Home',
+                href: `/${resolvedParams.locale}`,
+              },
               {
                 label: isKo ? '서비스 비교' : 'Compare',
                 ariaCurrent: 'page',
@@ -173,7 +176,7 @@ export default async function ComparePage({ params }: Props) {
           </div>
 
           <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
-            <div className="sticky top-16 z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
+            <div className="sticky top-14 sm:top-16 z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
               <div className="flex items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
                 {product1.logoUrl ? (
                   <Image
@@ -186,7 +189,7 @@ export default async function ComparePage({ params }: Props) {
                 ) : (
                   <span
                     aria-hidden="true"
-                    className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600"
+                    className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600 shadow-2xs ring-1 ring-black/5"
                   >
                     {product1.name.slice(0, 1).toUpperCase()}
                   </span>
@@ -205,7 +208,7 @@ export default async function ComparePage({ params }: Props) {
                 ) : (
                   <span
                     aria-hidden="true"
-                    className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600"
+                    className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600 shadow-2xs ring-1 ring-black/5"
                   >
                     {product2.name.slice(0, 1).toUpperCase()}
                   </span>
@@ -219,6 +222,7 @@ export default async function ComparePage({ params }: Props) {
               colLabel2={product2.name}
               value1={product1.name}
               value2={product2.name}
+              locale={resolvedParams.locale}
               testid="name"
             />
             <CompareRow
@@ -227,6 +231,7 @@ export default async function ComparePage({ params }: Props) {
               colLabel2={product2.name}
               value1={product1.summary ?? undefined}
               value2={product2.summary ?? undefined}
+              locale={resolvedParams.locale}
               testid="summary"
             />
             <CompareRow
@@ -235,6 +240,7 @@ export default async function ComparePage({ params }: Props) {
               colLabel2={product2.name}
               value1={product1.ownedCompany?.name}
               value2={product2.ownedCompany?.name}
+              locale={resolvedParams.locale}
               testid="company"
             />
             <CompareRow
@@ -243,6 +249,7 @@ export default async function ComparePage({ params }: Props) {
               colLabel2={product2.name}
               custom1={<VoteCountBadge count={product1.voteCount} />}
               custom2={<VoteCountBadge count={product2.voteCount} />}
+              locale={resolvedParams.locale}
               testid="vote-count"
             />
             <CompareRow
@@ -253,6 +260,7 @@ export default async function ComparePage({ params }: Props) {
               value2={product2.tags.map(t => t.name).join(', ')}
               tags1={product1.tags.map(t => t.name)}
               tags2={product2.tags.map(t => t.name)}
+              locale={resolvedParams.locale}
               testid="tags"
               isLast
             />
@@ -273,6 +281,7 @@ function CompareRow({
   tags2,
   custom1,
   custom2,
+  locale,
   testid,
   isLast,
 }: {
@@ -285,6 +294,7 @@ function CompareRow({
   tags2?: string[];
   custom1?: React.ReactNode;
   custom2?: React.ReactNode;
+  locale?: string;
   testid: string;
   isLast?: boolean;
 }) {
@@ -294,7 +304,7 @@ function CompareRow({
         isLast ? '' : 'border-b border-dark-150/70'
       }`}
     >
-      <div className="mb-2 text-xs font-bold uppercase tracking-wider text-dark-400">{label}</div>
+      <div className="mb-2 text-xs font-bold tracking-tight text-dark-500">{label}</div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-150/70">
         <div className="md:pr-5">
           <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
@@ -307,7 +317,7 @@ function CompareRow({
               <div className="flex flex-wrap gap-1.5">
                 {tags1.map(tag => (
                   <Chip key={tag} color="filledGray" variant="square">
-                    {tag}
+                    {getLocalizedTag(tag, locale)}
                   </Chip>
                 ))}
               </div>
@@ -329,7 +339,7 @@ function CompareRow({
               <div className="flex flex-wrap gap-1.5">
                 {tags2.map(tag => (
                   <Chip key={tag} color="filledGray" variant="square">
-                    {tag}
+                    {getLocalizedTag(tag, locale)}
                   </Chip>
                 ))}
               </div>

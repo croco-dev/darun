@@ -39,6 +39,7 @@ export function SearchProductPage({ searchParams }: Props) {
                 { label: isKo ? '서비스 탐색' : 'Search', ariaCurrent: 'page' },
               ]}
             />
+            <PageHeading title={isKo ? '서비스 탐색' : 'Explore Services'} subtitle={t('page.empty.description')} />
             <div className="flex flex-col gap-4 md:gap-5">
               <SectionHeader title={t('page.popularQueriesTitle')} />
               <PopularQueriesStripe />
@@ -65,7 +66,10 @@ export function SearchProductPage({ searchParams }: Props) {
             data-testid="breadcrumb-search-result"
             items={[
               { label: isKo ? '홈' : 'Home', href: `/${locale}/` },
-              { label: isKo ? '검색' : 'Search', href: `/${locale}/search/product` },
+              {
+                label: isKo ? '검색' : 'Search',
+                href: `/${locale}/search/product`,
+              },
               { label: `‘${query}’`, ariaCurrent: 'page' },
             ]}
           />
