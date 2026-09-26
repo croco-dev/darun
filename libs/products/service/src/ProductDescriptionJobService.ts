@@ -32,16 +32,25 @@ export class ProductDescriptionJobService {
     }
 
     if (!this.productDescriptionJobRepository) {
-      const updatedProduct = await this.generateProductDescriptionUseCase.execute({
+      const candidateResult = await this.generateProductDescriptionUseCase.execute({
         productId: product.id,
       });
       return {
-        product: updatedProduct,
+        product,
         job: {
           id: product.id,
           productId: product.id,
           status: 'completed',
           message: 'AI 소개 생성이 완료되었습니다.',
+          candidateHtml: candidateResult.candidateHtml,
+          candidateDocument: JSON.stringify(candidateResult.candidateDocument),
+          evidenceHash: candidateResult.evidenceHash,
+          baseDescriptionHash: candidateResult.baseDescriptionHash,
+          writerModel: candidateResult.writerModel,
+          reviewerModel: candidateResult.reviewerModel,
+          writerPromptVersion: candidateResult.writerPromptVersion,
+          reviewerPromptVersion: candidateResult.reviewerPromptVersion,
+          rendererVersion: candidateResult.rendererVersion,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -112,6 +121,7 @@ export class ProductDescriptionJobService {
     const updatedJob = await this.productDescriptionJobRepository.updateJobStatus(jobId, 'pending', {
       message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
       error: null,
+      appliedAt: null,
     });
 
     let isQueued = false;
@@ -149,12 +159,27 @@ export class ProductDescriptionJobService {
         message: 'LLM으로 AI 소개를 생성하고 있습니다...',
       });
 
-      await this.generateProductDescriptionUseCase.execute({ productId });
+      const candidateResult = await this.generateProductDescriptionUseCase.execute({ productId });
 
       await this.productDescriptionJobRepository.updateJobStatus(jobId, 'completed', {
         message: 'AI 소개 생성이 완료되었습니다.',
+        candidateHtml: candidateResult.candidateHtml,
+        candidateDocument: JSON.stringify(candidateResult.candidateDocument),
+        evidenceHash: candidateResult.evidenceHash,
+        baseDescriptionHash: candidateResult.baseDescriptionHash,
+        writerModel: candidateResult.writerModel,
+        reviewerModel: candidateResult.reviewerModel,
+        writerPromptVersion: candidateResult.writerPromptVersion,
+        reviewerPromptVersion: candidateResult.reviewerPromptVersion,
+        rendererVersion: candidateResult.rendererVersion,
       });
     } catch (error) {
+      if (error instanceof Error && error.message.includes('stale')) {
+        await this.productDescriptionJobRepository.updateJobStatus(jobId, 'superseded', {
+          message: '제품 정보 변경으로 결과가 폐기되었습니다.',
+        });
+        return;
+      }
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       console.error(`[ProductDescriptionJobService] Product description job ${jobId} failed:`, error);
       await this.productDescriptionJobRepository.updateJobStatus(jobId, 'failed', {

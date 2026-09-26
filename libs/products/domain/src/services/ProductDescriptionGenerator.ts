@@ -1,12 +1,22 @@
 import { Token } from 'typedi';
-import { Product } from '../entities/Product';
+import type { ProductDescriptionDocument } from './ProductDescriptionDocument';
+import type { ProductDescriptionEvidence } from './ProductDescriptionEvidenceAssembler';
 
-export type ProductDescriptionGenerationContext = {
-  categoryLabels?: string[];
-};
+export interface ProductDescriptionGenerationResult {
+  document: ProductDescriptionDocument;
+  candidateHtml: string;
+  writerModel: string;
+  reviewerModel: string;
+  writerPromptVersion: string;
+  reviewerPromptVersion: string;
+  rendererVersion: string;
+}
 
 export interface ProductDescriptionGenerator {
-  generate(product: Product, context?: ProductDescriptionGenerationContext): Promise<string>;
+  generate(
+    evidence: ProductDescriptionEvidence,
+    options?: { model?: string }
+  ): Promise<ProductDescriptionGenerationResult>;
 }
 
 export const ProductDescriptionGeneratorToken = new Token<ProductDescriptionGenerator>('ProductDescriptionGenerator');
