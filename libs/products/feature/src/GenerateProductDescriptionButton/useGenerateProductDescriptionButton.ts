@@ -3,6 +3,7 @@
 import { gql } from '@apollo/client';
 import { useApolloClient, useLazyQuery, useMutation } from '@apollo/client/react';
 import {
+  ApplyProductDescriptionCandidateDocument,
   GenerateProductDescriptionDocument,
   GetProductDescriptionJobDocument,
   TempProductBySlugOnEditProductDescriptionDocument,
@@ -24,6 +25,25 @@ gql(`
         productId
         status
         message
+        candidateHtml
+        appliedAt
+      }
+    }
+  }
+
+  mutation ApplyProductDescriptionCandidate($jobId: String!) {
+    applyProductDescriptionCandidate(jobId: $jobId) {
+      product {
+        id
+        name
+        description
+      }
+      job {
+        id
+        productId
+        status
+        message
+        appliedAt
       }
     }
   }
@@ -35,6 +55,8 @@ gql(`
       status
       message
       error
+      candidateHtml
+      appliedAt
     }
   }
 `);
@@ -45,11 +67,22 @@ const MAX_POLL_TIMEOUT_MS = 180_000;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+export interface CandidateJobInfo {
+  id: string;
+  candidateHtml?: string | null;
+  message?: string | null;
+}
+
 export function useGenerateProductDescriptionButton(slug: string) {
   const [loading, setLoading] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [candidateJob, setCandidateJob] = useState<CandidateJobInfo | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const isSubmittingRef = useRef(false);
+  const isApplyingRef = useRef(false);
   const apolloClient = useApolloClient();
   const [generateDescriptionMutation] = useMutation(GenerateProductDescriptionDocument);
+  const [applyCandidateMutation] = useMutation(ApplyProductDescriptionCandidateDocument);
   const [getProductDescriptionJob] = useLazyQuery(GetProductDescriptionJobDocument, {
     fetchPolicy: 'network-only',
   });
@@ -61,6 +94,49 @@ export function useGenerateProductDescriptionButton(slug: string) {
       });
     } catch (refetchErr) {
       console.warn('[useGenerateProductDescriptionButton] Refetch queries failed:', refetchErr);
+    }
+  };
+
+  const openPreview = () => setIsPreviewOpen(true);
+  const closePreview = () => setIsPreviewOpen(false);
+
+  const handleApply = async () => {
+    if (!candidateJob || isApplyingRef.current || applying) return;
+
+    try {
+      isApplyingRef.current = true;
+      setApplying(true);
+
+      const result = await applyCandidateMutation({
+        variables: { jobId: candidateJob.id },
+      });
+
+      const updatedJob = result.data?.applyProductDescriptionCandidate?.job;
+      if (updatedJob?.status === 'completed') {
+        notifications.show({
+          title: '적용 완료',
+          message: 'AI 소개가 제품에 반영되었습니다.',
+          color: 'teal',
+        });
+        setIsPreviewOpen(false);
+        setCandidateJob(null);
+        await refetchProductQueries();
+      } else {
+        notifications.show({
+          title: '적용 실패',
+          message: updatedJob?.message || '소개 초안 적용에 실패했습니다.',
+          color: 'red',
+        });
+      }
+    } catch (err) {
+      notifications.show({
+        title: '적용 실패',
+        message: err instanceof Error ? err.message : 'AI 소개 적용 중 오류가 발생했습니다.',
+        color: 'red',
+      });
+    } finally {
+      isApplyingRef.current = false;
+      setApplying(false);
     }
   };
 
@@ -103,14 +179,29 @@ export function useGenerateProductDescriptionButton(slug: string) {
 
       const initialJob = result?.data?.generateProductDescription?.job;
 
-      if (!initialJob || initialJob.status === 'completed') {
+      if (!initialJob) {
         notifications.hide(notificationId);
         notifications.show({
-          title: '생성 완료',
-          message: initialJob?.message || 'AI 소개를 생성했어요.',
+          title: '생성 실패',
+          message: '작업 상태를 확인할 수 없습니다.',
+          color: 'red',
+        });
+        return;
+      }
+
+      if (initialJob.status === 'completed') {
+        notifications.hide(notificationId);
+        notifications.show({
+          title: 'AI 소개 초안 생성 완료',
+          message: '소개 초안이 생성되었습니다. 내용을 검토한 후 적용해주세요.',
           color: 'teal',
         });
-        await refetchProductQueries();
+        setCandidateJob({
+          id: initialJob.id,
+          candidateHtml: initialJob.candidateHtml,
+          message: initialJob.message,
+        });
+        setIsPreviewOpen(true);
         return;
       }
 
@@ -148,11 +239,16 @@ export function useGenerateProductDescriptionButton(slug: string) {
           if (job.status === 'completed') {
             notifications.hide(notificationId);
             notifications.show({
-              title: '생성 완료',
-              message: job.message || 'AI 소개를 생성했어요.',
+              title: 'AI 소개 초안 생성 완료',
+              message: '소개 초안이 생성되었습니다. 내용을 검토한 후 적용해주세요.',
               color: 'teal',
             });
-            await refetchProductQueries();
+            setCandidateJob({
+              id: job.id,
+              candidateHtml: job.candidateHtml,
+              message: job.message,
+            });
+            setIsPreviewOpen(true);
             break;
           }
 
@@ -197,5 +293,11 @@ export function useGenerateProductDescriptionButton(slug: string) {
   return {
     handleGenerate,
     isGenerating: loading,
+    candidateJob,
+    isPreviewOpen,
+    openPreview,
+    closePreview,
+    isApplying: applying,
+    handleApply,
   };
 }

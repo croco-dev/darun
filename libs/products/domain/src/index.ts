@@ -73,25 +73,51 @@ export type {
 } from './repositories/ProductFlowRepository';
 export { ProductFlowRepositoryToken } from './repositories/ProductFlowRepository';
 export type { ProductDescriptionJobEntity, ProductDescriptionJobStatus } from './entities/ProductDescriptionJobEntity';
-export type { ProductDescriptionJobRepository } from './repositories/ProductDescriptionJobRepository';
+export type {
+  ProductDescriptionJobRepository,
+  UpdateProductDescriptionJobOptions,
+} from './repositories/ProductDescriptionJobRepository';
 export { ProductDescriptionJobRepositoryToken } from './repositories/ProductDescriptionJobRepository';
 export type { RankedProductVoteRepository } from './repositories/RankedProductVoteRepository';
 export { RankedProductVoteRepositoryToken } from './repositories/RankedProductVoteRepository';
 export type {
   ProductDescriptionGenerator,
-  ProductDescriptionGenerationContext,
+  ProductDescriptionGenerationResult,
 } from './services/ProductDescriptionGenerator';
 export { ProductDescriptionGeneratorToken } from './services/ProductDescriptionGenerator';
+export type {
+  ProductDescriptionDocument,
+  ProductDescriptionSection,
+  EvidenceBackedText,
+} from './services/ProductDescriptionDocument';
+export {
+  ProductDescriptionEvidenceAssembler,
+  ProductDescriptionEvidenceAssemblerToken,
+} from './services/ProductDescriptionEvidenceAssembler';
+export type {
+  IProductDescriptionEvidenceAssembler,
+  ProductDescriptionEvidence,
+  ProductDescriptionEvidenceItem,
+  AssembledProductDescriptionEvidence,
+} from './services/ProductDescriptionEvidenceAssembler';
 export { RankingCache } from './services/RankingCache';
 export { RankingService } from './services/RankingService';
 export { SystemClock } from './services/SystemClock';
 export { AddProductLink } from './usecases/AddProductLink';
 export { AddProductScreenshot } from './usecases/AddProductScreenshot';
+export {
+  ApplyProductDescriptionCandidate,
+  type ApplyProductDescriptionCandidateResult,
+} from './usecases/ApplyProductDescriptionCandidate';
 export { CreateProduct } from './usecases/CreateProduct';
 export { CreateProductFeature } from './usecases/CreateProductFeature';
 export { DeleteProductScreenshot } from './usecases/DeleteProductScreenshot';
 export { EditProduct } from './usecases/EditProduct';
-export { GenerateProductDescription } from './usecases/GenerateProductDescription';
+export {
+  GenerateProductDescription,
+  GenerateProductDescriptionCandidate,
+  type GenerateProductDescriptionCandidateResult,
+} from './usecases/GenerateProductDescription';
 export { GetCategories } from './usecases/GetCategories';
 export { GetAllProducts } from './usecases/GetAllProducts';
 export { GetProduct } from './usecases/GetProduct';

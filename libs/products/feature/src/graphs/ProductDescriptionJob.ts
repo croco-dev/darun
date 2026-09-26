@@ -17,6 +17,18 @@ export class ProductDescriptionJob {
   @Field(() => String, { nullable: true })
   error?: string;
 
+  @Field(() => String, { nullable: true })
+  evidenceHash?: string;
+
+  @Field(() => String, { nullable: true })
+  baseDescriptionHash?: string;
+
+  @Field(() => String, { nullable: true })
+  candidateHtml?: string;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  appliedAt?: Date;
+
   @Field(() => GraphQLISODateTime, { nullable: true })
   createdAt?: Date;
 

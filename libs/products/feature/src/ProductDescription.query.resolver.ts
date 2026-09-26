@@ -23,6 +23,10 @@ export class ProductDescriptionQueryResolver {
       status: job.status,
       message: job.message ?? undefined,
       error: job.error ?? undefined,
+      evidenceHash: job.evidenceHash ?? undefined,
+      baseDescriptionHash: job.baseDescriptionHash ?? undefined,
+      candidateHtml: job.candidateHtml ?? undefined,
+      appliedAt: job.appliedAt ?? undefined,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
     };
@@ -47,6 +51,10 @@ export class ProductDescriptionQueryResolver {
       status: job.status,
       message: job.message ?? undefined,
       error: job.error ?? undefined,
+      evidenceHash: job.evidenceHash ?? undefined,
+      baseDescriptionHash: job.baseDescriptionHash ?? undefined,
+      candidateHtml: job.candidateHtml ?? undefined,
+      appliedAt: job.appliedAt ?? undefined,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
     }));

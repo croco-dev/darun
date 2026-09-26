@@ -2,6 +2,7 @@ import { GetCompany } from '@darun/companies-domain';
 import {
   AddProductLink,
   AddProductScreenshot,
+  ApplyProductDescriptionCandidate,
   CreateProduct,
   DeleteProductScreenshot,
   EditProduct,
@@ -61,6 +62,7 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
     private readonly standaloneIndexProductUseCase: IndexProduct,
     private readonly getPublishedProductUseCase: GetPublishedProduct,
     private readonly upvoteProductUseCase: UpvoteProduct,
+    applyProductDescriptionCandidateUseCase?: ApplyProductDescriptionCandidate,
     productDescriptionJobService?: ProductDescriptionJobService
   ) {
     super(
@@ -82,6 +84,7 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
       publishIndexProductUseCase,
       translationJobService,
       updateAlternativeProductUseCase,
+      applyProductDescriptionCandidateUseCase,
       productDescriptionJobService
     );
   }
