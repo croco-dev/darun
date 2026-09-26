@@ -83,10 +83,7 @@ export function buildProductBundleTranslationPrompt(params: {
   ].join('\n');
 }
 
-export function buildAuditPrompt(params: {
-  sourceText: string;
-  candidateTranslation: string;
-}): string {
+export function buildAuditPrompt(params: { sourceText: string; candidateTranslation: string }): string {
   return [
     '다음 한국어 원문과 영어 번역 초안을 비교 검토하여 최종 영문 텍스트를 출력하십시오.',
     '설명이나 인사말 없이 최종 영문 텍스트만 출력하십시오.',

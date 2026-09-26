@@ -2,7 +2,6 @@ import { Inject, Service } from 'typedi';
 import type { ProductDescriptionDocument } from '../services/ProductDescriptionDocument';
 import {
   type IProductDescriptionEvidenceAssembler,
-  ProductDescriptionEvidenceAssembler,
   ProductDescriptionEvidenceAssemblerToken,
 } from '../services/ProductDescriptionEvidenceAssembler';
 import {

@@ -127,7 +127,9 @@ describe('productDescriptionDocumentValidator', () => {
         evidenceRefs: ['product:summary'],
       },
     };
-    expect(() => validateProductDescriptionDocument(invalid, mockEvidence)).toThrow('길이가 제한(600자)을 초과했습니다.');
+    expect(() => validateProductDescriptionDocument(invalid, mockEvidence)).toThrow(
+      '길이가 제한(600자)을 초과했습니다.'
+    );
   });
 
   it('rejects when sections exceed 3', () => {

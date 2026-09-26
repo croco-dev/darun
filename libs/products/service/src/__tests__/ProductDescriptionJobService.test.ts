@@ -219,7 +219,6 @@ describe('ProductDescriptionJobService', () => {
     });
   });
 
-
   it('retrieves job by id', async () => {
     const service = new ProductDescriptionJobService(
       getProductUseCase,

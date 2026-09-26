@@ -50,9 +50,7 @@ describe('htmlPlaceholderCodec', () => {
     // Dropped one </p>
     const translatedMissing = '⟦HTML_0000⟧Sentence 1⟦HTML_0001⟧⟦HTML_0002⟧Sentence 2';
 
-    expect(() => decodeHtml(translatedMissing, placeholders)).toThrow(
-      /HTML placeholder count mismatch/
-    );
+    expect(() => decodeHtml(translatedMissing, placeholders)).toThrow(/HTML placeholder count mismatch/);
   });
 
   it('throws when an unexpected placeholder is introduced', () => {
@@ -61,9 +59,7 @@ describe('htmlPlaceholderCodec', () => {
 
     const translatedWithExtra = '⟦HTML_0000⟧Content⟦HTML_0001⟧⟦HTML_0099⟧';
 
-    expect(() => decodeHtml(translatedWithExtra, placeholders)).toThrow(
-      /HTML placeholder count mismatch/
-    );
+    expect(() => decodeHtml(translatedWithExtra, placeholders)).toThrow(/HTML placeholder count mismatch/);
   });
 
   it('throws when a placeholder token is missing even if count somehow matches', () => {
@@ -73,8 +69,6 @@ describe('htmlPlaceholderCodec', () => {
     // Two tokens, but token 0 is duplicated and token 1 is missing
     const translatedDuplicated = '⟦HTML_0000⟧Content⟦HTML_0000⟧';
 
-    expect(() => decodeHtml(translatedDuplicated, placeholders)).toThrow(
-      /HTML placeholder missing/
-    );
+    expect(() => decodeHtml(translatedDuplicated, placeholders)).toThrow(/HTML placeholder missing/);
   });
 });

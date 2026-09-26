@@ -69,9 +69,7 @@ export class TranslationService {
       return new Map();
     }
 
-    const fallbackTranslations = new Map(
-      entries.map(entry => [`${entry.entityId}:${entry.field}`, entry.koreanValue])
-    );
+    const fallbackTranslations = new Map(entries.map(entry => [`${entry.entityId}:${entry.field}`, entry.koreanValue]));
 
     if (locale === 'ko') {
       return fallbackTranslations;

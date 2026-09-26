@@ -1,5 +1,5 @@
-import crypto from 'node:crypto';
 import { Inject, Service, Token } from 'typedi';
+import crypto from 'node:crypto';
 import { productNotFound } from '../errors/productError';
 import type { CategoryRepository } from '../repositories/CategoryRepository';
 import { CategoryRepositoryToken } from '../repositories/CategoryRepository';

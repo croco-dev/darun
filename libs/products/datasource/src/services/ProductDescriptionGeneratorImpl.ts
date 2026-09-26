@@ -13,10 +13,7 @@ import {
   createProductDescriptionWriterPrompt,
 } from '../prompts/productDescriptionPrompt';
 import { validateProductDescriptionDocument } from '../validators/productDescriptionDocumentValidator';
-import {
-  PRODUCT_DESCRIPTION_RENDERER_VERSION,
-  renderProductDescriptionDocument,
-} from './ProductDescriptionRenderer';
+import { PRODUCT_DESCRIPTION_RENDERER_VERSION, renderProductDescriptionDocument } from './ProductDescriptionRenderer';
 
 const CALL_TIMEOUT_MS = 25_000;
 
