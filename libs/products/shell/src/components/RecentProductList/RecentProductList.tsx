@@ -9,7 +9,7 @@ export const RecentProductList = bind(useRecentProductList, ({ products, locale 
   if (products.length === 0) {
     return (
       <div className="flex min-h-44 flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-10 text-center">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150/80 bg-gradient-to-br from-surface-50 to-surface-100 text-dark-500 shadow-2xs">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
           <Sparkles size={22} className="stroke-[2]" />
         </div>
         <p className="text-sm font-semibold text-dark-900 break-keep">

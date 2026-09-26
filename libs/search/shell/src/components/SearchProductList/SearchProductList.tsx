@@ -101,7 +101,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
     return (
       <div className="flex flex-col gap-8">
         <div className="flex flex-col items-center justify-center gap-3 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150/80 bg-gradient-to-br from-surface-50 to-surface-100 text-dark-500 shadow-2xs">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-700 shadow-2xs">
             <Search size={22} />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -126,7 +126,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
                   key={popularQuery}
                   type="button"
                   onClick={() => navigateToSearch(popularQuery)}
-                  className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 hover:shadow-button-hover active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+                  className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-colors duration-150 ease-out hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <span className="text-dark-400 transition-colors group-hover:text-dark-600">#</span>
                   {popularQuery}
@@ -148,9 +148,9 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
                   key={category.id}
                   type="button"
                   onClick={() => navigateToCategory(category.slug)}
-                  className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 hover:shadow-button-hover active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+                  className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-colors duration-150 ease-out hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dark-150/70 bg-gradient-to-br from-surface-50 to-surface-100 text-lg leading-none shadow-2xs transition-all group-hover:border-dark-300 group-hover:bg-white">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dark-150/70 bg-surface-100 text-lg leading-none shadow-2xs transition-colors group-hover:border-dark-300 group-hover:bg-white">
                     {getCategoryIcon(category.slug)}
                   </span>
                   <span className="truncate">{locale === 'ko' ? category.labelKo : category.labelEn}</span>

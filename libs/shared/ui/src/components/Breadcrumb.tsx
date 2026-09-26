@@ -32,7 +32,7 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
               {item.href ? (
                 <Link
                   href={item.href}
-                  className="inline-block max-w-[160px] truncate align-bottom font-medium text-dark-600 transition-colors duration-150 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:max-w-xs"
+                  className="inline-block max-w-[240px] truncate align-bottom font-medium text-dark-600 transition-colors duration-150 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:max-w-md md:max-w-lg"
                   {...(item.ariaCurrent && {
                     'aria-current': item.ariaCurrent,
                   })}
@@ -41,7 +41,7 @@ export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbPro
                 </Link>
               ) : (
                 <span
-                  className="inline-block max-w-[200px] truncate align-bottom font-semibold text-dark-900 sm:max-w-xs"
+                  className="inline-block max-w-[240px] truncate align-bottom font-semibold text-dark-900 sm:max-w-md md:max-w-lg"
                   {...(item.ariaCurrent && {
                     'aria-current': item.ariaCurrent,
                   })}

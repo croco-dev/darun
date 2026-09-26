@@ -32,7 +32,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
               variant="shadow"
               color={isPrimary ? 'primary' : 'secondary'}
               size="md"
-              className={`min-h-[42px] sm:min-h-[44px] px-3.5 sm:px-4 transition-all duration-200 active:scale-95 ${
+              className={`min-h-[42px] sm:min-h-[44px] px-3.5 sm:px-4 transition-all duration-200 ${
                 isPrimary
                   ? 'border-dark-800 bg-dark-900 text-white shadow-button hover:border-dark-700 hover:bg-dark-800 hover:shadow-button-hover'
                   : 'border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover'
@@ -63,10 +63,10 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                 </div>
                 <ExternalLink
                   size={14}
-                  className={`shrink-0 transition-all duration-200 ${
+                  className={`shrink-0 transition-colors duration-200 ${
                     isPrimary
-                      ? 'text-dark-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white'
-                      : 'text-dark-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-900'
+                      ? 'text-dark-400 group-hover:text-white'
+                      : 'text-dark-400 group-hover:text-dark-900'
                   }`}
                 />
               </div>

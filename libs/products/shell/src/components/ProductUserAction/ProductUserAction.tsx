@@ -57,9 +57,9 @@ export const ProductUserAction = bind(
           aria-label={voteLabel}
           aria-pressed={voted}
           title={voteLabel}
-          className={`group h-10 sm:h-11 px-3.5 sm:px-4 transition-all duration-200 active:scale-95 motion-reduce:transform-none motion-reduce:transition-none ${
+          className={`group h-10 sm:h-11 px-3.5 sm:px-4 transition-all duration-150 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none ${
             voted
-              ? 'border-cherry-200 bg-cherry-50/90 text-cherry-700 shadow-xs hover:border-cherry-300 hover:bg-cherry-100'
+              ? 'border-dark-900 bg-dark-900 text-white shadow-button hover:bg-dark-800 hover:border-dark-800'
               : 'border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover'
           }`}
         >
@@ -79,16 +79,16 @@ export const ProductUserAction = bind(
               </span>
             ) : (
               <Heart
-                size={18}
-                className={`transition-all duration-200 group-hover:scale-110 active:scale-95 motion-reduce:transform-none motion-reduce:transition-none ${
+                size={16}
+                className={`transition-colors duration-150 ${
                   voted
-                    ? 'fill-cherry-600 text-cherry-600'
-                    : 'fill-transparent text-dark-500 group-hover:text-cherry-500'
+                    ? 'fill-white text-white'
+                    : 'fill-transparent text-dark-500 group-hover:text-dark-900'
                 }`}
               />
             )}
             <span
-              className={`break-keep text-sm font-semibold tabular-nums transition-colors duration-200 ${voted ? 'text-cherry-700' : 'text-dark-700 group-hover:text-dark-900'}`}
+              className={`break-keep text-sm font-semibold tabular-nums transition-colors duration-150 ${voted ? 'text-white' : 'text-dark-700 group-hover:text-dark-900'}`}
             >
               {voteCount}
             </span>
@@ -103,15 +103,15 @@ export const ProductUserAction = bind(
           data-testid="share-btn"
           aria-label={copyLabel}
           title={copyLabel}
-          className="group h-10 sm:h-11 px-3 sm:px-3.5 transition-all duration-200 active:scale-95 border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover"
+          className="group h-10 sm:h-11 px-3 sm:px-3.5 transition-all duration-150 active:scale-[0.98] border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover"
         >
           <div className="flex items-center justify-center">
             {copied ? (
-              <Check size={16} className="text-leaf-600 stroke-[2.25] transition-transform duration-200 scale-110" />
+              <Check size={16} className="text-leaf-600 stroke-[2.25]" />
             ) : (
               <Copy
                 size={16}
-                className="text-dark-500 stroke-[2] transition-transform duration-200 group-hover:scale-110 group-hover:text-dark-900"
+                className="text-dark-500 stroke-[2] transition-colors duration-150 group-hover:text-dark-900"
               />
             )}
           </div>

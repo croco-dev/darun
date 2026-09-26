@@ -183,7 +183,7 @@ export default async function AboutPage({ params }: Props) {
                 className="flex flex-col gap-3 rounded-card-lg border border-dark-150/80 bg-white p-6 shadow-card transition-all duration-200 ease-out hover:border-dark-300 hover:shadow-card-hover md:p-7"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150/80 bg-gradient-to-br from-surface-50 to-surface-100 font-mono text-xs font-bold text-dark-700 shadow-2xs">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-100 font-mono text-xs font-bold text-dark-700 shadow-2xs">
                     {section.num}
                   </span>
                   <h2 className="text-lg font-extrabold tracking-tight text-dark-900 break-keep md:text-xl">

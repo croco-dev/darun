@@ -65,7 +65,7 @@ export const ProductAlternativeList = bind(
             href={`/${locale}/search/product`}
             className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
-            <Button as="span" variant="shadow" color="secondary" size="md" className="transition-all duration-200 active:scale-95">
+            <Button as="span" variant="shadow" color="secondary" size="md">
               {t('empty.button')}
             </Button>
           </Link>

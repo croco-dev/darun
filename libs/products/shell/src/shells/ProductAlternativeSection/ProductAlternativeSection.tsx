@@ -52,7 +52,7 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
             variant="shadow"
             color="secondary"
             size="md"
-            className="h-10 sm:h-11 px-4 sm:px-5 transition-all duration-200 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover active:scale-95"
+            className="h-10 sm:h-11 px-4 sm:px-5 transition-all duration-200 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover"
           >
             <div className="flex items-center justify-center gap-2">
               <Layers
