@@ -43,6 +43,13 @@
       "when": 1789900000000,
       "tag": "0005_warm_prima",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790442842268,
+      "tag": "0006_unique_selene",
+      "breakpoints": true
     }
   ]
 }
