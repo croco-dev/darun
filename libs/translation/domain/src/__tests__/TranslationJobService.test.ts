@@ -166,18 +166,21 @@ describe('TranslationJobService', () => {
     );
     TRANSLATABLE_FIELD_METADATA.Product.fields.tagline = {
       property: 'tagline',
+      mode: 'label',
     };
     const { service, translationService } = createService({ product });
 
     await service.translateEntity('Product', product.id, ['tagline']);
 
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
-      entityType: 'Product',
-      entityId: product.id,
-      locale: 'en',
-      field: 'tagline',
-      value: 'en:한 줄 소개',
-    });
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'Product',
+        entityId: product.id,
+        locale: 'en',
+        field: 'tagline',
+        value: 'en:한 줄 소개',
+      })
+    );
     delete TRANSLATABLE_FIELD_METADATA.Product.fields.tagline;
   });
 
@@ -194,20 +197,24 @@ describe('TranslationJobService', () => {
     await service.translateEntity('ProductFeature', feature.id, ['name', 'summary']);
 
     expect(translationService.upsertTranslation).toHaveBeenCalledTimes(2);
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
-      entityType: 'ProductFeature',
-      entityId: feature.id,
-      locale: 'en',
-      field: 'name',
-      value: 'en:핵심 기능',
-    });
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
-      entityType: 'ProductFeature',
-      entityId: feature.id,
-      locale: 'en',
-      field: 'summary',
-      value: 'en:기능 요약 설명',
-    });
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'ProductFeature',
+        entityId: feature.id,
+        locale: 'en',
+        field: 'name',
+        value: 'en:핵심 기능',
+      })
+    );
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'ProductFeature',
+        entityId: feature.id,
+        locale: 'en',
+        field: 'summary',
+        value: 'en:기능 요약 설명',
+      })
+    );
   });
 
   it('translates product with features in a single contextual JSON LLM call', async () => {
@@ -253,41 +260,51 @@ describe('TranslationJobService', () => {
     await service.translateProductWithFeatures(product.id);
 
     expect(llmClient.completion).toHaveBeenCalledTimes(1);
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
-      entityType: 'Product',
-      entityId: product.id,
-      locale: 'en',
-      field: 'name',
-      value: 'Toss',
-    });
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
-      entityType: 'Product',
-      entityId: product.id,
-      locale: 'en',
-      field: 'summary',
-      value: 'All-in-one finance platform',
-    });
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
-      entityType: 'Product',
-      entityId: product.id,
-      locale: 'en',
-      field: 'description',
-      value: '<p>Simple money transfer and payments</p>',
-    });
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
-      entityType: 'ProductFeature',
-      entityId: 'feat-1',
-      locale: 'en',
-      field: 'name',
-      value: 'Easy Transfer',
-    });
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith({
-      entityType: 'ProductFeature',
-      entityId: 'feat-1',
-      locale: 'en',
-      field: 'summary',
-      value: 'Free money transfers',
-    });
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'Product',
+        entityId: product.id,
+        locale: 'en',
+        field: 'name',
+        value: 'Toss',
+      })
+    );
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'Product',
+        entityId: product.id,
+        locale: 'en',
+        field: 'summary',
+        value: 'All-in-one finance platform',
+      })
+    );
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'Product',
+        entityId: product.id,
+        locale: 'en',
+        field: 'description',
+        value: '<p>Simple money transfer and payments</p>',
+      })
+    );
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'ProductFeature',
+        entityId: 'feat-1',
+        locale: 'en',
+        field: 'name',
+        value: 'Easy Transfer',
+      })
+    );
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'ProductFeature',
+        entityId: 'feat-1',
+        locale: 'en',
+        field: 'summary',
+        value: 'Free money transfers',
+      })
+    );
   });
 
   it('fails fast and throws descriptive error when LLM completion fails without cascading fallback', async () => {
@@ -410,5 +427,67 @@ describe('TranslationJobService', () => {
     expect(mockRepo.findJobs).toHaveBeenCalledWith({ status: 'completed', limit: 10 });
     expect(jobs).toHaveLength(1);
     expect(jobs[0]?.id).toBe('job-1');
+  });
+
+  it('aborts write and marks job superseded when product source content changes during translation', async () => {
+    const initialProduct = new Product({
+      id: 'prod-race',
+      slug: 'race-product',
+      name: '원래 이름',
+      summary: '원래 요약',
+      description: '원래 설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+
+    const modifiedProduct = new Product({
+      id: 'prod-race',
+      slug: 'race-product',
+      name: '수정된 이름',
+      summary: '원래 요약',
+      description: '원래 설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+
+    const getProductExecute = vi
+      .fn<GetProduct['execute']>()
+      .mockResolvedValueOnce(initialProduct) // first read
+      .mockResolvedValueOnce(modifiedProduct); // second pre-write re-read
+
+    const getProductUseCase = { execute: getProductExecute } as unknown as GetProduct;
+    const translationService = createTranslationService();
+    const mockRepo = {
+      createJob: vi.fn(),
+      findJobById: vi.fn(),
+      updateJobStatus: vi.fn().mockResolvedValue({} as never),
+      findJobs: vi.fn(),
+    };
+
+    const mockJsonResponse = JSON.stringify({
+      name: 'Original Name',
+      summary: 'Original Summary',
+      description: 'Original Description',
+      features: [],
+    });
+
+    const llmClient = createLlmClient(async () => ({
+      content: `\`\`\`json\n${mockJsonResponse}\n\`\`\``,
+    }));
+
+    const service = new TranslationJobService(
+      getProductUseCase,
+      createMagazineUseCase(),
+      translationService as unknown as TranslationService,
+      llmClient as unknown as LlmClient,
+      createProductFeatureUseCase(),
+      createProductFeaturesUseCase(),
+      mockRepo as never
+    );
+
+    await service.translateProductWithFeatures('prod-race', 'job-stale-check');
+
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
+    expect(mockRepo.updateJobStatus).toHaveBeenCalledWith('job-stale-check', 'superseded', {
+      message: '원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.',
+    });
   });
 });

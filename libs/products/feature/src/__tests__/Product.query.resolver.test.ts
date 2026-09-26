@@ -65,7 +65,7 @@ import {
   type AlternativeProductRepository,
 } from '@darun/recommendation-domain';
 import { SearchProduct, type SearchableProductRepository } from '@darun/search-domain';
-import { TranslationService, type TranslationRepository } from '@darun/translation-domain';
+import { TranslationService, type TranslationRepository, computeSourceHash } from '@darun/translation-domain';
 import { GetVoteCount, type VoteRepository } from '@darun/voting-domain';
 import { describe, expect, it, vi } from 'vitest';
 import type { Product } from '../graphs/Product';
@@ -185,19 +185,21 @@ const createTranslationRepository = (overrides: Partial<TranslationRepository> =
   findOne: vi.fn<TranslationRepository['findOne']>().mockResolvedValue(null),
   findMany: vi.fn<TranslationRepository['findMany']>().mockResolvedValue([]),
   upsert: vi.fn<TranslationRepository['upsert']>(),
+  upsertMany: vi.fn<TranslationRepository['upsertMany']>().mockResolvedValue([]),
   findByEntity: vi.fn<TranslationRepository['findByEntity']>().mockResolvedValue([]),
   ...overrides,
 });
 
 const createTranslationService = (repository = createTranslationRepository()) => new TranslationService(repository);
 
-const createTranslationRow = (value: string) => ({
+const createTranslationRow = (value: string, sourceHash?: string) => ({
   id: value,
   entityType: 'ProductFeature',
   entityId: value,
   locale: 'en',
   field: 'name',
   value,
+  sourceHash,
   createdAt: new Date(),
   updatedAt: new Date(),
 });
@@ -269,15 +271,27 @@ describe('ProductQueryResolver', () => {
         })
       );
 
+      const featureSourceValues: Record<string, string> = {
+        'f1:name': 'Feature 1',
+        'f1:summary': 'Summary 1',
+        'f2:name': 'Feature 2',
+        'f2:summary': 'Summary 2',
+        'f3:name': 'Feature 3',
+        'f3:summary': 'Summary 3',
+      };
+
       let callCount = 0;
       const mockTranslationService = createTranslationService(
         createTranslationRepository({
-          findOne: vi.fn<TranslationRepository['findOne']>().mockImplementation(() => {
+          findOne: vi.fn<TranslationRepository['findOne']>().mockImplementation(params => {
             callCount++;
             if (callCount === 3) {
               return Promise.reject(new Error('Translation service unavailable'));
             }
-            return Promise.resolve(createTranslationRow(`translated-${callCount}`));
+            const sourceText = featureSourceValues[`${params.entityId}:${params.field}`];
+            return Promise.resolve(
+              createTranslationRow(`translated-${callCount}`, sourceText ? computeSourceHash(sourceText) : undefined)
+            );
           }),
         })
       );
@@ -331,15 +345,27 @@ describe('ProductQueryResolver', () => {
         })
       );
 
+      const featureSourceValues: Record<string, string> = {
+        'f1:name': 'Feature 1',
+        'f1:summary': 'Summary 1',
+        'f2:name': 'Feature 2',
+        'f2:summary': 'Summary 2',
+        'f3:name': 'Feature 3',
+        'f3:summary': 'Summary 3',
+      };
+
       let callCount = 0;
       const mockTranslationService = createTranslationService(
         createTranslationRepository({
-          findOne: vi.fn<TranslationRepository['findOne']>().mockImplementation(() => {
+          findOne: vi.fn<TranslationRepository['findOne']>().mockImplementation(params => {
             callCount++;
             if (callCount === 3) {
               return Promise.reject(new Error('Network error'));
             }
-            return Promise.resolve(createTranslationRow(`translated-${callCount}`));
+            const sourceText = featureSourceValues[`${params.entityId}:${params.field}`];
+            return Promise.resolve(
+              createTranslationRow(`translated-${callCount}`, sourceText ? computeSourceHash(sourceText) : undefined)
+            );
           }),
         })
       );
@@ -540,6 +566,7 @@ describe('ProductQueryResolver', () => {
             locale: 'en',
             field: 'name',
             value: 'Notion',
+            sourceHash: computeSourceHash('노션'),
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -550,6 +577,7 @@ describe('ProductQueryResolver', () => {
             locale: 'en',
             field: 'summary',
             value: 'All-in-one productivity tool',
+            sourceHash: computeSourceHash('올인원 생산성 도구'),
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -560,6 +588,7 @@ describe('ProductQueryResolver', () => {
             locale: 'en',
             field: 'description',
             value: 'English description',
+            sourceHash: computeSourceHash('한국어 설명'),
             createdAt: new Date(),
             updatedAt: new Date(),
           },

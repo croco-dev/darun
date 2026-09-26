@@ -1,6 +1,7 @@
 import { Inject, Service } from 'typedi';
-import type { TranslationRepository } from '../repositories/TranslationRepository';
+import type { TranslationRepository, UpsertTranslationParams } from '../repositories/TranslationRepository';
 import { TranslationRepositoryToken } from '../repositories/TranslationRepository';
+import { computeSourceHash } from '../utils/sourceHash';
 
 type TranslationEntry = {
   entityId: string;
@@ -15,14 +16,12 @@ export class TranslationService {
     private readonly translationRepository: TranslationRepository
   ) {}
 
-  async upsertTranslation(params: {
-    entityType: string;
-    entityId: string;
-    locale: string;
-    field: string;
-    value: string;
-  }): Promise<void> {
+  async upsertTranslation(params: UpsertTranslationParams): Promise<void> {
     await this.translationRepository.upsert(params);
+  }
+
+  async upsertTranslations(paramsList: UpsertTranslationParams[]): Promise<void> {
+    await this.translationRepository.upsertMany(paramsList);
   }
 
   async getTranslation(params: {
@@ -47,7 +46,10 @@ export class TranslationService {
       });
 
       if (translated?.value) {
-        return translated.value;
+        const expectedHash = computeSourceHash(koreanValue);
+        if (translated.sourceHash && translated.sourceHash === expectedHash) {
+          return translated.value;
+        }
       }
     } catch (error) {
       console.error('Failed to fetch translation, falling back to default value:', error);
@@ -67,7 +69,9 @@ export class TranslationService {
       return new Map();
     }
 
-    const fallbackTranslations = new Map(entries.map(entry => [`${entry.entityId}:${entry.field}`, entry.koreanValue]));
+    const fallbackTranslations = new Map(
+      entries.map(entry => [`${entry.entityId}:${entry.field}`, entry.koreanValue])
+    );
 
     if (locale === 'ko') {
       return fallbackTranslations;
@@ -80,9 +84,16 @@ export class TranslationService {
         entities: entries.map(({ entityId, field }) => ({ entityId, field })),
       });
 
+      const entryMap = new Map(entries.map(e => [`${e.entityId}:${e.field}`, e]));
+
       for (const translatedRow of translatedRows) {
-        if (translatedRow.value) {
-          fallbackTranslations.set(`${translatedRow.entityId}:${translatedRow.field}`, translatedRow.value);
+        const key = `${translatedRow.entityId}:${translatedRow.field}`;
+        const entry = entryMap.get(key);
+        if (!entry) continue;
+
+        const expectedHash = computeSourceHash(entry.koreanValue);
+        if (translatedRow.value && translatedRow.sourceHash && translatedRow.sourceHash === expectedHash) {
+          fallbackTranslations.set(key, translatedRow.value);
         }
       }
     } catch (error) {
