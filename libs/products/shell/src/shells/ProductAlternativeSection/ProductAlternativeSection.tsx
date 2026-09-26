@@ -29,7 +29,7 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
           <p className="text-sm font-semibold text-dark-900 break-keep">{t('empty.title')}</p>
           <p className="mt-1 max-w-xs text-xs text-dark-500 break-keep">{t('empty.description')}</p>
           <Link href={`/${locale}/search/product`} className="mt-4">
-            <Button as="span" variant="shadow" color="primary" size="sm" className="h-10 px-4">
+            <Button as="span" variant="shadow" color="primary" size="sm" className="h-10 px-4 active:scale-[0.98] motion-reduce:transform-none">
               {t('empty.button')}
             </Button>
           </Link>
@@ -52,12 +52,12 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
             variant="shadow"
             color="secondary"
             size="md"
-            className="h-10 sm:h-11 px-4 sm:px-5 transition-all duration-200 hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover"
+            className="h-10 sm:h-11 px-4 sm:px-5 transition-all duration-200 active:scale-[0.98] motion-reduce:transform-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover"
           >
             <div className="flex items-center justify-center gap-2">
               <Layers
                 size={16}
-                className="shrink-0 text-dark-500 transition-colors duration-200 group-hover:text-dark-900"
+                className="shrink-0 text-dark-500 transition-all duration-200 group-hover:scale-110 group-hover:text-dark-900 motion-reduce:transform-none"
               />
               <span>{t('section.moreButton')}</span>
             </div>

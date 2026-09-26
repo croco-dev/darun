@@ -20,7 +20,7 @@ export function FAQSection({ items }: FAQSectionProps) {
 
   return (
     <section id="faq" className="flex w-full flex-col gap-4 scroll-mt-32 md:gap-5">
-      <SectionHeader title={t('faq.title')} />
+      <SectionHeader title={t('faq.title')} subtitle={t('faq.description')} />
       <div className="flex w-full flex-col gap-3">
         {items.map(item => (
           <FAQAccordionItem key={`${item.question}-${item.answer}`} question={item.question} answer={item.answer} />
@@ -72,6 +72,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
       </button>
       <section
         id={panelId}
+        role="region"
         aria-labelledby={buttonId}
         aria-hidden={!isOpen}
         style={{

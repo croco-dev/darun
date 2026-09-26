@@ -2,10 +2,13 @@
 
 import { Sparkles } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
+import { useTranslations } from 'next-intl';
 import { ProductCard } from '../ProductCard';
 import { useRecentProductList } from './useRecentProductList';
 
 export const RecentProductList = bind(useRecentProductList, ({ products, locale }) => {
+  const t = useTranslations('home');
+
   if (products.length === 0) {
     return (
       <div className="flex min-h-44 flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-10 text-center">
@@ -13,7 +16,7 @@ export const RecentProductList = bind(useRecentProductList, ({ products, locale 
           <Sparkles size={22} className="stroke-[2]" />
         </div>
         <p className="text-sm font-semibold text-dark-900 break-keep">
-          {locale === 'ko' ? '최근 등록된 서비스가 없습니다' : 'No recently added services'}
+          {t('recent.empty')}
         </p>
       </div>
     );

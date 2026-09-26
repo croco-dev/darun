@@ -93,14 +93,14 @@ export function CategoryProductSection({ slug }: { slug: string }) {
               </h1>
               {products.length > 0 && (
                 <span className="inline-flex items-center rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs">
-                  {locale === 'ko' ? `${products.length}개 도구` : `${products.length} tools`}
+                  {locale === 'ko'
+                    ? `${products.length.toLocaleString(locale)}개 도구`
+                    : `${products.length.toLocaleString(locale)} ${products.length === 1 ? 'tool' : 'tools'}`}
                 </span>
               )}
             </div>
             <p className="text-sm text-dark-600 break-keep sm:text-base">
-              {locale === 'ko'
-                ? `${categoryLabel} 분야의 추천 및 대안 소프트웨어를 탐색해보세요.`
-                : `Discover recommended and alternative software in ${categoryLabel}.`}
+              {t('subtitle', { category: categoryLabel })}
             </p>
           </div>
         </div>
@@ -112,9 +112,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
             </div>
             <p className="text-base font-extrabold text-dark-900 sm:text-lg">{emptyLabel}</p>
             <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">
-              {locale === 'ko'
-                ? '아직 등록된 서비스가 없습니다. 다른 분야의 도구를 확인해보세요.'
-                : 'No services registered yet. Explore tools in other categories.'}
+              {t('emptyDescription')}
             </p>
             <div className="mt-5">
               <Link
@@ -122,7 +120,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                 className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <Button as="span" variant="shadow" color="primary" size="md">
-                  {locale === 'ko' ? '전체 도구 둘러보기' : 'Browse All Software'}
+                  {t('browseAll')}
                 </Button>
               </Link>
             </div>

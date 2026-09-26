@@ -1,5 +1,6 @@
 export { AlternativeProductSection } from './AlternativeProductSection';
 export { CategoryNavigationSection, getCategoryIcon } from './CategoryNavigationSection';
+export { CategoryNavigationSkeleton } from './CategoryNavigationSection/CategoryNavigationSkeleton';
 export { CategoryProductSection } from './CategoryProductSection';
 export { MainHeroBanner } from './MainHeroBanner';
 export { ProductAlternativeSection } from './ProductAlternativeSection';
@@ -12,5 +13,7 @@ export { ProductSummaryLink } from './ProductSummaryLink';
 export { ProductTocSection } from './ProductTocSection';
 export { RankedProductSection } from './RankedProductSection';
 export { RecentProductSection } from './RecentProductSection';
+export { RecentProductSkeleton } from './RecentProductSection/RecentProductSkeleton';
 export { RelatedProductsSection } from './RelatedProductsSection';
 export { TrendingProductSection } from './TrendingProductSection';
+export { TrendingProductSkeleton } from './TrendingProductSection/TrendingProductSkeleton';

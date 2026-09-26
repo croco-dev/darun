@@ -37,7 +37,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
             >
               <Image
                 src={screenshot.imageUrl}
-                alt={screenshot.imageAlt}
+                alt={screenshot.imageAlt || `${name} feature screenshot`}
                 sizes="800px"
                 width={800}
                 height={220}

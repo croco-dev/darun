@@ -3,7 +3,7 @@
 import { Maximize2, Sparkles } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Zoom from 'react-medium-image-zoom';
 import { useProductPhotos } from './useProductPhotos';
 
@@ -15,6 +15,7 @@ type ProductPhotosViewProps = {
 
 export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosViewProps) => {
   const t = useTranslations('ProductDetail');
+  const locale = useLocale();
 
   if (!photos || photos.length === 0) {
     return (
@@ -34,7 +35,9 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
       <div className="mb-3.5 flex items-center justify-between border-b border-dark-150/70 pb-3">
         <span className="text-xs font-semibold text-dark-700">{t('photo.title')}</span>
         <span className="rounded-md bg-surface-100 px-2 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
-          {photos.length} {photos.length === 1 ? 'Preview' : 'Previews'}
+          {locale === 'ko'
+            ? `${photos.length}개 미리보기`
+            : `${photos.length} ${photos.length === 1 ? 'Preview' : 'Previews'}`}
         </span>
       </div>
       {photos && (

@@ -1,8 +1,13 @@
-import { CategoryNavigationSkeleton } from '@darun/products-shell/src/shells/CategoryNavigationSection/CategoryNavigationSkeleton';
-import { RecentProductSkeleton } from '@darun/products-shell/src/shells/RecentProductSection/RecentProductSkeleton';
-import { TrendingProductSkeleton } from '@darun/products-shell/src/shells/TrendingProductSection/TrendingProductSkeleton';
+'use client';
+
+import {
+  CategoryNavigationSkeleton,
+  RecentProductSkeleton,
+  TrendingProductSkeleton,
+} from '@darun/products-shell';
 import { ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
+import { useTranslations } from 'next-intl';
 
 const DarkSkeleton = ({ className = '' }: { className?: string }) => (
   <div
@@ -12,9 +17,11 @@ const DarkSkeleton = ({ className = '' }: { className?: string }) => (
 );
 
 export default function Loading() {
+  const t = useTranslations('ProductDetail');
+
   return (
     <Layout>
-      <main className="flex flex-col" aria-busy="true" aria-live="polite" aria-label="페이지를 불러오는 중입니다">
+      <main className="flex flex-col" aria-busy="true" aria-live="polite" aria-label={t('loading')}>
         <section className="relative isolate overflow-hidden bg-dark-900">
           <ContentArea className="relative z-10 py-14 sm:py-16 md:py-20">
             <div className="flex max-w-2xl flex-col gap-5 md:gap-6">
