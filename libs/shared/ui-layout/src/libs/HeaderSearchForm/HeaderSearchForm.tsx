@@ -38,7 +38,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
         type="text"
         placeholder={t('searchPlaceholder')}
         ref={inputRef}
-        className="w-full border-none bg-transparent text-sm tracking-tight text-dark-900 outline-none placeholder:text-dark-500 focus-visible:outline-none md:text-base"
+        className="w-full border-none bg-transparent text-base tracking-tight text-dark-900 outline-none placeholder:text-dark-500 focus-visible:outline-none sm:text-sm md:text-base"
         value={query}
         onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
       />

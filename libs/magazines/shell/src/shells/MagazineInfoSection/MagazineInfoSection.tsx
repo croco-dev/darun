@@ -75,7 +75,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
             {authorName && (
               <div className="flex items-center gap-1.5">
                 {authorInitial && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-2xs font-bold text-white ring-1 ring-white/30">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-2xs font-bold text-white ring-1 ring-white/40 backdrop-blur-xs shadow-2xs">
                     {authorInitial}
                   </span>
                 )}

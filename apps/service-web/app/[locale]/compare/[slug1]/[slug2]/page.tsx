@@ -126,7 +126,10 @@ export default async function ComparePage({ params }: Props) {
   }
 
   const { product1, product2 } = data;
-  const t = await getTranslations({ locale: resolvedParams.locale, namespace: 'Compare' });
+  const t = await getTranslations({
+    locale: resolvedParams.locale,
+    namespace: 'Compare',
+  });
 
   return (
     <Layout>
@@ -151,13 +154,19 @@ export default async function ComparePage({ params }: Props) {
             align="center"
           />
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+          <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
             <div data-testid="compare-column">
               <ProductCard
                 product={product1}
                 href={`/${resolvedParams.locale}/products/${product1.slug}`}
                 source="compare"
               />
+            </div>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 hidden md:flex h-9 w-9 items-center justify-center rounded-full border border-dark-200 bg-white font-black text-xs text-dark-700 shadow-md ring-4 ring-surface-50/60 select-none"
+            >
+              VS
             </div>
             <div data-testid="compare-column">
               <ProductCard

@@ -7,7 +7,7 @@
       "submit": "Submit",
       "login": "Login",
       "logout": "Logout",
-      "searchPlaceholder": "Find the service you're currently using!",
+      "searchPlaceholder": "Find the service you’re currently using!",
       "searchAriaLabel": "Search query",
       "mainMenuAriaLabel": "Main menu",
       "clearSearch": "Clear search query",
@@ -20,7 +20,7 @@
       "privacyPolicy": "Privacy Policy",
       "termsOfService": "Terms of Service",
       "contact": "Contact",
-      "disclaimer": "'Darun' service provides simple information and does not hold copyright or ownership of individual content. <br />'Darun' service is not an authoritative source. Do not blindly trust the content on the site."
+      "disclaimer": "‘Darun’ service provides simple information and does not hold copyright or ownership of individual content. ‘Darun’ service is not an authoritative source. Do not blindly trust the content on the site."
     },
     "metadata": {
       "title": "Darun - Compare Services in One Place",
@@ -44,7 +44,7 @@
       "title": "Explore Services",
       "empty": {
         "title": "Please enter a search term in the search box above.",
-        "description": "e.g.) Service name: 'Toss', 'Naver' or category: 'Finance', 'Video', etc..."
+        "description": "e.g.) Service name: ‘Toss’, ‘Naver’ or category: ‘Finance’, ‘Video’, etc..."
       },
       "resultTitle": "‘{query}’ search results",
       "popularQueriesTitle": "Popular searches",
@@ -206,7 +206,7 @@
     "info": {
       "badge": "Another Magazine",
       "title": "Netflix announces a price increase, what are the alternatives?",
-      "summary": "More consumers are feeling burdened by Netflix's consecutive subscription price hikes.",
+      "summary": "More consumers are feeling burdened by Netflix’s consecutive subscription price hikes.",
       "meta": "2025.02.18 ∙ by Doda"
     },
     "empty": {

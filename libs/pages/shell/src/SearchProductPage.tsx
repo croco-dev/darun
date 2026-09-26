@@ -9,6 +9,7 @@ import {
 import { Breadcrumb, ContentArea, PageHeading, SectionHeader } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { useLocale, useTranslations } from 'next-intl';
+import { Suspense } from 'react';
 
 type Props = { searchParams: { [key: string]: string | string[] | undefined } };
 
@@ -46,11 +47,40 @@ export function SearchProductPage({ searchParams }: Props) {
             </div>
             <div className="flex flex-col gap-4 md:gap-5">
               <SectionHeader title={t('page.categoriesTitle')} />
-              <CategoryShortcutGrid />
+              <Suspense
+                fallback={
+                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 md:gap-3" aria-hidden="true">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div
+                        key={String(i)}
+                        className="h-14 animate-pulse rounded-xl border border-dark-150/80 bg-surface-100 motion-reduce:animate-none"
+                      />
+                    ))}
+                  </div>
+                }
+              >
+                <CategoryShortcutGrid />
+              </Suspense>
             </div>
             <div className="flex flex-col gap-4 md:gap-5">
               <SectionHeader title={t('page.trendingTitle')} />
-              <TrendingProductPreview />
+              <Suspense
+                fallback={
+                  <div
+                    className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:gap-5"
+                    aria-hidden="true"
+                  >
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div
+                        key={String(i)}
+                        className="h-32 animate-pulse rounded-card-lg border border-dark-150/80 bg-surface-100 motion-reduce:animate-none"
+                      />
+                    ))}
+                  </div>
+                }
+              >
+                <TrendingProductPreview />
+              </Suspense>
             </div>
           </ContentArea>
         </main>

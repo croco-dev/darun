@@ -1,9 +1,9 @@
 'use client';
 
 import { Button, ExternalLink } from '@darun/ui';
+import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
-import { Link } from '@darun/utils-router';
 import { useLocale } from 'next-intl';
 import { getLocalizedLinkTitle } from '../../utils/localization';
 import { useProductLinks } from './useProductLinks';
@@ -44,7 +44,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
             >
               <div className="flex items-center justify-center gap-2">
                 {link.iconUrl && (
-                  <div className="flex h-5 w-5 sm:h-5.5 sm:w-5.5 shrink-0 items-center justify-center rounded-md border border-dark-150/70 bg-surface-100 p-0.5 shadow-2xs">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-dark-150/70 bg-surface-100 p-0.5 shadow-2xs">
                     <Image
                       src={link.iconUrl}
                       alt={link.title}
@@ -55,9 +55,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                     />
                   </div>
                 )}
-                <span className="w-max break-keep text-xs sm:text-sm font-semibold text-current">
-                  {localizedTitle}
-                </span>
+                <span className="w-max break-keep text-xs sm:text-sm font-semibold text-current">{localizedTitle}</span>
                 <ExternalLink
                   size={14}
                   className={`shrink-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none ${

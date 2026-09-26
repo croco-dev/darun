@@ -11,7 +11,7 @@ export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' 
   const locale = useLocale();
 
   const formattedCount = count.toLocaleString(locale);
-  const label = locale === 'en' ? `${formattedCount} upvotes` : `추천 ${formattedCount}`;
+  const label = locale === 'en' ? `${formattedCount} ${count === 1 ? 'upvote' : 'upvotes'}` : `추천 ${formattedCount}`;
 
   return (
     <div

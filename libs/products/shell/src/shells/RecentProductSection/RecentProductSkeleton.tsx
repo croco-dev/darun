@@ -9,7 +9,7 @@ const Skeleton = ({ className = '' }: { className?: string }) => (
 
 export const RecentProductSkeleton = () => {
   return (
-    <SectionWrapper background="white" spacing="md">
+    <SectionWrapper background="white" spacing="md" className="border-t border-dark-100/70">
       <div data-testid="skel-recent" className="flex w-full flex-col gap-5 md:gap-6">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">

@@ -23,18 +23,19 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
             <Sparkles className="h-5 w-5 text-dark-500 stroke-[1.75]" />
           )}
         </div>
-        <div className="flex flex-col pt-0.5">
-          <h3 className="text-base font-bold leading-snug tracking-tight text-dark-900 break-keep sm:text-lg">{name}</h3>
-          {description && <p className="mt-1 text-sm leading-relaxed text-dark-600 break-keep sm:text-base">{description}</p>}
+        <div className="flex min-w-0 flex-1 flex-col pt-0.5">
+          <h3 className="text-base font-bold leading-snug tracking-tight text-dark-900 break-keep sm:text-lg">
+            {name}
+          </h3>
+          {description && (
+            <p className="mt-1 text-sm leading-relaxed text-dark-600 break-keep sm:text-base">{description}</p>
+          )}
         </div>
       </div>
       {screenshots && screenshots.length > 0 && (
         <div className="flex w-full gap-3 overflow-x-auto pt-1 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x">
           {screenshots.map(screenshot => (
-            <div
-              key={screenshot.id}
-              className="shrink-0 snap-start"
-            >
+            <div key={screenshot.id} className="shrink-0 snap-start">
               <Image
                 src={screenshot.imageUrl}
                 alt={screenshot.imageAlt || `${name} feature screenshot`}

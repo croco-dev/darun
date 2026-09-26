@@ -38,7 +38,12 @@ export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings,
             }
 
             const location = target.getBoundingClientRect().top + window.scrollY - 124;
-            window.scrollTo({ top: Math.max(location, 0), behavior: 'smooth' });
+            const prefersReducedMotion =
+              typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            window.scrollTo({
+              top: Math.max(location, 0),
+              behavior: prefersReducedMotion ? 'auto' : 'smooth',
+            });
           }}
         >
           {text}

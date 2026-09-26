@@ -21,16 +21,12 @@ export const ProductFeatureGridList = ({ features }: ProductFeatureGridListProps
             {feature.emoji ? (
               <span className="text-lg leading-none sm:text-xl">{feature.emoji}</span>
             ) : (
-              <Sparkles className="h-4.5 w-4.5 text-dark-500 stroke-[1.75]" />
+              <Sparkles size={18} className="text-dark-500 stroke-[1.75]" />
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
             <p className="text-sm font-bold tracking-tight text-dark-900 break-keep">{feature.name}</p>
-            {feature.summary && (
-              <p className="text-xs leading-relaxed text-dark-600 break-keep">
-                {feature.summary}
-              </p>
-            )}
+            {feature.summary && <p className="text-xs leading-relaxed text-dark-600 break-keep">{feature.summary}</p>}
           </div>
         </div>
       ))}

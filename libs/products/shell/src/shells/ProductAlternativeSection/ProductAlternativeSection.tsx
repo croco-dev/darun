@@ -28,8 +28,17 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
           </div>
           <p className="text-sm font-semibold text-dark-900 break-keep">{t('empty.title')}</p>
           <p className="mt-1 max-w-xs text-xs text-dark-500 break-keep">{t('empty.description')}</p>
-          <Link href={`/${locale}/search/product`} className="mt-4">
-            <Button as="span" variant="shadow" color="primary" size="sm" className="h-10 px-4 active:scale-[0.98] motion-reduce:transform-none">
+          <Link
+            href={`/${locale}/search/product`}
+            className="mt-4 group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+          >
+            <Button
+              as="span"
+              variant="shadow"
+              color="primary"
+              size="sm"
+              className="h-10 px-4 active:scale-[0.98] motion-reduce:transform-none"
+            >
               {t('empty.button')}
             </Button>
           </Link>

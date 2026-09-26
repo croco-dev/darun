@@ -9,11 +9,14 @@ const Skeleton = ({ className = '' }: { className?: string }) => (
 
 export const TrendingProductSkeleton = () => {
   return (
-    <SectionWrapper background="subtle" spacing="md">
+    <SectionWrapper background="white" spacing="md" className="border-t border-dark-100/70">
       <div data-testid="skel-trending" className="flex w-full flex-col gap-5 md:gap-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-7 w-48 rounded-lg" />
-          <Skeleton className="h-5 w-16 rounded" />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-7 w-48 rounded-lg" />
+            <Skeleton className="h-5 w-16 rounded" />
+          </div>
+          <Skeleton className="h-4 w-64 rounded max-w-sm" />
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
           {Array.from({ length: 8 }).map((_, i) => (

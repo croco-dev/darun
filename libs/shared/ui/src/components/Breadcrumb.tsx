@@ -13,12 +13,13 @@ export type BreadcrumbItem = {
 export type BreadcrumbProps = HTMLAttributes<HTMLElement> & {
   items: BreadcrumbItem[];
   testId?: string;
+  ariaLabel?: string;
 };
 
-export function Breadcrumb({ items, testId, className, ...props }: BreadcrumbProps) {
+export function Breadcrumb({ items, testId, ariaLabel, className, ...props }: BreadcrumbProps) {
   return (
     <nav
-      aria-label="Breadcrumb"
+      aria-label={ariaLabel ?? 'Breadcrumb'}
       className={cn('flex items-center gap-1.5 text-xs sm:text-sm', className)}
       {...props}
       data-testid={testId}

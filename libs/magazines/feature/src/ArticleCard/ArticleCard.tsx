@@ -1,4 +1,6 @@
 import { Chip, formatDate, Sparkles } from '@darun/ui';
+import { Link } from '@darun/utils-router';
+import { useState } from 'react';
 
 type ArticleCardProps = {
   thumbnailImageUri?: string;
@@ -21,15 +23,19 @@ export const ArticleCard = ({
   href,
   locale,
 }: ArticleCardProps) => {
+  const [hasImageError, setHasImageError] = useState(false);
+  const showImage = thumbnailImageUri && !hasImageError;
+
   const content = (
     <>
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-100">
-        {thumbnailImageUri ? (
+        {showImage ? (
           <img
             src={thumbnailImageUri}
             alt={title}
             loading="lazy"
             decoding="async"
+            onError={() => setHasImageError(true)}
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transform-none motion-reduce:transition-none"
           />
         ) : (
@@ -66,12 +72,12 @@ export const ArticleCard = ({
 
   if (href) {
     return (
-      <a
+      <Link
         href={href}
         className={`${baseClassName} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2`}
       >
         {content}
-      </a>
+      </Link>
     );
   }
 

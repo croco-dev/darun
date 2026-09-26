@@ -21,10 +21,11 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
           <TrendingUp size={24} className="stroke-[2]" />
         </div>
         <p className="text-base font-extrabold tracking-tight text-dark-900 break-keep">{t('empty.title')}</p>
-        <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">
-          {t('empty.description')}
-        </p>
-        <Link href={`/${locale}/search/product`} className="mt-6">
+        <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">{t('empty.description')}</p>
+        <Link
+          href={`/${locale}/search/product`}
+          className="mt-6 group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+        >
           <Button as="span" variant="shadow" color="primary" size="md">
             {t('empty.button')}
           </Button>

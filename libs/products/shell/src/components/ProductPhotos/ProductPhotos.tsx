@@ -34,7 +34,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
     <div className="overflow-hidden rounded-card-lg border border-dark-150 bg-white p-4 shadow-card sm:p-5 md:p-6">
       <div className="mb-3.5 flex items-center justify-between border-b border-dark-150/70 pb-3">
         <span className="text-xs font-semibold text-dark-700">{t('photo.title')}</span>
-        <span className="rounded-md bg-surface-100 px-2 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
+        <span className="rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs">
           {locale === 'ko'
             ? `${photos.length}개 미리보기`
             : `${photos.length} ${photos.length === 1 ? 'Preview' : 'Previews'}`}

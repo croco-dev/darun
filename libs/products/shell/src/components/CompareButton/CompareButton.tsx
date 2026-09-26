@@ -88,6 +88,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       size="md"
       onClick={handleClick}
       data-testid="compare-button"
+      aria-label={buttonLabel}
       aria-pressed={isAdded}
       title={buttonLabel}
       className={`group h-10 sm:h-11 px-3.5 sm:px-4 transition-all duration-150 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none ${
@@ -98,10 +99,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
     >
       <div className="flex items-center gap-1.5">
         {isAdded ? (
-          <Check
-            size={16}
-            className="text-current stroke-[2.25]"
-          />
+          <Check size={16} className="text-current stroke-[2.25]" />
         ) : (
           <Plus
             size={16}
