@@ -106,7 +106,10 @@
       "voteSuccess": "Your vote has been submitted!",
       "alreadyVoted": "You have already voted for this product.",
       "rateLimit": "Too many vote attempts. Please try again in a minute.",
-      "voteFailed": "Failed to vote. Please try again."
+      "voteFailed": "Failed to vote. Please try again.",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "copySuccess": "Link copied to clipboard."
     },
     "compareButton": {
       "add": "Add to compare",
@@ -172,6 +175,11 @@
     "section": {
       "title": "Top 30 Popular Services",
       "description": "These are the services that received the most interest."
+    },
+    "empty": {
+      "title": "No ranked services yet",
+      "description": "No services have received votes yet. Explore various services and cast the first vote!",
+      "button": "Explore Services"
     }
   },
   "Magazine": {

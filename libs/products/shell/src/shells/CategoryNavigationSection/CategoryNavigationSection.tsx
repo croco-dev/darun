@@ -104,7 +104,7 @@ export const CategoryNavigationSection = () => {
                     source: 'home-bar',
                   })
                 }
-                className="group inline-flex items-center gap-2 rounded-full border border-dark-150 bg-white px-4 py-2 text-sm font-semibold text-dark-800 shadow-button transition-colors duration-150 ease-out hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:px-5 sm:py-2.5"
+                className="group inline-flex items-center gap-2 rounded-full border border-dark-150 bg-white px-4 py-2 text-sm font-semibold text-dark-800 shadow-button transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:px-5 sm:py-2.5"
               >
                 <span className="text-base leading-none">
                   {getCategoryIcon(category.slug)}

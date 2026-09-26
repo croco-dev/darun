@@ -9,7 +9,7 @@ import {
   CompactTrendingPreviewForSearchProductListDocument,
 } from '@darun/provider-graphql';
 import { Search } from '@darun/ui';
-import { useNavigate, useSearchParams } from '@darun/utils-router';
+import { Link, useSearchParams } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
@@ -55,7 +55,6 @@ type SearchProductListViewProps = {
 export const SearchProductList = bind(useSearchProductList, ({ products }: SearchProductListViewProps) => {
   const t = useTranslations('Search');
   const locale = useLocale();
-  const navigate = useNavigate();
   const searchParams = useSearchParams();
   const query = searchParams.get('query')?.trim() ?? '';
 
@@ -77,16 +76,6 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
 
   const trackEmptySearchClick = (queryText: string) => {
     track(AnalyticsEvents.EMPTY_SEARCH_STRIPE_CLICKED, { queryText });
-  };
-
-  const navigateToSearch = (nextQuery: string) => {
-    trackEmptySearchClick(nextQuery);
-    navigate(`/${locale}/search/product?query=${encodeURIComponent(nextQuery)}`);
-  };
-
-  const navigateToCategory = (slug: string) => {
-    trackEmptySearchClick(slug);
-    navigate(`/${locale}/categories/${slug}`);
   };
 
   const getNoResultsMessage = () => {
@@ -122,15 +111,15 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
               aria-label="Popular searches"
             >
               {popularQueries.map(popularQuery => (
-                <button
+                <Link
                   key={popularQuery}
-                  type="button"
-                  onClick={() => navigateToSearch(popularQuery)}
+                  href={`/${locale}/search/product?query=${encodeURIComponent(popularQuery)}`}
+                  onClick={() => trackEmptySearchClick(popularQuery)}
                   className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-colors duration-150 ease-out hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <span className="text-dark-400 transition-colors group-hover:text-dark-600">#</span>
                   {popularQuery}
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -144,17 +133,17 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
               aria-label="Browse by category"
             >
               {categories.map(category => (
-                <button
+                <Link
                   key={category.id}
-                  type="button"
-                  onClick={() => navigateToCategory(category.slug)}
+                  href={`/${locale}/categories/${category.slug}`}
+                  onClick={() => trackEmptySearchClick(category.slug)}
                   className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-colors duration-150 ease-out hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dark-150/70 bg-surface-100 text-lg leading-none shadow-2xs transition-colors group-hover:border-dark-300 group-hover:bg-white">
                     {getCategoryIcon(category.slug)}
                   </span>
                   <span className="truncate">{locale === 'ko' ? category.labelKo : category.labelEn}</span>
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -183,11 +172,12 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
         <span className="inline-flex items-center gap-1.5 rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs">
           {locale === 'ko' ? (
             <>
-              총 <strong className="font-bold text-dark-900">{products.length}</strong>개의 서비스
+              총 <strong className="font-bold text-dark-900">{products.length.toLocaleString(locale)}</strong>개의 서비스
             </>
           ) : (
             <>
-              <strong className="font-bold text-dark-900">{products.length}</strong> services found
+              <strong className="font-bold text-dark-900">{products.length.toLocaleString(locale)}</strong>{' '}
+              {products.length === 1 ? 'service found' : 'services found'}
             </>
           )}
         </span>

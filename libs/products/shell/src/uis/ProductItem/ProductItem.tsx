@@ -72,8 +72,8 @@ export const ProductItem = ({
   if (isRanked) {
     return (
       <Component className="flex w-full flex-col gap-2.5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-start gap-3 pt-0.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             {rank !== undefined && <RankBadge rank={rank} size="md" />}
             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dark-150/90 bg-white p-1 shadow-2xs ring-1 ring-black/5">
               <Image

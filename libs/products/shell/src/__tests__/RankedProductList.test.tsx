@@ -8,6 +8,16 @@ import { useRankedProductList } from '../components/RankedProductList/useRankedP
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => {
+    if (key === 'empty.title') return '집계된 랭킹 서비스가 없습니다';
+    if (key === 'empty.description') return '아직 투표가 집계된 서비스가 없습니다. 다양한 서비스를 탐색하고 첫 번째 표를 남겨보세요!';
+    if (key === 'empty.button') return '서비스 둘러보기';
+    return key;
+  },
+  useLocale: () => 'ko',
+}));
+
 vi.mock('@darun/utils-structure-react', () => ({
   bind: (
     hook: (props: Record<string, unknown>) => Record<string, unknown>,
@@ -87,7 +97,7 @@ describe('RankedProductList', () => {
     expect(links[1]?.getAttribute('href')).toBe('/ko/products/figma?from=trending');
   });
 
-  it('빈 목록이면 아무것도 렌더링하지 않는다', () => {
+  it('빈 목록이면 빈 상태 안내 UI를 렌더링한다', () => {
     vi.mocked(useRankedProductList).mockReturnValue({ products: [], locale: 'ko' });
 
     act(() => {
@@ -96,5 +106,6 @@ describe('RankedProductList', () => {
 
     const items = container.querySelectorAll('[data-testid="product-item"]');
     expect(items).toHaveLength(0);
+    expect(container.textContent).toContain('집계된 랭킹 서비스가 없습니다');
   });
 });

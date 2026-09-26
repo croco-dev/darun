@@ -1,6 +1,4 @@
-'use client';
-
-import { useNavigate } from '@darun/utils-router';
+import { Link } from '@darun/utils-router';
 import { useLocale } from 'next-intl';
 
 const POPULAR_QUERIES: Record<string, string[]> = {
@@ -32,13 +30,7 @@ const POPULAR_QUERIES: Record<string, string[]> = {
 
 export const PopularQueriesStripe = () => {
   const locale = useLocale();
-  const navigate = useNavigate();
   const queries = POPULAR_QUERIES[locale] ?? POPULAR_QUERIES.ko;
-
-  const handleClick = (query: string) => {
-    const searchPath = `/${locale}/search/product`;
-    navigate(`${searchPath}?query=${encodeURIComponent(query)}`);
-  };
 
   return (
     <div
@@ -48,15 +40,14 @@ export const PopularQueriesStripe = () => {
       aria-label="Popular searches"
     >
       {queries.map(query => (
-        <button
+        <Link
           key={query}
-          type="button"
-          onClick={() => handleClick(query)}
+          href={`/${locale}/search/product?query=${encodeURIComponent(query)}`}
           className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-colors duration-150 ease-out hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
           <span className="font-bold text-dark-400 transition-colors group-hover:text-dark-600">#</span>
           <span>{query}</span>
-        </button>
+        </Link>
       ))}
     </div>
   );

@@ -2,10 +2,14 @@
 
 import { AlertCircle, Button, Search } from '@darun/ui';
 import * as Sentry from '@sentry/nextjs';
+import { useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { Link } from '../../../i18n/navigation';
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const params = useParams();
+  const isKo = params?.locale !== 'en';
+
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -23,19 +27,23 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         </div>
 
         <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-bold tracking-tight text-dark-900 break-keep">검색 중 문제가 발생했습니다</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-dark-900 break-keep">
+            {isKo ? '검색 중 문제가 발생했습니다' : 'Error searching products'}
+          </h2>
           <p className="max-w-sm text-sm leading-relaxed text-dark-600 break-keep sm:text-base">
-            검색 결과를 불러오는 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+            {isKo
+              ? '검색 결과를 불러오는 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+              : 'An error occurred while loading search results. Please try again shortly.'}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
           <Button onClick={() => reset()} variant="shadow" color="primary" size="md">
-            다시 시도
+            {isKo ? '다시 시도' : 'Try again'}
           </Button>
           <Link href="/" className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2">
             <Button as="span" variant="shadow" color="secondary" size="md">
-              홈으로 이동
+              {isKo ? '홈으로 이동' : 'Go to Home'}
             </Button>
           </Link>
         </div>
