@@ -4,7 +4,7 @@ export interface HtmlCodecResult {
   tokenOrder: string[];
 }
 
-const HTML_TAG_REGEX = /<\/?[a-zA-Z][^>]*>/g;
+const HTML_TAG_REGEX = /<\/?[a-zA-Z][^<>]*>/g;
 const PLACEHOLDER_REGEX = /⟦HTML_(\d{4})⟧/g;
 
 export function encodeHtml(html: string): HtmlCodecResult {

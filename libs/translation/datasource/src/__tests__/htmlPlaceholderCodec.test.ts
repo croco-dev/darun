@@ -68,7 +68,16 @@ describe('htmlPlaceholderCodec', () => {
 
     // Two tokens, but token 0 is duplicated and token 1 is missing
     const translatedDuplicated = '⟦HTML_0000⟧Content⟦HTML_0000⟧';
-
     expect(() => decodeHtml(translatedDuplicated, placeholders)).toThrow(/HTML placeholder missing/);
+  });
+
+  it('handles strings with repeated unclosed angle brackets without catastrophic backtracking', () => {
+    const malicious = '<A'.repeat(5000);
+    const start = Date.now();
+    const { encodedText } = encodeHtml(malicious);
+    const elapsed = Date.now() - start;
+
+    expect(encodedText).toBe(malicious);
+    expect(elapsed).toBeLessThan(100);
   });
 });
