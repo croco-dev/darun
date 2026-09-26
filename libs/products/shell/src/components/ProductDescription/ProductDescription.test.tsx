@@ -51,7 +51,7 @@ describe('ProductDescription', () => {
       root?.render(<ProductDescription.ViewComponent description={htmlWithByline} />);
     });
 
-    const regretCard = container.querySelector('.border-amber-200\\/90');
+    const regretCard = container.querySelector('.border-yellow-200\\/90');
     expect(regretCard).not.toBeNull();
     expect(regretCard?.textContent).toContain('무료 플랜 용량 제한');
     expect(regretCard?.textContent).not.toContain('총평: 그럼에도 불구하고 도입 가치가 충분합니다.');

@@ -58,13 +58,13 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
           </Link>
 
           <div className="flex flex-col gap-2 sm:gap-2.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-brown-400/90 sm:text-sm">
+            <span className="text-xs font-semibold tracking-tight text-brown-400 sm:text-sm">
               {t('Main.hero.description')}
             </span>
             <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-5xl">
               <span className="tabular-nums">{productsCount?.toLocaleString(locale) ?? 0}</span>
               {t('Main.hero.title.countSuffix')}{' '}
-              <span className="bg-gradient-to-r from-amber-300 via-amber-100 to-amber-300 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-yellow-300 via-yellow-100 to-yellow-300 bg-clip-text text-transparent">
                 {t('Main.hero.title.highlight')}
               </span>{' '}
               <span>{t('Main.hero.title.ending')}</span>

@@ -58,7 +58,15 @@ export const ProductItem = ({
   const locale = useLocale();
   const Component = as;
   const NameTag = nameAs;
-  const [resolvedLogoUrl, setResolvedLogoUrl] = React.useState(logoUrl);
+  const [hasImageError, setHasImageError] = React.useState(false);
+  const [prevLogoUrl, setPrevLogoUrl] = React.useState(logoUrl);
+
+  if (prevLogoUrl !== logoUrl) {
+    setPrevLogoUrl(logoUrl);
+    setHasImageError(false);
+  }
+
+  const resolvedLogoUrl = hasImageError ? undefined : logoUrl;
   const effectiveLogoSize = isHero ? 'large' : logoSize;
 
   if (isRanked) {
@@ -75,7 +83,7 @@ export const ProductItem = ({
                 width={44}
                 height={44}
                 className="h-full w-full rounded-lg object-contain"
-                onError={() => setResolvedLogoUrl(undefined)}
+                onError={() => setHasImageError(true)}
               />
             </div>
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
@@ -84,13 +92,13 @@ export const ProductItem = ({
               </NameTag>
               {tags && tags.length > 0 && (
                 <div className="flex items-center gap-1.5 overflow-hidden">
-                  <span className="inline-block truncate rounded-md bg-dark-100/80 px-1.5 py-0.5 text-2xs font-semibold text-dark-600 group-hover:bg-dark-150/70">
+                  <Chip color="filledGray" variant="square">
                     {getLocalizedTag(tags[0], locale)}
-                  </span>
+                  </Chip>
                   {tags.length > 1 && (
-                    <span className="shrink-0 rounded-md bg-dark-100/80 px-1.5 py-0.5 text-2xs font-semibold tabular-nums text-dark-500">
+                    <Chip color="filledGray" variant="square">
                       +{tags.length - 1}
-                    </span>
+                    </Chip>
                   )}
                 </div>
               )}
@@ -131,7 +139,7 @@ export const ProductItem = ({
           width={logoSizes[effectiveLogoSize].imageSize}
           height={logoSizes[effectiveLogoSize].imageSize}
           className={`h-full w-full object-contain ${isHero ? 'rounded-xl' : 'rounded-lg'}`}
-          onError={() => setResolvedLogoUrl(undefined)}
+          onError={() => setHasImageError(true)}
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden w-full">
