@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { gql } from "@apollo/client";
-import { useSuspenseQuery } from "@apollo/client/react";
-import { Breadcrumb, Button, SectionWrapper } from "@darun/ui";
-import { Link } from "@darun/utils-router";
-import { useLocale, useTranslations } from "next-intl";
-import { ProductCard } from "../../components";
-import { getCategoryIcon } from "../CategoryNavigationSection/CategoryNavigationSection";
+import { gql } from '@apollo/client';
+import { useSuspenseQuery } from '@apollo/client/react';
+import { Breadcrumb, Button, SectionWrapper } from '@darun/ui';
+import { Link } from '@darun/utils-router';
+import { useLocale, useTranslations } from 'next-intl';
+import { ProductCard } from '../../components';
+import { getCategoryIcon } from '../CategoryNavigationSection/CategoryNavigationSection';
 
 const PRODUCTS_BY_CATEGORY_QUERY = gql`
   query ProductsByCategoryOnSection($slug: String!, $locale: String!) {
@@ -58,43 +58,33 @@ type ProductsByCategoryQueryData = {
 
 export function CategoryProductSection({ slug }: { slug: string }) {
   const locale = useLocale();
-  const t = useTranslations("category");
-  const { data } = useSuspenseQuery<ProductsByCategoryQueryData>(
-    PRODUCTS_BY_CATEGORY_QUERY,
-    {
-      variables: {
-        slug,
-        locale,
-      },
+  const t = useTranslations('category');
+  const { data } = useSuspenseQuery<ProductsByCategoryQueryData>(PRODUCTS_BY_CATEGORY_QUERY, {
+    variables: {
+      slug,
+      locale,
     },
-  );
+  });
 
   const products = data?.productsByCategory ?? [];
-  const category = (data?.categories ?? []).find((c) => c.slug === slug);
-  const categoryLabel = category
-    ? locale === "ko"
-      ? category.labelKo
-      : category.labelEn
-    : "";
-  const emptyLabel = t("empty");
+  const category = (data?.categories ?? []).find(c => c.slug === slug);
+  const categoryLabel = category ? (locale === 'ko' ? category.labelKo : category.labelEn) : '';
+  const emptyLabel = t('empty');
   const categoryIcon = getCategoryIcon(slug);
 
   return (
-    <SectionWrapper background="white" spacing="md">
+    <SectionWrapper background="transparent" spacing="md">
       <div className="flex flex-col gap-6 md:gap-8">
         <Breadcrumb
           items={[
-            { label: locale === "ko" ? "홈" : "Home", href: `/${locale}` },
-            { label: categoryLabel, ariaCurrent: "page" },
+            { label: locale === 'ko' ? '홈' : 'Home', href: `/${locale}` },
+            { label: categoryLabel, ariaCurrent: 'page' },
           ]}
         />
 
         <div className="flex items-start gap-4 sm:gap-5">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 shadow-2xs sm:h-14 sm:w-14">
-            <span
-              aria-hidden="true"
-              className="text-2xl leading-none sm:text-3xl"
-            >
+            <span aria-hidden="true" className="text-2xl leading-none sm:text-3xl">
               {categoryIcon}
             </span>
           </div>
@@ -109,14 +99,14 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                   aria-live="polite"
                   className="inline-flex items-center rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs"
                 >
-                  {locale === "ko"
+                  {locale === 'ko'
                     ? `${products.length.toLocaleString(locale)}개 도구`
-                    : `${products.length.toLocaleString(locale)} ${products.length === 1 ? "tool" : "tools"}`}
+                    : `${products.length.toLocaleString(locale)} ${products.length === 1 ? 'tool' : 'tools'}`}
                 </span>
               )}
             </div>
             <p className="text-sm text-dark-600 break-keep sm:text-base">
-              {t("subtitle", { category: categoryLabel })}
+              {t('subtitle', { category: categoryLabel })}
             </p>
           </div>
         </div>
@@ -129,26 +119,26 @@ export function CategoryProductSection({ slug }: { slug: string }) {
             >
               {categoryIcon}
             </div>
-            <p className="text-base font-extrabold text-dark-900 sm:text-lg">
-              {emptyLabel}
-            </p>
-            <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">
-              {t("emptyDescription")}
-            </p>
+            <p className="text-base font-extrabold text-dark-900 sm:text-lg">{emptyLabel}</p>
+            <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">{t('emptyDescription')}</p>
             <div className="mt-5">
               <Link
                 href={`/${locale}/search/product`}
                 className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <Button as="span" variant="shadow" color="primary" size="md">
-                  {t("browseAll")}
+                  {t('browseAll')}
                 </Button>
               </Link>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
-            {products.map((product) => (
+          <div
+            role="group"
+            aria-label={categoryLabel}
+            className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5"
+          >
+            {products.map(product => (
               <ProductCard
                 key={product.id}
                 product={product}

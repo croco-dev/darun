@@ -128,7 +128,11 @@ export default async function HomePage({ params }: HomePageProps) {
                   : 'A curated platform to discover, compare, and evaluate the right software for your workflow'
               }
             />
-            <div className="grid grid-cols-1 gap-5 text-sm leading-relaxed text-dark-700 sm:grid-cols-2 md:grid-cols-3 md:gap-6 sm:text-base">
+            <div
+              role="region"
+              aria-label={isKo ? '다른(darun) 주요 특징' : 'Darun key features'}
+              className="grid grid-cols-1 gap-5 text-sm leading-relaxed text-dark-700 sm:grid-cols-2 md:grid-cols-3 md:gap-6 sm:text-base"
+            >
               {whatIsDarunFeatures.map(item => {
                 const Icon = item.icon;
                 return (
@@ -139,7 +143,7 @@ export default async function HomePage({ params }: HomePageProps) {
                     <div
                       className={`flex h-11 w-11 items-center justify-center rounded-xl border shadow-2xs transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${item.iconColor}`}
                     >
-                      <Icon size={22} />
+                      <Icon size={22} aria-hidden="true" />
                     </div>
                     <h3 className="text-base font-bold tracking-tight text-dark-900 break-keep sm:text-lg">
                       {isKo ? item.titleKo : item.titleEn}

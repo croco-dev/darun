@@ -42,7 +42,7 @@ export const ArticleCard = ({
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-surface-100 text-dark-400">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150/80 bg-white/90 text-dark-400 shadow-2xs">
-              <Sparkles size={20} className="stroke-[1.75]" />
+              <Sparkles size={20} className="stroke-[1.75]" aria-hidden="true" />
             </div>
           </div>
         )}

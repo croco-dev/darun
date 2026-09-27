@@ -64,6 +64,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
                 <span className="inline-flex items-center text-dark-300 transition-colors duration-200 ease-out group-hover:text-dark-700">
                   <ChevronRight
                     size={15}
+                    aria-hidden="true"
                     className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
                   />
                 </span>

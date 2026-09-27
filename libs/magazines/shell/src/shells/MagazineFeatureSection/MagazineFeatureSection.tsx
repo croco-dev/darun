@@ -34,7 +34,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
             className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-12 text-center"
           >
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
-              <BookOpen size={22} className="stroke-[1.75]" />
+              <BookOpen size={22} className="stroke-[1.75]" aria-hidden="true" />
             </div>
             <p className="text-lg font-bold text-dark-900 break-keep">{t('Magazine.empty.title')}</p>
             <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-dark-600 break-keep">
@@ -58,7 +58,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
     <SectionWrapper background="white" spacing="md" className="border-t border-dark-100/70">
       <div className="flex w-full flex-col gap-5 md:gap-6">
         <SectionHeader title={t('home.magazine.title')} subtitle={t('home.magazine.description')} />
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div role="group" aria-label={t('home.magazine.title')} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {articles.slice(0, 3).map(article => (
             <div key={article.id} className="h-full">
               <ArticleCard

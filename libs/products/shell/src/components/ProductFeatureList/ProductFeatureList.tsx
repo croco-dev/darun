@@ -16,7 +16,7 @@ export const ProductFeatureList = bind(useProductFeatureList, ({ features }) => 
         className="flex flex-col items-center justify-center gap-2.5 rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-10 text-center"
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
-          <Sparkles size={18} className="stroke-[1.75]" />
+          <Sparkles size={18} className="stroke-[1.75]" aria-hidden="true" />
         </div>
         <p className="text-sm font-medium text-dark-500 break-keep">{t('empty')}</p>
       </div>

@@ -60,7 +60,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
           className="shrink-0 rounded-full p-1 text-dark-400 transition-all duration-150 hover:bg-surface-200 hover:text-dark-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transform-none"
           aria-label={t('clearSearch')}
         >
-          <X size={14} />
+          <X size={14} aria-hidden="true" />
         </button>
       ) : (
         <kbd

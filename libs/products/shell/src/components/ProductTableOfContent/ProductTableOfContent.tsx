@@ -52,7 +52,7 @@ export const ProductTableOfContent = bind(useProductTableOfContent, ({ headings,
 
   return (
     <div
-      className="flex gap-1 overflow-x-auto px-1 py-2 scrollbar-hide scroll-smooth scroll-pl-1 sm:gap-1.5 touch-pan-x"
+      className="flex gap-1 overflow-x-auto px-1 py-2 scrollbar-hide scroll-smooth scroll-pl-1 sm:gap-1.5 touch-pan-x rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
       role="tablist"
       aria-label={ariaLabel}
       onKeyDown={handleKeyDown}

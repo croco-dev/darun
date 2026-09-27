@@ -96,6 +96,7 @@ const TrendingProductsView = ({
               <span>{moreLabel}</span>
               <ChevronRight
                 size={16}
+                aria-hidden="true"
                 className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
               />
             </Link>
@@ -104,12 +105,16 @@ const TrendingProductsView = ({
         {products.length === 0 ? (
           <div className="flex min-h-44 flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-10 text-center">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
-              <TrendingUp size={22} className="stroke-[2]" />
+              <TrendingUp size={22} className="stroke-[2]" aria-hidden="true" />
             </div>
             <p className="text-sm font-semibold text-dark-900 break-keep">{emptyLabel}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
+          <div
+            role="group"
+            aria-label={title}
+            className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5"
+          >
             {products.map((product, index) => (
               <ProductCard
                 key={product.id}

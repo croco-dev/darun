@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { MagazineInfoSection } from "@darun/magazines-shell";
-import { Breadcrumb, ContentArea } from "@darun/ui";
-import { Layout } from "@darun/ui-layout";
-import { useLocale } from "next-intl";
+import { MagazineInfoSection } from '@darun/magazines-shell';
+import { Breadcrumb, ContentArea } from '@darun/ui';
+import { Layout } from '@darun/ui-layout';
+import { useLocale } from 'next-intl';
 
 export const MagazineContentPage = ({
   params: { slug },
@@ -13,7 +13,7 @@ export const MagazineContentPage = ({
   title?: string;
 }) => {
   const locale = useLocale();
-  const isKo = locale === "ko";
+  const isKo = locale === 'ko';
 
   return (
     <Layout>
@@ -22,8 +22,8 @@ export const MagazineContentPage = ({
           <Breadcrumb
             data-testid="breadcrumb-magazine"
             items={[
-              { label: isKo ? "홈" : "Home", href: `/${locale}` },
-              { label: title ?? slug, ariaCurrent: "page" },
+              { label: isKo ? '홈' : 'Home', href: `/${locale}` },
+              { label: title ?? slug, ariaCurrent: 'page' },
             ]}
           />
           <MagazineInfoSection slug={slug} />

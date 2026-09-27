@@ -1,20 +1,16 @@
-import { gql } from "@apollo/client";
-import {
-  ProductCard,
-  VoteCountBadge,
-  getLocalizedTag,
-} from "@darun/products-shell";
-import { Breadcrumb, Chip, ContentArea, PageHeading } from "@darun/ui";
-import { Layout } from "@darun/ui-layout";
-import { notFound } from "@darun/utils-router";
-import { Metadata } from "next";
-import Image from "next/image";
-import { getTranslations } from "next-intl/server";
-import { cache } from "react";
-import { NO_INDEX_ROBOTS } from "../../../../../lib/seo/indexability";
-import { getOgLocale, getSiteName } from "../../../../../lib/seo/metadata";
-import { buildAlternates, normalizeLocale } from "../../../../../lib/seo/url";
-import { getClient } from "../../../../getServerClient";
+import { gql } from '@apollo/client';
+import { ProductCard, VoteCountBadge, getLocalizedTag } from '@darun/products-shell';
+import { Breadcrumb, Chip, ContentArea, PageHeading } from '@darun/ui';
+import { Layout } from '@darun/ui-layout';
+import { notFound } from '@darun/utils-router';
+import { Metadata } from 'next';
+import Image from 'next/image';
+import { getTranslations } from 'next-intl/server';
+import { cache } from 'react';
+import { NO_INDEX_ROBOTS } from '../../../../../lib/seo/indexability';
+import { getOgLocale, getSiteName } from '../../../../../lib/seo/metadata';
+import { buildAlternates, normalizeLocale } from '../../../../../lib/seo/url';
+import { getClient } from '../../../../getServerClient';
 
 const productsQuery = gql`
   query ProductsForCompare($slug1: String!, $slug2: String!, $locale: String!) {
@@ -66,18 +62,16 @@ type Props = {
   params: Promise<{ locale: string; slug1: string; slug2: string }>;
 };
 
-const getCompareProducts = cache(
-  async ({ slug1, slug2, locale }: Awaited<Props["params"]>) => {
-    const { data } = await getClient().query<{
-      product1?: ProductData;
-      product2?: ProductData;
-    }>({
-      query: productsQuery,
-      variables: { slug1, slug2, locale },
-    });
-    return data;
-  },
-);
+const getCompareProducts = cache(async ({ slug1, slug2, locale }: Awaited<Props['params']>) => {
+  const { data } = await getClient().query<{
+    product1?: ProductData;
+    product2?: ProductData;
+  }>({
+    query: productsQuery,
+    variables: { slug1, slug2, locale },
+  });
+  return data;
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
@@ -91,12 +85,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name1 = data?.product1?.name ?? resolvedParams.slug1;
   const name2 = data?.product2?.name ?? resolvedParams.slug2;
 
-  const title =
-    currentLocale === "en"
-      ? `${name1} vs ${name2} Comparison - Darun`
-      : `${name1} vs ${name2} 비교 - 다른`;
+  const title = currentLocale === 'en' ? `${name1} vs ${name2} Comparison - Darun` : `${name1} vs ${name2} 비교 - 다른`;
   const description =
-    currentLocale === "en"
+    currentLocale === 'en'
       ? `Compare ${name1} and ${name2} side-by-side on Darun.`
       : `${name1}와 ${name2}를 나란히 비교해보세요.`;
 
@@ -119,7 +110,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       locale: getOgLocale(currentLocale),
     },
     twitter: {
-      card: "summary_large_image",
+      card: 'summary_large_image',
       title,
       description,
     },
@@ -137,7 +128,7 @@ export default async function ComparePage({ params }: Props) {
   const { product1, product2 } = data;
   const t = await getTranslations({
     locale: resolvedParams.locale,
-    namespace: "Compare",
+    namespace: 'Compare',
   });
 
   return (
@@ -148,22 +139,26 @@ export default async function ComparePage({ params }: Props) {
             data-testid="breadcrumb-compare"
             items={[
               {
-                label: t("breadcrumb.home"),
+                label: t('breadcrumb.home'),
                 href: `/${resolvedParams.locale}`,
               },
               {
-                label: t("breadcrumb.compare"),
-                ariaCurrent: "page",
+                label: t('breadcrumb.compare'),
+                ariaCurrent: 'page',
               },
             ]}
           />
           <PageHeading
-            title={t("title", { name1: product1.name, name2: product2.name })}
-            subtitle={t("subtitle")}
+            title={t('title', { name1: product1.name, name2: product2.name })}
+            subtitle={t('subtitle')}
             align="center"
           />
 
-          <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+          <div
+            role="region"
+            aria-label={t('title', { name1: product1.name, name2: product2.name })}
+            className="relative grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6"
+          >
             <div data-testid="compare-column">
               <ProductCard
                 product={product1}
@@ -186,7 +181,11 @@ export default async function ComparePage({ params }: Props) {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
+          <div
+            role="region"
+            aria-label={t('table.name')}
+            className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card"
+          >
             <div className="sticky top-14 sm:top-16 z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
               <div className="flex items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
                 {product1.logoUrl ? (
@@ -206,9 +205,7 @@ export default async function ComparePage({ params }: Props) {
                     {product1.name.slice(0, 1).toUpperCase()}
                   </span>
                 )}
-                <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">
-                  {product1.name}
-                </span>
+                <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">{product1.name}</span>
               </div>
               <div className="flex items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
                 {product2.logoUrl ? (
@@ -228,13 +225,11 @@ export default async function ComparePage({ params }: Props) {
                     {product2.name.slice(0, 1).toUpperCase()}
                   </span>
                 )}
-                <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">
-                  {product2.name}
-                </span>
+                <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">{product2.name}</span>
               </div>
             </div>
             <CompareRow
-              label={t("table.name")}
+              label={t('table.name')}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.name}
@@ -243,7 +238,7 @@ export default async function ComparePage({ params }: Props) {
               testid="name"
             />
             <CompareRow
-              label={t("table.summary")}
+              label={t('table.summary')}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.summary ?? undefined}
@@ -252,7 +247,7 @@ export default async function ComparePage({ params }: Props) {
               testid="summary"
             />
             <CompareRow
-              label={t("table.company")}
+              label={t('table.company')}
               colLabel1={product1.name}
               colLabel2={product2.name}
               value1={product1.ownedCompany?.name}
@@ -261,7 +256,7 @@ export default async function ComparePage({ params }: Props) {
               testid="company"
             />
             <CompareRow
-              label={t("table.voteCount")}
+              label={t('table.voteCount')}
               colLabel1={product1.name}
               colLabel2={product2.name}
               custom1={<VoteCountBadge count={product1.voteCount} />}
@@ -270,13 +265,13 @@ export default async function ComparePage({ params }: Props) {
               testid="vote-count"
             />
             <CompareRow
-              label={t("table.tags")}
+              label={t('table.tags')}
               colLabel1={product1.name}
               colLabel2={product2.name}
-              value1={product1.tags.map((t) => t.name).join(", ")}
-              value2={product2.tags.map((t) => t.name).join(", ")}
-              tags1={product1.tags.map((t) => t.name)}
-              tags2={product2.tags.map((t) => t.name)}
+              value1={product1.tags.map(t => t.name).join(', ')}
+              value2={product2.tags.map(t => t.name).join(', ')}
+              tags1={product1.tags.map(t => t.name)}
+              tags2={product2.tags.map(t => t.name)}
               locale={resolvedParams.locale}
               testid="tags"
               isLast
@@ -318,26 +313,21 @@ function CompareRow({
   return (
     <div
       className={`p-4 md:p-5 transition-colors duration-150 hover:bg-surface-50/60 ${
-        isLast ? "" : "border-b border-dark-150/70"
+        isLast ? '' : 'border-b border-dark-150/70'
       }`}
     >
-      <h3 className="mb-2 text-xs font-bold tracking-tight text-dark-500">
-        {label}
-      </h3>
+      <h3 className="mb-2 text-xs font-bold tracking-tight text-dark-500">{label}</h3>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-150/70">
         <div className="md:pr-5">
           <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
             {colLabel1}
           </div>
-          <div
-            className="text-sm leading-relaxed text-dark-800 break-keep"
-            data-testid={`compare-row-${testid}-1`}
-          >
+          <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-1`}>
             {custom1 ? (
               custom1
             ) : tags1 && tags1.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
-                {tags1.map((tag) => (
+                {tags1.map(tag => (
                   <Chip key={tag} color="filledGray" variant="square">
                     {getLocalizedTag(tag, locale)}
                   </Chip>
@@ -354,15 +344,12 @@ function CompareRow({
           <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
             {colLabel2}
           </div>
-          <div
-            className="text-sm leading-relaxed text-dark-800 break-keep"
-            data-testid={`compare-row-${testid}-2`}
-          >
+          <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-2`}>
             {custom2 ? (
               custom2
             ) : tags2 && tags2.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
-                {tags2.map((tag) => (
+                {tags2.map(tag => (
                   <Chip key={tag} color="filledGray" variant="square">
                     {getLocalizedTag(tag, locale)}
                   </Chip>

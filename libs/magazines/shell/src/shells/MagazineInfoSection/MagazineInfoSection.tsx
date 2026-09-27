@@ -50,7 +50,8 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
         <Image
           className="absolute inset-0 rounded-card-xl object-cover"
           src={magazine.backgroundImageUrl}
-          alt={magazine.title ?? 'Magazine background'}
+          alt=""
+          aria-hidden="true"
           fill
           sizes="100vw"
           priority

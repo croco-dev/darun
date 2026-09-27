@@ -46,7 +46,7 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
 
   return (
     <div
-      className={`w-full overflow-hidden rounded-card-lg border bg-white transition-all duration-200 ${
+      className={`w-full overflow-hidden rounded-card-lg border bg-white transition-all duration-200 motion-reduce:transition-none ${
         isOpen
           ? 'border-dark-300 shadow-card-hover'
           : 'border-dark-150/80 shadow-card hover:border-dark-300 hover:shadow-card-hover'

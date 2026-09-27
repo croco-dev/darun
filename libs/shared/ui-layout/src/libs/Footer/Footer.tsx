@@ -47,6 +47,7 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
                 <ExternalLink
                   size={12}
                   className="stroke-[2] text-dark-400 transition-colors duration-200 group-hover:text-dark-900"
+                  aria-hidden="true"
                 />
               </a>
             </nav>

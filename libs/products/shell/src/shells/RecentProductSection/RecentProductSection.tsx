@@ -23,6 +23,7 @@ export const RecentProductSection = () => {
               <span>{t('home.recent.more')}</span>
               <ChevronRight
                 size={16}
+                aria-hidden="true"
                 className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
               />
             </Link>

@@ -18,7 +18,11 @@ export const ProductAlternativeList = bind(
     if (!products) return <></>;
 
     return (
-      <div className="flex flex-col gap-5">
+      <div
+        role="group"
+        aria-label={locale === 'ko' ? '대체 서비스 비교 목록' : 'Alternative products comparison'}
+        className="flex flex-col gap-5"
+      >
         {products.map(product => (
           <div
             key={product.id}
