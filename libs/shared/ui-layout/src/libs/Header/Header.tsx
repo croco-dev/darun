@@ -28,7 +28,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={rankingUrl}
                 aria-current={isRanking ? 'page' : undefined}
-                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`inline-flex items-center min-h-[36px] sm:min-h-0 rounded-xl px-2.5 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isRanking
                     ? 'border border-dark-150/80 bg-surface-100/90 font-bold text-dark-900 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100/80 hover:text-dark-900'
@@ -39,7 +39,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={browseUrl}
                 aria-current={isBrowse ? 'page' : undefined}
-                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`inline-flex items-center min-h-[36px] sm:min-h-0 rounded-xl px-2.5 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isBrowse
                     ? 'border border-dark-150/80 bg-surface-100/90 font-bold text-dark-900 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100/80 hover:text-dark-900'

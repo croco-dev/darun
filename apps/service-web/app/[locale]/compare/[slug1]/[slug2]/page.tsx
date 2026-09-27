@@ -169,7 +169,7 @@ export default async function ComparePage({ params }: Props) {
             </div>
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 hidden md:flex md:h-9 md:w-9 items-center justify-center rounded-full border border-dark-200 bg-white font-black text-2xs md:text-xs text-dark-700 shadow-md ring-4 ring-surface-50/60 select-none"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-dark-200 bg-white font-black text-3xs md:text-xs text-dark-700 shadow-md ring-4 ring-surface-50/60 select-none"
             >
               VS
             </div>
@@ -188,7 +188,7 @@ export default async function ComparePage({ params }: Props) {
             className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card"
           >
             <div className="sticky top-14 sm:top-16 z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
-              <div className="flex items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
+              <div className="flex min-w-0 items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
                 {product1.logoUrl ? (
                   <Image
                     src={product1.logoUrl}
@@ -208,7 +208,7 @@ export default async function ComparePage({ params }: Props) {
                 )}
                 <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">{product1.name}</span>
               </div>
-              <div className="flex items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
+              <div className="flex min-w-0 items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
                 {product2.logoUrl ? (
                   <Image
                     src={product2.logoUrl}

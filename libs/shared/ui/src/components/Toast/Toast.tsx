@@ -94,7 +94,7 @@ export function ToastProvider({
             <button
               type="button"
               onClick={() => removeToast(toast.id)}
-              className="-mr-1.5 ml-1 inline-flex h-8 w-8 min-h-[32px] min-w-[32px] shrink-0 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/15 hover:text-white motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              className="-mr-1.5 ml-1 inline-flex h-8 w-8 min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg text-white/60 transition-all hover:bg-white/15 hover:text-white active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
               aria-label={closeAriaLabel}
             >
               <X size={14} className="stroke-[2.5]" aria-hidden="true" />

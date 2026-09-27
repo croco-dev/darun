@@ -40,12 +40,19 @@ function LinkIcon({ iconUrl, title, isPrimary }: { iconUrl?: string; title: stri
     setHasError(false);
   }
 
+  const normalizedTitle = title?.trim().toLowerCase() ?? '';
   const isOfficialWebsite =
-    title === '공식 홈페이지' ||
-    title === 'Official Website' ||
-    title === '홈페이지' ||
-    title === 'Website' ||
-    iconUrl?.includes('pvjgv9btsktstjkoarrl');
+    normalizedTitle === '공식 홈페이지' ||
+    normalizedTitle === '공식홈페이지' ||
+    normalizedTitle === '공식 웹사이트' ||
+    normalizedTitle === '공식웹사이트' ||
+    normalizedTitle === '홈페이지' ||
+    normalizedTitle === '웹사이트' ||
+    normalizedTitle === 'official website' ||
+    normalizedTitle === 'website' ||
+    normalizedTitle === 'home' ||
+    normalizedTitle === 'homepage' ||
+    Boolean(iconUrl?.includes('pvjgv9btsktstjkoarrl'));
 
   if (isOfficialWebsite) {
     return <Globe className={cn('h-5 w-5 stroke-[2]', isPrimary ? 'text-white' : 'text-dark-800')} />;

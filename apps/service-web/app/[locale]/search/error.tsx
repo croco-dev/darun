@@ -61,7 +61,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         </div>
 
         {isDev && (
-          <div className="mt-4 w-full overflow-auto rounded-card border border-dark-150 bg-surface-100 p-4 text-left font-mono text-xs text-dark-700">
+          <div className="mt-4 w-full max-h-60 overflow-y-auto rounded-card border border-dark-150 bg-surface-100 p-4 text-left font-mono text-xs text-dark-700">
             <p className="mb-2 font-bold text-cherry-700">
               {error.name}: {error.message}
             </p>

@@ -44,7 +44,7 @@ export function PageHeading({
       <div
         className={cn(
           'flex w-full gap-4',
-          isCentered ? 'items-center justify-center text-center' : 'items-start justify-between'
+          isCentered ? 'relative items-center justify-center text-center' : 'items-start justify-between'
         )}
       >
         <h1
@@ -55,7 +55,9 @@ export function PageHeading({
         >
           {title}
         </h1>
-        {moreLink && <span className="inline-flex shrink-0 items-center">{moreLink}</span>}
+        {moreLink && (
+          <span className={cn('inline-flex shrink-0 items-center', isCentered && 'absolute right-0')}>{moreLink}</span>
+        )}
       </div>
       {subtitle && (
         <p

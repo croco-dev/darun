@@ -44,7 +44,7 @@ export function SectionHeader({
       <div
         className={cn(
           'flex w-full gap-4',
-          isCentered ? 'items-center justify-center text-center' : 'items-center justify-between'
+          isCentered ? 'relative items-center justify-center text-center' : 'items-center justify-between'
         )}
       >
         <h2
@@ -55,7 +55,9 @@ export function SectionHeader({
         >
           {title}
         </h2>
-        {moreLink && <span className="inline-flex shrink-0 items-center">{moreLink}</span>}
+        {moreLink && (
+          <span className={cn('inline-flex shrink-0 items-center', isCentered && 'absolute right-0')}>{moreLink}</span>
+        )}
       </div>
       {subtitle && (
         <p

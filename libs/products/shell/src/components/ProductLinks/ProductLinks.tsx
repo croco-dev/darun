@@ -21,13 +21,20 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
         const isPrimary = index === 0;
         const localizedTitle = getLocalizedLinkTitle(link.title, locale);
         const tooltipTitle = link.displayLink ? `${localizedTitle} (${link.displayLink})` : localizedTitle;
+        const normalizedTitle = link.title.trim().toLowerCase();
         const isOfficialWebsite =
-          link.title === '공식 홈페이지' ||
-          link.title === 'Official Website' ||
-          link.title === '홈페이지' ||
-          link.title === 'Website' ||
-          getLocalizedLinkTitle(link.title, 'ko') === '공식 홈페이지' ||
-          link.iconUrl?.includes('pvjgv9btsktstjkoarrl');
+          normalizedTitle === '공식 홈페이지' ||
+          normalizedTitle === '공식홈페이지' ||
+          normalizedTitle === '공식 웹사이트' ||
+          normalizedTitle === '공식웹사이트' ||
+          normalizedTitle === '홈페이지' ||
+          normalizedTitle === '웹사이트' ||
+          normalizedTitle === 'official website' ||
+          normalizedTitle === 'website' ||
+          normalizedTitle === 'home' ||
+          normalizedTitle === 'homepage' ||
+          getLocalizedLinkTitle(link.title, 'ko').trim() === '공식 홈페이지' ||
+          Boolean(link.iconUrl?.includes('pvjgv9btsktstjkoarrl'));
 
         return (
           <Link
@@ -52,7 +59,15 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
             >
               <div className="flex items-center justify-center gap-2">
                 {isOfficialWebsite ? (
-                  <Globe size={16} aria-hidden="true" className="shrink-0 stroke-[2] text-current" />
+                  <div
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
+                      isPrimary
+                        ? 'border border-white/20 bg-white/10 text-white'
+                        : 'border border-dark-150/70 bg-surface-100 text-dark-800 shadow-2xs'
+                    }`}
+                  >
+                    <Globe size={13} aria-hidden="true" className="shrink-0 stroke-[2.2] text-current" />
+                  </div>
                 ) : link.iconUrl ? (
                   <div
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md p-0.5 shadow-2xs ${
@@ -70,7 +85,15 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                     />
                   </div>
                 ) : (
-                  <Globe size={16} aria-hidden="true" className="shrink-0 stroke-[2] text-current" />
+                  <div
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
+                      isPrimary
+                        ? 'border border-white/20 bg-white/10 text-white'
+                        : 'border border-dark-150/70 bg-surface-100 text-dark-800 shadow-2xs'
+                    }`}
+                  >
+                    <Globe size={13} aria-hidden="true" className="shrink-0 stroke-[2.2] text-current" />
+                  </div>
                 )}
                 <span className="w-max break-keep text-xs sm:text-sm font-semibold text-current">{localizedTitle}</span>
                 <ExternalLink

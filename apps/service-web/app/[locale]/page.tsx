@@ -138,7 +138,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 return (
                   <div
                     key={item.titleEn}
-                    className="group flex flex-col gap-3 rounded-card-lg border border-dark-150 bg-white p-6 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none"
+                    className="group flex flex-col gap-3 rounded-card-lg border border-dark-150 bg-white p-6 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover sm:last:col-span-2 md:last:col-span-1 motion-reduce:transform-none motion-reduce:transition-none"
                   >
                     <div
                       className={`flex h-11 w-11 items-center justify-center rounded-xl border shadow-2xs transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${item.iconColor}`}

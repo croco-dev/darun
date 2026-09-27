@@ -29,7 +29,7 @@ export const ProductAlternativeList = bind(
             className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none"
           >
             <div className="flex w-full flex-col gap-4">
-              <div className="flex flex-row items-start justify-between gap-4">
+              <div className="flex flex-row items-start justify-between gap-3 sm:gap-4">
                 <Link
                   href={`/${locale}/products/${product.slug}?from=related`}
                   className="group min-w-0 flex-1 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
@@ -43,7 +43,7 @@ export const ProductAlternativeList = bind(
                     tags={product.tags.map(tag => tag.name)}
                   />
                 </Link>
-                <div className="shrink-0 pt-1">
+                <div className="shrink-0 pt-0.5 sm:pt-1">
                   <CompareButton slug={product.slug} source="related" />
                 </div>
               </div>

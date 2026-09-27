@@ -85,7 +85,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
           role="region"
           aria-label={t('photo.title')}
           tabIndex={0}
-          className="flex w-full gap-3.5 overflow-x-auto px-0.5 pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 rounded-xl"
+          className="flex w-full gap-3.5 overflow-x-auto px-0.5 pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
           {photos.map(photo => (
             <ProductPhotoItem key={photo.imageUrl} photo={photo} />

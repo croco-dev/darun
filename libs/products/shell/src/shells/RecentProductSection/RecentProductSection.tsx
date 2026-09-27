@@ -18,7 +18,7 @@ export const RecentProductSection = () => {
           moreLink={
             <Link
               href={`/${locale}/search/product`}
-              className="group inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
+              className="group inline-flex min-h-11 items-center gap-1 rounded-lg px-2 -mr-2 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 motion-reduce:transition-none"
             >
               <span>{t('home.recent.more')}</span>
               <ChevronRight

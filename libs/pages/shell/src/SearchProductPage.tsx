@@ -43,11 +43,11 @@ export function SearchProductPage({ searchParams }: Props) {
             />
             <PageHeading title={t('page.title')} subtitle={t('page.empty.description')} />
             <div className="flex flex-col gap-4 md:gap-5">
-              <SectionHeader title={t('page.popularQueriesTitle')} />
+              <SectionHeader size="sm" title={t('page.popularQueriesTitle')} />
               <PopularQueriesStripe />
             </div>
             <div className="flex flex-col gap-4 md:gap-5">
-              <SectionHeader title={t('page.categoriesTitle')} />
+              <SectionHeader size="sm" title={t('page.categoriesTitle')} />
               <Suspense
                 fallback={
                   <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 md:gap-3" aria-hidden="true">
@@ -64,7 +64,7 @@ export function SearchProductPage({ searchParams }: Props) {
               </Suspense>
             </div>
             <div className="flex flex-col gap-4 md:gap-5">
-              <SectionHeader title={t('page.trendingTitle')} />
+              <SectionHeader size="sm" title={t('page.trendingTitle')} />
               <Suspense
                 fallback={
                   <div
