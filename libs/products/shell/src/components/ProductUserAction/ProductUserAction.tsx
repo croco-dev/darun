@@ -3,7 +3,7 @@
 import { AlertCircle, Button, Check, Copy, Heart, useToast } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CompareButton } from '../CompareButton';
 import { useProductUserAction } from './useProductUserAction';
 
@@ -14,15 +14,22 @@ export const ProductUserAction = bind(
     const locale = useLocale();
     const t = useTranslations('ProductDetail.action');
     const [copied, setCopied] = useState(false);
+    const hasShownSuccessToastRef = useRef(false);
+    const prevErrorRef = useRef<string | null>(null);
 
     const voteLabel = voted ? t('cancelUpvote') : t('upvote');
 
     useEffect(() => {
-      if (error) {
+      if (error && error !== prevErrorRef.current) {
         addToast(error, 'error');
-      } else if (voted && !loading) {
+        hasShownSuccessToastRef.current = false;
+      } else if (voted && !loading && !hasShownSuccessToastRef.current) {
         addToast(t('voteSuccess'), 'success');
+        hasShownSuccessToastRef.current = true;
+      } else if (!voted) {
+        hasShownSuccessToastRef.current = false;
       }
+      prevErrorRef.current = error;
     }, [error, voted, loading, addToast, t]);
 
     const handleCopyLink = async () => {
@@ -75,9 +82,7 @@ export const ProductUserAction = bind(
               <Heart
                 size={16}
                 className={`transition-colors duration-150 ${
-                  voted
-                    ? 'fill-white text-white'
-                    : 'fill-transparent text-dark-500 group-hover:text-dark-900'
+                  voted ? 'fill-white text-white' : 'fill-transparent text-dark-500 group-hover:text-dark-900'
                 }`}
               />
             )}

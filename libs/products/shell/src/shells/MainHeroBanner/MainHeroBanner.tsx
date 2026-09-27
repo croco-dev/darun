@@ -7,11 +7,15 @@ import { useLocale, useTranslations } from 'next-intl';
 
 type MainHeroBannerProps = { productsCount?: number };
 
-const POPULAR_SEARCH_TAGS = ['Notion', 'Figma', 'Slack', 'Linear', 'ChatGPT', 'Supabase'];
+const POPULAR_SEARCH_TAGS: Record<string, string[]> = {
+  ko: ['노션', '피그마', '슬랙', 'Linear', 'ChatGPT', 'Supabase'],
+  en: ['Notion', 'Figma', 'Slack', 'Linear', 'ChatGPT', 'Supabase'],
+};
 
 export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
   const t = useTranslations();
   const locale = useLocale();
+  const popularSearchTags = POPULAR_SEARCH_TAGS[locale] ?? POPULAR_SEARCH_TAGS.ko;
   const popularPath = `/${locale}/ranking`;
 
   return (
@@ -77,7 +81,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
           {/* Quick Search Recommendation Tags */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className="text-xs font-medium text-dark-400 sm:text-sm">{t('Main.hero.popularSearch')}</span>
-            {POPULAR_SEARCH_TAGS.map(keyword => (
+            {popularSearchTags.map(keyword => (
               <Link
                 key={keyword}
                 href={`/${locale}/search/product?query=${encodeURIComponent(keyword)}`}

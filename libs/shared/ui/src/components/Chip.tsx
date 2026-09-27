@@ -48,6 +48,7 @@ export function Chip({
     chipVariants[variant],
     chipColors[color],
     as !== 'div' && chipHoverColors[color],
+    as !== 'div' && 'active:scale-[0.97] motion-reduce:transform-none',
     as === 'button' && 'cursor-pointer',
     className
   );

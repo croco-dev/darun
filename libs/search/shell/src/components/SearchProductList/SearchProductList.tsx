@@ -150,7 +150,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
 
           <div className="flex flex-col gap-3">
             <p className="text-sm font-semibold text-dark-900">{t('list.empty.trending')}</p>
-            <div data-testid="search-empty-trending" className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div data-testid="search-empty-trending" className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
               {trendingProducts.map((product, index) => (
                 <div key={product.id} onClickCapture={() => trackEmptySearchClick(product.slug)}>
                   <ProductCard

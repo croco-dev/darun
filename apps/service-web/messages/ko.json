@@ -1,4 +1,7 @@
 {
+  "Common": {
+    "loading": "페이지를 불러오는 중입니다"
+  },
   "Layout": {
     "skipToContent": "본문 바로가기",
     "header": {

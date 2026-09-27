@@ -33,42 +33,44 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
         <dl className="grid grid-cols-1 divide-y divide-dark-100/80 sm:grid-cols-2 sm:divide-y-0 sm:gap-x-8 sm:gap-y-4">
           {company?.name && (
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
-              <div className="flex items-center gap-2 text-dark-500">
+              <div className="flex shrink-0 items-center gap-2 text-dark-500">
                 <Building2 size={15} className="shrink-0 stroke-[1.75]" />
                 <dt className="text-xs font-semibold text-dark-600">{t('company.field.name')}</dt>
               </div>
-              <dd className="text-right text-sm font-bold text-dark-900 break-keep">{company.name}</dd>
+              <dd className="min-w-0 flex-1 text-right text-sm font-bold text-dark-900 break-words sm:break-keep">
+                {company.name}
+              </dd>
             </div>
           )}
           {company?.type && (
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
-              <div className="flex items-center gap-2 text-dark-500">
+              <div className="flex shrink-0 items-center gap-2 text-dark-500">
                 <ShieldCheck size={15} className="shrink-0 stroke-[1.75]" />
                 <dt className="text-xs font-semibold text-dark-600">{t('company.field.status')}</dt>
               </div>
-              <dd className="text-right text-sm font-bold text-dark-900 break-keep">
+              <dd className="min-w-0 flex-1 text-right text-sm font-bold text-dark-900 break-words sm:break-keep">
                 {getLocalizedCompanyType(company.type, locale) ?? company.type}
               </dd>
             </div>
           )}
           {company?.address && (
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
-              <div className="flex items-center gap-2 text-dark-500">
+              <div className="flex shrink-0 items-center gap-2 text-dark-500">
                 <Compass size={15} className="shrink-0 stroke-[1.75]" />
                 <dt className="text-xs font-semibold text-dark-600">{t('company.field.address')}</dt>
               </div>
-              <dd className="text-right text-sm font-bold text-dark-900 break-keep">
+              <dd className="min-w-0 flex-1 text-right text-sm font-bold text-dark-900 break-words sm:break-keep">
                 {getLocalizedCompanyAddress(company.address, locale) ?? company.address}
               </dd>
             </div>
           )}
           {company?.startAt && (
             <div className="flex items-center justify-between gap-4 py-3 sm:py-2">
-              <div className="flex items-center gap-2 text-dark-500">
+              <div className="flex shrink-0 items-center gap-2 text-dark-500">
                 <Calendar size={15} className="shrink-0 stroke-[1.75]" />
                 <dt className="text-xs font-semibold text-dark-600">{t('company.field.foundedAt')}</dt>
               </div>
-              <dd className="text-right text-sm font-bold text-dark-900 break-keep">
+              <dd className="min-w-0 flex-1 text-right text-sm font-bold text-dark-900 break-words sm:break-keep">
                 {formatDate(company.startAt, '-', locale)}
               </dd>
             </div>

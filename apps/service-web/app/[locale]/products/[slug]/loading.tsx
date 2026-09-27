@@ -12,17 +12,12 @@ const Skeleton = ({ className = '' }: { className?: string }) => (
 );
 
 export default function Loading() {
-  const t = useTranslations('ProductDetail');
+  const t = useTranslations('Common');
   const loadingText = t('loading');
 
   return (
     <Layout>
-      <main
-        className="flex w-full flex-col"
-        aria-busy="true"
-        aria-live="polite"
-        aria-label={loadingText}
-      >
+      <main className="flex w-full flex-col" aria-busy="true" aria-live="polite" aria-label={loadingText}>
         {/* Hero Section Skeleton */}
         <div className="relative overflow-hidden border-b border-dark-150/60 bg-gradient-to-b from-white via-surface-50 to-surface-100/40">
           <div
@@ -166,11 +161,38 @@ export default function Loading() {
           <div className="flex flex-col gap-4 md:gap-5">
             <Skeleton className="h-7 w-24 rounded-lg" />
             <div className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card sm:p-6 md:p-8">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5">
-                <Skeleton className="h-16 rounded-xl" />
-                <Skeleton className="h-16 rounded-xl" />
-                <Skeleton className="h-16 rounded-xl" />
-                <Skeleton className="h-16 rounded-xl" />
+              <div className="flex flex-col gap-4">
+                <Skeleton className="h-4 w-20 rounded" />
+                <div className="grid grid-cols-1 divide-y divide-dark-100/80 sm:grid-cols-2 sm:divide-y-0 sm:gap-x-8 sm:gap-y-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={String(i)} className="flex items-center justify-between gap-4 py-3 sm:py-2">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-4 w-4 rounded" />
+                        <Skeleton className="h-3.5 w-16 rounded" />
+                      </div>
+                      <Skeleton className="h-4 w-28 rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* FAQ Section Skeleton */}
+          <div className="flex flex-col gap-4 md:gap-5">
+            <Skeleton className="h-7 w-20 rounded-lg" />
+            <div className="flex flex-col gap-3">
+              <div className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card">
+                <div className="flex items-center justify-between gap-4">
+                  <Skeleton className="h-5 w-1/2 rounded" />
+                  <Skeleton className="h-8 w-8 rounded-xl" />
+                </div>
+              </div>
+              <div className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card">
+                <div className="flex items-center justify-between gap-4">
+                  <Skeleton className="h-5 w-2/5 rounded" />
+                  <Skeleton className="h-8 w-8 rounded-xl" />
+                </div>
               </div>
             </div>
           </div>

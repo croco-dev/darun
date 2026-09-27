@@ -9,7 +9,7 @@ const sectionWrapperVariants = cva('w-full', {
     background: {
       white: 'bg-white',
       subtle: 'bg-surface-100/70 border-y border-dark-100/60',
-      dark: 'bg-dark-900',
+      dark: 'bg-dark-900 text-white',
     },
     spacing: {
       none: '',

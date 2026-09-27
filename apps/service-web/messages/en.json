@@ -1,4 +1,7 @@
 {
+  "Common": {
+    "loading": "Loading page..."
+  },
   "Layout": {
     "skipToContent": "Skip to main content",
     "header": {

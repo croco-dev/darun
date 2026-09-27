@@ -107,13 +107,11 @@ export function CategoryProductSection({ slug }: { slug: string }) {
 
         {products.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-14 text-center sm:py-16">
-            <div className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl shadow-2xs">
+            <div className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl leading-none shadow-2xs">
               {categoryIcon}
             </div>
             <p className="text-base font-extrabold text-dark-900 sm:text-lg">{emptyLabel}</p>
-            <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">
-              {t('emptyDescription')}
-            </p>
+            <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">{t('emptyDescription')}</p>
             <div className="mt-5">
               <Link
                 href={`/${locale}/search/product`}

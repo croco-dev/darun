@@ -97,10 +97,25 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
     };
   }, []);
 
+  const handleDialogClick = (event: React.MouseEvent<HTMLDialogElement>) => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    const isInDialog =
+      rect.top <= event.clientY &&
+      event.clientY <= rect.top + rect.height &&
+      rect.left <= event.clientX &&
+      event.clientX <= rect.left + rect.width;
+    if (!isInDialog) {
+      onCloseRef.current();
+    }
+  };
+
   return (
     <dialog
       ref={dialogRef}
       aria-labelledby={labelledBy}
+      onClick={handleDialogClick}
       className={cn(
         'm-auto max-h-[calc(100dvh-3rem)] max-w-[min(96rem,100vw-2rem)] rounded-3xl bg-transparent p-0 text-dark-900 shadow-elevated backdrop:bg-dark-950/60 backdrop:backdrop-blur-sm backdrop:transition-opacity',
         className

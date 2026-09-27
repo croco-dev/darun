@@ -35,7 +35,7 @@ export const PopularQueriesStripe = () => {
   return (
     <div
       data-testid="popular-queries-stripe"
-      className="flex gap-2 overflow-x-auto py-1 scrollbar-hide scroll-smooth scroll-pl-1 touch-pan-x"
+      className="flex gap-2 overflow-x-auto px-1 py-1.5 scrollbar-hide scroll-smooth scroll-pl-1 touch-pan-x"
       role="group"
       aria-label={locale === 'ko' ? '인기 검색어' : 'Popular searches'}
     >

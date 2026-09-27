@@ -29,6 +29,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
             target="_blank"
             rel="noopener noreferrer"
             title={tooltipTitle}
+            aria-label={`${tooltipTitle} (${locale === 'ko' ? '새 창에서 열림' : 'opens in a new tab'})`}
             className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <Button
@@ -50,7 +51,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                       alt={link.title}
                       width={16}
                       height={16}
-                      className="h-full w-full object-contain rounded-xs"
+                      className="h-full w-full object-contain rounded-sm"
                       unoptimized
                     />
                   </div>

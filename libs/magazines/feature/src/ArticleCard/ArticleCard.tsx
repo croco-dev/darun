@@ -60,7 +60,11 @@ export const ArticleCard = ({
         {summary && <p className="line-clamp-2 text-sm leading-relaxed text-dark-600 break-keep">{summary}</p>}
         <div className="mt-auto flex items-center gap-x-2 pt-3 text-xs text-dark-500">
           {author && <span className="font-semibold text-dark-800">{author}</span>}
-          {author && date && <span className="text-dark-300">•</span>}
+          {author && date && (
+            <span aria-hidden="true" className="select-none text-dark-300">
+              •
+            </span>
+          )}
           {date && <span>{formatDate(date, '', locale)}</span>}
         </div>
       </div>

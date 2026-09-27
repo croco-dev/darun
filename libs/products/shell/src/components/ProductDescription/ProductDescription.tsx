@@ -14,8 +14,28 @@ type Section = {
   html: string;
 };
 
-const RECOMMEND_KEYWORDS = ['추천한다면', 'Recommended if', 'Who should use', 'Best for', 'Pros'];
-const REGRET_KEYWORDS = ['아쉽다면', 'Limitations', 'Drawbacks', 'Cons', 'Not recommended if', 'Things to consider'];
+const RECOMMEND_KEYWORDS = [
+  '추천한다면',
+  '장점',
+  '추천 대상',
+  '이런 분께 추천',
+  '이런 분에게 추천',
+  'Recommended if',
+  'Who should use',
+  'Best for',
+  'Pros',
+];
+const REGRET_KEYWORDS = [
+  '아쉽다면',
+  '단점',
+  '아쉬운 점',
+  '유의할 점',
+  'Limitations',
+  'Drawbacks',
+  'Cons',
+  'Not recommended if',
+  'Things to consider',
+];
 
 function classifySection(headingText: string): Section['type'] {
   const trimmed = headingText.trim().toLowerCase();
@@ -111,11 +131,12 @@ export const ProductDescription = bind(useProductDescription, ({ description }) 
     <div className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card sm:p-6 md:p-8">
       <div className={DESCRIPTION_STYLES}>
         {sections.map((section, i) => {
+          const sectionKey = `desc-section-${section.type}-${i}`;
           if (section.type === 'default') {
-            return <div key={i} dangerouslySetInnerHTML={{ __html: section.html }} />;
+            return <div key={sectionKey} dangerouslySetInnerHTML={{ __html: section.html }} />;
           }
           return (
-            <div key={i} className={cardStyles[section.type]}>
+            <div key={sectionKey} className={cardStyles[section.type]}>
               <div dangerouslySetInnerHTML={{ __html: section.html }} />
             </div>
           );

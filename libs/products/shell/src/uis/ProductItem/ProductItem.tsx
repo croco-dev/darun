@@ -91,7 +91,7 @@ export const ProductItem = ({
                 {name}
               </NameTag>
               {tags && tags.length > 0 && (
-                <div className="flex items-center gap-1.5 overflow-hidden">
+                <div className="flex items-center gap-1.5 overflow-hidden py-0.5">
                   <Chip color="filledGray" variant="square">
                     {getLocalizedTag(tags[0], locale)}
                   </Chip>
@@ -207,7 +207,9 @@ export const ProductItem = ({
                   ))}
                 {specialTags && (
                   <>
-                    <span className="text-dark-400">•</span>
+                    <span aria-hidden="true" className="select-none text-dark-400">
+                      •
+                    </span>
                     {specialTags.map(tag => (
                       <Chip key={`special-tag-${tag}`} variant={tagVariant} color="filledDark">
                         {tag}

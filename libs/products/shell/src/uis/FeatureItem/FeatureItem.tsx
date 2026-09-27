@@ -33,7 +33,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
         </div>
       </div>
       {screenshots && screenshots.length > 0 && (
-        <div className="flex w-full gap-3 overflow-x-auto pt-1 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x">
+        <div className="flex w-full gap-3 overflow-x-auto px-0.5 pt-1 pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x">
           {screenshots.map(screenshot => (
             <div key={screenshot.id} className="shrink-0 snap-start">
               <Image

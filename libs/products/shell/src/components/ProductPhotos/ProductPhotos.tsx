@@ -41,7 +41,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
         </span>
       </div>
       {photos && (
-        <div className="flex w-full gap-3.5 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x">
+        <div className="flex w-full gap-3.5 overflow-x-auto px-0.5 pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x">
           {photos.map(photo => (
             <div key={photo.imageUrl} className="group relative shrink-0 snap-start">
               <Zoom>
@@ -53,7 +53,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
                   className="h-56 sm:h-64 w-auto rounded-xl border border-dark-150/90 bg-white object-contain p-1 shadow-2xs transition-all duration-200 hover:border-dark-300 hover:shadow-md cursor-zoom-in"
                 />
               </Zoom>
-              <div className="pointer-events-none absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-dark-900/70 text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
+              <div className="pointer-events-none absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-dark-900/70 text-white opacity-80 backdrop-blur-sm transition-opacity duration-200 sm:opacity-0 group-hover:opacity-100">
                 <Maximize2 size={13} className="stroke-[2.25]" />
               </div>
             </div>
