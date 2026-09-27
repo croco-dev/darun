@@ -1,22 +1,27 @@
-import { AnchorHTMLAttributes, ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
+import {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+  HTMLAttributes,
+  ReactNode,
+} from "react";
 
-import { cn } from '../lib/utils';
+import { cn } from "../lib/utils";
 
 const chipVariants = {
-  square: 'rounded-md px-2 py-0.5 text-xs font-semibold tracking-tight',
-  circle: 'rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-tight',
+  square: "rounded-md px-2 py-0.5 text-xs font-semibold tracking-tight",
+  circle: "rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-tight",
 } as const;
 
 const chipColors = {
-  filledGray: 'border-dark-150/70 bg-surface-100 text-dark-700 shadow-2xs',
-  filledDark: 'border-transparent bg-dark-900 text-dark-100',
-  outlineGray: 'border-dark-150 bg-surface-100 text-dark-700',
+  filledGray: "border-dark-150/70 bg-surface-100 text-dark-700 shadow-2xs",
+  filledDark: "border-transparent bg-dark-900 text-dark-100",
+  outlineGray: "border-dark-150 bg-surface-100 text-dark-700",
 } as const;
 
 const chipHoverColors: Partial<Record<ChipColor, string>> = {
-  filledGray: 'hover:border-dark-300 hover:bg-surface-200 hover:text-dark-900',
-  filledDark: 'hover:bg-dark-800',
-  outlineGray: 'hover:border-dark-300 hover:bg-surface-200 hover:text-dark-900',
+  filledGray: "hover:border-dark-300 hover:bg-surface-200 hover:text-dark-900",
+  filledDark: "hover:bg-dark-800",
+  outlineGray: "hover:border-dark-300 hover:bg-surface-200 hover:text-dark-900",
 };
 
 type ChipVariant = keyof typeof chipVariants;
@@ -29,48 +34,56 @@ type ChipCommonProps = {
   color?: ChipColor;
 };
 
-type DivChipProps = ChipCommonProps & HTMLAttributes<HTMLDivElement> & { as?: 'div' };
-type AnchorChipProps = ChipCommonProps & AnchorHTMLAttributes<HTMLAnchorElement> & { as: 'a' };
-type ButtonChipProps = ChipCommonProps & ButtonHTMLAttributes<HTMLButtonElement> & { as: 'button' };
+type DivChipProps = ChipCommonProps &
+  HTMLAttributes<HTMLDivElement> & { as?: "div" };
+type AnchorChipProps = ChipCommonProps &
+  AnchorHTMLAttributes<HTMLAnchorElement> & { as: "a" };
+type ButtonChipProps = ChipCommonProps &
+  ButtonHTMLAttributes<HTMLButtonElement> & { as: "button" };
 
 export type ChipProps = DivChipProps | AnchorChipProps | ButtonChipProps;
 
 export function Chip({
-  as = 'div',
+  as = "div",
   children,
   className,
-  color = 'filledGray',
-  variant = 'square',
+  color = "filledGray",
+  variant = "square",
   ...props
 }: ChipProps) {
   const chipClassName = cn(
-    'inline-flex shrink-0 items-center truncate max-w-[200px] sm:max-w-xs border leading-none transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transition-none',
+    "inline-flex shrink-0 items-center truncate max-w-[200px] sm:max-w-xs border leading-none transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transition-none",
     chipVariants[variant],
     chipColors[color],
-    as !== 'div' && chipHoverColors[color],
-    as !== 'div' && 'active:scale-[0.97] motion-reduce:transform-none',
-    as === 'button' && 'cursor-pointer',
-    className
+    as !== "div" && chipHoverColors[color],
+    as !== "div" && "active:scale-[0.97] motion-reduce:transform-none",
+    as === "button" &&
+      "cursor-pointer disabled:pointer-events-none disabled:opacity-50",
+    className,
   );
 
-  const defaultTitle = typeof children === 'string' ? children : undefined;
+  const defaultTitle = typeof children === "string" ? children : undefined;
 
-  if (as === 'a') {
+  if (as === "a") {
     const anchorProps = props as AnchorHTMLAttributes<HTMLAnchorElement>;
 
     return (
-      <a title={anchorProps.title ?? defaultTitle} className={chipClassName} {...anchorProps}>
+      <a
+        title={anchorProps.title ?? defaultTitle}
+        className={chipClassName}
+        {...anchorProps}
+      >
         {children}
       </a>
     );
   }
 
-  if (as === 'button') {
+  if (as === "button") {
     const buttonProps = props as ButtonHTMLAttributes<HTMLButtonElement>;
 
     return (
       <button
-        type={buttonProps.type ?? 'button'}
+        type={buttonProps.type ?? "button"}
         title={buttonProps.title ?? defaultTitle}
         className={chipClassName}
         {...buttonProps}
@@ -83,7 +96,11 @@ export function Chip({
   const divProps = props as HTMLAttributes<HTMLDivElement>;
 
   return (
-    <div title={divProps.title ?? defaultTitle} className={chipClassName} {...divProps}>
+    <div
+      title={divProps.title ?? defaultTitle}
+      className={chipClassName}
+      {...divProps}
+    >
       {children}
     </div>
   );

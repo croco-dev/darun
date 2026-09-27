@@ -1,5 +1,5 @@
-import { Sparkles } from '@darun/ui';
-import Image from 'next/image';
+import { Sparkles } from "@darun/ui";
+import Image from "next/image";
 
 type FeatureItemProps = {
   emoji?: string;
@@ -12,15 +12,25 @@ type FeatureItemProps = {
   }[];
 };
 
-export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureItemProps) => (
-  <div className="group rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 hover:border-dark-300 hover:shadow-card-hover sm:p-6">
+export const FeatureItem = ({
+  emoji,
+  name,
+  description,
+  screenshots,
+}: FeatureItemProps) => (
+  <div className="group rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none sm:p-6">
     <div className="flex w-full flex-col gap-4">
       <div className="flex items-start gap-3.5">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dark-150/90 bg-surface-100 shadow-2xs sm:h-11 sm:w-11">
           {emoji ? (
-            <span className="text-xl leading-none">{emoji}</span>
+            <span className="text-xl leading-none" aria-hidden="true">
+              {emoji}
+            </span>
           ) : (
-            <Sparkles className="h-5 w-5 text-dark-500 stroke-[1.75]" />
+            <Sparkles
+              className="h-5 w-5 text-dark-500 stroke-[1.75]"
+              aria-hidden="true"
+            />
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col pt-0.5">
@@ -28,13 +38,15 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
             {name}
           </h3>
           {description && (
-            <p className="mt-1 text-sm leading-relaxed text-dark-600 break-keep sm:text-base">{description}</p>
+            <p className="mt-1 text-sm leading-relaxed text-dark-600 break-keep sm:text-base">
+              {description}
+            </p>
           )}
         </div>
       </div>
       {screenshots && screenshots.length > 0 && (
         <div className="flex w-full gap-3 overflow-x-auto px-0.5 pt-1 pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x">
-          {screenshots.map(screenshot => (
+          {screenshots.map((screenshot) => (
             <div key={screenshot.id} className="shrink-0 snap-start">
               <Image
                 src={screenshot.imageUrl}

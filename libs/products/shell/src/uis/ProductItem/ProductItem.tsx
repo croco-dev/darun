@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
-import { Chip } from '@darun/ui';
-import Image from 'next/image';
-import { useLocale, useTranslations } from 'next-intl';
-import React from 'react';
-import { getLocalizedTag } from '../../utils/localization';
-import { RankBadge } from '../RankBadge';
+import { Chip } from "@darun/ui";
+import Image from "next/image";
+import { useLocale, useTranslations } from "next-intl";
+import React from "react";
+import { getLocalizedTag } from "../../utils/localization";
+import { RankBadge } from "../RankBadge";
 
 type ProductItemProps = {
-  as?: 'div' | 'a' | 'button';
+  as?: "div" | "a" | "button";
   logoUrl?: string;
   logoSize?: keyof typeof logoSizes;
   name: string;
   summary?: string;
-  tagVariant?: 'square' | 'circle';
+  tagVariant?: "square" | "circle";
   tags?: string[];
   specialTags?: string[];
   maxTagItems?: number;
   isAlignCenter?: boolean;
-  nameAs?: 'h3' | 'h2' | 'h1';
+  nameAs?: "h3" | "h2" | "h1";
   isSummaryNoWrap?: boolean;
   isStacked?: boolean;
   isHero?: boolean;
@@ -35,17 +35,17 @@ const logoSizes = {
 };
 
 export const ProductItem = ({
-  as = 'div',
+  as = "div",
   logoUrl,
-  logoSize = 'medium',
+  logoSize = "medium",
   name,
   summary,
-  tagVariant = 'square',
+  tagVariant = "square",
   tags,
   specialTags,
   maxTagItems,
   isAlignCenter,
-  nameAs = 'h3',
+  nameAs = "h3",
   isSummaryNoWrap = false,
   isStacked = false,
   isHero = false,
@@ -54,7 +54,7 @@ export const ProductItem = ({
   headerRight,
   footerRight,
 }: ProductItemProps) => {
-  const effectiveT = useTranslations('ProductDetail');
+  const effectiveT = useTranslations("ProductDetail");
   const locale = useLocale();
   const Component = as;
   const NameTag = nameAs;
@@ -67,7 +67,7 @@ export const ProductItem = ({
   }
 
   const resolvedLogoUrl = hasImageError ? undefined : logoUrl;
-  const effectiveLogoSize = isHero ? 'large' : logoSize;
+  const effectiveLogoSize = isHero ? "large" : logoSize;
 
   if (isRanked) {
     return (
@@ -77,9 +77,9 @@ export const ProductItem = ({
             {rank !== undefined && <RankBadge rank={rank} size="md" />}
             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dark-150/90 bg-white p-1 shadow-2xs ring-1 ring-black/5">
               <Image
-                src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}
+                src={resolvedLogoUrl ?? "/images/default-product-icon.svg"}
                 unoptimized={!resolvedLogoUrl}
-                alt={effectiveT('productItem.logoAlt', { name })}
+                alt={effectiveT("productItem.logoAlt", { name })}
                 width={44}
                 height={44}
                 className="h-full w-full rounded-lg object-contain"
@@ -119,36 +119,40 @@ export const ProductItem = ({
     <Component
       className={
         isStacked
-          ? 'flex w-full flex-col gap-3 overflow-visible'
-          : `flex w-full overflow-visible ${isHero ? 'gap-3.5 sm:gap-4 md:gap-5' : 'gap-3'} ${isAlignCenter ? 'items-center' : 'items-start'}`
+          ? "flex w-full flex-col gap-3 overflow-visible"
+          : `flex w-full overflow-visible ${isHero ? "gap-3.5 sm:gap-4 md:gap-5" : "gap-3"} ${isAlignCenter ? "items-center" : "items-start"}`
       }
     >
       <div
         className={`flex shrink-0 items-center justify-center overflow-hidden border border-dark-150 bg-white ring-1 ring-black/5 ${
           isHero
-            ? 'h-20 w-20 rounded-2xl p-2 shadow-card sm:h-24 sm:w-24 sm:p-2.5'
-            : effectiveLogoSize === 'small'
-              ? 'h-12 w-12 rounded-xl p-1.5 shadow-2xs'
-              : 'h-16 w-16 rounded-2xl p-2 shadow-xs'
+            ? "h-20 w-20 rounded-2xl p-2 shadow-card sm:h-24 sm:w-24 sm:p-2.5"
+            : effectiveLogoSize === "small"
+              ? "h-12 w-12 rounded-xl p-1.5 shadow-2xs"
+              : "h-16 w-16 rounded-2xl p-2 shadow-xs"
         }`}
       >
         <Image
-          src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}
+          src={resolvedLogoUrl ?? "/images/default-product-icon.svg"}
           unoptimized={!resolvedLogoUrl}
-          alt={effectiveT('productItem.logoAlt', { name })}
+          alt={effectiveT("productItem.logoAlt", { name })}
           width={logoSizes[effectiveLogoSize].imageSize}
           height={logoSizes[effectiveLogoSize].imageSize}
-          className={`h-full w-full object-contain ${isHero ? 'rounded-xl' : 'rounded-lg'}`}
+          className={`h-full w-full object-contain ${isHero ? "rounded-xl" : "rounded-lg"}`}
           onError={() => setHasImageError(true)}
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden w-full">
-        <div className={isHero ? 'flex flex-col gap-1.5 sm:gap-2' : 'flex flex-col gap-0.5'}>
+        <div
+          className={
+            isHero ? "flex flex-col gap-1.5 sm:gap-2" : "flex flex-col gap-0.5"
+          }
+        >
           <NameTag
             className={
               isHero
-                ? 'm-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-900 sm:text-3xl'
-                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
+                ? "m-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-900 sm:text-3xl"
+                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 ${isStacked ? "line-clamp-1" : "md:text-lg"}`
             }
           >
             {name}
@@ -166,52 +170,76 @@ export const ProductItem = ({
               <p
                 className={
                   isHero
-                    ? 'text-sm leading-relaxed text-dark-600 break-keep sm:text-base md:text-lg'
-                    : 'line-clamp-2 text-sm leading-relaxed text-dark-600 break-keep'
+                    ? "text-sm leading-relaxed text-dark-600 break-keep sm:text-base md:text-lg"
+                    : "line-clamp-2 text-sm leading-relaxed text-dark-600 break-keep"
                 }
               >
                 {summary}
               </p>
             ))}
         </div>
-        {(tags || specialTags || footerRight) && (
+        {((tags && tags.length > 0) ||
+          (specialTags && specialTags.length > 0) ||
+          footerRight) && (
           <div className="flex items-center justify-between gap-2 pt-1 mt-auto w-full">
-            {tags || specialTags ? (
+            {(tags && tags.length > 0) ||
+            (specialTags && specialTags.length > 0) ? (
               <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide touch-pan-x py-0.5">
                 {tags &&
+                  tags.length > 0 &&
                   (maxTagItems && tags.length > maxTagItems ? (
                     <div className="flex items-center gap-1.5">
-                      {tags.slice(0, maxTagItems).map(tag => (
+                      {tags.slice(0, maxTagItems).map((tag) => (
                         <Chip
                           key={`tag-${tag}`}
                           variant={tagVariant}
-                          color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}
+                          color={
+                            tagVariant === "square"
+                              ? "filledGray"
+                              : "outlineGray"
+                          }
                         >
                           {getLocalizedTag(tag, locale)}
                         </Chip>
                       ))}
-                      <Chip variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
+                      <Chip
+                        variant={tagVariant}
+                        color={
+                          tagVariant === "square" ? "filledGray" : "outlineGray"
+                        }
+                      >
                         +{tags.length - maxTagItems}
                       </Chip>
                     </div>
                   ) : (
-                    tags.map(tag => (
+                    tags.map((tag) => (
                       <Chip
                         key={`tag-${tag}`}
                         variant={tagVariant}
-                        color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}
+                        color={
+                          tagVariant === "square" ? "filledGray" : "outlineGray"
+                        }
                       >
                         {getLocalizedTag(tag, locale)}
                       </Chip>
                     ))
                   ))}
-                {specialTags && (
+                {specialTags && specialTags.length > 0 && (
                   <>
-                    <span aria-hidden="true" className="select-none text-dark-400">
-                      •
-                    </span>
-                    {specialTags.map(tag => (
-                      <Chip key={`special-tag-${tag}`} variant={tagVariant} color="filledDark">
+                    {tags && tags.length > 0 && (
+                      <span
+                        aria-hidden="true"
+                        className="select-none text-dark-400"
+                      >
+                        •
+                      </span>
+                    )}
+                    {specialTags.map((tag) => (
+                      <Chip
+                        key={`special-tag-${tag}`}
+                        variant={tagVariant}
+                        color="filledDark"
+                      >
                         {tag}
                       </Chip>
                     ))}

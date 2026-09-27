@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useEffect, useRef } from "react";
 
-import { cn } from '../lib/utils';
+import { cn } from "../lib/utils";
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -15,7 +15,13 @@ export type DialogProps = {
   className?: string;
 };
 
-export function Dialog({ open, onClose, labelledBy, children, className }: DialogProps) {
+export function Dialog({
+  open,
+  onClose,
+  labelledBy,
+  children,
+  className,
+}: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -29,11 +35,15 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
 
     if (open) {
       if (!dialog.open) {
-        previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        previouslyFocusedRef.current =
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
         dialog.showModal();
       }
       if (!dialog.contains(document.activeElement)) {
-        const firstFocusable = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+        const firstFocusable =
+          dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
         (firstFocusable ?? dialog).focus();
       }
     } else if (dialog.open) {
@@ -53,11 +63,14 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab' || !dialog.open) {
+      if (event.key !== "Tab" || !dialog.open) {
         return;
       }
-      const focusables = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-        element => element.offsetParent !== null || element === document.activeElement
+      const focusables = Array.from(
+        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ).filter(
+        (element) =>
+          element.offsetParent !== null || element === document.activeElement,
       );
       if (focusables.length === 0) {
         return;
@@ -87,19 +100,19 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
       onCloseRef.current();
     };
 
-    dialog.addEventListener('keydown', handleKeyDown);
-    dialog.addEventListener('cancel', handleCancel);
-    dialog.addEventListener('close', handleClose);
+    dialog.addEventListener("keydown", handleKeyDown);
+    dialog.addEventListener("cancel", handleCancel);
+    dialog.addEventListener("close", handleClose);
     return () => {
-      dialog.removeEventListener('keydown', handleKeyDown);
-      dialog.removeEventListener('cancel', handleCancel);
-      dialog.removeEventListener('close', handleClose);
+      dialog.removeEventListener("keydown", handleKeyDown);
+      dialog.removeEventListener("cancel", handleCancel);
+      dialog.removeEventListener("close", handleClose);
     };
   }, []);
 
   const handleDialogClick = (event: React.MouseEvent<HTMLDialogElement>) => {
     const dialog = dialogRef.current;
-    if (!dialog) return;
+    if (!dialog || event.target !== dialog) return;
     const rect = dialog.getBoundingClientRect();
     const isInDialog =
       rect.top <= event.clientY &&
@@ -117,8 +130,8 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
       aria-labelledby={labelledBy}
       onClick={handleDialogClick}
       className={cn(
-        'm-auto max-h-[calc(100dvh-3rem)] max-w-[min(96rem,100vw-2rem)] rounded-3xl bg-transparent p-0 text-dark-900 shadow-elevated backdrop:bg-dark-950/60 backdrop:backdrop-blur-sm backdrop:transition-opacity',
-        className
+        "m-auto max-h-[calc(100dvh-3rem)] max-w-[min(96rem,100vw-2rem)] rounded-3xl border-0 bg-transparent p-0 text-dark-900 shadow-elevated outline-none backdrop:bg-dark-950/60 backdrop:backdrop-blur-sm backdrop:transition-opacity",
+        className,
       )}
     >
       {open ? children : null}

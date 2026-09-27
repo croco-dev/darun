@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { gql } from '@apollo/client';
-import { useSuspenseQuery } from '@apollo/client/react';
-import { Breadcrumb, Button, SectionWrapper } from '@darun/ui';
-import { Link } from '@darun/utils-router';
-import { useLocale, useTranslations } from 'next-intl';
-import { ProductCard } from '../../components';
-import { getCategoryIcon } from '../CategoryNavigationSection/CategoryNavigationSection';
+import { gql } from "@apollo/client";
+import { useSuspenseQuery } from "@apollo/client/react";
+import { Breadcrumb, Button, SectionWrapper } from "@darun/ui";
+import { Link } from "@darun/utils-router";
+import { useLocale, useTranslations } from "next-intl";
+import { ProductCard } from "../../components";
+import { getCategoryIcon } from "../CategoryNavigationSection/CategoryNavigationSection";
 
 const PRODUCTS_BY_CATEGORY_QUERY = gql`
   query ProductsByCategoryOnSection($slug: String!, $locale: String!) {
@@ -58,18 +58,25 @@ type ProductsByCategoryQueryData = {
 
 export function CategoryProductSection({ slug }: { slug: string }) {
   const locale = useLocale();
-  const t = useTranslations('category');
-  const { data } = useSuspenseQuery<ProductsByCategoryQueryData>(PRODUCTS_BY_CATEGORY_QUERY, {
-    variables: {
-      slug,
-      locale,
+  const t = useTranslations("category");
+  const { data } = useSuspenseQuery<ProductsByCategoryQueryData>(
+    PRODUCTS_BY_CATEGORY_QUERY,
+    {
+      variables: {
+        slug,
+        locale,
+      },
     },
-  });
+  );
 
   const products = data?.productsByCategory ?? [];
-  const category = (data?.categories ?? []).find(c => c.slug === slug);
-  const categoryLabel = category ? (locale === 'ko' ? category.labelKo : category.labelEn) : '';
-  const emptyLabel = t('empty');
+  const category = (data?.categories ?? []).find((c) => c.slug === slug);
+  const categoryLabel = category
+    ? locale === "ko"
+      ? category.labelKo
+      : category.labelEn
+    : "";
+  const emptyLabel = t("empty");
   const categoryIcon = getCategoryIcon(slug);
 
   return (
@@ -77,14 +84,19 @@ export function CategoryProductSection({ slug }: { slug: string }) {
       <div className="flex flex-col gap-6 md:gap-8">
         <Breadcrumb
           items={[
-            { label: locale === 'ko' ? '홈' : 'Home', href: `/${locale}` },
-            { label: categoryLabel, ariaCurrent: 'page' },
+            { label: locale === "ko" ? "홈" : "Home", href: `/${locale}` },
+            { label: categoryLabel, ariaCurrent: "page" },
           ]}
         />
 
         <div className="flex items-start gap-4 sm:gap-5">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 shadow-2xs sm:h-14 sm:w-14">
-            <span className="text-2xl leading-none sm:text-3xl">{categoryIcon}</span>
+            <span
+              aria-hidden="true"
+              className="text-2xl leading-none sm:text-3xl"
+            >
+              {categoryIcon}
+            </span>
           </div>
           <div className="flex flex-1 flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2.5">
@@ -92,40 +104,51 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                 {categoryLabel}
               </h1>
               {products.length > 0 && (
-                <span className="inline-flex items-center rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs">
-                  {locale === 'ko'
+                <span
+                  role="status"
+                  aria-live="polite"
+                  className="inline-flex items-center rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs"
+                >
+                  {locale === "ko"
                     ? `${products.length.toLocaleString(locale)}개 도구`
-                    : `${products.length.toLocaleString(locale)} ${products.length === 1 ? 'tool' : 'tools'}`}
+                    : `${products.length.toLocaleString(locale)} ${products.length === 1 ? "tool" : "tools"}`}
                 </span>
               )}
             </div>
             <p className="text-sm text-dark-600 break-keep sm:text-base">
-              {t('subtitle', { category: categoryLabel })}
+              {t("subtitle", { category: categoryLabel })}
             </p>
           </div>
         </div>
 
         {products.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-14 text-center sm:py-16">
-            <div className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl leading-none shadow-2xs">
+            <div
+              aria-hidden="true"
+              className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl leading-none shadow-2xs"
+            >
               {categoryIcon}
             </div>
-            <p className="text-base font-extrabold text-dark-900 sm:text-lg">{emptyLabel}</p>
-            <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">{t('emptyDescription')}</p>
+            <p className="text-base font-extrabold text-dark-900 sm:text-lg">
+              {emptyLabel}
+            </p>
+            <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">
+              {t("emptyDescription")}
+            </p>
             <div className="mt-5">
               <Link
                 href={`/${locale}/search/product`}
                 className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <Button as="span" variant="shadow" color="primary" size="md">
-                  {t('browseAll')}
+                  {t("browseAll")}
                 </Button>
               </Link>
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
-            {products.map(product => (
+            {products.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
