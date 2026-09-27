@@ -22,7 +22,7 @@ export default function Loading() {
         aria-live="polite"
         aria-label={t('loading')}
       >
-        <SectionWrapper background="white" spacing="md">
+        <SectionWrapper background="transparent" spacing="md">
           <div className="flex flex-col gap-6 md:gap-8">
             {/* Breadcrumb Skeleton */}
             <div className="flex items-center gap-1.5" aria-hidden="true">
@@ -48,7 +48,7 @@ export default function Loading() {
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={String(i)}
-                  className="flex h-full flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card sm:p-5"
+                  className="flex min-h-[160px] sm:min-h-[180px] h-full flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card sm:p-5"
                 >
                   <div className="flex flex-col gap-3">
                     <Skeleton className="h-12 w-12 rounded-xl" />

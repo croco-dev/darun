@@ -50,7 +50,7 @@ export default function Loading() {
           </div>
 
           {/* Sections List Skeleton */}
-          <div className="flex flex-col gap-5 md:gap-6">
+          <div className="flex flex-col gap-5 md:gap-6" aria-busy="true" aria-live="polite">
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={String(i)}

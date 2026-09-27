@@ -1,52 +1,42 @@
-"use client";
+'use client';
 
-import { AlertCircle, Button, Search } from "@darun/ui";
-import * as Sentry from "@sentry/nextjs";
-import { useParams } from "next/navigation";
-import { useEffect } from "react";
-import { Link } from "../../../i18n/navigation";
+import { AlertCircle, Button, Search } from '@darun/ui';
+import * as Sentry from '@sentry/nextjs';
+import { useParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { Link } from '../../../i18n/navigation';
 
-export default function ErrorPage({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const params = useParams();
-  const isKo = params?.locale !== "en";
+  const isKo = params?.locale !== 'en';
 
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
 
-  const isDev = process.env.NODE_ENV === "development";
+  const isDev = process.env.NODE_ENV === 'development';
 
   return (
     <div
-      className="flex min-h-[70vh] flex-col items-center justify-center p-6"
+      className="flex min-h-[70vh] flex-col items-center justify-center bg-gradient-to-b from-surface-50/60 via-white to-white p-6"
       data-testid="error-search"
     >
-      <div className="flex w-full max-w-lg flex-col items-center gap-6 rounded-card-xl border border-dark-150 bg-white p-8 text-center shadow-card md:p-10">
+      <div className="flex w-full max-w-lg flex-col items-center gap-6 rounded-card-xl border border-dark-150/80 bg-white/95 p-8 text-center shadow-card backdrop-blur-xs md:p-10">
         <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-600 shadow-2xs">
           <Search size={26} className="stroke-[2]" aria-hidden="true" />
           <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-cherry-600 text-white">
-            <AlertCircle
-              size={12}
-              className="stroke-[2.5]"
-              aria-hidden="true"
-            />
+            <AlertCircle size={12} className="stroke-[2.5]" aria-hidden="true" />
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-bold tracking-tight text-dark-900 break-keep">
-            {isKo ? "검색 중 문제가 발생했습니다" : "Error searching products"}
-          </h2>
+          <h1 className="text-2xl font-bold tracking-tight text-dark-900 break-keep">
+            {isKo ? '검색 중 문제가 발생했습니다' : 'Error searching products'}
+          </h1>
           <p className="max-w-sm text-sm leading-relaxed text-dark-600 break-keep sm:text-base">
             {isKo
-              ? "검색 결과를 불러오는 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
-              : "An error occurred while loading search results. Please try again shortly."}
+              ? '검색 결과를 불러오는 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+              : 'An error occurred while loading search results. Please try again shortly.'}
           </p>
         </div>
 
@@ -56,16 +46,16 @@ export default function ErrorPage({
             variant="shadow"
             color="primary"
             size="md"
-            className="active:scale-[0.98] motion-reduce:transform-none"
+            className="active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
           >
-            {isKo ? "다시 시도" : "Try again"}
+            {isKo ? '다시 시도' : 'Try again'}
           </Button>
           <Link
             href="/"
-            className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="rounded-xl motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
-            <Button as="span" variant="shadow" color="secondary" size="md">
-              {isKo ? "홈으로 이동" : "Go to Home"}
+            <Button as="span" variant="shadow" color="secondary" size="md" className="motion-reduce:transition-none">
+              {isKo ? '홈으로 이동' : 'Go to Home'}
             </Button>
           </Link>
         </div>
@@ -75,12 +65,8 @@ export default function ErrorPage({
             <p className="mb-2 font-bold text-cherry-700">
               {error.name}: {error.message}
             </p>
-            <pre className="overflow-x-auto text-2xs leading-normal">
-              {error.stack}
-            </pre>
-            {error.digest && (
-              <p className="mt-2 text-dark-500">Digest: {error.digest}</p>
-            )}
+            <pre className="overflow-x-auto text-2xs leading-normal">{error.stack}</pre>
+            {error.digest && <p className="mt-2 text-dark-500">Digest: {error.digest}</p>}
           </div>
         )}
       </div>

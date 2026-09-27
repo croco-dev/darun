@@ -26,9 +26,9 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
           <span className="inline-flex items-center rounded-full border border-cherry-200/80 bg-cherry-50 px-3 py-0.5 font-mono text-xs font-bold tracking-widest text-cherry-700 shadow-2xs">
             ERROR
           </span>
-          <h2 className="text-2xl font-extrabold tracking-tight text-dark-900 break-keep sm:text-3xl">
+          <h1 className="text-2xl font-extrabold tracking-tight text-dark-900 break-keep sm:text-3xl">
             {isKo ? '문제가 발생했습니다' : 'Something went wrong'}
-          </h2>
+          </h1>
           <p className="max-w-md text-sm leading-relaxed text-dark-600 break-keep sm:text-base">
             {isKo
               ? '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
@@ -37,14 +37,20 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-          <Button onClick={() => reset()} variant="shadow" color="primary" size="md">
+          <Button
+            onClick={() => reset()}
+            variant="shadow"
+            color="primary"
+            size="md"
+            className="motion-reduce:transition-none"
+          >
             {isKo ? '다시 시도' : 'Try again'}
           </Button>
           <Link
             href="/"
-            className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="rounded-xl motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
-            <Button as="span" variant="shadow" color="secondary" size="md">
+            <Button as="span" variant="shadow" color="secondary" size="md" className="motion-reduce:transition-none">
               {isKo ? '홈으로 이동' : 'Go to Home'}
             </Button>
           </Link>

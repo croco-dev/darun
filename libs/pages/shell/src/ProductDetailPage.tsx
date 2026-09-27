@@ -33,6 +33,7 @@ export const ProductDetailPage = ({
           <ContentArea className="relative z-10 flex flex-col gap-4 pt-5 pb-6 sm:gap-5 sm:pt-6 sm:pb-7 md:pt-8 md:pb-8">
             <Breadcrumb
               data-testid="breadcrumb-product-detail"
+              ariaLabel={isKo ? '탐색 경로' : 'Breadcrumb'}
               items={[
                 { label: isKo ? '홈' : 'Home', href: `/${locale}` },
                 { label: productName ?? slug, ariaCurrent: 'page' },

@@ -20,7 +20,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
           <div className="flex shrink-0 items-center gap-4 md:gap-6">
             <Link
               href={headerUrl}
-              className="block rounded-xl transition-opacity duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              className="block rounded-xl transition-opacity duration-200 motion-reduce:transition-none hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               <Logo size={36} title={t('logoTitle')} />
             </Link>
@@ -28,7 +28,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={rankingUrl}
                 aria-current={isRanking ? 'page' : undefined}
-                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isRanking
                     ? 'border border-dark-150/80 bg-surface-100/90 font-bold text-dark-900 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100/80 hover:text-dark-900'
@@ -39,7 +39,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={browseUrl}
                 aria-current={isBrowse ? 'page' : undefined}
-                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isBrowse
                     ? 'border border-dark-150/80 bg-surface-100/90 font-bold text-dark-900 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100/80 hover:text-dark-900'
@@ -69,9 +69,9 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               rel="noopener noreferrer"
               href="https://forms.gle/nDPFKAYSuoGg2J3MA"
               aria-label={locale === 'ko' ? `${t('submit')} (새 창에서 열림)` : `${t('submit')} (opens in a new tab)`}
-              className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              className="rounded-xl motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
-              <Button as="span" variant="shadow" color="primary" size="sm">
+              <Button as="span" variant="shadow" color="primary" size="sm" className="motion-reduce:transition-none">
                 {t('submit')}
               </Button>
             </a>

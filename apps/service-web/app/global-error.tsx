@@ -19,15 +19,27 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             <AlertTriangle className="h-8 w-8 stroke-[2]" aria-hidden="true" />
           </div>
           <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-dark-900 break-keep">심각한 오류가 발생했습니다</h2>
+            <h1 className="text-2xl font-bold tracking-tight text-dark-900 break-keep">
+              심각한 오류가 발생했습니다
+              <span className="mt-1 block text-base font-normal text-dark-500">An unexpected error occurred</span>
+            </h1>
             <p className="text-sm leading-relaxed text-dark-600 break-keep sm:text-base">
               애플리케이션을 로드하는 중 오류가 발생했습니다. 페이지를 새로고침하거나 다시 시도해주세요.
+              <span className="mt-1 block text-xs text-dark-400 sm:text-sm">
+                An error occurred while loading the application. Please refresh or try again.
+              </span>
             </p>
           </div>
 
           <div className="flex items-center justify-center gap-3 pt-1">
-            <Button onClick={() => reset()} variant="shadow" color="primary" size="md">
-              다시 시도
+            <Button
+              onClick={() => reset()}
+              variant="shadow"
+              color="primary"
+              size="md"
+              className="motion-reduce:transition-none"
+            >
+              다시 시도 / Try again
             </Button>
           </div>
         </div>

@@ -21,6 +21,7 @@ export const MagazineContentPage = ({
         <ContentArea className="flex flex-col gap-6 py-6 md:gap-8 md:py-8">
           <Breadcrumb
             data-testid="breadcrumb-magazine"
+            ariaLabel={isKo ? '탐색 경로' : 'Breadcrumb'}
             items={[
               { label: isKo ? '홈' : 'Home', href: `/${locale}` },
               { label: title ?? slug, ariaCurrent: 'page' },

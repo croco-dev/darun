@@ -76,6 +76,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
     <SectionWrapper background="transparent" spacing="md">
       <div className="flex flex-col gap-6 md:gap-8">
         <Breadcrumb
+          ariaLabel={locale === 'ko' ? '탐색 경로' : 'Breadcrumb'}
           items={[
             { label: locale === 'ko' ? '홈' : 'Home', href: `/${locale}` },
             { label: categoryLabel, ariaCurrent: 'page' },

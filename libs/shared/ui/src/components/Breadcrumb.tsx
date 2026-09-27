@@ -1,51 +1,46 @@
-import { HTMLAttributes, ReactNode } from "react";
+import { HTMLAttributes, ReactNode } from 'react';
 
-import { Link } from "@darun/utils-router";
-import { cn } from "../lib/utils";
-import { ChevronRight } from "./icons";
+import { Link } from '@darun/utils-router';
+import { cn } from '../lib/utils';
+import { ChevronRight } from './icons';
 
 export type BreadcrumbItem = {
   label: ReactNode;
   href?: string;
-  ariaCurrent?: "page";
+  ariaCurrent?: 'page';
 };
 
 export type BreadcrumbProps = HTMLAttributes<HTMLElement> & {
   items: BreadcrumbItem[];
   testId?: string;
   ariaLabel?: string;
+  locale?: string;
 };
 
-export function Breadcrumb({
-  items,
-  testId,
-  ariaLabel,
-  className,
-  ...props
-}: BreadcrumbProps) {
-  const resolvedTestId =
-    testId ?? (props as { "data-testid"?: string })["data-testid"];
+export function Breadcrumb({ items, testId, ariaLabel, locale, className, ...props }: BreadcrumbProps) {
+  const resolvedTestId = testId ?? (props as { 'data-testid'?: string })['data-testid'];
+  const defaultAriaLabel = locale === 'ko' ? '탐색 경로' : 'Breadcrumb';
 
   return (
     <nav
-      aria-label={ariaLabel ?? "Breadcrumb"}
-      className={cn("flex items-center gap-1.5 text-xs sm:text-sm", className)}
+      aria-label={ariaLabel ?? defaultAriaLabel}
+      className={cn('flex items-center gap-1.5 text-xs sm:text-sm', className)}
       {...props}
-      {...(resolvedTestId && { "data-testid": resolvedTestId })}
+      {...(resolvedTestId && { 'data-testid': resolvedTestId })}
     >
       <ol className="flex flex-wrap items-center gap-1.5">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
-          const currentAria = item.ariaCurrent ?? (isLast ? "page" : undefined);
+          const currentAria = item.ariaCurrent ?? (isLast ? 'page' : undefined);
 
           return (
             <li key={String(index)} className="flex items-center gap-1.5">
               {item.href ? (
                 <Link
                   href={item.href}
-                  className="inline-block max-w-[240px] truncate align-bottom font-medium text-dark-600 transition-colors duration-150 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:max-w-md md:max-w-lg"
+                  className="inline-block max-w-[240px] truncate align-bottom font-medium text-dark-600 transition-colors duration-150 motion-reduce:transition-none hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:max-w-md md:max-w-lg"
                   {...(currentAria && {
-                    "aria-current": currentAria,
+                    'aria-current': currentAria,
                   })}
                 >
                   {item.label}
@@ -54,7 +49,7 @@ export function Breadcrumb({
                 <span
                   className="inline-block max-w-[240px] truncate align-bottom font-semibold text-dark-900 sm:max-w-md md:max-w-lg"
                   {...(currentAria && {
-                    "aria-current": currentAria,
+                    'aria-current': currentAria,
                   })}
                 >
                   {item.label}

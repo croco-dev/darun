@@ -35,6 +35,7 @@ export function SearchProductPage({ searchParams }: Props) {
           <ContentArea className="flex flex-col gap-8 pt-5 pb-12 sm:pt-6 sm:pb-16 md:gap-10 md:pt-8 md:pb-20">
             <Breadcrumb
               data-testid="breadcrumb-search-empty"
+              ariaLabel={isKo ? '탐색 경로' : 'Breadcrumb'}
               items={[
                 { label: isKo ? '홈' : 'Home', href: `/${locale}` },
                 { label: t('page.title'), ariaCurrent: 'page' },
@@ -94,6 +95,7 @@ export function SearchProductPage({ searchParams }: Props) {
         <ContentArea className="flex flex-col gap-6 pt-5 pb-12 sm:pt-6 sm:pb-16 md:gap-8 md:pt-8 md:pb-20">
           <Breadcrumb
             data-testid="breadcrumb-search-result"
+            ariaLabel={isKo ? '탐색 경로' : 'Breadcrumb'}
             items={[
               { label: isKo ? '홈' : 'Home', href: `/${locale}` },
               {

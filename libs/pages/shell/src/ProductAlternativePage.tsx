@@ -24,6 +24,7 @@ export const ProductAlternativePage = ({
           <ContentArea className="relative z-10 flex flex-col gap-4 pt-5 pb-6 sm:gap-5 sm:pt-6 sm:pb-7 md:pt-8 md:pb-8">
             <Breadcrumb
               data-testid="breadcrumb-alternatives"
+              ariaLabel={locale === 'ko' ? '탐색 경로' : 'Breadcrumb'}
               items={[
                 { label: t('breadcrumb.home'), href: `/${locale}` },
                 { label: productName, href: `/${locale}/products/${slug}` },

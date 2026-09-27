@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 type LogoProps = {
   size: number;
   scheme?: 'light' | 'dark';
@@ -9,6 +11,9 @@ type LogoProps = {
 const dark = '#111111';
 
 export function Logo({ size, scheme = 'dark', className, ariaHidden = true, title = '다른 로고' }: LogoProps) {
+  const generatedId = useId();
+  const titleId = title ? `logo-title-${generatedId}` : undefined;
+
   return (
     <svg
       width={size}
@@ -17,9 +22,11 @@ export function Logo({ size, scheme = 'dark', className, ariaHidden = true, titl
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-hidden={ariaHidden}
+      aria-hidden={ariaHidden ? true : undefined}
+      role={ariaHidden ? undefined : 'img'}
+      aria-labelledby={ariaHidden ? undefined : titleId}
     >
-      <title>{title}</title>
+      {title ? <title id={titleId}>{title}</title> : null}
       <path
         fillRule="evenodd"
         clipRule="evenodd"

@@ -1,22 +1,19 @@
-import { Button, Compass, ContentArea } from "@darun/ui";
-import { Layout } from "@darun/ui-layout";
-import { Metadata } from "next";
-import { getLocale } from "next-intl/server";
-import { Link } from "../../i18n/navigation";
+import { Button, Compass, ContentArea } from '@darun/ui';
+import { Layout } from '@darun/ui-layout';
+import { Metadata } from 'next';
+import { getLocale } from 'next-intl/server';
+import { Link } from '../../i18n/navigation';
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return {
-    title:
-      locale === "en"
-        ? "Page Not Found - Darun"
-        : "페이지를 찾을 수 없습니다 - 다른",
+    title: locale === 'en' ? 'Page Not Found - Darun' : '페이지를 찾을 수 없습니다 - 다른',
   };
 }
 
 export default async function NotFound() {
   const locale = await getLocale();
-  const isKo = locale === "ko";
+  const isKo = locale === 'ko';
 
   return (
     <Layout>
@@ -32,30 +29,36 @@ export default async function NotFound() {
                 ERROR 404
               </span>
               <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-dark-900 break-keep sm:text-3xl">
-                {isKo ? "페이지를 찾을 수 없습니다" : "Page Not Found"}
+                {isKo ? '페이지를 찾을 수 없습니다' : 'Page Not Found'}
               </h1>
               <p className="max-w-sm text-sm leading-relaxed text-dark-600 break-keep sm:text-base">
                 {isKo
-                  ? "요청하신 페이지가 삭제되었거나 잘못된 경로입니다. 아래 링크를 통해 다시 탐색해 보세요."
-                  : "The page you are looking for does not exist or has been moved."}
+                  ? '요청하신 페이지가 삭제되었거나 잘못된 경로입니다. 아래 링크를 통해 다시 탐색해 보세요.'
+                  : 'The page you are looking for does not exist or has been moved.'}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <Link
                 href="/"
-                className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="rounded-xl motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
-                <Button as="span" variant="shadow" color="primary" size="md">
-                  {isKo ? "홈으로 이동" : "Go to Home"}
+                <Button as="span" variant="shadow" color="primary" size="md" className="motion-reduce:transition-none">
+                  {isKo ? '홈으로 이동' : 'Go to Home'}
                 </Button>
               </Link>
               <Link
                 href="/ranking"
-                className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="rounded-xl motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
-                <Button as="span" variant="shadow" color="secondary" size="md">
-                  {isKo ? "인기 랭킹 보기" : "Explore Ranking"}
+                <Button
+                  as="span"
+                  variant="shadow"
+                  color="secondary"
+                  size="md"
+                  className="motion-reduce:transition-none"
+                >
+                  {isKo ? '인기 랭킹 보기' : 'Explore Ranking'}
                 </Button>
               </Link>
             </div>

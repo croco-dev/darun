@@ -137,6 +137,7 @@ export default async function ComparePage({ params }: Props) {
         <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
           <Breadcrumb
             data-testid="breadcrumb-compare"
+            ariaLabel={resolvedParams.locale === 'ko' ? '탐색 경로' : 'Breadcrumb'}
             items={[
               {
                 label: t('breadcrumb.home'),

@@ -41,7 +41,7 @@ export default function Loading() {
             {Array.from({ length: 2 }).map((_, i) => (
               <div
                 key={String(i)}
-                className="flex h-full flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card sm:p-5"
+                className="flex min-h-[160px] sm:min-h-[180px] h-full flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card sm:p-5"
               >
                 <div className="flex flex-col gap-3">
                   <Skeleton className="h-12 w-12 rounded-xl" />
@@ -61,7 +61,7 @@ export default function Loading() {
           {/* Comparison Table Skeleton */}
           <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
             {/* Header Row */}
-            <div className="grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 p-3.5 sm:p-4 md:p-5">
+            <div className="grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 p-3.5 sm:p-4 md:p-5 rounded-t-xl">
               <div className="flex items-center gap-2.5 pr-3 sm:pr-4 md:pr-5">
                 <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg shrink-0" />
                 <Skeleton className="h-5 w-28 rounded" />

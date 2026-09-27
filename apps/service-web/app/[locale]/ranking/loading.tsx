@@ -22,7 +22,7 @@ export default function Loading() {
         aria-live="polite"
         aria-label={t('loading')}
       >
-        <SectionWrapper background="white" spacing="md">
+        <SectionWrapper background="transparent" spacing="md">
           <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">
             <div className="flex items-center gap-1.5" aria-hidden="true">
               <Skeleton className="h-4 w-8 rounded-md" />

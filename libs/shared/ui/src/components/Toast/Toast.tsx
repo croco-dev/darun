@@ -1,26 +1,19 @@
-"use client";
+'use client';
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-} from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 
-import { AlertCircle, CheckCircle2, X } from "../icons";
+import { AlertCircle, CheckCircle2, X } from '../icons';
 
 export interface Toast {
   id: string;
   message: string;
-  type: "success" | "error";
+  type: 'success' | 'error';
   exiting?: boolean;
 }
 
 interface ToastContextValue {
   toasts: Toast[];
-  addToast: (message: string, type: "success" | "error") => void;
+  addToast: (message: string, type: 'success' | 'error') => void;
   removeToast: (id: string) => void;
 }
 
@@ -28,15 +21,13 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 export function ToastProvider({
   children,
-  closeAriaLabel = "알림 닫기",
+  closeAriaLabel = '알림 닫기',
 }: {
   children: React.ReactNode;
   closeAriaLabel?: string;
 }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const toastTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>[]>>(
-    new Map(),
-  );
+  const toastTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>[]>>(new Map());
 
   const removeToast = useCallback((id: string) => {
     const timers = toastTimersRef.current.get(id);
@@ -44,26 +35,22 @@ export function ToastProvider({
       timers.forEach(clearTimeout);
       toastTimersRef.current.delete(id);
     }
-    setToasts((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)),
-    );
+    setToasts(prev => prev.map(t => (t.id === id ? { ...t, exiting: true } : t)));
     const cleanupTimer = setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
+      setToasts(prev => prev.filter(t => t.id !== id));
       toastTimersRef.current.delete(id);
     }, 250);
     toastTimersRef.current.set(id, [cleanupTimer]);
   }, []);
 
-  const addToast = useCallback((message: string, type: "success" | "error") => {
+  const addToast = useCallback((message: string, type: 'success' | 'error') => {
     const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts(prev => [...prev, { id, message, type }]);
     const exitTimerId = setTimeout(() => {
-      setToasts((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)),
-      );
+      setToasts(prev => prev.map(t => (t.id === id ? { ...t, exiting: true } : t)));
     }, 4500);
     const removeTimerId = setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
+      setToasts(prev => prev.filter(t => t.id !== id));
       toastTimersRef.current.delete(id);
     }, 5000);
     toastTimersRef.current.set(id, [exitTimerId, removeTimerId]);
@@ -71,7 +58,7 @@ export function ToastProvider({
 
   useEffect(() => {
     return () => {
-      toastTimersRef.current.forEach((timers) => timers.forEach(clearTimeout));
+      toastTimersRef.current.forEach(timers => timers.forEach(clearTimeout));
       toastTimersRef.current.clear();
     };
   }, []);
@@ -80,44 +67,34 @@ export function ToastProvider({
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
       <div className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom,1rem))] inset-x-4 z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:right-[max(1rem,env(safe-area-inset-right,1rem))] sm:items-end">
-        {toasts.map((toast) => (
+        {toasts.map(toast => (
           <div
             key={toast.id}
             data-testid={`toast-${toast.type}`}
-            role={toast.type === "error" ? "alert" : "status"}
-            aria-live={toast.type === "error" ? "assertive" : "polite"}
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
             className={`pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/12 bg-dark-900/95 px-4 py-3 text-white shadow-elevated backdrop-blur-md transition-all motion-reduce:animate-none ${
-              toast.exiting ? "animate-fade-out-down" : "animate-fade-in-up"
+              toast.exiting ? 'animate-fade-out-down' : 'animate-fade-in-up'
             }`}
           >
             <div
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
-                toast.type === "success"
-                  ? "border-leaf-500/30 bg-leaf-500/20 text-leaf-400"
-                  : "border-cherry-500/30 bg-cherry-500/20 text-cherry-400"
+                toast.type === 'success'
+                  ? 'border-leaf-500/30 bg-leaf-500/20 text-leaf-400'
+                  : 'border-cherry-500/30 bg-cherry-500/20 text-cherry-400'
               }`}
             >
-              {toast.type === "success" ? (
-                <CheckCircle2
-                  size={14}
-                  className="stroke-[2.5]"
-                  aria-hidden="true"
-                />
+              {toast.type === 'success' ? (
+                <CheckCircle2 size={14} className="stroke-[2.5]" aria-hidden="true" />
               ) : (
-                <AlertCircle
-                  size={14}
-                  className="stroke-[2.5]"
-                  aria-hidden="true"
-                />
+                <AlertCircle size={14} className="stroke-[2.5]" aria-hidden="true" />
               )}
             </div>
-            <span className="text-sm font-semibold tracking-tight text-white/95 break-keep">
-              {toast.message}
-            </span>
+            <span className="text-sm font-semibold tracking-tight text-white/95 break-keep">{toast.message}</span>
             <button
               type="button"
               onClick={() => removeToast(toast.id)}
-              className="-mr-1 ml-1.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              className="-mr-1.5 ml-1 inline-flex h-8 w-8 min-h-[32px] min-w-[32px] shrink-0 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/15 hover:text-white motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
               aria-label={closeAriaLabel}
             >
               <X size={14} className="stroke-[2.5]" aria-hidden="true" />
@@ -132,7 +109,7 @@ export function ToastProvider({
 export function useToast() {
   const context = useContext(ToastContext);
   if (context === undefined) {
-    throw new Error("useToast must be used within a ToastProvider");
+    throw new Error('useToast must be used within a ToastProvider');
   }
   return context;
 }
