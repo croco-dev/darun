@@ -3,12 +3,23 @@
 import { Search, X } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
-import { ChangeEvent, useEffect, useRef } from 'react';
+import { ChangeEvent, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useHeaderSearchForm } from './useHeaderSearchForm';
+
+const subscribePlatform = () => () => {};
+const getPlatformSnapshot = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return 'mac';
+  }
+  return /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || navigator.userAgent) ? 'mac' : 'other';
+};
+const getServerPlatformSnapshot = () => 'mac';
 
 export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, onSubmit }) => {
   const t = useTranslations('Layout.header');
   const inputRef = useRef<HTMLInputElement>(null);
+  const platform = useSyncExternalStore(subscribePlatform, getPlatformSnapshot, getServerPlatformSnapshot);
+  const shortcutText = platform === 'mac' ? '⌘K' : 'Ctrl K';
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -56,7 +67,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
           aria-hidden="true"
           className="hidden select-none items-center rounded-md border border-dark-150/90 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-500 font-mono shadow-2xs sm:inline-flex"
         >
-          ⌘K
+          {shortcutText}
         </kbd>
       )}
     </form>

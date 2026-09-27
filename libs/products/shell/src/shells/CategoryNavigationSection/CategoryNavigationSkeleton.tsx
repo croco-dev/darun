@@ -1,6 +1,15 @@
 import { SectionWrapper } from '@darun/ui';
 
-const PILL_WIDTHS = ['w-16', 'w-24', 'w-20', 'w-28', 'w-16', 'w-20', 'w-24', 'w-16'];
+const PILL_WIDTHS = [
+  'w-28 sm:w-36',
+  'w-32 sm:w-40',
+  'w-24 sm:w-32',
+  'w-36 sm:w-44',
+  'w-28 sm:w-36',
+  'w-32 sm:w-40',
+  'w-24 sm:w-32',
+  'w-32 sm:w-40',
+];
 
 const Skeleton = ({ className = '' }: { className?: string }) => (
   <div
@@ -20,9 +29,9 @@ export const CategoryNavigationSkeleton = () => {
           </div>
           <Skeleton className="h-4 w-56 rounded max-w-sm" />
         </div>
-        <div className="flex flex-wrap gap-2 md:gap-3">
+        <div className="flex flex-wrap gap-2.5 md:gap-3">
           {PILL_WIDTHS.map((w, i) => (
-            <Skeleton key={String(i)} className={`h-9 rounded-full ${w}`} />
+            <Skeleton key={String(i)} className={`h-10 sm:h-11 rounded-full ${w}`} />
           ))}
         </div>
       </div>

@@ -102,7 +102,7 @@ export const ProductUserAction = bind(
           data-testid="share-btn"
           aria-label={copyLabel}
           title={copyLabel}
-          className="group h-10 sm:h-11 px-3 sm:px-3.5 transition-all duration-150 active:scale-[0.98] border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover"
+          className="group h-10 sm:h-11 px-3 sm:px-3.5 transition-all duration-150 active:scale-[0.98] border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover motion-reduce:transform-none motion-reduce:transition-none"
         >
           <div className="flex items-center justify-center">
             {copied ? (

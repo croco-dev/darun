@@ -50,7 +50,7 @@ export function SearchProductPage({ searchParams }: Props) {
               <Suspense
                 fallback={
                   <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 md:gap-3" aria-hidden="true">
-                    {Array.from({ length: 4 }).map((_, i) => (
+                    {Array.from({ length: 8 }).map((_, i) => (
                       <div
                         key={String(i)}
                         className="h-14 animate-pulse rounded-xl border border-dark-150/80 bg-surface-100 motion-reduce:animate-none"
@@ -73,7 +73,7 @@ export function SearchProductPage({ searchParams }: Props) {
                     {Array.from({ length: 6 }).map((_, i) => (
                       <div
                         key={String(i)}
-                        className="h-32 animate-pulse rounded-card-lg border border-dark-150/80 bg-surface-100 motion-reduce:animate-none"
+                        className="h-44 sm:h-48 animate-pulse rounded-card-lg border border-dark-150/90 bg-surface-100 motion-reduce:animate-none"
                       />
                     ))}
                   </div>

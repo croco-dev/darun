@@ -61,20 +61,16 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {articles.slice(0, 3).map(article => (
             <div key={article.id} className="h-full">
-              <Link
+              <ArticleCard
                 href={`/${locale}/magazines/${article.slug ?? article.id}`}
-                className="group block h-full rounded-card-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-              >
-                <ArticleCard
-                  thumbnailImageUri={article.thumbnailImageUri}
-                  category={article.category}
-                  title={article.title}
-                  summary={article.summary}
-                  author={article.author}
-                  date={article.publishedAt}
-                  locale={locale}
-                />
-              </Link>
+                thumbnailImageUri={article.thumbnailImageUri}
+                category={article.category}
+                title={article.title}
+                summary={article.summary}
+                author={article.author}
+                date={article.publishedAt}
+                locale={locale}
+              />
             </div>
           ))}
         </div>

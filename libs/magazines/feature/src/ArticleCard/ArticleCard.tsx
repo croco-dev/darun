@@ -32,7 +32,8 @@ export const ArticleCard = ({
         {showImage ? (
           <img
             src={thumbnailImageUri}
-            alt={title}
+            alt=""
+            aria-hidden="true"
             loading="lazy"
             decoding="async"
             onError={() => setHasImageError(true)}

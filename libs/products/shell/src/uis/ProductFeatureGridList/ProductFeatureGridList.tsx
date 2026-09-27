@@ -25,7 +25,7 @@ export const ProductFeatureGridList = ({ features }: ProductFeatureGridListProps
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
-            <p className="text-sm font-bold tracking-tight text-dark-900 break-keep">{feature.name}</p>
+            <h4 className="text-sm font-bold tracking-tight text-dark-900 break-keep">{feature.name}</h4>
             {feature.summary && <p className="text-xs leading-relaxed text-dark-600 break-keep">{feature.summary}</p>}
           </div>
         </div>

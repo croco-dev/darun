@@ -17,7 +17,7 @@ const DarkSkeleton = ({ className = '' }: { className?: string }) => (
 );
 
 export default function Loading() {
-  const t = useTranslations('ProductDetail');
+  const t = useTranslations('Common');
 
   return (
     <Layout>

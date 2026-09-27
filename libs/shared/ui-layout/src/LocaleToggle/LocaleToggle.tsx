@@ -15,10 +15,18 @@ export const LocaleToggle = () => {
     router.replace(pathname, { locale: nextLocale });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      toggle();
+    }
+  };
+
   return (
     <div
       role="radiogroup"
       aria-label={locale === 'ko' ? '언어 변경' : 'Change language'}
+      onKeyDown={handleKeyDown}
       className="inline-flex gap-0.5 rounded-full border border-dark-150/80 bg-surface-100 p-0.5 shadow-2xs"
     >
       {LOCALES.map(loc => {

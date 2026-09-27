@@ -57,7 +57,7 @@ function getWebSiteJsonLd(locale: 'ko' | 'en') {
 const whatIsDarunFeatures = [
   {
     icon: Compass,
-    iconColor: 'border-dark-150/90 bg-surface-100 text-dark-900',
+    iconColor: 'border-blue-200/80 bg-blue-50 text-blue-700',
     titleKo: '서비스 탐색과 나란한 비교',
     titleEn: 'Discovery and Comparison',
     descKo:
@@ -67,7 +67,7 @@ const whatIsDarunFeatures = [
   },
   {
     icon: Layers,
-    iconColor: 'border-dark-150/90 bg-surface-100 text-dark-900',
+    iconColor: 'border-indigo-200/80 bg-indigo-50 text-indigo-700',
     titleKo: '상세 정보와 대안 추천',
     titleEn: 'In-Depth Details & Alternatives',
     descKo:
@@ -77,7 +77,7 @@ const whatIsDarunFeatures = [
   },
   {
     icon: ShieldCheck,
-    iconColor: 'border-dark-150/90 bg-surface-100 text-dark-900',
+    iconColor: 'border-emerald-200/80 bg-emerald-50 text-emerald-700',
     titleKo: '공식 링크 및 최신성 확인',
     titleEn: 'Verified Links & Freshness',
     descKo:
@@ -128,7 +128,7 @@ export default async function HomePage({ params }: HomePageProps) {
                   : 'A curated platform to discover, compare, and evaluate the right software for your workflow'
               }
             />
-            <div className="grid grid-cols-1 gap-5 text-sm leading-relaxed text-dark-700 md:grid-cols-3 md:gap-6 sm:text-base">
+            <div className="grid grid-cols-1 gap-5 text-sm leading-relaxed text-dark-700 sm:grid-cols-2 md:grid-cols-3 md:gap-6 sm:text-base">
               {whatIsDarunFeatures.map(item => {
                 const Icon = item.icon;
                 return (

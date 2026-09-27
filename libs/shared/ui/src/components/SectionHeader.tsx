@@ -20,7 +20,7 @@ const sectionHeaderVariants = cva('flex flex-col', {
   },
 });
 
-export type SectionHeaderProps = HTMLAttributes<HTMLHeadingElement> & {
+export type SectionHeaderProps = HTMLAttributes<HTMLDivElement> & {
   title: string;
   subtitle?: string;
   moreLink?: ReactNode;

@@ -45,7 +45,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
         <div
           className="flex-1"
           style={{
-            viewTransitionName: layoutId ? `product-${layoutId}` : `product-${product.slug}`,
+            viewTransitionName: layoutId ? `product-${layoutId}` : `${source}-product-${product.slug}`,
           }}
         >
           <ProductItem

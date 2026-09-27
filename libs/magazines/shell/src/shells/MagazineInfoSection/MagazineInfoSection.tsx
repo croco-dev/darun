@@ -82,7 +82,11 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
                 <span className="font-semibold text-white/95">{authorName}</span>
               </div>
             )}
-            {authorName && formattedDate && <span className="text-white/40">∙</span>}
+            {authorName && formattedDate && (
+              <span aria-hidden="true" className="select-none text-white/40">
+                ∙
+              </span>
+            )}
             {formattedDate && (
               <div className="flex items-center gap-1.5 text-white/75">
                 <Calendar size={14} className="stroke-[2] text-white/70" aria-hidden="true" />

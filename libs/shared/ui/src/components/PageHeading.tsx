@@ -20,7 +20,7 @@ const pageHeadingVariants = cva('flex flex-col', {
   },
 });
 
-export type PageHeadingProps = HTMLAttributes<HTMLHeadingElement> & {
+export type PageHeadingProps = HTMLAttributes<HTMLDivElement> & {
   title: string;
   subtitle?: string;
   moreLink?: ReactNode;

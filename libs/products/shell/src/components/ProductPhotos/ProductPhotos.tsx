@@ -4,6 +4,7 @@ import { Maximize2, Sparkles } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import Zoom from 'react-medium-image-zoom';
 import { useProductPhotos } from './useProductPhotos';
 
@@ -11,6 +12,37 @@ import 'react-medium-image-zoom/dist/styles.css';
 
 type ProductPhotosViewProps = {
   photos: ReturnType<typeof useProductPhotos>['photos'];
+};
+
+const ProductPhotoItem = ({ photo }: { photo: { imageUrl: string; imageAlt: string } }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className="flex h-56 w-72 sm:h-64 sm:w-80 shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-dark-200 bg-surface-100 p-4 text-center">
+        <Sparkles size={18} className="text-dark-400 stroke-[1.75]" />
+        <span className="text-xs text-dark-500 break-keep">{photo.imageAlt}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="group relative shrink-0 snap-start">
+      <Zoom>
+        <Image
+          src={photo.imageUrl}
+          alt={photo.imageAlt}
+          width={600}
+          height={220}
+          onError={() => setHasError(true)}
+          className="h-56 sm:h-64 w-auto rounded-xl border border-dark-150/90 bg-white object-contain p-1 shadow-2xs transition-all duration-200 hover:border-dark-300 hover:shadow-md cursor-zoom-in"
+        />
+      </Zoom>
+      <div className="pointer-events-none absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-dark-900/70 text-white opacity-80 backdrop-blur-sm transition-opacity duration-200 sm:opacity-0 group-hover:opacity-100">
+        <Maximize2 size={13} className="stroke-[2.25]" />
+      </div>
+    </div>
+  );
 };
 
 export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosViewProps) => {
@@ -43,20 +75,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
       {photos && (
         <div className="flex w-full gap-3.5 overflow-x-auto px-0.5 pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x">
           {photos.map(photo => (
-            <div key={photo.imageUrl} className="group relative shrink-0 snap-start">
-              <Zoom>
-                <Image
-                  src={photo.imageUrl}
-                  alt={photo.imageAlt}
-                  width={600}
-                  height={220}
-                  className="h-56 sm:h-64 w-auto rounded-xl border border-dark-150/90 bg-white object-contain p-1 shadow-2xs transition-all duration-200 hover:border-dark-300 hover:shadow-md cursor-zoom-in"
-                />
-              </Zoom>
-              <div className="pointer-events-none absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-dark-900/70 text-white opacity-80 backdrop-blur-sm transition-opacity duration-200 sm:opacity-0 group-hover:opacity-100">
-                <Maximize2 size={13} className="stroke-[2.25]" />
-              </div>
-            </div>
+            <ProductPhotoItem key={photo.imageUrl} photo={photo} />
           ))}
         </div>
       )}

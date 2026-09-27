@@ -33,6 +33,7 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
                 href="https://forms.gle/nDPFKAYSuoGg2J3MA"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={locale === 'ko' ? `${t('contact')} (새 창에서 열림)` : `${t('contact')} (opens in a new tab)`}
                 className="group inline-flex items-center gap-1 text-sm font-medium text-dark-600 transition-colors duration-200 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <span>{t('contact')}</span>

@@ -3,7 +3,7 @@
 import { Button, ContentArea, Logo } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 import { HeaderLoginButton } from '../HeaderLoginButton';
 import { HeaderSearchForm } from '../HeaderSearchForm';
@@ -11,6 +11,7 @@ import { useHeader } from './useHeader';
 
 export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRanking, isBrowse }) => {
   const t = useTranslations('Layout.header');
+  const locale = useLocale();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-dark-150 bg-white/85 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
@@ -67,6 +68,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               target="_blank"
               rel="noopener noreferrer"
               href="https://forms.gle/nDPFKAYSuoGg2J3MA"
+              aria-label={locale === 'ko' ? `${t('submit')} (새 창에서 열림)` : `${t('submit')} (opens in a new tab)`}
               className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               <Button as="span" variant="shadow" color="primary" size="sm">
