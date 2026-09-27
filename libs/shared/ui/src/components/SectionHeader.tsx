@@ -49,7 +49,7 @@ export function SectionHeader({
       >
         <h2
           className={cn(
-            'break-keep font-extrabold leading-tight tracking-tight text-dark-900',
+            'break-words [word-break:keep-all] font-extrabold leading-tight tracking-tight text-dark-900',
             isSmall ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'
           )}
         >
@@ -62,7 +62,7 @@ export function SectionHeader({
       {subtitle && (
         <p
           className={cn(
-            'max-w-2xl break-keep text-sm leading-relaxed text-dark-600 sm:text-base',
+            'max-w-2xl break-words [word-break:keep-all] text-sm leading-relaxed text-dark-600 sm:text-base',
             isCentered && 'mx-auto'
           )}
         >

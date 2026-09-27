@@ -32,7 +32,7 @@ export const ProductAlternativeList = bind(
               <div className="flex flex-row items-start justify-between gap-3 sm:gap-4">
                 <Link
                   href={`/${locale}/products/${product.slug}?from=related`}
-                  className="group min-w-0 flex-1 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  className="group block min-w-0 flex-1 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <ProductItem
                     name={product.name}
@@ -67,7 +67,7 @@ export const ProductAlternativeList = bind(
         <div className="flex justify-center pt-2">
           <Link
             href={`/${locale}/search/product`}
-            className="group rounded-xl transition-transform active:scale-[0.98] motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="group inline-flex rounded-xl transition-transform active:scale-[0.98] motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <Button as="span" variant="shadow" color="secondary" size="md">
               {t('list.browseMore')}

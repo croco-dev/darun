@@ -23,16 +23,16 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         <ContentArea className="flex items-center justify-center py-16 md:py-24">
           <div className="flex w-full max-w-lg flex-col items-center gap-6 rounded-card-xl border border-dark-150/80 bg-white/95 p-8 text-center shadow-card backdrop-blur-xs md:p-10">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-cherry-200 bg-cherry-50 text-cherry-600 shadow-2xs">
-              <AlertTriangle className="h-8 w-8 stroke-[2]" aria-hidden="true" />
+              <AlertTriangle className="h-8 w-8 shrink-0 stroke-[2]" aria-hidden="true" />
             </div>
             <div className="flex flex-col items-center gap-2">
               <span className="inline-flex items-center rounded-full border border-cherry-200/80 bg-cherry-50 px-3 py-0.5 font-mono text-xs font-bold tracking-widest text-cherry-700 shadow-2xs">
                 ERROR
               </span>
-              <h1 className="text-2xl font-extrabold tracking-tight text-dark-900 break-keep sm:text-3xl">
+              <h1 className="text-2xl font-extrabold tracking-tight text-dark-900 break-words [word-break:keep-all] sm:text-3xl">
                 {isKo ? '문제가 발생했습니다' : 'Something went wrong'}
               </h1>
-              <p className="max-w-md text-sm leading-relaxed text-dark-600 break-keep sm:text-base">
+              <p className="max-w-md text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all] sm:text-base">
                 {isKo
                   ? '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
                   : 'An unexpected error occurred. Please try again in a moment.'}
@@ -45,20 +45,20 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
                 variant="shadow"
                 color="primary"
                 size="md"
-                className="motion-reduce:transition-none"
+                className="active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
               >
                 {isKo ? '다시 시도' : 'Try again'}
               </Button>
               <Link
                 href="/"
-                className="rounded-xl motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="inline-flex rounded-xl motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <Button
                   as="span"
                   variant="shadow"
                   color="secondary"
                   size="md"
-                  className="motion-reduce:transition-none"
+                  className="active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
                 >
                   {isKo ? '홈으로 이동' : 'Go to Home'}
                 </Button>

@@ -94,7 +94,7 @@ export const CategoryNavigationSection = () => {
               <ChevronRight
                 size={16}
                 aria-hidden="true"
-                className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+                className="shrink-0 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
               />
             </Link>
           }
@@ -115,7 +115,7 @@ export const CategoryNavigationSection = () => {
               >
                 <span
                   aria-hidden="true"
-                  className="text-base leading-none transition-transform duration-200 group-hover:scale-110 motion-reduce:transform-none"
+                  className="shrink-0 text-base leading-none transition-transform duration-200 group-hover:scale-110 motion-reduce:transform-none"
                 >
                   {getCategoryIcon(category.slug)}
                 </span>

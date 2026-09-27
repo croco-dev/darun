@@ -41,7 +41,7 @@ export const LocaleToggle = () => {
             aria-label={loc === 'ko' ? '한국어' : 'English'}
             tabIndex={isActive ? 0 : -1}
             className={`
-              rounded-full px-3 py-1 text-xs font-semibold select-none transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none
+              inline-flex min-h-[32px] sm:min-h-0 items-center justify-center rounded-full px-3 py-1 text-xs font-semibold select-none transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none active:scale-95
               ${isActive ? 'bg-dark-900 text-white shadow-xs cursor-default' : 'bg-transparent text-dark-600 hover:bg-surface-200/80 hover:text-dark-900 cursor-pointer'}
             `}
           >

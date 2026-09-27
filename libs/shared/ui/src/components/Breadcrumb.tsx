@@ -40,7 +40,7 @@ export function Breadcrumb({ items, testId, ariaLabel, locale, className, ...pro
               {item.href ? (
                 <Link
                   href={item.href}
-                  className="inline-block max-w-[240px] truncate align-bottom font-medium text-dark-600 transition-colors duration-150 motion-reduce:transition-none hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:max-w-md md:max-w-lg"
+                  className="inline-flex min-h-[28px] sm:min-h-0 items-center max-w-[240px] truncate font-medium text-dark-600 transition-colors duration-150 motion-reduce:transition-none hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:max-w-md md:max-w-lg"
                   {...(currentAria && {
                     'aria-current': currentAria,
                   })}
@@ -49,7 +49,7 @@ export function Breadcrumb({ items, testId, ariaLabel, locale, className, ...pro
                 </Link>
               ) : (
                 <span
-                  className="inline-block max-w-[240px] truncate align-bottom font-semibold text-dark-900 sm:max-w-md md:max-w-lg"
+                  className="inline-flex min-h-[28px] sm:min-h-0 items-center max-w-[240px] truncate font-semibold text-dark-900 sm:max-w-md md:max-w-lg"
                   {...(currentAria && {
                     'aria-current': currentAria,
                   })}

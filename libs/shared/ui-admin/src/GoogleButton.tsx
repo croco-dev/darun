@@ -1,12 +1,11 @@
-import { ButtonProps } from '@darun/ui';
-import { Button } from '@darun/ui';
+import { Button, type ButtonProps } from '@darun/ui';
 
 type GoogleButtonProps = ButtonProps & {
   fullWidth?: boolean;
   loading?: boolean;
 };
 
-function GoogleIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
+function GoogleIcon({ className, ...props }: React.ComponentPropsWithoutRef<'svg'>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -15,6 +14,7 @@ function GoogleIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
       style={{ width: '0.9rem', height: '0.9rem' }}
       aria-hidden="true"
       focusable="false"
+      className={['shrink-0', className].filter(Boolean).join(' ')}
       {...props}
     >
       <path
@@ -52,7 +52,7 @@ export function GoogleButton({ children, className, disabled, fullWidth, loading
       <span className="inline-flex items-center gap-2">
         {loading ? (
           <svg
-            className="h-4 w-4 animate-spin text-current motion-reduce:animate-none"
+            className="h-4 w-4 shrink-0 animate-spin text-current motion-reduce:animate-none"
             fill="none"
             viewBox="0 0 24 24"
             aria-hidden="true"

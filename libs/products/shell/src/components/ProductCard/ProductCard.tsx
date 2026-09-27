@@ -31,7 +31,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
     <Link
       key={product.id}
       href={href}
-      className="group relative h-full focus-visible:outline-none"
+      className="group relative block h-full focus-visible:outline-none"
       onClick={onClick}
       {...(layoutId ? { 'data-layout-id': layoutId } : {})}
       {...{ 'data-source': source }}
@@ -65,7 +65,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
                   <ChevronRight
                     size={15}
                     aria-hidden="true"
-                    className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+                    className="shrink-0 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
                   />
                 </span>
               )

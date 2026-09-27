@@ -57,10 +57,14 @@ export const ArticleCard = ({
             </Chip>
           </div>
         )}
-        <h3 className="text-base font-extrabold leading-snug tracking-tight text-dark-900 break-keep transition-colors duration-200 group-hover:text-dark-950 md:text-lg">
+        <h3 className="text-base font-extrabold leading-snug tracking-tight text-dark-900 break-words [word-break:keep-all] transition-colors duration-200 group-hover:text-dark-950 md:text-lg">
           {title}
         </h3>
-        {summary && <p className="line-clamp-2 text-sm leading-relaxed text-dark-600 break-keep">{summary}</p>}
+        {summary && (
+          <p className="line-clamp-2 text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all]">
+            {summary}
+          </p>
+        )}
         <div className="mt-auto flex items-center gap-x-2 pt-3 text-xs text-dark-500">
           {author && <span className="font-semibold text-dark-800">{author}</span>}
           {author && date && (
@@ -69,7 +73,9 @@ export const ArticleCard = ({
             </span>
           )}
           {date && (
-            <time dateTime={date instanceof Date ? date.toISOString() : undefined}>{formatDate(date, '', locale)}</time>
+            <time className="tabular-nums" dateTime={date instanceof Date ? date.toISOString() : undefined}>
+              {formatDate(date, '', locale)}
+            </time>
           )}
         </div>
       </div>

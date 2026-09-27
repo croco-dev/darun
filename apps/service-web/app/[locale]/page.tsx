@@ -143,12 +143,12 @@ export default async function HomePage({ params }: HomePageProps) {
                     <div
                       className={`flex h-11 w-11 items-center justify-center rounded-xl border shadow-2xs transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${item.iconColor}`}
                     >
-                      <Icon size={22} aria-hidden="true" />
+                      <Icon size={22} className="shrink-0" aria-hidden="true" />
                     </div>
-                    <h3 className="text-base font-bold tracking-tight text-dark-900 break-keep sm:text-lg">
+                    <h3 className="text-base font-bold tracking-tight text-dark-900 break-words [word-break:keep-all] sm:text-lg">
                       {isKo ? item.titleKo : item.titleEn}
                     </h3>
-                    <p className="text-sm leading-relaxed text-dark-600 break-keep">
+                    <p className="text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all]">
                       {isKo ? item.descKo : item.descEn}
                     </p>
                   </div>

@@ -209,12 +209,12 @@ export function ModelSelectModal({
               disabled={isLoading}
               className="flex items-center gap-1 text-dark-700 hover:text-dark-900 font-medium px-2 py-0.5 rounded hover:bg-dark-200 transition disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
               새로고침
             </button>
           </div>
           <div className="flex items-start gap-1.5 text-xs text-yellow-800 bg-yellow-50 p-2 rounded-lg border border-yellow-200">
-            <Zap className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
+            <Zap className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" aria-hidden="true" />
             <span>
               <strong>30초 타임아웃 방지 팁:</strong> 거대 무료 모델(`:free`)이나 추론 모델은 대기열 및 생각 시간으로
               인해 번역 요청 시 20~30초 제한을 초과하기 쉽습니다. 빠른 속도(2~5초)를 지원하는{' '}
@@ -225,7 +225,10 @@ export function ModelSelectModal({
 
         {/* Search Input */}
         <div className="relative">
-          <Search className="w-4 h-4 text-dark-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search
+            className="w-4 h-4 text-dark-400 absolute left-3 top-1/2 -translate-y-1/2 shrink-0"
+            aria-hidden="true"
+          />
           <input
             type="text"
             value={searchQuery}
@@ -240,7 +243,7 @@ export function ModelSelectModal({
               className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-dark-700"
               aria-label="검색어 지우기"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 shrink-0" aria-hidden="true" />
             </button>
           )}
         </div>
@@ -253,6 +256,7 @@ export function ModelSelectModal({
               <button
                 key={cat.id}
                 type="button"
+                aria-pressed={isSelected}
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${
                   isSelected
@@ -271,7 +275,7 @@ export function ModelSelectModal({
           <span>
             {isLoading ? (
               <span className="flex items-center gap-1.5">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" aria-hidden="true" />
                 모델 목록을 불러오는 중...
               </span>
             ) : (
@@ -291,7 +295,7 @@ export function ModelSelectModal({
         {/* Error View */}
         {error && (
           <div className="p-4 bg-cherry-50 border border-cherry-200 rounded-xl text-cherry-800 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-cherry-600 shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-cherry-600 shrink-0 mt-0.5" aria-hidden="true" />
             <div className="flex-1">
               <div className="text-sm font-semibold">모델 목록 조회 실패</div>
               <div className="text-xs text-cherry-700 mt-0.5">{error}</div>
@@ -340,7 +344,7 @@ export function ModelSelectModal({
                     key={model.id}
                     type="button"
                     onClick={() => handleSelect(model.id)}
-                    className={`w-full text-left p-3 rounded-xl border transition flex flex-col gap-1.5 group ${
+                    className={`w-full text-left p-3 rounded-xl border transition flex flex-col gap-1.5 group active:scale-[0.99] motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-1 ${
                       isCurrent
                         ? 'border-dark-900 bg-surface-50/70 ring-2 ring-dark-900/10'
                         : 'border-dark-200 bg-white hover:border-dark-400 hover:bg-surface-100/40'
@@ -353,7 +357,7 @@ export function ModelSelectModal({
                         </span>
                         {isFast && (
                           <span className="inline-flex items-center gap-0.5 text-2xs font-medium px-1.5 py-0.5 rounded bg-brown-50 text-brown-700 border border-brown-200">
-                            <Zap className="w-3 h-3" />
+                            <Zap className="w-3 h-3 shrink-0" aria-hidden="true" />
                             빠른 응답
                           </span>
                         )}
@@ -370,7 +374,7 @@ export function ModelSelectModal({
                       </div>
                       {isCurrent && (
                         <span className="shrink-0 flex items-center gap-1 text-xs font-semibold text-leaf-600">
-                          <Check className="w-4 h-4" />
+                          <Check className="w-4 h-4 shrink-0" aria-hidden="true" />
                           선택됨
                         </span>
                       )}

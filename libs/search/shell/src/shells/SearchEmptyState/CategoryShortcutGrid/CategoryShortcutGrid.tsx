@@ -1,19 +1,8 @@
-import { gql } from "@apollo/client";
-import { useSuspenseQuery } from "@apollo/client/react";
-import { getCategoryIcon } from "@darun/products-shell";
-import { CategoriesForEmptyStateDocument } from "@darun/provider-graphql";
-import { Link } from "@darun/utils-router";
-import { useLocale } from "next-intl";
-const CATEGORIES_QUERY = gql`
-  query CategoriesForEmptyState($first: Int!, $locale: String!) {
-    categories(first: $first, locale: $locale) {
-      id
-      slug
-      labelKo
-      labelEn
-    }
-  }
-`;
+import { useSuspenseQuery } from '@apollo/client/react';
+import { getCategoryIcon } from '@darun/products-shell';
+import { CategoriesForEmptyStateDocument } from '@darun/provider-graphql';
+import { Link } from '@darun/utils-router';
+import { useLocale } from 'next-intl';
 
 export const CategoryShortcutGrid = () => {
   const locale = useLocale();
@@ -28,11 +17,9 @@ export const CategoryShortcutGrid = () => {
       data-testid="category-shortcut-grid"
       className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 md:gap-3"
       role="group"
-      aria-label={
-        locale === "ko" ? "카테고리별 둘러보기" : "Browse by category"
-      }
+      aria-label={locale === 'ko' ? '카테고리별 둘러보기' : 'Browse by category'}
     >
-      {categories.map((cat) => (
+      {categories.map(cat => (
         <Link
           key={cat.id}
           href={`/${locale}/categories/${cat.slug}`}
@@ -44,9 +31,7 @@ export const CategoryShortcutGrid = () => {
           >
             {getCategoryIcon(cat.slug)}
           </span>
-          <span className="truncate">
-            {locale === "ko" ? cat.labelKo : cat.labelEn}
-          </span>
+          <span className="truncate">{locale === 'ko' ? cat.labelKo : cat.labelEn}</span>
         </Link>
       ))}
     </div>

@@ -40,7 +40,7 @@ export default function Loading() {
           <div
             data-testid="skel-magazine-hero"
             aria-hidden="true"
-            className="relative overflow-hidden rounded-card-xl border border-dark-150 bg-dark-900 py-8 shadow-card sm:py-12 lg:py-14"
+            className="relative overflow-hidden rounded-card-xl bg-dark-900 py-8 shadow-card sm:py-12 lg:py-14"
           >
             <div className="flex flex-col gap-5 px-6 sm:px-8 lg:px-12">
               <DarkSkeleton className="h-6 w-24 rounded-lg" />

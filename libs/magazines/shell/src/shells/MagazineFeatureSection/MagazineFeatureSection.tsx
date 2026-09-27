@@ -69,7 +69,7 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
               <ChevronRight
                 size={16}
                 aria-hidden="true"
-                className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+                className="shrink-0 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
               />
             </Link>
           }

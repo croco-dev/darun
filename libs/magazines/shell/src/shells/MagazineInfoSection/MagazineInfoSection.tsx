@@ -62,21 +62,21 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
       <div className="absolute inset-0 rounded-card-xl bg-gradient-to-t from-dark-950/85 via-dark-900/65 to-dark-900/45 backdrop-blur-[1px]" />
       <div className="relative z-10 flex flex-col gap-5 px-6 sm:px-8 lg:px-12">
         <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-semibold text-white/95 shadow-2xs backdrop-blur-md">
-          <BookOpen size={13} className="stroke-[2.25] text-white/90" aria-hidden="true" />
+          <BookOpen size={13} className="shrink-0 stroke-[2.25] text-white/90" aria-hidden="true" />
           <span>{t('info.badge')}</span>
         </div>
         <div className="flex max-w-3xl flex-col gap-3">
-          <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white break-keep sm:text-3xl lg:text-4xl">
+          <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white break-words [word-break:keep-all] sm:text-3xl lg:text-4xl">
             {magazine?.title ?? t('info.title')}
           </h1>
-          <p className="text-sm font-normal leading-relaxed tracking-tight text-white/85 break-keep sm:text-base">
+          <p className="text-sm font-normal leading-relaxed tracking-tight text-white/85 break-words [word-break:keep-all] sm:text-base">
             {magazine?.summary ?? t('info.summary')}
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-1 text-xs font-medium text-white/80 sm:text-sm">
             {authorName && (
               <div className="flex items-center gap-1.5">
                 {authorInitial && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-2xs font-bold text-white ring-1 ring-white/40 backdrop-blur-xs shadow-2xs">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-2xs font-bold text-white ring-1 ring-white/40 backdrop-blur-xs shadow-2xs">
                     {authorInitial}
                   </span>
                 )}
@@ -90,8 +90,10 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
             )}
             {formattedDate && (
               <div className="flex items-center gap-1.5 text-white/75">
-                <Calendar size={14} className="stroke-[2] text-white/70" aria-hidden="true" />
-                <time dateTime={magazine?.publishedAt ?? undefined}>{formattedDate}</time>
+                <Calendar size={14} className="shrink-0 stroke-[2] text-white/70" aria-hidden="true" />
+                <time className="tabular-nums" dateTime={magazine?.publishedAt ?? undefined}>
+                  {formattedDate}
+                </time>
               </div>
             )}
           </div>
