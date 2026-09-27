@@ -2,7 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { EditProductLinkItemFragment, EditProductLinkItemFragmentDoc, useFragment } from '@darun/provider-graphql';
-import { Button, cn, Link2, Pencil } from '@darun/ui';
+import { Button, cn, Globe, Link2, Pencil } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
@@ -38,6 +38,17 @@ function LinkIcon({ iconUrl, title, isPrimary }: { iconUrl?: string; title: stri
   if (iconUrl !== prevIconUrl) {
     setPrevIconUrl(iconUrl);
     setHasError(false);
+  }
+
+  const isOfficialWebsite =
+    title === '공식 홈페이지' ||
+    title === 'Official Website' ||
+    title === '홈페이지' ||
+    title === 'Website' ||
+    iconUrl?.includes('pvjgv9btsktstjkoarrl');
+
+  if (isOfficialWebsite) {
+    return <Globe className={cn('h-5 w-5 stroke-[2]', isPrimary ? 'text-white' : 'text-dark-800')} />;
   }
 
   if (!iconUrl || hasError) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, ExternalLink } from '@darun/ui';
+import { Button, ExternalLink, Globe } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
@@ -21,6 +21,13 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
         const isPrimary = index === 0;
         const localizedTitle = getLocalizedLinkTitle(link.title, locale);
         const tooltipTitle = link.displayLink ? `${localizedTitle} (${link.displayLink})` : localizedTitle;
+        const isOfficialWebsite =
+          link.title === '공식 홈페이지' ||
+          link.title === 'Official Website' ||
+          link.title === '홈페이지' ||
+          link.title === 'Website' ||
+          getLocalizedLinkTitle(link.title, 'ko') === '공식 홈페이지' ||
+          link.iconUrl?.includes('pvjgv9btsktstjkoarrl');
 
         return (
           <Link
@@ -44,8 +51,14 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                {link.iconUrl && (
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-dark-150/70 bg-surface-100 p-0.5 shadow-2xs">
+                {isOfficialWebsite ? (
+                  <Globe size={16} aria-hidden="true" className="shrink-0 stroke-[2] text-current" />
+                ) : link.iconUrl ? (
+                  <div
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md p-0.5 shadow-2xs ${
+                      isPrimary ? 'border border-white/20 bg-white' : 'border border-dark-150/70 bg-surface-100'
+                    }`}
+                  >
                     <Image
                       src={link.iconUrl}
                       alt=""
@@ -56,6 +69,8 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                       unoptimized
                     />
                   </div>
+                ) : (
+                  <Globe size={16} aria-hidden="true" className="shrink-0 stroke-[2] text-current" />
                 )}
                 <span className="w-max break-keep text-xs sm:text-sm font-semibold text-current">{localizedTitle}</span>
                 <ExternalLink
