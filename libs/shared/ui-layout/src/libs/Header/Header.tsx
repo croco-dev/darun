@@ -64,17 +64,19 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
           </Suspense>
           <div className="hidden h-max shrink-0 items-center gap-2.5 md:flex">
             <HeaderLoginButton />
-            <a
+            <Button
+              as="a"
+              href="https://forms.gle/nDPFKAYSuoGg2J3MA"
               target="_blank"
               rel="noopener noreferrer"
-              href="https://forms.gle/nDPFKAYSuoGg2J3MA"
+              variant="shadow"
+              color="primary"
+              size="sm"
               aria-label={locale === 'ko' ? `${t('submit')} (새 창에서 열림)` : `${t('submit')} (opens in a new tab)`}
-              className="rounded-xl motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              className="motion-reduce:transition-none"
             >
-              <Button as="span" variant="shadow" color="primary" size="sm" className="motion-reduce:transition-none">
-                {t('submit')}
-              </Button>
-            </a>
+              {t('submit')}
+            </Button>
           </div>
         </div>
       </ContentArea>

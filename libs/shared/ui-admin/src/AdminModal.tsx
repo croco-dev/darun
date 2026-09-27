@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@darun/ui';
+import { X, cn } from '@darun/ui';
 import { ReactNode, useCallback, useEffect, useRef } from 'react';
 
 export type AdminModalProps = {
@@ -15,6 +15,7 @@ export type AdminModalProps = {
 export function AdminModal({ opened, onClose, title, children, className, maxWidth = 'max-w-lg' }: AdminModalProps) {
   const modalContentRef = useRef<HTMLDivElement | null>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  const mouseDownOnBackdropRef = useRef(false);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -88,8 +89,11 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
       aria-modal="true"
       aria-labelledby={title ? 'admin-modal-title' : undefined}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity"
+      onMouseDown={e => {
+        mouseDownOnBackdropRef.current = e.target === e.currentTarget;
+      }}
       onClick={e => {
-        if (e.target === e.currentTarget) {
+        if (e.target === e.currentTarget && mouseDownOnBackdropRef.current) {
           onClose();
         }
       }}
@@ -113,12 +117,10 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-dark-400 hover:bg-dark-100 hover:text-dark-900 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-dark-400 hover:bg-dark-100 hover:text-dark-900 transition active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 focus-visible:ring-offset-2"
             aria-label="닫기"
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X size={18} aria-hidden="true" className="shrink-0 stroke-[2]" />
           </button>
         </div>
         <div className="max-h-[calc(85vh-8rem)] overflow-y-auto">{children}</div>

@@ -109,7 +109,8 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
             <p className="text-sm font-semibold text-dark-900">{t('list.empty.popularQueries')}</p>
             <div
               data-testid="search-empty-popular-queries"
-              className="flex gap-2 overflow-x-auto px-1 scrollbar-hide scroll-smooth scroll-pl-1 touch-pan-x"
+              tabIndex={0}
+              className="flex gap-2 overflow-x-auto px-1 py-1.5 scrollbar-hide scroll-smooth scroll-pl-1 touch-pan-x rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
               role="group"
               aria-label={t('list.empty.popularQueries')}
             >
@@ -118,7 +119,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
                   key={popularQuery}
                   href={`/${locale}/search/product?query=${encodeURIComponent(popularQuery)}`}
                   onClick={() => trackEmptySearchClick(popularQuery)}
-                  className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  className="group inline-flex min-h-[36px] sm:min-h-0 shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <span aria-hidden="true" className="text-dark-400 transition-colors group-hover:text-dark-600">
                     #

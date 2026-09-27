@@ -194,7 +194,7 @@ export default async function AboutPage({ params }: Props) {
                     {isKo ? section.titleKo : section.titleEn}
                   </h2>
                 </div>
-                <p className="text-sm leading-relaxed text-dark-700 break-keep md:text-base pl-10">
+                <p className="text-sm leading-relaxed text-dark-700 break-keep md:text-base pl-0 sm:pl-10">
                   {isKo ? section.descKo : section.descEn}
                 </p>
               </section>
@@ -209,7 +209,7 @@ export default async function AboutPage({ params }: Props) {
                   {isKo ? '5. 운영 주체 및 문의' : '5. Operation and Feedback'}
                 </h2>
               </div>
-              <div className="flex flex-col gap-4 pl-10">
+              <div className="flex flex-col gap-4 pl-0 sm:pl-10">
                 <p className="text-sm leading-relaxed text-dark-700 break-keep md:text-base">
                   {isKo
                     ? '‘다른’ 서비스는 Croco 프로젝트 팀에서 기획하고 운영하고 있습니다. 서비스 관련 오류 제보, 등록 요청, 기능 제안은 하단 문의 링크를 통해 언제든지 전달해 주실 수 있습니다.'

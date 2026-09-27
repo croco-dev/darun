@@ -32,14 +32,14 @@ const ProductPhotoItem = ({ photo }: { photo: { imageUrl: string; imageAlt: stri
         <Image
           src={photo.imageUrl}
           alt={photo.imageAlt}
-          width={600}
-          height={220}
+          width={640}
+          height={360}
           onError={() => setHasError(true)}
           className="h-56 sm:h-64 w-auto rounded-xl border border-dark-150/90 bg-white object-contain p-1 shadow-2xs transition-all duration-200 hover:border-dark-300 hover:shadow-md cursor-zoom-in"
         />
       </Zoom>
       <div className="pointer-events-none absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-dark-900/70 text-white opacity-80 backdrop-blur-sm transition-opacity duration-200 sm:opacity-0 group-hover:opacity-100">
-        <Maximize2 size={13} className="stroke-[2.25]" aria-hidden="true" />
+        <Maximize2 size={13} className="stroke-[2.25] shrink-0" aria-hidden="true" />
       </div>
     </div>
   );

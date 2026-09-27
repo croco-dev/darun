@@ -36,8 +36,8 @@ export const ProductTagsForm = bind(
         {tags.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             <span className="inline-flex items-center gap-1 text-xs text-dark-500 font-medium mr-1">
-              <Tag size={13} className="text-dark-400" />
-              적용될 태그 ({tags.length}):
+              <Tag size={13} className="text-dark-400 shrink-0" aria-hidden="true" />
+              적용될 태그 (<span className="tabular-nums">{tags.length}</span>):
             </span>
             {tags.map(tag => (
               <span
@@ -49,11 +49,11 @@ export const ProductTagsForm = bind(
                   type="button"
                   onClick={() => removeTag(tag)}
                   disabled={isBusy}
-                  className="text-dark-400 hover:text-dark-700 ml-0.5 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-dark-400 hover:text-dark-700 ml-0.5 rounded-full p-0.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-dark-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
                   title={`${tag} 태그 제거`}
                   aria-label={`${tag} 태그 제거`}
                 >
-                  <X size={12} />
+                  <X size={12} className="shrink-0" aria-hidden="true" />
                 </button>
               </span>
             ))}

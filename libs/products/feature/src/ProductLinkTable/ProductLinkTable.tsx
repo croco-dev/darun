@@ -23,7 +23,9 @@ gql`
 type ProductLinkTableLinkRef = {
   id: string;
   isPrimary: boolean;
-  ' $fragmentRefs'?: { EditProductLinkItemFragment: EditProductLinkItemFragment };
+  ' $fragmentRefs'?: {
+    EditProductLinkItemFragment: EditProductLinkItemFragment;
+  };
 };
 
 type ProductLinkRowProps = {
@@ -55,11 +57,16 @@ function LinkIcon({ iconUrl, title, isPrimary }: { iconUrl?: string; title: stri
     Boolean(iconUrl?.includes('pvjgv9btsktstjkoarrl'));
 
   if (isOfficialWebsite) {
-    return <Globe className={cn('h-5 w-5 stroke-[2]', isPrimary ? 'text-white' : 'text-dark-800')} />;
+    return (
+      <Globe
+        className={cn('h-5 w-5 stroke-[2] shrink-0', isPrimary ? 'text-white' : 'text-dark-800')}
+        aria-hidden="true"
+      />
+    );
   }
 
   if (!iconUrl || hasError) {
-    return <Link2 className={cn('h-5 w-5', isPrimary ? 'text-white' : 'text-dark-500')} />;
+    return <Link2 className={cn('h-5 w-5 shrink-0', isPrimary ? 'text-white' : 'text-dark-500')} aria-hidden="true" />;
   }
 
   return (
@@ -129,7 +136,7 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
         <div className="flex justify-end gap-0">
           <Button type="button" variant="base" size="sm" onClick={() => onEdit(link)} className="shrink-0">
             <span className="inline-flex items-center gap-2">
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-4 w-4 shrink-0" aria-hidden="true" />
               정보 수정
             </span>
           </Button>
@@ -166,7 +173,7 @@ export const ProductLinkTable = bind(
     return (
       <>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse table-fixed">
+          <table className="w-full border-collapse table-fixed" aria-label="링크 목록">
             <thead className="bg-surface-100 text-left text-dark-900">
               <tr>
                 <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[80px]">
@@ -179,7 +186,9 @@ export const ProductLinkTable = bind(
                 <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[120px]">
                   주 링크 여부
                 </th>
-                <th className="border-b border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 last:border-r-0 w-[120px]" />
+                <th className="border-b border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 last:border-r-0 w-[120px]">
+                  <span className="sr-only">수정</span>
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white">

@@ -90,11 +90,13 @@ export function ToastProvider({
                 <AlertCircle size={14} className="stroke-[2.5]" aria-hidden="true" />
               )}
             </div>
-            <span className="text-sm font-semibold tracking-tight text-white/95 break-keep">{toast.message}</span>
+            <span className="text-sm font-semibold tracking-tight text-white/95 break-words [word-break:keep-all]">
+              {toast.message}
+            </span>
             <button
               type="button"
               onClick={() => removeToast(toast.id)}
-              className="-mr-1.5 ml-1 inline-flex h-8 w-8 min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg text-white/60 transition-all hover:bg-white/15 hover:text-white active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              className="-mr-1.5 ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/60 transition-all hover:bg-white/15 hover:text-white active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
               aria-label={closeAriaLabel}
             >
               <X size={14} className="stroke-[2.5]" aria-hidden="true" />

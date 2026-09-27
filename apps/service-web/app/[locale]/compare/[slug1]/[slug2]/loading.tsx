@@ -61,7 +61,7 @@ export default function Loading() {
           {/* Comparison Table Skeleton */}
           <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
             {/* Header Row */}
-            <div className="grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 p-3.5 sm:p-4 md:p-5 rounded-t-xl">
+            <div className="grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
               <div className="flex items-center gap-2.5 pr-3 sm:pr-4 md:pr-5">
                 <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg shrink-0" />
                 <Skeleton className="h-5 w-28 rounded" />
@@ -78,10 +78,18 @@ export default function Loading() {
                 <Skeleton className="mb-2 h-3.5 w-16 rounded" />
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-150/70">
                   <div className="md:pr-5">
-                    <Skeleton className="h-4 w-4/5 rounded" />
+                    {i === 3 ? (
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    ) : (
+                      <Skeleton className="h-4 w-4/5 rounded" />
+                    )}
                   </div>
-                  <div className="md:pl-5">
-                    <Skeleton className="h-4 w-3/4 rounded" />
+                  <div className="border-t border-dark-100/70 pt-2.5 md:border-0 md:pt-0 md:pl-5">
+                    {i === 3 ? (
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    ) : (
+                      <Skeleton className="h-4 w-3/4 rounded" />
+                    )}
                   </div>
                 </div>
               </div>

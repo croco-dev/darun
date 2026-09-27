@@ -23,12 +23,18 @@ export const ProductFeatureGridList = ({ features }: ProductFeatureGridListProps
                 {feature.emoji}
               </span>
             ) : (
-              <Sparkles size={18} className="text-dark-500 stroke-[1.75]" aria-hidden="true" />
+              <Sparkles size={18} className="shrink-0 text-dark-500 stroke-[1.75]" aria-hidden="true" />
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
-            <h4 className="text-sm font-bold tracking-tight text-dark-900 break-keep">{feature.name}</h4>
-            {feature.summary && <p className="text-xs leading-relaxed text-dark-600 break-keep">{feature.summary}</p>}
+            <h4 className="text-sm font-bold tracking-tight text-dark-900 break-words [word-break:keep-all]">
+              {feature.name}
+            </h4>
+            {feature.summary && (
+              <p className="text-xs leading-relaxed text-dark-600 break-words [word-break:keep-all]">
+                {feature.summary}
+              </p>
+            )}
           </div>
         </div>
       ))}

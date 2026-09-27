@@ -1,23 +1,17 @@
-import { Heart } from "@darun/ui";
-import { useLocale } from "next-intl";
-import type { FC } from "react";
+import { Heart } from '@darun/ui';
+import { useLocale } from 'next-intl';
+import type { FC } from 'react';
 
 type VoteCountBadgeProps = {
   count: number;
   className?: string;
 };
 
-export const VoteCountBadge: FC<VoteCountBadgeProps> = ({
-  count,
-  className = "",
-}) => {
+export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' }) => {
   const locale = useLocale();
 
   const formattedCount = count.toLocaleString(locale);
-  const label =
-    locale === "en"
-      ? `${formattedCount} ${count === 1 ? "upvote" : "upvotes"}`
-      : `추천 ${formattedCount}`;
+  const label = locale === 'en' ? `${formattedCount} ${count === 1 ? 'upvote' : 'upvotes'}` : `추천 ${formattedCount}`;
 
   return (
     <div
@@ -28,7 +22,7 @@ export const VoteCountBadge: FC<VoteCountBadgeProps> = ({
     >
       <Heart
         size={12}
-        className="text-dark-400 fill-dark-400/30 transition-colors duration-150 group-hover:text-dark-700 group-hover:fill-dark-700/40"
+        className="shrink-0 text-dark-400 fill-dark-400/30 transition-colors duration-150 group-hover:text-dark-700 group-hover:fill-dark-700/40"
         aria-hidden="true"
       />
       <span>{formattedCount}</span>

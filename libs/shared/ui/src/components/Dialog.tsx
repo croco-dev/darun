@@ -28,6 +28,9 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
     }
 
     if (open) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
       if (!dialog.open) {
         previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         dialog.showModal();
@@ -36,6 +39,10 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
         const firstFocusable = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
         (firstFocusable ?? dialog).focus();
       }
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
     } else if (dialog.open) {
       dialog.close();
       const previouslyFocused = previouslyFocusedRef.current;
@@ -97,9 +104,15 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
     };
   }, []);
 
+  const mouseDownOnBackdropRef = useRef(false);
+
+  const handleDialogMouseDown = (event: React.MouseEvent<HTMLDialogElement>) => {
+    mouseDownOnBackdropRef.current = event.target === dialogRef.current;
+  };
+
   const handleDialogClick = (event: React.MouseEvent<HTMLDialogElement>) => {
     const dialog = dialogRef.current;
-    if (!dialog || event.target !== dialog) return;
+    if (!dialog || event.target !== dialog || !mouseDownOnBackdropRef.current) return;
     const rect = dialog.getBoundingClientRect();
     const isInDialog =
       rect.top <= event.clientY &&
@@ -115,6 +128,7 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
     <dialog
       ref={dialogRef}
       aria-labelledby={labelledBy}
+      onMouseDown={handleDialogMouseDown}
       onClick={handleDialogClick}
       className={cn(
         'm-auto max-h-[calc(100dvh-3rem)] max-w-[min(96rem,100vw-2rem)] rounded-3xl border-0 bg-transparent p-0 text-dark-900 shadow-elevated outline-none backdrop:bg-dark-950/60 backdrop:backdrop-blur-sm backdrop:transition-opacity motion-reduce:backdrop:transition-none',

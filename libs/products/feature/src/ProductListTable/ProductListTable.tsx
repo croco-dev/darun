@@ -108,7 +108,7 @@ export function ProductListTable() {
     <div className="flex flex-col gap-3">
       <AdminPanel className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse table-fixed">
+          <table className="w-full min-w-[640px] border-collapse table-fixed" aria-label="서비스 목록">
             <thead className="bg-surface-100">
               {table.getHeaderGroups().map(headerGroup => (
                 <tr key={headerGroup.id}>
@@ -153,10 +153,10 @@ export function ProductListTable() {
       </AdminPanel>
       <AdminPanel className="p-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm text-dark-900">
+          <p className="text-sm text-dark-900 tabular-nums">
             총 {totalCount}개의 서비스 중 {products.length > 0 ? pageCount : 0}-
-            {products.length > 0 ? Math.min(totalCount, pageCount + products.length - 1) : 0}번째 항목을 표시하고
-            있습니다.
+            {products.length > 0 ? Math.min(totalCount, pageCount + products.length - 1) : 0}
+            번째 항목을 표시하고 있습니다.
           </p>
           <div className="flex gap-2">
             <Button
@@ -168,7 +168,7 @@ export function ProductListTable() {
               onClick={loadPreviousPage}
             >
               <span className="inline-flex items-center gap-2">
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                 이전
               </span>
             </Button>
@@ -181,7 +181,7 @@ export function ProductListTable() {
               onClick={loadNextPage}
             >
               <span className="inline-flex items-center gap-2">
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                 다음
               </span>
             </Button>

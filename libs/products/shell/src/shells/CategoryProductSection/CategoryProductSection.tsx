@@ -106,7 +106,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                 </span>
               )}
             </div>
-            <p className="text-sm text-dark-600 break-keep sm:text-base">
+            <p className="text-sm text-dark-600 break-words [word-break:keep-all] sm:text-base">
               {t('subtitle', { category: categoryLabel })}
             </p>
           </div>

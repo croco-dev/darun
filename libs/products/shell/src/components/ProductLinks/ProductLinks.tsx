@@ -44,7 +44,7 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
             rel="noopener noreferrer"
             title={tooltipTitle}
             aria-label={`${tooltipTitle} (${locale === 'ko' ? '새 창에서 열림' : 'opens in a new tab'})`}
-            className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <Button
               as="span"

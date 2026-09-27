@@ -76,13 +76,13 @@ export const ProductUserAction = bind(
                 className="inline-flex items-center justify-center text-cherry-600"
                 title={error}
               >
-                <AlertCircle size={16} className="stroke-[2.25]" aria-hidden="true" />
+                <AlertCircle size={16} className="stroke-[2.25] shrink-0" aria-hidden="true" />
               </span>
             ) : (
               <Heart
                 size={16}
                 aria-hidden="true"
-                className={`transition-colors duration-150 ${
+                className={`shrink-0 transition-colors duration-150 ${
                   voted ? 'fill-white text-white' : 'fill-transparent text-dark-500 group-hover:text-dark-900'
                 }`}
               />
@@ -107,12 +107,12 @@ export const ProductUserAction = bind(
         >
           <div className="flex items-center justify-center">
             {copied ? (
-              <Check size={16} className="text-leaf-600 stroke-[2.25]" aria-hidden="true" />
+              <Check size={16} className="text-leaf-600 stroke-[2.25] shrink-0" aria-hidden="true" />
             ) : (
               <Copy
                 size={16}
                 aria-hidden="true"
-                className="text-dark-500 stroke-[2] transition-colors duration-150 group-hover:text-dark-900"
+                className="text-dark-500 stroke-[2] shrink-0 transition-colors duration-150 group-hover:text-dark-900"
               />
             )}
           </div>

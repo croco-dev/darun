@@ -6,7 +6,7 @@ type RankBadgeProps = {
 };
 
 const sizeStyles = {
-  sm: 'h-6 min-w-6 px-2 text-xs rounded-lg',
+  sm: 'h-6 min-w-6 px-2 shrink-0 text-xs rounded-lg',
   md: 'h-9 min-w-9 px-2 shrink-0 text-sm rounded-xl',
 } as const;
 

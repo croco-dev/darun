@@ -31,13 +31,15 @@ export const ProductFeatureTable = bind(
 
     return (
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse table-fixed text-sm">
+        <table className="w-full border-collapse table-fixed text-sm" aria-label="기능 목록">
           <thead className="bg-surface-100 text-left text-dark-900">
             <tr>
               <th className="w-[70px] border-b border-r border-dark-200 px-4 py-3 font-medium text-center">이모지</th>
               <th className="w-[180px] border-b border-r border-dark-200 px-4 py-3 font-medium">이름</th>
               <th className="border-b border-r border-dark-200 px-4 py-3 font-medium">설명</th>
-              <th className="w-[120px] border-b border-dark-200 px-4 py-3 last:border-r-0"></th>
+              <th className="w-[120px] border-b border-dark-200 px-4 py-3 last:border-r-0">
+                <span className="sr-only">작업</span>
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white">
@@ -65,7 +67,7 @@ export const ProductFeatureTable = bind(
                       size="sm"
                       className="gap-2 shrink-0"
                     >
-                      <Pencil size={16} />
+                      <Pencil size={16} className="shrink-0" aria-hidden="true" />
                       정보 수정
                     </Button>
                   </div>

@@ -48,14 +48,16 @@ export const AllCompanyListTable = bind(
       <div className="flex flex-col gap-3">
         <AdminPanel className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse table-fixed">
+            <table className="w-full min-w-[640px] border-collapse table-fixed" aria-label="기업 목록">
               <thead className="bg-surface-100">
                 <tr>
                   {dataTableColumns.map(col => (
                     <th
                       key={col.accessor}
                       className="border-b border-r border-dark-200 px-4 py-3 text-left text-sm font-medium text-dark-900 last:border-r-0"
-                      style={{ width: col.accessor === 'id' ? 100 : col.accessor === 'startAt' ? 150 : undefined }}
+                      style={{
+                        width: col.accessor === 'id' ? 100 : col.accessor === 'startAt' ? 150 : undefined,
+                      }}
                     >
                       {col.title}
                     </th>
@@ -88,7 +90,7 @@ export const AllCompanyListTable = bind(
         {totalCount !== undefined && totalCount > 0 ? (
           <AdminPanel className="p-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-dark-900">
+              <p className="text-sm text-dark-900 tabular-nums">
                 총 {totalCount}개 중 {(page - 1) * 50 + 1}-{Math.min(page * 50, totalCount)}
               </p>
               {calculatedTotalPages > 1 ? (
@@ -102,11 +104,11 @@ export const AllCompanyListTable = bind(
                     disabled={loading || page <= 1}
                   >
                     <span className="inline-flex items-center gap-2">
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                       이전
                     </span>
                   </Button>
-                  <span className="px-3 py-1 text-sm text-dark-900 font-medium">
+                  <span className="px-3 py-1 text-sm text-dark-900 font-medium tabular-nums">
                     {page} / {calculatedTotalPages}
                   </span>
                   <Button
@@ -119,7 +121,7 @@ export const AllCompanyListTable = bind(
                   >
                     <span className="inline-flex items-center gap-2">
                       다음
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                     </span>
                   </Button>
                 </div>

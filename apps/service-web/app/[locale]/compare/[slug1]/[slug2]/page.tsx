@@ -157,7 +157,10 @@ export default async function ComparePage({ params }: Props) {
 
           <div
             role="region"
-            aria-label={t('title', { name1: product1.name, name2: product2.name })}
+            aria-label={t('title', {
+              name1: product1.name,
+              name2: product2.name,
+            })}
             className="relative grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6"
           >
             <div data-testid="compare-column" className="h-full min-w-0">
@@ -184,10 +187,13 @@ export default async function ComparePage({ params }: Props) {
 
           <div
             role="region"
-            aria-label={t('title', { name1: product1.name, name2: product2.name })}
+            aria-label={t('title', {
+              name1: product1.name,
+              name2: product2.name,
+            })}
             className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card"
           >
-            <div className="sticky top-14 sm:top-16 z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
+            <div className="sticky top-[61px] z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
               <div className="flex min-w-0 items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
                 {product1.logoUrl ? (
                   <Image

@@ -29,13 +29,19 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
     }
 
     if (!file.type.startsWith('image/')) {
-      notifications.show({ message: '이미지 파일만 업로드할 수 있습니다.', color: 'red' });
+      notifications.show({
+        message: '이미지 파일만 업로드할 수 있습니다.',
+        color: 'red',
+      });
       if (inputRef.current) inputRef.current.value = '';
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      notifications.show({ message: '이미지 크기는 최대 10MB까지 가능합니다.', color: 'red' });
+      notifications.show({
+        message: '이미지 크기는 최대 10MB까지 가능합니다.',
+        color: 'red',
+      });
       if (inputRef.current) inputRef.current.value = '';
       return;
     }
@@ -45,15 +51,24 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
       const imageUrl = await upload('images/editor', file, file.name);
 
       if (!imageUrl) {
-        notifications.show({ message: '이미지 업로드에 실패했습니다.', color: 'red' });
+        notifications.show({
+          message: '이미지 업로드에 실패했습니다.',
+          color: 'red',
+        });
         return;
       }
 
       editor.chain().focus().setImage({ src: imageUrl }).run();
-      notifications.show({ message: '이미지가 본문에 추가되었습니다.', color: 'teal' });
+      notifications.show({
+        message: '이미지가 본문에 추가되었습니다.',
+        color: 'teal',
+      });
     } catch (error) {
       console.error('image upload failed:', error);
-      notifications.show({ message: '이미지 업로드에 실패했습니다.', color: 'red' });
+      notifications.show({
+        message: '이미지 업로드에 실패했습니다.',
+        color: 'red',
+      });
     } finally {
       setIsUploading(false);
       if (inputRef.current) {
@@ -99,7 +114,7 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
   );
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" role="toolbar" aria-label="서식 도구 모음">
       {menuItems.map(({ label, action, active }) => (
         <MenuItem key={label} label={label} disabled={disabled || isUploading} onClick={action} active={active} />
       ))}
@@ -107,7 +122,7 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
         className={cn(
           menuItemVariants({ active: false }),
           disabled || isUploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer',
-          'inline-flex items-center'
+          'inline-flex items-center focus-within:ring-2 focus-within:ring-dark-900/40'
         )}
       >
         {isUploading ? '업로드 중...' : 'Image'}
@@ -115,7 +130,8 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
           ref={inputRef}
           type="file"
           accept="image/png,image/jpeg,image/webp,image/gif"
-          className="hidden"
+          className="sr-only"
+          aria-label="본문 이미지 업로드"
           disabled={disabled || isUploading}
           onChange={handleSelectImage}
         />

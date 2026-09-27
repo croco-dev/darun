@@ -107,7 +107,7 @@ export const ProductItem = ({
           {headerRight && <div className="shrink-0 pt-0.5">{headerRight}</div>}
         </div>
         {summary && (
-          <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-keep sm:text-sm sm:leading-relaxed">
+          <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-words [word-break:keep-all] sm:text-sm sm:leading-relaxed">
             {summary}
           </p>
         )}
@@ -148,14 +148,14 @@ export const ProductItem = ({
             className={
               isHero
                 ? 'm-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-900 break-words sm:text-3xl sm:break-keep'
-                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
+                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 break-words ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
             }
           >
             {name}
           </NameTag>
           {summary &&
             (isStacked ? (
-              <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-keep sm:text-sm sm:leading-relaxed">
+              <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-words [word-break:keep-all] sm:text-sm sm:leading-relaxed">
                 {summary}
               </p>
             ) : isSummaryNoWrap && !isHero ? (
@@ -166,8 +166,8 @@ export const ProductItem = ({
               <p
                 className={
                   isHero
-                    ? 'text-sm leading-relaxed text-dark-600 break-keep sm:text-base md:text-lg'
-                    : 'line-clamp-2 text-sm leading-relaxed text-dark-600 break-keep'
+                    ? 'text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all] sm:text-base md:text-lg'
+                    : 'line-clamp-2 text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all]'
                 }
               >
                 {summary}

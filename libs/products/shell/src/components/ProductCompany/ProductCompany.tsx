@@ -71,7 +71,9 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
                 <dt className="text-xs font-semibold text-dark-600">{t('company.field.foundedAt')}</dt>
               </div>
               <dd className="min-w-0 flex-1 text-right text-sm font-bold text-dark-900 break-words sm:break-keep">
-                {formatDate(company.startAt, '-', locale)}
+                <time dateTime={new Date(company.startAt).toISOString()}>
+                  {formatDate(company.startAt, '-', locale)}
+                </time>
               </dd>
             </div>
           )}
