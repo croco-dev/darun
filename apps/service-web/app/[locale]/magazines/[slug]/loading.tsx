@@ -1,6 +1,6 @@
 'use client';
 
-import { ContentArea } from '@darun/ui';
+import { ChevronRight, ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { useTranslations } from 'next-intl';
 
@@ -32,7 +32,9 @@ export default function Loading() {
         <ContentArea className="flex flex-col gap-6 pt-5 pb-12 sm:pt-6 sm:pb-16 md:gap-8 md:pt-8 md:pb-20">
           <div className="flex items-center gap-1.5" aria-hidden="true">
             <Skeleton className="h-4 w-10 rounded-md" />
-            <span className="text-dark-300 text-xs select-none">/</span>
+            <ChevronRight size={12} className="shrink-0 text-dark-400 stroke-[2.25] select-none" />
+            <Skeleton className="h-4 w-16 rounded-md" />
+            <ChevronRight size={12} className="shrink-0 text-dark-400 stroke-[2.25] select-none" />
             <Skeleton className="h-4 w-28 rounded-md" />
           </div>
           <div

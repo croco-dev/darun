@@ -1,6 +1,6 @@
 'use client';
 
-import { ContentArea } from '@darun/ui';
+import { ChevronRight, ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { useTranslations } from 'next-intl';
 
@@ -28,7 +28,7 @@ export default function Loading() {
             {/* Breadcrumb Skeleton */}
             <div className="flex items-center gap-1.5" aria-hidden="true">
               <Skeleton className="h-4 w-10 rounded-md" />
-              <span className="text-dark-300 select-none text-xs">/</span>
+              <ChevronRight size={12} className="shrink-0 text-dark-400 stroke-[2.25] select-none" />
               <Skeleton className="h-4 w-28 rounded-md" />
             </div>
 
@@ -163,14 +163,17 @@ export default function Loading() {
             <div className="rounded-card-lg border border-dark-150 bg-white p-5 shadow-card sm:p-6 md:p-8">
               <div className="flex flex-col gap-4">
                 <Skeleton className="h-4 w-20 rounded" />
-                <div className="grid grid-cols-1 divide-y divide-dark-100/80 sm:grid-cols-2 sm:divide-y-0 sm:gap-x-8 sm:gap-y-4">
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={String(i)} className="flex items-center justify-between gap-4 py-3 sm:py-2">
+                    <div
+                      key={String(i)}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-dark-150/70 bg-surface-50/60 p-3.5"
+                    >
                       <div className="flex items-center gap-2">
                         <Skeleton className="h-4 w-4 rounded" />
                         <Skeleton className="h-3.5 w-16 rounded" />
                       </div>
-                      <Skeleton className="h-4 w-28 rounded" />
+                      <Skeleton className="h-4 w-24 rounded" />
                     </div>
                   ))}
                 </div>

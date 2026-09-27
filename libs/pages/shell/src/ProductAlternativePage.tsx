@@ -27,7 +27,7 @@ export const ProductAlternativePage = ({
               ariaLabel={locale === 'ko' ? '탐색 경로' : 'Breadcrumb'}
               items={[
                 { label: t('breadcrumb.home'), href: `/${locale}` },
-                { label: productName, href: `/${locale}/products/${slug}` },
+                { label: productName || slug, href: `/${locale}/products/${slug}` },
                 { label: t('breadcrumb.alternatives'), ariaCurrent: 'page' },
               ]}
             />

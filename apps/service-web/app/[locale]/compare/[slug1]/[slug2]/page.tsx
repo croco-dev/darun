@@ -160,7 +160,7 @@ export default async function ComparePage({ params }: Props) {
             aria-label={t('title', { name1: product1.name, name2: product2.name })}
             className="relative grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6"
           >
-            <div data-testid="compare-column">
+            <div data-testid="compare-column" className="h-full min-w-0">
               <ProductCard
                 product={product1}
                 href={`/${resolvedParams.locale}/products/${product1.slug}`}
@@ -173,7 +173,7 @@ export default async function ComparePage({ params }: Props) {
             >
               VS
             </div>
-            <div data-testid="compare-column">
+            <div data-testid="compare-column" className="h-full min-w-0">
               <ProductCard
                 product={product2}
                 href={`/${resolvedParams.locale}/products/${product2.slug}`}
@@ -184,7 +184,7 @@ export default async function ComparePage({ params }: Props) {
 
           <div
             role="region"
-            aria-label={t('table.name')}
+            aria-label={t('title', { name1: product1.name, name2: product2.name })}
             className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card"
           >
             <div className="sticky top-14 sm:top-16 z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
@@ -323,7 +323,10 @@ function CompareRow({
           <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
             {colLabel1}
           </div>
-          <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-1`}>
+          <div
+            className="text-sm leading-relaxed text-dark-800 break-words break-keep"
+            data-testid={`compare-row-${testid}-1`}
+          >
             {custom1 ? (
               custom1
             ) : tags1 && tags1.length > 0 ? (
@@ -341,11 +344,14 @@ function CompareRow({
             )}
           </div>
         </div>
-        <div className="md:pl-5">
+        <div className="border-t border-dark-100/70 pt-2.5 md:border-0 md:pt-0 md:pl-5">
           <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
             {colLabel2}
           </div>
-          <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-2`}>
+          <div
+            className="text-sm leading-relaxed text-dark-800 break-words break-keep"
+            data-testid={`compare-row-${testid}-2`}
+          >
             {custom2 ? (
               custom2
             ) : tags2 && tags2.length > 0 ? (

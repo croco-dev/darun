@@ -13,7 +13,7 @@ type FeatureItemProps = {
 };
 
 export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureItemProps) => (
-  <div className="group rounded-card-lg border border-dark-150 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none sm:p-6">
+  <div className="group rounded-card-lg border border-dark-150/90 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover motion-reduce:transform-none motion-reduce:transition-none sm:p-6">
     <div className="flex w-full flex-col gap-4">
       <div className="flex items-start gap-3.5">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dark-150/90 bg-surface-100 shadow-2xs sm:h-11 sm:w-11">
@@ -39,7 +39,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
           role="region"
           aria-label={`${name} screenshots`}
           tabIndex={0}
-          className="flex w-full gap-3 overflow-x-auto px-0.5 pt-1 pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+          className="flex w-full gap-3 overflow-x-auto px-0.5 pt-1 pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
           {screenshots.map(screenshot => (
             <div key={screenshot.id} className="shrink-0 snap-start">

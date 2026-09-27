@@ -71,7 +71,7 @@ export function SearchProductPage({ searchParams }: Props) {
                     className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:gap-5"
                     aria-hidden="true"
                   >
-                    {Array.from({ length: 6 }).map((_, i) => (
+                    {Array.from({ length: 8 }).map((_, i) => (
                       <div
                         key={String(i)}
                         className="h-44 sm:h-48 animate-pulse rounded-card-lg border border-dark-150/90 bg-surface-100 motion-reduce:animate-none"

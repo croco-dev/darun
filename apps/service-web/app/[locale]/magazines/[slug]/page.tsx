@@ -144,6 +144,12 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
           {
             '@type': 'ListItem',
             position: 2,
+            name: currentLocale === 'en' ? 'Magazines' : '매거진',
+            item: absolutePublicUrl(currentLocale, '/magazines'),
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
             name: magazine.title,
             item: canonicalUrl,
           },

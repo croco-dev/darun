@@ -36,6 +36,8 @@ export const ArticleCard = ({
             aria-hidden="true"
             loading="lazy"
             decoding="async"
+            width={640}
+            height={360}
             onError={() => setHasImageError(true)}
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transform-none motion-reduce:transition-none"
           />
@@ -66,7 +68,9 @@ export const ArticleCard = ({
               •
             </span>
           )}
-          {date && <span>{formatDate(date, '', locale)}</span>}
+          {date && (
+            <time dateTime={date instanceof Date ? date.toISOString() : undefined}>{formatDate(date, '', locale)}</time>
+          )}
         </div>
       </div>
     </>

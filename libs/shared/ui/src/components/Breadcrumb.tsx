@@ -21,6 +21,8 @@ export function Breadcrumb({ items, testId, ariaLabel, locale, className, ...pro
   const resolvedTestId = testId ?? (props as { 'data-testid'?: string })['data-testid'];
   const defaultAriaLabel = locale === 'ko' ? '탐색 경로' : 'Breadcrumb';
 
+  const validItems = items.filter(item => item.label !== undefined && item.label !== null && item.label !== '');
+
   return (
     <nav
       aria-label={ariaLabel ?? defaultAriaLabel}
@@ -29,8 +31,8 @@ export function Breadcrumb({ items, testId, ariaLabel, locale, className, ...pro
       {...(resolvedTestId && { 'data-testid': resolvedTestId })}
     >
       <ol className="flex flex-wrap items-center gap-1.5">
-        {items.map((item, index) => {
-          const isLast = index === items.length - 1;
+        {validItems.map((item, index) => {
+          const isLast = index === validItems.length - 1;
           const currentAria = item.ariaCurrent ?? (isLast ? 'page' : undefined);
 
           return (

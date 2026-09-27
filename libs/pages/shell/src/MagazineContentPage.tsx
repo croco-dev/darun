@@ -24,6 +24,7 @@ export const MagazineContentPage = ({
             ariaLabel={isKo ? '탐색 경로' : 'Breadcrumb'}
             items={[
               { label: isKo ? '홈' : 'Home', href: `/${locale}` },
+              { label: isKo ? '매거진' : 'Magazines', href: `/${locale}/magazines` },
               { label: title ?? slug, ariaCurrent: 'page' },
             ]}
           />

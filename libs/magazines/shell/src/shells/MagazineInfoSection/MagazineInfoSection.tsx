@@ -45,7 +45,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
   const authorInitial = authorName ? authorName.trim().charAt(0).toUpperCase() : null;
 
   return (
-    <div className="relative overflow-hidden rounded-card-xl border border-dark-150 py-8 shadow-card sm:py-12 lg:py-14">
+    <div className="relative overflow-hidden rounded-card-xl border border-white/10 ring-1 ring-black/20 py-8 shadow-card sm:py-12 lg:py-14">
       {magazine?.backgroundImageUrl ? (
         <Image
           className="absolute inset-0 rounded-card-xl object-cover"
@@ -91,7 +91,7 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
             {formattedDate && (
               <div className="flex items-center gap-1.5 text-white/75">
                 <Calendar size={14} className="stroke-[2] text-white/70" aria-hidden="true" />
-                <span>{formattedDate}</span>
+                <time dateTime={magazine?.publishedAt ?? undefined}>{formattedDate}</time>
               </div>
             )}
           </div>
