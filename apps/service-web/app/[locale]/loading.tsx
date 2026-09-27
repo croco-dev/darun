@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  CategoryNavigationSkeleton,
-  RecentProductSkeleton,
-  TrendingProductSkeleton,
-} from '@darun/products-shell';
+import { CategoryNavigationSkeleton, RecentProductSkeleton, TrendingProductSkeleton } from '@darun/products-shell';
 import { ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { useTranslations } from 'next-intl';

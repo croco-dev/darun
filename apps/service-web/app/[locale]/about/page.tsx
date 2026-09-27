@@ -216,7 +216,9 @@ export default async function AboutPage({ params }: Props) {
                     href="https://forms.gle/nDPFKAYSuoGg2J3MA"
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={isKo ? '문의 및 피드백 보내기 (새 창에서 열림)' : 'Submit Feedback (opens in a new tab)'}
+                    aria-label={
+                      isKo ? '문의 및 피드백 보내기 (새 창에서 열림)' : 'Submit Feedback (opens in a new tab)'
+                    }
                     className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
                     <Button
