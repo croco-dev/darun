@@ -23,7 +23,7 @@ function DetailImage({ src, alt, onError }: { src: string; alt: string; onError:
         aria-label="이미지를 불러올 수 없음"
         className="flex min-h-72 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dark-200 bg-surface-100 text-dark-400"
       >
-        <ImageOff size={32} aria-hidden="true" />
+        <ImageOff size={32} className="shrink-0" aria-hidden="true" />
         <span className="text-sm text-dark-500">이미지를 불러올 수 없어요.</span>
       </div>
     );
@@ -102,7 +102,9 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
     <main id="main-content" className="w-full py-8 md:py-12">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6">
         <div className="flex flex-col gap-2">
-          <h1 className="break-words text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">{displayTitle}</h1>
+          <h1 className="break-words [word-break:keep-all] text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">
+            {displayTitle}
+          </h1>
           <p className="flex flex-wrap items-center gap-2 text-sm text-dark-500">
             <span className="font-medium text-dark-700">{product.name}</span>
             <span aria-hidden="true" className="text-dark-300">
@@ -128,7 +130,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
               className="absolute bottom-3 right-3"
               aria-haspopup="dialog"
             >
-              <Maximize2 size={16} />
+              <Maximize2 size={16} className="shrink-0" aria-hidden="true" />
               <span className="hidden sm:inline">확대</span>
               <span className="sr-only sm:hidden">확대</span>
             </Button>
@@ -152,7 +154,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             color="primary"
             size="md"
           >
-            <ExternalLink size={16} />
+            <ExternalLink size={16} className="shrink-0" aria-hidden="true" />
             서비스 소개
           </Button>
           <Button
@@ -175,7 +177,10 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
         className="w-full"
       >
         <div className="flex max-h-[calc(100dvh-3rem)] flex-col items-center gap-3 p-4">
-          <h2 id="screenshot-zoom-heading" className="max-w-full truncate text-base font-bold text-white">
+          <h2
+            id="screenshot-zoom-heading"
+            className="max-w-full break-words [word-break:keep-all] text-base font-bold text-white"
+          >
             {displayTitle}
           </h2>
           <div className="max-h-[calc(100dvh-9rem)] w-full overflow-y-auto">

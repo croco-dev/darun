@@ -24,7 +24,7 @@ function StepImage({ src, alt }: { src: string; alt: string }) {
         aria-label="이미지를 불러올 수 없음"
         className="flex min-h-72 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dark-200 bg-surface-100 text-dark-400"
       >
-        <ImageOff size={32} aria-hidden="true" />
+        <ImageOff size={32} className="shrink-0" aria-hidden="true" />
         <span className="text-sm text-dark-500">이미지를 불러올 수 없어요. 다른 단계로 이동해 보세요.</span>
       </div>
     );
@@ -142,9 +142,11 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             role="alert"
             className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center"
           >
-            <p className="text-sm font-semibold text-dark-900">플로를 불러오지 못했어요.</p>
+            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+              플로를 불러오지 못했어요.
+            </p>
             <Button type="button" variant="contained" color="primary" size="sm" onClick={() => retry()}>
-              <RefreshCw size={16} />
+              <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
               다시 시도
             </Button>
           </div>
@@ -171,12 +173,16 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               {platformLabel} · {flowTypeLabel} · {stepCount}단계
             </span>
           </div>
-          <h1 className="break-words text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">{detail.title}</h1>
+          <h1 className="break-words [word-break:keep-all] text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">
+            {detail.title}
+          </h1>
           <p className="text-sm text-dark-500">
             <span className="font-medium text-dark-700">{detail.product.name}</span>
           </p>
           {detail.description.length > 0 && (
-            <p className="max-w-2xl text-sm leading-relaxed text-dark-500">{detail.description}</p>
+            <p className="max-w-2xl text-sm leading-relaxed text-dark-500 break-words [word-break:keep-all]">
+              {detail.description}
+            </p>
           )}
         </div>
 
@@ -190,11 +196,11 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               onClick={() => goToStep(activeStepNumber - 1)}
               disabled={!hasPrevStep}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={16} className="shrink-0" aria-hidden="true" />
               이전
               <span className="sr-only"> 단계</span>
             </Button>
-            <p className="text-sm font-semibold text-dark-700" aria-live="polite">
+            <p className="text-sm font-semibold tabular-nums text-dark-700" aria-live="polite">
               {activeStepNumber}/{stepCount} 단계
             </p>
             <Button
@@ -206,7 +212,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               disabled={!hasNextStep}
             >
               다음
-              <ChevronRight size={16} />
+              <ChevronRight size={16} className="shrink-0" aria-hidden="true" />
               <span className="sr-only"> 단계</span>
             </Button>
           </div>
@@ -237,7 +243,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                       type="button"
                       onClick={() => goToStep(stepNumber)}
                       aria-current={isActive ? 'step' : undefined}
-                      className={`flex shrink-0 flex-col items-center gap-1 rounded-lg border p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                      className={`flex shrink-0 flex-col items-center gap-1 rounded-lg border p-1.5 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transform-none motion-reduce:transition-none ${
                         isActive ? 'border-dark-900 bg-surface-100' : 'border-dark-150 bg-white hover:border-dark-300'
                       }`}
                     >
@@ -276,7 +282,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             color="primary"
             size="md"
           >
-            <ExternalLink size={16} />
+            <ExternalLink size={16} className="shrink-0" aria-hidden="true" />
             서비스 소개
           </Button>
         </div>

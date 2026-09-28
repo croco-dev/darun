@@ -57,11 +57,26 @@ export const NewCompanyForm = bind(
       </div>
 
       <AdminActions>
-        <Button as={Link} href="/companies" variant="contained" color="secondary" disabled={loading}>
-          취소
+        <Button
+          as={Link}
+          href="/companies"
+          variant="contained"
+          color="secondary"
+          size="md"
+          disabled={loading}
+          className="active:scale-[0.98] motion-reduce:transform-none"
+        >
+          <span className="whitespace-nowrap">취소</span>
         </Button>
-        <Button type="submit" variant="contained" color="primary" disabled={loading}>
-          {loading ? '저장 중...' : '저장'}
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          size="md"
+          disabled={loading}
+          className="active:scale-[0.98] motion-reduce:transform-none"
+        >
+          <span className="whitespace-nowrap">{loading ? '저장 중...' : '저장'}</span>
         </Button>
       </AdminActions>
     </form>

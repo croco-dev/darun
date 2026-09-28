@@ -37,12 +37,12 @@ export const ProductDetailInfoSection = ({ slug }: ProductDetailInfoSectionProps
             size="sm"
             className="inline-flex items-center gap-1.5"
           >
-            서비스 바로가기
-            <ExternalLink size={14} />
+            <span className="whitespace-nowrap">서비스 바로가기</span>
+            <ExternalLink size={14} className="shrink-0" aria-hidden="true" />
           </Button>
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={openEditModal} variant="base" color="secondary" size="sm">
-              기본 정보 수정
+              <span className="whitespace-nowrap">기본 정보 수정</span>
             </Button>
             <TranslateProductButton slug={slug} />
             <IndexProductButton slug={slug} />

@@ -103,7 +103,7 @@ export const AllCompanyListTable = bind(
                     onClick={() => handlePage(Math.max(1, page - 1))}
                     disabled={loading || page <= 1}
                   >
-                    <span className="inline-flex items-center gap-2">
+                    <span className="inline-flex items-center gap-2 whitespace-nowrap">
                       <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                       이전
                     </span>
@@ -119,7 +119,7 @@ export const AllCompanyListTable = bind(
                     onClick={() => handlePage(Math.min(calculatedTotalPages, page + 1))}
                     disabled={loading || page >= calculatedTotalPages}
                   >
-                    <span className="inline-flex items-center gap-2">
+                    <span className="inline-flex items-center gap-2 whitespace-nowrap">
                       다음
                       <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                     </span>
@@ -146,6 +146,6 @@ const dataTableColumns: Array<{
   {
     accessor: 'startAt',
     title: '설립일',
-    render: ({ startAt }) => formatDate(startAt),
+    render: ({ startAt }) => <span className="tabular-nums whitespace-nowrap">{formatDate(startAt)}</span>,
   },
 ];

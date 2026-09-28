@@ -44,7 +44,7 @@ export const ArticleCard = ({
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-surface-100 text-dark-400">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150/80 bg-white/90 text-dark-400 shadow-2xs">
-              <Sparkles size={20} className="stroke-[1.75]" aria-hidden="true" />
+              <Sparkles size={20} className="shrink-0 stroke-[1.75]" aria-hidden="true" />
             </div>
           </div>
         )}
@@ -66,14 +66,17 @@ export const ArticleCard = ({
           </p>
         )}
         <div className="mt-auto flex items-center gap-x-2 pt-3 text-xs text-dark-500">
-          {author && <span className="font-semibold text-dark-800">{author}</span>}
+          {author && <span className="max-w-[120px] truncate font-semibold text-dark-800">{author}</span>}
           {author && date && (
             <span aria-hidden="true" className="select-none text-dark-300">
               •
             </span>
           )}
           {date && (
-            <time className="tabular-nums" dateTime={date instanceof Date ? date.toISOString() : undefined}>
+            <time
+              className="tabular-nums whitespace-nowrap"
+              dateTime={date instanceof Date ? date.toISOString() : undefined}
+            >
               {formatDate(date, '', locale)}
             </time>
           )}

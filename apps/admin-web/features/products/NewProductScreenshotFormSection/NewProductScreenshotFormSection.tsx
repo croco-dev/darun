@@ -79,7 +79,7 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
                   <img
                     src={previewUrl}
                     alt="스크린샷 미리보기"
-                    className="h-24 w-auto rounded-lg border border-dark-200 object-contain p-1 bg-white"
+                    className="h-24 w-auto shrink-0 rounded-lg border border-dark-200 object-contain p-1 bg-white"
                   />
                   <span className="text-xs text-dark-500">선택된 스크린샷 미리보기</span>
                 </div>
@@ -142,12 +142,21 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
               href={`/products/${productSlug}`}
               variant="contained"
               color="secondary"
+              size="md"
               disabled={loading}
+              className="active:scale-[0.98] motion-reduce:transform-none"
             >
-              취소
+              <span className="whitespace-nowrap">취소</span>
             </Button>
-            <Button type="submit" size="md" variant="contained" color="primary" disabled={loading}>
-              {loading ? '추가 중...' : '추가'}
+            <Button
+              type="submit"
+              size="md"
+              variant="contained"
+              color="primary"
+              disabled={loading}
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
+              <span className="whitespace-nowrap">{loading ? '추가 중...' : '추가'}</span>
             </Button>
           </AdminActions>
         </div>

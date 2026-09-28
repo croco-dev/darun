@@ -1,6 +1,17 @@
 'use client';
 
-import { Button, Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, ExternalLink, Sparkles, User, formatDate } from '@darun/ui';
+import {
+  Button,
+  Calendar,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ExternalLink,
+  Sparkles,
+  User,
+  formatDate,
+} from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminPanel } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
@@ -18,7 +29,7 @@ function MagazineThumbnail({ src, alt }: { src?: string | null; alt: string }) {
   if (!src || hasError) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-100 to-surface-200 text-dark-400">
-        <Sparkles size={28} className="text-dark-300" />
+        <Sparkles size={28} className="shrink-0 text-dark-300" aria-hidden="true" />
       </div>
     );
   }
@@ -96,12 +107,12 @@ export const MagazinesList = bind(
                     >
                       {isPublished ? (
                         <>
-                          <CheckCircle2 size={12} />
+                          <CheckCircle2 size={12} className="shrink-0" aria-hidden="true" />
                           발행됨
                         </>
                       ) : (
                         <>
-                          <Clock size={12} />
+                          <Clock size={12} className="shrink-0" aria-hidden="true" />
                           초안(미발행)
                         </>
                       )}
@@ -116,9 +127,13 @@ export const MagazinesList = bind(
                       /{item.slug}
                     </code>
                   </div>
-                  <h3 className="text-base font-bold text-dark-900 line-clamp-2 mb-2 leading-snug">{item.title}</h3>
+                  <h3 className="text-base font-bold text-dark-900 line-clamp-2 mb-2 leading-snug break-words [word-break:keep-all]">
+                    {item.title}
+                  </h3>
                   {item.summary && (
-                    <p className="text-xs text-dark-500 line-clamp-2 leading-relaxed mb-4">{item.summary}</p>
+                    <p className="text-xs text-dark-500 line-clamp-2 leading-relaxed mb-4 break-words [word-break:keep-all]">
+                      {item.summary}
+                    </p>
                   )}
 
                   {/* Meta info & links */}
@@ -126,13 +141,13 @@ export const MagazinesList = bind(
                     <div className="flex items-center gap-3">
                       {item.author?.name && (
                         <span className="inline-flex items-center gap-1">
-                          <User size={12} className="text-dark-400" />
-                          {item.author.name}
+                          <User size={12} className="shrink-0 text-dark-400" aria-hidden="true" />
+                          <span className="max-w-[100px] truncate">{item.author.name}</span>
                         </span>
                       )}
                       <span className="inline-flex items-center gap-1">
-                        <Calendar size={12} className="text-dark-400" />
-                        {formatDate(displayDate)}
+                        <Calendar size={12} className="shrink-0 text-dark-400" aria-hidden="true" />
+                        <span className="tabular-nums whitespace-nowrap">{formatDate(displayDate)}</span>
                       </span>
                     </div>
 
@@ -145,7 +160,7 @@ export const MagazinesList = bind(
                         title="서비스 웹에서 보기"
                       >
                         <span>보기</span>
-                        <ExternalLink size={12} />
+                        <ExternalLink size={12} className="shrink-0" aria-hidden="true" />
                       </a>
                     )}
                   </div>
@@ -158,7 +173,7 @@ export const MagazinesList = bind(
         {totalPages > 1 && (
           <AdminPanel className="p-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-dark-900">
+              <p className="text-sm text-dark-900 tabular-nums">
                 총 {totalCount}개의 매거진 중 {page} / {totalPages} 페이지
               </p>
               <div className="flex gap-2">
@@ -170,7 +185,7 @@ export const MagazinesList = bind(
                   onClick={() => setPage(prev => Math.max(1, prev - 1))}
                 >
                   <span className="inline-flex items-center gap-2">
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                     이전
                   </span>
                 </Button>
@@ -182,7 +197,7 @@ export const MagazinesList = bind(
                   onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
                 >
                   <span className="inline-flex items-center gap-2">
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                     다음
                   </span>
                 </Button>

@@ -111,10 +111,10 @@ const View = ({
     <main id="main-content" className="w-full py-8 md:py-12">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 md:gap-10 md:px-6">
         <header className="flex flex-col gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-dark-900 break-words [word-break:keep-all] md:text-3xl">
             디자인과 UX를 화면으로 탐색하세요
           </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-dark-500 md:text-base">
+          <p className="max-w-2xl text-sm leading-relaxed text-dark-500 break-words [word-break:keep-all] md:text-base">
             다른 팀이 손수 등록한 서비스 화면을 검색하고, 플랫폼과 화면 유형으로 나누어 살펴보세요.
           </p>
         </header>
@@ -214,17 +214,23 @@ const View = ({
             role="alert"
             className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center"
           >
-            <ImageOff size={28} className="text-dark-400" aria-hidden="true" />
-            <p className="text-sm font-semibold text-dark-900">스크린샷을 불러오지 못했어요.</p>
+            <ImageOff size={28} className="shrink-0 text-dark-400" aria-hidden="true" />
+            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+              스크린샷을 불러오지 못했어요.
+            </p>
             <Button type="button" variant="contained" color="primary" size="sm" onClick={() => retry()}>
-              <RefreshCw size={16} />
+              <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
               다시 시도
             </Button>
           </div>
         ) : cards.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center">
-            <p className="text-sm font-semibold text-dark-900">검색 결과가 없습니다.</p>
-            <p className="text-sm text-dark-500">다른 검색어나 필터로 시도해 보세요.</p>
+            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+              검색 결과가 없습니다.
+            </p>
+            <p className="text-sm text-dark-500 break-words [word-break:keep-all]">
+              다른 검색어나 필터로 시도해 보세요.
+            </p>
             {hasFilters && (
               <Button type="button" variant="shadow" color="primary" size="sm" onClick={() => onClearFilters()}>
                 필터 초기화
@@ -233,7 +239,7 @@ const View = ({
           </div>
         ) : (
           <>
-            <p className="text-xs text-dark-400" aria-live="polite">
+            <p className="text-xs text-dark-400 tabular-nums" aria-live="polite">
               총 {totalCount}개의 화면
             </p>
             <ScreenshotCardGrid cards={cards} />
@@ -263,4 +269,6 @@ const View = ({
   );
 };
 
-export const ScreenshotExplorer = bind(useScreenshotExplorer, View, { displayName: 'ScreenshotExplorer' });
+export const ScreenshotExplorer = bind(useScreenshotExplorer, View, {
+  displayName: 'ScreenshotExplorer',
+});

@@ -22,8 +22,8 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
               <GenerateProductDescriptionButton slug={slug} />
               <Button type="button" onClick={openEditModal} variant="contained" color="secondary" size="sm">
                 <span className="inline-flex items-center gap-2">
-                  <Pencil className="h-4 w-4" />
-                  수정
+                  <Pencil className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="whitespace-nowrap">수정</span>
                 </span>
               </Button>
             </div>

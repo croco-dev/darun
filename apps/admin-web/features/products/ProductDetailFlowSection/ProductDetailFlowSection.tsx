@@ -78,7 +78,7 @@ function FlowCoverImage({ src, alt }: { src: string; alt: string }) {
   if (failed) {
     return (
       <div className="flex aspect-video w-full items-center justify-center rounded-md bg-dark-100 text-dark-500">
-        <ImageOff size={20} aria-hidden />
+        <ImageOff size={20} className="shrink-0" aria-hidden="true" />
       </div>
     );
   }
@@ -158,8 +158,8 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
             size="sm"
             className="flex items-center gap-1.5"
           >
-            <Plus size={16} />
-            플로 추가
+            <Plus size={16} className="shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap">플로 추가</span>
           </Button>
         }
       />
@@ -188,8 +188,8 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                 size="sm"
                 className="flex items-center gap-1.5"
               >
-                <Plus size={16} />
-                플로 추가
+                <Plus size={16} className="shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">플로 추가</span>
               </Button>
             }
           />
@@ -203,8 +203,8 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                 <div className="relative">
                   <FlowCoverImage src={flow.coverImageUrl} alt={flow.coverImageAlt || '플로 커버 화면'} />
                   <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-dark-900/80 px-2 py-0.5 text-xs font-medium text-surface-50">
-                    <Layers size={12} aria-hidden />
-                    {flow.stepCount}단계
+                    <Layers size={12} className="shrink-0" aria-hidden="true" />
+                    <span className="tabular-nums">{flow.stepCount}단계</span>
                   </span>
                 </div>
                 <div className="mt-2.5 flex flex-1 flex-col gap-1 px-1">
@@ -219,24 +219,24 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                 <div className="mt-2 flex items-center justify-end gap-1 px-1">
                   <Link
                     href={`/products/${slug}/flows/${flow.id}/edit`}
-                    className="rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900"
+                    className="inline-flex min-h-[28px] min-w-[28px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none"
                     title="플로 수정"
                     aria-label={`${flow.title} 플로 수정`}
                   >
-                    <Pencil size={16} />
+                    <Pencil size={16} className="shrink-0" aria-hidden="true" />
                   </Link>
                   <button
                     type="button"
                     onClick={() => handleDelete(flow.id)}
                     disabled={deletingId !== null}
-                    className="rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 disabled:opacity-50"
+                    className="inline-flex min-h-[28px] min-w-[28px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none"
                     title={deletingId === flow.id ? '삭제 중...' : '플로 삭제'}
                     aria-label={deletingId === flow.id ? `${flow.title} 삭제 중` : `${flow.title} 플로 삭제`}
                   >
                     {deletingId === flow.id ? (
                       <Loader2 size={16} className="animate-spin text-cherry-600 motion-reduce:animate-none" />
                     ) : (
-                      <Trash2 size={16} />
+                      <Trash2 size={16} className="shrink-0" aria-hidden="true" />
                     )}
                   </button>
                 </div>

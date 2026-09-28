@@ -32,12 +32,12 @@ export function VisualLayout({ children }: { children: ReactNode }) {
       <footer className="border-t border-dark-150 bg-surface-50/75 py-6">
         <ContentArea>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-dark-400">
+            <p className="text-xs text-dark-400 break-words [word-break:keep-all]">
               © {new Date().getFullYear()} Croco · 다른 Visual은 서비스 화면과 UX를 소개하는 다른(darun)의 공간입니다.
             </p>
             <a
               href="https://darun.io/ko"
-              className="rounded-lg font-semibold text-dark-500 transition-colors duration-200 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              className="inline-flex min-h-[32px] items-center rounded-lg text-xs font-semibold text-dark-500 whitespace-nowrap transition-colors duration-200 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:min-h-0 sm:text-sm"
             >
               darun.io 서비스 비교
             </a>

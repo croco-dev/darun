@@ -16,7 +16,7 @@ export const RankBadge = ({ rank, size = 'sm' }: RankBadgeProps) => {
     <span
       role="text"
       aria-label={locale === 'en' ? `Rank ${rank}` : `${rank}위`}
-      className={`flex items-center justify-center font-black tracking-tight tabular-nums transition-all duration-200 ease-out motion-reduce:transition-none ${sizeStyles[size]} ${
+      className={`flex items-center justify-center font-black tracking-tight select-none tabular-nums transition-all duration-200 ease-out motion-reduce:transition-none ${sizeStyles[size]} ${
         rank === 1
           ? 'border border-dark-900 bg-dark-900 text-white shadow-2xs'
           : rank === 2

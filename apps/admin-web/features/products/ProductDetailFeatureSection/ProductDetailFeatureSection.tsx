@@ -30,7 +30,7 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
           title="기능 관리"
           rightSide={
             <Button as={Link} href={`/products/${slug}/features/new`} variant="contained" color="primary" size="sm">
-              새 기능 추가
+              <span className="whitespace-nowrap">새 기능 추가</span>
             </Button>
           }
         />

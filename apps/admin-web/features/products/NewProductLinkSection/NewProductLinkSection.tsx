@@ -52,11 +52,26 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
         </AdminField>
 
         <AdminActions>
-          <Button as={Link} href={`/products/${productSlug}`} variant="contained" color="secondary" disabled={loading}>
-            취소
+          <Button
+            as={Link}
+            href={`/products/${productSlug}`}
+            variant="contained"
+            color="secondary"
+            size="md"
+            disabled={loading}
+            className="active:scale-[0.98] motion-reduce:transform-none"
+          >
+            <span className="whitespace-nowrap">취소</span>
           </Button>
-          <Button type="submit" variant="contained" color="primary" size="md" disabled={loading}>
-            {loading ? '등록 중...' : '등록'}
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            size="md"
+            disabled={loading}
+            className="active:scale-[0.98] motion-reduce:transform-none"
+          >
+            <span className="whitespace-nowrap">{loading ? '등록 중...' : '등록'}</span>
           </Button>
         </AdminActions>
       </div>
