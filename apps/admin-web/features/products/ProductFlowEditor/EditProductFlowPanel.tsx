@@ -18,9 +18,9 @@ export function EditProductFlowPanel({ slug, flowId }: EditProductFlowPanelProps
       flowId={flowId}
       onSaved={() => {
         notifications.show({ message: '플로가 수정되었습니다.', color: 'teal' });
-        navigate(`/products/${slug}`);
+        navigate(`/products/${encodeURIComponent(slug)}`);
       }}
-      onCancel={() => navigate(`/products/${slug}`)}
+      onCancel={() => navigate(`/products/${encodeURIComponent(slug)}`)}
     />
   );
 }

@@ -89,7 +89,7 @@ export function useProductListTable() {
   };
 
   const handleRowClick = ({ record: { slug } }: { record: { slug: string } }) => {
-    navigate(`/products/${slug}`);
+    navigate(`/products/${encodeURIComponent(slug)}`);
   };
 
   return {

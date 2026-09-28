@@ -101,11 +101,11 @@ export function useProductUserAction({ slug }: ProductUserActionProps) {
     const currentCount = optimisticCount ?? data?.productBySlug?.voteCount ?? 0;
     setOptimisticCount(currentCount + 1);
     setLocalVoted(true);
-    saveVotedSlug(slug);
 
     try {
       await upvoteProductMutation({ variables: { slug } });
-      // Success: keep the optimistic count
+      // Success: persist vote and clear local optimistic counter
+      saveVotedSlug(slug);
       setOptimisticCount(null);
     } catch (err: unknown) {
       // Error: revert optimistic update

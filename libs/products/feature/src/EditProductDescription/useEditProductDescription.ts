@@ -57,10 +57,13 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
   }, [data, form]);
 
   const [editDescription, { loading }] = useMutation(EditProductOnEditProductDescriptionDocument, {
-    refetchQueries: [TempProductBySlugOnEditProductDescriptionDocument, TempProductBySlugOnProductDescriptionDocument],
+    refetchQueries: [
+      { query: TempProductBySlugOnEditProductDescriptionDocument, variables: { slug } },
+      { query: TempProductBySlugOnProductDescriptionDocument, variables: { slug } },
+    ],
     awaitRefetchQueries: true,
     onCompleted: ({ editProduct }) => {
-      if (editProduct.product.id) {
+      if (editProduct?.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
         const description = editProduct.product.description ?? '';
         form.setInitialValues({ description });

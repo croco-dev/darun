@@ -74,7 +74,7 @@ export const RelatedProductsSection = ({ slug }: { slug: string }) => {
           <ProductCard
             key={alt.id}
             product={alt}
-            href={`/${locale}/products/${alt.slug}?from=related`}
+            href={`/${locale}/products/${encodeURIComponent(alt.slug)}?from=related`}
             source="related"
             onClick={() => handleClick(alt.slug, index + 1)}
           />

@@ -73,7 +73,8 @@ const PLATFORM_LABELS: Record<string, string> = {
 };
 
 function FlowCoverImage({ src, alt }: { src?: string; alt?: string }) {
-  const [failed, setFailed] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = Boolean(src && failedSrc === src);
 
   if (failed || !src) {
     return (
@@ -87,7 +88,7 @@ function FlowCoverImage({ src, alt }: { src?: string; alt?: string }) {
       src={src}
       alt={alt ?? ''}
       className="aspect-video w-full rounded-md object-cover"
-      onError={() => setFailed(true)}
+      onError={() => setFailedSrc(src)}
     />
   );
 }

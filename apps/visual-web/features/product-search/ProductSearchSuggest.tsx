@@ -133,7 +133,7 @@ export function ProductSearchSuggest({
                 className="size-6 shrink-0 rounded-md object-contain"
                 onError={event => {
                   const img = event.currentTarget;
-                  if (img.src !== DEFAULT_ICON) {
+                  if (!img.src.endsWith(DEFAULT_ICON)) {
                     img.src = DEFAULT_ICON;
                   }
                 }}

@@ -108,7 +108,9 @@ const MIN_STEPS = 2;
 const MAX_STEPS = 50;
 
 function StepImage({ src, alt }: { src: string; alt: string }) {
-  const [failed, setFailed] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = Boolean(src && failedSrc === src);
+
   if (failed) {
     return (
       <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-md bg-dark-100 text-dark-500">
@@ -117,7 +119,7 @@ function StepImage({ src, alt }: { src: string; alt: string }) {
     );
   }
   return (
-    <img src={src} alt={alt} className="h-20 w-32 shrink-0 rounded-md object-cover" onError={() => setFailed(true)} />
+    <img src={src} alt={alt} className="h-20 w-32 shrink-0 rounded-md object-cover" onError={() => setFailedSrc(src)} />
   );
 }
 

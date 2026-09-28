@@ -83,10 +83,10 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
       refetchQueries: [{ query: GetProductScreenshotsOnDetailSectionDocument, variables: { slug: productSlug } }],
       awaitRefetchQueries: true,
       onCompleted: ({ addProductScreenshot }) => {
-        if (addProductScreenshot.product?.id) {
+        if (addProductScreenshot?.product?.id) {
           notifications.show({ message: '생성되었습니다.', color: 'teal' });
           form.reset();
-          navigate(`/products/${productSlug}`);
+          navigate(`/products/${encodeURIComponent(productSlug)}`);
         }
       },
       onError: error => {

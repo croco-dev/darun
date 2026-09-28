@@ -26,7 +26,7 @@ export const RecentProductList = bind(useRecentProductList, ({ products, locale 
         <ProductCard
           key={product.id}
           product={product}
-          href={`/${locale}/products/${product.slug}?from=recent`}
+          href={`/${locale}/products/${encodeURIComponent(product.slug)}?from=recent`}
           source="recent"
         />
       ))}

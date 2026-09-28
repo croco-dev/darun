@@ -16,9 +16,9 @@ export function NewProductFlowPanel({ slug }: NewProductFlowPageProps) {
       slug={slug}
       onSaved={() => {
         notifications.show({ message: '플로가 등록되었습니다.', color: 'teal' });
-        navigate(`/products/${slug}`);
+        navigate(`/products/${encodeURIComponent(slug)}`);
       }}
-      onCancel={() => navigate(`/products/${slug}`)}
+      onCancel={() => navigate(`/products/${encodeURIComponent(slug)}`)}
     />
   );
 }

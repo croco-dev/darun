@@ -31,7 +31,7 @@ export const ProductAlternativeList = bind(
             <div className="flex w-full flex-col gap-4">
               <div className="flex flex-row items-start justify-between gap-3 sm:gap-4">
                 <Link
-                  href={`/${locale}/products/${product.slug}?from=related`}
+                  href={`/${locale}/products/${encodeURIComponent(product.slug)}?from=related`}
                   className="group block min-w-0 flex-1 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <ProductItem

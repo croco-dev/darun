@@ -49,6 +49,8 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
   });
 
   const [registerProductCompany, { loading }] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
+    refetchQueries: [{ query: TempProductBySlugOnProductCompanyInfoDocument, variables: { slug } }],
+    awaitRefetchQueries: true,
     onCompleted: ({ registerProductCompany }) => {
       if (registerProductCompany?.product?.id) {
         notifications.show({ message: '저장되었습니다.', color: 'green' });
@@ -66,8 +68,6 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
         color: 'red',
       });
     },
-    refetchQueries: [TempProductBySlugOnProductCompanyInfoDocument],
-    awaitRefetchQueries: true,
   });
 
   const [search] = useLazyQuery(SearchCompaniesOnEditProductCompanyDocument);

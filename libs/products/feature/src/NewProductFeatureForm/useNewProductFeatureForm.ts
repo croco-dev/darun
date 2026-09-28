@@ -61,7 +61,7 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
         if (createProductFeature?.feature?.id) {
           notifications.show({ message: '생성되었습니다.', color: 'teal' });
           form.reset();
-          navigate(`/products/${productSlug}`);
+          navigate(`/products/${encodeURIComponent(productSlug)}`);
         }
       },
       onError: error => {

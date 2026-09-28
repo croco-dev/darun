@@ -100,7 +100,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
     }
 
     if (newList.length === 2) {
-      router.push(`/${locale}/compare/${newList[0]}/${newList[1]}`);
+      router.push(`/${locale}/compare/${encodeURIComponent(newList[0])}/${encodeURIComponent(newList[1])}`);
     }
   };
 

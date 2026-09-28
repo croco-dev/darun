@@ -63,7 +63,14 @@ export const MagazinesList = bind(
             title="매거진 목록을 불러오지 못했습니다."
             error={error}
             action={
-              <Button type="button" variant="contained" color="primary" onClick={() => refetch()}>
+              <Button
+                type="button"
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  refetch().catch(() => {});
+                }}
+              >
                 <span className="select-none whitespace-nowrap">다시 시도</span>
               </Button>
             }

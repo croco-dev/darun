@@ -15,7 +15,8 @@ type ProductPhotosViewProps = {
 };
 
 const ProductPhotoItem = ({ photo }: { photo: { imageUrl: string; imageAlt: string } }) => {
-  const [hasError, setHasError] = useState(false);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const hasError = Boolean(photo.imageUrl && failedUrl === photo.imageUrl);
 
   if (hasError) {
     return (
@@ -34,7 +35,7 @@ const ProductPhotoItem = ({ photo }: { photo: { imageUrl: string; imageAlt: stri
           alt={photo.imageAlt}
           width={640}
           height={360}
-          onError={() => setHasError(true)}
+          onError={() => setFailedUrl(photo.imageUrl)}
           className="h-56 sm:h-64 w-auto rounded-xl border border-dark-150/90 bg-white object-contain p-1 shadow-2xs transition-all duration-200 hover:border-dark-300 hover:shadow-md cursor-zoom-in"
         />
       </Zoom>

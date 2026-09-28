@@ -23,8 +23,8 @@ export const ArticleCard = ({
   href,
   locale,
 }: ArticleCardProps) => {
-  const [hasImageError, setHasImageError] = useState(false);
-  const showImage = thumbnailImageUri && !hasImageError;
+  const [failedUri, setFailedUri] = useState<string | undefined>(undefined);
+  const showImage = Boolean(thumbnailImageUri && failedUri !== thumbnailImageUri);
 
   const content = (
     <>
@@ -38,7 +38,7 @@ export const ArticleCard = ({
             decoding="async"
             width={640}
             height={360}
-            onError={() => setHasImageError(true)}
+            onError={() => setFailedUri(thumbnailImageUri)}
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transform-none motion-reduce:transition-none"
           />
         ) : (

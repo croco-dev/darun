@@ -50,7 +50,7 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
         return (
           <Link
             key={product.id}
-            href={`/${locale}/products/${product.slug}?from=trending`}
+            href={`/${locale}/products/${encodeURIComponent(product.slug)}?from=trending`}
             onClick={() =>
               track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
                 productSlug: product.slug,

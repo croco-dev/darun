@@ -60,7 +60,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       if (createProduct?.product?.slug) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
         form.reset();
-        navigate(`/products/${createProduct.product.slug}`);
+        navigate(`/products/${encodeURIComponent(createProduct.product.slug)}`);
       }
     },
     onError: error => {

@@ -162,6 +162,8 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           <Button
             as="a"
             href={`https://darun.io/ko/products/${encodeURIComponent(product.slug)}`}
+            target="_blank"
+            rel="noopener noreferrer"
             variant="shadow"
             color="primary"
             size="md"

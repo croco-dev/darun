@@ -301,6 +301,8 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
           <Button
             as="a"
             href={`https://darun.io/ko/products/${encodeURIComponent(detail.product.slug)}`}
+            target="_blank"
+            rel="noopener noreferrer"
             variant="shadow"
             color="primary"
             size="md"
