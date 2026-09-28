@@ -16,7 +16,7 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
       <ContentArea>
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-start">
           <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 select-none">
               <Logo size={22} title={t('brandName')} />
               <span className="text-sm font-extrabold tracking-tight text-dark-900">{t('brandName')}</span>
               <span className="text-xs text-dark-300">/</span>
@@ -30,7 +30,7 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
             >
               <Link
                 href={aboutUrl}
-                className="inline-flex min-h-[32px] sm:min-h-0 items-center py-1 text-sm font-medium text-dark-600 transition-colors duration-200 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="inline-flex min-h-[32px] sm:min-h-0 items-center py-1 text-sm font-medium text-dark-600 transition-colors duration-200 select-none active:scale-[0.98] motion-reduce:transform-none hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 {t('about')}
               </Link>
@@ -41,7 +41,7 @@ export const Footer = bind(useFooter, ({ aboutUrl }) => {
                 aria-label={
                   locale === 'ko' ? `${t('contact')} (새 창에서 열림)` : `${t('contact')} (opens in a new tab)`
                 }
-                className="group inline-flex min-h-[32px] sm:min-h-0 items-center gap-1 py-1 text-sm font-medium text-dark-600 transition-colors duration-200 hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="group inline-flex min-h-[32px] sm:min-h-0 items-center gap-1 py-1 text-sm font-medium text-dark-600 transition-colors duration-200 select-none active:scale-[0.98] motion-reduce:transform-none hover:text-dark-900 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <span>{t('contact')}</span>
                 <ExternalLink

@@ -38,7 +38,7 @@ function GoogleIcon({ className, ...props }: React.ComponentPropsWithoutRef<'svg
 }
 
 export function GoogleButton({ children, className, disabled, fullWidth, loading, ...props }: GoogleButtonProps) {
-  const mergedClassName = [fullWidth ? 'w-full' : '', className].filter(Boolean).join(' ');
+  const mergedClassName = [fullWidth ? 'w-full' : '', 'min-h-[44px]', className].filter(Boolean).join(' ');
 
   return (
     <Button
@@ -49,7 +49,7 @@ export function GoogleButton({ children, className, disabled, fullWidth, loading
       aria-busy={loading}
       {...props}
     >
-      <span className="inline-flex items-center gap-2">
+      <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
         {loading ? (
           <svg
             className="h-4 w-4 shrink-0 animate-spin text-current motion-reduce:animate-none"

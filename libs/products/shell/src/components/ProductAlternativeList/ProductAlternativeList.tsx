@@ -51,7 +51,9 @@ export const ProductAlternativeList = bind(
                 <>
                   <div className="w-full border-t border-dashed border-dark-200/80" />
                   <div className="flex flex-col gap-3">
-                    <p className="text-sm font-semibold text-dark-900">{t('list.feature.title')}</p>
+                    <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+                      {t('list.feature.title')}
+                    </p>
                     <ProductFeatureGridList
                       features={product.features.map(item => ({
                         ...item,
@@ -70,7 +72,7 @@ export const ProductAlternativeList = bind(
             className="group inline-flex rounded-xl transition-transform active:scale-[0.98] motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <Button as="span" variant="shadow" color="secondary" size="md">
-              {t('list.browseMore')}
+              <span className="select-none whitespace-nowrap">{t('list.browseMore')}</span>
             </Button>
           </Link>
         </div>

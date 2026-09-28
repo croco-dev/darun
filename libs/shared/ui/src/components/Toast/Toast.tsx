@@ -73,7 +73,7 @@ export function ToastProvider({
             data-testid={`toast-${toast.type}`}
             role={toast.type === 'error' ? 'alert' : 'status'}
             aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
-            className={`pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/12 bg-dark-900/95 px-4 py-3 text-white shadow-elevated backdrop-blur-md transition-all motion-reduce:animate-none ${
+            className={`pointer-events-auto select-none flex items-center gap-3 rounded-2xl border border-white/12 bg-dark-900/95 px-4 py-3 text-white shadow-elevated backdrop-blur-md transition-all motion-reduce:animate-none ${
               toast.exiting ? 'animate-fade-out-down' : 'animate-fade-in-up'
             }`}
           >

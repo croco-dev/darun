@@ -13,6 +13,7 @@ export const SearchProductField = bind(useSearchProductField, ({ products, searc
       <AdminInput
         type="text"
         placeholder="서비스 이름을 검색하세요."
+        className="min-h-[44px] sm:min-h-0"
         list={datalistId}
         aria-autocomplete="list"
         aria-controls={datalistId}

@@ -23,7 +23,7 @@ export const AlternativeProductSection = ({ slug }: AlternativeProductSectionPro
           data-testid="alt-empty"
           className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-14 text-center sm:py-16"
         >
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
+          <div className="mb-4 flex h-14 w-14 select-none items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
             <Layers size={24} className="shrink-0 stroke-[2]" aria-hidden="true" />
           </div>
           <p className="text-base font-extrabold text-dark-900 break-words [word-break:keep-all]">{t('empty.title')}</p>
@@ -41,7 +41,7 @@ export const AlternativeProductSection = ({ slug }: AlternativeProductSectionPro
               size="md"
               className="active:scale-[0.98] motion-reduce:transform-none"
             >
-              {t('empty.button')}
+              <span className="select-none whitespace-nowrap">{t('empty.button')}</span>
             </Button>
           </Link>
         </div>

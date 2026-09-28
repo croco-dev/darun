@@ -159,7 +159,7 @@ export const ProductItem = ({
                 {summary}
               </p>
             ) : isSummaryNoWrap && !isHero ? (
-              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-relaxed text-dark-600">
+              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-relaxed text-dark-600 [word-break:keep-all]">
                 {summary}
               </p>
             ) : (

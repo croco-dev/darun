@@ -13,7 +13,7 @@ import { AlertCircle, CheckCircle2, Clock, Copy, Globe, Info, RefreshCw, RotateC
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal, AdminPanel } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -240,7 +240,7 @@ export function LlmJobListSection() {
     if (jobTypeFilter !== 'description') promises.push(refetchTranslation());
     if (jobTypeFilter !== 'translation') promises.push(refetchDescription());
     await Promise.all(promises);
-  });
+  }, [jobTypeFilter, refetchTranslation, refetchDescription]);
 
   // Auto-polling when active jobs exist
   const hasActiveJobs = jobs.some(j => j.status === 'pending' || j.status === 'in_progress');

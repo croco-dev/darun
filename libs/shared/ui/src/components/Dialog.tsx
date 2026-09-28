@@ -131,7 +131,7 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
       onMouseDown={handleDialogMouseDown}
       onClick={handleDialogClick}
       className={cn(
-        'm-auto max-h-[calc(100dvh-3rem)] max-w-[min(96rem,100vw-2rem)] rounded-3xl border-0 bg-transparent p-0 text-dark-900 shadow-elevated outline-none backdrop:bg-dark-950/60 backdrop:backdrop-blur-sm backdrop:transition-opacity motion-reduce:backdrop:transition-none',
+        'm-auto max-h-[calc(100dvh-3rem)] max-w-[min(96rem,100vw-2rem)] overscroll-contain rounded-3xl border-0 bg-transparent p-0 text-dark-900 shadow-elevated outline-none backdrop:bg-dark-950/60 backdrop:backdrop-blur-sm backdrop:transition-opacity motion-reduce:backdrop:transition-none',
         className
       )}
     >

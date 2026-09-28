@@ -122,7 +122,7 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
         className={cn(
           menuItemVariants({ active: false }),
           disabled || isUploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer',
-          'inline-flex items-center focus-within:ring-2 focus-within:ring-dark-900/40'
+          'inline-flex items-center justify-center select-none whitespace-nowrap active:scale-95 motion-reduce:transform-none focus-within:ring-2 focus-within:ring-dark-900/40'
         )}
       >
         {isUploading ? '업로드 중...' : 'Image'}

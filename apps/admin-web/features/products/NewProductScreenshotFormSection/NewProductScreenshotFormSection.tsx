@@ -81,7 +81,9 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
                     alt="스크린샷 미리보기"
                     className="h-24 w-auto shrink-0 rounded-lg border border-dark-200 object-contain p-1 bg-white"
                   />
-                  <span className="text-xs text-dark-500">선택된 스크린샷 미리보기</span>
+                  <span className="text-xs text-dark-500 select-none break-words [word-break:keep-all]">
+                    선택된 스크린샷 미리보기
+                  </span>
                 </div>
               )}
             </div>
@@ -107,7 +109,7 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
             <select
               name="platform"
               disabled={loading}
-              className="h-11 w-full rounded-xl border border-dark-200 bg-white px-3.5 text-sm text-dark-900 disabled:opacity-50"
+              className="h-11 w-full rounded-xl border border-dark-200 bg-white px-3.5 text-sm text-dark-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-dark-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
               {...form.getInputProps('platform')}
             >
               <option value="">미분류</option>
@@ -120,7 +122,7 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
             <select
               name="screenType"
               disabled={loading}
-              className="h-11 w-full rounded-xl border border-dark-200 bg-white px-3.5 text-sm text-dark-900 disabled:opacity-50"
+              className="h-11 w-full rounded-xl border border-dark-200 bg-white px-3.5 text-sm text-dark-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-dark-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
               {...form.getInputProps('screenType')}
             >
               <option value="">미분류</option>
@@ -146,7 +148,7 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
               disabled={loading}
               className="active:scale-[0.98] motion-reduce:transform-none"
             >
-              <span className="whitespace-nowrap">취소</span>
+              <span className="select-none whitespace-nowrap">취소</span>
             </Button>
             <Button
               type="submit"
@@ -156,7 +158,7 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
               disabled={loading}
               className="active:scale-[0.98] motion-reduce:transform-none"
             >
-              <span className="whitespace-nowrap">{loading ? '추가 중...' : '추가'}</span>
+              <span className="select-none whitespace-nowrap">{loading ? '추가 중...' : '추가'}</span>
             </Button>
           </AdminActions>
         </div>

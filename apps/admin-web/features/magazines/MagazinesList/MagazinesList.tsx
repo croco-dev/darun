@@ -64,7 +64,7 @@ export const MagazinesList = bind(
             error={error}
             action={
               <Button type="button" variant="contained" color="primary" onClick={() => refetch()}>
-                <span className="whitespace-nowrap">다시 시도</span>
+                <span className="select-none whitespace-nowrap">다시 시도</span>
               </Button>
             }
           />
@@ -156,7 +156,7 @@ export const MagazinesList = bind(
                         href={`https://darun.io/magazines/${item.slug}`}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="inline-flex items-center gap-1 text-dark-600 hover:text-dark-900 font-medium hover:underline"
+                        className="inline-flex min-h-[32px] items-center gap-1 px-2 rounded text-dark-600 hover:text-dark-900 font-medium active:scale-95 motion-reduce:transform-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
                         title="서비스 웹에서 보기"
                       >
                         <span className="whitespace-nowrap">보기</span>
@@ -185,7 +185,7 @@ export const MagazinesList = bind(
                   onClick={() => setPage(prev => Math.max(1, prev - 1))}
                   className="active:scale-[0.98] motion-reduce:transform-none"
                 >
-                  <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                  <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
                     <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                     이전
                   </span>
@@ -198,7 +198,7 @@ export const MagazinesList = bind(
                   onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
                   className="active:scale-[0.98] motion-reduce:transform-none"
                 >
-                  <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                  <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
                     <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                     다음
                   </span>

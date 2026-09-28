@@ -36,7 +36,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
     <form
       role="search"
       aria-label={t('searchAriaLabel')}
-      className="group flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-solid border-dark-150 bg-white px-3.5 py-2 shadow-button transition-all duration-200 ease-out focus-within:border-dark-900 focus-within:ring-2 focus-within:ring-dark-900/15 focus-within:shadow-button-hover motion-reduce:transition-none"
+      className="group flex min-w-0 flex-1 min-h-[44px] items-center gap-2 rounded-xl border border-solid border-dark-150 bg-white px-3.5 py-2 shadow-button transition-all duration-200 ease-out focus-within:border-dark-900 focus-within:ring-2 focus-within:ring-dark-900/15 focus-within:shadow-button-hover motion-reduce:transition-none"
       onSubmit={onSubmit}
     >
       <Search
@@ -65,7 +65,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
       ) : (
         <kbd
           aria-hidden="true"
-          className="hidden select-none items-center rounded-md border border-dark-150/90 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-500 font-mono shadow-2xs sm:inline-flex"
+          className="hidden select-none items-center rounded-md border border-dark-150/90 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-500 font-mono tabular-nums shadow-2xs sm:inline-flex"
         >
           {shortcutText}
         </kbd>

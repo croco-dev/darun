@@ -27,7 +27,7 @@ function ProductTableLogo({ logoUrl }: { logoUrl?: string | null }) {
   const src = !hasError && logoUrl ? logoUrl : '/images/default-product-icon.svg';
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center select-none shrink-0">
       <Image
         src={src}
         unoptimized={!logoUrl || hasError}
@@ -35,7 +35,7 @@ function ProductTableLogo({ logoUrl }: { logoUrl?: string | null }) {
         width={32}
         height={32}
         onError={() => setHasError(true)}
-        className="h-8 w-8 rounded-lg border border-dark-150 object-contain"
+        className="h-8 w-8 rounded-lg border border-dark-150 object-contain shrink-0"
       />
     </div>
   );
@@ -70,7 +70,7 @@ const columns = [
     header: '슬러그',
     size: 150,
     cell: info => (
-      <div className="truncate text-sm text-dark-500" title={info.getValue()}>
+      <div className="truncate font-mono text-sm text-dark-500" title={info.getValue()}>
         {info.getValue()}
       </div>
     ),
@@ -168,7 +168,7 @@ export function ProductListTable() {
               onClick={loadPreviousPage}
               className="active:scale-[0.98] motion-reduce:transform-none"
             >
-              <span className="inline-flex items-center gap-2 whitespace-nowrap">
+              <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
                 <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                 이전
               </span>
@@ -182,7 +182,7 @@ export function ProductListTable() {
               onClick={loadNextPage}
               className="active:scale-[0.98] motion-reduce:transform-none"
             >
-              <span className="inline-flex items-center gap-2 whitespace-nowrap">
+              <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
                 <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                 다음
               </span>

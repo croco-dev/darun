@@ -88,7 +88,7 @@ export const ProductUserAction = bind(
               />
             )}
             <span
-              className={`whitespace-nowrap text-sm font-semibold tabular-nums transition-colors duration-150 ${voted ? 'text-white' : 'text-dark-700 group-hover:text-dark-900'}`}
+              className={`select-none whitespace-nowrap text-sm font-semibold tabular-nums transition-colors duration-150 ${voted ? 'text-white' : 'text-dark-700 group-hover:text-dark-900'}`}
             >
               {voteCount.toLocaleString(locale)}
             </span>

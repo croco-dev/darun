@@ -160,7 +160,7 @@ export default async function AboutPage({ params }: Props) {
 
           <div className="relative overflow-hidden rounded-card-lg border border-dark-150/80 bg-gradient-to-br from-surface-100/90 via-white to-surface-100/50 p-6 shadow-card md:p-8">
             <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dark-150 bg-white text-dark-800 shadow-2xs">
+              <div className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-xl border border-dark-150 bg-white text-dark-800 shadow-2xs">
                 <Sparkles size={18} className="shrink-0" aria-hidden="true" />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -232,7 +232,7 @@ export default async function AboutPage({ params }: Props) {
                       size="md"
                       className="gap-2 transition-all duration-200 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
                     >
-                      <span className="font-semibold whitespace-nowrap">
+                      <span className="font-semibold select-none whitespace-nowrap">
                         {isKo ? '문의 및 피드백 보내기' : 'Submit Feedback'}
                       </span>
                       <ExternalLink

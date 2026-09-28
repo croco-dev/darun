@@ -26,8 +26,14 @@ export const AllCompanyListTable = bind(
         <AdminErrorState
           error={error}
           action={
-            <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
-              <span className="whitespace-nowrap">다시 시도</span>
+            <Button
+              type="button"
+              onClick={() => refetch()}
+              variant="contained"
+              color="primary"
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
+              <span className="select-none whitespace-nowrap">다시 시도</span>
             </Button>
           }
         />
@@ -104,7 +110,7 @@ export const AllCompanyListTable = bind(
                     disabled={loading || page <= 1}
                     className="active:scale-[0.98] motion-reduce:transform-none"
                   >
-                    <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
                       <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                       이전
                     </span>
@@ -121,7 +127,7 @@ export const AllCompanyListTable = bind(
                     disabled={loading || page >= calculatedTotalPages}
                     className="active:scale-[0.98] motion-reduce:transform-none"
                   >
-                    <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
                       다음
                       <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                     </span>
@@ -141,7 +147,11 @@ const dataTableColumns: Array<{
   title: string;
   render?: (record: CompanyRecord) => React.ReactNode;
 }> = [
-  { accessor: 'id', title: 'ID' },
+  {
+    accessor: 'id',
+    title: 'ID',
+    render: ({ id }) => <span className="font-mono tabular-nums text-xs text-dark-600">{id}</span>,
+  },
   { accessor: 'name', title: '이름' },
   { accessor: 'type', title: '유형' },
   { accessor: 'address', title: '주소' },

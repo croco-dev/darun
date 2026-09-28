@@ -66,11 +66,11 @@ export default function Loading() {
         <div className="relative border-y border-dark-150/80 bg-white/90 backdrop-blur-md">
           <ContentArea>
             <div className="flex gap-1 sm:gap-1.5 overflow-hidden px-1 py-2">
-              <Skeleton className="h-[34px] sm:h-[36px] w-20 rounded-full" />
-              <Skeleton className="h-[34px] sm:h-[36px] w-20 rounded-full" />
-              <Skeleton className="h-[34px] sm:h-[36px] w-20 rounded-full" />
-              <Skeleton className="h-[34px] sm:h-[36px] w-24 rounded-full" />
-              <Skeleton className="h-[34px] sm:h-[36px] w-20 rounded-full" />
+              <Skeleton className="h-11 sm:h-9 w-20 rounded-full" />
+              <Skeleton className="h-11 sm:h-9 w-20 rounded-full" />
+              <Skeleton className="h-11 sm:h-9 w-20 rounded-full" />
+              <Skeleton className="h-11 sm:h-9 w-24 rounded-full" />
+              <Skeleton className="h-11 sm:h-9 w-20 rounded-full" />
             </div>
           </ContentArea>
         </div>

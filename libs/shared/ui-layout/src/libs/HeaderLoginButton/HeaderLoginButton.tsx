@@ -15,7 +15,7 @@ export const HeaderLoginButton = bind(useHeaderLoginButton, ({ isLoading, isLogg
       type="button"
       kind="text"
       size="sm"
-      className="min-h-[36px] sm:min-h-0 active:scale-[0.98] motion-reduce:transform-none"
+      className="min-h-[36px] sm:min-h-0 select-none whitespace-nowrap active:scale-[0.98] motion-reduce:transform-none"
       onClick={logout}
     >
       {t('logout')}
@@ -25,7 +25,7 @@ export const HeaderLoginButton = bind(useHeaderLoginButton, ({ isLoading, isLogg
       type="button"
       kind="text"
       size="sm"
-      className="min-h-[36px] sm:min-h-0 active:scale-[0.98] motion-reduce:transform-none"
+      className="min-h-[36px] sm:min-h-0 select-none whitespace-nowrap active:scale-[0.98] motion-reduce:transform-none"
       onClick={login}
     >
       {t('login')}

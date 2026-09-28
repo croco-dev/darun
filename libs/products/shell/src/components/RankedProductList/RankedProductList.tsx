@@ -17,7 +17,7 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
         data-testid="ranking-empty"
         className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-14 text-center sm:py-16"
       >
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
+        <div className="mb-4 flex h-14 w-14 select-none items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
           <TrendingUp size={24} className="shrink-0 stroke-[2]" aria-hidden="true" />
         </div>
         <p className="text-base font-extrabold tracking-tight text-dark-900 break-words [word-break:keep-all]">
@@ -31,7 +31,7 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
           className="mt-6 group inline-flex rounded-xl transition-transform active:scale-[0.98] motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
           <Button as="span" variant="shadow" color="primary" size="md" className="motion-reduce:transition-none">
-            <span className="whitespace-nowrap">{t('empty.button')}</span>
+            <span className="select-none whitespace-nowrap">{t('empty.button')}</span>
           </Button>
         </Link>
       </div>

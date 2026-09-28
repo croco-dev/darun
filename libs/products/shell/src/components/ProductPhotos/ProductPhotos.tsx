@@ -38,7 +38,7 @@ const ProductPhotoItem = ({ photo }: { photo: { imageUrl: string; imageAlt: stri
           className="h-56 sm:h-64 w-auto rounded-xl border border-dark-150/90 bg-white object-contain p-1 shadow-2xs transition-all duration-200 hover:border-dark-300 hover:shadow-md cursor-zoom-in"
         />
       </Zoom>
-      <div className="pointer-events-none absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-dark-900/70 text-white opacity-80 backdrop-blur-sm transition-opacity duration-200 sm:opacity-0 group-hover:opacity-100">
+      <div className="pointer-events-none select-none absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-dark-900/70 text-white opacity-80 backdrop-blur-sm transition-opacity duration-200 sm:opacity-0 group-hover:opacity-100">
         <Maximize2 size={13} className="stroke-[2.25] shrink-0" aria-hidden="true" />
       </div>
     </div>
@@ -65,7 +65,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
   return (
     <div className="overflow-hidden rounded-card-lg border border-dark-150 bg-white p-4 shadow-card sm:p-5 md:p-6">
       <div className="mb-3.5 flex items-center justify-between border-b border-dark-150/70 pb-3">
-        <span className="text-xs font-semibold text-dark-700">{t('photo.title')}</span>
+        <span className="text-xs font-semibold text-dark-700 select-none">{t('photo.title')}</span>
         <span
           role="status"
           aria-label={
@@ -73,7 +73,7 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
               ? `총 ${photos.length}개의 제품 미리보기 이미지`
               : `Total ${photos.length} product preview ${photos.length === 1 ? 'image' : 'images'}`
           }
-          className="rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs"
+          className="rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs select-none"
         >
           {locale === 'ko'
             ? `${photos.length}개 미리보기`

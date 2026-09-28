@@ -44,6 +44,7 @@ export const NewCompanyForm = bind(
             key={form.key('startAt')}
             {...form.getInputProps('startAt')}
             placeholder="눌러서 선택해주세요."
+            className="font-mono tabular-nums"
             disabled={loading || startAtIsDisabled}
           />
         </AdminField>
@@ -66,7 +67,7 @@ export const NewCompanyForm = bind(
           disabled={loading}
           className="active:scale-[0.98] motion-reduce:transform-none"
         >
-          <span className="whitespace-nowrap">취소</span>
+          <span className="select-none whitespace-nowrap">취소</span>
         </Button>
         <Button
           type="submit"
@@ -76,7 +77,7 @@ export const NewCompanyForm = bind(
           disabled={loading}
           className="active:scale-[0.98] motion-reduce:transform-none"
         >
-          <span className="whitespace-nowrap">{loading ? '저장 중...' : '저장'}</span>
+          <span className="select-none whitespace-nowrap">{loading ? '저장 중...' : '저장'}</span>
         </Button>
       </AdminActions>
     </form>

@@ -84,7 +84,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
         />
 
         <div className="flex items-start gap-4 sm:gap-5">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 shadow-2xs sm:h-14 sm:w-14">
+          <div className="flex h-12 w-12 shrink-0 select-none items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 shadow-2xs sm:h-14 sm:w-14">
             <span aria-hidden="true" className="text-2xl leading-none sm:text-3xl">
               {categoryIcon}
             </span>
@@ -116,7 +116,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-14 text-center sm:py-16">
             <div
               aria-hidden="true"
-              className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl leading-none shadow-2xs"
+              className="mb-3.5 flex h-14 w-14 shrink-0 select-none items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl leading-none shadow-2xs"
             >
               {categoryIcon}
             </div>
@@ -138,7 +138,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                   size="md"
                   className="active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
                 >
-                  <span className="whitespace-nowrap">{t('browseAll')}</span>
+                  <span className="select-none whitespace-nowrap">{t('browseAll')}</span>
                 </Button>
               </Link>
             </div>
