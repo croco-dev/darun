@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const alternates = buildAlternates({
     locale: currentLocale,
-    pathname: `/categories/${slug}`,
+    pathname: `/categories/${encodeURIComponent(slug)}`,
     includeMarkdownAlternate: true,
   });
   const canonicalUrl = alternates.canonical;
@@ -94,7 +94,7 @@ export default async function CategoryPage({ params }: Props) {
   }
 
   const label = currentLocale === 'ko' ? category.labelKo : category.labelEn;
-  const canonicalUrl = absolutePublicUrl(currentLocale, `/categories/${slug}`);
+  const canonicalUrl = absolutePublicUrl(currentLocale, `/categories/${encodeURIComponent(slug)}`);
   const pageTitle = currentLocale === 'ko' ? `${label} 카테고리 - 다른` : `${label} Category - Darun`;
   const description =
     currentLocale === 'ko'

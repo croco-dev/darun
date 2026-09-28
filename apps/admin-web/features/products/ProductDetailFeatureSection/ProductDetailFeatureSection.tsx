@@ -31,7 +31,7 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
           rightSide={
             <Button
               as={Link}
-              href={`/products/${slug}/features/new`}
+              href={`/products/${encodeURIComponent(slug)}/features/new`}
               variant="contained"
               color="primary"
               size="sm"

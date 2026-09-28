@@ -195,89 +195,96 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
           )}
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              type="button"
-              variant="shadow"
-              color="primary"
-              size="sm"
-              onClick={() => goToStep(activeStepNumber - 1)}
-              disabled={!hasPrevStep}
-              className="active:scale-[0.98] motion-reduce:transform-none"
-            >
-              <ChevronLeft size={16} className="shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap">이전</span>
-              <span className="sr-only"> 단계</span>
-            </Button>
-            <p className="text-sm font-semibold tabular-nums text-dark-700" aria-live="polite">
-              {activeStepNumber}/{stepCount} 단계
-            </p>
-            <Button
-              type="button"
-              variant="shadow"
-              color="primary"
-              size="sm"
-              onClick={() => goToStep(activeStepNumber + 1)}
-              disabled={!hasNextStep}
-              className="active:scale-[0.98] motion-reduce:transform-none"
-            >
-              <span className="whitespace-nowrap">다음</span>
-              <ChevronRight size={16} className="shrink-0" aria-hidden="true" />
-              <span className="sr-only"> 단계</span>
-            </Button>
+        {stepCount === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-dark-200 py-16 text-center text-dark-500">
+            <p className="text-base font-semibold text-dark-700">등록된 단계가 없습니다.</p>
+            <p className="mt-1 text-sm text-dark-400">이 플로에는 아직 등록된 스텝(단계)이 없습니다.</p>
           </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <Button
+                  type="button"
+                  variant="shadow"
+                  color="primary"
+                  size="sm"
+                  onClick={() => goToStep(activeStepNumber - 1)}
+                  disabled={!hasPrevStep}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
+                >
+                  <ChevronLeft size={16} className="shrink-0" aria-hidden="true" />
+                  <span className="whitespace-nowrap">이전</span>
+                  <span className="sr-only"> 단계</span>
+                </Button>
+                <p className="text-sm font-semibold tabular-nums text-dark-700" aria-live="polite">
+                  {activeStepNumber}/{stepCount} 단계
+                </p>
+                <Button
+                  type="button"
+                  variant="shadow"
+                  color="primary"
+                  size="sm"
+                  onClick={() => goToStep(activeStepNumber + 1)}
+                  disabled={!hasNextStep}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
+                >
+                  <span className="whitespace-nowrap">다음</span>
+                  <ChevronRight size={16} className="shrink-0" aria-hidden="true" />
+                  <span className="sr-only"> 단계</span>
+                </Button>
+              </div>
 
-          {activeStep && (
-            <figure className="flex flex-col gap-2">
-              <StepImage src={activeStep.screenshot.imageUrl} alt={activeStep.screenshot.imageAlt} />
-              <figcaption className="flex flex-col gap-1 text-sm text-dark-600">
-                <span className="text-xs font-bold tabular-nums text-dark-400">단계 {activeStepNumber}</span>
-                <span className="font-medium text-dark-800 break-words [word-break:keep-all]">
-                  {activeStep.screenshot.title ?? activeStep.screenshot.imageAlt}
-                </span>
-                {activeStep.caption.length > 0 && (
-                  <span className="break-words [word-break:keep-all]">{activeStep.caption}</span>
-                )}
-              </figcaption>
-            </figure>
-          )}
-        </div>
+              {activeStep && (
+                <figure className="flex flex-col gap-2">
+                  <StepImage src={activeStep.screenshot.imageUrl} alt={activeStep.screenshot.imageAlt} />
+                  <figcaption className="flex flex-col gap-1 text-sm text-dark-600">
+                    <span className="text-xs font-bold tabular-nums text-dark-400">단계 {activeStepNumber}</span>
+                    <span className="font-medium text-dark-800 break-words [word-break:keep-all]">
+                      {activeStep.screenshot.title ?? activeStep.screenshot.imageAlt}
+                    </span>
+                    {activeStep.caption.length > 0 && (
+                      <span className="break-words [word-break:keep-all]">{activeStep.caption}</span>
+                    )}
+                  </figcaption>
+                </figure>
+              )}
+            </div>
 
-        {stepCount > 0 && (
-          <nav aria-label="단계 썸네일">
-            <ul className="flex list-none gap-2 overflow-x-auto pb-1">
-              {steps.map((step, index) => {
-                const stepNumber = index + 1;
-                const isActive = index === stepIndex;
-                return (
-                  <li key={step.screenshot.id}>
-                    <button
-                      type="button"
-                      onClick={() => goToStep(stepNumber)}
-                      aria-current={isActive ? 'step' : undefined}
-                      className={`flex min-h-[44px] shrink-0 flex-col items-center gap-1 rounded-lg border p-1.5 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transform-none motion-reduce:transition-none ${
-                        isActive ? 'border-dark-900 bg-surface-100' : 'border-dark-150 bg-white hover:border-dark-300'
-                      }`}
-                    >
-                      <span className="sr-only">단계 {stepNumber}로 이동</span>
-                      <span
-                        className={`text-2xs font-bold tabular-nums select-none ${isActive ? 'text-dark-900' : 'text-dark-400'}`}
+            <nav aria-label="단계 썸네일">
+              <ul className="flex list-none gap-2 overflow-x-auto pb-1">
+                {steps.map((step, index) => {
+                  const stepNumber = index + 1;
+                  const isActive = index === stepIndex;
+                  return (
+                    <li key={step.screenshot.id}>
+                      <button
+                        type="button"
+                        onClick={() => goToStep(stepNumber)}
+                        aria-current={isActive ? 'step' : undefined}
+                        className={`flex min-h-[44px] shrink-0 flex-col items-center gap-1 rounded-lg border p-1.5 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transform-none motion-reduce:transition-none ${
+                          isActive ? 'border-dark-900 bg-surface-100' : 'border-dark-150 bg-white hover:border-dark-300'
+                        }`}
                       >
-                        {stepNumber}
-                      </span>
-                      <img
-                        src={step.screenshot.imageUrl}
-                        alt={step.screenshot.imageAlt}
-                        loading="lazy"
-                        className="h-14 w-24 rounded object-cover object-top"
-                      />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+                        <span className="sr-only">단계 {stepNumber}로 이동</span>
+                        <span
+                          className={`text-2xs font-bold tabular-nums select-none ${isActive ? 'text-dark-900' : 'text-dark-400'}`}
+                        >
+                          {stepNumber}
+                        </span>
+                        <img
+                          src={step.screenshot.imageUrl}
+                          alt={step.screenshot.imageAlt}
+                          loading="lazy"
+                          className="h-14 w-24 rounded object-cover object-top"
+                        />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          </>
         )}
 
         <div className="flex flex-col gap-3 sm:flex-row">

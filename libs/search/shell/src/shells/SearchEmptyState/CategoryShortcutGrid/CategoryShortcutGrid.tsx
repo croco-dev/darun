@@ -22,7 +22,7 @@ export const CategoryShortcutGrid = () => {
       {categories.map(cat => (
         <Link
           key={cat.id}
-          href={`/${locale}/categories/${cat.slug}`}
+          href={`/${locale}/categories/${encodeURIComponent(cat.slug)}`}
           className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
           <span

@@ -81,7 +81,14 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
         </AdminSectionBody>
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="다른 서비스(대안) 관리">
-        <EditAlternativeProducts slug={slug} onSubmit={closeEditModal} onCancel={closeEditModal} />
+        <EditAlternativeProducts
+          slug={slug}
+          onSubmit={() => {
+            closeEditModal();
+            void refetch();
+          }}
+          onCancel={closeEditModal}
+        />
       </AdminModal>
     </>
   );

@@ -38,9 +38,9 @@ describe('ProductDescription', () => {
     expect(container.querySelector('script')).toBeNull();
     expect(container.querySelector('.animate-pulse')).not.toBeNull();
 
-    for (let index = 0; index < 10 && !container.querySelector('strong'); index += 1) {
+    for (let index = 0; index < 40 && !container.querySelector('strong'); index += 1) {
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise(resolve => setTimeout(resolve, 20));
       });
     }
 

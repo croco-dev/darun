@@ -16,7 +16,7 @@ export const ProductDetailLinkSection = ({ slug }: ProductDetailLinkSectionProps
       rightSide={
         <Button
           as={Link}
-          href={`/products/${slug}/links/new`}
+          href={`/products/${encodeURIComponent(slug)}/links/new`}
           variant="contained"
           color="primary"
           size="sm"

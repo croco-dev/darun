@@ -92,8 +92,18 @@ export function useTranslateProductButton({ slug }: TranslateProductButtonProps)
 
       const initialJob = result?.data?.requestProductTranslation;
 
+      if (!initialJob) {
+        notifications.hide(notificationId);
+        notifications.show({
+          title: '번역 실패',
+          message: '번역 요청에 실패했습니다. 다시 시도해 주세요.',
+          color: 'red',
+        });
+        return;
+      }
+
       // 1. If completed synchronously
-      if (initialJob?.status === 'completed') {
+      if (initialJob.status === 'completed') {
         notifications.hide(notificationId);
         notifications.show({
           title: '번역 완료',

@@ -50,12 +50,12 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
 
   const [registerProductCompany, { loading }] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
     onCompleted: ({ registerProductCompany }) => {
-      if (registerProductCompany.product?.id) {
+      if (registerProductCompany?.product?.id) {
         notifications.show({ message: '저장되었습니다.', color: 'green' });
         if (onSubmit) {
           onSubmit();
         } else {
-          navigate(`/products/${slug}`);
+          navigate(`/products/${encodeURIComponent(slug)}`);
         }
       }
     },
@@ -163,7 +163,7 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
     if (onCancel) {
       onCancel();
     } else {
-      navigate(`/products/${slug}`);
+      navigate(`/products/${encodeURIComponent(slug)}`);
     }
   };
 

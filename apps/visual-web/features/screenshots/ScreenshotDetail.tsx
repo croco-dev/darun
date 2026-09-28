@@ -14,7 +14,9 @@ import {
 } from './visualClassifications';
 
 function DetailImage({ src, alt, onError }: { src: string; alt: string; onError: () => void }) {
-  const [hasError, setHasError] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+
+  const hasError = failedSrc === src;
 
   if (hasError) {
     return (
@@ -34,7 +36,7 @@ function DetailImage({ src, alt, onError }: { src: string; alt: string; onError:
       src={src}
       alt={alt}
       onError={() => {
-        setHasError(true);
+        setFailedSrc(src);
         onError();
       }}
       className="max-h-[calc(100dvh-16rem)] w-full rounded-2xl border border-dark-150 bg-surface-100 object-contain"

@@ -43,7 +43,7 @@ export const TrendingProductPreview = () => {
             key={product.id}
             product={product}
             rank={index + 1}
-            href={`/${locale}/products/${product.slug}?from=trending`}
+            href={`/${locale}/products/${encodeURIComponent(product.slug)}?from=trending`}
             source="search-empty"
             onClick={() =>
               track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {

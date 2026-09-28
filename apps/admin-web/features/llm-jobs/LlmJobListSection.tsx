@@ -237,8 +237,8 @@ export function LlmJobListSection() {
 
   const refetchAll = useCallback(async () => {
     const promises: Promise<unknown>[] = [];
-    if (jobTypeFilter !== 'description') promises.push(refetchTranslation());
-    if (jobTypeFilter !== 'translation') promises.push(refetchDescription());
+    if (jobTypeFilter !== 'description') promises.push(Promise.resolve(refetchTranslation?.()).catch(() => {}));
+    if (jobTypeFilter !== 'translation') promises.push(Promise.resolve(refetchDescription?.()).catch(() => {}));
     await Promise.all(promises);
   }, [jobTypeFilter, refetchTranslation, refetchDescription]);
 

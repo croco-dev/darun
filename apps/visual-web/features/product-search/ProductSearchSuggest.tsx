@@ -57,6 +57,11 @@ export function ProductSearchSuggest({
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, []);
 
+  const activeIndexRef = useRef(activeIndex);
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+
   // Keyboard navigation attached to the input element
   useEffect(() => {
     const input = inputRef.current;
@@ -66,26 +71,23 @@ export function ProductSearchSuggest({
       const items = callbacksRef.current;
 
       if (event.key === 'ArrowDown') {
-        setActiveIndex(prev => {
-          if (suggestions.length === 0) return prev;
-          event.preventDefault();
-          return prev < suggestions.length - 1 ? prev + 1 : 0;
-        });
+        if (suggestions.length === 0) return;
+        event.preventDefault();
+        const next = activeIndexRef.current < suggestions.length - 1 ? activeIndexRef.current + 1 : 0;
+        activeIndexRef.current = next;
+        setActiveIndex(next);
       } else if (event.key === 'ArrowUp') {
-        setActiveIndex(prev => {
-          if (suggestions.length === 0) return prev;
-          event.preventDefault();
-          return prev > 0 ? prev - 1 : suggestions.length - 1;
-        });
+        if (suggestions.length === 0) return;
+        event.preventDefault();
+        const next = activeIndexRef.current > 0 ? activeIndexRef.current - 1 : suggestions.length - 1;
+        activeIndexRef.current = next;
+        setActiveIndex(next);
       } else if (event.key === 'Enter') {
-        // Read activeIndex from DOM to avoid stale closure
-        setActiveIndex(prev => {
-          if (prev >= 0 && prev < suggestions.length) {
-            event.preventDefault();
-            items.onSelect(suggestions[prev]);
-          }
-          return prev;
-        });
+        const currentIdx = activeIndexRef.current;
+        if (currentIdx >= 0 && currentIdx < suggestions.length) {
+          event.preventDefault();
+          items.onSelect(suggestions[currentIdx]);
+        }
       } else if (event.key === 'Escape') {
         event.preventDefault();
         items.onClose();

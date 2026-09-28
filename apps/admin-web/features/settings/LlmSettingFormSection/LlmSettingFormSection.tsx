@@ -182,7 +182,11 @@ function LlmSettingForm({
       });
       setClearApiKey(false);
       setApiKey('');
-      await onUpdated();
+      try {
+        await onUpdated();
+      } catch (refetchErr) {
+        console.error('Failed to reload LLM settings after update:', refetchErr);
+      }
     } catch (err) {
       notifications.show({
         title: '저장 실패',

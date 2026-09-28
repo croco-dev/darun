@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 import { ProductDetailPage } from '@darun/pages-shell';
 import { getLocalizedTag } from '@darun/products-shell';
-import { Metadata } from 'next';
 import { notFound } from '@darun/utils-router';
+import { Metadata } from 'next';
 import { cache } from 'react';
 import { JsonLd } from '../../../../lib/seo/json-ld';
 import { getOgLocale, getSiteName } from '../../../../lib/seo/metadata';
@@ -77,7 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const alternates = buildAlternates({
     locale: currentLocale,
-    pathname: `/products/${resolvedParams.slug}`,
+    pathname: `/products/${encodeURIComponent(resolvedParams.slug)}`,
     includeMarkdownAlternate: true,
   });
   const canonicalUrl = alternates.canonical;
@@ -135,7 +135,7 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
     return notFound();
   }
 
-  const canonicalUrl = absolutePublicUrl(currentLocale, `/products/${resolvedParams.slug}`);
+  const canonicalUrl = absolutePublicUrl(currentLocale, `/products/${encodeURIComponent(resolvedParams.slug)}`);
   const titleSuffix = currentLocale === 'en' ? 'Darun: Compare Services in One Place' : '다른: 서비스 비교를 한 곳에서';
   const pageTitle = `${product.name} - ${titleSuffix}`;
 

@@ -159,7 +159,7 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
         rightSide={
           <Button
             as={Link}
-            href={`/products/${slug}/flows/new`}
+            href={`/products/${encodeURIComponent(slug)}/flows/new`}
             variant="contained"
             color="primary"
             size="sm"
@@ -195,7 +195,7 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
             action={
               <Button
                 as={Link}
-                href={`/products/${slug}/flows/new`}
+                href={`/products/${encodeURIComponent(slug)}/flows/new`}
                 variant="contained"
                 color="primary"
                 size="sm"
@@ -231,7 +231,7 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                 </div>
                 <div className="mt-2 flex items-center justify-end gap-1 px-1">
                   <Link
-                    href={`/products/${slug}/flows/${flow.id}/edit`}
+                    href={`/products/${encodeURIComponent(slug)}/flows/${encodeURIComponent(flow.id)}/edit`}
                     className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
                     title="플로 수정"
                     aria-label={`${flow.title} 플로 수정`}

@@ -104,7 +104,7 @@ export const CategoryNavigationSection = () => {
             {categories.map(category => (
               <Link
                 key={category.id}
-                href={`/${locale}/categories/${category.slug}`}
+                href={`/${locale}/categories/${encodeURIComponent(category.slug)}`}
                 onClick={() =>
                   track(AnalyticsEvents.CATEGORY_CHIP_CLICKED, {
                     categorySlug: category.slug,

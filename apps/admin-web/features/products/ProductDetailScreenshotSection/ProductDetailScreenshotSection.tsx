@@ -379,7 +379,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         rightSide={
           <Button
             as={Link}
-            href={`/products/${slug}/screenshots/new`}
+            href={`/products/${encodeURIComponent(slug)}/screenshots/new`}
             variant="contained"
             color="primary"
             size="sm"
@@ -415,7 +415,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
             action={
               <Button
                 as={Link}
-                href={`/products/${slug}/screenshots/new`}
+                href={`/products/${encodeURIComponent(slug)}/screenshots/new`}
                 variant="contained"
                 color="primary"
                 size="sm"

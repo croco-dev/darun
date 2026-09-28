@@ -74,7 +74,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const alternates = buildAlternates({
     locale: currentLocale,
-    pathname: `/products/${resolvedParams.slug}/alternatives`,
+    pathname: `/products/${encodeURIComponent(resolvedParams.slug)}/alternatives`,
     includeMarkdownAlternate: true,
   });
   const canonicalUrl = alternates.canonical;
@@ -145,13 +145,13 @@ export default async function ProductAlternativePageWrapper({ params }: Props) {
         '@type': 'ListItem',
         position: 2,
         name: productName,
-        item: absolutePublicUrl(currentLocale, `/products/${resolvedParams.slug}`),
+        item: absolutePublicUrl(currentLocale, `/products/${encodeURIComponent(resolvedParams.slug)}`),
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: currentLocale === 'en' ? 'Alternatives' : '다른 서비스',
-        item: absolutePublicUrl(currentLocale, `/products/${resolvedParams.slug}/alternatives`),
+        item: absolutePublicUrl(currentLocale, `/products/${encodeURIComponent(resolvedParams.slug)}/alternatives`),
       },
     ],
   };

@@ -93,7 +93,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const alternates = buildAlternates({
     locale: currentLocale,
-    pathname: `/compare/${resolvedParams.slug1}/${resolvedParams.slug2}`,
+    pathname: `/compare/${encodeURIComponent(resolvedParams.slug1)}/${encodeURIComponent(resolvedParams.slug2)}`,
     includeMarkdownAlternate: true,
   });
 
@@ -166,7 +166,7 @@ export default async function ComparePage({ params }: Props) {
             <div data-testid="compare-column" className="h-full min-w-0">
               <ProductCard
                 product={product1}
-                href={`/${resolvedParams.locale}/products/${product1.slug}`}
+                href={`/${resolvedParams.locale}/products/${encodeURIComponent(product1.slug)}`}
                 source="compare"
               />
             </div>
@@ -179,7 +179,7 @@ export default async function ComparePage({ params }: Props) {
             <div data-testid="compare-column" className="h-full min-w-0">
               <ProductCard
                 product={product2}
-                href={`/${resolvedParams.locale}/products/${product2.slug}`}
+                href={`/${resolvedParams.locale}/products/${encodeURIComponent(product2.slug)}`}
                 source="compare"
               />
             </div>
@@ -275,10 +275,10 @@ export default async function ComparePage({ params }: Props) {
               label={t('table.tags')}
               colLabel1={product1.name}
               colLabel2={product2.name}
-              value1={product1.tags.map(t => t.name).join(', ')}
-              value2={product2.tags.map(t => t.name).join(', ')}
-              tags1={product1.tags.map(t => t.name)}
-              tags2={product2.tags.map(t => t.name)}
+              value1={(product1.tags ?? []).map(t => t.name).join(', ')}
+              value2={(product2.tags ?? []).map(t => t.name).join(', ')}
+              tags1={(product1.tags ?? []).map(t => t.name)}
+              tags2={(product2.tags ?? []).map(t => t.name)}
               locale={resolvedParams.locale}
               testid="tags"
               isLast

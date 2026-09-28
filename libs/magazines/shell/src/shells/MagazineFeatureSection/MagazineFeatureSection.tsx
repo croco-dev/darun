@@ -1,7 +1,7 @@
 'use client';
 
 import { ArticleCard } from '@darun/magazines-feature';
-import { BookOpen, Button, ChevronRight, SectionHeader, SectionWrapper } from '@darun/ui';
+import { BookOpen, Button, SectionHeader, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
 
@@ -64,28 +64,12 @@ export const MagazineFeatureSection = ({ articles = [] }: MagazineFeatureSection
   return (
     <SectionWrapper background="white" spacing="md" className="border-t border-dark-100/70">
       <div className="flex w-full flex-col gap-5 md:gap-6">
-        <SectionHeader
-          title={t('home.magazine.title')}
-          subtitle={t('home.magazine.description')}
-          moreLink={
-            <Link
-              href={`/${locale}/ranking`}
-              className="group inline-flex min-h-11 items-center gap-1 rounded-lg px-2 -mr-2 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 motion-reduce:transition-none"
-            >
-              <span className="whitespace-nowrap">{t('home.magazine.more')}</span>
-              <ChevronRight
-                size={16}
-                aria-hidden="true"
-                className="shrink-0 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
-              />
-            </Link>
-          }
-        />
+        <SectionHeader title={t('home.magazine.title')} subtitle={t('home.magazine.description')} />
         <div role="group" aria-label={t('home.magazine.title')} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {articles.slice(0, 3).map(article => (
             <div key={article.id} className="h-full">
               <ArticleCard
-                href={`/${locale}/magazines/${article.slug ?? article.id}`}
+                href={`/${locale}/magazines/${encodeURIComponent(article.slug ?? article.id)}`}
                 thumbnailImageUri={article.thumbnailImageUri}
                 category={article.category}
                 title={article.title}
