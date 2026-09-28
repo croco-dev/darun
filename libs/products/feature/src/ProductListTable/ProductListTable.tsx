@@ -153,7 +153,7 @@ export function ProductListTable() {
       </AdminPanel>
       <AdminPanel className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-dark-900 tabular-nums">
+          <p className="text-sm text-dark-900 tabular-nums break-words [word-break:keep-all]">
             총 {totalCount}개의 서비스 중 {products.length > 0 ? pageCount : 0}-
             {products.length > 0 ? Math.min(totalCount, pageCount + products.length - 1) : 0}
             번째 항목을 표시하고 있습니다.
@@ -166,6 +166,7 @@ export function ProductListTable() {
               size="sm"
               disabled={!hasPreviousPage || isNavigating}
               onClick={loadPreviousPage}
+              className="active:scale-[0.98] motion-reduce:transform-none"
             >
               <span className="inline-flex items-center gap-2 whitespace-nowrap">
                 <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -179,6 +180,7 @@ export function ProductListTable() {
               size="sm"
               disabled={!hasNextPage || isNavigating}
               onClick={loadNextPage}
+              className="active:scale-[0.98] motion-reduce:transform-none"
             >
               <span className="inline-flex items-center gap-2 whitespace-nowrap">
                 <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />

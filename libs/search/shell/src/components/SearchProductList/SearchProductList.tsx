@@ -108,7 +108,9 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
 
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-3">
-            <p className="text-sm font-semibold text-dark-900">{t('list.empty.popularQueries')}</p>
+            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+              {t('list.empty.popularQueries')}
+            </p>
             <div
               data-testid="search-empty-popular-queries"
               tabIndex={0}
@@ -133,7 +135,9 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
           </div>
 
           <div className="flex flex-col gap-3">
-            <p className="text-sm font-semibold text-dark-900">{t('list.empty.categories')}</p>
+            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+              {t('list.empty.categories')}
+            </p>
             <div
               data-testid="search-empty-categories"
               className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
@@ -160,7 +164,9 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
           </div>
 
           <div className="flex flex-col gap-3">
-            <p className="text-sm font-semibold text-dark-900">{t('list.empty.trending')}</p>
+            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+              {t('list.empty.trending')}
+            </p>
             <div data-testid="search-empty-trending" className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
               {trendingProducts.map((product, index) => (
                 <div
@@ -187,7 +193,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
         <span
           role="status"
           aria-live="polite"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs"
+          className="inline-flex select-none whitespace-nowrap items-center gap-1.5 rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs"
         >
           {locale === 'ko' ? (
             <>

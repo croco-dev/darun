@@ -98,7 +98,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                 <span
                   role="status"
                   aria-live="polite"
-                  className="inline-flex items-center rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs"
+                  className="inline-flex select-none whitespace-nowrap items-center rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs"
                 >
                   {locale === 'ko'
                     ? `${products.length.toLocaleString(locale)}개 도구`
@@ -120,7 +120,9 @@ export function CategoryProductSection({ slug }: { slug: string }) {
             >
               {categoryIcon}
             </div>
-            <p className="text-base font-extrabold text-dark-900 sm:text-lg">{emptyLabel}</p>
+            <p className="text-base font-extrabold text-dark-900 break-words [word-break:keep-all] sm:text-lg">
+              {emptyLabel}
+            </p>
             <p className="mt-1 max-w-sm text-sm text-dark-600 break-words [word-break:keep-all]">
               {t('emptyDescription')}
             </p>
@@ -129,8 +131,14 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                 href={`/${locale}/search/product`}
                 className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
-                <Button as="span" variant="shadow" color="primary" size="md">
-                  {t('browseAll')}
+                <Button
+                  as="span"
+                  variant="shadow"
+                  color="primary"
+                  size="md"
+                  className="active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
+                >
+                  <span className="whitespace-nowrap">{t('browseAll')}</span>
                 </Button>
               </Link>
             </div>

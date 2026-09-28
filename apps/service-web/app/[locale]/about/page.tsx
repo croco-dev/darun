@@ -144,7 +144,7 @@ export default async function AboutPage({ params }: Props) {
             ]}
           />
           <div className="flex flex-col gap-3">
-            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dark-150 bg-surface-100 px-3 py-1 text-xs font-semibold text-dark-700 shadow-2xs">
+            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dark-150 bg-surface-100 px-3 py-1 text-xs font-semibold text-dark-700 shadow-2xs select-none whitespace-nowrap">
               <ShieldCheck size={14} className="shrink-0 text-dark-500" aria-hidden="true" />
               <span>{isKo ? '편집 방침 및 가이드라인' : 'Editorial Guidelines'}</span>
             </div>
@@ -187,7 +187,7 @@ export default async function AboutPage({ params }: Props) {
                 className="flex flex-col gap-3 rounded-card-lg border border-dark-150/80 bg-white p-6 shadow-card md:p-7"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-100 font-mono text-xs font-bold text-dark-700 shadow-2xs">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-100 font-mono text-xs font-bold text-dark-700 shadow-2xs select-none tabular-nums">
                     {section.num}
                   </span>
                   <h2 className="text-lg font-extrabold tracking-tight text-dark-900 break-words [word-break:keep-all] md:text-xl">
@@ -202,7 +202,7 @@ export default async function AboutPage({ params }: Props) {
 
             <section className="flex flex-col gap-4 rounded-card-lg border border-dark-150/80 bg-surface-100/60 p-6 shadow-card md:p-7">
               <div className="flex items-center gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150/80 bg-white font-mono text-xs font-bold text-dark-700 shadow-2xs">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150/80 bg-white font-mono text-xs font-bold text-dark-700 shadow-2xs select-none tabular-nums">
                   05
                 </span>
                 <h2 className="text-lg font-extrabold tracking-tight text-dark-900 break-words [word-break:keep-all] md:text-xl">
@@ -232,11 +232,13 @@ export default async function AboutPage({ params }: Props) {
                       size="md"
                       className="gap-2 transition-all duration-200 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
                     >
-                      <span className="font-semibold">{isKo ? '문의 및 피드백 보내기' : 'Submit Feedback'}</span>
+                      <span className="font-semibold whitespace-nowrap">
+                        {isKo ? '문의 및 피드백 보내기' : 'Submit Feedback'}
+                      </span>
                       <ExternalLink
                         size={14}
                         aria-hidden="true"
-                        className="shrink-0 text-dark-400 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-900 motion-reduce:transition-none"
+                        className="shrink-0 text-dark-400 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-900 motion-reduce:transition-none motion-reduce:transform-none"
                       />
                     </Button>
                   </a>

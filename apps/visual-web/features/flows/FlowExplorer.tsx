@@ -27,7 +27,7 @@ function FlowCardGrid({ cards }: { cards: FlowCard[] }) {
                 src={card.coverImageUrl}
                 alt={card.coverImageAlt}
                 loading="lazy"
-                className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
+                className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
               />
             </div>
             <div className="flex flex-col gap-1 p-3.5">
@@ -46,7 +46,7 @@ function FlowCardGrid({ cards }: { cards: FlowCard[] }) {
                 </span>
                 <span className="shrink-0">{VISUAL_FLOW_TYPE_LABELS[card.flowType] ?? card.flowType}</span>
               </span>
-              <span className="text-xs text-dark-400">{card.stepCount}단계</span>
+              <span className="text-xs text-dark-400 tabular-nums">{card.stepCount}단계</span>
             </div>
           </Link>
         </li>
@@ -142,8 +142,14 @@ const View = ({
                 onClose={onSuggestClose}
               />
             </div>
-            <Button type="submit" variant="contained" color="primary" size="md">
-              검색
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              size="md"
+              className="shrink-0 active:scale-[0.98] motion-reduce:transform-none"
+            >
+              <span className="whitespace-nowrap">검색</span>
             </Button>
           </div>
           <div className="flex flex-wrap items-end gap-3">
@@ -212,9 +218,16 @@ const View = ({
             <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
               플로를 불러오지 못했어요.
             </p>
-            <Button type="button" variant="contained" color="primary" size="sm" onClick={() => retry()}>
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              size="sm"
+              onClick={() => retry()}
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
               <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
-              다시 시도
+              <span className="whitespace-nowrap">다시 시도</span>
             </Button>
           </div>
         ) : cards.length === 0 ? (
@@ -226,8 +239,15 @@ const View = ({
               다른 검색어나 필터로 시도해 보세요.
             </p>
             {hasFilters && (
-              <Button type="button" variant="shadow" color="primary" size="sm" onClick={() => onClearFilters()}>
-                필터 초기화
+              <Button
+                type="button"
+                variant="shadow"
+                color="primary"
+                size="sm"
+                onClick={() => onClearFilters()}
+                className="active:scale-[0.98] motion-reduce:transform-none"
+              >
+                <span className="whitespace-nowrap">필터 초기화</span>
               </Button>
             )}
           </div>
@@ -251,8 +271,9 @@ const View = ({
                   size="md"
                   onClick={() => onLoadMore()}
                   disabled={loadingMore}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
                 >
-                  {loadingMore ? '불러오는 중...' : '더 보기'}
+                  <span className="whitespace-nowrap">{loadingMore ? '불러오는 중...' : '더 보기'}</span>
                 </Button>
               </div>
             )}

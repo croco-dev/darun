@@ -30,14 +30,8 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
           href={`/${locale}/search/product`}
           className="mt-6 group inline-flex rounded-xl transition-transform active:scale-[0.98] motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
-          <Button
-            as="span"
-            variant="shadow"
-            color="primary"
-            size="md"
-            className="active:scale-[0.98] motion-reduce:transform-none"
-          >
-            {t('empty.button')}
+          <Button as="span" variant="shadow" color="primary" size="md" className="motion-reduce:transition-none">
+            <span className="whitespace-nowrap">{t('empty.button')}</span>
           </Button>
         </Link>
       </div>

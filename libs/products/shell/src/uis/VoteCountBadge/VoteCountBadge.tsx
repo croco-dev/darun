@@ -18,7 +18,7 @@ export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' 
       role="text"
       aria-label={label}
       title={label}
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border border-dark-150/90 bg-surface-100/80 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-800 shadow-2xs transition-colors duration-150 group-hover:border-dark-300 group-hover:bg-white group-hover:text-dark-950 ${className}`}
+      className={`inline-flex shrink-0 select-none items-center gap-1.5 rounded-full border border-dark-150/90 bg-surface-100/80 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-800 shadow-2xs transition-colors duration-150 group-hover:border-dark-300 group-hover:bg-white group-hover:text-dark-950 ${className}`}
     >
       <Heart
         size={12}

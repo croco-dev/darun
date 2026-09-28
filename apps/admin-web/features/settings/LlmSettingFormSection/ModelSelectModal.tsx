@@ -207,9 +207,12 @@ export function ModelSelectModal({
               type="button"
               onClick={() => void fetchModels()}
               disabled={isLoading}
-              className="flex items-center gap-1 text-dark-700 hover:text-dark-900 font-medium px-2 py-0.5 rounded hover:bg-dark-200 transition disabled:opacity-50"
+              className="flex items-center gap-1 text-dark-700 hover:text-dark-900 font-medium px-2 py-0.5 rounded hover:bg-dark-200 transition disabled:opacity-50 select-none"
             >
-              <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
+              <RefreshCw
+                className={`w-3.5 h-3.5 shrink-0 ${isLoading ? 'animate-spin motion-reduce:animate-none' : ''}`}
+                aria-hidden="true"
+              />
               새로고침
             </button>
           </div>
@@ -275,13 +278,13 @@ export function ModelSelectModal({
           <span>
             {isLoading ? (
               <span className="flex items-center gap-1.5">
-                <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" aria-hidden="true" />
+                <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                 모델 목록을 불러오는 중...
               </span>
             ) : (
-              <span>
-                검색 결과: <strong>{filteredModels.length}</strong>개{' '}
-                {models.length > 0 && <span className="text-dark-400">(전체 {models.length}개)</span>}
+              <span className="tabular-nums">
+                검색 결과: <strong>{filteredModels.length.toLocaleString()}</strong>개{' '}
+                {models.length > 0 && <span className="text-dark-400">(전체 {models.length.toLocaleString()}개)</span>}
               </span>
             )}
           </span>
@@ -356,24 +359,24 @@ export function ModelSelectModal({
                           {model.id}
                         </span>
                         {isFast && (
-                          <span className="inline-flex items-center gap-0.5 text-2xs font-medium px-1.5 py-0.5 rounded bg-brown-50 text-brown-700 border border-brown-200">
+                          <span className="inline-flex items-center gap-0.5 text-2xs font-medium px-1.5 py-0.5 rounded bg-brown-50 text-brown-700 border border-brown-200 select-none whitespace-nowrap">
                             <Zap className="w-3 h-3 shrink-0" aria-hidden="true" />
                             빠른 응답
                           </span>
                         )}
                         {isFree && (
-                          <span className="text-2xs font-medium px-1.5 py-0.5 rounded bg-leaf-50 text-leaf-700 border border-leaf-200">
+                          <span className="text-2xs font-medium px-1.5 py-0.5 rounded bg-leaf-50 text-leaf-700 border border-leaf-200 select-none whitespace-nowrap">
                             FREE
                           </span>
                         )}
                         {model.context_length && (
-                          <span className="text-2xs font-mono px-1.5 py-0.5 rounded bg-dark-100 text-dark-600">
+                          <span className="text-2xs font-mono px-1.5 py-0.5 rounded bg-dark-100 text-dark-600 select-none whitespace-nowrap tabular-nums">
                             {Math.round(model.context_length / 1000)}k ctx
                           </span>
                         )}
                       </div>
                       {isCurrent && (
-                        <span className="shrink-0 flex items-center gap-1 text-xs font-semibold text-leaf-600">
+                        <span className="shrink-0 flex items-center gap-1 text-xs font-semibold text-leaf-600 select-none whitespace-nowrap">
                           <Check className="w-4 h-4 shrink-0" aria-hidden="true" />
                           선택됨
                         </span>

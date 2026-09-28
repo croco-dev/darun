@@ -13,9 +13,11 @@ export const PublishProductButton = bind(usePublishProductButton, ({ loading, is
     color="secondary"
     disabled={isPublished || loading}
     size="sm"
-    className="gap-2"
+    className="gap-2 active:scale-[0.98] motion-reduce:transform-none"
   >
-    {loading ? <RefreshCw size={14} className="animate-spin motion-reduce:animate-none" /> : null}
-    {isPublished ? '노출 중' : '서비스 노출하기'}
+    {loading ? (
+      <RefreshCw size={14} className="shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+    ) : null}
+    <span className="whitespace-nowrap">{isPublished ? '노출 중' : '서비스 노출하기'}</span>
   </Button>
 ));

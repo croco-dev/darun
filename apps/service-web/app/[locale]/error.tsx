@@ -26,7 +26,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
               <AlertTriangle className="h-8 w-8 shrink-0 stroke-[2]" aria-hidden="true" />
             </div>
             <div className="flex flex-col items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-cherry-200/80 bg-cherry-50 px-3 py-0.5 font-mono text-xs font-bold tracking-widest text-cherry-700 shadow-2xs">
+              <span className="inline-flex items-center rounded-full border border-cherry-200/80 bg-cherry-50 px-3 py-0.5 font-mono text-xs font-bold tracking-widest text-cherry-700 shadow-2xs whitespace-nowrap select-none">
                 ERROR
               </span>
               <h1 className="text-2xl font-extrabold tracking-tight text-dark-900 break-words [word-break:keep-all] sm:text-3xl">
@@ -47,7 +47,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
                 size="md"
                 className="active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
               >
-                {isKo ? '다시 시도' : 'Try again'}
+                <span className="whitespace-nowrap">{isKo ? '다시 시도' : 'Try again'}</span>
               </Button>
               <Link
                 href="/"
@@ -60,7 +60,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
                   size="md"
                   className="active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
                 >
-                  {isKo ? '홈으로 이동' : 'Go to Home'}
+                  <span className="whitespace-nowrap">{isKo ? '홈으로 이동' : 'Go to Home'}</span>
                 </Button>
               </Link>
             </div>

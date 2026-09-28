@@ -43,7 +43,7 @@ export function Navbar() {
               <span className="text-lg font-bold text-dark-900 select-none">다른 관리자</span>
             </div>
           </Link>
-          <code className="font-mono font-bold text-xs bg-dark-100 text-dark-700 px-1.5 py-0.5 rounded border border-dark-200">
+          <code className="font-mono font-bold text-xs bg-dark-100 text-dark-700 px-1.5 py-0.5 rounded border border-dark-200 select-none whitespace-nowrap">
             {process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local' || process.env['NODE_ENV'] === 'development'
               ? 'local'
               : 'prod'}
@@ -83,9 +83,9 @@ export function Navbar() {
               aria-hidden="true"
               className="w-2 h-2 shrink-0 rounded-full bg-leaf-500 animate-pulse motion-reduce:animate-none"
             />
-            <span className="text-xs font-medium text-dark-700 whitespace-nowrap">관리자 접속 중</span>
+            <span className="text-xs font-medium text-dark-700 whitespace-nowrap select-none">관리자 접속 중</span>
           </div>
-          <span className="text-2xs text-dark-400 font-mono font-semibold uppercase">
+          <span className="text-2xs text-dark-400 font-mono font-semibold uppercase select-none whitespace-nowrap">
             {process.env['NEXT_PUBLIC_INFRA_ENV'] || process.env['NODE_ENV'] || 'local'}
           </span>
         </div>

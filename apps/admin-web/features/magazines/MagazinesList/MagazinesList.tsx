@@ -38,7 +38,7 @@ function MagazineThumbnail({ src, alt }: { src?: string | null; alt: string }) {
     <img
       src={src}
       alt={alt}
-      className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+      className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
       loading="lazy"
       onError={() => setHasError(true)}
     />
@@ -64,7 +64,7 @@ export const MagazinesList = bind(
             error={error}
             action={
               <Button type="button" variant="contained" color="primary" onClick={() => refetch()}>
-                다시 시도
+                <span className="whitespace-nowrap">다시 시도</span>
               </Button>
             }
           />
@@ -101,7 +101,7 @@ export const MagazinesList = bind(
                   {/* Publication Status Badge */}
                   <div className="absolute top-3 left-3">
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm backdrop-blur-md ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm backdrop-blur-md select-none whitespace-nowrap ${
                         isPublished ? 'bg-leaf-600/90 text-white' : 'bg-dark-900/80 text-white'
                       }`}
                     >
@@ -123,7 +123,7 @@ export const MagazinesList = bind(
                 {/* Body Content */}
                 <div className="flex flex-1 flex-col p-5">
                   <div className="mb-2">
-                    <code className="inline-block text-2xs font-mono text-dark-500 bg-surface-100 px-2 py-0.5 rounded border border-dark-150">
+                    <code className="inline-block text-2xs font-mono text-dark-500 bg-surface-100 px-2 py-0.5 rounded border border-dark-150 select-none">
                       /{item.slug}
                     </code>
                   </div>
@@ -159,7 +159,7 @@ export const MagazinesList = bind(
                         className="inline-flex items-center gap-1 text-dark-600 hover:text-dark-900 font-medium hover:underline"
                         title="서비스 웹에서 보기"
                       >
-                        <span>보기</span>
+                        <span className="whitespace-nowrap">보기</span>
                         <ExternalLink size={12} className="shrink-0" aria-hidden="true" />
                       </a>
                     )}
@@ -183,8 +183,9 @@ export const MagazinesList = bind(
                   size="sm"
                   disabled={page <= 1}
                   onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
                 >
-                  <span className="inline-flex items-center gap-2">
+                  <span className="inline-flex items-center gap-2 whitespace-nowrap">
                     <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                     이전
                   </span>
@@ -195,8 +196,9 @@ export const MagazinesList = bind(
                   size="sm"
                   disabled={page >= totalPages}
                   onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
                 >
-                  <span className="inline-flex items-center gap-2">
+                  <span className="inline-flex items-center gap-2 whitespace-nowrap">
                     <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                     다음
                   </span>

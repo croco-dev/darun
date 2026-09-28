@@ -80,10 +80,19 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             role="alert"
             className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center"
           >
-            <p className="text-sm font-semibold text-dark-900">스크린샷을 불러오지 못했어요.</p>
-            <Button type="button" variant="contained" color="primary" size="sm" onClick={() => retry()}>
-              <RefreshCw size={16} />
-              다시 시도
+            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+              스크린샷을 불러오지 못했어요.
+            </p>
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              size="sm"
+              onClick={() => retry()}
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
+              <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">다시 시도</span>
             </Button>
           </div>
         </div>
@@ -127,11 +136,11 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
               color="primary"
               size="sm"
               onClick={() => setIsZoomOpen(true)}
-              className="absolute bottom-3 right-3"
+              className="absolute bottom-3 right-3 active:scale-[0.98] motion-reduce:transform-none"
               aria-haspopup="dialog"
             >
               <Maximize2 size={16} className="shrink-0" aria-hidden="true" />
-              <span className="hidden sm:inline">확대</span>
+              <span className="hidden sm:inline whitespace-nowrap">확대</span>
               <span className="sr-only sm:hidden">확대</span>
             </Button>
           )}
@@ -144,8 +153,9 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             variant="contained"
             color="primary"
             size="md"
+            className="active:scale-[0.98] motion-reduce:transform-none"
           >
-            이 서비스의 화면
+            <span className="whitespace-nowrap">이 서비스의 화면</span>
           </Button>
           <Button
             as="a"
@@ -153,9 +163,10 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             variant="shadow"
             color="primary"
             size="md"
+            className="active:scale-[0.98] motion-reduce:transform-none"
           >
             <ExternalLink size={16} className="shrink-0" aria-hidden="true" />
-            서비스 소개
+            <span className="whitespace-nowrap">서비스 소개</span>
           </Button>
           <Button
             type="button"
@@ -163,9 +174,9 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             color="primary"
             size="md"
             onClick={() => router.back()}
-            className="sm:ml-auto"
+            className="sm:ml-auto active:scale-[0.98] motion-reduce:transform-none"
           >
-            뒤로 가기
+            <span className="whitespace-nowrap">뒤로 가기</span>
           </Button>
         </div>
       </div>
@@ -186,8 +197,15 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           <div className="max-h-[calc(100dvh-9rem)] w-full overflow-y-auto">
             <img src={imageUrl} alt={imageAlt} className="mx-auto max-w-full rounded-lg object-contain" />
           </div>
-          <Button type="button" variant="contained" color="primary" size="sm" onClick={() => setIsZoomOpen(false)}>
-            닫기
+          <Button
+            type="button"
+            variant="contained"
+            color="primary"
+            size="sm"
+            onClick={() => setIsZoomOpen(false)}
+            className="active:scale-[0.98] motion-reduce:transform-none"
+          >
+            <span className="whitespace-nowrap">닫기</span>
           </Button>
         </div>
       </Dialog>

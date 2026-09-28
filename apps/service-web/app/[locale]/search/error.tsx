@@ -23,17 +23,17 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
     >
       <div className="flex w-full max-w-lg flex-col items-center gap-6 rounded-card-xl border border-dark-150/80 bg-white/95 p-8 text-center shadow-card backdrop-blur-xs md:p-10">
         <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-600 shadow-2xs">
-          <Search size={26} className="stroke-[2]" aria-hidden="true" />
+          <Search size={26} className="shrink-0 stroke-[2]" aria-hidden="true" />
           <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-cherry-600 text-white">
-            <AlertCircle size={12} className="stroke-[2.5]" aria-hidden="true" />
+            <AlertCircle size={12} className="shrink-0 stroke-[2.5]" aria-hidden="true" />
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-dark-900 break-keep">
+          <h1 className="text-2xl font-bold tracking-tight text-dark-900 break-words [word-break:keep-all]">
             {isKo ? '검색 중 문제가 발생했습니다' : 'Error searching products'}
           </h1>
-          <p className="max-w-sm text-sm leading-relaxed text-dark-600 break-keep sm:text-base">
+          <p className="max-w-sm text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all] sm:text-base">
             {isKo
               ? '검색 결과를 불러오는 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
               : 'An error occurred while loading search results. Please try again shortly.'}
@@ -48,14 +48,20 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
             size="md"
             className="active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
           >
-            {isKo ? '다시 시도' : 'Try again'}
+            <span className="whitespace-nowrap">{isKo ? '다시 시도' : 'Try again'}</span>
           </Button>
           <Link
             href="/"
             className="rounded-xl motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
-            <Button as="span" variant="shadow" color="secondary" size="md" className="motion-reduce:transition-none">
-              {isKo ? '홈으로 이동' : 'Go to Home'}
+            <Button
+              as="span"
+              variant="shadow"
+              color="secondary"
+              size="md"
+              className="active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
+            >
+              <span className="whitespace-nowrap">{isKo ? '홈으로 이동' : 'Go to Home'}</span>
             </Button>
           </Link>
         </div>

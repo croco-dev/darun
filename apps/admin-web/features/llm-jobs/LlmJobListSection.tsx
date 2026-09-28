@@ -299,7 +299,7 @@ export function LlmJobListSection() {
         error={queryError}
         action={
           <Button type="button" onClick={() => void refetchAll()} variant="contained" color="primary">
-            다시 시도
+            <span className="whitespace-nowrap">다시 시도</span>
           </Button>
         }
       />
@@ -356,8 +356,8 @@ export function LlmJobListSection() {
 
         <div className="flex items-center gap-2">
           {hasActiveJobs && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-brown-600 bg-brown-50 px-2.5 py-1 rounded-full border border-brown-200">
-              <RotateCw size={12} className="animate-spin" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-brown-600 bg-brown-50 px-2.5 py-1 rounded-full border border-brown-200 select-none whitespace-nowrap">
+              <RotateCw size={12} className="animate-spin shrink-0 motion-reduce:animate-none" aria-hidden="true" />
               실시간 갱신 중
             </span>
           )}
@@ -366,11 +366,11 @@ export function LlmJobListSection() {
             variant="base"
             color="secondary"
             onClick={() => void refetchAll()}
-            className="flex items-center gap-1.5 py-1.5 px-3 text-xs"
+            className="flex items-center gap-1.5 py-1.5 px-3 text-xs active:scale-[0.98] motion-reduce:transform-none"
           >
             <RefreshCw
               size={13}
-              className={`shrink-0 ${translationLoading || descriptionLoading ? 'animate-spin' : ''}`}
+              className={`shrink-0 ${translationLoading || descriptionLoading ? 'animate-spin motion-reduce:animate-none' : ''}`}
               aria-hidden="true"
             />
             <span className="whitespace-nowrap">새로고침</span>
@@ -441,7 +441,7 @@ export function LlmJobListSection() {
                           <button
                             type="button"
                             onClick={() => copyToClipboard(job.id, '작업 ID가')}
-                            className="text-dark-400 hover:text-dark-700 transition"
+                            className="rounded p-1 text-dark-400 hover:text-dark-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
                             title="전체 ID 복사"
                             aria-label="작업 ID 복사"
                           >

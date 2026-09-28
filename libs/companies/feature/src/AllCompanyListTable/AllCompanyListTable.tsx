@@ -27,7 +27,7 @@ export const AllCompanyListTable = bind(
           error={error}
           action={
             <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
-              다시 시도
+              <span className="whitespace-nowrap">다시 시도</span>
             </Button>
           }
         />
@@ -102,13 +102,14 @@ export const AllCompanyListTable = bind(
                     size="sm"
                     onClick={() => handlePage(Math.max(1, page - 1))}
                     disabled={loading || page <= 1}
+                    className="active:scale-[0.98] motion-reduce:transform-none"
                   >
                     <span className="inline-flex items-center gap-2 whitespace-nowrap">
                       <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                       이전
                     </span>
                   </Button>
-                  <span className="px-3 py-1 text-sm text-dark-900 font-medium tabular-nums">
+                  <span className="px-3 py-1 text-sm text-dark-900 font-medium tabular-nums select-none whitespace-nowrap">
                     {page} / {calculatedTotalPages}
                   </span>
                   <Button
@@ -118,6 +119,7 @@ export const AllCompanyListTable = bind(
                     size="sm"
                     onClick={() => handlePage(Math.min(calculatedTotalPages, page + 1))}
                     disabled={loading || page >= calculatedTotalPages}
+                    className="active:scale-[0.98] motion-reduce:transform-none"
                   >
                     <span className="inline-flex items-center gap-2 whitespace-nowrap">
                       다음

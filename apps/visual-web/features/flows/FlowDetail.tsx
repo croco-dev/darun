@@ -145,9 +145,16 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
               플로를 불러오지 못했어요.
             </p>
-            <Button type="button" variant="contained" color="primary" size="sm" onClick={() => retry()}>
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              size="sm"
+              onClick={() => retry()}
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
               <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
-              다시 시도
+              <span className="whitespace-nowrap">다시 시도</span>
             </Button>
           </div>
         </div>
@@ -195,9 +202,10 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               size="sm"
               onClick={() => goToStep(activeStepNumber - 1)}
               disabled={!hasPrevStep}
+              className="active:scale-[0.98] motion-reduce:transform-none"
             >
               <ChevronLeft size={16} className="shrink-0" aria-hidden="true" />
-              이전
+              <span className="whitespace-nowrap">이전</span>
               <span className="sr-only"> 단계</span>
             </Button>
             <p className="text-sm font-semibold tabular-nums text-dark-700" aria-live="polite">
@@ -210,8 +218,9 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               size="sm"
               onClick={() => goToStep(activeStepNumber + 1)}
               disabled={!hasNextStep}
+              className="active:scale-[0.98] motion-reduce:transform-none"
             >
-              다음
+              <span className="whitespace-nowrap">다음</span>
               <ChevronRight size={16} className="shrink-0" aria-hidden="true" />
               <span className="sr-only"> 단계</span>
             </Button>
@@ -248,7 +257,9 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                       }`}
                     >
                       <span className="sr-only">단계 {stepNumber}로 이동</span>
-                      <span className={`text-2xs font-bold ${isActive ? 'text-dark-900' : 'text-dark-400'}`}>
+                      <span
+                        className={`text-2xs font-bold tabular-nums select-none ${isActive ? 'text-dark-900' : 'text-dark-400'}`}
+                      >
                         {stepNumber}
                       </span>
                       <img
@@ -272,8 +283,9 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             variant="contained"
             color="primary"
             size="md"
+            className="active:scale-[0.98] motion-reduce:transform-none"
           >
-            이 서비스의 플로
+            <span className="whitespace-nowrap">이 서비스의 플로</span>
           </Button>
           <Button
             as="a"
@@ -281,9 +293,10 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             variant="shadow"
             color="primary"
             size="md"
+            className="active:scale-[0.98] motion-reduce:transform-none"
           >
             <ExternalLink size={16} className="shrink-0" aria-hidden="true" />
-            서비스 소개
+            <span className="whitespace-nowrap">서비스 소개</span>
           </Button>
         </div>
       </div>

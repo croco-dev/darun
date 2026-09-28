@@ -96,7 +96,7 @@ export const ProductItem = ({
                     {getLocalizedTag(tags[0], locale)}
                   </Chip>
                   {tags.length > 1 && (
-                    <Chip color="filledGray" variant="square" className="shrink-0">
+                    <Chip color="filledGray" variant="square" className="shrink-0 tabular-nums select-none">
                       +{tags.length - 1}
                     </Chip>
                   )}
@@ -194,7 +194,7 @@ export const ProductItem = ({
                       <Chip
                         variant={tagVariant}
                         color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}
-                        className="shrink-0"
+                        className="shrink-0 tabular-nums select-none"
                       >
                         +{tags.length - maxTagItems}
                       </Chip>

@@ -24,14 +24,14 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
         disabled={isGenerating || isApplying}
         variant="contained"
         color="secondary"
-        className="gap-2 border-yellow-200 bg-yellow-50 text-yellow-700"
+        className="gap-2 border-yellow-200 bg-yellow-50 text-yellow-700 active:scale-[0.98] motion-reduce:transform-none"
       >
         {isGenerating ? (
-          <RefreshCw size={16} className="animate-spin motion-reduce:animate-none" />
+          <RefreshCw size={16} className="shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
         ) : (
-          <Sparkles size={16} />
+          <Sparkles size={16} className="shrink-0" aria-hidden="true" />
         )}
-        {isGenerating ? 'AI 소개 생성 중...' : 'AI 소개 생성'}
+        <span className="whitespace-nowrap">{isGenerating ? 'AI 소개 생성 중...' : 'AI 소개 생성'}</span>
       </Button>
 
       <AdminModal opened={isPreviewOpen} onClose={closePreview} title="AI 소개 초안 검토" maxWidth="max-w-2xl">
@@ -48,8 +48,14 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
           />
 
           <div className="flex justify-end gap-2 pt-2 border-t border-dark-200">
-            <Button type="button" variant="base" onClick={closePreview} disabled={isApplying}>
-              닫기
+            <Button
+              type="button"
+              variant="base"
+              onClick={closePreview}
+              disabled={isApplying}
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
+              <span className="whitespace-nowrap">닫기</span>
             </Button>
             <Button
               type="button"
@@ -57,8 +63,9 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
               color="primary"
               onClick={() => handleApply().catch(() => {})}
               disabled={isApplying || !candidateJob}
+              className="active:scale-[0.98] motion-reduce:transform-none"
             >
-              {isApplying ? '적용 중...' : '적용하기'}
+              <span className="whitespace-nowrap">{isApplying ? '적용 중...' : '적용하기'}</span>
             </Button>
           </div>
         </div>
