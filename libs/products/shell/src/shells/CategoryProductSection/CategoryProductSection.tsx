@@ -73,9 +73,10 @@ export function CategoryProductSection({ slug }: { slug: string }) {
   const categoryIcon = getCategoryIcon(slug);
 
   return (
-    <SectionWrapper background="white" spacing="md">
+    <SectionWrapper background="transparent" spacing="md">
       <div className="flex flex-col gap-6 md:gap-8">
         <Breadcrumb
+          ariaLabel={locale === 'ko' ? '탐색 경로' : 'Breadcrumb'}
           items={[
             { label: locale === 'ko' ? '홈' : 'Home', href: `/${locale}` },
             { label: categoryLabel, ariaCurrent: 'page' },
@@ -83,23 +84,29 @@ export function CategoryProductSection({ slug }: { slug: string }) {
         />
 
         <div className="flex items-start gap-4 sm:gap-5">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 shadow-2xs sm:h-14 sm:w-14">
-            <span className="text-2xl leading-none sm:text-3xl">{categoryIcon}</span>
+          <div className="flex h-12 w-12 shrink-0 select-none items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 shadow-2xs sm:h-14 sm:w-14">
+            <span aria-hidden="true" className="text-2xl leading-none sm:text-3xl">
+              {categoryIcon}
+            </span>
           </div>
           <div className="flex flex-1 flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-extrabold tracking-tight text-dark-900 break-keep sm:text-3xl">
+              <h1 className="text-2xl font-extrabold tracking-tight text-dark-900 break-words [word-break:keep-all] sm:text-3xl">
                 {categoryLabel}
               </h1>
               {products.length > 0 && (
-                <span className="inline-flex items-center rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs">
+                <span
+                  role="status"
+                  aria-live="polite"
+                  className="inline-flex select-none whitespace-nowrap items-center rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs"
+                >
                   {locale === 'ko'
                     ? `${products.length.toLocaleString(locale)}개 도구`
                     : `${products.length.toLocaleString(locale)} ${products.length === 1 ? 'tool' : 'tools'}`}
                 </span>
               )}
             </div>
-            <p className="text-sm text-dark-600 break-keep sm:text-base">
+            <p className="text-sm text-dark-600 break-words [word-break:keep-all] sm:text-base">
               {t('subtitle', { category: categoryLabel })}
             </p>
           </div>
@@ -107,11 +114,16 @@ export function CategoryProductSection({ slug }: { slug: string }) {
 
         {products.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-14 text-center sm:py-16">
-            <div className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl shadow-2xs">
+            <div
+              aria-hidden="true"
+              className="mb-3.5 flex h-14 w-14 shrink-0 select-none items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-2xl leading-none shadow-2xs"
+            >
               {categoryIcon}
             </div>
-            <p className="text-base font-extrabold text-dark-900 sm:text-lg">{emptyLabel}</p>
-            <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">
+            <p className="text-base font-extrabold text-dark-900 break-words [word-break:keep-all] sm:text-lg">
+              {emptyLabel}
+            </p>
+            <p className="mt-1 max-w-sm text-sm text-dark-600 break-words [word-break:keep-all]">
               {t('emptyDescription')}
             </p>
             <div className="mt-5">
@@ -119,19 +131,29 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                 href={`/${locale}/search/product`}
                 className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
-                <Button as="span" variant="shadow" color="primary" size="md">
-                  {t('browseAll')}
+                <Button
+                  as="span"
+                  variant="shadow"
+                  color="primary"
+                  size="md"
+                  className="active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
+                >
+                  <span className="select-none whitespace-nowrap">{t('browseAll')}</span>
                 </Button>
               </Link>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
+          <div
+            role="group"
+            aria-label={categoryLabel}
+            className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5"
+          >
             {products.map(product => (
               <ProductCard
                 key={product.id}
                 product={product}
-                href={`/${locale}/products/${product.slug}?from=category`}
+                href={`/${locale}/products/${encodeURIComponent(product.slug)}?from=category`}
                 source="category"
               />
             ))}

@@ -40,16 +40,16 @@ export function useProductListTable() {
   });
 
   // Refs to prevent stale closure in callbacks
-  const endCursorRef = useRef(data?.allProducts.pageInfo.endCursor);
-  const startCursorRef = useRef(data?.allProducts.pageInfo.startCursor);
+  const endCursorRef = useRef(data?.allProducts?.pageInfo?.endCursor);
+  const startCursorRef = useRef(data?.allProducts?.pageInfo?.startCursor);
 
   useEffect(() => {
-    endCursorRef.current = data?.allProducts.pageInfo.endCursor;
-    startCursorRef.current = data?.allProducts.pageInfo.startCursor;
+    endCursorRef.current = data?.allProducts?.pageInfo?.endCursor;
+    startCursorRef.current = data?.allProducts?.pageInfo?.startCursor;
   }, [data]);
 
   const loadNextPage = () => {
-    if (!data?.allProducts.pageInfo.hasNextPage || !endCursorRef.current) {
+    if (!data?.allProducts?.pageInfo?.hasNextPage || !endCursorRef.current) {
       return;
     }
     setIsNavigating(true);
@@ -69,7 +69,7 @@ export function useProductListTable() {
   };
 
   const loadPreviousPage = () => {
-    if (!data?.allProducts.pageInfo.hasPreviousPage || !startCursorRef.current) {
+    if (!data?.allProducts?.pageInfo?.hasPreviousPage || !startCursorRef.current) {
       return;
     }
     setIsNavigating(true);
@@ -89,14 +89,14 @@ export function useProductListTable() {
   };
 
   const handleRowClick = ({ record: { slug } }: { record: { slug: string } }) => {
-    navigate(`/products/${slug}`);
+    navigate(`/products/${encodeURIComponent(slug)}`);
   };
 
   return {
-    products: data?.allProducts.edges ?? [],
-    totalCount: data?.allProducts.totalCount,
-    hasNextPage: data?.allProducts.pageInfo.hasNextPage,
-    hasPreviousPage: data?.allProducts.pageInfo.hasPreviousPage,
+    products: data?.allProducts?.edges ?? [],
+    totalCount: data?.allProducts?.totalCount,
+    hasNextPage: data?.allProducts?.pageInfo?.hasNextPage,
+    hasPreviousPage: data?.allProducts?.pageInfo?.hasPreviousPage,
     pageCount,
     isNavigating,
     loadNextPage,

@@ -31,7 +31,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
     <Link
       key={product.id}
       href={href}
-      className="group relative h-full focus-visible:outline-none"
+      className="group relative block h-full focus-visible:outline-none"
       onClick={onClick}
       {...(layoutId ? { 'data-layout-id': layoutId } : {})}
       {...{ 'data-source': source }}
@@ -45,7 +45,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
         <div
           className="flex-1"
           style={{
-            viewTransitionName: layoutId ? `product-${layoutId}` : `product-${product.slug}`,
+            viewTransitionName: layoutId ? `product-${layoutId}` : `${source}-product-${product.slug}`,
           }}
         >
           <ProductItem
@@ -61,10 +61,11 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
               product.voteCount !== undefined && product.voteCount !== null ? (
                 <VoteCountBadge count={product.voteCount} />
               ) : (
-                <span className="inline-flex items-center text-dark-300 transition-colors duration-200 ease-out group-hover:text-dark-700">
+                <span className="inline-flex shrink-0 items-center text-dark-300 transition-colors duration-200 ease-out group-hover:text-dark-700">
                   <ChevronRight
                     size={15}
-                    className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+                    aria-hidden="true"
+                    className="shrink-0 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
                   />
                 </span>
               )

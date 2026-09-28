@@ -134,6 +134,7 @@ export const WriteMagazine = bind(
                   color="danger"
                   disabled={isSubmitting}
                   onClick={() => handleFileRemove()}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
                 >
                   이미지 삭제
                 </Button>
@@ -142,13 +143,28 @@ export const WriteMagazine = bind(
           </AdminField>
         </div>
 
-        <p className="mt-4 text-xs text-dark-500">글 작성은 저장 후, 수정 기능을 이용하여 가능합니다.</p>
+        <p className="mt-4 text-xs text-dark-500 break-words [word-break:keep-all]">
+          글 작성은 저장 후, 수정 기능을 이용하여 가능합니다.
+        </p>
 
         <AdminActions>
-          <Button as={Link} href="/magazines" variant="contained" color="secondary" disabled={isSubmitting}>
+          <Button
+            as={Link}
+            href="/magazines"
+            variant="contained"
+            color="secondary"
+            disabled={isSubmitting}
+            className="active:scale-[0.98] motion-reduce:transform-none"
+          >
             취소
           </Button>
-          <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={isSubmitting}
+            className="active:scale-[0.98] motion-reduce:transform-none"
+          >
             {isSubmitting ? '저장 중...' : '저장'}
           </Button>
         </AdminActions>

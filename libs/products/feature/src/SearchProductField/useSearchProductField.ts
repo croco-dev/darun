@@ -57,7 +57,7 @@ export function useSearchProductField({ onSelect }: SearchProductFieldProps) {
     }
 
     setProducts(
-      data?.searchProducts.map(({ id, name }) => ({
+      data?.searchProducts?.map(({ id, name }) => ({
         label: name,
         value: id,
       })) ?? []

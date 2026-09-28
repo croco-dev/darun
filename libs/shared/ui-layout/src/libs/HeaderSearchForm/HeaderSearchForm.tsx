@@ -3,12 +3,23 @@
 import { Search, X } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
-import { ChangeEvent, useEffect, useRef } from 'react';
+import { ChangeEvent, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useHeaderSearchForm } from './useHeaderSearchForm';
+
+const subscribePlatform = () => () => {};
+const getPlatformSnapshot = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return 'mac';
+  }
+  return /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || navigator.userAgent) ? 'mac' : 'other';
+};
+const getServerPlatformSnapshot = () => 'mac';
 
 export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, onSubmit }) => {
   const t = useTranslations('Layout.header');
   const inputRef = useRef<HTMLInputElement>(null);
+  const platform = useSyncExternalStore(subscribePlatform, getPlatformSnapshot, getServerPlatformSnapshot);
+  const shortcutText = platform === 'mac' ? '⌘K' : 'Ctrl K';
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -25,7 +36,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
     <form
       role="search"
       aria-label={t('searchAriaLabel')}
-      className="group flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-solid border-dark-150 bg-white px-3.5 py-2 shadow-button transition-all duration-200 ease-out focus-within:border-dark-900 focus-within:ring-2 focus-within:ring-dark-900/15 focus-within:shadow-button-hover motion-reduce:transition-none"
+      className="group flex min-w-0 flex-1 min-h-[44px] items-center gap-2 rounded-xl border border-solid border-dark-150 bg-white px-3.5 py-2 shadow-button transition-all duration-200 ease-out focus-within:border-dark-900 focus-within:ring-2 focus-within:ring-dark-900/15 focus-within:shadow-button-hover motion-reduce:transition-none"
       onSubmit={onSubmit}
     >
       <Search
@@ -38,7 +49,7 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
         type="text"
         placeholder={t('searchPlaceholder')}
         ref={inputRef}
-        className="w-full border-none bg-transparent text-sm tracking-tight text-dark-900 outline-none placeholder:text-dark-500 focus-visible:outline-none md:text-base"
+        className="w-full border-none bg-transparent text-base tracking-tight text-dark-900 outline-none placeholder:text-dark-500 focus-visible:outline-none sm:text-sm md:text-base"
         value={query}
         onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
       />
@@ -46,17 +57,17 @@ export const HeaderSearchForm = bind(useHeaderSearchForm, ({ query, setQuery, on
         <button
           type="button"
           onClick={() => setQuery('')}
-          className="shrink-0 rounded-full p-1 text-dark-400 transition-all duration-150 hover:bg-surface-200 hover:text-dark-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transform-none"
+          className="flex h-7 w-7 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full text-dark-400 transition-all duration-150 hover:bg-surface-200 hover:text-dark-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-1 motion-reduce:transform-none"
           aria-label={t('clearSearch')}
         >
-          <X size={14} />
+          <X size={14} aria-hidden="true" />
         </button>
       ) : (
         <kbd
           aria-hidden="true"
-          className="hidden select-none items-center rounded-md border border-dark-150/90 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-500 font-mono shadow-2xs sm:inline-flex"
+          className="hidden select-none items-center rounded-md border border-dark-150/90 bg-surface-100 px-1.5 py-0.5 text-2xs font-semibold text-dark-500 font-mono tabular-nums shadow-2xs sm:inline-flex"
         >
-          ⌘K
+          {shortcutText}
         </kbd>
       )}
     </form>

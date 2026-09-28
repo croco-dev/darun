@@ -4,10 +4,45 @@ import { AnalyticsEvents, track, type ProductAttributionSource } from '@darun/an
 import { Button, Check, Plus } from '@darun/ui';
 import { useRouter } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 const STORAGE_KEY = 'compare-products';
 const MAX_COMPARE_ITEMS = 2;
+const EMPTY_LIST: string[] = [];
+
+let cachedRaw: string | null = null;
+let cachedList: string[] = EMPTY_LIST;
+
+function subscribe(callback: () => void) {
+  window.addEventListener('storage', callback);
+  window.addEventListener('compare-updated', callback);
+  return () => {
+    window.removeEventListener('storage', callback);
+    window.removeEventListener('compare-updated', callback);
+  };
+}
+
+function getSnapshot(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw !== cachedRaw) {
+      cachedRaw = raw;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        cachedList = Array.isArray(parsed) && parsed.every(item => typeof item === 'string') ? parsed : EMPTY_LIST;
+      } else {
+        cachedList = EMPTY_LIST;
+      }
+    }
+    return cachedList;
+  } catch {
+    return EMPTY_LIST;
+  }
+}
+
+function getServerSnapshot(): string[] {
+  return EMPTY_LIST;
+}
 
 type CompareButtonProps = {
   slug: string;
@@ -18,18 +53,8 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('ProductDetail.compareButton');
+  const compareList = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  const getStoredList = (): string[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const [compareList, setCompareList] = useState<string[]>(getStoredList);
   const isAdded = compareList.includes(slug);
 
   const handleClick = () => {
@@ -44,8 +69,8 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       newList.push(slug);
     }
 
-    setCompareList(newList);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
+    window.dispatchEvent(new Event('compare-updated'));
 
     const effectiveSource = source ?? 'direct';
 
@@ -75,7 +100,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
     }
 
     if (newList.length === 2) {
-      router.push(`/${locale}/compare/${newList[0]}/${newList[1]}`);
+      router.push(`/${locale}/compare/${encodeURIComponent(newList[0])}/${encodeURIComponent(newList[1])}`);
     }
   };
 
@@ -88,6 +113,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       size="md"
       onClick={handleClick}
       data-testid="compare-button"
+      aria-label={buttonLabel}
       aria-pressed={isAdded}
       title={buttonLabel}
       className={`group h-10 sm:h-11 px-3.5 sm:px-4 transition-all duration-150 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none ${
@@ -98,17 +124,15 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
     >
       <div className="flex items-center gap-1.5">
         {isAdded ? (
-          <Check
-            size={16}
-            className="text-current stroke-[2.25]"
-          />
+          <Check size={16} className="text-current stroke-[2.25] shrink-0" aria-hidden="true" />
         ) : (
           <Plus
             size={16}
-            className="text-dark-600 stroke-[2.25] transition-colors duration-200 group-hover:text-dark-900"
+            className="text-dark-600 stroke-[2.25] shrink-0 transition-colors duration-200 group-hover:text-dark-900"
+            aria-hidden="true"
           />
         )}
-        <span className="break-keep text-sm font-semibold">{buttonLabel}</span>
+        <span className="select-none whitespace-nowrap text-sm font-semibold">{buttonLabel}</span>
       </div>
     </Button>
   );

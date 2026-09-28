@@ -1,8 +1,8 @@
 import '../globals.css';
 
+import { notFound } from '@darun/utils-router';
 import { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { notFound } from '@darun/utils-router';
 import { CookiesProvider } from 'next-client-cookies/server';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
@@ -56,7 +56,9 @@ export default async function RootLayout({ children, params }: LayoutProps) {
         <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
         <meta name="naver-site-verification" content="9df72f43242db6a7b1048dee830cef5b44e00a7a" />
       </head>
-      <body className={`${pretendardFont.className} selection:bg-brand-200 selection:text-dark-900`}>
+      <body
+        className={`${pretendardFont.className} min-h-screen bg-white text-dark-900 antialiased selection:bg-brand-200 selection:text-dark-900`}
+      >
         <NextIntlClientProvider messages={messages}>
           <CookiesProvider>{content}</CookiesProvider>
         </NextIntlClientProvider>

@@ -44,11 +44,12 @@ export function Chip({
   ...props
 }: ChipProps) {
   const chipClassName = cn(
-    'inline-flex shrink-0 items-center truncate max-w-[200px] sm:max-w-xs border leading-none transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transition-none',
+    'inline-flex shrink-0 select-none items-center truncate max-w-[200px] sm:max-w-xs border leading-none transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 motion-reduce:transition-none',
     chipVariants[variant],
     chipColors[color],
     as !== 'div' && chipHoverColors[color],
-    as === 'button' && 'cursor-pointer',
+    as !== 'div' && 'min-h-[28px] sm:min-h-0 active:scale-[0.97] motion-reduce:transform-none',
+    as === 'button' && 'cursor-pointer disabled:pointer-events-none disabled:opacity-50',
     className
   );
 

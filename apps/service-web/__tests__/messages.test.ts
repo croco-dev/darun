@@ -43,4 +43,11 @@ describe('messages i18n formatting', () => {
     const formatted = t('Compare.title', { name1: '피그마', name2: '스케치' });
     expect(formatted).toBe('피그마 vs 스케치 비교');
   });
+
+  it('Layout.footer.disclaimer does not contain raw html tags in en or ko', () => {
+    const tEn = createTranslator({ locale: 'en', messages: enMessages });
+    const tKo = createTranslator({ locale: 'ko', messages: koMessages });
+    expect(tEn('Layout.footer.disclaimer')).not.toContain('<br');
+    expect(tKo('Layout.footer.disclaimer')).not.toContain('<br');
+  });
 });

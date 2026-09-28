@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 import { CategoryProductSection } from '@darun/products-shell';
 import { Layout } from '@darun/ui-layout';
-import { Metadata } from 'next';
 import { notFound } from '@darun/utils-router';
+import { Metadata } from 'next';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
 import { JsonLd } from '../../../../lib/seo/json-ld';
@@ -35,7 +35,7 @@ const getCategory = cache(async (slug: string, locale: string) => {
     variables: { first: 100, locale },
   });
 
-  return data?.categories.find(c => c.slug === slug) ?? null;
+  return data?.categories?.find(c => c.slug === slug) ?? null;
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const alternates = buildAlternates({
     locale: currentLocale,
-    pathname: `/categories/${slug}`,
+    pathname: `/categories/${encodeURIComponent(slug)}`,
     includeMarkdownAlternate: true,
   });
   const canonicalUrl = alternates.canonical;
@@ -94,7 +94,7 @@ export default async function CategoryPage({ params }: Props) {
   }
 
   const label = currentLocale === 'ko' ? category.labelKo : category.labelEn;
-  const canonicalUrl = absolutePublicUrl(currentLocale, `/categories/${slug}`);
+  const canonicalUrl = absolutePublicUrl(currentLocale, `/categories/${encodeURIComponent(slug)}`);
   const pageTitle = currentLocale === 'ko' ? `${label} 카테고리 - 다른` : `${label} Category - Darun`;
   const description =
     currentLocale === 'ko'

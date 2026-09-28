@@ -186,7 +186,7 @@ export function useScreenshotExplorer(): ScreenshotExplorerState {
       .fetchMore({
         variables: { after: endCursor },
         updateQuery: (previous, { fetchMoreResult }) => {
-          if (!fetchMoreResult.visualScreenshots) {
+          if (!fetchMoreResult?.visualScreenshots) {
             return previous;
           }
           const previousEdges = previous.visualScreenshots?.edges ?? [];

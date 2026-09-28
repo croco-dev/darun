@@ -27,7 +27,7 @@ function ProductTableLogo({ logoUrl }: { logoUrl?: string | null }) {
   const src = !hasError && logoUrl ? logoUrl : '/images/default-product-icon.svg';
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center select-none shrink-0">
       <Image
         src={src}
         unoptimized={!logoUrl || hasError}
@@ -35,7 +35,7 @@ function ProductTableLogo({ logoUrl }: { logoUrl?: string | null }) {
         width={32}
         height={32}
         onError={() => setHasError(true)}
-        className="h-8 w-8 rounded-lg border border-dark-150 object-contain"
+        className="h-8 w-8 rounded-lg border border-dark-150 object-contain shrink-0"
       />
     </div>
   );
@@ -70,7 +70,7 @@ const columns = [
     header: '슬러그',
     size: 150,
     cell: info => (
-      <div className="truncate text-sm text-dark-500" title={info.getValue()}>
+      <div className="truncate font-mono text-sm text-dark-500" title={info.getValue()}>
         {info.getValue()}
       </div>
     ),
@@ -108,7 +108,7 @@ export function ProductListTable() {
     <div className="flex flex-col gap-3">
       <AdminPanel className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse table-fixed">
+          <table className="w-full min-w-[640px] border-collapse table-fixed" aria-label="서비스 목록">
             <thead className="bg-surface-100">
               {table.getHeaderGroups().map(headerGroup => (
                 <tr key={headerGroup.id}>
@@ -152,11 +152,11 @@ export function ProductListTable() {
         </div>
       </AdminPanel>
       <AdminPanel className="p-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-dark-900">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-dark-900 tabular-nums break-words [word-break:keep-all]">
             총 {totalCount}개의 서비스 중 {products.length > 0 ? pageCount : 0}-
-            {products.length > 0 ? Math.min(totalCount, pageCount + products.length - 1) : 0}번째 항목을 표시하고
-            있습니다.
+            {products.length > 0 ? Math.min(totalCount, pageCount + products.length - 1) : 0}
+            번째 항목을 표시하고 있습니다.
           </p>
           <div className="flex gap-2">
             <Button
@@ -166,9 +166,10 @@ export function ProductListTable() {
               size="sm"
               disabled={!hasPreviousPage || isNavigating}
               onClick={loadPreviousPage}
+              className="active:scale-[0.98] motion-reduce:transform-none"
             >
-              <span className="inline-flex items-center gap-2">
-                <ChevronLeft className="h-4 w-4" />
+              <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
+                <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                 이전
               </span>
             </Button>
@@ -179,9 +180,10 @@ export function ProductListTable() {
               size="sm"
               disabled={!hasNextPage || isNavigating}
               onClick={loadNextPage}
+              className="active:scale-[0.98] motion-reduce:transform-none"
             >
-              <span className="inline-flex items-center gap-2">
-                <ChevronRight className="h-4 w-4" />
+              <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
+                <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                 다음
               </span>
             </Button>

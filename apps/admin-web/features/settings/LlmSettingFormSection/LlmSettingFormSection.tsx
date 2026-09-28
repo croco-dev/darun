@@ -18,6 +18,7 @@ import {
 import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { ModelSelectModal } from './ModelSelectModal';
 
@@ -68,7 +69,7 @@ export function LlmSettingFormSection() {
         error={error}
         action={
           <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
-            다시 시도
+            <span className="whitespace-nowrap">다시 시도</span>
           </Button>
         }
       />
@@ -115,9 +116,9 @@ export function resolveLlmFormDefaults(
 
 function formatUpdatedAt(dateStr?: string | null): string | null {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString('ko-KR');
+  const d = dayjs(dateStr);
+  if (!d.isValid()) return null;
+  return d.format('YYYY-MM-DD HH:mm:ss');
 }
 
 function LlmSettingForm({
@@ -181,7 +182,11 @@ function LlmSettingForm({
       });
       setClearApiKey(false);
       setApiKey('');
-      await onUpdated();
+      try {
+        await onUpdated();
+      } catch (refetchErr) {
+        console.error('Failed to reload LLM settings after update:', refetchErr);
+      }
     } catch (err) {
       notifications.show({
         title: '저장 실패',
@@ -274,9 +279,9 @@ function LlmSettingForm({
             type="button"
             onClick={openModelModal}
             disabled={isUpdating}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-dark-800 hover:text-dark-950 px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 transition disabled:opacity-50"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-dark-800 hover:text-dark-950 px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 transition disabled:opacity-50 select-none active:scale-[0.98] motion-reduce:transform-none"
           >
-            <Search className="w-3.5 h-3.5" />
+            <Search className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             /v1/models 검색 및 선택
           </button>
         </div>
@@ -296,14 +301,14 @@ function LlmSettingForm({
             type="button"
             onClick={openModelModal}
             disabled={isUpdating}
-            className="px-3.5 py-2 rounded-lg bg-dark-900 hover:bg-dark-800 text-white text-sm font-medium transition whitespace-nowrap flex items-center gap-1.5 disabled:opacity-60"
+            className="px-3.5 py-2 rounded-lg bg-dark-900 hover:bg-dark-800 text-white text-sm font-medium transition whitespace-nowrap flex items-center gap-1.5 disabled:opacity-60 active:scale-[0.98] motion-reduce:transform-none"
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-4 h-4 shrink-0" aria-hidden="true" />
             목록에서 찾기
           </button>
         </div>
         <div className="flex flex-wrap items-center gap-1.5 mt-1">
-          <span className="text-xs text-dark-500">빠른 선택:</span>
+          <span className="text-xs text-dark-500 select-none">빠른 선택:</span>
           {[
             { label: 'gemini-2.5-flash (빠름)', value: 'google/gemini-2.5-flash' },
             { label: 'grok-4-fast (빠름)', value: 'x-ai/grok-4-fast' },
@@ -315,7 +320,7 @@ function LlmSettingForm({
               type="button"
               disabled={isUpdating}
               onClick={() => setModel(opt.value)}
-              className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 disabled:opacity-50 text-dark-800 font-mono transition"
+              className="text-xs px-2 py-0.5 rounded bg-dark-100 hover:bg-dark-200 disabled:opacity-50 text-dark-800 font-mono transition select-none active:scale-[0.98] motion-reduce:transform-none"
             >
               {opt.label}
             </button>
@@ -340,7 +345,7 @@ function LlmSettingForm({
           aria-describedby="thinkingLevel-help"
         />
         <div className="flex flex-wrap items-center gap-1.5 mt-1">
-          <span className="text-xs text-dark-500">빠른 선택:</span>
+          <span className="text-xs text-dark-500 select-none">빠른 선택:</span>
           {[
             { label: '기본값', value: '' },
             { label: 'none (추론 끄기)', value: 'none' },
@@ -355,7 +360,7 @@ function LlmSettingForm({
               type="button"
               disabled={isUpdating}
               onClick={() => setThinkingLevel(opt.value)}
-              className={`text-xs px-2 py-0.5 rounded font-mono transition border disabled:opacity-50 ${
+              className={`text-xs px-2 py-0.5 rounded font-mono transition border disabled:opacity-50 select-none active:scale-[0.98] motion-reduce:transform-none ${
                 thinkingLevel === opt.value
                   ? 'bg-dark-900 text-white border-dark-900'
                   : 'bg-surface-50 hover:bg-surface-100 text-dark-700 border-dark-200'
@@ -374,11 +379,17 @@ function LlmSettingForm({
       <div className="flex items-center justify-between pt-4 border-t border-dark-100">
         <div className="text-xs text-dark-400">
           {formatUpdatedAt(currentSetting?.updatedAt) && (
-            <span>마지막 변경: {formatUpdatedAt(currentSetting?.updatedAt)}</span>
+            <span className="tabular-nums">마지막 변경: {formatUpdatedAt(currentSetting?.updatedAt)}</span>
           )}
         </div>
-        <Button type="submit" variant="contained" color="primary" disabled={isUpdating}>
-          {isUpdating ? '저장 중...' : '설정 저장'}
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          disabled={isUpdating}
+          className="active:scale-[0.98] motion-reduce:transform-none"
+        >
+          <span className="whitespace-nowrap">{isUpdating ? '저장 중...' : '설정 저장'}</span>
         </Button>
       </div>
 

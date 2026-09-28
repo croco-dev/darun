@@ -100,7 +100,7 @@ export const NewProductFormSection = () => {
                     <img
                       src={previewUrl}
                       alt="로고 미리보기"
-                      className="h-12 w-12 rounded-lg border border-dark-200 object-contain p-1 bg-white"
+                      className="h-12 w-12 shrink-0 rounded-lg border border-dark-200 object-contain p-1 bg-white"
                     />
                     <span className="text-xs text-dark-500">선택된 로고 미리보기</span>
                   </div>
@@ -108,11 +108,26 @@ export const NewProductFormSection = () => {
               </div>
             </AdminField>
             <AdminActions>
-              <Button as={Link} href="/products" variant="contained" color="secondary" disabled={loading}>
-                취소
+              <Button
+                as={Link}
+                href="/products"
+                variant="contained"
+                color="secondary"
+                size="md"
+                disabled={loading}
+                className="active:scale-[0.98] motion-reduce:transform-none"
+              >
+                <span className="whitespace-nowrap">취소</span>
               </Button>
-              <Button type="submit" size="md" variant="contained" color="primary" disabled={loading}>
-                {loading ? '등록 중...' : '등록'}
+              <Button
+                type="submit"
+                size="md"
+                variant="contained"
+                color="primary"
+                disabled={loading}
+                className="active:scale-[0.98] motion-reduce:transform-none"
+              >
+                <span className="whitespace-nowrap">{loading ? '등록 중...' : '등록'}</span>
               </Button>
             </AdminActions>
           </AdminSectionBody>

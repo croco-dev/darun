@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 import { ProductAlternativePage } from '@darun/pages-shell';
-import { Metadata } from 'next';
 import { notFound } from '@darun/utils-router';
+import { Metadata } from 'next';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../../lib/seo/indexability';
 import { JsonLd } from '../../../../../lib/seo/json-ld';
@@ -74,7 +74,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const alternates = buildAlternates({
     locale: currentLocale,
-    pathname: `/products/${resolvedParams.slug}/alternatives`,
+    pathname: `/products/${encodeURIComponent(resolvedParams.slug)}/alternatives`,
     includeMarkdownAlternate: true,
   });
   const canonicalUrl = alternates.canonical;
@@ -145,21 +145,41 @@ export default async function ProductAlternativePageWrapper({ params }: Props) {
         '@type': 'ListItem',
         position: 2,
         name: productName,
-        item: absolutePublicUrl(currentLocale, `/products/${resolvedParams.slug}`),
+        item: absolutePublicUrl(currentLocale, `/products/${encodeURIComponent(resolvedParams.slug)}`),
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: currentLocale === 'en' ? 'Alternatives' : '다른 서비스',
-        item: absolutePublicUrl(currentLocale, `/products/${resolvedParams.slug}/alternatives`),
+        item: absolutePublicUrl(currentLocale, `/products/${encodeURIComponent(resolvedParams.slug)}/alternatives`),
       },
     ],
   };
 
+  const isKo = currentLocale === 'ko';
+  const faqItems = [
+    {
+      question: isKo
+        ? `${productName}의 대안 서비스는 어떤 기준으로 선정되나요?`
+        : `How are alternatives to ${productName} selected?`,
+      answer: isKo
+        ? `${productName}과 유사한 핵심 기능, 대상 사용자층, 그리고 카테고리 태그 및 커뮤니티 추천 데이터를 바탕으로 엄선하여 비교 목록을 구성합니다.`
+        : `Alternatives are curated based on shared core capabilities, target workflows, category tags, and community usage feedback to help you find the best fit.`,
+    },
+    {
+      question: isKo
+        ? `선택한 대안 서비스의 최신 정보와 요금제는 어떻게 확인하나요?`
+        : `How can I verify pricing and feature details for these alternatives?`,
+      answer: isKo
+        ? `각 서비스 카드의 공식 웹사이트 링크를 통해 기능 업데이트 내역과 최신 요금 정책을 직접 확인하실 수 있습니다.`
+        : `Use the official website link provided on each product card to review the latest specs, integrations, and pricing plans directly from the source.`,
+    },
+  ];
+
   return (
     <>
       <JsonLd data={breadcrumbJsonLd} />
-      <ProductAlternativePage params={resolvedParams} productName={productName} />
+      <ProductAlternativePage params={resolvedParams} productName={productName} faqItems={faqItems} />
     </>
   );
 }

@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  CategoryNavigationSkeleton,
-  RecentProductSkeleton,
-  TrendingProductSkeleton,
-} from '@darun/products-shell';
+import { CategoryNavigationSkeleton, RecentProductSkeleton, TrendingProductSkeleton } from '@darun/products-shell';
 import { ContentArea } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { useTranslations } from 'next-intl';
@@ -17,7 +13,7 @@ const DarkSkeleton = ({ className = '' }: { className?: string }) => (
 );
 
 export default function Loading() {
-  const t = useTranslations('ProductDetail');
+  const t = useTranslations('Common');
 
   return (
     <Layout>

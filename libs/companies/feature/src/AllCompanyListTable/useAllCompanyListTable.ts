@@ -33,11 +33,11 @@ export function useAllCompanyListTable() {
   };
 
   return {
-    companies: data?.allCompanies.companies,
+    companies: data?.allCompanies?.companies,
     handlePage,
     page,
-    totalCount: data?.allCompanies.totalCount,
-    totalPages: data?.allCompanies.totalPages,
+    totalCount: data?.allCompanies?.totalCount,
+    totalPages: data?.allCompanies?.totalPages,
     loading,
     error,
     refetch,

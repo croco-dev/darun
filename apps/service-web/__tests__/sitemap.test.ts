@@ -194,4 +194,19 @@ describe('buildSitemapEntries', () => {
     expect(magKo?.changeFrequency).toBe('weekly');
     expect(magKo?.priority).toBe(0.7);
   });
+
+  it('한글 등 비ASCII 슬러그가 포함된 경우 올바르게 URI 인코딩된다', async () => {
+    const entries = await buildSitemapEntries({
+      fetchProducts: async () => [{ id: '1', slug: '생산성-도구', alternatives: [{ slug: '대안-서비스' }] }],
+      fetchCategories: async () => [{ slug: '개발-도구' }],
+      fetchMagazines: async () => [{ slug: '트렌드-리포트' }],
+    });
+
+    const urls = entries.map(e => e.url);
+    expect(urls).toContain(`${CANONICAL_ORIGIN}/ko/products/${encodeURIComponent('생산성-도구')}`);
+    expect(urls).toContain(`${CANONICAL_ORIGIN}/en/products/${encodeURIComponent('생산성-도구')}`);
+    expect(urls).toContain(`${CANONICAL_ORIGIN}/ko/products/${encodeURIComponent('생산성-도구')}/alternatives`);
+    expect(urls).toContain(`${CANONICAL_ORIGIN}/ko/categories/${encodeURIComponent('개발-도구')}`);
+    expect(urls).toContain(`${CANONICAL_ORIGIN}/ko/magazines/${encodeURIComponent('트렌드-리포트')}`);
+  });
 });

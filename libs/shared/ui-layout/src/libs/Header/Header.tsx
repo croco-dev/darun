@@ -3,7 +3,7 @@
 import { Button, ContentArea, Logo } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 import { HeaderLoginButton } from '../HeaderLoginButton';
 import { HeaderSearchForm } from '../HeaderSearchForm';
@@ -11,6 +11,7 @@ import { useHeader } from './useHeader';
 
 export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRanking, isBrowse }) => {
   const t = useTranslations('Layout.header');
+  const locale = useLocale();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-dark-150 bg-white/85 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
@@ -19,7 +20,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
           <div className="flex shrink-0 items-center gap-4 md:gap-6">
             <Link
               href={headerUrl}
-              className="block rounded-xl transition-opacity duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              className="block rounded-xl transition-opacity duration-200 motion-reduce:transition-none hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               <Logo size={36} title={t('logoTitle')} />
             </Link>
@@ -27,7 +28,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={rankingUrl}
                 aria-current={isRanking ? 'page' : undefined}
-                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`inline-flex items-center min-h-[36px] sm:min-h-0 rounded-xl px-2.5 sm:px-3 py-1.5 text-sm font-semibold select-none whitespace-nowrap active:scale-95 motion-reduce:transform-none transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isRanking
                     ? 'border border-dark-150/80 bg-surface-100/90 font-bold text-dark-900 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100/80 hover:text-dark-900'
@@ -38,7 +39,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               <Link
                 href={browseUrl}
                 aria-current={isBrowse ? 'page' : undefined}
-                className={`rounded-xl px-2 sm:px-3 py-1.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
+                className={`inline-flex items-center min-h-[36px] sm:min-h-0 rounded-xl px-2.5 sm:px-3 py-1.5 text-sm font-semibold select-none whitespace-nowrap active:scale-95 motion-reduce:transform-none transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 ${
                   isBrowse
                     ? 'border border-dark-150/80 bg-surface-100/90 font-bold text-dark-900 shadow-2xs'
                     : 'text-dark-700 hover:bg-surface-100/80 hover:text-dark-900'
@@ -63,16 +64,19 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
           </Suspense>
           <div className="hidden h-max shrink-0 items-center gap-2.5 md:flex">
             <HeaderLoginButton />
-            <a
+            <Button
+              as="a"
+              href="https://forms.gle/nDPFKAYSuoGg2J3MA"
               target="_blank"
               rel="noopener noreferrer"
-              href="https://forms.gle/nDPFKAYSuoGg2J3MA"
-              className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              variant="shadow"
+              color="primary"
+              size="sm"
+              aria-label={locale === 'ko' ? `${t('submit')} (새 창에서 열림)` : `${t('submit')} (opens in a new tab)`}
+              className="select-none whitespace-nowrap active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
             >
-              <Button as="span" variant="shadow" color="primary" size="sm">
-                {t('submit')}
-              </Button>
-            </a>
+              {t('submit')}
+            </Button>
           </div>
         </div>
       </ContentArea>

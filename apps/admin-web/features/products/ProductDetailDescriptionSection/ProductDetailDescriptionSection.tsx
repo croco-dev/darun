@@ -20,10 +20,17 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
           rightSide={
             <div className="flex gap-2">
               <GenerateProductDescriptionButton slug={slug} />
-              <Button type="button" onClick={openEditModal} variant="contained" color="secondary" size="sm">
+              <Button
+                type="button"
+                onClick={openEditModal}
+                variant="contained"
+                color="secondary"
+                size="sm"
+                className="active:scale-[0.98] motion-reduce:transform-none"
+              >
                 <span className="inline-flex items-center gap-2">
-                  <Pencil className="h-4 w-4" />
-                  수정
+                  <Pencil className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="whitespace-nowrap">수정</span>
                 </span>
               </Button>
             </div>

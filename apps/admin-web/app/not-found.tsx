@@ -11,7 +11,13 @@ export default function NotFoundPage() {
           description="주소를 다시 확인하거나 대시보드로 돌아가 주세요."
           className="min-h-0 p-0"
           action={
-            <Button as={Link} href="/" variant="contained" color="primary">
+            <Button
+              as={Link}
+              href="/"
+              variant="contained"
+              color="primary"
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
               대시보드로 돌아가기
             </Button>
           }

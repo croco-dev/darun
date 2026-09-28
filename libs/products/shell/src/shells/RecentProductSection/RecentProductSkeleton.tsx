@@ -1,6 +1,6 @@
-import { SectionWrapper } from '@darun/ui';
+import { SectionWrapper } from "@darun/ui";
 
-const Skeleton = ({ className = '' }: { className?: string }) => (
+const Skeleton = ({ className = "" }: { className?: string }) => (
   <div
     aria-hidden="true"
     className={`${className} animate-pulse bg-gradient-to-r from-surface-100 via-surface-200 to-surface-100 motion-reduce:animate-none`}
@@ -9,8 +9,17 @@ const Skeleton = ({ className = '' }: { className?: string }) => (
 
 export const RecentProductSkeleton = () => {
   return (
-    <SectionWrapper background="white" spacing="md">
-      <div data-testid="skel-recent" className="flex w-full flex-col gap-5 md:gap-6">
+    <SectionWrapper
+      background="white"
+      spacing="md"
+      className="border-t border-dark-100/70"
+    >
+      <div
+        data-testid="skel-recent"
+        aria-busy="true"
+        aria-live="polite"
+        className="flex w-full flex-col gap-5 md:gap-6"
+      >
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <Skeleton className="h-7 w-48 rounded-lg" />
@@ -22,7 +31,7 @@ export const RecentProductSkeleton = () => {
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={String(i)}
-              className="flex h-full flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card sm:p-5"
+              className="flex h-full min-h-[160px] sm:min-h-[180px] flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card sm:p-5"
             >
               <div className="flex flex-col gap-3">
                 <Skeleton className="h-12 w-12 rounded-xl" />

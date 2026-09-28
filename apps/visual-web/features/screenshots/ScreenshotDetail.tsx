@@ -14,7 +14,9 @@ import {
 } from './visualClassifications';
 
 function DetailImage({ src, alt, onError }: { src: string; alt: string; onError: () => void }) {
-  const [hasError, setHasError] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+
+  const hasError = failedSrc === src;
 
   if (hasError) {
     return (
@@ -23,8 +25,8 @@ function DetailImage({ src, alt, onError }: { src: string; alt: string; onError:
         aria-label="이미지를 불러올 수 없음"
         className="flex min-h-72 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dark-200 bg-surface-100 text-dark-400"
       >
-        <ImageOff size={32} aria-hidden="true" />
-        <span className="text-sm text-dark-500">이미지를 불러올 수 없어요.</span>
+        <ImageOff size={32} className="shrink-0" aria-hidden="true" />
+        <span className="text-sm text-dark-500 break-words [word-break:keep-all]">이미지를 불러올 수 없어요.</span>
       </div>
     );
   }
@@ -34,7 +36,7 @@ function DetailImage({ src, alt, onError }: { src: string; alt: string; onError:
       src={src}
       alt={alt}
       onError={() => {
-        setHasError(true);
+        setFailedSrc(src);
         onError();
       }}
       className="max-h-[calc(100dvh-16rem)] w-full rounded-2xl border border-dark-150 bg-surface-100 object-contain"
@@ -80,10 +82,19 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             role="alert"
             className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center"
           >
-            <p className="text-sm font-semibold text-dark-900">스크린샷을 불러오지 못했어요.</p>
-            <Button type="button" variant="contained" color="primary" size="sm" onClick={() => retry()}>
-              <RefreshCw size={16} />
-              다시 시도
+            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+              스크린샷을 불러오지 못했어요.
+            </p>
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              size="sm"
+              onClick={() => retry()}
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
+              <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">다시 시도</span>
             </Button>
           </div>
         </div>
@@ -102,9 +113,11 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
     <main id="main-content" className="w-full py-8 md:py-12">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6">
         <div className="flex flex-col gap-2">
-          <h1 className="break-words text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">{displayTitle}</h1>
+          <h1 className="break-words [word-break:keep-all] text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">
+            {displayTitle}
+          </h1>
           <p className="flex flex-wrap items-center gap-2 text-sm text-dark-500">
-            <span className="font-medium text-dark-700">{product.name}</span>
+            <span className="max-w-xs truncate font-medium text-dark-700">{product.name}</span>
             <span aria-hidden="true" className="text-dark-300">
               ·
             </span>
@@ -125,11 +138,11 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
               color="primary"
               size="sm"
               onClick={() => setIsZoomOpen(true)}
-              className="absolute bottom-3 right-3"
+              className="absolute bottom-3 right-3 active:scale-[0.98] motion-reduce:transform-none"
               aria-haspopup="dialog"
             >
-              <Maximize2 size={16} />
-              <span className="hidden sm:inline">확대</span>
+              <Maximize2 size={16} className="shrink-0" aria-hidden="true" />
+              <span className="hidden sm:inline whitespace-nowrap">확대</span>
               <span className="sr-only sm:hidden">확대</span>
             </Button>
           )}
@@ -142,18 +155,22 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             variant="contained"
             color="primary"
             size="md"
+            className="active:scale-[0.98] motion-reduce:transform-none"
           >
-            이 서비스의 화면
+            <span className="whitespace-nowrap">이 서비스의 화면</span>
           </Button>
           <Button
             as="a"
             href={`https://darun.io/ko/products/${encodeURIComponent(product.slug)}`}
+            target="_blank"
+            rel="noopener noreferrer"
             variant="shadow"
             color="primary"
             size="md"
+            className="active:scale-[0.98] motion-reduce:transform-none"
           >
-            <ExternalLink size={16} />
-            서비스 소개
+            <ExternalLink size={16} className="shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap">서비스 소개</span>
           </Button>
           <Button
             type="button"
@@ -161,9 +178,9 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             color="primary"
             size="md"
             onClick={() => router.back()}
-            className="sm:ml-auto"
+            className="sm:ml-auto active:scale-[0.98] motion-reduce:transform-none"
           >
-            뒤로 가기
+            <span className="whitespace-nowrap">뒤로 가기</span>
           </Button>
         </div>
       </div>
@@ -175,14 +192,24 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
         className="w-full"
       >
         <div className="flex max-h-[calc(100dvh-3rem)] flex-col items-center gap-3 p-4">
-          <h2 id="screenshot-zoom-heading" className="max-w-full truncate text-base font-bold text-white">
+          <h2
+            id="screenshot-zoom-heading"
+            className="max-w-full break-words [word-break:keep-all] text-base font-bold text-white"
+          >
             {displayTitle}
           </h2>
-          <div className="max-h-[calc(100dvh-9rem)] w-full overflow-y-auto">
+          <div className="max-h-[calc(100dvh-9rem)] w-full overflow-y-auto overscroll-contain">
             <img src={imageUrl} alt={imageAlt} className="mx-auto max-w-full rounded-lg object-contain" />
           </div>
-          <Button type="button" variant="contained" color="primary" size="sm" onClick={() => setIsZoomOpen(false)}>
-            닫기
+          <Button
+            type="button"
+            variant="contained"
+            color="primary"
+            size="sm"
+            onClick={() => setIsZoomOpen(false)}
+            className="active:scale-[0.98] motion-reduce:transform-none"
+          >
+            <span className="whitespace-nowrap">닫기</span>
           </Button>
         </div>
       </Dialog>

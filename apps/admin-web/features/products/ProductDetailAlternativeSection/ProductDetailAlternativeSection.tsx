@@ -33,8 +33,8 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
         <AdminSectionHeader
           title="다른 서비스(대안) 관리"
           rightSide={
-            <Button type="button" onClick={openEditModal} variant="contained" color="primary">
-              대안 서비스 수정/추가
+            <Button type="button" onClick={openEditModal} variant="contained" color="primary" size="sm">
+              <span className="whitespace-nowrap">대안 서비스 수정/추가</span>
             </Button>
           }
         />
@@ -45,7 +45,7 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
             <AdminErrorState
               error={error}
               action={
-                <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+                <Button type="button" onClick={() => refetch()} variant="contained" color="primary" size="sm">
                   다시 시도
                 </Button>
               }
@@ -55,14 +55,16 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
               title="등록된 대안 서비스가 없습니다."
               description="상단의 '대안 서비스 수정/추가' 버튼을 눌러 이 서비스와 유사하거나 비교 가능한 대안 서비스를 연결하세요."
               action={
-                <Button type="button" onClick={openEditModal} variant="contained" color="primary">
-                  대안 서비스 연결
+                <Button type="button" onClick={openEditModal} variant="contained" color="primary" size="sm">
+                  <span className="whitespace-nowrap">대안 서비스 연결</span>
                 </Button>
               }
             />
           ) : (
             <div className="flex flex-col gap-3">
-              <p className="text-xs font-medium text-dark-500">현재 연결된 대안 서비스 ({alternatives.length}개):</p>
+              <p className="text-xs font-medium text-dark-500 tabular-nums">
+                현재 연결된 대안 서비스 ({alternatives.length}개):
+              </p>
               <div className="flex flex-wrap gap-2.5">
                 {alternatives.map(alt => (
                   <div
@@ -79,7 +81,14 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
         </AdminSectionBody>
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="다른 서비스(대안) 관리">
-        <EditAlternativeProducts slug={slug} onSubmit={closeEditModal} onCancel={closeEditModal} />
+        <EditAlternativeProducts
+          slug={slug}
+          onSubmit={() => {
+            closeEditModal();
+            void refetch();
+          }}
+          onCancel={closeEditModal}
+        />
       </AdminModal>
     </>
   );

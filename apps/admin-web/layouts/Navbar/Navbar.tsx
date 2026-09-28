@@ -34,13 +34,16 @@ export function Navbar() {
     >
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
         <div className="pb-5 mb-6 border-b border-dark-200 flex items-center justify-between shrink-0">
-          <Link href="/">
+          <Link
+            href="/"
+            className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
+          >
             <div className="flex items-center gap-2 px-1 hover:opacity-85 transition">
-              <Logo size={32} />
+              <Logo size={32} className="shrink-0" />
               <span className="text-lg font-bold text-dark-900 select-none">다른 관리자</span>
             </div>
           </Link>
-          <code className="font-mono font-bold text-xs bg-dark-100 text-dark-700 px-1.5 py-0.5 rounded border border-dark-200">
+          <code className="font-mono font-bold text-xs bg-dark-100 text-dark-700 px-1.5 py-0.5 rounded border border-dark-200 select-none whitespace-nowrap">
             {process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local' || process.env['NODE_ENV'] === 'development'
               ? 'local'
               : 'prod'}
@@ -54,7 +57,7 @@ export function Navbar() {
               <Link
                 key={item.link}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition duration-150 motion-reduce:transition-none outline-none select-none focus-visible:ring-2 focus-visible:ring-dark-900/40 ${
+                className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition duration-150 motion-reduce:transition-none outline-none select-none active:scale-[0.99] motion-reduce:transform-none focus-visible:ring-2 focus-visible:ring-dark-900/40 focus-visible:ring-offset-1 ${
                   isActive
                     ? 'bg-dark-900 text-white visited:text-white shadow-sm font-semibold'
                     : 'text-dark-600 visited:text-dark-600 hover:bg-surface-100 hover:text-dark-900 hover:visited:text-dark-900'
@@ -62,10 +65,11 @@ export function Navbar() {
                 href={item.link}
               >
                 <item.icon
-                  className={`w-5 h-5 transition-colors ${isActive ? 'text-white' : 'text-dark-400'}`}
+                  aria-hidden="true"
+                  className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-dark-400 group-hover:text-dark-700'}`}
                   strokeWidth={1.5}
                 />
-                <span>{item.label}</span>
+                <span className="whitespace-nowrap">{item.label}</span>
               </Link>
             );
           })}
@@ -75,10 +79,13 @@ export function Navbar() {
       <div className="pt-4 mt-auto border-t border-dark-200 shrink-0 flex flex-col gap-2">
         <div className="px-3 py-2 rounded-lg bg-surface-100/60 border border-dark-150/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-leaf-500 animate-pulse" />
-            <span className="text-xs font-medium text-dark-700">관리자 접속 중</span>
+            <div
+              aria-hidden="true"
+              className="w-2 h-2 shrink-0 rounded-full bg-leaf-500 animate-pulse motion-reduce:animate-none"
+            />
+            <span className="text-xs font-medium text-dark-700 whitespace-nowrap select-none">관리자 접속 중</span>
           </div>
-          <span className="text-2xs text-dark-400 font-mono font-semibold uppercase">
+          <span className="text-2xs text-dark-400 font-mono font-semibold uppercase select-none whitespace-nowrap">
             {process.env['NEXT_PUBLIC_INFRA_ENV'] || process.env['NODE_ENV'] || 'local'}
           </span>
         </div>

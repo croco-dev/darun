@@ -1,5 +1,4 @@
-import { VariantProps } from 'class-variance-authority';
-import { cva } from 'class-variance-authority';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '../lib/utils';
 import { ContentArea } from './ContentArea';
@@ -9,7 +8,8 @@ const sectionWrapperVariants = cva('w-full', {
     background: {
       white: 'bg-white',
       subtle: 'bg-surface-100/70 border-y border-dark-100/60',
-      dark: 'bg-dark-900',
+      dark: 'bg-dark-900 text-white',
+      transparent: 'bg-transparent',
     },
     spacing: {
       none: '',

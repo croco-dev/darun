@@ -9,17 +9,25 @@ const Skeleton = ({ className = '' }: { className?: string }) => (
 
 export const TrendingProductSkeleton = () => {
   return (
-    <SectionWrapper background="subtle" spacing="md">
-      <div data-testid="skel-trending" className="flex w-full flex-col gap-5 md:gap-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-7 w-48 rounded-lg" />
-          <Skeleton className="h-5 w-16 rounded" />
+    <SectionWrapper background="white" spacing="md" className="border-t border-dark-100/70">
+      <div
+        data-testid="skel-trending"
+        aria-busy="true"
+        aria-live="polite"
+        className="flex w-full flex-col gap-5 md:gap-6"
+      >
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-7 w-48 rounded-lg" />
+            <Skeleton className="h-5 w-16 rounded" />
+          </div>
+          <Skeleton className="h-4 w-64 rounded max-w-sm" />
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={String(i)}
-              className="relative flex h-full flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card sm:p-5"
+              className="relative flex h-full min-h-[160px] sm:min-h-[180px] flex-col justify-between rounded-card-lg border border-dark-150/90 bg-white p-4 shadow-card sm:p-5"
             >
               <div className="absolute right-3.5 top-3.5 z-10 sm:right-4 sm:top-4">
                 <Skeleton className="h-6 w-6 rounded-lg" />

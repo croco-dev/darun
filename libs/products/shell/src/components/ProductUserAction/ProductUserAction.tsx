@@ -3,7 +3,7 @@
 import { AlertCircle, Button, Check, Copy, Heart, useToast } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CompareButton } from '../CompareButton';
 import { useProductUserAction } from './useProductUserAction';
 
@@ -14,15 +14,22 @@ export const ProductUserAction = bind(
     const locale = useLocale();
     const t = useTranslations('ProductDetail.action');
     const [copied, setCopied] = useState(false);
+    const hasShownSuccessToastRef = useRef(false);
+    const prevErrorRef = useRef<string | null>(null);
 
     const voteLabel = voted ? t('cancelUpvote') : t('upvote');
 
     useEffect(() => {
-      if (error) {
+      if (error && error !== prevErrorRef.current) {
         addToast(error, 'error');
-      } else if (voted && !loading) {
+        hasShownSuccessToastRef.current = false;
+      } else if (voted && !loading && !hasShownSuccessToastRef.current) {
         addToast(t('voteSuccess'), 'success');
+        hasShownSuccessToastRef.current = true;
+      } else if (!voted) {
+        hasShownSuccessToastRef.current = false;
       }
+      prevErrorRef.current = error;
     }, [error, voted, loading, addToast, t]);
 
     const handleCopyLink = async () => {
@@ -40,7 +47,7 @@ export const ProductUserAction = bind(
     const copyLabel = copied ? t('copied') : t('copyLink');
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="shadow"
           color="secondary"
@@ -61,7 +68,7 @@ export const ProductUserAction = bind(
             {loading ? (
               <div
                 data-testid="upvote-loading"
-                className="h-4 w-4 animate-spin rounded-full border-2 border-current border-b-transparent motion-reduce:animate-none"
+                className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-b-transparent motion-reduce:animate-none"
               />
             ) : error ? (
               <span
@@ -69,20 +76,19 @@ export const ProductUserAction = bind(
                 className="inline-flex items-center justify-center text-cherry-600"
                 title={error}
               >
-                <AlertCircle size={16} className="stroke-[2.25]" />
+                <AlertCircle size={16} className="stroke-[2.25] shrink-0" aria-hidden="true" />
               </span>
             ) : (
               <Heart
                 size={16}
-                className={`transition-colors duration-150 ${
-                  voted
-                    ? 'fill-white text-white'
-                    : 'fill-transparent text-dark-500 group-hover:text-dark-900'
+                aria-hidden="true"
+                className={`shrink-0 transition-colors duration-150 ${
+                  voted ? 'fill-white text-white' : 'fill-transparent text-dark-500 group-hover:text-dark-900'
                 }`}
               />
             )}
             <span
-              className={`break-keep text-sm font-semibold tabular-nums transition-colors duration-150 ${voted ? 'text-white' : 'text-dark-700 group-hover:text-dark-900'}`}
+              className={`select-none whitespace-nowrap text-sm font-semibold tabular-nums transition-colors duration-150 ${voted ? 'text-white' : 'text-dark-700 group-hover:text-dark-900'}`}
             >
               {voteCount.toLocaleString(locale)}
             </span>
@@ -97,15 +103,16 @@ export const ProductUserAction = bind(
           data-testid="share-btn"
           aria-label={copyLabel}
           title={copyLabel}
-          className="group h-10 sm:h-11 px-3 sm:px-3.5 transition-all duration-150 active:scale-[0.98] border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover"
+          className="group flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center p-0 transition-all duration-150 active:scale-[0.98] border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover motion-reduce:transform-none motion-reduce:transition-none"
         >
           <div className="flex items-center justify-center">
             {copied ? (
-              <Check size={16} className="text-leaf-600 stroke-[2.25]" />
+              <Check size={16} className="text-leaf-600 stroke-[2.25] shrink-0" aria-hidden="true" />
             ) : (
               <Copy
                 size={16}
-                className="text-dark-500 stroke-[2] transition-colors duration-150 group-hover:text-dark-900"
+                aria-hidden="true"
+                className="text-dark-500 stroke-[2] shrink-0 transition-colors duration-150 group-hover:text-dark-900"
               />
             )}
           </div>

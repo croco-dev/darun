@@ -6,16 +6,17 @@ type RankBadgeProps = {
 };
 
 const sizeStyles = {
-  sm: 'h-6 min-w-6 px-2 text-xs rounded-lg',
-  md: 'h-9 w-9 shrink-0 text-sm rounded-xl',
+  sm: 'h-6 min-w-6 px-2 shrink-0 text-xs rounded-lg',
+  md: 'h-9 min-w-9 px-2 shrink-0 text-sm rounded-xl',
 } as const;
 
 export const RankBadge = ({ rank, size = 'sm' }: RankBadgeProps) => {
   const locale = useLocale();
   return (
     <span
+      role="text"
       aria-label={locale === 'en' ? `Rank ${rank}` : `${rank}위`}
-      className={`flex items-center justify-center font-black tracking-tight tabular-nums transition-all duration-200 ease-out motion-reduce:transition-none ${sizeStyles[size]} ${
+      className={`flex items-center justify-center font-black tracking-tight select-none tabular-nums transition-all duration-200 ease-out motion-reduce:transition-none ${sizeStyles[size]} ${
         rank === 1
           ? 'border border-dark-900 bg-dark-900 text-white shadow-2xs'
           : rank === 2

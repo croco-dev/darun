@@ -1,13 +1,13 @@
 import { gql } from '@apollo/client';
 import {
   CategoryNavigationSection,
+  CategoryNavigationSkeleton,
   MainHeroBanner,
   RecentProductSection,
+  RecentProductSkeleton,
   TrendingProductSection,
+  TrendingProductSkeleton,
 } from '@darun/products-shell';
-import { CategoryNavigationSkeleton } from '@darun/products-shell/src/shells/CategoryNavigationSection/CategoryNavigationSkeleton';
-import { RecentProductSkeleton } from '@darun/products-shell/src/shells/RecentProductSection/RecentProductSkeleton';
-import { TrendingProductSkeleton } from '@darun/products-shell/src/shells/TrendingProductSection/TrendingProductSkeleton';
 import { Compass, Layers, SectionHeader, SectionWrapper, ShieldCheck } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 
@@ -57,7 +57,7 @@ function getWebSiteJsonLd(locale: 'ko' | 'en') {
 const whatIsDarunFeatures = [
   {
     icon: Compass,
-    iconColor: 'border-dark-150/90 bg-surface-100 text-dark-900',
+    iconColor: 'border-blue-200/80 bg-blue-50 text-blue-700',
     titleKo: '서비스 탐색과 나란한 비교',
     titleEn: 'Discovery and Comparison',
     descKo:
@@ -67,7 +67,7 @@ const whatIsDarunFeatures = [
   },
   {
     icon: Layers,
-    iconColor: 'border-dark-150/90 bg-surface-100 text-dark-900',
+    iconColor: 'border-indigo-200/80 bg-indigo-50 text-indigo-700',
     titleKo: '상세 정보와 대안 추천',
     titleEn: 'In-Depth Details & Alternatives',
     descKo:
@@ -77,7 +77,7 @@ const whatIsDarunFeatures = [
   },
   {
     icon: ShieldCheck,
-    iconColor: 'border-dark-150/90 bg-surface-100 text-dark-900',
+    iconColor: 'border-emerald-200/80 bg-emerald-50 text-emerald-700',
     titleKo: '공식 링크 및 최신성 확인',
     titleEn: 'Verified Links & Freshness',
     descKo:
@@ -128,23 +128,27 @@ export default async function HomePage({ params }: HomePageProps) {
                   : 'A curated platform to discover, compare, and evaluate the right software for your workflow'
               }
             />
-            <div className="grid grid-cols-1 gap-5 text-sm leading-relaxed text-dark-700 md:grid-cols-3 md:gap-6 sm:text-base">
+            <div
+              role="region"
+              aria-label={isKo ? '다른(darun) 주요 특징' : 'Darun key features'}
+              className="grid grid-cols-1 gap-5 text-sm leading-relaxed text-dark-700 sm:grid-cols-2 md:grid-cols-3 md:gap-6 sm:text-base"
+            >
               {whatIsDarunFeatures.map(item => {
                 const Icon = item.icon;
                 return (
                   <div
                     key={item.titleEn}
-                    className="flex flex-col gap-3 rounded-card-lg border border-dark-150 bg-white p-6 shadow-card"
+                    className="group flex flex-col gap-3 rounded-card-lg border border-dark-150 bg-white p-6 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-dark-300 hover:shadow-card-hover sm:last:col-span-2 md:last:col-span-1 motion-reduce:transform-none motion-reduce:transition-none"
                   >
                     <div
-                      className={`flex h-11 w-11 items-center justify-center rounded-xl border shadow-2xs ${item.iconColor}`}
+                      className={`flex h-11 w-11 items-center justify-center rounded-xl border shadow-2xs transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${item.iconColor}`}
                     >
-                      <Icon size={22} />
+                      <Icon size={22} className="shrink-0" aria-hidden="true" />
                     </div>
-                    <h3 className="text-base font-bold tracking-tight text-dark-900 break-keep sm:text-lg">
+                    <h3 className="text-base font-bold tracking-tight text-dark-900 break-words [word-break:keep-all] sm:text-lg">
                       {isKo ? item.titleKo : item.titleEn}
                     </h3>
-                    <p className="text-sm leading-relaxed text-dark-600 break-keep">
+                    <p className="text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all]">
                       {isKo ? item.descKo : item.descEn}
                     </p>
                   </div>

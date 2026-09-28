@@ -179,15 +179,18 @@ export function Button({
   active,
   isActive,
   kind,
+  type,
   ...props
 }: ButtonProps) {
   const Component = as ?? 'button';
   const resolvedVariant = resolveButtonVariant(variant, kind);
   const resolvedColor = resolveButtonColor(resolvedVariant, color, kind);
   const resolvedActive = resolveButtonActive(active, isActive, kind);
+  const resolvedType = Component === 'button' ? (type ?? 'button') : type;
 
   return (
     <Component
+      type={resolvedType}
       className={cn(
         buttonVariants({
           variant: resolvedVariant,

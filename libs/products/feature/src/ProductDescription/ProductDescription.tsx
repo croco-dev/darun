@@ -18,11 +18,15 @@ export const ProductDescription = bind(useProductDescription, ({ description, lo
 
     let isMounted = true;
 
-    import('dompurify').then(DOMPurify => {
-      if (isMounted) {
-        setDomPurify(() => DOMPurify.default);
-      }
-    });
+    import('dompurify')
+      .then(DOMPurify => {
+        if (isMounted) {
+          setDomPurify(() => DOMPurify.default);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load dompurify', err);
+      });
 
     return () => {
       isMounted = false;

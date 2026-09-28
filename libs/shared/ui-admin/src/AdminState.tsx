@@ -166,20 +166,22 @@ export function AdminLoadingState({
 }: AdminStateProps) {
   return (
     <div className={cn('flex flex-col items-center justify-center text-center p-8 min-h-52', className)}>
-      <svg
-        className="animate-spin motion-reduce:animate-none h-8 w-8 text-dark-500 mb-3"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path
-          className="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        />
-      </svg>
-      <h3 className="text-sm font-medium text-dark-900">{title}</h3>
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
+        <svg
+          className="animate-spin motion-reduce:animate-none h-6 w-6 text-dark-500"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
+        </svg>
+      </div>
+      <h3 className="text-sm font-semibold text-dark-900">{title}</h3>
       {description && <p className="text-xs text-dark-500 mt-1">{description}</p>}
     </div>
   );
@@ -199,25 +201,27 @@ export function AdminEmptyState({
 }: AdminEmptyStateProps) {
   return (
     <div className={cn('flex flex-col items-center justify-center text-center p-8 min-h-52', className)}>
-      {icon ?? (
-        <svg
-          className="h-8 w-8 text-dark-400 mb-3"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.008 1.24l.885 1.77a2.25 2.25 0 0 0 2.007 1.24h1.98a2.25 2.25 0 0 0 2.007-1.24l.885-1.77a2.25 2.25 0 0 1 2.007-1.24h3.86m-18 0h18a2.25 2.25 0 0 1 2.25 2.25v4.5A2.25 2.25 0 0 1 22.5 21h-21A2.25 2.25 0 0 1 1.5 18.75v-4.5A2.25 2.25 0 0 1 2.25 13.5Z"
-          />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5" />
-        </svg>
-      )}
-      <h3 className="text-sm font-semibold text-dark-800">{title}</h3>
-      {description && <p className="text-xs text-dark-500 mt-1">{description}</p>}
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
+        {icon ?? (
+          <svg
+            className="h-6 w-6 shrink-0 text-dark-500"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="1.75"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.008 1.24l.885 1.77a2.25 2.25 0 0 0 2.007 1.24h1.98a2.25 2.25 0 0 0 2.007-1.24l.885-1.77a2.25 2.25 0 0 1 2.007-1.24h3.86m-18 0h18a2.25 2.25 0 0 1 2.25 2.25v4.5A2.25 2.25 0 0 1 22.5 21h-21A2.25 2.25 0 0 1 1.5 18.75v-4.5A2.25 2.25 0 0 1 2.25 13.5Z"
+            />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5" />
+          </svg>
+        )}
+      </div>
+      <h3 className="text-sm font-semibold text-dark-800 break-words [word-break:keep-all]">{title}</h3>
+      {description && <p className="text-xs text-dark-500 mt-1 break-words [word-break:keep-all]">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -260,22 +264,28 @@ export function AdminErrorState({
     <div
       className={cn('flex flex-col items-center justify-center text-center p-8 min-h-52 max-w-xl mx-auto', className)}
     >
-      <svg
-        className="h-8 w-8 text-cherry-700 mb-3"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
-        />
-      </svg>
-      <h3 className="text-sm font-medium text-cherry-700">{title}</h3>
-      {finalDescription && <p className="text-xs text-dark-500 mt-1 whitespace-pre-wrap">{finalDescription}</p>}
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-cherry-200 bg-cherry-50 text-cherry-600 shadow-2xs">
+        <svg
+          className="h-6 w-6 shrink-0 text-cherry-600"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth="1.75"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+          />
+        </svg>
+      </div>
+      <h3 className="text-sm font-semibold text-cherry-700 break-words [word-break:keep-all]">{title}</h3>
+      {finalDescription && (
+        <p className="text-xs text-dark-500 mt-1 whitespace-pre-wrap break-words [word-break:keep-all]">
+          {finalDescription}
+        </p>
+      )}
 
       {technicalContent && (
         <details className="mt-4 w-full text-left text-xs bg-surface-100 border border-dark-200 rounded-lg p-3 group">
@@ -289,7 +299,7 @@ export function AdminErrorState({
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="text-2xs px-2 py-0.5 rounded border border-dark-200 bg-white hover:bg-surface-200 text-dark-700 transition"
+                  className="text-2xs px-2 py-0.5 rounded border border-dark-200 bg-white hover:bg-surface-200 text-dark-700 transition active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
                 >
                   {copied ? '복사 완료!' : '오류 내용 복사'}
                 </button>

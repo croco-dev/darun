@@ -45,7 +45,7 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
     variables: { slug },
   });
 
-  const fetchedTags = data?.tempProductBySlug?.tags.map(tag => tag.name) ?? [];
+  const fetchedTags = data?.tempProductBySlug?.tags?.map(tag => tag.name) ?? [];
   const currentInputValue = inputValue !== null ? inputValue : fetchedTags.join(', ');
 
   const currentTags = currentInputValue
@@ -60,12 +60,12 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
       notifications.show({ message: error.message, color: 'red' });
     },
     onCompleted: data => {
-      if (data.updateProductTags.product?.id) {
+      if (data?.updateProductTags?.product?.id) {
         notifications.show({
           message: '태그 수정이 반영되었어요.',
           color: 'teal',
         });
-        const updated = data.updateProductTags.product.tags.map(t => t.name);
+        const updated = data.updateProductTags.product.tags?.map(t => t.name) ?? [];
         setInputValue(updated.join(', '));
       }
     },

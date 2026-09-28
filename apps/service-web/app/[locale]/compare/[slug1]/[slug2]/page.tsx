@@ -93,7 +93,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const alternates = buildAlternates({
     locale: currentLocale,
-    pathname: `/compare/${resolvedParams.slug1}/${resolvedParams.slug2}`,
+    pathname: `/compare/${encodeURIComponent(resolvedParams.slug1)}/${encodeURIComponent(resolvedParams.slug2)}`,
     includeMarkdownAlternate: true,
   });
 
@@ -121,19 +121,23 @@ export default async function ComparePage({ params }: Props) {
   const resolvedParams = await params;
   const data = await getCompareProducts(resolvedParams);
 
-  if (!data?.product1 || !data.product2) {
+  if (!data?.product1 || !data?.product2) {
     return notFound();
   }
 
   const { product1, product2 } = data;
-  const t = await getTranslations({ locale: resolvedParams.locale, namespace: 'Compare' });
+  const t = await getTranslations({
+    locale: resolvedParams.locale,
+    namespace: 'Compare',
+  });
 
   return (
     <Layout>
       <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col bg-gradient-to-b from-surface-50/60 via-white to-white">
-        <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
+        <ContentArea className="flex flex-col gap-8 pt-5 pb-12 sm:pt-6 sm:pb-16 md:gap-12 md:pt-8 md:pb-20">
           <Breadcrumb
             data-testid="breadcrumb-compare"
+            ariaLabel={resolvedParams.locale === 'ko' ? '탐색 경로' : 'Breadcrumb'}
             items={[
               {
                 label: t('breadcrumb.home'),
@@ -151,30 +155,51 @@ export default async function ComparePage({ params }: Props) {
             align="center"
           />
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
-            <div data-testid="compare-column">
+          <div
+            role="region"
+            aria-label={t('title', {
+              name1: product1.name,
+              name2: product2.name,
+            })}
+            className="relative grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6"
+          >
+            <div data-testid="compare-column" className="h-full min-w-0">
               <ProductCard
                 product={product1}
-                href={`/${resolvedParams.locale}/products/${product1.slug}`}
+                href={`/${resolvedParams.locale}/products/${encodeURIComponent(product1.slug)}`}
                 source="compare"
               />
             </div>
-            <div data-testid="compare-column">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-dark-200 bg-white font-black text-3xs md:text-xs text-dark-700 shadow-md ring-4 ring-surface-50/60 select-none motion-reduce:transform-none"
+            >
+              VS
+            </div>
+            <div data-testid="compare-column" className="h-full min-w-0">
               <ProductCard
                 product={product2}
-                href={`/${resolvedParams.locale}/products/${product2.slug}`}
+                href={`/${resolvedParams.locale}/products/${encodeURIComponent(product2.slug)}`}
                 source="compare"
               />
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card">
-            <div className="sticky top-14 sm:top-16 z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
-              <div className="flex items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
+          <div
+            role="region"
+            aria-label={t('title', {
+              name1: product1.name,
+              name2: product2.name,
+            })}
+            className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card"
+          >
+            <div className="sticky top-[61px] z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
+              <div className="flex min-w-0 items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
                 {product1.logoUrl ? (
                   <Image
                     src={product1.logoUrl}
-                    alt={product1.name}
+                    alt=""
+                    aria-hidden="true"
                     width={32}
                     height={32}
                     className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-lg border border-dark-150/90 bg-white object-contain p-0.5 shadow-2xs ring-1 ring-black/5"
@@ -189,11 +214,12 @@ export default async function ComparePage({ params }: Props) {
                 )}
                 <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">{product1.name}</span>
               </div>
-              <div className="flex items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
+              <div className="flex min-w-0 items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
                 {product2.logoUrl ? (
                   <Image
                     src={product2.logoUrl}
-                    alt={product2.name}
+                    alt=""
+                    aria-hidden="true"
                     width={32}
                     height={32}
                     className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-lg border border-dark-150/90 bg-white object-contain p-0.5 shadow-2xs ring-1 ring-black/5"
@@ -249,10 +275,10 @@ export default async function ComparePage({ params }: Props) {
               label={t('table.tags')}
               colLabel1={product1.name}
               colLabel2={product2.name}
-              value1={product1.tags.map(t => t.name).join(', ')}
-              value2={product2.tags.map(t => t.name).join(', ')}
-              tags1={product1.tags.map(t => t.name)}
-              tags2={product2.tags.map(t => t.name)}
+              value1={(product1.tags ?? []).map(t => t.name).join(', ')}
+              value2={(product2.tags ?? []).map(t => t.name).join(', ')}
+              tags1={(product1.tags ?? []).map(t => t.name)}
+              tags2={(product2.tags ?? []).map(t => t.name)}
               locale={resolvedParams.locale}
               testid="tags"
               isLast
@@ -297,13 +323,16 @@ function CompareRow({
         isLast ? '' : 'border-b border-dark-150/70'
       }`}
     >
-      <div className="mb-2 text-xs font-bold tracking-tight text-dark-500">{label}</div>
+      <h3 className="mb-2 text-xs font-bold tracking-tight text-dark-500 break-words [word-break:keep-all]">{label}</h3>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-150/70">
         <div className="md:pr-5">
-          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
+          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden select-none max-w-full truncate">
             {colLabel1}
           </div>
-          <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-1`}>
+          <div
+            className="text-sm leading-relaxed text-dark-800 break-words [word-break:keep-all]"
+            data-testid={`compare-row-${testid}-1`}
+          >
             {custom1 ? (
               custom1
             ) : tags1 && tags1.length > 0 ? (
@@ -321,11 +350,14 @@ function CompareRow({
             )}
           </div>
         </div>
-        <div className="md:pl-5">
-          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
+        <div className="border-t border-dark-100/70 pt-2.5 md:border-0 md:pt-0 md:pl-5">
+          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden select-none max-w-full truncate">
             {colLabel2}
           </div>
-          <div className="text-sm leading-relaxed text-dark-800 break-keep" data-testid={`compare-row-${testid}-2`}>
+          <div
+            className="text-sm leading-relaxed text-dark-800 break-words [word-break:keep-all]"
+            data-testid={`compare-row-${testid}-2`}
+          >
             {custom2 ? (
               custom2
             ) : tags2 && tags2.length > 0 ? (

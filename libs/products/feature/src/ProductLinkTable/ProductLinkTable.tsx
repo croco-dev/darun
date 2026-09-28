@@ -2,7 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { EditProductLinkItemFragment, EditProductLinkItemFragmentDoc, useFragment } from '@darun/provider-graphql';
-import { Button, cn, Link2, Pencil } from '@darun/ui';
+import { Button, cn, Globe, Link2, Pencil } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
@@ -23,7 +23,9 @@ gql`
 type ProductLinkTableLinkRef = {
   id: string;
   isPrimary: boolean;
-  ' $fragmentRefs'?: { EditProductLinkItemFragment: EditProductLinkItemFragment };
+  ' $fragmentRefs'?: {
+    EditProductLinkItemFragment: EditProductLinkItemFragment;
+  };
 };
 
 type ProductLinkRowProps = {
@@ -40,8 +42,31 @@ function LinkIcon({ iconUrl, title, isPrimary }: { iconUrl?: string; title: stri
     setHasError(false);
   }
 
+  const normalizedTitle = title?.trim().toLowerCase() ?? '';
+  const isOfficialWebsite =
+    normalizedTitle === '공식 홈페이지' ||
+    normalizedTitle === '공식홈페이지' ||
+    normalizedTitle === '공식 웹사이트' ||
+    normalizedTitle === '공식웹사이트' ||
+    normalizedTitle === '홈페이지' ||
+    normalizedTitle === '웹사이트' ||
+    normalizedTitle === 'official website' ||
+    normalizedTitle === 'website' ||
+    normalizedTitle === 'home' ||
+    normalizedTitle === 'homepage' ||
+    Boolean(iconUrl?.includes('pvjgv9btsktstjkoarrl'));
+
+  if (isOfficialWebsite) {
+    return (
+      <Globe
+        className={cn('h-5 w-5 stroke-[2] shrink-0', isPrimary ? 'text-white' : 'text-dark-800')}
+        aria-hidden="true"
+      />
+    );
+  }
+
   if (!iconUrl || hasError) {
-    return <Link2 className={cn('h-5 w-5', isPrimary ? 'text-white' : 'text-dark-500')} />;
+    return <Link2 className={cn('h-5 w-5 shrink-0', isPrimary ? 'text-white' : 'text-dark-500')} aria-hidden="true" />;
   }
 
   return (
@@ -109,9 +134,15 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-end gap-0">
-          <Button type="button" variant="base" size="sm" onClick={() => onEdit(link)} className="shrink-0">
+          <Button
+            type="button"
+            variant="base"
+            size="sm"
+            onClick={() => onEdit(link)}
+            className="shrink-0 active:scale-[0.98] motion-reduce:transform-none"
+          >
             <span className="inline-flex items-center gap-2">
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-4 w-4 shrink-0" aria-hidden="true" />
               정보 수정
             </span>
           </Button>
@@ -133,7 +164,13 @@ export const ProductLinkTable = bind(
         <AdminErrorState
           error={error}
           action={
-            <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+            <Button
+              type="button"
+              onClick={() => refetch()}
+              variant="contained"
+              color="primary"
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
               다시 시도
             </Button>
           }
@@ -148,7 +185,7 @@ export const ProductLinkTable = bind(
     return (
       <>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse table-fixed">
+          <table className="w-full border-collapse table-fixed" aria-label="링크 목록">
             <thead className="bg-surface-100 text-left text-dark-900">
               <tr>
                 <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[80px]">
@@ -161,7 +198,9 @@ export const ProductLinkTable = bind(
                 <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[120px]">
                   주 링크 여부
                 </th>
-                <th className="border-b border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 last:border-r-0 w-[120px]" />
+                <th className="border-b border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 last:border-r-0 w-[120px]">
+                  <span className="sr-only">수정</span>
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white">
@@ -175,7 +214,7 @@ export const ProductLinkTable = bind(
           {link ? (
             <EditProductLinkItem slug={slug} link={link} onSubmit={closeEditModal} onCancel={closeEditModal} />
           ) : (
-            <div className="py-4 text-center text-sm text-dark-500">
+            <div className="py-4 text-center text-sm text-dark-500 break-words [word-break:keep-all]">
               오류가 발생했습니다. 새로고침 후 다시 시도해 주세요.
             </div>
           )}

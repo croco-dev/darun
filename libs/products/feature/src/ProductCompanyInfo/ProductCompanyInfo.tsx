@@ -40,7 +40,13 @@ export const ProductCompanyInfo = bind(
           error={error}
           title="회사 정보를 불러오지 못했습니다."
           action={
-            <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+            <Button
+              type="button"
+              onClick={() => refetch()}
+              variant="contained"
+              color="primary"
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
               다시 시도
             </Button>
           }
@@ -55,7 +61,13 @@ export const ProductCompanyInfo = bind(
           description="회사를 연결해 보세요."
           action={
             onConnectCompany ? (
-              <Button type="button" variant="contained" color="primary" onClick={onConnectCompany}>
+              <Button
+                type="button"
+                variant="contained"
+                color="primary"
+                onClick={onConnectCompany}
+                className="active:scale-[0.98] motion-reduce:transform-none"
+              >
                 회사 연결
               </Button>
             ) : undefined
@@ -68,7 +80,7 @@ export const ProductCompanyInfo = bind(
       <div>
         <div className="flex flex-col gap-1">
           <p className="text-xs font-bold uppercase tracking-[0.08em] text-dark-500">기본 정보</p>
-          <p className="text-lg font-medium text-dark-900">{company.name}</p>
+          <p className="text-lg font-medium text-dark-900 break-words [word-break:keep-all]">{company.name}</p>
 
           <div className="mt-1 flex flex-wrap items-baseline gap-2.5 text-xs">
             <span className="font-bold text-dark-900 shrink-0">유형</span>
@@ -77,12 +89,12 @@ export const ProductCompanyInfo = bind(
 
           <div className="mt-1 flex flex-wrap items-baseline gap-2.5 text-xs">
             <span className="font-bold text-dark-900 shrink-0">주소</span>
-            <span className="text-dark-500 break-words">{company.address || '-'}</span>
+            <span className="text-dark-500 break-words [word-break:keep-all]">{company.address || '-'}</span>
           </div>
 
           <div className="mt-1 flex flex-wrap items-baseline gap-2.5 text-xs">
             <span className="font-bold text-dark-900 shrink-0">설립일</span>
-            <span className="text-dark-500">{formatStartAt(company.startAt)}</span>
+            <span className="text-dark-500 tabular-nums">{formatStartAt(company.startAt)}</span>
           </div>
         </div>
       </div>

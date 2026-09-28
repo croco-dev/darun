@@ -11,11 +11,23 @@ export const HeaderLoginButton = bind(useHeaderLoginButton, ({ isLoading, isLogg
   return isLoading ? (
     <div className="h-8 w-14 animate-pulse rounded-xl bg-surface-200 motion-reduce:animate-none" aria-hidden="true" />
   ) : isLoggedIn ? (
-    <Button type="button" kind="text" size="sm" onClick={logout}>
+    <Button
+      type="button"
+      kind="text"
+      size="sm"
+      className="min-h-[36px] sm:min-h-0 select-none whitespace-nowrap active:scale-[0.98] motion-reduce:transform-none"
+      onClick={logout}
+    >
       {t('logout')}
     </Button>
   ) : (
-    <Button type="button" kind="text" size="sm" onClick={login}>
+    <Button
+      type="button"
+      kind="text"
+      size="sm"
+      className="min-h-[36px] sm:min-h-0 select-none whitespace-nowrap active:scale-[0.98] motion-reduce:transform-none"
+      onClick={login}
+    >
       {t('login')}
     </Button>
   );

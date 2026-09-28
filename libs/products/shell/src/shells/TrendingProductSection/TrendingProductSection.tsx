@@ -91,12 +91,13 @@ const TrendingProductsView = ({
           moreLink={
             <Link
               href={rankingMoreHref}
-              className="group inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
+              className="group inline-flex min-h-11 items-center gap-1 rounded-lg px-2 -mr-2 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 motion-reduce:transition-none"
             >
               <span>{moreLabel}</span>
               <ChevronRight
                 size={16}
-                className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+                aria-hidden="true"
+                className="shrink-0 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
               />
             </Link>
           }
@@ -104,18 +105,22 @@ const TrendingProductsView = ({
         {products.length === 0 ? (
           <div className="flex min-h-44 flex-col items-center justify-center rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-10 text-center">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
-              <TrendingUp size={22} className="stroke-[2]" />
+              <TrendingUp size={22} className="shrink-0 stroke-[2]" aria-hidden="true" />
             </div>
-            <p className="text-sm font-semibold text-dark-900 break-keep">{emptyLabel}</p>
+            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">{emptyLabel}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
+          <div
+            role="group"
+            aria-label={title}
+            className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5"
+          >
             {products.map((product, index) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 rank={index + 1}
-                href={`/${locale}/products/${product.slug}?from=trending`}
+                href={`/${locale}/products/${encodeURIComponent(product.slug)}?from=trending`}
                 source="trending"
                 onClick={() =>
                   track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {

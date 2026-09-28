@@ -45,12 +45,13 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
   const authorInitial = authorName ? authorName.trim().charAt(0).toUpperCase() : null;
 
   return (
-    <div className="relative overflow-hidden rounded-card-xl border border-dark-150 py-8 shadow-card sm:py-12 lg:py-14">
+    <div className="relative overflow-hidden rounded-card-xl border border-white/10 ring-1 ring-black/20 py-8 shadow-card sm:py-12 lg:py-14">
       {magazine?.backgroundImageUrl ? (
         <Image
           className="absolute inset-0 rounded-card-xl object-cover"
           src={magazine.backgroundImageUrl}
-          alt={magazine.title ?? 'Magazine background'}
+          alt=""
+          aria-hidden="true"
           fill
           sizes="100vw"
           priority
@@ -61,32 +62,38 @@ export const MagazineInfoSection = ({ slug }: MagazineInfoSectionProps) => {
       <div className="absolute inset-0 rounded-card-xl bg-gradient-to-t from-dark-950/85 via-dark-900/65 to-dark-900/45 backdrop-blur-[1px]" />
       <div className="relative z-10 flex flex-col gap-5 px-6 sm:px-8 lg:px-12">
         <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-semibold text-white/95 shadow-2xs backdrop-blur-md">
-          <BookOpen size={13} className="stroke-[2.25] text-white/90" aria-hidden="true" />
-          <span>{t('info.badge')}</span>
+          <BookOpen size={13} className="shrink-0 stroke-[2.25] text-white/90" aria-hidden="true" />
+          <span className="whitespace-nowrap">{t('info.badge')}</span>
         </div>
         <div className="flex max-w-3xl flex-col gap-3">
-          <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white break-keep sm:text-3xl lg:text-4xl">
+          <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white break-words [word-break:keep-all] sm:text-3xl lg:text-4xl">
             {magazine?.title ?? t('info.title')}
           </h1>
-          <p className="text-sm font-normal leading-relaxed tracking-tight text-white/85 break-keep sm:text-base">
+          <p className="text-sm font-normal leading-relaxed tracking-tight text-white/85 break-words [word-break:keep-all] sm:text-base">
             {magazine?.summary ?? t('info.summary')}
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-1 text-xs font-medium text-white/80 sm:text-sm">
             {authorName && (
               <div className="flex items-center gap-1.5">
                 {authorInitial && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-2xs font-bold text-white ring-1 ring-white/30">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-2xs font-bold text-white ring-1 ring-white/40 backdrop-blur-xs shadow-2xs">
                     {authorInitial}
                   </span>
                 )}
-                <span className="font-semibold text-white/95">{authorName}</span>
+                <span className="font-semibold text-white/95 whitespace-nowrap">{authorName}</span>
               </div>
             )}
-            {authorName && formattedDate && <span className="text-white/40">∙</span>}
+            {authorName && formattedDate && (
+              <span aria-hidden="true" className="select-none text-white/40">
+                ∙
+              </span>
+            )}
             {formattedDate && (
               <div className="flex items-center gap-1.5 text-white/75">
-                <Calendar size={14} className="stroke-[2] text-white/70" aria-hidden="true" />
-                <span>{formattedDate}</span>
+                <Calendar size={14} className="shrink-0 stroke-[2] text-white/70" aria-hidden="true" />
+                <time className="tabular-nums whitespace-nowrap" dateTime={magazine?.publishedAt ?? undefined}>
+                  {formattedDate}
+                </time>
               </div>
             )}
           </div>

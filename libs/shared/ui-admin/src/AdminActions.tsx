@@ -7,5 +7,5 @@ type AdminActionsProps = {
 };
 
 export function AdminActions({ children, className }: AdminActionsProps) {
-  return <div className={cn('flex items-center justify-end gap-3 pt-4', className)}>{children}</div>;
+  return <div className={cn('flex flex-wrap items-center justify-end gap-3 pt-4', className)}>{children}</div>;
 }

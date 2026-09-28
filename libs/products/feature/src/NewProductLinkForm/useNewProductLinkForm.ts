@@ -56,6 +56,14 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
       link: value => {
         if (!value?.trim()) return '링크를 입력해주세요.';
         if (!/^https?:\/\//i.test(value.trim())) return '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.';
+        try {
+          const parsed = new URL(value.trim());
+          if (!parsed.hostname) {
+            return '올바른 URL 형식을 입력해주세요.';
+          }
+        } catch {
+          return '올바른 URL 형식을 입력해주세요.';
+        }
         return null;
       },
       title: value => (!value?.trim() ? '이름을 입력해주세요.' : null),
@@ -66,10 +74,10 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
     refetchQueries: [TempProductBySlugOnProductLinkTableDocument],
     awaitRefetchQueries: true,
     onCompleted: ({ addProductLink }) => {
-      if (addProductLink.product?.id) {
+      if (addProductLink?.product?.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
         form.reset();
-        navigate(`/products/${productSlug}`);
+        navigate(`/products/${encodeURIComponent(productSlug)}`);
       }
     },
     onError: error => {

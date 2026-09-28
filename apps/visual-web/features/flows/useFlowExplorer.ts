@@ -189,7 +189,7 @@ export function useFlowExplorer(): FlowExplorerState {
       .fetchMore({
         variables: { after: endCursor },
         updateQuery: (previous, { fetchMoreResult }) => {
-          if (!fetchMoreResult.visualFlows) {
+          if (!fetchMoreResult?.visualFlows) {
             return previous;
           }
           const previousEdges = previous.visualFlows?.edges ?? [];

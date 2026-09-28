@@ -69,17 +69,19 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
   const [searchProducts, { data: searchData }] = useLazyQuery(SearchProductsOnEditAlternativeProductsDocument);
 
   useEffect(() => {
-    const rawAlternatives = data?.tempProductBySlug?.alternatives ?? [];
+    if (!data?.tempProductBySlug) return;
+    const rawAlternatives = data.tempProductBySlug.alternatives ?? [];
     const alternativeIds = rawAlternatives.map(item => item.id).filter((id): id is string => typeof id === 'string');
     form.setInitialValues({ alternativeIds });
     form.setValues({ alternativeIds });
-  }, [data, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.tempProductBySlug?.id]);
 
   const [updateAlternativeProducts, { loading }] = useMutation(EditProductOnEditAlternativeProductsDocument, {
     refetchQueries: [TempProductBySlugOnEditAlternativeProductsDocument],
     awaitRefetchQueries: true,
     onCompleted: ({ updateAlternativeProduct }) => {
-      if (updateAlternativeProduct.product?.id) {
+      if (updateAlternativeProduct?.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
         const rawAlternatives = updateAlternativeProduct.product.alternatives ?? [];
         const alternativeIds = rawAlternatives

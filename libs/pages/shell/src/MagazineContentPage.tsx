@@ -18,12 +18,13 @@ export const MagazineContentPage = ({
   return (
     <Layout>
       <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col bg-gradient-to-b from-surface-50/60 via-white to-white">
-        <ContentArea className="flex flex-col gap-6 py-6 md:gap-8 md:py-8">
+        <ContentArea className="flex flex-col gap-6 pt-5 pb-12 sm:pt-6 sm:pb-16 md:gap-8 md:pt-8 md:pb-20">
           <Breadcrumb
             data-testid="breadcrumb-magazine"
+            ariaLabel={isKo ? '탐색 경로' : 'Breadcrumb'}
             items={[
               { label: isKo ? '홈' : 'Home', href: `/${locale}` },
-              { label: isKo ? '매거진' : 'Magazine' },
+              { label: isKo ? '매거진' : 'Magazines', href: `/${locale}/magazines` },
               { label: title ?? slug, ariaCurrent: 'page' },
             ]}
           />

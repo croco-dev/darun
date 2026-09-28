@@ -58,19 +58,21 @@ export function useEditProductInfo({ slug, onSubmit, onCancel }: UseEditProductI
   });
 
   useEffect(() => {
+    if (!data?.tempProductBySlug) return;
     const values = {
-      name: data?.tempProductBySlug?.name ?? '',
-      summary: data?.tempProductBySlug?.summary ?? '',
+      name: data.tempProductBySlug.name ?? '',
+      summary: data.tempProductBySlug.summary ?? '',
     };
     form.setInitialValues(values);
     form.setValues(values);
-  }, [data, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.tempProductBySlug?.name, data?.tempProductBySlug?.summary]);
 
   const [editInformation, { loading }] = useMutation(EditProductOnEditProductInfoDocument, {
     refetchQueries: [TempProductBySlugOnEditProductInfoDocument, TempProductBySlugOnProductInfoDocument],
     awaitRefetchQueries: true,
     onCompleted: ({ editProduct }) => {
-      if (editProduct.product.id) {
+      if (editProduct?.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
         form.setInitialValues({
           name: editProduct.product.name ?? '',
@@ -95,15 +97,19 @@ export function useEditProductInfo({ slug, onSubmit, onCancel }: UseEditProductI
       notifications.show({ message: '서비스 이름을 입력해주세요.', color: 'red' });
       return;
     }
-    await editInformation({
-      variables: {
-        slug,
-        input: {
-          name,
-          summary: summary || undefined,
+    try {
+      await editInformation({
+        variables: {
+          slug,
+          input: {
+            name,
+            summary: summary || undefined,
+          },
         },
-      },
-    });
+      });
+    } catch {
+      // Handled by onError
+    }
   };
 
   return { form, submit, onCancel, loading };

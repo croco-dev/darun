@@ -91,12 +91,12 @@ export const ProductItem = ({
                 {name}
               </NameTag>
               {tags && tags.length > 0 && (
-                <div className="flex items-center gap-1.5 overflow-hidden">
+                <div className="flex items-center gap-1.5 overflow-hidden py-0.5">
                   <Chip color="filledGray" variant="square">
                     {getLocalizedTag(tags[0], locale)}
                   </Chip>
                   {tags.length > 1 && (
-                    <Chip color="filledGray" variant="square">
+                    <Chip color="filledGray" variant="square" className="shrink-0 tabular-nums select-none">
                       +{tags.length - 1}
                     </Chip>
                   )}
@@ -107,7 +107,7 @@ export const ProductItem = ({
           {headerRight && <div className="shrink-0 pt-0.5">{headerRight}</div>}
         </div>
         {summary && (
-          <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-keep sm:text-sm sm:leading-relaxed">
+          <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-words [word-break:keep-all] sm:text-sm sm:leading-relaxed">
             {summary}
           </p>
         )}
@@ -147,38 +147,39 @@ export const ProductItem = ({
           <NameTag
             className={
               isHero
-                ? 'm-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-900 sm:text-3xl'
-                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
+                ? 'm-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-900 break-words [word-break:keep-all] sm:text-3xl'
+                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 break-words [word-break:keep-all] ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
             }
           >
             {name}
           </NameTag>
           {summary &&
             (isStacked ? (
-              <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-keep sm:text-sm sm:leading-relaxed">
+              <p className="line-clamp-2 text-xs leading-normal text-dark-600 break-words [word-break:keep-all] sm:text-sm sm:leading-relaxed">
                 {summary}
               </p>
             ) : isSummaryNoWrap && !isHero ? (
-              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-relaxed text-dark-600">
+              <p className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-relaxed text-dark-600 [word-break:keep-all]">
                 {summary}
               </p>
             ) : (
               <p
                 className={
                   isHero
-                    ? 'text-sm leading-relaxed text-dark-600 break-keep sm:text-base md:text-lg'
-                    : 'line-clamp-2 text-sm leading-relaxed text-dark-600 break-keep'
+                    ? 'text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all] sm:text-base md:text-lg'
+                    : 'line-clamp-2 text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all]'
                 }
               >
                 {summary}
               </p>
             ))}
         </div>
-        {(tags || specialTags || footerRight) && (
+        {((tags && tags.length > 0) || (specialTags && specialTags.length > 0) || footerRight) && (
           <div className="flex items-center justify-between gap-2 pt-1 mt-auto w-full">
-            {tags || specialTags ? (
+            {(tags && tags.length > 0) || (specialTags && specialTags.length > 0) ? (
               <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide touch-pan-x py-0.5">
                 {tags &&
+                  tags.length > 0 &&
                   (maxTagItems && tags.length > maxTagItems ? (
                     <div className="flex items-center gap-1.5">
                       {tags.slice(0, maxTagItems).map(tag => (
@@ -190,7 +191,11 @@ export const ProductItem = ({
                           {getLocalizedTag(tag, locale)}
                         </Chip>
                       ))}
-                      <Chip variant={tagVariant} color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}>
+                      <Chip
+                        variant={tagVariant}
+                        color={tagVariant === 'square' ? 'filledGray' : 'outlineGray'}
+                        className="shrink-0 tabular-nums select-none"
+                      >
                         +{tags.length - maxTagItems}
                       </Chip>
                     </div>
@@ -205,9 +210,13 @@ export const ProductItem = ({
                       </Chip>
                     ))
                   ))}
-                {specialTags && (
+                {specialTags && specialTags.length > 0 && (
                   <>
-                    <span className="text-dark-400">•</span>
+                    {tags && tags.length > 0 && (
+                      <span aria-hidden="true" className="select-none text-dark-400">
+                        •
+                      </span>
+                    )}
                     {specialTags.map(tag => (
                       <Chip key={`special-tag-${tag}`} variant={tagVariant} color="filledDark">
                         {tag}

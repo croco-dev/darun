@@ -139,6 +139,14 @@ export async function HEAD(req: NextRequest, props: RouteParams): Promise<NextRe
   return handleMarkdownRequest(req, props, true);
 }
 
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHead: boolean): Promise<NextResponse> {
   const { path = [] } = await props.params;
 
@@ -241,7 +249,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
 
     // 4. Products: detail or alternatives
     if (subPath[0] === 'products' && subPath.length >= 2) {
-      const slug = subPath[1];
+      const slug = safeDecode(subPath[1] ?? '');
       if (!slug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
       const result = await client.query<{ productBySlug: ProductQueryResult | null }>({
@@ -278,7 +286,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
 
     // 5. Category: /categories/:slug
     if (subPath[0] === 'categories' && subPath.length === 2) {
-      const slug = subPath[1];
+      const slug = safeDecode(subPath[1] ?? '');
       if (!slug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
       const [catListResult, prodResult] = await Promise.all([
@@ -310,8 +318,8 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
 
     // 6. Compare: /compare/:slug1/:slug2
     if (subPath[0] === 'compare' && subPath.length === 3) {
-      const slug1 = subPath[1];
-      const slug2 = subPath[2];
+      const slug1 = safeDecode(subPath[1] ?? '');
+      const slug2 = safeDecode(subPath[2] ?? '');
       if (!slug1 || !slug2) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
       const [prod1Result, prod2Result] = await Promise.all([
@@ -343,7 +351,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
 
     // 7. Magazine: /magazines/:slug
     if (subPath[0] === 'magazines' && subPath.length === 2) {
-      const slug = subPath[1];
+      const slug = safeDecode(subPath[1] ?? '');
       if (!slug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
       const result = await client.query<{ magazineBySlug: MagazineQueryResult | null }>({

@@ -88,22 +88,23 @@ export const CategoryNavigationSection = () => {
           moreLink={
             <Link
               href={`/${locale}/search/product`}
-              className="group inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 motion-reduce:transition-none"
+              className="group inline-flex min-h-11 items-center gap-1 rounded-lg px-2 -mr-2 text-sm font-semibold text-dark-700 transition-colors duration-200 ease-out hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/70 focus-visible:ring-offset-2 motion-reduce:transition-none"
             >
               <span>{t('home.category.more')}</span>
               <ChevronRight
                 size={16}
-                className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+                aria-hidden="true"
+                className="shrink-0 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
               />
             </Link>
           }
         />
         {categories.length > 0 ? (
-          <div className="flex flex-wrap gap-2.5 md:gap-3">
+          <div role="group" aria-label={t('home.category.title')} className="flex flex-wrap gap-2.5 md:gap-3">
             {categories.map(category => (
               <Link
                 key={category.id}
-                href={`/${locale}/categories/${category.slug}`}
+                href={`/${locale}/categories/${encodeURIComponent(category.slug)}`}
                 onClick={() =>
                   track(AnalyticsEvents.CATEGORY_CHIP_CLICKED, {
                     categorySlug: category.slug,
@@ -112,7 +113,10 @@ export const CategoryNavigationSection = () => {
                 }
                 className="group inline-flex items-center gap-2 rounded-full border border-dark-150 bg-white px-4 py-2 text-sm font-semibold text-dark-800 shadow-button transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:px-5 sm:py-2.5"
               >
-                <span className="text-base leading-none transition-transform duration-200 group-hover:scale-110 motion-reduce:transform-none">
+                <span
+                  aria-hidden="true"
+                  className="shrink-0 text-base leading-none transition-transform duration-200 group-hover:scale-110 motion-reduce:transform-none"
+                >
                   {getCategoryIcon(category.slug)}
                 </span>
                 <span>{locale === 'ko' ? category.labelKo : category.labelEn}</span>

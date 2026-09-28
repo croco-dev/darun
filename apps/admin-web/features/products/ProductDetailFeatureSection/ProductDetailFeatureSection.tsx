@@ -29,8 +29,15 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
         <AdminSectionHeader
           title="기능 관리"
           rightSide={
-            <Button as={Link} href={`/products/${slug}/features/new`} variant="contained" color="primary" size="sm">
-              새 기능 추가
+            <Button
+              as={Link}
+              href={`/products/${encodeURIComponent(slug)}/features/new`}
+              variant="contained"
+              color="primary"
+              size="sm"
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
+              <span className="whitespace-nowrap">새 기능 추가</span>
             </Button>
           }
         />
@@ -42,7 +49,7 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
         {featureId ? (
           <EditProductFeatureItem featureId={featureId} onSubmit={closeEditModal} onCancel={closeEditModal} />
         ) : (
-          <p className="text-sm text-dark-500 py-4 text-center">
+          <p className="text-sm text-dark-500 py-4 text-center break-words [word-break:keep-all]">
             선택된 기능 정보가 없습니다. 새로고침 후 다시 시도해 주세요.
           </p>
         )}

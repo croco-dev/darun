@@ -1,6 +1,17 @@
 'use client';
 
-import { Button, Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, ExternalLink, Sparkles, User, formatDate } from '@darun/ui';
+import {
+  Button,
+  Calendar,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ExternalLink,
+  Sparkles,
+  User,
+  formatDate,
+} from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminPanel } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
@@ -18,7 +29,7 @@ function MagazineThumbnail({ src, alt }: { src?: string | null; alt: string }) {
   if (!src || hasError) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-100 to-surface-200 text-dark-400">
-        <Sparkles size={28} className="text-dark-300" />
+        <Sparkles size={28} className="shrink-0 text-dark-300" aria-hidden="true" />
       </div>
     );
   }
@@ -27,7 +38,7 @@ function MagazineThumbnail({ src, alt }: { src?: string | null; alt: string }) {
     <img
       src={src}
       alt={alt}
-      className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+      className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
       loading="lazy"
       onError={() => setHasError(true)}
     />
@@ -52,8 +63,15 @@ export const MagazinesList = bind(
             title="매거진 목록을 불러오지 못했습니다."
             error={error}
             action={
-              <Button type="button" variant="contained" color="primary" onClick={() => refetch()}>
-                다시 시도
+              <Button
+                type="button"
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  refetch().catch(() => {});
+                }}
+              >
+                <span className="select-none whitespace-nowrap">다시 시도</span>
               </Button>
             }
           />
@@ -90,18 +108,18 @@ export const MagazinesList = bind(
                   {/* Publication Status Badge */}
                   <div className="absolute top-3 left-3">
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm backdrop-blur-md ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm backdrop-blur-md select-none whitespace-nowrap ${
                         isPublished ? 'bg-leaf-600/90 text-white' : 'bg-dark-900/80 text-white'
                       }`}
                     >
                       {isPublished ? (
                         <>
-                          <CheckCircle2 size={12} />
+                          <CheckCircle2 size={12} className="shrink-0" aria-hidden="true" />
                           발행됨
                         </>
                       ) : (
                         <>
-                          <Clock size={12} />
+                          <Clock size={12} className="shrink-0" aria-hidden="true" />
                           초안(미발행)
                         </>
                       )}
@@ -112,13 +130,17 @@ export const MagazinesList = bind(
                 {/* Body Content */}
                 <div className="flex flex-1 flex-col p-5">
                   <div className="mb-2">
-                    <code className="inline-block text-2xs font-mono text-dark-500 bg-surface-100 px-2 py-0.5 rounded border border-dark-150">
+                    <code className="inline-block text-2xs font-mono text-dark-500 bg-surface-100 px-2 py-0.5 rounded border border-dark-150 select-none">
                       /{item.slug}
                     </code>
                   </div>
-                  <h3 className="text-base font-bold text-dark-900 line-clamp-2 mb-2 leading-snug">{item.title}</h3>
+                  <h3 className="text-base font-bold text-dark-900 line-clamp-2 mb-2 leading-snug break-words [word-break:keep-all]">
+                    {item.title}
+                  </h3>
                   {item.summary && (
-                    <p className="text-xs text-dark-500 line-clamp-2 leading-relaxed mb-4">{item.summary}</p>
+                    <p className="text-xs text-dark-500 line-clamp-2 leading-relaxed mb-4 break-words [word-break:keep-all]">
+                      {item.summary}
+                    </p>
                   )}
 
                   {/* Meta info & links */}
@@ -126,26 +148,26 @@ export const MagazinesList = bind(
                     <div className="flex items-center gap-3">
                       {item.author?.name && (
                         <span className="inline-flex items-center gap-1">
-                          <User size={12} className="text-dark-400" />
-                          {item.author.name}
+                          <User size={12} className="shrink-0 text-dark-400" aria-hidden="true" />
+                          <span className="max-w-[100px] truncate">{item.author.name}</span>
                         </span>
                       )}
                       <span className="inline-flex items-center gap-1">
-                        <Calendar size={12} className="text-dark-400" />
-                        {formatDate(displayDate)}
+                        <Calendar size={12} className="shrink-0 text-dark-400" aria-hidden="true" />
+                        <span className="tabular-nums whitespace-nowrap">{formatDate(displayDate)}</span>
                       </span>
                     </div>
 
                     {isPublished && (
                       <a
-                        href={`https://darun.io/magazines/${item.slug}`}
+                        href={`https://darun.io/ko/magazines/${encodeURIComponent(item.slug)}`}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="inline-flex items-center gap-1 text-dark-600 hover:text-dark-900 font-medium hover:underline"
+                        className="inline-flex min-h-[32px] items-center gap-1 px-2 rounded text-dark-600 hover:text-dark-900 font-medium active:scale-95 motion-reduce:transform-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
                         title="서비스 웹에서 보기"
                       >
-                        <span>보기</span>
-                        <ExternalLink size={12} />
+                        <span className="whitespace-nowrap">보기</span>
+                        <ExternalLink size={12} className="shrink-0" aria-hidden="true" />
                       </a>
                     )}
                   </div>
@@ -158,7 +180,7 @@ export const MagazinesList = bind(
         {totalPages > 1 && (
           <AdminPanel className="p-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-dark-900">
+              <p className="text-sm text-dark-900 tabular-nums">
                 총 {totalCount}개의 매거진 중 {page} / {totalPages} 페이지
               </p>
               <div className="flex gap-2">
@@ -168,9 +190,10 @@ export const MagazinesList = bind(
                   size="sm"
                   disabled={page <= 1}
                   onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
                 >
-                  <span className="inline-flex items-center gap-2">
-                    <ChevronLeft className="h-4 w-4" />
+                  <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
+                    <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                     이전
                   </span>
                 </Button>
@@ -180,9 +203,10 @@ export const MagazinesList = bind(
                   size="sm"
                   disabled={page >= totalPages}
                   onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
                 >
-                  <span className="inline-flex items-center gap-2">
-                    <ChevronRight className="h-4 w-4" />
+                  <span className="inline-flex items-center gap-2 select-none whitespace-nowrap">
+                    <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
                     다음
                   </span>
                 </Button>

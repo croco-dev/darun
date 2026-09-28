@@ -75,25 +75,27 @@ export async function buildSitemapEntries(deps: SitemapDeps): Promise<MetadataRo
   // 3. Categories (ko, en)
   for (const category of categories) {
     if (!category.slug) continue;
-    addEntry('ko', `/categories/${category.slug}`, { changeFrequency: 'weekly', priority: 0.7 });
-    addEntry('en', `/categories/${category.slug}`, { changeFrequency: 'weekly', priority: 0.7 });
+    const categorySlug = encodeURIComponent(category.slug);
+    addEntry('ko', `/categories/${categorySlug}`, { changeFrequency: 'weekly', priority: 0.7 });
+    addEntry('en', `/categories/${categorySlug}`, { changeFrequency: 'weekly', priority: 0.7 });
   }
 
   // 4. Products (ko, en) + indexable alternatives
   for (const product of products) {
     if (!product.slug) continue;
+    const productSlug = encodeURIComponent(product.slug);
     const lastModified = parseDate(product.updatedAt) ?? parseDate(product.publishedAt);
-    addEntry('ko', `/products/${product.slug}`, { lastModified, changeFrequency: 'weekly', priority: 0.8 });
-    addEntry('en', `/products/${product.slug}`, { lastModified, changeFrequency: 'weekly', priority: 0.8 });
+    addEntry('ko', `/products/${productSlug}`, { lastModified, changeFrequency: 'weekly', priority: 0.8 });
+    addEntry('en', `/products/${productSlug}`, { lastModified, changeFrequency: 'weekly', priority: 0.8 });
 
     // Only include alternatives route if product has at least one alternative
     if (product.alternatives && product.alternatives.length > 0) {
-      addEntry('ko', `/products/${product.slug}/alternatives`, {
+      addEntry('ko', `/products/${productSlug}/alternatives`, {
         lastModified,
         changeFrequency: 'weekly',
         priority: 0.7,
       });
-      addEntry('en', `/products/${product.slug}/alternatives`, {
+      addEntry('en', `/products/${productSlug}/alternatives`, {
         lastModified,
         changeFrequency: 'weekly',
         priority: 0.7,
@@ -104,8 +106,9 @@ export async function buildSitemapEntries(deps: SitemapDeps): Promise<MetadataRo
   // 5. Magazines (ko only!)
   for (const magazine of magazines) {
     if (!magazine.slug) continue;
+    const magazineSlug = encodeURIComponent(magazine.slug);
     const lastModified = parseDate(magazine.updatedAt) ?? parseDate(magazine.publishedAt);
-    addEntry('ko', `/magazines/${magazine.slug}`, { lastModified, changeFrequency: 'weekly', priority: 0.7 });
+    addEntry('ko', `/magazines/${magazineSlug}`, { lastModified, changeFrequency: 'weekly', priority: 0.7 });
   }
 
   return entries;

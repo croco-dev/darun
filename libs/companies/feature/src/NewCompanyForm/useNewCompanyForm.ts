@@ -67,7 +67,7 @@ export function useNewCompanyForm() {
     awaitRefetchQueries: true,
     onCompleted: ({ createCompany }) => {
       isSubmittingRef.current = false;
-      if (createCompany.company.id) {
+      if (createCompany?.company?.id) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
         form.reset();
         navigate('/companies');
@@ -106,6 +106,8 @@ export function useNewCompanyForm() {
           startAt,
         },
       },
+    })?.catch(() => {
+      isSubmittingRef.current = false;
     });
   };
 

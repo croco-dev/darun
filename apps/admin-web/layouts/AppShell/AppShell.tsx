@@ -15,7 +15,13 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   return (
     <div className="flex min-h-screen bg-surface-100 overflow-hidden">
       <Navbar />
-      <main className="flex-1 min-w-0 h-screen overflow-auto motion-reduce:transition-none">{children}</main>
+      <main
+        id="admin-main-content"
+        tabIndex={-1}
+        className="flex-1 min-w-0 h-screen overflow-auto motion-reduce:transition-none focus:outline-none"
+      >
+        {children}
+      </main>
     </div>
   );
 };

@@ -14,8 +14,8 @@ export const ProductDetailCompanySection = ({ slug }: { slug: string }) => {
         <AdminSectionHeader
           title="운영사 관리"
           rightSide={
-            <Button type="button" variant="contained" color="primary" onClick={openEditModal}>
-              정보 수정
+            <Button type="button" variant="contained" color="primary" size="sm" onClick={openEditModal}>
+              <span className="whitespace-nowrap">정보 수정</span>
             </Button>
           }
         />

@@ -81,14 +81,16 @@ export function useEditProductFeatureItem({ featureId, onSubmit, onCancel }: Edi
   });
 
   useEffect(() => {
+    if (!data?.feature) return;
     const values = {
-      emoji: data?.feature?.emoji ?? '',
-      name: data?.feature?.name ?? '',
-      summary: data?.feature?.summary ?? '',
+      emoji: data.feature.emoji ?? '',
+      name: data.feature.name ?? '',
+      summary: data.feature.summary ?? '',
     };
     form.setInitialValues(values);
     form.setValues(values);
-  }, [data, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.feature?.id]);
 
   const submit = async (values: FormValues) => {
     if (mutationLoading) return;
@@ -97,16 +99,20 @@ export function useEditProductFeatureItem({ featureId, onSubmit, onCancel }: Edi
       return;
     }
 
-    await updateFeature({
-      variables: {
-        featureId,
-        input: {
-          emoji: values.emoji.trim(),
-          name: values.name.trim(),
-          summary: values.summary.trim(),
+    try {
+      await updateFeature({
+        variables: {
+          featureId,
+          input: {
+            emoji: values.emoji.trim(),
+            name: values.name.trim(),
+            summary: values.summary.trim(),
+          },
         },
-      },
-    });
+      });
+    } catch {
+      // Handled by onError
+    }
   };
 
   return { loading: queryLoading || mutationLoading, form, submit, onCancel };

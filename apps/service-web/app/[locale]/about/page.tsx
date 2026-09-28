@@ -144,8 +144,8 @@ export default async function AboutPage({ params }: Props) {
             ]}
           />
           <div className="flex flex-col gap-3">
-            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dark-150 bg-surface-100 px-3 py-1 text-xs font-semibold text-dark-700 shadow-2xs">
-              <ShieldCheck size={14} className="text-dark-500" />
+            <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dark-150 bg-surface-100 px-3 py-1 text-xs font-semibold text-dark-700 shadow-2xs select-none whitespace-nowrap">
+              <ShieldCheck size={14} className="shrink-0 text-dark-500" aria-hidden="true" />
               <span>{isKo ? '편집 방침 및 가이드라인' : 'Editorial Guidelines'}</span>
             </div>
             <PageHeading
@@ -160,14 +160,14 @@ export default async function AboutPage({ params }: Props) {
 
           <div className="relative overflow-hidden rounded-card-lg border border-dark-150/80 bg-gradient-to-br from-surface-100/90 via-white to-surface-100/50 p-6 shadow-card md:p-8">
             <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dark-150 bg-white text-dark-800 shadow-2xs">
-                <Sparkles size={18} />
+              <div className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-xl border border-dark-150 bg-white text-dark-800 shadow-2xs">
+                <Sparkles size={18} className="shrink-0" aria-hidden="true" />
               </div>
               <div className="flex flex-col gap-1.5">
-                <h3 className="text-base font-bold text-dark-900 break-keep">
+                <h3 className="text-base font-bold text-dark-900 break-words [word-break:keep-all]">
                   {isKo ? '신뢰할 수 있는 소프트웨어 탐색 기준' : 'Our Commitment to Trusted Discovery'}
                 </h3>
-                <p className="text-sm leading-relaxed text-dark-600 break-keep">
+                <p className="text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all]">
                   {isKo
                     ? '다른(darun)은 사용자가 최적의 소프트웨어를 선택할 수 있도록 객관적이고 투명한 정보를 제공합니다. 상업적 후원이나 광고에 좌우되지 않는 공정한 기준을 약속합니다.'
                     : 'Darun is dedicated to empowering users with transparent and verified software insights, unaffected by commercial sponsorships or paid promotions.'}
@@ -176,21 +176,25 @@ export default async function AboutPage({ params }: Props) {
             </div>
           </div>
 
-          <div className="flex flex-col gap-5 md:gap-6">
+          <div
+            role="region"
+            aria-label={isKo ? '소개 및 편집 방침 상세' : 'About and editorial policy sections'}
+            className="flex flex-col gap-5 md:gap-6"
+          >
             {SECTIONS.map(section => (
               <section
                 key={section.id}
                 className="flex flex-col gap-3 rounded-card-lg border border-dark-150/80 bg-white p-6 shadow-card md:p-7"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-100 font-mono text-xs font-bold text-dark-700 shadow-2xs">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-100 font-mono text-xs font-bold text-dark-700 shadow-2xs select-none tabular-nums">
                     {section.num}
                   </span>
-                  <h2 className="text-lg font-extrabold tracking-tight text-dark-900 break-keep md:text-xl">
+                  <h2 className="text-lg font-extrabold tracking-tight text-dark-900 break-words [word-break:keep-all] md:text-xl">
                     {isKo ? section.titleKo : section.titleEn}
                   </h2>
                 </div>
-                <p className="text-sm leading-relaxed text-dark-700 break-keep md:text-base md:pl-10">
+                <p className="text-sm leading-relaxed text-dark-700 break-words [word-break:keep-all] md:text-base pl-0 sm:pl-10">
                   {isKo ? section.descKo : section.descEn}
                 </p>
               </section>
@@ -198,15 +202,15 @@ export default async function AboutPage({ params }: Props) {
 
             <section className="flex flex-col gap-4 rounded-card-lg border border-dark-150/80 bg-surface-100/60 p-6 shadow-card md:p-7">
               <div className="flex items-center gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150/80 bg-white font-mono text-xs font-bold text-dark-700 shadow-2xs">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150/80 bg-white font-mono text-xs font-bold text-dark-700 shadow-2xs select-none tabular-nums">
                   05
                 </span>
-                <h2 className="text-lg font-extrabold tracking-tight text-dark-900 break-keep md:text-xl">
+                <h2 className="text-lg font-extrabold tracking-tight text-dark-900 break-words [word-break:keep-all] md:text-xl">
                   {isKo ? '5. 운영 주체 및 문의' : '5. Operation and Feedback'}
                 </h2>
               </div>
-              <div className="flex flex-col gap-4 md:pl-10">
-                <p className="text-sm leading-relaxed text-dark-700 break-keep md:text-base">
+              <div className="flex flex-col gap-4 pl-0 sm:pl-10">
+                <p className="text-sm leading-relaxed text-dark-700 break-words [word-break:keep-all] md:text-base">
                   {isKo
                     ? '‘다른’ 서비스는 Croco 프로젝트 팀에서 기획하고 운영하고 있습니다. 서비스 관련 오류 제보, 등록 요청, 기능 제안은 하단 문의 링크를 통해 언제든지 전달해 주실 수 있습니다.'
                     : 'Darun is developed and maintained by the Croco project team. We welcome feature suggestions, data corrections, and feedback via our community contact channels.'}
@@ -216,6 +220,9 @@ export default async function AboutPage({ params }: Props) {
                     href="https://forms.gle/nDPFKAYSuoGg2J3MA"
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={
+                      isKo ? '문의 및 피드백 보내기 (새 창에서 열림)' : 'Submit Feedback (opens in a new tab)'
+                    }
                     className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
                     <Button
@@ -223,12 +230,15 @@ export default async function AboutPage({ params }: Props) {
                       variant="shadow"
                       color="secondary"
                       size="md"
-                      className="gap-2 transition-all duration-200 active:scale-[0.98]"
+                      className="gap-2 transition-all duration-200 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
                     >
-                      <span className="font-semibold">{isKo ? '문의 및 피드백 보내기' : 'Submit Feedback'}</span>
+                      <span className="font-semibold select-none whitespace-nowrap">
+                        {isKo ? '문의 및 피드백 보내기' : 'Submit Feedback'}
+                      </span>
                       <ExternalLink
                         size={14}
-                        className="text-dark-400 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-900"
+                        aria-hidden="true"
+                        className="shrink-0 text-dark-400 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-dark-900 motion-reduce:transition-none motion-reduce:transform-none"
                       />
                     </Button>
                   </a>

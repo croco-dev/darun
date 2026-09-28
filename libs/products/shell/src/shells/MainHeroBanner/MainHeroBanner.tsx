@@ -7,11 +7,15 @@ import { useLocale, useTranslations } from 'next-intl';
 
 type MainHeroBannerProps = { productsCount?: number };
 
-const POPULAR_SEARCH_TAGS = ['Notion', 'Figma', 'Slack', 'Linear', 'ChatGPT', 'Supabase'];
+const POPULAR_SEARCH_TAGS: Record<string, string[]> = {
+  ko: ['노션', '피그마', '슬랙', 'Linear', 'ChatGPT', 'Supabase'],
+  en: ['Notion', 'Figma', 'Slack', 'Linear', 'ChatGPT', 'Supabase'],
+};
 
 export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
   const t = useTranslations();
   const locale = useLocale();
+  const popularSearchTags = POPULAR_SEARCH_TAGS[locale] ?? POPULAR_SEARCH_TAGS.ko;
   const popularPath = `/${locale}/ranking`;
 
   return (
@@ -41,7 +45,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
           {/* Badge Pill */}
           <Link
             href={popularPath}
-            className="group inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3.5 py-1.5 backdrop-blur-md shadow-xs transition-all duration-200 hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-900"
+            className="group inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3.5 py-1.5 backdrop-blur-md shadow-xs transition-all duration-200 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-900"
           >
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />
@@ -52,7 +56,8 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             </span>
             <ChevronRight
               size={14}
-              className="text-white/60 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+              aria-hidden="true"
+              className="shrink-0 text-white/60 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
             />
           </Link>
 
@@ -70,21 +75,29 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             </h1>
           </div>
 
-          <p className="max-w-xl text-sm leading-relaxed text-dark-300 break-keep sm:text-base">
+          <p className="max-w-xl text-sm leading-relaxed text-dark-300 break-words [word-break:keep-all] sm:text-base">
             {t('Main.hero.subDescription')}
           </p>
 
           {/* Quick Search Recommendation Tags */}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div
+            role="group"
+            aria-label={t('Main.hero.popularSearch')}
+            className="flex flex-wrap items-center gap-2 pt-1"
+          >
             <span className="text-xs font-medium text-dark-400 sm:text-sm">{t('Main.hero.popularSearch')}</span>
-            {POPULAR_SEARCH_TAGS.map(keyword => (
+            {popularSearchTags.map(keyword => (
               <Link
                 key={keyword}
                 href={`/${locale}/search/product?query=${encodeURIComponent(keyword)}`}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white/80 backdrop-blur-xs transition-colors duration-150 hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-900"
+                className="group inline-flex min-h-[32px] sm:min-h-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur-xs transition-all duration-150 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-900"
               >
-                <Search size={11} className="shrink-0 text-white/40 transition-colors group-hover:text-white/80" />
-                <span>{keyword}</span>
+                <Search
+                  size={11}
+                  aria-hidden="true"
+                  className="shrink-0 text-white/40 transition-colors motion-reduce:transition-none group-hover:text-white/80"
+                />
+                <span className="whitespace-nowrap">{keyword}</span>
               </Link>
             ))}
           </div>

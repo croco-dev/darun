@@ -9,11 +9,11 @@ import {
   RetryTranslationJobOnAdminDocument,
 } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
+import { AlertCircle, CheckCircle2, Clock, Copy, Globe, Info, RefreshCw, RotateCw, Sparkles } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal, AdminPanel } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
-import { AlertCircle, CheckCircle2, Clock, Copy, Globe, Info, RefreshCw, RotateCw, Sparkles } from '@darun/ui';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -122,29 +122,29 @@ function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case 'pending':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200">
-          <Clock size={12} />
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-yellow-50 text-yellow-700 border border-yellow-200">
+          <Clock size={12} className="shrink-0" aria-hidden="true" />
           대기 중
         </span>
       );
     case 'in_progress':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-brown-50 text-brown-700 border border-brown-200 animate-pulse">
-          <RotateCw size={12} className="animate-spin" />
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-brown-50 text-brown-700 border border-brown-200 animate-pulse motion-reduce:animate-none">
+          <RotateCw size={12} className="shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
           진행 중
         </span>
       );
     case 'completed':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-leaf-50 text-leaf-700 border border-leaf-200">
-          <CheckCircle2 size={12} />
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-leaf-50 text-leaf-700 border border-leaf-200">
+          <CheckCircle2 size={12} className="shrink-0" aria-hidden="true" />
           완료
         </span>
       );
     case 'failed':
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-cherry-50 text-cherry-700 border border-cherry-200">
-          <AlertCircle size={12} />
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-cherry-50 text-cherry-700 border border-cherry-200">
+          <AlertCircle size={12} className="shrink-0" aria-hidden="true" />
           실패
         </span>
       );
@@ -235,12 +235,12 @@ export function LlmJobListSection() {
     (translationLoading && translationJobs.length === 0) || (descriptionLoading && descriptionJobs.length === 0);
   const queryError = translationError || descriptionError;
 
-  const refetchAll = async () => {
+  const refetchAll = useCallback(async () => {
     const promises: Promise<unknown>[] = [];
-    if (jobTypeFilter !== 'description') promises.push(refetchTranslation());
-    if (jobTypeFilter !== 'translation') promises.push(refetchDescription());
+    if (jobTypeFilter !== 'description') promises.push(Promise.resolve(refetchTranslation?.()).catch(() => {}));
+    if (jobTypeFilter !== 'translation') promises.push(Promise.resolve(refetchDescription?.()).catch(() => {}));
     await Promise.all(promises);
-  };
+  }, [jobTypeFilter, refetchTranslation, refetchDescription]);
 
   // Auto-polling when active jobs exist
   const hasActiveJobs = jobs.some(j => j.status === 'pending' || j.status === 'in_progress');
@@ -250,7 +250,7 @@ export function LlmJobListSection() {
       void refetchAll();
     }, 3000);
     return () => clearInterval(timer);
-  }, [hasActiveJobs, jobTypeFilter]);
+  }, [hasActiveJobs, jobTypeFilter, refetchAll]);
 
   const handleRetry = async (job: UnifiedLlmJob) => {
     try {
@@ -281,12 +281,19 @@ export function LlmJobListSection() {
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    void navigator.clipboard.writeText(text);
-    notifications.show({
-      message: `${label} 복사되었습니다.`,
-      color: 'dark',
-    });
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      notifications.show({
+        message: `${label} 복사되었습니다.`,
+        color: 'dark',
+      });
+    } catch {
+      notifications.show({
+        message: '클립보드 복사에 실패했습니다.',
+        color: 'red',
+      });
+    }
   };
 
   if (isLoading && jobs.length === 0) {
@@ -299,7 +306,7 @@ export function LlmJobListSection() {
         error={queryError}
         action={
           <Button type="button" onClick={() => void refetchAll()} variant="contained" color="primary">
-            다시 시도
+            <span className="whitespace-nowrap">다시 시도</span>
           </Button>
         }
       />
@@ -320,7 +327,7 @@ export function LlmJobListSection() {
                   key={typeFilter.value}
                   type="button"
                   onClick={() => setJobTypeFilter(typeFilter.value)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer select-none ${
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer select-none active:scale-95 motion-reduce:transform-none ${
                     isActive ? 'bg-white text-dark-900 shadow-xs' : 'text-dark-500 hover:text-dark-800'
                   }`}
                 >
@@ -341,7 +348,7 @@ export function LlmJobListSection() {
                   key={filter.value}
                   type="button"
                   onClick={() => setStatusFilter(filter.value)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition cursor-pointer select-none ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition cursor-pointer select-none active:scale-95 motion-reduce:transform-none ${
                     isActive
                       ? 'bg-dark-900 text-white font-semibold shadow-xs'
                       : 'text-dark-600 hover:bg-surface-100 hover:text-dark-900'
@@ -356,8 +363,8 @@ export function LlmJobListSection() {
 
         <div className="flex items-center gap-2">
           {hasActiveJobs && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-brown-600 bg-brown-50 px-2.5 py-1 rounded-full border border-brown-200">
-              <RotateCw size={12} className="animate-spin" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-brown-600 bg-brown-50 px-2.5 py-1 rounded-full border border-brown-200 select-none whitespace-nowrap">
+              <RotateCw size={12} className="animate-spin shrink-0 motion-reduce:animate-none" aria-hidden="true" />
               실시간 갱신 중
             </span>
           )}
@@ -366,10 +373,14 @@ export function LlmJobListSection() {
             variant="base"
             color="secondary"
             onClick={() => void refetchAll()}
-            className="flex items-center gap-1.5 py-1.5 px-3 text-xs"
+            className="flex items-center gap-1.5 py-1.5 px-3 text-xs active:scale-[0.98] motion-reduce:transform-none"
           >
-            <RefreshCw size={13} className={translationLoading || descriptionLoading ? 'animate-spin' : ''} />
-            새로고침
+            <RefreshCw
+              size={13}
+              className={`shrink-0 ${translationLoading || descriptionLoading ? 'animate-spin motion-reduce:animate-none' : ''}`}
+              aria-hidden="true"
+            />
+            <span className="whitespace-nowrap">새로고침</span>
           </Button>
         </div>
       </div>
@@ -392,28 +403,28 @@ export function LlmJobListSection() {
             <table className="w-full min-w-[760px] border-collapse table-fixed">
               <thead className="bg-surface-100">
                 <tr>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-24">
+                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-24 whitespace-nowrap">
                     작업 ID
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36">
+                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36 whitespace-nowrap">
                     작업 유형
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36">
+                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36 whitespace-nowrap">
                     대상 엔티티
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-28">
+                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-28 whitespace-nowrap">
                     상태
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 min-w-[200px]">
+                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 min-w-[200px] whitespace-nowrap">
                     메시지 / 에러
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36">
+                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36 whitespace-nowrap">
                     요청 일시
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-24">
+                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-24 whitespace-nowrap">
                     소요 시간
                   </th>
-                  <th className="border-b border-dark-200 px-4 py-3 text-center text-xs font-semibold text-dark-700 w-24">
+                  <th className="border-b border-dark-200 px-4 py-3 text-center text-xs font-semibold text-dark-700 w-24 whitespace-nowrap">
                     액션
                   </th>
                 </tr>
@@ -431,17 +442,17 @@ export function LlmJobListSection() {
                       }`}
                     >
                       {/* ID */}
-                      <td className="border-r border-dark-200 px-4 py-3 text-xs font-mono text-dark-800">
+                      <td className="border-r border-dark-200 px-4 py-3 text-xs font-mono text-dark-800 tabular-nums">
                         <div className="flex items-center gap-1" title={job.id}>
                           <span>{job.id.slice(0, 8)}</span>
                           <button
                             type="button"
                             onClick={() => copyToClipboard(job.id, '작업 ID가')}
-                            className="text-dark-400 hover:text-dark-700 transition"
+                            className="rounded p-1 text-dark-400 hover:text-dark-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
                             title="전체 ID 복사"
                             aria-label="작업 ID 복사"
                           >
-                            <Copy size={12} />
+                            <Copy size={12} className="shrink-0" aria-hidden="true" />
                           </button>
                         </div>
                       </td>
@@ -469,7 +480,7 @@ export function LlmJobListSection() {
                             title="엔티티 ID 복사"
                             aria-label="엔티티 ID 복사"
                           >
-                            <Copy size={12} />
+                            <Copy size={12} className="shrink-0" aria-hidden="true" />
                           </button>
                         </div>
                       </td>
@@ -498,7 +509,7 @@ export function LlmJobListSection() {
                               title="에러 상세 보기"
                               aria-label="에러 상세 보기"
                             >
-                              <Info size={13} />
+                              <Info size={13} className="shrink-0" aria-hidden="true" />
                             </button>
                           </div>
                         ) : (
@@ -507,12 +518,12 @@ export function LlmJobListSection() {
                       </td>
 
                       {/* Requested At */}
-                      <td className="border-r border-dark-200 px-4 py-3 text-xs text-dark-600 whitespace-nowrap">
+                      <td className="border-r border-dark-200 px-4 py-3 text-xs text-dark-600 whitespace-nowrap tabular-nums">
                         {job.createdAt ? dayjs(job.createdAt).format('YY-MM-DD HH:mm:ss') : '-'}
                       </td>
 
                       {/* Duration */}
-                      <td className="border-r border-dark-200 px-4 py-3 text-xs text-dark-600 whitespace-nowrap font-mono">
+                      <td className="border-r border-dark-200 px-4 py-3 text-xs text-dark-600 whitespace-nowrap font-mono tabular-nums">
                         {formatDuration(job.createdAt, job.updatedAt)}
                       </td>
 
@@ -526,13 +537,17 @@ export function LlmJobListSection() {
                             color="secondary"
                             onClick={() => void handleRetry(job)}
                             disabled={isRetrying}
-                            className="inline-flex items-center gap-1 py-1 px-2.5 text-xs text-cherry-700 border-cherry-200 hover:bg-cherry-50 hover:border-cherry-300 font-semibold"
+                            className="inline-flex items-center gap-1 py-1 px-2.5 text-xs text-cherry-700 border-cherry-200 hover:bg-cherry-50 hover:border-cherry-300 font-semibold active:scale-[0.98] motion-reduce:transform-none"
                           >
-                            <RotateCw size={11} className={isRetrying ? 'animate-spin' : ''} />
-                            재시도
+                            <RotateCw
+                              size={11}
+                              className={`shrink-0 ${isRetrying ? 'animate-spin motion-reduce:animate-none' : ''}`}
+                              aria-hidden="true"
+                            />
+                            <span className="whitespace-nowrap">재시도</span>
                           </Button>
                         ) : job.status === 'pending' || job.status === 'in_progress' ? (
-                          <span className="text-xs text-brown-600 font-medium">처리 중</span>
+                          <span className="text-xs text-brown-600 font-medium whitespace-nowrap">처리 중</span>
                         ) : (
                           <span className="text-xs text-dark-300">-</span>
                         )}
@@ -593,10 +608,10 @@ export function LlmJobListSection() {
                 color="secondary"
                 size="sm"
                 onClick={() => copyToClipboard(selectedErrorJob.error || '', '에러 내용이')}
-                className="flex items-center gap-1.5"
+                className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
               >
-                <Copy size={13} />
-                에러 복사
+                <Copy size={13} className="shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">에러 복사</span>
               </Button>
 
               <div className="flex gap-2">
@@ -606,8 +621,9 @@ export function LlmJobListSection() {
                   color="secondary"
                   size="sm"
                   onClick={() => setSelectedErrorJob(null)}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
                 >
-                  닫기
+                  <span className="whitespace-nowrap">닫기</span>
                 </Button>
                 {selectedErrorJob.status === 'failed' && (
                   <Button
@@ -620,10 +636,10 @@ export function LlmJobListSection() {
                       setSelectedErrorJob(null);
                       void handleRetry(job);
                     }}
-                    className="flex items-center gap-1.5"
+                    className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
                   >
-                    <RotateCw size={13} />
-                    지금 재시도
+                    <RotateCw size={13} className="shrink-0" aria-hidden="true" />
+                    <span className="whitespace-nowrap">지금 재시도</span>
                   </Button>
                 )}
               </div>

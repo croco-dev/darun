@@ -13,9 +13,11 @@ export const IndexProductButton = bind(useIndexProductButton, ({ indexProduct, l
     variant="contained"
     color="secondary"
     size="sm"
-    className="gap-2"
+    className="gap-2 active:scale-[0.98] motion-reduce:transform-none"
   >
-    {loading ? <RefreshCw size={14} className="animate-spin motion-reduce:animate-none" /> : null}
-    {loading ? '색인 중...' : '검색 인덱싱'}
+    {loading ? (
+      <RefreshCw size={14} className="shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+    ) : null}
+    <span className="whitespace-nowrap">{loading ? '색인 중...' : '검색 인덱싱'}</span>
   </Button>
 ));

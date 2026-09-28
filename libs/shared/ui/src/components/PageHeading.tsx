@@ -20,7 +20,7 @@ const pageHeadingVariants = cva('flex flex-col', {
   },
 });
 
-export type PageHeadingProps = HTMLAttributes<HTMLHeadingElement> & {
+export type PageHeadingProps = HTMLAttributes<HTMLDivElement> & {
   title: string;
   subtitle?: string;
   moreLink?: ReactNode;
@@ -44,23 +44,25 @@ export function PageHeading({
       <div
         className={cn(
           'flex w-full gap-4',
-          isCentered ? 'items-center justify-center text-center' : 'items-start justify-between'
+          isCentered ? 'relative items-center justify-center text-center' : 'items-start justify-between'
         )}
       >
         <h1
           className={cn(
-            'break-keep font-extrabold leading-tight tracking-tight text-dark-900',
+            'break-words [word-break:keep-all] font-extrabold leading-tight tracking-tight text-dark-900',
             isSmall ? 'text-2xl sm:text-3xl' : 'text-2xl sm:text-3xl md:text-4xl'
           )}
         >
           {title}
         </h1>
-        {moreLink && <span className="inline-flex shrink-0 items-center">{moreLink}</span>}
+        {moreLink && (
+          <span className={cn('inline-flex shrink-0 items-center', isCentered && 'absolute right-0')}>{moreLink}</span>
+        )}
       </div>
       {subtitle && (
         <p
           className={cn(
-            'max-w-2xl break-keep text-sm leading-relaxed text-dark-600 sm:text-base',
+            'max-w-2xl break-words [word-break:keep-all] text-sm leading-relaxed text-dark-600 sm:text-base',
             isCentered && 'mx-auto'
           )}
         >

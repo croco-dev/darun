@@ -32,10 +32,23 @@ export const EditProductCompany = bind(
         </div>
 
         <AdminActions>
-          <Button type="button" variant="contained" color="secondary" onClick={handleCancel} disabled={loading}>
+          <Button
+            type="button"
+            variant="contained"
+            color="secondary"
+            onClick={handleCancel}
+            disabled={loading}
+            className="active:scale-[0.98] motion-reduce:transform-none"
+          >
             취소
           </Button>
-          <Button type="submit" variant="contained" color="primary" disabled={loading}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            className="active:scale-[0.98] motion-reduce:transform-none"
+          >
             {loading ? '저장 중...' : '저장'}
           </Button>
         </AdminActions>

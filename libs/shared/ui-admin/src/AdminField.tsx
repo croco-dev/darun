@@ -44,7 +44,7 @@ export function AdminField({ label, htmlFor, error, help, children, className }:
         </p>
       )}
       {error && (
-        <p id={`${inputId}-error`} role="alert" className="text-xs text-cherry-700">
+        <p id={`${inputId}-error`} role="alert" className="text-xs text-cherry-700 break-words [word-break:keep-all]">
           {error}
         </p>
       )}

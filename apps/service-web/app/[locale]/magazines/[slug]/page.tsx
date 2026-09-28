@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 import { MagazineContentPage } from '@darun/pages-shell';
-import { Metadata } from 'next';
 import { notFound } from '@darun/utils-router';
+import { Metadata } from 'next';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
 import { JsonLd } from '../../../../lib/seo/json-ld';
@@ -61,11 +61,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const { title, summary, backgroundImageUrl, author } = data.magazineBySlug;
-  const description = summary || '다양한 서비스의 비교와 분석 매거진입니다.';
-  const canonicalUrl = absolutePublicUrl('ko', `/magazines/${resolvedParams.slug}`);
+  const description =
+    summary ||
+    (isEn ? 'Comparison and analysis magazine of various services.' : '다양한 서비스의 비교와 분석 매거진입니다.');
+  const canonicalUrl = absolutePublicUrl('ko', `/magazines/${encodeURIComponent(resolvedParams.slug)}`);
 
   return {
-    title: `${title} - 다른: 서비스 비교를 한 곳에서`,
+    title: isEn ? `${title} - Darun: Service comparison in one place` : `${title} - 다른: 서비스 비교를 한 곳에서`,
     description,
     alternates: {
       canonical: canonicalUrl,
@@ -73,12 +75,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     robots: isEn ? NO_INDEX_ROBOTS : undefined,
     openGraph: {
-      title: `${title} - 다른`,
+      title: isEn ? `${title} - Darun` : `${title} - 다른`,
       description,
       siteName: getSiteName(currentLocale),
       url: canonicalUrl,
       type: 'article',
-      locale: 'ko_KR',
+      locale: isEn ? 'en_US' : 'ko_KR',
       images: backgroundImageUrl
         ? [
             {
@@ -92,7 +94,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} - 다른`,
+      title: isEn ? `${title} - Darun` : `${title} - 다른`,
       description,
       images: backgroundImageUrl ? [backgroundImageUrl] : undefined,
     },
@@ -107,7 +109,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
   const data = await getMagazine(resolvedParams.slug, currentLocale);
   const magazine = data?.magazineBySlug;
 
-  const canonicalUrl = absolutePublicUrl('ko', `/magazines/${resolvedParams.slug}`);
+  const canonicalUrl = absolutePublicUrl('ko', `/magazines/${encodeURIComponent(resolvedParams.slug)}`);
 
   const articleJsonLd = magazine
     ? {

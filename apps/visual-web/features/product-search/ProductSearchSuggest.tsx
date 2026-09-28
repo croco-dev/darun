@@ -57,6 +57,11 @@ export function ProductSearchSuggest({
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, []);
 
+  const activeIndexRef = useRef(activeIndex);
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+
   // Keyboard navigation attached to the input element
   useEffect(() => {
     const input = inputRef.current;
@@ -66,26 +71,23 @@ export function ProductSearchSuggest({
       const items = callbacksRef.current;
 
       if (event.key === 'ArrowDown') {
-        setActiveIndex(prev => {
-          if (suggestions.length === 0) return prev;
-          event.preventDefault();
-          return prev < suggestions.length - 1 ? prev + 1 : 0;
-        });
+        if (suggestions.length === 0) return;
+        event.preventDefault();
+        const next = activeIndexRef.current < suggestions.length - 1 ? activeIndexRef.current + 1 : 0;
+        activeIndexRef.current = next;
+        setActiveIndex(next);
       } else if (event.key === 'ArrowUp') {
-        setActiveIndex(prev => {
-          if (suggestions.length === 0) return prev;
-          event.preventDefault();
-          return prev > 0 ? prev - 1 : suggestions.length - 1;
-        });
+        if (suggestions.length === 0) return;
+        event.preventDefault();
+        const next = activeIndexRef.current > 0 ? activeIndexRef.current - 1 : suggestions.length - 1;
+        activeIndexRef.current = next;
+        setActiveIndex(next);
       } else if (event.key === 'Enter') {
-        // Read activeIndex from DOM to avoid stale closure
-        setActiveIndex(prev => {
-          if (prev >= 0 && prev < suggestions.length) {
-            event.preventDefault();
-            items.onSelect(suggestions[prev]);
-          }
-          return prev;
-        });
+        const currentIdx = activeIndexRef.current;
+        if (currentIdx >= 0 && currentIdx < suggestions.length) {
+          event.preventDefault();
+          items.onSelect(suggestions[currentIdx]);
+        }
       } else if (event.key === 'Escape') {
         event.preventDefault();
         items.onClose();
@@ -116,7 +118,7 @@ export function ProductSearchSuggest({
               id={`${inputId}-suggest-option-${index}`}
               role="option"
               aria-selected={index === activeIndex}
-              className={`flex cursor-pointer items-center gap-2.5 px-3.5 py-2.5 text-sm transition-colors ${
+              className={`flex min-h-[44px] cursor-pointer items-center gap-2.5 px-3.5 py-2.5 text-sm select-none transition-colors ${
                 index === activeIndex ? 'bg-surface-100 text-dark-900' : 'text-dark-700 hover:bg-surface-50'
               }`}
               onMouseEnter={() => setActiveIndex(index)}
@@ -128,10 +130,10 @@ export function ProductSearchSuggest({
               <img
                 src={suggestion.logoUrl || DEFAULT_ICON}
                 alt=""
-                className="size-6 rounded-md object-contain"
+                className="size-6 shrink-0 rounded-md object-contain"
                 onError={event => {
                   const img = event.currentTarget;
-                  if (img.src !== DEFAULT_ICON) {
+                  if (!img.src.endsWith(DEFAULT_ICON)) {
                     img.src = DEFAULT_ICON;
                   }
                 }}
@@ -141,7 +143,7 @@ export function ProductSearchSuggest({
           ))}
         </ul>
       ) : showLoading ? (
-        <div className="rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-400 shadow-lg">
+        <div className="flex min-h-[44px] items-center rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-400 shadow-lg select-none">
           검색 중...
         </div>
       ) : null}

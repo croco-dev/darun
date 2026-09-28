@@ -29,20 +29,26 @@ export const ProductDetailInfoSection = ({ slug }: ProductDetailInfoSectionProps
         <div className="px-5 py-3 bg-surface-100/30 flex flex-wrap justify-between items-center gap-3">
           <Button
             as="a"
-            href={`https://darun.io/products/${slug}`}
+            href={`https://darun.io/ko/products/${encodeURIComponent(slug)}`}
             target="_blank"
             rel="noopener noreferrer"
             variant="contained"
             color="secondary"
             size="sm"
-            className="inline-flex items-center gap-1.5"
+            className="inline-flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
           >
-            서비스 바로가기
-            <ExternalLink size={14} />
+            <span className="whitespace-nowrap">서비스 바로가기</span>
+            <ExternalLink size={14} className="shrink-0" aria-hidden="true" />
           </Button>
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={openEditModal} variant="base" color="secondary" size="sm">
-              기본 정보 수정
+            <Button
+              onClick={openEditModal}
+              variant="base"
+              color="secondary"
+              size="sm"
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
+              <span className="whitespace-nowrap">기본 정보 수정</span>
             </Button>
             <TranslateProductButton slug={slug} />
             <IndexProductButton slug={slug} />

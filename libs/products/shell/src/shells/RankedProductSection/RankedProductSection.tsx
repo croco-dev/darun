@@ -10,10 +10,11 @@ export const RankedProductSection = () => {
   const isKo = locale === 'ko';
 
   return (
-    <SectionWrapper background="white" spacing="md">
+    <SectionWrapper background="transparent" spacing="md">
       <div className="flex flex-col gap-5 sm:gap-6 md:gap-8">
         <Breadcrumb
           data-testid="breadcrumb-ranking"
+          ariaLabel={isKo ? '탐색 경로' : 'Breadcrumb'}
           items={[
             { label: isKo ? '홈' : 'Home', href: `/${locale}` },
             { label: isKo ? '인기 랭킹' : 'Ranking', ariaCurrent: 'page' },

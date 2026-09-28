@@ -72,18 +72,24 @@ const PLATFORM_LABELS: Record<string, string> = {
   ANDROID: '안드로이드',
 };
 
-function FlowCoverImage({ src, alt }: { src: string; alt: string }) {
-  const [failed, setFailed] = useState(false);
+function FlowCoverImage({ src, alt }: { src?: string; alt?: string }) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = Boolean(src && failedSrc === src);
 
-  if (failed) {
+  if (failed || !src) {
     return (
       <div className="flex aspect-video w-full items-center justify-center rounded-md bg-dark-100 text-dark-500">
-        <ImageOff size={20} aria-hidden />
+        <ImageOff size={20} className="shrink-0" aria-hidden="true" />
       </div>
     );
   }
   return (
-    <img src={src} alt={alt} className="aspect-video w-full rounded-md object-cover" onError={() => setFailed(true)} />
+    <img
+      src={src}
+      alt={alt ?? ''}
+      className="aspect-video w-full rounded-md object-cover"
+      onError={() => setFailedSrc(src)}
+    />
   );
 }
 
@@ -122,6 +128,8 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
     setDeletingId(id);
     try {
       await deleteFlow({ variables: { id } });
+    } catch {
+      // onError handles notification
     } finally {
       setDeletingId(null);
     }
@@ -129,7 +137,7 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
 
   const flows = (data?.adminProductFlows ?? []).flatMap(flow => {
     const cover = flow?.coverScreenshot;
-    if (!flow || !cover || !flow.id) {
+    if (!flow || !flow.id) {
       return [];
     }
     return [
@@ -139,8 +147,8 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
         platform: flow.platform ?? '',
         flowType: flow.flowType ?? '',
         stepCount: flow.stepCount ?? 0,
-        coverImageUrl: cover.imageUrl ?? '',
-        coverImageAlt: cover.imageAlt ?? '',
+        coverImageUrl: cover?.imageUrl ?? '',
+        coverImageAlt: cover?.imageAlt ?? '',
       },
     ];
   });
@@ -152,14 +160,14 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
         rightSide={
           <Button
             as={Link}
-            href={`/products/${slug}/flows/new`}
+            href={`/products/${encodeURIComponent(slug)}/flows/new`}
             variant="contained"
             color="primary"
             size="sm"
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
           >
-            <Plus size={16} />
-            플로 추가
+            <Plus size={16} className="shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap">플로 추가</span>
           </Button>
         }
       />
@@ -170,7 +178,13 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
           <AdminErrorState
             error={error}
             action={
-              <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+              <Button
+                type="button"
+                onClick={() => refetch()}
+                variant="contained"
+                color="primary"
+                className="active:scale-[0.98] motion-reduce:transform-none"
+              >
                 다시 시도
               </Button>
             }
@@ -182,14 +196,14 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
             action={
               <Button
                 as={Link}
-                href={`/products/${slug}/flows/new`}
+                href={`/products/${encodeURIComponent(slug)}/flows/new`}
                 variant="contained"
                 color="primary"
                 size="sm"
-                className="flex items-center gap-1.5"
+                className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
               >
-                <Plus size={16} />
-                플로 추가
+                <Plus size={16} className="shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">플로 추가</span>
               </Button>
             }
           />
@@ -203,8 +217,8 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                 <div className="relative">
                   <FlowCoverImage src={flow.coverImageUrl} alt={flow.coverImageAlt || '플로 커버 화면'} />
                   <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-dark-900/80 px-2 py-0.5 text-xs font-medium text-surface-50">
-                    <Layers size={12} aria-hidden />
-                    {flow.stepCount}단계
+                    <Layers size={12} className="shrink-0" aria-hidden="true" />
+                    <span className="tabular-nums">{flow.stepCount}단계</span>
                   </span>
                 </div>
                 <div className="mt-2.5 flex flex-1 flex-col gap-1 px-1">
@@ -218,25 +232,25 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                 </div>
                 <div className="mt-2 flex items-center justify-end gap-1 px-1">
                   <Link
-                    href={`/products/${slug}/flows/${flow.id}/edit`}
-                    className="rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900"
+                    href={`/products/${encodeURIComponent(slug)}/flows/${encodeURIComponent(flow.id)}/edit`}
+                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
                     title="플로 수정"
                     aria-label={`${flow.title} 플로 수정`}
                   >
-                    <Pencil size={16} />
+                    <Pencil size={16} className="shrink-0" aria-hidden="true" />
                   </Link>
                   <button
                     type="button"
                     onClick={() => handleDelete(flow.id)}
                     disabled={deletingId !== null}
-                    className="rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 disabled:opacity-50"
+                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-600/60"
                     title={deletingId === flow.id ? '삭제 중...' : '플로 삭제'}
                     aria-label={deletingId === flow.id ? `${flow.title} 삭제 중` : `${flow.title} 플로 삭제`}
                   >
                     {deletingId === flow.id ? (
                       <Loader2 size={16} className="animate-spin text-cherry-600 motion-reduce:animate-none" />
                     ) : (
-                      <Trash2 size={16} />
+                      <Trash2 size={16} className="shrink-0" aria-hidden="true" />
                     )}
                   </button>
                 </div>
