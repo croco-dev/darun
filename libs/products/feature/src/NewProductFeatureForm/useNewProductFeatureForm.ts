@@ -58,7 +58,7 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
       refetchQueries: [{ query: TempProductBySlugOnProductFeatureTableDocument, variables: { slug: productSlug } }],
       awaitRefetchQueries: true,
       onCompleted: ({ createProductFeature }) => {
-        if (createProductFeature.feature.id) {
+        if (createProductFeature?.feature?.id) {
           notifications.show({ message: '생성되었습니다.', color: 'teal' });
           form.reset();
           navigate(`/products/${productSlug}`);

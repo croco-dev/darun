@@ -106,6 +106,8 @@ export function useNewCompanyForm() {
           startAt,
         },
       },
+    })?.catch(() => {
+      isSubmittingRef.current = false;
     });
   };
 

@@ -43,7 +43,7 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
         notifications.show({ message: error.message, color: 'red' });
       },
       onCompleted: data => {
-        if (data.publishProduct.product.publishedAt) {
+        if (data?.publishProduct?.product?.id) {
           notifications.show({
             message: '서비스가 노출 설정되었습니다.',
             color: 'teal',

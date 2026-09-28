@@ -2,7 +2,7 @@
 
 import { AlertCircle, Check, Loader2, RefreshCw, Search, X, Zap } from '@darun/ui';
 import { AdminModal } from '@darun/ui-admin';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type LlmModelItem = {
   id: string;
@@ -144,12 +144,17 @@ export function ModelSelectModal({
     }
   }, [endpoint, apiKey]);
 
+  const lastFetchedKeyRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!opened || models.length > 0) return;
+    if (!opened) return;
+    const currentKey = `${endpoint}::${apiKey ?? ''}`;
+    if (models.length > 0 && lastFetchedKeyRef.current === currentKey) return;
 
     let ignore = false;
     const timer = setTimeout(() => {
       if (!ignore) {
+        lastFetchedKeyRef.current = currentKey;
         void fetchModels();
       }
     }, 0);
@@ -158,7 +163,7 @@ export function ModelSelectModal({
       ignore = true;
       clearTimeout(timer);
     };
-  }, [opened, models.length, fetchModels]);
+  }, [opened, models.length, fetchModels, endpoint, apiKey]);
 
   const filteredModels = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();

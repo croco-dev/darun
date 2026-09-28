@@ -27,7 +27,12 @@ function getSnapshot(): string[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw !== cachedRaw) {
       cachedRaw = raw;
-      cachedList = raw ? JSON.parse(raw) : EMPTY_LIST;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        cachedList = Array.isArray(parsed) && parsed.every(item => typeof item === 'string') ? parsed : EMPTY_LIST;
+      } else {
+        cachedList = EMPTY_LIST;
+      }
     }
     return cachedList;
   } catch {

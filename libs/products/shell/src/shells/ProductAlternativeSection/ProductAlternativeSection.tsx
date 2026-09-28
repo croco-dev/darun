@@ -55,7 +55,7 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
       <AlternativeProductList slug={slug} />
       <div className="flex justify-center pt-2">
         <Link
-          href={`/${locale}/products/${slug}/alternatives`}
+          href={`/${locale}/products/${encodeURIComponent(slug)}/alternatives`}
           className="group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
           <Button

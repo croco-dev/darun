@@ -13,7 +13,7 @@ import {
 import { ArrowDown, ArrowUp, Button, Check, ImageOff, Loader2, Plus, X } from '@darun/ui';
 import { AdminErrorState } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -161,18 +161,21 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
 
   // 편집 대상 플로를 한 번만 반영한다. 이후 서버 재조회가 로컬 편집 내용을 덮어쓰지 않는다.
   const serverFlow = flowResult.data?.adminProductFlow;
-  if (isEdit && !hydratedFromServer && serverFlow) {
-    setHydratedFromServer(true);
-    setTitle(serverFlow.title ?? '');
-    setDescription(serverFlow.description ?? '');
-    setPlatform((serverFlow.platform as VisualPlatform) ?? 'WEB');
-    setFlowType((serverFlow.flowType as VisualFlowType) ?? 'ONBOARDING');
-    setSteps(
-      (serverFlow.steps ?? []).flatMap(step =>
-        step?.screenshot?.id ? [{ screenshotId: step.screenshot.id, caption: step.caption ?? '' }] : []
-      )
-    );
-  }
+  useEffect(() => {
+    if (isEdit && !hydratedFromServer && serverFlow) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 서버 플로 데이터 초기 동기화에 필요
+      setHydratedFromServer(true);
+      setTitle(serverFlow.title ?? '');
+      setDescription(serverFlow.description ?? '');
+      setPlatform((serverFlow.platform as VisualPlatform) ?? 'WEB');
+      setFlowType((serverFlow.flowType as VisualFlowType) ?? 'ONBOARDING');
+      setSteps(
+        (serverFlow.steps ?? []).flatMap(step =>
+          step?.screenshot?.id ? [{ screenshotId: step.screenshot.id, caption: step.caption ?? '' }] : []
+        )
+      );
+    }
+  }, [isEdit, hydratedFromServer, serverFlow]);
 
   const [createFlow] = useMutation(CreateProductFlowOnEditorDocument);
   const [updateFlow] = useMutation(UpdateProductFlowOnEditorDocument);
@@ -237,7 +240,15 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
           variables: { input: { productSlug: slug, ...input } },
         });
         const newId = result.data?.createProductFlow?.flow?.id;
-        onSaved(newId ?? '');
+        if (newId) {
+          onSaved(newId);
+        } else {
+          notifications.show({
+            title: '저장 실패',
+            message: '플로 생성 결과를 확인할 수 없습니다.',
+            color: 'red',
+          });
+        }
       }
     } catch {
       // 실패 시 편집 내용을 보존한다. 오류 안내만 표시한다.

@@ -135,6 +135,13 @@ export function useWriteMagazine() {
     setIsUploading(true);
     try {
       const imageUrl = await upload('images/magazines', droppedFile, droppedFile.name);
+      if (!imageUrl) {
+        URL.revokeObjectURL(objectUrl);
+        setPreviewUrl(null);
+        setFile(null);
+        form.setFieldValue('backgroundImageUrl', '');
+        return;
+      }
       form.setFieldValue('backgroundImageUrl', imageUrl);
       notifications.show({
         message: '이미지가 업로드되었습니다.',

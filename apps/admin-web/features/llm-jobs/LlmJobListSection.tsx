@@ -281,12 +281,19 @@ export function LlmJobListSection() {
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    void navigator.clipboard.writeText(text);
-    notifications.show({
-      message: `${label} 복사되었습니다.`,
-      color: 'dark',
-    });
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      notifications.show({
+        message: `${label} 복사되었습니다.`,
+        color: 'dark',
+      });
+    } catch {
+      notifications.show({
+        message: '클립보드 복사에 실패했습니다.',
+        color: 'red',
+      });
+    }
   };
 
   if (isLoading && jobs.length === 0) {

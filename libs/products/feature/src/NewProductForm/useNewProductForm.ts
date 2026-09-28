@@ -57,7 +57,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     refetchQueries: [AllProductsOnProductListTableDocument],
     awaitRefetchQueries: true,
     onCompleted: ({ createProduct }) => {
-      if (createProduct.product.slug) {
+      if (createProduct?.product?.slug) {
         notifications.show({ message: '생성되었습니다.', color: 'teal' });
         form.reset();
         navigate(`/products/${createProduct.product.slug}`);

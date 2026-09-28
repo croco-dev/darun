@@ -53,7 +53,8 @@ function saveVotedSlug(slug: string) {
   if (typeof window === 'undefined') return;
   try {
     const raw = localStorage.getItem(VOTED_PRODUCTS_KEY);
-    const votedSlugs: string[] = raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    const votedSlugs: string[] = Array.isArray(parsed) ? parsed : [];
     if (!votedSlugs.includes(slug)) {
       votedSlugs.push(slug);
       localStorage.setItem(VOTED_PRODUCTS_KEY, JSON.stringify(votedSlugs));

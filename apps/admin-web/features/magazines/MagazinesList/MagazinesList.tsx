@@ -153,7 +153,7 @@ export const MagazinesList = bind(
 
                     {isPublished && (
                       <a
-                        href={`https://darun.io/magazines/${item.slug}`}
+                        href={`https://darun.io/ko/magazines/${encodeURIComponent(item.slug)}`}
                         target="_blank"
                         rel="noreferrer noopener"
                         className="inline-flex min-h-[32px] items-center gap-1 px-2 rounded text-dark-600 hover:text-dark-900 font-medium active:scale-95 motion-reduce:transform-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"

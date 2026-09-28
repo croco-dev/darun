@@ -29,7 +29,7 @@ export const ProductDetailInfoSection = ({ slug }: ProductDetailInfoSectionProps
         <div className="px-5 py-3 bg-surface-100/30 flex flex-wrap justify-between items-center gap-3">
           <Button
             as="a"
-            href={`https://darun.io/products/${slug}`}
+            href={`https://darun.io/ko/products/${encodeURIComponent(slug)}`}
             target="_blank"
             rel="noopener noreferrer"
             variant="contained"

@@ -18,6 +18,7 @@ import {
 import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { ModelSelectModal } from './ModelSelectModal';
 
@@ -115,9 +116,9 @@ export function resolveLlmFormDefaults(
 
 function formatUpdatedAt(dateStr?: string | null): string | null {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString('ko-KR');
+  const d = dayjs(dateStr);
+  if (!d.isValid()) return null;
+  return d.format('YYYY-MM-DD HH:mm:ss');
 }
 
 function LlmSettingForm({

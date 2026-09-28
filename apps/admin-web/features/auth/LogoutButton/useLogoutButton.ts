@@ -26,6 +26,7 @@ export function useLogoutButton(props: LogoutButtonProps = {}) {
         message: error instanceof Error ? error.message : '로그아웃 중 오류가 발생했습니다.',
         color: 'red',
       });
+    } finally {
       setIsLoggingOut(false);
     }
   };

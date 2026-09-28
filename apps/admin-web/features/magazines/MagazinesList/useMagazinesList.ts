@@ -36,11 +36,11 @@ export function useMagazinesList() {
   });
 
   return {
-    magazines: data?.tempAllMagazines.magazines ?? [],
+    magazines: data?.tempAllMagazines?.magazines ?? [],
     page,
     setPage,
-    totalCount: data?.tempAllMagazines.totalCount ?? 0,
-    totalPages: data?.tempAllMagazines.totalPages ?? 1,
+    totalCount: data?.tempAllMagazines?.totalCount ?? 0,
+    totalPages: data?.tempAllMagazines?.totalPages ?? 1,
     loading,
     error,
     refetch,

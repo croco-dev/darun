@@ -120,10 +120,6 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     }
 
     if (!url) {
-      notifications.show({
-        message: '이미지 업로드에 실패했어요.',
-        color: 'red',
-      });
       return;
     }
 

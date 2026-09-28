@@ -121,7 +121,7 @@ export default async function ComparePage({ params }: Props) {
   const resolvedParams = await params;
   const data = await getCompareProducts(resolvedParams);
 
-  if (!data?.product1 || !data.product2) {
+  if (!data?.product1 || !data?.product2) {
     return notFound();
   }
 

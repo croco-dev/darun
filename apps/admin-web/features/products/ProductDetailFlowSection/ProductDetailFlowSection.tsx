@@ -72,10 +72,10 @@ const PLATFORM_LABELS: Record<string, string> = {
   ANDROID: '안드로이드',
 };
 
-function FlowCoverImage({ src, alt }: { src: string; alt: string }) {
+function FlowCoverImage({ src, alt }: { src?: string; alt?: string }) {
   const [failed, setFailed] = useState(false);
 
-  if (failed) {
+  if (failed || !src) {
     return (
       <div className="flex aspect-video w-full items-center justify-center rounded-md bg-dark-100 text-dark-500">
         <ImageOff size={20} className="shrink-0" aria-hidden="true" />
@@ -83,7 +83,12 @@ function FlowCoverImage({ src, alt }: { src: string; alt: string }) {
     );
   }
   return (
-    <img src={src} alt={alt} className="aspect-video w-full rounded-md object-cover" onError={() => setFailed(true)} />
+    <img
+      src={src}
+      alt={alt ?? ''}
+      className="aspect-video w-full rounded-md object-cover"
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -122,6 +127,8 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
     setDeletingId(id);
     try {
       await deleteFlow({ variables: { id } });
+    } catch {
+      // onError handles notification
     } finally {
       setDeletingId(null);
     }
@@ -129,7 +136,7 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
 
   const flows = (data?.adminProductFlows ?? []).flatMap(flow => {
     const cover = flow?.coverScreenshot;
-    if (!flow || !cover || !flow.id) {
+    if (!flow || !flow.id) {
       return [];
     }
     return [
@@ -139,8 +146,8 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
         platform: flow.platform ?? '',
         flowType: flow.flowType ?? '',
         stepCount: flow.stepCount ?? 0,
-        coverImageUrl: cover.imageUrl ?? '',
-        coverImageAlt: cover.imageAlt ?? '',
+        coverImageUrl: cover?.imageUrl ?? '',
+        coverImageAlt: cover?.imageAlt ?? '',
       },
     ];
   });

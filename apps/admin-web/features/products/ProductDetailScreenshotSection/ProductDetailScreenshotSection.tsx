@@ -350,6 +350,8 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
     setDeletingId(id);
     try {
       await deleteScreenshot({ variables: { id } });
+    } catch {
+      // Handled by onError
     } finally {
       setDeletingId(null);
     }

@@ -101,7 +101,7 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
     }
 
     setCompanies(
-      data?.searchCompanies.map(({ id, name }) => ({
+      data?.searchCompanies?.map(({ id, name }) => ({
         label: name,
         value: id,
       })) ?? []
@@ -135,7 +135,8 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
       form.setInitialValues({ companyId: currentCompany.id });
       form.setValues({ companyId: currentCompany.id });
     }
-  }, [currentCompany?.id, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCompany?.id]);
 
   const handleSubmit = (values: FormValues) => {
     if (loading || !values.companyId) {
@@ -146,6 +147,8 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
     }
     registerProductCompany({
       variables: { input: { companyId: values.companyId }, slug },
+    })?.catch(() => {
+      // Handled by onError
     });
   };
 
