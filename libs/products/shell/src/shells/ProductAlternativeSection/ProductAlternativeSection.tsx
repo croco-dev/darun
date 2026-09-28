@@ -24,10 +24,12 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
           className="flex flex-col items-center justify-center rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-10 text-center"
         >
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
-            <Layers size={18} className="stroke-[2]" aria-hidden="true" />
+            <Layers size={18} className="stroke-[2] shrink-0" aria-hidden="true" />
           </div>
-          <p className="text-sm font-semibold text-dark-900 break-keep">{t('empty.title')}</p>
-          <p className="mt-1 max-w-xs text-xs text-dark-500 break-keep">{t('empty.description')}</p>
+          <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">{t('empty.title')}</p>
+          <p className="mt-1 max-w-xs text-xs text-dark-500 break-words [word-break:keep-all]">
+            {t('empty.description')}
+          </p>
           <Link
             href={`/${locale}/search/product`}
             className="mt-4 group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"

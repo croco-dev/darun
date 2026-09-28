@@ -108,7 +108,7 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
       >
         <div className="mb-4 flex items-center justify-between gap-4">
           {title ? (
-            <h2 id="admin-modal-title" className="text-lg font-bold text-dark-900">
+            <h2 id="admin-modal-title" className="text-lg font-bold text-dark-900 break-words [word-break:keep-all]">
               {title}
             </h2>
           ) : (
@@ -117,7 +117,7 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-dark-400 hover:bg-dark-100 hover:text-dark-900 transition active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 focus-visible:ring-offset-2"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-dark-400 hover:bg-dark-100 hover:text-dark-900 transition active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 focus-visible:ring-offset-2"
             aria-label="닫기"
           >
             <X size={18} aria-hidden="true" className="shrink-0 stroke-[2]" />

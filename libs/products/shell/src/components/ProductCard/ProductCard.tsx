@@ -61,7 +61,7 @@ export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: 
               product.voteCount !== undefined && product.voteCount !== null ? (
                 <VoteCountBadge count={product.voteCount} />
               ) : (
-                <span className="inline-flex items-center text-dark-300 transition-colors duration-200 ease-out group-hover:text-dark-700">
+                <span className="inline-flex shrink-0 items-center text-dark-300 transition-colors duration-200 ease-out group-hover:text-dark-700">
                   <ChevronRight
                     size={15}
                     aria-hidden="true"

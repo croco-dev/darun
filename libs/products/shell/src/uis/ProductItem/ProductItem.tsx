@@ -147,8 +147,8 @@ export const ProductItem = ({
           <NameTag
             className={
               isHero
-                ? 'm-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-900 break-words sm:text-3xl sm:break-keep'
-                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 break-words ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
+                ? 'm-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-900 break-words [word-break:keep-all] sm:text-3xl'
+                : `m-0 text-base font-bold leading-snug tracking-tight text-dark-900 transition-colors duration-200 group-hover:text-dark-950 break-words [word-break:keep-all] ${isStacked ? 'line-clamp-1' : 'md:text-lg'}`
             }
           >
             {name}

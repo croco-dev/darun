@@ -47,7 +47,7 @@ export const ProductUserAction = bind(
     const copyLabel = copied ? t('copied') : t('copyLink');
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="shadow"
           color="secondary"
@@ -68,7 +68,7 @@ export const ProductUserAction = bind(
             {loading ? (
               <div
                 data-testid="upvote-loading"
-                className="h-4 w-4 animate-spin rounded-full border-2 border-current border-b-transparent motion-reduce:animate-none"
+                className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-b-transparent motion-reduce:animate-none"
               />
             ) : error ? (
               <span
@@ -88,7 +88,7 @@ export const ProductUserAction = bind(
               />
             )}
             <span
-              className={`break-keep text-sm font-semibold tabular-nums transition-colors duration-150 ${voted ? 'text-white' : 'text-dark-700 group-hover:text-dark-900'}`}
+              className={`whitespace-nowrap text-sm font-semibold tabular-nums transition-colors duration-150 ${voted ? 'text-white' : 'text-dark-700 group-hover:text-dark-900'}`}
             >
               {voteCount.toLocaleString(locale)}
             </span>

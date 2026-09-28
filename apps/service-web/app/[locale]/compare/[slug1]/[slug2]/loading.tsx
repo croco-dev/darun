@@ -22,7 +22,7 @@ export default function Loading() {
         aria-live="polite"
         aria-label={t('loading')}
       >
-        <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
+        <ContentArea className="flex flex-col gap-8 pt-5 pb-12 sm:pt-6 sm:pb-16 md:gap-12 md:pt-8 md:pb-20">
           {/* Breadcrumb Skeleton */}
           <div className="flex items-center gap-1.5" aria-hidden="true">
             <Skeleton className="h-4 w-8 rounded-md" />

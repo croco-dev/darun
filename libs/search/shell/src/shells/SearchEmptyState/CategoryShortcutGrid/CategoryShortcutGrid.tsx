@@ -31,7 +31,7 @@ export const CategoryShortcutGrid = () => {
           >
             {getCategoryIcon(cat.slug)}
           </span>
-          <span className="truncate">{locale === 'ko' ? cat.labelKo : cat.labelEn}</span>
+          <span className="truncate min-w-0 flex-1">{locale === 'ko' ? cat.labelKo : cat.labelEn}</span>
         </Link>
       ))}
     </div>

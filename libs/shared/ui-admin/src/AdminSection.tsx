@@ -17,7 +17,11 @@ type AdminSectionHeaderProps = {
 export function AdminSectionHeader({ title, rightSide, children, className }: AdminSectionHeaderProps) {
   return (
     <div className={cn('border-b border-dark-200 px-5 py-3 flex items-center justify-between gap-4', className)}>
-      {title ? <h2 className="text-sm font-medium text-dark-900">{title}</h2> : children}
+      {title ? (
+        <h2 className="text-sm font-medium text-dark-900 break-words [word-break:keep-all]">{title}</h2>
+      ) : (
+        children
+      )}
       {rightSide && <div className="shrink-0">{rightSide}</div>}
     </div>
   );

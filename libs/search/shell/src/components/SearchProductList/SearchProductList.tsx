@@ -94,13 +94,15 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
       <div className="flex flex-col gap-8">
         <div className="flex flex-col items-center justify-center gap-3 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-700 shadow-2xs">
-            <Search size={22} aria-hidden="true" />
+            <Search size={22} className="shrink-0 stroke-[2]" aria-hidden="true" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <p className="text-xl font-bold leading-tight text-dark-900 break-keep sm:text-2xl">
+            <p className="text-xl font-bold leading-tight text-dark-900 break-words [word-break:keep-all] sm:text-2xl">
               {getNoResultsMessage()}
             </p>
-            <p className="text-sm text-dark-600 break-keep sm:text-base">{t('list.empty.description')}</p>
+            <p className="text-sm text-dark-600 break-words [word-break:keep-all] sm:text-base">
+              {t('list.empty.description')}
+            </p>
           </div>
         </div>
 
@@ -124,7 +126,7 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
                   <span aria-hidden="true" className="text-dark-400 transition-colors group-hover:text-dark-600">
                     #
                   </span>
-                  {popularQuery}
+                  <span className="whitespace-nowrap">{popularQuery}</span>
                 </Link>
               ))}
             </div>
@@ -200,7 +202,11 @@ export const SearchProductList = bind(useSearchProductList, ({ products }: Searc
           )}
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5">
+      <div
+        role="group"
+        aria-label={t('page.resultTitle', { query })}
+        className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-5"
+      >
         {products.map(product => (
           <ProductCard
             key={product.id}

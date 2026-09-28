@@ -109,9 +109,11 @@ export const ProductDescription = bind(useProductDescription, ({ description }) 
     return (
       <div className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-10 text-center">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
-          <FileText size={18} className="stroke-[2]" aria-hidden="true" />
+          <FileText size={18} className="stroke-[2] shrink-0" aria-hidden="true" />
         </div>
-        <p className="text-sm font-semibold text-dark-900 break-keep">{t('description.empty')}</p>
+        <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+          {t('description.empty')}
+        </p>
       </div>
     );
   }

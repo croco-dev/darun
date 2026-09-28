@@ -25,7 +25,7 @@ export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' 
         className="shrink-0 text-dark-400 fill-dark-400/30 transition-colors duration-150 group-hover:text-dark-700 group-hover:fill-dark-700/40"
         aria-hidden="true"
       />
-      <span>{formattedCount}</span>
+      <span className="whitespace-nowrap">{formattedCount}</span>
     </div>
   );
 };

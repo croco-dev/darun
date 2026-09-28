@@ -69,7 +69,7 @@ export function Navbar() {
                   className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-dark-400 group-hover:text-dark-700'}`}
                   strokeWidth={1.5}
                 />
-                <span>{item.label}</span>
+                <span className="whitespace-nowrap">{item.label}</span>
               </Link>
             );
           })}
@@ -83,7 +83,7 @@ export function Navbar() {
               aria-hidden="true"
               className="w-2 h-2 shrink-0 rounded-full bg-leaf-500 animate-pulse motion-reduce:animate-none"
             />
-            <span className="text-xs font-medium text-dark-700">관리자 접속 중</span>
+            <span className="text-xs font-medium text-dark-700 whitespace-nowrap">관리자 접속 중</span>
           </div>
           <span className="text-2xs text-dark-400 font-mono font-semibold uppercase">
             {process.env['NEXT_PUBLIC_INFRA_ENV'] || process.env['NODE_ENV'] || 'local'}

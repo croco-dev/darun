@@ -127,7 +127,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
             aria-hidden="true"
           />
         )}
-        <span className="break-keep text-sm font-semibold">{buttonLabel}</span>
+        <span className="whitespace-nowrap text-sm font-semibold">{buttonLabel}</span>
       </div>
     </Button>
   );

@@ -49,7 +49,7 @@ export const PopularQueriesStripe = () => {
           <span aria-hidden="true" className="font-bold text-dark-400 transition-colors group-hover:text-dark-600">
             #
           </span>
-          <span>{query}</span>
+          <span className="whitespace-nowrap">{query}</span>
         </Link>
       ))}
     </div>

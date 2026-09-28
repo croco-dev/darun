@@ -18,19 +18,21 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
       <div className="flex items-start gap-3.5">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dark-150/90 bg-surface-100 shadow-2xs sm:h-11 sm:w-11">
           {emoji ? (
-            <span className="text-xl leading-none" aria-hidden="true">
+            <span className="shrink-0 select-none text-xl leading-none" aria-hidden="true">
               {emoji}
             </span>
           ) : (
-            <Sparkles className="h-5 w-5 text-dark-500 stroke-[1.75]" aria-hidden="true" />
+            <Sparkles className="h-5 w-5 shrink-0 text-dark-500 stroke-[1.75]" aria-hidden="true" />
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col pt-0.5">
-          <h3 className="text-base font-bold leading-snug tracking-tight text-dark-900 break-keep sm:text-lg">
+          <h3 className="text-base font-bold leading-snug tracking-tight text-dark-900 break-words [word-break:keep-all] sm:text-lg">
             {name}
           </h3>
           {description && (
-            <p className="mt-1 text-sm leading-relaxed text-dark-600 break-keep sm:text-base">{description}</p>
+            <p className="mt-1 text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all] sm:text-base">
+              {description}
+            </p>
           )}
         </div>
       </div>

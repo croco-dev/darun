@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-const Skeleton = ({ className = "" }: { className?: string }) => (
+const Skeleton = ({ className = '' }: { className?: string }) => (
   <div
     aria-hidden="true"
     className={`${className} animate-pulse bg-gradient-to-r from-surface-100 via-surface-200 to-surface-100 motion-reduce:animate-none`}

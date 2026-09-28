@@ -95,7 +95,9 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
                     <Globe size={13} aria-hidden="true" className="shrink-0 stroke-[2.2] text-current" />
                   </div>
                 )}
-                <span className="w-max break-keep text-xs sm:text-sm font-semibold text-current">{localizedTitle}</span>
+                <span className="truncate max-w-[200px] sm:max-w-xs text-xs sm:text-sm font-semibold text-current">
+                  {localizedTitle}
+                </span>
                 <ExternalLink
                   size={14}
                   aria-hidden="true"

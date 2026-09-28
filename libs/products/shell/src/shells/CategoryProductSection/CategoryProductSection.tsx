@@ -91,7 +91,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
           </div>
           <div className="flex flex-1 flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-extrabold tracking-tight text-dark-900 break-keep sm:text-3xl">
+              <h1 className="text-2xl font-extrabold tracking-tight text-dark-900 break-words [word-break:keep-all] sm:text-3xl">
                 {categoryLabel}
               </h1>
               {products.length > 0 && (
@@ -121,7 +121,9 @@ export function CategoryProductSection({ slug }: { slug: string }) {
               {categoryIcon}
             </div>
             <p className="text-base font-extrabold text-dark-900 sm:text-lg">{emptyLabel}</p>
-            <p className="mt-1 max-w-sm text-sm text-dark-600 break-keep">{t('emptyDescription')}</p>
+            <p className="mt-1 max-w-sm text-sm text-dark-600 break-words [word-break:keep-all]">
+              {t('emptyDescription')}
+            </p>
             <div className="mt-5">
               <Link
                 href={`/${locale}/search/product`}

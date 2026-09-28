@@ -63,14 +63,14 @@ export default function Loading() {
         </div>
 
         {/* TOC Skeleton */}
-        <div className="relative border-y border-dark-150 bg-white/90 backdrop-blur-md">
-          <ContentArea className="py-2.5">
-            <div className="flex gap-2 overflow-hidden">
-              <Skeleton className="h-8 w-20 rounded-full" />
-              <Skeleton className="h-8 w-20 rounded-full" />
-              <Skeleton className="h-8 w-20 rounded-full" />
-              <Skeleton className="h-8 w-24 rounded-full" />
-              <Skeleton className="h-8 w-20 rounded-full" />
+        <div className="relative border-y border-dark-150/80 bg-white/90 backdrop-blur-md">
+          <ContentArea>
+            <div className="flex gap-1 sm:gap-1.5 overflow-hidden px-1 py-2">
+              <Skeleton className="h-[34px] sm:h-[36px] w-20 rounded-full" />
+              <Skeleton className="h-[34px] sm:h-[36px] w-20 rounded-full" />
+              <Skeleton className="h-[34px] sm:h-[36px] w-20 rounded-full" />
+              <Skeleton className="h-[34px] sm:h-[36px] w-24 rounded-full" />
+              <Skeleton className="h-[34px] sm:h-[36px] w-20 rounded-full" />
             </div>
           </ContentArea>
         </div>

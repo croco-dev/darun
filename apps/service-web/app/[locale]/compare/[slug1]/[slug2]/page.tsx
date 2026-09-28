@@ -134,7 +134,7 @@ export default async function ComparePage({ params }: Props) {
   return (
     <Layout>
       <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col bg-gradient-to-b from-surface-50/60 via-white to-white">
-        <ContentArea className="flex flex-col gap-8 py-6 md:gap-12 md:py-8">
+        <ContentArea className="flex flex-col gap-8 pt-5 pb-12 sm:pt-6 sm:pb-16 md:gap-12 md:pt-8 md:pb-20">
           <Breadcrumb
             data-testid="breadcrumb-compare"
             ariaLabel={resolvedParams.locale === 'ko' ? '탐색 경로' : 'Breadcrumb'}
@@ -330,7 +330,7 @@ function CompareRow({
             {colLabel1}
           </div>
           <div
-            className="text-sm leading-relaxed text-dark-800 break-words break-keep"
+            className="text-sm leading-relaxed text-dark-800 break-words [word-break:keep-all]"
             data-testid={`compare-row-${testid}-1`}
           >
             {custom1 ? (
@@ -355,7 +355,7 @@ function CompareRow({
             {colLabel2}
           </div>
           <div
-            className="text-sm leading-relaxed text-dark-800 break-words break-keep"
+            className="text-sm leading-relaxed text-dark-800 break-words [word-break:keep-all]"
             data-testid={`compare-row-${testid}-2`}
           >
             {custom2 ? (

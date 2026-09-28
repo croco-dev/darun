@@ -20,8 +20,8 @@ const ProductPhotoItem = ({ photo }: { photo: { imageUrl: string; imageAlt: stri
   if (hasError) {
     return (
       <div className="flex h-56 w-72 sm:h-64 sm:w-80 shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-dark-200 bg-surface-100 p-4 text-center">
-        <Sparkles size={18} className="text-dark-400 stroke-[1.75]" aria-hidden="true" />
-        <span className="text-xs text-dark-500 break-keep">{photo.imageAlt}</span>
+        <Sparkles size={18} className="text-dark-400 stroke-[1.75] shrink-0" aria-hidden="true" />
+        <span className="text-xs text-dark-500 break-words [word-break:keep-all]">{photo.imageAlt}</span>
       </div>
     );
   }
@@ -56,9 +56,9 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
         className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-dashed border-dark-200/80 bg-surface-50/50 px-6 py-10 text-center"
       >
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
-          <Sparkles size={18} className="stroke-[1.75]" aria-hidden="true" />
+          <Sparkles size={18} className="stroke-[1.75] shrink-0" aria-hidden="true" />
         </div>
-        <p className="text-sm font-semibold text-dark-900 break-keep">{t('photo.empty')}</p>
+        <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">{t('photo.empty')}</p>
       </div>
     );
   }

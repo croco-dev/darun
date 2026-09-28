@@ -204,7 +204,7 @@ export function AdminEmptyState({
       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-dark-150 bg-surface-100 text-dark-500 shadow-2xs">
         {icon ?? (
           <svg
-            className="h-6 w-6 text-dark-500"
+            className="h-6 w-6 shrink-0 text-dark-500"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -220,8 +220,8 @@ export function AdminEmptyState({
           </svg>
         )}
       </div>
-      <h3 className="text-sm font-semibold text-dark-800">{title}</h3>
-      {description && <p className="text-xs text-dark-500 mt-1">{description}</p>}
+      <h3 className="text-sm font-semibold text-dark-800 break-words [word-break:keep-all]">{title}</h3>
+      {description && <p className="text-xs text-dark-500 mt-1 break-words [word-break:keep-all]">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -266,7 +266,7 @@ export function AdminErrorState({
     >
       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-cherry-200 bg-cherry-50 text-cherry-600 shadow-2xs">
         <svg
-          className="h-6 w-6 text-cherry-600"
+          className="h-6 w-6 shrink-0 text-cherry-600"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -280,8 +280,12 @@ export function AdminErrorState({
           />
         </svg>
       </div>
-      <h3 className="text-sm font-semibold text-cherry-700">{title}</h3>
-      {finalDescription && <p className="text-xs text-dark-500 mt-1 whitespace-pre-wrap">{finalDescription}</p>}
+      <h3 className="text-sm font-semibold text-cherry-700 break-words [word-break:keep-all]">{title}</h3>
+      {finalDescription && (
+        <p className="text-xs text-dark-500 mt-1 whitespace-pre-wrap break-words [word-break:keep-all]">
+          {finalDescription}
+        </p>
+      )}
 
       {technicalContent && (
         <details className="mt-4 w-full text-left text-xs bg-surface-100 border border-dark-200 rounded-lg p-3 group">
@@ -295,7 +299,7 @@ export function AdminErrorState({
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="text-2xs px-2 py-0.5 rounded border border-dark-200 bg-white hover:bg-surface-200 text-dark-700 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
+                  className="text-2xs px-2 py-0.5 rounded border border-dark-200 bg-white hover:bg-surface-200 text-dark-700 transition active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
                 >
                   {copied ? '복사 완료!' : '오류 내용 복사'}
                 </button>

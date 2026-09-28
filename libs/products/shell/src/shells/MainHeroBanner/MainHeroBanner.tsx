@@ -57,7 +57,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             <ChevronRight
               size={14}
               aria-hidden="true"
-              className="text-white/60 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+              className="shrink-0 text-white/60 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
             />
           </Link>
 
@@ -75,7 +75,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             </h1>
           </div>
 
-          <p className="max-w-xl text-sm leading-relaxed text-dark-300 break-keep sm:text-base">
+          <p className="max-w-xl text-sm leading-relaxed text-dark-300 break-words [word-break:keep-all] sm:text-base">
             {t('Main.hero.subDescription')}
           </p>
 
@@ -97,7 +97,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
                   aria-hidden="true"
                   className="shrink-0 text-white/40 transition-colors motion-reduce:transition-none group-hover:text-white/80"
                 />
-                <span>{keyword}</span>
+                <span className="whitespace-nowrap">{keyword}</span>
               </Link>
             ))}
           </div>
