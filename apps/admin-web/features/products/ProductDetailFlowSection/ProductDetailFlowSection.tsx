@@ -156,7 +156,7 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
             variant="contained"
             color="primary"
             size="sm"
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
           >
             <Plus size={16} className="shrink-0" aria-hidden="true" />
             <span className="whitespace-nowrap">플로 추가</span>
@@ -170,7 +170,13 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
           <AdminErrorState
             error={error}
             action={
-              <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+              <Button
+                type="button"
+                onClick={() => refetch()}
+                variant="contained"
+                color="primary"
+                className="active:scale-[0.98] motion-reduce:transform-none"
+              >
                 다시 시도
               </Button>
             }
@@ -186,7 +192,7 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                 variant="contained"
                 color="primary"
                 size="sm"
-                className="flex items-center gap-1.5"
+                className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
               >
                 <Plus size={16} className="shrink-0" aria-hidden="true" />
                 <span className="whitespace-nowrap">플로 추가</span>
@@ -219,7 +225,7 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                 <div className="mt-2 flex items-center justify-end gap-1 px-1">
                   <Link
                     href={`/products/${slug}/flows/${flow.id}/edit`}
-                    className="inline-flex min-h-[28px] min-w-[28px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none"
+                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
                     title="플로 수정"
                     aria-label={`${flow.title} 플로 수정`}
                   >
@@ -229,7 +235,7 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                     type="button"
                     onClick={() => handleDelete(flow.id)}
                     disabled={deletingId !== null}
-                    className="inline-flex min-h-[28px] min-w-[28px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none"
+                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-600/60"
                     title={deletingId === flow.id ? '삭제 중...' : '플로 삭제'}
                     aria-label={deletingId === flow.id ? `${flow.title} 삭제 중` : `${flow.title} 플로 삭제`}
                   >

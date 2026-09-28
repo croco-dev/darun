@@ -161,7 +161,7 @@ const View = ({
                 id="flow-platform"
                 value={platform ?? ''}
                 onChange={event => onPlatformChange(event.currentTarget.value)}
-                className="rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+                className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-dark-900/60"
               >
                 <option value="">전체</option>
                 {VISUAL_PLATFORM_OPTIONS.map(option => (
@@ -179,7 +179,7 @@ const View = ({
                 id="flow-type"
                 value={flowType ?? ''}
                 onChange={event => onFlowTypeChange(event.currentTarget.value)}
-                className="rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+                className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-dark-900/60"
               >
                 <option value="">전체</option>
                 {VISUAL_FLOW_TYPE_OPTIONS.map(option => (
@@ -192,9 +192,17 @@ const View = ({
             {product !== null && (
               <div className="flex flex-col gap-1.5">
                 <span className="text-sm font-semibold text-dark-700">서비스 플로 필터</span>
-                <Button variant="shadow" color="primary" size="sm" onClick={() => onClearFilters()}>
+                <Button
+                  variant="shadow"
+                  color="primary"
+                  size="sm"
+                  onClick={() => onClearFilters()}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
+                >
                   <span className="max-w-48 truncate">{product}</span>
-                  <span aria-hidden="true">×</span>
+                  <span aria-hidden="true" className="ml-1 font-bold">
+                    ×
+                  </span>
                   <span className="sr-only">서비스 필터 해제</span>
                 </Button>
               </div>
@@ -204,8 +212,12 @@ const View = ({
 
         {queryLengthError ? (
           <div role="alert" className="rounded-2xl border border-dark-200 bg-surface-50 p-6 text-center">
-            <p className="text-sm font-semibold text-dark-900">검색어는 100자 이하로 입력해 주세요.</p>
-            <p className="mt-1 text-sm text-dark-500">입력을 줄인 뒤 다시 검색해 주세요.</p>
+            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+              검색어는 100자 이하로 입력해 주세요.
+            </p>
+            <p className="mt-1 text-sm text-dark-500 break-words [word-break:keep-all]">
+              입력을 줄인 뒤 다시 검색해 주세요.
+            </p>
           </div>
         ) : loading ? (
           <FlowCardSkeletons />
@@ -260,7 +272,7 @@ const View = ({
             {hasNextPage && (
               <div className="flex flex-col items-center gap-2">
                 {loadMoreError && (
-                  <p role="alert" className="text-sm text-dark-500">
+                  <p role="alert" className="text-sm text-dark-500 break-words [word-break:keep-all]">
                     더 불러오지 못했어요. 아래 버튼으로 다시 시도해 주세요.
                   </p>
                 )}

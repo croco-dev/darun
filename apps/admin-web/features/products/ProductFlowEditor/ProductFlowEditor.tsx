@@ -222,7 +222,10 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
       description: description.trim(),
       platform,
       flowType,
-      steps: steps.map(step => ({ screenshotId: step.screenshotId, caption: step.caption.trim() })),
+      steps: steps.map(step => ({
+        screenshotId: step.screenshotId,
+        caption: step.caption.trim(),
+      })),
     };
     setSaving(true);
     try {
@@ -230,7 +233,9 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
         await updateFlow({ variables: { input: { id: flowId, ...input } } });
         onSaved(flowId);
       } else {
-        const result = await createFlow({ variables: { input: { productSlug: slug, ...input } } });
+        const result = await createFlow({
+          variables: { input: { productSlug: slug, ...input } },
+        });
         const newId = result.data?.createProductFlow?.flow?.id;
         onSaved(newId ?? '');
       }
@@ -260,7 +265,13 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
         title="플로를 불러오지 못했습니다."
         error={flowResult.error}
         action={
-          <Button type="button" variant="contained" color="primary" onClick={() => flowResult.refetch()}>
+          <Button
+            type="button"
+            variant="contained"
+            color="primary"
+            className="active:scale-[0.98] motion-reduce:transform-none"
+            onClick={() => flowResult.refetch()}
+          >
             다시 시도
           </Button>
         }
@@ -344,15 +355,15 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
             color="primary"
             size="sm"
             onClick={() => setPickMode(current => !current)}
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
             disabled={steps.length >= MAX_STEPS || selectableScreenshots.length === 0}
           >
-            <Plus size={16} />
+            <Plus size={16} className="shrink-0" aria-hidden="true" />
             단계 추가
           </Button>
         </div>
         {steps.length < MIN_STEPS && (
-          <p className="text-sm text-dark-500" role="status">
+          <p className="text-sm text-dark-500 break-words [word-break:keep-all]" role="status">
             플로는 {MIN_STEPS}단계 이상으로 구성해 주세요.
           </p>
         )}
@@ -370,7 +381,7 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
               </button>
             ))}
             {selectableScreenshots.length === 0 && (
-              <p className="col-span-full py-2 text-center text-sm text-dark-500">
+              <p className="col-span-full py-2 text-center text-sm text-dark-500 break-words [word-break:keep-all]">
                 이 플랫폼에서 추가로 사용할 수 있는 스크린샷이 없습니다.
               </p>
             )}
@@ -387,7 +398,7 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
                 <div className="flex items-center gap-3 sm:w-48 sm:shrink-0">
                   {shot ? <StepImage src={shot.imageUrl} alt={shot.imageAlt || '단계 스크린샷'} /> : null}
                   <div className="flex min-w-0 flex-col">
-                    <span className="text-xs font-semibold text-dark-400">단계 {index + 1}</span>
+                    <span className="text-xs font-semibold text-dark-400 tabular-nums">단계 {index + 1}</span>
                     <span className="truncate text-sm font-medium text-dark-900">
                       {shot?.title ?? shot?.imageAlt ?? '스크린샷'}
                     </span>
@@ -407,30 +418,30 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
                     type="button"
                     onClick={() => moveStep(index, -1)}
                     disabled={index === 0}
-                    className="rounded p-1.5 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 disabled:opacity-40"
+                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1.5 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 disabled:opacity-40 disabled:pointer-events-none"
                     title="위로 이동"
                     aria-label={`단계 ${index + 1} 위로 이동`}
                   >
-                    <ArrowUp size={16} />
+                    <ArrowUp size={16} className="shrink-0" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
                     onClick={() => moveStep(index, 1)}
                     disabled={index === steps.length - 1}
-                    className="rounded p-1.5 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 disabled:opacity-40"
+                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1.5 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 disabled:opacity-40 disabled:pointer-events-none"
                     title="아래로 이동"
                     aria-label={`단계 ${index + 1} 아래로 이동`}
                   >
-                    <ArrowDown size={16} />
+                    <ArrowDown size={16} className="shrink-0" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
                     onClick={() => removeStep(index)}
-                    className="rounded p-1.5 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600"
+                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1.5 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-600/60"
                     title="단계 제거"
                     aria-label={`단계 ${index + 1} 제거`}
                   >
-                    <X size={16} />
+                    <X size={16} className="shrink-0" aria-hidden="true" />
                   </button>
                 </div>
               </li>
@@ -440,7 +451,14 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
       </div>
 
       <div className="flex items-center justify-end gap-2">
-        <Button type="button" variant="text" color="secondary" onClick={onCancel} disabled={saving}>
+        <Button
+          type="button"
+          variant="text"
+          color="secondary"
+          className="active:scale-[0.98] motion-reduce:transform-none"
+          onClick={onCancel}
+          disabled={saving}
+        >
           취소
         </Button>
         <Button
@@ -449,12 +467,12 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
           color="primary"
           onClick={handleSave}
           disabled={!canSave}
-          className="flex items-center gap-1.5"
+          className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
         >
           {saving ? (
-            <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-label="저장 중" />
+            <Loader2 size={16} className="animate-spin motion-reduce:animate-none shrink-0" aria-label="저장 중" />
           ) : (
-            <Check size={16} />
+            <Check size={16} className="shrink-0" aria-hidden="true" />
           )}
           {isEdit ? '플로 수정' : '플로 등록'}
         </Button>

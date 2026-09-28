@@ -36,7 +36,7 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
 
       <AdminModal opened={isPreviewOpen} onClose={closePreview} title="AI 소개 초안 검토" maxWidth="max-w-2xl">
         <div className="space-y-4">
-          <p className="text-xs text-dark-500">
+          <p className="text-xs text-dark-500 break-words [word-break:keep-all]">
             생성된 AI 소개 초안입니다. 사실에 부합하는지 검토 후 [적용하기]를 눌러 제품 소개로 반영하세요.
           </p>
 

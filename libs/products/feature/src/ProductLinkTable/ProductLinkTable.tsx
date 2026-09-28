@@ -134,7 +134,13 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-end gap-0">
-          <Button type="button" variant="base" size="sm" onClick={() => onEdit(link)} className="shrink-0">
+          <Button
+            type="button"
+            variant="base"
+            size="sm"
+            onClick={() => onEdit(link)}
+            className="shrink-0 active:scale-[0.98] motion-reduce:transform-none"
+          >
             <span className="inline-flex items-center gap-2">
               <Pencil className="h-4 w-4 shrink-0" aria-hidden="true" />
               정보 수정
@@ -158,7 +164,13 @@ export const ProductLinkTable = bind(
         <AdminErrorState
           error={error}
           action={
-            <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+            <Button
+              type="button"
+              onClick={() => refetch()}
+              variant="contained"
+              color="primary"
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
               다시 시도
             </Button>
           }
@@ -202,7 +214,7 @@ export const ProductLinkTable = bind(
           {link ? (
             <EditProductLinkItem slug={slug} link={link} onSubmit={closeEditModal} onCancel={closeEditModal} />
           ) : (
-            <div className="py-4 text-center text-sm text-dark-500">
+            <div className="py-4 text-center text-sm text-dark-500 break-words [word-break:keep-all]">
               오류가 발생했습니다. 새로고침 후 다시 시도해 주세요.
             </div>
           )}

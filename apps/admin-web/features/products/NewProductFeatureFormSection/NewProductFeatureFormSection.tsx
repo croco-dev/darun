@@ -42,7 +42,7 @@ export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureF
                 className={`absolute right-2 top-1/2 -translate-y-1/2 ${loading ? 'pointer-events-none opacity-50' : ''}`}
               >
                 <summary
-                  className="list-none inline-flex items-center gap-1.5 justify-center cursor-pointer rounded-lg border border-dark-200 bg-dark-100 hover:bg-dark-150 px-2.5 py-1 text-xs font-medium text-dark-800 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
+                  className="list-none inline-flex items-center gap-1.5 justify-center cursor-pointer rounded-lg border border-dark-200 bg-dark-100 hover:bg-dark-150 px-2.5 py-1 text-xs font-medium text-dark-800 select-none min-h-[32px] active:scale-95 motion-reduce:transform-none focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
                   aria-label="이모지 선택기 열기"
                 >
                   <Smile size={13} className="shrink-0 text-dark-500" aria-hidden="true" />

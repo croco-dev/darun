@@ -25,7 +25,9 @@ function StepImage({ src, alt }: { src: string; alt: string }) {
         className="flex min-h-72 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dark-200 bg-surface-100 text-dark-400"
       >
         <ImageOff size={32} className="shrink-0" aria-hidden="true" />
-        <span className="text-sm text-dark-500">이미지를 불러올 수 없어요. 다른 단계로 이동해 보세요.</span>
+        <span className="text-sm text-dark-500 break-words [word-break:keep-all]">
+          이미지를 불러올 수 없어요. 다른 단계로 이동해 보세요.
+        </span>
       </div>
     );
   }
@@ -230,11 +232,13 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             <figure className="flex flex-col gap-2">
               <StepImage src={activeStep.screenshot.imageUrl} alt={activeStep.screenshot.imageAlt} />
               <figcaption className="flex flex-col gap-1 text-sm text-dark-600">
-                <span className="text-xs font-bold text-dark-400">단계 {activeStepNumber}</span>
-                <span className="font-medium text-dark-800">
+                <span className="text-xs font-bold tabular-nums text-dark-400">단계 {activeStepNumber}</span>
+                <span className="font-medium text-dark-800 break-words [word-break:keep-all]">
                   {activeStep.screenshot.title ?? activeStep.screenshot.imageAlt}
                 </span>
-                {activeStep.caption.length > 0 && <span>{activeStep.caption}</span>}
+                {activeStep.caption.length > 0 && (
+                  <span className="break-words [word-break:keep-all]">{activeStep.caption}</span>
+                )}
               </figcaption>
             </figure>
           )}
@@ -252,7 +256,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                       type="button"
                       onClick={() => goToStep(stepNumber)}
                       aria-current={isActive ? 'step' : undefined}
-                      className={`flex shrink-0 flex-col items-center gap-1 rounded-lg border p-1.5 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transform-none motion-reduce:transition-none ${
+                      className={`flex min-h-[44px] shrink-0 flex-col items-center gap-1 rounded-lg border p-1.5 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 motion-reduce:transform-none motion-reduce:transition-none ${
                         isActive ? 'border-dark-900 bg-surface-100' : 'border-dark-150 bg-white hover:border-dark-300'
                       }`}
                     >

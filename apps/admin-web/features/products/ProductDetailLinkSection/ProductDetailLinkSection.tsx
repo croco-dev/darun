@@ -14,7 +14,14 @@ export const ProductDetailLinkSection = ({ slug }: ProductDetailLinkSectionProps
   <AdminPanel>
     <AdminSectionHeader
       rightSide={
-        <Button as={Link} href={`/products/${slug}/links/new`} variant="contained" color="primary" size="sm">
+        <Button
+          as={Link}
+          href={`/products/${slug}/links/new`}
+          variant="contained"
+          color="primary"
+          size="sm"
+          className="active:scale-[0.98] motion-reduce:transform-none"
+        >
           <span className="whitespace-nowrap">새 링크 추가</span>
         </Button>
       }

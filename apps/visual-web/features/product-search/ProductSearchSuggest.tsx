@@ -116,7 +116,7 @@ export function ProductSearchSuggest({
               id={`${inputId}-suggest-option-${index}`}
               role="option"
               aria-selected={index === activeIndex}
-              className={`flex cursor-pointer items-center gap-2.5 px-3.5 py-2.5 text-sm transition-colors ${
+              className={`flex min-h-[44px] cursor-pointer items-center gap-2.5 px-3.5 py-2.5 text-sm select-none transition-colors ${
                 index === activeIndex ? 'bg-surface-100 text-dark-900' : 'text-dark-700 hover:bg-surface-50'
               }`}
               onMouseEnter={() => setActiveIndex(index)}
@@ -128,7 +128,7 @@ export function ProductSearchSuggest({
               <img
                 src={suggestion.logoUrl || DEFAULT_ICON}
                 alt=""
-                className="size-6 rounded-md object-contain"
+                className="size-6 shrink-0 rounded-md object-contain"
                 onError={event => {
                   const img = event.currentTarget;
                   if (img.src !== DEFAULT_ICON) {
@@ -141,7 +141,7 @@ export function ProductSearchSuggest({
           ))}
         </ul>
       ) : showLoading ? (
-        <div className="rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-400 shadow-lg">
+        <div className="flex min-h-[44px] items-center rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-400 shadow-lg select-none">
           검색 중...
         </div>
       ) : null}

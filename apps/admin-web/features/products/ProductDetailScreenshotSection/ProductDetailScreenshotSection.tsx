@@ -288,10 +288,25 @@ function ScreenshotMetadataEditor({
         </select>
       </label>
       <div className="flex items-center gap-2">
-        <Button type="submit" size="sm" variant="contained" color="primary" disabled={isSubmitDisabled}>
+        <Button
+          type="submit"
+          size="sm"
+          variant="contained"
+          color="primary"
+          disabled={isSubmitDisabled}
+          className="active:scale-[0.98] motion-reduce:transform-none"
+        >
           {isSaving ? '저장 중...' : '저장'}
         </Button>
-        <Button type="button" size="sm" variant="text" color="primary" onClick={onClose} disabled={isSaving}>
+        <Button
+          type="button"
+          size="sm"
+          variant="text"
+          color="primary"
+          onClick={onClose}
+          disabled={isSaving}
+          className="active:scale-[0.98] motion-reduce:transform-none"
+        >
           취소
         </Button>
       </div>
@@ -366,7 +381,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
             variant="contained"
             color="primary"
             size="sm"
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
           >
             <Plus size={16} className="shrink-0" aria-hidden="true" />
             <span className="whitespace-nowrap">스크린샷 추가</span>
@@ -380,7 +395,13 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
           <AdminErrorState
             error={error}
             action={
-              <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+              <Button
+                type="button"
+                onClick={() => refetch()}
+                variant="contained"
+                color="primary"
+                className="active:scale-[0.98] motion-reduce:transform-none"
+              >
                 다시 시도
               </Button>
             }
@@ -396,7 +417,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                 variant="contained"
                 color="primary"
                 size="sm"
-                className="flex items-center gap-1.5"
+                className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
               >
                 <Plus size={16} className="shrink-0" aria-hidden="true" />
                 <span className="whitespace-nowrap">스크린샷 추가</span>
@@ -428,7 +449,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                       type="button"
                       onClick={() => setEditingId(current => (current === screenshot.id ? null : screenshot.id))}
                       disabled={deletingId !== null}
-                      className="inline-flex min-h-[28px] min-w-[28px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 disabled:opacity-50 motion-reduce:transform-none"
+                      className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 disabled:opacity-50 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
                       title={editingId === screenshot.id ? '메타데이터 편집 닫기' : '메타데이터 수정'}
                       aria-label={editingId === screenshot.id ? '메타데이터 편집 닫기' : '메타데이터 수정'}
                       aria-expanded={editingId === screenshot.id}
@@ -439,7 +460,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                       type="button"
                       onClick={() => handleDelete(screenshot.id)}
                       disabled={deletingId !== null}
-                      className="inline-flex min-h-[28px] min-w-[28px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none"
+                      className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-600/60"
                       title={deletingId === screenshot.id ? '삭제 중...' : '스크린샷 삭제'}
                       aria-label={deletingId === screenshot.id ? '삭제 중' : '스크린샷 삭제'}
                     >

@@ -24,7 +24,7 @@ function DetailImage({ src, alt, onError }: { src: string; alt: string; onError:
         className="flex min-h-72 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dark-200 bg-surface-100 text-dark-400"
       >
         <ImageOff size={32} className="shrink-0" aria-hidden="true" />
-        <span className="text-sm text-dark-500">이미지를 불러올 수 없어요.</span>
+        <span className="text-sm text-dark-500 break-words [word-break:keep-all]">이미지를 불러올 수 없어요.</span>
       </div>
     );
   }
@@ -115,7 +115,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             {displayTitle}
           </h1>
           <p className="flex flex-wrap items-center gap-2 text-sm text-dark-500">
-            <span className="font-medium text-dark-700">{product.name}</span>
+            <span className="max-w-xs truncate font-medium text-dark-700">{product.name}</span>
             <span aria-hidden="true" className="text-dark-300">
               ·
             </span>
@@ -194,7 +194,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           >
             {displayTitle}
           </h2>
-          <div className="max-h-[calc(100dvh-9rem)] w-full overflow-y-auto">
+          <div className="max-h-[calc(100dvh-9rem)] w-full overflow-y-auto overscroll-contain">
             <img src={imageUrl} alt={imageAlt} className="mx-auto max-w-full rounded-lg object-contain" />
           </div>
           <Button

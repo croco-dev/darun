@@ -60,11 +60,24 @@ export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit,
         </AdminField>
         <AdminActions>
           {onCancel && (
-            <Button type="button" variant="contained" color="secondary" onClick={onCancel} disabled={loading}>
+            <Button
+              type="button"
+              variant="contained"
+              color="secondary"
+              className="active:scale-[0.98] motion-reduce:transform-none"
+              onClick={onCancel}
+              disabled={loading}
+            >
               취소
             </Button>
           )}
-          <Button type="submit" variant="contained" color="primary" disabled={loading}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            className="active:scale-[0.98] motion-reduce:transform-none"
+            disabled={loading}
+          >
             {loading ? '저장 중...' : '저장'}
           </Button>
         </AdminActions>

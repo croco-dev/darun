@@ -74,7 +74,10 @@ export function ModelSelectModal({
         const proxyRes = await fetch('/api/llm/models', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: normalizedEndpoint, apiKey: apiKey?.trim() || undefined }),
+          body: JSON.stringify({
+            endpoint: normalizedEndpoint,
+            apiKey: apiKey?.trim() || undefined,
+          }),
         });
 
         if (proxyRes.ok) {
@@ -86,7 +89,9 @@ export function ModelSelectModal({
 
       // 2. If proxy didn't return data, fallback to direct fetch
       if (!data) {
-        const directHeaders: Record<string, string> = { Accept: 'application/json' };
+        const directHeaders: Record<string, string> = {
+          Accept: 'application/json',
+        };
         if (apiKey?.trim()) {
           directHeaders['Authorization'] = `Bearer ${apiKey.trim()}`;
         }
@@ -207,7 +212,7 @@ export function ModelSelectModal({
               type="button"
               onClick={() => void fetchModels()}
               disabled={isLoading}
-              className="flex items-center gap-1 text-dark-700 hover:text-dark-900 font-medium px-2 py-0.5 rounded hover:bg-dark-200 transition disabled:opacity-50 select-none"
+              className="flex items-center gap-1 text-dark-700 hover:text-dark-900 font-medium px-2 py-0.5 rounded hover:bg-dark-200 transition disabled:opacity-50 select-none active:scale-95 motion-reduce:transform-none"
             >
               <RefreshCw
                 className={`w-3.5 h-3.5 shrink-0 ${isLoading ? 'animate-spin motion-reduce:animate-none' : ''}`}
@@ -261,7 +266,7 @@ export function ModelSelectModal({
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${
+                className={`min-h-[32px] inline-flex items-center text-xs px-2.5 py-1 rounded-full border transition font-medium select-none active:scale-95 motion-reduce:transform-none ${
                   isSelected
                     ? 'bg-dark-900 text-white border-dark-900'
                     : 'bg-white hover:bg-surface-100 text-dark-700 border-dark-200'
@@ -305,7 +310,7 @@ export function ModelSelectModal({
               <button
                 type="button"
                 onClick={() => void fetchModels()}
-                className="mt-2 text-xs font-medium text-cherry-900 bg-cherry-100 hover:bg-cherry-200 px-2.5 py-1 rounded transition"
+                className="mt-2 text-xs font-medium text-cherry-900 bg-cherry-100 hover:bg-cherry-200 px-2.5 py-1 rounded transition active:scale-95 motion-reduce:transform-none"
               >
                 다시 시도
               </button>
@@ -317,7 +322,7 @@ export function ModelSelectModal({
         {!isLoading && !error && (
           <div className="max-h-[48vh] overflow-y-auto space-y-2 pr-1">
             {filteredModels.length === 0 ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-2 text-center text-sm text-dark-500">
+              <div className="py-12 flex flex-col items-center justify-center gap-2 text-center text-sm text-dark-500 break-words [word-break:keep-all]">
                 <p>{models.length === 0 ? '불러온 모델이 없습니다.' : '검색 조건과 일치하는 모델이 없습니다.'}</p>
                 {(searchQuery || selectedCategory !== 'all') && (
                   <button

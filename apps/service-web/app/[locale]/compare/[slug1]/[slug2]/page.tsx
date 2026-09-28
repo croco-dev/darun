@@ -172,7 +172,7 @@ export default async function ComparePage({ params }: Props) {
             </div>
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-dark-200 bg-white font-black text-3xs md:text-xs text-dark-700 shadow-md ring-4 ring-surface-50/60 select-none"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full border border-dark-200 bg-white font-black text-3xs md:text-xs text-dark-700 shadow-md ring-4 ring-surface-50/60 select-none motion-reduce:transform-none"
             >
               VS
             </div>
@@ -323,10 +323,10 @@ function CompareRow({
         isLast ? '' : 'border-b border-dark-150/70'
       }`}
     >
-      <h3 className="mb-2 text-xs font-bold tracking-tight text-dark-500">{label}</h3>
+      <h3 className="mb-2 text-xs font-bold tracking-tight text-dark-500 break-words [word-break:keep-all]">{label}</h3>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-150/70">
         <div className="md:pr-5">
-          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
+          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden select-none max-w-full truncate">
             {colLabel1}
           </div>
           <div
@@ -351,7 +351,7 @@ function CompareRow({
           </div>
         </div>
         <div className="border-t border-dark-100/70 pt-2.5 md:border-0 md:pt-0 md:pl-5">
-          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden">
+          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden select-none max-w-full truncate">
             {colLabel2}
           </div>
           <div

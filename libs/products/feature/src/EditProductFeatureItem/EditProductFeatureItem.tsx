@@ -43,10 +43,10 @@ export const EditProductFeatureItem = bind(useEditProductFeatureItem, ({ form, s
             />
             <details ref={detailsRef} className="absolute right-2 top-1/2 -translate-y-1/2">
               <summary
-                className="list-none inline-flex items-center justify-center cursor-pointer rounded-lg border border-dark-200 bg-dark-100 hover:bg-dark-150 p-1.5 text-xs select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
+                className="list-none inline-flex items-center justify-center cursor-pointer rounded-lg border border-dark-200 bg-dark-100 hover:bg-dark-150 p-1.5 text-xs select-none min-h-[32px] min-w-[32px] active:scale-95 motion-reduce:transform-none focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
                 aria-label="이모지 선택기 열기"
               >
-                <Smile size={16} className="text-dark-700" />
+                <Smile size={16} className="text-dark-700 shrink-0" aria-hidden="true" />
               </summary>
               <div className="absolute right-0 top-full z-10 mt-2 overflow-hidden rounded-xl border border-dark-200 bg-white shadow-lg">
                 <Picker
@@ -84,11 +84,24 @@ export const EditProductFeatureItem = bind(useEditProductFeatureItem, ({ form, s
 
       <AdminActions>
         {onCancel && (
-          <Button type="button" variant="contained" color="secondary" onClick={onCancel} disabled={loading}>
+          <Button
+            type="button"
+            variant="contained"
+            color="secondary"
+            className="active:scale-[0.98] motion-reduce:transform-none"
+            onClick={onCancel}
+            disabled={loading}
+          >
             취소
           </Button>
         )}
-        <Button type="submit" variant="contained" color="primary" disabled={loading}>
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          className="active:scale-[0.98] motion-reduce:transform-none"
+          disabled={loading}
+        >
           {loading ? '저장 중...' : '저장'}
         </Button>
       </AdminActions>

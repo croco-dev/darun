@@ -17,7 +17,13 @@ export const ProductFeatureTable = bind(
         <AdminErrorState
           error={error}
           action={
-            <Button type="button" onClick={() => refetch()} variant="contained" color="primary">
+            <Button
+              type="button"
+              onClick={() => refetch()}
+              variant="contained"
+              color="primary"
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
               다시 시도
             </Button>
           }
@@ -46,7 +52,7 @@ export const ProductFeatureTable = bind(
             {features.map(feature => (
               <tr key={feature.id} className="border-b border-dark-200 transition hover:bg-surface-100 last:border-b-0">
                 <td className="border-r border-dark-200 px-4 py-3 text-center">
-                  <span className="p-1 text-base font-medium text-dark-900">{feature.emoji}</span>
+                  <span className="p-1 text-base font-medium text-dark-900 select-none">{feature.emoji}</span>
                 </td>
                 <td className="border-r border-dark-200 px-4 py-3">
                   <div className="truncate text-sm font-medium text-dark-900" title={feature.name ?? undefined}>
@@ -65,7 +71,7 @@ export const ProductFeatureTable = bind(
                       variant="contained"
                       color="secondary"
                       size="sm"
-                      className="gap-2 shrink-0"
+                      className="gap-2 shrink-0 active:scale-[0.98] motion-reduce:transform-none"
                     >
                       <Pencil size={16} className="shrink-0" aria-hidden="true" />
                       정보 수정
