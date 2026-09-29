@@ -48,6 +48,30 @@ export const typescriptEslintRecommendedConfigs = tseslint.configs.recommended.m
 
 export const sourceFilePatterns = ['**/*.{js,mjs,cjs,jsx,ts,tsx}'];
 
+export const importXOrderRule = [
+  'error',
+  {
+    groups: ['internal', 'external', 'builtin', 'parent', 'sibling'],
+    pathGroups: [
+      {
+        pattern: '@*/**',
+        group: 'internal',
+        position: 'before',
+      },
+      {
+        pattern: '@*/**',
+        group: 'external',
+        position: 'after',
+      },
+    ],
+    pathGroupsExcludedImportTypes: [],
+    alphabetize: {
+      order: 'asc',
+      caseInsensitive: true,
+    },
+  },
+];
+
 export const baseSourceConfig = {
   files: sourceFilePatterns,
   languageOptions: {
@@ -56,7 +80,7 @@ export const baseSourceConfig = {
       ecmaFeatures: {
         jsx: true,
       },
-      ecmaVersion: 2018,
+      ecmaVersion: 2022,
       sourceType: 'module',
     },
   },
@@ -82,7 +106,7 @@ export const baseSourceConfig = {
     'import-x/no-named-as-default': ['off'],
     'import-x/no-relative-packages': ['off'],
     'import-x/no-self-import': ['error'],
-    'import-x/order': 'off',
+    'import-x/order': importXOrderRule,
     'import-x/prefer-default-export': ['off'],
     '@typescript-eslint/consistent-type-imports': 'off',
     '@typescript-eslint/ban-types': 'off',

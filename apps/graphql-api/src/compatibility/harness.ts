@@ -15,11 +15,10 @@ const HARNESS_TOKEN = 'compatibility-harness/token';
 Container.set(HARNESS_TOKEN, { ready: true });
 
 function getHarnessToken(): { ready: boolean } | undefined {
-  try {
-    return Container.get<{ ready: boolean }>(HARNESS_TOKEN);
-  } catch {
-    return undefined;
-  }
+  // getOptional returns undefined only for resolution errors
+  // (ServiceNotFoundError, CannotInstantiateValueError) and rethrows the rest,
+  // so unexpected DI failures are never swallowed.
+  return Container.getOptional<{ ready: boolean }>(HARNESS_TOKEN);
 }
 
 function runWithRequestContext<T>(requestId: string, fn: () => T): T {

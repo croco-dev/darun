@@ -116,9 +116,13 @@ export function resolveLlmFormDefaults(
 
 function formatUpdatedAt(dateStr?: string | null): string | null {
   if (!dateStr) return null;
-  const d = dayjs(dateStr);
+  // Backend ISO strings may lack an explicit zone; treat zone-less strings as UTC,
+  // then shift the instant to KST (+09:00). dayjs has no timezone plugin here.
+  const trimmed = dateStr.trim();
+  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(trimmed);
+  const d = dayjs(hasZone ? trimmed : `${trimmed.replace(' ', 'T')}Z`);
   if (!d.isValid()) return null;
-  return d.format('YYYY-MM-DD HH:mm:ss');
+  return d.add(9, 'hour').format('YYYY-MM-DD HH:mm:ss');
 }
 
 function LlmSettingForm({

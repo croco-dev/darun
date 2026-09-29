@@ -86,7 +86,7 @@ function FlowCoverImage({ src, alt }: { src?: string; alt?: string }) {
   return (
     <img
       src={src}
-      alt={alt ?? ''}
+      alt={alt || '플로 커버 이미지'}
       className="aspect-video w-full rounded-md object-cover"
       onError={() => setFailedSrc(src)}
     />
@@ -215,7 +215,10 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
                 className="group flex flex-col overflow-hidden rounded-lg border border-dark-200 bg-surface-100/30 p-2 transition hover:border-dark-300 hover:shadow-card"
               >
                 <div className="relative">
-                  <FlowCoverImage src={flow.coverImageUrl} alt={flow.coverImageAlt || '플로 커버 화면'} />
+                  <FlowCoverImage
+                    src={flow.coverImageUrl}
+                    alt={flow.coverImageAlt || (flow.title ? `${flow.title} 플로 커버` : '플로 커버 화면')}
+                  />
                   <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-dark-900/80 px-2 py-0.5 text-xs font-medium text-surface-50">
                     <Layers size={12} className="shrink-0" aria-hidden="true" />
                     <span className="tabular-nums">{flow.stepCount}단계</span>

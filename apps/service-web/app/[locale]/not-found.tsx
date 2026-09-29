@@ -3,16 +3,17 @@ import { Layout } from '@darun/ui-layout';
 import { Metadata } from 'next';
 import { getLocale } from 'next-intl/server';
 import { Link } from '../../i18n/navigation';
+import { normalizeLocale } from '../../lib/seo/url';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
+  const locale = normalizeLocale(await getLocale());
   return {
     title: locale === 'en' ? 'Page Not Found - Darun' : '페이지를 찾을 수 없습니다 - 다른',
   };
 }
 
 export default async function NotFound() {
-  const locale = await getLocale();
+  const locale = normalizeLocale(await getLocale());
   const isKo = locale === 'ko';
 
   return (

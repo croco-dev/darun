@@ -32,20 +32,36 @@ describe('Cursor', () => {
     expect(Cursor.decode(cursor, ['id'] as const)).toEqual({ id: '' });
   });
 
-  it('decodes legacy unsigned cursor (backward compatibility)', () => {
+  it('rejects legacy unsigned cursor by default', () => {
     const legacyCursor = Buffer.from('id__KEY_DELIMITER__product-1').toString('base64');
 
-    expect(Cursor.decode(legacyCursor, ['id'] as const)).toEqual({ id: 'product-1' });
+    expect(() => Cursor.decode(legacyCursor, ['id'] as const)).toThrow('pagination/invalid-cursor');
   });
 
-  it('decodes legacy unsigned cursor with multiple keys', () => {
-    const legacyCursor = Buffer.from(
-      'id__KEY_DELIMITER__product-1__CURSOR_DELIMITER__createdAt__KEY_DELIMITER__2026-01-02T03:04:05.000Z'
-    ).toString('base64');
+  it('decodes legacy unsigned cursor only when explicitly opted in', () => {
+    process.env.ALLOW_LEGACY_CURSOR = 'true';
+    try {
+      const legacyCursor = Buffer.from('id__KEY_DELIMITER__product-1').toString('base64');
 
-    expect(Cursor.decode(legacyCursor, ['id', 'createdAt'] as const)).toEqual({
-      id: 'product-1',
-      createdAt: '2026-01-02T03:04:05.000Z',
-    });
+      expect(Cursor.decode(legacyCursor, ['id'] as const)).toEqual({ id: 'product-1' });
+    } finally {
+      delete process.env.ALLOW_LEGACY_CURSOR;
+    }
+  });
+
+  it('decodes legacy unsigned cursor with multiple keys when explicitly opted in', () => {
+    process.env.ALLOW_LEGACY_CURSOR = 'true';
+    try {
+      const legacyCursor = Buffer.from(
+        'id__KEY_DELIMITER__product-1__CURSOR_DELIMITER__createdAt__KEY_DELIMITER__2026-01-02T03:04:05.000Z'
+      ).toString('base64');
+
+      expect(Cursor.decode(legacyCursor, ['id', 'createdAt'] as const)).toEqual({
+        id: 'product-1',
+        createdAt: '2026-01-02T03:04:05.000Z',
+      });
+    } finally {
+      delete process.env.ALLOW_LEGACY_CURSOR;
+    }
   });
 });

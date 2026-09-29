@@ -1,7 +1,7 @@
-import baseConfig from "./libs/shared/utils-eslint-config/eslint.config.js";
-import { reactSourceConfig } from "./libs/shared/utils-eslint-config/react.js";
 import boundaries from "eslint-plugin-boundaries";
 import reactCompiler from "eslint-plugin-react-compiler";
+import baseConfig from "./libs/shared/utils-eslint-config/eslint.config.js";
+import { reactSourceConfig } from "./libs/shared/utils-eslint-config/react.js";
 
 const reactFilePatterns = [
   "libs/admin/**/*.{js,mjs,cjs,jsx,ts,tsx}",
@@ -28,6 +28,16 @@ const config = [
   },
   {
     ignores: ["libs/shared/provider-graphql/src/index.ts"],
+  },
+  {
+    // Bare `gql` tagged templates (e.g. in **/documents.ts, **/explorerDocuments.ts,
+    // **/detailDocuments.ts, **/use*.ts(x)) are intentional side-effectful registrations,
+    // not unused expressions. Replaces scattered per-file eslint-disable comments.
+    files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
+    rules: {
+      "no-unused-expressions": ["error", { allowTaggedTemplates: true }],
+      "@typescript-eslint/no-unused-expressions": ["error", { allowTaggedTemplates: true }],
+    },
   },
   {
     plugins: {
@@ -134,6 +144,10 @@ const config = [
     },
     rules: {
       "boundaries/entry-point": ["off"],
+      // TODO: promote to "error" after scoping the rule with `from` so that ordinary
+      // external imports (react, @apollo/client, …) are not flagged. Currently
+      // `default: "disallow"` warns on every external import repo-wide (verified via
+      // `npx eslint` on sample files), so "error" would break lint everywhere.
       // STAGED ROLLOUT: warn for existing violations → error after consumer migration (T4+)
       "boundaries/external": [
         "warn",

@@ -1,4 +1,5 @@
 import { GetAccount } from '@darun/accounts-domain';
+import { GraphQLError } from 'graphql';
 
 export type GraphQLContext = {
   requestId: string;
@@ -47,7 +48,10 @@ export function createGraphQLContext({
     getUserIdOrThrow: async () => {
       const account = await getAccount();
       if (!account) {
-        throw new Error('Unauthorized');
+        // GraphQLError carries extensions.code through Apollo's formatError
+        // (see createServer.ts), so clients receive code UNAUTHENTICATED
+        // instead of a generic internal error.
+        throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
       return account.id;
     },

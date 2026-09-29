@@ -25,9 +25,10 @@ export function createNodeConfig(overrides: UserConfig = {}): UserConfig {
   return {
     ...restOverrides,
     test: {
+      // Keep true so packages without tests yet don't fail the gate.
       passWithNoTests: true,
       environment: 'node',
-      include: ['src/__tests__/**/*.test.ts'],
+      include: ['src/__tests__/**/*.test.ts', 'src/**/*.test.{ts,tsx}'],
       ...testOverrides,
       coverage: {
         ...coverageDefaults,
@@ -42,6 +43,7 @@ export function createJsdomConfig(overrides: UserConfig = {}): UserConfig {
   return {
     ...restOverrides,
     test: {
+      // Keep true so packages without tests yet don't fail the gate.
       passWithNoTests: true,
       environment: 'jsdom',
       include: ['src/__tests__/**/*.test.ts', 'src/**/*.test.tsx'],

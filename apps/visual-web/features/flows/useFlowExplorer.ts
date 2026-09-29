@@ -13,6 +13,22 @@ import { isVisualFlowTypeValue, isVisualPlatformValue } from './flowClassificati
 
 const VISUAL_QUERY_MAX_LENGTH = 100;
 
+function resolveVisualPlatform(value: unknown): VisualPlatform {
+  if (typeof value === 'string' && isVisualPlatformValue(value)) {
+    return value;
+  }
+  console.warn('Unknown VisualPlatform value, falling back to WEB:', value);
+  return 'WEB';
+}
+
+function resolveVisualFlowType(value: unknown): VisualFlowType {
+  if (typeof value === 'string' && isVisualFlowTypeValue(value)) {
+    return value;
+  }
+  console.warn('Unknown VisualFlowType value, falling back to OTHER:', value);
+  return 'OTHER';
+}
+
 export type FlowCard = {
   id: string;
   title: string;
@@ -59,7 +75,7 @@ function readFilterParams(searchParams: URLSearchParams) {
   const rawFlowType = searchParams.get('flowType');
   const rawProduct = searchParams.get('product');
   return {
-    query: rawQuery !== null && rawQuery.length > 0 ? rawQuery : null,
+    query: rawQuery !== null && rawQuery.trim().length > 0 ? rawQuery.trim() : null,
     platform: rawPlatform !== null && isVisualPlatformValue(rawPlatform) ? rawPlatform : null,
     flowType: rawFlowType !== null && isVisualFlowTypeValue(rawFlowType) ? rawFlowType : null,
     product: rawProduct !== null && rawProduct.length > 0 ? rawProduct : null,
@@ -122,13 +138,15 @@ export function useFlowExplorer(): FlowExplorerState {
     if (!node || !cover || !productNode) {
       return [];
     }
+    const platform = resolveVisualPlatform(node.platform);
+    const flowType = resolveVisualFlowType(node.flowType);
     return [
       {
         id: node.id ?? '',
         title: node.title ?? '',
         description: node.description ?? '',
-        platform: (node.platform ?? 'WEB') as VisualPlatform,
-        flowType: (node.flowType ?? 'OTHER') as VisualFlowType,
+        platform,
+        flowType,
         stepCount: node.stepCount ?? 0,
         coverImageUrl: cover.imageUrl ?? '',
         coverImageAlt: cover.imageAlt ?? '',
@@ -209,7 +227,8 @@ export function useFlowExplorer(): FlowExplorerState {
           };
         },
       })
-      .catch(() => {
+      .catch((e: unknown) => {
+        console.error('Failed to load more flows', e);
         setLoadMoreError(true);
       })
       .finally(() => {
@@ -257,7 +276,9 @@ export function useFlowExplorer(): FlowExplorerState {
   };
 
   const retry = () => {
-    observable.refetch().catch(() => undefined);
+    observable.refetch().catch((e: unknown) => {
+      console.error('Failed to refetch flows', e);
+    });
   };
 
   const loading = result.loading && cards.length === 0;

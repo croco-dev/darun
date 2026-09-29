@@ -1,6 +1,6 @@
 const { context } = require('esbuild');
-const { existsSync, readFileSync } = require('fs');
 const { spawn } = require('child_process');
+const { existsSync, readFileSync } = require('fs');
 
 for (const f of ['.env', '.env.local']) {
   if (existsSync(f)) {

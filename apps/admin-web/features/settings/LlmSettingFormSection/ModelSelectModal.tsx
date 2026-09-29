@@ -104,14 +104,22 @@ export function ModelSelectModal({
       }
 
       const rawList: unknown[] =
-        data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown[] }).data)
+        data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown }).data)
           ? (data as { data: unknown[] }).data
           : Array.isArray(data)
             ? data
             : [];
 
       const parsedModels: LlmModelItem[] = rawList
-        .filter((item): item is Record<string, unknown> => item !== null && typeof item === 'object' && 'id' in item)
+        .filter(
+          (item): item is Record<string, unknown> =>
+            item !== null &&
+            typeof item === 'object' &&
+            !Array.isArray(item) &&
+            'id' in item &&
+            (typeof (item as Record<string, unknown>)['id'] === 'string' ||
+              typeof (item as Record<string, unknown>)['id'] === 'number')
+        )
         .map(item => ({
           id: String(item['id']),
           name: typeof item['name'] === 'string' ? item['name'] : undefined,
@@ -247,6 +255,7 @@ export function ModelSelectModal({
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="모델명 또는 모델 ID 검색 (예: gemini, claude, gpt, grok, llama)..."
+            aria-label="모델 검색"
             className="w-full pl-9 pr-9 py-2 rounded-lg border border-dark-200 bg-white text-dark-900 text-sm focus:outline-none focus:ring-2 focus:ring-dark-900/30"
           />
           {searchQuery && (

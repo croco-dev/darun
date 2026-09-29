@@ -130,6 +130,11 @@ export default async function ComparePage({ params }: Props) {
     locale: resolvedParams.locale,
     namespace: 'Compare',
   });
+  const compareTitle = t('title', {
+    name1: product1.name,
+    name2: product2.name,
+  });
+  const isKo = resolvedParams.locale === 'ko';
 
   return (
     <Layout>
@@ -157,10 +162,7 @@ export default async function ComparePage({ params }: Props) {
 
           <div
             role="region"
-            aria-label={t('title', {
-              name1: product1.name,
-              name2: product2.name,
-            })}
+            aria-label={isKo ? `${compareTitle} - 서비스 카드` : `${compareTitle} - Service cards`}
             className="relative grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6"
           >
             <div data-testid="compare-column" className="h-full min-w-0">
@@ -187,10 +189,7 @@ export default async function ComparePage({ params }: Props) {
 
           <div
             role="region"
-            aria-label={t('title', {
-              name1: product1.name,
-              name2: product2.name,
-            })}
+            aria-label={isKo ? `${compareTitle} - 상세 비교표` : `${compareTitle} - Detailed comparison`}
             className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card"
           >
             <div className="sticky top-[61px] z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">

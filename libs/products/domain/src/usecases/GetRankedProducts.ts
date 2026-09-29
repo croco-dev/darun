@@ -1,5 +1,6 @@
 import { Inject, Service } from 'typedi';
 import type { Product } from '../entities/Product';
+import { productInvalidArgs } from '../errors/productError';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
 import type { RankedProductVoteRepository } from '../repositories/RankedProductVoteRepository';
@@ -14,6 +15,7 @@ const INITIAL_RANKING_CANDIDATE_MULTIPLIER = 2;
 const RANKING_CANDIDATE_MULTIPLIER_STEP = 1;
 const MAX_RANKING_CANDIDATE_MULTIPLIER = 5;
 const MAX_RANKING_CANDIDATES = 250;
+const MAX_RANKED_PRODUCTS_LIMIT = 100;
 const LATEST_BUFFER_MULTIPLIER = 2;
 const LATEST_BUFFER_HARD_CAP = 50;
 
@@ -30,6 +32,9 @@ export class GetRankedProducts {
   ) {}
 
   async execute({ limit }: { limit: number }): Promise<Product[]> {
+    if (!Number.isInteger(limit) || limit < 1 || limit > MAX_RANKED_PRODUCTS_LIMIT) {
+      throw productInvalidArgs('limit must be an integer between 1 and 100.');
+    }
     const voteCountByProductId = new Map<string, number>();
     const seenProductIds = new Set<string>();
     const publishedProducts: Product[] = [];
@@ -149,6 +154,10 @@ export class GetRankedProducts {
         return a.id.localeCompare(b.id);
       })
       .slice(0, limit);
+  }
+
+  invalidateProduct(productId: string): void {
+    this.rankingCache.invalidate(productId);
   }
 
   private score(product: Product, voteCountByProductId: ReadonlyMap<string, number>): number {

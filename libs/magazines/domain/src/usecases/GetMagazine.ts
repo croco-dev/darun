@@ -1,7 +1,7 @@
 import { Inject, Service } from "typedi";
+import { magazineInvalidArgs } from "../errors/magazineError";
 import type { MagazineRepository } from "../repositories/MagazineRepository";
 import { MagazineRepositoryToken } from "../repositories/MagazineRepository";
-import { magazineInvalidArgs } from "../errors/magazineError";
 
 @Service()
 export class GetMagazine {

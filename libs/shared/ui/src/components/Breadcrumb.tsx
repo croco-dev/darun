@@ -1,6 +1,6 @@
+import { Link } from '@darun/utils-router';
 import { HTMLAttributes, ReactNode } from 'react';
 
-import { Link } from '@darun/utils-router';
 import { cn } from '../lib/utils';
 import { ChevronRight } from './icons';
 

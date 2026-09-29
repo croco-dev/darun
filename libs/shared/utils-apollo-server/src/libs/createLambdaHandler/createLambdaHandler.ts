@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ApolloServer } from '@apollo/server';
 import { LambdaHandlerOptions } from '@as-integrations/aws-lambda';
 import { handlers, startServerAndCreateLambdaHandler } from '@as-integrations/aws-lambda';

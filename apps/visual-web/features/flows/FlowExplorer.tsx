@@ -25,7 +25,7 @@ function FlowCardGrid({ cards }: { cards: FlowCard[] }) {
             <div className="aspect-[4/3] w-full overflow-hidden bg-surface-100">
               <img
                 src={card.coverImageUrl}
-                alt={card.coverImageAlt}
+                alt={card.coverImageAlt || (card.title ? `${card.title} 플로 커버 이미지` : '플로 커버 이미지')}
                 loading="lazy"
                 className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
               />

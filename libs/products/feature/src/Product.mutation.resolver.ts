@@ -132,7 +132,9 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
     });
 
     return {
-      product: await this.getPublishedProductUseCase.execute({ slug }),
+      // Re-read by id, not slug: the slug could have changed between the two
+      // reads (TOCTOU), returning a different product or a miss.
+      product: await this.getPublishedProductUseCase.execute({ id: product.id }),
     };
   }
 }

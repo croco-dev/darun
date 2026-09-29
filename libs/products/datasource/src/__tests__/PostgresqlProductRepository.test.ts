@@ -3,8 +3,8 @@ import { Product } from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { PostgresqlProductRepository } from '../repositories/PostgresqlProductRepository';
 import { products } from '../entities/ProductSchema';
+import { PostgresqlProductRepository } from '../repositories/PostgresqlProductRepository';
 
 function createMockDb(rows: Record<string, unknown>[]) {
   const orderByMock = vi.fn().mockResolvedValue(rows);

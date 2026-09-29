@@ -4,22 +4,22 @@ pre-commit:
   parallel: true
   commands:
     ts:
-      glob: "*.ts"
+      glob: "**/*.ts"
       run: pnpm eslint --fix --quiet {staged_files}
     tsx:
-      glob: "*.tsx"
+      glob: "**/*.tsx"
       run: pnpm eslint --fix --quiet {staged_files}
     jsx:
-      glob: "*.jsx"
+      glob: "**/*.jsx"
       run: pnpm eslint --fix --quiet {staged_files}
     js:
-      glob: "*.js"
+      glob: "**/*.js"
       run: pnpm eslint --fix --quiet {staged_files}
     mdx:
-      glob: "*.mdx"
+      glob: "**/*.mdx"
       run: pnpm eslint --fix --quiet {staged_files}
     json:
-      glob: "*.json"
+      glob: "**/*.json"
       run: pnpm eslint --fix --quiet {staged_files}
 
 post-merge:

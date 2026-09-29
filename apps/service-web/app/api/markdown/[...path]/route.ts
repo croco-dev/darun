@@ -147,6 +147,44 @@ function safeDecode(value: string): string {
   }
 }
 
+function isNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as Record<string, unknown>;
+  if (err['status'] === 404 || err['statusCode'] === 404 || err['code'] === 404 || err['code'] === 'NOT_FOUND') {
+    return true;
+  }
+  const graphQLErrors = (err['graphQLErrors'] ?? err['graphQlErrors']) as
+    Array<{ extensions?: { code?: unknown } }> | undefined;
+  if (
+    Array.isArray(graphQLErrors) &&
+    graphQLErrors.some(e => e?.extensions?.code === 'NOT_FOUND' || e?.extensions?.code === 404)
+  ) {
+    return true;
+  }
+  const networkError = err['networkError'] as Record<string, unknown> | undefined;
+  if (
+    networkError &&
+    typeof networkError === 'object' &&
+    (networkError['statusCode'] === 404 || networkError['status'] === 404)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function buildErrorMarkdown(locale: PublicLocale): string {
+  const isKo = locale === 'ko';
+  return [
+    `# ${isKo ? '일시적인 오류가 발생했습니다' : 'Something went wrong'}`,
+    '',
+    isKo
+      ? '마크다운 문서를 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      : 'An error occurred while generating the markdown document. Please try again shortly.',
+    '',
+    `- [${isKo ? '홈' : 'Home'}](${absolutePublicUrl(locale, '')})`,
+  ].join('\n');
+}
+
 async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHead: boolean): Promise<NextResponse> {
   const { path = [] } = await props.params;
 
@@ -383,6 +421,9 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
     return createResponse(buildNotFoundMarkdown({ locale }), 404);
   } catch (error) {
     console.error('Error serving markdown representation:', error);
-    return createResponse(buildNotFoundMarkdown({ locale }), 404);
+    if (isNotFoundError(error)) {
+      return createResponse(buildNotFoundMarkdown({ locale }), 404);
+    }
+    return createResponse(buildErrorMarkdown(locale), 500, { noindex: true });
   }
 }
