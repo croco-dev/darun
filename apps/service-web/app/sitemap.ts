@@ -40,14 +40,22 @@ const publishedMagazinesQuery = gql`
 `;
 
 async function fetchAllPublishedProducts(): Promise<SitemapProduct[]> {
+  const allProducts: SitemapProduct[] = [];
   try {
     const client = getClient({ static: true });
-    const allProducts: SitemapProduct[] = [];
     let cursor: string | undefined = undefined;
     const pageSize = 100;
+    const maxPages = 50;
+    let pagesFetched = 0;
     let hasMore = true;
 
     while (hasMore) {
+      if (pagesFetched >= maxPages) {
+        console.warn('Reached max sitemap pages, stopping pagination with partial results.');
+        break;
+      }
+      pagesFetched += 1;
+
       const result = await client.query<{
         publishedProductsForSitemap: SitemapProduct[];
       }>({
@@ -59,17 +67,20 @@ async function fetchAllPublishedProducts(): Promise<SitemapProduct[]> {
       const products: SitemapProduct[] = result.data?.publishedProductsForSitemap ?? [];
       allProducts.push(...products);
 
-      if (products.length < pageSize) {
+      if (products.length === 0) {
         hasMore = false;
       } else {
         cursor = products[products.length - 1].id;
+        if (products.length < pageSize) {
+          hasMore = false;
+        }
       }
     }
 
     return allProducts;
   } catch (error) {
-    console.warn('Failed to fetch published products for sitemap:', error);
-    return [];
+    console.error('Failed to fetch published products for sitemap:', error);
+    return allProducts;
   }
 }
 

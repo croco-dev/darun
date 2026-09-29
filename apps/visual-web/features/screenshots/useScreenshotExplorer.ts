@@ -206,7 +206,8 @@ export function useScreenshotExplorer(): ScreenshotExplorerState {
           };
         },
       })
-      .catch(() => {
+      .catch((e: unknown) => {
+        console.error('Failed to load more screenshots', e);
         setLoadMoreError(true);
       })
       .finally(() => {
@@ -250,11 +251,13 @@ export function useScreenshotExplorer(): ScreenshotExplorerState {
   const onClearFilters = () => {
     setSearchInput('');
     clearSuggestions();
-    navigate(product !== null ? `/?product=${encodeURIComponent(product)}` : '/');
+    navigate('/');
   };
 
   const retry = () => {
-    observable.refetch().catch(() => undefined);
+    observable.refetch().catch((e: unknown) => {
+      console.error('Failed to refetch screenshots', e);
+    });
   };
 
   const loading = result.loading && cards.length === 0;

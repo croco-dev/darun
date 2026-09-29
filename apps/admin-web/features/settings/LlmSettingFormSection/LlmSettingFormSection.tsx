@@ -18,8 +18,8 @@ import {
 import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import dayjs from 'dayjs';
 import { useState } from 'react';
+import { formatAsKst } from '../../../lib/datetime';
 import { ModelSelectModal } from './ModelSelectModal';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -116,9 +116,7 @@ export function resolveLlmFormDefaults(
 
 function formatUpdatedAt(dateStr?: string | null): string | null {
   if (!dateStr) return null;
-  const d = dayjs(dateStr);
-  if (!d.isValid()) return null;
-  return d.format('YYYY-MM-DD HH:mm:ss');
+  return formatAsKst(dateStr, 'YYYY-MM-DD HH:mm:ss');
 }
 
 function LlmSettingForm({

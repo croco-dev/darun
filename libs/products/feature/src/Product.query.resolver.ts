@@ -44,6 +44,18 @@ type ProductWithPreload = ProductWithLocale & {
 
 type PublishedProduct = DomainProduct;
 
+const MAX_LIST_LIMIT = 100;
+const MAX_SITEMAP_LIMIT = 200;
+const MAX_SEARCH_RESULTS = 100;
+
+function validateListLimit(first: number, max: number): number {
+  const limit = Math.floor(first);
+  if (!Number.isInteger(limit) || limit < 1 || limit > max) {
+    throw new Error('pagination/invalid-connection-args');
+  }
+  return limit;
+}
+
 @Resolver(() => Product)
 @Service()
 export class ProductQueryResolver {
@@ -180,7 +192,7 @@ export class ProductQueryResolver {
     @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
   ) {
     const products = await this.getRecentProductsUseCase.execute({
-      limit: first,
+      limit: validateListLimit(first, MAX_LIST_LIMIT),
     });
     const translated = await this.translateProducts(products, locale);
     return this.preloadFields(translated);
@@ -192,7 +204,7 @@ export class ProductQueryResolver {
     @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
   ) {
     const products = await this.getRankedProductsUseCase.execute({
-      limit: first,
+      limit: validateListLimit(first, MAX_LIST_LIMIT),
     });
     const translated = await this.translateProducts(products, locale);
     return this.preloadFields(translated);
@@ -246,7 +258,7 @@ export class ProductQueryResolver {
     })) as (PublishedProduct | null)[];
 
     const translated = await this.translateProducts(
-      products.filter((product): product is PublishedProduct => Boolean(product)),
+      products.filter((product): product is PublishedProduct => Boolean(product)).slice(0, MAX_SEARCH_RESULTS),
       locale
     );
     return this.preloadFields(translated);
@@ -281,7 +293,7 @@ export class ProductQueryResolver {
     @Arg('after', () => String, { nullable: true }) after?: string
   ) {
     const { products } = await this.getPublishedProductsForSitemapUseCase.execute({
-      limit: first,
+      limit: validateListLimit(first, MAX_SITEMAP_LIMIT),
       cursor: after,
     });
     return products;

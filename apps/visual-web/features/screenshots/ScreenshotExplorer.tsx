@@ -28,7 +28,11 @@ function ScreenshotCardGrid({ cards }: { cards: ScreenshotCard[] }) {
             <div className="aspect-[4/3] w-full overflow-hidden bg-surface-100">
               <img
                 src={card.imageUrl}
-                alt={card.imageAlt}
+                alt={
+                  card.imageAlt ||
+                  card.title ||
+                  (card.product.name ? `${card.product.name} 스크린샷` : '스크린샷 이미지')
+                }
                 loading="lazy"
                 className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
               />

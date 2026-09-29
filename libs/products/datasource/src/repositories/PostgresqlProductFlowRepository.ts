@@ -9,7 +9,7 @@ import {
   productFlowNotFound,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { and, asc, count, eq, inArray, isNotNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNotNull, lt, or, sql, type SQLWrapper } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { productFlowSteps, productFlows } from '../entities/ProductFlowsSchema';
 import { products } from '../entities/ProductSchema';
@@ -77,10 +77,21 @@ function buildVisualFlowFilterConditions(filter: VisualFlowFilter) {
   return and(...conditions)!;
 }
 
-const coverColumn = (column: 'id' | 'image_url' | 'image_alt') => sql<string | null>`(
-  SELECT ps.${sql.raw(column)}
+type CoverColumnName = 'id' | 'image_url' | 'image_alt';
+
+// Allowlist of sortable/selectable cover columns. The key is resolved to a
+// drizzle column object (a safely quoted identifier) instead of interpolating
+// a raw string, so caller input can never inject SQL.
+const coverColumns: Record<CoverColumnName, SQLWrapper> = {
+  id: productScreenshots.id,
+  image_url: productScreenshots.imageUrl,
+  image_alt: productScreenshots.imageAlt,
+};
+
+const coverColumn = (column: CoverColumnName) => sql<string | null>`(
+  SELECT ${coverColumns[column]}
   FROM product_flow_steps cover_join
-  INNER JOIN product_screenshots ps ON ps.id = cover_join.screenshot_id
+  INNER JOIN product_screenshots ON product_screenshots.id = cover_join.screenshot_id
   WHERE cover_join.flow_id = ${productFlows.id} AND cover_join.position = 0
   LIMIT 1
 )`;

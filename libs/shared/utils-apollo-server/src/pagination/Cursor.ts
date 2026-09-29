@@ -46,7 +46,11 @@ export class Cursor {
     let payload: string;
 
     if (delimiterIndex === -1) {
-      // Legacy cursor without signature — skip verification
+      // Unsigned legacy cursors are rejected by default. They bypass signature
+      // verification, so only accept them when explicitly opted in.
+      if (process.env.ALLOW_LEGACY_CURSOR !== 'true') {
+        throw new Error('pagination/invalid-cursor');
+      }
       payload = decoded;
     } else {
       payload = decoded.slice(0, delimiterIndex);

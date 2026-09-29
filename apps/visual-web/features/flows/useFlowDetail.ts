@@ -4,6 +4,7 @@ import { useApolloClient } from '@apollo/client/react';
 import { VisualFlowOnDetailDocument } from '@darun/provider-graphql';
 import type { VisualFlowType, VisualPlatform } from '@darun/provider-graphql';
 import { useEffect, useState } from 'react';
+import { resolveVisualFlowType, resolveVisualPlatform } from './flowClassifications';
 
 export type FlowDetailStep = {
   position: number;
@@ -61,8 +62,8 @@ export function useFlowDetail(id: string): FlowDetailState {
             id: flow.id,
             title: flow.title ?? '',
             description: flow.description ?? '',
-            platform: (flow.platform ?? 'WEB') as VisualPlatform,
-            flowType: (flow.flowType ?? 'OTHER') as VisualFlowType,
+            platform: resolveVisualPlatform(flow.platform),
+            flowType: resolveVisualFlowType(flow.flowType),
             stepCount: flow.stepCount ?? 0,
             steps: (flow.steps ?? []).flatMap(step =>
               step && step.screenshot
@@ -90,7 +91,8 @@ export function useFlowDetail(id: string): FlowDetailState {
           },
         });
       })
-      .catch(() => {
+      .catch((e: unknown) => {
+        console.error('Failed to load flow detail', e);
         if (active) {
           setQueryState({ status: 'error' });
         }

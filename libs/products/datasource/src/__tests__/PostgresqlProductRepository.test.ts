@@ -3,8 +3,8 @@ import { Product } from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { PostgresqlProductRepository } from '../repositories/PostgresqlProductRepository';
 import { products } from '../entities/ProductSchema';
+import { PostgresqlProductRepository } from '../repositories/PostgresqlProductRepository';
 
 function createMockDb(rows: Record<string, unknown>[]) {
   const orderByMock = vi.fn().mockResolvedValue(rows);
@@ -242,7 +242,9 @@ describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
       const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
       mockDb.select = vi.fn().mockReturnValue({ from: mockFrom });
 
-      const repository = new PostgresqlProductRepository(mockDb as unknown as ConstructorParameters<typeof PostgresqlProductRepository>[0]);
+      const repository = new PostgresqlProductRepository(
+        mockDb as unknown as ConstructorParameters<typeof PostgresqlProductRepository>[0]
+      );
 
       const result = await repository.findPublishedByCategoryIdAndLimit('cat-1', 2);
 

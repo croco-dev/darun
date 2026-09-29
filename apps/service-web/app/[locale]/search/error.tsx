@@ -8,7 +8,7 @@ import { Link } from '../../../i18n/navigation';
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const params = useParams();
-  const isKo = params?.locale !== 'en';
+  const isKo = params?.locale === 'ko';
 
   useEffect(() => {
     Sentry.captureException(error);

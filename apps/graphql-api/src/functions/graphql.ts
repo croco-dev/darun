@@ -32,8 +32,10 @@ export const handler: APIGatewayProxyHandlerV2 = Sentry.wrapHandler(
     {
       context: async ({ event }) => {
         const authToken = event.headers?.['authorization']?.replace('Bearer ', '');
-        const clientIp =
-          event.requestContext?.http?.sourceIp ?? event.headers?.['x-forwarded-for']?.split(',')[0]?.trim();
+        // Trust only the source IP set by API Gateway from the TCP peer.
+        // x-forwarded-for is client-controlled and trivially spoofable, so it
+        // must never feed auth, rate-limit, or vote-fraud decisions.
+        const clientIp = event.requestContext?.http?.sourceIp;
 
         return createGraphQLContext({
           requestId: event.requestContext.requestId,

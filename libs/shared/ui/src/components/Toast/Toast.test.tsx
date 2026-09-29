@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { useEffect } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { ToastProvider, useToast } from './Toast';
 
 function TestConsumer({ message, type }: { message: string; type: 'success' | 'error' }) {

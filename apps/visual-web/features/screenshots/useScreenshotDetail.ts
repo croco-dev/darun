@@ -73,7 +73,8 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
           },
         });
       })
-      .catch(() => {
+      .catch((e: unknown) => {
+        console.error('Failed to load screenshot detail', e);
         if (active) {
           setQueryState({ status: 'error' });
         }

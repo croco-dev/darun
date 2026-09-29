@@ -6,10 +6,11 @@ import * as Sentry from '@sentry/nextjs';
 import { useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { Link } from '../../i18n/navigation';
+import { normalizeLocale } from '../../lib/seo/url';
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const params = useParams();
-  const isKo = params?.locale !== 'en';
+  const isKo = normalizeLocale(typeof params?.locale === 'string' ? params.locale : '') === 'ko';
 
   useEffect(() => {
     Sentry.captureException(error);

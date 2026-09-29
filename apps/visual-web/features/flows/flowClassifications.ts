@@ -31,3 +31,19 @@ export function isVisualPlatformValue(value: string): value is VisualPlatform {
 export function isVisualFlowTypeValue(value: string): value is VisualFlowType {
   return value in VISUAL_FLOW_TYPE_LABELS;
 }
+
+export function resolveVisualPlatform(value: unknown): VisualPlatform {
+  if (typeof value === 'string' && isVisualPlatformValue(value)) {
+    return value;
+  }
+  console.warn('Unknown VisualPlatform value, falling back to WEB:', value);
+  return 'WEB';
+}
+
+export function resolveVisualFlowType(value: unknown): VisualFlowType {
+  if (typeof value === 'string' && isVisualFlowTypeValue(value)) {
+    return value;
+  }
+  console.warn('Unknown VisualFlowType value, falling back to OTHER:', value);
+  return 'OTHER';
+}

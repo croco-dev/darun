@@ -2,6 +2,7 @@ import { absolutePublicUrl, PublicLocale } from './url';
 
 export function escapeMarkdown(text: string): string {
   return text
+    .replace(/[\r\n]+/g, ' ')
     .replace(/\\/g, '\\\\')
     .replace(/\[/g, '\\[')
     .replace(/\]/g, '\\]')
@@ -67,7 +68,12 @@ export function htmlToMarkdown(html: string): string {
     .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, ' ');
 
-  // Collapse multiple blank lines
+  // Decoding can materialize tags from encoded input (e.g. &lt;script&gt; -> <script>).
+  // Encode any remaining '<' so no raw HTML can survive in the markdown output.
+  md = md.replace(/</g, '&lt;');
+
+  // Normalize line endings and collapse multiple blank lines
+  md = md.replace(/\r\n?/g, '\n');
   md = md.replace(/\n{3,}/g, '\n\n').trim();
 
   return md;

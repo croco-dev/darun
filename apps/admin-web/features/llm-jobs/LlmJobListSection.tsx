@@ -14,8 +14,8 @@ import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal, AdminP
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatAsKst, parseAsUtc } from '../../lib/datetime';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query GetTranslationJobsOnAdmin($status: String, $limit: Int, $offset: Int) {
     translationJobs(status: $status, limit: $limit, offset: $offset) {
@@ -32,7 +32,6 @@ gql`
   }
 `;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation RetryTranslationJobOnAdmin($id: String!) {
     retryTranslationJob(id: $id) {
@@ -49,7 +48,6 @@ gql`
   }
 `;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query GetProductDescriptionJobsOnAdmin($status: String, $limit: Int, $offset: Int) {
     productDescriptionJobs(status: $status, limit: $limit, offset: $offset) {
@@ -64,7 +62,6 @@ gql`
   }
 `;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation RetryProductDescriptionJobOnAdmin($id: String!) {
     retryProductDescriptionJob(id: $id) {
@@ -106,10 +103,15 @@ const STATUS_FILTERS = [
   { value: 'completed', label: '완료' },
 ] as const;
 
+function formatKst(value?: string | Date | null): string {
+  return formatAsKst(value, 'YY-MM-DD HH:mm:ss') ?? '-';
+}
+
 function formatDuration(createdAt?: string | Date | null, updatedAt?: string | Date | null) {
   if (!createdAt || !updatedAt) return '-';
-  const start = dayjs(createdAt);
-  const end = dayjs(updatedAt);
+  const start = parseAsUtc(createdAt);
+  const end = parseAsUtc(updatedAt);
+  if (!start || !end) return '-';
   const diffSec = end.diff(start, 'second');
   if (diffSec < 0) return '-';
   if (diffSec < 60) return `${diffSec}초`;
@@ -162,10 +164,13 @@ export function LlmJobListSection() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedErrorJob, setSelectedErrorJob] = useState<UnifiedLlmJob | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  // Backend returns plain arrays without totalCount, so paginate by growing
+  // `limit` (offset stays 0). Initial page size is 100.
+  const [visibleLimit, setVisibleLimit] = useState(100);
 
   const queryVariables = {
     status: statusFilter === 'all' ? undefined : statusFilter,
-    limit: 50,
+    limit: visibleLimit,
     offset: 0,
   };
 
@@ -237,10 +242,26 @@ export function LlmJobListSection() {
 
   const refetchAll = useCallback(async () => {
     const promises: Promise<unknown>[] = [];
-    if (jobTypeFilter !== 'description') promises.push(Promise.resolve(refetchTranslation?.()).catch(() => {}));
-    if (jobTypeFilter !== 'translation') promises.push(Promise.resolve(refetchDescription?.()).catch(() => {}));
+    if (jobTypeFilter !== 'description')
+      promises.push(
+        Promise.resolve(refetchTranslation?.()).catch(e => {
+          console.error('Failed to refetch LLM translation jobs', e);
+        })
+      );
+    if (jobTypeFilter !== 'translation')
+      promises.push(
+        Promise.resolve(refetchDescription?.()).catch(e => {
+          console.error('Failed to refetch LLM description jobs', e);
+        })
+      );
     await Promise.all(promises);
   }, [jobTypeFilter, refetchTranslation, refetchDescription]);
+
+  // Reset pagination when filters change so a stale large limit isn't reused.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 필터 변경 시 페이지네이션 초기화에 필요
+    setVisibleLimit(100);
+  }, [jobTypeFilter, statusFilter]);
 
   // Auto-polling when active jobs exist
   const hasActiveJobs = jobs.some(j => j.status === 'pending' || j.status === 'in_progress');
@@ -403,28 +424,52 @@ export function LlmJobListSection() {
             <table className="w-full min-w-[760px] border-collapse table-fixed">
               <thead className="bg-surface-100">
                 <tr>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-24 whitespace-nowrap">
+                  <th
+                    scope="col"
+                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-24 whitespace-nowrap"
+                  >
                     작업 ID
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36 whitespace-nowrap">
+                  <th
+                    scope="col"
+                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36 whitespace-nowrap"
+                  >
                     작업 유형
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36 whitespace-nowrap">
+                  <th
+                    scope="col"
+                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36 whitespace-nowrap"
+                  >
                     대상 엔티티
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-28 whitespace-nowrap">
+                  <th
+                    scope="col"
+                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-28 whitespace-nowrap"
+                  >
                     상태
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 min-w-[200px] whitespace-nowrap">
+                  <th
+                    scope="col"
+                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 min-w-[200px] whitespace-nowrap"
+                  >
                     메시지 / 에러
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36 whitespace-nowrap">
+                  <th
+                    scope="col"
+                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-36 whitespace-nowrap"
+                  >
                     요청 일시
                   </th>
-                  <th className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-24 whitespace-nowrap">
+                  <th
+                    scope="col"
+                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-24 whitespace-nowrap"
+                  >
                     소요 시간
                   </th>
-                  <th className="border-b border-dark-200 px-4 py-3 text-center text-xs font-semibold text-dark-700 w-24 whitespace-nowrap">
+                  <th
+                    scope="col"
+                    className="border-b border-dark-200 px-4 py-3 text-center text-xs font-semibold text-dark-700 w-24 whitespace-nowrap"
+                  >
                     액션
                   </th>
                 </tr>
@@ -499,6 +544,7 @@ export function LlmJobListSection() {
                               className="text-left text-cherry-700 font-medium line-clamp-2 cursor-pointer hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-500/60 focus-visible:ring-offset-1 rounded-sm"
                               onClick={() => setSelectedErrorJob(job)}
                               title="클릭하여 상세 에러 확인"
+                              aria-label={typeof job.error === 'string' ? job.error.slice(0, 200) : 'View error detail'}
                             >
                               {job.error}
                             </button>
@@ -517,9 +563,9 @@ export function LlmJobListSection() {
                         )}
                       </td>
 
-                      {/* Requested At */}
+                      {/* Requested At (KST) */}
                       <td className="border-r border-dark-200 px-4 py-3 text-xs text-dark-600 whitespace-nowrap tabular-nums">
-                        {job.createdAt ? dayjs(job.createdAt).format('YY-MM-DD HH:mm:ss') : '-'}
+                        {formatKst(job.createdAt)}
                       </td>
 
                       {/* Duration */}
@@ -559,6 +605,24 @@ export function LlmJobListSection() {
             </table>
           </div>
         </AdminPanel>
+      )}
+
+      {/* Pagination: backend has no totalCount, so grow limit and show loaded count */}
+      {jobs.length > 0 && (
+        <div className="flex items-center justify-center gap-3 pt-1">
+          <span className="text-xs text-dark-500 tabular-nums">현재 {jobs.length.toLocaleString()}건 표시 중</span>
+          <Button
+            type="button"
+            variant="base"
+            color="secondary"
+            size="sm"
+            onClick={() => setVisibleLimit(limit => limit + 100)}
+            disabled={translationLoading || descriptionLoading}
+            className="active:scale-[0.98] motion-reduce:transform-none"
+          >
+            <span className="whitespace-nowrap">더 보기 (+100건)</span>
+          </Button>
+        </div>
       )}
 
       {/* Error Details Modal */}
