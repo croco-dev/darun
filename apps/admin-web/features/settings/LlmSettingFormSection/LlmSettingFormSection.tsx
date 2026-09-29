@@ -18,8 +18,8 @@ import {
 import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import dayjs from 'dayjs';
 import { useState } from 'react';
+import { formatAsKst } from '../../../lib/datetime';
 import { ModelSelectModal } from './ModelSelectModal';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -116,13 +116,7 @@ export function resolveLlmFormDefaults(
 
 function formatUpdatedAt(dateStr?: string | null): string | null {
   if (!dateStr) return null;
-  // Backend ISO strings may lack an explicit zone; treat zone-less strings as UTC,
-  // then shift the instant to KST (+09:00). dayjs has no timezone plugin here.
-  const trimmed = dateStr.trim();
-  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(trimmed);
-  const d = dayjs(hasZone ? trimmed : `${trimmed.replace(' ', 'T')}Z`);
-  if (!d.isValid()) return null;
-  return d.add(9, 'hour').format('YYYY-MM-DD HH:mm:ss');
+  return formatAsKst(dateStr, 'YYYY-MM-DD HH:mm:ss');
 }
 
 function LlmSettingForm({

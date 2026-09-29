@@ -242,7 +242,9 @@ describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
       const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
       mockDb.select = vi.fn().mockReturnValue({ from: mockFrom });
 
-      const repository = new PostgresqlProductRepository(mockDb as unknown as ConstructorParameters<typeof PostgresqlProductRepository>[0]);
+      const repository = new PostgresqlProductRepository(
+        mockDb as unknown as ConstructorParameters<typeof PostgresqlProductRepository>[0]
+      );
 
       const result = await repository.findPublishedByCategoryIdAndLimit('cat-1', 2);
 

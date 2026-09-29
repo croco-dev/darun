@@ -14,6 +14,7 @@ import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal, AdminP
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatAsKst, parseAsUtc } from '../../lib/datetime';
 
 gql`
   query GetTranslationJobsOnAdmin($status: String, $limit: Int, $offset: Int) {
@@ -102,24 +103,8 @@ const STATUS_FILTERS = [
   { value: 'completed', label: '완료' },
 ] as const;
 
-function parseAsUtc(value: string | Date): dayjs.Dayjs | null {
-  if (value instanceof Date) {
-    const d = dayjs(value);
-    return d.isValid() ? d : null;
-  }
-  // Backend ISO strings may lack an explicit zone; treat zone-less strings as UTC
-  // so the same instant renders identically regardless of server/browser locale.
-  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(value.trim());
-  const d = dayjs(hasZone ? value : `${value.replace(' ', 'T')}Z`);
-  return d.isValid() ? d : null;
-}
-
 function formatKst(value?: string | Date | null): string {
-  if (!value) return '-';
-  const d = parseAsUtc(value);
-  if (!d) return '-';
-  // dayjs has no timezone plugin here; shift UTC instant to KST (+09:00) explicitly.
-  return d.add(9, 'hour').format('YY-MM-DD HH:mm:ss');
+  return formatAsKst(value, 'YY-MM-DD HH:mm:ss') ?? '-';
 }
 
 function formatDuration(createdAt?: string | Date | null, updatedAt?: string | Date | null) {

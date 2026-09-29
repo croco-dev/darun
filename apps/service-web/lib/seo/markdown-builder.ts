@@ -69,9 +69,8 @@ export function htmlToMarkdown(html: string): string {
     .replace(/&nbsp;/g, ' ');
 
   // Decoding can materialize tags from encoded input (e.g. &lt;script&gt; -> <script>).
-  // Strip tags again so no raw HTML survives, then neutralize any tag-like remainder.
-  md = md.replace(/<[^>]+>/g, '');
-  md = md.replace(/<(?=[A-Za-z/#!?])/g, '&lt;');
+  // Encode any remaining '<' so no raw HTML can survive in the markdown output.
+  md = md.replace(/</g, '&lt;');
 
   // Normalize line endings and collapse multiple blank lines
   md = md.replace(/\r\n?/g, '\n');

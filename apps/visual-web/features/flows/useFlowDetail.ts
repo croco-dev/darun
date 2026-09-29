@@ -4,7 +4,7 @@ import { useApolloClient } from '@apollo/client/react';
 import { VisualFlowOnDetailDocument } from '@darun/provider-graphql';
 import type { VisualFlowType, VisualPlatform } from '@darun/provider-graphql';
 import { useEffect, useState } from 'react';
-import { isVisualFlowTypeValue, isVisualPlatformValue } from './flowClassifications';
+import { resolveVisualFlowType, resolveVisualPlatform } from './flowClassifications';
 
 export type FlowDetailStep = {
   position: number;
@@ -28,22 +28,6 @@ export type FlowDetailState = {
   detail: FlowDetailData | null;
   retry: () => void;
 };
-
-function resolveVisualPlatform(value: unknown): VisualPlatform {
-  if (typeof value === 'string' && isVisualPlatformValue(value)) {
-    return value;
-  }
-  console.warn('Unknown VisualPlatform value, falling back to WEB:', value);
-  return 'WEB';
-}
-
-function resolveVisualFlowType(value: unknown): VisualFlowType {
-  if (typeof value === 'string' && isVisualFlowTypeValue(value)) {
-    return value;
-  }
-  console.warn('Unknown VisualFlowType value, falling back to OTHER:', value);
-  return 'OTHER';
-}
 
 export function useFlowDetail(id: string): FlowDetailState {
   const apolloClient = useApolloClient();

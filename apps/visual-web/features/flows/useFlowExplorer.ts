@@ -9,25 +9,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useProductSearchSuggest } from '../product-search/useProductSearchSuggest';
 import type { ProductSuggestion } from '../product-search/useProductSearchSuggest';
 import { VISUAL_FLOWS_PAGE_SIZE } from './explorerDocuments';
-import { isVisualFlowTypeValue, isVisualPlatformValue } from './flowClassifications';
+import {
+  isVisualFlowTypeValue,
+  isVisualPlatformValue,
+  resolveVisualFlowType,
+  resolveVisualPlatform,
+} from './flowClassifications';
 
 const VISUAL_QUERY_MAX_LENGTH = 100;
-
-function resolveVisualPlatform(value: unknown): VisualPlatform {
-  if (typeof value === 'string' && isVisualPlatformValue(value)) {
-    return value;
-  }
-  console.warn('Unknown VisualPlatform value, falling back to WEB:', value);
-  return 'WEB';
-}
-
-function resolveVisualFlowType(value: unknown): VisualFlowType {
-  if (typeof value === 'string' && isVisualFlowTypeValue(value)) {
-    return value;
-  }
-  console.warn('Unknown VisualFlowType value, falling back to OTHER:', value);
-  return 'OTHER';
-}
 
 export type FlowCard = {
   id: string;

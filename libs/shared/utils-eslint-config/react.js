@@ -5,7 +5,12 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import unusedImports from 'eslint-plugin-unused-imports';
 import tseslint from 'typescript-eslint';
 
-import { importXOrderRule, packageJsonConfig, sourceFilePatterns, typescriptEslintRecommendedConfigs } from './eslint.config.js';
+import {
+  importXOrderRule,
+  packageJsonConfig,
+  sourceFilePatterns,
+  typescriptEslintRecommendedConfigs,
+} from './eslint.config.js';
 
 export const reactSourceConfig = {
   files: sourceFilePatterns,

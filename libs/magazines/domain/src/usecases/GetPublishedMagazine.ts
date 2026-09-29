@@ -1,13 +1,13 @@
-import { Inject, Service } from "typedi";
-import { magazineInvalidArgs } from "../errors/magazineError";
-import type { MagazineRepository } from "../repositories/MagazineRepository";
-import { MagazineRepositoryToken } from "../repositories/MagazineRepository";
+import { Inject, Service } from 'typedi';
+import { magazineInvalidArgs } from '../errors/magazineError';
+import type { MagazineRepository } from '../repositories/MagazineRepository';
+import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
 
 @Service()
 export class GetPublishedMagazine {
   constructor(
     @Inject(MagazineRepositoryToken)
-    private readonly magazineRepository: MagazineRepository,
+    private readonly magazineRepository: MagazineRepository
   ) {}
 
   async execute({ id, slug }: { id?: string; slug?: string }) {
@@ -16,7 +16,7 @@ export class GetPublishedMagazine {
     }
 
     if (!id) {
-      throw magazineInvalidArgs("id or slug is required to get a magazine.");
+      throw magazineInvalidArgs('id or slug is required to get a magazine.');
     }
     return this.magazineRepository.findPublishedOneById(id);
   }
