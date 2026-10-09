@@ -1,9 +1,26 @@
 'use client';
 
 import { useApolloClient } from '@apollo/client/react';
-import { VisualScreenshotOnDetailDocument } from '@darun/provider-graphql';
+import { VisualScreenshotOnDetailDocument, VisualSiblingScreenshotsOnDetailDocument } from '@darun/provider-graphql';
 import type { VisualPlatform, VisualScreenType } from '@darun/provider-graphql';
 import { useEffect, useState } from 'react';
+import { VISUAL_SCREENSHOT_DETAIL_RELATED_FETCH_SIZE, VISUAL_SCREENSHOT_DETAIL_RELATED_SIZE } from './detailDocuments';
+import { filterSiblingScreenshots, normalizeDetailFlows, siblingDisplayTotalCount } from './relatedCollections';
+
+export type ScreenshotDetailRelatedScreenshot = {
+  id: string;
+  imageUrl: string;
+  imageAlt: string;
+  title: string | null;
+};
+
+export type ScreenshotDetailRelatedFlow = {
+  id: string;
+  title: string;
+  stepCount: number;
+  coverImageUrl: string;
+  coverImageAlt: string;
+};
 
 export type ScreenshotDetailData = {
   id: string;
@@ -13,6 +30,10 @@ export type ScreenshotDetailData = {
   platform: VisualPlatform | null;
   screenType: VisualScreenType | null;
   product: { id: string; name: string; slug: string; summary: string | null; logoUrl: string };
+  flows: ScreenshotDetailRelatedFlow[];
+  flowTotalCount: number;
+  relatedScreenshots: ScreenshotDetailRelatedScreenshot[];
+  relatedScreenshotTotalCount: number;
 };
 
 export type ScreenshotDetailState = {
@@ -45,7 +66,7 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
         variables: { id },
         fetchPolicy: 'no-cache',
       })
-      .then(result => {
+      .then(async result => {
         if (!active) {
           return;
         }
@@ -54,6 +75,34 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
           setQueryState({ status: 'not-found' });
           return;
         }
+        const slug = screenshot.product.slug;
+        let siblings: ScreenshotDetailRelatedScreenshot[] = [];
+        let siblingTotalCount = 0;
+        try {
+          const siblingResult = await apolloClient.query({
+            query: VisualSiblingScreenshotsOnDetailDocument,
+            variables: { productSlug: slug, first: VISUAL_SCREENSHOT_DETAIL_RELATED_FETCH_SIZE },
+            fetchPolicy: 'no-cache',
+          });
+          if (!active) {
+            return;
+          }
+          siblingTotalCount = siblingResult.data?.visualScreenshots.totalCount ?? 0;
+          siblings = filterSiblingScreenshots(
+            siblingResult.data?.visualScreenshots.edges ?? [],
+            screenshot.id,
+            VISUAL_SCREENSHOT_DETAIL_RELATED_FETCH_SIZE
+          );
+        } catch (e: unknown) {
+          console.error('Failed to load sibling screenshots', e);
+          if (!active) {
+            return;
+          }
+        }
+        if (!active) {
+          return;
+        }
+        const flows = normalizeDetailFlows(screenshot.flows ?? []);
         setQueryState({
           status: 'loaded',
           detail: {
@@ -70,6 +119,10 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
               summary: screenshot.product.summary ?? null,
               logoUrl: screenshot.product.logoUrl,
             },
+            flows,
+            flowTotalCount: flows.length,
+            relatedScreenshots: siblings.slice(0, VISUAL_SCREENSHOT_DETAIL_RELATED_SIZE),
+            relatedScreenshotTotalCount: siblingDisplayTotalCount(siblingTotalCount),
           },
         });
       })

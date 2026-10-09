@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Dialog, ExternalLink, ImageOff, Maximize2, RefreshCw } from '@darun/ui';
-import { notFound, useRouter } from '@darun/utils-router';
+import { Link, notFound, useRouter } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { ScreenshotDetailState, useScreenshotDetail } from './useScreenshotDetail';
@@ -102,7 +102,18 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
     );
   }
 
-  const { imageUrl, imageAlt, title, platform, screenType, product } = detail;
+  const {
+    imageUrl,
+    imageAlt,
+    title,
+    platform,
+    screenType,
+    product,
+    flows,
+    flowTotalCount,
+    relatedScreenshots,
+    relatedScreenshotTotalCount,
+  } = detail;
   const displayTitle = title ?? imageAlt;
   const platformLabel =
     platform && isVisualPlatformValue(platform) ? VISUAL_PLATFORM_LABELS[platform] : UNCLASSIFIED_LABEL;
@@ -183,6 +194,83 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             <span className="whitespace-nowrap">뒤로 가기</span>
           </Button>
         </div>
+
+        {relatedScreenshots.length > 0 && (
+          <section aria-labelledby="screenshot-related-heading" className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="screenshot-related-heading" className="text-lg font-bold text-dark-900">
+                같은 앱의 다른 화면 ({relatedScreenshotTotalCount})
+              </h2>
+              <Link
+                href={`/apps/${encodeURIComponent(product.slug)}`}
+                className="shrink-0 rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              >
+                전체 보기 →
+              </Link>
+            </div>
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {relatedScreenshots.map(item => (
+                <li key={item.id}>
+                  <Link
+                    href={`/screenshots/${encodeURIComponent(item.id)}`}
+                    className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  >
+                    <div className="aspect-[4/3] w-full overflow-hidden bg-surface-100">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.imageAlt || item.title || `${product.name} 스크린샷`}
+                        loading="lazy"
+                        className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
+                      />
+                    </div>
+                    {item.title && (
+                      <div className="truncate p-2.5 text-xs font-semibold text-dark-900">{item.title}</div>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {flows.length > 0 && (
+          <section aria-labelledby="screenshot-flows-heading" className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="screenshot-flows-heading" className="text-lg font-bold text-dark-900">
+                이 화면이 포함된 플로 ({flowTotalCount})
+              </h2>
+              <Link
+                href={`/apps/${encodeURIComponent(product.slug)}`}
+                className="shrink-0 rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              >
+                전체 보기 →
+              </Link>
+            </div>
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {flows.map(flow => (
+                <li key={flow.id}>
+                  <Link
+                    href={`/flows/${encodeURIComponent(flow.id)}`}
+                    className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  >
+                    <div className="aspect-[16/9] w-full overflow-hidden bg-surface-100">
+                      <img
+                        src={flow.coverImageUrl}
+                        alt={flow.coverImageAlt || flow.title || `${product.name} 플로 커버`}
+                        loading="lazy"
+                        className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-2 p-3.5">
+                      <span className="truncate text-sm font-bold text-dark-900">{flow.title}</span>
+                      <span className="shrink-0 text-xs text-dark-500 tabular-nums">{flow.stepCount}단계</span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
       <Dialog
