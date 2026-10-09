@@ -8,6 +8,7 @@ import { VisualPlatformGraph } from './graphs/VisualPlatform';
 import { VisualScreenshot } from './graphs/VisualScreenshot';
 import { VisualScreenshotConnection } from './graphs/VisualScreenshotConnection';
 import { VisualScreenTypeGraph } from './graphs/VisualScreenType';
+import { VisualSortGraph } from './graphs/VisualSort';
 
 const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -76,8 +77,10 @@ export class VisualScreenshotQueryResolver {
     @Arg('platform', () => VisualPlatformGraph, { nullable: true }) platform?: VisualPlatformGraph | null,
     @Arg('screenType', () => VisualScreenTypeGraph, { nullable: true }) screenType?: VisualScreenTypeGraph | null,
     @Arg('productSlug', () => String, { nullable: true }) productSlug?: string | null,
+    @Arg('sort', () => VisualSortGraph, { nullable: true }) sort?: VisualSortGraph | null,
     @Arg('first', () => Int, { defaultValue: 24 }) first?: number,
-    @Arg('after', () => String, { nullable: true }) after?: string | null
+    @Arg('after', () => String, { nullable: true }) after?: string | null,
+    @Arg('page', () => Int, { nullable: true }) page?: number | null
   ): Promise<VisualScreenshotConnection> {
     let afterId: string | undefined;
     if (after !== undefined && after !== null && after !== '') {
@@ -88,13 +91,24 @@ export class VisualScreenshotQueryResolver {
       afterId = decoded.id;
     }
 
+    const resolvedSort = sort ?? VisualSortGraph.LATEST;
+    // POPULAR는 오프셋(page) 방식, LATEST는 기존 keyset 유지.
+    if (resolvedSort === VisualSortGraph.POPULAR && afterId !== undefined) {
+      throw new Error('pagination/invalid-connection-args');
+    }
+    if (resolvedSort === VisualSortGraph.LATEST && page !== undefined && page !== null) {
+      throw new Error('pagination/invalid-connection-args');
+    }
+
     const { screenshots, totalCount, hasNextPage } = await this.getVisualScreenshotsUseCase.execute({
       query: query ?? null,
       platform: platform ?? null,
       screenType: screenType ?? null,
       productSlug: productSlug ?? null,
+      sort: resolvedSort,
       first: first ?? 24,
       afterId,
+      page: page ?? undefined,
     });
 
     const edges = screenshots.map(screenshot => {
@@ -110,7 +124,7 @@ export class VisualScreenshotQueryResolver {
       edges,
       pageInfo: {
         hasNextPage,
-        hasPreviousPage: afterId !== undefined,
+        hasPreviousPage: resolvedSort === VisualSortGraph.POPULAR ? (page ?? 1) > 1 : afterId !== undefined,
         startCursor: edges[0]?.cursor,
         endCursor: edges[edges.length - 1]?.cursor,
       },

@@ -5,6 +5,7 @@ import { productInvalidArgs } from '../errors/productError';
 import type {
   VisualScreenshotFilter,
   VisualScreenshotWithProduct,
+  VisualSort,
   ProductScreenshotRepository,
 } from '../repositories/ProductScreenshotRepository';
 import { ProductScreenshotRepositoryToken } from '../repositories/ProductScreenshotRepository';
@@ -17,8 +18,10 @@ type GetVisualScreenshotsArgs = {
   platform?: string | null;
   screenType?: string | null;
   productSlug?: string | null;
+  sort?: VisualSort | null;
   first: number;
   afterId?: string;
+  page?: number;
 };
 
 function resolvePlatformFilter(platform: string | null | undefined): VisualPlatform | undefined {
@@ -48,12 +51,17 @@ export class GetVisualScreenshots {
     private readonly productScreenshotRepository: ProductScreenshotRepository
   ) {}
 
-  async execute({ query, platform, screenType, productSlug, first, afterId }: GetVisualScreenshotsArgs): Promise<{
+  async execute({ query, platform, screenType, productSlug, sort, first, afterId, page }: GetVisualScreenshotsArgs): Promise<{
     screenshots: VisualScreenshotWithProduct[];
     totalCount: number;
     hasNextPage: boolean;
   }> {
     if (!Number.isInteger(first) || first < 1 || first > VISUAL_SCREENSHOTS_MAX_FIRST) {
+      throw new Error('pagination/invalid-connection-args');
+    }
+
+    const resolvedSort: VisualSort = sort ?? 'LATEST';
+    if (resolvedSort !== 'LATEST' && resolvedSort !== 'POPULAR') {
       throw new Error('pagination/invalid-connection-args');
     }
 
@@ -70,10 +78,33 @@ export class GetVisualScreenshots {
       ...(trimmedProductSlug ? { productSlug: trimmedProductSlug } : {}),
     };
 
-    const [screenshots, totalCount] = await Promise.all([
-      this.productScreenshotRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit(filter, first + 1, afterId),
-      this.productScreenshotRepository.countVisualPublishedByFilter(filter),
-    ]);
+    const [screenshots, totalCount] =
+      resolvedSort === 'POPULAR'
+        ? await (async () => {
+            // POPULAR는 오프셋(page) 방식. 1-based, 미지정 시 1페이지.
+            const resolvedPage = page ?? 1;
+            if (!Number.isInteger(resolvedPage) || resolvedPage < 1) {
+              throw new Error('pagination/invalid-connection-args');
+            }
+            const rows = await this.productScreenshotRepository.findManyVisualPublishedByFilterAndPageAndLimit(
+              filter,
+              resolvedPage,
+              first + 1
+            );
+            const count = await this.productScreenshotRepository.countVisualPublishedByFilter(filter);
+            return [rows, count] as const;
+          })()
+        : await (async () => {
+            const [rows, count] = await Promise.all([
+              this.productScreenshotRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit(
+                filter,
+                first + 1,
+                afterId
+              ),
+              this.productScreenshotRepository.countVisualPublishedByFilter(filter),
+            ]);
+            return [rows, count] as const;
+          })();
 
     const hasNextPage = screenshots.length > first;
 

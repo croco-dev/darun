@@ -50,6 +50,13 @@
       "when": 1790442842268,
       "tag": "0006_unique_selene",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791576574214,
+      "tag": "0007_m1-visual-popularity",
+      "breakpoints": true
     }
   ]
 }
