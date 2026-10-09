@@ -17,6 +17,35 @@ gql`
         summary
         logoUrl
       }
+      flows {
+        id
+        title
+        stepCount
+        coverScreenshot {
+          id
+          imageUrl
+          imageAlt
+        }
+      }
     }
   }
 `;
+
+gql`
+  query VisualSiblingScreenshotsOnDetail($productSlug: String!, $first: Int!) {
+    visualScreenshots(first: $first, productSlug: $productSlug) {
+      totalCount
+      edges {
+        node {
+          id
+          imageUrl
+          imageAlt
+          title
+        }
+      }
+    }
+  }
+`;
+
+export const VISUAL_SCREENSHOT_DETAIL_RELATED_SIZE = 8;
+export const VISUAL_SCREENSHOT_DETAIL_RELATED_FETCH_SIZE = 9;
