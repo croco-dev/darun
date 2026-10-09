@@ -1,0 +1,39 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "env": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "NEXT_PUBLIC_SITE_URL"
+      ]
+    },
+    "cloudflare:build": {
+      "env": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "NEXT_PUBLIC_SITE_URL"
+      ],
+      "outputs": [".open-next/**"]
+    },
+    "dev": {
+      "env": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "NEXT_PUBLIC_SITE_URL"
+      ],
+      "passThroughEnv": ["SUPABASE_SERVICE_ROLE_KEY"]
+    },
+    "typecheck": {
+      "inputs": [
+        "src/**",
+        "scripts/**",
+        "*.ts",
+        "tsconfig.json",
+        "next.config.*",
+        "!**/.next/**"
+      ]
+    }
+  }
+}
