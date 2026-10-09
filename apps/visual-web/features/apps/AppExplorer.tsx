@@ -5,6 +5,7 @@ import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useRef } from 'react';
 import { ExplorerShell } from '../explorer/ExplorerShell';
+import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
 import { AppExplorerState, AppCard, useAppExplorer } from './useAppExplorer';
 
 const DEFAULT_ICON = '/images/default-product-icon.svg';
@@ -67,6 +68,11 @@ const View = (props: AppExplorerState) => {
     onSearchSubmit,
     onClearFilters,
     retry,
+    suggestions,
+    isSearchingSuggestions,
+    onSuggestionSelect,
+    onSuggestClose,
+    onSearchInputFocus,
   } = props;
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,11 +114,23 @@ const View = (props: AppExplorerState) => {
                 id="app-search"
                 type="search"
                 autoComplete="off"
+                aria-expanded={suggestions.length > 0 || (searchInput.trim().length > 0 && isSearchingSuggestions)}
+                aria-controls="app-search-suggest-listbox"
                 value={searchInput}
                 onChange={event => onSearchInputChange(event.currentTarget.value)}
+                onFocus={onSearchInputFocus}
                 placeholder="서비스명으로 검색"
                 data-visual-search="apps"
                 className="w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-900 shadow-2xs placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+              />
+              <ProductSearchSuggest
+                inputId="app-search"
+                inputRef={searchInputRef}
+                inputValue={searchInput}
+                suggestions={suggestions}
+                isSearching={isSearchingSuggestions}
+                onSelect={onSuggestionSelect}
+                onClose={onSuggestClose}
               />
             </div>
             <Button

@@ -72,6 +72,10 @@ export function readExplorerQueryParam(searchParams: URLSearchParams) {
   return rawQuery !== null && rawQuery.trim().length > 0 ? rawQuery.trim() : null;
 }
 
+export function isOverlongExplorerQuery(query: string | null): boolean {
+  return query !== null && query.length > VISUAL_QUERY_MAX_LENGTH;
+}
+
 export function readExplorerProductParam(searchParams: URLSearchParams) {
   const rawProduct = searchParams.get('product');
   return rawProduct !== null && rawProduct.trim().length > 0 ? rawProduct.trim() : null;
@@ -135,7 +139,7 @@ export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNo
     setSearchInput(query ?? '');
   }, [query]);
 
-  const queryLengthError = query !== null && query.trim().length > VISUAL_QUERY_MAX_LENGTH;
+  const queryLengthError = isOverlongExplorerQuery(query);
 
   const observable = useMemo(
     () =>

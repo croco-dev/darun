@@ -6,10 +6,11 @@ import type { RecentProductsOnVisualAppsQuery } from '@darun/provider-graphql';
 import { useNavigate, useSearchParams } from '@darun/utils-router';
 import { useEffect, useState } from 'react';
 import {
+  isOverlongExplorerQuery,
   readExplorerProductParam,
   readExplorerQueryParam,
-  VISUAL_QUERY_MAX_LENGTH,
 } from '../explorer/useExplorerQuery';
+import type { ProductSuggestion } from '../product-search/useProductSearchSuggest';
 import { useProductSearchSuggest } from '../product-search/useProductSearchSuggest';
 import { VISUAL_APPS_PAGE_SIZE } from './documents';
 
@@ -36,6 +37,11 @@ export type AppExplorerState = {
   retry: () => void;
   searched: AppCard[] | null;
   isSearchingApps: boolean;
+  suggestions: ProductSuggestion[];
+  isSearchingSuggestions: boolean;
+  onSuggestionSelect: (product: ProductSuggestion) => void;
+  onSuggestClose: () => void;
+  onSearchInputFocus: () => void;
 };
 
 type RecentProductNode = RecentProductsOnVisualAppsQuery['recentProducts'][number];
@@ -67,7 +73,7 @@ export function useAppExplorer(): AppExplorerState {
     setSearchInput(query ?? '');
   }, [query]);
 
-  const queryLengthError = query !== null && query.trim().length > VISUAL_QUERY_MAX_LENGTH;
+  const queryLengthError = isOverlongExplorerQuery(query);
 
   const [cards, setCards] = useState<AppCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,8 +124,21 @@ export function useAppExplorer(): AppExplorerState {
     navigate(trimmed.length > 0 ? `/apps?q=${encodeURIComponent(trimmed)}` : '/apps');
   };
 
+  const onSuggestionSelect = (selected: ProductSuggestion) => {
+    clearSuggestions();
+    setSearchInput('');
+    const trimmed = selected.name.trim();
+    navigate(trimmed.length > 0 ? `/apps?q=${encodeURIComponent(trimmed)}` : '/apps');
+  };
+
+  const onSearchInputFocus = () => {
+    if (searchInput.trim().length > 0) {
+      suggest(searchInput);
+    }
+  };
+
   const searched: AppCard[] | null =
-    query === null
+    query === null || queryLengthError
       ? null
       : suggestions.map(s => ({ id: s.id, name: s.name, slug: s.slug, summary: '', logoUrl: s.logoUrl }));
 
@@ -145,5 +164,10 @@ export function useAppExplorer(): AppExplorerState {
     retry: () => setRequestKey(key => key + 1),
     searched,
     isSearchingApps: isSearching,
+    suggestions,
+    isSearchingSuggestions: isSearching,
+    onSuggestionSelect,
+    onSuggestClose: clearSuggestions,
+    onSearchInputFocus,
   };
 }
