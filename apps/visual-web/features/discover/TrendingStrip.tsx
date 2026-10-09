@@ -1,5 +1,6 @@
 import { Link } from '@darun/utils-router';
 import type { TrendingItem } from '../../app/page';
+import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 
 export function TrendingStrip({ items }: { items: TrendingItem[] }) {
   if (items.length === 0) {
@@ -21,7 +22,7 @@ export function TrendingStrip({ items }: { items: TrendingItem[] }) {
                 <img
                   src={item.imageUrl}
                   alt={item.imageAlt || item.title || `${item.productName} 스크린샷`}
-                  loading="lazy"
+                  loading={VISUAL_CARD_IMAGE_LOADING}
                   className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
                 />
               </div>

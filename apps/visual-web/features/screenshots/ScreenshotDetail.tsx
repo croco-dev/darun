@@ -4,6 +4,7 @@ import { Button, Dialog, ExternalLink, ImageOff, Maximize2, RefreshCw } from '@d
 import { Link, notFound, useRouter } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
+import { VISUAL_CARD_IMAGE_LOADING, VISUAL_DETAIL_IMAGE_FETCH_PRIORITY } from '../perf/imageLoading';
 import { ScreenshotDetailState, useScreenshotDetail } from './useScreenshotDetail';
 import {
   UNCLASSIFIED_LABEL,
@@ -35,6 +36,7 @@ function DetailImage({ src, alt, onError }: { src: string; alt: string; onError:
     <img
       src={src}
       alt={alt}
+      fetchPriority={VISUAL_DETAIL_IMAGE_FETCH_PRIORITY}
       onError={() => {
         setFailedSrc(src);
         onError();
@@ -50,23 +52,21 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
 
   if (status === 'loading') {
     return (
-      <main id="main-content" className="w-full py-8 md:py-12">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6" aria-busy="true">
-          <div
-            className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
-            aria-hidden="true"
-          />
-          <div
-            className="h-4 w-1/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
-            aria-hidden="true"
-          />
-          <div
-            className="min-h-72 w-full animate-pulse rounded-2xl bg-surface-200 motion-reduce:animate-none"
-            aria-hidden="true"
-          />
-          <span className="sr-only">스크린샷을 불러오는 중</span>
-        </div>
-      </main>
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6" aria-busy="true">
+        <div
+          className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+        <div
+          className="h-4 w-1/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+        <div
+          className="min-h-72 w-full animate-pulse rounded-2xl bg-surface-200 motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+        <span className="sr-only">스크린샷을 불러오는 중</span>
+      </div>
     );
   }
 
@@ -76,29 +76,27 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
 
   if (status === 'error' || detail === null) {
     return (
-      <main id="main-content" className="w-full py-8 md:py-12">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 md:px-6">
-          <div
-            role="alert"
-            className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center"
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 md:px-6">
+        <div
+          role="alert"
+          className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center"
+        >
+          <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+            스크린샷을 불러오지 못했어요.
+          </p>
+          <Button
+            type="button"
+            variant="contained"
+            color="primary"
+            size="sm"
+            onClick={() => retry()}
+            className="active:scale-[0.98] motion-reduce:transform-none"
           >
-            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
-              스크린샷을 불러오지 못했어요.
-            </p>
-            <Button
-              type="button"
-              variant="contained"
-              color="primary"
-              size="sm"
-              onClick={() => retry()}
-              className="active:scale-[0.98] motion-reduce:transform-none"
-            >
-              <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap">다시 시도</span>
-            </Button>
-          </div>
+            <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap">다시 시도</span>
+          </Button>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -121,26 +119,26 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
     screenType && isVisualScreenTypeValue(screenType) ? VISUAL_SCREEN_TYPE_LABELS[screenType] : UNCLASSIFIED_LABEL;
 
   return (
-    <main id="main-content" className="w-full py-8 md:py-12">
+    <>
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6">
         <div className="flex flex-col gap-2">
-          <h1 className="break-words [word-break:keep-all] text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">
-            {displayTitle}
-          </h1>
-          <p className="flex flex-wrap items-center gap-2 text-sm text-dark-500">
-            <span className="max-w-xs truncate font-medium text-dark-700">{product.name}</span>
-            <span aria-hidden="true" className="text-dark-300">
-              ·
-            </span>
-            <span>{platformLabel}</span>
-            <span aria-hidden="true" className="text-dark-300">
-              ·
-            </span>
-            <span>{screenTypeLabel}</span>
-          </p>
-        </div>
+        <h1 className="break-words [word-break:keep-all] text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">
+          {displayTitle}
+        </h1>
+        <p className="flex flex-wrap items-center gap-2 text-sm text-dark-500">
+          <span className="max-w-xs truncate font-medium text-dark-700">{product.name}</span>
+          <span aria-hidden="true" className="text-dark-300">
+            ·
+          </span>
+          <span>{platformLabel}</span>
+          <span aria-hidden="true" className="text-dark-300">
+            ·
+          </span>
+          <span>{screenTypeLabel}</span>
+        </p>
+      </div>
 
-        <div className="relative">
+      <div className="relative">
           <DetailImage src={imageUrl} alt={imageAlt} onError={onImageError} />
           {!isImageError && (
             <Button
@@ -219,7 +217,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
                       <img
                         src={item.imageUrl}
                         alt={item.imageAlt || item.title || `${product.name} 스크린샷`}
-                        loading="lazy"
+                        loading={VISUAL_CARD_IMAGE_LOADING}
                         className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
                       />
                     </div>
@@ -257,7 +255,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
                       <img
                         src={flow.coverImageUrl}
                         alt={flow.coverImageAlt || flow.title || `${product.name} 플로 커버`}
-                        loading="lazy"
+                        loading={VISUAL_CARD_IMAGE_LOADING}
                         className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
                       />
                     </div>
@@ -301,7 +299,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           </Button>
         </div>
       </Dialog>
-    </main>
+    </>
   );
 };
 

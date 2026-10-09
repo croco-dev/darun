@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
+import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import type { ProductSuggestion } from './useProductSearchSuggest';
 
 const DEFAULT_ICON = '/images/default-product-icon.svg';
@@ -130,6 +131,7 @@ export function ProductSearchSuggest({
               <img
                 src={suggestion.logoUrl || DEFAULT_ICON}
                 alt=""
+                loading={VISUAL_CARD_IMAGE_LOADING}
                 className="size-6 shrink-0 rounded-md object-contain"
                 onError={event => {
                   const img = event.currentTarget;

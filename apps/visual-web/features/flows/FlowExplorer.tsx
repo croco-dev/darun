@@ -6,6 +6,7 @@ import { bind } from '@darun/utils-structure-react';
 import { useRef } from 'react';
 import { ExplorerShell } from '../explorer/ExplorerShell';
 import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
+import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import {
   VISUAL_PLATFORM_LABELS,
   VISUAL_PLATFORM_OPTIONS,
@@ -27,7 +28,7 @@ function FlowCardGrid({ cards }: { cards: FlowCard[] }) {
               <img
                 src={card.coverImageUrl}
                 alt={card.coverImageAlt || (card.title ? `${card.title} 플로 커버 이미지` : '플로 커버 이미지')}
-                loading="lazy"
+                loading={VISUAL_CARD_IMAGE_LOADING}
                 className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
               />
             </div>
@@ -95,9 +96,8 @@ const View = (props: FlowExplorerState & { hideHero?: boolean }) => {
   const hasFilters = searchInput.trim().length > 0 || platform !== null || flowType !== null || product !== null;
 
   return (
-    <main id="main-content" className="w-full py-8 md:py-12">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 md:gap-10 md:px-6">
-        <ExplorerShell
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 md:gap-10 md:px-6">
+      <ExplorerShell
           state={{ ...props, hasFilters }}
           hero={
             hideHero !== true ? (
@@ -218,8 +218,7 @@ const View = (props: FlowExplorerState & { hideHero?: boolean }) => {
           resourceName="플로"
           unitName="개의 플로"
         />
-      </div>
-    </main>
+    </div>
   );
 };
 
