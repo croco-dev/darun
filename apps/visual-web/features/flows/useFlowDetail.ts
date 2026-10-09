@@ -1,15 +1,25 @@
 'use client';
 
 import { useApolloClient } from '@apollo/client/react';
-import { VisualFlowOnDetailDocument } from '@darun/provider-graphql';
+import { VisualFlowOnDetailDocument, VisualSiblingFlowsOnDetailDocument } from '@darun/provider-graphql';
 import type { VisualFlowType, VisualPlatform } from '@darun/provider-graphql';
 import { useEffect, useState } from 'react';
+import { VISUAL_FLOW_DETAIL_RELATED_FETCH_SIZE, VISUAL_FLOW_DETAIL_RELATED_SIZE } from './detailDocuments';
 import { resolveVisualFlowType, resolveVisualPlatform } from './flowClassifications';
+import { filterSiblingFlows, siblingFlowDisplayTotalCount } from './relatedCollections';
 
 export type FlowDetailStep = {
   position: number;
   caption: string;
   screenshot: { id: string; imageUrl: string; imageAlt: string; title: string | null };
+};
+
+export type FlowDetailRelatedFlow = {
+  id: string;
+  title: string;
+  stepCount: number;
+  coverImageUrl: string;
+  coverImageAlt: string;
 };
 
 export type FlowDetailData = {
@@ -21,6 +31,8 @@ export type FlowDetailData = {
   stepCount: number;
   steps: FlowDetailStep[];
   product: { id: string; name: string; slug: string; summary: string | null; logoUrl: string };
+  relatedFlows: FlowDetailRelatedFlow[];
+  relatedFlowTotalCount: number;
 };
 
 export type FlowDetailState = {
@@ -47,13 +59,40 @@ export function useFlowDetail(id: string): FlowDetailState {
         variables: { id },
         fetchPolicy: 'no-cache',
       })
-      .then(result => {
+      .then(async result => {
         if (!active) {
           return;
         }
         const flow = result.data?.visualFlow ?? null;
         if (flow === null) {
           setQueryState({ status: 'not-found' });
+          return;
+        }
+        const slug = flow.product.slug ?? '';
+        let relatedFlows: FlowDetailRelatedFlow[] = [];
+        let relatedTotalCount = 0;
+        try {
+          const siblingResult = await apolloClient.query({
+            query: VisualSiblingFlowsOnDetailDocument,
+            variables: { productSlug: slug, first: VISUAL_FLOW_DETAIL_RELATED_FETCH_SIZE },
+            fetchPolicy: 'no-cache',
+          });
+          if (!active) {
+            return;
+          }
+          relatedTotalCount = siblingResult.data?.visualFlows.totalCount ?? 0;
+          relatedFlows = filterSiblingFlows(
+            siblingResult.data?.visualFlows.edges ?? [],
+            flow.id,
+            VISUAL_FLOW_DETAIL_RELATED_FETCH_SIZE
+          );
+        } catch (e: unknown) {
+          console.error('Failed to load sibling flows', e);
+          if (!active) {
+            return;
+          }
+        }
+        if (!active) {
           return;
         }
         setQueryState({
@@ -88,6 +127,8 @@ export function useFlowDetail(id: string): FlowDetailState {
               summary: flow.product.summary ?? null,
               logoUrl: flow.product.logoUrl ?? '',
             },
+            relatedFlows: relatedFlows.slice(0, VISUAL_FLOW_DETAIL_RELATED_SIZE),
+            relatedFlowTotalCount: siblingFlowDisplayTotalCount(relatedTotalCount),
           },
         });
       })
