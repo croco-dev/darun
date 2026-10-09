@@ -130,6 +130,7 @@ const View = ({
                 onChange={event => onSearchInputChange(event.currentTarget.value)}
                 onFocus={onSearchInputFocus}
                 placeholder="플로 제목, 설명, 서비스명으로 검색"
+                data-visual-search="flows"
                 className="w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-900 shadow-2xs placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
               />
               <ProductSearchSuggest
