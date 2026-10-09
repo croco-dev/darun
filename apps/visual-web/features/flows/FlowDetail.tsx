@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, ChevronLeft, ChevronRight, ExternalLink, ImageOff, Layers, RefreshCw } from '@darun/ui';
-import { notFound, useNavigate, useSearchParams } from '@darun/utils-router';
+import { Link, notFound, useNavigate, useSearchParams } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useCallback, useEffect, useState } from 'react';
 import { VISUAL_PLATFORM_LABELS, VISUAL_FLOW_TYPE_LABELS } from './flowClassifications';
@@ -237,7 +237,12 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
 
               {activeStep && (
                 <figure className="flex flex-col gap-2">
-                  <StepImage src={activeStep.screenshot.imageUrl} alt={activeStep.screenshot.imageAlt} />
+                  <Link
+                    href={`/screenshots/${encodeURIComponent(activeStep.screenshot.id)}`}
+                    className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  >
+                    <StepImage src={activeStep.screenshot.imageUrl} alt={activeStep.screenshot.imageAlt} />
+                  </Link>
                   <figcaption className="flex flex-col gap-1 text-sm text-dark-600">
                     <span className="text-xs font-bold tabular-nums text-dark-400">단계 {activeStepNumber}</span>
                     <span className="font-medium text-dark-800 break-words [word-break:keep-all]">
@@ -246,6 +251,12 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                     {activeStep.caption.length > 0 && (
                       <span className="break-words [word-break:keep-all]">{activeStep.caption}</span>
                     )}
+                    <Link
+                      href={`/screenshots/${encodeURIComponent(activeStep.screenshot.id)}`}
+                      className="self-start rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                    >
+                      화면 상세 보기 →
+                    </Link>
                   </figcaption>
                 </figure>
               )}
@@ -312,6 +323,45 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             <span className="whitespace-nowrap">서비스 소개</span>
           </Button>
         </div>
+
+        {detail.relatedFlows.length > 0 && (
+          <section aria-labelledby="flow-related-heading" className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="flow-related-heading" className="text-lg font-bold text-dark-900">
+                같은 앱의 다른 플로 ({detail.relatedFlowTotalCount})
+              </h2>
+              <Link
+                href={`/apps/${encodeURIComponent(detail.product.slug)}`}
+                className="shrink-0 rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              >
+                전체 보기 →
+              </Link>
+            </div>
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {detail.relatedFlows.map(flow => (
+                <li key={flow.id}>
+                  <Link
+                    href={`/flows/${encodeURIComponent(flow.id)}`}
+                    className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  >
+                    <div className="aspect-[16/9] w-full overflow-hidden bg-surface-100">
+                      <img
+                        src={flow.coverImageUrl}
+                        alt={flow.coverImageAlt || flow.title || `${detail.product.name} 플로 커버`}
+                        loading="lazy"
+                        className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-2 p-3.5">
+                      <span className="truncate text-sm font-bold text-dark-900">{flow.title}</span>
+                      <span className="shrink-0 text-xs text-dark-500 tabular-nums">{flow.stepCount}단계</span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     </main>
   );

@@ -1,6 +1,5 @@
 import { gql } from '@apollo/client';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query VisualFlowOnDetail($id: String!) {
     visualFlow(id: $id) {
@@ -35,3 +34,26 @@ gql`
     }
   }
 `;
+
+gql`
+  query VisualSiblingFlowsOnDetail($productSlug: String!, $first: Int!) {
+    visualFlows(first: $first, productSlug: $productSlug) {
+      totalCount
+      edges {
+        node {
+          id
+          title
+          stepCount
+          coverScreenshot {
+            id
+            imageUrl
+            imageAlt
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const VISUAL_FLOW_DETAIL_RELATED_SIZE = 8;
+export const VISUAL_FLOW_DETAIL_RELATED_FETCH_SIZE = 9;
