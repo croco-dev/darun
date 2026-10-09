@@ -4,6 +4,7 @@ import { VisualLayout } from '../VisualLayout';
 
 export const metadata = {
   title: 'UX 플로 — 다른 Visual',
+  alternates: { canonical: '/flows' },
 };
 
 function FlowExplorerSkeleton() {

@@ -52,6 +52,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${flow.title} — ${flow.product.name} — 다른 Visual`,
     description: `${flow.product.name}의 UX 플로 「${flow.title}」를 단계별 화면으로 만나보세요.`,
+    alternates: { canonical: `/flows/${id}` },
+    openGraph: {
+      title: `${flow.title} — ${flow.product.name} — 다른 Visual`,
+      description: `${flow.product.name}의 UX 플로 「${flow.title}」를 단계별 화면으로 만나보세요.`,
+    },
   };
 }
 

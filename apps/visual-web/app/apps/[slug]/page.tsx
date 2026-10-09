@@ -49,6 +49,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${app.name} — 다른 Visual`,
     description: `${app.name}의 화면과 플로 모음을 다른 Visual에서 만나보세요.`,
+    alternates: { canonical: `/apps/${slug}` },
+    openGraph: {
+      title: `${app.name} — 다른 Visual`,
+      description: `${app.name}의 화면과 플로 모음을 다른 Visual에서 만나보세요.`,
+    },
   };
 }
 

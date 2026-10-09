@@ -11,6 +11,7 @@ const screenshotQuery = gql`
     visualScreenshot(id: $id) {
       id
       title
+      imageUrl
       imageAlt
       product {
         name
@@ -24,6 +25,7 @@ type VisualScreenshotMetadataData = {
   visualScreenshot?: {
     id: string;
     title: string | null;
+    imageUrl: string;
     imageAlt: string;
     product: { name: string; slug: string };
   } | null;
@@ -55,6 +57,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${title} — 다른 Visual`,
     description: `${screenshot.product.name}의 화면을 다른 Visual에서 만나보세요.`,
+    alternates: { canonical: `/screenshots/${id}` },
+    openGraph: {
+      title: `${title} — 다른 Visual`,
+      description: `${screenshot.product.name}의 화면을 다른 Visual에서 만나보세요.`,
+      images: [{ url: screenshot.imageUrl, alt: screenshot.imageAlt }],
+    },
   };
 }
 

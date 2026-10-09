@@ -90,6 +90,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   return {
     title: `${screenType} 화면 모음 — 다른 Visual`,
     description: `한국 서비스의 ${screenType} 화면을 다른 Visual에서 모아보세요.`,
+    alternates: { canonical: '/' },
   };
 }
 
