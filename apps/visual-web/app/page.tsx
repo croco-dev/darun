@@ -1,47 +1,7 @@
-import { gql } from '@apollo/client';
 import { Metadata } from 'next';
-import { cache } from 'react';
-import { TrendingStrip } from '../features/discover/TrendingStrip';
 import { CategoryCards, VisualHomeHero } from '../features/discover/VisualHomeHero';
 import { ScreenshotExplorer } from '../features/screenshots';
-import { container } from './serverContainer';
 import { VisualLayout } from './VisualLayout';
-
-const trendingQuery = gql`
-  query VisualHomeTrending {
-    visualScreenshots(first: 8, after: null) {
-      edges {
-        node {
-          id
-          imageUrl
-          imageAlt
-          title
-          product {
-            id
-            name
-            slug
-          }
-        }
-      }
-    }
-  }
-`;
-
-type TrendingData = {
-  visualScreenshots?: {
-    edges?: Array<{
-      node?: {
-        id?: string;
-        imageUrl?: string;
-        imageAlt?: string;
-        title?: string | null;
-        product?: { id?: string; name?: string; slug?: string } | null;
-      } | null;
-    } | null> | null;
-  } | null;
-};
-
-type TrendingEdge = NonNullable<NonNullable<TrendingData['visualScreenshots']>['edges']>[number];
 
 export type TrendingItem = {
   id: string;
@@ -50,31 +10,6 @@ export type TrendingItem = {
   title: string | null;
   productName: string;
 };
-
-const getTrending = cache(async (): Promise<TrendingItem[]> => {
-  try {
-    const client = container.serverApolloClient;
-    const { data } = await client.query<TrendingData>({ query: trendingQuery });
-    return (data?.visualScreenshots?.edges ?? []).flatMap((edge: TrendingEdge) => {
-      const node = edge?.node;
-      if (!node?.id || !node.imageUrl || !node.product?.name) {
-        return [];
-      }
-      return [
-        {
-          id: node.id,
-          imageUrl: node.imageUrl,
-          imageAlt: node.imageAlt ?? '',
-          title: node.title ?? null,
-          productName: node.product.name,
-        },
-      ];
-    });
-  } catch (error) {
-    console.error('Failed to load trending screenshots', error);
-    return [];
-  }
-});
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -100,22 +35,20 @@ export default async function Page({ searchParams }: Props) {
     const value = params[key];
     return typeof value === 'string' && value.trim().length > 0;
   });
-  const trending = hasActiveFilter ? [] : await getTrending();
 
   return (
     <VisualLayout>
-      <main id="main-content" tabIndex={-1} className="w-full py-8 focus:outline-none md:py-12">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 md:gap-12 md:px-6">
+      <div className="w-full pt-6 pb-8 md:pt-8 md:pb-12">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:gap-8 md:px-6">
           {!hasActiveFilter && (
-            <>
+            <div className="flex flex-col gap-4">
               <VisualHomeHero />
               <CategoryCards />
-              <TrendingStrip items={trending} />
-            </>
+            </div>
           )}
           <ScreenshotExplorer hideHero />
         </div>
-      </main>
+      </div>
     </VisualLayout>
   );
 }

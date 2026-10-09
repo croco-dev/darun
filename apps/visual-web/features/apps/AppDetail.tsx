@@ -4,6 +4,8 @@ import { Button, ImageOff, RefreshCw } from '@darun/ui';
 import { Link, notFound, useRouter } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
+import { SaveButton } from '../collections/SaveButton';
+import { AppDescription } from './AppDescription';
 import { AppDetailState, useAppDetail } from './useAppDetail';
 
 const DEFAULT_ICON = '/images/default-product-icon.svg';
@@ -22,7 +24,7 @@ function DetailSkeletons() {
 }
 
 const View = (props: AppDetailState & { slug: string }) => {
-  const { status, detail, retry, slug } = props;
+  const { status, detail, retry } = props;
   const router = useRouter();
 
   if (status === 'loading') {
@@ -59,9 +61,27 @@ const View = (props: AppDetailState & { slug: string }) => {
 
   const screenshotsHref = `/?product=${encodeURIComponent(detail.slug)}`;
   const flowsHref = `/flows?product=${encodeURIComponent(detail.slug)}`;
+  const appHref = `/apps/${encodeURIComponent(detail.slug)}`;
 
   return (
     <div className="flex w-full flex-col gap-6 md:gap-10">
+      <nav
+        aria-label="이동 경로"
+        className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-dark-500"
+      >
+        <Link
+          href="/apps"
+          className="shrink-0 rounded font-semibold transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+        >
+          앱
+        </Link>
+        <span aria-hidden="true" className="text-dark-300">
+          /
+        </span>
+        <span aria-current="page" className="min-w-0 flex-1 truncate font-semibold text-dark-900">
+          {detail.name}
+        </span>
+      </nav>
       <button
         type="button"
         onClick={() => router.back()}
@@ -75,13 +95,26 @@ const View = (props: AppDetailState & { slug: string }) => {
           alt={`${detail.name} 로고`}
           className="h-16 w-16 shrink-0 rounded-2xl border border-dark-150 bg-surface-100 object-cover"
         />
-        <div className="flex min-w-0 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h1 className="truncate text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">{detail.name}</h1>
           {detail.summary.trim().length > 0 && (
             <p className="line-clamp-2 text-sm leading-relaxed text-dark-500">{detail.summary}</p>
           )}
         </div>
+        <SaveButton
+          item={{
+            kind: 'app',
+            id: detail.id,
+            title: detail.name,
+            imageUrl: detail.logoUrl || DEFAULT_ICON,
+            href: appHref,
+            productName: detail.name,
+          }}
+        />
       </header>
+      {detail.description !== null && detail.description.trim().length > 0 && (
+        <AppDescription description={detail.description} />
+      )}
 
       <section aria-labelledby="app-screenshots-heading" className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
@@ -102,17 +135,17 @@ const View = (props: AppDetailState & { slug: string }) => {
         ) : (
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {detail.screenshots.map(item => (
-              <li key={item.id}>
+              <li key={item.id} className="min-w-0">
                 <Link
                   href={`/screenshots/${encodeURIComponent(item.id)}`}
                   className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
-                  <div className="aspect-[4/3] w-full overflow-hidden bg-surface-100">
+                  <div className="w-full bg-surface-100">
                     <img
                       src={item.imageUrl}
                       alt={item.imageAlt || item.title || `${detail.name} 스크린샷`}
                       loading={VISUAL_CARD_IMAGE_LOADING}
-                      className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
+                      className="h-auto max-h-[420px] w-full object-contain"
                     />
                   </div>
                   {item.title && <div className="truncate p-2.5 text-xs font-semibold text-dark-900">{item.title}</div>}
@@ -142,7 +175,7 @@ const View = (props: AppDetailState & { slug: string }) => {
         ) : (
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {detail.flows.map(flow => (
-              <li key={flow.id}>
+              <li key={flow.id} className="min-w-0">
                 <Link
                   href={`/flows/${encodeURIComponent(flow.id)}`}
                   className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
@@ -152,7 +185,7 @@ const View = (props: AppDetailState & { slug: string }) => {
                       src={flow.coverImageUrl}
                       alt={flow.coverImageAlt || flow.title || `${detail.name} 플로 커버`}
                       loading={VISUAL_CARD_IMAGE_LOADING}
-                      className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
+                      className="h-full w-full object-contain"
                     />
                   </div>
                   <div className="flex items-center justify-between gap-2 p-3.5">
@@ -165,7 +198,6 @@ const View = (props: AppDetailState & { slug: string }) => {
           </ul>
         )}
       </section>
-      <span className="sr-only">{slug}</span>
     </div>
   );
 };
@@ -173,7 +205,9 @@ const View = (props: AppDetailState & { slug: string }) => {
 const BoundAppDetail = bind<{ slug: string }, AppDetailState & { slug: string }>(
   props => ({ ...useAppDetail(props.slug), slug: props.slug }),
   View,
-  { displayName: 'AppDetail' }
+  {
+    displayName: 'AppDetail',
+  }
 );
 
 export function AppDetail({ slug }: { slug: string }) {

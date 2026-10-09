@@ -26,6 +26,7 @@ export function ExplorerShell({
   grid,
   resourceName,
   unitName,
+  resultsControls,
   children,
 }: {
   state: ExplorerShellState;
@@ -35,6 +36,7 @@ export function ExplorerShell({
   grid: ReactNode;
   resourceName: string;
   unitName: string;
+  resultsControls?: ReactNode;
   children?: ReactNode;
 }) {
   return (
@@ -92,10 +94,13 @@ export function ExplorerShell({
         </div>
       ) : (
         <>
-          <p className="text-xs text-dark-400 tabular-nums" aria-live="polite">
-            총 {state.totalCount}
-            {unitName}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-dark-400 tabular-nums" aria-live="polite">
+              총 {state.totalCount}
+              {unitName}
+            </p>
+            {resultsControls}
+          </div>
           {grid}
           {state.hasNextPage && (
             <div className="flex flex-col items-center gap-2">

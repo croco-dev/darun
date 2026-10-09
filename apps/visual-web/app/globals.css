@@ -1,7 +1,9 @@
+@import "normalize.css/normalize.css" layer(base);
 @import "tailwindcss";
 
 @config '../../../tailwind.config.ts';
 @source './**/*.{js,ts,jsx,tsx,mdx}';
+@source '../features/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/*/shell/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/*/feature/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/shared/ui/src/**/*.{js,ts,jsx,tsx}';

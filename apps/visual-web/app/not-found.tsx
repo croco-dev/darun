@@ -4,7 +4,7 @@ import { VisualLayout } from './VisualLayout';
 export default function NotFound() {
   return (
     <VisualLayout>
-      <main id="main-content" tabIndex={-1} className="w-full py-20 focus:outline-none">
+      <div className="w-full py-20">
         <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 px-4 text-center">
           <p className="text-5xl font-bold tracking-tight text-dark-900 select-none tabular-nums font-mono">404</p>
           <h1 className="text-lg font-bold text-dark-900 break-words [word-break:keep-all]">
@@ -20,7 +20,7 @@ export default function NotFound() {
             <span className="whitespace-nowrap">Visual 홈으로</span>
           </Link>
         </div>
-      </main>
+      </div>
     </VisualLayout>
   );
 }

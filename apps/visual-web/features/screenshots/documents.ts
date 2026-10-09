@@ -1,6 +1,5 @@
 import { gql } from '@apollo/client';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query VisualScreenshotsOnExplorer(
     $query: String
@@ -33,6 +32,7 @@ gql`
             name
             slug
             logoUrl
+            summary
           }
         }
       }

@@ -820,6 +820,9 @@ importers:
       date-fns:
         specifier: 3.6.0
         version: 3.6.0
+      isomorphic-dompurify:
+        specifier: 3.8.0
+        version: 3.8.0
       lucide-react:
         specifier: 'catalog:'
         version: 0.468.0(react@19.2.6)

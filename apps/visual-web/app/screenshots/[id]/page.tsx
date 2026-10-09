@@ -76,9 +76,7 @@ export default async function Page({ params }: Props) {
 
   return (
     <VisualLayout>
-      <main id="main-content" tabIndex={-1} className="w-full py-8 focus:outline-none md:py-12">
-        <ScreenshotDetail id={id} />
-      </main>
+      <ScreenshotDetail id={id} />
     </VisualLayout>
   );
 }
