@@ -6,6 +6,7 @@ import { bind } from '@darun/utils-structure-react';
 import { useRef } from 'react';
 import { ExplorerShell } from '../explorer/ExplorerShell';
 import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
+import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { ScreenshotExplorerState, ScreenshotCard, useScreenshotExplorer } from './useScreenshotExplorer';
 import {
   UNCLASSIFIED_LABEL,
@@ -34,7 +35,7 @@ function ScreenshotCardGrid({ cards }: { cards: ScreenshotCard[] }) {
                   card.title ||
                   (card.product.name ? `${card.product.name} 스크린샷` : '스크린샷 이미지')
                 }
-                loading="lazy"
+                loading={VISUAL_CARD_IMAGE_LOADING}
                 className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
               />
             </div>

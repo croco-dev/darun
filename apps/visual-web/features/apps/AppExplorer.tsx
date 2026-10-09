@@ -6,6 +6,7 @@ import { bind } from '@darun/utils-structure-react';
 import { useRef } from 'react';
 import { ExplorerShell } from '../explorer/ExplorerShell';
 import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
+import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { AppExplorerState, AppCard, useAppExplorer } from './useAppExplorer';
 
 const DEFAULT_ICON = '/images/default-product-icon.svg';
@@ -22,7 +23,7 @@ function AppCardGrid({ cards }: { cards: AppCard[] }) {
             <img
               src={card.logoUrl || DEFAULT_ICON}
               alt={`${card.name} 로고`}
-              loading="lazy"
+              loading={VISUAL_CARD_IMAGE_LOADING}
               className="h-14 w-14 shrink-0 rounded-xl border border-dark-150 bg-surface-100 object-cover"
             />
             <span className="flex min-w-0 flex-col gap-1">

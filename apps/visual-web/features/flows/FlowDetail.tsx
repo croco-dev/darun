@@ -4,6 +4,7 @@ import { Button, ChevronLeft, ChevronRight, ExternalLink, ImageOff, Layers, Refr
 import { Link, notFound, useNavigate, useSearchParams } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useCallback, useEffect, useState } from 'react';
+import { VISUAL_CARD_IMAGE_LOADING, VISUAL_DETAIL_IMAGE_FETCH_PRIORITY } from '../perf/imageLoading';
 import { VISUAL_PLATFORM_LABELS, VISUAL_FLOW_TYPE_LABELS } from './flowClassifications';
 import { FlowDetailState, useFlowDetail } from './useFlowDetail';
 
@@ -36,6 +37,7 @@ function StepImage({ src, alt }: { src: string; alt: string }) {
     <img
       src={src}
       alt={alt}
+      fetchPriority={VISUAL_DETAIL_IMAGE_FETCH_PRIORITY}
       onError={() => setFailedSrc(src)}
       className="max-h-[calc(100dvh-16rem)] w-full rounded-2xl border border-dark-150 bg-surface-100 object-contain"
     />
@@ -112,23 +114,21 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
 
   if (status === 'loading') {
     return (
-      <main id="main-content" className="w-full py-8 md:py-12">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6" aria-busy="true">
-          <div
-            className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
-            aria-hidden="true"
-          />
-          <div
-            className="h-4 w-1/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
-            aria-hidden="true"
-          />
-          <div
-            className="min-h-72 w-full animate-pulse rounded-2xl bg-surface-200 motion-reduce:animate-none"
-            aria-hidden="true"
-          />
-          <span className="sr-only">플로를 불러오는 중</span>
-        </div>
-      </main>
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6" aria-busy="true">
+        <div
+          className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+        <div
+          className="h-4 w-1/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+        <div
+          className="min-h-72 w-full animate-pulse rounded-2xl bg-surface-200 motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+        <span className="sr-only">플로를 불러오는 중</span>
+      </div>
     );
   }
 
@@ -138,29 +138,27 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
 
   if (status === 'error' || detail === null) {
     return (
-      <main id="main-content" className="w-full py-8 md:py-12">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 md:px-6">
-          <div
-            role="alert"
-            className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center"
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 md:px-6">
+        <div
+          role="alert"
+          className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center"
+        >
+          <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
+            플로를 불러오지 못했어요.
+          </p>
+          <Button
+            type="button"
+            variant="contained"
+            color="primary"
+            size="sm"
+            onClick={() => retry()}
+            className="active:scale-[0.98] motion-reduce:transform-none"
           >
-            <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
-              플로를 불러오지 못했어요.
-            </p>
-            <Button
-              type="button"
-              variant="contained"
-              color="primary"
-              size="sm"
-              onClick={() => retry()}
-              className="active:scale-[0.98] motion-reduce:transform-none"
-            >
-              <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap">다시 시도</span>
-            </Button>
-          </div>
+            <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap">다시 시도</span>
+          </Button>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -173,9 +171,8 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
   const flowTypeLabel = VISUAL_FLOW_TYPE_LABELS[detail.flowType] ?? detail.flowType;
 
   return (
-    <main id="main-content" className="w-full py-8 md:py-12">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6">
-        <div className="flex flex-col gap-2">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6">
+      <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-xs text-dark-400">
             <Layers size={14} className="shrink-0" aria-hidden="true" />
             <span>
@@ -286,7 +283,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                         <img
                           src={step.screenshot.imageUrl}
                           alt={step.screenshot.imageAlt}
-                          loading="lazy"
+                          loading={VISUAL_CARD_IMAGE_LOADING}
                           className="h-14 w-24 rounded object-cover object-top"
                         />
                       </button>
@@ -348,7 +345,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                       <img
                         src={flow.coverImageUrl}
                         alt={flow.coverImageAlt || flow.title || `${detail.product.name} 플로 커버`}
-                        loading="lazy"
+                        loading={VISUAL_CARD_IMAGE_LOADING}
                         className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
                       />
                     </div>
@@ -362,8 +359,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             </ul>
           </section>
         )}
-      </div>
-    </main>
+    </div>
   );
 };
 

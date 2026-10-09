@@ -104,7 +104,7 @@ export default async function Page({ searchParams }: Props) {
 
   return (
     <VisualLayout>
-      <main id="main-content" className="w-full py-8 md:py-12">
+      <main id="main-content" tabIndex={-1} className="w-full py-8 focus:outline-none md:py-12">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 md:gap-12 md:px-6">
           {!hasActiveFilter && (
             <>

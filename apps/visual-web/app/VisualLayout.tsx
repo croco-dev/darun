@@ -77,9 +77,7 @@ export function VisualLayout({ children }: { children: ReactNode }) {
           </div>
         </ContentArea>
       </header>
-      <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">
-        {children}
-      </div>
+      <div className="flex flex-1 flex-col">{children}</div>
       <footer className="border-t border-dark-150 bg-surface-50/75 py-6">
         <ContentArea>
           <div className="flex flex-wrap items-center justify-between gap-3">

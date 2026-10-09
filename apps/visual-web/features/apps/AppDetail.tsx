@@ -3,6 +3,7 @@
 import { Button, ImageOff, RefreshCw } from '@darun/ui';
 import { Link, notFound, useRouter } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
+import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { AppDetailState, useAppDetail } from './useAppDetail';
 
 const DEFAULT_ICON = '/images/default-product-icon.svg';
@@ -110,7 +111,7 @@ const View = (props: AppDetailState & { slug: string }) => {
                     <img
                       src={item.imageUrl}
                       alt={item.imageAlt || item.title || `${detail.name} 스크린샷`}
-                      loading="lazy"
+                      loading={VISUAL_CARD_IMAGE_LOADING}
                       className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
                     />
                   </div>
@@ -150,7 +151,7 @@ const View = (props: AppDetailState & { slug: string }) => {
                     <img
                       src={flow.coverImageUrl}
                       alt={flow.coverImageAlt || flow.title || `${detail.name} 플로 커버`}
-                      loading="lazy"
+                      loading={VISUAL_CARD_IMAGE_LOADING}
                       className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
                     />
                   </div>
