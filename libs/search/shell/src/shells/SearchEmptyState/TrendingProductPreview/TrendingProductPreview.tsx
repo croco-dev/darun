@@ -1,20 +1,47 @@
 'use client';
 
+import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { ProductCard } from '@darun/products-shell';
-import { TrendingPreviewDocument } from '@darun/provider-graphql';
 import { TrendingUp } from '@darun/ui';
 import { useLocale, useTranslations } from 'next-intl';
+
+const TRENDING_PREVIEW = gql`
+  query TrendingPreview($first: Int!, $locale: String!) {
+    rankedProducts(first: $first, locale: $locale) {
+      id
+      name
+      slug
+      logoUrl
+      summary
+      voteCount
+      tags {
+        id
+        name
+      }
+    }
+  }
+`;
+
+type TrendingPreviewProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string;
+  summary: string;
+  voteCount: number;
+  tags: Array<{ id: string; name: string }>;
+};
 
 export const TrendingProductPreview = () => {
   const locale = useLocale();
   const t = useTranslations('Search');
-  const { data } = useSuspenseQuery(TrendingPreviewDocument, {
+  const { data } = useSuspenseQuery<{ rankedProducts?: Array<TrendingPreviewProduct> }>(TRENDING_PREVIEW, {
     variables: { first: 8, locale },
   });
 
-  const products = data?.rankedProducts ?? [];
+  const products = (data?.rankedProducts ?? []).slice(0, 8);
 
   if (products.length === 0) {
     return (
@@ -38,7 +65,7 @@ export const TrendingProductPreview = () => {
         aria-label={t('page.trendingTitle')}
         className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:gap-5"
       >
-        {products.slice(0, 8).map((product, index) => (
+        {products.map((product, index) => (
           <ProductCard
             key={product.id}
             product={product}
