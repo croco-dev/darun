@@ -15,10 +15,12 @@ const pretendardFont = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://visual.darun.io'),
   title: '다른 Visual — 디자인·스크린샷·UX 탐색',
   description:
     '다른 Visual에서 서비스의 실제 화면을 검색하고, 플랫폼과 화면 유형으로 나누어 디자인과 UX를 탐색해 보세요.',
   keywords: ['스크린샷', 'UX', '디자인', '화면', '서비스 화면', '다른', 'darun'],
+  alternates: { canonical: '/' },
   openGraph: {
     siteName: '다른(darun)',
     url: 'https://visual.darun.io',

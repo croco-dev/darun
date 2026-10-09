@@ -4,6 +4,7 @@ import { VisualLayout } from '../VisualLayout';
 
 export const metadata = {
   title: '앱 — 다른 Visual',
+  alternates: { canonical: '/apps' },
 };
 
 function AppExplorerSkeleton() {
