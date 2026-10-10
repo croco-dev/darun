@@ -6,3 +6,10 @@ export type { LlmConfig, LlmConfigProvider } from './libs/LlmConfig';
 export { withRetry, RetryableError } from './withRetry';
 export type { RetryOptions } from './withRetry';
 export { withTimeout } from './withTimeout';
+export { BraveSearchClient } from './search/BraveSearchClient';
+export type {
+  WebSearchResult,
+  WebSearchFailureCode,
+  WebSearchOutcome,
+  WebSearchKeyProvider,
+} from './search/types';
