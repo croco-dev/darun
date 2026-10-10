@@ -530,4 +530,51 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
       .limit(1);
     return existing.length > 0;
   }
+
+  /**
+   * M4 내 저장 플로 카드 목록. 저장 시각 내림차순 + id 내림차순.
+   * 공개 제품(publishedAt IS NOT NULL)만 반환한다.
+   */
+  async findManyVisualSavedFlowsByUser(params: {
+    userId: string;
+    limit: number;
+    offset: number;
+  }): Promise<{ flows: VisualFlowSummary[]; totalCount: number }> {
+    const baseConditions = [eq(visualSaves.userId, params.userId), isNotNull(visualSaves.flowId)];
+    const [countRows, rows] = await Promise.all([
+      this.db
+        .select({ value: count() })
+        .from(visualSaves)
+        .where(and(...baseConditions)),
+      this.db
+        .select({
+          id: productFlows.id,
+          title: productFlows.title,
+          description: productFlows.description,
+          platform: productFlows.platform,
+          flowType: productFlows.flowType,
+          stepCount: stepCountExpr,
+          coverId: sql<string | null>`${coverColumn('id')}`,
+          coverImageUrl: sql<string | null>`${coverColumn('image_url')}`,
+          coverImageAlt: sql<string | null>`${coverColumn('image_alt')}`,
+          productId: productFlows.productId,
+          productName: products.name,
+          productSlug: products.slug,
+        })
+        .from(visualSaves)
+        .innerJoin(productFlows, eq(productFlows.id, visualSaves.flowId))
+        .innerJoin(products, eq(products.id, productFlows.productId))
+        .where(and(...baseConditions, isNotNull(products.publishedAt)))
+        .orderBy(sql`${visualSaves.createdAt} DESC`, sql`${visualSaves.id} DESC`)
+        .limit(params.limit)
+        .offset(params.offset),
+    ]);
+    return {
+      flows: rows.flatMap(row => {
+        const summary = toVisualSummary(row);
+        return summary ? [summary] : [];
+      }),
+      totalCount: countRows[0]?.value ?? 0,
+    };
+  }
 }

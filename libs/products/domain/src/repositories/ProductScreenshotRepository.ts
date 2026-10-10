@@ -70,6 +70,15 @@ export interface ProductScreenshotRepository {
     limit: number;
     offset: number;
   }): Promise<{ screenshotIds: string[]; flowIds: string[]; totalCount: number }>;
+  /**
+   * M4 내 저장 화면 카드 목록. 로그인 필수.
+   * 저장 시각 내림차순(LATEST) + id 내림차순 tiebreak, 공개 제품만.
+   */
+  findManyVisualSavedScreenshotsByUser(params: {
+    userId: string;
+    limit: number;
+    offset: number;
+  }): Promise<{ screenshots: VisualScreenshotWithProduct[]; totalCount: number }>;
 }
 
 export const ProductScreenshotRepositoryToken = new Token<ProductScreenshotRepository>('ProductScreenshotRepository');

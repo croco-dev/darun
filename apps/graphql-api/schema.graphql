@@ -370,6 +370,8 @@ type Query {
   visualFlowSaveStatus(id: String!): VisualSaveStatusPayload!
   myVisualScreenshotSaves(first: Int, page: Int): [String!]!
   myVisualFlowSaves(first: Int, page: Int): [String!]!
+  myVisualSavedScreenshots(first: Int, page: Int): VisualScreenshotConnection!
+  myVisualSavedFlows(first: Int, page: Int): VisualFlowConnection!
 }
 
 input RegisterProductCompanyInput {

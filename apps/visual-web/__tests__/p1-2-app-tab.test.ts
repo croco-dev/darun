@@ -3,7 +3,7 @@ import { VISUAL_NAV_TABS, isTabActive } from '../app/visualNav';
 
 describe('P1-2 app tab', () => {
   it('앱 탭이 내비에 포함된다', () => {
-    expect(VISUAL_NAV_TABS.map(tab => tab.href)).toEqual(['/', '/flows', '/apps']);
+    expect(VISUAL_NAV_TABS.map(tab => tab.href)).toEqual(['/', '/flows', '/apps', '/saves']);
   });
 
   it('앱 탭은 상세에서도 활성화된다', () => {

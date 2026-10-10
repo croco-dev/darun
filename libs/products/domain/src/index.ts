@@ -166,6 +166,7 @@ export { assertVisualUlid } from './utils/assertVisualUlid';
 export { ToggleVisualFlowSave, ToggleVisualScreenshotSave } from './usecases/ToggleVisualSave';
 export type { ToggleVisualSaveResult } from './usecases/ToggleVisualSave';
 export { GetMyVisualSaves, GetVisualSaveStatus, VISUAL_SAVES_MAX_FIRST } from './usecases/VisualSaveQuery';
+export { GetMyVisualSavedFlows, GetMyVisualSavedScreenshots } from './usecases/VisualSaveQuery';
 export type { VisualSaveStatus, VisualSavedItem } from './usecases/VisualSaveQuery';
 export { GetVisualScreenshotFlows } from './usecases/GetVisualScreenshotFlows';
 export { GetAdminProductFlows } from './usecases/GetAdminProductFlows';
