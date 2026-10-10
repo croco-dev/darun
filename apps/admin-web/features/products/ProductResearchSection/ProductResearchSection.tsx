@@ -2,7 +2,14 @@
 
 import { gql, useLazyQuery, useMutation } from '@apollo/client';
 import { Button } from '@darun/ui';
-import { AdminActions, AdminField, AdminInput, AdminPanel, AdminSectionBody, AdminSectionHeader } from '@darun/ui-admin';
+import {
+  AdminActions,
+  AdminField,
+  AdminInput,
+  AdminPanel,
+  AdminSectionBody,
+  AdminSectionHeader,
+} from '@darun/ui-admin';
 import { useState } from 'react';
 
 const REQUEST_PRODUCT_RESEARCH = gql`
@@ -109,7 +116,9 @@ export const ProductResearchSection = () => {
             <p className="text-sm font-semibold">{result.name?.value}</p>
             {result.summary?.value && <p className="text-sm text-dark-600">{result.summary.value}</p>}
             <p className="text-xs text-dark-500">제안 slug: {result.suggestedSlug}</p>
-            {result.warnings?.length > 0 && <p className="text-xs text-amber-700">주의: {result.warnings.join(', ')}</p>}
+            {result.warnings?.length > 0 && (
+              <p className="text-xs text-amber-700">주의: {result.warnings.join(', ')}</p>
+            )}
             <ul className="list-disc pl-5 text-xs text-dark-600">
               {result.sources?.map((source: { id: string; title: string; url: string }) => (
                 <li key={source.id}>
@@ -119,7 +128,9 @@ export const ProductResearchSection = () => {
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-dark-500">검토 후 아래 수동 등록 폼에 복사해 저장하세요. 자동 발행되지 않습니다.</p>
+            <p className="text-xs text-dark-500">
+              검토 후 아래 수동 등록 폼에 복사해 저장하세요. 자동 발행되지 않습니다.
+            </p>
           </div>
         )}
       </AdminSectionBody>

@@ -12,10 +12,10 @@ import { eq, inArray } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { ulid } from 'ulid';
 import { categories } from '../entities/CategorySchema';
-import { products } from '../entities/ProductSchema';
 import { productFeatures } from '../entities/ProductFeaturesSchema';
 import { productLinks } from '../entities/ProductLinksSchema';
 import { productResearchJobs } from '../entities/ProductResearchJobSchema';
+import { products } from '../entities/ProductSchema';
 import { productTags } from '../entities/ProductTagsSchema';
 import { tags } from '../entities/TagSchema';
 
@@ -31,9 +31,7 @@ function isUniqueViolationError(error: unknown): boolean {
 }
 
 @Service(ProductResearchMaterializationRepositoryToken)
-export class PostgresqlProductResearchMaterializationRepository
-  implements ProductResearchMaterializationRepository
-{
+export class PostgresqlProductResearchMaterializationRepository implements ProductResearchMaterializationRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
   async materialize(input: ValidatedReviewedProductInput): Promise<{
@@ -79,7 +77,10 @@ export class PostgresqlProductResearchMaterializationRepository
 
         const categoryRows =
           input.categoryIds.length > 0
-            ? await tx.select().from(categories).where(inArray(categories.id, [...input.categoryIds]))
+            ? await tx
+                .select()
+                .from(categories)
+                .where(inArray(categories.id, [...input.categoryIds]))
             : [];
         if (categoryRows.length !== input.categoryIds.length) {
           throw productInvalidArgs('카테고리를 다시 선택해 주세요.');
@@ -135,7 +136,10 @@ export class PostgresqlProductResearchMaterializationRepository
               }))
             )
             .onConflictDoNothing({ target: tags.name });
-          const tagRows = await tx.select().from(tags).where(inArray(tags.name, [...input.tags]));
+          const tagRows = await tx
+            .select()
+            .from(tags)
+            .where(inArray(tags.name, [...input.tags]));
           await tx
             .insert(productTags)
             .values(tagRows.map(tag => ({ productId, tagId: tag.id })))

@@ -7,9 +7,4 @@ export { withRetry, RetryableError } from './withRetry';
 export type { RetryOptions } from './withRetry';
 export { withTimeout } from './withTimeout';
 export { BraveSearchClient } from './search/BraveSearchClient';
-export type {
-  WebSearchResult,
-  WebSearchFailureCode,
-  WebSearchOutcome,
-  WebSearchKeyProvider,
-} from './search/types';
+export type { WebSearchResult, WebSearchFailureCode, WebSearchOutcome, WebSearchKeyProvider } from './search/types';

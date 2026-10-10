@@ -13,10 +13,7 @@ export type ProductResearchFailureCode =
   | 'RETRY_EXHAUSTED';
 
 export type ProductResearchWarning =
-  | 'PARTIAL_SEARCH_FAILURE'
-  | 'NO_INPUT_HOST_SOURCES'
-  | 'SPARSE_FACTS'
-  | 'AMBIGUOUS_PRODUCT';
+  'PARTIAL_SEARCH_FAILURE' | 'NO_INPUT_HOST_SOURCES' | 'SPARSE_FACTS' | 'AMBIGUOUS_PRODUCT';
 
 export type ResearchRelationToInput = 'INPUT_HOST_MATCH' | 'EXTERNAL';
 

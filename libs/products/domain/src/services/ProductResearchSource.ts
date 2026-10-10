@@ -26,7 +26,10 @@ function canonicalizeUrl(rawUrl: string): string | null {
   try {
     const parsed = new URL(trimmed);
     parsed.hash = '';
-    if ((parsed.protocol === 'http:' && parsed.port === '80') || (parsed.protocol === 'https:' && parsed.port === '443')) {
+    if (
+      (parsed.protocol === 'http:' && parsed.port === '80') ||
+      (parsed.protocol === 'https:' && parsed.port === '443')
+    ) {
       parsed.port = '';
     }
     let pathname = parsed.pathname;

@@ -1,8 +1,9 @@
 import { Token } from 'typedi';
 import type { Product } from '../entities/Product';
 
-export const ProductResearchMaterializationRepositoryToken =
-  new Token<ProductResearchMaterializationRepository>('ProductResearchMaterializationRepository');
+export const ProductResearchMaterializationRepositoryToken = new Token<ProductResearchMaterializationRepository>(
+  'ProductResearchMaterializationRepository'
+);
 
 export type ReviewedResearchFeature = {
   name: string;

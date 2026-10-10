@@ -33,9 +33,7 @@ function isSecretPath(pathname: string): boolean {
   if (lower.includes('/invite/') || lower.includes('/reset-password/') || lower.includes('/callback/')) {
     return true;
   }
-  return lower
-    .split('/')
-    .some(segment => segment.length >= 32 && /^[a-z0-9_-]+$/i.test(segment));
+  return lower.split('/').some(segment => segment.length >= 32 && /^[a-z0-9_-]+$/i.test(segment));
 }
 
 export type NormalizeOfficialUrlSuccess = { ok: true; url: string; hostname: string };
@@ -80,7 +78,10 @@ export function normalizeOfficialUrl(input: string): NormalizeOfficialUrlResult 
   parsed.hostname = hostname;
   parsed.hash = '';
   parsed.search = '';
-  if ((parsed.protocol === 'http:' && parsed.port === '80') || (parsed.protocol === 'https:' && parsed.port === '443')) {
+  if (
+    (parsed.protocol === 'http:' && parsed.port === '80') ||
+    (parsed.protocol === 'https:' && parsed.port === '443')
+  ) {
     parsed.port = '';
   }
   if (parsed.pathname.length > 1 && parsed.pathname.endsWith('/')) {

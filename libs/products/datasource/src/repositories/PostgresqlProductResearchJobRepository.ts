@@ -91,10 +91,7 @@ export class PostgresqlProductResearchJobRepository implements ProductResearchJo
     }
   }
 
-  async createPendingJob(input: {
-    requestKey: string;
-    officialUrl: string;
-  }): Promise<ProductResearchJobEntity> {
+  async createPendingJob(input: { requestKey: string; officialUrl: string }): Promise<ProductResearchJobEntity> {
     const rows = await this.db
       .insert(productResearchJobs)
       .values({
