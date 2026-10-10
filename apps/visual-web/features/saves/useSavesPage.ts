@@ -10,6 +10,7 @@ import {
   type VisualPlatform,
   type VisualScreenType,
 } from '@darun/provider-graphql';
+import { useNavigate, useSearchParams } from '@darun/utils-router';
 import { useCallback, useEffect, useState } from 'react';
 import { resolveVisualFlowType, resolveVisualPlatform } from '../explorer/visualTaxonomy';
 import type { FlowCard } from '../flows/useFlowExplorer';
@@ -102,13 +103,27 @@ function isUnauthorized(error: unknown): boolean {
   return message.includes('UNAUTHENTICATED') || message.includes('Unauthorized');
 }
 
+export function isSavesTabValue(value: string | null): value is SavesTab {
+  return value === 'screenshots' || value === 'flows';
+}
+
+export function readSavesTabParam(searchParams: URLSearchParams): SavesTab {
+  const raw = searchParams.get('tab');
+  return isSavesTabValue(raw) ? raw : 'screenshots';
+}
+
 /**
  * M4 내 저장 페이지 상태. 로그인 필수 — 미인증 시 login-required.
  * 탭별 화면/플로 카드 목록, 저장 시각 내림차순(LATEST), page 오프셋 더보기.
+ * M5: 탭 상태를 URL(?tab=)과 동기화.
  */
 export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageState {
   const apolloClient = useApolloClient();
-  const [tab, setTab] = useState<SavesTab>(initialTab);
+  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const urlTab = readSavesTabParam(searchParams);
+  const resolvedInitial = isSavesTabValue(searchParams.get('tab')) ? urlTab : initialTab;
+  const [tab, setTab] = useState<SavesTab>(resolvedInitial);
   const [status, setStatus] = useState<'loading' | 'login-required' | 'error' | 'loaded'>('loading');
   const [screenshotCards, setScreenshotCards] = useState<ScreenshotCard[]>([]);
   const [flowCards, setFlowCards] = useState<FlowCard[]>([]);
@@ -186,10 +201,22 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
     setReloadKey(key => key + 1);
   }, []);
 
-  const onTabChange = useCallback((next: SavesTab) => {
-    setTab(next);
-    setLoadMoreError(false);
-  }, []);
+  const onTabChange = useCallback(
+    (next: SavesTab) => {
+      setTab(next);
+      setLoadMoreError(false);
+      navigate(next === 'screenshots' ? '/saves' : `/saves?tab=${next}`, { preventScrollReset: true });
+    },
+    [navigate]
+  );
+
+  useEffect(() => {
+    if (urlTab !== tab) {
+      setTab(urlTab);
+      setLoadMoreError(false);
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 탭 파라미터 동기화에 필요
+  }, [urlTab]);
 
   const onLoadMore = useCallback(() => {
     if (loadingMore) {
