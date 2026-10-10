@@ -20,6 +20,9 @@ function screenshotRepo(overrides: Record<string, unknown> = {}): ProductScreens
     findVisualPublishedById: vi.fn().mockResolvedValue({ id: SCREENSHOT_ID }),
     countVisualPublishedByFilter: vi.fn().mockResolvedValue(0),
     insertVisualViewEvent: vi.fn().mockResolvedValue(true),
+    toggleVisualSave: vi.fn().mockResolvedValue({ saved: true }),
+    isVisualSaved: vi.fn().mockResolvedValue(false),
+    findVisualSavesByUser: vi.fn().mockResolvedValue({ screenshotIds: [], flowIds: [], totalCount: 0 }),
     ...overrides,
   } as unknown as ProductScreenshotRepository;
 }
@@ -32,6 +35,9 @@ function flowRepo(overrides: Record<string, unknown> = {}): ProductFlowRepositor
     countVisualPublishedByFilter: vi.fn().mockResolvedValue(0),
     findManyVisualPublishedByScreenshotId: vi.fn().mockResolvedValue([]),
     insertVisualViewEvent: vi.fn().mockResolvedValue(true),
+    toggleVisualSave: vi.fn().mockResolvedValue({ saved: true }),
+    isVisualSaved: vi.fn().mockResolvedValue(false),
+    findVisualSavesByUser: vi.fn().mockResolvedValue({ screenshotIds: [], flowIds: [], totalCount: 0 }),
     ...overrides,
   } as unknown as ProductFlowRepository;
 }

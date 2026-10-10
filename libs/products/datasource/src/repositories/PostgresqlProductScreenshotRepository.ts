@@ -13,7 +13,7 @@ import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
-import { visualViewEvents } from '../entities/VisualPopularitySchema';
+import { visualSaves, visualViewEvents } from '../entities/VisualPopularitySchema';
 
 type ScreenshotRow = typeof productScreenshots.$inferSelect;
 
@@ -332,5 +332,76 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
       viewerHash: params.viewerHash,
     });
     return true;
+  }
+
+  async toggleVisualSave(params: {
+    screenshotId?: string;
+    flowId?: string;
+    userId: string;
+  }): Promise<{ saved: boolean }> {
+    const conditions = [eq(visualSaves.userId, params.userId)];
+    if (params.screenshotId) {
+      conditions.push(eq(visualSaves.screenshotId, params.screenshotId));
+    }
+    if (params.flowId) {
+      conditions.push(eq(visualSaves.flowId, params.flowId));
+    }
+    const existing = await this.db
+      .select({ id: visualSaves.id })
+      .from(visualSaves)
+      .where(and(...conditions))
+      .limit(1);
+    if (existing.length > 0) {
+      await this.db.delete(visualSaves).where(eq(visualSaves.id, existing[0].id));
+      return { saved: false };
+    }
+    await this.db.insert(visualSaves).values({
+      userId: params.userId,
+      screenshotId: params.screenshotId ?? null,
+      flowId: params.flowId ?? null,
+    });
+    return { saved: true };
+  }
+
+  async isVisualSaved(params: { screenshotId?: string; flowId?: string; userId: string }): Promise<boolean> {
+    const conditions = [eq(visualSaves.userId, params.userId)];
+    if (params.screenshotId) {
+      conditions.push(eq(visualSaves.screenshotId, params.screenshotId));
+    }
+    if (params.flowId) {
+      conditions.push(eq(visualSaves.flowId, params.flowId));
+    }
+    const existing = await this.db
+      .select({ id: visualSaves.id })
+      .from(visualSaves)
+      .where(and(...conditions))
+      .limit(1);
+    return existing.length > 0;
+  }
+
+  async findVisualSavesByUser(params: {
+    userId: string;
+    kind: 'screenshot' | 'flow';
+    limit: number;
+    offset: number;
+  }): Promise<{ screenshotIds: string[]; flowIds: string[]; totalCount: number }> {
+    const targetColumn = params.kind === 'screenshot' ? visualSaves.screenshotId : visualSaves.flowId;
+    const baseConditions = [eq(visualSaves.userId, params.userId), isNotNull(targetColumn)];
+    const countRows = await this.db
+      .select({ value: count() })
+      .from(visualSaves)
+      .where(and(...baseConditions));
+    const rows = await this.db
+      .select({ screenshotId: visualSaves.screenshotId, flowId: visualSaves.flowId })
+      .from(visualSaves)
+      .where(and(...baseConditions))
+      .orderBy(sql`${visualSaves.createdAt} DESC`, sql`${visualSaves.id} DESC`)
+      .limit(params.limit)
+      .offset(params.offset);
+    return {
+      screenshotIds: rows.flatMap(row => (row.screenshotId ? [row.screenshotId] : [])),
+      flowIds: rows.flatMap(row => (row.flowId ? [row.flowId] : [])),
+      totalCount: countRows[0]?.value ?? 0,
+    };
   }
 }

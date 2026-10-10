@@ -5,6 +5,7 @@ import { Link, notFound, useRouter } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { VISUAL_CARD_IMAGE_LOADING, VISUAL_DETAIL_IMAGE_FETCH_PRIORITY } from '../perf/imageLoading';
+import { VisualSaveButton } from '../saves/VisualSaveButton';
 import { ScreenshotDetailState, useScreenshotDetail } from './useScreenshotDetail';
 import {
   UNCLASSIFIED_LABEL,
@@ -53,14 +54,8 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
   if (status === 'loading') {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6" aria-busy="true">
-        <div
-          className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
-          aria-hidden="true"
-        />
-        <div
-          className="h-4 w-1/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
-          aria-hidden="true"
-        />
+        <div className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" aria-hidden="true" />
+        <div className="h-4 w-1/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" aria-hidden="true" />
         <div
           className="min-h-72 w-full animate-pulse rounded-2xl bg-surface-200 motion-reduce:animate-none"
           aria-hidden="true"
@@ -101,6 +96,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
   }
 
   const {
+    id,
     imageUrl,
     imageAlt,
     title,
@@ -122,23 +118,26 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
     <>
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 md:px-6">
         <div className="flex flex-col gap-2">
-        <h1 className="break-words [word-break:keep-all] text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">
-          {displayTitle}
-        </h1>
-        <p className="flex flex-wrap items-center gap-2 text-sm text-dark-500">
-          <span className="max-w-xs truncate font-medium text-dark-700">{product.name}</span>
-          <span aria-hidden="true" className="text-dark-300">
-            ·
-          </span>
-          <span>{platformLabel}</span>
-          <span aria-hidden="true" className="text-dark-300">
-            ·
-          </span>
-          <span>{screenTypeLabel}</span>
-        </p>
-      </div>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="break-words [word-break:keep-all] text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">
+              {displayTitle}
+            </h1>
+            <VisualSaveButton kind="screenshot" id={id} enabled={status === 'loaded'} />
+          </div>
+          <p className="flex flex-wrap items-center gap-2 text-sm text-dark-500">
+            <span className="max-w-xs truncate font-medium text-dark-700">{product.name}</span>
+            <span aria-hidden="true" className="text-dark-300">
+              ·
+            </span>
+            <span>{platformLabel}</span>
+            <span aria-hidden="true" className="text-dark-300">
+              ·
+            </span>
+            <span>{screenTypeLabel}</span>
+          </p>
+        </div>
 
-      <div className="relative">
+        <div className="relative">
           <DetailImage src={imageUrl} alt={imageAlt} onError={onImageError} />
           {!isImageError && (
             <Button

@@ -74,6 +74,9 @@ const createMockRepositories = () => {
     countVisualPublishedByFilter: vi.fn(async () => 0),
     findManyVisualPublishedByScreenshotId: vi.fn(async () => []),
     insertVisualViewEvent: vi.fn(async () => true),
+    toggleVisualSave: vi.fn(async () => ({ saved: true })),
+    isVisualSaved: vi.fn(async () => false),
+    findVisualSavesByUser: vi.fn(async () => ({ screenshotIds: [], flowIds: [], totalCount: 0 })),
   };
   return { flowRepository, screenshots, savedFlows };
 };
