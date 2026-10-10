@@ -81,6 +81,11 @@ export interface ProductFlowRepository {
   findVisualPublishedById(id: string): Promise<VisualFlowDetail | null>;
   countVisualPublishedByFilter(filter: VisualFlowFilter): Promise<number>;
   findManyVisualPublishedByScreenshotId(screenshotId: string): Promise<VisualFlowSummary[]>;
+  /**
+   * M2 조회 기록. 같은 viewerHash+target의 24시간 내 중복은 무시한다.
+   * true면 신규 기록, false면 중복 무시(24시간 내 기존 기록 존재).
+   */
+  insertVisualViewEvent(params: { flowId: string; viewerHash: string }): Promise<boolean>;
 }
 
 export const ProductFlowRepositoryToken = new Token<ProductFlowRepository>('ProductFlowRepository');

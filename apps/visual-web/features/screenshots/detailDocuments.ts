@@ -49,3 +49,12 @@ gql`
 
 export const VISUAL_SCREENSHOT_DETAIL_RELATED_SIZE = 8;
 export const VISUAL_SCREENSHOT_DETAIL_RELATED_FETCH_SIZE = 9;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+gql`
+  mutation TrackVisualScreenshotView($id: String!) {
+    trackVisualScreenshotView(id: $id) {
+      tracked
+    }
+  }
+`;

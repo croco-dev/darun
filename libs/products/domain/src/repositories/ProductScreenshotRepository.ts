@@ -51,6 +51,11 @@ export interface ProductScreenshotRepository {
   ): Promise<VisualScreenshotWithProduct[]>;
   findVisualPublishedById(id: string): Promise<VisualScreenshotWithProduct | null>;
   countVisualPublishedByFilter(filter: VisualScreenshotFilter): Promise<number>;
+  /**
+   * M2 조회 기록. 같은 viewerHash+target의 24시간 내 중복은 무시한다.
+   * true면 신규 기록, false면 중복 무시(24시간 내 기존 기록 존재).
+   */
+  insertVisualViewEvent(params: { screenshotId?: string; flowId?: string; viewerHash: string }): Promise<boolean>;
 }
 
 export const ProductScreenshotRepositoryToken = new Token<ProductScreenshotRepository>('ProductScreenshotRepository');

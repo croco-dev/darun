@@ -65,6 +65,7 @@ const relatedRepositories = () => ({
     findManyVisualPublishedByFilterAndPageAndLimit: vi.fn(),
     findVisualPublishedById: vi.fn(),
     countVisualPublishedByFilter: vi.fn(),
+    insertVisualViewEvent: vi.fn().mockResolvedValue(true),
   } satisfies ProductScreenshotRepository,
   features: {
     updateById: vi.fn(),

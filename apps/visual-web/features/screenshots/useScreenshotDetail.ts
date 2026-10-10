@@ -1,7 +1,11 @@
 'use client';
 
 import { useApolloClient } from '@apollo/client/react';
-import { VisualScreenshotOnDetailDocument, VisualSiblingScreenshotsOnDetailDocument } from '@darun/provider-graphql';
+import {
+  TrackVisualScreenshotViewDocument,
+  VisualScreenshotOnDetailDocument,
+  VisualSiblingScreenshotsOnDetailDocument,
+} from '@darun/provider-graphql';
 import type { VisualPlatform, VisualScreenType } from '@darun/provider-graphql';
 import { useEffect, useState } from 'react';
 import { VISUAL_SCREENSHOT_DETAIL_RELATED_FETCH_SIZE, VISUAL_SCREENSHOT_DETAIL_RELATED_SIZE } from './detailDocuments';
@@ -75,6 +79,10 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
           setQueryState({ status: 'not-found' });
           return;
         }
+        // M2 조회 기록: fire-and-forget, 상세 로딩 경로에 영향 금지
+        void apolloClient
+          .mutate({ mutation: TrackVisualScreenshotViewDocument, variables: { id } })
+          .catch((e: unknown) => console.error('Failed to track screenshot view', e));
         const slug = screenshot.product.slug;
         let siblings: ScreenshotDetailRelatedScreenshot[] = [];
         let siblingTotalCount = 0;

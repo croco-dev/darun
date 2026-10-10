@@ -9,6 +9,8 @@ export { ProductPublishMutationResolver } from './ProductPublishMutationResolver
 export { ProductQueryResolver } from './Product.query.resolver';
 export { VisualScreenshotQueryResolver } from './VisualScreenshot.query.resolver';
 export { VisualFlowQueryResolver } from './VisualFlow.query.resolver';
+export { VisualViewMutationResolver } from './VisualView.mutation.resolver';
+export { TrackVisualViewPayload } from './graphs/TrackVisualView';
 export { ProductFlowMutationResolver } from './ProductFlow.mutation.resolver';
 export { ProductDescriptionQueryResolver } from './ProductDescription.query.resolver';
 export { ProductDescriptionMutationResolver } from './ProductDescription.mutation.resolver';
