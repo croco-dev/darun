@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { VISUAL_NAV_TABS, isTabActive } from '../app/visualNav';
 import { VISUAL_SAVES_PAGE_SIZE } from '../features/saves/saveDocuments';
-import { isTabActive, VISUAL_NAV_TABS } from '../app/visualNav';
 
 vi.mock('@apollo/client/react', () => ({
   useApolloClient: () => ({ query: vi.fn(), mutate: vi.fn() }),
