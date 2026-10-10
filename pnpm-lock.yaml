@@ -1560,6 +1560,9 @@ importers:
       '@darun/products-domain':
         specifier: workspace:*
         version: link:../domain
+      '@darun/utils-llm':
+        specifier: workspace:*
+        version: link:../../shared/utils-llm
       typedi:
         specifier: 'catalog:'
         version: 0.10.0
