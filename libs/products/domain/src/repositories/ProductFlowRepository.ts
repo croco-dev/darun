@@ -1,6 +1,7 @@
 import { Token } from 'typedi';
 import type { ProductFlow } from '../entities/ProductFlow';
 import type { ProductScreenshot } from '../entities/ProductScreenshot';
+import type { VisualSort } from './ProductScreenshotRepository';
 
 export type VisualFlowFilter = {
   query: string;
@@ -66,6 +67,16 @@ export interface ProductFlowRepository {
     filter: VisualFlowFilter,
     limit: number,
     afterId?: string
+  ): Promise<VisualFlowSummary[]>;
+  /**
+   * M1 인기순 오프셋 조회. 배치 테이블 없이 집계 테이블
+   * (visual_view_events/visual_saves) 서브쿼리로 실시간 SQL ORDER BY 계산한다.
+   * 느려지면 배치 도입을 검토한다.
+   */
+  findManyVisualPublishedByFilterAndPageAndLimit(
+    filter: VisualFlowFilter,
+    page: number,
+    limit: number
   ): Promise<VisualFlowSummary[]>;
   findVisualPublishedById(id: string): Promise<VisualFlowDetail | null>;
   countVisualPublishedByFilter(filter: VisualFlowFilter): Promise<number>;

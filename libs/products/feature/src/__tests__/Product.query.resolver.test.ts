@@ -139,6 +139,9 @@ const createProductScreenshotRepository = (): ProductScreenshotRepository => ({
   findManyVisualPublishedByFilterAndAfterIdAndLimit: vi
     .fn<ProductScreenshotRepository['findManyVisualPublishedByFilterAndAfterIdAndLimit']>()
     .mockResolvedValue([]),
+  findManyVisualPublishedByFilterAndPageAndLimit: vi
+    .fn<ProductScreenshotRepository['findManyVisualPublishedByFilterAndPageAndLimit']>()
+    .mockResolvedValue([]),
   findVisualPublishedById: vi.fn<ProductScreenshotRepository['findVisualPublishedById']>().mockResolvedValue(null),
   countVisualPublishedByFilter: vi
     .fn<ProductScreenshotRepository['countVisualPublishedByFilter']>()

@@ -3,6 +3,7 @@ import { isVisualPlatform } from '../entities/VisualClassification';
 import { isVisualFlowType } from '../entities/VisualFlowType';
 import { productInvalidArgs } from '../errors/productError';
 import type { ProductFlowRepository, VisualFlowFilter, VisualFlowSummary } from '../repositories/ProductFlowRepository';
+import type { VisualSort } from '../repositories/ProductScreenshotRepository';
 import { ProductFlowRepositoryToken } from '../repositories/ProductFlowRepository';
 import { normalizeVisualQuery } from './ProductScreenshotMetadata';
 
@@ -13,8 +14,10 @@ type GetVisualFlowsArgs = {
   platform?: string | null;
   flowType?: string | null;
   productSlug?: string | null;
+  sort?: VisualSort | null;
   first: number;
   afterId?: string;
+  page?: number;
 };
 
 @Service()
@@ -24,12 +27,17 @@ export class GetVisualFlows {
     private readonly productFlowRepository: ProductFlowRepository
   ) {}
 
-  async execute({ query, platform, flowType, productSlug, first, afterId }: GetVisualFlowsArgs): Promise<{
+  async execute({ query, platform, flowType, productSlug, sort, first, afterId, page }: GetVisualFlowsArgs): Promise<{
     flows: VisualFlowSummary[];
     totalCount: number;
     hasNextPage: boolean;
   }> {
     if (!Number.isInteger(first) || first < 1 || first > VISUAL_FLOWS_MAX_FIRST) {
+      throw new Error('pagination/invalid-connection-args');
+    }
+
+    const resolvedSort: VisualSort = sort ?? 'LATEST';
+    if (resolvedSort !== 'LATEST' && resolvedSort !== 'POPULAR') {
       throw new Error('pagination/invalid-connection-args');
     }
 
@@ -51,10 +59,33 @@ export class GetVisualFlows {
       ...(trimmedProductSlug ? { productSlug: trimmedProductSlug } : {}),
     };
 
-    const [flows, totalCount] = await Promise.all([
-      this.productFlowRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit(filter, first + 1, afterId),
-      this.productFlowRepository.countVisualPublishedByFilter(filter),
-    ]);
+    const [flows, totalCount] =
+      resolvedSort === 'POPULAR'
+        ? await (async () => {
+            // POPULAR는 오프셋(page) 방식. 1-based, 미지정 시 1페이지.
+            const resolvedPage = page ?? 1;
+            if (!Number.isInteger(resolvedPage) || resolvedPage < 1) {
+              throw new Error('pagination/invalid-connection-args');
+            }
+            const rows = await this.productFlowRepository.findManyVisualPublishedByFilterAndPageAndLimit(
+              filter,
+              resolvedPage,
+              first + 1
+            );
+            const count = await this.productFlowRepository.countVisualPublishedByFilter(filter);
+            return [rows, count] as const;
+          })()
+        : await (async () => {
+            const [rows, count] = await Promise.all([
+              this.productFlowRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit(
+                filter,
+                first + 1,
+                afterId
+              ),
+              this.productFlowRepository.countVisualPublishedByFilter(filter),
+            ]);
+            return [rows, count] as const;
+          })();
 
     const hasNextPage = flows.length > first;
 

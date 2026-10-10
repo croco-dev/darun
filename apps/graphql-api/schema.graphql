@@ -359,9 +359,9 @@ type Query {
   translationJob(id: String!): TranslationJob
   translationJobs(limit: Int, offset: Int, status: String): [TranslationJob!]!
   visualFlow(id: String!): VisualFlow
-  visualFlows(after: String, first: Int! = 24, flowType: VisualFlowType, platform: VisualPlatform, productSlug: String, query: String): VisualFlowConnection!
+  visualFlows(after: String, first: Int! = 24, flowType: VisualFlowType, page: Int, platform: VisualPlatform, productSlug: String, query: String, sort: VisualSort = LATEST): VisualFlowConnection!
   visualScreenshot(id: String!): VisualScreenshot
-  visualScreenshots(after: String, first: Int! = 24, platform: VisualPlatform, productSlug: String, query: String, screenType: VisualScreenType): VisualScreenshotConnection!
+  visualScreenshots(after: String, first: Int! = 24, page: Int, platform: VisualPlatform, productSlug: String, query: String, screenType: VisualScreenType, sort: VisualSort = LATEST): VisualScreenshotConnection!
 }
 
 input RegisterProductCompanyInput {
@@ -539,6 +539,12 @@ enum VisualScreenType {
   SETTINGS
   SIGN_IN
   SIGN_UP
+}
+
+"""Visual 목록 정렬. LATEST는 keyset, POPULAR는 오프셋(page) 방식."""
+enum VisualSort {
+  LATEST
+  POPULAR
 }
 
 """공개 제품에 속한 스크린샷과 제품 정보"""

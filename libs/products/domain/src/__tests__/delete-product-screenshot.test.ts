@@ -27,6 +27,7 @@ const createMockRepositories = (screenshot: ProductScreenshot | null) => {
     insert: vi.fn(),
     updateById: vi.fn(),
     findManyVisualPublishedByFilterAndAfterIdAndLimit: vi.fn(),
+    findManyVisualPublishedByFilterAndPageAndLimit: vi.fn(),
     findVisualPublishedById: vi.fn(),
     countVisualPublishedByFilter: vi.fn(),
   };

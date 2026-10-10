@@ -60,6 +60,7 @@ export type {
   ProductScreenshotRepository,
   VisualScreenshotFilter,
   VisualScreenshotWithProduct,
+  VisualSort,
 } from './repositories/ProductScreenshotRepository';
 export { ProductScreenshotRepositoryToken } from './repositories/ProductScreenshotRepository';
 export type { ProductTagRepository } from './repositories/ProductTagRepository';
@@ -158,6 +159,12 @@ export { GetAdminProductFlow } from './usecases/GetAdminProductFlow';
 export { GetVisualFlowById } from './usecases/GetVisualFlowById';
 export { GetVisualScreenshotFlows } from './usecases/GetVisualScreenshotFlows';
 export { GetAdminProductFlows } from './usecases/GetAdminProductFlows';
+export {
+  visualPopularityScore,
+  VISUAL_POPULARITY_SAVE_WEIGHT,
+  VISUAL_POPULARITY_SAVE_SCALE,
+  VISUAL_POPULARITY_DECAY_DAYS,
+} from './usecases/VisualPopularity';
 export {
   FLOW_MIN_STEPS,
   FLOW_MAX_STEPS,

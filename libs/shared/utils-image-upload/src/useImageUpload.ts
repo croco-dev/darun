@@ -80,6 +80,7 @@ export function useImageUpload() {
     formData.append('file', file);
     formData.append('api_key', apiKey);
     formData.append('folder', signedPayload.folder);
+    formData.append('public_id', displayName);
     formData.append('signature', signedPayload.signature);
     formData.append('timestamp', String(signedPayload.timestamp));
 
