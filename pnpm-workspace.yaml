@@ -19,10 +19,10 @@ overrides:
   fast-xml-parser: ">=4.5.5"
   protobufjs: ">=7.5.5"
   shell-quote: ">=1.11.0"
-  handlebars: ">=4.7.10"
   velocityjs: ">=2.1.7"
   websocket-driver: ">=0.7.5"
   next: "16.3.8"
+  handlebars: ">=4.7.10"
 
 allowBuilds:
   '@apollo/protobufjs': true
@@ -35,10 +35,12 @@ allowBuilds:
   esbuild: true
   lefthook: true
   protobufjs: true
+  rclone.js: true
   serverless: set this to true or false
   sharp: true
   type-graphql: true
   unrs-resolver: true
+  workerd: true
 
 catalog:
   # Toolchain

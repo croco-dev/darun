@@ -1,30 +1,12 @@
-import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { getCategoryIcon } from '@darun/products-shell';
+import { CompactCategoriesForSearchProductListDocument } from '@darun/provider-graphql';
 import { Link } from '@darun/utils-router';
 import { useLocale } from 'next-intl';
 
-type CategoryShortcut = {
-  id: string;
-  slug: string;
-  labelKo: string;
-  labelEn: string;
-};
-
-const CATEGORIES_FOR_EMPTY_STATE = gql`
-  query CategoriesForEmptyState($first: Int!, $locale: String!) {
-    categories(first: $first, locale: $locale) {
-      id
-      slug
-      labelKo
-      labelEn
-    }
-  }
-`;
-
 export const CategoryShortcutGrid = () => {
   const locale = useLocale();
-  const { data } = useSuspenseQuery<{ categories?: Array<CategoryShortcut> }>(CATEGORIES_FOR_EMPTY_STATE, {
+  const { data } = useSuspenseQuery(CompactCategoriesForSearchProductListDocument, {
     variables: { first: 8, locale },
   });
 

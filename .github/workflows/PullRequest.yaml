@@ -41,6 +41,12 @@ jobs:
           retention-days: 7
       - name: Build
         run: pnpm run build
+        env:
+          # CI-only build values; this workflow never deploys its tier bundle.
+          # NEXT_PUBLIC_* values are baked in and cannot be replaced by Worker vars.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://supabase.invalid' }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_ci_build_only' }}
+          NEXT_PUBLIC_SITE_URL: https://tier.darun.io
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
