@@ -150,6 +150,8 @@ export {
 export { UpdateProductScreenshot } from './usecases/UpdateProductScreenshot';
 export { GetVisualScreenshots, VISUAL_SCREENSHOTS_MAX_FIRST } from './usecases/GetVisualScreenshots';
 export { GetVisualScreenshotById } from './usecases/GetVisualScreenshotById';
+export { TrackVisualScreenshotView } from './usecases/TrackVisualScreenshotView';
+export type { TrackVisualScreenshotViewResult } from './usecases/TrackVisualScreenshotView';
 export { CreateProductFlow, buildFlowDraft, validateFlowSteps } from './usecases/CreateProductFlow';
 export type { ProductFlowStepInput } from './usecases/CreateProductFlow';
 export { UpdateProductFlow } from './usecases/UpdateProductFlow';
@@ -157,6 +159,9 @@ export { DeleteProductFlow } from './usecases/DeleteProductFlow';
 export { GetVisualFlows, VISUAL_FLOWS_MAX_FIRST } from './usecases/GetVisualFlows';
 export { GetAdminProductFlow } from './usecases/GetAdminProductFlow';
 export { GetVisualFlowById } from './usecases/GetVisualFlowById';
+export { TrackVisualFlowView } from './usecases/TrackVisualFlowView';
+export type { TrackVisualFlowViewResult } from './usecases/TrackVisualFlowView';
+export { hashVisualViewerIp } from './utils/hashVisualViewerIp';
 export { GetVisualScreenshotFlows } from './usecases/GetVisualScreenshotFlows';
 export { GetAdminProductFlows } from './usecases/GetAdminProductFlows';
 export {

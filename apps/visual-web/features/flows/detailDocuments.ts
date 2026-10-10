@@ -57,3 +57,12 @@ gql`
 
 export const VISUAL_FLOW_DETAIL_RELATED_SIZE = 8;
 export const VISUAL_FLOW_DETAIL_RELATED_FETCH_SIZE = 9;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+gql`
+  mutation TrackVisualFlowView($id: String!) {
+    trackVisualFlowView(id: $id) {
+      tracked
+    }
+  }
+`;

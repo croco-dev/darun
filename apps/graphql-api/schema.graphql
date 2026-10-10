@@ -256,6 +256,8 @@ type Mutation {
   updateProductScreenshot(input: UpdateProductScreenshotInput!): UpdateProductScreenshotPayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
   upvoteProduct(slug: String!): UpvoteProductPayload!
+  trackVisualFlowView(id: String!): TrackVisualViewPayload!
+  trackVisualScreenshotView(id: String!): TrackVisualViewPayload!
 }
 
 type PageInfo {
@@ -476,6 +478,10 @@ type UpdateProductTagsPayload {
 
 type UpvoteProductPayload {
   product: Product
+}
+
+type TrackVisualViewPayload {
+  tracked: Boolean!
 }
 
 """공개 제품에 속한 UX 플로"""

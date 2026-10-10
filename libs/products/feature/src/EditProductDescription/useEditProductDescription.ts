@@ -11,7 +11,6 @@ import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useEffect } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductBySlugOnEditProductDescription($slug: String!) {
     tempProductBySlug(slug: $slug) {
@@ -44,22 +43,29 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
   const { data } = useQuery(TempProductBySlugOnEditProductDescriptionDocument, {
     variables: { slug },
   });
+  const description = data?.tempProductBySlug?.description ?? '';
 
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
-    initialValues: { description: data?.tempProductBySlug?.description ?? '' },
+    initialValues: { description },
   });
+  const { setInitialValues, setValues } = form;
 
   useEffect(() => {
-    const description = data?.tempProductBySlug?.description ?? '';
-    form.setInitialValues({ description });
-    form.setValues({ description });
-  }, [data, form]);
+    setInitialValues({ description });
+    setValues({ description });
+  }, [slug, description, setInitialValues, setValues]);
 
   const [editDescription, { loading }] = useMutation(EditProductOnEditProductDescriptionDocument, {
     refetchQueries: [
-      { query: TempProductBySlugOnEditProductDescriptionDocument, variables: { slug } },
-      { query: TempProductBySlugOnProductDescriptionDocument, variables: { slug } },
+      {
+        query: TempProductBySlugOnEditProductDescriptionDocument,
+        variables: { slug },
+      },
+      {
+        query: TempProductBySlugOnProductDescriptionDocument,
+        variables: { slug },
+      },
     ],
     awaitRefetchQueries: true,
     onCompleted: ({ editProduct }) => {
@@ -91,7 +97,10 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
     })();
 
     if (!hasContent) {
-      notifications.show({ message: '설명 내용을 입력해주세요.', color: 'red' });
+      notifications.show({
+        message: '설명 내용을 입력해주세요.',
+        color: 'red',
+      });
       return;
     }
 
@@ -109,7 +118,7 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
     form,
     submit,
     onCancel,
-    defaultValue: data?.tempProductBySlug?.description ?? '',
+    defaultValue: description,
     loading,
   };
 }
