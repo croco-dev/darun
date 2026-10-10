@@ -105,6 +105,16 @@ pnpm typecheck
 pnpm test
 ```
 
+### 관리자 서비스 설명 편집
+
+설명 편집기는 조회한 설명이나 대상 서비스가 바뀔 때 폼을 동기화합니다. 일반적인 리렌더링에서는 작성 중인 내용을 유지하며, 저장 시 편집한 내용을 전송합니다. 설명이 실제로 비어 있으면 기존 입력 검증이 적용됩니다.
+
+회귀 테스트는 실제 Mantine 폼으로 비어 있던 설명 작성, 기존 설명 수정, 지연 조회, 대상 서비스 전환을 확인합니다.
+
+```bash
+pnpm --filter @darun/products-feature exec vitest run src/EditProductDescription/__tests__/useEditProductDescription.test.ts
+```
+
 ### tier-web (독립 앱)
 
 - 소스: `croco-dev/darun-tier` 리비전 `03f7094310a84a061ff4b1c4829a735d86925ca5`를 `apps/tier-web`로 가져온 독립 앱입니다.

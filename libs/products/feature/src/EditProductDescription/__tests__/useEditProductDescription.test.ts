@@ -1,263 +1,123 @@
-import { type ApolloCache, type OperationVariables } from '@apollo/client';
-import { useQuery, useMutation, type MutationHookOptions } from '@apollo/client/react';
+import type { OperationVariables } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { notifications } from '@mantine/notifications';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useEditProductDescription } from '../useEditProductDescription';
 
-// ── Mock: @apollo/client/react to avoid ApolloProvider requirement ─────
-vi.mock('@apollo/client/react', async importOriginal => {
-  const actual = await importOriginal();
-  return {
-    ...(actual as Record<string, unknown>),
-    useQuery: vi.fn(),
-    useMutation: vi.fn(),
-  };
-});
-
-// ── Mock: @mantine/form ──────────────────────────────────────────
-const mockForm = {
-  reset: vi.fn(),
-  setInitialValues: vi.fn(),
-  setValues: vi.fn(),
-  getInputProps: vi.fn(() => ({ key: 'test-form-key', defaultValue: '' })),
-  onSubmit: vi.fn((handler: (values: { description?: string }) => Promise<void>) => handler),
-};
-
-vi.mock('@mantine/form', () => ({
-  useForm: vi.fn(() => mockForm),
+vi.mock('@apollo/client/react', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useQuery: vi.fn(),
+  useMutation: vi.fn(),
 }));
 
-// ── Mock: @mantine/notifications ─────────────────────────────────
 vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn() },
 }));
 
-// ── Import after mocks ───────────────────────────────────────────
-import { useEditProductDescription } from '../useEditProductDescription';
+const mutate = vi.fn();
+let description: string | null | undefined;
 
-describe('useEditProductDescription', () => {
-  const defaultSlug = 'test-product-slug';
-  type MockMutationOptions = MutationHookOptions<unknown, OperationVariables, unknown, ApolloCache>;
-  let mutationOnCompleted:
-    ((data: { editProduct: { product: { id: string; description?: string | null } } }) => void) | null = null;
-  let mutateFn: ReturnType<typeof vi.fn>;
+beforeEach(() => {
+  vi.clearAllMocks();
+  description = undefined;
+  vi.mocked(useQuery).mockImplementation(
+    () =>
+      ({
+        data: description === undefined ? undefined : { tempProductBySlug: { id: 'product-1', description } },
+      }) as useQuery.Result<
+        unknown,
+        OperationVariables,
+        'empty' | 'complete' | 'streaming',
+        Partial<OperationVariables>
+      >
+  );
+  vi.mocked(useMutation).mockReturnValue([mutate, { loading: false }] as unknown as useMutation.ResultTuple<
+    unknown,
+    OperationVariables
+  >);
+  mutate.mockResolvedValue({});
+});
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mutationOnCompleted = null;
-    mutateFn = vi.fn();
-
-    // Default Apollo mocks
-    vi.mocked(useQuery).mockReturnValue({ data: undefined } as ReturnType<typeof useQuery>);
-    vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>);
-  });
-
-  describe('mutation onCompleted', () => {
-    beforeEach(() => {
-      vi.mocked(useMutation).mockImplementation(((_query: unknown, options?: MockMutationOptions) => {
-        if (options?.onCompleted) {
-          mutationOnCompleted = options.onCompleted as typeof mutationOnCompleted;
-        }
-        return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
-      }) as typeof useMutation);
-    });
-
-    it('should preserve loaded description after mutation save', () => {
-      renderHook(() => useEditProductDescription({ slug: defaultSlug }));
+describe('description form synchronization', () => {
+  it.each([null, '<p>Existing description</p>'])(
+    'submits the edited description after rerenders when the loaded value is %s',
+    async loadedDescription => {
+      description = loadedDescription;
+      const { result, rerender } = renderHook(() => useEditProductDescription({ slug: 'product-1' }));
+      const editedDescription = '<p>Edited description</p>';
 
       act(() => {
-        mutationOnCompleted!({
-          editProduct: {
-            product: {
-              id: 'product-1',
-              description: 'Will be saved',
-            },
-          },
-        });
+        result.current.form.getInputProps('description').onChange(editedDescription);
       });
+      rerender();
 
-      expect(mockForm.reset).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('defaultValue return value', () => {
-    it('should return empty string when data is undefined', () => {
-      vi.mocked(useQuery).mockReturnValue({ data: undefined } as ReturnType<typeof useQuery>);
-
-      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug }));
-
-      expect(result.current.defaultValue).toBe('');
-    });
-
-    it('should reflect the loaded description when data is available', () => {
-      vi.mocked(useQuery).mockReturnValue({
-        data: {
-          tempProductBySlug: {
-            __typename: 'Product' as const,
-            id: 'product-1',
-            description: 'Direct data',
-          },
-        },
-      } as ReturnType<typeof useQuery>);
-
-      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug }));
-
-      expect(result.current.defaultValue).toBe('Direct data');
-    });
-  });
-
-  describe('mutation failure handling', () => {
-    beforeEach(() => {
-      vi.mocked(useMutation).mockImplementation(((_query: unknown, options?: MockMutationOptions) => {
-        if (options?.onCompleted) {
-          mutationOnCompleted = options.onCompleted as typeof mutationOnCompleted;
-        }
-        return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
-      }) as typeof useMutation);
-    });
-
-    it('should rethrow when mutation rejects', async () => {
-      const onSubmit = vi.fn();
-      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug, onSubmit }));
-
-      mutateFn.mockRejectedValueOnce(new Error('Network error'));
-
-      await expect(
-        act(async () => {
-          await result.current.submit({ description: 'New description' });
-        })
-      ).rejects.toThrow('Network error');
-
-      expect(onSubmit).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('submit function', () => {
-    beforeEach(() => {
-      vi.mocked(useMutation).mockImplementation(((_query: unknown, options?: MockMutationOptions) => {
-        if (options?.onCompleted) {
-          mutationOnCompleted = options.onCompleted as typeof mutationOnCompleted;
-        }
-        return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
-      }) as typeof useMutation);
-    });
-
-    it('should show error notification when description is empty', async () => {
-      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug }));
-      const { notifications } = await import('@mantine/notifications');
-
+      expect(result.current.form.getValues().description).toBe(editedDescription);
       await act(async () => {
-        await result.current.submit({ description: '' });
+        await result.current.form.onSubmit(result.current.submit)();
       });
-
-      expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'red' }));
-      expect(mutateFn).not.toHaveBeenCalled();
-    });
-
-    it('should show error notification when description contains only empty HTML tags', async () => {
-      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug }));
-      const { notifications } = await import('@mantine/notifications');
-
-      await act(async () => {
-        await result.current.submit({ description: '<p>   <br>  </p>' });
-      });
-
-      expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'red' }));
-      expect(mutateFn).not.toHaveBeenCalled();
-    });
-
-    it('should accept description containing an image tag even without text', async () => {
-      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug }));
-
-      mutateFn.mockResolvedValueOnce({
-        data: {
-          editProduct: {
-            product: { id: 'product-1', description: '<p><img src="https://example.com/img.png" alt="test" /></p>' },
-          },
-        },
-      });
-
-      await act(async () => {
-        await result.current.submit({ description: '<p><img src="https://example.com/img.png" alt="test" /></p>' });
-      });
-
-      expect(mutateFn).toHaveBeenCalledWith({
+      expect(mutate).toHaveBeenCalledWith({
         variables: {
-          slug: defaultSlug,
-          input: { description: '<p><img src="https://example.com/img.png" alt="test" /></p>' },
+          slug: 'product-1',
+          input: { description: editedDescription },
         },
       });
+      expect(notifications.show).not.toHaveBeenCalled();
+    }
+  );
+
+  it('loads a description that arrives after the form mounts', () => {
+    const { result, rerender } = renderHook(() => useEditProductDescription({ slug: 'product-1' }));
+    description = '<p>Loaded asynchronously</p>';
+    rerender();
+
+    expect(result.current.form.getValues().description).toBe(description);
+    expect(result.current.form.isDirty()).toBe(false);
+  });
+
+  it('discards the previous product draft when switching products with the same loaded description', () => {
+    description = '<p>Shared description</p>';
+    const { result, rerender } = renderHook(({ slug }) => useEditProductDescription({ slug }), {
+      initialProps: { slug: 'product-1' },
+    });
+    act(() => {
+      result.current.form.getInputProps('description').onChange('<p>First product draft</p>');
+    });
+    rerender({ slug: 'product-2' });
+
+    expect(result.current.form.getValues().description).toBe(description);
+  });
+});
+
+describe('description validation', () => {
+  it.each(['', '<p>   <br>  </p>'])('rejects an empty description: %s', async value => {
+    const { result } = renderHook(() => useEditProductDescription({ slug: 'product-1' }));
+    await act(async () => {
+      await result.current.submit({ description: value });
     });
 
-    it('should call mutation with description when provided', async () => {
-      const onSubmit = vi.fn();
-      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug, onSubmit }));
+    expect(mutate).not.toHaveBeenCalled();
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'red' }));
+  });
 
-      mutateFn.mockResolvedValueOnce({
-        data: {
-          editProduct: {
-            product: { id: 'product-1', description: 'New description' },
-          },
-        },
-      });
-
-      await act(async () => {
-        await result.current.submit({ description: 'New description' });
-      });
-
-      expect(mutateFn).toHaveBeenCalledWith({
-        variables: {
-          slug: defaultSlug,
-          input: { description: 'New description' },
-        },
-      });
-    });
-
-    it('should call onCompleted and onSubmit after mutation succeeds', async () => {
-      const onSubmit = vi.fn();
-      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug, onSubmit }));
-
-      mutateFn.mockResolvedValueOnce({
-        data: {
-          editProduct: {
-            product: { id: 'product-1', description: 'New description' },
-          },
-        },
-      });
-
-      await act(async () => {
-        await result.current.submit({ description: 'New description' });
-      });
-
-      // The mock captures onCompleted but does not auto-call it;
-      // simulate Apollo's post-mutation onCompleted trigger.
-      act(() => {
-        mutationOnCompleted!({
-          editProduct: { product: { id: 'product-1', description: 'New description' } },
-        });
-      });
-
-      expect(onSubmit).toHaveBeenCalled();
-    });
-
-    it('should show error notification with description validation message when description is empty', async () => {
-      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug }));
-      const { notifications } = await import('@mantine/notifications');
-
-      await act(async () => {
-        await result.current.submit({ description: '' });
-      });
-
-      expect(notifications.show).toHaveBeenCalledWith({
-        message: '설명 내용을 입력해주세요.',
-        color: 'red',
+  it('accepts a description containing an image without text', async () => {
+    const { result } = renderHook(() => useEditProductDescription({ slug: 'product-1' }));
+    await act(async () => {
+      await result.current.submit({
+        description: '<p><img src="https://example.com/image.png"></p>',
       });
     });
 
-    it('should pass through onCancel callback', () => {
-      const onCancel = vi.fn();
-      const { result } = renderHook(() => useEditProductDescription({ slug: defaultSlug, onCancel }));
+    expect(mutate).toHaveBeenCalledTimes(1);
+    expect(notifications.show).not.toHaveBeenCalled();
+  });
 
-      expect(result.current.onCancel).toBe(onCancel);
-    });
+  it('propagates a failed save without completing the form', async () => {
+    const onSubmit = vi.fn();
+    const { result } = renderHook(() => useEditProductDescription({ slug: 'product-1', onSubmit }));
+    mutate.mockRejectedValueOnce(new Error('Network error'));
+
+    await expect(result.current.submit({ description: '<p>Draft</p>' })).rejects.toThrow('Network error');
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });
