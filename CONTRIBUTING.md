@@ -76,6 +76,8 @@ cp apps/visual-web/.env.sample apps/visual-web/.env.local
 | `NEXT_PUBLIC_INFRA_ENV` | 인프라 환경 식별자 (`local` 설정 시 Firebase emulator 연동) | 선택 |
 | `FIREBASE_AUTH_EMULATOR_HOST` | Firebase Auth 에뮬레이터 호스트 주소 (`localhost:9099`) | 선택 |
 
+Cloudinary 이미지 업로드 요청은 서버가 서명한 `folder`, `timestamp`, `public_id`와 동일한 값을 전송해야 합니다. 공유 `useImageUpload`의 `displayName`은 서명 입력과 업로드 요청의 `public_id`에 함께 사용하며, 이를 누락하거나 변경하면 `Invalid Signature` 오류가 발생합니다.
+
 #### `apps/visual-web`
 
 | 변수 | 설명 | 필수 |
