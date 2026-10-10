@@ -3,6 +3,7 @@
 import { Button, Layers } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
+import { VisualLoginButton } from './VisualLoginButton';
 import type { FlowCard } from '../flows/useFlowExplorer';
 import { VISUAL_FLOW_TYPE_LABELS } from '../flows/flowClassifications';
 import { VISUAL_PLATFORM_LABELS } from '../screenshots/visualClassifications';
@@ -150,6 +151,7 @@ export function SavesExplorer() {
       <div className="flex w-full flex-col items-center gap-3 py-16 text-center">
         <p className="text-lg font-bold text-dark-900">저장은 로그인 후 이용할 수 있어요.</p>
         <p className="text-sm text-dark-500">로그인하면 저장한 화면과 플로우를 여기서 모아볼 수 있어요.</p>
+        <VisualLoginButton redirectTo="/saves" />
       </div>
     );
   }
