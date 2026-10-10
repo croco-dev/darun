@@ -18,7 +18,24 @@ function makeProduct(id: string, name: string): Product {
 async function runWithProducts(ids: string[], params: { limit: number; cursor?: string }) {
   const mockProducts = ids.map(id => makeProduct(id, `Product ${id}`));
   const findPublishedByAfterIdAndLimit = vi.fn().mockResolvedValue(mockProducts);
-  const useCase = new GetPublishedProductsForSitemap({ findPublishedByAfterIdAndLimit } as ProductRepository);
+  const repository: ProductRepository = {
+    findPublishedByAfterIdAndLimit,
+    updateById: vi.fn(),
+    findAllByBeforeIdAndLimit: vi.fn(),
+    findAllByAfterIdAndLimit: vi.fn(),
+    findTopNSortByPublishedAtDesc: vi.fn(),
+    findPublishedByIds: vi.fn(),
+    findPublishedOneById: vi.fn(),
+    findOneBySlug: vi.fn(),
+    findOneById: vi.fn(),
+    findPublishedOneBySlug: vi.fn(),
+    findPublishedByCategoryId: vi.fn(),
+    findPublishedByCategoryIdAndLimit: vi.fn(),
+    countPublishedAll: vi.fn(),
+    countAll: vi.fn(),
+    insert: vi.fn(),
+  };
+  const useCase = new GetPublishedProductsForSitemap(repository);
   const result = await useCase.execute(params);
   return { result, findPublishedByAfterIdAndLimit };
 }
