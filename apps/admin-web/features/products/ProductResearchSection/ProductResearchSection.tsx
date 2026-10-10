@@ -1,6 +1,7 @@
 'use client';
 
-import { gql, useLazyQuery, useMutation } from '@apollo/client';
+import { gql } from '@apollo/client';
+import { useLazyQuery, useMutation } from '@apollo/client/react';
 import { Button } from '@darun/ui';
 import {
   AdminActions,
@@ -59,11 +60,25 @@ const PRODUCT_RESEARCH_JOB = gql`
   }
 `;
 
+type ProductResearchResult = {
+  name?: { value?: string };
+  summary?: { value?: string };
+  suggestedSlug?: string;
+  warnings?: string[];
+  sources?: { id: string; title: string; url: string }[];
+};
+
 export const ProductResearchSection = () => {
   const [officialUrl, setOfficialUrl] = useState('');
   const [jobId, setJobId] = useState<string | null>(null);
-  const [requestResearch, { loading, error }] = useMutation(REQUEST_PRODUCT_RESEARCH);
-  const [fetchJob, { data, loading: jobLoading }] = useLazyQuery(PRODUCT_RESEARCH_JOB, {
+  const [requestResearch, { loading, error }] = useMutation<
+    { requestProductResearch?: { id: string } },
+    { input: { officialUrl: string } }
+  >(REQUEST_PRODUCT_RESEARCH);
+  const [fetchJob, { data, loading: jobLoading }] = useLazyQuery<
+    { productResearchJob?: { result?: ProductResearchResult } },
+    { id: string }
+  >(PRODUCT_RESEARCH_JOB, {
     fetchPolicy: 'network-only',
   });
 
@@ -116,8 +131,8 @@ export const ProductResearchSection = () => {
             <p className="text-sm font-semibold">{result.name?.value}</p>
             {result.summary?.value && <p className="text-sm text-dark-600">{result.summary.value}</p>}
             <p className="text-xs text-dark-500">제안 slug: {result.suggestedSlug}</p>
-            {result.warnings?.length > 0 && (
-              <p className="text-xs text-amber-700">주의: {result.warnings.join(', ')}</p>
+            {(result.warnings?.length ?? 0) > 0 && (
+              <p className="text-xs text-amber-700">주의: {(result.warnings ?? []).join(', ')}</p>
             )}
             <ul className="list-disc pl-5 text-xs text-dark-600">
               {result.sources?.map((source: { id: string; title: string; url: string }) => (
