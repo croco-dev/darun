@@ -404,4 +404,32 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
       totalCount: countRows[0]?.value ?? 0,
     };
   }
+
+  /**
+   * M4 내 저장 화면 카드 목록. 저장 시각 내림차순 + id 내림차순.
+   * 공개 제품(publishedAt IS NOT NULL)만 반환한다.
+   */
+  async findManyVisualSavedScreenshotsByUser(params: {
+    userId: string;
+    limit: number;
+    offset: number;
+  }): Promise<{ screenshots: VisualScreenshotWithProduct[]; totalCount: number }> {
+    const baseConditions = [eq(visualSaves.userId, params.userId), isNotNull(visualSaves.screenshotId)];
+    const [countRows, rows] = await Promise.all([
+      this.db
+        .select({ value: count() })
+        .from(visualSaves)
+        .where(and(...baseConditions)),
+      this.db
+        .select(visualScreenshotColumns)
+        .from(visualSaves)
+        .innerJoin(productScreenshots, eq(productScreenshots.id, visualSaves.screenshotId))
+        .innerJoin(products, eq(products.id, productScreenshots.productId))
+        .where(and(...baseConditions, isNotNull(products.publishedAt)))
+        .orderBy(sql`${visualSaves.createdAt} DESC`, sql`${visualSaves.id} DESC`)
+        .limit(params.limit)
+        .offset(params.offset),
+    ]);
+    return { screenshots: rows.map(toVisualWithProduct), totalCount: countRows[0]?.value ?? 0 };
+  }
 }

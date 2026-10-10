@@ -12,7 +12,11 @@ import { VisualSortGraph } from './graphs/VisualSort';
 
 const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
-function toGraphVisualScreenshot(screenshot: VisualScreenshotWithProduct): VisualScreenshot {
+/**
+ * M4 내 저장 목록 매핑 공용. 저장 카드 connection의 node 변환을
+ * 탐색 resolver와 공유해 Sonar 중복 게이트를 피한다.
+ */
+export function toGraphVisualScreenshot(screenshot: VisualScreenshotWithProduct): VisualScreenshot {
   return {
     id: screenshot.id,
     imageUrl: screenshot.imageUrl,
