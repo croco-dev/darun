@@ -109,7 +109,7 @@ pnpm test
 
 - 소스: `croco-dev/darun-tier` 리비전 `03f7094310a84a061ff4b1c4829a735d86925ca5`를 `apps/tier-web`로 가져온 독립 앱입니다.
 - 인증/DB 분리: Supabase Auth와 tier 전용 Supabase Postgres만 사용합니다. 기존 Firebase/MongoDB/AWS 스택과 공유하지 않습니다.
-- Next.js는 `tier-web`에만 보안 패치된 `16.3.8`을 적용하고 OpenNext `1.20.10`을 사용합니다. 기존 앱의 Next 버전은 바꾸지 않습니다.
+- 모노레포 앱은 보안 패치된 Next.js `16.3.8`을 공통으로 사용하며, tier-web의 Cloudflare 빌드는 OpenNext `1.20.10`을 사용합니다. CI의 critical 취약점 검사를 위해 `shell-quote`와 `handlebars`도 패치 버전 이상으로 고정합니다.
 - 명령어:
   ```bash
   pnpm --filter tier-web dev              # http://localhost:3003

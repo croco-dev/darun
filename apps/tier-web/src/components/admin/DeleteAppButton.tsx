@@ -66,9 +66,9 @@ export function DeleteAppButton({ appId, appName }: DeleteAppButtonProps) {
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
           <AlertDialogAction
-            onClick={e => {
+            onClick={async e => {
               e.preventDefault();
-              handleDelete();
+              await handleDelete();
             }}
             disabled={isDeleting}
             className="liquid-glass-active border-red-400/60 bg-red-500/75 text-white hover:bg-red-500/85 focus:ring-red-500"

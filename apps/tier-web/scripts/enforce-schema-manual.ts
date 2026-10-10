@@ -76,4 +76,7 @@ async function enforceSchema() {
   }
 }
 
-enforceSchema();
+enforceSchema().catch(error => {
+  console.error('Unhandled error enforcing schema:', error);
+  process.exit(1);
+});

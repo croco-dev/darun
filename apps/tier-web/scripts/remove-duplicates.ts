@@ -111,4 +111,7 @@ async function removeDuplicates() {
   }
 }
 
-removeDuplicates();
+removeDuplicates().catch(error => {
+  console.error('Unhandled error removing duplicates:', error);
+  process.exit(1);
+});

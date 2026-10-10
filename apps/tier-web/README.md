@@ -42,7 +42,7 @@ pnpm exec turbo run cloudflare:build --filter=tier-web
 
 ## Cloudflare 빌드·배포
 
-Worker `darun-tier`, R2 `darun-tier-inc-cache`, 도메인 `tier.darun.io`를 유지한다. Next.js는 이 앱에만 `16.3.8`을 사용한다. 공통 catalog의 `16.3.5`는 보안 패치 및 OpenNext `1.20.10` 지원 범위를 만족하지 않아, 루트의 `tier-web>next` override로 다른 앱과 분리했다.
+Worker `darun-tier`, R2 `darun-tier-inc-cache`, 도메인 `tier.darun.io`를 유지한다. 모노레포 공통 catalog와 override의 Next.js `16.3.8`을 사용하며, Cloudflare 빌드에는 OpenNext `1.20.10`을 사용한다.
 
 ```bash
 pnpm --filter tier-web cloudflare:build

@@ -3,14 +3,14 @@
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { ProductCard } from '@darun/products-shell';
-import { TrendingPreviewDocument } from '@darun/provider-graphql';
+import { CompactTrendingPreviewForSearchProductListDocument } from '@darun/provider-graphql';
 import { TrendingUp } from '@darun/ui';
 import { useLocale, useTranslations } from 'next-intl';
 
 export const TrendingProductPreview = () => {
   const locale = useLocale();
   const t = useTranslations('Search');
-  const { data } = useSuspenseQuery(TrendingPreviewDocument, {
+  const { data } = useSuspenseQuery(CompactTrendingPreviewForSearchProductListDocument, {
     variables: { first: 8, locale },
   });
 

@@ -18,11 +18,11 @@ overrides:
   form-data: ">=2.5.4"
   fast-xml-parser: ">=4.5.5"
   protobufjs: ">=7.5.5"
-  shell-quote: ">=1.8.4"
+  shell-quote: ">=1.11.0"
   velocityjs: ">=2.1.7"
   websocket-driver: ">=0.7.5"
-  next: ">=16.3.5"
-  "tier-web>next": "16.3.8"
+  next: "16.3.8"
+  handlebars: ">=4.7.10"
 
 allowBuilds:
   '@apollo/protobufjs': true
@@ -59,10 +59,10 @@ catalog:
   react-dom: 19.2.6
   '@types/react': 19.2.14
   '@types/react-dom': 19.2.4
-  next: 16.3.5
+  next: 16.3.8
   next-intl: 4.8.2
   next-client-cookies: 2.1.0
-  eslint-config-next: 16.3.5
+  eslint-config-next: 16.3.8
 
   # Apollo / GraphQL
   '@apollo/client': 4.2.0
