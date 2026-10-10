@@ -13,8 +13,8 @@ catalogs:
       specifier: 5.5.1
       version: 5.5.1
     '@as-integrations/aws-lambda':
-      specifier: 4.0.1
-      version: 4.0.1
+      specifier: 4.1.0
+      version: 4.1.0
     '@mantine/core':
       specifier: 9.5.1
       version: 9.5.1
@@ -393,7 +393,7 @@ importers:
         version: 5.5.1(graphql@16.12.0)
       '@as-integrations/aws-lambda':
         specifier: 'catalog:'
-        version: 4.0.1(@apollo/server@5.5.1(graphql@16.12.0))
+        version: 4.1.0(@apollo/server@5.5.1(graphql@16.12.0))
       '@darun/accounts-datasource':
         specifier: workspace:*
         version: link:../../libs/accounts/datasource
@@ -2226,7 +2226,7 @@ importers:
         version: 5.5.1(graphql@16.12.0)
       '@as-integrations/aws-lambda':
         specifier: 'catalog:'
-        version: 4.0.1(@apollo/server@5.5.1(graphql@16.12.0))
+        version: 4.1.0(@apollo/server@5.5.1(graphql@16.12.0))
       '@darun/utils-error':
         specifier: workspace:*
         version: link:../utils-error
@@ -2800,9 +2800,9 @@ packages:
     peerDependencies:
       graphql: '*'
 
-  '@as-integrations/aws-lambda@4.0.1':
-    resolution: {integrity: sha512-1vpz2V6MhuPhO0m5vE8NUVR+4RoM5nDO/iH+IVHovE0aOWUIoDbAqQDKCUXTV8/nJO/GBycQt/z/Mp9MX79Hkg==}
-    engines: {node: '>=16.0'}
+  '@as-integrations/aws-lambda@4.1.0':
+    resolution: {integrity: sha512-JSABzuduzpZbxUaZ7uL7mMFCkKe6uBBN2Yut9z2TInqDdkpVlxlFO+JaiU2EWvPL0jJUQfROXhSNYpRbE29p3g==}
+    engines: {node: '>=22'}
     peerDependencies:
       '@apollo/server': ^5.0.0
 
@@ -12121,7 +12121,7 @@ snapshots:
       immutable: 5.1.9
       invariant: 2.2.4
 
-  '@as-integrations/aws-lambda@4.0.1(@apollo/server@5.5.1(graphql@16.12.0))':
+  '@as-integrations/aws-lambda@4.1.0(@apollo/server@5.5.1(graphql@16.12.0))':
     dependencies:
       '@apollo/server': 5.5.1(graphql@16.12.0)
       '@types/aws-lambda': 8.10.161
