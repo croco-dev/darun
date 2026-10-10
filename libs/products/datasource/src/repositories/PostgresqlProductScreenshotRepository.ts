@@ -8,7 +8,7 @@ import {
 import { ProductScreenshotRepositoryToken, productScreenshotInsertFailed } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
-import { and, count, eq, inArray, isNotNull, lt, or, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, lt, or, sql, type SQLWrapper } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
@@ -89,6 +89,22 @@ const visualScreenshotColumns = {
   productSummary: products.summary,
   productLogoUrl: products.logoUrl,
 };
+
+/**
+ * M1 인기순 ORDER BY 식.
+ * (ln(1+v30) + ln(1+9*saves)*3.0) * (0.5+0.5*exp(-ageDays/60)), 동점 tiebreak id DESC.
+ * v30/saves는 집계 테이블(visual_view_events/visual_saves) 서브쿼리로 실시간 계산한다.
+ * 배치 테이블 없이 SQL ORDER BY 실시간 계산이며, 느려지면 배치 도입을 검토한다.
+ */
+export const visualScreenshotPopularityOrderExpr = (createdAtColumn: SQLWrapper) => sql<number>`
+  (
+    (
+      LN(1 + (SELECT COUNT(*) FROM visual_view_events WHERE visual_view_events.screenshot_id = product_screenshots.id AND visual_view_events.created_at >= NOW() - INTERVAL '30 days'))
+      + LN(1 + 9 * (SELECT COUNT(*) FROM visual_saves WHERE visual_saves.screenshot_id = product_screenshots.id)) * 3.0
+    )
+    * (0.5 + 0.5 * EXP(-(EXTRACT(EPOCH FROM (NOW() - ${createdAtColumn})) / 86400.0) / 60))
+  ) DESC
+`;
 
 @Service(ProductScreenshotRepositoryToken)
 export class PostgresqlProductScreenshotRepository implements ProductScreenshotRepository {
@@ -242,6 +258,27 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
       .where(and(...conditions))
       .orderBy(sql`${productScreenshots.id} DESC`)
       .limit(limit);
+
+    return rows.map(toVisualWithProduct);
+  }
+
+  async findManyVisualPublishedByFilterAndPageAndLimit(
+    filter: VisualScreenshotFilter,
+    page: number,
+    limit: number
+  ): Promise<VisualScreenshotWithProduct[]> {
+    const offset = (page - 1) * (limit - 1);
+    const rows = await this.db
+      .select(visualScreenshotColumns)
+      .from(productScreenshots)
+      .innerJoin(products, eq(products.id, productScreenshots.productId))
+      .where(buildVisualFilterConditions(filter))
+      .orderBy(
+        visualScreenshotPopularityOrderExpr(productScreenshots.createdAt),
+        sql`${productScreenshots.id} DESC`
+      )
+      .limit(limit)
+      .offset(offset);
 
     return rows.map(toVisualWithProduct);
   }

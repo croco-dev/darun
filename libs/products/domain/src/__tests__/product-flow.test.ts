@@ -69,6 +69,7 @@ const createMockRepositories = () => {
     findManyByProductId: vi.fn(async () => []),
     findFlowIdsByScreenshotId: vi.fn(async () => []),
     findManyVisualPublishedByFilterAndAfterIdAndLimit: vi.fn(async () => []),
+    findManyVisualPublishedByFilterAndPageAndLimit: vi.fn(async () => []),
     findVisualPublishedById: vi.fn(async () => null),
     countVisualPublishedByFilter: vi.fn(async () => 0),
     findManyVisualPublishedByScreenshotId: vi.fn(async () => []),

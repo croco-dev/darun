@@ -16,6 +16,8 @@ export type VisualScreenshotFilter = {
   productSlug?: string;
 };
 
+export type VisualSort = 'LATEST' | 'POPULAR';
+
 export interface ProductScreenshotRepository {
   findManyByProductIdSortByPriorityDesc(productId: string): Promise<ProductScreenshot[]>;
   findById(id: string): Promise<ProductScreenshot | null>;
@@ -36,6 +38,16 @@ export interface ProductScreenshotRepository {
     filter: VisualScreenshotFilter,
     limit: number,
     afterId?: string
+  ): Promise<VisualScreenshotWithProduct[]>;
+  /**
+   * M1 인기순 오프셋 조회. 배치 테이블 없이 집계 테이블
+   * (visual_view_events/visual_saves) 서브쿼리로 실시간 SQL ORDER BY 계산한다.
+   * 느려지면 배치 도입을 검토한다.
+   */
+  findManyVisualPublishedByFilterAndPageAndLimit(
+    filter: VisualScreenshotFilter,
+    page: number,
+    limit: number
   ): Promise<VisualScreenshotWithProduct[]>;
   findVisualPublishedById(id: string): Promise<VisualScreenshotWithProduct | null>;
   countVisualPublishedByFilter(filter: VisualScreenshotFilter): Promise<number>;

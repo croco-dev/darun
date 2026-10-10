@@ -28,6 +28,7 @@ const createMockRepository = () => ({
   deleteById: vi.fn(),
   updateById: vi.fn(),
   findManyVisualPublishedByFilterAndAfterIdAndLimit: vi.fn(),
+  findManyVisualPublishedByFilterAndPageAndLimit: vi.fn(),
   findVisualPublishedById: vi.fn(),
   countVisualPublishedByFilter: vi.fn(),
 });
@@ -110,5 +111,43 @@ describe('GetVisualScreenshots', () => {
       code: 'product/invalid-args',
     });
     expect(mockRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit).not.toHaveBeenCalled();
+  });
+
+  it('sort 미지정 시 LATEST로 keyset 조회를 유지한다', async () => {
+    const mockRepository = createMockRepository();
+    mockRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit.mockResolvedValue([]);
+    mockRepository.countVisualPublishedByFilter.mockResolvedValue(0);
+    const useCase = new GetVisualScreenshots(mockRepository as unknown as ProductScreenshotRepository);
+
+    await useCase.execute({ first: 24 });
+
+    expect(mockRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit).toHaveBeenCalledTimes(1);
+    expect(mockRepository.findManyVisualPublishedByFilterAndPageAndLimit).not.toHaveBeenCalled();
+  });
+
+  it('POPULAR는 오프셋(page) 조회로 분기한다', async () => {
+    const mockRepository = createMockRepository();
+    mockRepository.findManyVisualPublishedByFilterAndPageAndLimit.mockResolvedValue([]);
+    mockRepository.countVisualPublishedByFilter.mockResolvedValue(0);
+    const useCase = new GetVisualScreenshots(mockRepository as unknown as ProductScreenshotRepository);
+
+    await useCase.execute({ sort: 'POPULAR', first: 24, page: 2 });
+
+    expect(mockRepository.findManyVisualPublishedByFilterAndPageAndLimit).toHaveBeenCalledWith(
+      expect.anything(),
+      2,
+      25
+    );
+    expect(mockRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit).not.toHaveBeenCalled();
+  });
+
+  it('POPULAR에서 page가 1 미만이면 거절한다', async () => {
+    const mockRepository = createMockRepository();
+    const useCase = new GetVisualScreenshots(mockRepository as unknown as ProductScreenshotRepository);
+
+    await expect(useCase.execute({ sort: 'POPULAR', first: 24, page: 0 })).rejects.toThrow(
+      'pagination/invalid-connection-args'
+    );
+    expect(mockRepository.findManyVisualPublishedByFilterAndPageAndLimit).not.toHaveBeenCalled();
   });
 });

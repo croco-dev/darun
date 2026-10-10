@@ -100,6 +100,22 @@ const stepCountExpr = sql<number>`(
   SELECT COUNT(*)::int FROM product_flow_steps step_count_join WHERE step_count_join.flow_id = ${productFlows.id}
 )`;
 
+/**
+ * M1 인기순 ORDER BY 식.
+ * (ln(1+v30) + ln(1+9*saves)*3.0) * (0.5+0.5*exp(-ageDays/60)), 동점 tiebreak id DESC.
+ * v30/saves는 집계 테이블(visual_view_events/visual_saves) 서브쿼리로 실시간 계산한다.
+ * 배치 테이블 없이 SQL ORDER BY 실시간 계산이며, 느려지면 배치 도입을 검토한다.
+ */
+export const visualFlowPopularityOrderExpr = (createdAtColumn: SQLWrapper) => sql<number>`
+  (
+    (
+      LN(1 + (SELECT COUNT(*) FROM visual_view_events WHERE visual_view_events.flow_id = product_flows.id AND visual_view_events.created_at >= NOW() - INTERVAL '30 days'))
+      + LN(1 + 9 * (SELECT COUNT(*) FROM visual_saves WHERE visual_saves.flow_id = product_flows.id)) * 3.0
+    )
+    * (0.5 + 0.5 * EXP(-(EXTRACT(EPOCH FROM (NOW() - ${createdAtColumn})) / 86400.0) / 60))
+  ) DESC
+`;
+
 function toVisualSummary(row: {
   id: string;
   title: string;
@@ -323,6 +339,40 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
       .where(and(...conditions))
       .orderBy(sql`${productFlows.id} DESC`)
       .limit(limit);
+
+    return rows.flatMap(row => {
+      const summary = toVisualSummary(row);
+      return summary ? [summary] : [];
+    });
+  }
+
+  async findManyVisualPublishedByFilterAndPageAndLimit(
+    filter: VisualFlowFilter,
+    page: number,
+    limit: number
+  ): Promise<VisualFlowSummary[]> {
+    const offset = (page - 1) * (limit - 1);
+    const rows = await this.db
+      .select({
+        id: productFlows.id,
+        title: productFlows.title,
+        description: productFlows.description,
+        platform: productFlows.platform,
+        flowType: productFlows.flowType,
+        stepCount: stepCountExpr,
+        coverId: sql<string | null>`${coverColumn('id')}`,
+        coverImageUrl: sql<string | null>`${coverColumn('image_url')}`,
+        coverImageAlt: sql<string | null>`${coverColumn('image_alt')}`,
+        productId: productFlows.productId,
+        productName: products.name,
+        productSlug: products.slug,
+      })
+      .from(productFlows)
+      .innerJoin(products, eq(products.id, productFlows.productId))
+      .where(buildVisualFlowFilterConditions(filter))
+      .orderBy(visualFlowPopularityOrderExpr(productFlows.createdAt), sql`${productFlows.id} DESC`)
+      .limit(limit)
+      .offset(offset);
 
     return rows.flatMap(row => {
       const summary = toVisualSummary(row);
