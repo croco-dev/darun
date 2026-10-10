@@ -13,6 +13,7 @@ import {
   ProductMutationResolver,
   ProductQueryResolver,
   VisualFlowQueryResolver,
+  VisualSaveMutationResolver,
   VisualScreenshotQueryResolver,
   VisualViewMutationResolver,
 } from '@darun/products-feature/server';
@@ -34,6 +35,7 @@ export const resolvers: NonEmptyArray<Function> = [
   ProductMutationResolver,
   VisualScreenshotQueryResolver,
   VisualViewMutationResolver,
+  VisualSaveMutationResolver,
   ProductDescriptionQueryResolver,
   ProductDescriptionMutationResolver,
   FeatureQueryResolver,

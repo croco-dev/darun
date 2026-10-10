@@ -6,6 +6,7 @@ import { bind } from '@darun/utils-structure-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
 import { VISUAL_CARD_IMAGE_LOADING, VISUAL_DETAIL_IMAGE_FETCH_PRIORITY } from '../perf/imageLoading';
+import { VisualSaveButton } from '../saves/VisualSaveButton';
 import { VISUAL_PLATFORM_LABELS, VISUAL_FLOW_TYPE_LABELS } from './flowClassifications';
 import { FlowDetailState, useFlowDetail } from './useFlowDetail';
 
@@ -274,6 +275,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             </li>
           </ul>
           <div className="flex flex-wrap items-center gap-2">
+            <VisualSaveButton kind="flow" id={detail.id} enabled />
             <SaveButton
               item={{
                 kind: 'flow',

@@ -86,6 +86,13 @@ export interface ProductFlowRepository {
    * true면 신규 기록, false면 중복 무시(24시간 내 기존 기록 존재).
    */
   insertVisualViewEvent(params: { flowId: string; viewerHash: string }): Promise<boolean>;
+  /**
+   * M3 저장 토글. 로그인 필수.
+   * 이미 저장했으면 삭제하고 saved:false, 아니면 생성하고 saved:true.
+   */
+  toggleVisualSave(params: { flowId: string; userId: string }): Promise<{ saved: boolean }>;
+  /** M3 저장 여부 조회. 로그인 필수. */
+  isVisualSaved(params: { flowId: string; userId: string }): Promise<boolean>;
 }
 
 export const ProductFlowRepositoryToken = new Token<ProductFlowRepository>('ProductFlowRepository');

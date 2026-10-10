@@ -4,8 +4,9 @@ import { Button, Dialog, ExternalLink, ImageOff, Maximize2, RefreshCw } from '@d
 import { Link, notFound, useRouter } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
-import { VISUAL_CARD_IMAGE_LOADING, VISUAL_DETAIL_IMAGE_FETCH_PRIORITY } from '../perf/imageLoading';
 import { SaveButton } from '../collections/SaveButton';
+import { VISUAL_CARD_IMAGE_LOADING, VISUAL_DETAIL_IMAGE_FETCH_PRIORITY } from '../perf/imageLoading';
+import { VisualSaveButton } from '../saves/VisualSaveButton';
 import { ScreenshotDetailState, useScreenshotDetail } from './useScreenshotDetail';
 import {
   UNCLASSIFIED_LABEL,
@@ -218,6 +219,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
               </span>
             )}
             <span className="flex flex-wrap items-center gap-2 sm:ml-auto">
+              <VisualSaveButton kind="screenshot" id={id} enabled={status === 'loaded'} />
               <SaveButton
                 item={{
                   kind: 'screenshot',

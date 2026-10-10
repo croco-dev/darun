@@ -258,6 +258,8 @@ type Mutation {
   upvoteProduct(slug: String!): UpvoteProductPayload!
   trackVisualFlowView(id: String!): TrackVisualViewPayload!
   trackVisualScreenshotView(id: String!): TrackVisualViewPayload!
+  toggleVisualFlowSave(id: String!): ToggleVisualSavePayload!
+  toggleVisualScreenshotSave(id: String!): ToggleVisualSavePayload!
 }
 
 type PageInfo {
@@ -364,6 +366,10 @@ type Query {
   visualFlows(after: String, first: Int! = 24, flowType: VisualFlowType, page: Int, platform: VisualPlatform, productSlug: String, query: String, sort: VisualSort = LATEST): VisualFlowConnection!
   visualScreenshot(id: String!): VisualScreenshot
   visualScreenshots(after: String, first: Int! = 24, page: Int, platform: VisualPlatform, productSlug: String, query: String, screenType: VisualScreenType, sort: VisualSort = LATEST): VisualScreenshotConnection!
+  visualScreenshotSaveStatus(id: String!): VisualSaveStatusPayload!
+  visualFlowSaveStatus(id: String!): VisualSaveStatusPayload!
+  myVisualScreenshotSaves(first: Int, page: Int): [String!]!
+  myVisualFlowSaves(first: Int, page: Int): [String!]!
 }
 
 input RegisterProductCompanyInput {
@@ -482,6 +488,14 @@ type UpvoteProductPayload {
 
 type TrackVisualViewPayload {
   tracked: Boolean!
+}
+
+type ToggleVisualSavePayload {
+  saved: Boolean!
+}
+
+type VisualSaveStatusPayload {
+  saved: Boolean!
 }
 
 """공개 제품에 속한 UX 플로"""

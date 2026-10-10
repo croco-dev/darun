@@ -32,6 +32,9 @@ const createMockRepository = () => ({
   findVisualPublishedById: vi.fn(),
   countVisualPublishedByFilter: vi.fn(),
   insertVisualViewEvent: vi.fn().mockResolvedValue(true),
+    toggleVisualSave: vi.fn().mockResolvedValue({ saved: true }),
+    isVisualSaved: vi.fn().mockResolvedValue(false),
+    findVisualSavesByUser: vi.fn().mockResolvedValue({ screenshotIds: [], flowIds: [], totalCount: 0 }),
 });
 
 describe('GetVisualScreenshots', () => {
