@@ -14,6 +14,7 @@ import { Inject, Service } from 'typedi';
 import { productFlowSteps, productFlows } from '../entities/ProductFlowsSchema';
 import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
+import { visualViewEvents } from '../entities/VisualPopularitySchema';
 
 type FlowRow = typeof productFlows.$inferSelect;
 type StepRow = typeof productFlowSteps.$inferSelect;
@@ -485,5 +486,25 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
       const summary = toVisualSummary(row);
       return summary ? [summary] : [];
     });
+  }
+
+  async insertVisualViewEvent(params: { flowId: string; viewerHash: string }): Promise<boolean> {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const existing = await this.db
+      .select({ id: visualViewEvents.id })
+      .from(visualViewEvents)
+      .where(
+        and(
+          eq(visualViewEvents.viewerHash, params.viewerHash),
+          eq(visualViewEvents.flowId, params.flowId),
+          sql`${visualViewEvents.createdAt} >= ${since}`
+        )
+      )
+      .limit(1);
+    if (existing.length > 0) {
+      return false;
+    }
+    await this.db.insert(visualViewEvents).values({ flowId: params.flowId, viewerHash: params.viewerHash });
+    return true;
   }
 }

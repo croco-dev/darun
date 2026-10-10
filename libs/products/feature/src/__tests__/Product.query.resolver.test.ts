@@ -146,6 +146,7 @@ const createProductScreenshotRepository = (): ProductScreenshotRepository => ({
   countVisualPublishedByFilter: vi
     .fn<ProductScreenshotRepository['countVisualPublishedByFilter']>()
     .mockResolvedValue(0),
+  insertVisualViewEvent: vi.fn<ProductScreenshotRepository['insertVisualViewEvent']>().mockResolvedValue(true),
 });
 
 const createCompanyRepository = (): CompanyRepository => ({

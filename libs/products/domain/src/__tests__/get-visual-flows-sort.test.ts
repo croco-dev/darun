@@ -20,6 +20,7 @@ const createMockRepository = () => ({
   findManyVisualPublishedByFilterAndAfterIdAndLimit: vi.fn(),
   findManyVisualPublishedByFilterAndPageAndLimit: vi.fn(),
   countVisualPublishedByFilter: vi.fn(),
+  insertVisualViewEvent: vi.fn().mockResolvedValue(true),
 });
 
 describe('GetVisualFlows sort', () => {

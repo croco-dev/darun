@@ -31,6 +31,7 @@ const createMockRepository = () => ({
   findManyVisualPublishedByFilterAndPageAndLimit: vi.fn(),
   findVisualPublishedById: vi.fn(),
   countVisualPublishedByFilter: vi.fn(),
+  insertVisualViewEvent: vi.fn().mockResolvedValue(true),
 });
 
 describe('GetVisualScreenshots', () => {

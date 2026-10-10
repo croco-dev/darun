@@ -14,6 +14,7 @@ import {
   ProductQueryResolver,
   VisualFlowQueryResolver,
   VisualScreenshotQueryResolver,
+  VisualViewMutationResolver,
 } from '@darun/products-feature/server';
 import {
   LlmSettingResolver,
@@ -32,6 +33,7 @@ export const resolvers: NonEmptyArray<Function> = [
   ProductFlowMutationResolver,
   ProductMutationResolver,
   VisualScreenshotQueryResolver,
+  VisualViewMutationResolver,
   ProductDescriptionQueryResolver,
   ProductDescriptionMutationResolver,
   FeatureQueryResolver,

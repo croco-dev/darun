@@ -1,7 +1,11 @@
 'use client';
 
 import { useApolloClient } from '@apollo/client/react';
-import { VisualFlowOnDetailDocument, VisualSiblingFlowsOnDetailDocument } from '@darun/provider-graphql';
+import {
+  TrackVisualFlowViewDocument,
+  VisualFlowOnDetailDocument,
+  VisualSiblingFlowsOnDetailDocument,
+} from '@darun/provider-graphql';
 import type { VisualFlowType, VisualPlatform } from '@darun/provider-graphql';
 import { useEffect, useState } from 'react';
 import { VISUAL_FLOW_DETAIL_RELATED_FETCH_SIZE, VISUAL_FLOW_DETAIL_RELATED_SIZE } from './detailDocuments';
@@ -68,6 +72,10 @@ export function useFlowDetail(id: string): FlowDetailState {
           setQueryState({ status: 'not-found' });
           return;
         }
+        // M2 조회 기록: fire-and-forget, 상세 로딩 경로에 영향 금지
+        void apolloClient
+          .mutate({ mutation: TrackVisualFlowViewDocument, variables: { id } })
+          .catch((e: unknown) => console.error('Failed to track flow view', e));
         const slug = flow.product.slug ?? '';
         let relatedFlows: FlowDetailRelatedFlow[] = [];
         let relatedTotalCount = 0;

@@ -30,6 +30,7 @@ const createMockRepositories = (screenshot: ProductScreenshot | null) => {
     findManyVisualPublishedByFilterAndPageAndLimit: vi.fn(),
     findVisualPublishedById: vi.fn(),
     countVisualPublishedByFilter: vi.fn(),
+    insertVisualViewEvent: vi.fn().mockResolvedValue(true),
   };
   const flowRepository = {
     findFlowIdsByScreenshotId: vi.fn().mockResolvedValue([]),

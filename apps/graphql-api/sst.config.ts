@@ -30,6 +30,7 @@ export default $config({
       OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY!,
       CURSOR_SIGNATURE_SECRET: process.env.CURSOR_SIGNATURE_SECRET!,
       VOTE_IP_SALT: process.env.VOTE_IP_SALT!,
+      VISUAL_VIEW_IP_SALT: process.env.VISUAL_VIEW_IP_SALT ?? process.env.VOTE_IP_SALT ?? '',
       VISUAL_FLOW_WRITES_ENABLED: process.env.VISUAL_FLOW_WRITES_ENABLED ?? 'false',
     };
 
