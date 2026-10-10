@@ -147,6 +147,11 @@ const createProductScreenshotRepository = (): ProductScreenshotRepository => ({
     .fn<ProductScreenshotRepository['countVisualPublishedByFilter']>()
     .mockResolvedValue(0),
   insertVisualViewEvent: vi.fn<ProductScreenshotRepository['insertVisualViewEvent']>().mockResolvedValue(true),
+  toggleVisualSave: vi.fn<ProductScreenshotRepository['toggleVisualSave']>().mockResolvedValue({ saved: true }),
+  isVisualSaved: vi.fn<ProductScreenshotRepository['isVisualSaved']>().mockResolvedValue(false),
+  findVisualSavesByUser: vi
+    .fn<ProductScreenshotRepository['findVisualSavesByUser']>()
+    .mockResolvedValue({ screenshotIds: [], flowIds: [], totalCount: 0 }),
 });
 
 const createCompanyRepository = (): CompanyRepository => ({

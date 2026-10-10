@@ -46,6 +46,12 @@ type Documents = {
     "\n  mutation TrackVisualFlowView($id: String!) {\n    trackVisualFlowView(id: $id) {\n      tracked\n    }\n  }\n": typeof types.TrackVisualFlowViewDocument,
     "\n  query VisualFlowsOnExplorer(\n    $query: String\n    $platform: VisualPlatform\n    $flowType: VisualFlowType\n    $productSlug: String\n    $first: Int!\n    $after: String\n  ) {\n    visualFlows(\n      query: $query\n      platform: $platform\n      flowType: $flowType\n      productSlug: $productSlug\n      first: $first\n      after: $after\n    ) {\n      totalCount\n      edges {\n        cursor\n        node {\n          id\n          title\n          description\n          platform\n          flowType\n          stepCount\n          coverScreenshot {\n            id\n            imageUrl\n            imageAlt\n          }\n          product {\n            id\n            name\n            slug\n            logoUrl\n          }\n        }\n      }\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n    }\n  }\n": typeof types.VisualFlowsOnExplorerDocument,
     "\n  query SearchProductsOnVisualExplorer($query: String!) {\n    searchProducts(query: $query) {\n      id\n      name\n      slug\n      logoUrl\n    }\n  }\n": typeof types.SearchProductsOnVisualExplorerDocument,
+    "\n  mutation ToggleVisualScreenshotSave($id: String!) {\n    toggleVisualScreenshotSave(id: $id) {\n      saved\n    }\n  }\n": typeof types.ToggleVisualScreenshotSaveDocument,
+    "\n  mutation ToggleVisualFlowSave($id: String!) {\n    toggleVisualFlowSave(id: $id) {\n      saved\n    }\n  }\n": typeof types.ToggleVisualFlowSaveDocument,
+    "\n  query VisualScreenshotSaveStatus($id: String!) {\n    visualScreenshotSaveStatus(id: $id) {\n      saved\n    }\n  }\n": typeof types.VisualScreenshotSaveStatusDocument,
+    "\n  query VisualFlowSaveStatus($id: String!) {\n    visualFlowSaveStatus(id: $id) {\n      saved\n    }\n  }\n": typeof types.VisualFlowSaveStatusDocument,
+    "\n  query MyVisualScreenshotSaves($first: Int, $page: Int) {\n    myVisualScreenshotSaves(first: $first, page: $page)\n  }\n": typeof types.MyVisualScreenshotSavesDocument,
+    "\n  query MyVisualFlowSaves($first: Int, $page: Int) {\n    myVisualFlowSaves(first: $first, page: $page)\n  }\n": typeof types.MyVisualFlowSavesDocument,
     "\n  query VisualScreenshotOnDetail($id: String!) {\n    visualScreenshot(id: $id) {\n      id\n      imageUrl\n      imageAlt\n      title\n      platform\n      screenType\n      product {\n        id\n        name\n        slug\n        summary\n        logoUrl\n      }\n      flows {\n        id\n        title\n        stepCount\n        coverScreenshot {\n          id\n          imageUrl\n          imageAlt\n        }\n      }\n    }\n  }\n": typeof types.VisualScreenshotOnDetailDocument,
     "\n  query VisualSiblingScreenshotsOnDetail($productSlug: String!, $first: Int!) {\n    visualScreenshots(first: $first, productSlug: $productSlug) {\n      totalCount\n      edges {\n        node {\n          id\n          imageUrl\n          imageAlt\n          title\n        }\n      }\n    }\n  }\n": typeof types.VisualSiblingScreenshotsOnDetailDocument,
     "\n  mutation TrackVisualScreenshotView($id: String!) {\n    trackVisualScreenshotView(id: $id) {\n      tracked\n    }\n  }\n": typeof types.TrackVisualScreenshotViewDocument,
@@ -133,6 +139,12 @@ const documents: Documents = {
     "\n  mutation TrackVisualFlowView($id: String!) {\n    trackVisualFlowView(id: $id) {\n      tracked\n    }\n  }\n": types.TrackVisualFlowViewDocument,
     "\n  query VisualFlowsOnExplorer(\n    $query: String\n    $platform: VisualPlatform\n    $flowType: VisualFlowType\n    $productSlug: String\n    $first: Int!\n    $after: String\n  ) {\n    visualFlows(\n      query: $query\n      platform: $platform\n      flowType: $flowType\n      productSlug: $productSlug\n      first: $first\n      after: $after\n    ) {\n      totalCount\n      edges {\n        cursor\n        node {\n          id\n          title\n          description\n          platform\n          flowType\n          stepCount\n          coverScreenshot {\n            id\n            imageUrl\n            imageAlt\n          }\n          product {\n            id\n            name\n            slug\n            logoUrl\n          }\n        }\n      }\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n    }\n  }\n": types.VisualFlowsOnExplorerDocument,
     "\n  query SearchProductsOnVisualExplorer($query: String!) {\n    searchProducts(query: $query) {\n      id\n      name\n      slug\n      logoUrl\n    }\n  }\n": types.SearchProductsOnVisualExplorerDocument,
+    "\n  mutation ToggleVisualScreenshotSave($id: String!) {\n    toggleVisualScreenshotSave(id: $id) {\n      saved\n    }\n  }\n": types.ToggleVisualScreenshotSaveDocument,
+    "\n  mutation ToggleVisualFlowSave($id: String!) {\n    toggleVisualFlowSave(id: $id) {\n      saved\n    }\n  }\n": types.ToggleVisualFlowSaveDocument,
+    "\n  query VisualScreenshotSaveStatus($id: String!) {\n    visualScreenshotSaveStatus(id: $id) {\n      saved\n    }\n  }\n": types.VisualScreenshotSaveStatusDocument,
+    "\n  query VisualFlowSaveStatus($id: String!) {\n    visualFlowSaveStatus(id: $id) {\n      saved\n    }\n  }\n": types.VisualFlowSaveStatusDocument,
+    "\n  query MyVisualScreenshotSaves($first: Int, $page: Int) {\n    myVisualScreenshotSaves(first: $first, page: $page)\n  }\n": types.MyVisualScreenshotSavesDocument,
+    "\n  query MyVisualFlowSaves($first: Int, $page: Int) {\n    myVisualFlowSaves(first: $first, page: $page)\n  }\n": types.MyVisualFlowSavesDocument,
     "\n  query VisualScreenshotOnDetail($id: String!) {\n    visualScreenshot(id: $id) {\n      id\n      imageUrl\n      imageAlt\n      title\n      platform\n      screenType\n      product {\n        id\n        name\n        slug\n        summary\n        logoUrl\n      }\n      flows {\n        id\n        title\n        stepCount\n        coverScreenshot {\n          id\n          imageUrl\n          imageAlt\n        }\n      }\n    }\n  }\n": types.VisualScreenshotOnDetailDocument,
     "\n  query VisualSiblingScreenshotsOnDetail($productSlug: String!, $first: Int!) {\n    visualScreenshots(first: $first, productSlug: $productSlug) {\n      totalCount\n      edges {\n        node {\n          id\n          imageUrl\n          imageAlt\n          title\n        }\n      }\n    }\n  }\n": types.VisualSiblingScreenshotsOnDetailDocument,
     "\n  mutation TrackVisualScreenshotView($id: String!) {\n    trackVisualScreenshotView(id: $id) {\n      tracked\n    }\n  }\n": types.TrackVisualScreenshotViewDocument,
@@ -330,6 +342,30 @@ export function graphql(source: "\n  query VisualFlowsOnExplorer(\n    $query: S
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query SearchProductsOnVisualExplorer($query: String!) {\n    searchProducts(query: $query) {\n      id\n      name\n      slug\n      logoUrl\n    }\n  }\n"): (typeof documents)["\n  query SearchProductsOnVisualExplorer($query: String!) {\n    searchProducts(query: $query) {\n      id\n      name\n      slug\n      logoUrl\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ToggleVisualScreenshotSave($id: String!) {\n    toggleVisualScreenshotSave(id: $id) {\n      saved\n    }\n  }\n"): (typeof documents)["\n  mutation ToggleVisualScreenshotSave($id: String!) {\n    toggleVisualScreenshotSave(id: $id) {\n      saved\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ToggleVisualFlowSave($id: String!) {\n    toggleVisualFlowSave(id: $id) {\n      saved\n    }\n  }\n"): (typeof documents)["\n  mutation ToggleVisualFlowSave($id: String!) {\n    toggleVisualFlowSave(id: $id) {\n      saved\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query VisualScreenshotSaveStatus($id: String!) {\n    visualScreenshotSaveStatus(id: $id) {\n      saved\n    }\n  }\n"): (typeof documents)["\n  query VisualScreenshotSaveStatus($id: String!) {\n    visualScreenshotSaveStatus(id: $id) {\n      saved\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query VisualFlowSaveStatus($id: String!) {\n    visualFlowSaveStatus(id: $id) {\n      saved\n    }\n  }\n"): (typeof documents)["\n  query VisualFlowSaveStatus($id: String!) {\n    visualFlowSaveStatus(id: $id) {\n      saved\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query MyVisualScreenshotSaves($first: Int, $page: Int) {\n    myVisualScreenshotSaves(first: $first, page: $page)\n  }\n"): (typeof documents)["\n  query MyVisualScreenshotSaves($first: Int, $page: Int) {\n    myVisualScreenshotSaves(first: $first, page: $page)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query MyVisualFlowSaves($first: Int, $page: Int) {\n    myVisualFlowSaves(first: $first, page: $page)\n  }\n"): (typeof documents)["\n  query MyVisualFlowSaves($first: Int, $page: Int) {\n    myVisualFlowSaves(first: $first, page: $page)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

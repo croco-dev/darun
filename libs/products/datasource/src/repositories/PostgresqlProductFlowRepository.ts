@@ -14,7 +14,7 @@ import { Inject, Service } from 'typedi';
 import { productFlowSteps, productFlows } from '../entities/ProductFlowsSchema';
 import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
-import { visualViewEvents } from '../entities/VisualPopularitySchema';
+import { visualSaves, visualViewEvents } from '../entities/VisualPopularitySchema';
 
 type FlowRow = typeof productFlows.$inferSelect;
 type StepRow = typeof productFlowSteps.$inferSelect;
@@ -506,5 +506,28 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
     }
     await this.db.insert(visualViewEvents).values({ flowId: params.flowId, viewerHash: params.viewerHash });
     return true;
+  }
+
+  async toggleVisualSave(params: { flowId: string; userId: string }): Promise<{ saved: boolean }> {
+    const existing = await this.db
+      .select({ id: visualSaves.id })
+      .from(visualSaves)
+      .where(and(eq(visualSaves.userId, params.userId), eq(visualSaves.flowId, params.flowId)))
+      .limit(1);
+    if (existing.length > 0) {
+      await this.db.delete(visualSaves).where(eq(visualSaves.id, existing[0].id));
+      return { saved: false };
+    }
+    await this.db.insert(visualSaves).values({ userId: params.userId, flowId: params.flowId });
+    return { saved: true };
+  }
+
+  async isVisualSaved(params: { flowId: string; userId: string }): Promise<boolean> {
+    const existing = await this.db
+      .select({ id: visualSaves.id })
+      .from(visualSaves)
+      .where(and(eq(visualSaves.userId, params.userId), eq(visualSaves.flowId, params.flowId)))
+      .limit(1);
+    return existing.length > 0;
   }
 }

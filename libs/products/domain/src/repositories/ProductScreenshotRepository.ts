@@ -56,6 +56,20 @@ export interface ProductScreenshotRepository {
    * true면 신규 기록, false면 중복 무시(24시간 내 기존 기록 존재).
    */
   insertVisualViewEvent(params: { screenshotId?: string; flowId?: string; viewerHash: string }): Promise<boolean>;
+  /**
+   * M3 저장 토글. 로그인 필수.
+   * 이미 저장했으면 삭제하고 saved:false, 아니면 생성하고 saved:true.
+   */
+  toggleVisualSave(params: { screenshotId?: string; flowId?: string; userId: string }): Promise<{ saved: boolean }>;
+  /** M3 저장 여부 조회. 로그인 필수. */
+  isVisualSaved(params: { screenshotId?: string; flowId?: string; userId: string }): Promise<boolean>;
+  /** M3 내 저장 목록. 로그인 필수. 화면·플로 중 하나 지정. */
+  findVisualSavesByUser(params: {
+    userId: string;
+    kind: 'screenshot' | 'flow';
+    limit: number;
+    offset: number;
+  }): Promise<{ screenshotIds: string[]; flowIds: string[]; totalCount: number }>;
 }
 
 export const ProductScreenshotRepositoryToken = new Token<ProductScreenshotRepository>('ProductScreenshotRepository');
