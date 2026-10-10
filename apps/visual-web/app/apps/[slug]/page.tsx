@@ -59,13 +59,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 function AppDetailSkeleton() {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 md:px-6" aria-busy="true">
+    <div className="w-full py-8 md:py-12">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-6" aria-busy="true">
         <div className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" aria-hidden="true" />
         <div
           className="min-h-72 w-full animate-pulse rounded-2xl bg-surface-200 motion-reduce:animate-none"
           aria-hidden="true"
         />
         <span className="sr-only">앱을 불러오는 중</span>
+      </div>
     </div>
   );
 }
@@ -80,13 +82,13 @@ export default async function Page({ params }: Props) {
 
   return (
     <VisualLayout>
-      <main id="main-content" tabIndex={-1} className="w-full py-8 focus:outline-none md:py-12">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 md:gap-10 md:px-6">
+      <div className="w-full py-8 md:py-12">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:gap-10 md:px-6">
           <Suspense fallback={<AppDetailSkeleton />}>
             <AppDetail slug={slug} />
           </Suspense>
         </div>
-      </main>
+      </div>
     </VisualLayout>
   );
 }

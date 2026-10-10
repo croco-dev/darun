@@ -49,13 +49,13 @@ export function ProductSearchSuggest({
 
   // Close on outside click
   useEffect(() => {
-    function handleMouseDown(event: MouseEvent) {
+    function handleClick(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         callbacksRef.current.onClose();
       }
     }
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
   }, []);
 
   const activeIndexRef = useRef(activeIndex);
@@ -105,7 +105,7 @@ export function ProductSearchSuggest({
   if (!isOpen) return null;
 
   return (
-    <div ref={containerRef} className="absolute left-0 right-0 top-full z-30 mt-1.5">
+    <div ref={containerRef} className="relative z-30 mt-2 lg:absolute lg:top-full lg:right-0 lg:left-0">
       {hasResults ? (
         <ul
           id={listboxId}
@@ -145,7 +145,7 @@ export function ProductSearchSuggest({
           ))}
         </ul>
       ) : showLoading ? (
-        <div className="flex min-h-[44px] items-center rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-400 shadow-lg select-none">
+        <div className="flex min-h-11 items-center rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-600 shadow-lg select-none">
           검색 중...
         </div>
       ) : null}

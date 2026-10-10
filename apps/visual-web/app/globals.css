@@ -1,7 +1,9 @@
-@import "tailwindcss";
+@import 'normalize.css/normalize.css' layer(base);
+@import 'tailwindcss';
 
 @config '../../../tailwind.config.ts';
 @source './**/*.{js,ts,jsx,tsx,mdx}';
+@source '../features/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/*/shell/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/*/feature/src/**/*.{js,ts,jsx,tsx}';
 @source '../../../libs/shared/ui/src/**/*.{js,ts,jsx,tsx}';
@@ -9,6 +11,20 @@
 @source '../../../libs/shared/ui-layout/src/**/*.{js,ts,jsx,tsx}';
 
 @layer base {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  h1,
+  h2,
+  h3 {
+    margin: 0;
+    font-style: normal;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+    text-wrap: balance;
+  }
   * {
     margin: 0;
     padding: 0;

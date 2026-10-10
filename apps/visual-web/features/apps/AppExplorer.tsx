@@ -4,6 +4,7 @@ import { Button } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useRef } from 'react';
+import { SaveButton } from '../collections/SaveButton';
 import { ExplorerShell } from '../explorer/ExplorerShell';
 import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
@@ -13,26 +14,41 @@ const DEFAULT_ICON = '/images/default-product-icon.svg';
 
 function AppCardGrid({ cards }: { cards: AppCard[] }) {
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {cards.map(card => (
-        <li key={card.id}>
-          <Link
-            href={`/apps/${encodeURIComponent(card.slug)}`}
-            className="group flex items-center gap-4 overflow-hidden rounded-2xl border border-dark-150 bg-white p-4 shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-          >
-            <img
-              src={card.logoUrl || DEFAULT_ICON}
-              alt={`${card.name} 로고`}
-              loading={VISUAL_CARD_IMAGE_LOADING}
-              className="h-14 w-14 shrink-0 rounded-xl border border-dark-150 bg-surface-100 object-cover"
-            />
-            <span className="flex min-w-0 flex-col gap-1">
-              <span className="truncate text-sm font-bold text-dark-900">{card.name}</span>
-              {card.summary.trim().length > 0 && (
-                <span className="line-clamp-2 text-xs leading-relaxed text-dark-500">{card.summary}</span>
-              )}
-            </span>
-          </Link>
+        <li key={card.id} className="min-w-0">
+          <div className="flex h-full flex-col overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300">
+            <Link
+              href={`/apps/${encodeURIComponent(card.slug)}`}
+              className="flex min-w-0 flex-1 items-center gap-3 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-inset"
+            >
+              <img
+                src={card.logoUrl || DEFAULT_ICON}
+                alt=""
+                aria-hidden="true"
+                loading={VISUAL_CARD_IMAGE_LOADING}
+                className="h-12 w-12 shrink-0 rounded-xl border border-dark-150 bg-surface-100 object-cover"
+              />
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate text-sm font-semibold text-dark-900">{card.name}</span>
+                {card.summary.trim().length > 0 && (
+                  <span className="line-clamp-2 text-xs leading-relaxed text-dark-600">{card.summary}</span>
+                )}
+              </span>
+            </Link>
+            <div className="flex items-center justify-end border-t border-dark-100 px-2 py-1">
+              <SaveButton
+                item={{
+                  kind: 'app',
+                  id: card.id,
+                  title: card.name,
+                  imageUrl: card.logoUrl || DEFAULT_ICON,
+                  href: `/apps/${encodeURIComponent(card.slug)}`,
+                  productName: card.name,
+                }}
+              />
+            </div>
+          </div>
         </li>
       ))}
     </ul>
@@ -41,10 +57,10 @@ function AppCardGrid({ cards }: { cards: AppCard[] }) {
 
 function AppCardSkeletons() {
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
-      {Array.from({ length: 6 }, (_, index) => (
-        <li key={index} className="flex items-center gap-4 rounded-2xl border border-dark-150 bg-white p-4">
-          <div className="h-14 w-14 shrink-0 animate-pulse rounded-xl bg-surface-200 motion-reduce:animate-none" />
+    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-hidden="true">
+      {Array.from({ length: 8 }, (_, index) => (
+        <li key={index} className="flex items-center gap-3 rounded-xl border border-dark-150 bg-white p-4">
+          <div className="h-12 w-12 shrink-0 animate-pulse rounded-xl bg-surface-200 motion-reduce:animate-none" />
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <div className="h-4 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
             <div className="h-3 w-full animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
@@ -94,7 +110,7 @@ const View = (props: AppExplorerState) => {
         retry,
       }}
       hero={
-        <header className="flex flex-col gap-3">
+        <header className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold tracking-tight text-dark-900 break-words [word-break:keep-all] md:text-3xl">
             앱으로 탐색하세요
           </h1>
@@ -104,10 +120,10 @@ const View = (props: AppExplorerState) => {
         </header>
       }
       searchForm={
-        <form onSubmit={onSearchSubmit} className="flex flex-col gap-3" role="search">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="relative flex min-w-0 flex-1 flex-col gap-1.5 sm:max-w-md">
-              <label htmlFor="app-search" className="text-sm font-semibold text-dark-700">
+        <form onSubmit={onSearchSubmit} role="search" className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+            <div className="relative min-w-0 w-full lg:flex-1">
+              <label htmlFor="app-search" className="sr-only">
                 앱 검색
               </label>
               <input
@@ -122,7 +138,8 @@ const View = (props: AppExplorerState) => {
                 onFocus={onSearchInputFocus}
                 placeholder="서비스명으로 검색"
                 data-visual-search="apps"
-                className="w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-900 shadow-2xs placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+                aria-describedby={query !== null ? 'app-search-status' : undefined}
+                className="min-h-[44px] w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-900 placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
               />
               <ProductSearchSuggest
                 inputId="app-search"
@@ -134,21 +151,33 @@ const View = (props: AppExplorerState) => {
                 onClose={onSuggestClose}
               />
             </div>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              size="md"
-              className="shrink-0 active:scale-[0.98] motion-reduce:transform-none"
-            >
-              <span className="whitespace-nowrap">검색</span>
-            </Button>
-            {query !== null && (
-              <p className="w-full text-xs text-dark-400" aria-live="polite">
-                ‘{query}’ 검색 결과
-              </p>
-            )}
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                size="md"
+                className="min-h-[44px] shrink-0 active:scale-[0.98] motion-reduce:transform-none"
+              >
+                <span className="whitespace-nowrap">검색</span>
+              </Button>
+              {hasFilters && (
+                <Button
+                  type="button"
+                  variant="text"
+                  color="primary"
+                  size="md"
+                  onClick={onClearFilters}
+                  className="min-h-[44px] shrink-0 active:scale-[0.98] motion-reduce:transform-none"
+                >
+                  <span className="whitespace-nowrap">초기화</span>
+                </Button>
+              )}
+            </div>
           </div>
+          <p id="app-search-status" className="min-h-4 text-xs text-dark-600" aria-live="polite">
+            {query !== null && !loading && !networkError ? `‘${query}’ 검색 결과 ${totalCount}개` : ''}
+          </p>
         </form>
       }
       skeleton={<AppCardSkeletons />}

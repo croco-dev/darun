@@ -24,6 +24,7 @@
     "@darun/utils-router": "workspace:*",
     "@darun/utils-structure-react": "workspace:*",
     "date-fns": "3.6.0",
+    "isomorphic-dompurify": "3.8.0",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "next-client-cookies": "catalog:",
