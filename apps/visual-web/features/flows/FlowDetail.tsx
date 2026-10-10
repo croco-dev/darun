@@ -24,10 +24,10 @@ function StepImage({ src, alt }: { src: string; alt: string }) {
       <div
         role="img"
         aria-label="이미지를 불러올 수 없음"
-        className="flex min-h-72 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dark-200 bg-surface-100 text-dark-400"
+        className="flex min-h-72 w-full flex-col items-center justify-center gap-2 rounded-xl bg-surface-100 text-dark-400"
       >
         <ImageOff size={32} className="shrink-0" aria-hidden="true" />
-        <span className="text-sm text-dark-500 break-words [word-break:keep-all]">
+        <span className="text-sm text-dark-600 break-words [word-break:keep-all]">
           이미지를 불러올 수 없어요. 다른 단계로 이동해 보세요.
         </span>
       </div>
@@ -40,7 +40,7 @@ function StepImage({ src, alt }: { src: string; alt: string }) {
       alt={alt}
       fetchPriority={VISUAL_DETAIL_IMAGE_FETCH_PRIORITY}
       onError={() => setFailedSrc(src)}
-      className="max-h-[calc(100dvh-16rem)] w-full rounded-2xl border border-dark-150 bg-surface-100 object-contain"
+      className="mx-auto max-h-[calc(100dvh-16rem)] w-auto max-w-full rounded-xl bg-surface-100 object-contain"
     />
   );
 }
@@ -138,7 +138,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
 
   if (status === 'loading') {
     return (
-      <div className="w-full py-8 md:py-12">
+      <div className="w-full py-6 md:py-8">
         <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-6" aria-busy="true">
           <div
             className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
@@ -164,7 +164,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
 
   if (status === 'error' || detail === null) {
     return (
-      <div className="w-full py-8 md:py-12">
+      <div className="w-full py-6 md:py-8">
         <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 md:px-6">
           <div
             role="alert"
@@ -179,7 +179,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               color="primary"
               size="sm"
               onClick={() => retry()}
-              className="active:scale-[0.98] motion-reduce:transform-none"
+              className="min-h-[44px] active:scale-[0.98] motion-reduce:transform-none"
             >
               <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
               <span className="whitespace-nowrap">다시 시도</span>
@@ -215,14 +215,14 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
   };
 
   return (
-    <div className="w-full py-8 md:py-12">
+    <div className="w-full py-6 md:py-8">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-6">
         <nav aria-label="브레드크럼브">
-          <ol className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-dark-400">
+          <ol className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-dark-600">
             <li>
               <Link
                 href="/flows"
-                className="rounded underline-offset-4 hover:text-dark-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+                className="inline-flex min-h-[44px] items-center rounded underline-offset-4 hover:text-dark-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
               >
                 플로
               </Link>
@@ -254,11 +254,11 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               {detail.product.name}
             </Link>
           </p>
-          <h1 className="break-words [word-break:keep-all] text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">
+          <h1 className="break-words [word-break:keep-all] text-[28px] font-bold leading-tight tracking-tight text-dark-900 md:text-[32px]">
             {detail.title}
           </h1>
           {detail.description.length > 0 && (
-            <p className="max-w-2xl text-sm leading-relaxed text-dark-500 break-words [word-break:keep-all]">
+            <p className="max-w-2xl text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all]">
               {detail.description}
             </p>
           )}
@@ -287,15 +287,15 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             <Button
               type="button"
               variant="shadow"
-              color="primary"
+              color="secondary"
               size="sm"
               onClick={handleShare}
-              className="active:scale-[0.98] motion-reduce:transform-none"
+              className="min-h-[44px] active:scale-[0.98] motion-reduce:transform-none"
             >
               <Link2 size={16} className="shrink-0" aria-hidden="true" />
               <span className="whitespace-nowrap">링크 복사</span>
             </Button>
-            <span aria-live="polite" className="text-xs text-dark-500">
+            <span aria-live="polite" className="text-xs text-dark-600">
               {copyState === 'copied'
                 ? '링크를 복사했어요.'
                 : copyState === 'error'
@@ -308,13 +308,13 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
         {stepCount === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-dark-200 py-16 text-center text-dark-500">
             <p className="text-base font-semibold text-dark-700">등록된 단계가 없습니다.</p>
-            <p className="mt-1 text-sm text-dark-400">이 플로에는 아직 등록된 스텝(단계)이 없습니다.</p>
+            <p className="mt-1 text-sm text-dark-600">이 플로에는 아직 등록된 스텝(단계)이 없습니다.</p>
           </div>
         ) : (
-          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="grid min-w-0 items-start gap-4 md:gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <section
               aria-label="플로 단계 이미지"
-              className="min-w-0 rounded-2xl border border-dark-150 bg-surface-50 p-3 md:p-4"
+              className="min-w-0 rounded-xl border border-dark-150 bg-surface-100 p-3 md:p-4"
             >
               <div className="flex min-w-0 flex-col gap-3">
                 {activeStep && (
@@ -342,7 +342,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                             }`}
                           >
                             <span
-                              className={`text-2xs font-bold tabular-nums select-none ${isActive ? 'text-dark-900' : 'text-dark-400'}`}
+                              className={`text-2xs font-bold tabular-nums select-none ${isActive ? 'text-dark-900' : 'text-dark-600'}`}
                             >
                               {stepNumber}
                             </span>
@@ -364,7 +364,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
 
             <aside
               aria-label="단계 설명"
-              className="flex min-w-0 flex-col gap-4 rounded-2xl border border-dark-150 bg-white p-4 md:p-5"
+              className="flex min-w-0 flex-col gap-4 self-start rounded-xl border border-dark-150 bg-white p-4 md:p-5 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto"
             >
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-semibold tabular-nums text-dark-700" aria-live="polite">
@@ -398,15 +398,15 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                   )}
                 </div>
               )}
-              <div className="mt-auto flex gap-2 pt-2">
+              <div className="mt-auto flex gap-2 border-t border-dark-100 pt-4">
                 <Button
                   type="button"
                   variant="shadow"
-                  color="primary"
+                  color="secondary"
                   size="sm"
                   onClick={() => goToStep(activeStepNumber - 1)}
                   disabled={!hasPrevStep}
-                  className="flex-1 active:scale-[0.98] motion-reduce:transform-none"
+                  className="min-h-[44px] flex-1 active:scale-[0.98] motion-reduce:transform-none"
                 >
                   <ChevronLeft size={16} className="shrink-0" aria-hidden="true" />
                   <span className="whitespace-nowrap">이전</span>
@@ -414,12 +414,12 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                 </Button>
                 <Button
                   type="button"
-                  variant="shadow"
+                  variant="contained"
                   color="primary"
                   size="sm"
                   onClick={() => goToStep(activeStepNumber + 1)}
                   disabled={!hasNextStep}
-                  className="flex-1 active:scale-[0.98] motion-reduce:transform-none"
+                  className="min-h-[44px] flex-1 active:scale-[0.98] motion-reduce:transform-none"
                 >
                   <span className="whitespace-nowrap">다음</span>
                   <ChevronRight size={16} className="shrink-0" aria-hidden="true" />
@@ -429,7 +429,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               {activeStep && (
                 <Link
                   href={`/screenshots/${encodeURIComponent(activeStep.screenshot.id)}`}
-                  className="self-start rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  className="inline-flex min-h-[44px] items-center self-start rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   화면 상세 보기 →
                 </Link>
@@ -445,30 +445,26 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             variant="contained"
             color="primary"
             size="md"
-            className="active:scale-[0.98] motion-reduce:transform-none"
+            className="min-h-[44px] active:scale-[0.98] motion-reduce:transform-none"
           >
             <span className="whitespace-nowrap">이 서비스의 플로</span>
           </Button>
-          <Button
-            as="a"
+          <a
             href={`https://darun.io/ko/products/${encodeURIComponent(detail.product.slug)}`}
             target="_blank"
             rel="noopener noreferrer"
-            variant="shadow"
-            color="primary"
-            size="md"
-            className="active:scale-[0.98] motion-reduce:transform-none"
+            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-dark-150 bg-white px-3.5 py-2 text-sm font-semibold text-dark-900 transition-colors hover:border-dark-300 hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <ExternalLink size={16} className="shrink-0" aria-hidden="true" />
             <span className="whitespace-nowrap">서비스 소개</span>
-          </Button>
+          </a>
           <Button
             type="button"
             variant="text"
             color="primary"
             size="md"
             onClick={() => router.back()}
-            className="sm:ml-auto active:scale-[0.98] motion-reduce:transform-none"
+            className="sm:ml-auto min-h-[44px] active:scale-[0.98] motion-reduce:transform-none"
           >
             <span className="whitespace-nowrap">뒤로 가기</span>
           </Button>
@@ -482,7 +478,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               </h2>
               <Link
                 href={`/apps/${encodeURIComponent(detail.product.slug)}`}
-                className="shrink-0 rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 전체 보기 →
               </Link>
@@ -492,7 +488,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                 <li key={flow.id}>
                   <Link
                     href={`/flows/${encodeURIComponent(flow.id)}`}
-                    className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                    className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
                     <div className="aspect-[16/9] w-full overflow-hidden bg-surface-100">
                       <img
@@ -504,7 +500,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                     </div>
                     <div className="flex items-center justify-between gap-2 p-3.5">
                       <span className="truncate text-sm font-bold text-dark-900">{flow.title}</span>
-                      <span className="shrink-0 text-xs text-dark-500 tabular-nums">{flow.stepCount}단계</span>
+                      <span className="shrink-0 text-xs text-dark-600 tabular-nums">{flow.stepCount}단계</span>
                     </div>
                   </Link>
                 </li>

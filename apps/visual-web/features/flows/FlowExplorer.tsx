@@ -18,30 +18,30 @@ import { FlowExplorerState, FlowCard, useFlowExplorer } from './useFlowExplorer'
 
 function FlowCardGrid({ cards }: { cards: FlowCard[] }) {
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {cards.map(card => (
         <li
           key={card.id}
-          className="relative overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 focus-within:border-dark-300"
+          className="min-w-0 overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300"
         >
           <Link
             href={`/flows/${encodeURIComponent(card.id)}`}
             className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-inset"
           >
-            <div className="aspect-[4/3] w-full overflow-hidden bg-surface-100">
+            <div className="flex min-h-28 w-full items-center justify-center overflow-hidden bg-surface-100">
               <img
                 src={card.coverImageUrl}
                 alt={card.coverImageAlt || (card.title ? `${card.title} 플로 커버 이미지` : '플로 커버 이미지')}
                 loading={VISUAL_CARD_IMAGE_LOADING}
-                className="h-full w-full object-contain object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
+                className="h-auto max-h-64 w-full object-contain object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
               />
             </div>
-            <div className="flex flex-col gap-1 p-3.5">
-              <span className="flex items-center gap-1.5 truncate text-sm font-bold text-dark-900">
+            <div className="flex flex-col gap-1 p-3">
+              <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-dark-900">
                 <Layers size={14} className="shrink-0 text-dark-400" aria-hidden="true" />
                 {card.title}
               </span>
-              <span className="flex items-center gap-2 text-xs text-dark-500">
+              <span className="flex items-center gap-2 text-xs text-dark-600">
                 <span className="truncate">{card.product.name}</span>
                 <span aria-hidden="true" className="text-dark-300">
                   ·
@@ -52,10 +52,10 @@ function FlowCardGrid({ cards }: { cards: FlowCard[] }) {
                 </span>
                 <span className="shrink-0">{VISUAL_FLOW_TYPE_LABELS[card.flowType] ?? card.flowType}</span>
               </span>
-              <span className="text-xs text-dark-400 tabular-nums">{card.stepCount}단계</span>
+              <span className="text-xs text-dark-600 tabular-nums">{card.stepCount}단계</span>
             </div>
           </Link>
-          <div className="absolute top-2 right-2">
+          <div className="flex items-center justify-end border-t border-dark-100 px-2 py-1">
             <SaveButton
               item={{
                 kind: 'flow',
@@ -75,11 +75,11 @@ function FlowCardGrid({ cards }: { cards: FlowCard[] }) {
 
 function FlowCardSkeletons() {
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
-      {Array.from({ length: 6 }, (_, index) => (
-        <li key={index} className="overflow-hidden rounded-2xl border border-dark-150 bg-white">
-          <div className="aspect-[4/3] w-full animate-pulse bg-surface-200 motion-reduce:animate-none" />
-          <div className="flex flex-col gap-2 p-3.5">
+    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-hidden="true">
+      {Array.from({ length: 8 }, (_, index) => (
+        <li key={index} className="overflow-hidden rounded-xl border border-dark-150 bg-white">
+          <div className="min-h-28 w-full animate-pulse bg-surface-200 motion-reduce:animate-none" />
+          <div className="flex flex-col gap-2 p-3">
             <div className="h-4 w-3/4 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
             <div className="h-3 w-1/2 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
           </div>
@@ -131,8 +131,8 @@ const View = (props: FlowExplorerState & { hideHero?: boolean }) => {
             )
           }
           searchForm={
-            <form onSubmit={onSearchSubmit} role="search" className="flex flex-wrap items-center gap-2">
-              <div className="relative min-w-0 flex-1 basis-48">
+            <form onSubmit={onSearchSubmit} role="search" className="flex flex-col gap-2 lg:flex-row lg:items-center">
+              <div className="relative min-w-0 w-full lg:flex-1">
                 <label htmlFor="flow-search" className="sr-only">
                   플로 검색
                 </label>
@@ -148,7 +148,7 @@ const View = (props: FlowExplorerState & { hideHero?: boolean }) => {
                   onFocus={onSearchInputFocus}
                   placeholder="플로 제목, 설명, 서비스명으로 검색"
                   data-visual-search="flows"
-                  className="w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2 text-sm text-dark-900 shadow-2xs placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+                  className="min-h-[44px] w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-900 placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
                 />
                 <ProductSearchSuggest
                   inputId="flow-search"
@@ -160,7 +160,7 @@ const View = (props: FlowExplorerState & { hideHero?: boolean }) => {
                   onClose={onSuggestClose}
                 />
               </div>
-              <div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <label htmlFor="flow-platform" className="sr-only">
                   플랫폼
                 </label>
@@ -168,7 +168,7 @@ const View = (props: FlowExplorerState & { hideHero?: boolean }) => {
                   id="flow-platform"
                   value={platform ?? ''}
                   onChange={event => onPlatformChange(event.currentTarget.value)}
-                  className="min-h-[40px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2 text-sm text-dark-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+                  className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
                 >
                   <option value="">전체 플랫폼</option>
                   {VISUAL_PLATFORM_OPTIONS.map(option => (
@@ -177,8 +177,6 @@ const View = (props: FlowExplorerState & { hideHero?: boolean }) => {
                     </option>
                   ))}
                 </select>
-              </div>
-              <div>
                 <label htmlFor="flow-type" className="sr-only">
                   플로 유형
                 </label>
@@ -186,7 +184,7 @@ const View = (props: FlowExplorerState & { hideHero?: boolean }) => {
                   id="flow-type"
                   value={flowType ?? ''}
                   onChange={event => onFlowTypeChange(event.currentTarget.value)}
-                  className="min-h-[40px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2 text-sm text-dark-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+                  className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
                 >
                   <option value="">전체 유형</option>
                   {VISUAL_FLOW_TYPE_OPTIONS.map(option => (
@@ -195,31 +193,31 @@ const View = (props: FlowExplorerState & { hideHero?: boolean }) => {
                     </option>
                   ))}
                 </select>
-              </div>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                size="md"
-                className="shrink-0 active:scale-[0.98] motion-reduce:transform-none"
-              >
-                <span className="whitespace-nowrap">검색</span>
-              </Button>
-              {product !== null && (
                 <Button
-                  variant="shadow"
+                  type="submit"
+                  variant="contained"
                   color="primary"
-                  size="sm"
-                  onClick={() => onClearFilters()}
-                  className="active:scale-[0.98] motion-reduce:transform-none"
+                  size="md"
+                  className="min-h-[44px] shrink-0 active:scale-[0.98] motion-reduce:transform-none"
                 >
-                  <span className="max-w-48 truncate">{product}</span>
-                  <span aria-hidden="true" className="ml-1 font-bold">
-                    ×
-                  </span>
-                  <span className="sr-only">서비스 필터 해제</span>
+                  <span className="whitespace-nowrap">검색</span>
                 </Button>
-              )}
+                {product !== null && (
+                  <Button
+                    variant="shadow"
+                    color="primary"
+                    size="sm"
+                    onClick={() => onClearFilters()}
+                    className="min-h-[44px] shrink-0 active:scale-[0.98] motion-reduce:transform-none"
+                  >
+                    <span className="max-w-48 truncate">{product}</span>
+                    <span aria-hidden="true" className="ml-1 font-bold">
+                      ×
+                    </span>
+                    <span className="sr-only">서비스 필터 해제</span>
+                  </Button>
+                )}
+              </div>
             </form>
           }
           skeleton={<FlowCardSkeletons />}

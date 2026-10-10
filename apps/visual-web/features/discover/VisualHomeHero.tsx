@@ -23,18 +23,16 @@ export function buildCategoryHref(screenType: VisualHomeCategory) {
 export function VisualHomeHero() {
   return (
     <section aria-labelledby="visual-home-hero-title" className="w-full">
-      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <div className="flex max-w-2xl flex-col gap-2 md:gap-3">
-          <h1
-            id="visual-home-hero-title"
-            className="text-2xl font-bold tracking-tight text-dark-900 break-words [word-break:keep-all] sm:text-3xl md:text-4xl"
-          >
-            좋은 제품의 실제 화면을 탐색하세요.
-          </h1>
-          <p className="text-sm leading-relaxed text-dark-500 break-words [word-break:keep-all] sm:text-base">
-            다른 Visual은 전 세계의 훌륭한 제품들이 만들어가는 경험을 실제 화면으로 수집하고 정리합니다.
-          </p>
-        </div>
+      <div className="flex min-w-0 flex-col gap-2">
+        <h1
+          id="visual-home-hero-title"
+          className="min-w-0 text-2xl font-bold leading-tight tracking-tight text-dark-900 [overflow-wrap:anywhere] sm:text-3xl"
+        >
+          좋은 화면에서 시작하는 다음 디자인.
+        </h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all]">
+          실제 서비스의 화면과 흐름을 살펴보고, 다음 작업에 필요한 레퍼런스를 모아보세요.
+        </p>
       </div>
     </section>
   );
@@ -42,14 +40,13 @@ export function VisualHomeHero() {
 
 export function CategoryCards() {
   return (
-    <nav aria-label="화면 유형별 탐색" className="flex w-full flex-wrap items-center gap-1.5 sm:gap-2">
-      <span className="text-xs font-semibold text-dark-500 whitespace-nowrap">유형:</span>
-      <ul className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+    <nav aria-label="화면 유형별 탐색" className="w-full overflow-x-auto">
+      <ul className="flex w-max min-w-full items-center gap-2">
         {CATEGORY_ORDER.map(screenType => (
           <li key={screenType}>
             <Link
               href={buildCategoryHref(screenType)}
-              className="inline-flex items-center rounded-full border border-dark-150 bg-white px-3 py-1 text-xs font-medium text-dark-700 shadow-2xs transition hover:border-dark-300 hover:bg-surface-50 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              className="inline-flex min-h-11 items-center rounded-lg bg-surface-100 px-3 text-xs font-medium text-dark-700 transition-colors duration-150 hover:bg-surface-200 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               {VISUAL_SCREEN_TYPE_LABELS[screenType]}
             </Link>

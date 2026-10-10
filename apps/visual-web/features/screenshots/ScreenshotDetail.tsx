@@ -28,7 +28,7 @@ function DetailImage({ src, alt, onError }: { src: string; alt: string; onError:
         className="flex min-h-72 w-full flex-col items-center justify-center gap-2 rounded-xl bg-surface-100 text-dark-400"
       >
         <ImageOff size={32} className="shrink-0" aria-hidden="true" />
-        <span className="text-sm text-dark-500 break-words [word-break:keep-all]">이미지를 불러올 수 없어요.</span>
+        <span className="text-sm text-dark-600 break-words [word-break:keep-all]">이미지를 불러올 수 없어요.</span>
       </div>
     );
   }
@@ -42,7 +42,7 @@ function DetailImage({ src, alt, onError }: { src: string; alt: string; onError:
         setFailedSrc(src);
         onError();
       }}
-      className="max-h-[calc(100dvh-16rem)] w-full rounded-xl bg-surface-100 object-contain"
+      className="mx-auto max-h-[70dvh] w-auto max-w-full rounded-lg object-contain lg:max-h-[calc(100dvh-22rem)]"
     />
   );
 }
@@ -55,7 +55,7 @@ function CopyLinkButton() {
       <Button
         type="button"
         variant="shadow"
-        color="primary"
+        color="secondary"
         size="sm"
         onClick={() => {
           if (typeof window === 'undefined' || !window.navigator.clipboard?.writeText) {
@@ -67,7 +67,7 @@ function CopyLinkButton() {
             .then(() => setStatus('copied'))
             .catch(() => setStatus('failed'));
         }}
-        className="shrink-0 active:scale-[0.98] motion-reduce:transform-none"
+        className="min-h-[44px] shrink-0 active:scale-[0.98] motion-reduce:transform-none"
       >
         <span className="whitespace-nowrap">링크 복사</span>
       </Button>
@@ -90,7 +90,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
 
   if (status === 'loading') {
     return (
-      <div className="w-full py-8 md:py-12">
+      <div className="w-full py-6 md:py-8">
         <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-6" aria-busy="true">
           <div
             className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
@@ -116,7 +116,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
 
   if (status === 'error' || detail === null) {
     return (
-      <div className="w-full py-8 md:py-12">
+      <div className="w-full py-6 md:py-8">
         <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 md:px-6">
           <div
             role="alert"
@@ -131,7 +131,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
               color="primary"
               size="sm"
               onClick={() => retry()}
-              className="active:scale-[0.98] motion-reduce:transform-none"
+              className="min-h-[44px] active:scale-[0.98] motion-reduce:transform-none"
             >
               <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
               <span className="whitespace-nowrap">다시 시도</span>
@@ -163,15 +163,15 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
   const appHref = `/apps/${encodeURIComponent(product.slug)}`;
 
   return (
-    <div className="w-full py-8 md:py-12">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-6">
+    <div className="w-full py-6 md:py-8">
+      <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-6 px-4 md:px-6">
         <nav
           aria-label="이동 경로"
-          className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-dark-500"
+          className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-dark-600"
         >
           <Link
             href="/apps"
-            className="shrink-0 rounded font-semibold transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+            className="inline-flex min-h-[44px] shrink-0 items-center rounded font-semibold transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
           >
             앱
           </Link>
@@ -180,7 +180,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           </span>
           <Link
             href={appHref}
-            className="max-w-40 shrink-0 truncate rounded font-semibold transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+            className="inline-flex max-w-40 min-h-[44px] shrink-0 items-center truncate rounded font-semibold transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
           >
             {product.name}
           </Link>
@@ -192,7 +192,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           </span>
         </nav>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <img
               src={product.logoUrl || '/images/default-product-icon.svg'}
@@ -200,19 +200,23 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
               className="h-10 w-10 shrink-0 rounded-xl border border-dark-150 bg-surface-100 object-cover"
             />
             <div className="flex min-w-0 flex-col gap-0.5">
-              <p className="truncate text-xs font-semibold text-dark-500">{product.name}</p>
-              <h1 className="break-words [word-break:keep-all] text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">
+              <p className="truncate text-xs font-semibold text-dark-600">{product.name}</p>
+              <h1 className="break-words [word-break:keep-all] text-[28px] font-bold leading-tight tracking-tight text-dark-900 md:text-[32px]">
                 {displayTitle}
               </h1>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-dark-150 bg-surface-50 px-2.5 py-1 text-xs font-semibold text-dark-700">
-              {platformLabel}
-            </span>
-            <span className="rounded-full border border-dark-150 bg-surface-50 px-2.5 py-1 text-xs font-semibold text-dark-700">
-              {screenTypeLabel}
-            </span>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {platform && isVisualPlatformValue(platform) && (
+              <span className="rounded-full bg-surface-100 px-2.5 py-1 text-xs font-semibold text-dark-700">
+                {platformLabel}
+              </span>
+            )}
+            {screenType && isVisualScreenTypeValue(screenType) && (
+              <span className="rounded-full bg-surface-100 px-2.5 py-1 text-xs font-semibold text-dark-700">
+                {screenTypeLabel}
+              </span>
+            )}
             <span className="flex flex-wrap items-center gap-2 sm:ml-auto">
               <SaveButton
                 item={{
@@ -229,11 +233,8 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           </div>
         </div>
 
-        <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <section
-            aria-label="스크린샷 크게 보기"
-            className="min-w-0 rounded-2xl border border-dark-150 bg-surface-100 p-3 shadow-2xs md:p-4"
-          >
+        <div className="grid w-full grid-cols-1 items-start gap-4 md:gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section aria-label="스크린샷 크게 보기" className="min-w-0 rounded-xl bg-surface-100 p-4 md:p-6">
             <div className="relative">
               <DetailImage src={imageUrl} alt={imageAlt} onError={onImageError} />
               {!isImageError && (
@@ -243,7 +244,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
                   color="primary"
                   size="sm"
                   onClick={() => setIsZoomOpen(true)}
-                  className="absolute right-3 bottom-3 active:scale-[0.98] motion-reduce:transform-none"
+                  className="absolute right-3 bottom-3 min-h-[44px] min-w-[44px] active:scale-[0.98] motion-reduce:transform-none"
                   aria-haspopup="dialog"
                 >
                   <Maximize2 size={16} className="shrink-0" aria-hidden="true" />
@@ -254,71 +255,63 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             </div>
           </section>
 
-          <aside className="flex min-w-0 flex-col gap-5 rounded-2xl border border-dark-150 bg-white p-5 shadow-2xs">
+          <aside className="flex min-w-0 flex-col gap-5 self-start border-t border-dark-150 pt-5 lg:sticky lg:top-20">
             <h2 className="text-sm font-bold text-dark-900">화면 정보</h2>
             <dl className="flex flex-col gap-3 text-sm">
               <div className="flex min-w-0 flex-col gap-0.5">
-                <dt className="text-xs font-semibold text-dark-400">서비스</dt>
+                <dt className="text-xs font-semibold text-dark-600">서비스</dt>
                 <dd className="min-w-0 truncate font-semibold text-dark-900">{product.name}</dd>
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
-                <dt className="text-xs font-semibold text-dark-400">플랫폼</dt>
+                <dt className="text-xs font-semibold text-dark-600">플랫폼</dt>
                 <dd className="text-dark-900">{platformLabel}</dd>
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
-                <dt className="text-xs font-semibold text-dark-400">화면 유형</dt>
+                <dt className="text-xs font-semibold text-dark-600">화면 유형</dt>
                 <dd className="text-dark-900">{screenTypeLabel}</dd>
               </div>
               {product.summary !== null && product.summary.trim().length > 0 && (
                 <div className="flex min-w-0 flex-col gap-0.5">
-                  <dt className="text-xs font-semibold text-dark-400">서비스 소개</dt>
+                  <dt className="text-xs font-semibold text-dark-600">서비스 소개</dt>
                   <dd className="text-sm leading-relaxed text-dark-700 break-words [word-break:keep-all]">
                     {product.summary}
                   </dd>
                 </div>
               )}
             </dl>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 border-t border-dark-100 pt-4">
               <Button
                 as="a"
                 href={`/?product=${encodeURIComponent(product.slug)}`}
                 variant="contained"
                 color="primary"
                 size="md"
-                className="active:scale-[0.98] motion-reduce:transform-none"
+                className="min-h-[44px] w-full active:scale-[0.98] motion-reduce:transform-none"
               >
                 <span className="whitespace-nowrap">이 서비스의 화면</span>
               </Button>
-              <Button
-                as="a"
+              <a
                 href={appHref}
-                variant="shadow"
-                color="primary"
-                size="md"
-                className="active:scale-[0.98] motion-reduce:transform-none"
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-dark-150 bg-white px-3.5 py-2 text-sm font-semibold text-dark-900 transition-colors hover:border-dark-300 hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <span className="whitespace-nowrap">앱 상세 보기</span>
-              </Button>
-              <Button
-                as="a"
+              </a>
+              <a
                 href={`https://darun.io/ko/products/${encodeURIComponent(product.slug)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                variant="shadow"
-                color="primary"
-                size="md"
-                className="active:scale-[0.98] motion-reduce:transform-none"
+                className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-dark-150 bg-white px-3.5 py-2 text-sm font-semibold text-dark-900 transition-colors hover:border-dark-300 hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <ExternalLink size={16} className="shrink-0" aria-hidden="true" />
                 <span className="whitespace-nowrap">서비스 소개</span>
-              </Button>
+              </a>
               <Button
                 type="button"
                 variant="text"
                 color="primary"
                 size="md"
                 onClick={() => router.back()}
-                className="active:scale-[0.98] motion-reduce:transform-none"
+                className="min-h-[44px] w-full active:scale-[0.98] motion-reduce:transform-none"
               >
                 <span className="whitespace-nowrap">뒤로 가기</span>
               </Button>
@@ -334,24 +327,24 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
               </h2>
               <Link
                 href={`/apps/${encodeURIComponent(product.slug)}`}
-                className="shrink-0 rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 전체 보기 →
               </Link>
             </div>
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6 lg:grid-cols-4">
               {relatedScreenshots.map(item => (
                 <li key={item.id}>
                   <Link
                     href={`/screenshots/${encodeURIComponent(item.id)}`}
-                    className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                    className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
-                    <div className="aspect-[4/3] w-full overflow-hidden bg-surface-100">
+                    <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-surface-100 p-2">
                       <img
                         src={item.imageUrl}
                         alt={item.imageAlt || item.title || `${product.name} 스크린샷`}
                         loading={VISUAL_CARD_IMAGE_LOADING}
-                        className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
+                        className="max-h-full w-auto max-w-full object-contain"
                       />
                     </div>
                     {item.title && (
@@ -372,7 +365,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
               </h2>
               <Link
                 href={`/apps/${encodeURIComponent(product.slug)}`}
-                className="shrink-0 rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 전체 보기 →
               </Link>
@@ -382,7 +375,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
                 <li key={flow.id}>
                   <Link
                     href={`/flows/${encodeURIComponent(flow.id)}`}
-                    className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                    className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
                     <div className="aspect-[16/9] w-full overflow-hidden bg-surface-100">
                       <img
@@ -394,7 +387,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
                     </div>
                     <div className="flex items-center justify-between gap-2 p-3.5">
                       <span className="truncate text-sm font-bold text-dark-900">{flow.title}</span>
-                      <span className="shrink-0 text-xs text-dark-500 tabular-nums">{flow.stepCount}단계</span>
+                      <span className="shrink-0 text-xs text-dark-600 tabular-nums">{flow.stepCount}단계</span>
                     </div>
                   </Link>
                 </li>
@@ -426,7 +419,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             color="primary"
             size="sm"
             onClick={() => setIsZoomOpen(false)}
-            className="active:scale-[0.98] motion-reduce:transform-none"
+            className="min-h-[44px] active:scale-[0.98] motion-reduce:transform-none"
           >
             <span className="whitespace-nowrap">닫기</span>
           </Button>

@@ -38,10 +38,10 @@ export default async function Page({ searchParams }: Props) {
 
   return (
     <VisualLayout>
-      <div className="w-full pt-6 pb-8 md:pt-8 md:pb-12">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:gap-8 md:px-6">
+      <div className="w-full pt-6 pb-8 md:pt-10 md:pb-12">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:gap-6 md:px-6">
           {!hasActiveFilter && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
               <VisualHomeHero />
               <CategoryCards />
             </div>

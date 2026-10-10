@@ -47,10 +47,12 @@ export function ScreenshotImage({ src, alt, platform, variant = 'card' }: Screen
         ? landscape
           ? 'aspect-[16/10] w-28'
           : 'aspect-[9/19.5] w-14'
-        : `${landscape ? 'aspect-[16/10]' : 'aspect-[9/19.5]'} w-full`;
+        : `${landscape ? 'aspect-[16/10]' : 'aspect-[9/19.5]'} max-h-112 w-full`;
     return (
       <div
-        className={`${frameClass} shrink-0 overflow-hidden bg-surface-100 ${variant === 'thumb' ? 'rounded-lg' : ''}`}
+        className={`${frameClass} shrink-0 overflow-hidden bg-surface-100 ${
+          variant === 'thumb' ? 'rounded-lg' : 'rounded-t-xl'
+        }`}
       >
         <img src={src} alt={alt} loading="lazy" onError={handleError} className="block h-full w-full object-contain" />
       </div>
@@ -71,7 +73,13 @@ export function ScreenshotImage({ src, alt, platform, variant = 'card' }: Screen
   }
   return (
     <div className="min-h-28 w-full bg-surface-100">
-      <img src={src} alt={alt} loading="lazy" onError={handleError} className="block h-auto w-full object-contain" />
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onError={handleError}
+        className="block h-auto max-h-112 w-full object-contain"
+      />
     </div>
   );
 }

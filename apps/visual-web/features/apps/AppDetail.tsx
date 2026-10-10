@@ -50,7 +50,7 @@ const View = (props: AppDetailState & { slug: string }) => {
           color="primary"
           size="sm"
           onClick={() => retry()}
-          className="active:scale-[0.98] motion-reduce:transform-none"
+          className="min-h-[44px] active:scale-[0.98] motion-reduce:transform-none"
         >
           <RefreshCw size={16} className="shrink-0" aria-hidden="true" />
           <span className="whitespace-nowrap">다시 시도</span>
@@ -67,11 +67,11 @@ const View = (props: AppDetailState & { slug: string }) => {
     <div className="flex w-full flex-col gap-6 md:gap-10">
       <nav
         aria-label="이동 경로"
-        className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-dark-500"
+        className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-dark-600"
       >
         <Link
           href="/apps"
-          className="shrink-0 rounded font-semibold transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+          className="inline-flex min-h-[44px] shrink-0 items-center rounded font-semibold transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
         >
           앱
         </Link>
@@ -85,7 +85,7 @@ const View = (props: AppDetailState & { slug: string }) => {
       <button
         type="button"
         onClick={() => router.back()}
-        className="self-start rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+        className="inline-flex min-h-[44px] items-center self-start rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
       >
         ← 뒤로 가기
       </button>
@@ -93,12 +93,14 @@ const View = (props: AppDetailState & { slug: string }) => {
         <img
           src={detail.logoUrl || DEFAULT_ICON}
           alt={`${detail.name} 로고`}
-          className="h-16 w-16 shrink-0 rounded-2xl border border-dark-150 bg-surface-100 object-cover"
+          className="h-16 w-16 shrink-0 rounded-2xl border border-dark-150 bg-surface-100 object-cover md:h-20 md:w-20"
         />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h1 className="truncate text-2xl font-bold tracking-tight text-dark-900 md:text-3xl">{detail.name}</h1>
+          <h1 className="break-words text-[28px] font-bold leading-tight tracking-tight text-dark-900 [word-break:keep-all] md:text-[32px]">
+            {detail.name}
+          </h1>
           {detail.summary.trim().length > 0 && (
-            <p className="line-clamp-2 text-sm leading-relaxed text-dark-500">{detail.summary}</p>
+            <p className="line-clamp-2 text-sm leading-relaxed text-dark-600">{detail.summary}</p>
           )}
         </div>
         <SaveButton
@@ -113,39 +115,44 @@ const View = (props: AppDetailState & { slug: string }) => {
         />
       </header>
       {detail.description !== null && detail.description.trim().length > 0 && (
-        <AppDescription description={detail.description} />
+        <div className="border-t border-dark-100 pt-6 md:pt-8">
+          <AppDescription description={detail.description} />
+        </div>
       )}
 
-      <section aria-labelledby="app-screenshots-heading" className="flex flex-col gap-3">
+      <section
+        aria-labelledby="app-screenshots-heading"
+        className="flex flex-col gap-4 border-t border-dark-100 pt-6 md:pt-8"
+      >
         <div className="flex items-center justify-between gap-3">
           <h2 id="app-screenshots-heading" className="text-lg font-bold text-dark-900">
             화면 모음 ({detail.screenshotTotalCount})
           </h2>
           <Link
             href={screenshotsHref}
-            className="shrink-0 rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             전체 보기 →
           </Link>
         </div>
         {detail.screenshots.length === 0 ? (
-          <p className="rounded-2xl border border-dark-200 bg-surface-50 p-6 text-center text-sm text-dark-500">
+          <p className="rounded-2xl border border-dark-200 bg-surface-50 p-6 text-center text-sm text-dark-600">
             등록된 화면이 없습니다.
           </p>
         ) : (
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 md:gap-6 xl:grid-cols-5">
             {detail.screenshots.map(item => (
               <li key={item.id} className="min-w-0">
                 <Link
                   href={`/screenshots/${encodeURIComponent(item.id)}`}
-                  className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
-                  <div className="w-full bg-surface-100">
+                  <div className="flex h-48 items-center justify-center bg-surface-100 md:h-56">
                     <img
                       src={item.imageUrl}
                       alt={item.imageAlt || item.title || `${detail.name} 스크린샷`}
                       loading={VISUAL_CARD_IMAGE_LOADING}
-                      className="h-auto max-h-[420px] w-full object-contain"
+                      className="max-h-full w-auto max-w-full object-contain"
                     />
                   </div>
                   {item.title && <div className="truncate p-2.5 text-xs font-semibold text-dark-900">{item.title}</div>}
@@ -156,29 +163,32 @@ const View = (props: AppDetailState & { slug: string }) => {
         )}
       </section>
 
-      <section aria-labelledby="app-flows-heading" className="flex flex-col gap-3">
+      <section
+        aria-labelledby="app-flows-heading"
+        className="flex flex-col gap-4 border-t border-dark-100 pt-6 md:pt-8"
+      >
         <div className="flex items-center justify-between gap-3">
           <h2 id="app-flows-heading" className="text-lg font-bold text-dark-900">
             플로 모음 ({detail.flowTotalCount})
           </h2>
           <Link
             href={flowsHref}
-            className="shrink-0 rounded-lg text-sm font-semibold text-dark-500 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             전체 보기 →
           </Link>
         </div>
         {detail.flows.length === 0 ? (
-          <p className="rounded-2xl border border-dark-200 bg-surface-50 p-6 text-center text-sm text-dark-500">
+          <p className="rounded-2xl border border-dark-200 bg-surface-50 p-6 text-center text-sm text-dark-600">
             등록된 플로가 없습니다.
           </p>
         ) : (
-          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
             {detail.flows.map(flow => (
               <li key={flow.id} className="min-w-0">
                 <Link
                   href={`/flows/${encodeURIComponent(flow.id)}`}
-                  className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <div className="aspect-[16/9] w-full overflow-hidden bg-surface-100">
                     <img
@@ -190,7 +200,7 @@ const View = (props: AppDetailState & { slug: string }) => {
                   </div>
                   <div className="flex items-center justify-between gap-2 p-3.5">
                     <span className="truncate text-sm font-bold text-dark-900">{flow.title}</span>
-                    <span className="shrink-0 text-xs text-dark-500 tabular-nums">{flow.stepCount}단계</span>
+                    <span className="shrink-0 text-xs text-dark-600 tabular-nums">{flow.stepCount}단계</span>
                   </div>
                 </Link>
               </li>

@@ -62,39 +62,40 @@ function ScreenshotMeta({ card }: { card: ScreenshotCard }) {
             alt=""
             aria-hidden="true"
             loading="lazy"
-            width={16}
-            height={16}
-            className="h-4 w-4 shrink-0 rounded object-contain"
+            width={20}
+            height={20}
+            className="h-5 w-5 shrink-0 rounded object-contain"
           />
         ) : null}
-        <span className="truncate text-xs font-semibold text-dark-700">{card.product.name}</span>
+        <span className="truncate text-sm font-medium text-dark-700">{card.product.name}</span>
       </span>
-      <span className="truncate text-sm font-bold text-dark-900">{cardTitle(card)}</span>
-      <span className="text-xs text-dark-500">
+      <span className="truncate text-sm font-semibold text-dark-900">{cardTitle(card)}</span>
+      <span className="text-xs text-dark-600">
         {platformLabel} · {typeLabel}
       </span>
     </div>
   );
 }
 
-// Home catalog identity: real app logo + name as the primary link above the
+// Home catalog identity: screenshot first, then a quiet app link below the
 // representative shot. Sibling of the screenshot link, never nested in it.
 function AppIdentityLink({ card }: { card: ScreenshotCard }) {
   return (
     <Link
       href={`/apps/${encodeURIComponent(card.product.slug)}`}
       aria-label={`${card.product.name} 앱으로 이동`}
-      className="flex min-w-0 flex-1 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+      className="flex min-w-0 items-center gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
     >
       <img
         src={card.product.logoUrl || DEFAULT_PRODUCT_ICON}
-        alt={`${card.product.name} 로고`}
+        alt=""
+        aria-hidden="true"
         loading="lazy"
-        width={40}
-        height={40}
-        className="h-9 w-9 shrink-0 rounded-lg border border-dark-150 bg-surface-100 object-cover md:h-10 md:w-10"
+        width={20}
+        height={20}
+        className="h-5 w-5 shrink-0 rounded object-contain"
       />
-      <span className="min-w-0 flex-1 line-clamp-2 text-base font-bold leading-snug text-dark-900 [overflow-wrap:anywhere]">
+      <span className="min-w-0 flex-1 truncate text-sm font-medium text-dark-700 [overflow-wrap:anywhere]">
         {card.product.name}
       </span>
     </Link>
@@ -104,32 +105,34 @@ function AppIdentityLink({ card }: { card: ScreenshotCard }) {
 function ScreenshotCardGrid({ cards, catalogMode }: { cards: ScreenshotCard[]; catalogMode?: boolean }) {
   if (catalogMode === true) {
     return (
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
         {cards.map(card => (
-          <li key={card.id} className="relative min-w-0">
-            <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card">
-              <div className="flex min-w-0 items-center p-3 pb-2">
+          <li key={card.id} className="min-w-0">
+            <div className="flex h-full flex-col overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300">
+              <Link
+                href={`/screenshots/${encodeURIComponent(card.id)}`}
+                aria-label={`${cardTitle(card)} 화면으로 이동`}
+                className="block min-w-0 bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-inset"
+              >
+                <ScreenshotImage
+                  src={card.imageUrl}
+                  alt={
+                    card.imageAlt ||
+                    card.title ||
+                    (card.product.name ? `${card.product.name} 스크린샷` : '스크린샷 이미지')
+                  }
+                  platform={card.platform}
+                  variant="card"
+                />
+              </Link>
+              <div className="flex min-w-0 items-center gap-2 px-3 pt-2">
                 <AppIdentityLink card={card} />
               </div>
-              <div className="relative">
-                <Link
-                  href={`/screenshots/${encodeURIComponent(card.id)}`}
-                  aria-label={`${cardTitle(card)} 화면으로 이동`}
-                  className="block min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-inset"
-                >
-                  <ScreenshotImage
-                    src={card.imageUrl}
-                    alt={
-                      card.imageAlt ||
-                      card.title ||
-                      (card.product.name ? `${card.product.name} 스크린샷` : '스크린샷 이미지')
-                    }
-                    platform={card.platform}
-                    variant="card"
-                  />
-                  <span className="block line-clamp-2 px-3 py-2 text-xs text-dark-500">{cardTitle(card)}</span>
-                </Link>
-                <SaveButton item={toSaveItem(card)} className="absolute top-2 right-2" />
+              <span className="block line-clamp-2 px-3 pt-1 text-sm font-semibold text-dark-900">
+                {cardTitle(card)}
+              </span>
+              <div className="flex items-center justify-end border-t border-dark-100 px-2 py-1">
+                <SaveButton item={toSaveItem(card)} />
               </div>
             </div>
           </li>
@@ -138,24 +141,30 @@ function ScreenshotCardGrid({ cards, catalogMode }: { cards: ScreenshotCard[]; c
     );
   }
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+    <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
       {cards.map(card => (
-        <li key={card.id} className="relative">
-          <Link
-            href={`/screenshots/${encodeURIComponent(card.id)}`}
-            className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-          >
-            <ScreenshotImage
-              src={card.imageUrl}
-              alt={
-                card.imageAlt || card.title || (card.product.name ? `${card.product.name} 스크린샷` : '스크린샷 이미지')
-              }
-              platform={card.platform}
-              variant="card"
-            />
-            <ScreenshotMeta card={card} />
-          </Link>
-          <SaveButton item={toSaveItem(card)} className="absolute top-2 right-2" />
+        <li key={card.id} className="min-w-0">
+          <div className="flex h-full flex-col overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300">
+            <Link
+              href={`/screenshots/${encodeURIComponent(card.id)}`}
+              className="group block min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-inset"
+            >
+              <ScreenshotImage
+                src={card.imageUrl}
+                alt={
+                  card.imageAlt ||
+                  card.title ||
+                  (card.product.name ? `${card.product.name} 스크린샷` : '스크린샷 이미지')
+                }
+                platform={card.platform}
+                variant="card"
+              />
+              <ScreenshotMeta card={card} />
+            </Link>
+            <div className="flex items-center justify-end border-t border-dark-100 px-2 py-1">
+              <SaveButton item={toSaveItem(card)} />
+            </div>
+          </div>
         </li>
       ))}
     </ul>
@@ -167,10 +176,7 @@ function ScreenshotCardList({ cards, catalogMode }: { cards: ScreenshotCard[]; c
     return (
       <ul className="flex flex-col gap-2">
         {cards.map(card => (
-          <li
-            key={card.id}
-            className="relative min-w-0 overflow-hidden rounded-2xl border border-dark-150 bg-white p-2 shadow-2xs"
-          >
+          <li key={card.id} className="min-w-0 overflow-hidden rounded-xl border border-dark-150 bg-white p-2">
             <div className="flex min-w-0 items-center gap-2 px-1 pt-1 pb-2">
               <AppIdentityLink card={card} />
               <SaveButton item={toSaveItem(card)} className="shrink-0" />
@@ -178,7 +184,7 @@ function ScreenshotCardList({ cards, catalogMode }: { cards: ScreenshotCard[]; c
             <Link
               href={`/screenshots/${encodeURIComponent(card.id)}`}
               aria-label={`${cardTitle(card)} 화면으로 이동`}
-              className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              className="flex min-w-0 items-center gap-3 rounded-lg bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               <ScreenshotImage
                 src={card.imageUrl}
@@ -190,7 +196,7 @@ function ScreenshotCardList({ cards, catalogMode }: { cards: ScreenshotCard[]; c
                 platform={card.platform}
                 variant="thumb"
               />
-              <span className="min-w-0 flex-1 py-1 text-xs leading-relaxed text-dark-500 line-clamp-2 [overflow-wrap:anywhere]">
+              <span className="min-w-0 flex-1 bg-white py-1 text-sm font-semibold text-dark-900 line-clamp-2 [overflow-wrap:anywhere]">
                 {cardTitle(card)}
               </span>
             </Link>
@@ -202,13 +208,10 @@ function ScreenshotCardList({ cards, catalogMode }: { cards: ScreenshotCard[]; c
   return (
     <ul className="flex flex-col gap-2">
       {cards.map(card => (
-        <li
-          key={card.id}
-          className="relative flex gap-3 overflow-hidden rounded-2xl border border-dark-150 bg-white p-2 shadow-2xs"
-        >
+        <li key={card.id} className="flex gap-3 overflow-hidden rounded-xl border border-dark-150 bg-white p-2">
           <Link
             href={`/screenshots/${encodeURIComponent(card.id)}`}
-            className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="group flex min-w-0 flex-1 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <ScreenshotImage
               src={card.imageUrl}
@@ -226,15 +229,15 @@ function ScreenshotCardList({ cards, catalogMode }: { cards: ScreenshotCard[]; c
                     alt=""
                     aria-hidden="true"
                     loading="lazy"
-                    width={16}
-                    height={16}
-                    className="h-4 w-4 shrink-0 rounded object-contain"
+                    width={20}
+                    height={20}
+                    className="h-5 w-5 shrink-0 rounded object-contain"
                   />
                 ) : null}
-                <span className="truncate text-xs font-semibold text-dark-700">{card.product.name}</span>
+                <span className="truncate text-sm font-medium text-dark-700">{card.product.name}</span>
               </span>
-              <span className="truncate text-sm font-bold text-dark-900">{cardTitle(card)}</span>
-              <span className="text-xs text-dark-500">
+              <span className="truncate text-sm font-semibold text-dark-900">{cardTitle(card)}</span>
+              <span className="text-xs text-dark-600">
                 {(card.platform && isVisualPlatformValue(card.platform)
                   ? VISUAL_PLATFORM_LABELS[card.platform]
                   : UNCLASSIFIED_LABEL) +
@@ -254,12 +257,9 @@ function ScreenshotCardList({ cards, catalogMode }: { cards: ScreenshotCard[]; c
 
 function ScreenshotCardSkeletons() {
   return (
-    <ul
-      className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-      aria-hidden="true"
-    >
+    <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5" aria-hidden="true">
       {Array.from({ length: 12 }, (_, index) => (
-        <li key={index} className="overflow-hidden rounded-2xl border border-dark-150 bg-white">
+        <li key={index} className="overflow-hidden rounded-xl border border-dark-150 bg-white">
           <div className="min-h-40 w-full animate-pulse bg-surface-200 motion-reduce:animate-none" />
           <div className="flex flex-col gap-2 p-3">
             <div className="h-4 w-3/4 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
@@ -285,7 +285,7 @@ function ScreenshotViewSwitch({
         aria-pressed={mode === 'grid'}
         aria-label="격자 보기"
         onClick={() => onChange('grid')}
-        className="min-h-[36px] min-w-[36px] rounded-lg border px-2.5 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 data-[active=true]:border-dark-900 data-[active=true]:bg-dark-900 data-[active=true]:text-white border-dark-150 bg-white text-dark-700"
+        className="min-h-11 min-w-11 rounded-lg border px-2.5 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 data-[active=true]:border-dark-900 data-[active=true]:bg-dark-900 data-[active=true]:text-white border-dark-150 bg-white text-dark-700"
         data-active={mode === 'grid'}
       >
         격자
@@ -295,7 +295,7 @@ function ScreenshotViewSwitch({
         aria-pressed={mode === 'list'}
         aria-label="목록 보기"
         onClick={() => onChange('list')}
-        className="min-h-[36px] min-w-[36px] rounded-lg border px-2.5 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 data-[active=true]:border-dark-900 data-[active=true]:bg-dark-900 data-[active=true]:text-white border-dark-150 bg-white text-dark-700"
+        className="min-h-11 min-w-11 rounded-lg border px-2.5 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 data-[active=true]:border-dark-900 data-[active=true]:bg-dark-900 data-[active=true]:text-white border-dark-150 bg-white text-dark-700"
         data-active={mode === 'list'}
       >
         목록
@@ -346,8 +346,8 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
         )
       }
       searchForm={
-        <form onSubmit={onSearchSubmit} role="search" className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-36 flex-1">
+        <form onSubmit={onSearchSubmit} role="search" className="flex flex-col gap-2 lg:flex-row lg:items-center">
+          <div className="relative min-w-0 w-full lg:flex-1">
             <label htmlFor="screenshot-search" className="sr-only">
               스크린샷 검색
             </label>
@@ -363,7 +363,7 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
               onFocus={onSearchInputFocus}
               placeholder="서비스명, 화면 제목, 설명으로 검색"
               data-visual-search="screenshots"
-              className="w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-900 shadow-2xs placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+              className="min-h-[44px] w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-900 placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
             />
             <ProductSearchSuggest
               inputId="screenshot-search"
@@ -375,64 +375,66 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
               onClose={onSuggestClose}
             />
           </div>
-          <label htmlFor="screenshot-platform" className="sr-only">
-            플랫폼
-          </label>
-          <select
-            id="screenshot-platform"
-            aria-label="플랫폼"
-            value={platform ?? ''}
-            onChange={event => onPlatformChange(event.currentTarget.value)}
-            className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-dark-900/60"
-          >
-            <option value="">전체 플랫폼</option>
-            {VISUAL_PLATFORM_OPTIONS.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="screenshot-screen-type" className="sr-only">
-            화면 유형
-          </label>
-          <select
-            id="screenshot-screen-type"
-            aria-label="화면 유형"
-            value={screenType ?? ''}
-            onChange={event => onScreenTypeChange(event.currentTarget.value)}
-            className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-dark-900/60"
-          >
-            <option value="">전체 유형</option>
-            {VISUAL_SCREEN_TYPE_OPTIONS.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            size="md"
-            className="shrink-0 active:scale-[0.98] motion-reduce:transform-none"
-          >
-            <span className="whitespace-nowrap">검색</span>
-          </Button>
-          {product !== null && (
-            <Button
-              variant="shadow"
-              color="primary"
-              size="sm"
-              onClick={() => onClearFilters()}
-              className="active:scale-[0.98] motion-reduce:transform-none"
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <label htmlFor="screenshot-platform" className="sr-only">
+              플랫폼
+            </label>
+            <select
+              id="screenshot-platform"
+              aria-label="플랫폼"
+              value={platform ?? ''}
+              onChange={event => onPlatformChange(event.currentTarget.value)}
+              className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
             >
-              <span className="max-w-48 truncate">{product}</span>
-              <span aria-hidden="true" className="ml-1 font-bold">
-                ×
-              </span>
-              <span className="sr-only">서비스 필터 해제</span>
+              <option value="">전체 플랫폼</option>
+              {VISUAL_PLATFORM_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="screenshot-screen-type" className="sr-only">
+              화면 유형
+            </label>
+            <select
+              id="screenshot-screen-type"
+              aria-label="화면 유형"
+              value={screenType ?? ''}
+              onChange={event => onScreenTypeChange(event.currentTarget.value)}
+              className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+            >
+              <option value="">전체 유형</option>
+              {VISUAL_SCREEN_TYPE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              size="md"
+              className="min-h-[44px] shrink-0 active:scale-[0.98] motion-reduce:transform-none"
+            >
+              <span className="whitespace-nowrap">검색</span>
             </Button>
-          )}
+            {product !== null && (
+              <Button
+                variant="shadow"
+                color="primary"
+                size="sm"
+                onClick={() => onClearFilters()}
+                className="active:scale-[0.98] motion-reduce:transform-none"
+              >
+                <span className="max-w-48 truncate">{product}</span>
+                <span aria-hidden="true" className="ml-1 font-bold">
+                  ×
+                </span>
+                <span className="sr-only">서비스 필터 해제</span>
+              </Button>
+            )}
+          </div>
         </form>
       }
       skeleton={<ScreenshotCardSkeletons />}
