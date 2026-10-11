@@ -6,7 +6,7 @@ import {
   type UpdateProductDescriptionJobOptions,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, type SQL } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { type ProductDescriptionJobRow, productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
 
@@ -86,6 +86,36 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
     status: ProductDescriptionJobStatus,
     options?: UpdateProductDescriptionJobOptions
   ): Promise<ProductDescriptionJobEntity> {
+    const entity = await this.writeJobStatus(id, status, options, eq(productDescriptionJobs.id, id), true);
+    if (!entity) {
+      throw new Error(`ProductDescriptionJob not found for update: ${id}`);
+    }
+    return entity;
+  }
+
+  async claimJobStatus(
+    id: string,
+    expectedStatuses: ProductDescriptionJobStatus[],
+    nextStatus: ProductDescriptionJobStatus,
+    options?: UpdateProductDescriptionJobOptions
+  ): Promise<ProductDescriptionJobEntity | null> {
+    return this.writeJobStatus(
+      id,
+      nextStatus,
+      options,
+      and(eq(productDescriptionJobs.id, id), inArray(productDescriptionJobs.status, expectedStatuses)) ??
+        eq(productDescriptionJobs.id, id),
+      false
+    );
+  }
+
+  private async writeJobStatus(
+    id: string,
+    status: ProductDescriptionJobStatus,
+    options: UpdateProductDescriptionJobOptions | undefined,
+    condition: SQL<unknown>,
+    throwOnMissing: boolean
+  ): Promise<ProductDescriptionJobEntity | null> {
     const updateValues: Record<string, unknown> = {
       status,
       updatedAt: new Date(),
@@ -128,77 +158,14 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       updateValues.appliedAt = options.appliedAt;
     }
 
-    const rows = await this.db
-      .update(productDescriptionJobs)
-      .set(updateValues)
-      .where(eq(productDescriptionJobs.id, id))
-      .returning();
+    const rows = await this.db.update(productDescriptionJobs).set(updateValues).where(condition).returning();
 
     const row = rows[0];
     if (!row) {
+      if (!throwOnMissing) {
+        return null;
+      }
       throw new Error(`ProductDescriptionJob not found for update: ${id}`);
-    }
-
-    return this.toEntity(row);
-  }
-
-  async claimJobStatus(
-    id: string,
-    expectedStatuses: ProductDescriptionJobStatus[],
-    nextStatus: ProductDescriptionJobStatus,
-    options?: UpdateProductDescriptionJobOptions
-  ): Promise<ProductDescriptionJobEntity | null> {
-    const updateValues: Record<string, unknown> = {
-      status: nextStatus,
-      updatedAt: new Date(),
-    };
-
-    if (options?.message !== undefined) {
-      updateValues.message = options.message;
-    }
-    if (options?.error !== undefined) {
-      updateValues.error = options.error;
-    }
-    if (options?.evidenceHash !== undefined) {
-      updateValues.evidenceHash = options.evidenceHash;
-    }
-    if (options?.baseDescriptionHash !== undefined) {
-      updateValues.baseDescriptionHash = options.baseDescriptionHash;
-    }
-    if (options?.candidateDocument !== undefined) {
-      updateValues.candidateDocument = options.candidateDocument;
-    }
-    if (options?.candidateHtml !== undefined) {
-      updateValues.candidateHtml = options.candidateHtml;
-    }
-    if (options?.writerModel !== undefined) {
-      updateValues.writerModel = options.writerModel;
-    }
-    if (options?.reviewerModel !== undefined) {
-      updateValues.reviewerModel = options.reviewerModel;
-    }
-    if (options?.writerPromptVersion !== undefined) {
-      updateValues.writerPromptVersion = options.writerPromptVersion;
-    }
-    if (options?.reviewerPromptVersion !== undefined) {
-      updateValues.reviewerPromptVersion = options.reviewerPromptVersion;
-    }
-    if (options?.rendererVersion !== undefined) {
-      updateValues.rendererVersion = options.rendererVersion;
-    }
-    if (options?.appliedAt !== undefined) {
-      updateValues.appliedAt = options.appliedAt;
-    }
-
-    const rows = await this.db
-      .update(productDescriptionJobs)
-      .set(updateValues)
-      .where(and(eq(productDescriptionJobs.id, id), inArray(productDescriptionJobs.status, expectedStatuses)))
-      .returning();
-
-    const row = rows[0];
-    if (!row) {
-      return null;
     }
 
     return this.toEntity(row);

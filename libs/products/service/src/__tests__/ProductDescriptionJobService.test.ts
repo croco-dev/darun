@@ -240,16 +240,10 @@ describe('ProductDescriptionJobService', () => {
     await service.executeJob('job-123', 'prod-123');
 
     expect(mockRepository.claimJobStatus).toHaveBeenCalledTimes(2);
-    expect(mockRepository.claimJobStatus).toHaveBeenNthCalledWith(
-      2,
-      'job-123',
-      ['pending', 'in_progress'],
-      'failed',
-      {
-        error: 'LLM Timeout',
-        message: 'AI 소개 생성에 실패했습니다.',
-      }
-    );
+    expect(mockRepository.claimJobStatus).toHaveBeenNthCalledWith(2, 'job-123', ['pending', 'in_progress'], 'failed', {
+      error: 'LLM Timeout',
+      message: 'AI 소개 생성에 실패했습니다.',
+    });
     expect(mockRepository.updateJobStatus).not.toHaveBeenCalledWith('job-123', 'failed', expect.anything());
   });
 
