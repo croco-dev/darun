@@ -57,6 +57,27 @@
       "when": 1791576574214,
       "tag": "0007_m1-visual-popularity",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791698443336,
+      "tag": "0008_add_product_research_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791702492802,
+      "tag": "0009_nemotron-super-default",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791714557475,
+      "tag": "0010_superb_fallen_one",
+      "breakpoints": true
     }
   ]
 }

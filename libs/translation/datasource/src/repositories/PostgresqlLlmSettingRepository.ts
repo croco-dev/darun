@@ -25,6 +25,7 @@ export class PostgresqlLlmSettingRepository implements LlmSettingRepository {
         apiKey: row.apiKey,
         model: row.model,
         thinkingLevel: row.thinkingLevel,
+        braveApiKey: row.braveApiKey,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       };
@@ -42,6 +43,7 @@ export class PostgresqlLlmSettingRepository implements LlmSettingRepository {
     apiKey?: string | null;
     model: string;
     thinkingLevel?: string | null;
+    braveApiKey?: string | null;
   }): Promise<LlmSetting> {
     const rows = await this.db
       .insert(llmSettings)
@@ -51,6 +53,7 @@ export class PostgresqlLlmSettingRepository implements LlmSettingRepository {
         apiKey: input.apiKey ?? null,
         model: input.model,
         thinkingLevel: input.thinkingLevel ?? null,
+        braveApiKey: input.braveApiKey ?? null,
       })
       .onConflictDoUpdate({
         target: llmSettings.id,
@@ -59,6 +62,7 @@ export class PostgresqlLlmSettingRepository implements LlmSettingRepository {
           apiKey: input.apiKey !== undefined ? input.apiKey : undefined,
           model: input.model,
           thinkingLevel: input.thinkingLevel !== undefined ? input.thinkingLevel : undefined,
+          braveApiKey: input.braveApiKey !== undefined ? input.braveApiKey : undefined,
           updatedAt: new Date(),
         },
       })
@@ -75,6 +79,7 @@ export class PostgresqlLlmSettingRepository implements LlmSettingRepository {
       apiKey: row.apiKey,
       model: row.model,
       thinkingLevel: row.thinkingLevel,
+      braveApiKey: row.braveApiKey,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

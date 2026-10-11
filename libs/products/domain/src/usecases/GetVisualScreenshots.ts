@@ -1,6 +1,8 @@
 import { Inject, Service } from 'typedi';
 import { isVisualPlatform, isVisualScreenType } from '../entities/VisualClassification';
 import type { VisualPlatform, VisualScreenType } from '../entities/VisualClassification';
+import { normalizeVisualUiElements } from '../entities/VisualUiElement';
+import type { VisualUiElement } from '../entities/VisualUiElement';
 import { productInvalidArgs } from '../errors/productError';
 import type {
   VisualScreenshotFilter,
@@ -17,6 +19,7 @@ type GetVisualScreenshotsArgs = {
   query?: string | null;
   platform?: string | null;
   screenType?: string | null;
+  uiElements?: readonly string[] | null;
   productSlug?: string | null;
   sort?: VisualSort | null;
   first: number;
@@ -32,6 +35,13 @@ function resolvePlatformFilter(platform: string | null | undefined): VisualPlatf
     throw productInvalidArgs('지원하지 않는 플랫폼 값입니다.');
   }
   return platform;
+}
+
+function resolveUiElementsFilter(uiElements: readonly string[] | null | undefined): VisualUiElement[] | undefined {
+  if (uiElements === null || uiElements === undefined) {
+    return undefined;
+  }
+  return normalizeVisualUiElements(uiElements);
 }
 
 function resolveScreenTypeFilter(screenType: string | null | undefined): VisualScreenType | undefined {
@@ -51,7 +61,17 @@ export class GetVisualScreenshots {
     private readonly productScreenshotRepository: ProductScreenshotRepository
   ) {}
 
-  async execute({ query, platform, screenType, productSlug, sort, first, afterId, page }: GetVisualScreenshotsArgs): Promise<{
+  async execute({
+    query,
+    platform,
+    screenType,
+    uiElements,
+    productSlug,
+    sort,
+    first,
+    afterId,
+    page,
+  }: GetVisualScreenshotsArgs): Promise<{
     screenshots: VisualScreenshotWithProduct[];
     totalCount: number;
     hasNextPage: boolean;
@@ -70,11 +90,13 @@ export class GetVisualScreenshots {
       typeof productSlug === 'string' && productSlug.trim().length > 0 ? productSlug.trim() : undefined;
     const platformFilter = resolvePlatformFilter(platform);
     const screenTypeFilter = resolveScreenTypeFilter(screenType);
+    const uiElementsFilter = resolveUiElementsFilter(uiElements);
 
     const filter: VisualScreenshotFilter = {
       query: normalizedQuery,
       ...(platformFilter ? { platform: platformFilter } : {}),
       ...(screenTypeFilter ? { screenType: screenTypeFilter } : {}),
+      ...(uiElementsFilter !== undefined ? { uiElements: uiElementsFilter } : {}),
       ...(trimmedProductSlug ? { productSlug: trimmedProductSlug } : {}),
     };
 

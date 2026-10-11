@@ -47,9 +47,9 @@ describe('ProductDescriptionRenderer', () => {
     const html = renderProductDescriptionDocument(sampleDoc, fixedDate);
 
     expect(html).toContain('<p>토스는 간편한 금융 서비스 &amp; 결제 앱입니다.</p>');
-    expect(html).toContain('<h3>송금 &lt;기능&gt;</h3>');
+    expect(html).toContain('<h2>송금 &lt;기능&gt;</h2>');
     expect(html).toContain('<p>&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt; 안전한 송금 제공</p>');
-    expect(html).toContain('<h3>추천한다면 -</h3>');
+    expect(html).toContain('<h2>추천한다면 -</h2>');
     expect(html).toContain('<li>간편 송금을 &quot;자주&quot; 쓰는 사람</li>');
     expect(html).not.toContain('<script>');
     expect(html).not.toContain('아쉽다면');
@@ -58,6 +58,35 @@ describe('ProductDescriptionRenderer', () => {
     const bylineCount = (html.match(/Editor\. DAO/g) || []).length;
     expect(bylineCount).toBe(1);
     expect(html).toContain('<p><em>2026년 9월 - Editor. DAO</em></p>');
+  });
+
+  it('renders rich blocks with bullets, quotes, and evidence-bound links', () => {
+    const richDoc: ProductDescriptionDocument = {
+      ...sampleDoc,
+      sections: [
+        {
+          title: '송금 기능',
+          paragraphs: [
+            {
+              text: '수수료 없는 송금을 지원합니다.',
+              evidenceRefs: ['feature:feat-1', 'link:link-1'],
+              bullets: ['주말에도 송금 가능', '받는 사람 계좌 확인 가능'],
+              quote: true,
+              link: { label: '공식 안내', url: 'https://example.com/guide' },
+            },
+          ],
+        },
+      ],
+    };
+    const html = renderProductDescriptionDocument(richDoc, new Date('2026-09-27T12:00:00Z'));
+
+    expect(html).toContain('<blockquote><p>수수료 없는 송금을 지원합니다.');
+    expect(html).toContain(
+      '<a href="https://example.com/guide" target="_blank" rel="noopener noreferrer">공식 안내</a>'
+    );
+    expect(html).toContain('<ul><li>주말에도 송금 가능</li><li>받는 사람 계좌 확인 가능</li></ul>');
+    expect(html).not.toContain('<h3>');
+    expect(html).not.toContain('<script>');
   });
 
   it('omits recommendedIf section when recommendedIf is empty', () => {

@@ -32,9 +32,9 @@ const createMockRepository = () => ({
   findVisualPublishedById: vi.fn(),
   countVisualPublishedByFilter: vi.fn(),
   insertVisualViewEvent: vi.fn().mockResolvedValue(true),
-    toggleVisualSave: vi.fn().mockResolvedValue({ saved: true }),
-    isVisualSaved: vi.fn().mockResolvedValue(false),
-    findVisualSavesByUser: vi.fn().mockResolvedValue({ screenshotIds: [], flowIds: [], totalCount: 0 }),
+  toggleVisualSave: vi.fn().mockResolvedValue({ saved: true }),
+  isVisualSaved: vi.fn().mockResolvedValue(false),
+  findVisualSavesByUser: vi.fn().mockResolvedValue({ screenshotIds: [], flowIds: [], totalCount: 0 }),
 });
 
 describe('GetVisualScreenshots', () => {
@@ -115,6 +115,30 @@ describe('GetVisualScreenshots', () => {
       code: 'product/invalid-args',
     });
     expect(mockRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit).not.toHaveBeenCalled();
+  });
+
+  it('uiElements 필터는 정규화해 repository 필터로 전달한다', async () => {
+    const mockRepository = createMockRepository();
+    mockRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit.mockResolvedValue([]);
+    mockRepository.countVisualPublishedByFilter.mockResolvedValue(0);
+    const useCase = new GetVisualScreenshots(mockRepository as unknown as ProductScreenshotRepository);
+
+    await useCase.execute({ uiElements: ['CARD', 'BUTTON', 'CARD'], first: 24 });
+
+    const filter = mockRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit.mock
+      .calls[0][0] as VisualScreenshotFilter;
+    expect(filter.uiElements).toEqual(['CARD', 'BUTTON']);
+  });
+
+  it('잘못된 uiElements 필터는 DB 접근 없이 invalid-args로 거절한다', async () => {
+    const mockRepository = createMockRepository();
+    const useCase = new GetVisualScreenshots(mockRepository as unknown as ProductScreenshotRepository);
+
+    await expect(useCase.execute({ uiElements: ['CARD', 'SIDEBAR'], first: 24 })).rejects.toMatchObject({
+      code: 'product/invalid-args',
+    });
+    expect(mockRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit).not.toHaveBeenCalled();
+    expect(mockRepository.countVisualPublishedByFilter).not.toHaveBeenCalled();
   });
 
   it('sort 미지정 시 LATEST로 keyset 조회를 유지한다', async () => {

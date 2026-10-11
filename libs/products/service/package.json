@@ -12,6 +12,7 @@
   "dependencies": {
     "@aws-sdk/client-sqs": "3.1133.0",
     "@darun/products-domain": "workspace:*",
+    "@darun/utils-llm": "workspace:*",
     "typedi": "catalog:"
   },
   "devDependencies": {

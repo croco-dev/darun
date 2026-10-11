@@ -28,6 +28,8 @@ jobs:
         run: pnpm --filter graphql-api exec tsc --noEmit
       - name: Test
         run: pnpm --filter graphql-api exec vitest run
+      - name: Check migration completeness
+        run: pnpm --filter graphql-api run check:migrations
 
   deploy:
     name: deploy
@@ -54,12 +56,19 @@ jobs:
           secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Install SST providers
         run: pnpm --filter graphql-api exec sst install
+      - name: Build Lambda bundles
+        run: pnpm --filter graphql-api run build:lambda
+        env:
+          INFRA_ENV: prod
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      - name: Verify Lambda initialization and GraphQL schema
+        run: pnpm --filter graphql-api run verify:lambda
       - name: Run Database Migrations
         run: pnpm --filter graphql-api run migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - name: Deploy
-        run: pnpm run --filter graphql-api deploy
+        run: pnpm --filter graphql-api exec sst deploy --stage prod
         env:
           AWS_PROFILE: darun
           INFRA_ENV: prod

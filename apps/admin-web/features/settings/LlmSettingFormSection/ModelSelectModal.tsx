@@ -9,11 +9,20 @@ export type LlmModelItem = {
   name?: string;
   description?: string;
   context_length?: number;
+  supported_parameters?: string[];
   pricing?: {
     prompt?: string;
     completion?: string;
   };
 };
+
+function getStructuredOutputSupport(model: LlmModelItem): 'supported' | 'unsupported' | 'unknown' {
+  if (!model.supported_parameters) return 'unknown';
+  return model.supported_parameters.includes('structured_outputs') &&
+    model.supported_parameters.includes('response_format')
+    ? 'supported'
+    : 'unsupported';
+}
 
 export type ModelSelectModalProps = {
   opened: boolean;
@@ -35,6 +44,7 @@ const FAST_RECOMMENDED_MODELS = [
 
 const CATEGORIES = [
   { id: 'all', label: '전체' },
+  { id: 'structured', label: '구조화 응답 지원' },
   { id: 'fast', label: '⚡ 빠른 추천 (타임아웃 방지)' },
   { id: 'free', label: '무료 (:free)' },
   { id: 'google', label: 'Google (Gemini)' },
@@ -125,6 +135,11 @@ export function ModelSelectModal({
           name: typeof item['name'] === 'string' ? item['name'] : undefined,
           description: typeof item['description'] === 'string' ? item['description'] : undefined,
           context_length: typeof item['context_length'] === 'number' ? item['context_length'] : undefined,
+          supported_parameters:
+            Array.isArray(item['supported_parameters']) &&
+            item['supported_parameters'].every((parameter: unknown) => typeof parameter === 'string')
+              ? item['supported_parameters']
+              : undefined,
           pricing:
             item['pricing'] && typeof item['pricing'] === 'object'
               ? {
@@ -178,7 +193,9 @@ export function ModelSelectModal({
 
     return models.filter(m => {
       // Category filter
-      if (selectedCategory === 'fast') {
+      if (selectedCategory === 'structured') {
+        if (getStructuredOutputSupport(m) !== 'supported') return false;
+      } else if (selectedCategory === 'fast') {
         const isFastPreset = FAST_RECOMMENDED_MODELS.some(preset => m.id.includes(preset));
         const isFlashOrFast = m.id.includes('flash') || m.id.includes('mini') || m.id.includes('fast');
         if (!isFastPreset && !isFlashOrFast) return false;
@@ -292,6 +309,11 @@ export function ModelSelectModal({
           })}
         </div>
 
+        <p className="text-sm text-dark-600 leading-relaxed">
+          서비스 소개 자동 작성·검수에는 구조화 응답이 필요합니다. 실제 지원 여부는 모델 제공업체에 따라 달라질 수
+          있습니다.
+        </p>
+
         {/* Status / Count bar */}
         <div className="flex items-center justify-between text-xs text-dark-500">
           <span>
@@ -354,6 +376,7 @@ export function ModelSelectModal({
             ) : (
               filteredModels.map(model => {
                 const isCurrent = model.id === selectedModel;
+                const structuredOutputSupport = getStructuredOutputSupport(model);
                 const isFree = model.id.includes(':free');
                 const isFast =
                   FAST_RECOMMENDED_MODELS.some(p => model.id.includes(p)) ||
@@ -376,6 +399,21 @@ export function ModelSelectModal({
                       <div className="flex items-center gap-2 flex-wrap min-w-0">
                         <span className="font-mono text-sm font-semibold text-dark-900 group-hover:text-primary transition truncate">
                           {model.id}
+                        </span>
+                        <span
+                          className={`text-xs font-medium px-1.5 py-0.5 rounded border select-none whitespace-nowrap ${
+                            structuredOutputSupport === 'supported'
+                              ? 'bg-leaf-50 text-leaf-700 border-leaf-200'
+                              : structuredOutputSupport === 'unsupported'
+                                ? 'bg-cherry-50 text-cherry-800 border-cherry-200'
+                                : 'bg-dark-100 text-dark-600 border-dark-200'
+                          }`}
+                        >
+                          {structuredOutputSupport === 'supported'
+                            ? '구조화 응답 지원'
+                            : structuredOutputSupport === 'unsupported'
+                              ? '구조화 응답 미지원'
+                              : '구조화 응답 지원 여부 미확인'}
                         </span>
                         {isFast && (
                           <span className="inline-flex items-center gap-0.5 text-2xs font-medium px-1.5 py-0.5 rounded bg-brown-50 text-brown-700 border border-brown-200 select-none whitespace-nowrap">
@@ -401,6 +439,14 @@ export function ModelSelectModal({
                         </span>
                       )}
                     </div>
+
+                    {structuredOutputSupport !== 'supported' && (
+                      <div className="text-sm text-cherry-800 leading-relaxed">
+                        {structuredOutputSupport === 'unsupported'
+                          ? '서비스 소개 자동 작성·검수에 필요한 구조화 응답을 지원하지 않습니다.'
+                          : '지원 정보가 없어 서비스 소개 자동 작성·검수에 사용할 수 있는지 확인이 필요합니다.'}
+                      </div>
+                    )}
 
                     {model.name && model.name !== model.id && (
                       <div className="text-xs font-medium text-dark-700">{model.name}</div>

@@ -13,7 +13,9 @@ export type VisualSaveButtonState = {
   saved: boolean;
   isToggling: boolean;
   needsLogin: boolean;
+  toggleError: boolean;
   toggle: () => void;
+  retry: () => void;
 };
 
 function isUnauthorized(error: unknown): boolean {
@@ -38,6 +40,7 @@ export function useVisualSaveButton(params: {
   const [saved, setSaved] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [toggleError, setToggleError] = useState(false);
 
   useEffect(() => {
     if (!enabled) {
@@ -85,6 +88,7 @@ export function useVisualSaveButton(params: {
       return;
     }
     setIsToggling(true);
+    setToggleError(false);
     const request =
       kind === 'screenshot'
         ? apolloClient.mutate({ mutation: ToggleVisualScreenshotSaveDocument, variables: { id } })
@@ -107,11 +111,17 @@ export function useVisualSaveButton(params: {
           return;
         }
         console.error('Failed to toggle visual save', e);
+        setToggleError(true);
       })
       .finally(() => {
         setIsToggling(false);
       });
   }, [apolloClient, kind, id, isToggling]);
 
-  return { saved, isToggling, needsLogin, toggle };
+  const retry = useCallback(() => {
+    setToggleError(false);
+    toggle();
+  }, [toggle]);
+
+  return { saved, isToggling, needsLogin, toggleError, toggle, retry };
 }

@@ -9,6 +9,7 @@ describe('LlmTranslationProvider', () => {
   beforeEach(() => {
     mockLlmClient = {
       completion: vi.fn(),
+      getConfig: vi.fn().mockResolvedValue({ model: 'custom-llm-model' }),
     } as unknown as LlmClient;
     provider = new LlmTranslationProvider(mockLlmClient);
   });
@@ -29,9 +30,13 @@ describe('LlmTranslationProvider', () => {
       });
 
       expect(result.translatedText).toBe('Notion');
-      expect(result.model).toBe('gemini-2.5-flash');
+      expect(result.model).toBe('custom-llm-model');
       expect(result.sourceHash).toBeDefined();
       expect(mockLlmClient.completion).toHaveBeenCalledTimes(1);
+      expect(mockLlmClient.completion).toHaveBeenCalledWith(
+        'custom-llm-model',
+        expect.any(Array)
+      );
     });
 
     it('translates HTML content preserving placeholders', async () => {

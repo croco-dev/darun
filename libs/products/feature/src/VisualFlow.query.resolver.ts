@@ -20,8 +20,8 @@ import { toGraphFlowFromSaved } from './VisualFlow.mapper';
 const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
 // 제품 정보는 flow row에서 매핑한다. 목록 GraphQL 선택은 cover와 stepCount만 사용하고
-// 전체 steps는 상세에서 요청한다.
-function toGraphVisualFlow(flow: VisualFlowSummary): VisualFlow {
+// 전체 steps는 상세에서 요청한다. M4 내 저장 목록 매핑과 공유한다.
+export function toGraphVisualFlow(flow: VisualFlowSummary): VisualFlow {
   return {
     id: flow.id,
     title: flow.title,

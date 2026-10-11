@@ -66,6 +66,10 @@ export default $config({
       visibilityTimeout: '6 minutes',
     });
 
+    const productResearchQueue = new sst.aws.Queue('ProductResearchQueue', {
+      visibilityTimeout: '6 minutes',
+    });
+
     const productDescriptionWorker = new sst.aws.Function('ProductDescriptionWorker', {
       handler: 'product-description-worker.handler',
       bundle: '.build/lambda',
@@ -90,6 +94,30 @@ export default $config({
 
     productDescriptionQueue.subscribe(productDescriptionWorker.arn);
 
+    const productResearchWorker = new sst.aws.Function('ProductResearchWorker', {
+      handler: 'product-research-worker.handler',
+      bundle: '.build/lambda',
+      runtime: 'nodejs22.x',
+      architecture: 'arm64',
+      timeout: '5 minutes',
+      logging: { retention: '1 week' },
+      permissions: [
+        {
+          actions: [
+            'sqs:ChangeMessageVisibility',
+            'sqs:DeleteMessage',
+            'sqs:GetQueueAttributes',
+            'sqs:GetQueueUrl',
+            'sqs:ReceiveMessage',
+          ],
+          resources: [productResearchQueue.arn],
+        },
+      ],
+      environment,
+    });
+
+    productResearchQueue.subscribe(productResearchWorker.arn);
+
     const router = new sst.aws.Router('GraphqlRouter', {
       domain: {
         name: 'api.darun.io',
@@ -108,13 +136,14 @@ export default $config({
       permissions: [
         {
           actions: ['sqs:SendMessage'],
-          resources: [translationQueue.arn, productDescriptionQueue.arn],
+          resources: [translationQueue.arn, productDescriptionQueue.arn, productResearchQueue.arn],
         },
       ],
       environment: {
         ...environment,
         TRANSLATION_QUEUE_URL: translationQueue.url,
         PRODUCT_DESCRIPTION_QUEUE_URL: productDescriptionQueue.url,
+        PRODUCT_RESEARCH_QUEUE_URL: productResearchQueue.url,
       },
       url: {
         cors: {

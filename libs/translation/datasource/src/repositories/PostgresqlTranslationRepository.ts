@@ -118,9 +118,9 @@ export class PostgresqlTranslationRepository implements TranslationRepository {
         target: [translations.entityType, translations.entityId, translations.locale, translations.field],
         set: {
           value: sql`excluded.value`,
-          sourceHash: sql`excluded.source_hash`,
-          model: sql`excluded.model`,
-          promptVersion: sql`excluded.prompt_version`,
+          sourceHash: sql`COALESCE(excluded.source_hash, ${translations.sourceHash})`,
+          model: sql`COALESCE(excluded.model, ${translations.model})`,
+          promptVersion: sql`COALESCE(excluded.prompt_version, ${translations.promptVersion})`,
           updatedAt: new Date(),
         },
       })

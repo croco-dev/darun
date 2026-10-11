@@ -85,6 +85,24 @@ export function LlmSettingFormSection() {
         <p className="text-sm text-dark-500 mb-2">
           번역 및 콘텐츠 자동 생성에 사용할 LLM 엔드포인트, API 키, 기본 모델을 데이터베이스에 동적으로 설정합니다.
         </p>
+        {currentSetting && (
+          <div className="flex flex-wrap items-center gap-2 mb-4 text-xs">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-100 border border-dark-200 text-dark-700 font-mono max-w-full">
+              <span className="text-dark-400 font-sans shrink-0">현재 모델:</span>
+              <span className="truncate">{currentSetting.model}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-100 border border-dark-200 text-dark-700 font-mono max-w-full">
+              <span className="text-dark-400 font-sans shrink-0">엔드포인트:</span>
+              <span className="truncate">{currentSetting.endpoint}</span>
+            </span>
+            {currentSetting.thinkingLevel && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-100 border border-dark-200 text-dark-700 font-mono">
+                <span className="text-dark-400 font-sans">추론 강도:</span>
+                {currentSetting.thinkingLevel}
+              </span>
+            )}
+          </div>
+        )}
         <LlmSettingForm
           key={currentSetting?.updatedAt ?? 'default'}
           currentSetting={currentSetting}
@@ -290,7 +308,7 @@ function LlmSettingForm({
             value={model}
             disabled={isUpdating}
             onChange={e => setModel(e.target.value)}
-            placeholder="nvidia/nemotron-3-ultra-550b-a55b:free"
+            placeholder="nvidia/nemotron-3-super-120b-a12b:free"
             className="flex-1 font-mono"
             aria-describedby="model-help"
             required
@@ -311,7 +329,7 @@ function LlmSettingForm({
             { label: 'gemini-2.5-flash (빠름)', value: 'google/gemini-2.5-flash' },
             { label: 'grok-4-fast (빠름)', value: 'x-ai/grok-4-fast' },
             { label: 'gpt-4o-mini (빠름)', value: 'openai/gpt-4o-mini' },
-            { label: 'nemotron free (무료)', value: 'nvidia/nemotron-3-ultra-550b-a55b:free' },
+            { label: 'Nemotron Super (무료)', value: 'nvidia/nemotron-3-super-120b-a12b:free' },
           ].map(opt => (
             <button
               key={opt.value}

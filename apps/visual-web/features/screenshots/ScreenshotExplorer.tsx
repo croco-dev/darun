@@ -23,8 +23,10 @@ import {
   VISUAL_PLATFORM_OPTIONS,
   VISUAL_SCREEN_TYPE_LABELS,
   VISUAL_SCREEN_TYPE_OPTIONS,
+  VISUAL_UI_ELEMENT_OPTIONS,
   isVisualPlatformValue,
   isVisualScreenTypeValue,
+  isVisualUiElementValue,
 } from './visualClassifications';
 
 type ScreenshotViewMode = 'grid' | 'list';
@@ -310,11 +312,13 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
     searchInput,
     platform,
     screenType,
+    element,
     product,
     onSearchInputChange,
     onSearchSubmit,
     onPlatformChange,
     onScreenTypeChange,
+    onElementChange,
     onClearFilters,
     suggestions,
     isSearchingSuggestions,
@@ -326,7 +330,8 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
   } = props;
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [viewMode, setViewMode] = useState<ScreenshotViewMode>('grid');
-  const hasFilters = searchInput.trim().length > 0 || platform !== null || screenType !== null || product !== null;
+  const hasFilters =
+    searchInput.trim().length > 0 || platform !== null || screenType !== null || element !== null || product !== null;
 
   return (
     <ExplorerShell
@@ -419,6 +424,23 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
             >
               <span className="whitespace-nowrap">검색</span>
             </Button>
+            <label htmlFor="screenshot-element" className="sr-only">
+              UI 요소
+            </label>
+            <select
+              id="screenshot-element"
+              aria-label="UI 요소"
+              value={element ?? ''}
+              onChange={event => onElementChange(event.currentTarget.value)}
+              className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+            >
+              <option value="">전체 UI 요소</option>
+              {VISUAL_UI_ELEMENT_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             {product !== null && (
               <Button
                 variant="shadow"
@@ -501,6 +523,9 @@ function CatalogExplorer({ hideHero }: { hideHero?: boolean }) {
     product: null,
     query: null,
     screenType: null,
+    element: null,
+    onElementChange: (value: string) =>
+      navigate(buildExplorerUrl('/', EMPTY_CATALOG_FILTERS, 'screenType', { element: value.length > 0 ? value : null })),
     onSearchInputChange: handleSearchInputChange,
     onSearchSubmit: handleSearchSubmit,
     onPlatformChange: (value: string) =>
@@ -541,11 +566,13 @@ export function ScreenshotExplorer({ hideHero }: { hideHero?: boolean }) {
   const searchParams = useSearchParams();
   const platformParam = searchParams.get('platform');
   const screenTypeParam = searchParams.get('screenType');
+  const elementParam = searchParams.get('element');
   const catalogMode =
     readExplorerQueryParam(searchParams) === null &&
     readExplorerProductParam(searchParams) === null &&
     (platformParam === null || !isVisualPlatformValue(platformParam)) &&
-    (screenTypeParam === null || !isVisualScreenTypeValue(screenTypeParam));
+    (screenTypeParam === null || !isVisualScreenTypeValue(screenTypeParam)) &&
+    (elementParam === null || !isVisualUiElementValue(elementParam));
   if (catalogMode) {
     return <CatalogExplorer hideHero={hideHero} />;
   }

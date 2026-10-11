@@ -5,7 +5,7 @@ import {
   TranslationJobRepositoryToken,
   type TranslationJobStatus,
 } from '@darun/translation-domain';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { translationJobs } from '../entities/TranslationJobSchema';
 
@@ -123,6 +123,66 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
     const row = rows[0];
     if (!row) {
       throw new Error(`TranslationJob not found for update: ${id}`);
+    }
+
+    return {
+      id: row.id,
+      entityType: row.entityType,
+      entityId: row.entityId,
+      locale: row.locale,
+      status: row.status as TranslationJobStatus,
+      message: row.message,
+      error: row.error,
+      sourceHash: row.sourceHash,
+      model: row.model,
+      promptVersion: row.promptVersion,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async claimJobStatus(
+    id: string,
+    expectedStatuses: TranslationJobStatus[],
+    nextStatus: TranslationJobStatus,
+    options?: {
+      message?: string | null;
+      error?: string | null;
+      sourceHash?: string | null;
+      model?: string | null;
+      promptVersion?: string | null;
+    }
+  ): Promise<TranslationJobEntity | null> {
+    const updateValues: Record<string, unknown> = {
+      status: nextStatus,
+      updatedAt: new Date(),
+    };
+
+    if (options?.message !== undefined) {
+      updateValues.message = options.message;
+    }
+    if (options?.error !== undefined) {
+      updateValues.error = options.error;
+    }
+    if (options?.sourceHash !== undefined) {
+      updateValues.sourceHash = options.sourceHash;
+    }
+    if (options?.model !== undefined) {
+      updateValues.model = options.model;
+    }
+    if (options?.promptVersion !== undefined) {
+      updateValues.promptVersion = options.promptVersion;
+    }
+
+    const rows = await this.db
+      .update(translationJobs)
+      .set(updateValues)
+      .where(and(eq(translationJobs.id, id), inArray(translationJobs.status, expectedStatuses)))
+      .returning();
+
+    const row = rows[0];
+    if (!row) {
+      return null;
     }
 
     return {

@@ -78,12 +78,13 @@ const createCompanyRepository = (): CompanyRepository => ({
 const createMockTranslationJobService = () =>
   ({
     translateEntity: vi.fn().mockResolvedValue(undefined),
-    translateProductWithFeatures: vi.fn().mockResolvedValue(undefined),
+    translateProductWithFeatures: vi.fn(() => new Promise(() => {})),
+    requestProductTranslationJob: vi.fn().mockResolvedValue({ id: 'job-1', status: 'pending' }),
   }) as unknown as TranslationJobService;
 
 describe('ProductPublishMutationResolver', () => {
   describe('publishProduct', () => {
-    it('search index payload includes tags and category', async () => {
+    it('indexes the product and waits only for translation job registration', async () => {
       const publishedAt = new Date();
       const product = new DomainProduct({
         id: 'p1',
@@ -117,6 +118,17 @@ describe('ProductPublishMutationResolver', () => {
       const indexProductUseCase = createMockUseCase<IndexProduct>();
       indexProductUseCase.execute.mockResolvedValue(true);
 
+      let completeRegistration!: (
+        job: Awaited<ReturnType<TranslationJobService['requestProductTranslationJob']>>
+      ) => void;
+      const registration = new Promise<Awaited<ReturnType<TranslationJobService['requestProductTranslationJob']>>>(
+        resolve => {
+          completeRegistration = resolve;
+        }
+      );
+      const translationJobService = createMockTranslationJobService();
+      vi.mocked(translationJobService.requestProductTranslationJob).mockReturnValue(registration);
+
       const resolver = new ProductPublishMutationResolver(
         new GetCompany(createCompanyRepository()),
         createMockUseCase<CreateProduct>() as unknown as CreateProduct,
@@ -134,10 +146,25 @@ describe('ProductPublishMutationResolver', () => {
         createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
         publishProductUseCase as unknown as PublishProduct,
         indexProductUseCase as unknown as IndexProduct,
-        createMockTranslationJobService()
+        translationJobService
       );
 
-      await resolver.publishProduct({ slug: 'product-1' });
+      const onResponse = vi.fn();
+      const response = resolver.publishProduct({ slug: 'product-1' }).then(onResponse);
+      await vi.waitFor(() => {
+        expect(translationJobService.requestProductTranslationJob).toHaveBeenCalledWith('p1');
+      });
+      expect(onResponse).not.toHaveBeenCalled();
+      expect(translationJobService.translateProductWithFeatures).not.toHaveBeenCalled();
+
+      completeRegistration({
+        id: 'job-1',
+        entityType: 'Product',
+        entityId: 'p1',
+        status: 'pending',
+      });
+      await response;
+      expect(onResponse).toHaveBeenCalledWith({ product: publishedProduct });
 
       expect(indexProductUseCase.execute).toHaveBeenCalledTimes(1);
       expect(indexProductUseCase.execute).toHaveBeenCalledWith(
@@ -154,7 +181,7 @@ describe('ProductPublishMutationResolver', () => {
       );
     });
 
-    it('search index payload falls back to empty tags and category when product has none', async () => {
+    it('returns the published product and logs a translation registration failure', async () => {
       const publishedAt = new Date();
       const product = new DomainProduct({
         id: 'p1',
@@ -181,6 +208,11 @@ describe('ProductPublishMutationResolver', () => {
       const indexProductUseCase = createMockUseCase<IndexProduct>();
       indexProductUseCase.execute.mockResolvedValue(true);
 
+      const registrationError = new Error('translation job registration failed');
+      const translationJobService = createMockTranslationJobService();
+      vi.mocked(translationJobService.requestProductTranslationJob).mockRejectedValue(registrationError);
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
       const resolver = new ProductPublishMutationResolver(
         new GetCompany(createCompanyRepository()),
         createMockUseCase<CreateProduct>() as unknown as CreateProduct,
@@ -198,10 +230,20 @@ describe('ProductPublishMutationResolver', () => {
         createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
         publishProductUseCase as unknown as PublishProduct,
         indexProductUseCase as unknown as IndexProduct,
-        createMockTranslationJobService()
+        translationJobService
       );
 
-      await resolver.publishProduct({ slug: 'product-1' });
+      try {
+        await expect(resolver.publishProduct({ slug: 'product-1' })).resolves.toEqual({ product: publishedProduct });
+        expect(translationJobService.requestProductTranslationJob).toHaveBeenCalledWith('p1');
+        expect(translationJobService.translateProductWithFeatures).not.toHaveBeenCalled();
+        expect(warn).toHaveBeenCalledWith(
+          '[products] publishProduct side effect contract violated: translation-job-trigger severity=degraded logLevel=warn returnPath=omit',
+          registrationError
+        );
+      } finally {
+        warn.mockRestore();
+      }
 
       expect(indexProductUseCase.execute).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -213,7 +255,7 @@ describe('ProductPublishMutationResolver', () => {
   });
 
   describe('editProduct', () => {
-    it('triggers translation when published product content changes', async () => {
+    it('registers a translation job when published product content changes', async () => {
       const product = new DomainProduct({
         id: 'p1',
         slug: 'product-1',
@@ -260,8 +302,9 @@ describe('ProductPublishMutationResolver', () => {
 
       await resolver.editProduct('product-1', { name: 'Updated Name' });
 
-      expect(mockTranslationJobService.translateProductWithFeatures).toHaveBeenCalledTimes(1);
-      expect(mockTranslationJobService.translateProductWithFeatures).toHaveBeenCalledWith('p1');
+      expect(mockTranslationJobService.requestProductTranslationJob).toHaveBeenCalledTimes(1);
+      expect(mockTranslationJobService.requestProductTranslationJob).toHaveBeenCalledWith('p1');
+      expect(mockTranslationJobService.translateProductWithFeatures).not.toHaveBeenCalled();
     });
   });
 });

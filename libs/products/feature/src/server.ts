@@ -1,4 +1,6 @@
 export { CategoryQueryResolver } from './Category.query.resolver';
+export { ProductResearchMutationResolver, ProductResearchQueryResolver } from './ProductResearch.resolver';
+export { ProductResearchJob, toProductResearchJobGraph } from './graphs/ProductResearch';
 export { FeatureMutationResolver } from './Feature.mutation.resolver';
 export { FeatureQueryResolver } from './Feature.query.resolver';
 export { ProductConnection } from './graphs/ProductPagination';

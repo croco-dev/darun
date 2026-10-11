@@ -38,6 +38,7 @@ vi.mock('type-graphql', () => {
 
 import { Product as DomainProduct } from '@darun/products-domain';
 import { describe, expect, it, vi } from 'vitest';
+import { VisualUiElementGraph } from '../graphs/VisualUiElement';
 import { ProductMediaMutationResolver } from '../ProductMediaMutationResolver';
 
 const createMockUseCase = () => ({ execute: vi.fn() });
@@ -82,6 +83,7 @@ function createResolver() {
     deleteProductScreenshot,
     addProductLink,
     updateProductLink,
+    updateProductScreenshot,
     registerProductCompany,
     generateProductDescription,
     getCompany,
@@ -123,6 +125,44 @@ describe('ProductMediaMutationResolver', () => {
         screenType: null,
       });
       expect(result).toEqual({ product });
+    });
+  });
+
+  describe('updateProductScreenshot', () => {
+    it('uiElements를 전달하면 usecase에 그대로 전달한다', async () => {
+      const { resolver, updateProductScreenshot } = createResolver();
+      updateProductScreenshot.execute.mockResolvedValue({ id: 'screenshot-1' });
+
+      await resolver.updateProductScreenshot({
+        id: 'screenshot-1',
+        imageAlt: '이미지',
+        uiElements: [VisualUiElementGraph.CARD, VisualUiElementGraph.BUTTON],
+      });
+
+      expect(updateProductScreenshot.execute).toHaveBeenCalledWith({
+        id: 'screenshot-1',
+        imageAlt: '이미지',
+        title: null,
+        platform: null,
+        screenType: null,
+        uiElements: [VisualUiElementGraph.CARD, VisualUiElementGraph.BUTTON],
+      });
+    });
+
+    it('uiElements를 생략하면 usecase 호출에 키를 포함하지 않는다', async () => {
+      const { resolver, updateProductScreenshot } = createResolver();
+      updateProductScreenshot.execute.mockResolvedValue({ id: 'screenshot-1' });
+
+      await resolver.updateProductScreenshot({ id: 'screenshot-1', imageAlt: '이미지' });
+
+      expect(updateProductScreenshot.execute).toHaveBeenCalledWith({
+        id: 'screenshot-1',
+        imageAlt: '이미지',
+        title: null,
+        platform: null,
+        screenType: null,
+      });
+      expect(updateProductScreenshot.execute.mock.calls[0][0]).not.toHaveProperty('uiElements');
     });
   });
 

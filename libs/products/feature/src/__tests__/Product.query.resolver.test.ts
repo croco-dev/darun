@@ -149,6 +149,13 @@ const createProductScreenshotRepository = (): ProductScreenshotRepository => ({
   insertVisualViewEvent: vi.fn<ProductScreenshotRepository['insertVisualViewEvent']>().mockResolvedValue(true),
   toggleVisualSave: vi.fn<ProductScreenshotRepository['toggleVisualSave']>().mockResolvedValue({ saved: true }),
   isVisualSaved: vi.fn<ProductScreenshotRepository['isVisualSaved']>().mockResolvedValue(false),
+  findManyVisualSavedScreenshotsByUser: vi.fn().mockResolvedValue({ screenshots: [], totalCount: 0 }),
+  replaceScreenshotUiElements: vi
+    .fn<ProductScreenshotRepository['replaceScreenshotUiElements']>()
+    .mockResolvedValue([]),
+  findScreenshotUiElementsByScreenshotIds: vi
+    .fn<ProductScreenshotRepository['findScreenshotUiElementsByScreenshotIds']>()
+    .mockResolvedValue({}),
   findVisualSavesByUser: vi
     .fn<ProductScreenshotRepository['findVisualSavesByUser']>()
     .mockResolvedValue({ screenshotIds: [], flowIds: [], totalCount: 0 }),

@@ -332,6 +332,72 @@ describe('TranslationJobService', () => {
     expect(translationService.upsertTranslation).not.toHaveBeenCalled();
   });
 
+  it('registers and enqueues a pending product translation without invoking the LLM', async () => {
+    const product = new Product({
+      id: 'prod-queued',
+      slug: 'queued-product',
+      name: '상품',
+      summary: '요약',
+      logoUrl: 'https://example.com/logo.png',
+    });
+    const job = {
+      id: 'job-queued',
+      status: 'pending',
+      message: '번역 작업이 대기열에 등록되었습니다.',
+    };
+    const repository = { createJob: vi.fn().mockResolvedValue(job) };
+    let completeEnqueue!: (queued: boolean) => void;
+    const queue = {
+      sendJob: vi.fn(
+        () =>
+          new Promise<boolean>(resolve => {
+            completeEnqueue = resolve;
+          })
+      ),
+    };
+    const translationService = createTranslationService();
+    const llmClient = createLlmClient(() => new Promise(() => {}));
+    const service = new TranslationJobService(
+      createProductUseCase(product),
+      createMagazineUseCase(),
+      translationService as unknown as TranslationService,
+      llmClient as unknown as LlmClient,
+      createProductFeatureUseCase(),
+      createProductFeaturesUseCase(),
+      repository as never,
+      queue as never
+    );
+
+    const onResponse = vi.fn();
+    const response = service.requestProductTranslationJob(product.id).then(onResponse);
+    await vi.waitFor(() => {
+      expect(queue.sendJob).toHaveBeenCalledWith({
+        jobId: job.id,
+        entityType: 'Product',
+        entityId: product.id,
+      });
+    });
+    expect(repository.createJob).toHaveBeenCalledWith({
+      entityType: 'Product',
+      entityId: product.id,
+      locale: 'en',
+      status: 'pending',
+      message: '번역 작업이 대기열에 등록되었습니다.',
+    });
+    expect(onResponse).not.toHaveBeenCalled();
+    completeEnqueue(true);
+    await response;
+    await new Promise(resolve => setImmediate(resolve));
+
+    expect(onResponse).toHaveBeenCalledWith({
+      ...job,
+      entityType: 'Product',
+      entityId: product.id,
+    });
+    expect(llmClient.completion).not.toHaveBeenCalled();
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
+  });
+
   it('retries product translation job and sets status to pending', async () => {
     const now = new Date();
     const mockRepo = {
@@ -489,5 +555,245 @@ describe('TranslationJobService', () => {
     expect(mockRepo.updateJobStatus).toHaveBeenCalledWith('job-stale-check', 'superseded', {
       message: '원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.',
     });
+  });
+
+  it('writes product translation when feature re-fetch fails after a successful initial fetch', async () => {
+    const product = new Product({
+      id: 'prod-refetch-fail',
+      slug: 'refetch-fail',
+      name: '재조회 실패 상품',
+      summary: '요약',
+      description: '설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+    const features = [
+      new ProductFeature({
+        id: 'feat-1',
+        productId: 'prod-refetch-fail',
+        name: '실제 기능',
+        summary: '실제 요약',
+        emoji: '✨',
+      }),
+    ];
+
+    const mockJsonResponse = JSON.stringify({
+      name: 'Refetch Fail Product',
+      summary: 'Summary',
+      description: 'Description',
+      features: [{ id: 'feat-1', name: 'Real Feature', summary: 'Real summary' }],
+    });
+
+    const getProductUseCase = createProductUseCase(product);
+    const translationService = createTranslationService();
+    const llmClient = createLlmClient(async () => ({ content: mockJsonResponse }));
+    const getProductFeaturesUseCase = {
+      execute: vi
+        .fn<GetProductFeatures['execute']>()
+        .mockResolvedValueOnce(features)
+        .mockRejectedValueOnce(new Error('transient DB error')),
+    } as unknown as GetProductFeatures;
+
+    const service = new TranslationJobService(
+      getProductUseCase,
+      createMagazineUseCase(),
+      translationService as unknown as TranslationService,
+      llmClient as unknown as LlmClient,
+      createProductFeatureUseCase(),
+      getProductFeaturesUseCase
+    );
+
+    await service.translateProductWithFeatures(product.id);
+
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'Product',
+        entityId: product.id,
+        field: 'name',
+        value: 'Refetch Fail Product',
+      })
+    );
+  });
+
+  it('rejects bundle responses with hallucinated or missing feature IDs', async () => {
+    const product = new Product({
+      id: 'product-halluc',
+      slug: 'halluc-prod',
+      name: '환각 상품',
+      summary: '요약',
+      description: '설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+    const features = [
+      new ProductFeature({
+        id: 'feat-1',
+        productId: 'product-halluc',
+        name: '실제 기능',
+        summary: '실제 요약',
+        emoji: '✨',
+      }),
+    ];
+
+    const hallucinated = JSON.stringify({
+      name: 'Halluc',
+      summary: 'Halluc summary',
+      description: 'Halluc desc',
+      features: [{ id: 'feat-evil', name: 'Evil', summary: 'Evil summary' }],
+    });
+
+    const { service, translationService } = createService({
+      product,
+      features,
+      customLlmImplementation: async () => ({ content: hallucinated }),
+    });
+
+    await expect(service.translateProductWithFeatures(product.id)).rejects.toThrow(
+      '상품 번역에 실패했습니다: 번역 결과에 알 수 없는 기능 ID(feat-evil)가 포함되었습니다.'
+    );
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
+
+    const incomplete = JSON.stringify({
+      name: 'Halluc',
+      summary: 'Halluc summary',
+      description: 'Halluc desc',
+      features: [],
+    });
+
+    const retry = createService({
+      product,
+      features,
+      customLlmImplementation: async () => ({ content: incomplete }),
+    });
+
+    await expect(retry.service.translateProductWithFeatures(product.id)).rejects.toThrow(
+      '상품 번역에 실패했습니다: 기능 개수 불일치: 요청 1개, 응답 0개'
+    );
+    expect(retry.translationService.upsertTranslation).not.toHaveBeenCalled();
+  });
+
+  it('rejects unparseable bundle JSON without writing translations', async () => {
+    const product = new Product({
+      id: 'product-badjson',
+      slug: 'badjson-prod',
+      name: '깨진 상품',
+      summary: '요약',
+      description: '설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+
+    const { service, translationService } = createService({
+      product,
+      customLlmImplementation: async () => ({ content: 'not-json-at-all' }),
+    });
+
+    await expect(service.translateProductWithFeatures(product.id)).rejects.toThrow(
+      '상품 번역에 실패했습니다: LLM 번역 응답 JSON 파싱에 실패했습니다.'
+    );
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
+  });
+
+  it('skips duplicate execution when the job is already claimed', async () => {
+    const product = new Product({
+      id: 'prod-claim',
+      slug: 'claim-prod',
+      name: '선점 상품',
+      summary: '요약',
+      description: '설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+
+    const mockJsonResponse = JSON.stringify({
+      name: 'Claimed Product',
+      summary: 'Summary',
+      description: 'Description',
+      features: [],
+    });
+
+    const translationService = createTranslationService();
+    const llmClient = createLlmClient(async () => ({ content: mockJsonResponse }));
+    const mockRepo = {
+      createJob: vi.fn(),
+      findJobById: vi.fn(),
+      updateJobStatus: vi.fn(),
+      claimJobStatus: vi.fn().mockResolvedValue(null),
+      findJobs: vi.fn(),
+    };
+
+    const service = new TranslationJobService(
+      createProductUseCase(product),
+      createMagazineUseCase(),
+      translationService as unknown as TranslationService,
+      llmClient as unknown as LlmClient,
+      createProductFeatureUseCase(),
+      createProductFeaturesUseCase(),
+      mockRepo as never
+    );
+
+    await service.executeProductTranslationJob('job-claim', product.id);
+
+    expect(mockRepo.claimJobStatus).toHaveBeenCalledWith('job-claim', ['pending'], 'in_progress', {
+      message: 'LLM으로 영문 번역을 생성하고 있습니다...',
+    });
+    expect(llmClient.completion).not.toHaveBeenCalled();
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
+  });
+
+  it('does not overwrite a terminal job status when translation fails', async () => {
+    const product = new Product({
+      id: 'prod-terminal',
+      slug: 'terminal-prod',
+      name: '터미널 상품',
+      summary: '요약',
+      description: '설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+
+    const claimed = {
+      id: 'job-terminal',
+      entityType: 'Product',
+      entityId: product.id,
+      locale: 'en',
+      status: 'in_progress',
+      message: '진행 중',
+      error: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const translationService = createTranslationService();
+    const llmClient = createLlmClient(async () => {
+      throw new Error('LLM down');
+    });
+    const mockRepo = {
+      createJob: vi.fn(),
+      findJobById: vi.fn(),
+      updateJobStatus: vi.fn(),
+      claimJobStatus: vi.fn().mockResolvedValueOnce(claimed).mockResolvedValueOnce(null),
+      findJobs: vi.fn(),
+    };
+
+    const service = new TranslationJobService(
+      createProductUseCase(product),
+      createMagazineUseCase(),
+      translationService as unknown as TranslationService,
+      llmClient as unknown as LlmClient,
+      createProductFeatureUseCase(),
+      createProductFeaturesUseCase(),
+      mockRepo as never
+    );
+
+    await service.executeProductTranslationJob('job-terminal', product.id);
+
+    expect(mockRepo.claimJobStatus).toHaveBeenCalledTimes(2);
+    expect(mockRepo.claimJobStatus).toHaveBeenNthCalledWith(
+      2,
+      'job-terminal',
+      ['pending', 'in_progress'],
+      'failed',
+      {
+        error: expect.stringContaining('LLM down'),
+        message: '상품 번역에 실패했습니다.',
+      }
+    );
+    expect(mockRepo.updateJobStatus).not.toHaveBeenCalledWith('job-terminal', 'failed', expect.anything());
   });
 });

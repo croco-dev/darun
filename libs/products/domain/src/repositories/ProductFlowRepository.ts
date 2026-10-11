@@ -93,6 +93,15 @@ export interface ProductFlowRepository {
   toggleVisualSave(params: { flowId: string; userId: string }): Promise<{ saved: boolean }>;
   /** M3 저장 여부 조회. 로그인 필수. */
   isVisualSaved(params: { flowId: string; userId: string }): Promise<boolean>;
+  /**
+   * M4 내 저장 플로 카드 목록. 로그인 필수.
+   * 저장 시각 내림차순(LATEST) + id 내림차순 tiebreak, 공개 제품만.
+   */
+  findManyVisualSavedFlowsByUser(params: {
+    userId: string;
+    limit: number;
+    offset: number;
+  }): Promise<{ flows: VisualFlowSummary[]; totalCount: number }>;
 }
 
 export const ProductFlowRepositoryToken = new Token<ProductFlowRepository>('ProductFlowRepository');

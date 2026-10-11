@@ -106,6 +106,7 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
       title: input.title ?? null,
       platform: input.platform ?? null,
       screenType: input.screenType ?? null,
+      ...(input.uiElements !== undefined ? { uiElements: input.uiElements ?? null } : {}),
     });
 
     return {

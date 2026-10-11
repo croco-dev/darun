@@ -1,6 +1,6 @@
-import type { ProductDescriptionDocument } from '@darun/products-domain';
+import { safeEvidenceUrl, type EvidenceBackedText, type ProductDescriptionDocument } from '@darun/products-domain';
 
-export const PRODUCT_DESCRIPTION_RENDERER_VERSION = 'v1';
+export const PRODUCT_DESCRIPTION_RENDERER_VERSION = 'v2';
 
 export function escapeHtml(text: string): string {
   return text
@@ -29,19 +29,19 @@ export function renderProductDescriptionDocument(doc: ProductDescriptionDocument
 
   // 1. Intro
   if (doc.intro?.text) {
-    fragments.push(`<p>${escapeHtml(doc.intro.text)}</p>`);
+    fragments.push(renderRichBlock(doc.intro, 'p'));
   }
 
   // 2. Sections
   if (Array.isArray(doc.sections)) {
     for (const section of doc.sections) {
       if (section.title) {
-        fragments.push(`<h3>${escapeHtml(section.title)}</h3>`);
+        fragments.push(`<h2>${escapeHtml(section.title)}</h2>`);
       }
       if (Array.isArray(section.paragraphs)) {
         for (const p of section.paragraphs) {
           if (p.text) {
-            fragments.push(`<p>${escapeHtml(p.text)}</p>`);
+            fragments.push(renderRichBlock(p, 'p'));
           }
         }
       }
@@ -50,11 +50,11 @@ export function renderProductDescriptionDocument(doc: ProductDescriptionDocument
 
   // 3. Recommended if
   if (Array.isArray(doc.recommendedIf) && doc.recommendedIf.length > 0) {
-    fragments.push('<h3>추천한다면 -</h3>');
+    fragments.push('<h2>추천한다면 -</h2>');
     fragments.push('<ul>');
     for (const item of doc.recommendedIf) {
       if (item.text) {
-        fragments.push(`<li>${escapeHtml(item.text)}</li>`);
+        fragments.push(`<li>${renderInlineContent(item)}</li>`);
       }
     }
     fragments.push('</ul>');
@@ -62,7 +62,7 @@ export function renderProductDescriptionDocument(doc: ProductDescriptionDocument
 
   // 4. Closing
   if (doc.closing?.text) {
-    fragments.push(`<p>${escapeHtml(doc.closing.text)}</p>`);
+    fragments.push(renderRichBlock(doc.closing, 'p'));
   }
 
   // 5. Byline
@@ -70,4 +70,27 @@ export function renderProductDescriptionDocument(doc: ProductDescriptionDocument
   fragments.push(`<p><em>${escapeHtml(byline)}</em></p>`);
 
   return fragments.join('\n');
+}
+
+function renderRichBlock(block: EvidenceBackedText, tag: 'p'): string {
+  const inline = renderInlineContent(block);
+  const body = block.quote ? `<blockquote><${tag}>${inline}</${tag}></blockquote>` : `<${tag}>${inline}</${tag}>`;
+  if (!block.bullets || block.bullets.length === 0) {
+    return body;
+  }
+  const bullets = block.bullets.map(bullet => `<li>${escapeHtml(bullet)}</li>`).join('');
+  return `${body}\n<ul>${bullets}</ul>`;
+}
+
+function renderInlineContent(block: EvidenceBackedText): string {
+  const escapedText = escapeHtml(block.text);
+  if (!block.link) {
+    return escapedText;
+  }
+  const safeUrl = safeEvidenceUrl(block.link.url);
+  if (!safeUrl) {
+    return escapedText;
+  }
+  const label = escapeHtml(block.link.label);
+  return `${escapedText} <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 }

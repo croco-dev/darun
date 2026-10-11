@@ -1,5 +1,6 @@
 import { Inject, Service } from 'typedi';
 import { ProductScreenshot } from '../entities/ProductScreenshot';
+import { normalizeVisualUiElements } from '../entities/VisualUiElement';
 import { productScreenshotInUse } from '../errors/productFlowError';
 import type { ProductFlowRepository } from '../repositories/ProductFlowRepository';
 import { ProductFlowRepositoryToken } from '../repositories/ProductFlowRepository';
@@ -27,19 +28,22 @@ export class UpdateProductScreenshot {
     imageAlt,
     platform,
     screenType,
+    uiElements,
   }: {
     id: string;
     imageAlt: string;
     title?: string | null;
     platform?: string | null;
     screenType?: string | null;
+    uiElements?: readonly string[] | null;
   }): Promise<ProductScreenshot> {
     const normalizedTitle = normalizeScreenshotTitle(title);
     const normalizedImageAlt = normalizeScreenshotImageAlt(imageAlt);
     const normalizedPlatform = normalizeVisualPlatform(platform);
     const normalizedScreenType = normalizeVisualScreenType(screenType);
+    const normalizedUiElements = uiElements === undefined ? undefined : normalizeVisualUiElements(uiElements);
 
-    return this.productScreenshotRepository.updateById(
+    const screenshot = await this.productScreenshotRepository.updateById(
       id,
       current =>
         new ProductScreenshot({
@@ -62,5 +66,11 @@ export class UpdateProductScreenshot {
         }
       }
     );
+
+    if (normalizedUiElements !== undefined) {
+      await this.productScreenshotRepository.replaceScreenshotUiElements(id, normalizedUiElements);
+    }
+
+    return screenshot;
   }
 }

@@ -2,7 +2,7 @@ import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import { VoteRepository } from '@darun/voting-domain';
 import { Vote, VoteRepositoryToken, votingVoteInsertFailed, votingVoteUpdateFailed } from '@darun/voting-domain';
-import { desc, eq } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { votes } from '../entities/VoteSchema';
 
@@ -62,7 +62,11 @@ export class PostgresqlVoteRepository implements VoteRepository {
   }
 
   async findTopNByVoteCount(n: number): Promise<Vote[]> {
-    const rows = await this.db.select().from(votes).orderBy(desc(votes.count)).limit(n);
+    const rows = await this.db
+      .select()
+      .from(votes)
+      .orderBy(desc(votes.count), asc(votes.createdAt), asc(votes.id))
+      .limit(n);
 
     return rows.map(row => new Vote(row));
   }

@@ -15,9 +15,11 @@ const createMockRepository = () => ({
   findVisualPublishedById: vi.fn(),
   countVisualPublishedByFilter: vi.fn(),
   insertVisualViewEvent: vi.fn().mockResolvedValue(true),
-    toggleVisualSave: vi.fn().mockResolvedValue({ saved: true }),
-    isVisualSaved: vi.fn().mockResolvedValue(false),
-    findVisualSavesByUser: vi.fn().mockResolvedValue({ screenshotIds: [], flowIds: [], totalCount: 0 }),
+  toggleVisualSave: vi.fn().mockResolvedValue({ saved: true }),
+  isVisualSaved: vi.fn().mockResolvedValue(false),
+  findVisualSavesByUser: vi.fn().mockResolvedValue({ screenshotIds: [], flowIds: [], totalCount: 0 }),
+  replaceScreenshotUiElements: vi.fn().mockResolvedValue([]),
+  findScreenshotUiElementsByScreenshotIds: vi.fn().mockResolvedValue({}),
 });
 
 describe('screenshot metadata normalization (add + update share one policy)', () => {
@@ -122,6 +124,72 @@ describe('screenshot metadata normalization (add + update share one policy)', ()
     ).rejects.toMatchObject({ code: 'product/invalid-args' });
 
     expect(mockRepository.insert).not.toHaveBeenCalled();
+  });
+
+  it('update에 uiElements를 주면 정규화 후 조인 태그를 교체한다', async () => {
+    const mockRepository = createMockRepository();
+    mockRepository.updateById.mockImplementation(
+      async (id: string, modifier: (s: ProductScreenshot) => ProductScreenshot) =>
+        modifier(
+          new ProductScreenshot({
+            id,
+            imageUrl: 'https://example.com/keep.png',
+            imageAlt: '기존 alt',
+            productId: 'product-1',
+          })
+        )
+    );
+    vi.mocked(mockRepository.replaceScreenshotUiElements).mockResolvedValue(['CARD', 'BUTTON']);
+    const useCase = new UpdateProductScreenshot(
+      mockRepository as unknown as ProductScreenshotRepository,
+      { findFlowIdsByScreenshotId: vi.fn().mockResolvedValue([]) } as never
+    );
+
+    const updated = await useCase.execute({
+      id: 'screenshot-1',
+      imageAlt: '새 alt',
+      uiElements: ['CARD', 'BUTTON', 'CARD'],
+    });
+
+    expect(updated.imageAlt).toBe('새 alt');
+    expect(mockRepository.replaceScreenshotUiElements).toHaveBeenCalledWith('screenshot-1', ['CARD', 'BUTTON']);
+  });
+
+  it('update에 잘못된 uiElements를 주면 DB 작업 없이 invalid-args로 거절한다', async () => {
+    const mockRepository = createMockRepository();
+    const useCase = new UpdateProductScreenshot(
+      mockRepository as unknown as ProductScreenshotRepository,
+      { findFlowIdsByScreenshotId: vi.fn().mockResolvedValue([]) } as never
+    );
+
+    await expect(
+      useCase.execute({ id: 'screenshot-1', imageAlt: '새 alt', uiElements: ['SIDEBAR'] })
+    ).rejects.toMatchObject({ code: 'product/invalid-args' });
+    expect(mockRepository.updateById).not.toHaveBeenCalled();
+  });
+
+  it('update에 uiElements를 생략하면 조인 태그를 건드리지 않는다', async () => {
+    const mockRepository = createMockRepository();
+    mockRepository.updateById.mockImplementation(
+      async (id: string, modifier: (s: ProductScreenshot) => ProductScreenshot) =>
+        modifier(
+          new ProductScreenshot({
+            id,
+            imageUrl: 'https://example.com/keep.png',
+            imageAlt: '기존 alt',
+            productId: 'product-1',
+          })
+        )
+    );
+    vi.mocked(mockRepository.replaceScreenshotUiElements).mockClear();
+    const useCase = new UpdateProductScreenshot(
+      mockRepository as unknown as ProductScreenshotRepository,
+      { findFlowIdsByScreenshotId: vi.fn().mockResolvedValue([]) } as never
+    );
+
+    await useCase.execute({ id: 'screenshot-1', imageAlt: '새 alt' });
+
+    expect(mockRepository.replaceScreenshotUiElements).not.toHaveBeenCalled();
   });
 
   it('update는 기존 행의 id/imageUrl/productId를 유지하고 메타데이터만 교체한다', async () => {

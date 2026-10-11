@@ -68,7 +68,10 @@ const relatedRepositories = () => ({
     insertVisualViewEvent: vi.fn().mockResolvedValue(true),
     toggleVisualSave: vi.fn().mockResolvedValue({ saved: true }),
     isVisualSaved: vi.fn().mockResolvedValue(false),
+    findManyVisualSavedScreenshotsByUser: vi.fn().mockResolvedValue({ screenshots: [], totalCount: 0 }),
     findVisualSavesByUser: vi.fn().mockResolvedValue({ screenshotIds: [], flowIds: [], totalCount: 0 }),
+    replaceScreenshotUiElements: vi.fn().mockResolvedValue([]),
+    findScreenshotUiElementsByScreenshotIds: vi.fn().mockResolvedValue({}),
   } satisfies ProductScreenshotRepository,
   features: {
     updateById: vi.fn(),

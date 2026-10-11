@@ -20,6 +20,8 @@ export class ProductDescriptionMutationResolver {
       status: job.status,
       message: job.message ?? undefined,
       error: job.error ?? undefined,
+      writerModel: job.writerModel ?? undefined,
+      reviewerModel: job.reviewerModel ?? undefined,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
     };

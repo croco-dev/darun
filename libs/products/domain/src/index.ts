@@ -19,6 +19,13 @@ export type { VisualPlatform, VisualScreenType } from './entities/VisualClassifi
 export { VISUAL_FLOW_TYPES, isVisualFlowType } from './entities/VisualFlowType';
 export type { VisualFlowType } from './entities/VisualFlowType';
 export {
+  VISUAL_UI_ELEMENTS,
+  VISUAL_UI_ELEMENTS_MAX_COUNT,
+  isVisualUiElement,
+  normalizeVisualUiElements,
+} from './entities/VisualUiElement';
+export type { VisualUiElement } from './entities/VisualUiElement';
+export {
   ProductError,
   productCategoryNotFound,
   productCompanyNotFound,
@@ -75,6 +82,43 @@ export type {
 export { ProductFlowRepositoryToken } from './repositories/ProductFlowRepository';
 export type { ProductDescriptionJobEntity, ProductDescriptionJobStatus } from './entities/ProductDescriptionJobEntity';
 export type {
+  ProductResearchJobEntity,
+  ProductResearchJobStatus,
+  ProductResearchStage,
+  ProductResearchFailureCode,
+  ProductResearchWarning,
+  ResearchSource,
+  ResearchAnchor,
+  ResearchText,
+  ResearchEvidenceType,
+  ResearchRelationToInput,
+  ProductResearchDraftV1,
+} from './entities/ProductResearchJobEntity';
+export const PRODUCT_RESEARCH_DRAFT_VERSION = 1 as const;
+export { RESEARCH_LIMITS } from './services/ProductResearchSource';
+export type { ProductResearchGenerator, ProductResearchLlmInput } from './services/ProductResearchGenerator';
+export { ProductResearchGeneratorToken } from './services/ProductResearchGenerator';
+export type { NormalizedResearchSource, RawSearchSource } from './services/ProductResearchSource';
+export {
+  normalizeResearchSources,
+  hashSourceSnapshot,
+  isAnchorExcerptPresent,
+  isSameHostOrSubdomain,
+} from './services/ProductResearchSource';
+export { normalizeOfficialUrl, suggestSlug, isSafeSlug } from './services/ProductResearchUrl';
+export type { NormalizeOfficialUrlResult } from './services/ProductResearchUrl';
+export type {
+  ProductResearchJobRepository,
+  ClaimProductResearchJobResult,
+} from './repositories/ProductResearchJobRepository';
+export { ProductResearchJobRepositoryToken } from './repositories/ProductResearchJobRepository';
+export type {
+  ProductResearchMaterializationRepository,
+  ValidatedReviewedProductInput,
+  ReviewedResearchFeature,
+} from './repositories/ProductResearchMaterializationRepository';
+export { ProductResearchMaterializationRepositoryToken } from './repositories/ProductResearchMaterializationRepository';
+export type {
   ProductDescriptionJobRepository,
   UpdateProductDescriptionJobOptions,
 } from './repositories/ProductDescriptionJobRepository';
@@ -90,10 +134,22 @@ export type {
   ProductDescriptionDocument,
   ProductDescriptionSection,
   EvidenceBackedText,
+  EvidenceRichLink,
 } from './services/ProductDescriptionDocument';
 export {
   ProductDescriptionEvidenceAssembler,
   ProductDescriptionEvidenceAssemblerToken,
+  MAX_EVIDENCE_TAGS,
+  MAX_EVIDENCE_LINKS,
+  MAX_EVIDENCE_SCREENSHOTS,
+  MAX_EVIDENCE_FLOWS,
+  MAX_EVIDENCE_RESEARCH_SOURCES,
+  MAX_EVIDENCE_BULLETS,
+  MAX_EVIDENCE_BULLET_LENGTH,
+  normalizeString,
+  computeSha256,
+  safeEvidenceUrl,
+  truncateEvidenceText,
 } from './services/ProductDescriptionEvidenceAssembler';
 export type {
   IProductDescriptionEvidenceAssembler,
@@ -166,6 +222,7 @@ export { assertVisualUlid } from './utils/assertVisualUlid';
 export { ToggleVisualFlowSave, ToggleVisualScreenshotSave } from './usecases/ToggleVisualSave';
 export type { ToggleVisualSaveResult } from './usecases/ToggleVisualSave';
 export { GetMyVisualSaves, GetVisualSaveStatus, VISUAL_SAVES_MAX_FIRST } from './usecases/VisualSaveQuery';
+export { GetMyVisualSavedFlows, GetMyVisualSavedScreenshots } from './usecases/VisualSaveQuery';
 export type { VisualSaveStatus, VisualSavedItem } from './usecases/VisualSaveQuery';
 export { GetVisualScreenshotFlows } from './usecases/GetVisualScreenshotFlows';
 export { GetAdminProductFlows } from './usecases/GetAdminProductFlows';

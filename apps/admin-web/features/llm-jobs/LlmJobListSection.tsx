@@ -24,6 +24,7 @@ gql`
       entityId
       locale
       status
+      model
       message
       error
       createdAt
@@ -40,6 +41,7 @@ gql`
       entityId
       locale
       status
+      model
       message
       error
       createdAt
@@ -54,6 +56,8 @@ gql`
       id
       productId
       status
+      writerModel
+      reviewerModel
       message
       error
       createdAt
@@ -68,6 +72,8 @@ gql`
       id
       productId
       status
+      writerModel
+      reviewerModel
       message
       error
       createdAt
@@ -83,6 +89,7 @@ export type UnifiedLlmJob = {
   entityType: string;
   entityId: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed' | string;
+  model?: string | null;
   message?: string | null;
   error?: string | null;
   createdAt?: string | Date | null;
@@ -206,6 +213,7 @@ export function LlmJobListSection() {
     entityType: j.entityType,
     entityId: j.entityId,
     status: j.status,
+    model: j.model,
     message: j.message,
     error: j.error,
     createdAt: j.createdAt,
@@ -219,6 +227,10 @@ export function LlmJobListSection() {
     entityType: 'Product',
     entityId: j.productId,
     status: j.status,
+    model:
+      j.writerModel && j.reviewerModel && j.writerModel !== j.reviewerModel
+        ? `${j.writerModel} / ${j.reviewerModel}`
+        : (j.writerModel ?? j.reviewerModel ?? null),
     message: j.message,
     error: j.error,
     createdAt: j.createdAt,
@@ -450,6 +462,12 @@ export function LlmJobListSection() {
                   </th>
                   <th
                     scope="col"
+                    className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 w-44 whitespace-nowrap"
+                  >
+                    LLM 모델
+                  </th>
+                  <th
+                    scope="col"
                     className="border-b border-r border-dark-200 px-4 py-3 text-left text-xs font-semibold text-dark-700 min-w-[200px] whitespace-nowrap"
                   >
                     메시지 / 에러
@@ -533,6 +551,14 @@ export function LlmJobListSection() {
                       {/* Status */}
                       <td className="border-r border-dark-200 px-4 py-3 text-xs">
                         <StatusBadge status={job.status} />
+                      </td>
+
+                      {/* LLM Model */}
+                      <td
+                        className="border-r border-dark-200 px-4 py-3 text-xs font-mono text-dark-600 truncate"
+                        title={job.model ?? undefined}
+                      >
+                        <span className="truncate">{job.model || '-'}</span>
                       </td>
 
                       {/* Message / Error */}
@@ -657,6 +683,13 @@ export function LlmJobListSection() {
                 {selectedErrorJob.error || '에러 내용이 없습니다.'}
               </pre>
             </div>
+
+            {selectedErrorJob.model && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-dark-700">사용 모델</span>
+                <p className="text-xs text-dark-600 font-mono break-all">{selectedErrorJob.model}</p>
+              </div>
+            )}
 
             {selectedErrorJob.message && (
               <div className="flex flex-col gap-1.5">
