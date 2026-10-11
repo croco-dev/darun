@@ -556,4 +556,81 @@ describe('TranslationJobService', () => {
       message: '원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.',
     });
   });
+
+  it('rejects bundle responses with hallucinated or missing feature IDs', async () => {
+    const product = new Product({
+      id: 'product-halluc',
+      slug: 'halluc-prod',
+      name: '환각 상품',
+      summary: '요약',
+      description: '설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+    const features = [
+      new ProductFeature({
+        id: 'feat-1',
+        productId: 'product-halluc',
+        name: '실제 기능',
+        summary: '실제 요약',
+        emoji: '✨',
+      }),
+    ];
+
+    const hallucinated = JSON.stringify({
+      name: 'Halluc',
+      summary: 'Halluc summary',
+      description: 'Halluc desc',
+      features: [{ id: 'feat-evil', name: 'Evil', summary: 'Evil summary' }],
+    });
+
+    const { service, translationService } = createService({
+      product,
+      features,
+      customLlmImplementation: async () => ({ content: hallucinated }),
+    });
+
+    await expect(service.translateProductWithFeatures(product.id)).rejects.toThrow(
+      '상품 번역에 실패했습니다: 번역 결과에 알 수 없는 기능 ID(feat-evil)가 포함되었습니다.'
+    );
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
+
+    const incomplete = JSON.stringify({
+      name: 'Halluc',
+      summary: 'Halluc summary',
+      description: 'Halluc desc',
+      features: [],
+    });
+
+    const retry = createService({
+      product,
+      features,
+      customLlmImplementation: async () => ({ content: incomplete }),
+    });
+
+    await expect(retry.service.translateProductWithFeatures(product.id)).rejects.toThrow(
+      '상품 번역에 실패했습니다: 기능 개수 불일치: 요청 1개, 응답 0개'
+    );
+    expect(retry.translationService.upsertTranslation).not.toHaveBeenCalled();
+  });
+
+  it('rejects unparseable bundle JSON without writing translations', async () => {
+    const product = new Product({
+      id: 'product-badjson',
+      slug: 'badjson-prod',
+      name: '깨진 상품',
+      summary: '요약',
+      description: '설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+
+    const { service, translationService } = createService({
+      product,
+      customLlmImplementation: async () => ({ content: 'not-json-at-all' }),
+    });
+
+    await expect(service.translateProductWithFeatures(product.id)).rejects.toThrow(
+      '상품 번역에 실패했습니다: LLM 번역 응답 JSON 파싱에 실패했습니다.'
+    );
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
+  });
 });
