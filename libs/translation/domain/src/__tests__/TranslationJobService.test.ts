@@ -557,6 +557,63 @@ describe('TranslationJobService', () => {
     });
   });
 
+  it('writes product translation when feature re-fetch fails after a successful initial fetch', async () => {
+    const product = new Product({
+      id: 'prod-refetch-fail',
+      slug: 'refetch-fail',
+      name: '재조회 실패 상품',
+      summary: '요약',
+      description: '설명',
+      logoUrl: 'https://example.com/logo.png',
+    });
+    const features = [
+      new ProductFeature({
+        id: 'feat-1',
+        productId: 'prod-refetch-fail',
+        name: '실제 기능',
+        summary: '실제 요약',
+        emoji: '✨',
+      }),
+    ];
+
+    const mockJsonResponse = JSON.stringify({
+      name: 'Refetch Fail Product',
+      summary: 'Summary',
+      description: 'Description',
+      features: [{ id: 'feat-1', name: 'Real Feature', summary: 'Real summary' }],
+    });
+
+    const getProductUseCase = createProductUseCase(product);
+    const translationService = createTranslationService();
+    const llmClient = createLlmClient(async () => ({ content: mockJsonResponse }));
+    const getProductFeaturesUseCase = {
+      execute: vi
+        .fn<GetProductFeatures['execute']>()
+        .mockResolvedValueOnce(features)
+        .mockRejectedValueOnce(new Error('transient DB error')),
+    } as unknown as GetProductFeatures;
+
+    const service = new TranslationJobService(
+      getProductUseCase,
+      createMagazineUseCase(),
+      translationService as unknown as TranslationService,
+      llmClient as unknown as LlmClient,
+      createProductFeatureUseCase(),
+      getProductFeaturesUseCase
+    );
+
+    await service.translateProductWithFeatures(product.id);
+
+    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: 'Product',
+        entityId: product.id,
+        field: 'name',
+        value: 'Refetch Fail Product',
+      })
+    );
+  });
+
   it('rejects bundle responses with hallucinated or missing feature IDs', async () => {
     const product = new Product({
       id: 'product-halluc',
