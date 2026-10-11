@@ -24,7 +24,7 @@ describe('LlmSettingService', () => {
     const config = await service.getConfig();
 
     expect(config.endpoint).toBe('https://openrouter.ai/api/v1');
-    expect(config.model).toBe('nvidia/nemotron-3-ultra-550b-a55b:free');
+    expect(config.model).toBe('nvidia/nemotron-3-super-120b-a12b:free');
     expect(config.apiKey).toBe('env-api-key');
   });
 

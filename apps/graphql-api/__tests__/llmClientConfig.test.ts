@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 
 import { LlmSettingService } from '@darun/translation-service';
-import { LlmClient } from '@darun/utils-llm';
+import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL, LlmClient } from '@darun/utils-llm';
 import { Container, type ContainerInstance } from 'typedi';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -21,9 +21,9 @@ describe('LlmClient container configuration', () => {
               return await container.get(LlmSettingService).getConfig();
             } catch {
               return {
-                endpoint: 'https://openrouter.ai/api/v1',
+                endpoint: DEFAULT_LLM_ENDPOINT,
                 apiKey: 'fallback-key',
-                model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+                model: DEFAULT_LLM_MODEL,
                 thinkingLevel: null,
               };
             }
@@ -36,7 +36,7 @@ describe('LlmClient container configuration', () => {
 
     const config = await client.getConfig();
     expect(config.apiKey).toBe('fallback-key');
-    expect(config.model).toBe('nvidia/nemotron-3-ultra-550b-a55b:free');
+    expect(config.model).toBe(DEFAULT_LLM_MODEL);
   });
 
   it('resolves LlmClient with custom settings when LlmSettingService succeeds', async () => {
@@ -60,7 +60,7 @@ describe('LlmClient container configuration', () => {
               return await container.get(LlmSettingService).getConfig();
             } catch {
               return {
-                endpoint: 'https://openrouter.ai/api/v1',
+                endpoint: DEFAULT_LLM_ENDPOINT,
                 apiKey: 'fallback-key',
                 model: 'fallback-model',
                 thinkingLevel: null,

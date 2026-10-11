@@ -39,7 +39,7 @@ describe('LlmClient', () => {
 
     expect(result.content).toBe('test response');
     expect(mockCreate).toHaveBeenCalledWith({
-      model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+      model: 'nvidia/nemotron-3-super-120b-a12b:free',
       messages: [{ role: 'user', content: 'Hello' }],
     });
   });
@@ -115,5 +115,76 @@ describe('LlmClient', () => {
         effort: 'high',
       },
     });
+  });
+});
+
+const responseFormat = {
+  type: 'json_schema' as const,
+  json_schema: {
+    name: 'test',
+    strict: true,
+    schema: {
+      type: 'object',
+      properties: {},
+      required: [],
+      additionalProperties: false,
+    },
+  },
+};
+
+describe('structured completions', () => {
+  beforeEach(() => {
+    mockCreate.mockReset();
+    process.env['OPEN_ROUTER_API_KEY'] = 'test-key';
+  });
+
+  it.each(['https://openrouter.ai/api/v1', 'https://custom-llm.com/v1'])(
+    'passes a strict schema and requires supported routing only for OpenRouter: %s',
+    async endpoint => {
+      mockCreate.mockResolvedValueOnce({
+        choices: [{ finish_reason: 'stop', message: { content: '{}', refusal: null } }],
+      });
+      const client = new LlmClient({
+        getConfig: vi.fn().mockResolvedValue({
+          endpoint,
+          apiKey: 'test-key',
+          model: 'test-model',
+        }),
+      });
+      await client.completion('test-model', [{ role: 'user', content: 'Generate' }], { responseFormat });
+      expect(mockCreate).toHaveBeenCalledWith({
+        model: 'test-model',
+        messages: [{ role: 'user', content: 'Generate' }],
+        response_format: responseFormat,
+        ...(endpoint.includes('openrouter.ai') ? { provider: { require_parameters: true } } : {}),
+      });
+    }
+  );
+
+  it.each(['length', 'content_filter', 'tool_calls'])(
+    'rejects incomplete structured output: %s',
+    async finishReason => {
+      mockCreate.mockResolvedValueOnce({
+        choices: [
+          {
+            finish_reason: finishReason,
+            message: { content: '{"partial":', refusal: null },
+          },
+        ],
+      });
+      await expect(new LlmClient().completion('test-model', [], { responseFormat })).rejects.toThrow('did not finish');
+    }
+  );
+
+  it('rejects a refusal even when it includes content', async () => {
+    mockCreate.mockResolvedValueOnce({
+      choices: [
+        {
+          finish_reason: 'stop',
+          message: { content: '{}', refusal: 'refused' },
+        },
+      ],
+    });
+    await expect(new LlmClient().completion('test-model', [], { responseFormat })).rejects.toThrow('was refused');
   });
 });

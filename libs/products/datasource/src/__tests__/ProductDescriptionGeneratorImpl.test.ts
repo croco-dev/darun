@@ -6,6 +6,7 @@ import {
   PRODUCT_DESCRIPTION_REVIEWER_PROMPT_VERSION,
   PRODUCT_DESCRIPTION_WRITER_PROMPT_VERSION,
 } from '../prompts/productDescriptionPrompt';
+import { createProductDescriptionResponseFormat } from '../prompts/productDescriptionSchema';
 import { parseStrictJson, ProductDescriptionGeneratorImpl } from '../services/ProductDescriptionGeneratorImpl';
 
 class FakeLlmClient extends LlmClient {
@@ -22,9 +23,18 @@ const mockEvidence: ProductDescriptionEvidence = {
   productId: 'prod-1',
   productName: 'Flowdesk',
   items: [
-    { id: 'product:summary', kind: 'product_summary', text: '팀 업무 흐름 협업 도구' },
+    {
+      id: 'product:summary',
+      kind: 'product_summary',
+      text: '팀 업무 흐름 협업 도구',
+    },
     { id: 'category:cat-1', kind: 'category', text: '협업' },
-    { id: 'feature:feat-1', kind: 'feature', title: '보드 자동화', text: '자동화 규칙 지원' },
+    {
+      id: 'feature:feat-1',
+      kind: 'feature',
+      title: '보드 자동화',
+      text: '자동화 규칙 지원',
+    },
   ],
 };
 
@@ -88,6 +98,12 @@ describe('ProductDescriptionGeneratorImpl', () => {
 
     expect(llmClient.getConfig).toHaveBeenCalledTimes(1);
     expect(llmClient.completion).toHaveBeenCalledTimes(2);
+    for (const call of llmClient.completion.mock.calls) {
+      expect(call[2]).toEqual({
+        thinkingLevel: 'low',
+        responseFormat: createProductDescriptionResponseFormat(mockEvidence),
+      });
+    }
 
     // Both calls used the pinned model 'google/gemini-2.5-flash'
     expect(llmClient.completion.mock.calls[0]?.[0]).toBe('google/gemini-2.5-flash');
@@ -103,8 +119,12 @@ describe('ProductDescriptionGeneratorImpl', () => {
     expect(result.rendererVersion).toBeDefined();
 
     // Verify reviewer received the writer's draft in user prompt
-    const reviewerUserPrompt = (llmClient.completion.mock.calls[1]?.[1] as Array<{ role: string; content: string }>)[1]
-      ?.content;
+    const reviewerUserPrompt = (
+      llmClient.completion.mock.calls[1]?.[1] as Array<{
+        role: string;
+        content: string;
+      }>
+    )[1]?.content;
     expect(reviewerUserPrompt).toContain('Flowdesk는 팀 업무 흐름을 정리하는 협업 도구입니다.');
   });
 
@@ -144,5 +164,43 @@ describe('ProductDescriptionGeneratorImpl', () => {
     const generator = new ProductDescriptionGeneratorImpl(llmClient);
     await expect(generator.generate(mockEvidence)).rejects.toThrow();
     expect(llmClient.completion).toHaveBeenCalledTimes(2);
+  });
+  it('rejects a reviewer result that omits provided features from the body', async () => {
+    const llmClient = new FakeLlmClient();
+    llmClient.completion
+      .mockResolvedValueOnce({
+        role: 'assistant',
+        content: JSON.stringify(validWriterDoc),
+        refusal: null,
+      })
+      .mockResolvedValueOnce({
+        role: 'assistant',
+        content: JSON.stringify({ ...validReviewedDoc, sections: [] }),
+        refusal: null,
+      });
+    await expect(new ProductDescriptionGeneratorImpl(llmClient).generate(mockEvidence)).rejects.toThrow(
+      '기능 근거가 누락'
+    );
+  });
+
+  it('lets the reviewer fill missing feature coverage in a structurally valid draft', async () => {
+    const llmClient = new FakeLlmClient();
+    llmClient.completion
+      .mockResolvedValueOnce({
+        role: 'assistant',
+        content: JSON.stringify({
+          ...validWriterDoc,
+          sections: [],
+          recommendedIf: [],
+        }),
+        refusal: null,
+      })
+      .mockResolvedValueOnce({
+        role: 'assistant',
+        content: JSON.stringify(validReviewedDoc),
+        refusal: null,
+      });
+    const result = await new ProductDescriptionGeneratorImpl(llmClient).generate(mockEvidence);
+    expect(result.document.sections).toHaveLength(1);
   });
 });

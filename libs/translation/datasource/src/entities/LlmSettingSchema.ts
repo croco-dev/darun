@@ -6,7 +6,7 @@ export const llmSettings = pgTable('llm_settings', {
     .$defaultFn(() => 'default'),
   endpoint: text('endpoint').notNull().default('https://openrouter.ai/api/v1'),
   apiKey: text('api_key'),
-  model: text('model').notNull().default('nvidia/nemotron-3-ultra-550b-a55b:free'),
+  model: text('model').notNull().default('nvidia/nemotron-3-super-120b-a12b:free'),
   thinkingLevel: text('thinking_level'),
   braveApiKey: text('brave_api_key'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
