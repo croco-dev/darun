@@ -61,7 +61,10 @@ export class LlmClient {
   async completion(
     modelOrMessages: LlmModel | LlmChatMessage[],
     maybeMessages?: LlmChatMessage[],
-    options?: { thinkingLevel?: string | null }
+    options?: {
+      thinkingLevel?: string | null;
+      responseFormat?: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming['response_format'];
+    }
   ): Promise<OpenAI.Chat.Completions.ChatCompletionMessage> {
     const config = await this.getConfig();
 
@@ -85,6 +88,13 @@ export class LlmClient {
       messages,
     };
 
+    if (options?.responseFormat) {
+      requestBody.response_format = options.responseFormat;
+      if (options.responseFormat.type === 'json_schema' && new URL(config.endpoint).hostname === 'openrouter.ai') {
+        Object.assign(requestBody, { provider: { require_parameters: true } });
+      }
+    }
+
     if (thinkingLevel && thinkingLevel.trim() !== '') {
       const level = thinkingLevel.trim();
       if (['low', 'medium', 'high'].includes(level)) {
@@ -97,10 +107,20 @@ export class LlmClient {
 
     const completion = await client.chat.completions.create(requestBody);
 
-    const message = completion.choices[0]?.message;
+    const choice = completion.choices[0];
+    const message = choice?.message;
 
     if (!message) {
       throw new Error(`LLM completion is empty for model: ${model}`);
+    }
+
+    if (options?.responseFormat?.type === 'json_schema') {
+      if (message.refusal) {
+        throw new Error(`LLM structured completion was refused for model: ${model}`);
+      }
+      if (choice?.finish_reason !== 'stop') {
+        throw new Error(`LLM structured completion did not finish for model: ${model} (${choice?.finish_reason})`);
+      }
     }
 
     return message;

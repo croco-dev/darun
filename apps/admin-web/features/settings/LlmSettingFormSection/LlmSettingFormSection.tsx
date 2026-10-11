@@ -308,7 +308,7 @@ function LlmSettingForm({
             value={model}
             disabled={isUpdating}
             onChange={e => setModel(e.target.value)}
-            placeholder="nvidia/nemotron-3-ultra-550b-a55b:free"
+            placeholder="nvidia/nemotron-3-super-120b-a12b:free"
             className="flex-1 font-mono"
             aria-describedby="model-help"
             required
@@ -329,7 +329,7 @@ function LlmSettingForm({
             { label: 'gemini-2.5-flash (빠름)', value: 'google/gemini-2.5-flash' },
             { label: 'grok-4-fast (빠름)', value: 'x-ai/grok-4-fast' },
             { label: 'gpt-4o-mini (빠름)', value: 'openai/gpt-4o-mini' },
-            { label: 'nemotron free (무료)', value: 'nvidia/nemotron-3-ultra-550b-a55b:free' },
+            { label: 'Nemotron Super (무료)', value: 'nvidia/nemotron-3-super-120b-a12b:free' },
           ].map(opt => (
             <button
               key={opt.value}

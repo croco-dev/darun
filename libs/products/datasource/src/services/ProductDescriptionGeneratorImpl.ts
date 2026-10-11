@@ -12,6 +12,8 @@ import {
   createProductDescriptionReviewerPrompt,
   createProductDescriptionWriterPrompt,
 } from '../prompts/productDescriptionPrompt';
+import { createProductDescriptionResponseFormat } from '../prompts/productDescriptionSchema';
+import { validateProductDescriptionCoverage } from '../validators/productDescriptionCoverageValidator';
 import { validateProductDescriptionDocument } from '../validators/productDescriptionDocumentValidator';
 import { PRODUCT_DESCRIPTION_RENDERER_VERSION, renderProductDescriptionDocument } from './ProductDescriptionRenderer';
 
@@ -44,6 +46,7 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
     const config = await this.llmClient.getConfig();
     const model = options?.model ?? config.model;
     const thinkingLevel = config.thinkingLevel;
+    const responseFormat = createProductDescriptionResponseFormat(evidence);
 
     // 1. Pass 1: Writer
     const writerPrompts = createProductDescriptionWriterPrompt(evidence);
@@ -56,7 +59,7 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
               { role: 'system', content: writerPrompts.systemPrompt },
               { role: 'user', content: writerPrompts.userPrompt },
             ],
-            { thinkingLevel }
+            { thinkingLevel, responseFormat }
           ),
           CALL_TIMEOUT_MS,
           '상품 설명 초안 생성 요청이 시간 초과되었습니다.'
@@ -83,7 +86,7 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
               { role: 'system', content: reviewerPrompts.systemPrompt },
               { role: 'user', content: reviewerPrompts.userPrompt },
             ],
-            { thinkingLevel }
+            { thinkingLevel, responseFormat }
           ),
           CALL_TIMEOUT_MS,
           '상품 설명 검수 요청이 시간 초과되었습니다.'
@@ -98,6 +101,8 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
 
     const reviewerParsed = parseStrictJson(reviewerContent);
     const reviewedDoc = validateProductDescriptionDocument(reviewerParsed, evidence);
+
+    validateProductDescriptionCoverage(reviewedDoc, evidence);
 
     const candidateHtml = renderProductDescriptionDocument(reviewedDoc);
 
