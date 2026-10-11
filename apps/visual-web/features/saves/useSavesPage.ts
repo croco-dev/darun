@@ -133,14 +133,17 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
   const [flowPage, setFlowPage] = useState(0);
   const [screenshotHasNext, setScreenshotHasNext] = useState(false);
   const [flowHasNext, setFlowHasNext] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [screenshotLoadingMore, setScreenshotLoadingMore] = useState(false);
+  const [flowLoadingMore, setFlowLoadingMore] = useState(false);
+  const [screenshotLoadMoreError, setScreenshotLoadMoreError] = useState(false);
+  const [flowLoadMoreError, setFlowLoadMoreError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
     setStatus('loading');
-    setLoadMoreError(false);
+    setScreenshotLoadMoreError(false);
+    setFlowLoadMoreError(false);
     Promise.all([
       apolloClient.query({
         query: MyVisualSavedScreenshotsDocument,
@@ -204,7 +207,11 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
   const onTabChange = useCallback(
     (next: SavesTab) => {
       setTab(next);
-      setLoadMoreError(false);
+      if (next === 'screenshots') {
+        setScreenshotLoadMoreError(false);
+      } else {
+        setFlowLoadMoreError(false);
+      }
       navigate(next === 'screenshots' ? '/saves' : `/saves?tab=${next}`, { preventScrollReset: true });
     },
     [navigate]
@@ -213,18 +220,25 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
   useEffect(() => {
     if (urlTab !== tab) {
       setTab(urlTab);
-      setLoadMoreError(false);
+      if (urlTab === 'screenshots') {
+        setScreenshotLoadMoreError(false);
+      } else {
+        setFlowLoadMoreError(false);
+      }
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 탭 파라미터 동기화에 필요
   }, [urlTab]);
 
   const onLoadMore = useCallback(() => {
-    if (loadingMore) {
+    const setTabLoadingMore = tab === 'screenshots' ? setScreenshotLoadingMore : setFlowLoadingMore;
+    const setTabLoadMoreError = tab === 'screenshots' ? setScreenshotLoadMoreError : setFlowLoadMoreError;
+    const isTabLoadingMore = tab === 'screenshots' ? screenshotLoadingMore : flowLoadingMore;
+    if (isTabLoadingMore) {
       return;
     }
     const nextPage = (tab === 'screenshots' ? screenshotPage : flowPage) + 1;
-    setLoadingMore(true);
-    setLoadMoreError(false);
+    setTabLoadingMore(true);
+    setTabLoadMoreError(false);
     const request =
       tab === 'screenshots'
         ? apolloClient.query({
@@ -267,17 +281,21 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
           return;
         }
         console.error('Failed to load more visual saves', e);
-        setLoadMoreError(true);
+        setTabLoadMoreError(true);
       })
       .finally(() => {
-        setLoadingMore(false);
+        setTabLoadingMore(false);
       });
-  }, [apolloClient, tab, screenshotPage, flowPage, loadingMore]);
+  }, [apolloClient, tab, screenshotPage, flowPage, screenshotLoadingMore, flowLoadingMore]);
 
   const retryLoadMore = useCallback(() => {
-    setLoadMoreError(false);
+    if (tab === 'screenshots') {
+      setScreenshotLoadMoreError(false);
+    } else {
+      setFlowLoadMoreError(false);
+    }
     onLoadMore();
-  }, [onLoadMore]);
+  }, [tab, onLoadMore]);
 
   if (status === 'loading') {
     return { status: 'loading' };
@@ -288,6 +306,8 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
   if (status === 'error') {
     return { status: 'error', retry };
   }
+  const loadingMore = tab === 'screenshots' ? screenshotLoadingMore : flowLoadingMore;
+  const loadMoreError = tab === 'screenshots' ? screenshotLoadMoreError : flowLoadMoreError;
   return {
     status: 'loaded',
     tab,
