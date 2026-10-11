@@ -66,6 +66,7 @@ pnpm test           # 단위 테스트 실행
 - resolver mock 테스트와 별도로 전체 resolver 목록으로 스키마를 생성하는 테스트를 두고, 배포용 설정으로 만든 Lambda 번들도 별도 Node.js 프로세스에서 로드해 초기화 성공과 `handler` export를 검증합니다. 두 검증은 PR CI와 운영 배포 전 필수 체크로 연결해야 합니다.
 - 검증 환경은 운영과 같은 Node.js 22와 `tsconfig.lambda.json`의 decorator metadata 설정을 사용합니다. 운영 자격 증명을 가져오는 대신 검증 전용 환경변수와 유효한 임시 RSA private key를 사용하고, DB 연결이나 실제 Lambda invocation 없이 모듈 초기화를 확인합니다.
 - PR CI와 운영 배포 workflow는 `build:lambda` 다음에 `verify:lambda`를 실행합니다. `apps/graphql-api/scripts/verify-lambda-bundle.js`는 유효한 임시 RSA 키와 검증 전용 환경으로 실제 배포 번들의 모든 handler를 로드한 뒤, 전체 resolver로 별도 스키마를 생성하고 health query를 실행합니다. DB 연결과 worker 실행은 포함하지 않습니다.
+- 상품 발행과 발행된 콘텐츠 변경에서는 `requestProductTranslationJob`으로 번역 작업을 등록합니다. `translateProductWithFeatures`를 직접 기다리면 LLM 응답 시간이 어드민의 기본 15초 제한을 넘길 수 있습니다. 운영의 `TRANSLATION_QUEUE_URL` 설정과 translation worker의 SQS 연결을 확인합니다.
 
 ## 4. PostgreSQL migration 변경 검증
 
@@ -97,6 +98,7 @@ pnpm test           # 단위 테스트 실행
 - 어드민 502 조사 시 페이지 응답과 GraphQL API 응답을 따로 확인합니다. 인증 없는 `query { __typename }` 조회로 API 초기화 경로를 확인하고 HTTP status, 응답 본문, `x-amzn-requestid`, 발생 시각을 기록합니다. 이 조회가 성공해도 DB나 인증 경로가 정상이라고 단정하지 않습니다.
 - CloudWatch는 발생 시각 주변의 짧은 구간으로 제한해 조회합니다. 사용자에게는 KST, AWS 로그 조회에는 UTC 또는 epoch milliseconds를 사용합니다. 요청 ID가 없는 모듈 초기화 예외도 있으므로 요청 ID 검색만으로 끝내지 말고 같은 시각·로그 스트림의 `Uncaught Exception`과 `INIT_REPORT`도 확인합니다.
 - 오류 원인은 운영 로그로 확정합니다. 브라우저의 `ServerError`나 minified JS 위치만으로 DB·CORS·인증 문제를 단정하지 않습니다. HTTP 502 재현, Lambda 초기화 예외, SQL 실행 오류를 구분해 보고합니다.
+- 클라이언트 timeout은 서버 mutation 취소나 DB rollback을 뜻하지 않습니다. 발행 timeout 조사에서는 `published_at`, 번역 저장 시각, Lambda 실행 시간을 읽기 전용으로 대조해 이미 완료된 작업인지 확인합니다.
 - 배포 작업 성공과 서비스 정상 동작을 구분합니다. 배포 후에는 읽기 전용 GraphQL smoke check에서 HTTP 200뿐 아니라 GraphQL `errors`가 없는지와 기대한 `data`를 확인합니다. 초기화 smoke check와 DB 기능 검증은 각각 증거를 남깁니다.
 
 ---

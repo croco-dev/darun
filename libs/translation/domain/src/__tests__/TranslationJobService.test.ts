@@ -332,6 +332,72 @@ describe('TranslationJobService', () => {
     expect(translationService.upsertTranslation).not.toHaveBeenCalled();
   });
 
+  it('registers and enqueues a pending product translation without invoking the LLM', async () => {
+    const product = new Product({
+      id: 'prod-queued',
+      slug: 'queued-product',
+      name: '상품',
+      summary: '요약',
+      logoUrl: 'https://example.com/logo.png',
+    });
+    const job = {
+      id: 'job-queued',
+      status: 'pending',
+      message: '번역 작업이 대기열에 등록되었습니다.',
+    };
+    const repository = { createJob: vi.fn().mockResolvedValue(job) };
+    let completeEnqueue!: (queued: boolean) => void;
+    const queue = {
+      sendJob: vi.fn(
+        () =>
+          new Promise<boolean>(resolve => {
+            completeEnqueue = resolve;
+          })
+      ),
+    };
+    const translationService = createTranslationService();
+    const llmClient = createLlmClient(() => new Promise(() => {}));
+    const service = new TranslationJobService(
+      createProductUseCase(product),
+      createMagazineUseCase(),
+      translationService as unknown as TranslationService,
+      llmClient as unknown as LlmClient,
+      createProductFeatureUseCase(),
+      createProductFeaturesUseCase(),
+      repository as never,
+      queue as never
+    );
+
+    const onResponse = vi.fn();
+    const response = service.requestProductTranslationJob(product.id).then(onResponse);
+    await vi.waitFor(() => {
+      expect(queue.sendJob).toHaveBeenCalledWith({
+        jobId: job.id,
+        entityType: 'Product',
+        entityId: product.id,
+      });
+    });
+    expect(repository.createJob).toHaveBeenCalledWith({
+      entityType: 'Product',
+      entityId: product.id,
+      locale: 'en',
+      status: 'pending',
+      message: '번역 작업이 대기열에 등록되었습니다.',
+    });
+    expect(onResponse).not.toHaveBeenCalled();
+    completeEnqueue(true);
+    await response;
+    await new Promise(resolve => setImmediate(resolve));
+
+    expect(onResponse).toHaveBeenCalledWith({
+      ...job,
+      entityType: 'Product',
+      entityId: product.id,
+    });
+    expect(llmClient.completion).not.toHaveBeenCalled();
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
+  });
+
   it('retries product translation job and sets status to pending', async () => {
     const now = new Date();
     const mockRepo = {
