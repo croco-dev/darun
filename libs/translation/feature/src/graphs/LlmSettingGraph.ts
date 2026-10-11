@@ -11,6 +11,9 @@ export class LlmSettingGraph {
   @Field(() => String, { nullable: true })
   apiKeyMasked?: string | null;
 
+  @Field(() => String, { nullable: true })
+  braveApiKeyMasked?: string | null;
+
   @Field()
   model: string;
 

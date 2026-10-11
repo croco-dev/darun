@@ -17,13 +17,31 @@ describe('normalizeResearchSources', () => {
     expect(sources.map(source => source.id)).toEqual(['s1', 's2', 's3']);
     expect(sources[0]).toMatchObject({ url: 'https://linear.app/', relationToInput: 'INPUT_HOST_MATCH' });
     expect(sources[1]).toMatchObject({
-      url: 'https://linear.app.evil.org/',
-      relationToInput: 'EXTERNAL',
-    });
-    expect(sources[2]).toMatchObject({
       url: 'https://docs.linear.app/features',
       relationToInput: 'INPUT_HOST_MATCH',
     });
+    expect(sources[2]).toMatchObject({
+      url: 'https://linear.app.evil.org/',
+      relationToInput: 'EXTERNAL',
+    });
+  });
+
+  it('keeps official host sources first in stable order and renumbers ids', () => {
+    const sources = normalizeResearchSources(
+      [
+        { title: 'External', url: 'https://external.example/post', description: 'external facts' },
+        { title: 'Official', url: 'https://linear.app/about', description: 'official facts' },
+        { title: 'External 2', url: 'https://other.example/post', description: 'more facts' },
+      ],
+      'linear.app'
+    );
+
+    expect(sources.map(source => source.url)).toEqual([
+      'https://linear.app/about',
+      'https://external.example/post',
+      'https://other.example/post',
+    ]);
+    expect(sources.map(source => source.id)).toEqual(['s1', 's2', 's3']);
   });
 });
 

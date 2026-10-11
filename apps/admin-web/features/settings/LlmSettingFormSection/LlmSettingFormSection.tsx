@@ -29,6 +29,7 @@ gql`
       id
       endpoint
       apiKeyMasked
+      braveApiKeyMasked
       model
       thinkingLevel
       updatedAt
@@ -43,11 +44,19 @@ gql`
     $apiKey: String
     $model: String
     $thinkingLevel: String
+    $braveApiKey: String
   ) {
-    updateLlmSetting(endpoint: $endpoint, apiKey: $apiKey, model: $model, thinkingLevel: $thinkingLevel) {
+    updateLlmSetting(
+      endpoint: $endpoint
+      apiKey: $apiKey
+      model: $model
+      thinkingLevel: $thinkingLevel
+      braveApiKey: $braveApiKey
+    ) {
       id
       endpoint
       apiKeyMasked
+      braveApiKeyMasked
       model
       thinkingLevel
       updatedAt
@@ -117,6 +126,7 @@ type LlmSettingData = {
   id: string;
   endpoint: string;
   apiKeyMasked?: string | null;
+  braveApiKeyMasked?: string | null;
   model: string;
   thinkingLevel?: string | null;
   updatedAt: string;
@@ -150,6 +160,8 @@ function LlmSettingForm({
   const [endpoint, setEndpoint] = useState(defaults.endpoint);
   const [apiKey, setApiKey] = useState('');
   const [clearApiKey, setClearApiKey] = useState(false);
+  const [braveApiKey, setBraveApiKey] = useState('');
+  const [clearBraveApiKey, setClearBraveApiKey] = useState(false);
   const [model, setModel] = useState(defaults.model);
   const [thinkingLevel, setThinkingLevel] = useState(defaults.thinkingLevel);
   const [isModelModalOpened, { open: openModelModal, close: closeModelModal }] = useDisclosure(false);
@@ -183,12 +195,14 @@ function LlmSettingForm({
 
     try {
       const resolvedApiKey = clearApiKey ? '' : apiKey.trim() || undefined;
+      const resolvedBraveApiKey = clearBraveApiKey ? '' : braveApiKey.trim() || undefined;
       await updateLlmSetting({
         variables: {
           endpoint: endpoint.trim() || undefined,
           apiKey: resolvedApiKey,
           model: model.trim() || undefined,
           thinkingLevel: thinkingLevel.trim(),
+          braveApiKey: resolvedBraveApiKey,
         },
       });
 
@@ -198,6 +212,8 @@ function LlmSettingForm({
       });
       setClearApiKey(false);
       setApiKey('');
+      setClearBraveApiKey(false);
+      setBraveApiKey('');
       try {
         await onUpdated();
       } catch (refetchErr) {
@@ -283,6 +299,59 @@ function LlmSettingForm({
         )}
         <p id="apiKey-help" className="text-xs text-dark-500">
           새 API 키를 입력하면 DB에 갱신됩니다. 비워두면 기존 등록된 키 또는 환경변수가 유지됩니다.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <label htmlFor="braveApiKey" className="text-sm font-medium text-dark-800">
+            Brave Search 키
+          </label>
+          {currentSetting?.braveApiKeyMasked && !clearBraveApiKey && (
+            <button
+              type="button"
+              disabled={isUpdating}
+              onClick={() => {
+                setClearBraveApiKey(true);
+                setBraveApiKey('');
+              }}
+              className="text-xs text-cherry-700 hover:text-cherry-800 underline disabled:opacity-50"
+            >
+              DB 등록 키 삭제
+            </button>
+          )}
+          {clearBraveApiKey && (
+            <button
+              type="button"
+              disabled={isUpdating}
+              onClick={() => setClearBraveApiKey(false)}
+              className="text-xs text-dark-600 hover:text-dark-800 underline disabled:opacity-50"
+            >
+              삭제 취소
+            </button>
+          )}
+        </div>
+        {clearBraveApiKey ? (
+          <div className="rounded-lg border border-cherry-200 bg-cherry-50 p-2.5 text-xs text-cherry-700">
+            DB에 등록된 Brave 키가 저장 시 삭제됩니다. (기본 환경변수 BRAVE_API_KEY 로 복원됨)
+          </div>
+        ) : (
+          <AdminInput
+            id="braveApiKey"
+            type="password"
+            value={braveApiKey}
+            disabled={isUpdating}
+            onChange={e => setBraveApiKey(e.target.value)}
+            aria-describedby="braveApiKey-help"
+            placeholder={
+              currentSetting?.braveApiKeyMasked
+                ? `현재 등록됨 (${currentSetting.braveApiKeyMasked}) - 변경 시에만 입력`
+                : '등록된 키 없음 (입력하지 않으면 환경변수 BRAVE_API_KEY 사용)'
+            }
+          />
+        )}
+        <p id="braveApiKey-help" className="text-xs text-dark-500">
+          웹 검색 근거 수집에 사용합니다. 비워두면 기존 등록된 키 또는 환경변수가 유지됩니다.
         </p>
       </div>
 

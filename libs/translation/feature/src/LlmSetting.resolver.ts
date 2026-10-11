@@ -31,6 +31,7 @@ export class LlmSettingResolver {
       id: setting.id,
       endpoint: setting.endpoint,
       apiKeyMasked: maskApiKey(setting.apiKey),
+      braveApiKeyMasked: maskApiKey(setting.braveApiKey),
       model: setting.model,
       thinkingLevel: setting.thinkingLevel,
       updatedAt: setting.updatedAt,
@@ -44,19 +45,23 @@ export class LlmSettingResolver {
     @Arg('apiKey', () => String, { nullable: true }) apiKey?: string,
     @Arg('model', () => String, { nullable: true }) model?: string,
     @Arg('thinkingLevel', () => String, { nullable: true })
-    thinkingLevel?: string
+    thinkingLevel?: string,
+    @Arg('braveApiKey', () => String, { nullable: true })
+    braveApiKey?: string
   ): Promise<LlmSettingGraph> {
     const updated = await this.llmSettingService.updateSetting({
       endpoint,
       apiKey,
       model,
       thinkingLevel,
+      braveApiKey,
     });
 
     return {
       id: updated.id,
       endpoint: updated.endpoint,
       apiKeyMasked: maskApiKey(updated.apiKey),
+      braveApiKeyMasked: maskApiKey(updated.braveApiKey),
       model: updated.model,
       thinkingLevel: updated.thinkingLevel,
       updatedAt: updated.updatedAt,

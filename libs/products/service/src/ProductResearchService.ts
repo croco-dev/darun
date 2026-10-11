@@ -1,5 +1,7 @@
 import {
+  CategoryRepositoryToken,
   PRODUCT_RESEARCH_DRAFT_VERSION,
+  ProductResearchJobRepositoryToken,
   RESEARCH_LIMITS,
   hashSourceSnapshot,
   isAnchorExcerptPresent,
@@ -14,9 +16,9 @@ import {
   type ProductResearchJobRepository,
   type ProductResearchWarning,
 } from '@darun/products-domain';
+import type { ProductResearchDispatchStatus } from '@darun/products-domain';
 import type { WebSearchResult } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
-import { createHash } from 'node:crypto';
 
 export type ProductResearchWebSearch = {
   search(
@@ -30,6 +32,7 @@ export type ProductResearchWebSearch = {
 
 export type ProductResearchLlmClient = {
   getModel(): Promise<string>;
+  supportsStructuredOutput?(): Promise<boolean>;
   complete(systemPrompt: string, userPrompt: string): Promise<string>;
 };
 
@@ -43,14 +46,142 @@ export type ProductResearchDependencies = {
 
 export const PRODUCT_RESEARCH_PROMPT_VERSION = 'research-v1';
 const MAX_SEARCH_FAILURES_BEFORE_ABORT = 2;
+export const PRODUCT_RESEARCH_MAX_ATTEMPTS = 5;
 const LEASE_MS = 5 * 60 * 1000;
 
-function sha256Hex(input: string): string {
-  return createHash('sha256').update(input).digest('hex');
+const researchAnchorSchema = {
+  type: 'object',
+  properties: {
+    sourceId: { type: 'string', description: '제공된 sources 배열의 id 중 하나입니다.' },
+    excerpt: {
+      type: 'string',
+      maxLength: 300,
+      description: '해당 출처 title/snippet/extraSnippets에 그대로 존재하는 발췌입니다.',
+    },
+  },
+  required: ['sourceId', 'excerpt'],
+  additionalProperties: false,
+} as const;
+
+export function createProductResearchResponseFormat() {
+  return {
+    type: 'json_schema' as const,
+    json_schema: {
+      name: 'product_research_draft',
+      strict: true,
+      schema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', maxLength: 100 },
+          nameAnchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
+          summary: { type: 'string', maxLength: 255 },
+          summaryAnchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
+          categoryCandidates: {
+            type: 'array',
+            maxItems: 3,
+            items: {
+              type: 'object',
+              properties: {
+                categoryId: { type: 'string' },
+                reason: { type: 'string', maxLength: 200 },
+              },
+              required: ['categoryId', 'reason'],
+              additionalProperties: false,
+            },
+          },
+          features: {
+            type: 'array',
+            maxItems: 8,
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', maxLength: 80 },
+                summary: { type: 'string', maxLength: 300 },
+                emoji: { type: 'string', maxLength: 30 },
+                anchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
+              },
+              required: ['name', 'summary', 'anchors'],
+              additionalProperties: false,
+            },
+          },
+          tags: { type: 'array', maxItems: 10, items: { type: 'string', maxLength: 30 } },
+          companyCandidate: {
+            type: 'object',
+            description: '회사 후보가 없으면 이 필드를 생략하십시오.',
+            properties: {
+              name: { type: 'string', maxLength: 100 },
+              website: { type: 'string' },
+              anchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
+            },
+            required: ['name', 'anchors'],
+            additionalProperties: false,
+          },
+          alternativeCandidates: {
+            type: 'array',
+            maxItems: 8,
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', maxLength: 100 },
+                website: { type: 'string' },
+                anchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
+              },
+              required: ['name', 'anchors'],
+              additionalProperties: false,
+            },
+          },
+          suggestedSlug: { type: 'string', maxLength: 100 },
+          warnings: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['PARTIAL_SEARCH_FAILURE', 'NO_INPUT_HOST_SOURCES', 'SPARSE_FACTS', 'AMBIGUOUS_PRODUCT'],
+            },
+          },
+        },
+        required: ['name', 'nameAnchors', 'features'],
+        additionalProperties: false,
+      },
+    },
+  };
 }
 
-function requestKeyFor(officialUrl: string): string {
-  return `url:${sha256Hex(officialUrl)}`;
+export type ProductResearchDispatch = ProductResearchDispatchStatus;
+
+export type RequestProductResearchInput = {
+  requestId: string;
+  officialUrl: string;
+};
+
+function requestKeyFor(requestId: string): string {
+  return requestId.trim();
+}
+
+function newRequestId(): string {
+  return crypto
+    .randomUUID()
+    .replace(/[^A-Za-z0-9]/g, '')
+    .slice(0, 32)
+    .padEnd(8, '0');
+}
+
+function isRequestId(value: string): boolean {
+  return /^[A-Za-z0-9_-]{8,128}$/.test(value.trim());
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : '';
+  if (code === '23505') {
+    return true;
+  }
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return /duplicate key|unique constraint|UNIQUE constraint/i.test(message);
+}
+
+function isStructuredOutputUnsupported(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return /structured completion was refused|structured completion did not finish|구조화 응답/i.test(message);
 }
 
 function toFailureCode(code: string): ProductResearchFailureCode {
@@ -110,9 +241,13 @@ function buildResearchSystemPrompt(categoryLabel: string): string {
 @Service()
 export class ProductResearchService {
   constructor(
-    @Inject('ProductResearchJobRepository') private readonly jobRepository?: ProductResearchJobRepository,
-    @Inject('CategoryRepository') private readonly categoryRepository?: CategoryRepository
+    @Inject(ProductResearchJobRepositoryToken) private readonly jobRepository?: ProductResearchJobRepository,
+    @Inject(CategoryRepositoryToken) private readonly categoryRepository?: CategoryRepository
   ) {}
+
+  static researchResponseFormat() {
+    return createProductResearchResponseFormat();
+  }
 
   static buildDraftValidator(input: {
     raw: unknown;
@@ -188,6 +323,9 @@ export class ProductResearchService {
         }
         const candidate = item as { categoryId?: unknown; reason?: unknown };
         if (typeof candidate.categoryId !== 'string' || !validCategoryIds.has(candidate.categoryId)) {
+          if (validCategoryIds.size === 0) {
+            continue;
+          }
           throw new Error(`categoryCandidates[${index}].categoryId가 유효하지 않습니다.`);
         }
         const reason = asString(candidate.reason);
@@ -347,15 +485,19 @@ export class ProductResearchService {
     anchors: Array<{ sourceId: string }>,
     sourceById: Map<string, NormalizedResearchSource>
   ): ProductResearchDraftV1['identity']['name']['evidenceType'] {
-    const relations = new Set(anchors.map(anchor => sourceById.get(anchor.sourceId)?.relationToInput).filter(Boolean));
-    if (relations.has('INPUT_HOST_MATCH')) {
+    const sources = anchors
+      .map(anchor => sourceById.get(anchor.sourceId))
+      .filter((source): source is NormalizedResearchSource => source !== undefined);
+    if (sources.some(source => source.relationToInput === 'INPUT_HOST_MATCH')) {
       return 'INPUT_HOST';
     }
-    const externalSources = new Set(anchors.map(anchor => anchor.sourceId));
-    if (externalSources.size >= 2) {
+    const externalHostnames = new Set(
+      sources.filter(source => source.relationToInput === 'EXTERNAL').map(source => source.hostname)
+    );
+    if (externalHostnames.size >= 2) {
       return 'MULTIPLE_EXTERNAL';
     }
-    if (externalSources.size === 1) {
+    if (externalHostnames.size === 1) {
       return 'SINGLE_EXTERNAL';
     }
     return 'NONE';
@@ -393,23 +535,81 @@ export class ProductResearchService {
   }
 
   async requestResearch(
-    officialUrlInput: string,
+    input: RequestProductResearchInput,
     deps: ProductResearchDependencies
   ): Promise<{ job: ProductResearchJobEntity; queued: boolean }> {
-    const normalized = normalizeOfficialUrl(officialUrlInput);
+    if (!isRequestId(input.requestId)) {
+      throw productInvalidArgs('요청 ID 형식이 유효하지 않습니다.');
+    }
+    const normalized = normalizeOfficialUrl(input.officialUrl);
     if (!normalized.ok) {
       throw productInvalidArgs(normalized.reason);
     }
-    const requestKey = requestKeyFor(normalized.url);
+    const requestKey = requestKeyFor(input.requestId);
     const existing = await deps.jobRepository.findByRequestKey(requestKey);
     if (existing) {
+      if (existing.officialUrl !== normalized.url) {
+        throw productInvalidArgs('요청 ID에 이미 다른 공식 URL이 연결되어 있습니다. 새 요청 ID로 다시 시도해 주세요.');
+      }
       return { job: existing, queued: false };
     }
-    const job = await deps.jobRepository.createPendingJob({
-      requestKey,
-      officialUrl: normalized.url,
-    });
-    return { job, queued: true };
+    try {
+      const job = await deps.jobRepository.createPendingJob({
+        requestKey,
+        officialUrl: normalized.url,
+      });
+      return { job, queued: true };
+    } catch (error) {
+      if (!isUniqueViolation(error)) {
+        throw error;
+      }
+      const raced = await deps.jobRepository.findByRequestKey(requestKey);
+      if (!raced) {
+        throw error;
+      }
+      if (raced.officialUrl !== normalized.url) {
+        throw productInvalidArgs('요청 ID에 이미 다른 공식 URL이 연결되어 있습니다. 새 요청 ID로 다시 시도해 주세요.');
+      }
+      return { job: raced, queued: false };
+    }
+  }
+
+  async retryFailedResearch(
+    jobId: string,
+    deps: ProductResearchDependencies,
+    requestId?: string
+  ): Promise<{ job: ProductResearchJobEntity; deduped: boolean }> {
+    const resolved = requestId?.trim() ? requestId : newRequestId();
+    if (!isRequestId(resolved)) {
+      throw productInvalidArgs('요청 ID 형식이 유효하지 않습니다.');
+    }
+    const original = await deps.jobRepository.findById(jobId);
+    if (!original) {
+      throw productInvalidArgs(`존재하지 않는 조사 작업입니다: ${jobId}`);
+    }
+    if (original.status !== 'failed') {
+      return { job: original, deduped: true };
+    }
+    const requestKey = requestKeyFor(resolved);
+    try {
+      const created = await deps.jobRepository.createPendingJob({
+        requestKey,
+        officialUrl: original.officialUrl,
+      });
+      return { job: created, deduped: created.id === original.id };
+    } catch (error) {
+      if (!isUniqueViolation(error)) {
+        throw error;
+      }
+      const raced = await deps.jobRepository.findByRequestKey(requestKey);
+      if (!raced) {
+        throw error;
+      }
+      if (raced.officialUrl !== original.officialUrl) {
+        throw productInvalidArgs('요청 ID에 이미 다른 공식 URL이 연결되어 있습니다. 새 요청 ID로 다시 시도해 주세요.');
+      }
+      return { job: raced, deduped: true };
+    }
   }
 
   async executeResearch(
@@ -421,6 +621,7 @@ export class ProductResearchService {
       jobId,
       leaseToken,
       leaseUntil: new Date(Date.now() + LEASE_MS),
+      maxAttempts: PRODUCT_RESEARCH_MAX_ATTEMPTS,
     });
     if (!claim.claimed || !claim.job) {
       return claim.job;
@@ -484,6 +685,18 @@ export class ProductResearchService {
       }
 
       const categories = deps.categoryRepository ? await deps.categoryRepository.findAll() : [];
+      const model = await deps.llm.getModel();
+      if (deps.llm.supportsStructuredOutput) {
+        const supported = await deps.llm.supportsStructuredOutput();
+        if (!supported) {
+          return deps.jobRepository.failJob({
+            jobId,
+            leaseToken,
+            errorCode: 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED',
+            errorMessage: '현재 LLM 모델은 구조화 응답을 지원하지 않습니다. 구조화 응답 지원 모델을 선택해 주세요.',
+          });
+        }
+      }
       const categoryLabel =
         categories.length > 0 ? categories.map(category => `${category.id}:${category.labelKo}`).join(', ') : 'none';
       const systemPrompt = buildResearchSystemPrompt(categoryLabel);
@@ -508,6 +721,14 @@ export class ProductResearchService {
       try {
         rawResponse = await deps.llm.complete(systemPrompt, `${userPrompt}\n반드시 JSON 객체 하나만 출력하십시오.`);
       } catch (error) {
+        if (isStructuredOutputUnsupported(error)) {
+          return deps.jobRepository.failJob({
+            jobId,
+            leaseToken,
+            errorCode: 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED',
+            errorMessage: error instanceof Error ? error.message : '구조화 응답 미지원 모델입니다.',
+          });
+        }
         return deps.jobRepository.failJob({
           jobId,
           leaseToken,
@@ -526,7 +747,6 @@ export class ProductResearchService {
           errorMessage: error instanceof Error ? error.message : 'LLM 응답 형식이 유효하지 않습니다.',
         });
       }
-      const model = await deps.llm.getModel();
       let draft: ProductResearchDraftV1;
       try {
         draft = ProductResearchService.buildDraftValidator({

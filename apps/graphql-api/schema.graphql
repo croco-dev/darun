@@ -199,6 +199,7 @@ type Link {
 
 type LlmSetting {
   apiKeyMasked: String
+  braveApiKeyMasked: String
   endpoint: String!
   id: ID!
   model: String!
@@ -244,15 +245,15 @@ type Mutation {
   publishProduct(input: PublishProductInput!): PublishProductPayload!
   materializeResearchedProduct(input: MaterializeResearchedProductInput!): Product!
   registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
-  requestProductResearch(input: RequestProductResearchInput!): ProductResearchJob!
+  requestProductResearch(input: RequestProductResearchInput!): RequestProductResearchPayload!
   requestProductTranslation(productId: String, slug: String): TranslationJob!
   requestTranslation(entityId: String!, entityType: String!, fields: [String!]!): TranslationJob!
   retryProductDescriptionJob(id: String!): ProductDescriptionJob!
-  retryProductResearch(jobId: String!): ProductResearchJob
+  retryProductResearch(input: RetryProductResearchInput, jobId: String!): RequestProductResearchPayload
   retryTranslationJob(id: String!): TranslationJob!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
-  updateLlmSetting(apiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
+  updateLlmSetting(apiKey: String, braveApiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
   updateProductFlow(input: UpdateProductFlowInput!): UpdateProductFlowPayload!
   updateProductLink(id: String!, input: UpdateProductLinkInput!, slug: String!): UpdateProductLinkPayload!
@@ -336,18 +337,21 @@ input ProductFlowStepInput {
 }
 
 type ProductResearchDraftGraph {
-  features: [ResearchFeatureGraph!]!
-  model: String!
-  name: ResearchTextGraph!
+  version: Int!
   originalUrl: String!
-  promptVersion: String!
-  sourceSnapshotHash: String!
-  sources: [ResearchSourceGraph!]!
+  name: ResearchTextGraph!
   suggestedSlug: String!
   summary: ResearchTextGraph
+  features: [ResearchFeatureGraph!]!
   tags: [String!]!
-  version: Int!
   warnings: [String!]!
+  sources: [ResearchSourceGraph!]!
+  categoryCandidates: [ResearchCategoryCandidateGraph!]!
+  companyCandidate: ResearchCandidateGraph
+  alternativeCandidates: [ResearchCandidateGraph!]!
+  sourceSnapshotHash: String!
+  promptVersion: String!
+  model: String!
 }
 
 type ProductResearchJob {
@@ -442,6 +446,17 @@ type ResearchFeatureGraph {
   summary: String!
 }
 
+type ResearchCategoryCandidateGraph {
+  categoryId: String!
+  reason: String!
+}
+
+type ResearchCandidateGraph {
+  name: String!
+  website: String
+  anchors: [ResearchAnchorGraph!]!
+}
+
 type ResearchSourceGraph {
   extraSnippets: [String!]!
   hostname: String!
@@ -460,6 +475,16 @@ type ResearchTextGraph {
 
 input RequestProductResearchInput {
   officialUrl: String!
+  requestId: String!
+}
+
+type RequestProductResearchPayload {
+  dispatchStatus: String!
+  job: ProductResearchJob!
+}
+
+input RetryProductResearchInput {
+  requestId: String
 }
 
 input ReviewedResearchFeatureInput {
