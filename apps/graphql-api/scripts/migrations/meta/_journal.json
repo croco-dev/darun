@@ -57,6 +57,13 @@
       "when": 1791576574214,
       "tag": "0007_m1-visual-popularity",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791698443336,
+      "tag": "0008_add_product_research_jobs",
+      "breakpoints": true
     }
   ]
 }

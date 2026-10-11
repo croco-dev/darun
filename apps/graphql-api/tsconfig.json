@@ -1,6 +1,6 @@
 {
   "extends": "@darun/utils-tsconfig/tsconfig.node.json",
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "scripts/verify-schema.ts"],
   "compilerOptions": {
     "paths": {
       "@companies/domain": [

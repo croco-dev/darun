@@ -78,7 +78,7 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
     });
 
     await this.runDegradedSideEffect('syncPublishedContent', 'translation-job-trigger', async () => {
-      await this.translationJobService.translateProductWithFeatures(product.id);
+      await this.translationJobService.requestProductTranslationJob(product.id);
     });
   }
 
@@ -164,7 +164,7 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
     });
 
     await this.runDegradedSideEffect('publishProduct', 'translation-job-trigger', async () => {
-      await this.translationJobService.translateProductWithFeatures(updatedProduct.id);
+      await this.translationJobService.requestProductTranslationJob(updatedProduct.id);
     });
 
     return {
