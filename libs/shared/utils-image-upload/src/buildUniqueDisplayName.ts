@@ -11,10 +11,7 @@ function sanitizeSegment(value: string): string {
 }
 
 function randomSuffix(): string {
-  const token =
-    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
+  const token = crypto.randomUUID();
   return (
     token
       .replace(/[^a-z0-9]+/gi, '')

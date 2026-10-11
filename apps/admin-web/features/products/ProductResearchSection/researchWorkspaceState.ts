@@ -159,17 +159,11 @@ export function parseWorkspaceState(raw: string | null): ResearchWorkspacePersis
 }
 
 export function newRequestId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    const uuid = crypto.randomUUID().replace(/[^A-Za-z0-9]/g, '');
-    if (uuid.length >= 8) {
-      return uuid.slice(0, 64);
-    }
+  const uuid = crypto.randomUUID().replace(/[^A-Za-z0-9]/g, '');
+  if (uuid.length >= 8) {
+    return uuid.slice(0, 64);
   }
-  const fallback = `${Date.now().toString(36)}${Math.floor(Math.random() * 36 ** 8).toString(36)}`.replace(
-    /[^A-Za-z0-9]/g,
-    ''
-  );
-  return (fallback + '00000000').slice(0, 32);
+  throw new Error('request ID를 생성할 수 없습니다.');
 }
 
 export function parseTagsInput(value: string): string[] {
