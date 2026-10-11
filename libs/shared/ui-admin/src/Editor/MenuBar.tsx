@@ -100,6 +100,16 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
         active: editor.isActive('heading', { level: 2 }),
       },
       {
+        label: 'H3',
+        action: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+        active: editor.isActive('heading', { level: 3 }),
+      },
+      {
+        label: '❝ Quote',
+        action: () => editor.chain().focus().toggleBlockquote().run(),
+        active: editor.isActive('blockquote'),
+      },
+      {
         label: '• List',
         action: () => editor.chain().focus().toggleBulletList().run(),
         active: editor.isActive('bulletList'),

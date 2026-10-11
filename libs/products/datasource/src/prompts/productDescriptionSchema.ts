@@ -6,13 +6,33 @@ export function createProductDescriptionResponseFormat(evidence: ProductDescript
     properties: {
       text: {
         type: 'string',
-        description: '근거 범위 안에서 작성한 한국어 설명. HTML 없이 일반 텍스트로 작성합니다.',
+        description: '근거 범위 안에서 작성한 한국어 설명. HTML과 Markdown 없이 일반 텍스트로 작성합니다.',
       },
       evidenceRefs: {
         type: 'array',
         items: { type: 'string', enum: evidence.items.map(item => item.id) },
         minItems: 1,
         description: '이 설명을 직접 뒷받침하는 제공된 근거 ID입니다.',
+      },
+      bullets: {
+        type: 'array',
+        items: { type: 'string' },
+        maxItems: 4,
+        description: '사실 나열이 필요할 때만 쓰는 항목 목록. HTML과 Markdown 없이 작성합니다.',
+      },
+      quote: {
+        type: 'boolean',
+        description: '직접 인용이 필요할 때만 true로 설정합니다.',
+      },
+      link: {
+        type: 'object',
+        properties: {
+          label: { type: 'string', description: '링크 표시 문구. HTML과 Markdown 없이 작성합니다.' },
+          url: { type: 'string', description: '인용한 link 또는 research 근거의 URL과 같은 http(s) 주소.' },
+        },
+        required: ['label', 'url'],
+        additionalProperties: false,
+        description: '외부 안내로 연결할 때만 쓰며 link 또는 research 근거 인용이 필요합니다.',
       },
     },
     required: ['text', 'evidenceRefs'],

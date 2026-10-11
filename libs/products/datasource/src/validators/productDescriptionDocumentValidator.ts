@@ -1,7 +1,12 @@
-import type {
-  EvidenceBackedText,
-  ProductDescriptionDocument,
-  ProductDescriptionEvidence,
+import {
+  MAX_EVIDENCE_BULLETS,
+  MAX_EVIDENCE_BULLET_LENGTH,
+  safeEvidenceUrl,
+  type EvidenceBackedText,
+  type EvidenceRichLink,
+  type ProductDescriptionDocument,
+  type ProductDescriptionEvidence,
+  type ProductDescriptionEvidenceItem,
 } from '@darun/products-domain';
 
 const MAX_INTRO_LENGTH = 600;
@@ -12,6 +17,22 @@ const MAX_RECOMMENDED_LENGTH = 300;
 const MAX_SECTIONS = 3;
 const MAX_PARAGRAPHS_PER_SECTION = 2;
 const MAX_RECOMMENDED_ITEMS = 3;
+const HTML_TAG_PATTERN = /<[a-zA-Z][^<>]*>/;
+
+function containsMarkdownFormat(text: string): boolean {
+  if (text.includes('**') || text.includes('__') || text.includes('`')) {
+    return true;
+  }
+  const linkStart = text.indexOf('[');
+  if (linkStart === -1) {
+    return false;
+  }
+  const linkMiddle = text.indexOf('](', linkStart + 1);
+  if (linkMiddle === -1) {
+    return false;
+  }
+  return text.indexOf(')', linkMiddle + 2) !== -1;
+}
 
 export function validateProductDescriptionDocument(
   raw: unknown,
@@ -30,6 +51,7 @@ export function validateProductDescriptionDocument(
   }
 
   const validEvidenceIds = new Set(evidence.items.map(item => item.id));
+  const evidenceById = new Map<string, ProductDescriptionEvidenceItem>(evidence.items.map(item => [item.id, item]));
 
   // 1. limitations check
   if (!Array.isArray(candidate.limitations) || candidate.limitations.length > 0) {
@@ -42,6 +64,7 @@ export function validateProductDescriptionDocument(
     'intro',
     MAX_INTRO_LENGTH,
     validEvidenceIds,
+    evidenceById,
     false // category-only allowed for intro
   );
 
@@ -51,6 +74,7 @@ export function validateProductDescriptionDocument(
     'closing',
     MAX_CLOSING_LENGTH,
     validEvidenceIds,
+    evidenceById,
     false // category-only allowed for closing
   );
 
@@ -90,6 +114,7 @@ export function validateProductDescriptionDocument(
         `sections[${sectionIdx}].paragraphs[${pIdx}]`,
         MAX_PARAGRAPH_LENGTH,
         validEvidenceIds,
+        evidenceById,
         true // category-only forbidden
       )
     );
@@ -114,6 +139,7 @@ export function validateProductDescriptionDocument(
       `recommendedIf[${idx}]`,
       MAX_RECOMMENDED_LENGTH,
       validEvidenceIds,
+      evidenceById,
       true // category-only forbidden
     )
   );
@@ -132,6 +158,7 @@ function validateEvidenceBackedText(
   fieldName: string,
   maxLength: number,
   validEvidenceIds: Set<string>,
+  evidenceById: Map<string, ProductDescriptionEvidenceItem>,
   requireSummaryOrFeatureRef: boolean
 ): EvidenceBackedText {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
@@ -147,6 +174,7 @@ function validateEvidenceBackedText(
   if (text.length > maxLength) {
     throw new Error(`${fieldName}.text 길이가 제한(${maxLength}자)을 초과했습니다.`);
   }
+  assertPlainRichText(text, fieldName);
 
   if (!Array.isArray(obj.evidenceRefs) || obj.evidenceRefs.length === 0) {
     throw new Error(`${fieldName}.evidenceRefs는 최소 1개 이상의 근거 ID가 필요합니다.`);
@@ -164,16 +192,117 @@ function validateEvidenceBackedText(
   });
 
   if (requireSummaryOrFeatureRef) {
-    const hasSummaryOrFeature = evidenceRefs.some(ref => ref === 'product:summary' || ref.startsWith('feature:'));
-    if (!hasSummaryOrFeature) {
+    const hasSubstantiveRef = evidenceRefs.some(
+      ref =>
+        ref === 'product:summary' ||
+        ref.startsWith('feature:') ||
+        ref.startsWith('flow:') ||
+        ref.startsWith('research:')
+    );
+    if (!hasSubstantiveRef) {
       throw new Error(
-        `${fieldName}은(는) category만으로 작성될 수 없으며 product:summary 또는 feature:* 근거가 포함되어야 합니다.`
+        `${fieldName}은(는) category, tag, link, screenshot만으로 작성될 수 없으며 product:summary, feature:*, flow:*, research:* 근거 중 하나가 포함되어야 합니다.`
       );
     }
   }
 
+  const bullets = validateBullets(obj.bullets, fieldName);
+  const quote = validateQuote(obj.quote, fieldName);
+  const link = validateRichLink(obj.link, fieldName, evidenceById, evidenceRefs);
+
   return {
     text,
     evidenceRefs,
+    ...(bullets ? { bullets } : {}),
+    ...(quote ? { quote: true as const } : {}),
+    ...(link ? { link } : {}),
   };
+}
+
+function assertPlainRichText(text: string, fieldName: string): void {
+  if (HTML_TAG_PATTERN.test(text)) {
+    throw new Error(`${fieldName}.text에는 HTML 태그를 직접 쓸 수 없습니다. bullets/quote/link 필드를 사용하십시오.`);
+  }
+  if (containsMarkdownFormat(text)) {
+    throw new Error(
+      `${fieldName}.text에는 Markdown 서식을 쓸 수 없습니다. 일반 텍스트로 작성하고 구조는 전용 필드를 사용하십시오.`
+    );
+  }
+}
+
+function validateBullets(raw: unknown, fieldName: string): string[] | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(raw)) {
+    throw new Error(`${fieldName}.bullets는 문자열 배열이어야 합니다.`);
+  }
+  if (raw.length === 0) {
+    throw new Error(`${fieldName}.bullets는 비어 있을 수 없습니다.`);
+  }
+  if (raw.length > MAX_EVIDENCE_BULLETS) {
+    throw new Error(`${fieldName}.bullets 항목은 최대 ${MAX_EVIDENCE_BULLETS}개까지 허용됩니다.`);
+  }
+  return raw.map((item, idx) => {
+    if (typeof item !== 'string' || !item.trim()) {
+      throw new Error(`${fieldName}.bullets[${idx}]는 비어있지 않은 문자열이어야 합니다.`);
+    }
+    const bullet = item.trim();
+    if (bullet.length > MAX_EVIDENCE_BULLET_LENGTH) {
+      throw new Error(`${fieldName}.bullets[${idx}] 길이가 제한(${MAX_EVIDENCE_BULLET_LENGTH}자)을 초과했습니다.`);
+    }
+    assertPlainRichText(bullet, `${fieldName}.bullets[${idx}]`);
+    return bullet;
+  });
+}
+
+function validateQuote(raw: unknown, fieldName: string): boolean {
+  if (raw === undefined) {
+    return false;
+  }
+  if (typeof raw !== 'boolean') {
+    throw new Error(`${fieldName}.quote는 boolean이어야 합니다.`);
+  }
+  return raw;
+}
+
+function validateRichLink(
+  raw: unknown,
+  fieldName: string,
+  evidenceById: Map<string, ProductDescriptionEvidenceItem>,
+  evidenceRefs: string[]
+): EvidenceRichLink | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    throw new Error(`${fieldName}.link는 { label, url } 객체여야 합니다.`);
+  }
+  const link = raw as Record<string, unknown>;
+  if (typeof link.label !== 'string' || !link.label.trim()) {
+    throw new Error(`${fieldName}.link.label은 비어있지 않은 문자열이어야 합니다.`);
+  }
+  if (typeof link.url !== 'string' || !link.url.trim()) {
+    throw new Error(`${fieldName}.link.url은 비어있지 않은 문자열이어야 합니다.`);
+  }
+  const label = link.label.trim();
+  assertPlainRichText(label, `${fieldName}.link.label`);
+  const safeUrl = safeEvidenceUrl(link.url.trim());
+  if (!safeUrl) {
+    throw new Error(`${fieldName}.link.url은 http(s) URL이어야 합니다.`);
+  }
+
+  const linkedEvidence = evidenceRefs
+    .map(ref => evidenceById.get(ref))
+    .find(item => item?.kind === 'link' || item?.kind === 'research');
+  if (!linkedEvidence) {
+    throw new Error(`${fieldName}.link를 쓰려면 link:* 또는 research:* 근거를 evidenceRefs에 포함해야 합니다.`);
+  }
+  if (linkedEvidence.kind === 'link' && linkedEvidence.url !== safeUrl) {
+    throw new Error(`${fieldName}.link.url은 인용한 link 근거의 URL과 일치해야 합니다.`);
+  }
+  if (linkedEvidence.kind === 'research' && linkedEvidence.url !== safeUrl) {
+    throw new Error(`${fieldName}.link.url은 인용한 research 근거의 URL과 일치해야 합니다.`);
+  }
+  return { label, url: safeUrl };
 }
