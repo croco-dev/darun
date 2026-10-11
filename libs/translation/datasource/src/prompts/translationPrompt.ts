@@ -1,6 +1,4 @@
 export const TRANSLATION_PROMPT_VERSION = 'v1.0.0';
-export const TRANSLATION_WRITER_MODEL = 'gemini-2.5-flash';
-export const TRANSLATION_REVIEWER_MODEL = 'gemini-2.5-flash';
 
 export const TRANSLATION_SYSTEM_PROMPT = `당신은 IT 프로덕트 및 SaaS 전문의 고충실도(High-Fidelity) 번역가입니다.
 한국어로 작성된 제품 정보를 정확하고 자연스러운 영어로 번역합니다.

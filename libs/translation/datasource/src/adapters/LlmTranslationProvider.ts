@@ -16,9 +16,7 @@ import {
   buildSingleTranslationPrompt,
   TRANSLATION_AUDIT_SYSTEM_PROMPT,
   TRANSLATION_PROMPT_VERSION,
-  TRANSLATION_REVIEWER_MODEL,
   TRANSLATION_SYSTEM_PROMPT,
-  TRANSLATION_WRITER_MODEL,
 } from '../prompts/translationPrompt';
 
 function parseJsonFromLlmResponse(raw: string): unknown {
@@ -34,6 +32,7 @@ export class LlmTranslationProvider implements TranslationProvider {
 
   async translateSingle(request: SingleTranslationRequest): Promise<SingleTranslationResult> {
     const { entityType, field, koreanText, mode, isHtml } = request;
+    const { model } = await this.llmClient.getConfig();
 
     let textToTranslate = koreanText;
     let placeholders: Map<string, string> | undefined;
@@ -54,7 +53,7 @@ export class LlmTranslationProvider implements TranslationProvider {
     const writerResponse = await withRetry(
       () =>
         withTimeout(
-          this.llmClient.completion(TRANSLATION_WRITER_MODEL, [
+          this.llmClient.completion(model, [
             { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
             { role: 'user', content: writerPrompt },
           ]),
@@ -79,7 +78,7 @@ export class LlmTranslationProvider implements TranslationProvider {
         const reviewerResponse = await withRetry(
           () =>
             withTimeout(
-              this.llmClient.completion(TRANSLATION_REVIEWER_MODEL, [
+              this.llmClient.completion(model, [
                 { role: 'system', content: TRANSLATION_AUDIT_SYSTEM_PROMPT },
                 { role: 'user', content: auditPrompt },
               ]),
@@ -106,13 +105,14 @@ export class LlmTranslationProvider implements TranslationProvider {
     return {
       translatedText: finalTranslatedText,
       sourceHash: computeSourceHash(koreanText),
-      model: TRANSLATION_WRITER_MODEL,
+      model,
       promptVersion: TRANSLATION_PROMPT_VERSION,
     };
   }
 
   async translateProductBundle(request: ProductBundleTranslationRequest): Promise<ProductBundleTranslationResult> {
     const { name, summary, description, features } = request;
+    const { model } = await this.llmClient.getConfig();
 
     const encodedDesc = encodeHtml(description);
 
@@ -126,7 +126,7 @@ export class LlmTranslationProvider implements TranslationProvider {
     const response = await withRetry(
       () =>
         withTimeout(
-          this.llmClient.completion(TRANSLATION_WRITER_MODEL, [
+          this.llmClient.completion(model, [
             { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
             { role: 'user', content: bundlePrompt },
           ]),
@@ -206,7 +206,7 @@ export class LlmTranslationProvider implements TranslationProvider {
         descriptionSourceHash: computeSourceHash(description),
       },
       features: featureResults,
-      model: TRANSLATION_WRITER_MODEL,
+      model,
       promptVersion: TRANSLATION_PROMPT_VERSION,
     };
   }
