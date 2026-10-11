@@ -125,19 +125,19 @@ export class ProductResearchJob {
   @Field()
   status: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   stage?: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   errorCode?: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   errorMessage?: string | null;
 
   @Field(() => ProductResearchDraftGraph, { nullable: true })
   result?: ProductResearchDraftGraph | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   materializedProductId?: string | null;
 
   @Field(() => GraphQLISODateTime)

@@ -29,6 +29,14 @@ jobs:
       - run: pnpm run lint
       - name: Type Check
         run: pnpm run typecheck
+      - name: Check migration completeness
+        run: pnpm --filter graphql-api run check:migrations
+      - name: Build Lambda bundles
+        run: pnpm --filter graphql-api run build:lambda
+        env:
+          INFRA_ENV: prod
+      - name: Verify Lambda initialization and GraphQL schema
+        run: pnpm --filter graphql-api run verify:lambda
       - run: pnpm run test:coverage
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4

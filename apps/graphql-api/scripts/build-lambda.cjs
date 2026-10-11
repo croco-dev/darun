@@ -10,48 +10,17 @@ async function main() {
   await mkdir(outDir, { recursive: true });
 
   await build({
-    entryPoints: ['src/functions/graphql.ts'],
+    entryPoints: [
+      'src/functions/graphql.ts',
+      'src/functions/translation-worker.ts',
+      'src/functions/product-description-worker.ts',
+      'src/functions/product-research-worker.ts',
+    ],
     bundle: true,
     platform: 'node',
     target: 'node22',
     format: 'cjs',
-    outfile: `${outDir}/graphql.js`,
-    minify: true,
-    keepNames: true,
-    sourcemap: true,
-    sourcesContent: false,
-    treeShaking: true,
-    ignoreAnnotations: true,
-    external: ['class-validator'],
-    plugins,
-    logLevel: 'info',
-  });
-
-  await build({
-    entryPoints: ['src/functions/translation-worker.ts'],
-    bundle: true,
-    platform: 'node',
-    target: 'node22',
-    format: 'cjs',
-    outfile: `${outDir}/translation-worker.js`,
-    minify: true,
-    keepNames: true,
-    sourcemap: true,
-    sourcesContent: false,
-    treeShaking: true,
-    ignoreAnnotations: true,
-    external: ['class-validator'],
-    plugins,
-    logLevel: 'info',
-  });
-
-  await build({
-    entryPoints: ['src/functions/product-description-worker.ts'],
-    bundle: true,
-    platform: 'node',
-    target: 'node22',
-    format: 'cjs',
-    outfile: `${outDir}/product-description-worker.js`,
+    outdir: outDir,
     minify: true,
     keepNames: true,
     sourcemap: true,

@@ -6,7 +6,8 @@
   "types": "./src/index.ts",
   "scripts": {
     "build:lambda": "node scripts/build-lambda.cjs",
-    "deploy": "pnpm run build:lambda && sst deploy --stage prod",
+    "check:migrations": "node scripts/check-migrations.cjs",
+    "deploy": "pnpm run check:migrations && pnpm run build:lambda && pnpm run verify:lambda && sst deploy --stage prod",
     "dev": "node scripts/dev.cjs",
     "lint": "eslint **/*.ts*",
     "local:bootstrap": "tsx scripts/bootstrap-local.ts",
@@ -14,7 +15,8 @@
     "seed:categories": "tsx scripts/seed-categories.ts",
     "seed:e2e": "tsx scripts/seed-e2e.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:lambda": "node scripts/verify-lambda-bundle.js"
   },
   "dependencies": {
     "@apollo/server": "catalog:",
