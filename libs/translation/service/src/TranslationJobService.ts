@@ -117,7 +117,30 @@ class LlmClientTranslationProviderAdapter implements TranslationProvider {
     const content = res.content?.trim() ?? '';
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     const target = jsonMatch ? jsonMatch[1].trim() : content;
-    const parsed = JSON.parse(target);
+    let parsed: {
+      name?: string;
+      summary?: string;
+      description?: string;
+      features?: Array<{ id?: string; name?: string; summary?: string }>;
+    };
+    try {
+      parsed = JSON.parse(target);
+    } catch {
+      throw new Error('LLM 번역 응답 JSON 파싱에 실패했습니다.');
+    }
+
+    const expectedFeatureIds = new Set(request.features.map(f => f.id));
+    const returnedFeatures = Array.isArray(parsed.features) ? parsed.features : [];
+
+    if (returnedFeatures.length !== expectedFeatureIds.size) {
+      throw new Error(`기능 개수 불일치: 요청 ${expectedFeatureIds.size}개, 응답 ${returnedFeatures.length}개`);
+    }
+
+    for (const f of returnedFeatures) {
+      if (!f.id || !expectedFeatureIds.has(f.id)) {
+        throw new Error(`번역 결과에 알 수 없는 기능 ID(${f.id ?? '없음'})가 포함되었습니다.`);
+      }
+    }
 
     return {
       product: {
@@ -128,10 +151,10 @@ class LlmClientTranslationProviderAdapter implements TranslationProvider {
         summarySourceHash: computeSourceHash(request.summary),
         descriptionSourceHash: computeSourceHash(request.description),
       },
-      features: (parsed.features ?? []).map((f: { id?: string; name?: string; summary?: string }) => {
+      features: returnedFeatures.map(f => {
         const reqF = request.features.find(rf => rf.id === f.id);
         return {
-          id: f.id,
+          id: f.id as string,
           name: f.name ?? '',
           summary: f.summary ?? '',
           nameSourceHash: reqF ? computeSourceHash(reqF.name) : '',
