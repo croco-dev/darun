@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RetryableError, withRetry } from '../withRetry';
 import { withTimeout } from '../withTimeout';
 
 describe('withTimeout', () => {
@@ -31,6 +32,49 @@ describe('withTimeout', () => {
 
     await vi.advanceTimersByTimeAsync(500);
     await assertion;
+  });
+
+  it('rejects with a retryable error so withRetry retries timeouts', async () => {
+    const promise = new Promise<string>(() => {
+      // never resolves
+    });
+
+    const resultPromise = withTimeout(promise, 500, 'LLM 번역 요청이 시간 초과되었습니다.');
+    const assertion = expect(resultPromise).rejects.toMatchObject({
+      name: 'RetryableError',
+      message: 'LLM 번역 요청이 시간 초과되었습니다.',
+    });
+
+    await vi.advanceTimersByTimeAsync(500);
+    await assertion;
+  });
+
+  it('rejects with RetryableError instance on timeout', async () => {
+    const promise = new Promise<string>(() => {
+      // never resolves
+    });
+
+    const resultPromise = withTimeout(promise, 500, 'Custom timeout error');
+    const assertion = expect(resultPromise).rejects.toBeInstanceOf(RetryableError);
+
+    await vi.advanceTimersByTimeAsync(500);
+    await assertion;
+  });
+
+  it('withRetry retries a timed-out call and then succeeds', async () => {
+    const fn = vi
+      .fn()
+      .mockImplementationOnce(
+        () => withTimeout(new Promise<string>(() => {}), 500, 'LLM 번역 요청이 시간 초과되었습니다.')
+      )
+      .mockResolvedValueOnce('ok');
+
+    const result = withRetry(fn, { baseDelay: 1000, maxDelay: 1000 });
+    const assertion = expect(result).resolves.toBe('ok');
+
+    await vi.advanceTimersByTimeAsync(1500);
+    await assertion;
+    expect(fn).toHaveBeenCalledTimes(2);
   });
 
   it('clears timeout timer on promise rejection', async () => {
