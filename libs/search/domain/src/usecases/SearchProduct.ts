@@ -26,6 +26,9 @@ export class SearchProduct {
    */
   async execute({ query, limit }: { query: string; limit?: number }) {
     const normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.length === 0) {
+      return [];
+    }
     const expandedQuery = this.synonymExpander.expand(normalizedQuery);
     const candidateLimit =
       limit !== undefined ? Math.min(limit * SEARCH_CANDIDATE_MULTIPLIER, MAX_SEARCH_CANDIDATES) : undefined;

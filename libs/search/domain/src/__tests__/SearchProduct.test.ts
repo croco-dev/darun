@@ -757,6 +757,15 @@ describe('SearchProduct', () => {
   });
 
   describe('input defense', () => {
+    it('returns empty array without hitting the repository for a blank query', async () => {
+      const repository = createRepository([createProduct('p1')]);
+      const useCase = createUseCase(repository);
+
+      expect(await useCase.execute({ query: '' })).toEqual([]);
+      expect(await useCase.execute({ query: '   ' })).toEqual([]);
+      expect(repository.searchProduct).not.toHaveBeenCalled();
+    });
+
     it('handles NaN searchScore by treating it as 0', async () => {
       const a = new SearchableProduct({
         id: 'a',
