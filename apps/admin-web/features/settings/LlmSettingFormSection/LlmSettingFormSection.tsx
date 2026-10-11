@@ -85,6 +85,24 @@ export function LlmSettingFormSection() {
         <p className="text-sm text-dark-500 mb-2">
           번역 및 콘텐츠 자동 생성에 사용할 LLM 엔드포인트, API 키, 기본 모델을 데이터베이스에 동적으로 설정합니다.
         </p>
+        {currentSetting && (
+          <div className="flex flex-wrap items-center gap-2 mb-4 text-xs">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-100 border border-dark-200 text-dark-700 font-mono max-w-full">
+              <span className="text-dark-400 font-sans shrink-0">현재 모델:</span>
+              <span className="truncate">{currentSetting.model}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-100 border border-dark-200 text-dark-700 font-mono max-w-full">
+              <span className="text-dark-400 font-sans shrink-0">엔드포인트:</span>
+              <span className="truncate">{currentSetting.endpoint}</span>
+            </span>
+            {currentSetting.thinkingLevel && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-100 border border-dark-200 text-dark-700 font-mono">
+                <span className="text-dark-400 font-sans">추론 강도:</span>
+                {currentSetting.thinkingLevel}
+              </span>
+            )}
+          </div>
+        )}
         <LlmSettingForm
           key={currentSetting?.updatedAt ?? 'default'}
           currentSetting={currentSetting}

@@ -56,12 +56,12 @@ export class TranslationMutationResolver {
         productId ? { id: productId } : { slug: slug! }
       );
     } else {
-      const resolvedProductId = await this.translationJobService.translateProductWithFeatures(
+      const resolvedTranslation = await this.translationJobService.translateProductWithFeatures(
         productId ? { id: productId } : { slug: slug! }
       );
       job = {
-        id: resolvedProductId,
-        entityId: resolvedProductId,
+        id: resolvedTranslation.productId,
+        entityId: resolvedTranslation.productId,
         status: 'completed',
         message: '상품 및 주요 기능 번역이 완료되었습니다.',
       };
@@ -90,6 +90,7 @@ export class TranslationMutationResolver {
       fields: ['name', 'summary', 'description', 'features'],
       locale: job.locale,
       status: job.status,
+      model: job.model ?? undefined,
       message: job.message ?? undefined,
       error: job.error ?? undefined,
       createdAt: job.createdAt,

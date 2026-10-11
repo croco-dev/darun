@@ -175,7 +175,7 @@ export class TranslationJobService {
   async translateProductWithFeatures(
     identifier: { id?: string; slug?: string } | string,
     jobId?: string
-  ): Promise<string> {
+  ): Promise<{ productId: string; model?: string; promptVersion?: string }> {
     const query = typeof identifier === 'string' ? { id: identifier } : identifier;
     const product = await this.getProductUseCase.execute(query);
     if (!product) {
@@ -207,6 +207,9 @@ export class TranslationJobService {
         },
       ])
     );
+
+    let completedModel: string | undefined;
+    let completedPromptVersion: string | undefined;
 
     try {
       const bundleResult = await this.translationProvider.translateProductBundle({
@@ -268,7 +271,7 @@ export class TranslationJobService {
             message: '원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.',
           });
         }
-        return productId;
+        return { productId };
       }
 
       const rows: UpsertTranslationParams[] = [];
@@ -349,13 +352,16 @@ export class TranslationJobService {
           await this.translationService.upsertTranslation(row);
         }
       }
+
+      completedModel = bundleResult.model;
+      completedPromptVersion = bundleResult.promptVersion;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       console.error(`[TranslationJobService] Product translation failed for ${productId}:`, error);
       throw new Error(`상품 번역에 실패했습니다: ${errorMessage}`);
     }
 
-    return productId;
+    return { productId, model: completedModel, promptVersion: completedPromptVersion };
   }
 
   async requestProductTranslationJob(identifier: { id?: string; slug?: string } | string): Promise<{
@@ -489,12 +495,14 @@ export class TranslationJobService {
         message: 'LLM으로 영문 번역을 생성하고 있습니다...',
       });
 
-      await this.translateProductWithFeatures(productId, jobId);
+      const completedTranslation = await this.translateProductWithFeatures(productId, jobId);
 
       const latestJob = await this.translationJobRepository.findJobById(jobId);
       if (latestJob?.status !== 'superseded') {
         await this.translationJobRepository.updateJobStatus(jobId, 'completed', {
           message: '상품 및 기능의 영문 번역이 완료되었습니다.',
+          model: completedTranslation.model ?? null,
+          promptVersion: completedTranslation.promptVersion ?? null,
         });
       }
     } catch (error) {

@@ -86,7 +86,7 @@ describe('TranslationMutationResolver', () => {
   describe('requestProductTranslation', () => {
     it('productId로 상품과 하위 기능 통합 번역을 요청하고 완료 상태를 반환한다', async () => {
       const translationJobService = {
-        translateProductWithFeatures: vi.fn().mockResolvedValue('prod-123'),
+        translateProductWithFeatures: vi.fn().mockResolvedValue({ productId: 'prod-123' }),
       };
 
       const resolver = new TranslationMutationResolver(translationJobService as never);
@@ -101,7 +101,7 @@ describe('TranslationMutationResolver', () => {
 
     it('slug로 상품과 하위 기능 통합 번역을 요청하고 완료 상태를 반환한다', async () => {
       const translationJobService = {
-        translateProductWithFeatures: vi.fn().mockResolvedValue('prod-123'),
+        translateProductWithFeatures: vi.fn().mockResolvedValue({ productId: 'prod-123' }),
       };
 
       const resolver = new TranslationMutationResolver(translationJobService as never);
