@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { VISUAL_NAV_TABS, isTabActive } from '../app/visualNav';
 import { VISUAL_SAVES_PAGE_SIZE } from '../features/saves/saveDocuments';
 import { isSavesTabValue, readSavesTabParam } from '../features/saves/useSavesPage';
+
+const testDir = dirname(fileURLToPath(import.meta.url));
+const appRoot = join(testDir, '..');
 
 vi.mock('@apollo/client/react', () => ({
   useApolloClient: () => ({ query: vi.fn(), mutate: vi.fn() }),
@@ -44,5 +50,17 @@ describe('M5 saves finish', () => {
     expect(readSavesTabParam(new URLSearchParams())).toBe('screenshots');
     expect(readSavesTabParam(new URLSearchParams('tab=apps'))).toBe('screenshots');
     expect(readSavesTabParam(new URLSearchParams('tab=flows'))).toBe('flows');
+  });
+
+  it('탭별 더보기 로딩·에러 상태가 분리된다 (회귀: 전역 공유 금지)', () => {
+    const source = readFileSync(join(appRoot, 'features/saves/useSavesPage.ts'), 'utf-8');
+
+    expect(source).toMatch(/screenshotLoadingMore/);
+    expect(source).toMatch(/flowLoadingMore/);
+    expect(source).toMatch(/screenshotLoadMoreError/);
+    expect(source).toMatch(/flowLoadMoreError/);
+    // 전역 단일 loadingMore/loadMoreError 상태가 남아 있으면 안 된다
+    expect(source).not.toMatch(/const \[loadingMore, setLoadingMore\]/);
+    expect(source).not.toMatch(/const \[loadMoreError, setLoadMoreError\]/);
   });
 });
