@@ -513,25 +513,42 @@ export class TranslationJobService {
       return;
     }
 
+    const repository = this.translationJobRepository;
+    const claimJobStatus =
+      typeof repository.claimJobStatus === 'function'
+        ? repository.claimJobStatus.bind(repository)
+        : async (
+            id: string,
+            expectedStatuses: TranslationJobStatus[],
+            nextStatus: TranslationJobStatus,
+            options?: { message?: string | null }
+          ) => {
+            const latest = await repository.findJobById(id);
+            if (!latest || !expectedStatuses.includes(latest.status)) {
+              return null;
+            }
+            return repository.updateJobStatus(id, nextStatus, options);
+          };
+
     try {
-      await this.translationJobRepository.updateJobStatus(jobId, 'in_progress', {
+      const claimed = await claimJobStatus(jobId, ['pending'], 'in_progress', {
         message: 'LLM으로 영문 번역을 생성하고 있습니다...',
       });
+      if (!claimed) {
+        return;
+      }
 
       const completedTranslation = await this.translateProductWithFeatures(productId, jobId);
 
-      const latestJob = await this.translationJobRepository.findJobById(jobId);
-      if (latestJob?.status !== 'superseded') {
-        await this.translationJobRepository.updateJobStatus(jobId, 'completed', {
-          message: '상품 및 기능의 영문 번역이 완료되었습니다.',
-          model: completedTranslation.model ?? null,
-          promptVersion: completedTranslation.promptVersion ?? null,
-        });
-      }
+      await claimJobStatus(jobId, ['in_progress'], 'completed', {
+        message: '상품 및 기능의 영문 번역이 완료되었습니다.',
+        model: completedTranslation.model ?? null,
+        promptVersion: completedTranslation.promptVersion ?? null,
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       console.error(`[TranslationJobService] Translation job ${jobId} failed:`, error);
-      await this.translationJobRepository.updateJobStatus(jobId, 'failed', {
+      await claimJobStatus(jobId, ['pending', 'in_progress'], 'failed', {
         error: errorMessage,
         message: '상품 번역에 실패했습니다.',
       });
