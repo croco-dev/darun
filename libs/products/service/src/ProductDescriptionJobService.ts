@@ -6,6 +6,7 @@ import {
   type ProductDescriptionJobRepository,
   ProductDescriptionJobRepositoryToken,
   type ProductDescriptionJobStatus,
+  type UpdateProductDescriptionJobOptions,
   productNotFound,
 } from '@darun/products-domain';
 import { Inject, Service } from 'typedi';
@@ -154,14 +155,34 @@ export class ProductDescriptionJobService {
       return;
     }
 
+    const repository = this.productDescriptionJobRepository;
+    const claimJobStatus =
+      typeof repository.claimJobStatus === 'function'
+        ? repository.claimJobStatus.bind(repository)
+        : async (
+            id: string,
+            expectedStatuses: ProductDescriptionJobStatus[],
+            nextStatus: ProductDescriptionJobStatus,
+            options?: UpdateProductDescriptionJobOptions
+          ) => {
+            const latest = await repository.findJobById(id);
+            if (!latest || !expectedStatuses.includes(latest.status)) {
+              return null;
+            }
+            return repository.updateJobStatus(id, nextStatus, options);
+          };
+
     try {
-      await this.productDescriptionJobRepository.updateJobStatus(jobId, 'in_progress', {
+      const claimed = await claimJobStatus(jobId, ['pending'], 'in_progress', {
         message: 'LLM으로 AI 소개를 생성하고 있습니다...',
       });
+      if (!claimed) {
+        return;
+      }
 
       const candidateResult = await this.generateProductDescriptionUseCase.execute({ productId });
 
-      await this.productDescriptionJobRepository.updateJobStatus(jobId, 'completed', {
+      await claimJobStatus(jobId, ['in_progress'], 'completed', {
         message: 'AI 소개 생성이 완료되었습니다.',
         candidateHtml: candidateResult.candidateHtml,
         candidateDocument: JSON.stringify(candidateResult.candidateDocument),
@@ -175,14 +196,14 @@ export class ProductDescriptionJobService {
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes('stale')) {
-        await this.productDescriptionJobRepository.updateJobStatus(jobId, 'superseded', {
+        await claimJobStatus(jobId, ['in_progress'], 'superseded', {
           message: '제품 정보 변경으로 결과가 폐기되었습니다.',
         });
         return;
       }
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       console.error(`[ProductDescriptionJobService] Product description job ${jobId} failed:`, error);
-      await this.productDescriptionJobRepository.updateJobStatus(jobId, 'failed', {
+      await claimJobStatus(jobId, ['pending', 'in_progress'], 'failed', {
         error: errorMessage,
         message: 'AI 소개 생성에 실패했습니다.',
       });
