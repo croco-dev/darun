@@ -3,6 +3,7 @@
 import {
   VisualScreenshotsOnExplorerDocument,
   type VisualScreenshotsOnExplorerQuery,
+  type VisualUiElement,
 } from '@darun/provider-graphql';
 import type { VisualPlatform, VisualScreenType } from '@darun/provider-graphql';
 import {
@@ -12,7 +13,7 @@ import {
   type ExplorerBaseState,
   type ExplorerFilters,
 } from '../explorer/useExplorerQuery';
-import { isVisualPlatformValue, isVisualScreenTypeValue } from '../explorer/visualTaxonomy';
+import { isVisualPlatformValue, isVisualScreenTypeValue, isVisualUiElementValue } from '../explorer/visualTaxonomy';
 import { VISUAL_SCREENSHOTS_PAGE_SIZE } from './documents';
 
 export type ScreenshotCard = {
@@ -27,7 +28,9 @@ export type ScreenshotCard = {
 
 export type ScreenshotExplorerState = ExplorerBaseState<ScreenshotCard> & {
   screenType: string | null;
+  element: VisualUiElement | null;
   onScreenTypeChange: (value: string) => void;
+  onElementChange: (value: string) => void;
 };
 
 type ScreenshotNode = NonNullable<
@@ -36,11 +39,13 @@ type ScreenshotNode = NonNullable<
 
 function readFilterParams(searchParams: URLSearchParams): ExplorerFilters {
   const screenTypeParam = searchParams.get('screenType');
+  const elementParam = searchParams.get('element');
   return {
     query: readExplorerQueryParam(searchParams),
     platform: isVisualPlatformValue(searchParams.get('platform')) ? (searchParams.get('platform') as string) : null,
     secondary: isVisualScreenTypeValue(screenTypeParam) ? screenTypeParam : null,
     product: readExplorerProductParam(searchParams),
+    element: isVisualUiElementValue(elementParam) ? elementParam : null,
   };
 }
 
@@ -77,11 +82,11 @@ const SCREENSHOT_OPTIONS = {
     query: filters.query,
     platform: filters.platform,
     screenType: filters.secondary,
+    uiElements: filters.element != null ? [filters.element] : null,
     productSlug: filters.product,
   }),
   mapEdgeToCard,
-  getEdges: (data: unknown) =>
-    (data as VisualScreenshotsOnExplorerQuery | undefined)?.visualScreenshots?.edges,
+  getEdges: (data: unknown) => (data as VisualScreenshotsOnExplorerQuery | undefined)?.visualScreenshots?.edges,
   getConnection: (data: unknown) => (data as VisualScreenshotsOnExplorerQuery | undefined)?.visualScreenshots,
   getNodeId: (node: ScreenshotNode) => node.id,
   refetchLabel: 'Failed to refetch screenshots',
@@ -93,6 +98,8 @@ export function useScreenshotExplorer(): ScreenshotExplorerState {
   return {
     ...state,
     screenType: state.secondary,
+    element: (state.element ?? null) as VisualUiElement | null,
     onScreenTypeChange: state.onSecondaryChange,
+    onElementChange: state.onElementChange ?? (() => {}),
   };
 }

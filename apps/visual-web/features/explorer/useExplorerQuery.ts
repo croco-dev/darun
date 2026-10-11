@@ -15,6 +15,7 @@ export type ExplorerFilters = {
   platform: string | null;
   secondary: string | null;
   product: string | null;
+  element?: string | null;
 };
 
 export type ExplorerBaseState<TCard> = {
@@ -30,12 +31,14 @@ export type ExplorerBaseState<TCard> = {
   searchInput: string;
   platform: string | null;
   secondary: string | null;
+  element?: string | null;
   product: string | null;
   query: string | null;
   onSearchInputChange: (value: string) => void;
   onSearchSubmit: (event: React.FormEvent) => void;
   onPlatformChange: (value: string) => void;
   onSecondaryChange: (value: string) => void;
+  onElementChange?: (value: string) => void;
   onClearFilters: () => void;
   onLoadMore: () => void;
   retry: () => void;
@@ -46,12 +49,21 @@ export type ExplorerBaseState<TCard> = {
   onSearchInputFocus: () => void;
 };
 
+type BuildUrlNext = {
+  q?: string | null;
+  platform?: string | null;
+  secondary?: string | null;
+  product?: string | null;
+  element?: string | null;
+};
+
 type ExplorerQueryOptions<TNode, TCard> = {
   document: DocumentNode;
   connectionKey: string;
   pageSize: number;
   basePath: string;
   secondaryParamKey: string;
+  elementParamKey?: string;
   clearFiltersTo: string | ((product: string | null) => string);
   readFilters: (searchParams: URLSearchParams) => ExplorerFilters;
   buildVariables: (filters: ExplorerFilters) => Record<string, unknown>;
@@ -85,13 +97,21 @@ export function buildExplorerUrl(
   basePath: string,
   filters: ExplorerFilters,
   secondaryParamKey: string,
-  next: { q?: string | null; platform?: string | null; secondary?: string | null; product?: string | null }
+  next: {
+    q?: string | null;
+    platform?: string | null;
+    secondary?: string | null;
+    product?: string | null;
+    element?: string | null;
+  },
+  elementParamKey = 'element'
 ) {
   const params = new URLSearchParams();
   const nextQuery = next.q !== undefined ? next.q : filters.query;
   const nextPlatform = next.platform !== undefined ? next.platform : filters.platform;
   const nextSecondary = next.secondary !== undefined ? next.secondary : filters.secondary;
   const nextProduct = next.product !== undefined ? next.product : filters.product;
+  const nextElement = next.element !== undefined ? next.element : (filters.element ?? null);
   if (nextQuery !== null) {
     params.set('q', nextQuery);
   }
@@ -103,6 +123,9 @@ export function buildExplorerUrl(
   }
   if (nextProduct !== null) {
     params.set('product', nextProduct);
+  }
+  if (nextElement !== null) {
+    params.set(elementParamKey, nextElement);
   }
   const queryString = params.toString();
   return queryString.length > 0 ? `${basePath}?${queryString}` : basePath;
@@ -132,6 +155,8 @@ export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNo
 
   const filters = useMemo(() => options.readFilters(searchParams), [options, searchParams]);
   const { query, platform, secondary, product } = filters;
+  const element = filters.element ?? null;
+  const elementParamKey = options.elementParamKey ?? 'element';
 
   const [searchInput, setSearchInput] = useState(query ?? '');
   useEffect(() => {
@@ -146,13 +171,19 @@ export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNo
       apolloClient.watchQuery({
         query: options.document,
         variables: {
-          ...options.buildVariables({ query: queryLengthError ? null : query, platform, secondary, product }),
+          ...options.buildVariables({
+            query: queryLengthError ? null : query,
+            platform,
+            secondary,
+            product,
+            element,
+          }),
           first: options.pageSize,
           after: null,
         },
         notifyOnNetworkStatusChange: true,
       }),
-    [apolloClient, options, query, platform, secondary, product, queryLengthError]
+    [apolloClient, options, query, platform, secondary, product, element, queryLengthError]
   );
 
   const [result, setResult] = useState(() => observable.getCurrentResult());
@@ -189,19 +220,10 @@ export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNo
   const showQueryLengthError = queryLengthError || hasQueryLengthError;
   const networkError = result.error !== undefined && !hasQueryLengthError;
 
-  const buildUrl = (next: {
-    q?: string | null;
-    platform?: string | null;
-    secondary?: string | null;
-    product?: string | null;
-  }) => buildExplorerUrl(options.basePath, filters, options.secondaryParamKey, next);
+  const buildUrl = (next: BuildUrlNext) =>
+    buildExplorerUrl(options.basePath, filters, options.secondaryParamKey, next, elementParamKey);
 
-  const navigateTo = (next: {
-    q?: string | null;
-    platform?: string | null;
-    secondary?: string | null;
-    product?: string | null;
-  }) => navigate(buildUrl(next));
+  const navigateTo = (next: BuildUrlNext) => navigate(buildUrl(next));
 
   const onLoadMore = () => {
     if (loadingMore || !hasNextPage || endCursor === null) {
@@ -310,12 +332,14 @@ export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNo
     searchInput,
     platform,
     secondary,
+    element,
     product,
     query,
     onSearchInputChange: handleSearchInputChange,
     onSearchSubmit,
     onPlatformChange,
     onSecondaryChange: (value: string) => navigateTo({ secondary: value.length > 0 ? value : null }),
+    onElementChange: (value: string) => navigateTo({ element: value.length > 0 ? value : null }),
     onClearFilters,
     onLoadMore,
     retry,

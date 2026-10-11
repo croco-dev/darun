@@ -19,6 +19,13 @@ export type { VisualPlatform, VisualScreenType } from './entities/VisualClassifi
 export { VISUAL_FLOW_TYPES, isVisualFlowType } from './entities/VisualFlowType';
 export type { VisualFlowType } from './entities/VisualFlowType';
 export {
+  VISUAL_UI_ELEMENTS,
+  VISUAL_UI_ELEMENTS_MAX_COUNT,
+  isVisualUiElement,
+  normalizeVisualUiElements,
+} from './entities/VisualUiElement';
+export type { VisualUiElement } from './entities/VisualUiElement';
+export {
   ProductError,
   productCategoryNotFound,
   productCompanyNotFound,

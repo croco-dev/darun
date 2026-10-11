@@ -2,6 +2,7 @@ import { Field, ID, InputType, ObjectType } from 'type-graphql';
 import { Screenshot } from './Screenshot';
 import { VisualPlatformGraph } from './VisualPlatform';
 import { VisualScreenTypeGraph } from './VisualScreenType';
+import { VisualUiElementGraph } from './VisualUiElement';
 
 @ObjectType()
 export class UpdateProductScreenshotPayload {
@@ -25,4 +26,7 @@ export class UpdateProductScreenshotInput {
 
   @Field(() => VisualScreenTypeGraph, { nullable: true })
   screenType?: string | null;
+
+  @Field(() => [VisualUiElementGraph], { nullable: true })
+  uiElements?: VisualUiElementGraph[] | null;
 }

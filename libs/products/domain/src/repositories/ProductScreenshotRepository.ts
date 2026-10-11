@@ -1,6 +1,7 @@
 import { Token } from 'typedi';
 import { ProductScreenshot } from '../entities/ProductScreenshot';
 import type { VisualPlatform, VisualScreenType } from '../entities/VisualClassification';
+import type { VisualUiElement } from '../entities/VisualUiElement';
 
 export type VisualScreenshotWithProduct = ProductScreenshot & {
   productName: string;
@@ -14,6 +15,7 @@ export type VisualScreenshotFilter = {
   platform?: VisualPlatform;
   screenType?: VisualScreenType;
   productSlug?: string;
+  uiElements?: readonly VisualUiElement[];
 };
 
 export type VisualSort = 'LATEST' | 'POPULAR';
@@ -79,6 +81,18 @@ export interface ProductScreenshotRepository {
     limit: number;
     offset: number;
   }): Promise<{ screenshots: VisualScreenshotWithProduct[]; totalCount: number }>;
+  /**
+   * 스크린샷 UI 요소 태그 전체 교체 저장.
+   * 닫힌 집합 밖 값은 거절한다. 반환값은 정규화된 현재 태그다.
+   */
+  replaceScreenshotUiElements(
+    screenshotId: string,
+    elements: readonly string[] | null | undefined
+  ): Promise<VisualUiElement[]>;
+  /**
+   * 스크린샷별 UI 요소 태그 일괄 조회. 요청 id마다 목록을 묶어 반환한다.
+   */
+  findScreenshotUiElementsByScreenshotIds(screenshotIds: readonly string[]): Promise<Record<string, VisualUiElement[]>>;
 }
 
 export const ProductScreenshotRepositoryToken = new Token<ProductScreenshotRepository>('ProductScreenshotRepository');

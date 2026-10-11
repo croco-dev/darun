@@ -3,6 +3,8 @@ import {
   ProductScreenshotRepository,
   VisualScreenshotFilter,
   VisualScreenshotWithProduct,
+  VisualUiElement,
+  normalizeVisualUiElements,
   productScreenshotNotFound,
 } from '@darun/products-domain';
 import { ProductScreenshotRepositoryToken, productScreenshotInsertFailed } from '@darun/products-domain';
@@ -13,6 +15,7 @@ import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
+import { productScreenshotUiElements } from '../entities/ProductScreenshotUiElementsSchema';
 import { visualSaves, visualViewEvents } from '../entities/VisualPopularitySchema';
 
 type ScreenshotRow = typeof productScreenshots.$inferSelect;
@@ -59,6 +62,16 @@ function buildVisualFilterConditions(filter: VisualScreenshotFilter) {
   }
   if (filter.productSlug) {
     conditions.push(eq(products.slug, filter.productSlug));
+  }
+  if (filter.uiElements && filter.uiElements.length > 0) {
+    const normalized = normalizeVisualUiElements(filter.uiElements);
+    if (normalized.length > 0) {
+      const elementConditions = normalized.map(
+        element =>
+          sql`EXISTS (SELECT 1 FROM ${productScreenshotUiElements} WHERE ${productScreenshotUiElements.screenshotId} = ${productScreenshots.id} AND ${productScreenshotUiElements.element} = ${element})`
+      );
+      conditions.push(and(...elementConditions)!);
+    }
   }
   if (filter.query.length > 0) {
     const pattern = `%${escapeLikeLiteral(filter.query)}%`;
@@ -431,5 +444,51 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
         .offset(params.offset),
     ]);
     return { screenshots: rows.map(toVisualWithProduct), totalCount: countRows[0]?.value ?? 0 };
+  }
+
+  /**
+   * 스크린샷 UI 요소 태그 전체 교체 저장.
+   * 입력은 도메인 닫힌 집합으로 정규화하며 중복은 첫 등장 순서로 제거한다.
+   * replace semantics: 기존 행을 삭제한 뒤 정규화 결과를 삽입한다.
+   */
+  async replaceScreenshotUiElements(
+    screenshotId: string,
+    elements: readonly string[] | null | undefined
+  ): Promise<VisualUiElement[]> {
+    const normalized = normalizeVisualUiElements(elements);
+    await this.db.transaction(async tx => {
+      await tx.delete(productScreenshotUiElements).where(eq(productScreenshotUiElements.screenshotId, screenshotId));
+      if (normalized.length > 0) {
+        await tx.insert(productScreenshotUiElements).values(normalized.map(element => ({ screenshotId, element })));
+      }
+    });
+    this.productIdLoader.clearAll();
+    return normalized;
+  }
+
+  /**
+   * 스크린샷별 UI 요소 태그 일괄 조회. 저장 순서(삽입 순서) 보장은 하지 않으며
+   * element 코드 오름차순 정렬로 결정적 순서를 반환한다.
+   */
+  async findScreenshotUiElementsByScreenshotIds(
+    screenshotIds: readonly string[]
+  ): Promise<Record<string, VisualUiElement[]>> {
+    if (screenshotIds.length === 0) {
+      return {};
+    }
+    const rows = await this.db
+      .select({
+        screenshotId: productScreenshotUiElements.screenshotId,
+        element: productScreenshotUiElements.element,
+      })
+      .from(productScreenshotUiElements)
+      .where(inArray(productScreenshotUiElements.screenshotId, [...screenshotIds]))
+      .orderBy(sql`${productScreenshotUiElements.screenshotId} ASC`, sql`${productScreenshotUiElements.element} ASC`);
+    const grouped = groupBy(rows, row => row.screenshotId);
+    const result: Record<string, VisualUiElement[]> = {};
+    for (const screenshotId of screenshotIds) {
+      result[screenshotId] = (grouped[screenshotId] ?? []).map(row => row.element as VisualUiElement);
+    }
+    return result;
   }
 }

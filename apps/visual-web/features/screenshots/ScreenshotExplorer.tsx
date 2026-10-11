@@ -5,8 +5,8 @@ import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useRef } from 'react';
 import { ExplorerShell } from '../explorer/ExplorerShell';
-import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
+import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
 import { ScreenshotExplorerState, ScreenshotCard, useScreenshotExplorer } from './useScreenshotExplorer';
 import {
   UNCLASSIFIED_LABEL,
@@ -14,6 +14,7 @@ import {
   VISUAL_PLATFORM_OPTIONS,
   VISUAL_SCREEN_TYPE_LABELS,
   VISUAL_SCREEN_TYPE_OPTIONS,
+  VISUAL_UI_ELEMENT_OPTIONS,
   isVisualPlatformValue,
   isVisualScreenTypeValue,
 } from './visualClassifications';
@@ -90,11 +91,13 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean }) => {
     searchInput,
     platform,
     screenType,
+    element,
     product,
     onSearchInputChange,
     onSearchSubmit,
     onPlatformChange,
     onScreenTypeChange,
+    onElementChange,
     onClearFilters,
     suggestions,
     isSearchingSuggestions,
@@ -104,7 +107,8 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean }) => {
     hideHero,
   } = props;
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const hasFilters = searchInput.trim().length > 0 || platform !== null || screenType !== null || product !== null;
+  const hasFilters =
+    searchInput.trim().length > 0 || platform !== null || screenType !== null || element !== null || product !== null;
 
   return (
     <ExplorerShell
@@ -195,6 +199,24 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean }) => {
               >
                 <option value="">전체</option>
                 {VISUAL_SCREEN_TYPE_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="screenshot-element" className="text-sm font-semibold text-dark-700">
+                UI 요소
+              </label>
+              <select
+                id="screenshot-element"
+                value={element ?? ''}
+                onChange={event => onElementChange(event.currentTarget.value)}
+                className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+              >
+                <option value="">전체</option>
+                {VISUAL_UI_ELEMENT_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

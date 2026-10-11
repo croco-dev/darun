@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildExplorerUrl, mergeCardsForTest } from '../features/explorer/useExplorerQuery';
 import type { ExplorerFilters } from '../features/explorer/useExplorerQuery';
+import { VISUAL_UI_ELEMENT_OPTIONS, isVisualUiElementValue } from '../features/explorer/visualTaxonomy';
 
 const BASE_FILTERS: ExplorerFilters = { query: null, platform: null, secondary: null, product: null };
 
@@ -24,6 +25,15 @@ describe('P1-1 explorer URL builder', () => {
     expect(buildExplorerUrl('/flows', { ...BASE_FILTERS, product: 'toss' }, 'flowType', {})).toBe(
       '/flows?product=toss'
     );
+  });
+
+  it('화면 탐색 UI 요소 선택이 URL에 반영된다', () => {
+    expect(buildExplorerUrl('/', BASE_FILTERS, 'screenType', { element: 'BUTTON' })).toBe('/?element=BUTTON');
+    expect(buildExplorerUrl('/', { ...BASE_FILTERS, element: 'BUTTON' }, 'screenType', {})).toBe('/?element=BUTTON');
+    expect(buildExplorerUrl('/', { ...BASE_FILTERS, element: 'BUTTON' }, 'screenType', { element: null })).toBe('/');
+    expect(isVisualUiElementValue('BUTTON')).toBe(true);
+    expect(isVisualUiElementValue('SIDEBAR')).toBe(false);
+    expect(VISUAL_UI_ELEMENT_OPTIONS.some(option => option.value === 'BUTTON')).toBe(true);
   });
 });
 
