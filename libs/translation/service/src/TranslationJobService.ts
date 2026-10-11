@@ -258,7 +258,7 @@ export class TranslationJobService {
         computeSourceHash(currentProduct.summary) !== startProductHash.summary ||
         computeSourceHash(currentProduct.description || '') !== startProductHash.description;
 
-      let currentFeatures: ProductFeature[] = [];
+      let currentFeatures: ProductFeature[] | null = null;
       if (this.getProductFeaturesUseCase) {
         try {
           currentFeatures = await this.getProductFeaturesUseCase.execute({ productId });
@@ -267,7 +267,7 @@ export class TranslationJobService {
         }
       }
 
-      if (!isStale) {
+      if (!isStale && currentFeatures !== null) {
         if (currentFeatures.length !== features.length) {
           isStale = true;
         } else {
