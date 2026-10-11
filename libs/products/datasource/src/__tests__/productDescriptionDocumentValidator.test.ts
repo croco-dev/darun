@@ -10,6 +10,13 @@ describe('productDescriptionDocumentValidator', () => {
       { id: 'product:summary', kind: 'product_summary', text: '간편 송금 서비스' },
       { id: 'category:cat-1', kind: 'category', text: '핀테크' },
       { id: 'feature:feat-1', kind: 'feature', title: '송금', text: '무료 송금' },
+      {
+        id: 'link:link-1',
+        kind: 'link',
+        title: '공식 안내',
+        url: 'https://example.com/guide',
+        displayText: '공식 안내',
+      },
     ],
   };
 
@@ -95,7 +102,7 @@ describe('productDescriptionDocumentValidator', () => {
       ],
     };
     expect(() => validateProductDescriptionDocument(invalid, mockEvidence)).toThrow(
-      'category만으로 작성될 수 없으며 product:summary 또는 feature:* 근거가 포함되어야 합니다.'
+      'category, tag, link, screenshot만으로 작성될 수 없으며'
     );
   });
 
@@ -115,7 +122,157 @@ describe('productDescriptionDocumentValidator', () => {
       ],
     };
     expect(() => validateProductDescriptionDocument(invalid, mockEvidence)).toThrow(
-      'category만으로 작성될 수 없으며 product:summary 또는 feature:* 근거가 포함되어야 합니다.'
+      'category, tag, link, screenshot만으로 작성될 수 없으며'
+    );
+  });
+
+  it('accepts flow and research refs as substantive body evidence', () => {
+    const flowEvidence: ProductDescriptionEvidence = {
+      ...mockEvidence,
+      items: [
+        ...mockEvidence.items,
+        {
+          id: 'flow:flow-1',
+          kind: 'flow',
+          title: '송금 흐름',
+          description: '송금 흐름 설명',
+          platform: 'iOS',
+          stepCount: 2,
+          stepCaptions: ['계좌 선택', '금액 입력'],
+        },
+      ],
+    };
+    const doc = {
+      ...validDoc,
+      sections: [
+        {
+          title: '송금 흐름',
+          paragraphs: [
+            {
+              text: '확인된 단계에 따라 송금을 진행합니다.',
+              evidenceRefs: ['flow:flow-1'],
+            },
+          ],
+        },
+      ],
+    };
+    expect(() => validateProductDescriptionDocument(doc, flowEvidence)).not.toThrow();
+  });
+
+  it('accepts rich bullets, quotes, and evidence-bound links', () => {
+    const doc = {
+      ...validDoc,
+      sections: [
+        {
+          title: '송금 안내',
+          paragraphs: [
+            {
+              text: '수수료 없는 송금을 지원합니다.',
+              evidenceRefs: ['feature:feat-1', 'link:link-1'],
+              bullets: ['주말에도 송금 가능', '받는 사람 계좌 확인 가능'],
+              quote: true,
+              link: { label: '공식 안내', url: 'https://example.com/guide' },
+            },
+          ],
+        },
+      ],
+    };
+    const result = validateProductDescriptionDocument(doc, mockEvidence);
+    expect(result.sections[0]?.paragraphs[0]?.bullets).toHaveLength(2);
+    expect(result.sections[0]?.paragraphs[0]?.quote).toBe(true);
+    expect(result.sections[0]?.paragraphs[0]?.link?.url).toBe('https://example.com/guide');
+  });
+
+  it('rejects inline HTML or Markdown in rich text fields', () => {
+    const htmlDoc = {
+      ...validDoc,
+      intro: { text: '<b>강조된 소개</b>', evidenceRefs: ['product:summary'] },
+    };
+    expect(() => validateProductDescriptionDocument(htmlDoc, mockEvidence)).toThrow('HTML 태그를 직접 쓸 수 없습니다');
+
+    const markdownDoc = {
+      ...validDoc,
+      intro: { text: '**강조된 소개**', evidenceRefs: ['product:summary'] },
+    };
+    expect(() => validateProductDescriptionDocument(markdownDoc, mockEvidence)).toThrow(
+      'Markdown 서식을 쓸 수 없습니다'
+    );
+  });
+
+  it('rejects links without cited link or research evidence', () => {
+    const doc = {
+      ...validDoc,
+      sections: [
+        {
+          title: '송금 안내',
+          paragraphs: [
+            {
+              text: '자세한 안내는 링크를 확인하십시오.',
+              evidenceRefs: ['feature:feat-1'],
+              link: { label: '공식 안내', url: 'https://example.com/guide' },
+            },
+          ],
+        },
+      ],
+    };
+    expect(() => validateProductDescriptionDocument(doc, mockEvidence)).toThrow(
+      'link:* 또는 research:* 근거를 evidenceRefs에 포함해야 합니다'
+    );
+  });
+
+  it('rejects links whose URL does not match cited link evidence', () => {
+    const doc = {
+      ...validDoc,
+      sections: [
+        {
+          title: '송금 안내',
+          paragraphs: [
+            {
+              text: '자세한 안내는 링크를 확인하십시오.',
+              evidenceRefs: ['feature:feat-1', 'link:link-1'],
+              link: { label: '공식 안내', url: 'https://evil.example/other' },
+            },
+          ],
+        },
+      ],
+    };
+    expect(() => validateProductDescriptionDocument(doc, mockEvidence)).toThrow(
+      '인용한 link 근거의 URL과 일치해야 합니다'
+    );
+  });
+
+  it('rejects research-bound links whose URL does not match cited research evidence', () => {
+    const researchEvidence: ProductDescriptionEvidence = {
+      ...mockEvidence,
+      items: [
+        ...mockEvidence.items,
+        {
+          id: 'research:src-1',
+          kind: 'research',
+          title: '공식 안내',
+          snippet: '수수료 없는 송금을 지원합니다.',
+          hostname: 'example.com',
+          url: 'https://example.com/guide',
+        },
+      ],
+    };
+    const doc = {
+      ...validDoc,
+      sections: [
+        {
+          title: '송금 안내',
+          paragraphs: [
+            {
+              text: '외부 안내를 확인하십시오.',
+              evidenceRefs: ['feature:feat-1', 'research:src-1'],
+              link: { label: '외부 안내', url: 'https://evil.example/other' },
+            },
+          ],
+        },
+      ],
+    };
+    expect(() => validateProductDescriptionDocument(doc, researchEvidence)).toThrow(
+      '인용한 research 근거의 URL과 일치해야 합니다'
     );
   });
 

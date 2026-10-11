@@ -127,10 +127,22 @@ export type {
   ProductDescriptionDocument,
   ProductDescriptionSection,
   EvidenceBackedText,
+  EvidenceRichLink,
 } from './services/ProductDescriptionDocument';
 export {
   ProductDescriptionEvidenceAssembler,
   ProductDescriptionEvidenceAssemblerToken,
+  MAX_EVIDENCE_TAGS,
+  MAX_EVIDENCE_LINKS,
+  MAX_EVIDENCE_SCREENSHOTS,
+  MAX_EVIDENCE_FLOWS,
+  MAX_EVIDENCE_RESEARCH_SOURCES,
+  MAX_EVIDENCE_BULLETS,
+  MAX_EVIDENCE_BULLET_LENGTH,
+  normalizeString,
+  computeSha256,
+  safeEvidenceUrl,
+  truncateEvidenceText,
 } from './services/ProductDescriptionEvidenceAssembler';
 export type {
   IProductDescriptionEvidenceAssembler,

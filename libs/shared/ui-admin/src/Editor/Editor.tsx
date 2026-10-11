@@ -1,6 +1,7 @@
 'use client';
 
 import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
 import Typography from '@tiptap/extension-typography';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -19,7 +20,17 @@ export function Editor({ value, defaultValue, onChange, editable = true, disable
   const isEditable = editable && !disabled;
   const initialContent = value !== undefined ? value : (defaultValue ?? '');
   const editor = useEditor({
-    extensions: [StarterKit, Image, Typography],
+    extensions: [
+      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+      Image,
+      Typography,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
+      }),
+    ],
     content: initialContent,
     editable: isEditable,
     onUpdate: ({ editor: currentEditor }) => {
