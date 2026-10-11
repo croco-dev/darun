@@ -198,7 +198,7 @@ export class RequestProductResearchPayload {
   @Field(() => ProductResearchJob)
   job: ProductResearchJob;
 
-  @Field()
+  @Field(() => String)
   dispatchStatus: ProductResearchDispatchStatus;
 }
 

@@ -5,7 +5,7 @@ function sanitizeSegment(value: string): string {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, '-')
-    .replace(/-+/g, '-')
+    .replace(/--+/g, '-')
     .replace(/^[-._]+|[-._]+$/g, '');
   return normalized.slice(0, 64) || 'image';
 }
