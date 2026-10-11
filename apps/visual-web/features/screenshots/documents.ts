@@ -6,6 +6,7 @@ gql`
     $query: String
     $platform: VisualPlatform
     $screenType: VisualScreenType
+    $uiElements: [VisualUiElement!]
     $productSlug: String
     $first: Int!
     $after: String
@@ -14,6 +15,7 @@ gql`
       query: $query
       platform: $platform
       screenType: $screenType
+      uiElements: $uiElements
       productSlug: $productSlug
       first: $first
       after: $after

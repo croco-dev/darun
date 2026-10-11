@@ -9,6 +9,7 @@ import { VisualScreenshot } from './graphs/VisualScreenshot';
 import { VisualScreenshotConnection } from './graphs/VisualScreenshotConnection';
 import { VisualScreenTypeGraph } from './graphs/VisualScreenType';
 import { VisualSortGraph } from './graphs/VisualSort';
+import { VisualUiElementGraph } from './graphs/VisualUiElement';
 
 const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -80,6 +81,8 @@ export class VisualScreenshotQueryResolver {
     @Arg('query', () => String, { nullable: true }) query?: string | null,
     @Arg('platform', () => VisualPlatformGraph, { nullable: true }) platform?: VisualPlatformGraph | null,
     @Arg('screenType', () => VisualScreenTypeGraph, { nullable: true }) screenType?: VisualScreenTypeGraph | null,
+    @Arg('uiElements', () => [VisualUiElementGraph], { nullable: true })
+    uiElements?: VisualUiElementGraph[] | null,
     @Arg('productSlug', () => String, { nullable: true }) productSlug?: string | null,
     @Arg('sort', () => VisualSortGraph, { nullable: true }) sort?: VisualSortGraph | null,
     @Arg('first', () => Int, { defaultValue: 24 }) first?: number,
@@ -108,6 +111,7 @@ export class VisualScreenshotQueryResolver {
       query: query ?? null,
       platform: platform ?? null,
       screenType: screenType ?? null,
+      uiElements: uiElements ?? null,
       productSlug: productSlug ?? null,
       sort: resolvedSort,
       first: first ?? 24,
