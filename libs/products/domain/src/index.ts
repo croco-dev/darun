@@ -75,6 +75,43 @@ export type {
 export { ProductFlowRepositoryToken } from './repositories/ProductFlowRepository';
 export type { ProductDescriptionJobEntity, ProductDescriptionJobStatus } from './entities/ProductDescriptionJobEntity';
 export type {
+  ProductResearchJobEntity,
+  ProductResearchJobStatus,
+  ProductResearchStage,
+  ProductResearchFailureCode,
+  ProductResearchWarning,
+  ResearchSource,
+  ResearchAnchor,
+  ResearchText,
+  ResearchEvidenceType,
+  ResearchRelationToInput,
+  ProductResearchDraftV1,
+} from './entities/ProductResearchJobEntity';
+export const PRODUCT_RESEARCH_DRAFT_VERSION = 1 as const;
+export { RESEARCH_LIMITS } from './services/ProductResearchSource';
+export type { ProductResearchGenerator, ProductResearchLlmInput } from './services/ProductResearchGenerator';
+export { ProductResearchGeneratorToken } from './services/ProductResearchGenerator';
+export type { NormalizedResearchSource, RawSearchSource } from './services/ProductResearchSource';
+export {
+  normalizeResearchSources,
+  hashSourceSnapshot,
+  isAnchorExcerptPresent,
+  isSameHostOrSubdomain,
+} from './services/ProductResearchSource';
+export { normalizeOfficialUrl, suggestSlug, isSafeSlug } from './services/ProductResearchUrl';
+export type { NormalizeOfficialUrlResult } from './services/ProductResearchUrl';
+export type {
+  ProductResearchJobRepository,
+  ClaimProductResearchJobResult,
+} from './repositories/ProductResearchJobRepository';
+export { ProductResearchJobRepositoryToken } from './repositories/ProductResearchJobRepository';
+export type {
+  ProductResearchMaterializationRepository,
+  ValidatedReviewedProductInput,
+  ReviewedResearchFeature,
+} from './repositories/ProductResearchMaterializationRepository';
+export { ProductResearchMaterializationRepositoryToken } from './repositories/ProductResearchMaterializationRepository';
+export type {
   ProductDescriptionJobRepository,
   UpdateProductDescriptionJobOptions,
 } from './repositories/ProductDescriptionJobRepository';

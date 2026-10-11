@@ -1,6 +1,9 @@
 export { PostgresqlProductRepository } from './repositories/PostgresqlProductRepository';
 export { PostgresqlProductLinkRepository } from './repositories/PostgresqlProductLinkRepository';
 export { PostgresqlProductTagRepository } from './repositories/PostgresqlProductTagRepository';
+export { PostgresqlProductResearchJobRepository } from './repositories/PostgresqlProductResearchJobRepository';
+export { PostgresqlProductResearchMaterializationRepository } from './repositories/PostgresqlProductResearchMaterializationRepository';
+export { productResearchJobs } from './entities/ProductResearchJobSchema';
 export { PostgresqlProductFlowRepository } from './repositories/PostgresqlProductFlowRepository';
 export { PostgresqlProductScreenshotRepository } from './repositories/PostgresqlProductScreenshotRepository';
 export { PostgresqlProductFeatureRepository } from './repositories/PostgresqlProductFeatureRepository';
