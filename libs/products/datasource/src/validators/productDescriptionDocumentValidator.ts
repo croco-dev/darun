@@ -17,8 +17,22 @@ const MAX_RECOMMENDED_LENGTH = 300;
 const MAX_SECTIONS = 3;
 const MAX_PARAGRAPHS_PER_SECTION = 2;
 const MAX_RECOMMENDED_ITEMS = 3;
-const MARKDOWN_FORMAT_PATTERN = /(\*\*|__|`|\[.*?\]\(.*?\))/;
 const HTML_TAG_PATTERN = /<[a-zA-Z][^<>]*>/;
+
+function containsMarkdownFormat(text: string): boolean {
+  if (text.includes('**') || text.includes('__') || text.includes('`')) {
+    return true;
+  }
+  const linkStart = text.indexOf('[');
+  if (linkStart === -1) {
+    return false;
+  }
+  const linkMiddle = text.indexOf('](', linkStart + 1);
+  if (linkMiddle === -1) {
+    return false;
+  }
+  return text.indexOf(')', linkMiddle + 2) !== -1;
+}
 
 export function validateProductDescriptionDocument(
   raw: unknown,
@@ -209,7 +223,7 @@ function assertPlainRichText(text: string, fieldName: string): void {
   if (HTML_TAG_PATTERN.test(text)) {
     throw new Error(`${fieldName}.text에는 HTML 태그를 직접 쓸 수 없습니다. bullets/quote/link 필드를 사용하십시오.`);
   }
-  if (MARKDOWN_FORMAT_PATTERN.test(text)) {
+  if (containsMarkdownFormat(text)) {
     throw new Error(
       `${fieldName}.text에는 Markdown 서식을 쓸 수 없습니다. 일반 텍스트로 작성하고 구조는 전용 필드를 사용하십시오.`
     );

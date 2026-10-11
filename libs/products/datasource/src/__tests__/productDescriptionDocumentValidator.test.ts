@@ -159,8 +159,7 @@ describe('productDescriptionDocumentValidator', () => {
     expect(() => validateProductDescriptionDocument(doc, flowEvidence)).not.toThrow();
   });
 
-  it('accepts rich bullets, quotes, and evidence-bound links', () => {
-    const doc = {
+  it('accepts rich bullets, quotes, and evidence-bound links', () => {    const doc = {
       ...validDoc,
       sections: [
         {
@@ -190,13 +189,27 @@ describe('productDescriptionDocumentValidator', () => {
     };
     expect(() => validateProductDescriptionDocument(htmlDoc, mockEvidence)).toThrow('HTML 태그를 직접 쓸 수 없습니다');
 
-    const markdownDoc = {
+    const markdownCases = [
+      '**강조된 소개**',
+      '__강조된 소개__',
+      '`강조된 소개`',
+      '자세한 내용은 [공식 안내](https://example.com/guide)를 보세요',
+    ];
+    for (const text of markdownCases) {
+      const markdownDoc = {
+        ...validDoc,
+        intro: { text, evidenceRefs: ['product:summary'] },
+      };
+      expect(() => validateProductDescriptionDocument(markdownDoc, mockEvidence)).toThrow(
+        'Markdown 서식을 쓸 수 없습니다'
+      );
+    }
+
+    const bracketOnlyDoc = {
       ...validDoc,
-      intro: { text: '**강조된 소개**', evidenceRefs: ['product:summary'] },
+      intro: { text: '대괄호 [메모] 정도만 있는 소개', evidenceRefs: ['product:summary'] },
     };
-    expect(() => validateProductDescriptionDocument(markdownDoc, mockEvidence)).toThrow(
-      'Markdown 서식을 쓸 수 없습니다'
-    );
+    expect(() => validateProductDescriptionDocument(bracketOnlyDoc, mockEvidence)).not.toThrow();
   });
 
   it('rejects links without cited link or research evidence', () => {
