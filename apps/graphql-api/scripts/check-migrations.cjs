@@ -1,7 +1,7 @@
 const { spawnSync } = require('node:child_process');
 const { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } = require('node:fs');
 const { tmpdir } = require('node:os');
-const { join, relative, resolve } = require('node:path');
+const { dirname, join, relative, resolve } = require('node:path');
 
 const appDirectory = resolve(__dirname, '..');
 const migrationDirectory = join(__dirname, 'migrations');
@@ -35,7 +35,8 @@ try {
     `module.exports = { ...require(${JSON.stringify(join(appDirectory, 'drizzle.config.cjs'))}), out: ${JSON.stringify(relative(appDirectory, temporaryMigrations))} };\n`
   );
 
-  const result = spawnSync('pnpm', ['exec', 'drizzle-kit', 'generate', '--config', temporaryConfig], {
+  const drizzleCli = join(dirname(require.resolve('drizzle-kit')), 'bin.cjs');
+  const result = spawnSync(process.execPath, [drizzleCli, 'generate', '--config', temporaryConfig], {
     cwd: appDirectory,
     encoding: 'utf8',
     input: '',
