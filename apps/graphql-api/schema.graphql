@@ -242,10 +242,13 @@ type Mutation {
   indexProduct(input: IndexProductInput!): IndexProductPayload!
   publishMagazine(input: PublishMagazineInput!): PublishMagazinePayload!
   publishProduct(input: PublishProductInput!): PublishProductPayload!
+  materializeResearchedProduct(input: MaterializeResearchedProductInput!): Product!
   registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
+  requestProductResearch(input: RequestProductResearchInput!): ProductResearchJob!
   requestProductTranslation(productId: String, slug: String): TranslationJob!
   requestTranslation(entityId: String!, entityType: String!, fields: [String!]!): TranslationJob!
   retryProductDescriptionJob(id: String!): ProductDescriptionJob!
+  retryProductResearch(jobId: String!): ProductResearchJob
   retryTranslationJob(id: String!): TranslationJob!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
@@ -288,6 +291,18 @@ type Product {
   voteCount: Int!
 }
 
+input MaterializeResearchedProductInput {
+  categoryIds: [String!]!
+  features: [ReviewedResearchFeatureInput!]!
+  logoUrl: String!
+  name: String!
+  officialUrl: String!
+  researchJobId: String!
+  slug: String!
+  summary: String!
+  tags: [String!]!
+}
+
 type ProductConnection {
   edges: [ProductEdge!]!
   pageInfo: PageInfo!
@@ -304,8 +319,10 @@ type ProductDescriptionJob {
   id: ID!
   message: String
   productId: String!
+  reviewerModel: String
   status: String!
   updatedAt: DateTimeISO
+  writerModel: String
 }
 
 type ProductEdge {
@@ -316,6 +333,35 @@ type ProductEdge {
 input ProductFlowStepInput {
   caption: String!
   screenshotId: ID!
+}
+
+type ProductResearchDraftGraph {
+  features: [ResearchFeatureGraph!]!
+  model: String!
+  name: ResearchTextGraph!
+  originalUrl: String!
+  promptVersion: String!
+  sourceSnapshotHash: String!
+  sources: [ResearchSourceGraph!]!
+  suggestedSlug: String!
+  summary: ResearchTextGraph
+  tags: [String!]!
+  version: Int!
+  warnings: [String!]!
+}
+
+type ProductResearchJob {
+  createdAt: DateTimeISO!
+  errorCode: String
+  errorMessage: String
+  id: ID!
+  materializedProductId: String
+  officialUrl: String!
+  requestKey: String!
+  result: ProductResearchDraftGraph
+  stage: String
+  status: String!
+  updatedAt: DateTimeISO!
 }
 
 input PublishMagazineInput {
@@ -349,6 +395,7 @@ type Query {
   productBySlug(locale: String! = "ko", slug: String!): Product
   productDescriptionJob(id: String!): ProductDescriptionJob
   productDescriptionJobs(limit: Int, offset: Int, status: String): [ProductDescriptionJob!]!
+  productResearchJob(id: String!): ProductResearchJob
   productsByCategory(locale: String! = "ko", slug: String!): [Product!]!
   productsCount: Int!
   publishedMagazines: [Magazine!]!
@@ -380,6 +427,45 @@ input RegisterProductCompanyInput {
 
 type RegisterProductCompanyPayload {
   product: Product
+}
+
+type ResearchAnchorGraph {
+  excerpt: String!
+  sourceId: String!
+}
+
+type ResearchFeatureGraph {
+  anchors: [ResearchAnchorGraph!]!
+  emoji: String!
+  evidenceType: String!
+  name: String!
+  summary: String!
+}
+
+type ResearchSourceGraph {
+  extraSnippets: [String!]!
+  hostname: String!
+  id: String!
+  relationToInput: String!
+  snippet: String!
+  title: String!
+  url: String!
+}
+
+type ResearchTextGraph {
+  anchors: [ResearchAnchorGraph!]!
+  evidenceType: String!
+  value: String!
+}
+
+input RequestProductResearchInput {
+  officialUrl: String!
+}
+
+input ReviewedResearchFeatureInput {
+  emoji: String
+  name: String!
+  summary: String!
 }
 
 """제품 스크린샷"""
@@ -418,6 +504,7 @@ type TranslationJob {
   id: ID!
   locale: String!
   message: String
+  model: String
   status: String!
   updatedAt: DateTimeISO
 }

@@ -26,7 +26,7 @@ const REQUEST_PRODUCT_RESEARCH = gql`
 `;
 
 const PRODUCT_RESEARCH_JOB = gql`
-  query ProductResearchJob($id: ID!) {
+  query ProductResearchJob($id: String!) {
     productResearchJob(id: $id) {
       id
       status

@@ -26,6 +26,12 @@ export class ProductDescriptionJob {
   @Field(() => String, { nullable: true })
   candidateHtml?: string;
 
+  @Field(() => String, { nullable: true })
+  writerModel?: string;
+
+  @Field(() => String, { nullable: true })
+  reviewerModel?: string;
+
   @Field(() => GraphQLISODateTime, { nullable: true })
   appliedAt?: Date;
 

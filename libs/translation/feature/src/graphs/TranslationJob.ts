@@ -21,6 +21,9 @@ export class TranslationJob {
   status: string;
 
   @Field(() => String, { nullable: true })
+  model?: string;
+
+  @Field(() => String, { nullable: true })
   message?: string;
 
   @Field(() => String, { nullable: true })
