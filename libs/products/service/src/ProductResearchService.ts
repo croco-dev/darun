@@ -18,12 +18,19 @@ import {
 } from '@darun/products-domain';
 import type { ProductResearchDispatchStatus } from '@darun/products-domain';
 import type { WebSearchResult } from '@darun/utils-llm';
+import { isAbortError, withAbortableStage, withRetry } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
+import { createHash, randomUUID } from 'node:crypto';
+
+function sha256Hex(input: string): string {
+  return createHash('sha256').update(input).digest('hex');
+}
 
 export type ProductResearchWebSearch = {
   search(
     query: string,
-    count: number
+    count: number,
+    signal?: AbortSignal
   ): Promise<
     | { ok: true; results: WebSearchResult[] }
     | { ok: false; code: 'NOT_CONFIGURED' | 'RATE_LIMITED' | 'TIMEOUT' | 'UPSTREAM_ERROR'; message?: string }
@@ -33,7 +40,7 @@ export type ProductResearchWebSearch = {
 export type ProductResearchLlmClient = {
   getModel(): Promise<string>;
   supportsStructuredOutput?(): Promise<boolean>;
-  complete(systemPrompt: string, userPrompt: string): Promise<string>;
+  complete(systemPrompt: string, userPrompt: string, options?: { signal?: AbortSignal }): Promise<string>;
 };
 
 export type ProductResearchDependencies = {
@@ -48,6 +55,21 @@ export const PRODUCT_RESEARCH_PROMPT_VERSION = 'research-v1';
 const MAX_SEARCH_FAILURES_BEFORE_ABORT = 2;
 export const PRODUCT_RESEARCH_MAX_ATTEMPTS = 5;
 const LEASE_MS = 5 * 60 * 1000;
+// Stage wall-clock budget는 worker deadline(5분) 안에 들어오도록 합성
+// 1회 호출을 90초로 제한하고, 검색 1회 호출은 15초로 제한한다.
+const RESEARCH_STAGE_BUDGET_MS = 90_000;
+const SEARCH_STAGE_BUDGET_MS = 15_000;
+// LLM stage 재시도는 재시도 가능 클래스(타임아웃/429/5xx)에만 적용한다.
+// Abort는 호출자 의도이므로 withRetry가 재시도하지 않는다.
+const LLM_STAGE_MAX_RETRIES = 1;
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    const aborted = new Error('작업이 중단되었습니다.');
+    aborted.name = 'AbortError';
+    throw aborted;
+  }
+}
 
 const researchAnchorSchema = {
   type: 'object',
@@ -146,6 +168,16 @@ export function createProductResearchResponseFormat() {
   };
 }
 
+function requestKeyFor(officialUrl: string, requestId?: string): string {
+  const trimmed = requestId?.trim();
+  // Manual re-research creates a new logical job preserving prior results.
+  // Absent requestId (legacy callers/tests) falls back to URL-keyed dedup.
+  if (trimmed) {
+    return trimmed;
+  }
+  return `url:${sha256Hex(officialUrl)}`;
+}
+
 export type ProductResearchDispatch = ProductResearchDispatchStatus;
 
 export type RequestProductResearchInput = {
@@ -153,13 +185,8 @@ export type RequestProductResearchInput = {
   officialUrl: string;
 };
 
-function requestKeyFor(requestId: string): string {
-  return requestId.trim();
-}
-
 function newRequestId(): string {
-  return crypto
-    .randomUUID()
+  return randomUUID()
     .replace(/[^A-Za-z0-9]/g, '')
     .slice(0, 32)
     .padEnd(8, '0');
@@ -258,6 +285,7 @@ export class ProductResearchService {
     promptVersion: string;
   }): ProductResearchDraftV1 {
     const { raw, originalUrl, sources, categories, model, promptVersion } = input;
+    const inputHostname = new URL(originalUrl).hostname.toLowerCase();
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
       throw new Error('리서치 결과가 올바른 JSON 객체가 아닙니다.');
     }
@@ -293,7 +321,7 @@ export class ProductResearchService {
     if (nameAnchors.length === 0) {
       throw new Error('name에는 최소 1개의 근거가 필요합니다.');
     }
-    const nameEvidence = ProductResearchService.evidenceOf(nameAnchors, sourceById);
+    const nameEvidence = ProductResearchService.evidenceOf(nameAnchors, sourceById, inputHostname);
 
     const summaryValue = asString(payload.summary);
     const summaryAnchors =
@@ -313,7 +341,7 @@ export class ProductResearchService {
       }
     }
     const summaryEvidence =
-      summaryValue === null ? 'NONE' : ProductResearchService.evidenceOf(summaryAnchors, sourceById);
+      summaryValue === null ? 'NONE' : ProductResearchService.evidenceOf(summaryAnchors, sourceById, inputHostname);
 
     const categoryCandidates: ProductResearchDraftV1['categoryCandidates'] = [];
     if (Array.isArray(payload.categoryCandidates)) {
@@ -363,7 +391,7 @@ export class ProductResearchService {
         summary: featureSummary,
         emoji: emoji ?? '✨',
         anchors,
-        evidenceType: ProductResearchService.evidenceOf(anchors, sourceById),
+        evidenceType: ProductResearchService.evidenceOf(anchors, sourceById, inputHostname),
       });
       if (features.length >= RESEARCH_LIMITS.maxFeatures) {
         break;
@@ -483,16 +511,19 @@ export class ProductResearchService {
 
   private static evidenceOf(
     anchors: Array<{ sourceId: string }>,
-    sourceById: Map<string, NormalizedResearchSource>
+    sourceById: Map<string, NormalizedResearchSource>,
+    inputHostname: string
   ): ProductResearchDraftV1['identity']['name']['evidenceType'] {
-    const sources = anchors
+    const cited = anchors
       .map(anchor => sourceById.get(anchor.sourceId))
       .filter((source): source is NormalizedResearchSource => source !== undefined);
-    if (sources.some(source => source.relationToInput === 'INPUT_HOST_MATCH')) {
+    // verified-official(INPUT_HOST)은 입력 호스트와 정확히 같은 호스트에서만 인정한다.
+    // 같은 호스트의 서로 다른 정체성(서브도메인 변형 등)은 서로 독립된 근거가 아니다.
+    if (cited.some(source => source.hostname.toLowerCase() === inputHostname.toLowerCase())) {
       return 'INPUT_HOST';
     }
     const externalHostnames = new Set(
-      sources.filter(source => source.relationToInput === 'EXTERNAL').map(source => source.hostname)
+      cited.filter(source => source.relationToInput === 'EXTERNAL').map(source => source.hostname)
     );
     if (externalHostnames.size >= 2) {
       return 'MULTIPLE_EXTERNAL';
@@ -535,17 +566,21 @@ export class ProductResearchService {
   }
 
   async requestResearch(
-    input: RequestProductResearchInput,
-    deps: ProductResearchDependencies
+    input: RequestProductResearchInput | string,
+    deps: ProductResearchDependencies,
+    requestId?: string
   ): Promise<{ job: ProductResearchJobEntity; queued: boolean }> {
-    if (!isRequestId(input.requestId)) {
+    // trunk(#432) object form {requestId, officialUrl} + legacy positional form.
+    const officialUrlInput = typeof input === 'string' ? input : input.officialUrl;
+    const resolvedRequestId = typeof input === 'string' ? requestId : input.requestId;
+    if (resolvedRequestId !== undefined && !isRequestId(resolvedRequestId)) {
       throw productInvalidArgs('요청 ID 형식이 유효하지 않습니다.');
     }
-    const normalized = normalizeOfficialUrl(input.officialUrl);
+    const normalized = normalizeOfficialUrl(officialUrlInput);
     if (!normalized.ok) {
       throw productInvalidArgs(normalized.reason);
     }
-    const requestKey = requestKeyFor(input.requestId);
+    const requestKey = requestKeyFor(normalized.url, resolvedRequestId);
     const existing = await deps.jobRepository.findByRequestKey(requestKey);
     if (existing) {
       if (existing.officialUrl !== normalized.url) {
@@ -590,7 +625,7 @@ export class ProductResearchService {
     if (original.status !== 'failed') {
       return { job: original, deduped: true };
     }
-    const requestKey = requestKeyFor(resolved);
+    const requestKey = requestKeyFor(original.officialUrl, resolved);
     try {
       const created = await deps.jobRepository.createPendingJob({
         requestKey,
@@ -615,7 +650,8 @@ export class ProductResearchService {
   async executeResearch(
     jobId: string,
     deps: ProductResearchDependencies,
-    leaseToken = crypto.randomUUID()
+    leaseToken = randomUUID(),
+    options?: { signal?: AbortSignal; stageBudgetMs?: number }
   ): Promise<ProductResearchJobEntity | null> {
     const claim = await deps.jobRepository.claimJob({
       jobId,
@@ -627,6 +663,7 @@ export class ProductResearchService {
       return claim.job;
     }
     const job = claim.job;
+    const stageBudgetMs = options?.stageBudgetMs ?? RESEARCH_STAGE_BUDGET_MS;
     try {
       const normalized = normalizeOfficialUrl(job.officialUrl);
       if (!normalized.ok) {
@@ -641,9 +678,42 @@ export class ProductResearchService {
       const collected: Array<{ title: string; url: string; description: string; extraSnippets?: string[] }> = [];
       let failures = 0;
       for (const query of queries) {
-        const outcome = await deps.searchClient.search(query, 5);
+        throwIfAborted(options?.signal);
+        let outcome: Awaited<ReturnType<ProductResearchWebSearch['search']>>;
+        try {
+          outcome = await withAbortableStage(signal => deps.searchClient.search(query, 5, signal), {
+            budgetMs: SEARCH_STAGE_BUDGET_MS,
+            signal: options?.signal,
+            message: '웹 검색 요청이 시간 초과되었습니다.',
+          });
+        } catch (error) {
+          // 호출자 abort는 terminal 확정 없이 in_progress lease 만료·recovery에 맡긴다.
+          if (isAbortError(error) || options?.signal?.aborted) {
+            console.warn(`[ProductResearchService] Job ${jobId} aborted during search; leaving lease to expire.`);
+            return job;
+          }
+          // Stage budget 만료(RetryableError)는 단일 공급자 stall일 뿐이므로
+          // per-query 실패로 흡수한다. 2회 연속 실패 정책과 부분 성공 지원이 그대로 적용된다.
+          failures += 1;
+          if (failures >= MAX_SEARCH_FAILURES_BEFORE_ABORT) {
+            return deps.jobRepository.failJob({
+              jobId,
+              leaseToken,
+              errorCode: 'SEARCH_UNAVAILABLE',
+              errorMessage: error instanceof Error ? error.message : '웹 검색에 실패했습니다.',
+            });
+          }
+          continue;
+        }
         if (!outcome.ok) {
           failures += 1;
+          // 호출자 abort 도중의 검색 실패(TIMEOUT 등)는 실패 카운트·terminal
+          // 확정 없이 in_progress lease를 만료·recovery에 맡긴다. 일반
+          // 타임아웃·상류 실패는 기존처럼 실패 카운트로 흡수된다.
+          if (options?.signal?.aborted) {
+            console.warn(`[ProductResearchService] Job ${jobId} aborted during search; leaving lease to expire.`);
+            return job;
+          }
           if (outcome.code === 'NOT_CONFIGURED') {
             return deps.jobRepository.failJob({
               jobId,
@@ -719,8 +789,26 @@ export class ProductResearchService {
       );
       let rawResponse: string;
       try {
-        rawResponse = await deps.llm.complete(systemPrompt, `${userPrompt}\n반드시 JSON 객체 하나만 출력하십시오.`);
+        throwIfAborted(options?.signal);
+        rawResponse = await withRetry(
+          () =>
+            withAbortableStage(
+              signal =>
+                deps.llm.complete(systemPrompt, `${userPrompt}\n반드시 JSON 객체 하나만 출력하십시오.`, { signal }),
+              {
+                budgetMs: stageBudgetMs,
+                signal: options?.signal,
+                message: 'LLM 합성 요청이 시간 초과되었습니다.',
+              }
+            ),
+          { maxRetries: LLM_STAGE_MAX_RETRIES, baseDelay: 1000, maxDelay: 5000 }
+        );
       } catch (error) {
+        // 호출자 abort는 terminal failJob 없이 lease 만료·recovery에 맡긴다.
+        if (isAbortError(error) || options?.signal?.aborted) {
+          console.warn(`[ProductResearchService] Job ${jobId} aborted during LLM stage; leaving lease to expire.`);
+          return job;
+        }
         if (isStructuredOutputUnsupported(error)) {
           return deps.jobRepository.failJob({
             jobId,
@@ -777,6 +865,13 @@ export class ProductResearchService {
         model: draft.model,
       });
     } catch (error) {
+      // 호출자 abort(AbortError·이미 중단된 부모 signal)는 terminal failJob으로
+      // 확정하지 않는다. in_progress lease가 만료되면 recovery가 재시도한다.
+      // description·translation worker와 동일한 규율이다.
+      if (isAbortError(error) || options?.signal?.aborted) {
+        console.warn(`[ProductResearchService] Job ${jobId} aborted; leaving lease to expire.`);
+        return job;
+      }
       return deps.jobRepository.failJob({
         jobId,
         leaseToken,

@@ -30,10 +30,19 @@ export class GenerateProductDescriptionCandidate {
     private readonly productDescriptionGenerator: ProductDescriptionGenerator
   ) {}
 
-  async execute({ productId }: { productId: string }): Promise<GenerateProductDescriptionCandidateResult> {
+  async execute({
+    productId,
+    signal,
+  }: {
+    productId: string;
+    signal?: AbortSignal;
+  }): Promise<GenerateProductDescriptionCandidateResult> {
     const startSnapshot = await this.evidenceAssembler.assemble(productId);
 
-    const generationResult = await this.productDescriptionGenerator.generate(startSnapshot.evidence);
+    const generationResult = await this.productDescriptionGenerator.generate(
+      startSnapshot.evidence,
+      signal ? { signal } : undefined
+    );
 
     const currentSnapshot = await this.evidenceAssembler.assemble(productId);
     if (

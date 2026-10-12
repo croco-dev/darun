@@ -49,19 +49,21 @@ export class ProductResearchMutationResolver {
     private readonly llmSettingService: LlmSettingService
   ) {}
 
-  private async buildDeps(): Promise<ProductResearchDependencies> {
+  private async buildDeps(signal?: AbortSignal): Promise<ProductResearchDependencies> {
     const searchClient = new BraveSearchClient(() => this.llmSettingService.getBraveApiKey());
     const llm = {
       getModel: async () => (await this.llmClient.getConfig()).model,
-      complete: async (systemPrompt: string, userPrompt: string) => {
-        const config = await this.llmClient.getConfig();
+      complete: async (systemPrompt: string, userPrompt: string, options?: { signal?: AbortSignal }) => {
         const message = await this.llmClient.completion(
-          config.model,
           [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
           ],
-          { responseFormat: ProductResearchService.researchResponseFormat() }
+          undefined,
+          {
+            responseFormat: ProductResearchService.researchResponseFormat(),
+            ...(options?.signal ? { signal: options.signal } : {}),
+          }
         );
         const content = typeof message.content === 'string' ? message.content : '';
         if (!content.trim()) {
@@ -74,7 +76,8 @@ export class ProductResearchMutationResolver {
       jobRepository: this.jobRepository,
       categoryRepository: this.categoryRepository,
       searchClient: {
-        search: (query: string, count: number) => searchClient.search(query, count),
+        search: (query: string, count: number, childSignal?: AbortSignal) =>
+          searchClient.search(query, count, childSignal ?? signal),
       },
       llm,
       promptVersion: PRODUCT_RESEARCH_PROMPT_VERSION,
@@ -105,6 +108,9 @@ export class ProductResearchMutationResolver {
       throw new Error(normalized.reason);
     }
     const deps = await this.buildDeps();
+    // Manual re-research (new requestId) creates a new logical job;
+    // same request-id retransmit returns the single existing job (deduped).
+    // 큐 전송 실패는 pending으로 남겨 recovery tick이 재발견한다 (dispatchJob RETRY_REQUIRED).
     const { job, queued } = await this.researchService.requestResearch(
       { requestId: input.requestId, officialUrl: normalized.url },
       deps
@@ -138,8 +144,19 @@ export class ProductResearchMutationResolver {
       return { job: toProductResearchJobGraph(job), dispatchStatus: await this.dispatchJob(job.id) };
     }
     const deps = await this.buildDeps();
+    // 실패 작업 재시도는 새 논리 job을 만들어 이전 결과를 보존한다.
+    // 같은 requestId 재전송은 단일 기존 job을 반환한다(deduped).
     const { job: retried, deduped } = await this.researchService.retryFailedResearch(job.id, deps, input?.requestId);
     if (deduped || retried.id === job.id) {
+      // 동일 ID 재대기: CAS로 failed→pending 전이를 시도한다 (레거시 same-id mock 호환).
+      if (typeof this.jobRepository.requeueFailedJob === 'function' && retried.id === job.id) {
+        const requeued = await this.jobRepository.requeueFailedJob({ jobId: job.id, expectedStatuses: ['failed'] });
+        const latest = requeued ?? (await this.jobRepository.findById(job.id)) ?? retried;
+        if (!this.isResendable(latest)) {
+          return { job: toProductResearchJobGraph(latest), dispatchStatus: 'DEDUPED' };
+        }
+        return { job: toProductResearchJobGraph(latest), dispatchStatus: await this.dispatchJob(latest.id) };
+      }
       if (!this.isResendable(retried)) {
         return { job: toProductResearchJobGraph(retried), dispatchStatus: 'DEDUPED' };
       }
@@ -149,6 +166,30 @@ export class ProductResearchMutationResolver {
       job: toProductResearchJobGraph(retried),
       dispatchStatus: await this.dispatchJob(retried.id),
     };
+  }
+
+  /**
+   * 주기 recovery tick: 전송 누락 pending과 만료 lease in_progress를
+   * 재발견해 큐로 다시 전송한다.
+   */
+  async recoverInterruptedJobs(input?: { now?: Date; limit?: number }): Promise<{ recovered: number; queued: number }> {
+    const jobs =
+      (await this.jobRepository.findRecoverableJobs?.({
+        now: input?.now ?? new Date(),
+        limit: input?.limit ?? 50,
+      })) ?? [];
+    let queued = 0;
+    for (const job of jobs) {
+      try {
+        const sent = await this.queueService.sendJob({ jobId: job.id });
+        if (sent) {
+          queued += 1;
+        }
+      } catch (error) {
+        console.warn('[ProductResearchMutationResolver] Recovery send failed; leaving pending:', error);
+      }
+    }
+    return { recovered: jobs.length, queued };
   }
 
   @Authorized([AuthRole.Admin])

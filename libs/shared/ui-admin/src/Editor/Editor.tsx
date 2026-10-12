@@ -1,11 +1,8 @@
 'use client';
 
-import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import Typography from '@tiptap/extension-typography';
 import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import { useEffect } from 'react';
+import { createAdminEditorExtensions } from './extensions';
 import { MenuBar } from './MenuBar';
 
 type EditorProps = {
@@ -20,17 +17,7 @@ export function Editor({ value, defaultValue, onChange, editable = true, disable
   const isEditable = editable && !disabled;
   const initialContent = value !== undefined ? value : (defaultValue ?? '');
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
-      Image,
-      Typography,
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        linkOnPaste: true,
-        HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
-      }),
-    ],
+    extensions: createAdminEditorExtensions(),
     content: initialContent,
     editable: isEditable,
     onUpdate: ({ editor: currentEditor }) => {

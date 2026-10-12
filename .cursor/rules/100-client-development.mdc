@@ -1,5 +1,5 @@
 ---
-description: Next.js 클라이언트 개발 규칙 (Shell, Feature, UI 계층 구조, MVVM bind 패턴, Suspense 활용, Apollo Client, Clerk 인증)
+description: Next.js 클라이언트 개발 규칙 (Shell, Feature, UI 계층 구조, MVVM bind 패턴, Suspense 활용, Apollo Client, Firebase 인증)
 alwaysApply: false
 ---
 # 📱 클라이언트 개발 규칙
@@ -163,7 +163,7 @@ libs/portfolio/feature/src/libs/
 - **Navigation**: `@darun/utils-router` (next/navigation re-export)
 - **State**: React hooks, 복잡한 상태는 컨텍스트 활용
 - **GraphQL**: Apollo Client (@apollo/client, @apollo/client-integration-nextjs)
-- **Auth**: Clerk (@clerk/nextjs)
+- **Auth**: Firebase (`@darun/utils-auth-service-firebase`, `@darun/provider-auth`)
 - **Deployment**: Cloudflare (@opennextjs/cloudflare)
 
 ## 파일 구조
@@ -175,7 +175,7 @@ apps/console-web/src/
 │   ├── layout.tsx           # 루트 레이아웃 (GlobalLayout 사용)
 │   ├── page.tsx             # 페이지 컴포넌트
 │   ├── client-providers.tsx # Apollo Provider
-│   ├── server-providers.tsx # Clerk Provider
+│   ├── server-providers.tsx # Auth Provider (Firebase)
 │   └── environment.ts       # 환경 변수
 └── shells/
     └── GlobalLayout.tsx     # 레이아웃 조립 + UX Boundary
@@ -200,14 +200,14 @@ Feature Layer에서 `@darun/utils-mvvm`의 `bind` 함수 사용:
 // GlobalHeader.tsx - View를 bind에 인라인으로 작성
 'use client';
 
-import { UserButton } from '@clerk/nextjs';
+import { HeaderLoginButton } from '@darun/ui-layout';
 import { bind } from '@darun/utils-mvvm';
 import { useGlobalHeader } from './useGlobalHeader';
 
 export const GlobalHeader = bind(useGlobalHeader, ({ workspaceName }) => (
   <header className="flex items-center justify-between border-b px-4 py-3">
     <h1 className="text-lg font-semibold">{workspaceName}</h1>
-    <UserButton />
+    <HeaderLoginButton />
   </header>
 ));
 
@@ -425,14 +425,13 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
 }
 ```
 
-## Clerk 인증 사용 패턴
+## Firebase 인증 사용 패턴
 ```typescript
-// apps/*/src/app/server-providers.tsx
-import { ClerkProvider } from '@clerk/nextjs';
+// apps/*/app/server.tsx — Firebase AuthService를 provider-auth에 등록
+import { initAuthProvider } from '@darun/provider-auth/server';
+import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 
-export function ServerProviders({ children }: { children: React.ReactNode }) {
-  return <ClerkProvider>{children}</ClerkProvider>;
-}
+initAuthProvider({ authService: container.authService });
 ```
 
 ## 컴포넌트 작성 규칙

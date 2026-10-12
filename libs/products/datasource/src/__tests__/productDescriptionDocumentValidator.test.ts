@@ -159,7 +159,8 @@ describe('productDescriptionDocumentValidator', () => {
     expect(() => validateProductDescriptionDocument(doc, flowEvidence)).not.toThrow();
   });
 
-  it('accepts rich bullets, quotes, and evidence-bound links', () => {    const doc = {
+  it('accepts rich bullets, quotes, and evidence-bound links', () => {
+    const doc = {
       ...validDoc,
       sections: [
         {
@@ -287,6 +288,62 @@ describe('productDescriptionDocumentValidator', () => {
     expect(() => validateProductDescriptionDocument(doc, researchEvidence)).toThrow(
       '인용한 research 근거의 URL과 일치해야 합니다'
     );
+  });
+
+  it('passes when the link matches any cited link ref', () => {
+    const multiLinkEvidence: ProductDescriptionEvidence = {
+      ...mockEvidence,
+      items: [
+        ...mockEvidence.items,
+        {
+          id: 'link:link-2',
+          kind: 'link',
+          title: '두 번째 안내',
+          url: 'https://example.com/second',
+          displayText: '두 번째 안내',
+        },
+      ],
+    };
+    const doc = {
+      ...validDoc,
+      sections: [
+        {
+          title: '송금 안내',
+          paragraphs: [
+            {
+              text: '자세한 안내는 두 번째 링크를 확인하십시오.',
+              evidenceRefs: ['feature:feat-1', 'link:link-1', 'link:link-2'],
+              link: { label: '두 번째 안내', url: 'https://example.com/second' },
+            },
+          ],
+        },
+      ],
+    };
+    const result = validateProductDescriptionDocument(doc, multiLinkEvidence);
+    expect(result.sections[0]?.paragraphs[0]?.link?.url).toBe('https://example.com/second');
+  });
+
+  it('rejects javascript: and credentialed URLs as non-http(s) links', () => {
+    for (const url of ['javascript:alert(1)', 'https://user:pass@example.com/guide']) {
+      const doc = {
+        ...validDoc,
+        sections: [
+          {
+            title: '송금 안내',
+            paragraphs: [
+              {
+                text: '자세한 안내는 링크를 확인하십시오.',
+                evidenceRefs: ['feature:feat-1', 'link:link-1'],
+                link: { label: '공식 안내', url },
+              },
+            ],
+          },
+        ],
+      };
+      expect(() => validateProductDescriptionDocument(doc, mockEvidence)).toThrow(
+        'link.url은 http(s) URL이어야 합니다'
+      );
+    }
   });
 
   it('rejects when text exceeds length limit', () => {

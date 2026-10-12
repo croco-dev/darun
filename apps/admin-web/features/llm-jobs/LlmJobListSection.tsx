@@ -105,6 +105,7 @@ const JOB_TYPE_FILTERS = [
 const STATUS_FILTERS = [
   { value: 'all', label: '전체' },
   { value: 'failed', label: '실패' },
+  { value: 'superseded', label: '폐기' },
   { value: 'in_progress', label: '진행 중' },
   { value: 'pending', label: '대기 중' },
   { value: 'completed', label: '완료' },
@@ -155,6 +156,13 @@ function StatusBadge({ status }: { status: string }) {
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-cherry-50 text-cherry-700 border border-cherry-200">
           <AlertCircle size={12} className="shrink-0" aria-hidden="true" />
           실패
+        </span>
+      );
+    case 'superseded':
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-surface-100 text-dark-600 border border-dark-200">
+          <Info size={12} className="shrink-0" aria-hidden="true" />
+          폐기
         </span>
       );
     default:
@@ -563,7 +571,11 @@ export function LlmJobListSection() {
 
                       {/* Message / Error */}
                       <td className="border-r border-dark-200 px-4 py-3 text-xs">
-                        {hasError ? (
+                        {job.status === 'superseded' ? (
+                          <span className="text-dark-600 line-clamp-2">
+                            원문 변경으로 폐기됨 · {job.message || '해당 상품에서 다시 생성해 주세요.'}
+                          </span>
+                        ) : hasError ? (
                           <div className="flex items-start gap-1.5">
                             <button
                               type="button"
@@ -601,7 +613,7 @@ export function LlmJobListSection() {
 
                       {/* Actions */}
                       <td className="px-4 py-3 text-center text-xs">
-                        {job.status === 'failed' ? (
+                        {job.status === 'failed' || job.status === 'superseded' ? (
                           <Button
                             type="button"
                             size="sm"
@@ -616,7 +628,9 @@ export function LlmJobListSection() {
                               className={`shrink-0 ${isRetrying ? 'animate-spin motion-reduce:animate-none' : ''}`}
                               aria-hidden="true"
                             />
-                            <span className="whitespace-nowrap">재시도</span>
+                            <span className="whitespace-nowrap">
+                              {job.status === 'superseded' ? '다시 생성' : '재시도'}
+                            </span>
                           </Button>
                         ) : job.status === 'pending' || job.status === 'in_progress' ? (
                           <span className="text-xs text-brown-600 font-medium whitespace-nowrap">처리 중</span>

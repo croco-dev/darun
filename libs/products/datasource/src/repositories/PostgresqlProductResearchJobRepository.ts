@@ -4,10 +4,11 @@ import {
   type ProductResearchFailureCode,
   type ProductResearchJobEntity,
   type ProductResearchJobRepository,
+  type ProductResearchJobStatus,
   ProductResearchJobRepositoryToken,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { and, eq, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { type ProductResearchJobRow, productResearchJobs } from '../entities/ProductResearchJobSchema';
 
@@ -90,6 +91,25 @@ export class PostgresqlProductResearchJobRepository implements ProductResearchJo
       throw new Error('ProductResearchJob creation failed');
     }
     return this.toEntity(row);
+  }
+
+  async requeueFailedJob(input: {
+    jobId: string;
+    expectedStatuses: ProductResearchJobStatus[];
+  }): Promise<ProductResearchJobEntity | null> {
+    const rows = await this.db
+      .update(productResearchJobs)
+      .set({
+        status: 'pending',
+        stage: null,
+        errorCode: null,
+        errorMessage: null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(productResearchJobs.id, input.jobId), inArray(productResearchJobs.status, input.expectedStatuses)))
+      .returning();
+    const row = rows[0];
+    return row ? this.toEntity(row) : null;
   }
 
   async claimJob(input: {
@@ -259,5 +279,29 @@ export class PostgresqlProductResearchJobRepository implements ProductResearchJo
       .returning();
     const row = rows[0];
     return row ? this.toEntity(row) : null;
+  }
+
+  async findRecoverableJobs(input: { now: Date; limit?: number }): Promise<ProductResearchJobEntity[]> {
+    const limit = Math.min(Math.max(input.limit ?? 50, 1), 200);
+    try {
+      const rows = await this.db
+        .select()
+        .from(productResearchJobs)
+        .where(
+          or(
+            eq(productResearchJobs.status, 'pending'),
+            and(
+              eq(productResearchJobs.status, 'in_progress'),
+              or(isNull(productResearchJobs.leaseUntil), lte(productResearchJobs.leaseUntil, input.now))
+            )
+          )
+        )
+        .orderBy(asc(productResearchJobs.updatedAt))
+        .limit(limit);
+      return rows.map(row => this.toEntity(row));
+    } catch (error) {
+      console.warn('[PostgresqlProductResearchJobRepository] Failed to find recoverable jobs:', error);
+      return [];
+    }
   }
 }

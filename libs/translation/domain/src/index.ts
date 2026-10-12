@@ -21,5 +21,8 @@ export type {
 } from './ports/TranslationProvider';
 export { TranslationProviderToken } from './ports/TranslationProvider';
 
+export { validateProductBundleTranslation } from './validators/productBundleTranslationValidator';
+export type { ValidatedProductBundleTranslation } from './validators/productBundleTranslationValidator';
+
 export { TranslationService } from './services/TranslationService';
 export { computeSourceHash, normalizeSourceText } from './utils/sourceHash';

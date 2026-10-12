@@ -15,6 +15,7 @@ async function main() {
       'src/functions/translation-worker.ts',
       'src/functions/product-description-worker.ts',
       'src/functions/product-research-worker.ts',
+      'src/functions/job-recovery-tick.ts',
     ],
     bundle: true,
     platform: 'node',

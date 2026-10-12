@@ -59,7 +59,8 @@ function httpsUrl(value: string): string | null {
 @Service()
 export class ProductResearchReviewService {
   constructor(
-    @Inject(ProductResearchJobRepositoryToken) private readonly jobRepository?: ProductResearchJobRepository,
+    @Inject(ProductResearchJobRepositoryToken)
+    private readonly jobRepository?: ProductResearchJobRepository,
     @Inject(ProductResearchMaterializationRepositoryToken)
     private readonly materializationRepository?: ProductResearchMaterializationRepository
   ) {}

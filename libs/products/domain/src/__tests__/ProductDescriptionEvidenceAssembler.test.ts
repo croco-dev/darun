@@ -541,11 +541,39 @@ describe('ProductDescriptionEvidenceAssembler', () => {
       })
     );
     vi.mocked(featureRepo.findManyByProductId).mockResolvedValue([]);
-    vi.mocked(extended.tagRepo.findOneByProductId).mockRejectedValue(new Error('tag store down'));
+    vi.mocked(extended.tagRepo.findOneByProductId).mockResolvedValue(null);
+    vi.mocked(extended.linkRepo.findManyByProductId).mockResolvedValue([]);
+    vi.mocked(extended.screenshotRepo.findManyByProductIdSortByPriorityDesc).mockResolvedValue([]);
+    vi.mocked(extended.flowRepo.findManyByProductId).mockResolvedValue([]);
+    vi.mocked(extended.researchRepo.findByProductId).mockResolvedValue(null);
 
     const assembler = createAssembler(productRepo, featureRepo, categoryRepo, extended);
     const result = await assembler.assemble('prod-1');
 
     expect(result.evidence.items.map(item => item.id)).toEqual(['product:summary']);
+  });
+
+  it('propagates an extended repository failure as a retryable assembly error', async () => {
+    const productRepo = createMockProductRepo();
+    const featureRepo = createMockFeatureRepo();
+    const categoryRepo = createMockCategoryRepo();
+    const extended = createEmptyExtendedRepos();
+
+    vi.mocked(productRepo.findOneById).mockResolvedValue(
+      new Product({
+        id: 'prod-1',
+        name: '토스',
+        slug: 'toss',
+        logoUrl: 'https://example.com/logo.png',
+        summary: '금융의 모든 것',
+        categoryIds: [],
+      })
+    );
+    vi.mocked(featureRepo.findManyByProductId).mockResolvedValue([]);
+    vi.mocked(extended.tagRepo.findOneByProductId).mockRejectedValue(new Error('tag store down'));
+
+    const assembler = createAssembler(productRepo, featureRepo, categoryRepo, extended);
+
+    await expect(assembler.assemble('prod-1')).rejects.toThrow('tag store down');
   });
 });

@@ -40,6 +40,7 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
   }> {
     try {
       return await this.db.transaction(async tx => {
+        // 잠금 순서: research job row(FOR UPDATE) → product/source rows.
         const jobRows = await tx
           .select()
           .from(productResearchJobs)

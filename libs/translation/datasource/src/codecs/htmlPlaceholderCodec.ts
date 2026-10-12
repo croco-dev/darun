@@ -12,6 +12,16 @@ export function encodeHtml(html: string): HtmlCodecResult {
   const tokenOrder: string[] = [];
   let index = 0;
 
+  const literalCollision = (() => {
+    PLACEHOLDER_REGEX.lastIndex = 0;
+    const found = PLACEHOLDER_REGEX.test(html);
+    PLACEHOLDER_REGEX.lastIndex = 0;
+    return found;
+  })();
+  if (literalCollision) {
+    throw new Error('HTML source contains a literal placeholder-shaped token and cannot be encoded safely.');
+  }
+
   const encodedText = html.replace(HTML_TAG_REGEX, tag => {
     const token = `⟦HTML_${String(index).padStart(4, '0')}⟧`;
     placeholders.set(token, tag);
@@ -23,7 +33,11 @@ export function encodeHtml(html: string): HtmlCodecResult {
   return { encodedText, placeholders, tokenOrder };
 }
 
-export function decodeHtml(encodedText: string, placeholders: Map<string, string>): string {
+export function decodeHtml(
+  encodedText: string,
+  placeholders: Map<string, string>,
+  tokenOrder?: string[]
+): string {
   if (placeholders.size === 0) {
     return encodedText;
   }
@@ -46,6 +60,16 @@ export function decodeHtml(encodedText: string, placeholders: Map<string, string
   for (const token of foundTokens) {
     if (!placeholders.has(token)) {
       throw new Error(`Unexpected HTML placeholder found: ${token}`);
+    }
+  }
+
+  // 같은 토큰 집합이라도 순서가 바뀌면 태그 위치가 뒤바뀌어
+  // 닫힘 순서가 깨진 손상 출력이 되므로 순서 일치를 강제한다.
+  const expectedOrder = tokenOrder ?? [...placeholders.keys()];
+  if (expectedOrder.length === foundTokens.length) {
+    const reordered = expectedOrder.some((token, index) => foundTokens[index] !== token);
+    if (reordered) {
+      throw new Error('HTML placeholder order mismatch: translated output reordered tag tokens.');
     }
   }
 

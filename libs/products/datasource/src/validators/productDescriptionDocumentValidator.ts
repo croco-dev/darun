@@ -231,14 +231,14 @@ function assertPlainRichText(text: string, fieldName: string): void {
 }
 
 function validateBullets(raw: unknown, fieldName: string): string[] | undefined {
-  if (raw === undefined) {
+  if (raw === undefined || raw === null) {
     return undefined;
   }
   if (!Array.isArray(raw)) {
     throw new Error(`${fieldName}.bullets는 문자열 배열이어야 합니다.`);
   }
   if (raw.length === 0) {
-    throw new Error(`${fieldName}.bullets는 비어 있을 수 없습니다.`);
+    return undefined;
   }
   if (raw.length > MAX_EVIDENCE_BULLETS) {
     throw new Error(`${fieldName}.bullets 항목은 최대 ${MAX_EVIDENCE_BULLETS}개까지 허용됩니다.`);
@@ -257,13 +257,13 @@ function validateBullets(raw: unknown, fieldName: string): string[] | undefined 
 }
 
 function validateQuote(raw: unknown, fieldName: string): boolean {
-  if (raw === undefined) {
+  if (raw === undefined || raw === null || raw === false) {
     return false;
   }
-  if (typeof raw !== 'boolean') {
-    throw new Error(`${fieldName}.quote는 boolean이어야 합니다.`);
+  if (raw === true) {
+    return true;
   }
-  return raw;
+  throw new Error(`${fieldName}.quote는 boolean이어야 합니다.`);
 }
 
 function validateRichLink(
@@ -272,7 +272,8 @@ function validateRichLink(
   evidenceById: Map<string, ProductDescriptionEvidenceItem>,
   evidenceRefs: string[]
 ): EvidenceRichLink | undefined {
-  if (raw === undefined) {
+  // Wire sentinels for absence (strict schema emits `link: null`).
+  if (raw === undefined || raw === null) {
     return undefined;
   }
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
@@ -298,11 +299,16 @@ function validateRichLink(
   if (!linkedEvidence) {
     throw new Error(`${fieldName}.link를 쓰려면 link:* 또는 research:* 근거를 evidenceRefs에 포함해야 합니다.`);
   }
-  if (linkedEvidence.kind === 'link' && linkedEvidence.url !== safeUrl) {
-    throw new Error(`${fieldName}.link.url은 인용한 link 근거의 URL과 일치해야 합니다.`);
-  }
-  if (linkedEvidence.kind === 'research' && linkedEvidence.url !== safeUrl) {
-    throw new Error(`${fieldName}.link.url은 인용한 research 근거의 URL과 일치해야 합니다.`);
+  // The link must match at least one cited link/research evidence URL —
+  // not merely the first cited one — while unmatched URLs are rejected.
+  const citedUrls = new Set(
+    evidenceRefs
+      .map(ref => evidenceById.get(ref))
+      .flatMap(item => (item?.kind === 'link' || item?.kind === 'research' ? [item.url] : []))
+  );
+  if (!citedUrls.has(safeUrl)) {
+    const kindLabel = linkedEvidence.kind === 'research' ? 'research' : 'link';
+    throw new Error(`${fieldName}.link.url은 인용한 ${kindLabel} 근거의 URL과 일치해야 합니다.`);
   }
   return { label, url: safeUrl };
 }

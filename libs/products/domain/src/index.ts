@@ -140,6 +140,7 @@ export type {
 export {
   ProductDescriptionEvidenceAssembler,
   ProductDescriptionEvidenceAssemblerToken,
+  projectEvidenceSnapshot,
   MAX_EVIDENCE_TAGS,
   MAX_EVIDENCE_LINKS,
   MAX_EVIDENCE_SCREENSHOTS,
@@ -154,6 +155,7 @@ export {
 } from './services/ProductDescriptionEvidenceAssembler';
 export type {
   IProductDescriptionEvidenceAssembler,
+  EvidenceSnapshotInput,
   ProductDescriptionEvidence,
   ProductDescriptionEvidenceItem,
   AssembledProductDescriptionEvidence,
@@ -165,7 +167,10 @@ export { AddProductLink } from './usecases/AddProductLink';
 export { AddProductScreenshot } from './usecases/AddProductScreenshot';
 export {
   ApplyProductDescriptionCandidate,
+  ProductDescriptionApplyStoreToken,
   type ApplyProductDescriptionCandidateResult,
+  type ProductDescriptionApplyStore,
+  type ProductDescriptionApplyTransaction,
 } from './usecases/ApplyProductDescriptionCandidate';
 export { CreateProduct } from './usecases/CreateProduct';
 export { CreateProductFeature } from './usecases/CreateProductFeature';
