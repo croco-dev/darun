@@ -63,6 +63,7 @@ function toScreenshotCard(node: SavedScreenshotNode): ScreenshotCard | null {
       name: productNode.name ?? '',
       slug: productNode.slug ?? '',
       logoUrl: productNode.logoUrl ?? '',
+      summary: productNode.summary ?? '',
     },
   };
 }

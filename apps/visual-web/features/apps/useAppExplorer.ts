@@ -1,8 +1,5 @@
 'use client';
 
-import { useApolloClient } from '@apollo/client/react';
-import { RecentProductsOnVisualAppsDocument } from '@darun/provider-graphql';
-import type { RecentProductsOnVisualAppsQuery } from '@darun/provider-graphql';
 import { useNavigate, useSearchParams } from '@darun/utils-router';
 import { useEffect, useState } from 'react';
 import {
@@ -12,7 +9,7 @@ import {
 } from '../explorer/useExplorerQuery';
 import type { ProductSuggestion } from '../product-search/useProductSearchSuggest';
 import { useProductSearchSuggest } from '../product-search/useProductSearchSuggest';
-import { VISUAL_APPS_PAGE_SIZE } from './documents';
+import { useScreenshotCatalog } from '../screenshots/useScreenshotCatalog';
 
 export type AppCard = {
   id: string;
@@ -44,26 +41,10 @@ export type AppExplorerState = {
   onSearchInputFocus: () => void;
 };
 
-type RecentProductNode = RecentProductsOnVisualAppsQuery['recentProducts'][number];
-
-function mapNodeToCard(node: RecentProductNode): AppCard | null {
-  if (!node?.id || !node.name || !node.slug) {
-    return null;
-  }
-  return {
-    id: node.id,
-    name: node.name,
-    slug: node.slug,
-    summary: node.summary ?? '',
-    logoUrl: node.logoUrl ?? '',
-  };
-}
-
 export function useAppExplorer(): AppExplorerState {
-  const apolloClient = useApolloClient();
   const searchParams = useSearchParams();
   const navigate = useNavigate();
-  const { suggestions, isSearching, clearSuggestions, suggest } = useProductSearchSuggest();
+  const { cards, loading, networkError, retry } = useScreenshotCatalog();
 
   const query = readExplorerQueryParam(searchParams);
   const product = readExplorerProductParam(searchParams);
@@ -75,42 +56,16 @@ export function useAppExplorer(): AppExplorerState {
 
   const queryLengthError = isOverlongExplorerQuery(query);
 
-  const [cards, setCards] = useState<AppCard[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [networkError, setNetworkError] = useState(false);
-  const [requestKey, setRequestKey] = useState(0);
+  const { suggestions, isSearching, clearSuggestions, suggest } = useProductSearchSuggest();
 
-  useEffect(() => {
-    let active = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 재시도 시 로딩 상태 리셋에 필요
-    setLoading(true);
-
-    setNetworkError(false);
-    apolloClient
-      .query({ query: RecentProductsOnVisualAppsDocument, variables: { first: VISUAL_APPS_PAGE_SIZE } })
-      .then(result => {
-        if (!active) {
-          return;
-        }
-        setCards(
-          (result.data?.recentProducts ?? []).flatMap(node => {
-            const card = mapNodeToCard(node);
-            return card ? [card] : [];
-          })
-        );
-        setLoading(false);
-      })
-      .catch((e: unknown) => {
-        console.error('Failed to load recent products', e);
-        if (active) {
-          setNetworkError(true);
-          setLoading(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [apolloClient, requestKey]);
+  const apps = cards.flatMap(card => {
+    const { product: app } = card;
+    if (!app.id || !app.name || !app.slug) {
+      return [];
+    }
+    return [{ id: app.id, name: app.name, slug: app.slug, summary: app.summary ?? '', logoUrl: app.logoUrl ?? '' }];
+  });
+  const scoped = product !== null ? apps.filter(app => app.slug.toLowerCase() === product.toLowerCase()) : apps;
 
   const handleSearchInputChange = (value: string) => {
     setSearchInput(value);
@@ -120,8 +75,16 @@ export function useAppExplorer(): AppExplorerState {
   const onSearchSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     clearSuggestions();
+    const params = new URLSearchParams();
     const trimmed = searchInput.trim();
-    navigate(trimmed.length > 0 ? `/apps?q=${encodeURIComponent(trimmed)}` : '/apps');
+    if (trimmed.length > 0) {
+      params.set('q', trimmed);
+    }
+    if (product !== null) {
+      params.set('product', product);
+    }
+    const queryString = params.toString();
+    navigate(queryString.length > 0 ? `/apps?${queryString}` : '/apps');
   };
 
   const onSuggestionSelect = (selected: ProductSuggestion) => {
@@ -140,14 +103,18 @@ export function useAppExplorer(): AppExplorerState {
   const searched: AppCard[] | null =
     query === null || queryLengthError
       ? null
-      : suggestions.map(s => ({ id: s.id, name: s.name, slug: s.slug, summary: '', logoUrl: s.logoUrl }));
+      : scoped.filter(
+          app =>
+            app.name.toLowerCase().includes(query.toLowerCase()) ||
+            app.slug.toLowerCase().includes(query.toLowerCase())
+        );
 
-  const visibleCards = searched ?? cards;
+  const visibleCards = searched ?? scoped;
   const hasFilters = query !== null || product !== null;
 
   return {
-    loading: query === null ? loading : false,
-    networkError: query === null ? networkError : false,
+    loading,
+    networkError,
     queryLengthError,
     cards: visibleCards,
     searchInput,
@@ -161,9 +128,9 @@ export function useAppExplorer(): AppExplorerState {
       clearSuggestions();
       navigate('/apps');
     },
-    retry: () => setRequestKey(key => key + 1),
+    retry,
     searched,
-    isSearchingApps: isSearching,
+    isSearchingApps: false,
     suggestions,
     isSearchingSuggestions: isSearching,
     onSuggestionSelect,

@@ -23,7 +23,7 @@ export type ScreenshotCard = {
   title: string | null;
   platform: VisualPlatform | null;
   screenType: VisualScreenType | null;
-  product: { id: string; name: string; slug: string; logoUrl: string };
+  product: { id: string; name: string; slug: string; logoUrl: string; summary: string };
 };
 
 export type ScreenshotExplorerState = ExplorerBaseState<ScreenshotCard> & {
@@ -49,7 +49,7 @@ function readFilterParams(searchParams: URLSearchParams): ExplorerFilters {
   };
 }
 
-function mapEdgeToCard(node: ScreenshotNode): ScreenshotCard | null {
+export function mapEdgeToCard(node: ScreenshotNode): ScreenshotCard | null {
   const productNode = node.product;
   if (!productNode) {
     return null;
@@ -66,6 +66,7 @@ function mapEdgeToCard(node: ScreenshotNode): ScreenshotCard | null {
       name: productNode.name ?? '',
       slug: productNode.slug ?? '',
       logoUrl: productNode.logoUrl ?? '',
+      summary: productNode.summary ?? '',
     },
   };
 }
