@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { index, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 export const productDescriptionJobs = pgTable(
   'product_description_jobs',
@@ -19,6 +19,9 @@ export const productDescriptionJobs = pgTable(
     writerPromptVersion: text('writer_prompt_version'),
     reviewerPromptVersion: text('reviewer_prompt_version'),
     rendererVersion: text('renderer_version'),
+    leaseToken: text('lease_token'),
+    leaseUntil: timestamp('lease_until'),
+    attemptCount: integer('attempt_count').notNull().default(0),
     appliedAt: timestamp('applied_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

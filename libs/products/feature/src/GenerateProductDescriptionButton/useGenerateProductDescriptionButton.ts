@@ -69,6 +69,9 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export interface CandidateJobInfo {
   id: string;
+  productId?: string | null;
+  status?: string | null;
+  appliedAt?: string | null;
   candidateHtml?: string | null;
   message?: string | null;
 }
@@ -78,6 +81,9 @@ export function useGenerateProductDescriptionButton(slug: string) {
   const [applying, setApplying] = useState(false);
   const [candidateJob, setCandidateJob] = useState<CandidateJobInfo | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [jobIdInput, setJobIdInput] = useState('');
+  const [reopening, setReopening] = useState(false);
+  const [staleApplyNotice, setStaleApplyNotice] = useState<string | null>(null);
   const isSubmittingRef = useRef(false);
   const isApplyingRef = useRef(false);
   const apolloClient = useApolloClient();
@@ -100,6 +106,70 @@ export function useGenerateProductDescriptionButton(slug: string) {
   const openPreview = () => setIsPreviewOpen(true);
   const closePreview = () => setIsPreviewOpen(false);
 
+  const setCandidateFromJob = (job: {
+    id: string;
+    productId?: string | null;
+    status?: string | null;
+    appliedAt?: string | null;
+    candidateHtml?: string | null;
+    message?: string | null;
+  }) => {
+    setCandidateJob({
+      id: job.id,
+      productId: job.productId ?? null,
+      status: job.status ?? null,
+      appliedAt: job.appliedAt ?? null,
+      candidateHtml: job.candidateHtml,
+      message: job.message,
+    });
+  };
+
+  const isStaleApplyError = (message: string) =>
+    message.includes('제품 정보가 생성 이후 변경') || message.includes('Base description has changed');
+
+  const handleReopenJob = async () => {
+    const id = jobIdInput.trim();
+    if (!id || reopening) return;
+    try {
+      setReopening(true);
+      setStaleApplyNotice(null);
+      const queryRes = await getProductDescriptionJob({ variables: { id } });
+      const job = queryRes.data?.productDescriptionJob;
+      if (!job) {
+        notifications.show({
+          title: '후보 다시 열기 실패',
+          message: '해당 ID의 후보 작업을 찾지 못했습니다.',
+          color: 'red',
+        });
+        return;
+      }
+      if (job.status !== 'completed' || !job.candidateHtml) {
+        notifications.show({
+          title: '후보 다시 열기 실패',
+          message: `완료된 후보만 다시 열 수 있습니다. 현재 상태: ${job.status}`,
+          color: 'red',
+        });
+        return;
+      }
+      // v1 후보 HTML은 저장된 바이트 그대로 렌더링한다.
+      setCandidateFromJob(job);
+      setIsPreviewOpen(true);
+      notifications.show({
+        title: '후보 다시 열기',
+        message: job.appliedAt ? '이미 적용된 후보의 저장된 HTML을 표시합니다.' : '저장된 후보 HTML을 표시합니다.',
+        color: 'teal',
+      });
+    } catch (err) {
+      notifications.show({
+        title: '후보 다시 열기 실패',
+        message: err instanceof Error ? err.message : '후보 작업을 조회하지 못했습니다.',
+        color: 'red',
+      });
+    } finally {
+      setReopening(false);
+    }
+  };
+
   const handleApply = async () => {
     if (!candidateJob || isApplyingRef.current || applying) return;
 
@@ -120,6 +190,7 @@ export function useGenerateProductDescriptionButton(slug: string) {
         });
         setIsPreviewOpen(false);
         setCandidateJob(null);
+        setStaleApplyNotice(null);
         await refetchProductQueries();
       } else {
         notifications.show({
@@ -129,9 +200,14 @@ export function useGenerateProductDescriptionButton(slug: string) {
         });
       }
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'AI 소개 적용 중 오류가 발생했습니다.';
+      if (isStaleApplyError(message)) {
+        // stale 적용은 수동 편집을 보존하고 재생성 경로로 안내한다.
+        setStaleApplyNotice(message);
+      }
       notifications.show({
         title: '적용 실패',
-        message: err instanceof Error ? err.message : 'AI 소개 적용 중 오류가 발생했습니다.',
+        message,
         color: 'red',
       });
     } finally {
@@ -196,11 +272,8 @@ export function useGenerateProductDescriptionButton(slug: string) {
           message: '소개 초안이 생성되었습니다. 내용을 검토한 후 적용해주세요.',
           color: 'teal',
         });
-        setCandidateJob({
-          id: initialJob.id,
-          candidateHtml: initialJob.candidateHtml,
-          message: initialJob.message,
-        });
+        setCandidateFromJob(initialJob);
+        setStaleApplyNotice(null);
         setIsPreviewOpen(true);
         return;
       }
@@ -243,20 +316,20 @@ export function useGenerateProductDescriptionButton(slug: string) {
               message: '소개 초안이 생성되었습니다. 내용을 검토한 후 적용해주세요.',
               color: 'teal',
             });
-            setCandidateJob({
-              id: job.id,
-              candidateHtml: job.candidateHtml,
-              message: job.message,
-            });
+            setCandidateFromJob(job);
+            setStaleApplyNotice(null);
             setIsPreviewOpen(true);
             break;
           }
 
-          if (job.status === 'failed') {
+          if (job.status === 'failed' || job.status === 'superseded') {
             notifications.hide(notificationId);
             notifications.show({
-              title: '생성 실패',
-              message: job.error || job.message || 'AI 소개 생성에 실패했습니다.',
+              title: job.status === 'superseded' ? '후보 폐기' : '생성 실패',
+              message:
+                job.status === 'superseded'
+                  ? '제품 정보 변경으로 후보가 폐기되었습니다. 다시 생성해 주세요.'
+                  : job.error || job.message || 'AI 소개 생성에 실패했습니다.',
               color: 'red',
             });
             break;
@@ -299,5 +372,11 @@ export function useGenerateProductDescriptionButton(slug: string) {
     closePreview,
     isApplying: applying,
     handleApply,
+    jobIdInput,
+    setJobIdInput,
+    isReopening: reopening,
+    handleReopenJob,
+    staleApplyNotice,
+    clearStaleApplyNotice: () => setStaleApplyNotice(null),
   };
 }

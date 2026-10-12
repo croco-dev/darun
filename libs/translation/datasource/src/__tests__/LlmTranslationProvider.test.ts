@@ -35,7 +35,8 @@ describe('LlmTranslationProvider', () => {
       expect(mockLlmClient.completion).toHaveBeenCalledTimes(1);
       expect(mockLlmClient.completion).toHaveBeenCalledWith(
         'custom-llm-model',
-        expect.any(Array)
+        expect.any(Array),
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
       );
     });
 
@@ -139,7 +140,7 @@ describe('LlmTranslationProvider', () => {
           description: '설명',
           features: [{ id: 'f-1', name: '기능', summary: '설명' }],
         })
-      ).rejects.toThrow(/기능 ID\(f-1\)가 누락되었습니다/);
+      ).rejects.toThrow(/알 수 없는 기능 ID\(f-wrong\)/);
     });
   });
 });

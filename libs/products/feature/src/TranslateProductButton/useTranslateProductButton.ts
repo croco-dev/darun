@@ -38,11 +38,22 @@ const MAX_POLL_TIMEOUT_MS = 180_000; // 3 minutes
 
 export function useTranslateProductButton({ slug }: TranslateProductButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [lastStatus, setLastStatus] = useState<string | null>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [lastJobId, setLastJobId] = useState<string | null>(null);
   const isSubmittingRef = useRef(false);
   const [requestTranslationMutation] = useMutation(RequestProductTranslationOnTranslateButtonDocument);
   const [getTranslationJob] = useLazyQuery(GetTranslationJobOnTranslateButtonDocument, {
     fetchPolicy: 'network-only',
   });
+
+  const markTerminal = (status: string, job?: { id?: string | null; error?: string | null } | null) => {
+    setLastStatus(status);
+    if (job?.id) {
+      setLastJobId(job.id);
+    }
+    setLastError(status === 'failed' || status === 'superseded' ? (job?.error ?? null) : null);
+  };
 
   const translateProduct = async () => {
     if (isSubmittingRef.current || loading) {
@@ -110,15 +121,20 @@ export function useTranslateProductButton({ slug }: TranslateProductButtonProps)
           message: initialJob.message || '상품 및 기능의 영문 번역이 완료되었습니다.',
           color: 'teal',
         });
+        markTerminal('completed', initialJob);
         return;
       }
 
-      // 2. If failed immediately
-      if (initialJob?.status === 'failed') {
+      // 2. If failed or superseded immediately, keep failure visible for a per-product retranslate.
+      if (initialJob?.status === 'failed' || initialJob?.status === 'superseded') {
         notifications.hide(notificationId);
+        markTerminal(initialJob.status, initialJob);
         notifications.show({
-          title: '번역 실패',
-          message: initialJob.message || '영문 번역 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
+          title: initialJob.status === 'superseded' ? '번역 보류' : '번역 실패',
+          message:
+            initialJob.status === 'superseded'
+              ? '원문이 번역 도중 변경되어 결과가 폐기되었습니다. 이 상품만 다시 번역해 주세요.'
+              : initialJob.message || '영문 번역 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
           color: 'red',
         });
         return;
@@ -161,13 +177,18 @@ export function useTranslateProductButton({ slug }: TranslateProductButtonProps)
                   message: currentJob.message || '상품 및 기능의 영문 번역이 완료되었습니다.',
                   color: 'teal',
                 });
+                markTerminal('completed', currentJob);
                 resolve();
-              } else if (currentJob.status === 'failed') {
+              } else if (currentJob.status === 'failed' || currentJob.status === 'superseded') {
                 clearInterval(pollInterval);
                 notifications.hide(notificationId);
+                markTerminal(currentJob.status, currentJob);
                 notifications.show({
-                  title: '번역 실패',
-                  message: currentJob.error || currentJob.message || '영문 번역 생성에 실패했습니다.',
+                  title: currentJob.status === 'superseded' ? '번역 보류' : '번역 실패',
+                  message:
+                    currentJob.status === 'superseded'
+                      ? '원문이 번역 도중 변경되어 결과가 폐기되었습니다. 이 상품만 다시 번역해 주세요.'
+                      : currentJob.error || currentJob.message || '영문 번역 생성에 실패했습니다.',
                   color: 'red',
                 });
                 resolve();
@@ -216,5 +237,8 @@ export function useTranslateProductButton({ slug }: TranslateProductButtonProps)
   return {
     loading,
     translateProduct,
+    lastStatus,
+    lastError,
+    lastJobId,
   };
 }

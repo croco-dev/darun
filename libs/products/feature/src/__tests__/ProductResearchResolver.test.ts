@@ -58,16 +58,18 @@ function jobEntity(overrides: Partial<ProductResearchJobEntity> = {}): ProductRe
 describe('ProductResearchMutationResolver', () => {
   const requestResearch = vi.fn();
   const executeResearch = vi.fn();
+  const retryFailedResearch = vi.fn();
   const materializeReviewedProduct = vi.fn();
   const sendJob = vi.fn();
   const findById = vi.fn();
+  const requeueFailedJob = vi.fn();
 
   function createResolver() {
     return new ProductResearchMutationResolver(
-      { findById } as never,
+      { findById, requeueFailedJob } as never,
       {} as never,
       {} as never,
-      { requestResearch, executeResearch } as never,
+      { requestResearch, executeResearch, retryFailedResearch } as never,
       { materializeReviewedProduct } as never,
       { sendJob } as never,
       {} as never,
@@ -93,6 +95,41 @@ describe('ProductResearchMutationResolver', () => {
     expect(result.id).toBe('job-1');
     expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-1' });
     expect(executeResearch).not.toHaveBeenCalled();
+  });
+
+  it('retries a failed research job as a new logical job preserving the failed one', async () => {
+    const failed = jobEntity({ status: 'failed' });
+    const created = jobEntity({ id: 'job-2', status: 'pending', requestKey: 'req:retry-1' });
+    findById.mockResolvedValueOnce(failed);
+    retryFailedResearch.mockResolvedValueOnce({ job: created, deduped: false });
+    sendJob.mockResolvedValueOnce(true);
+    const resolver = createResolver();
+    vi.spyOn(resolver as unknown as { buildDeps: () => Promise<never> }, 'buildDeps').mockResolvedValueOnce(
+      {} as never
+    );
+
+    const result = await resolver.retryProductResearch('job-1', { requestId: 'retry-0001' });
+    expect(retryFailedResearch).toHaveBeenCalledWith('job-1', expect.anything(), 'retry-0001');
+    expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-2' });
+    expect(result?.id).toBe('job-2');
+  });
+
+  it('requeues a failed research job with CAS before sending it (legacy same-id path)', async () => {
+    const failed = jobEntity({ status: 'failed' });
+    const pending = jobEntity({ status: 'pending' });
+    findById.mockResolvedValueOnce(failed).mockResolvedValueOnce(pending);
+    retryFailedResearch.mockResolvedValueOnce({ job: failed, deduped: false });
+    requeueFailedJob.mockResolvedValueOnce(pending);
+    sendJob.mockResolvedValueOnce(true);
+    const resolver = createResolver();
+    vi.spyOn(resolver as unknown as { buildDeps: () => Promise<never> }, 'buildDeps').mockResolvedValueOnce(
+      {} as never
+    );
+
+    const result = await resolver.retryProductResearch('job-1');
+    expect(requeueFailedJob).toHaveBeenCalledWith({ jobId: 'job-1', expectedStatuses: ['failed'] });
+    expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-1' });
+    expect(result?.status).toBe('pending');
   });
 
   it('materializes only validated reviewed products', async () => {

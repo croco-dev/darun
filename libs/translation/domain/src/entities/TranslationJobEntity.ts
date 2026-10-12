@@ -11,6 +11,9 @@ export type TranslationJobEntity = {
   sourceHash?: string | null;
   model?: string | null;
   promptVersion?: string | null;
+  leaseToken?: string | null;
+  leaseUntil?: Date | null;
+  attemptCount?: number;
   createdAt: Date;
   updatedAt: Date;
 };

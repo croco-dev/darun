@@ -42,7 +42,13 @@ function run(args) {
 async function main() {
   const directory = mkdtempSync(path.join(tmpdir(), 'darun-schema-'));
   try {
-    for (const name of ['graphql', 'translation-worker', 'product-description-worker', 'product-research-worker']) {
+    for (const name of [
+      'graphql',
+      'translation-worker',
+      'product-description-worker',
+      'product-research-worker',
+      'job-recovery-tick',
+    ]) {
       const file = path.join(directory, `${name}.js`);
       copyFileSync(path.join(root, '.build/lambda', `${name}.js`), file);
       run([

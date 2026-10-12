@@ -4,6 +4,7 @@ import type { GetMagazine } from '@darun/magazines-domain';
 import { Product, ProductFeature } from '@darun/products-domain';
 import type { GetProduct, GetProductFeature, GetProductFeatures } from '@darun/products-domain';
 import type { LlmClient } from '@darun/utils-llm';
+import { RetryableError } from '@darun/utils-llm';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { TranslationService } from '../services/TranslationService';
 
@@ -393,6 +394,7 @@ describe('TranslationJobService', () => {
       ...job,
       entityType: 'Product',
       entityId: product.id,
+      queued: true,
     });
     expect(llmClient.completion).not.toHaveBeenCalled();
     expect(translationService.upsertTranslation).not.toHaveBeenCalled();
@@ -557,7 +559,7 @@ describe('TranslationJobService', () => {
     });
   });
 
-  it('writes product translation when feature re-fetch fails after a successful initial fetch', async () => {
+  it('fails retryably and preserves existing rows when feature re-fetch fails after initial fetch', async () => {
     const product = new Product({
       id: 'prod-refetch-fail',
       slug: 'refetch-fail',
@@ -602,16 +604,11 @@ describe('TranslationJobService', () => {
       getProductFeaturesUseCase
     );
 
-    await service.translateProductWithFeatures(product.id);
+    const failure = await service.translateProductWithFeatures(product.id).catch(error => error);
+    expect(failure).toBeInstanceOf(RetryableError);
+    expect((failure as Error).message).toBe('기능 목록 재조회에 실패했습니다: prod-refetch-fail');
 
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
-      expect.objectContaining({
-        entityType: 'Product',
-        entityId: product.id,
-        field: 'name',
-        value: 'Refetch Fail Product',
-      })
-    );
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
   });
 
   it('rejects bundle responses with hallucinated or missing feature IDs', async () => {
@@ -665,7 +662,7 @@ describe('TranslationJobService', () => {
     });
 
     await expect(retry.service.translateProductWithFeatures(product.id)).rejects.toThrow(
-      '상품 번역에 실패했습니다: 기능 개수 불일치: 요청 1개, 응답 0개'
+      '상품 번역에 실패했습니다: 번역 결과에 요청된 기능 ID(feat-1)가 누락되었습니다.'
     );
     expect(retry.translationService.upsertTranslation).not.toHaveBeenCalled();
   });
@@ -784,16 +781,10 @@ describe('TranslationJobService', () => {
     await service.executeProductTranslationJob('job-terminal', product.id);
 
     expect(mockRepo.claimJobStatus).toHaveBeenCalledTimes(2);
-    expect(mockRepo.claimJobStatus).toHaveBeenNthCalledWith(
-      2,
-      'job-terminal',
-      ['pending', 'in_progress'],
-      'failed',
-      {
-        error: expect.stringContaining('LLM down'),
-        message: '상품 번역에 실패했습니다.',
-      }
-    );
+    expect(mockRepo.claimJobStatus).toHaveBeenNthCalledWith(2, 'job-terminal', ['pending', 'in_progress'], 'failed', {
+      error: expect.stringContaining('LLM down'),
+      message: '상품 번역에 실패했습니다.',
+    });
     expect(mockRepo.updateJobStatus).not.toHaveBeenCalledWith('job-terminal', 'failed', expect.anything());
   });
 });

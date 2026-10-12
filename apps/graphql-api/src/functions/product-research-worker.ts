@@ -8,6 +8,8 @@ import type { SQSEvent, SQSHandler } from 'aws-lambda';
 import { Container } from 'typedi';
 import { createMongodbConnection, createPostgresConnection } from '../config/database';
 
+const WORKER_DEADLINE_MS = 4 * 60 * 1000;
+
 export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
   await Promise.all([createPostgresConnection(), createMongodbConnection()]);
 
@@ -23,26 +25,44 @@ export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
       const payload = JSON.parse(record.body) as { jobId: string };
       console.log(`[ProductResearchWorker] Processing message ${record.messageId}:`, payload);
       if (payload.jobId) {
-        await researchService.executeResearch(payload.jobId, {
-          jobRepository,
-          categoryRepository,
-          searchClient: { search: (query, count) => searchClient.search(query, count) },
-          llm: {
-            getModel: async () => (await llmClient.getConfig()).model,
-            complete: async (systemPrompt, userPrompt) => {
-              const message = await llmClient.completion([
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt },
-              ]);
-              const content = typeof message.content === 'string' ? message.content : '';
-              if (!content.trim()) {
-                throw new Error('LLM 응답이 비어 있습니다.');
-              }
-              return content;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), WORKER_DEADLINE_MS);
+        try {
+          await researchService.executeResearch(
+            payload.jobId,
+            {
+              jobRepository,
+              categoryRepository,
+              searchClient: {
+                search: (query, count, childSignal) =>
+                  searchClient.search(query, count, childSignal ?? controller.signal),
+              },
+              llm: {
+                getModel: async () => (await llmClient.getConfig()).model,
+                complete: async (systemPrompt, userPrompt, options) => {
+                  const message = await llmClient.completion(
+                    [
+                      { role: 'system', content: systemPrompt },
+                      { role: 'user', content: userPrompt },
+                    ],
+                    undefined,
+                    { signal: options?.signal ?? controller.signal }
+                  );
+                  const content = typeof message.content === 'string' ? message.content : '';
+                  if (!content.trim()) {
+                    throw new Error('LLM 응답이 비어 있습니다.');
+                  }
+                  return content;
+                },
+              },
+              promptVersion: PRODUCT_RESEARCH_PROMPT_VERSION,
             },
-          },
-          promptVersion: PRODUCT_RESEARCH_PROMPT_VERSION,
-        });
+            undefined,
+            { signal: controller.signal }
+          );
+        } finally {
+          clearTimeout(timeout);
+        }
       }
     } catch (error) {
       console.error(`[ProductResearchWorker] Error processing record ${record.messageId}:`, error);

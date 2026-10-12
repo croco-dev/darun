@@ -99,10 +99,15 @@ describe('ProductDescriptionGeneratorImpl', () => {
     expect(llmClient.getConfig).toHaveBeenCalledTimes(1);
     expect(llmClient.completion).toHaveBeenCalledTimes(2);
     for (const call of llmClient.completion.mock.calls) {
-      expect(call[2]).toEqual({
-        thinkingLevel: 'low',
-        responseFormat: createProductDescriptionResponseFormat(mockEvidence),
-      });
+      expect(call[2]).toEqual(
+        expect.objectContaining({
+          thinkingLevel: 'low',
+          responseFormat: createProductDescriptionResponseFormat(mockEvidence),
+        })
+      );
+      // stage wall-clock budget의 AbortSignal이 HTTP 계층까지 전파된다.
+      expect(call[2]).toHaveProperty('signal');
+      expect((call[2] as { signal?: unknown }).signal).toBeInstanceOf(AbortSignal);
     }
 
     // Both calls used the pinned model 'google/gemini-2.5-flash'

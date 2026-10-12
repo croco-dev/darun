@@ -73,6 +73,27 @@ export class ResearchFeatureGraph {
 }
 
 @ObjectType()
+export class ResearchCandidateGraph {
+  @Field()
+  name: string;
+
+  @Field(() => String, { nullable: true })
+  website?: string | null;
+
+  @Field(() => [ResearchAnchorGraph])
+  anchors: ResearchAnchorGraph[];
+}
+
+@ObjectType()
+export class ResearchCategoryCandidateGraph {
+  @Field()
+  categoryId: string;
+
+  @Field()
+  reason: string;
+}
+
+@ObjectType()
 export class ProductResearchDraftGraph {
   @Field(() => Int)
   version: number;
@@ -100,6 +121,15 @@ export class ProductResearchDraftGraph {
 
   @Field(() => [ResearchSourceGraph])
   sources: ResearchSourceGraph[];
+
+  @Field(() => [ResearchCategoryCandidateGraph])
+  categoryCandidates: ResearchCategoryCandidateGraph[];
+
+  @Field(() => ResearchCandidateGraph, { nullable: true })
+  companyCandidate?: ResearchCandidateGraph | null;
+
+  @Field(() => [ResearchCandidateGraph])
+  alternativeCandidates: ResearchCandidateGraph[];
 
   @Field()
   sourceSnapshotHash: string;
@@ -149,8 +179,17 @@ export class ProductResearchJob {
 
 @InputType()
 export class RequestProductResearchInput {
+  @Field({ nullable: true })
+  requestId?: string;
+
   @Field()
   officialUrl: string;
+}
+
+@InputType()
+export class RetryProductResearchInput {
+  @Field({ nullable: true })
+  requestId?: string;
 }
 
 @InputType()
@@ -219,6 +258,19 @@ function toSourceGraph(source: ResearchSource): ResearchSourceGraph {
   };
 }
 
+function toCandidateGraph(
+  candidate: { name: string; website?: string; anchors: ResearchAnchor[] } | null
+): ResearchCandidateGraph | null {
+  if (!candidate) {
+    return null;
+  }
+  return {
+    name: candidate.name,
+    website: candidate.website ?? null,
+    anchors: candidate.anchors.map(toAnchorGraph),
+  };
+}
+
 export function toProductResearchJobGraph(job: ProductResearchJobEntity): ProductResearchJob {
   let result: ProductResearchDraftGraph | null = null;
   const draft: ProductResearchDraftV1 | null = job.result;
@@ -239,6 +291,16 @@ export function toProductResearchJobGraph(job: ProductResearchJobEntity): Produc
       tags: draft.tags,
       warnings: draft.warnings,
       sources: draft.sources.map(toSourceGraph),
+      categoryCandidates: draft.categoryCandidates.map(candidate => ({
+        categoryId: candidate.categoryId,
+        reason: candidate.reason,
+      })),
+      companyCandidate: toCandidateGraph(draft.companyCandidate),
+      alternativeCandidates: (draft.alternativeCandidates ?? []).map(candidate => ({
+        name: candidate.name,
+        website: candidate.website ?? null,
+        anchors: candidate.anchors.map(toAnchorGraph),
+      })),
       sourceSnapshotHash: draft.sourceSnapshotHash,
       promptVersion: draft.promptVersion,
       model: draft.model,

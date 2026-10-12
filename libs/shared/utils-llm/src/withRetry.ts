@@ -15,6 +15,29 @@ export class RetryableError extends Error {
   }
 }
 
+export class AbortError extends Error {
+  constructor(message = 'Operation was aborted') {
+    super(message);
+    this.name = 'AbortError';
+  }
+}
+
+export function isAbortError(error: unknown): boolean {
+  if (error instanceof AbortError) {
+    return true;
+  }
+  if (error instanceof Error) {
+    if (error.name === 'AbortError') {
+      return true;
+    }
+    const message = error.message.toLowerCase();
+    if (message.includes('aborted') || message.includes('aborterror')) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function isRetryableError(error: unknown): boolean {
   if (error instanceof RetryableError) {
     const statusCode = error.statusCode;
@@ -108,6 +131,11 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
       return await fn();
     } catch (error) {
       lastError = error;
+
+      // Aborts are caller intent, never a retryable class.
+      if (isAbortError(error)) {
+        throw error;
+      }
 
       if (is4xxError(error) && !is429Error(error)) {
         throw error;

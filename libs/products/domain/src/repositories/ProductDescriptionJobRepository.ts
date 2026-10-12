@@ -49,6 +49,34 @@ export interface ProductDescriptionJobRepository {
     options?: UpdateProductDescriptionJobOptions
   ): Promise<ProductDescriptionJobEntity | null>;
 
+  /**
+   * lease 소유권 기반 클레임. pending은 즉시 선점하고, in_progress는
+   * lease 만료 시에만 재선점한다. leaseToken이 새 소유권을 식별한다.
+   */
+  claimJobLease?(input: {
+    jobId: string;
+    leaseToken: string;
+    leaseUntil: Date;
+  }): Promise<ProductDescriptionJobEntity | null>;
+
+  /**
+   * lease 소유권 기반 확정 쓰기. 현재 행의 leaseToken이 입력과 일치하고
+   * 상태가 in_progress일 때만 nextStatus로 전이하고 전이된 작업을 반환한다.
+   * 구 attempt의 늦은 쓰기와 이미 끝난 terminal 행 덮어쓰기는 null로 거부된다(fence).
+   */
+  completeJobLease?(
+    jobId: string,
+    leaseToken: string,
+    nextStatus: Extract<ProductDescriptionJobStatus, 'completed' | 'failed' | 'superseded'>,
+    options?: UpdateProductDescriptionJobOptions
+  ): Promise<ProductDescriptionJobEntity | null>;
+
+  /**
+   * 복구 대상 조회. 큐 전송이 누락된 pending과 lease가 만료된
+   * in_progress를 반환한다. recovery tick이 주기적으로 재발견한다.
+   */
+  findRecoverableJobs?(input: { now: Date; limit?: number }): Promise<ProductDescriptionJobEntity[]>;
+
   markApplied(id: string, appliedAt: Date): Promise<ProductDescriptionJobEntity>;
 
   findJobs(options?: {

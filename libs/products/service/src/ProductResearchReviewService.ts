@@ -1,7 +1,9 @@
 import {
   type ProductResearchDraftV1,
   type ProductResearchJobRepository,
+  ProductResearchJobRepositoryToken,
   type ProductResearchMaterializationRepository,
+  ProductResearchMaterializationRepositoryToken,
   type ReviewedResearchFeature,
   productInvalidArgs,
   productSlugAlreadyExists,
@@ -49,8 +51,9 @@ function httpsUrl(value: string): string | null {
 @Service()
 export class ProductResearchReviewService {
   constructor(
-    @Inject('ProductResearchJobRepository') private readonly jobRepository?: ProductResearchJobRepository,
-    @Inject('ProductResearchMaterializationRepository')
+    @Inject(ProductResearchJobRepositoryToken)
+    private readonly jobRepository?: ProductResearchJobRepository,
+    @Inject(ProductResearchMaterializationRepositoryToken)
     private readonly materializationRepository?: ProductResearchMaterializationRepository
   ) {}
 

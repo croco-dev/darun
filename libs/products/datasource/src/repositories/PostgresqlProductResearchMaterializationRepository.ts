@@ -8,7 +8,7 @@ import {
   productSlugAlreadyExists,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { ulid } from 'ulid';
 import { categories } from '../entities/CategorySchema';
@@ -40,10 +40,12 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
   }> {
     try {
       return await this.db.transaction(async tx => {
+        // 잠금 순서: research job row(FOR UPDATE) → product/source rows.
         const jobRows = await tx
           .select()
           .from(productResearchJobs)
           .where(eq(productResearchJobs.id, input.researchJobId))
+          .for('update')
           .limit(1);
         const jobRow = jobRows[0];
         if (!jobRow) {
@@ -146,14 +148,23 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
             .onConflictDoNothing({ target: [productTags.productId, productTags.tagId] });
         }
 
-        await tx
+        const marked = await tx
           .update(productResearchJobs)
           .set({
             materializedProductId: productId,
             appliedAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(productResearchJobs.id, input.researchJobId));
+          .where(
+            and(eq(productResearchJobs.id, input.researchJobId), isNull(productResearchJobs.materializedProductId))
+          )
+          .returning();
+        if (!marked[0]) {
+          // 조건부 확정이 실패했다는 것은 이미 이 job이 확정됐다는 뜻이다.
+          // 삽입한 product/source rows는 이 트랜잭션이 롤백하므로 고아 행이 남지 않는다.
+          // 정상 재시도(이미 확정된 job 조회)는 위의 early-return이 처리한다.
+          throw productInvalidArgs('이미 적용된 조사 작업입니다. 다시 조회해 주세요.');
+        }
 
         return {
           product: new Product({
