@@ -54,6 +54,7 @@ async function freshStore(): Promise<typeof StoreModule> {
 
 afterEach(() => {
   delete (globalThis as Record<string, unknown>).window;
+  vi.unstubAllGlobals();
   vi.resetModules();
 });
 
@@ -113,6 +114,48 @@ describe('collections persistence', () => {
     expect(s.createCollection('New')).toBeNull();
     s.toggleInCollection('c1', shot());
     expect(s.savedIn('screenshot', 's1')).toEqual([]);
+  });
+
+  it('randomUUID 없이 getRandomValues만 있어도 서로 다른 컬렉션이 유지된다', async () => {
+    const backing = installWindow();
+    let counter = 0;
+    vi.stubGlobal('crypto', {
+      getRandomValues: (array: Uint8Array) => {
+        counter += 1;
+        array.fill(counter);
+        return array;
+      },
+    });
+    const s = await freshStore();
+    const first = s.createCollection('First');
+    const second = s.createCollection('Second');
+    expect(first).not.toBeNull();
+    expect(second).not.toBeNull();
+    expect(first!.id).toMatch(/^c-[0-9a-f]{32}$/);
+    expect(second!.id).toMatch(/^c-[0-9a-f]{32}$/);
+    expect(first!.id).not.toBe(second!.id);
+    s.toggleInCollection(first!.id, shot());
+    s.toggleInCollection(second!.id, shot({ id: 's2', href: '/screenshots/s2' }));
+
+    const reloaded = await freshStore();
+    expect(reloaded.savedIn('screenshot', 's1').map(c => c.id)).toEqual([first!.id]);
+    expect(reloaded.savedIn('screenshot', 's2').map(c => c.id)).toEqual([second!.id]);
+    reloaded.deleteCollection(first!.id);
+    const after = await freshStore();
+    expect(after.savedIn('screenshot', 's1')).toEqual([]);
+    expect(after.savedIn('screenshot', 's2').map(c => c.id)).toEqual([second!.id]);
+    expect(JSON.parse(backing[KEY]).map((c: { id: string }) => c.id)).toEqual([second!.id]);
+  });
+
+  it('사용 가능한 crypto가 없으면 생성하지 않고 기존 저장을 건드리지 않는다', async () => {
+    const seed = JSON.stringify([{ id: 'c1', name: 'Seed', createdAt: 1, items: [] }]);
+    const backing = installWindow({ seed });
+    vi.stubGlobal('crypto', undefined);
+    const s = await freshStore();
+    expect(s.createCollection('New')).toBeNull();
+    expect(backing[KEY]).toBe(seed);
+    expect((await freshStore()).savedIn('screenshot', 's1')).toEqual([]);
+    expect(JSON.parse(backing[KEY])).toEqual([{ id: 'c1', name: 'Seed', createdAt: 1, items: [] }]);
   });
 
   it('persist된 unsafe href는 로드 시 제외된다', async () => {

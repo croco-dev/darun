@@ -216,11 +216,21 @@ function getServerSnapshot(): StoreSnapshot {
   return EMPTY_SNAPSHOT;
 }
 
-function newId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
+function newId(): string | null {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      let hex = '';
+      for (const byte of bytes) hex += byte.toString(16).padStart(2, '0');
+      return `c-${hex}`;
+    }
+  } catch {
+    return null;
   }
-  return `c-${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
+  return null;
 }
 
 export function useCollections(): StoreSnapshot & {
@@ -254,8 +264,16 @@ export function createCollection(name: string): NamedCollection | null {
     });
     return null;
   }
+  const id = newId();
+  if (id === null) {
+    setSnapshot({
+      ...snapshot,
+      storageError: '안전한 식별자를 만들 수 없어 컬렉션을 만들 수 없습니다.',
+    });
+    return null;
+  }
   const collection: NamedCollection = {
-    id: newId(),
+    id,
     name: trimmed.slice(0, 60),
     createdAt: Date.now(),
     items: [],
