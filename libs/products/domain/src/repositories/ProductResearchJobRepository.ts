@@ -26,7 +26,12 @@ export interface ProductResearchJobRepository {
     jobId: string;
     expectedStatuses: ProductResearchJobStatus[];
   }): Promise<ProductResearchJobEntity | null>;
-  claimJob(input: { jobId: string; leaseToken: string; leaseUntil: Date }): Promise<ClaimProductResearchJobResult>;
+  claimJob(input: {
+    jobId: string;
+    leaseToken: string;
+    leaseUntil: Date;
+    maxAttempts?: number;
+  }): Promise<ClaimProductResearchJobResult>;
   completeJob(input: {
     jobId: string;
     leaseToken: string;

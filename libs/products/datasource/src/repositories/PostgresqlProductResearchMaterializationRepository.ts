@@ -112,7 +112,7 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           title: `${input.name} 공식 사이트`,
           iconUrl: input.logoUrl,
           link: input.officialUrl,
-          displayLink: hostname.slice(0, 100),
+          displayLink: hostname,
         });
 
         if (input.features.length > 0) {
@@ -148,7 +148,7 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
             .onConflictDoNothing({ target: [productTags.productId, productTags.tagId] });
         }
 
-        const marked = await tx
+        const claimedRows = await tx
           .update(productResearchJobs)
           .set({
             materializedProductId: productId,
@@ -158,12 +158,33 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           .where(
             and(eq(productResearchJobs.id, input.researchJobId), isNull(productResearchJobs.materializedProductId))
           )
-          .returning();
-        if (!marked[0]) {
-          // 조건부 확정이 실패했다는 것은 이미 이 job이 확정됐다는 뜻이다.
-          // 삽입한 product/source rows는 이 트랜잭션이 롤백하므로 고아 행이 남지 않는다.
-          // 정상 재시도(이미 확정된 job 조회)는 위의 early-return이 처리한다.
-          throw productInvalidArgs('이미 적용된 조사 작업입니다. 다시 조회해 주세요.');
+          .returning({ id: productResearchJobs.id });
+        const claimed = claimedRows[0];
+        if (!claimed) {
+          const lostRows = await tx
+            .select()
+            .from(productResearchJobs)
+            .where(eq(productResearchJobs.id, input.researchJobId))
+            .limit(1);
+          const lost = lostRows[0]?.materializedProductId;
+          if (lost) {
+            const existingRows = await tx.select().from(products).where(eq(products.id, lost)).limit(1);
+            const existing = existingRows[0];
+            if (existing) {
+              return {
+                product: new Product({
+                  ...existing,
+                  ownedCompanyId: existing.ownedCompanyId ?? undefined,
+                  description: existing.description ?? undefined,
+                  publishedAt: existing.publishedAt ?? undefined,
+                  updatedAt: existing.updatedAt ?? undefined,
+                  categoryIds: existing.categoryIds ?? [],
+                }),
+                alreadyCreated: true,
+              };
+            }
+          }
+          throw productSlugAlreadyExists();
         }
 
         return {

@@ -8,6 +8,7 @@ import {
   SignImageUploadMutationVariables,
 } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
+import { buildUniqueDisplayName } from './buildUniqueDisplayName';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -57,11 +58,12 @@ export function useImageUpload() {
       return undefined;
     }
 
+    const uniqueDisplayName = buildUniqueDisplayName(displayName);
     const result = await signImageUpload({
       variables: {
         input: {
           folder,
-          displayName,
+          displayName: uniqueDisplayName,
         },
       },
     });
@@ -80,7 +82,7 @@ export function useImageUpload() {
     formData.append('file', file);
     formData.append('api_key', apiKey);
     formData.append('folder', signedPayload.folder);
-    formData.append('public_id', displayName);
+    formData.append('public_id', uniqueDisplayName);
     formData.append('signature', signedPayload.signature);
     formData.append('timestamp', String(signedPayload.timestamp));
 

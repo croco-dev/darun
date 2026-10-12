@@ -8,7 +8,7 @@ import {
   ProductResearchJobRepositoryToken,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { and, asc, eq, inArray, isNull, lte, or } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { type ProductResearchJobRow, productResearchJobs } from '../entities/ProductResearchJobSchema';
 
@@ -52,44 +52,29 @@ export class PostgresqlProductResearchJobRepository implements ProductResearchJo
   }
 
   async findById(id: string): Promise<ProductResearchJobEntity | null> {
-    try {
-      const rows = await this.db.select().from(productResearchJobs).where(eq(productResearchJobs.id, id)).limit(1);
-      const row = rows[0];
-      return row ? this.toEntity(row) : null;
-    } catch (error) {
-      console.warn('[PostgresqlProductResearchJobRepository] Failed to find job (table may not exist yet):', error);
-      return null;
-    }
+    const rows = await this.db.select().from(productResearchJobs).where(eq(productResearchJobs.id, id)).limit(1);
+    const row = rows[0];
+    return row ? this.toEntity(row) : null;
   }
 
   async findByRequestKey(requestKey: string): Promise<ProductResearchJobEntity | null> {
-    try {
-      const rows = await this.db
-        .select()
-        .from(productResearchJobs)
-        .where(eq(productResearchJobs.requestKey, requestKey))
-        .limit(1);
-      const row = rows[0];
-      return row ? this.toEntity(row) : null;
-    } catch (error) {
-      console.warn('[PostgresqlProductResearchJobRepository] Failed to find job by request key:', error);
-      return null;
-    }
+    const rows = await this.db
+      .select()
+      .from(productResearchJobs)
+      .where(eq(productResearchJobs.requestKey, requestKey))
+      .limit(1);
+    const row = rows[0];
+    return row ? this.toEntity(row) : null;
   }
 
   async findByProductId(productId: string): Promise<ProductResearchJobEntity | null> {
-    try {
-      const rows = await this.db
-        .select()
-        .from(productResearchJobs)
-        .where(eq(productResearchJobs.materializedProductId, productId))
-        .limit(1);
-      const row = rows[0];
-      return row ? this.toEntity(row) : null;
-    } catch (error) {
-      console.warn('[PostgresqlProductResearchJobRepository] Failed to find job by product id:', error);
-      return null;
-    }
+    const rows = await this.db
+      .select()
+      .from(productResearchJobs)
+      .where(eq(productResearchJobs.materializedProductId, productId))
+      .limit(1);
+    const row = rows[0];
+    return row ? this.toEntity(row) : null;
   }
 
   async createPendingJob(input: { requestKey: string; officialUrl: string }): Promise<ProductResearchJobEntity> {
@@ -131,6 +116,7 @@ export class PostgresqlProductResearchJobRepository implements ProductResearchJo
     jobId: string;
     leaseToken: string;
     leaseUntil: Date;
+    maxAttempts?: number;
   }): Promise<ClaimProductResearchJobResult> {
     return this.db.transaction(async tx => {
       const rows = await tx.select().from(productResearchJobs).where(eq(productResearchJobs.id, input.jobId)).limit(1);
@@ -140,12 +126,51 @@ export class PostgresqlProductResearchJobRepository implements ProductResearchJo
       }
       const current = this.toEntity(row);
       const now = new Date();
+      const leaseExpired = current.leaseUntil === null || current.leaseUntil <= now;
+      const sameTokenReentry =
+        current.status === 'in_progress' && current.leaseToken !== null && current.leaseToken === input.leaseToken;
       const claimable =
-        current.status === 'pending' ||
-        (current.status === 'in_progress' &&
-          (current.leaseUntil === null || current.leaseUntil <= now || current.leaseToken === input.leaseToken));
+        current.status === 'pending' || (current.status === 'in_progress' && (leaseExpired || sameTokenReentry));
       if (!claimable) {
         return { claimed: false, job: current };
+      }
+      const maxAttempts = input.maxAttempts ?? 5;
+      const reclaimable = current.status === 'in_progress' && (leaseExpired || sameTokenReentry);
+      const exhaustedLeaseGuard =
+        current.leaseToken === null
+          ? isNull(productResearchJobs.leaseToken)
+          : eq(productResearchJobs.leaseToken, current.leaseToken);
+      if (current.attemptCount >= maxAttempts && (current.status === 'pending' || reclaimable)) {
+        const exhausted = await tx
+          .update(productResearchJobs)
+          .set({
+            status: 'failed',
+            stage: null,
+            errorCode: 'RETRY_EXHAUSTED',
+            errorMessage: '재시도 횟수를 초과했습니다.',
+            leaseToken: null,
+            leaseUntil: null,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(productResearchJobs.id, input.jobId),
+              eq(productResearchJobs.status, current.status),
+              reclaimable
+                ? and(
+                    exhaustedLeaseGuard,
+                    or(
+                      isNull(productResearchJobs.leaseUntil),
+                      lte(productResearchJobs.leaseUntil, now),
+                      eq(productResearchJobs.leaseToken, input.leaseToken)
+                    )
+                  )
+                : eq(productResearchJobs.status, 'pending')
+            )
+          )
+          .returning();
+        const terminal = exhausted[0];
+        return { claimed: false, job: terminal ? this.toEntity(terminal) : current };
       }
 
       const updated = await tx
@@ -155,7 +180,7 @@ export class PostgresqlProductResearchJobRepository implements ProductResearchJo
           stage: 'searching',
           leaseToken: input.leaseToken,
           leaseUntil: input.leaseUntil,
-          attemptCount: current.attemptCount + 1,
+          attemptCount: sql`${productResearchJobs.attemptCount} + 1`,
           errorCode: null,
           errorMessage: null,
           updatedAt: new Date(),
@@ -167,7 +192,11 @@ export class PostgresqlProductResearchJobRepository implements ProductResearchJo
               eq(productResearchJobs.status, 'pending'),
               and(
                 eq(productResearchJobs.status, 'in_progress'),
-                or(isNull(productResearchJobs.leaseUntil), lte(productResearchJobs.leaseUntil, now))
+                or(
+                  isNull(productResearchJobs.leaseUntil),
+                  lte(productResearchJobs.leaseUntil, now),
+                  eq(productResearchJobs.leaseToken, input.leaseToken)
+                )
               )
             )
           )
@@ -181,7 +210,10 @@ export class PostgresqlProductResearchJobRepository implements ProductResearchJo
           .from(productResearchJobs)
           .where(eq(productResearchJobs.id, input.jobId))
           .limit(1);
-        return { claimed: false, job: latest[0] ? this.toEntity(latest[0]) : null };
+        if (!latest[0]) {
+          return { claimed: false, job: null };
+        }
+        return { claimed: false, job: this.toEntity(latest[0]) };
       }
       return { claimed: true, job: this.toEntity(next) };
     });

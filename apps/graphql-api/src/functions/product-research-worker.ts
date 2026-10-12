@@ -46,7 +46,10 @@ export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
                       { role: 'user', content: userPrompt },
                     ],
                     undefined,
-                    { signal: options?.signal ?? controller.signal }
+                    {
+                      responseFormat: ProductResearchService.researchResponseFormat(),
+                      signal: options?.signal ?? controller.signal,
+                    }
                   );
                   const content = typeof message.content === 'string' ? message.content : '';
                   if (!content.trim()) {

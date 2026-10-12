@@ -1,4 +1,5 @@
 import {
+  type ProductResearchDispatchStatus,
   type ProductResearchDraftV1,
   type ProductResearchJobEntity,
   type ResearchAnchor,
@@ -183,6 +184,9 @@ export class RequestProductResearchInput {
   requestId?: string;
 
   @Field()
+  requestId: string;
+
+  @Field()
   officialUrl: string;
 }
 
@@ -190,6 +194,15 @@ export class RequestProductResearchInput {
 export class RetryProductResearchInput {
   @Field({ nullable: true })
   requestId?: string;
+}
+
+@ObjectType()
+export class RequestProductResearchPayload {
+  @Field(() => ProductResearchJob)
+  job: ProductResearchJob;
+
+  @Field(() => String)
+  dispatchStatus: ProductResearchDispatchStatus;
 }
 
 @InputType()

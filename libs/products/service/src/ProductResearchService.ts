@@ -1,5 +1,7 @@
 import {
+  CategoryRepositoryToken,
   PRODUCT_RESEARCH_DRAFT_VERSION,
+  ProductResearchJobRepositoryToken,
   RESEARCH_LIMITS,
   hashSourceSnapshot,
   isAnchorExcerptPresent,
@@ -14,10 +16,15 @@ import {
   type ProductResearchJobRepository,
   type ProductResearchWarning,
 } from '@darun/products-domain';
+import type { ProductResearchDispatchStatus } from '@darun/products-domain';
 import type { WebSearchResult } from '@darun/utils-llm';
 import { isAbortError, withAbortableStage, withRetry } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+
+function sha256Hex(input: string): string {
+  return createHash('sha256').update(input).digest('hex');
+}
 
 export type ProductResearchWebSearch = {
   search(
@@ -32,6 +39,7 @@ export type ProductResearchWebSearch = {
 
 export type ProductResearchLlmClient = {
   getModel(): Promise<string>;
+  supportsStructuredOutput?(): Promise<boolean>;
   complete(systemPrompt: string, userPrompt: string, options?: { signal?: AbortSignal }): Promise<string>;
 };
 
@@ -45,6 +53,7 @@ export type ProductResearchDependencies = {
 
 export const PRODUCT_RESEARCH_PROMPT_VERSION = 'research-v1';
 const MAX_SEARCH_FAILURES_BEFORE_ABORT = 2;
+export const PRODUCT_RESEARCH_MAX_ATTEMPTS = 5;
 const LEASE_MS = 5 * 60 * 1000;
 // Stage wall-clock budget는 worker deadline(5분) 안에 들어오도록 합성
 // 1회 호출을 90초로 제한하고, 검색 1회 호출은 15초로 제한한다.
@@ -62,8 +71,101 @@ function throwIfAborted(signal?: AbortSignal): void {
   }
 }
 
-function sha256Hex(input: string): string {
-  return createHash('sha256').update(input).digest('hex');
+const researchAnchorSchema = {
+  type: 'object',
+  properties: {
+    sourceId: { type: 'string', description: '제공된 sources 배열의 id 중 하나입니다.' },
+    excerpt: {
+      type: 'string',
+      maxLength: 300,
+      description: '해당 출처 title/snippet/extraSnippets에 그대로 존재하는 발췌입니다.',
+    },
+  },
+  required: ['sourceId', 'excerpt'],
+  additionalProperties: false,
+} as const;
+
+export function createProductResearchResponseFormat() {
+  return {
+    type: 'json_schema' as const,
+    json_schema: {
+      name: 'product_research_draft',
+      strict: true,
+      schema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', maxLength: 100 },
+          nameAnchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
+          summary: { type: 'string', maxLength: 255 },
+          summaryAnchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
+          categoryCandidates: {
+            type: 'array',
+            maxItems: 3,
+            items: {
+              type: 'object',
+              properties: {
+                categoryId: { type: 'string' },
+                reason: { type: 'string', maxLength: 200 },
+              },
+              required: ['categoryId', 'reason'],
+              additionalProperties: false,
+            },
+          },
+          features: {
+            type: 'array',
+            maxItems: 8,
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', maxLength: 80 },
+                summary: { type: 'string', maxLength: 300 },
+                emoji: { type: 'string', maxLength: 30 },
+                anchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
+              },
+              required: ['name', 'summary', 'anchors'],
+              additionalProperties: false,
+            },
+          },
+          tags: { type: 'array', maxItems: 10, items: { type: 'string', maxLength: 30 } },
+          companyCandidate: {
+            type: 'object',
+            description: '회사 후보가 없으면 이 필드를 생략하십시오.',
+            properties: {
+              name: { type: 'string', maxLength: 100 },
+              website: { type: 'string' },
+              anchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
+            },
+            required: ['name', 'anchors'],
+            additionalProperties: false,
+          },
+          alternativeCandidates: {
+            type: 'array',
+            maxItems: 8,
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', maxLength: 100 },
+                website: { type: 'string' },
+                anchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
+              },
+              required: ['name', 'anchors'],
+              additionalProperties: false,
+            },
+          },
+          suggestedSlug: { type: 'string', maxLength: 100 },
+          warnings: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['PARTIAL_SEARCH_FAILURE', 'NO_INPUT_HOST_SOURCES', 'SPARSE_FACTS', 'AMBIGUOUS_PRODUCT'],
+            },
+          },
+        },
+        required: ['name', 'nameAnchors', 'features'],
+        additionalProperties: false,
+      },
+    },
+  };
 }
 
 function requestKeyFor(officialUrl: string, requestId?: string): string {
@@ -71,9 +173,23 @@ function requestKeyFor(officialUrl: string, requestId?: string): string {
   // Manual re-research creates a new logical job preserving prior results.
   // Absent requestId (legacy callers/tests) falls back to URL-keyed dedup.
   if (trimmed) {
-    return `req:${trimmed}`;
+    return trimmed;
   }
   return `url:${sha256Hex(officialUrl)}`;
+}
+
+export type ProductResearchDispatch = ProductResearchDispatchStatus;
+
+export type RequestProductResearchInput = {
+  requestId: string;
+  officialUrl: string;
+};
+
+function newRequestId(): string {
+  return randomUUID()
+    .replace(/[^A-Za-z0-9]/g, '')
+    .slice(0, 32)
+    .padEnd(8, '0');
 }
 
 function isRequestId(value: string): boolean {
@@ -88,6 +204,11 @@ function isUniqueViolation(error: unknown): boolean {
   }
   const message = error instanceof Error ? error.message : String(error ?? '');
   return /duplicate key|unique constraint|UNIQUE constraint/i.test(message);
+}
+
+function isStructuredOutputUnsupported(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return /structured completion was refused|structured completion did not finish|구조화 응답/i.test(message);
 }
 
 function toFailureCode(code: string): ProductResearchFailureCode {
@@ -147,9 +268,13 @@ function buildResearchSystemPrompt(categoryLabel: string): string {
 @Service()
 export class ProductResearchService {
   constructor(
-    @Inject('ProductResearchJobRepository') private readonly jobRepository?: ProductResearchJobRepository,
-    @Inject('CategoryRepository') private readonly categoryRepository?: CategoryRepository
+    @Inject(ProductResearchJobRepositoryToken) private readonly jobRepository?: ProductResearchJobRepository,
+    @Inject(CategoryRepositoryToken) private readonly categoryRepository?: CategoryRepository
   ) {}
+
+  static researchResponseFormat() {
+    return createProductResearchResponseFormat();
+  }
 
   static buildDraftValidator(input: {
     raw: unknown;
@@ -226,6 +351,9 @@ export class ProductResearchService {
         }
         const candidate = item as { categoryId?: unknown; reason?: unknown };
         if (typeof candidate.categoryId !== 'string' || !validCategoryIds.has(candidate.categoryId)) {
+          if (validCategoryIds.size === 0) {
+            continue;
+          }
           throw new Error(`categoryCandidates[${index}].categoryId가 유효하지 않습니다.`);
         }
         const reason = asString(candidate.reason);
@@ -438,18 +566,21 @@ export class ProductResearchService {
   }
 
   async requestResearch(
-    officialUrlInput: string,
+    input: RequestProductResearchInput | string,
     deps: ProductResearchDependencies,
     requestId?: string
   ): Promise<{ job: ProductResearchJobEntity; queued: boolean }> {
+    // trunk(#432) object form {requestId, officialUrl} + legacy positional form.
+    const officialUrlInput = typeof input === 'string' ? input : input.officialUrl;
+    const resolvedRequestId = typeof input === 'string' ? requestId : input.requestId;
+    if (resolvedRequestId !== undefined && !isRequestId(resolvedRequestId)) {
+      throw productInvalidArgs('요청 ID 형식이 유효하지 않습니다.');
+    }
     const normalized = normalizeOfficialUrl(officialUrlInput);
     if (!normalized.ok) {
       throw productInvalidArgs(normalized.reason);
     }
-    if (requestId !== undefined && !isRequestId(requestId)) {
-      throw productInvalidArgs('요청 ID 형식이 유효하지 않습니다.');
-    }
-    const requestKey = requestKeyFor(normalized.url, requestId);
+    const requestKey = requestKeyFor(normalized.url, resolvedRequestId);
     const existing = await deps.jobRepository.findByRequestKey(requestKey);
     if (existing) {
       if (existing.officialUrl !== normalized.url) {
@@ -483,8 +614,8 @@ export class ProductResearchService {
     deps: ProductResearchDependencies,
     requestId?: string
   ): Promise<{ job: ProductResearchJobEntity; deduped: boolean }> {
-    const target = requestId?.trim() ? requestId : crypto.randomUUID();
-    if (!isRequestId(target)) {
+    const resolved = requestId?.trim() ? requestId : newRequestId();
+    if (!isRequestId(resolved)) {
       throw productInvalidArgs('요청 ID 형식이 유효하지 않습니다.');
     }
     const original = await deps.jobRepository.findById(jobId);
@@ -494,13 +625,13 @@ export class ProductResearchService {
     if (original.status !== 'failed') {
       return { job: original, deduped: true };
     }
-    const requestKey = requestKeyFor(original.officialUrl, target);
+    const requestKey = requestKeyFor(original.officialUrl, resolved);
     try {
       const created = await deps.jobRepository.createPendingJob({
         requestKey,
         officialUrl: original.officialUrl,
       });
-      return { job: created, deduped: false };
+      return { job: created, deduped: created.id === original.id };
     } catch (error) {
       if (!isUniqueViolation(error)) {
         throw error;
@@ -519,13 +650,14 @@ export class ProductResearchService {
   async executeResearch(
     jobId: string,
     deps: ProductResearchDependencies,
-    leaseToken = crypto.randomUUID(),
+    leaseToken = randomUUID(),
     options?: { signal?: AbortSignal; stageBudgetMs?: number }
   ): Promise<ProductResearchJobEntity | null> {
     const claim = await deps.jobRepository.claimJob({
       jobId,
       leaseToken,
       leaseUntil: new Date(Date.now() + LEASE_MS),
+      maxAttempts: PRODUCT_RESEARCH_MAX_ATTEMPTS,
     });
     if (!claim.claimed || !claim.job) {
       return claim.job;
@@ -623,6 +755,18 @@ export class ProductResearchService {
       }
 
       const categories = deps.categoryRepository ? await deps.categoryRepository.findAll() : [];
+      const model = await deps.llm.getModel();
+      if (deps.llm.supportsStructuredOutput) {
+        const supported = await deps.llm.supportsStructuredOutput();
+        if (!supported) {
+          return deps.jobRepository.failJob({
+            jobId,
+            leaseToken,
+            errorCode: 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED',
+            errorMessage: '현재 LLM 모델은 구조화 응답을 지원하지 않습니다. 구조화 응답 지원 모델을 선택해 주세요.',
+          });
+        }
+      }
       const categoryLabel =
         categories.length > 0 ? categories.map(category => `${category.id}:${category.labelKo}`).join(', ') : 'none';
       const systemPrompt = buildResearchSystemPrompt(categoryLabel);
@@ -665,6 +809,14 @@ export class ProductResearchService {
           console.warn(`[ProductResearchService] Job ${jobId} aborted during LLM stage; leaving lease to expire.`);
           return job;
         }
+        if (isStructuredOutputUnsupported(error)) {
+          return deps.jobRepository.failJob({
+            jobId,
+            leaseToken,
+            errorCode: 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED',
+            errorMessage: error instanceof Error ? error.message : '구조화 응답 미지원 모델입니다.',
+          });
+        }
         return deps.jobRepository.failJob({
           jobId,
           leaseToken,
@@ -683,7 +835,6 @@ export class ProductResearchService {
           errorMessage: error instanceof Error ? error.message : 'LLM 응답 형식이 유효하지 않습니다.',
         });
       }
-      const model = await deps.llm.getModel();
       let draft: ProductResearchDraftV1;
       try {
         draft = ProductResearchService.buildDraftValidator({

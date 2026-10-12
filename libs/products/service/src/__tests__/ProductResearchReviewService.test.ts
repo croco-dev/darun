@@ -48,4 +48,47 @@ describe('ProductResearchReviewService.validateReviewedInput', () => {
       })
     ).toThrow();
   });
+
+  it('allows an empty category list for later categorization', () => {
+    const validated = service.validateReviewedInput({
+      researchJobId: 'job-1',
+      name: 'Linear',
+      slug: 'linear',
+      summary: '이슈 트래킹 도구',
+      logoUrl: 'https://linear.app/logo.png',
+      officialUrl: 'https://linear.app/',
+      categoryIds: [],
+      features: [],
+      tags: [],
+    });
+    expect(validated.categoryIds).toEqual([]);
+  });
+
+  it('rejects overlong fields instead of silently truncating them', () => {
+    const base = {
+      researchJobId: 'job-1',
+      name: 'Linear',
+      slug: 'linear',
+      summary: '이슈 트래킹 도구',
+      logoUrl: 'https://linear.app/logo.png',
+      officialUrl: 'https://linear.app/',
+      categoryIds: [] as string[],
+      features: [{ name: '이슈 관리', summary: '빠르게 관리', emoji: '✨' }],
+      tags: [] as string[],
+    };
+    expect(() => service.validateReviewedInput({ ...base, name: 'x'.repeat(256) })).toThrow();
+    expect(() =>
+      service.validateReviewedInput({
+        ...base,
+        features: [{ name: 'x'.repeat(101), summary: '빠르게 관리', emoji: '✨' }],
+      })
+    ).toThrow();
+    expect(() =>
+      service.validateReviewedInput({
+        ...base,
+        features: [{ name: '이슈 관리', summary: 'x'.repeat(256), emoji: '✨' }],
+      })
+    ).toThrow();
+    expect(() => service.validateReviewedInput({ ...base, tags: ['x'.repeat(101)] })).toThrow();
+  });
 });

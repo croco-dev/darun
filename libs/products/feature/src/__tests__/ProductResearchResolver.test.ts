@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import type { ProductResearchJobEntity } from '@darun/products-domain';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProductResearchMutationResolver } from '../ProductResearch.resolver';
+import { ProductResearchMutationResolver, ProductResearchQueryResolver } from '../ProductResearch.resolver';
 
 vi.mock('typedi', async importOriginal => {
   const actual = await importOriginal<typeof import('typedi')>();
@@ -34,7 +34,7 @@ vi.mock('type-graphql', () => {
 function jobEntity(overrides: Partial<ProductResearchJobEntity> = {}): ProductResearchJobEntity {
   return {
     id: 'job-1',
-    requestKey: 'url:abc',
+    requestKey: 'req-12345678',
     officialUrl: 'https://linear.app/',
     status: 'completed',
     stage: null,
@@ -57,19 +57,18 @@ function jobEntity(overrides: Partial<ProductResearchJobEntity> = {}): ProductRe
 
 describe('ProductResearchMutationResolver', () => {
   const requestResearch = vi.fn();
-  const executeResearch = vi.fn();
   const retryFailedResearch = vi.fn();
+  const executeResearch = vi.fn();
   const materializeReviewedProduct = vi.fn();
   const sendJob = vi.fn();
   const findById = vi.fn();
-  const requeueFailedJob = vi.fn();
 
   function createResolver() {
     return new ProductResearchMutationResolver(
-      { findById, requeueFailedJob } as never,
+      { findById } as never,
       {} as never,
       {} as never,
-      { requestResearch, executeResearch, retryFailedResearch } as never,
+      { requestResearch, retryFailedResearch, executeResearch } as never,
       { materializeReviewedProduct } as never,
       { sendJob } as never,
       {} as never,
@@ -91,15 +90,106 @@ describe('ProductResearchMutationResolver', () => {
       {} as never
     );
 
-    const result = await resolver.requestProductResearch({ officialUrl: 'https://linear.app/' });
-    expect(result.id).toBe('job-1');
+    const result = await resolver.requestProductResearch({
+      requestId: 'req-12345678',
+      officialUrl: 'https://linear.app/',
+    });
+    expect(result.job.id).toBe('job-1');
+    expect(result.dispatchStatus).toBe('QUEUED');
+    expect(requestResearch).toHaveBeenCalledWith({ requestId: 'req-12345678', officialUrl: 'https://linear.app/' }, {});
     expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-1' });
     expect(executeResearch).not.toHaveBeenCalled();
   });
 
-  it('retries a failed research job as a new logical job preserving the failed one', async () => {
-    const failed = jobEntity({ status: 'failed' });
-    const created = jobEntity({ id: 'job-2', status: 'pending', requestKey: 'req:retry-1' });
+  it('returns RETRY_REQUIRED with the job id when SQS dispatch fails', async () => {
+    const job = jobEntity({ status: 'pending' });
+    requestResearch.mockResolvedValueOnce({ job, queued: true });
+    sendJob.mockRejectedValueOnce(new Error('sqs down'));
+    const resolver = createResolver();
+    vi.spyOn(resolver as unknown as { buildDeps: () => Promise<never> }, 'buildDeps').mockResolvedValueOnce(
+      {} as never
+    );
+
+    const result = await resolver.requestProductResearch({
+      requestId: 'req-12345678',
+      officialUrl: 'https://linear.app/',
+    });
+    expect(result.job.id).toBe('job-1');
+    expect(result.dispatchStatus).toBe('RETRY_REQUIRED');
+    expect(executeResearch).not.toHaveBeenCalled();
+  });
+
+  it('resends SQS for a stranded pending job on a deduped requestId', async () => {
+    const stranded = jobEntity({ status: 'pending' });
+    requestResearch.mockResolvedValueOnce({ job: stranded, queued: false });
+    sendJob.mockResolvedValueOnce(true);
+    const resolver = createResolver();
+    vi.spyOn(resolver as unknown as { buildDeps: () => Promise<never> }, 'buildDeps').mockResolvedValueOnce(
+      {} as never
+    );
+
+    const result = await resolver.requestProductResearch({
+      requestId: 'req-12345678',
+      officialUrl: 'https://linear.app/',
+    });
+    expect(result.job.id).toBe('job-1');
+    expect(result.dispatchStatus).toBe('QUEUED');
+    expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-1' });
+  });
+
+  it('returns RETRY_REQUIRED for a stranded pending job when resend fails', async () => {
+    const stranded = jobEntity({ status: 'pending' });
+    requestResearch.mockResolvedValueOnce({ job: stranded, queued: false });
+    sendJob.mockRejectedValueOnce(new Error('sqs down'));
+    const resolver = createResolver();
+    vi.spyOn(resolver as unknown as { buildDeps: () => Promise<never> }, 'buildDeps').mockResolvedValueOnce(
+      {} as never
+    );
+
+    const result = await resolver.requestProductResearch({
+      requestId: 'req-12345678',
+      officialUrl: 'https://linear.app/',
+    });
+    expect(result.job.id).toBe('job-1');
+    expect(result.dispatchStatus).toBe('RETRY_REQUIRED');
+  });
+
+  it('returns DEDUPED without dispatch for a terminal job on a deduped requestId', async () => {
+    const terminal = jobEntity({ status: 'completed' });
+    requestResearch.mockResolvedValueOnce({ job: terminal, queued: false });
+    const resolver = createResolver();
+    vi.spyOn(resolver as unknown as { buildDeps: () => Promise<never> }, 'buildDeps').mockResolvedValueOnce(
+      {} as never
+    );
+
+    const result = await resolver.requestProductResearch({
+      requestId: 'req-12345678',
+      officialUrl: 'https://linear.app/',
+    });
+    expect(result.job.id).toBe('job-1');
+    expect(result.dispatchStatus).toBe('DEDUPED');
+    expect(sendJob).not.toHaveBeenCalled();
+  });
+
+  it('propagates a typed invalid-args rejection for a requestId URL mismatch without dispatch', async () => {
+    const mismatch = Object.assign(new Error('요청 ID에 이미 다른 공식 URL이 연결되어 있습니다.'), {
+      code: 'product/invalid-args',
+    });
+    requestResearch.mockRejectedValueOnce(mismatch);
+    const resolver = createResolver();
+    vi.spyOn(resolver as unknown as { buildDeps: () => Promise<never> }, 'buildDeps').mockResolvedValueOnce(
+      {} as never
+    );
+
+    await expect(
+      resolver.requestProductResearch({ requestId: 'req-12345678', officialUrl: 'https://notion.so/' })
+    ).rejects.toMatchObject({ code: 'product/invalid-args' });
+    expect(sendJob).not.toHaveBeenCalled();
+  });
+
+  it('retries a failed job as a new pending job without changing the terminal job', async () => {
+    const failed = jobEntity({ id: 'job-old', status: 'failed' });
+    const created = jobEntity({ id: 'job-new', status: 'pending' });
     findById.mockResolvedValueOnce(failed);
     retryFailedResearch.mockResolvedValueOnce({ job: created, deduped: false });
     sendJob.mockResolvedValueOnce(true);
@@ -108,28 +198,74 @@ describe('ProductResearchMutationResolver', () => {
       {} as never
     );
 
-    const result = await resolver.retryProductResearch('job-1', { requestId: 'retry-0001' });
-    expect(retryFailedResearch).toHaveBeenCalledWith('job-1', expect.anything(), 'retry-0001');
-    expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-2' });
-    expect(result?.id).toBe('job-2');
+    const result = await resolver.retryProductResearch('job-old', { requestId: 'req-retry-99' });
+    expect(result?.job.id).toBe('job-new');
+    expect(result?.dispatchStatus).toBe('QUEUED');
+    expect(retryFailedResearch).toHaveBeenCalledWith('job-old', {}, 'req-retry-99');
+    expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-new' });
   });
 
-  it('requeues a failed research job with CAS before sending it (legacy same-id path)', async () => {
-    const failed = jobEntity({ status: 'failed' });
-    const pending = jobEntity({ status: 'pending' });
-    findById.mockResolvedValueOnce(failed).mockResolvedValueOnce(pending);
-    retryFailedResearch.mockResolvedValueOnce({ job: failed, deduped: false });
-    requeueFailedJob.mockResolvedValueOnce(pending);
+  it('resends SQS for a stranded pending job when retry collides on request_key', async () => {
+    const failed = jobEntity({ id: 'job-old', status: 'failed' });
+    const raced = jobEntity({ id: 'job-existing', status: 'pending' });
+    findById.mockResolvedValueOnce(failed);
+    retryFailedResearch.mockResolvedValueOnce({ job: raced, deduped: true });
     sendJob.mockResolvedValueOnce(true);
     const resolver = createResolver();
     vi.spyOn(resolver as unknown as { buildDeps: () => Promise<never> }, 'buildDeps').mockResolvedValueOnce(
       {} as never
     );
 
-    const result = await resolver.retryProductResearch('job-1');
-    expect(requeueFailedJob).toHaveBeenCalledWith({ jobId: 'job-1', expectedStatuses: ['failed'] });
-    expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-1' });
-    expect(result?.status).toBe('pending');
+    const result = await resolver.retryProductResearch('job-old', { requestId: 'req-collide-1' });
+    expect(result?.job.id).toBe('job-existing');
+    expect(result?.dispatchStatus).toBe('QUEUED');
+    expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-existing' });
+  });
+
+  it('returns RETRY_REQUIRED for a stranded pending job when retry resend fails', async () => {
+    const failed = jobEntity({ id: 'job-old', status: 'failed' });
+    const raced = jobEntity({ id: 'job-existing', status: 'pending' });
+    findById.mockResolvedValueOnce(failed);
+    retryFailedResearch.mockResolvedValueOnce({ job: raced, deduped: true });
+    sendJob.mockRejectedValueOnce(new Error('sqs down'));
+    const resolver = createResolver();
+    vi.spyOn(resolver as unknown as { buildDeps: () => Promise<never> }, 'buildDeps').mockResolvedValueOnce(
+      {} as never
+    );
+
+    const result = await resolver.retryProductResearch('job-old', { requestId: 'req-collide-1' });
+    expect(result?.job.id).toBe('job-existing');
+    expect(result?.dispatchStatus).toBe('RETRY_REQUIRED');
+  });
+
+  it('returns DEDUPED for a completed job queried directly via retry', async () => {
+    const terminal = jobEntity({ id: 'job-done', status: 'completed' });
+    findById.mockResolvedValueOnce(terminal);
+    const resolver = createResolver();
+
+    const result = await resolver.retryProductResearch('job-done');
+    expect(result?.job.id).toBe('job-done');
+    expect(result?.dispatchStatus).toBe('DEDUPED');
+    expect(sendJob).not.toHaveBeenCalled();
+    expect(retryFailedResearch).not.toHaveBeenCalled();
+  });
+
+  it('propagates a typed invalid-args rejection when retry collides on a different URL without dispatch', async () => {
+    const failed = jobEntity({ id: 'job-old', status: 'failed' });
+    const mismatch = Object.assign(new Error('요청 ID에 이미 다른 공식 URL이 연결되어 있습니다.'), {
+      code: 'product/invalid-args',
+    });
+    findById.mockResolvedValueOnce(failed);
+    retryFailedResearch.mockRejectedValueOnce(mismatch);
+    const resolver = createResolver();
+    vi.spyOn(resolver as unknown as { buildDeps: () => Promise<never> }, 'buildDeps').mockResolvedValueOnce(
+      {} as never
+    );
+
+    await expect(resolver.retryProductResearch('job-old', { requestId: 'req-collide-1' })).rejects.toMatchObject({
+      code: 'product/invalid-args',
+    });
+    expect(sendJob).not.toHaveBeenCalled();
   });
 
   it('materializes only validated reviewed products', async () => {
@@ -159,5 +295,47 @@ describe('ProductResearchMutationResolver', () => {
       expect.objectContaining({ researchJobId: 'job-1', slug: 'linear' })
     );
     expect(product.slug).toBe('linear');
+  });
+});
+
+describe('ProductResearchGraphSchema', () => {
+  it('exposes requestId input and payload dispatch status via decorator metadata', async () => {
+    const { RequestProductResearchInput, RequestProductResearchPayload } = await import('../graphs/ProductResearch');
+    expect(new RequestProductResearchInput()).toBeTruthy();
+    expect(new RequestProductResearchPayload()).toBeTruthy();
+    const mutationSource = ProductResearchMutationResolver.prototype.requestProductResearch as never as object;
+    expect(mutationSource).toBeTruthy();
+    expect(ProductResearchQueryResolver).toBeTruthy();
+  });
+
+  it('maps reference-only candidates without touching persisted semantics', async () => {
+    const { toProductResearchJobGraph } = await import('../graphs/ProductResearch');
+    const graph = toProductResearchJobGraph(
+      jobEntity({
+        status: 'completed',
+        result: {
+          version: 1,
+          originalUrl: 'https://linear.app/',
+          identity: {
+            name: { value: 'Linear', anchors: [{ sourceId: 's1', excerpt: 'Linear' }], evidenceType: 'INPUT_HOST' },
+            suggestedSlug: 'linear',
+          },
+          summary: null,
+          categoryCandidates: [{ categoryId: 'cat-1', reason: '후보' }],
+          features: [],
+          tags: [],
+          companyCandidate: { name: 'Linear Inc', anchors: [{ sourceId: 's1', excerpt: 'Linear' }] },
+          alternativeCandidates: [{ name: 'Asana', anchors: [{ sourceId: 's1', excerpt: 'Linear' }] }],
+          sources: [],
+          warnings: [],
+          sourceSnapshotHash: 'hash',
+          promptVersion: 'research-v1',
+          model: 'test-model',
+        },
+      })
+    );
+    expect(graph.result?.companyCandidate?.name).toBe('Linear Inc');
+    expect(graph.result?.alternativeCandidates).toHaveLength(1);
+    expect(graph.result?.categoryCandidates).toHaveLength(1);
   });
 });

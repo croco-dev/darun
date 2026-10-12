@@ -71,7 +71,7 @@ export function normalizeResearchSources(
   inputHostname: string
 ): NormalizedResearchSource[] {
   const seen = new Set<string>();
-  const normalized: NormalizedResearchSource[] = [];
+  const collected: NormalizedResearchSource[] = [];
   let counter = 0;
 
   for (const raw of rawSources) {
@@ -90,7 +90,7 @@ export function normalizeResearchSources(
     }
 
     counter += 1;
-    normalized.push({
+    collected.push({
       id: `s${counter}`,
       title: raw.title.trim().slice(0, 300),
       url: canonical,
@@ -103,13 +103,22 @@ export function normalizeResearchSources(
         .map(snippet => snippet.slice(0, MAX_SOURCE_SNIPPET_CHARS)),
       relationToInput: isSameHostOrSubdomain(hostname, inputHostname) ? 'INPUT_HOST_MATCH' : 'EXTERNAL',
     });
-
-    if (normalized.length >= RESEARCH_LIMITS.maxUniqueSources) {
-      break;
-    }
   }
 
-  return normalized;
+  const ranked = collected
+    .map((source, index) => ({ source, index }))
+    .sort((a, b) => {
+      const rankA = a.source.relationToInput === 'INPUT_HOST_MATCH' ? 0 : 1;
+      const rankB = b.source.relationToInput === 'INPUT_HOST_MATCH' ? 0 : 1;
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+      return a.index - b.index;
+    })
+    .slice(0, RESEARCH_LIMITS.maxUniqueSources)
+    .map(entry => entry.source);
+
+  return ranked.map((source, index) => ({ ...source, id: `s${index + 1}` }));
 }
 
 export function hashSourceSnapshot(sources: NormalizedResearchSource[]): string {
