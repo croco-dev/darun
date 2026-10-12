@@ -30,10 +30,15 @@ export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
           llm: {
             getModel: async () => (await llmClient.getConfig()).model,
             complete: async (systemPrompt, userPrompt) => {
-              const message = await llmClient.completion([
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt },
-              ]);
+              const config = await llmClient.getConfig();
+              const message = await llmClient.completion(
+                config.model,
+                [
+                  { role: 'system', content: systemPrompt },
+                  { role: 'user', content: userPrompt },
+                ],
+                { responseFormat: ProductResearchService.researchResponseFormat() }
+              );
               const content = typeof message.content === 'string' ? message.content : '';
               if (!content.trim()) {
                 throw new Error('LLM 응답이 비어 있습니다.');

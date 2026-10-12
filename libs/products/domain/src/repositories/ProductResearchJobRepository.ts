@@ -13,7 +13,12 @@ export interface ProductResearchJobRepository {
   findByRequestKey(requestKey: string): Promise<ProductResearchJobEntity | null>;
   findByProductId(productId: string): Promise<ProductResearchJobEntity | null>;
   createPendingJob(input: { requestKey: string; officialUrl: string }): Promise<ProductResearchJobEntity>;
-  claimJob(input: { jobId: string; leaseToken: string; leaseUntil: Date }): Promise<ClaimProductResearchJobResult>;
+  claimJob(input: {
+    jobId: string;
+    leaseToken: string;
+    leaseUntil: Date;
+    maxAttempts?: number;
+  }): Promise<ClaimProductResearchJobResult>;
   completeJob(input: {
     jobId: string;
     leaseToken: string;

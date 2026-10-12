@@ -4,6 +4,8 @@ import {
   ProductResearchMaterializationRepositoryToken,
   normalizeOfficialUrl,
   type CategoryRepository,
+  type ProductResearchDispatchStatus,
+  type ProductResearchJobEntity,
   type ProductResearchJobRepository,
   type ProductResearchMaterializationRepository,
 } from '@darun/products-domain';
@@ -25,6 +27,8 @@ import {
   MaterializeResearchedProductInput,
   ProductResearchJob,
   RequestProductResearchInput,
+  RequestProductResearchPayload,
+  RetryProductResearchInput,
   toProductResearchJobGraph,
 } from './graphs/ProductResearch';
 
@@ -50,10 +54,15 @@ export class ProductResearchMutationResolver {
     const llm = {
       getModel: async () => (await this.llmClient.getConfig()).model,
       complete: async (systemPrompt: string, userPrompt: string) => {
-        const message = await this.llmClient.completion([
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ]);
+        const config = await this.llmClient.getConfig();
+        const message = await this.llmClient.completion(
+          config.model,
+          [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          { responseFormat: ProductResearchService.researchResponseFormat() }
+        );
         const content = typeof message.content === 'string' ? message.content : '';
         if (!content.trim()) {
           throw new Error('LLM 응답이 비어 있습니다.');
@@ -72,56 +81,74 @@ export class ProductResearchMutationResolver {
     };
   }
 
+  private async dispatchJob(jobId: string): Promise<ProductResearchDispatchStatus> {
+    try {
+      const sent = await this.queueService.sendJob({ jobId });
+      return sent ? 'QUEUED' : 'RETRY_REQUIRED';
+    } catch (error) {
+      console.warn('[ProductResearchMutationResolver] Failed to send job to SQS:', error);
+      return 'RETRY_REQUIRED';
+    }
+  }
+
+  private isResendable(job: ProductResearchJobEntity): boolean {
+    return job.status === 'pending' || job.status === 'in_progress';
+  }
+
   @Authorized([AuthRole.Admin])
-  @Mutation(() => ProductResearchJob)
-  async requestProductResearch(@Arg('input') input: RequestProductResearchInput): Promise<ProductResearchJob> {
+  @Mutation(() => RequestProductResearchPayload)
+  async requestProductResearch(
+    @Arg('input') input: RequestProductResearchInput
+  ): Promise<RequestProductResearchPayload> {
     const normalized = normalizeOfficialUrl(input.officialUrl);
     if (!normalized.ok) {
       throw new Error(normalized.reason);
     }
     const deps = await this.buildDeps();
-    const { job, queued } = await this.researchService.requestResearch(normalized.url, deps);
-    if (queued) {
-      let sent = false;
-      try {
-        sent = await this.queueService.sendJob({ jobId: job.id });
-      } catch (error) {
-        console.warn('[ProductResearchMutationResolver] Failed to send job to SQS:', error);
+    const { job, queued } = await this.researchService.requestResearch(
+      { requestId: input.requestId, officialUrl: normalized.url },
+      deps
+    );
+    if (!queued) {
+      if (!this.isResendable(job)) {
+        return { job: toProductResearchJobGraph(job), dispatchStatus: 'DEDUPED' };
       }
-      if (!sent) {
-        setImmediate(() => {
-          void this.researchService.executeResearch(job.id, deps);
-        });
-      }
+      return { job: toProductResearchJobGraph(job), dispatchStatus: await this.dispatchJob(job.id) };
     }
-    return toProductResearchJobGraph(job);
+    return {
+      job: toProductResearchJobGraph(job),
+      dispatchStatus: await this.dispatchJob(job.id),
+    };
   }
 
   @Authorized([AuthRole.Admin])
-  @Mutation(() => ProductResearchJob, { nullable: true })
-  async retryProductResearch(@Arg('jobId') jobId: string): Promise<ProductResearchJob | null> {
+  @Mutation(() => RequestProductResearchPayload, { nullable: true })
+  async retryProductResearch(
+    @Arg('jobId') jobId: string,
+    @Arg('input', { nullable: true }) input?: RetryProductResearchInput
+  ): Promise<RequestProductResearchPayload | null> {
     const job = await this.jobRepository.findById(jobId);
     if (!job) {
       throw new Error(`존재하지 않는 조사 작업입니다: ${jobId}`);
     }
     if (job.status !== 'failed') {
-      return toProductResearchJobGraph(job);
+      if (!this.isResendable(job)) {
+        return { job: toProductResearchJobGraph(job), dispatchStatus: 'DEDUPED' };
+      }
+      return { job: toProductResearchJobGraph(job), dispatchStatus: await this.dispatchJob(job.id) };
     }
     const deps = await this.buildDeps();
-    try {
-      const sent = await this.queueService.sendJob({ jobId: job.id });
-      if (!sent) {
-        setImmediate(() => {
-          void this.researchService.executeResearch(job.id, deps);
-        });
+    const { job: retried, deduped } = await this.researchService.retryFailedResearch(job.id, deps, input?.requestId);
+    if (deduped || retried.id === job.id) {
+      if (!this.isResendable(retried)) {
+        return { job: toProductResearchJobGraph(retried), dispatchStatus: 'DEDUPED' };
       }
-    } catch (error) {
-      console.warn('[ProductResearchMutationResolver] Failed to retry job via SQS:', error);
-      setImmediate(() => {
-        void this.researchService.executeResearch(job.id, deps);
-      });
+      return { job: toProductResearchJobGraph(retried), dispatchStatus: await this.dispatchJob(retried.id) };
     }
-    return toProductResearchJobGraph(job);
+    return {
+      job: toProductResearchJobGraph(retried),
+      dispatchStatus: await this.dispatchJob(retried.id),
+    };
   }
 
   @Authorized([AuthRole.Admin])

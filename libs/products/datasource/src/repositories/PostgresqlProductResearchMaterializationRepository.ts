@@ -8,7 +8,7 @@ import {
   productSlugAlreadyExists,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { ulid } from 'ulid';
 import { categories } from '../entities/CategorySchema';
@@ -44,6 +44,7 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           .select()
           .from(productResearchJobs)
           .where(eq(productResearchJobs.id, input.researchJobId))
+          .for('update')
           .limit(1);
         const jobRow = jobRows[0];
         if (!jobRow) {
@@ -110,7 +111,7 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           title: `${input.name} 공식 사이트`,
           iconUrl: input.logoUrl,
           link: input.officialUrl,
-          displayLink: hostname.slice(0, 100),
+          displayLink: hostname,
         });
 
         if (input.features.length > 0) {
@@ -146,14 +147,44 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
             .onConflictDoNothing({ target: [productTags.productId, productTags.tagId] });
         }
 
-        await tx
+        const claimedRows = await tx
           .update(productResearchJobs)
           .set({
             materializedProductId: productId,
             appliedAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(productResearchJobs.id, input.researchJobId));
+          .where(
+            and(eq(productResearchJobs.id, input.researchJobId), isNull(productResearchJobs.materializedProductId))
+          )
+          .returning({ id: productResearchJobs.id });
+        const claimed = claimedRows[0];
+        if (!claimed) {
+          const lostRows = await tx
+            .select()
+            .from(productResearchJobs)
+            .where(eq(productResearchJobs.id, input.researchJobId))
+            .limit(1);
+          const lost = lostRows[0]?.materializedProductId;
+          if (lost) {
+            const existingRows = await tx.select().from(products).where(eq(products.id, lost)).limit(1);
+            const existing = existingRows[0];
+            if (existing) {
+              return {
+                product: new Product({
+                  ...existing,
+                  ownedCompanyId: existing.ownedCompanyId ?? undefined,
+                  description: existing.description ?? undefined,
+                  publishedAt: existing.publishedAt ?? undefined,
+                  updatedAt: existing.updatedAt ?? undefined,
+                  categoryIds: existing.categoryIds ?? [],
+                }),
+                alreadyCreated: true,
+              };
+            }
+          }
+          throw productSlugAlreadyExists();
+        }
 
         return {
           product: new Product({

@@ -84,6 +84,7 @@ export type { ProductDescriptionJobEntity, ProductDescriptionJobStatus } from '.
 export type {
   ProductResearchJobEntity,
   ProductResearchJobStatus,
+  ProductResearchDispatchStatus,
   ProductResearchStage,
   ProductResearchFailureCode,
   ProductResearchWarning,
