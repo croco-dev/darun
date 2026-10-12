@@ -122,7 +122,7 @@ export function createTestUser(
   overrides?: Partial<Parameters<typeof User.create>[0]>
 ) {
   return User.create({
-    externalId: 'clerk_test_user_123',
+    externalId: 'firebase_test_user_123',
     ...overrides,
   });
 }
@@ -206,7 +206,7 @@ import { IdPrefixes } from '@darun/provider-gid';
 
 // Entity 테스트에서 ID 검증
 it('올바른 ID prefix를 가진다', () => {
-  const user = User.create({ externalId: 'clerk_123' });
+  const user = User.create({ externalId: 'firebase_123' });
   expect(IdPrefixes.USER.validate(user.id)).toBe(true);
 });
 

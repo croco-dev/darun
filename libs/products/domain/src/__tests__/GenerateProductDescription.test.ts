@@ -50,7 +50,7 @@ describe('GenerateProductDescriptionCandidate', () => {
     const result = await usecase.execute({ productId: 'prod-1' });
 
     expect(assembler.assemble).toHaveBeenCalledTimes(2); // start and pre-return freshness check
-    expect(generator.generate).toHaveBeenCalledWith(mockEvidence);
+    expect(generator.generate).toHaveBeenCalledWith(mockEvidence, undefined);
     expect(result.candidateHtml).toBe('<p>도입</p><p>마무리</p>');
     expect(result.evidenceHash).toBe('hash-ev-1');
     expect(result.baseDescriptionHash).toBe('hash-desc-1');

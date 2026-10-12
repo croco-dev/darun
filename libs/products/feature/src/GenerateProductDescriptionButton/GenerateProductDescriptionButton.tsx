@@ -10,8 +10,20 @@ interface GenerateProductDescriptionButtonProps {
 }
 
 export function GenerateProductDescriptionButton({ slug }: GenerateProductDescriptionButtonProps) {
-  const { handleGenerate, isGenerating, candidateJob, isPreviewOpen, closePreview, isApplying, handleApply } =
-    useGenerateProductDescriptionButton(slug);
+  const {
+    handleGenerate,
+    isGenerating,
+    candidateJob,
+    isPreviewOpen,
+    closePreview,
+    isApplying,
+    handleApply,
+    jobIdInput,
+    setJobIdInput,
+    isReopening,
+    handleReopenJob,
+    staleApplyNotice,
+  } = useGenerateProductDescriptionButton(slug);
 
   const handleClick = () => {
     handleGenerate().catch(() => {});
@@ -39,6 +51,19 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
           <p className="text-xs text-dark-500 break-words [word-break:keep-all]">
             생성된 AI 소개 초안입니다. 사실에 부합하는지 검토 후 [적용하기]를 눌러 제품 소개로 반영하세요.
           </p>
+          {candidateJob?.id && <p className="text-xs text-dark-500">후보 작업 ID: {candidateJob.id}</p>}
+          {candidateJob?.appliedAt && (
+            <p className="text-xs text-dark-500">이미 적용된 후보의 저장된 HTML을 표시합니다.</p>
+          )}
+          {staleApplyNotice && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3" role="alert">
+              <p className="text-xs font-semibold text-amber-800">적용 보류: 근거가 변경되었습니다.</p>
+              <p className="mt-1 text-xs text-amber-800">{staleApplyNotice}</p>
+              <p className="mt-1 text-xs text-amber-800">
+                수동 편집은 유지됩니다. 새 근거로 다시 생성한 뒤 검토해 주세요.
+              </p>
+            </div>
+          )}
 
           <div
             className="max-h-[60vh] overflow-y-auto rounded-lg border border-dark-200 bg-surface-50 p-4 text-sm text-dark-800"
@@ -70,6 +95,37 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
           </div>
         </div>
       </AdminModal>
+
+      <form
+        className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center"
+        onSubmit={event => {
+          event.preventDefault();
+          void handleReopenJob();
+        }}
+      >
+        <label htmlFor={`candidate-job-id-${slug}`} className="sr-only">
+          후보 작업 ID로 다시 열기
+        </label>
+        <input
+          id={`candidate-job-id-${slug}`}
+          name="candidateJobId"
+          value={jobIdInput}
+          onChange={event => setJobIdInput(event.currentTarget.value)}
+          placeholder="후보 작업 ID로 다시 열기"
+          disabled={isReopening || isGenerating}
+          className="w-full rounded-lg border border-dark-200 bg-white px-3 py-2 text-xs text-dark-900 placeholder:text-dark-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 sm:max-w-56"
+        />
+        <Button
+          type="submit"
+          variant="base"
+          color="secondary"
+          size="sm"
+          disabled={isReopening || !jobIdInput.trim()}
+          className="active:scale-[0.98] motion-reduce:transform-none"
+        >
+          <span className="whitespace-nowrap">{isReopening ? '여는 중...' : '후보 다시 열기'}</span>
+        </Button>
+      </form>
     </>
   );
 }

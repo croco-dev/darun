@@ -13,20 +13,20 @@ alwaysApply: false
 - **API**: type-graphql (GraphQL 스키마 및 리졸버)
 - **Database**: Drizzle ORM + Drizzle Kit + Supabase (postgres)
 - **DI**: TypeDI 컨테이너 사용
-- **Auth**: Clerk (@clerk/backend)
-- **Deployment**: Serverless Framework + AWS Lambda (Node.js 22.x, ARM64)
+- **Auth**: Firebase (`firebase-admin`, `@darun/utils-auth-service-firebase`)
+- **Deployment**: SST + AWS Lambda (Node.js 22.x, ARM64)
 
 ## ⚠️ 마이그레이션 규칙
-- **마이그레이션 파일 생성 금지**: AI가 마이그레이션을 직접 생성하지 않음
-- 사용자가 `pnpm drizzle-kit generate` 명령으로 직접 생성
-- Drizzle 스키마(`libs/**/datasource/src/libs/entities/*.ts`)만 정의
+- **Drizzle generator로만 추가**: 영속 스키마 변경(컬럼·테이블·인덱스)은 `pnpm --filter graphql-api exec drizzle-kit generate --config drizzle.config.cjs`로 생성한 SQL migration + snapshot / `meta/_journal.json`을 같은 PR에 포함
+- **적용된 migration은 수정하지 않음**: 이미 적용된 migration 이력을 고치지 않고 후속 migration으로 수정
+- Drizzle 스키마(`libs/**/datasource/src/**/entities/*.ts`)만 정의하고 SQL을 손으로 쓰지 않음
 
 ## Domain Layer 규칙
 - Entity는 비즈니스 규칙과 불변성 보장
 - Repository는 인터페이스만 정의, 구현체는 Datasource에
 - 외부 라이브러리 의존성 최소화 (TypeDI, provider-gid 제외)
 - 순수 비즈니스 로직만 포함
-- **외부 프로바이더 이름 노출 금지**: `clerkUserId` → `externalId` 사용
+- **외부 프로바이더 이름 노출 금지**: `firebaseUserId` → `externalId` 사용
 - **도메인 간 직접 참조 금지**: 다른 도메인 패키지 import 금지
   - 예: `wiki-service`에서 `@darun/user-domain` import 금지
   - 다른 도메인 엔티티 참조 시 ID만 저장 (`createdById: string`)

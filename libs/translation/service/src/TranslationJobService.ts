@@ -2,6 +2,7 @@ import { GetMagazine, Magazine } from '@darun/magazines-domain';
 import { GetProduct, GetProductFeature, GetProductFeatures, Product, ProductFeature } from '@darun/products-domain';
 import {
   computeSourceHash,
+  validateProductBundleTranslation,
   type ProductBundleTranslationRequest,
   type ProductBundleTranslationResult,
   type SingleTranslationRequest,
@@ -16,9 +17,85 @@ import {
   TranslationService,
   type UpsertTranslationParams,
 } from '@darun/translation-domain';
-import { LlmClient } from '@darun/utils-llm';
+import { LlmClient, RetryableError } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
+import { randomUUID } from 'node:crypto';
 import { TranslationQueueService } from './TranslationQueueService';
+
+export const TRANSLATION_LEASE_MS = 5 * 60 * 1000;
+export const TRANSLATION_STAGE_BUDGET_MS = 4 * 60 * 1000;
+
+function isAbortError(error: unknown): boolean {
+  if (error instanceof Error) {
+    return error.name === 'AbortError' || error.message.includes('중단');
+  }
+  return false;
+}
+
+function withWorkerDeadline<T>(
+  run: (signal: AbortSignal) => Promise<T>,
+  deadlineMs: number,
+  parentSignal?: AbortSignal
+): Promise<T> {
+  const controller = new AbortController();
+  if (parentSignal?.aborted) {
+    controller.abort();
+  }
+  const onParentAbort = () => controller.abort();
+  if (parentSignal) {
+    parentSignal.addEventListener('abort', onParentAbort, { once: true });
+  }
+  const timeout = setTimeout(() => controller.abort(), deadlineMs);
+  const attempt: Promise<T> = run(controller.signal);
+  attempt.catch(() => {});
+  const cleanup = () => {
+    clearTimeout(timeout);
+    parentSignal?.removeEventListener('abort', onParentAbort);
+  };
+  return Promise.race([
+    attempt.finally(cleanup),
+    new Promise<never>((_, reject) => {
+      controller.signal.addEventListener(
+        'abort',
+        () => {
+          cleanup();
+          const aborted = new Error('작업이 중단되었습니다.');
+          aborted.name = 'AbortError';
+          reject(aborted);
+        },
+        { once: true }
+      );
+    }),
+  ]);
+}
+
+function validateBundleRowsForCommit(
+  requestedFeatures: Array<{ id: string }>,
+  bundleResult: ProductBundleTranslationResult
+): void {
+  const requestedIds = requestedFeatures.map(feature => feature.id);
+  const requestedIdSet = new Set(requestedIds);
+  if (requestedIdSet.size !== requestedIds.length) {
+    throw new Error('번역 커밋 요청에 중복된 기능 ID가 포함되었습니다.');
+  }
+  const returnedIds = Array.isArray(bundleResult.features)
+    ? bundleResult.features.map(feature => feature.id)
+    : [];
+  const returnedIdSet = new Set(returnedIds);
+  if (returnedIdSet.size !== returnedIds.length) {
+    throw new Error('번역 결과에 중복된 기능 ID가 포함되었습니다.');
+  }
+  for (const id of returnedIds) {
+    if (!id || !requestedIdSet.has(id)) {
+      throw new Error(`번역 결과에 알 수 없는 기능 ID(${id || '없음'})가 포함되었습니다.`);
+    }
+  }
+  for (const id of requestedIds) {
+    if (!returnedIdSet.has(id)) {
+      throw new Error(`번역 결과에 요청된 기능 ID(${id})가 누락되었습니다.`);
+    }
+  }
+}
 
 export type TranslationEntityType = 'Product' | 'Magazine' | 'ProductFeature';
 
@@ -76,6 +153,9 @@ class LlmClientTranslationProviderAdapter implements TranslationProvider {
       },
     ]);
     const translatedText = res.content?.trim() ?? '';
+    if (!translatedText) {
+      throw new Error('LLM 번역 결과가 비어 있습니다.');
+    }
     return {
       translatedText,
       sourceHash: computeSourceHash(request.koreanText),
@@ -117,48 +197,35 @@ class LlmClientTranslationProviderAdapter implements TranslationProvider {
     const content = res.content?.trim() ?? '';
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     const target = jsonMatch ? jsonMatch[1].trim() : content;
-    let parsed: {
-      name?: string;
-      summary?: string;
-      description?: string;
-      features?: Array<{ id?: string; name?: string; summary?: string }>;
-    };
+    let parsed: unknown;
     try {
       parsed = JSON.parse(target);
     } catch {
       throw new Error('LLM 번역 응답 JSON 파싱에 실패했습니다.');
     }
 
-    const expectedFeatureIds = new Set(request.features.map(f => f.id));
-    const returnedFeatures = Array.isArray(parsed.features) ? parsed.features : [];
-
-    if (returnedFeatures.length !== expectedFeatureIds.size) {
-      throw new Error(`기능 개수 불일치: 요청 ${expectedFeatureIds.size}개, 응답 ${returnedFeatures.length}개`);
-    }
-
-    for (const f of returnedFeatures) {
-      if (!f.id || !expectedFeatureIds.has(f.id)) {
-        throw new Error(`번역 결과에 알 수 없는 기능 ID(${f.id ?? '없음'})가 포함되었습니다.`);
-      }
-    }
+    const validated = validateProductBundleTranslation({ features: request.features }, parsed);
 
     return {
       product: {
-        name: parsed.name ?? '',
-        summary: parsed.summary ?? '',
-        description: parsed.description ?? '',
+        name: validated.product.name,
+        summary: validated.product.summary,
+        description: validated.product.description,
         nameSourceHash: computeSourceHash(request.name),
         summarySourceHash: computeSourceHash(request.summary),
         descriptionSourceHash: computeSourceHash(request.description),
       },
-      features: returnedFeatures.map(f => {
-        const reqF = request.features.find(rf => rf.id === f.id);
+      features: request.features.map(reqF => {
+        const translated = validated.features.find(f => f.id === reqF.id);
+        if (!translated) {
+          throw new Error(`번역 결과에 요청된 기능 ID(${reqF.id})가 누락되었습니다.`);
+        }
         return {
-          id: f.id as string,
-          name: f.name ?? '',
-          summary: f.summary ?? '',
-          nameSourceHash: reqF ? computeSourceHash(reqF.name) : '',
-          summarySourceHash: reqF ? computeSourceHash(reqF.summary) : '',
+          id: reqF.id,
+          name: translated.name,
+          summary: translated.summary,
+          nameSourceHash: computeSourceHash(reqF.name),
+          summarySourceHash: computeSourceHash(reqF.summary),
         };
       }),
       model: 'llm-client',
@@ -185,7 +252,8 @@ export class TranslationJobService {
   ) {
     if (
       translationProviderOrLlmClient &&
-      typeof (translationProviderOrLlmClient as TranslationProvider).translateProductBundle === 'function'
+      (typeof (translationProviderOrLlmClient as TranslationProvider).translateProductBundle === 'function' ||
+        typeof (translationProviderOrLlmClient as TranslationProvider).translateSingle === 'function')
     ) {
       this.translationProvider = translationProviderOrLlmClient as TranslationProvider;
     } else {
@@ -197,8 +265,9 @@ export class TranslationJobService {
 
   async translateProductWithFeatures(
     identifier: { id?: string; slug?: string } | string,
-    jobId?: string
-  ): Promise<{ productId: string; model?: string; promptVersion?: string }> {
+    jobId?: string,
+    options?: { signal?: AbortSignal; leaseToken?: string | null }
+  ): Promise<{ productId: string; model?: string; promptVersion?: string; stale?: boolean; leaseLost?: boolean }> {
     const query = typeof identifier === 'string' ? { id: identifier } : identifier;
     const product = await this.getProductUseCase.execute(query);
     if (!product) {
@@ -208,9 +277,11 @@ export class TranslationJobService {
     const productId = product.id;
 
     let features: ProductFeature[] = [];
+    let initialFeaturesLoaded = false;
     if (this.getProductFeaturesUseCase) {
       try {
         features = await this.getProductFeaturesUseCase.execute({ productId });
+        initialFeaturesLoaded = true;
       } catch (error) {
         console.warn(`Failed to fetch features for product ${productId}:`, error);
       }
@@ -245,7 +316,31 @@ export class TranslationJobService {
           name: feature.name,
           summary: feature.summary || '',
         })),
+        ...(options?.signal ? { signal: options.signal } : {}),
       });
+
+      // lease fence: 번역 row 쓰기 직전 소유권을 재확인한다.
+      // 구 attempt의 늦은 쓰기는 여기서 거부된다.
+      // findJobById 재확인은 leaseToken 회전(reclaim)까지 보지만
+      // 토큰 교체와 row 쓰기 사이의 TOCTOU를 완전히 닫지는 못한다.
+      // 완전한 원자성은 DB 쓰기 조건(lease 조건부 upsert)으로만 닫히며,
+      // 여기서는 메모리/테스트 더블 경계에서 가능한 좁은 방어를 둔다.
+      if (jobId && options?.leaseToken !== undefined && this.translationJobRepository) {
+        const current = await this.translationJobRepository.findJobById(jobId);
+        if (!current || current.leaseToken !== options.leaseToken) {
+          console.warn(
+            `[TranslationJobService] Lease lost for job ${jobId}; discarding translation result without writing rows.`
+          );
+          return { productId, leaseLost: true };
+        }
+        // stale로 이미 확정된 행은 이 attempt가 덮어쓰지 않는다.
+        if (current.status === 'superseded' || current.status === 'completed' || current.status === 'failed') {
+          console.warn(
+            `[TranslationJobService] Job ${jobId} already terminal (${current.status}); discarding stale translation result.`
+          );
+          return { productId, stale: current.status === 'superseded', leaseLost: true };
+        }
+      }
 
       // Pre-write snapshot check: re-read source to prevent stale overwrite
       const currentProduct = await this.getProductUseCase.execute({ id: productId });
@@ -263,12 +358,15 @@ export class TranslationJobService {
         try {
           currentFeatures = await this.getProductFeaturesUseCase.execute({ productId });
         } catch (error) {
-          console.warn(`Failed to re-fetch features for product ${productId}:`, error);
+          // 기능 목록을 두 번 연속으로 읽지 못하면 소스 신선도를 확정할 수 없다.
+          // 기존 영문 행을 유지한 채 인프라 실패로 재시도한다.
+          // 조용한 stale 저장도, 섣부른 superseded 확정도 하지 않는다.
+          throw new RetryableError(`기능 목록 재조회에 실패했습니다: ${productId}`, undefined, error);
         }
       }
 
       if (!isStale && currentFeatures !== null) {
-        if (currentFeatures.length !== features.length) {
+        if (!initialFeaturesLoaded || currentFeatures.length !== features.length) {
           isStale = true;
         } else {
           for (const cf of currentFeatures) {
@@ -290,81 +388,113 @@ export class TranslationJobService {
           `[TranslationJobService] Source content changed during translation for product ${productId}. Skipping stale write.`
         );
         if (jobId && this.translationJobRepository) {
-          await this.translationJobRepository.updateJobStatus(jobId, 'superseded', {
-            message: '원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.',
-          });
+          if (
+            options?.leaseToken !== undefined &&
+            typeof this.translationJobRepository.completeJobLease === 'function'
+          ) {
+            await this.translationJobRepository.completeJobLease(jobId, options.leaseToken ?? '', 'superseded', {
+              message: '원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.',
+            });
+          } else {
+            await this.translationJobRepository.updateJobStatus(jobId, 'superseded', {
+              message: '원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.',
+            });
+          }
         }
-        return { productId };
+        return { productId, stale: true };
       }
 
       const rows: UpsertTranslationParams[] = [];
 
-      if (bundleResult.product.name) {
-        rows.push({
-          entityType: 'Product',
-          entityId: productId,
-          locale: 'en',
-          field: 'name',
-          value: bundleResult.product.name,
-          sourceHash: bundleResult.product.nameSourceHash,
-          model: bundleResult.model,
-          promptVersion: bundleResult.promptVersion,
-        });
-      }
+      // 쓰기 직전 외부 번들의 형식을 커밋 게이트에서 다시 검증한다.
+      // 단일 검증자가 유일한 형식 판정자이며, 여기서는 현재 스냅샷의
+      // 요청 ID 집합과 번들 ID 집합 일치·필수명 비어 있지 않음만 확인하고
+      // 행을 쓰기 전 거부한다. 값 정규화는 이미 provider가 마쳤다.
+      validateBundleRowsForCommit(
+        features.map(feature => ({ id: feature.id })),
+        bundleResult
+      );
 
-      if (bundleResult.product.summary) {
-        rows.push({
-          entityType: 'Product',
-          entityId: productId,
-          locale: 'en',
-          field: 'summary',
-          value: bundleResult.product.summary,
-          sourceHash: bundleResult.product.summarySourceHash,
-          model: bundleResult.model,
-          promptVersion: bundleResult.promptVersion,
-        });
+      // 요청된 모든 필드를 스냅샷하고 전체 유효할 때만 일괄 커밋한다.
+      // name은 필수, summary/description과 feature summary는 빈 값도 합법이다.
+      const productName = bundleResult.product.name;
+      if (typeof productName !== 'string' || !productName.trim()) {
+        throw new Error('번역 결과에 name이 누락되었거나 문자열이 아닙니다.');
       }
+      rows.push({
+        entityType: 'Product',
+        entityId: productId,
+        locale: 'en',
+        field: 'name',
+        value: productName,
+        sourceHash: bundleResult.product.nameSourceHash,
+        model: bundleResult.model,
+        promptVersion: bundleResult.promptVersion,
+      });
 
-      if (bundleResult.product.description) {
-        rows.push({
-          entityType: 'Product',
-          entityId: productId,
-          locale: 'en',
-          field: 'description',
-          value: bundleResult.product.description,
-          sourceHash: bundleResult.product.descriptionSourceHash,
-          model: bundleResult.model,
-          promptVersion: bundleResult.promptVersion,
-        });
-      }
+      rows.push({
+        entityType: 'Product',
+        entityId: productId,
+        locale: 'en',
+        field: 'summary',
+        value: bundleResult.product.summary ?? '',
+        sourceHash: bundleResult.product.summarySourceHash,
+        model: bundleResult.model,
+        promptVersion: bundleResult.promptVersion,
+      });
+
+      rows.push({
+        entityType: 'Product',
+        entityId: productId,
+        locale: 'en',
+        field: 'description',
+        value: bundleResult.product.description ?? '',
+        sourceHash: bundleResult.product.descriptionSourceHash,
+        model: bundleResult.model,
+        promptVersion: bundleResult.promptVersion,
+      });
 
       if (Array.isArray(bundleResult.features)) {
         for (const featureItem of bundleResult.features) {
-          if (!featureItem.id) continue;
-          if (featureItem.name) {
-            rows.push({
-              entityType: 'ProductFeature',
-              entityId: featureItem.id,
-              locale: 'en',
-              field: 'name',
-              value: featureItem.name,
-              sourceHash: featureItem.nameSourceHash,
-              model: bundleResult.model,
-              promptVersion: bundleResult.promptVersion,
-            });
+          if (!featureItem.id) {
+            throw new Error('번역 결과의 기능 ID가 누락되었습니다.');
           }
-          if (featureItem.summary) {
-            rows.push({
-              entityType: 'ProductFeature',
-              entityId: featureItem.id,
-              locale: 'en',
-              field: 'summary',
-              value: featureItem.summary,
-              sourceHash: featureItem.summarySourceHash,
-              model: bundleResult.model,
-              promptVersion: bundleResult.promptVersion,
-            });
+          if (typeof featureItem.name !== 'string' || !featureItem.name.trim()) {
+            throw new Error(`번역 결과의 기능(${featureItem.id}) name이 누락되었거나 비어 있습니다.`);
           }
+          rows.push({
+            entityType: 'ProductFeature',
+            entityId: featureItem.id,
+            locale: 'en',
+            field: 'name',
+            value: featureItem.name,
+            sourceHash: featureItem.nameSourceHash,
+            model: bundleResult.model,
+            promptVersion: bundleResult.promptVersion,
+          });
+          rows.push({
+            entityType: 'ProductFeature',
+            entityId: featureItem.id,
+            locale: 'en',
+            field: 'summary',
+            value: featureItem.summary ?? '',
+            sourceHash: featureItem.summarySourceHash,
+            model: bundleResult.model,
+            promptVersion: bundleResult.promptVersion,
+          });
+        }
+      }
+
+      // lease 조건 안의 커밋 구간: 번역 행 쓰기 직전 소유권을 한 번 더
+      // 재확인한다. LLM 호출·스냅샷 재조회 사이에 lease가 회전했으면
+      // 이 attempt의 늦은 쓰기를 여기서 거부해 row 0개를 보장한다.
+      if (jobId && options?.leaseToken !== undefined && this.translationJobRepository) {
+        const guard = await this.translationJobRepository.findJobById(jobId);
+        if (!guard || guard.leaseToken !== options.leaseToken || guard.status !== 'in_progress') {
+          console.warn(
+            `[TranslationJobService] Lease guard before commit failed for job ${jobId}; discarding translation rows.`
+          );
+          return { productId, leaseLost: true };
         }
       }
 
@@ -379,6 +509,11 @@ export class TranslationJobService {
       completedModel = bundleResult.model;
       completedPromptVersion = bundleResult.promptVersion;
     } catch (error) {
+      // 인프라 재시도 가능 실패는 RetryableError 그대로 전달해 상위 재시도
+      // 분류가 유지되도록 한다. 그 외에는 명시적 실패로 감싼다.
+      if (error instanceof RetryableError) {
+        throw error;
+      }
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       console.error(`[TranslationJobService] Product translation failed for ${productId}:`, error);
       throw new Error(`상품 번역에 실패했습니다: ${errorMessage}`);
@@ -393,6 +528,7 @@ export class TranslationJobService {
     entityId: string;
     status: string;
     message?: string | null;
+    queued: boolean;
   }> {
     const query = typeof identifier === 'string' ? { id: identifier } : identifier;
     const product = await this.getProductUseCase.execute(query);
@@ -410,7 +546,45 @@ export class TranslationJobService {
         entityId: productId,
         status: 'completed',
         message: '상품 및 주요 기능 번역이 완료되었습니다.',
+        queued: false,
       };
+    }
+
+    // 반복 발행 동기화는 중복 intent를 만들지 않는다: 같은 entity·locale의
+    // 활성(pending/in_progress) job이 있으면 기존 intent를 재사용하고,
+    // pending 재전송 시도 결과를 그대로 보고한다. in_progress 재사용은
+    // 이미 실행 중인 attempt가 있으므로 전송하지 않고 queued=true로 둔다.
+    if (typeof this.translationJobRepository.findActiveJob === 'function') {
+      const active = await this.translationJobRepository.findActiveJob({
+        entityType: 'Product',
+        entityId: productId,
+        locale: 'en',
+      });
+      if (active) {
+        if (active.status === 'pending') {
+          const queued = await this.sendToQueue({
+            jobId: active.id,
+            entityType: 'Product',
+            entityId: productId,
+          });
+          return {
+            id: active.id,
+            entityType: 'Product',
+            entityId: productId,
+            status: active.status,
+            message: active.message,
+            queued,
+          };
+        }
+        return {
+          id: active.id,
+          entityType: 'Product',
+          entityId: productId,
+          status: active.status,
+          message: active.message,
+          queued: true,
+        };
+      }
     }
 
     const job = await this.translationJobRepository.createJob({
@@ -421,24 +595,13 @@ export class TranslationJobService {
       message: '번역 작업이 대기열에 등록되었습니다.',
     });
 
-    let isQueued = false;
-    if (this.translationQueueService) {
-      try {
-        isQueued = await this.translationQueueService.sendJob({
-          jobId: job.id,
-          entityType: 'Product',
-          entityId: productId,
-        });
-      } catch (err) {
-        console.warn('[TranslationJobService] Failed to send job to SQS, falling back to background process:', err);
-      }
-    }
-
-    if (!isQueued) {
-      setImmediate(() => {
-        void this.executeProductTranslationJob(job.id, productId);
-      });
-    }
+    // 큐 전송 실패는 pending으로 남겨 recovery tick이 재발견한다.
+    // setImmediate 폴백을 제거하고, 전송 성공 여부만 정직하게 보고한다.
+    const queued = await this.sendToQueue({
+      jobId: job.id,
+      entityType: 'Product',
+      entityId: productId,
+    });
 
     return {
       id: job.id,
@@ -446,6 +609,7 @@ export class TranslationJobService {
       entityId: productId,
       status: job.status,
       message: job.message,
+      queued,
     };
   }
 
@@ -467,7 +631,7 @@ export class TranslationJobService {
     return this.translationJobRepository.findJobs(options);
   }
 
-  async retryProductTranslationJob(jobId: string): Promise<TranslationJobEntity> {
+  async retryProductTranslationJob(jobId: string): Promise<TranslationJobEntity & { queued: boolean }> {
     if (!this.translationJobRepository) {
       throw new Error('TranslationJobRepository가 설정되지 않았습니다.');
     }
@@ -476,91 +640,201 @@ export class TranslationJobService {
     if (!job) {
       throw new Error(`존재하지 않는 번역 작업입니다: ${jobId}`);
     }
-
-    const updatedJob = await this.translationJobRepository.updateJobStatus(jobId, 'pending', {
-      message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
-      error: null,
-    });
-
-    let isQueued = false;
-    if (this.translationQueueService) {
-      try {
-        isQueued = await this.translationQueueService.sendJob({
-          jobId: job.id,
-          entityType: job.entityType as 'Product' | 'Magazine' | 'ProductFeature',
-          entityId: job.entityId,
-        });
-      } catch (error) {
-        console.warn(
-          `[TranslationJobService] Failed to send retry job ${jobId} to SQS queue, falling back to in-process execution:`,
-          error
-        );
+    // 재시도는 failed 한정: in_progress lease 소유권을 건드리지 않고
+    // 조건부 상태 전이로만 pending에 복귀한다. 레거시 repository가
+    // claimJobStatus 없이 updateJobStatus만 가진 경우에도 동작한다.
+    // 소유권을 잃은 pending 재진입(재전송 경쟁)은 업데이트 없이 큐로만 보낸다.
+    if (job.status === 'failed') {
+      const updatedJob =
+        typeof this.translationJobRepository.claimJobStatus === 'function'
+          ? await this.translationJobRepository.claimJobStatus(jobId, ['failed'], 'pending', {
+              message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
+              error: null,
+            })
+          : await this.translationJobRepository.updateJobStatus(jobId, 'pending', {
+              message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
+              error: null,
+            });
+      if (!updatedJob) {
+        throw new Error(`재시도 조건이 만료된 번역 작업입니다: ${jobId}`);
       }
-    }
-
-    if (!isQueued) {
-      setImmediate(() => {
-        void this.executeProductTranslationJob(job.id, job.entityId);
+      const queuedAfterRetry = await this.sendToQueue({
+        jobId: job.id,
+        entityType: job.entityType as 'Product' | 'Magazine' | 'ProductFeature',
+        entityId: job.entityId,
       });
+      return { ...updatedJob, queued: queuedAfterRetry };
     }
-
-    return updatedJob;
+    if (job.status === 'pending') {
+      const queued = await this.sendToQueue({
+        jobId: job.id,
+        entityType: job.entityType as 'Product' | 'Magazine' | 'ProductFeature',
+        entityId: job.entityId,
+      });
+      return { ...job, queued };
+    }
+    throw new Error(`재시도할 수 없는 번역 작업 상태입니다: ${job.status}`);
   }
 
-  async executeProductTranslationJob(jobId: string, productId: string): Promise<void> {
+  async executeProductTranslationJob(
+    jobId: string,
+    productId: string,
+    options?: { leaseToken?: string; signal?: AbortSignal; stageBudgetMs?: number }
+  ): Promise<void> {
     if (!this.translationJobRepository) {
       await this.translateProductWithFeatures(productId, jobId);
       return;
     }
 
     const repository = this.translationJobRepository;
-    const claimJobStatus =
-      typeof repository.claimJobStatus === 'function'
-        ? repository.claimJobStatus.bind(repository)
-        : async (
-            id: string,
-            expectedStatuses: TranslationJobStatus[],
-            nextStatus: TranslationJobStatus,
-            options?: { message?: string | null }
-          ) => {
-            const latest = await repository.findJobById(id);
-            if (!latest || !expectedStatuses.includes(latest.status)) {
-              return null;
-            }
-            return repository.updateJobStatus(id, nextStatus, options);
-          };
+    const leaseToken = options?.leaseToken ?? randomUUID();
+    const claimed =
+      typeof repository.claimJobLease === 'function'
+        ? await repository.claimJobLease({
+            jobId,
+            leaseToken,
+            leaseUntil: new Date(Date.now() + TRANSLATION_LEASE_MS),
+          })
+        : await repository.claimJobStatus(jobId, ['pending'], 'in_progress', {
+            message: 'LLM으로 영문 번역을 생성하고 있습니다...',
+          });
+    if (!claimed) {
+      return;
+    }
+    const ownedToken = claimed.leaseToken ?? leaseToken;
 
     try {
-      const claimed = await claimJobStatus(jobId, ['pending'], 'in_progress', {
-        message: 'LLM으로 영문 번역을 생성하고 있습니다...',
-      });
-      if (!claimed) {
+      const completedTranslation = await withWorkerDeadline(
+        signal => this.translateProductWithFeatures(productId, jobId, { signal, leaseToken: ownedToken }),
+        options?.stageBudgetMs ?? TRANSLATION_STAGE_BUDGET_MS,
+        options?.signal
+      );
+
+      // stale/superseded 확정이나 lease 상실은 outer completed로 덮어쓰지 않는다.
+      if (completedTranslation.stale || completedTranslation.leaseLost) {
+        console.warn(
+          `[TranslationJobService] Job ${jobId} stale or lease-lost; skipping outer completion to preserve terminal state.`
+        );
         return;
       }
 
-      const completedTranslation = await this.translateProductWithFeatures(productId, jobId);
+      // 상태 가드 완성: superseded/completed/failed로 이미 확정된 행은
+      // leaseToken이 일치해도 completed로 덮어쓰지 않는다.
+      // 선행 fence와 별개로 outer 완료 직전에도 소유권·상태를 재확인한다.
+      if (typeof repository.completeJobLease === 'function') {
+        const current = await repository.findJobById(jobId);
+        if (!current || current.leaseToken !== ownedToken) {
+          console.warn(`[TranslationJobService] Late attempt lost lease for job ${jobId}; discarding result.`);
+          return;
+        }
+        if (current.status !== 'in_progress') {
+          console.warn(
+            `[TranslationJobService] Job ${jobId} already terminal (${current.status}); skipping outer completion.`
+          );
+          return;
+        }
+      }
 
-      await claimJobStatus(jobId, ['in_progress'], 'completed', {
-        message: '상품 및 기능의 영문 번역이 완료되었습니다.',
-        model: completedTranslation.model ?? null,
-        promptVersion: completedTranslation.promptVersion ?? null,
-      });
+      const completed =
+        typeof repository.completeJobLease === 'function'
+          ? await repository.completeJobLease(jobId, ownedToken, 'completed', {
+              message: '상품 및 기능의 영문 번역이 완료되었습니다.',
+              model: completedTranslation.model ?? null,
+              promptVersion: completedTranslation.promptVersion ?? null,
+            })
+          : await repository.claimJobStatus(jobId, ['in_progress'], 'completed', {
+              message: '상품 및 기능의 영문 번역이 완료되었습니다.',
+              model: completedTranslation.model ?? null,
+              promptVersion: completedTranslation.promptVersion ?? null,
+            });
+      if (!completed) {
+        console.warn(`[TranslationJobService] Late attempt lost lease for job ${jobId}; discarding result.`);
+      }
     } catch (error) {
+      if (isAbortError(error) || (options?.signal?.aborted ?? false)) {
+        console.warn(`[TranslationJobService] Job ${jobId} aborted; leaving lease to expire.`);
+        return;
+      }
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      const failed =
+        typeof repository.completeJobLease === 'function'
+          ? await repository.completeJobLease(jobId, ownedToken, 'failed', {
+              error: errorMessage,
+              message: '상품 번역에 실패했습니다.',
+            })
+          : await repository.claimJobStatus(jobId, ['pending', 'in_progress'], 'failed', {
+              error: errorMessage,
+              message: '상품 번역에 실패했습니다.',
+            });
+      if (!failed) {
+        console.warn(`[TranslationJobService] Late failure for job ${jobId} lost lease; discarding.`);
+        return;
+      }
       console.error(`[TranslationJobService] Translation job ${jobId} failed:`, error);
-      await claimJobStatus(jobId, ['pending', 'in_progress'], 'failed', {
-        error: errorMessage,
-        message: '상품 번역에 실패했습니다.',
-      });
     }
   }
 
-  async translateEntity(entityType: TranslationEntityType, entityId: string, fields: string[]): Promise<void> {
+  /**
+   * 주기 recovery tick: 전송 누락 pending과 만료 lease in_progress를
+   * 재발견해 큐로 다시 전송한다. 전송 실패는 pending으로 남긴다.
+   */
+  async recoverInterruptedJobs(input?: { now?: Date; limit?: number }): Promise<{ recovered: number; queued: number }> {
+    if (!this.translationJobRepository || typeof this.translationJobRepository.findRecoverableJobs !== 'function') {
+      return { recovered: 0, queued: 0 };
+    }
+    const jobs = await this.translationJobRepository.findRecoverableJobs({
+      now: input?.now ?? new Date(),
+      limit: input?.limit ?? 50,
+    });
+    let queued = 0;
+    for (const job of jobs) {
+      const sent = await this.sendToQueue({
+        jobId: job.id,
+        entityType: job.entityType as 'Product' | 'Magazine' | 'ProductFeature',
+        entityId: job.entityId,
+      });
+      if (sent) {
+        queued += 1;
+      }
+    }
+    return { recovered: jobs.length, queued };
+  }
+
+  private async sendToQueue(payload: {
+    jobId: string;
+    entityType: 'Product' | 'Magazine' | 'ProductFeature';
+    entityId: string;
+  }): Promise<boolean> {
+    if (!this.translationQueueService) {
+      return false;
+    }
+    try {
+      return await this.translationQueueService.sendJob(payload);
+    } catch (error) {
+      console.warn('[TranslationJobService] Failed to send job to SQS; leaving pending for recovery:', error);
+      return false;
+    }
+  }
+
+  async translateEntity(
+    entityType: TranslationEntityType,
+    entityId: string,
+    fields: string[],
+    options?: { signal?: AbortSignal }
+  ): Promise<void> {
     const entity = await this.getEntity(entityType, entityId);
     const uniqueFields = this.getUniqueFields(fields);
 
-    for (const field of uniqueFields) {
-      const koreanValue = this.getKoreanValue(entityType, entity, field);
+    // 요청된 모든 필드를 먼저 스냅샷하고, 전체 유효할 때만 일괄 커밋한다.
+    // 필드별 즉시 쓰기는 부분 실패 시 일부만 남기는 부분 커밋이 된다.
+    const snapshots = uniqueFields.map(field => ({
+      field,
+      koreanValue: this.getKoreanValue(entityType, entity, field),
+    }));
+
+    const pending: UpsertTranslationParams[] = [];
+    for (const snapshot of snapshots) {
+      const { field, koreanValue } = snapshot;
       if (!koreanValue) {
         continue;
       }
@@ -576,19 +850,14 @@ export class TranslationJobService {
         koreanText: koreanValue,
         mode,
         isHtml,
+        ...(options?.signal ? { signal: options.signal } : {}),
       });
 
-      // Pre-write snapshot check for single entity field
-      const currentEntity = await this.getEntity(entityType, entityId);
-      const currentKorean = this.getKoreanValue(entityType, currentEntity, field);
-      if (currentKorean !== koreanValue) {
-        console.warn(
-          `[TranslationJobService] Source text changed during translation for ${entityType} ${entityId} field ${field}. Skipping stale write.`
-        );
-        continue;
+      if (!result.translatedText || !result.translatedText.trim()) {
+        throw new Error(`${entityType}의 ${field} 번역 결과가 비어 있습니다.`);
       }
 
-      await this.translationService.upsertTranslation({
+      pending.push({
         entityType,
         entityId,
         locale: 'en',
@@ -598,6 +867,32 @@ export class TranslationJobService {
         model: result.model,
         promptVersion: result.promptVersion,
       });
+    }
+
+    if (pending.length === 0) {
+      return;
+    }
+
+    // 쓰기 직전 스냅샷: 하나라도 바뀌었으면 전체를 명시적으로 버린다.
+    const currentEntity = await this.getEntity(entityType, entityId);
+    for (const snapshot of snapshots) {
+      if (!snapshot.koreanValue) {
+        continue;
+      }
+      const currentKorean = this.getKoreanValue(entityType, currentEntity, snapshot.field);
+      if (currentKorean !== snapshot.koreanValue) {
+        throw new Error(
+          `${entityType}의 ${snapshot.field} 원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.`
+        );
+      }
+    }
+
+    if (typeof this.translationService.upsertTranslations === 'function') {
+      await this.translationService.upsertTranslations(pending);
+    } else {
+      for (const row of pending) {
+        await this.translationService.upsertTranslation(row);
+      }
     }
   }
 

@@ -64,6 +64,7 @@ export class LlmClient {
     options?: {
       thinkingLevel?: string | null;
       responseFormat?: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming['response_format'];
+      signal?: AbortSignal;
     }
   ): Promise<OpenAI.Chat.Completions.ChatCompletionMessage> {
     const config = await this.getConfig();
@@ -105,7 +106,15 @@ export class LlmClient {
       };
     }
 
-    const completion = await client.chat.completions.create(requestBody);
+    if (options?.signal?.aborted) {
+      const aborted = new Error('LLM completion was aborted');
+      aborted.name = 'AbortError';
+      throw aborted;
+    }
+
+    const completion = options?.signal
+      ? await client.chat.completions.create(requestBody, { signal: options.signal })
+      : await client.chat.completions.create(requestBody);
 
     const choice = completion.choices[0];
     const message = choice?.message;

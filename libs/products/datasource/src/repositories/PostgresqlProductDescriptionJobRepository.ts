@@ -6,7 +6,7 @@ import {
   type UpdateProductDescriptionJobOptions,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { and, desc, eq, inArray, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, lte, or, type SQL } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { type ProductDescriptionJobRow, productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
 
@@ -30,6 +30,9 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       writerPromptVersion: row.writerPromptVersion,
       reviewerPromptVersion: row.reviewerPromptVersion,
       rendererVersion: row.rendererVersion,
+      leaseToken: row.leaseToken,
+      leaseUntil: row.leaseUntil,
+      attemptCount: row.attemptCount,
       appliedAt: row.appliedAt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -107,6 +110,95 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
         eq(productDescriptionJobs.id, id),
       false
     );
+  }
+
+  async claimJobLease(input: {
+    jobId: string;
+    leaseToken: string;
+    leaseUntil: Date;
+  }): Promise<ProductDescriptionJobEntity | null> {
+    const now = new Date();
+    const rows = await this.db
+      .update(productDescriptionJobs)
+      .set({
+        status: 'in_progress',
+        message: 'LLM으로 AI 소개를 생성하고 있습니다...',
+        leaseToken: input.leaseToken,
+        leaseUntil: input.leaseUntil,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(productDescriptionJobs.id, input.jobId),
+          or(
+            eq(productDescriptionJobs.status, 'pending'),
+            and(
+              eq(productDescriptionJobs.status, 'in_progress'),
+              or(isNull(productDescriptionJobs.leaseUntil), lte(productDescriptionJobs.leaseUntil, now))
+            )
+          )
+        )
+      )
+      .returning();
+    const row = rows[0];
+    if (!row) {
+      return null;
+    }
+    // attempt 소유권은 DB 조건으로 분리한다: lease 선점에 성공한
+    // attempt만 attemptCount를 1 증가시킨다.
+    const bumped = await this.db
+      .update(productDescriptionJobs)
+      .set({ attemptCount: row.attemptCount + 1, updatedAt: new Date() })
+      .where(
+        and(eq(productDescriptionJobs.id, input.jobId), eq(productDescriptionJobs.leaseToken, input.leaseToken))
+      )
+      .returning();
+    return this.toEntity(bumped[0] ?? row);
+  }
+
+  async completeJobLease(
+    jobId: string,
+    leaseToken: string,
+    nextStatus: Extract<ProductDescriptionJobStatus, 'completed' | 'failed' | 'superseded'>,
+    options?: UpdateProductDescriptionJobOptions
+  ): Promise<ProductDescriptionJobEntity | null> {
+    // lease 소유권과 함께 in_progress에서만 확정한다. 이미
+    // completed/failed/superseded로 끝난 행은 늦은 쓰기로 덮어쓰지 않는다.
+    return this.writeJobStatus(
+      jobId,
+      nextStatus,
+      options,
+      and(
+        eq(productDescriptionJobs.id, jobId),
+        eq(productDescriptionJobs.leaseToken, leaseToken),
+        eq(productDescriptionJobs.status, 'in_progress')
+      ) ?? eq(productDescriptionJobs.id, jobId),
+      false
+    );
+  }
+
+  async findRecoverableJobs(input: { now: Date; limit?: number }): Promise<ProductDescriptionJobEntity[]> {
+    const limit = Math.min(Math.max(input.limit ?? 50, 1), 200);
+    try {
+      const rows = await this.db
+        .select()
+        .from(productDescriptionJobs)
+        .where(
+          or(
+            eq(productDescriptionJobs.status, 'pending'),
+            and(
+              eq(productDescriptionJobs.status, 'in_progress'),
+              or(isNull(productDescriptionJobs.leaseUntil), lte(productDescriptionJobs.leaseUntil, input.now))
+            )
+          )
+        )
+        .orderBy(asc(productDescriptionJobs.updatedAt))
+        .limit(limit);
+      return rows.map(row => this.toEntity(row));
+    } catch (error) {
+      console.warn('[PostgresqlProductDescriptionJobRepository] Failed to find recoverable jobs:', error);
+      return [];
+    }
   }
 
   private async writeJobStatus(

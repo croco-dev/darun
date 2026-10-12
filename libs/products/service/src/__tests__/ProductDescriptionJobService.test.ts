@@ -95,6 +95,38 @@ describe('ProductDescriptionJobService', () => {
           )) as ProductDescriptionJobEntity;
         }
       ),
+      claimJobLease: vi.fn(async (input: { jobId: string; leaseToken: string }) => {
+        const latest = (await vi.mocked(mockRepository.findJobById)(input.jobId)) as ProductDescriptionJobEntity | null;
+        if (!latest || latest.status !== 'pending') {
+          return null;
+        }
+        return { ...latest, status: 'in_progress', leaseToken: input.leaseToken } as ProductDescriptionJobEntity;
+      }),
+      completeJobLease: vi.fn(
+        async (
+          jobId: string,
+          leaseToken: string,
+          nextStatus: string,
+          options?: Record<string, unknown>
+        ): Promise<ProductDescriptionJobEntity | null> => {
+          const latest = (await vi.mocked(mockRepository.findJobById)(jobId)) as ProductDescriptionJobEntity | null;
+          if (
+            !latest ||
+            (latest.leaseToken !== undefined &&
+              latest.leaseToken !== null &&
+              latest.leaseToken !== leaseToken &&
+              latest.status === 'in_progress')
+          ) {
+            return null;
+          }
+          return (await vi.mocked(mockRepository.updateJobStatus)(
+            jobId,
+            nextStatus as ProductDescriptionJobEntity['status'],
+            options
+          )) as ProductDescriptionJobEntity;
+        }
+      ),
+      findRecoverableJobs: vi.fn().mockResolvedValue([]),
       markApplied: vi.fn(),
       findJobs: vi.fn().mockResolvedValue([
         {
@@ -153,7 +185,7 @@ describe('ProductDescriptionJobService', () => {
     expect(result.job.status).toBe('pending');
   });
 
-  it('falls back to setImmediate if SQS send fails or is unconfigured', async () => {
+  it('leaves retryable pending and reports queued=false when queue send is unconfigured', async () => {
     vi.mocked(mockQueueService.sendJob).mockResolvedValue(false);
 
     const service = new ProductDescriptionJobService(
@@ -168,11 +200,23 @@ describe('ProductDescriptionJobService', () => {
     const result = await service.requestProductDescriptionJob({ slug: 'test-product' });
 
     expect(result.job.id).toBe('job-123');
+    expect(result.queued).toBe(false);
+    expect(result.job.status).toBe('pending');
+    // setImmediate 폴백 제거: 전송 실패 시 in-process 실행을 하지 않고
+    // recovery tick이 재발견한다.
     await new Promise(resolve => setImmediate(resolve));
-    expect(executeSpy).toHaveBeenCalledWith('job-123', 'prod-123');
+    expect(executeSpy).not.toHaveBeenCalled();
   });
 
   it('executes job and updates status to completed with candidate fields', async () => {
+    vi.mocked(mockRepository.claimJobLease!)?.mockResolvedValueOnce({
+      id: 'job-123',
+      productId: 'prod-123',
+      status: 'in_progress',
+      leaseToken: 'lease-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as ProductDescriptionJobEntity);
     const service = new ProductDescriptionJobService(
       getProductUseCase,
       generateProductDescriptionUseCase,
@@ -182,26 +226,31 @@ describe('ProductDescriptionJobService', () => {
 
     await service.executeJob('job-123', 'prod-123');
 
-    expect(mockRepository.claimJobStatus).toHaveBeenCalledWith('job-123', ['pending'], 'in_progress', {
-      message: 'LLM으로 AI 소개를 생성하고 있습니다...',
-    });
-    expect(generateProductDescriptionUseCase.execute).toHaveBeenCalledWith({ productId: 'prod-123' });
-    expect(mockRepository.claimJobStatus).toHaveBeenCalledWith('job-123', ['in_progress'], 'completed', {
-      message: 'AI 소개 생성이 완료되었습니다.',
-      candidateHtml: '<p>생성된 설명</p>',
-      candidateDocument: JSON.stringify(mockCandidateResult.candidateDocument),
-      evidenceHash: 'ev-hash-123',
-      baseDescriptionHash: 'desc-hash-123',
-      writerModel: 'google/gemini-2.5-flash',
-      reviewerModel: 'google/gemini-2.5-flash',
-      writerPromptVersion: 'v1',
-      reviewerPromptVersion: 'v1',
-      rendererVersion: 'v1',
-    });
+    expect(mockRepository.claimJobLease!).toHaveBeenCalledWith(expect.objectContaining({ jobId: 'job-123' }));
+    expect(generateProductDescriptionUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ productId: 'prod-123' })
+    );
+    expect(mockRepository.completeJobLease!).toHaveBeenCalledWith(
+      'job-123',
+      'lease-1',
+      'completed',
+      expect.objectContaining({
+        message: 'AI 소개 생성이 완료되었습니다.',
+        candidateHtml: '<p>생성된 설명</p>',
+        candidateDocument: JSON.stringify(mockCandidateResult.candidateDocument),
+        evidenceHash: 'ev-hash-123',
+        baseDescriptionHash: 'desc-hash-123',
+        writerModel: 'google/gemini-2.5-flash',
+        reviewerModel: 'google/gemini-2.5-flash',
+        writerPromptVersion: 'v1',
+        reviewerPromptVersion: 'v1',
+        rendererVersion: 'v1',
+      })
+    );
   });
 
   it('skips duplicate execution when the job is already claimed', async () => {
-    vi.mocked(mockRepository.claimJobStatus).mockResolvedValueOnce(null);
+    vi.mocked(mockRepository.claimJobLease!)?.mockResolvedValueOnce(null);
 
     const service = new ProductDescriptionJobService(
       getProductUseCase,
@@ -212,23 +261,21 @@ describe('ProductDescriptionJobService', () => {
 
     await service.executeJob('job-123', 'prod-123');
 
-    expect(mockRepository.claimJobStatus).toHaveBeenCalledWith('job-123', ['pending'], 'in_progress', {
-      message: 'LLM으로 AI 소개를 생성하고 있습니다...',
-    });
+    expect(mockRepository.claimJobLease!).toHaveBeenCalledWith(expect.objectContaining({ jobId: 'job-123' }));
     expect(generateProductDescriptionUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('does not overwrite a terminal job status when generation fails', async () => {
     vi.mocked(generateProductDescriptionUseCase.execute).mockRejectedValue(new Error('LLM Timeout'));
-    vi.mocked(mockRepository.claimJobStatus)
-      .mockResolvedValueOnce({
-        id: 'job-123',
-        productId: 'prod-123',
-        status: 'in_progress',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as ProductDescriptionJobEntity)
-      .mockResolvedValueOnce(null);
+    vi.mocked(mockRepository.claimJobLease!)?.mockResolvedValueOnce({
+      id: 'job-123',
+      productId: 'prod-123',
+      status: 'in_progress',
+      leaseToken: 'lease-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as ProductDescriptionJobEntity);
+    vi.mocked(mockRepository.completeJobLease!)?.mockResolvedValueOnce(null);
 
     const service = new ProductDescriptionJobService(
       getProductUseCase,
@@ -239,11 +286,14 @@ describe('ProductDescriptionJobService', () => {
 
     await service.executeJob('job-123', 'prod-123');
 
-    expect(mockRepository.claimJobStatus).toHaveBeenCalledTimes(2);
-    expect(mockRepository.claimJobStatus).toHaveBeenNthCalledWith(2, 'job-123', ['pending', 'in_progress'], 'failed', {
-      error: 'LLM Timeout',
-      message: 'AI 소개 생성에 실패했습니다.',
-    });
+    expect(mockRepository.completeJobLease!).toHaveBeenCalledTimes(1);
+    expect(mockRepository.completeJobLease!).toHaveBeenNthCalledWith(
+      1,
+      'job-123',
+      'lease-1',
+      'failed',
+      expect.objectContaining({ error: 'LLM Timeout' })
+    );
     expect(mockRepository.updateJobStatus).not.toHaveBeenCalledWith('job-123', 'failed', expect.anything());
   });
 
@@ -251,6 +301,14 @@ describe('ProductDescriptionJobService', () => {
     vi.mocked(generateProductDescriptionUseCase.execute).mockRejectedValue(
       new Error('stale: 제품 정보가 생성 도중 변경되었습니다.')
     );
+    vi.mocked(mockRepository.claimJobLease!)?.mockResolvedValueOnce({
+      id: 'job-123',
+      productId: 'prod-123',
+      status: 'in_progress',
+      leaseToken: 'lease-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as ProductDescriptionJobEntity);
 
     const service = new ProductDescriptionJobService(
       getProductUseCase,
@@ -261,13 +319,24 @@ describe('ProductDescriptionJobService', () => {
 
     await service.executeJob('job-123', 'prod-123');
 
-    expect(mockRepository.claimJobStatus).toHaveBeenCalledWith('job-123', ['in_progress'], 'superseded', {
-      message: '제품 정보 변경으로 결과가 폐기되었습니다.',
-    });
+    expect(mockRepository.completeJobLease!).toHaveBeenCalledWith(
+      'job-123',
+      'lease-1',
+      'superseded',
+      expect.objectContaining({ message: '제품 정보 변경으로 결과가 폐기되었습니다.' })
+    );
   });
 
   it('updates status to failed when execution throws non-stale error', async () => {
     vi.mocked(generateProductDescriptionUseCase.execute).mockRejectedValue(new Error('LLM Timeout'));
+    vi.mocked(mockRepository.claimJobLease!)?.mockResolvedValueOnce({
+      id: 'job-123',
+      productId: 'prod-123',
+      status: 'in_progress',
+      leaseToken: 'lease-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as ProductDescriptionJobEntity);
 
     const service = new ProductDescriptionJobService(
       getProductUseCase,
@@ -278,10 +347,12 @@ describe('ProductDescriptionJobService', () => {
 
     await service.executeJob('job-123', 'prod-123');
 
-    expect(mockRepository.claimJobStatus).toHaveBeenCalledWith('job-123', ['pending', 'in_progress'], 'failed', {
-      error: 'LLM Timeout',
-      message: 'AI 소개 생성에 실패했습니다.',
-    });
+    expect(mockRepository.completeJobLease!).toHaveBeenCalledWith(
+      'job-123',
+      'lease-1',
+      'failed',
+      expect.objectContaining({ error: 'LLM Timeout' })
+    );
   });
 
   it('retrieves job by id', async () => {
@@ -351,5 +422,6 @@ describe('ProductDescriptionJobService', () => {
       productId: 'prod-123',
     });
     expect(retriedJob.status).toBe('pending');
+    expect(retriedJob.queued).toBe(true);
   });
 });

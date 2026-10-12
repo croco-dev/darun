@@ -180,6 +180,9 @@ export class ProductResearchJob {
 
 @InputType()
 export class RequestProductResearchInput {
+  @Field({ nullable: true })
+  requestId?: string;
+
   @Field()
   requestId: string;
 

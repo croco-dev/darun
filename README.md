@@ -32,7 +32,7 @@ darun.io는 pnpm workspace와 Turborepo 기반으로 구성된 모노레포입�
 
 | App                | 역할                                                                  | 로컬 개발 포트 |
 | ------------------ | --------------------------------------------------------------------- | -------------- |
-| `apps/graphql-api` | Apollo Server 기반 GraphQL API, AWS Lambda 및 Serverless Offline 실행 | `4000`         |
+| `apps/graphql-api` | Apollo Server 기반 GraphQL API, AWS Lambda 및 SST 배포 | `4000`         |
 | `apps/service-web` | 사용자 대상 메인 서비스 웹, Next.js 15 기반 프론트엔드                | `3000`         |
 | `apps/admin-web`   | 운영용 관리자 웹, Next.js 기반 백오피스                               | `3001`         |
 | `apps/visual-web`  | 비주얼 중심 웹 경험을 제공하는 Next.js 프론트엔드                     | `3002`         |
@@ -138,7 +138,7 @@ pnpm --filter @darun/products-feature exec vitest run src/EditProductDescription
 
 - Monorepo: pnpm workspace, Turborepo
 - Frontend: React 19, Next.js 15, Tailwind CSS 4
-- Backend: Apollo Server, TypeDI, AWS Lambda, Serverless
+- Backend: Apollo Server, TypeDI, AWS Lambda, SST
 - Data: Drizzle ORM, Mongoose
 - Quality: ESLint, Prettier, Vitest, Lefthook
 

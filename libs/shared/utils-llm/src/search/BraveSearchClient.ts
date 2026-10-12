@@ -83,7 +83,12 @@ async function resolveKey(provider?: WebSearchKeyProvider): Promise<string | nul
   }
 }
 
-async function fetchOnce(query: string, count: number, apiKey: string): Promise<Response> {
+async function fetchOnce(
+  query: string,
+  count: number,
+  apiKey: string,
+  signal?: AbortSignal
+): Promise<Response> {
   const url = new URL(BRAVE_SEARCH_ENDPOINT);
   url.searchParams.set('q', query);
   url.searchParams.set('count', String(count));
@@ -93,6 +98,7 @@ async function fetchOnce(query: string, count: number, apiKey: string): Promise<
         Accept: 'application/json',
         'X-Subscription-Token': apiKey,
       },
+      ...(signal ? { signal } : {}),
     }),
     REQUEST_TIMEOUT_MS,
     'Brave search request timed out'
@@ -109,7 +115,7 @@ function classifyStatus(status: number): WebSearchOutcome {
 export class BraveSearchClient {
   constructor(private readonly keyProvider?: WebSearchKeyProvider) {}
 
-  async search(query: string, count = 5): Promise<WebSearchOutcome> {
+  async search(query: string, count = 5, signal?: AbortSignal): Promise<WebSearchOutcome> {
     const normalizedQuery = query.trim().slice(0, MAX_QUERY_CHARS);
     if (normalizedQuery.length === 0) {
       return { ok: true, results: [] };
@@ -122,11 +128,20 @@ export class BraveSearchClient {
 
     const clampedCount = clampCount(count);
 
+    // 호출자 abort는 타임아웃과 구분 없이 TIMEOUT 계약으로 신호한다.
+    // 호출자는 in_progress lease를 만료·recovery에 맡기고 terminal 실패로 확정하지 않는다.
+    if (signal?.aborted) {
+      return { ok: false, code: 'TIMEOUT', message: 'Brave search was aborted' };
+    }
+
     let response: Response;
     try {
-      response = await fetchOnce(normalizedQuery, clampedCount, apiKey);
+      response = await fetchOnce(normalizedQuery, clampedCount, apiKey, signal);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown search error';
+      if (signal?.aborted || (error instanceof Error && error.name === 'AbortError')) {
+        return { ok: false, code: 'TIMEOUT', message: 'Brave search was aborted' };
+      }
       if (message.toLowerCase().includes('timed out')) {
         return { ok: false, code: 'TIMEOUT', message };
       }

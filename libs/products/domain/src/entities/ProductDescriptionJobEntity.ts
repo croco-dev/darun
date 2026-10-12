@@ -15,6 +15,9 @@ export type ProductDescriptionJobEntity = {
   writerPromptVersion?: string | null;
   reviewerPromptVersion?: string | null;
   rendererVersion?: string | null;
+  leaseToken?: string | null;
+  leaseUntil?: Date | null;
+  attemptCount?: number;
   appliedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;

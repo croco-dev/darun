@@ -1,5 +1,6 @@
 import {
   computeSourceHash,
+  validateProductBundleTranslation,
   type ProductBundleTranslationRequest,
   type ProductBundleTranslationResult,
   type SingleTranslationRequest,
@@ -7,7 +8,7 @@ import {
   type TranslationProvider,
   TranslationProviderToken,
 } from '@darun/translation-domain';
-import { LlmClient, withRetry, withTimeout } from '@darun/utils-llm';
+import { LlmClient, withAbortableStage, withRetry } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 import { decodeHtml, encodeHtml } from '../codecs/htmlPlaceholderCodec';
 import {
@@ -31,16 +32,18 @@ export class LlmTranslationProvider implements TranslationProvider {
   constructor(@Inject(() => LlmClient) private readonly llmClient: LlmClient) {}
 
   async translateSingle(request: SingleTranslationRequest): Promise<SingleTranslationResult> {
-    const { entityType, field, koreanText, mode, isHtml } = request;
+    const { entityType, field, koreanText, mode, isHtml, signal } = request;
     const { model } = await this.llmClient.getConfig();
 
     let textToTranslate = koreanText;
     let placeholders: Map<string, string> | undefined;
+    let tokenOrder: string[] | undefined;
 
     if (isHtml) {
       const encoded = encodeHtml(koreanText);
       textToTranslate = encoded.encodedText;
       placeholders = encoded.placeholders;
+      tokenOrder = encoded.tokenOrder;
     }
 
     const writerPrompt = buildSingleTranslationPrompt({
@@ -52,13 +55,21 @@ export class LlmTranslationProvider implements TranslationProvider {
 
     const writerResponse = await withRetry(
       () =>
-        withTimeout(
-          this.llmClient.completion(model, [
-            { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
-            { role: 'user', content: writerPrompt },
-          ]),
-          30_000,
-          'LLM 번역 요청이 시간 초과되었습니다.'
+        withAbortableStage(
+          stageSignal =>
+            this.llmClient.completion(
+              model,
+              [
+                { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
+                { role: 'user', content: writerPrompt },
+              ],
+              { signal: stageSignal }
+            ),
+          {
+            budgetMs: 30_000,
+            signal,
+            message: 'LLM 번역 요청이 시간 초과되었습니다.',
+          }
         ),
       { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
     );
@@ -69,37 +80,42 @@ export class LlmTranslationProvider implements TranslationProvider {
     }
 
     if (mode === 'editorial' || mode === 'product_copy') {
-      try {
-        const auditPrompt = buildAuditPrompt({
-          sourceText: textToTranslate,
-          candidateTranslation: translatedCandidate,
-        });
+      const auditPrompt = buildAuditPrompt({
+        sourceText: textToTranslate,
+        candidateTranslation: translatedCandidate,
+      });
 
-        const reviewerResponse = await withRetry(
-          () =>
-            withTimeout(
-              this.llmClient.completion(model, [
-                { role: 'system', content: TRANSLATION_AUDIT_SYSTEM_PROMPT },
-                { role: 'user', content: auditPrompt },
-              ]),
-              30_000,
-              'LLM 번역 검토 요청이 시간 초과되었습니다.'
-            ),
-          { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
-        );
+      const reviewerResponse = await withRetry(
+        () =>
+          withAbortableStage(
+            stageSignal =>
+              this.llmClient.completion(
+                model,
+                [
+                  { role: 'system', content: TRANSLATION_AUDIT_SYSTEM_PROMPT },
+                  { role: 'user', content: auditPrompt },
+                ],
+                { signal: stageSignal }
+              ),
+            {
+              budgetMs: 30_000,
+              signal,
+              message: 'LLM 번역 검토 요청이 시간 초과되었습니다.',
+            }
+          ),
+        { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
+      );
 
-        const audited = reviewerResponse.content?.trim();
-        if (audited) {
-          translatedCandidate = audited;
-        }
-      } catch (auditErr) {
-        console.warn('[LlmTranslationProvider] Audit review failed, keeping writer candidate:', auditErr);
+      const audited = reviewerResponse.content?.trim();
+      if (!audited) {
+        throw new Error('LLM 번역 검토 결과가 비어 있습니다.');
       }
+      translatedCandidate = audited;
     }
 
     let finalTranslatedText = translatedCandidate;
     if (isHtml && placeholders) {
-      finalTranslatedText = decodeHtml(translatedCandidate, placeholders);
+      finalTranslatedText = decodeHtml(translatedCandidate, placeholders, tokenOrder);
     }
 
     return {
@@ -111,7 +127,7 @@ export class LlmTranslationProvider implements TranslationProvider {
   }
 
   async translateProductBundle(request: ProductBundleTranslationRequest): Promise<ProductBundleTranslationResult> {
-    const { name, summary, description, features } = request;
+    const { name, summary, description, features, signal } = request;
     const { model } = await this.llmClient.getConfig();
 
     const encodedDesc = encodeHtml(description);
@@ -125,13 +141,21 @@ export class LlmTranslationProvider implements TranslationProvider {
 
     const response = await withRetry(
       () =>
-        withTimeout(
-          this.llmClient.completion(model, [
-            { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
-            { role: 'user', content: bundlePrompt },
-          ]),
-          120_000,
-          'LLM 제품 번역 요청이 시간 초과되었습니다.'
+        withAbortableStage(
+          stageSignal =>
+            this.llmClient.completion(
+              model,
+              [
+                { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
+                { role: 'user', content: bundlePrompt },
+              ],
+              { signal: stageSignal }
+            ),
+          {
+            budgetMs: 120_000,
+            signal,
+            message: 'LLM 제품 번역 요청이 시간 초과되었습니다.',
+          }
         ),
       { maxRetries: 2, baseDelay: 2000, maxDelay: 10000 }
     );
@@ -141,56 +165,32 @@ export class LlmTranslationProvider implements TranslationProvider {
       throw new Error('LLM 번역 응답이 비어 있습니다.');
     }
 
-    let parsed: {
-      name?: string;
-      summary?: string;
-      description?: string;
-      features?: Array<{ id?: string; name?: string; summary?: string }>;
-    };
+    let parsed: unknown;
     try {
-      parsed = parseJsonFromLlmResponse(rawJson) as typeof parsed;
+      parsed = parseJsonFromLlmResponse(rawJson);
     } catch {
       throw new Error(`번역 결과 JSON 파싱에 실패했습니다: ${rawJson}`);
     }
 
-    if (!parsed || typeof parsed !== 'object') {
-      throw new Error('번역 결과가 유효한 JSON 객체가 아닙니다.');
-    }
+    const validated = validateProductBundleTranslation({ features }, parsed);
 
-    if (!parsed.name || typeof parsed.name !== 'string') {
-      throw new Error('번역 결과에 name이 누락되었거나 문자열이 아닙니다.');
-    }
-    if (!parsed.summary || typeof parsed.summary !== 'string') {
-      throw new Error('번역 결과에 summary가 누락되었거나 문자열이 아닙니다.');
-    }
-    if (!parsed.description || typeof parsed.description !== 'string') {
-      throw new Error('번역 결과에 description이 누락되었거나 문자열이 아닙니다.');
-    }
-    if (!Array.isArray(parsed.features)) {
-      throw new Error('번역 결과에 features가 배열이 아닙니다.');
-    }
+    const finalDescription = decodeHtml(
+      validated.product.description,
+      encodedDesc.placeholders,
+      encodedDesc.tokenOrder
+    );
 
-    const expectedFeatureIds = new Set(features.map(f => f.id));
-    const returnedFeatureIds = new Set(parsed.features.map(f => f.id));
-
-    if (expectedFeatureIds.size !== returnedFeatureIds.size) {
-      throw new Error(`기능 개수 불일치: 요청 ${expectedFeatureIds.size}개, 응답 ${returnedFeatureIds.size}개`);
-    }
-
-    for (const id of expectedFeatureIds) {
-      if (!returnedFeatureIds.has(id)) {
-        throw new Error(`번역 결과에 요청된 기능 ID(${id})가 누락되었습니다.`);
-      }
-    }
-
-    const finalDescription = decodeHtml(parsed.description, encodedDesc.placeholders);
-
+    // 검증자가 요청 순서로 정규화했으므로 요청 순서대로 ID로 대조한다.
+    // 인덱스 매핑은 순서 가정이 깨지면 잘못된 feature에 값을 붙이므로 사용하지 않는다.
     const featureResults = features.map(reqFeature => {
-      const translatedFeature = parsed.features?.find(f => f.id === reqFeature.id);
+      const translatedFeature = validated.features.find(f => f.id === reqFeature.id);
+      if (!translatedFeature) {
+        throw new Error(`번역 결과에 요청된 기능 ID(${reqFeature.id})가 누락되었습니다.`);
+      }
       return {
         id: reqFeature.id,
-        name: translatedFeature?.name?.trim() ?? '',
-        summary: translatedFeature?.summary?.trim() ?? '',
+        name: translatedFeature.name,
+        summary: translatedFeature.summary,
         nameSourceHash: computeSourceHash(reqFeature.name),
         summarySourceHash: computeSourceHash(reqFeature.summary),
       };
@@ -198,8 +198,8 @@ export class LlmTranslationProvider implements TranslationProvider {
 
     return {
       product: {
-        name: parsed.name.trim(),
-        summary: parsed.summary.trim(),
+        name: validated.product.name,
+        summary: validated.product.summary,
         description: finalDescription.trim(),
         nameSourceHash: computeSourceHash(name),
         summarySourceHash: computeSourceHash(summary),

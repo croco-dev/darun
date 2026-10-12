@@ -46,7 +46,7 @@ alwaysApply: false
   │   ├── layout.tsx           # 루트 레이아웃
   │   ├── page.tsx             # 페이지
   │   ├── client-providers.tsx # Apollo Provider
-  │   ├── server-providers.tsx # Clerk Provider
+  │   ├── server-providers.tsx # Auth Provider (Firebase)
   │   └── environment.ts       # 환경 변수
   └── shells/
       └── GlobalLayout.tsx     # 레이아웃 조립 + UX Boundary
@@ -104,7 +104,7 @@ Apps (라우팅 + Provider)
 | 구분 | 위치 | 역할 | 예시 |
 |------|------|------|------|
 | Port (인터페이스) | `domain/src/libs/ports/` | 외부 서비스 인터페이스 정의 | `ExternalAccountProvider` |
-| Adapter (구현체) | `datasource/src/libs/adapters/` | 실제 외부 서비스 호출 구현 | `ClerkExternalAccountProvider` |
+| Adapter (구현체) | `datasource/src/libs/adapters/` | 실제 외부 서비스 호출 구현 | `FirebaseAccountRepository` |
 | Repository | `domain/src/libs/repositories/` | 영속성 인터페이스 (특수 케이스) | `UserRepository` |
 
 - **Port**: Domain Layer에 인터페이스 정의 (외부 의존성 없음)

@@ -54,29 +54,46 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
     );
   }
 
-  protected async syncPublishedContent(product: Product): Promise<void> {
+  /**
+   * 발행된 콘텐츠 동기화: 하나의 논리적 색인 업데이트와 하나의 번역 intent 기록.
+   * 재실행은 같은 입력에 대해 같은 결과를 내고, 더 새 리비전을 되돌리지 않는다.
+   */
+  protected async syncPublishedContent(
+    product: Product,
+    options?: { expectedUpdatedAt?: Date }
+  ): Promise<void> {
     if (product.publishedAt === undefined) {
       return;
     }
 
+    // 하나의 논리적 색인 업데이트: 커밋된 현재 상태를 다시 읽어 색인한다.
+    // 실패한 색인은 같은 revision으로 재실행해도 같은 결과를 낸다.
     await this.runDegradedSideEffect('syncPublishedContent', 'search-index-sync', async () => {
       const [productTag, domainProduct] = await Promise.all([
         this.getProductTagsUseCase.execute({ productId: product.id }),
         this.getProductUseCase.execute({ slug: product.slug }),
       ]);
+      if (options?.expectedUpdatedAt && domainProduct?.updatedAt) {
+        if (domainProduct.updatedAt.getTime() > options.expectedUpdatedAt.getTime()) {
+          // 더 새 리비전이 이미 커밋됐다: 오래된 스냅샷으로 색인을 되돌리지 않는다.
+          return;
+        }
+      }
 
       await this.publishIndexProductUseCase.execute({
         id: product.id,
-        name: product.name,
-        slug: product.slug,
-        summary: product.summary,
-        description: product.description,
+        name: domainProduct?.name ?? product.name,
+        slug: domainProduct?.slug ?? product.slug,
+        summary: domainProduct?.summary ?? product.summary,
+        description: domainProduct?.description ?? product.description,
         tags: productTag ? productTag.tags.map(tag => tag.name) : [],
         category: domainProduct?.categoryIds[0] ?? '',
-        publishedAt: product.publishedAt,
+        publishedAt: domainProduct?.publishedAt ?? product.publishedAt,
       });
     });
 
+    // 번역 intent는 정식 커밋 경로에서 한 번만 기록한다. 같은 revision의
+    // 재실행은 중복 job을 만들지 않고 기존 intent를 재사용한다.
     await this.runDegradedSideEffect('syncPublishedContent', 'translation-job-trigger', async () => {
       await this.translationJobService.requestProductTranslationJob(product.id);
     });
@@ -93,7 +110,11 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
         input.name !== undefined || input.summary !== undefined || input.description !== undefined;
 
       if (hasContentChange) {
-        await this.syncPublishedContent(updatedProduct);
+        // super.editProduct가 이미 하나의 색인 업데이트를 수행했다.
+        // 여기서는 번역 intent만 정식 커밋 경로에서 한 번 기록한다.
+        await this.runDegradedSideEffect('editProduct', 'translation-job-trigger', async () => {
+          await this.translationJobService.requestProductTranslationJob(updatedProduct.id);
+        });
       }
     }
 

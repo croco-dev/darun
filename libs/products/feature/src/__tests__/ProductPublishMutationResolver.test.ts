@@ -79,7 +79,7 @@ const createMockTranslationJobService = () =>
   ({
     translateEntity: vi.fn().mockResolvedValue(undefined),
     translateProductWithFeatures: vi.fn(() => new Promise(() => {})),
-    requestProductTranslationJob: vi.fn().mockResolvedValue({ id: 'job-1', status: 'pending' }),
+    requestProductTranslationJob: vi.fn().mockResolvedValue({ id: 'job-1', status: 'pending', queued: true }),
   }) as unknown as TranslationJobService;
 
 describe('ProductPublishMutationResolver', () => {
@@ -162,6 +162,7 @@ describe('ProductPublishMutationResolver', () => {
         entityType: 'Product',
         entityId: 'p1',
         status: 'pending',
+        queued: true,
       });
       await response;
       expect(onResponse).toHaveBeenCalledWith({ product: publishedProduct });
@@ -251,6 +252,124 @@ describe('ProductPublishMutationResolver', () => {
           category: '',
         })
       );
+    });
+  });
+
+  describe('W6 published sync (single index update, idempotent intent)', () => {
+    function publishedProduct() {
+      return new DomainProduct({
+        id: 'p1',
+        slug: 'product-1',
+        name: 'Product 1',
+        summary: 'Summary 1',
+        logoUrl: 'https://example.com/logo.png',
+        description: 'Description 1',
+        categoryIds: [],
+        publishedAt: new Date('2026-10-11T00:00:00Z'),
+      });
+    }
+
+    function resolverWith(
+      editResult: DomainProduct,
+      indexUseCase: ReturnType<typeof createMockUseCase<IndexProduct>>,
+      translation: TranslationJobService
+    ) {
+      const getProductUseCase = createMockUseCase<GetProduct>();
+      getProductUseCase.execute.mockResolvedValue(editResult);
+      const editProductUseCase = createMockUseCase<EditProduct>();
+      editProductUseCase.execute.mockResolvedValue(editResult);
+      return new ProductPublishMutationResolver(
+        new GetCompany(createCompanyRepository()),
+        createMockUseCase<CreateProduct>() as unknown as CreateProduct,
+        editProductUseCase as unknown as EditProduct,
+        indexUseCase as unknown as IndexProduct,
+        createMockUseCase<UpdateProductTag>() as unknown as UpdateProductTag,
+        getProductUseCase as unknown as GetProduct,
+        createMockUseCase<GetProductTags>() as unknown as GetProductTags,
+        createMockUseCase<AddProductScreenshot>() as unknown as AddProductScreenshot,
+        createMockUseCase<DeleteProductScreenshot>() as unknown as DeleteProductScreenshot,
+        createMockUseCase<AddProductLink>() as unknown as AddProductLink,
+        createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
+        createMockUseCase<UpdateProductScreenshot>() as unknown as UpdateProductScreenshot,
+        createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
+        createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
+        createMockUseCase<PublishProduct>() as unknown as PublishProduct,
+        createMockUseCase<IndexProduct>() as unknown as IndexProduct,
+        translation
+      );
+    }
+
+    it('does one logical index update on published edit (no double index write)', async () => {
+      const updated = publishedProduct();
+      const coreIndex = createMockUseCase<IndexProduct>();
+      coreIndex.execute.mockResolvedValue(true);
+      const translation = createMockTranslationJobService();
+      const resolver = resolverWith(updated, coreIndex, translation);
+
+      await resolver.editProduct('product-1', { name: 'Updated Name' });
+
+      // super.editProduct의 색인 1회만 수행되고, 이 override는 색인을 추가하지 않는다.
+      expect(coreIndex.execute).toHaveBeenCalledTimes(1);
+      expect(translation.requestProductTranslationJob).toHaveBeenCalledTimes(1);
+      expect(translation.requestProductTranslationJob).toHaveBeenCalledWith('p1');
+    });
+
+    it('replays idempotently without regressing a newer revision', async () => {
+      const committed = publishedProduct();
+      const staleSnapshot = new DomainProduct({
+        ...committed,
+        summary: 'Stale summary',
+        updatedAt: new Date('2026-10-10T00:00:00Z'),
+      });
+      const newerCommitted = new DomainProduct({
+        ...committed,
+        summary: 'Newer summary',
+        updatedAt: new Date('2026-10-12T00:00:00Z'),
+      });
+      const indexUseCase = createMockUseCase<IndexProduct>();
+      indexUseCase.execute.mockResolvedValue(true);
+      const getProductUseCase = createMockUseCase<GetProduct>();
+      // syncPublishedContent 내부 재조회가 더 새 리비전을 반환한다.
+      getProductUseCase.execute.mockResolvedValue(newerCommitted);
+      const getProductTagsUseCase = createMockUseCase<GetProductTags>();
+      getProductTagsUseCase.execute.mockResolvedValue(null);
+      const translation = createMockTranslationJobService();
+      const resolver = new ProductPublishMutationResolver(
+        new GetCompany(createCompanyRepository()),
+        createMockUseCase<CreateProduct>() as unknown as CreateProduct,
+        createMockUseCase<EditProduct>() as unknown as EditProduct,
+        createMockUseCase<IndexProduct>() as unknown as IndexProduct,
+        createMockUseCase<UpdateProductTag>() as unknown as UpdateProductTag,
+        getProductUseCase as unknown as GetProduct,
+        getProductTagsUseCase as unknown as GetProductTags,
+        createMockUseCase<AddProductScreenshot>() as unknown as AddProductScreenshot,
+        createMockUseCase<DeleteProductScreenshot>() as unknown as DeleteProductScreenshot,
+        createMockUseCase<AddProductLink>() as unknown as AddProductLink,
+        createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
+        createMockUseCase<UpdateProductScreenshot>() as unknown as UpdateProductScreenshot,
+        createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
+        createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
+        createMockUseCase<PublishProduct>() as unknown as PublishProduct,
+        indexUseCase as unknown as IndexProduct,
+        translation
+      );
+
+      const staleAsProduct = {
+        id: staleSnapshot.id,
+        slug: staleSnapshot.slug,
+        name: staleSnapshot.name,
+        summary: staleSnapshot.summary,
+        description: staleSnapshot.description,
+        publishedAt: staleSnapshot.publishedAt,
+      };
+      // revision guard: 오래된 스냅샷 재실행은 색인 쓰기를 건너뛴다.
+      await (resolver as unknown as { syncPublishedContent: (p: unknown, o: unknown) => Promise<void> }).syncPublishedContent(
+        staleAsProduct,
+        { expectedUpdatedAt: staleSnapshot.updatedAt }
+      );
+      expect(indexUseCase.execute).not.toHaveBeenCalled();
+      // 번역 intent 기록은 정식 경로에서 시도된다(중복 dedup은 서비스 계층 소유).
+      expect(translation.requestProductTranslationJob).toHaveBeenCalledTimes(1);
     });
   });
 

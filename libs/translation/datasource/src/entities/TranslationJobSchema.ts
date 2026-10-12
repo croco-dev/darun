@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { index, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 export const translationJobs = pgTable(
   'translation_jobs',
@@ -15,6 +15,9 @@ export const translationJobs = pgTable(
     sourceHash: text('source_hash'),
     model: text('model'),
     promptVersion: text('prompt_version'),
+    leaseToken: text('lease_token'),
+    leaseUntil: timestamp('lease_until'),
+    attemptCount: integer('attempt_count').notNull().default(0),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
