@@ -4,6 +4,7 @@ import {
   type IProductDescriptionEvidenceAssembler,
   ProductDescriptionEvidenceAssemblerToken,
 } from '../services/ProductDescriptionEvidenceAssembler';
+import type { ProductDescriptionEvidenceHashVersion } from '../services/ProductDescriptionEvidenceProjector';
 import {
   type ProductDescriptionGenerator,
   ProductDescriptionGeneratorToken,
@@ -12,6 +13,7 @@ import {
 export type GenerateProductDescriptionCandidateResult = {
   candidateDocument: ProductDescriptionDocument;
   candidateHtml: string;
+  evidenceHashVersion: ProductDescriptionEvidenceHashVersion;
   evidenceHash: string;
   baseDescriptionHash: string;
   writerModel: string;
@@ -30,13 +32,23 @@ export class GenerateProductDescriptionCandidate {
     private readonly productDescriptionGenerator: ProductDescriptionGenerator
   ) {}
 
-  async execute({ productId }: { productId: string }): Promise<GenerateProductDescriptionCandidateResult> {
+  async execute({
+    productId,
+    signal,
+  }: {
+    productId: string;
+    signal?: AbortSignal;
+  }): Promise<GenerateProductDescriptionCandidateResult> {
     const startSnapshot = await this.evidenceAssembler.assemble(productId);
 
-    const generationResult = await this.productDescriptionGenerator.generate(startSnapshot.evidence);
+    const generationResult = await this.productDescriptionGenerator.generate(
+      startSnapshot.evidence,
+      signal ? { signal } : undefined
+    );
 
     const currentSnapshot = await this.evidenceAssembler.assemble(productId);
     if (
+      currentSnapshot.evidenceHashVersion !== startSnapshot.evidenceHashVersion ||
       currentSnapshot.evidenceHash !== startSnapshot.evidenceHash ||
       currentSnapshot.baseDescriptionHash !== startSnapshot.baseDescriptionHash
     ) {
@@ -46,6 +58,7 @@ export class GenerateProductDescriptionCandidate {
     return {
       candidateDocument: generationResult.document,
       candidateHtml: generationResult.candidateHtml,
+      evidenceHashVersion: startSnapshot.evidenceHashVersion,
       evidenceHash: startSnapshot.evidenceHash,
       baseDescriptionHash: startSnapshot.baseDescriptionHash,
       writerModel: generationResult.writerModel,

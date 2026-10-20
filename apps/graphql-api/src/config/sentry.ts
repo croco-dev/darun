@@ -1,7 +1,9 @@
+import { sentryRequestRedaction } from '@darun/utils-sentry';
 import * as Sentry from '@sentry/aws-serverless';
 import { RUNNING_ENV } from './environment';
 
 Sentry.init({
+  ...sentryRequestRedaction,
   dsn: 'https://0bca7005e13145b49c2b68c18022b5f8@o1088571.ingest.us.sentry.io/4508023165419520',
   // Tracing
   tracesSampleRate: 0.1, // 운영 비용 절감을 위해 10%로 조정

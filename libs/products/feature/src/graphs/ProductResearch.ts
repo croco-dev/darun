@@ -9,7 +9,7 @@ import {
 } from '@darun/products-domain';
 import { Field, GraphQLISODateTime, ID, InputType, Int, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('ResearchAnchorGraph')
 export class ResearchAnchorGraph {
   @Field()
   sourceId: string;
@@ -18,7 +18,7 @@ export class ResearchAnchorGraph {
   excerpt: string;
 }
 
-@ObjectType()
+@ObjectType('ResearchTextGraph')
 export class ResearchTextGraph {
   @Field()
   value: string;
@@ -30,7 +30,7 @@ export class ResearchTextGraph {
   evidenceType: string;
 }
 
-@ObjectType()
+@ObjectType('ResearchSourceGraph')
 export class ResearchSourceGraph {
   @Field()
   id: string;
@@ -54,7 +54,7 @@ export class ResearchSourceGraph {
   relationToInput: string;
 }
 
-@ObjectType()
+@ObjectType('ResearchFeatureGraph')
 export class ResearchFeatureGraph {
   @Field()
   name: string;
@@ -72,7 +72,28 @@ export class ResearchFeatureGraph {
   evidenceType: string;
 }
 
-@ObjectType()
+@ObjectType('ResearchCandidateGraph')
+export class ResearchCandidateGraph {
+  @Field()
+  name: string;
+
+  @Field(() => String, { nullable: true })
+  website?: string | null;
+
+  @Field(() => [ResearchAnchorGraph])
+  anchors: ResearchAnchorGraph[];
+}
+
+@ObjectType('ResearchCategoryCandidateGraph')
+export class ResearchCategoryCandidateGraph {
+  @Field()
+  categoryId: string;
+
+  @Field()
+  reason: string;
+}
+
+@ObjectType('ProductResearchDraftGraph')
 export class ProductResearchDraftGraph {
   @Field(() => Int)
   version: number;
@@ -101,6 +122,15 @@ export class ProductResearchDraftGraph {
   @Field(() => [ResearchSourceGraph])
   sources: ResearchSourceGraph[];
 
+  @Field(() => [ResearchCategoryCandidateGraph])
+  categoryCandidates: ResearchCategoryCandidateGraph[];
+
+  @Field(() => ResearchCandidateGraph, { nullable: true })
+  companyCandidate?: ResearchCandidateGraph | null;
+
+  @Field(() => [ResearchCandidateGraph])
+  alternativeCandidates: ResearchCandidateGraph[];
+
   @Field()
   sourceSnapshotHash: string;
 
@@ -111,7 +141,7 @@ export class ProductResearchDraftGraph {
   model: string;
 }
 
-@ObjectType()
+@ObjectType('ProductResearchJob')
 export class ProductResearchJob {
   @Field(() => ID)
   id: string;
@@ -124,6 +154,18 @@ export class ProductResearchJob {
 
   @Field()
   status: string;
+
+  @Field(() => String, { nullable: true })
+  dispatchStatus?: string;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  runNotBefore?: Date;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  nextDispatchAt?: Date;
+
+  @Field(() => String, { nullable: true })
+  retryOfJobId?: string | null;
 
   @Field(() => String, { nullable: true })
   stage?: string | null;
@@ -147,13 +189,22 @@ export class ProductResearchJob {
   updatedAt: Date;
 }
 
-@InputType()
+@InputType('RequestProductResearchInput')
 export class RequestProductResearchInput {
+  @Field()
+  requestId: string;
+
   @Field()
   officialUrl: string;
 }
 
-@InputType()
+@InputType('RetryProductResearchInput')
+export class RetryProductResearchInput {
+  @Field({ nullable: true })
+  requestId?: string;
+}
+
+@InputType('ReviewedResearchFeatureInput')
 export class ReviewedResearchFeatureInput {
   @Field()
   name: string;
@@ -165,7 +216,7 @@ export class ReviewedResearchFeatureInput {
   emoji?: string;
 }
 
-@InputType()
+@InputType('MaterializeResearchedProductInput')
 export class MaterializeResearchedProductInput {
   @Field()
   researchJobId: string;
@@ -184,6 +235,9 @@ export class MaterializeResearchedProductInput {
 
   @Field()
   officialUrl: string;
+
+  @Field(() => Boolean)
+  officialUrlConfirmed: boolean;
 
   @Field(() => [String])
   categoryIds: string[];
@@ -219,6 +273,19 @@ function toSourceGraph(source: ResearchSource): ResearchSourceGraph {
   };
 }
 
+function toCandidateGraph(
+  candidate: { name: string; website?: string; anchors: ResearchAnchor[] } | null
+): ResearchCandidateGraph | null {
+  if (!candidate) {
+    return null;
+  }
+  return {
+    name: candidate.name,
+    website: candidate.website ?? null,
+    anchors: candidate.anchors.map(toAnchorGraph),
+  };
+}
+
 export function toProductResearchJobGraph(job: ProductResearchJobEntity): ProductResearchJob {
   let result: ProductResearchDraftGraph | null = null;
   const draft: ProductResearchDraftV1 | null = job.result;
@@ -239,6 +306,16 @@ export function toProductResearchJobGraph(job: ProductResearchJobEntity): Produc
       tags: draft.tags,
       warnings: draft.warnings,
       sources: draft.sources.map(toSourceGraph),
+      categoryCandidates: draft.categoryCandidates.map(candidate => ({
+        categoryId: candidate.categoryId,
+        reason: candidate.reason,
+      })),
+      companyCandidate: toCandidateGraph(draft.companyCandidate),
+      alternativeCandidates: (draft.alternativeCandidates ?? []).map(candidate => ({
+        name: candidate.name,
+        website: candidate.website ?? null,
+        anchors: candidate.anchors.map(toAnchorGraph),
+      })),
       sourceSnapshotHash: draft.sourceSnapshotHash,
       promptVersion: draft.promptVersion,
       model: draft.model,
@@ -249,6 +326,10 @@ export function toProductResearchJobGraph(job: ProductResearchJobEntity): Produc
     requestKey: job.requestKey,
     officialUrl: job.officialUrl,
     status: job.status,
+    dispatchStatus: job.dispatchStatus,
+    runNotBefore: job.runNotBefore,
+    nextDispatchAt: job.nextDispatchAt,
+    retryOfJobId: job.retryOfJobId,
     stage: job.stage,
     errorCode: job.errorCode,
     errorMessage: job.errorMessage,

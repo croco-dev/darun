@@ -7,6 +7,8 @@ import { and, asc, count, desc, eq, gt, inArray, isNotNull, lt, sql } from 'driz
 import { keyBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
+import { beginProductContentWrite } from './productContentSync';
+import { lockCategoryMembership } from './productSourceMutex';
 
 @Service(ProductRepositoryToken)
 export class PostgresqlProductRepository implements ProductRepository {
@@ -35,6 +37,7 @@ export class PostgresqlProductRepository implements ProductRepository {
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {
     return this.db
       .transaction(async tx => {
+        const finishContentWrite = await beginProductContentWrite(tx, id);
         const prevProduct = await tx
           .select()
           .from(products)
@@ -55,6 +58,7 @@ export class PostgresqlProductRepository implements ProductRepository {
           throw productUpdateFailed();
         }
 
+        await finishContentWrite();
         return this.mapper(updated[0]);
       })
       .then(result => {
@@ -106,6 +110,7 @@ export class PostgresqlProductRepository implements ProductRepository {
   async insert(values: Product): Promise<Product | null> {
     return this.db
       .transaction(async tx => {
+        await lockCategoryMembership(tx, 'shared');
         const inserted = await tx
           .insert(products)
           .values({ ...values })
@@ -141,6 +146,12 @@ export class PostgresqlProductRepository implements ProductRepository {
 
   async findOneById(id: string): Promise<Product | null> {
     return this.idLoader.load(id);
+  }
+
+  /** 요청 간 DataLoader cache를 우회해 현재 commit된 Product 행을 읽는다. */
+  async findOneFreshById(id: string): Promise<Product | null> {
+    const [product] = await this.findByIdsInternal([id]);
+    return product ?? null;
   }
 
   async findPublishedOneBySlug(slug: string): Promise<Product | null> {

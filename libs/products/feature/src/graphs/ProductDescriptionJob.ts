@@ -1,6 +1,6 @@
 import { Field, GraphQLISODateTime, ID, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('ProductDescriptionJob')
 export class ProductDescriptionJob {
   @Field(() => ID)
   id: string;
@@ -8,8 +8,23 @@ export class ProductDescriptionJob {
   @Field(() => String)
   productId: string;
 
+  @Field(() => String, { description: '후보가 소속된 Product의 현재 slug. 관리자 후보 재진입 주소에 사용한다.' })
+  productSlug?: string;
+
   @Field(() => String)
   status: string;
+
+  @Field(() => String, { nullable: true })
+  dispatchStatus?: string;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  runNotBefore?: Date;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  nextDispatchAt?: Date;
+
+  @Field(() => String, { nullable: true })
+  retryOfJobId?: string;
 
   @Field(() => String, { nullable: true })
   message?: string;

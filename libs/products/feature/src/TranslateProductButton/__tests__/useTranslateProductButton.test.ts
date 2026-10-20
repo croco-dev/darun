@@ -320,4 +320,53 @@ describe('useTranslateProductButton', () => {
     expect(result.current.loading).toBe(false);
     vi.useRealTimers();
   });
+
+  it('keeps a superseded translation visible with a per-product retranslate path', async () => {
+    vi.useFakeTimers();
+    mutateFn.mockResolvedValueOnce({
+      data: {
+        requestProductTranslation: { id: 'job-stale', entityId: 'prod-1', status: 'pending', message: '대기 중' },
+      },
+    });
+    lazyQueryFn.mockResolvedValueOnce({
+      data: {
+        translationJob: { id: 'job-stale', status: 'superseded', error: 'source changed' },
+      },
+    });
+
+    const { result } = renderHook(() => useTranslateProductButton({ slug: defaultSlug }));
+
+    let translatePromise: Promise<void>;
+    act(() => {
+      translatePromise = result.current.translateProduct();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+      await translatePromise;
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: '번역 보류', color: 'red' }));
+    expect(result.current.lastStatus).toBe('superseded');
+    expect(result.current.lastJobId).toBe('job-stale');
+    expect(result.current.loading).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it('keeps a failed translation visible with a per-product retranslate path', async () => {
+    mutateFn.mockResolvedValueOnce({
+      data: {
+        requestProductTranslation: { id: 'job-failed', entityId: 'prod-1', status: 'failed', message: 'boom' },
+      },
+    });
+
+    const { result } = renderHook(() => useTranslateProductButton({ slug: defaultSlug }));
+
+    await act(async () => {
+      await result.current.translateProduct();
+    });
+
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: '번역 실패', color: 'red' }));
+    expect(result.current.lastStatus).toBe('failed');
+    expect(result.current.lastJobId).toBe('job-failed');
+  });
 });

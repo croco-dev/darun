@@ -12,7 +12,10 @@
   "dependencies": {
     "@darun/translation-domain": "workspace:*",
     "@darun/utils-llm": "workspace:*",
-    "drizzle-orm": "catalog:"
+    "drizzle-orm": "catalog:",
+    "parse5": "8.0.0",
+    "remark-parse": "11.0.0",
+    "unified": "11.0.5"
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",

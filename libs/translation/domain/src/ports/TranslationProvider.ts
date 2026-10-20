@@ -9,6 +9,7 @@ export interface SingleTranslationRequest {
   koreanText: string;
   mode: TranslationMode;
   isHtml?: boolean;
+  signal?: AbortSignal;
 }
 
 export interface SingleTranslationResult {
@@ -28,6 +29,7 @@ export interface ProductBundleTranslationRequest {
     name: string;
     summary: string;
   }>;
+  signal?: AbortSignal;
 }
 
 export interface ProductBundleTranslationResult {

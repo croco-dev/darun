@@ -6,10 +6,11 @@ import { LlmSettingService } from '@darun/translation-service';
 import { BraveSearchClient, LlmClient } from '@darun/utils-llm';
 import type { SQSEvent, SQSHandler } from 'aws-lambda';
 import { Container } from 'typedi';
-import { createMongodbConnection, createPostgresConnection } from '../config/database';
+import { createPostgresConnection } from '../config/database';
+import { withJobDeadline } from './jobDeadline';
 
-export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
-  await Promise.all([createPostgresConnection(), createMongodbConnection()]);
+export const handler: SQSHandler = async (event: SQSEvent, context): Promise<void> => {
+  createPostgresConnection();
 
   const researchService = Container.get(ProductResearchService);
   const jobRepository = Container.get(ProductResearchJobRepositoryToken);
@@ -23,26 +24,45 @@ export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
       const payload = JSON.parse(record.body) as { jobId: string };
       console.log(`[ProductResearchWorker] Processing message ${record.messageId}:`, payload);
       if (payload.jobId) {
-        await researchService.executeResearch(payload.jobId, {
-          jobRepository,
-          categoryRepository,
-          searchClient: { search: (query, count) => searchClient.search(query, count) },
-          llm: {
-            getModel: async () => (await llmClient.getConfig()).model,
-            complete: async (systemPrompt, userPrompt) => {
-              const message = await llmClient.completion([
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt },
-              ]);
-              const content = typeof message.content === 'string' ? message.content : '';
-              if (!content.trim()) {
-                throw new Error('LLM 응답이 비어 있습니다.');
-              }
-              return content;
-            },
-          },
-          promptVersion: PRODUCT_RESEARCH_PROMPT_VERSION,
-        });
+        await withJobDeadline(context, workerOptions =>
+          llmClient.withConfigSnapshot(async () => {
+            await researchService.executeResearch(
+              payload.jobId,
+              {
+                jobRepository,
+                categoryRepository,
+                searchClient: {
+                  search: (query, count, childSignal) =>
+                    searchClient.search(query, count, childSignal ?? workerOptions.signal),
+                },
+                llm: {
+                  getModel: async () => (await llmClient.getConfig()).model,
+                  complete: async (systemPrompt, userPrompt, options) => {
+                    const message = await llmClient.completion(
+                      [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt },
+                      ],
+                      undefined,
+                      {
+                        responseFormat: ProductResearchService.researchResponseFormat(),
+                        signal: options?.signal ?? workerOptions.signal,
+                      }
+                    );
+                    const content = typeof message.content === 'string' ? message.content : '';
+                    if (!content.trim()) {
+                      throw new Error('LLM 응답이 비어 있습니다.');
+                    }
+                    return content;
+                  },
+                },
+                promptVersion: PRODUCT_RESEARCH_PROMPT_VERSION,
+              },
+              undefined,
+              workerOptions
+            );
+          })
+        );
       }
     } catch (error) {
       console.error(`[ProductResearchWorker] Error processing record ${record.messageId}:`, error);

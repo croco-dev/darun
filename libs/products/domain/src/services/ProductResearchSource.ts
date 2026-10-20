@@ -36,7 +36,7 @@ function canonicalizeUrl(rawUrl: string): string | null {
     if (pathname.length > 1 && pathname.endsWith('/')) {
       pathname = pathname.slice(0, -1);
     }
-    return `${parsed.protocol}//${parsed.hostname.toLowerCase()}${pathname}${parsed.search}`;
+    return `${parsed.protocol}//${parsed.host.toLowerCase()}${pathname}${parsed.search}`;
   } catch {
     return null;
   }
@@ -71,7 +71,7 @@ export function normalizeResearchSources(
   inputHostname: string
 ): NormalizedResearchSource[] {
   const seen = new Set<string>();
-  const normalized: NormalizedResearchSource[] = [];
+  const collected: NormalizedResearchSource[] = [];
   let counter = 0;
 
   for (const raw of rawSources) {
@@ -90,7 +90,7 @@ export function normalizeResearchSources(
     }
 
     counter += 1;
-    normalized.push({
+    collected.push({
       id: `s${counter}`,
       title: raw.title.trim().slice(0, 300),
       url: canonical,
@@ -103,13 +103,10 @@ export function normalizeResearchSources(
         .map(snippet => snippet.slice(0, MAX_SOURCE_SNIPPET_CHARS)),
       relationToInput: isSameHostOrSubdomain(hostname, inputHostname) ? 'INPUT_HOST_MATCH' : 'EXTERNAL',
     });
-
-    if (normalized.length >= RESEARCH_LIMITS.maxUniqueSources) {
-      break;
-    }
+    if (collected.length >= RESEARCH_LIMITS.maxUniqueSources) break;
   }
 
-  return normalized;
+  return collected;
 }
 
 export function hashSourceSnapshot(sources: NormalizedResearchSource[]): string {

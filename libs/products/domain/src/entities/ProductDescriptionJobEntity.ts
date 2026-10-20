@@ -7,6 +7,7 @@ export type ProductDescriptionJobEntity = {
   message?: string | null;
   error?: string | null;
   evidenceHash?: string | null;
+  evidenceHashVersion?: string | null;
   baseDescriptionHash?: string | null;
   candidateDocument?: string | null;
   candidateHtml?: string | null;
@@ -15,6 +16,13 @@ export type ProductDescriptionJobEntity = {
   writerPromptVersion?: string | null;
   reviewerPromptVersion?: string | null;
   rendererVersion?: string | null;
+  leaseToken?: string | null;
+  leaseUntil?: Date | null;
+  attemptCount?: number;
+  runNotBefore?: Date;
+  nextDispatchAt?: Date;
+  retryOfJobId?: string | null;
+  dispatchStatus?: string;
   appliedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;

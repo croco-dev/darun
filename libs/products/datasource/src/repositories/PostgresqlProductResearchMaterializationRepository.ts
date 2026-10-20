@@ -8,7 +8,7 @@ import {
   productSlugAlreadyExists,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { ulid } from 'ulid';
 import { categories } from '../entities/CategorySchema';
@@ -18,6 +18,8 @@ import { productResearchJobs } from '../entities/ProductResearchJobSchema';
 import { products } from '../entities/ProductSchema';
 import { productTags } from '../entities/ProductTagsSchema';
 import { tags } from '../entities/TagSchema';
+import { beginProductContentWrite } from './productContentSync';
+import { lockCategoryMembership } from './productSourceMutex';
 
 const PG_UNIQUE_VIOLATION = '23505';
 
@@ -40,10 +42,12 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
   }> {
     try {
       return await this.db.transaction(async tx => {
+        // 잠금 순서: research job row(FOR UPDATE) → product/source rows.
         const jobRows = await tx
           .select()
           .from(productResearchJobs)
           .where(eq(productResearchJobs.id, input.researchJobId))
+          .for('update')
           .limit(1);
         const jobRow = jobRows[0];
         if (!jobRow) {
@@ -75,12 +79,21 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           };
         }
 
+        if (!jobRow.resultJson) {
+          throw productInvalidArgs('완료된 조사 결과가 없습니다.');
+        }
+        if (new URL(jobRow.officialUrl).toString() !== input.officialUrl && input.officialUrlConfirmed !== true) {
+          throw productInvalidArgs('변경한 공식 URL을 명시적으로 확인해 주세요.');
+        }
+        // Keep job-first locking, but enter membership before Category shares or new Product rows.
+        await lockCategoryMembership(tx, 'shared');
         const categoryRows =
           input.categoryIds.length > 0
             ? await tx
                 .select()
                 .from(categories)
                 .where(inArray(categories.id, [...input.categoryIds]))
+                .for('share')
             : [];
         if (categoryRows.length !== input.categoryIds.length) {
           throw productInvalidArgs('카테고리를 다시 선택해 주세요.');
@@ -103,6 +116,7 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           throw productInvalidArgs('서비스 저장에 실패했습니다.');
         }
         const productId = inserted.id;
+        const finishContentWrite = await beginProductContentWrite(tx, productId);
 
         const hostname = new URL(input.officialUrl).hostname.toLowerCase();
         await tx.insert(productLinks).values({
@@ -110,7 +124,7 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           title: `${input.name} 공식 사이트`,
           iconUrl: input.logoUrl,
           link: input.officialUrl,
-          displayLink: hostname.slice(0, 100),
+          displayLink: hostname,
         });
 
         if (input.features.length > 0) {
@@ -146,15 +160,33 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
             .onConflictDoNothing({ target: [productTags.productId, productTags.tagId] });
         }
 
-        await tx
+        const claimedRows = await tx
           .update(productResearchJobs)
           .set({
             materializedProductId: productId,
             appliedAt: new Date(),
+            reviewedInput: {
+              name: input.name,
+              slug: input.slug,
+              summary: input.summary,
+              logoUrl: input.logoUrl,
+              officialUrl: input.officialUrl,
+              categoryIds: input.categoryIds,
+              features: input.features,
+              tags: input.tags,
+            },
             updatedAt: new Date(),
           })
-          .where(eq(productResearchJobs.id, input.researchJobId));
+          .where(
+            and(eq(productResearchJobs.id, input.researchJobId), isNull(productResearchJobs.materializedProductId))
+          )
+          .returning({ id: productResearchJobs.id });
+        const claimed = claimedRows[0];
+        if (!claimed) {
+          throw productInvalidArgs('조사 작업 적용 상태가 변경되었습니다.');
+        }
 
+        await finishContentWrite();
         return {
           product: new Product({
             ...inserted,

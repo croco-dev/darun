@@ -58,6 +58,22 @@ describe('LlmSettingResolver', () => {
     expect(result.endpoint).toBe('https://openrouter.ai/api/v1');
     expect(result.model).toBe('nvidia/nemotron-3-ultra-550b-a55b:free');
     expect(result.apiKeyMasked).toBe('sk-o...****0xyz');
+    expect(result.braveApiKeyMasked).toBeNull();
+  });
+
+  it('masks brave api key from stored settings or env fallback', async () => {
+    vi.mocked(mockService.getSetting!).mockResolvedValueOnce({
+      id: 'default',
+      endpoint: 'https://openrouter.ai/api/v1',
+      apiKey: null,
+      braveApiKey: 'BSA-abcdef1234567890xyz',
+      model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const result = await resolver.llmSetting();
+    expect(result.braveApiKeyMasked).toBe('BSA-...****0xyz');
   });
 
   it('updates llmSetting and returns masked api key', async () => {
@@ -75,7 +91,8 @@ describe('LlmSettingResolver', () => {
       'https://custom-endpoint.com/v1',
       'sk-secret-new-key-1234',
       'nvidia/nemotron-3-ultra-550b-a55b:free',
-      'high'
+      'high',
+      undefined
     );
 
     expect(mockService.updateSetting).toHaveBeenCalledWith({
@@ -83,10 +100,23 @@ describe('LlmSettingResolver', () => {
       apiKey: 'sk-secret-new-key-1234',
       model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
       thinkingLevel: 'high',
+      braveApiKey: undefined,
     });
 
     expect(result.endpoint).toBe('https://custom-endpoint.com/v1');
     expect(result.apiKeyMasked).toBe('sk-s...****1234');
     expect(result.thinkingLevel).toBe('high');
   });
+
+  it.each(['LLM_API_KEY_NOT_ALLOWED', 'LLM_CONFIG_READ_FAILED', 'LLM_SETTING_SAVE_FAILED'])(
+    'propagates %s without returning a masked success',
+    async code => {
+      const error = Object.assign(new Error('설정 작업에 실패했습니다.'), { code });
+      vi.mocked(mockService.updateSetting!).mockRejectedValueOnce(error);
+
+      await expect(
+        resolver.updateLlmSetting(undefined, 'synthetic-input-key', undefined, undefined, undefined)
+      ).rejects.toBe(error);
+    }
+  );
 });

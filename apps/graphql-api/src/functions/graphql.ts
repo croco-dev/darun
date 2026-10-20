@@ -9,13 +9,13 @@ import { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { GraphQLISODateTime } from 'type-graphql';
 import { Container } from 'typedi';
 import { resolvers } from '../app/resolvers';
-import { createMongodbConnection, createPostgresConnection } from '../config/database';
+import { createPostgresConnection } from '../config/database';
 import { IS_LOCAL } from '../config/environment';
 import { createGraphQLContext } from './context';
 
 export const handler: APIGatewayProxyHandlerV2 = Sentry.wrapHandler(
   createLambdaHandler(
-    [createPostgresConnection, createMongodbConnection],
+    [createPostgresConnection],
     createServer({
       options: {
         resolvers,

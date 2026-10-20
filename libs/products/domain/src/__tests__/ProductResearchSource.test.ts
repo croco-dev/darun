@@ -25,6 +25,40 @@ describe('normalizeResearchSources', () => {
       relationToInput: 'INPUT_HOST_MATCH',
     });
   });
+
+  it('preserves non-default ports and strips canonical ones', () => {
+    const sources = normalizeResearchSources(
+      [
+        { title: 'Custom port', url: 'https://linear.app:8443/features', description: 'features on custom port' },
+        { title: 'Default port', url: 'https://linear.app:443/features', description: 'canonical https' },
+        { title: 'Distinct port host', url: 'https://linear.app/features', description: 'no port' },
+      ],
+      'linear.app'
+    );
+
+    expect(sources.map(source => source.url)).toEqual([
+      'https://linear.app:8443/features',
+      'https://linear.app/features',
+    ]);
+  });
+
+  it('preserves ranked search order without promoting matching hostnames', () => {
+    const sources = normalizeResearchSources(
+      [
+        { title: 'External', url: 'https://external.example/post', description: 'external facts' },
+        { title: 'Official', url: 'https://linear.app/about', description: 'official facts' },
+        { title: 'External 2', url: 'https://other.example/post', description: 'more facts' },
+      ],
+      'linear.app'
+    );
+
+    expect(sources.map(source => source.url)).toEqual([
+      'https://external.example/post',
+      'https://linear.app/about',
+      'https://other.example/post',
+    ]);
+    expect(sources.map(source => source.id)).toEqual(['s1', 's2', 's3']);
+  });
 });
 
 describe('isAnchorExcerptPresent', () => {

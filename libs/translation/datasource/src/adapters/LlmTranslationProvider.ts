@@ -1,5 +1,7 @@
 import {
   computeSourceHash,
+  validateProductBundleTranslation,
+  validateTranslationText,
   type ProductBundleTranslationRequest,
   type ProductBundleTranslationResult,
   type SingleTranslationRequest,
@@ -7,9 +9,9 @@ import {
   type TranslationProvider,
   TranslationProviderToken,
 } from '@darun/translation-domain';
-import { LlmClient, withRetry, withTimeout } from '@darun/utils-llm';
+import { LlmClient, withAbortableStage, withRetry } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
-import { decodeHtml, encodeHtml } from '../codecs/htmlPlaceholderCodec';
+import { assertDocumentStructure, decodeHtml, encodeHtml, type HtmlCodecResult } from '../codecs/htmlPlaceholderCodec';
 import {
   buildAuditPrompt,
   buildProductBundleTranslationPrompt,
@@ -19,193 +21,149 @@ import {
   TRANSLATION_SYSTEM_PROMPT,
 } from '../prompts/translationPrompt';
 
-function parseJsonFromLlmResponse(raw: string): unknown {
+function parseJson(raw: string): unknown {
   const trimmed = raw.trim();
-  const jsonMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  const target = jsonMatch ? jsonMatch[1].trim() : trimmed;
-  return JSON.parse(target);
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    // Models may wrap the mandated JSON in an outer ``` fence; string values may contain ``` runs,
+    // so unwrap from the first fence to the last rather than the first inner pair.
+    return JSON.parse(trimmed.match(/```(?:json)?\s*([\s\S]*)\s*```/i)?.[1] ?? trimmed);
+  }
 }
 
 @Service(TranslationProviderToken)
 export class LlmTranslationProvider implements TranslationProvider {
   constructor(@Inject(() => LlmClient) private readonly llmClient: LlmClient) {}
 
-  async translateSingle(request: SingleTranslationRequest): Promise<SingleTranslationResult> {
-    const { entityType, field, koreanText, mode, isHtml } = request;
-    const { model } = await this.llmClient.getConfig();
-
-    let textToTranslate = koreanText;
-    let placeholders: Map<string, string> | undefined;
-
-    if (isHtml) {
-      const encoded = encodeHtml(koreanText);
-      textToTranslate = encoded.encodedText;
-      placeholders = encoded.placeholders;
-    }
-
-    const writerPrompt = buildSingleTranslationPrompt({
-      entityType,
-      field,
-      text: textToTranslate,
-      mode,
-    });
-
-    const writerResponse = await withRetry(
+  private async completion(model: string, system: string, prompt: string, signal?: AbortSignal, budgetMs = 30_000) {
+    const response = await withRetry(
       () =>
-        withTimeout(
-          this.llmClient.completion(model, [
-            { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
-            { role: 'user', content: writerPrompt },
-          ]),
-          30_000,
-          'LLM 번역 요청이 시간 초과되었습니다.'
+        withAbortableStage(
+          stageSignal =>
+            this.llmClient.completion(
+              model,
+              [
+                { role: 'system', content: system },
+                { role: 'user', content: prompt },
+              ],
+              { signal: stageSignal }
+            ),
+          { budgetMs, signal, message: 'LLM 번역 요청이 시간 초과되었습니다.' }
         ),
       { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
     );
+    const content = response.content?.trim();
+    if (!content) throw new Error('LLM 번역 또는 검토 결과가 비어 있습니다.');
+    return content;
+  }
 
-    let translatedCandidate = writerResponse.content?.trim();
-    if (!translatedCandidate) {
-      throw new Error('LLM 번역 결과가 비어 있습니다.');
+  private decode(source: string, candidate: string, encoded: HtmlCodecResult) {
+    const translated = decodeHtml(candidate, encoded.placeholders, encoded.tokenOrder);
+    assertDocumentStructure(source, translated);
+    return translated;
+  }
+
+  async translateSingle(request: SingleTranslationRequest): Promise<SingleTranslationResult> {
+    const { model } = await this.llmClient.getConfig();
+    if (!request.koreanText.trim())
+      return {
+        translatedText: '',
+        sourceHash: computeSourceHash(request.koreanText),
+        model,
+        promptVersion: TRANSLATION_PROMPT_VERSION,
+      };
+    // Plain name/summary/title must reach the Writer as translatable text: Markdown
+    // parsing would hide indented or literal code-looking Korean as one immutable
+    // placeholder. Document fields keep placeholder encoding and structure checks.
+    const document = request.isHtml === true || request.field === 'description' || request.field === 'content';
+    const encoded = document ? encodeHtml(request.koreanText) : null;
+    const sourceText = encoded?.encodedText ?? request.koreanText;
+    let candidate = await this.completion(
+      model,
+      TRANSLATION_SYSTEM_PROMPT,
+      buildSingleTranslationPrompt({
+        entityType: request.entityType,
+        field: request.field,
+        text: sourceText,
+        mode: request.mode,
+      }),
+      request.signal
+    );
+    // Validate the writer before reviewer so a reviewer cannot conceal structural damage.
+    if (encoded) this.decode(request.koreanText, candidate, encoded);
+    else validateTranslationText(request.koreanText, candidate, request.field);
+    if (request.entityType === 'Magazine' || request.mode === 'editorial' || request.mode === 'product_copy') {
+      candidate = await this.completion(
+        model,
+        TRANSLATION_AUDIT_SYSTEM_PROMPT,
+        buildAuditPrompt({ sourceText, candidateTranslation: candidate }),
+        request.signal
+      );
     }
-
-    if (mode === 'editorial' || mode === 'product_copy') {
-      try {
-        const auditPrompt = buildAuditPrompt({
-          sourceText: textToTranslate,
-          candidateTranslation: translatedCandidate,
-        });
-
-        const reviewerResponse = await withRetry(
-          () =>
-            withTimeout(
-              this.llmClient.completion(model, [
-                { role: 'system', content: TRANSLATION_AUDIT_SYSTEM_PROMPT },
-                { role: 'user', content: auditPrompt },
-              ]),
-              30_000,
-              'LLM 번역 검토 요청이 시간 초과되었습니다.'
-            ),
-          { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
-        );
-
-        const audited = reviewerResponse.content?.trim();
-        if (audited) {
-          translatedCandidate = audited;
-        }
-      } catch (auditErr) {
-        console.warn('[LlmTranslationProvider] Audit review failed, keeping writer candidate:', auditErr);
-      }
-    }
-
-    let finalTranslatedText = translatedCandidate;
-    if (isHtml && placeholders) {
-      finalTranslatedText = decodeHtml(translatedCandidate, placeholders);
-    }
-
+    const translatedText = encoded
+      ? this.decode(request.koreanText, candidate, encoded)
+      : validateTranslationText(request.koreanText, candidate, request.field);
     return {
-      translatedText: finalTranslatedText,
-      sourceHash: computeSourceHash(koreanText),
+      translatedText,
+      sourceHash: computeSourceHash(request.koreanText),
       model,
       promptVersion: TRANSLATION_PROMPT_VERSION,
     };
   }
 
   async translateProductBundle(request: ProductBundleTranslationRequest): Promise<ProductBundleTranslationResult> {
-    const { name, summary, description, features } = request;
     const { model } = await this.llmClient.getConfig();
-
-    const encodedDesc = encodeHtml(description);
-
-    const bundlePrompt = buildProductBundleTranslationPrompt({
-      name,
-      summary,
-      description: encodedDesc.encodedText,
-      features,
-    });
-
-    const response = await withRetry(
-      () =>
-        withTimeout(
-          this.llmClient.completion(model, [
-            { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
-            { role: 'user', content: bundlePrompt },
-          ]),
-          120_000,
-          'LLM 제품 번역 요청이 시간 초과되었습니다.'
-        ),
-      { maxRetries: 2, baseDelay: 2000, maxDelay: 10000 }
-    );
-
-    const rawJson = response.content?.trim();
-    if (!rawJson) {
-      throw new Error('LLM 번역 응답이 비어 있습니다.');
-    }
-
-    let parsed: {
-      name?: string;
-      summary?: string;
-      description?: string;
-      features?: Array<{ id?: string; name?: string; summary?: string }>;
+    // Only the description is a document field. Bundle name/summary and Feature
+    // name/summary are plain text whose indented or literal code-looking Korean
+    // must reach the Writer instead of hiding behind document placeholders.
+    const description = encodeHtml(request.description);
+    const encodedRequest = {
+      name: request.name,
+      summary: request.summary,
+      description: description.encodedText,
+      features: request.features.map(feature => ({
+        id: feature.id,
+        name: feature.name,
+        summary: feature.summary,
+      })),
     };
-    try {
-      parsed = parseJsonFromLlmResponse(rawJson) as typeof parsed;
-    } catch {
-      throw new Error(`번역 결과 JSON 파싱에 실패했습니다: ${rawJson}`);
-    }
-
-    if (!parsed || typeof parsed !== 'object') {
-      throw new Error('번역 결과가 유효한 JSON 객체가 아닙니다.');
-    }
-
-    if (!parsed.name || typeof parsed.name !== 'string') {
-      throw new Error('번역 결과에 name이 누락되었거나 문자열이 아닙니다.');
-    }
-    if (!parsed.summary || typeof parsed.summary !== 'string') {
-      throw new Error('번역 결과에 summary가 누락되었거나 문자열이 아닙니다.');
-    }
-    if (!parsed.description || typeof parsed.description !== 'string') {
-      throw new Error('번역 결과에 description이 누락되었거나 문자열이 아닙니다.');
-    }
-    if (!Array.isArray(parsed.features)) {
-      throw new Error('번역 결과에 features가 배열이 아닙니다.');
-    }
-
-    const expectedFeatureIds = new Set(features.map(f => f.id));
-    const returnedFeatureIds = new Set(parsed.features.map(f => f.id));
-
-    if (expectedFeatureIds.size !== returnedFeatureIds.size) {
-      throw new Error(`기능 개수 불일치: 요청 ${expectedFeatureIds.size}개, 응답 ${returnedFeatureIds.size}개`);
-    }
-
-    for (const id of expectedFeatureIds) {
-      if (!returnedFeatureIds.has(id)) {
-        throw new Error(`번역 결과에 요청된 기능 ID(${id})가 누락되었습니다.`);
-      }
-    }
-
-    const finalDescription = decodeHtml(parsed.description, encodedDesc.placeholders);
-
-    const featureResults = features.map(reqFeature => {
-      const translatedFeature = parsed.features?.find(f => f.id === reqFeature.id);
-      return {
-        id: reqFeature.id,
-        name: translatedFeature?.name?.trim() ?? '',
-        summary: translatedFeature?.summary?.trim() ?? '',
-        nameSourceHash: computeSourceHash(reqFeature.name),
-        summarySourceHash: computeSourceHash(reqFeature.summary),
+    const prompt = buildProductBundleTranslationPrompt(encodedRequest);
+    const writer = await this.completion(model, TRANSLATION_SYSTEM_PROMPT, prompt, request.signal, 120_000);
+    const decodeBundle = (raw: string) => {
+      const validated = validateProductBundleTranslation(encodedRequest, parseJson(raw));
+      const decoded = {
+        name: validated.product.name,
+        summary: validated.product.summary,
+        description: this.decode(request.description, validated.product.description, description),
+        features: validated.features.map(feature => ({ id: feature.id, name: feature.name, summary: feature.summary })),
       };
-    });
-
+      return validateProductBundleTranslation(request, decoded);
+    };
+    decodeBundle(writer);
+    const reviewer = await this.completion(
+      model,
+      TRANSLATION_AUDIT_SYSTEM_PROMPT,
+      `${prompt}\n\n검토할 번역 초안:\n${writer}\n\n원문과 대조하여 모든 필드를 검토하고 동일한 JSON 형식의 최종 번역만 반환하십시오.`,
+      request.signal,
+      120_000
+    );
+    const validated = decodeBundle(reviewer);
     return {
       product: {
-        name: parsed.name.trim(),
-        summary: parsed.summary.trim(),
-        description: finalDescription.trim(),
-        nameSourceHash: computeSourceHash(name),
-        summarySourceHash: computeSourceHash(summary),
-        descriptionSourceHash: computeSourceHash(description),
+        ...validated.product,
+        nameSourceHash: computeSourceHash(request.name),
+        summarySourceHash: computeSourceHash(request.summary),
+        descriptionSourceHash: computeSourceHash(request.description),
       },
-      features: featureResults,
+      features: validated.features.map(feature => {
+        const source = request.features.find(source => source.id === feature.id)!;
+        return {
+          ...feature,
+          nameSourceHash: computeSourceHash(source.name),
+          summarySourceHash: computeSourceHash(source.summary),
+        };
+      }),
       model,
       promptVersion: TRANSLATION_PROMPT_VERSION,
     };

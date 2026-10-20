@@ -28,6 +28,7 @@ export default $config({
       CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY!,
       CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET!,
       OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY!,
+      BRAVE_API_KEY: process.env.BRAVE_API_KEY ?? '',
       CURSOR_SIGNATURE_SECRET: process.env.CURSOR_SIGNATURE_SECRET!,
       VOTE_IP_SALT: process.env.VOTE_IP_SALT!,
       VISUAL_VIEW_IP_SALT: process.env.VISUAL_VIEW_IP_SALT ?? process.env.VOTE_IP_SALT ?? '',
@@ -60,7 +61,7 @@ export default $config({
       environment,
     });
 
-    translationQueue.subscribe(translationWorker.arn);
+    translationQueue.subscribe(translationWorker.arn, { batch: { size: 1 } });
 
     const productDescriptionQueue = new sst.aws.Queue('ProductDescriptionQueue', {
       visibilityTimeout: '6 minutes',
@@ -92,7 +93,7 @@ export default $config({
       environment,
     });
 
-    productDescriptionQueue.subscribe(productDescriptionWorker.arn);
+    productDescriptionQueue.subscribe(productDescriptionWorker.arn, { batch: { size: 1 } });
 
     const productResearchWorker = new sst.aws.Function('ProductResearchWorker', {
       handler: 'product-research-worker.handler',
@@ -116,7 +117,60 @@ export default $config({
       environment,
     });
 
-    productResearchQueue.subscribe(productResearchWorker.arn);
+    productResearchQueue.subscribe(productResearchWorker.arn, { batch: { size: 1 } });
+
+    const contentSyncQueue = new sst.aws.Queue('ProductContentSyncQueue', { visibilityTimeout: '2 minutes' });
+    const contentSyncWorker = new sst.aws.Function('ProductContentSyncWorker', {
+      handler: 'product-content-sync-worker.handler',
+      bundle: '.build/lambda',
+      runtime: 'nodejs22.x',
+      architecture: 'arm64',
+      timeout: '1 minute',
+      logging: { retention: '1 week' },
+      environment,
+      permissions: [
+        {
+          actions: [
+            'sqs:ChangeMessageVisibility',
+            'sqs:DeleteMessage',
+            'sqs:GetQueueAttributes',
+            'sqs:GetQueueUrl',
+            'sqs:ReceiveMessage',
+          ],
+          resources: [contentSyncQueue.arn],
+        },
+      ],
+    });
+    contentSyncQueue.subscribe(contentSyncWorker.arn);
+
+    new sst.aws.Cron('JobRecoveryTick', {
+      schedule: 'rate(1 minute)',
+      job: {
+        handler: 'job-recovery-tick.handler',
+        bundle: '.build/lambda',
+        runtime: 'nodejs22.x',
+        architecture: 'arm64',
+        timeout: '1 minute',
+        environment: {
+          ...environment,
+          PRODUCT_CONTENT_SYNC_QUEUE_URL: contentSyncQueue.url,
+          TRANSLATION_QUEUE_URL: translationQueue.url,
+          PRODUCT_DESCRIPTION_QUEUE_URL: productDescriptionQueue.url,
+          PRODUCT_RESEARCH_QUEUE_URL: productResearchQueue.url,
+        },
+        permissions: [
+          {
+            actions: ['sqs:SendMessage'],
+            resources: [
+              contentSyncQueue.arn,
+              translationQueue.arn,
+              productDescriptionQueue.arn,
+              productResearchQueue.arn,
+            ],
+          },
+        ],
+      },
+    });
 
     const router = new sst.aws.Router('GraphqlRouter', {
       domain: {

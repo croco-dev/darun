@@ -4,7 +4,7 @@ import {
   type ProductDescriptionGenerator,
   ProductDescriptionGeneratorToken,
 } from '@darun/products-domain';
-import { LlmClient, withRetry, withTimeout } from '@darun/utils-llm';
+import { LlmClient, withAbortableStage, withRetry } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
 import {
   PRODUCT_DESCRIPTION_REVIEWER_PROMPT_VERSION,
@@ -13,7 +13,6 @@ import {
   createProductDescriptionWriterPrompt,
 } from '../prompts/productDescriptionPrompt';
 import { createProductDescriptionResponseFormat } from '../prompts/productDescriptionSchema';
-import { validateProductDescriptionCoverage } from '../validators/productDescriptionCoverageValidator';
 import { validateProductDescriptionDocument } from '../validators/productDescriptionDocumentValidator';
 import { PRODUCT_DESCRIPTION_RENDERER_VERSION, renderProductDescriptionDocument } from './ProductDescriptionRenderer';
 
@@ -41,28 +40,33 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
 
   async generate(
     evidence: ProductDescriptionEvidence,
-    options?: { model?: string }
+    options?: { model?: string; signal?: AbortSignal }
   ): Promise<ProductDescriptionGenerationResult> {
     const config = await this.llmClient.getConfig();
     const model = options?.model ?? config.model;
     const thinkingLevel = config.thinkingLevel;
     const responseFormat = createProductDescriptionResponseFormat(evidence);
+    const signal = options?.signal;
 
     // 1. Pass 1: Writer
     const writerPrompts = createProductDescriptionWriterPrompt(evidence);
     const writerResponse = await withRetry(
       () =>
-        withTimeout(
-          this.llmClient.completion(
-            model,
-            [
-              { role: 'system', content: writerPrompts.systemPrompt },
-              { role: 'user', content: writerPrompts.userPrompt },
-            ],
-            { thinkingLevel, responseFormat }
-          ),
-          CALL_TIMEOUT_MS,
-          '상품 설명 초안 생성 요청이 시간 초과되었습니다.'
+        withAbortableStage(
+          stageSignal =>
+            this.llmClient.completion(
+              model,
+              [
+                { role: 'system', content: writerPrompts.systemPrompt },
+                { role: 'user', content: writerPrompts.userPrompt },
+              ],
+              { thinkingLevel, responseFormat, signal: stageSignal }
+            ),
+          {
+            budgetMs: CALL_TIMEOUT_MS,
+            signal,
+            message: '상품 설명 초안 생성 요청이 시간 초과되었습니다.',
+          }
         ),
       { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
     );
@@ -79,17 +83,21 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
     const reviewerPrompts = createProductDescriptionReviewerPrompt(evidence, writerDoc);
     const reviewerResponse = await withRetry(
       () =>
-        withTimeout(
-          this.llmClient.completion(
-            model,
-            [
-              { role: 'system', content: reviewerPrompts.systemPrompt },
-              { role: 'user', content: reviewerPrompts.userPrompt },
-            ],
-            { thinkingLevel, responseFormat }
-          ),
-          CALL_TIMEOUT_MS,
-          '상품 설명 검수 요청이 시간 초과되었습니다.'
+        withAbortableStage(
+          stageSignal =>
+            this.llmClient.completion(
+              model,
+              [
+                { role: 'system', content: reviewerPrompts.systemPrompt },
+                { role: 'user', content: reviewerPrompts.userPrompt },
+              ],
+              { thinkingLevel, responseFormat, signal: stageSignal }
+            ),
+          {
+            budgetMs: CALL_TIMEOUT_MS,
+            signal,
+            message: '상품 설명 검수 요청이 시간 초과되었습니다.',
+          }
         ),
       { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
     );
@@ -101,8 +109,6 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
 
     const reviewerParsed = parseStrictJson(reviewerContent);
     const reviewedDoc = validateProductDescriptionDocument(reviewerParsed, evidence);
-
-    validateProductDescriptionCoverage(reviewedDoc, evidence);
 
     const candidateHtml = renderProductDescriptionDocument(reviewedDoc);
 

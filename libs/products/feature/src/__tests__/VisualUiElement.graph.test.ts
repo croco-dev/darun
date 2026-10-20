@@ -52,7 +52,11 @@ describe('VisualUiElement graph exposure', () => {
       import('../VisualScreenshot.query.resolver'),
       import('../graphs/VisualUiElement'),
     ]);
-    const execute = vi.fn().mockResolvedValue({ screenshots: [], totalCount: 0, hasNextPage: false });
+    const execute = vi.fn().mockResolvedValue({
+      screenshots: [],
+      totalCount: 0,
+      hasNextPage: false,
+    });
     const resolver = new VisualScreenshotQueryResolver({ execute } as never, {} as never, {} as never);
     await resolver.visualScreenshots(
       null,
@@ -73,7 +77,9 @@ describe('VisualUiElement graph exposure', () => {
       import('../ProductMediaMutationResolver'),
       import('../graphs/VisualUiElement'),
     ]);
-    const updateProductScreenshot = { execute: vi.fn().mockResolvedValue({ id: 'screenshot-1' }) };
+    const updateProductScreenshot = {
+      execute: vi.fn().mockResolvedValue({ id: 'screenshot-1' }),
+    };
     const resolver = new ProductMediaMutationResolver(
       {} as never,
       {} as never,
@@ -85,8 +91,8 @@ describe('VisualUiElement graph exposure', () => {
       {} as never,
       {} as never,
       {} as never,
-      {} as never,
       updateProductScreenshot as never,
+      {} as never,
       {} as never,
       {} as never
     );

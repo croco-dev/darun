@@ -9,6 +9,8 @@ vi.mock('../features/magazines/MagazinesList/useMagazinesList', () => ({
   useMagazinesList: vi.fn(),
 }));
 
+vi.mock('../features/llm-jobs/TranslationRecovery', () => ({ TranslationRecovery: () => <div>번역 복구</div> }));
+
 describe('MagazinesList', () => {
   afterEach(() => {
     cleanup();

@@ -1,6 +1,6 @@
 import { Field, ID, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('Link', { description: 'Product에 등록한 서비스 링크. 공식 여부를 자동 인증하지 않는다.' })
 export class Link {
   @Field(() => ID)
   id: string;

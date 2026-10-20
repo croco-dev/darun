@@ -71,6 +71,7 @@ gql`
             name
             slug
             logoUrl
+            summary
           }
         }
       }

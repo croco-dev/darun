@@ -6,11 +6,21 @@ import {
   type ProductDescriptionJobRepository,
   ProductDescriptionJobRepositoryToken,
   type ProductDescriptionJobStatus,
-  type UpdateProductDescriptionJobOptions,
   productNotFound,
 } from '@darun/products-domain';
+import {
+  JOB_LEASE_MS,
+  JOB_COMMIT_MARGIN_MS,
+  isAbortError,
+  isRetryableError,
+  withAbortableStage,
+} from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
+import { randomUUID } from 'node:crypto';
 import { ProductDescriptionQueueService } from './ProductDescriptionQueueService';
+
+export const PRODUCT_DESCRIPTION_LEASE_MS = JOB_LEASE_MS;
+export const PRODUCT_DESCRIPTION_STAGE_BUDGET_MS = 270_000 - JOB_COMMIT_MARGIN_MS;
 
 @Service()
 export class ProductDescriptionJobService {
@@ -18,44 +28,19 @@ export class ProductDescriptionJobService {
     private readonly getProductUseCase: GetProduct,
     private readonly generateProductDescriptionUseCase: GenerateProductDescription,
     @Inject(ProductDescriptionJobRepositoryToken)
-    private readonly productDescriptionJobRepository?: ProductDescriptionJobRepository,
-    private readonly productDescriptionQueueService?: ProductDescriptionQueueService
+    private readonly productDescriptionJobRepository: ProductDescriptionJobRepository,
+    private readonly productDescriptionQueueService: ProductDescriptionQueueService
   ) {}
 
   async requestProductDescriptionJob(identifier: { id?: string; slug?: string } | string): Promise<{
     product: Product;
     job: ProductDescriptionJobEntity;
+    queued: boolean;
   }> {
     const query = typeof identifier === 'string' ? { id: identifier } : identifier;
     const product = await this.getProductUseCase.execute(query);
     if (!product) {
       throw productNotFound();
-    }
-
-    if (!this.productDescriptionJobRepository) {
-      const candidateResult = await this.generateProductDescriptionUseCase.execute({
-        productId: product.id,
-      });
-      return {
-        product,
-        job: {
-          id: product.id,
-          productId: product.id,
-          status: 'completed',
-          message: 'AI 소개 생성이 완료되었습니다.',
-          candidateHtml: candidateResult.candidateHtml,
-          candidateDocument: JSON.stringify(candidateResult.candidateDocument),
-          evidenceHash: candidateResult.evidenceHash,
-          baseDescriptionHash: candidateResult.baseDescriptionHash,
-          writerModel: candidateResult.writerModel,
-          reviewerModel: candidateResult.reviewerModel,
-          writerPromptVersion: candidateResult.writerPromptVersion,
-          reviewerPromptVersion: candidateResult.reviewerPromptVersion,
-          rendererVersion: candidateResult.rendererVersion,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      };
     }
 
     const job = await this.productDescriptionJobRepository.createJob({
@@ -64,37 +49,18 @@ export class ProductDescriptionJobService {
       message: '소개 생성 작업이 대기열에 등록되었습니다.',
     });
 
-    let isQueued = false;
-    if (this.productDescriptionQueueService) {
-      try {
-        isQueued = await this.productDescriptionQueueService.sendJob({
-          jobId: job.id,
-          productId: product.id,
-        });
-      } catch (err) {
-        console.warn(
-          '[ProductDescriptionJobService] Failed to send job to SQS, falling back to background process:',
-          err
-        );
-      }
-    }
-
-    if (!isQueued) {
-      setImmediate(() => {
-        void this.executeJob(job.id, product.id);
-      });
-    }
+    // 큐 전송 실패는 pending으로 남겨 recovery tick이 재발견한다.
+    // setImmediate 폴백을 제거하고, 전송 성공 여부만 정직하게 보고한다.
+    const queued = await this.sendToQueue({ jobId: job.id, productId: product.id });
 
     return {
       product,
       job,
+      queued,
     };
   }
 
   async getJob(id: string): Promise<ProductDescriptionJobEntity | null> {
-    if (!this.productDescriptionJobRepository) {
-      return null;
-    }
     return this.productDescriptionJobRepository.findJobById(id);
   }
 
@@ -103,90 +69,60 @@ export class ProductDescriptionJobService {
     limit?: number;
     offset?: number;
   }): Promise<ProductDescriptionJobEntity[]> {
-    if (!this.productDescriptionJobRepository) {
-      return [];
-    }
     return this.productDescriptionJobRepository.findJobs(options);
   }
 
-  async retryProductDescriptionJob(jobId: string): Promise<ProductDescriptionJobEntity> {
-    if (!this.productDescriptionJobRepository) {
-      throw new Error('ProductDescriptionJobRepository가 설정되지 않았습니다.');
-    }
-
+  async retryProductDescriptionJob(jobId: string): Promise<ProductDescriptionJobEntity & { queued: boolean }> {
     const job = await this.productDescriptionJobRepository.findJobById(jobId);
-    if (!job) {
-      throw new Error(`존재하지 않는 AI 소개 생성 작업입니다: ${jobId}`);
-    }
-
-    const updatedJob = await this.productDescriptionJobRepository.updateJobStatus(jobId, 'pending', {
-      message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
-      error: null,
-      appliedAt: null,
-    });
-
-    let isQueued = false;
-    if (this.productDescriptionQueueService) {
-      try {
-        isQueued = await this.productDescriptionQueueService.sendJob({
-          jobId: job.id,
-          productId: job.productId,
-        });
-      } catch (err) {
-        console.warn(
-          '[ProductDescriptionJobService] Failed to send retry job to SQS, falling back to background process:',
-          err
-        );
-      }
-    }
-
-    if (!isQueued) {
-      setImmediate(() => {
-        void this.executeJob(job.id, job.productId);
-      });
-    }
-
-    return updatedJob;
+    if (!job) throw new Error(`존재하지 않는 AI 소개 생성 작업입니다: ${jobId}`);
+    if (job.status !== 'failed' && job.status !== 'pending')
+      throw new Error(`재시도할 수 없는 AI 소개 생성 작업 상태입니다: ${job.status}`);
+    const retry =
+      job.status === 'failed'
+        ? await this.productDescriptionJobRepository.createJob({ productId: job.productId, retryOfJobId: job.id })
+        : job;
+    const queued = await this.sendToQueue({ jobId: retry.id, productId: retry.productId });
+    return { ...retry, queued };
   }
 
-  async executeJob(jobId: string, productId: string): Promise<void> {
-    if (!this.productDescriptionJobRepository) {
-      await this.generateProductDescriptionUseCase.execute({ productId });
-      return;
-    }
-
+  async executeJob(
+    jobId: string,
+    productId: string,
+    options?: { leaseToken?: string; signal?: AbortSignal; stageBudgetMs?: number; deadline?: Date }
+  ): Promise<void> {
     const repository = this.productDescriptionJobRepository;
-    const claimJobStatus =
-      typeof repository.claimJobStatus === 'function'
-        ? repository.claimJobStatus.bind(repository)
-        : async (
-            id: string,
-            expectedStatuses: ProductDescriptionJobStatus[],
-            nextStatus: ProductDescriptionJobStatus,
-            options?: UpdateProductDescriptionJobOptions
-          ) => {
-            const latest = await repository.findJobById(id);
-            if (!latest || !expectedStatuses.includes(latest.status)) {
-              return null;
-            }
-            return repository.updateJobStatus(id, nextStatus, options);
-          };
+    const job = await repository.findJobById(jobId);
+    if (!job || job.productId !== productId) throw new Error('Description queue identity mismatch');
+    const leaseToken = options?.leaseToken ?? randomUUID();
+    const claim = await repository.claimJobLease({
+      jobId,
+      leaseToken,
+      leaseUntil: new Date(Date.now() + JOB_LEASE_MS),
+    });
+    if (!claim) return;
+    let stageSignal: AbortSignal | undefined;
 
     try {
-      const claimed = await claimJobStatus(jobId, ['pending'], 'in_progress', {
-        message: 'LLM으로 AI 소개를 생성하고 있습니다...',
-      });
-      if (!claimed) {
-        return;
-      }
-
-      const candidateResult = await this.generateProductDescriptionUseCase.execute({ productId });
-
-      await claimJobStatus(jobId, ['in_progress'], 'completed', {
+      const candidateResult = await withAbortableStage(
+        async signal => {
+          stageSignal = signal;
+          const result = await this.generateProductDescriptionUseCase.execute({ productId: claim.productId, signal });
+          signal.throwIfAborted();
+          return result;
+        },
+        {
+          budgetMs: options?.stageBudgetMs ?? PRODUCT_DESCRIPTION_STAGE_BUDGET_MS,
+          signal: options?.signal,
+          message: '소개 생성 작업 실행 시간이 초과되었습니다.',
+        }
+      );
+      await repository.completeJobLease(jobId, leaseToken, 'completed', {
         message: 'AI 소개 생성이 완료되었습니다.',
+        commitBefore: options?.deadline ? new Date(options.deadline.getTime() - JOB_COMMIT_MARGIN_MS) : undefined,
         candidateHtml: candidateResult.candidateHtml,
         candidateDocument: JSON.stringify(candidateResult.candidateDocument),
         evidenceHash: candidateResult.evidenceHash,
+        evidenceHashVersion: candidateResult.evidenceHashVersion,
         baseDescriptionHash: candidateResult.baseDescriptionHash,
         writerModel: candidateResult.writerModel,
         reviewerModel: candidateResult.reviewerModel,
@@ -195,18 +131,45 @@ export class ProductDescriptionJobService {
         rendererVersion: candidateResult.rendererVersion,
       });
     } catch (error) {
-      if (error instanceof Error && error.message.includes('stale')) {
-        await claimJobStatus(jobId, ['in_progress'], 'superseded', {
-          message: '제품 정보 변경으로 결과가 폐기되었습니다.',
+      if (stageSignal?.aborted || isAbortError(error) || options?.signal?.aborted) return;
+      const message = error instanceof Error ? error.message : '알 수 없는 오류';
+      if (isRetryableError(error)) {
+        await repository.retryJobLease(jobId, leaseToken, message);
+      } else {
+        const status = message.includes('stale') ? 'superseded' : 'failed';
+        await repository.completeJobLease(jobId, leaseToken, status, {
+          error: message,
+          message: 'AI 소개 생성에 실패했습니다.',
         });
-        return;
       }
-      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-      console.error(`[ProductDescriptionJobService] Product description job ${jobId} failed:`, error);
-      await claimJobStatus(jobId, ['pending', 'in_progress'], 'failed', {
-        error: errorMessage,
-        message: 'AI 소개 생성에 실패했습니다.',
-      });
+    }
+  }
+
+  /**
+   * 주기 recovery tick: 전송 누락 pending과 만료 lease in_progress를
+   * 재발견해 큐로 다시 전송한다. 전송 실패는 pending으로 남긴다.
+   */
+  async recoverInterruptedJobs(input?: { now?: Date; limit?: number }): Promise<{ recovered: number; queued: number }> {
+    const jobs = await this.productDescriptionJobRepository.findRecoverableJobs({
+      now: input?.now ?? new Date(),
+      limit: input?.limit ?? 25,
+    });
+    let queued = 0;
+    for (const job of jobs) {
+      const sent = await this.sendToQueue({ jobId: job.id, productId: job.productId });
+      if (sent) {
+        queued += 1;
+      }
+    }
+    return { recovered: jobs.length, queued };
+  }
+
+  private async sendToQueue(payload: { jobId: string; productId: string }): Promise<boolean> {
+    try {
+      return await this.productDescriptionQueueService.sendJob(payload);
+    } catch (err) {
+      console.warn('[ProductDescriptionJobService] Failed to send job to SQS; leaving pending for recovery:', err);
+      return false;
     }
   }
 }

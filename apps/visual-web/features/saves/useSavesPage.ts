@@ -42,9 +42,7 @@ type SavedScreenshotNode = NonNullable<
   NonNullable<MyVisualSavedScreenshotsQuery['myVisualSavedScreenshots']['edges'][number]['node']>
 >;
 
-type SavedFlowNode = NonNullable<
-  NonNullable<MyVisualSavedFlowsQuery['myVisualSavedFlows']['edges'][number]['node']>
->;
+type SavedFlowNode = NonNullable<NonNullable<MyVisualSavedFlowsQuery['myVisualSavedFlows']['edges'][number]['node']>>;
 
 function toScreenshotCard(node: SavedScreenshotNode): ScreenshotCard | null {
   const productNode = node.product;
@@ -63,6 +61,7 @@ function toScreenshotCard(node: SavedScreenshotNode): ScreenshotCard | null {
       name: productNode.name ?? '',
       slug: productNode.slug ?? '',
       logoUrl: productNode.logoUrl ?? '',
+      summary: productNode.summary ?? '',
     },
   };
 }
@@ -141,6 +140,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
 
   useEffect(() => {
     let active = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 재시도 시 로딩 상태 리셋에 필요
     setStatus('loading');
     setScreenshotLoadMoreError(false);
     setFlowLoadMoreError(false);
@@ -219,6 +219,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
 
   useEffect(() => {
     if (urlTab !== tab) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 탭 파라미터 동기화에 필요
       setTab(urlTab);
       if (urlTab === 'screenshots') {
         setScreenshotLoadMoreError(false);
@@ -226,7 +227,6 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
         setFlowLoadMoreError(false);
       }
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 탭 파라미터 동기화에 필요
   }, [urlTab]);
 
   const onLoadMore = useCallback(() => {

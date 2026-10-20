@@ -3,18 +3,18 @@
 import { VisualFlowsOnExplorerDocument, type VisualFlowsOnExplorerQuery } from '@darun/provider-graphql';
 import type { VisualFlowType, VisualPlatform } from '@darun/provider-graphql';
 import {
-  isVisualFlowTypeValue,
-  isVisualPlatformValue,
-  resolveVisualFlowType,
-  resolveVisualPlatform,
-} from '../explorer/visualTaxonomy';
-import {
   readExplorerProductParam,
   readExplorerQueryParam,
   useExplorerQuery,
   type ExplorerBaseState,
   type ExplorerFilters,
 } from '../explorer/useExplorerQuery';
+import {
+  isVisualFlowTypeValue,
+  isVisualPlatformValue,
+  resolveVisualFlowType,
+  resolveVisualPlatform,
+} from '../explorer/visualTaxonomy';
 import { VISUAL_FLOWS_PAGE_SIZE } from './explorerDocuments';
 
 export type FlowCard = {
@@ -77,8 +77,7 @@ const FLOW_OPTIONS = {
   pageSize: VISUAL_FLOWS_PAGE_SIZE,
   basePath: '/flows',
   secondaryParamKey: 'flowType',
-  clearFiltersTo: (product: string | null) =>
-    product !== null && product.length > 0 ? `/flows?product=${encodeURIComponent(product)}` : '/flows',
+  clearFiltersTo: '/flows',
   readFilters: readFilterParams,
   buildVariables: (filters: ExplorerFilters) => ({
     query: filters.query,

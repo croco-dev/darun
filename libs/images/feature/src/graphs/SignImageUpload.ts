@@ -1,6 +1,6 @@
 import { Field, InputType, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('SignImageUploadPayload')
 export class SignImageUploadPayload {
   @Field()
   timestamp: number;
@@ -12,7 +12,7 @@ export class SignImageUploadPayload {
   folder: string;
 }
 
-@InputType()
+@InputType('SignImageUploadInput')
 export class SignImageUploadInput {
   @Field()
   folder: string;

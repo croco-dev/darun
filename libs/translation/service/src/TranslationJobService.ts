@@ -1,459 +1,77 @@
-import { GetMagazine, Magazine } from '@darun/magazines-domain';
-import { GetProduct, GetProductFeature, GetProductFeatures, Product, ProductFeature } from '@darun/products-domain';
+import { GetProduct } from '@darun/products-domain';
 import {
   computeSourceHash,
-  type ProductBundleTranslationRequest,
-  type ProductBundleTranslationResult,
-  type SingleTranslationRequest,
-  type SingleTranslationResult,
+  translationFields,
+  TranslationJobRepositoryToken,
+  TranslationProviderToken,
+  TranslationSourceStoreToken,
+  type TranslationEntityType,
   type TranslationJobEntity,
   type TranslationJobRepository,
-  TranslationJobRepositoryToken,
   type TranslationJobStatus,
-  type TranslationMode,
   type TranslationProvider,
-  TranslationProviderToken,
-  TranslationService,
+  type TranslationSourceSnapshot,
+  type TranslationSourceStore,
   type UpsertTranslationParams,
 } from '@darun/translation-domain';
-import { LlmClient } from '@darun/utils-llm';
+import { JOB_LEASE_MS, JOB_COMMIT_MARGIN_MS, isRetryableError, withAbortableStage } from '@darun/utils-llm';
 import { Inject, Service } from 'typedi';
-import { TranslationQueueService } from './TranslationQueueService';
+import { randomUUID } from 'node:crypto';
+import { TranslationQueueService, type TranslationQueuePayload } from './TranslationQueueService';
 
-export type TranslationEntityType = 'Product' | 'Magazine' | 'ProductFeature';
-
-type TranslatableFieldMetadata = {
-  property: string;
-  mode: TranslationMode;
-  isHtml?: boolean;
-};
-
-export const TRANSLATABLE_FIELD_METADATA: Record<
-  TranslationEntityType,
-  { fields: Record<string, TranslatableFieldMetadata> }
-> = {
-  Product: {
-    fields: {
-      name: { property: 'name', mode: 'label' },
-      summary: { property: 'summary', mode: 'product_copy' },
-      description: { property: 'description', mode: 'editorial', isHtml: true },
-    },
-  },
-  Magazine: {
-    fields: {
-      title: { property: 'title', mode: 'label' },
-      summary: { property: 'summary', mode: 'product_copy' },
-      content: { property: 'content', mode: 'editorial', isHtml: true },
-    },
-  },
-  ProductFeature: {
-    fields: {
-      name: { property: 'name', mode: 'label' },
-      summary: { property: 'summary', mode: 'product_copy' },
-    },
-  },
-};
-
-interface MinimalLlmClient {
-  completion: (
-    messages: Array<{ role: string; content: string }>,
-    options?: Record<string, unknown>
-  ) => Promise<{ content?: string }>;
-}
-
-class LlmClientTranslationProviderAdapter implements TranslationProvider {
-  constructor(private readonly client: MinimalLlmClient) {}
-
-  async translateSingle(request: SingleTranslationRequest): Promise<SingleTranslationResult> {
-    const isHtml = request.isHtml;
-    const res = await this.client.completion([
-      { role: 'system', content: 'You are a translator.' },
-      {
-        role: 'user',
-        content: isHtml
-          ? `Translate the following Korean HTML text to English, preserving all HTML tags: ${request.koreanText}`
-          : `Translate the following Korean text to English: ${request.koreanText}`,
-      },
-    ]);
-    const translatedText = res.content?.trim() ?? '';
-    return {
-      translatedText,
-      sourceHash: computeSourceHash(request.koreanText),
-      model: 'llm-client',
-      promptVersion: 'v1.0.0',
-    };
-  }
-
-  async translateProductBundle(request: ProductBundleTranslationRequest): Promise<ProductBundleTranslationResult> {
-    const inputPayload = {
-      name: request.name,
-      summary: request.summary,
-      description: request.description,
-      features: request.features,
-    };
-    const prompt = [
-      '다음 제품 정보와 주요 기능 목록을 영어로 번역해주세요.',
-      '반드시 아래와 같은 JSON 형식으로만 응답하고, 마크다운 코드블록이나 다른 설명은 일절 포함하지 마세요.',
-      '',
-      'JSON 응답 포맷:',
-      '{',
-      '  "name": "영문 제품명",',
-      '  "summary": "영문 한 줄 요약",',
-      '  "description": "영문 본문 설명 (HTML 태그 보존)",',
-      '  "features": [',
-      '    { "id": "기능ID", "name": "영문 기능명", "summary": "영문 기능 설명" }',
-      '  ]',
-      '}',
-      '',
-      '번역할 원본 데이터 (JSON):',
-      JSON.stringify(inputPayload, null, 2),
-    ].join('\n');
-
-    const res = await this.client.completion([
-      { role: 'system', content: 'You are a translator.' },
-      { role: 'user', content: prompt },
-    ]);
-
-    const content = res.content?.trim() ?? '';
-    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-    const target = jsonMatch ? jsonMatch[1].trim() : content;
-    let parsed: {
-      name?: string;
-      summary?: string;
-      description?: string;
-      features?: Array<{ id?: string; name?: string; summary?: string }>;
-    };
-    try {
-      parsed = JSON.parse(target);
-    } catch {
-      throw new Error('LLM 번역 응답 JSON 파싱에 실패했습니다.');
-    }
-
-    const expectedFeatureIds = new Set(request.features.map(f => f.id));
-    const returnedFeatures = Array.isArray(parsed.features) ? parsed.features : [];
-
-    if (returnedFeatures.length !== expectedFeatureIds.size) {
-      throw new Error(`기능 개수 불일치: 요청 ${expectedFeatureIds.size}개, 응답 ${returnedFeatures.length}개`);
-    }
-
-    for (const f of returnedFeatures) {
-      if (!f.id || !expectedFeatureIds.has(f.id)) {
-        throw new Error(`번역 결과에 알 수 없는 기능 ID(${f.id ?? '없음'})가 포함되었습니다.`);
-      }
-    }
-
-    return {
-      product: {
-        name: parsed.name ?? '',
-        summary: parsed.summary ?? '',
-        description: parsed.description ?? '',
-        nameSourceHash: computeSourceHash(request.name),
-        summarySourceHash: computeSourceHash(request.summary),
-        descriptionSourceHash: computeSourceHash(request.description),
-      },
-      features: returnedFeatures.map(f => {
-        const reqF = request.features.find(rf => rf.id === f.id);
-        return {
-          id: f.id as string,
-          name: f.name ?? '',
-          summary: f.summary ?? '',
-          nameSourceHash: reqF ? computeSourceHash(reqF.name) : '',
-          summarySourceHash: reqF ? computeSourceHash(reqF.summary) : '',
-        };
-      }),
-      model: 'llm-client',
-      promptVersion: 'v1.0.0',
-    };
-  }
-}
+export type { TranslationEntityType } from '@darun/translation-domain';
+export const TRANSLATION_LEASE_MS = JOB_LEASE_MS;
+export const TRANSLATION_STAGE_BUDGET_MS = 270_000 - JOB_COMMIT_MARGIN_MS;
 
 @Service()
 export class TranslationJobService {
-  private readonly translationProvider: TranslationProvider;
-
   constructor(
     private readonly getProductUseCase: GetProduct,
-    private readonly getMagazineUseCase: GetMagazine,
-    private readonly translationService: TranslationService,
-    @Inject(TranslationProviderToken)
-    translationProviderOrLlmClient: TranslationProvider | LlmClient,
-    private readonly getProductFeatureUseCase?: GetProductFeature,
-    private readonly getProductFeaturesUseCase?: GetProductFeatures,
-    @Inject(TranslationJobRepositoryToken)
-    private readonly translationJobRepository?: TranslationJobRepository,
-    private readonly translationQueueService?: TranslationQueueService
-  ) {
-    if (
-      translationProviderOrLlmClient &&
-      typeof (translationProviderOrLlmClient as TranslationProvider).translateProductBundle === 'function'
-    ) {
-      this.translationProvider = translationProviderOrLlmClient as TranslationProvider;
-    } else {
-      this.translationProvider = new LlmClientTranslationProviderAdapter(
-        translationProviderOrLlmClient as unknown as MinimalLlmClient
-      );
-    }
-  }
+    @Inject(TranslationProviderToken) private readonly provider: TranslationProvider,
+    @Inject(TranslationJobRepositoryToken) private readonly repository: TranslationJobRepository,
+    @Inject(TranslationSourceStoreToken) private readonly sourceStore: TranslationSourceStore,
+    private readonly queue: TranslationQueueService
+  ) {}
 
-  async translateProductWithFeatures(
-    identifier: { id?: string; slug?: string } | string,
-    jobId?: string
-  ): Promise<{ productId: string; model?: string; promptVersion?: string }> {
-    const query = typeof identifier === 'string' ? { id: identifier } : identifier;
-    const product = await this.getProductUseCase.execute(query);
-    if (!product) {
-      throw new Error('Product가 존재하지 않습니다.');
-    }
-
-    const productId = product.id;
-
-    let features: ProductFeature[] = [];
-    if (this.getProductFeaturesUseCase) {
-      try {
-        features = await this.getProductFeaturesUseCase.execute({ productId });
-      } catch (error) {
-        console.warn(`Failed to fetch features for product ${productId}:`, error);
-      }
-    }
-
-    const startProductHash = {
-      name: computeSourceHash(product.name),
-      summary: computeSourceHash(product.summary),
-      description: computeSourceHash(product.description || ''),
-    };
-    const startFeatureHashes = new Map(
-      features.map(f => [
-        f.id,
-        {
-          name: computeSourceHash(f.name),
-          summary: computeSourceHash(f.summary || ''),
-        },
-      ])
-    );
-
-    let completedModel: string | undefined;
-    let completedPromptVersion: string | undefined;
-
-    try {
-      const bundleResult = await this.translationProvider.translateProductBundle({
-        productId,
-        name: product.name,
-        summary: product.summary,
-        description: product.description || '',
-        features: features.map(feature => ({
-          id: feature.id,
-          name: feature.name,
-          summary: feature.summary || '',
-        })),
-      });
-
-      // Pre-write snapshot check: re-read source to prevent stale overwrite
-      const currentProduct = await this.getProductUseCase.execute({ id: productId });
-      if (!currentProduct) {
-        throw new Error('Product가 번역 도중 삭제되었습니다.');
-      }
-
-      let isStale =
-        computeSourceHash(currentProduct.name) !== startProductHash.name ||
-        computeSourceHash(currentProduct.summary) !== startProductHash.summary ||
-        computeSourceHash(currentProduct.description || '') !== startProductHash.description;
-
-      let currentFeatures: ProductFeature[] | null = null;
-      if (this.getProductFeaturesUseCase) {
-        try {
-          currentFeatures = await this.getProductFeaturesUseCase.execute({ productId });
-        } catch (error) {
-          console.warn(`Failed to re-fetch features for product ${productId}:`, error);
-        }
-      }
-
-      if (!isStale && currentFeatures !== null) {
-        if (currentFeatures.length !== features.length) {
-          isStale = true;
-        } else {
-          for (const cf of currentFeatures) {
-            const startH = startFeatureHashes.get(cf.id);
-            if (!startH) {
-              isStale = true;
-              break;
-            }
-            if (computeSourceHash(cf.name) !== startH.name || computeSourceHash(cf.summary || '') !== startH.summary) {
-              isStale = true;
-              break;
-            }
-          }
-        }
-      }
-
-      if (isStale) {
-        console.warn(
-          `[TranslationJobService] Source content changed during translation for product ${productId}. Skipping stale write.`
-        );
-        if (jobId && this.translationJobRepository) {
-          await this.translationJobRepository.updateJobStatus(jobId, 'superseded', {
-            message: '원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.',
-          });
-        }
-        return { productId };
-      }
-
-      const rows: UpsertTranslationParams[] = [];
-
-      if (bundleResult.product.name) {
-        rows.push({
-          entityType: 'Product',
-          entityId: productId,
-          locale: 'en',
-          field: 'name',
-          value: bundleResult.product.name,
-          sourceHash: bundleResult.product.nameSourceHash,
-          model: bundleResult.model,
-          promptVersion: bundleResult.promptVersion,
-        });
-      }
-
-      if (bundleResult.product.summary) {
-        rows.push({
-          entityType: 'Product',
-          entityId: productId,
-          locale: 'en',
-          field: 'summary',
-          value: bundleResult.product.summary,
-          sourceHash: bundleResult.product.summarySourceHash,
-          model: bundleResult.model,
-          promptVersion: bundleResult.promptVersion,
-        });
-      }
-
-      if (bundleResult.product.description) {
-        rows.push({
-          entityType: 'Product',
-          entityId: productId,
-          locale: 'en',
-          field: 'description',
-          value: bundleResult.product.description,
-          sourceHash: bundleResult.product.descriptionSourceHash,
-          model: bundleResult.model,
-          promptVersion: bundleResult.promptVersion,
-        });
-      }
-
-      if (Array.isArray(bundleResult.features)) {
-        for (const featureItem of bundleResult.features) {
-          if (!featureItem.id) continue;
-          if (featureItem.name) {
-            rows.push({
-              entityType: 'ProductFeature',
-              entityId: featureItem.id,
-              locale: 'en',
-              field: 'name',
-              value: featureItem.name,
-              sourceHash: featureItem.nameSourceHash,
-              model: bundleResult.model,
-              promptVersion: bundleResult.promptVersion,
-            });
-          }
-          if (featureItem.summary) {
-            rows.push({
-              entityType: 'ProductFeature',
-              entityId: featureItem.id,
-              locale: 'en',
-              field: 'summary',
-              value: featureItem.summary,
-              sourceHash: featureItem.summarySourceHash,
-              model: bundleResult.model,
-              promptVersion: bundleResult.promptVersion,
-            });
-          }
-        }
-      }
-
-      if (typeof this.translationService.upsertTranslations === 'function') {
-        await this.translationService.upsertTranslations(rows);
-      } else {
-        for (const row of rows) {
-          await this.translationService.upsertTranslation(row);
-        }
-      }
-
-      completedModel = bundleResult.model;
-      completedPromptVersion = bundleResult.promptVersion;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-      console.error(`[TranslationJobService] Product translation failed for ${productId}:`, error);
-      throw new Error(`상품 번역에 실패했습니다: ${errorMessage}`);
-    }
-
-    return { productId, model: completedModel, promptVersion: completedPromptVersion };
-  }
-
-  async requestProductTranslationJob(identifier: { id?: string; slug?: string } | string): Promise<{
-    id: string;
-    entityType: string;
-    entityId: string;
-    status: string;
-    message?: string | null;
-  }> {
-    const query = typeof identifier === 'string' ? { id: identifier } : identifier;
-    const product = await this.getProductUseCase.execute(query);
-    if (!product) {
-      throw new Error('Product가 존재하지 않습니다.');
-    }
-
-    const productId = product.id;
-
-    if (!this.translationJobRepository) {
-      await this.translateProductWithFeatures(productId);
-      return {
-        id: productId,
-        entityType: 'Product',
-        entityId: productId,
-        status: 'completed',
-        message: '상품 및 주요 기능 번역이 완료되었습니다.',
-      };
-    }
-
-    const job = await this.translationJobRepository.createJob({
-      entityType: 'Product',
-      entityId: productId,
+  async requestTranslationJob(entityType: TranslationEntityType, entityId: string, fields: string[]) {
+    const normalizedFields = translationFields({ entityType, entityId, fields });
+    // Read failures and invalid fields cannot register work that pretends to be valid.
+    await this.sourceStore.read({ entityType, entityId, fields: normalizedFields });
+    const job = await this.repository.createJob({
+      entityType,
+      entityId,
       locale: 'en',
+      fields: normalizedFields,
       status: 'pending',
       message: '번역 작업이 대기열에 등록되었습니다.',
     });
+    const queued = await this.sendToQueue({ jobId: job.id, entityType, entityId });
+    return { ...job, queued };
+  }
 
-    let isQueued = false;
-    if (this.translationQueueService) {
-      try {
-        isQueued = await this.translationQueueService.sendJob({
-          jobId: job.id,
-          entityType: 'Product',
-          entityId: productId,
-        });
-      } catch (err) {
-        console.warn('[TranslationJobService] Failed to send job to SQS, falling back to background process:', err);
-      }
+  async requestProductTranslationJob(identifier: { id?: string; slug?: string } | string) {
+    const product = await this.getProductUseCase.execute(
+      typeof identifier === 'string' ? { id: identifier } : identifier
+    );
+    if (!product) throw new Error('Product가 존재하지 않습니다.');
+    const fields = ['name', 'summary', 'description', 'features'];
+    const active = await this.repository.findActiveJob?.({ entityType: 'Product', entityId: product.id, locale: 'en' });
+    if (
+      active &&
+      JSON.stringify(
+        translationFields({ entityType: 'Product', entityId: product.id, fields: active.fields ?? null })
+      ) === JSON.stringify(fields)
+    ) {
+      const queued =
+        active.status === 'in_progress' ||
+        (await this.sendToQueue({ jobId: active.id, entityType: 'Product', entityId: product.id }));
+      return { ...active, queued };
     }
-
-    if (!isQueued) {
-      setImmediate(() => {
-        void this.executeProductTranslationJob(job.id, productId);
-      });
-    }
-
-    return {
-      id: job.id,
-      entityType: 'Product',
-      entityId: productId,
-      status: job.status,
-      message: job.message,
-    };
+    return this.requestTranslationJob('Product', product.id, fields);
   }
 
   async getJob(id: string): Promise<TranslationJobEntity | null> {
-    if (!this.translationJobRepository) {
-      return null;
-    }
-    return this.translationJobRepository.findJobById(id);
+    return this.repository.findJobById(id);
   }
 
   async getJobs(options?: {
@@ -461,205 +79,189 @@ export class TranslationJobService {
     limit?: number;
     offset?: number;
   }): Promise<TranslationJobEntity[]> {
-    if (!this.translationJobRepository) {
-      return [];
-    }
-    return this.translationJobRepository.findJobs(options);
+    return this.repository.findJobs(options);
   }
 
-  async retryProductTranslationJob(jobId: string): Promise<TranslationJobEntity> {
-    if (!this.translationJobRepository) {
-      throw new Error('TranslationJobRepository가 설정되지 않았습니다.');
-    }
+  async retryProductTranslationJob(jobId: string) {
+    const job = await this.repository.findJobById(jobId);
+    if (!job) throw new Error(`존재하지 않는 번역 작업입니다: ${jobId}`);
+    if (job.status !== 'failed' && job.status !== 'pending')
+      throw new Error(`재시도할 수 없는 번역 작업 상태입니다: ${job.status}`);
+    const entityType = this.entityType(job.entityType);
+    translationFields({ entityType, entityId: job.entityId, fields: job.fields ?? null });
+    // 실패한 job의 새 logical retry 등록과 최신 intent 연결은 앱 adapter가 한 commit에 저장한다.
+    const retry = job.status === 'failed' ? await this.sourceStore.createRetryJob(job.id) : job;
+    const queued = await this.sendToQueue({ jobId: retry.id, entityType, entityId: retry.entityId });
+    return { ...retry, queued };
+  }
 
-    const job = await this.translationJobRepository.findJobById(jobId);
-    if (!job) {
-      throw new Error(`존재하지 않는 번역 작업입니다: ${jobId}`);
-    }
-
-    const updatedJob = await this.translationJobRepository.updateJobStatus(jobId, 'pending', {
-      message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
-      error: null,
+  /** Queue identity is checked against the persisted job; fields never come from an SQS message. */
+  async executeTranslationJob(
+    jobId: string,
+    expected: { entityType: string; entityId: string },
+    options?: { leaseToken?: string; signal?: AbortSignal; stageBudgetMs?: number; deadline?: Date }
+  ) {
+    const job = await this.repository.findJobById(jobId);
+    if (!job || job.entityType !== expected.entityType || job.entityId !== expected.entityId)
+      throw new Error('Translation queue identity mismatch');
+    const entityType = this.entityType(job.entityType);
+    const fields = job.fields ?? null;
+    translationFields({ entityType, entityId: job.entityId, fields });
+    const leaseToken = options?.leaseToken ?? randomUUID();
+    const claimed = await this.repository.claimJobLease({
+      jobId,
+      leaseToken,
+      leaseUntil: new Date(Date.now() + TRANSLATION_LEASE_MS),
     });
-
-    let isQueued = false;
-    if (this.translationQueueService) {
-      try {
-        isQueued = await this.translationQueueService.sendJob({
-          jobId: job.id,
-          entityType: job.entityType as 'Product' | 'Magazine' | 'ProductFeature',
-          entityId: job.entityId,
-        });
-      } catch (error) {
-        console.warn(
-          `[TranslationJobService] Failed to send retry job ${jobId} to SQS queue, falling back to in-process execution:`,
-          error
-        );
-      }
-    }
-
-    if (!isQueued) {
-      setImmediate(() => {
-        void this.executeProductTranslationJob(job.id, job.entityId);
-      });
-    }
-
-    return updatedJob;
-  }
-
-  async executeProductTranslationJob(jobId: string, productId: string): Promise<void> {
-    if (!this.translationJobRepository) {
-      await this.translateProductWithFeatures(productId, jobId);
-      return;
-    }
-
-    const repository = this.translationJobRepository;
-    const claimJobStatus =
-      typeof repository.claimJobStatus === 'function'
-        ? repository.claimJobStatus.bind(repository)
-        : async (
-            id: string,
-            expectedStatuses: TranslationJobStatus[],
-            nextStatus: TranslationJobStatus,
-            options?: { message?: string | null }
-          ) => {
-            const latest = await repository.findJobById(id);
-            if (!latest || !expectedStatuses.includes(latest.status)) {
-              return null;
-            }
-            return repository.updateJobStatus(id, nextStatus, options);
-          };
-
+    if (!claimed) return;
+    let stageSignal: AbortSignal | undefined;
     try {
-      const claimed = await claimJobStatus(jobId, ['pending'], 'in_progress', {
-        message: 'LLM으로 영문 번역을 생성하고 있습니다...',
-      });
-      if (!claimed) {
-        return;
-      }
-
-      const completedTranslation = await this.translateProductWithFeatures(productId, jobId);
-
-      await claimJobStatus(jobId, ['in_progress'], 'completed', {
-        message: '상품 및 기능의 영문 번역이 완료되었습니다.',
-        model: completedTranslation.model ?? null,
-        promptVersion: completedTranslation.promptVersion ?? null,
-      });
+      await withAbortableStage(
+        async signal => {
+          stageSignal = signal;
+          const snapshot = await this.sourceStore.read({ entityType, entityId: job.entityId, fields });
+          const result = await this.translateSnapshot(snapshot, signal);
+          // Deadline aborts cannot commit even if a provider ignores its AbortSignal.
+          signal.throwIfAborted();
+          await this.sourceStore.commit({
+            jobId,
+            leaseToken,
+            snapshot,
+            ...result,
+            deadline: options?.deadline,
+            signal,
+          });
+        },
+        {
+          budgetMs: options?.stageBudgetMs ?? TRANSLATION_STAGE_BUDGET_MS,
+          signal: options?.signal,
+          message: '번역 작업 실행 시간이 초과되었습니다.',
+        }
+      );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-      console.error(`[TranslationJobService] Translation job ${jobId} failed:`, error);
-      await claimJobStatus(jobId, ['pending', 'in_progress'], 'failed', {
-        error: errorMessage,
-        message: '상품 번역에 실패했습니다.',
-      });
+      if (stageSignal?.aborted || options?.signal?.aborted || (error instanceof Error && error.name === 'AbortError'))
+        return;
+      const message = error instanceof Error ? error.message : '알 수 없는 오류';
+      if (isRetryableError(error)) await this.repository.retryJobLease(jobId, leaseToken, message);
+      else
+        await this.repository.completeJobLease(jobId, leaseToken, 'failed', {
+          message: '번역에 실패했습니다.',
+          error: message,
+        });
     }
   }
 
-  async translateEntity(entityType: TranslationEntityType, entityId: string, fields: string[]): Promise<void> {
-    const entity = await this.getEntity(entityType, entityId);
-    const uniqueFields = this.getUniqueFields(fields);
-
-    for (const field of uniqueFields) {
-      const koreanValue = this.getKoreanValue(entityType, entity, field);
-      if (!koreanValue) {
-        continue;
-      }
-
-      const fieldMetadata = TRANSLATABLE_FIELD_METADATA[entityType]?.fields[field];
-      const isHtml = fieldMetadata?.isHtml ?? (field === 'description' || field === 'content');
-      const mode = fieldMetadata?.mode ?? (isHtml ? 'editorial' : 'product_copy');
-
-      const result = await this.translationProvider.translateSingle({
-        entityType,
-        entityId,
-        field,
-        koreanText: koreanValue,
-        mode,
-        isHtml,
-      });
-
-      // Pre-write snapshot check for single entity field
-      const currentEntity = await this.getEntity(entityType, entityId);
-      const currentKorean = this.getKoreanValue(entityType, currentEntity, field);
-      if (currentKorean !== koreanValue) {
-        console.warn(
-          `[TranslationJobService] Source text changed during translation for ${entityType} ${entityId} field ${field}. Skipping stale write.`
-        );
-        continue;
-      }
-
-      await this.translationService.upsertTranslation({
-        entityType,
-        entityId,
-        locale: 'en',
-        field,
-        value: result.translatedText,
-        sourceHash: result.sourceHash,
-        model: result.model,
-        promptVersion: result.promptVersion,
-      });
-    }
+  async executeProductTranslationJob(
+    jobId: string,
+    productId: string,
+    options?: { leaseToken?: string; signal?: AbortSignal; stageBudgetMs?: number }
+  ) {
+    await this.executeTranslationJob(jobId, { entityType: 'Product', entityId: productId }, options);
   }
 
-  private getUniqueFields(fields: string[]): string[] {
-    return [...new Set(fields.map(field => field.trim()).filter(Boolean))];
-  }
-
-  private async getEntity(
-    entityType: TranslationEntityType,
-    entityId: string
-  ): Promise<Product | Magazine | ProductFeature> {
-    if (entityType === 'Product') {
-      const product = await this.getProductUseCase.execute({ id: entityId });
-      if (!product) {
-        throw new Error('Product가 존재하지 않습니다.');
-      }
-
-      return product;
-    }
-
-    if (entityType === 'Magazine') {
-      const magazine = await this.getMagazineUseCase.execute({ id: entityId });
-      if (!magazine) {
-        throw new Error('Magazine이 존재하지 않습니다.');
-      }
-
-      return magazine;
-    }
-
-    if (entityType === 'ProductFeature') {
-      if (!this.getProductFeatureUseCase) {
-        throw new Error('GetProductFeature usecase가 주입되지 않았습니다.');
-      }
-      const feature = await this.getProductFeatureUseCase.execute({
-        id: entityId,
+  private async translateSnapshot(snapshot: TranslationSourceSnapshot, signal: AbortSignal) {
+    const rows: UpsertTranslationParams[] = [];
+    let model = '';
+    let promptVersion = '';
+    const fields = translationFields(snapshot);
+    if (snapshot.entityType === 'Product' && fields.includes('features')) {
+      if (!snapshot.product) throw new Error('Product bundle source context is missing');
+      const productValues = snapshot.product;
+      const featureIds = [
+        ...new Set(snapshot.values.filter(value => value.entityType === 'ProductFeature').map(value => value.entityId)),
+      ];
+      const features = featureIds.map(id => ({
+        id,
+        name: snapshot.values.find(value => value.entityId === id && value.field === 'name')!.value,
+        summary: snapshot.values.find(value => value.entityId === id && value.field === 'summary')!.value,
+      }));
+      const result = await this.provider.translateProductBundle({
+        productId: snapshot.entityId,
+        name: productValues['name']!,
+        summary: productValues['summary']!,
+        description: productValues['description']!,
+        features,
+        signal,
       });
-      if (!feature) {
-        throw new Error('ProductFeature가 존재하지 않습니다.');
+      model = result.model;
+      promptVersion = result.promptVersion;
+      for (const source of snapshot.values) {
+        const feature = result.features.find(feature => feature.id === source.entityId);
+        const value =
+          source.entityType === 'Product'
+            ? result.product[source.field as 'name' | 'summary' | 'description']
+            : feature?.[source.field as 'name' | 'summary'];
+        if (typeof value !== 'string') throw new Error('Incomplete provider translation result');
+        rows.push({
+          ...source,
+          locale: 'en',
+          value,
+          sourceHash: computeSourceHash(source.value),
+          model,
+          promptVersion,
+        });
       }
-
-      return feature;
+    } else {
+      for (const source of snapshot.values) {
+        const result = await this.provider.translateSingle({
+          entityType: source.entityType,
+          entityId: source.entityId,
+          field: source.field,
+          koreanText: source.value,
+          mode:
+            source.entityType === 'Magazine' || source.field === 'description'
+              ? 'editorial'
+              : source.field === 'name'
+                ? 'label'
+                : 'product_copy',
+          isHtml: source.field === 'description' || source.field === 'content',
+          signal,
+        });
+        if (model && (model !== result.model || promptVersion !== result.promptVersion))
+          throw new Error('Translation provenance changed within a job');
+        model = result.model;
+        promptVersion = result.promptVersion;
+        rows.push({
+          ...source,
+          locale: 'en',
+          value: result.translatedText,
+          sourceHash: computeSourceHash(source.value),
+          model,
+          promptVersion,
+        });
+      }
     }
-
-    throw new Error(`지원하지 않는 엔티티 타입입니다: ${entityType}`);
+    if (!model || !promptVersion) throw new Error('Missing translation provenance');
+    return { rows, model, promptVersion };
   }
 
-  private getKoreanValue(
-    entityType: TranslationEntityType,
-    entity: Product | Magazine | ProductFeature,
-    field: string
-  ): string | undefined {
-    const fieldMetadata = TRANSLATABLE_FIELD_METADATA[entityType]?.fields[field];
-    if (!fieldMetadata) {
-      throw new Error(`${entityType}의 번역 가능한 필드가 아닙니다: ${field}`);
+  async recoverInterruptedJobs(input?: { now?: Date; limit?: number }) {
+    const jobs = await this.repository.findRecoverableJobs({
+      now: input?.now ?? new Date(),
+      limit: input?.limit ?? 25,
+    });
+    let queued = 0;
+    for (const job of jobs) {
+      if (
+        await this.sendToQueue({ jobId: job.id, entityType: this.entityType(job.entityType), entityId: job.entityId })
+      )
+        queued++;
     }
+    return { recovered: jobs.length, queued };
+  }
 
-    const value = (entity as unknown as Record<string, unknown>)[fieldMetadata.property];
-    if (typeof value !== 'string') {
-      return undefined;
+  private entityType(value: string): TranslationEntityType {
+    if (value !== 'Product' && value !== 'Magazine' && value !== 'ProductFeature')
+      throw new Error(`Unsupported translation entity: ${value}`);
+    return value;
+  }
+
+  private async sendToQueue(payload: TranslationQueuePayload): Promise<boolean> {
+    try {
+      return await this.queue.sendJob(payload);
+    } catch (error) {
+      console.warn('[TranslationJobService] Queue send failed; pending job remains recoverable:', error);
+      return false;
     }
-
-    const trimmedValue = value.trim();
-    return trimmedValue || undefined;
   }
 }

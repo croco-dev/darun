@@ -6,9 +6,18 @@ import {
   type UpdateProductDescriptionJobOptions,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { and, desc, eq, inArray, type SQL } from 'drizzle-orm';
+import {
+  JOB_COMMIT_MARGIN_MS,
+  JOB_DISPATCH_RESERVATION_MS,
+  JOB_MAX_ATTEMPTS,
+  jobDispatchStatus,
+  jobRetryDelay,
+} from '@darun/utils-llm';
+import { and, asc, desc, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { type ProductDescriptionJobRow, productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
+
+type JobDbTx = Parameters<Parameters<Drizzle['transaction']>[0]>[0];
 
 @Service(ProductDescriptionJobRepositoryToken)
 export class PostgresqlProductDescriptionJobRepository implements ProductDescriptionJobRepository {
@@ -22,6 +31,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       message: row.message,
       error: row.error,
       evidenceHash: row.evidenceHash,
+      evidenceHashVersion: row.evidenceHashVersion,
       baseDescriptionHash: row.baseDescriptionHash,
       candidateDocument: row.candidateDocument,
       candidateHtml: row.candidateHtml,
@@ -30,6 +40,13 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       writerPromptVersion: row.writerPromptVersion,
       reviewerPromptVersion: row.reviewerPromptVersion,
       rendererVersion: row.rendererVersion,
+      leaseToken: row.leaseToken,
+      leaseUntil: row.leaseUntil,
+      attemptCount: row.attemptCount,
+      runNotBefore: row.runNotBefore,
+      nextDispatchAt: row.nextDispatchAt,
+      retryOfJobId: row.retryOfJobId,
+      dispatchStatus: jobDispatchStatus(row),
       appliedAt: row.appliedAt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -38,6 +55,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
 
   async createJob(job: {
     productId: string;
+    retryOfJobId?: string;
     status?: ProductDescriptionJobStatus;
     message?: string;
     evidenceHash?: string;
@@ -47,6 +65,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       .insert(productDescriptionJobs)
       .values({
         productId: job.productId,
+        retryOfJobId: job.retryOfJobId,
         status: job.status ?? 'pending',
         message: job.message ?? '소개 생성 작업이 대기 중입니다.',
         evidenceHash: job.evidenceHash,
@@ -60,6 +79,13 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
     }
 
     return this.toEntity(row);
+  }
+
+  /** Lease scheduling compares against the database clock, not the worker clock. */
+  private async dbNow(tx: JobDbTx): Promise<Date> {
+    const rows = (await tx.execute(sql`select clock_timestamp() as "now"`)) as { now: Date | string }[];
+    const raw = rows[0]?.now;
+    return raw instanceof Date ? raw : new Date(raw!);
   }
 
   async findJobById(id: string): Promise<ProductDescriptionJobEntity | null> {
@@ -81,112 +107,151 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
     }
   }
 
-  async updateJobStatus(
-    id: string,
-    status: ProductDescriptionJobStatus,
-    options?: UpdateProductDescriptionJobOptions
-  ): Promise<ProductDescriptionJobEntity> {
-    const entity = await this.writeJobStatus(id, status, options, eq(productDescriptionJobs.id, id), true);
-    if (!entity) {
-      throw new Error(`ProductDescriptionJob not found for update: ${id}`);
-    }
-    return entity;
-  }
-
-  async claimJobStatus(
-    id: string,
-    expectedStatuses: ProductDescriptionJobStatus[],
-    nextStatus: ProductDescriptionJobStatus,
-    options?: UpdateProductDescriptionJobOptions
-  ): Promise<ProductDescriptionJobEntity | null> {
-    return this.writeJobStatus(
-      id,
-      nextStatus,
-      options,
-      and(eq(productDescriptionJobs.id, id), inArray(productDescriptionJobs.status, expectedStatuses)) ??
-        eq(productDescriptionJobs.id, id),
-      false
-    );
-  }
-
-  private async writeJobStatus(
-    id: string,
-    status: ProductDescriptionJobStatus,
-    options: UpdateProductDescriptionJobOptions | undefined,
-    condition: SQL<unknown>,
-    throwOnMissing: boolean
-  ): Promise<ProductDescriptionJobEntity | null> {
-    const updateValues: Record<string, unknown> = {
-      status,
-      updatedAt: new Date(),
-    };
-
-    if (options?.message !== undefined) {
-      updateValues.message = options.message;
-    }
-    if (options?.error !== undefined) {
-      updateValues.error = options.error;
-    }
-    if (options?.evidenceHash !== undefined) {
-      updateValues.evidenceHash = options.evidenceHash;
-    }
-    if (options?.baseDescriptionHash !== undefined) {
-      updateValues.baseDescriptionHash = options.baseDescriptionHash;
-    }
-    if (options?.candidateDocument !== undefined) {
-      updateValues.candidateDocument = options.candidateDocument;
-    }
-    if (options?.candidateHtml !== undefined) {
-      updateValues.candidateHtml = options.candidateHtml;
-    }
-    if (options?.writerModel !== undefined) {
-      updateValues.writerModel = options.writerModel;
-    }
-    if (options?.reviewerModel !== undefined) {
-      updateValues.reviewerModel = options.reviewerModel;
-    }
-    if (options?.writerPromptVersion !== undefined) {
-      updateValues.writerPromptVersion = options.writerPromptVersion;
-    }
-    if (options?.reviewerPromptVersion !== undefined) {
-      updateValues.reviewerPromptVersion = options.reviewerPromptVersion;
-    }
-    if (options?.rendererVersion !== undefined) {
-      updateValues.rendererVersion = options.rendererVersion;
-    }
-    if (options?.appliedAt !== undefined) {
-      updateValues.appliedAt = options.appliedAt;
-    }
-
-    const rows = await this.db.update(productDescriptionJobs).set(updateValues).where(condition).returning();
-
-    const row = rows[0];
-    if (!row) {
-      if (!throwOnMissing) {
+  async claimJobLease(input: {
+    jobId: string;
+    leaseToken: string;
+    leaseUntil: Date;
+  }): Promise<ProductDescriptionJobEntity | null> {
+    return this.db.transaction(async tx => {
+      const [row] = await tx
+        .select()
+        .from(productDescriptionJobs)
+        .where(eq(productDescriptionJobs.id, input.jobId))
+        .for('update');
+      // Compare against the database clock: the worker clock can drift from
+      // the clock that writes run_not_before/lease_until defaults, and a
+      // freshly created job must stay claimable in the same instant.
+      const now = await this.dbNow(tx);
+      if (
+        !row ||
+        (row.status !== 'pending' && row.status !== 'in_progress') ||
+        (row.status === 'pending' && row.runNotBefore > now) ||
+        (row.status === 'in_progress' && row.leaseUntil && row.leaseUntil > now)
+      )
+        return null;
+      if (row.attemptCount >= JOB_MAX_ATTEMPTS) {
+        await tx
+          .update(productDescriptionJobs)
+          .set({ status: 'failed', error: 'RETRY_EXHAUSTED', leaseToken: null, leaseUntil: null, updatedAt: now })
+          .where(eq(productDescriptionJobs.id, row.id));
         return null;
       }
-      throw new Error(`ProductDescriptionJob not found for update: ${id}`);
-    }
-
-    return this.toEntity(row);
+      const [claimed] = await tx
+        .update(productDescriptionJobs)
+        .set({
+          status: 'in_progress',
+          message: 'LLM으로 AI 소개를 생성하고 있습니다...',
+          leaseToken: input.leaseToken,
+          leaseUntil: input.leaseUntil,
+          attemptCount: row.attemptCount + 1,
+          updatedAt: now,
+        })
+        .where(eq(productDescriptionJobs.id, row.id))
+        .returning();
+      return claimed ? this.toEntity(claimed) : null;
+    });
   }
 
-  async markApplied(id: string, appliedAt: Date = new Date()): Promise<ProductDescriptionJobEntity> {
-    const rows = await this.db
+  async completeJobLease(
+    jobId: string,
+    leaseToken: string,
+    nextStatus: Extract<ProductDescriptionJobStatus, 'completed' | 'failed' | 'superseded'>,
+    options?: UpdateProductDescriptionJobOptions
+  ): Promise<ProductDescriptionJobEntity | null> {
+    const { commitBefore, ...payload } = options ?? {};
+    const [row] = await this.db
       .update(productDescriptionJobs)
-      .set({
-        appliedAt,
-        updatedAt: new Date(),
-      })
-      .where(eq(productDescriptionJobs.id, id))
+      .set({ ...payload, status: nextStatus, updatedAt: new Date() })
+      .where(
+        and(
+          eq(productDescriptionJobs.id, jobId),
+          eq(productDescriptionJobs.leaseToken, leaseToken),
+          eq(productDescriptionJobs.status, 'in_progress'),
+          gt(
+            productDescriptionJobs.leaseUntil,
+            sql`clock_timestamp() + ${nextStatus === 'completed' ? JOB_COMMIT_MARGIN_MS : 0} * interval '1 millisecond'`
+          ),
+          commitBefore ? sql`clock_timestamp() < ${commitBefore.toISOString()}::timestamptz` : undefined
+        )
+      )
       .returning();
+    return row ? this.toEntity(row) : null;
+  }
 
-    const row = rows[0];
-    if (!row) {
-      throw new Error(`ProductDescriptionJob not found for markApplied: ${id}`);
-    }
+  async retryJobLease(jobId: string, leaseToken: string, error: string): Promise<ProductDescriptionJobEntity | null> {
+    return this.db.transaction(async tx => {
+      const [row] = await tx
+        .select()
+        .from(productDescriptionJobs)
+        .where(
+          and(
+            eq(productDescriptionJobs.id, jobId),
+            eq(productDescriptionJobs.leaseToken, leaseToken),
+            eq(productDescriptionJobs.status, 'in_progress')
+          )
+        )
+        .for('update');
+      const now = await this.dbNow(tx);
+      if (!row || !row.leaseUntil || row.leaseUntil <= now) return null;
+      const exhausted = row.attemptCount >= JOB_MAX_ATTEMPTS;
+      const retryAt = new Date(now.getTime() + jobRetryDelay(row.attemptCount));
+      const [updated] = await tx
+        .update(productDescriptionJobs)
+        .set({
+          status: exhausted ? 'failed' : 'pending',
+          error,
+          message: exhausted ? 'AI 소개 생성에 실패했습니다.' : 'AI 소개 생성 작업을 재시도합니다.',
+          leaseToken: null,
+          leaseUntil: null,
+          runNotBefore: retryAt,
+          nextDispatchAt: retryAt,
+          updatedAt: now,
+        })
+        .where(eq(productDescriptionJobs.id, jobId))
+        .returning();
+      return updated ? this.toEntity(updated) : null;
+    });
+  }
 
-    return this.toEntity(row);
+  async findRecoverableJobs(input: { now: Date; limit?: number }): Promise<ProductDescriptionJobEntity[]> {
+    return this.db.transaction(async tx => {
+      const now = await this.dbNow(tx);
+      const rows = await tx
+        .select()
+        .from(productDescriptionJobs)
+        .where(
+          and(
+            lte(productDescriptionJobs.nextDispatchAt, now),
+            or(
+              and(eq(productDescriptionJobs.status, 'pending'), lte(productDescriptionJobs.runNotBefore, now)),
+              and(
+                eq(productDescriptionJobs.status, 'in_progress'),
+                or(isNull(productDescriptionJobs.leaseUntil), lte(productDescriptionJobs.leaseUntil, now))
+              )
+            )
+          )
+        )
+        .orderBy(asc(productDescriptionJobs.updatedAt), asc(productDescriptionJobs.id))
+        .limit(Math.min(Math.max(input.limit ?? 25, 1), 25))
+        .for('update', { skipLocked: true });
+      const reserved: ProductDescriptionJobEntity[] = [];
+      for (const row of rows) {
+        if (row.attemptCount >= JOB_MAX_ATTEMPTS) {
+          await tx
+            .update(productDescriptionJobs)
+            .set({ status: 'failed', error: 'RETRY_EXHAUSTED', leaseToken: null, leaseUntil: null, updatedAt: now })
+            .where(eq(productDescriptionJobs.id, row.id));
+          continue;
+        }
+        const [next] = await tx
+          .update(productDescriptionJobs)
+          .set({ nextDispatchAt: new Date(now.getTime() + JOB_DISPATCH_RESERVATION_MS) })
+          .where(eq(productDescriptionJobs.id, row.id))
+          .returning();
+        if (next) reserved.push(this.toEntity(next));
+      }
+      return reserved;
+    });
   }
 
   async findJobs(options?: {

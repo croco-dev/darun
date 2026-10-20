@@ -36,6 +36,7 @@
     "@mantine/hooks": "catalog:",
     "@mantine/notifications": "catalog:",
     "dayjs": "1.11.19",
+    "ipaddr.js": "2.5.0",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "next-client-cookies": "catalog:",

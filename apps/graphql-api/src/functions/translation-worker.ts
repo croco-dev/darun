@@ -1,12 +1,15 @@
 import 'reflect-metadata';
 import '../config';
 import { TranslationJobService } from '@darun/translation-service';
+import { LlmClient } from '@darun/utils-llm';
 import type { SQSEvent, SQSHandler } from 'aws-lambda';
 import { Container } from 'typedi';
-import { createMongodbConnection, createPostgresConnection } from '../config/database';
+import { PostgresqlProductContentSync } from '../adapters/PostgresqlProductContentSync';
+import { createPostgresConnection } from '../config/database';
+import { withJobDeadline } from './jobDeadline';
 
-export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
-  await Promise.all([createPostgresConnection(), createMongodbConnection()]);
+export const handler: SQSHandler = async (event: SQSEvent, context): Promise<void> => {
+  createPostgresConnection();
 
   const translationJobService = Container.get(TranslationJobService);
 
@@ -19,10 +22,20 @@ export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
       };
 
       console.log(`[TranslationWorker] Processing message ${record.messageId}:`, payload);
-
-      if (payload.jobId && payload.entityType === 'Product') {
-        await translationJobService.executeProductTranslationJob(payload.jobId, payload.entityId);
+      if (
+        !payload.jobId ||
+        !payload.entityId ||
+        !['Product', 'Magazine', 'ProductFeature'].includes(payload.entityType)
+      ) {
+        throw new Error('Invalid translation queue payload');
       }
+
+      await withJobDeadline(context, options =>
+        Container.get(LlmClient).withConfigSnapshot(() =>
+          translationJobService.executeTranslationJob(payload.jobId, payload, options)
+        )
+      );
+      await Container.get(PostgresqlProductContentSync).reconcileTranslation(payload.jobId);
     } catch (error) {
       console.error(`[TranslationWorker] Error processing record ${record.messageId}:`, error);
       throw error;

@@ -1,15 +1,30 @@
-import { Inject, Service } from 'typedi';
+import { Inject, Service, Token } from 'typedi';
 import type { Product } from '../entities/Product';
 import type { ProductDescriptionJobEntity } from '../entities/ProductDescriptionJobEntity';
+import { productDescriptionStaleCandidate } from '../errors/productDescriptionError';
 import { productNotFound } from '../errors/productError';
-import type { ProductDescriptionJobRepository } from '../repositories/ProductDescriptionJobRepository';
-import { ProductDescriptionJobRepositoryToken } from '../repositories/ProductDescriptionJobRepository';
-import type { ProductRepository } from '../repositories/ProductRepository';
-import { ProductRepositoryToken } from '../repositories/ProductRepository';
-import {
-  type IProductDescriptionEvidenceAssembler,
-  ProductDescriptionEvidenceAssemblerToken,
-} from '../services/ProductDescriptionEvidenceAssembler';
+import type { AssembledProductDescriptionEvidence } from '../services/ProductDescriptionEvidenceProjector';
+
+export interface ProductDescriptionApplyTransaction {
+  run<T>(work: (store: ProductDescriptionApplySession) => Promise<T>): Promise<T>;
+}
+
+/** A session is owned by one transaction, never shared between requests. */
+export interface ProductDescriptionApplySession {
+  findJob(jobId: string, lock: boolean): Promise<ProductDescriptionJobEntity | null>;
+  findLockedProduct(productId: string): Promise<Product | null>;
+  assembleLocked(productId: string): Promise<AssembledProductDescriptionEvidence>;
+  applyLocked(input: { productId: string; candidateHtml: string }): Promise<Product>;
+  markAppliedLocked(jobId: string, appliedAt: Date): Promise<ProductDescriptionJobEntity>;
+}
+
+export interface ProductDescriptionApplyStore {
+  transaction: ProductDescriptionApplyTransaction;
+}
+
+export const ProductDescriptionApplyStoreToken = new Token<ProductDescriptionApplyStore>(
+  'ProductDescriptionApplyStore'
+);
 
 export type ApplyProductDescriptionCandidateResult = {
   product: Product;
@@ -19,61 +34,35 @@ export type ApplyProductDescriptionCandidateResult = {
 
 @Service()
 export class ApplyProductDescriptionCandidate {
-  constructor(
-    @Inject(ProductRepositoryToken)
-    private readonly productRepository: ProductRepository,
-    @Inject(ProductDescriptionJobRepositoryToken)
-    private readonly productDescriptionJobRepository: ProductDescriptionJobRepository,
-    @Inject(ProductDescriptionEvidenceAssemblerToken)
-    private readonly evidenceAssembler: IProductDescriptionEvidenceAssembler
-  ) {}
+  constructor(@Inject(ProductDescriptionApplyStoreToken) private readonly applyStore: ProductDescriptionApplyStore) {}
 
   async execute({ jobId }: { jobId: string }): Promise<ApplyProductDescriptionCandidateResult> {
-    const job = await this.productDescriptionJobRepository.findJobById(jobId);
-    if (!job) {
-      throw new Error(`존재하지 않는 AI 소개 생성 작업입니다: ${jobId}`);
-    }
-
-    if (job.status !== 'completed' || !job.candidateHtml) {
-      throw new Error('적용 가능한 완료된 AI 소개 초안이 존재하지 않습니다.');
-    }
-
-    const product = await this.productRepository.findOneById(job.productId);
-    if (!product) {
-      throw productNotFound();
-    }
-
-    // Idempotency: if already applied and description matches candidateHtml
-    if (job.appliedAt) {
-      return {
-        product,
-        job,
-        alreadyApplied: true,
-      };
-    }
-
-    // Re-check evidenceHash and baseDescriptionHash
-    const currentSnapshot = await this.evidenceAssembler.assemble(product.id);
-
-    if (
-      currentSnapshot.evidenceHash !== job.evidenceHash ||
-      currentSnapshot.baseDescriptionHash !== job.baseDescriptionHash
-    ) {
-      throw new Error('제품 정보가 생성 이후 변경되어 이 초안을 적용할 수 없습니다. 다시 생성해 주세요.');
-    }
-
-    const candidateHtml = job.candidateHtml;
-    const updatedProduct = await this.productRepository.updateById(product.id, prevProduct => {
-      prevProduct.update({ description: candidateHtml });
-      return prevProduct;
+    return this.applyStore.transaction.run(async store => {
+      // The first read discovers the owner only. Revalidate the job after locking Product.
+      const discovered = await store.findJob(jobId, false);
+      if (!discovered) throw new Error(`존재하지 않는 AI 소개 생성 작업입니다: ${jobId}`);
+      const product = await store.findLockedProduct(discovered.productId);
+      if (!product) throw productNotFound();
+      const job = await store.findJob(jobId, true);
+      if (!job || job.productId !== product.id) throw productDescriptionStaleCandidate();
+      // Historical application remains true even if the candidate/status or current body changed.
+      if (job.appliedAt) return { product, job, alreadyApplied: true };
+      if (job.status !== 'completed' || !job.candidateHtml) {
+        throw new Error('적용 가능한 완료된 AI 소개 초안이 존재하지 않습니다.');
+      }
+      const snapshot = await store.assembleLocked(product.id);
+      const evidenceMatches =
+        job.evidenceHashVersion === 'v2'
+          ? snapshot.evidenceHash === job.evidenceHash
+          : job.evidenceHashVersion == null &&
+            !snapshot.evidence.items.some(item => item.kind === 'link') &&
+            snapshot.legacyEvidenceHash === job.evidenceHash;
+      if (!evidenceMatches || snapshot.baseDescriptionHash !== job.baseDescriptionHash) {
+        throw productDescriptionStaleCandidate();
+      }
+      const updatedProduct = await store.applyLocked({ productId: product.id, candidateHtml: job.candidateHtml });
+      const updatedJob = await store.markAppliedLocked(job.id, new Date());
+      return { product: updatedProduct, job: updatedJob, alreadyApplied: false };
     });
-
-    const updatedJob = await this.productDescriptionJobRepository.markApplied(job.id, new Date());
-
-    return {
-      product: updatedProduct,
-      job: updatedJob,
-      alreadyApplied: false,
-    };
   }
 }

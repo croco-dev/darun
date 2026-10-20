@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { build } = require('esbuild');
 const { spawnSync } = require('node:child_process');
 const { generateKeyPairSync } = require('node:crypto');
-const { copyFileSync, mkdtempSync, rmSync } = require('node:fs');
+const { copyFileSync, mkdtempSync, rmSync, writeFileSync } = require('node:fs');
+const { createRequire } = require('node:module');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
 
@@ -28,8 +29,8 @@ const environment = {
   CURSOR_SIGNATURE_SECRET: 'verification-cursor-secret',
 };
 
-function run(args) {
-  const result = spawnSync(process.execPath, args, {
+function run(args, networkGuard) {
+  const result = spawnSync(process.execPath, ['--require', networkGuard, ...args], {
     cwd: root,
     env: environment,
     stdio: 'inherit',
@@ -42,22 +43,58 @@ function run(args) {
 async function main() {
   const directory = mkdtempSync(path.join(tmpdir(), 'darun-schema-'));
   try {
-    for (const name of ['graphql', 'translation-worker', 'product-description-worker', 'product-research-worker']) {
+    const networkGuard = path.join(directory, 'deny-network.cjs');
+    writeFileSync(
+      networkGuard,
+      `
+      const denyNetwork = () => { throw new Error('Network connections are forbidden during Lambda/schema verification'); };
+      require('node:net').Socket.prototype.connect = denyNetwork;
+      require('node:tls').connect = denyNetwork;
+    `
+    );
+    for (const name of [
+      'graphql',
+      'translation-worker',
+      'product-description-worker',
+      'product-research-worker',
+      'job-recovery-tick',
+      'product-content-sync-worker',
+    ]) {
       const file = path.join(directory, `${name}.js`);
       copyFileSync(path.join(root, '.build/lambda', `${name}.js`), file);
-      run([
-        '-e',
-        `const assert = require('node:assert/strict');
+      run(
+        [
+          '-e',
+          `const assert = require('node:assert/strict');
          const bundle = require(process.argv[1]);
          assert.equal(typeof bundle.handler, 'function');
          console.log('Lambda handler verified:', process.argv[1]);
          process.exit(0);`,
-        file,
-      ]);
+          file,
+        ],
+        networkGuard
+      );
     }
 
     process.env.INFRA_ENV = 'local';
     const plugins = require('../esbuild.plugins.js');
+    const providerRoot = path.resolve(root, '../../libs/shared/provider-graphql');
+    const providerRequire = createRequire(path.join(providerRoot, 'package.json'));
+    const { loadContext } = providerRequire('@graphql-codegen/cli');
+    const { print } = require('graphql');
+    const context = await loadContext(path.join(providerRoot, 'codegen.ts'));
+    context.updateConfig({ cwd: providerRoot });
+    const documents = await context.loadDocuments(context.getConfig().documents);
+    const documentsFile = path.join(directory, 'consumer-documents.json');
+    writeFileSync(
+      documentsFile,
+      JSON.stringify(
+        documents.map(({ location, document }) => {
+          if (!document) throw new Error(`Codegen document was not parsed: ${location}`);
+          return { location, source: print(document) };
+        })
+      )
+    );
     const outfile = path.join(directory, 'schema.cjs');
     await build({
       absWorkingDir: root,
@@ -69,11 +106,13 @@ async function main() {
       format: 'cjs',
       minify: true,
       keepNames: true,
+      treeShaking: true,
+      ignoreAnnotations: true,
       external: ['class-validator'],
       plugins,
       logLevel: 'error',
     });
-    run([outfile]);
+    run([outfile, documentsFile, ...process.argv.slice(2)], networkGuard);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

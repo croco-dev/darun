@@ -1,5 +1,7 @@
 export type ProductResearchJobStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 
+export type ProductResearchDispatchStatus = 'QUEUED' | 'RETRY_REQUIRED' | 'DEDUPED';
+
 export type ProductResearchStage = 'searching' | 'synthesizing';
 
 export type ProductResearchFailureCode =
@@ -9,6 +11,7 @@ export type ProductResearchFailureCode =
   | 'SEARCH_UNAVAILABLE'
   | 'NO_USABLE_SOURCES'
   | 'LLM_UNAVAILABLE'
+  | 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED'
   | 'INVALID_GENERATION'
   | 'RETRY_EXHAUSTED';
 
@@ -84,6 +87,10 @@ export type ProductResearchJobEntity = {
   leaseToken: string | null;
   leaseUntil: Date | null;
   attemptCount: number;
+  runNotBefore?: Date;
+  nextDispatchAt?: Date;
+  retryOfJobId?: string | null;
+  dispatchStatus?: string;
   materializedProductId: string | null;
   appliedAt: Date | null;
   createdAt: Date;

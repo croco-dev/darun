@@ -8,7 +8,10 @@ export interface TranslationJobRepository {
     entityType: string;
     entityId: string;
     locale?: string;
-    status?: TranslationJobStatus;
+    fields: string[];
+    retryOfJobId?: string;
+    idempotencyKey?: string;
+    status?: 'pending';
     message?: string;
     sourceHash?: string | null;
     model?: string | null;
@@ -17,27 +20,17 @@ export interface TranslationJobRepository {
 
   findJobById(id: string): Promise<TranslationJobEntity | null>;
 
-  updateJobStatus(
-    id: string,
-    status: TranslationJobStatus,
-    options?: {
-      message?: string | null;
-      error?: string | null;
-      sourceHash?: string | null;
-      model?: string | null;
-      promptVersion?: string | null;
-    }
-  ): Promise<TranslationJobEntity>;
-
   /**
-   * 조건부 상태 전이. 현재 상태가 expectedStatuses 중 하나일 때만 nextStatus로
-   * 전이하고 전이된 작업을 반환한다. 조건 불일치 시 null을 반환한다.
-   * 동시 중복 실행 중 선점 경쟁을 해소하는 데 사용한다.
+   * lease 소유권 기반 클레임. pending은 즉시 선점하고, in_progress는
+   * lease 만료 시에만 재선점한다. leaseToken이 새 소유권을 식별한다.
    */
-  claimJobStatus(
-    id: string,
-    expectedStatuses: TranslationJobStatus[],
-    nextStatus: TranslationJobStatus,
+  claimJobLease(input: { jobId: string; leaseToken: string; leaseUntil: Date }): Promise<TranslationJobEntity | null>;
+
+  /** Failure-only fenced transition; completed/superseded belong to TranslationSourceStore.commit. */
+  completeJobLease(
+    jobId: string,
+    leaseToken: string,
+    nextStatus: 'failed',
     options?: {
       message?: string | null;
       error?: string | null;
@@ -46,6 +39,23 @@ export interface TranslationJobRepository {
       promptVersion?: string | null;
     }
   ): Promise<TranslationJobEntity | null>;
+
+  retryJobLease(jobId: string, leaseToken: string, error: string): Promise<TranslationJobEntity | null>;
+
+  /**
+   * 활성 intent 조회. 같은 entity·locale에 pending/in_progress job이 있으면
+   * 반복 발행 동기화가 중복 job을 만들지 않고 기존 intent를 재사용한다.
+   * 조회·생성 사이 경쟁은 기존처럼 유일 결과가 아닌 중복 허용으로 흡수되며,
+   * recovery tick이 전송 누락분을 재발견한다.
+   */
+  findActiveJob?(input: {
+    entityType: string;
+    entityId: string;
+    locale?: string;
+  }): Promise<TranslationJobEntity | null>;
+
+  /** Reserve up to 25 due jobs with SKIP LOCKED; commit before sending SQS. */
+  findRecoverableJobs(input: { now: Date; limit?: number }): Promise<TranslationJobEntity[]>;
 
   findJobs(options?: {
     status?: TranslationJobStatus;

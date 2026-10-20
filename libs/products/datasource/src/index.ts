@@ -11,7 +11,9 @@ export { PostgresqlProductFeatureScreenshotRepository } from './repositories/Pos
 export { ProductDescriptionGeneratorImpl } from './services/ProductDescriptionGeneratorImpl';
 export { PostgresqlCategoryRepository } from './repositories/PostgresqlCategoryRepository';
 export { PostgresqlProductDescriptionJobRepository } from './repositories/PostgresqlProductDescriptionJobRepository';
+export { PostgresqlProductDescriptionApplyStore } from './repositories/PostgresqlProductDescriptionApplyStore';
 export { productDescriptionJobs } from './entities/ProductDescriptionJobSchema';
+export { PostgresqlProductDescriptionEvidenceAssembler } from './repositories/PostgresqlProductDescriptionEvidenceAssembler';
 export {
   renderProductDescriptionDocument,
   formatEditorByline,
