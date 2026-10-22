@@ -1,7 +1,7 @@
 'use client';
 
 import { useNavigate, useSearchParams } from '@darun/utils-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   isOverlongExplorerQuery,
   readExplorerProductParam,
@@ -9,13 +9,15 @@ import {
 } from '../explorer/useExplorerQuery';
 import type { ProductSuggestion } from '../product-search/useProductSearchSuggest';
 import { useProductSearchSuggest } from '../product-search/useProductSearchSuggest';
-import { useScreenshotCatalog } from '../screenshots/useScreenshotCatalog';
+import { groupScreenshotCatalog, useScreenshotCatalog } from '../screenshots/useScreenshotCatalog';
+import type { ScreenshotCard } from '../screenshots/useScreenshotExplorer';
 
 export type AppCard = {
   id: string;
   name: string;
   slug: string;
-  summary: string;
+  screenshots: ScreenshotCard[];
+  screenshotCount: number;
   logoUrl: string;
 };
 
@@ -58,13 +60,24 @@ export function useAppExplorer(): AppExplorerState {
 
   const { suggestions, isSearching, clearSuggestions, suggest } = useProductSearchSuggest();
 
-  const apps = cards.flatMap(card => {
-    const { product: app } = card;
-    if (!app.id || !app.name || !app.slug) {
-      return [];
-    }
-    return [{ id: app.id, name: app.name, slug: app.slug, summary: app.summary ?? '', logoUrl: app.logoUrl ?? '' }];
-  });
+  const apps = useMemo(
+    () =>
+      groupScreenshotCatalog(cards).flatMap(({ product: app, screenshots }): AppCard[] =>
+        app.id && app.name && app.slug
+          ? [
+              {
+                id: app.id,
+                name: app.name,
+                slug: app.slug,
+                logoUrl: app.logoUrl ?? '',
+                screenshots: screenshots.slice(0, 3),
+                screenshotCount: screenshots.length,
+              },
+            ]
+          : []
+      ),
+    [cards]
+  );
   const scoped = product !== null ? apps.filter(app => app.slug.toLowerCase() === product.toLowerCase()) : apps;
 
   const handleSearchInputChange = (value: string) => {
@@ -105,8 +118,7 @@ export function useAppExplorer(): AppExplorerState {
       ? null
       : scoped.filter(
           app =>
-            app.name.toLowerCase().includes(query.toLowerCase()) ||
-            app.slug.toLowerCase().includes(query.toLowerCase())
+            app.name.toLowerCase().includes(query.toLowerCase()) || app.slug.toLowerCase().includes(query.toLowerCase())
         );
 
   const visibleCards = searched ?? scoped;

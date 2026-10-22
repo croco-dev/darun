@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getRetainedNavHref } from '../app/VisualLayout';
 import { isTabActive } from '../app/visualNav';
-import { buildCategoryHref } from '../features/discover/VisualHomeHero';
 
 function retainedParams(href: string): URLSearchParams {
   const query = href.split('?')[1] ?? '';
@@ -65,12 +64,5 @@ describe('P0 retained nav query', () => {
     expect(getRetainedNavHref('/collections', '/', new URLSearchParams('q=Notion&platform=IOS&product=notion'))).toBe(
       '/collections'
     );
-  });
-});
-
-describe('P0 category deeplinks', () => {
-  it('카테고리 카드가 필터 URL로 연결된다', () => {
-    expect(buildCategoryHref('CHECKOUT')).toBe('/?screenType=CHECKOUT');
-    expect(buildCategoryHref('ONBOARDING')).toBe('/?screenType=ONBOARDING');
   });
 });

@@ -1,6 +1,6 @@
 import type { ApolloClient } from '@apollo/client';
 import { describe, expect, it, vi, type Mock } from 'vitest';
-import { loadScreenshotCatalog } from '../features/screenshots/useScreenshotCatalog';
+import { groupScreenshotCatalog, loadScreenshotCatalog } from '../features/screenshots/useScreenshotCatalog';
 import type { ScreenshotCard } from '../features/screenshots/useScreenshotExplorer';
 
 function screenshot(id: string, productId: string, name = productId): ScreenshotCard {
@@ -31,7 +31,7 @@ function client(query: Mock) {
 }
 
 describe('screenshot-backed app catalog', () => {
-  it('keeps one newest screen per product across cursor pages without losing later apps or same-name products', async () => {
+  it('retains every screen across cursor pages and groups distinct product identities', async () => {
     const query = vi.fn(async ({ variables }: { variables: { after: string | null } }) => {
       if (variables.after === null) {
         return page([screenshot('newest-a', 'a', '같은 이름'), screenshot('older-a', 'a')], 'page-2', true);
@@ -45,11 +45,28 @@ describe('screenshot-backed app catalog', () => {
       throw new Error('Unexpected cursor');
     });
     const cards = await loadScreenshotCatalog(client(query));
-    expect(cards.map(card => [card.product.id, card.id])).toEqual([
-      ['a', 'newest-a'],
-      ['b', 'newest-b'],
-      ['c', 'newest-c'],
+    expect(cards.map(card => card.id)).toEqual(['newest-a', 'older-a', 'oldest-a', 'newest-b', 'newest-c', 'older-b']);
+    expect(
+      groupScreenshotCatalog(cards).map(group => [group.product.id, group.screenshots.map(card => card.id)])
+    ).toEqual([
+      ['a', ['newest-a', 'older-a', 'oldest-a']],
+      ['b', ['newest-b', 'older-b']],
+      ['c', ['newest-c']],
     ]);
+  });
+
+  it('deduplicates repeated screenshot edges while preserving preview order', () => {
+    const newest = screenshot('newest', 'app');
+    const groups = groupScreenshotCatalog([
+      newest,
+      newest,
+      screenshot('older', 'app'),
+      screenshot('third', 'app'),
+      screenshot('fourth', 'app'),
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].screenshots).toHaveLength(4);
+    expect(groups[0].screenshots.slice(0, 3).map(card => card.id)).toEqual(['newest', 'older', 'third']);
   });
 
   it('does not report a partial app list as complete when a later page fails', async () => {

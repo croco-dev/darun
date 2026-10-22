@@ -1,7 +1,17 @@
 'use client';
 
-import { Button, ChevronLeft, ChevronRight, ExternalLink, ImageOff, Link2, RefreshCw } from '@darun/ui';
-import { Link, notFound, useNavigate, useRouter, useSearchParams } from '@darun/utils-router';
+import {
+  Button,
+  ChevronLeft,
+  ChevronRight,
+  Dialog,
+  ExternalLink,
+  ImageOff,
+  Link2,
+  Maximize2,
+  RefreshCw,
+} from '@darun/ui';
+import { Link, notFound, useSearchParams } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
@@ -9,16 +19,12 @@ import { VISUAL_CARD_IMAGE_LOADING, VISUAL_DETAIL_IMAGE_FETCH_PRIORITY } from '.
 import { VisualSaveButton } from '../saves/VisualSaveButton';
 import { VISUAL_PLATFORM_LABELS, VISUAL_FLOW_TYPE_LABELS } from './flowClassifications';
 import { FlowDetailState, useFlowDetail } from './useFlowDetail';
+import { stepSearch } from './stepSearch';
 
 const STEP_QUERY_KEY = 'step';
 
 function StepImage({ src, alt }: { src: string; alt: string }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-
-  // 단계마다 다른 이미지를 보여주므로, src가 바뀌면 이전 단계의 실패 상태를 되돌린다.
-  if (failedSrc !== null && failedSrc !== src) {
-    setFailedSrc(null);
-  }
 
   if (failedSrc === src) {
     return (
@@ -47,11 +53,10 @@ function StepImage({ src, alt }: { src: string; alt: string }) {
 }
 
 const View = ({ status, detail, retry }: FlowDetailState) => {
-  const navigate = useNavigate();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [zoomedFlowId, setZoomedFlowId] = useState<string | null>(null);
 
   // UI와 URL은 1부터 시작하는 단계 번호를 사용한다. GraphQL steps의 position은 0부터 시작한다.
   const stepCount = detail?.steps.length ?? 0;
@@ -61,30 +66,21 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
   const currentStepNumber =
     stepParam !== null && Number.isInteger(stepParam) && stepParam >= 1 && stepParam <= stepCount ? stepParam : 1;
 
-  const [activeStepNumber, setActiveStepNumber] = useState(1);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- URL step 파라미터 동기화에 필요
-    setActiveStepNumber(currentStepNumber);
-  }, [currentStepNumber, detail?.id]);
+  const activeStepNumber = currentStepNumber;
 
   const goToStep = useCallback(
     (stepNumber: number) => {
       if (stepNumber < 1 || stepNumber > stepCount || stepCount === 0) {
         return;
       }
-      const params = new URLSearchParams();
-      if (stepNumber > 1) {
-        params.set(STEP_QUERY_KEY, String(stepNumber));
-      }
-      const queryString = params.toString();
-      navigate(queryString.length > 0 ? `/flows/${detail?.id ?? ''}?${queryString}` : `/flows/${detail?.id ?? ''}`, {
-        replace: true,
-        preventScrollReset: true,
-      });
-      setActiveStepNumber(stepNumber);
+      window.history.replaceState(
+        null,
+        '',
+        `/flows/${encodeURIComponent(detail?.id ?? '')}${stepSearch(searchParams.toString(), stepNumber)}`
+      );
       setCopyState('idle');
     },
-    [detail?.id, navigate, stepCount]
+    [detail?.id, searchParams, stepCount]
   );
 
   // 왼쪽·오른쪽 화살표로 단계를 이동한다. 입력 요소에 포커스가 있을 때는 가로지르지 않는다.
@@ -139,8 +135,8 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
 
   if (status === 'loading') {
     return (
-      <div className="w-full py-6 md:py-8">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-6" aria-busy="true">
+      <div className="w-full py-5 md:py-8">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-8" aria-busy="true">
           <div
             className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
             aria-hidden="true"
@@ -165,8 +161,8 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
 
   if (status === 'error' || detail === null) {
     return (
-      <div className="w-full py-6 md:py-8">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 md:px-6">
+      <div className="w-full py-5 md:py-8">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 md:px-8">
           <div
             role="alert"
             className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center"
@@ -208,7 +204,9 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
       ) {
         throw new Error('clipboard unavailable');
       }
-      await navigator.clipboard.writeText(window.location.href);
+      const url = new URL(window.location.href);
+      url.search = stepSearch(url.search, activeStepNumber);
+      await navigator.clipboard.writeText(url.href);
       setCopyState('copied');
     } catch {
       setCopyState('error');
@@ -216,26 +214,9 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
   };
 
   return (
-    <div className="w-full py-6 md:py-8">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-6">
-        <nav aria-label="브레드크럼브">
-          <ol className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-dark-600">
-            <li>
-              <Link
-                href="/flows"
-                className="inline-flex min-h-[44px] items-center rounded underline-offset-4 hover:text-dark-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
-              >
-                플로
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li aria-current="page" className="min-w-0 max-w-full truncate font-medium text-dark-700">
-              {detail.title}
-            </li>
-          </ol>
-        </nav>
-
-        <header className="flex flex-col gap-3">
+    <div className="w-full py-5 md:py-8">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 px-4 md:px-8">
+        <header className="flex flex-col gap-2">
           <p className="flex min-w-0 items-center gap-2.5">
             {detail.product.logoUrl.length > 0 && (
               <img
@@ -255,14 +236,9 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               {detail.product.name}
             </Link>
           </p>
-          <h1 className="break-words [word-break:keep-all] text-[28px] font-bold leading-tight tracking-tight text-dark-900 md:text-[32px]">
+          <h1 className="break-words [overflow-wrap:anywhere] text-xl font-bold leading-tight tracking-tight text-dark-900">
             {detail.title}
           </h1>
-          {detail.description.length > 0 && (
-            <p className="max-w-2xl text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all]">
-              {detail.description}
-            </p>
-          )}
           <ul className="flex flex-wrap items-center gap-1.5" aria-label="플로 정보">
             <li className="rounded-full border border-dark-150 bg-white px-2.5 py-1 text-xs text-dark-600">
               {platformLabel}
@@ -310,18 +286,26 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
         {stepCount === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-dark-200 py-16 text-center text-dark-500">
             <p className="text-base font-semibold text-dark-700">등록된 단계가 없습니다.</p>
-            <p className="mt-1 text-sm text-dark-600">이 플로에는 아직 등록된 스텝(단계)이 없습니다.</p>
           </div>
         ) : (
-          <div className="grid min-w-0 items-start gap-4 md:gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <section
-              aria-label="플로 단계 이미지"
-              className="min-w-0 rounded-xl border border-dark-150 bg-surface-100 p-3 md:p-4"
-            >
+          <div className="grid min-w-0 items-start gap-4 md:gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
+            <section aria-label="플로 단계 이미지" className="min-w-0 bg-surface-100 p-3 md:p-4">
               <div className="flex min-w-0 flex-col gap-3">
                 {activeStep && (
-                  <figure className="flex min-w-0 flex-col gap-2">
+                  <figure className="relative flex min-w-0 flex-col gap-2">
                     <StepImage src={activeStep.screenshot.imageUrl} alt={activeStep.screenshot.imageAlt} />
+                    <Button
+                      type="button"
+                      variant="shadow"
+                      color="secondary"
+                      size="sm"
+                      onClick={() => setZoomedFlowId(detail.id)}
+                      aria-haspopup="dialog"
+                      className="absolute right-2 bottom-2 min-h-[44px]"
+                    >
+                      <Maximize2 size={16} aria-hidden="true" />
+                      <span className="whitespace-nowrap">확대</span>
+                    </Button>
                   </figure>
                 )}
                 <nav aria-label="단계 썸네일" className="min-w-0">
@@ -330,7 +314,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                       const stepNumber = index + 1;
                       const isActive = index === stepIndex;
                       return (
-                        <li key={step.screenshot.id} className="shrink-0">
+                        <li key={`${step.position}-${stepNumber}`} className="shrink-0">
                           <button
                             type="button"
                             ref={element => {
@@ -366,27 +350,12 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
 
             <aside
               aria-label="단계 설명"
-              className="flex min-w-0 flex-col gap-4 self-start rounded-xl border border-dark-150 bg-white p-4 md:p-5 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto"
+              className="flex min-w-0 flex-col gap-4 self-start border-t border-dark-150 pt-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto"
             >
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-semibold tabular-nums text-dark-700" aria-live="polite">
                   단계 {activeStepNumber} / {stepCount}
                 </p>
-                <div
-                  role="progressbar"
-                  aria-label="플로 진행 상황"
-                  aria-valuenow={activeStepNumber}
-                  aria-valuemin={1}
-                  aria-valuemax={stepCount}
-                  className="h-1.5 w-full overflow-hidden rounded-full bg-surface-200"
-                >
-                  <div
-                    className="h-full rounded-full bg-dark-900"
-                    style={{
-                      width: `${stepCount > 0 ? (activeStepNumber / stepCount) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
               </div>
               {activeStep && (
                 <div className="flex min-w-0 flex-col gap-1 text-sm">
@@ -440,7 +409,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
           </div>
         )}
 
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             as="a"
             href={`/flows?product=${encodeURIComponent(detail.product.slug)}`}
@@ -460,23 +429,13 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
             <ExternalLink size={16} className="shrink-0" aria-hidden="true" />
             <span className="whitespace-nowrap">서비스 소개</span>
           </a>
-          <Button
-            type="button"
-            variant="text"
-            color="primary"
-            size="md"
-            onClick={() => router.back()}
-            className="sm:ml-auto min-h-[44px] active:scale-[0.98] motion-reduce:transform-none"
-          >
-            <span className="whitespace-nowrap">뒤로 가기</span>
-          </Button>
         </div>
 
         {detail.relatedFlows.length > 0 && (
           <section aria-labelledby="flow-related-heading" className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
               <h2 id="flow-related-heading" className="text-lg font-bold text-dark-900">
-                같은 앱의 다른 플로 ({detail.relatedFlowTotalCount})
+                다른 플로 ({detail.relatedFlowTotalCount})
               </h2>
               <Link
                 href={`/apps/${encodeURIComponent(detail.product.slug)}`}
@@ -511,6 +470,63 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
           </section>
         )}
       </div>
+      <Dialog
+        open={zoomedFlowId === detail.id}
+        onClose={() => setZoomedFlowId(null)}
+        labelledBy="flow-zoom-heading"
+        className="h-[calc(100dvh-2rem)] w-full"
+      >
+        <div className="flex h-full flex-col gap-3 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-white">
+            <h2 id="flow-zoom-heading" className="min-w-0 break-words text-sm font-semibold">
+              {detail.title} · {activeStepNumber} / {stepCount}
+            </h2>
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              size="sm"
+              onClick={() => setZoomedFlowId(null)}
+              className="min-h-[44px]"
+            >
+              닫기
+            </Button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
+            {activeStep && (
+              <img
+                src={activeStep.screenshot.imageUrl}
+                alt={activeStep.screenshot.imageAlt}
+                className="mx-auto max-w-full"
+              />
+            )}
+          </div>
+          <div className="flex justify-center gap-2">
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              size="sm"
+              disabled={!hasPrevStep}
+              onClick={() => goToStep(activeStepNumber - 1)}
+              className="min-h-[44px]"
+            >
+              이전 단계
+            </Button>
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              size="sm"
+              disabled={!hasNextStep}
+              onClick={() => goToStep(activeStepNumber + 1)}
+              className="min-h-[44px]"
+            >
+              다음 단계
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 };

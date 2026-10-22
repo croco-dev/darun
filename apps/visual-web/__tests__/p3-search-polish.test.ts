@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildExplorerUrl,
   isOverlongExplorerQuery,
   readExplorerQueryParam,
   VISUAL_QUERY_MAX_LENGTH,
@@ -23,5 +24,27 @@ describe('P3 explorer search polish', () => {
 
   it('정상 검색어는 trim된다', () => {
     expect(readExplorerQueryParam(new URLSearchParams('q=%20toss%20'))).toBe('toss');
+  });
+
+  it('removes only the service filter and retains every other criterion', () => {
+    const url = buildExplorerUrl(
+      '/',
+      {
+        query: '결제',
+        platform: 'IOS',
+        secondary: 'LOGIN',
+        product: 'toss',
+        element: 'BUTTON',
+      },
+      'screenType',
+      { product: null }
+    );
+    const params = new URL(url, 'https://visual.darun.app').searchParams;
+    expect(Object.fromEntries(params)).toEqual({
+      q: '결제',
+      platform: 'IOS',
+      screenType: 'LOGIN',
+      element: 'BUTTON',
+    });
   });
 });

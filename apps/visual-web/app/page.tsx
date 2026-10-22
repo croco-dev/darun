@@ -1,15 +1,7 @@
 import { Metadata } from 'next';
-import { CategoryCards, VisualHomeHero } from '../features/discover/VisualHomeHero';
+import { Suspense } from 'react';
 import { ScreenshotExplorer } from '../features/screenshots';
 import { VisualLayout } from './VisualLayout';
-
-export type TrendingItem = {
-  id: string;
-  imageUrl: string;
-  imageAlt: string;
-  title: string | null;
-  productName: string;
-};
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -29,25 +21,13 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   };
 }
 
-export default async function Page({ searchParams }: Props) {
-  const params = await searchParams;
-  const hasActiveFilter = ['q', 'platform', 'screenType', 'product'].some(key => {
-    const value = params[key];
-    return typeof value === 'string' && value.trim().length > 0;
-  });
-
+export default function Page() {
   return (
     <VisualLayout>
-      <div className="w-full pt-6 pb-8 md:pt-10 md:pb-12">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:gap-6 md:px-6">
-          {!hasActiveFilter && (
-            <div className="flex flex-col gap-5">
-              <VisualHomeHero />
-              <CategoryCards />
-            </div>
-          )}
-          <ScreenshotExplorer hideHero />
-        </div>
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-8 md:py-8">
+        <Suspense fallback={<p className="py-12 text-sm text-dark-600">화면을 불러오는 중…</p>}>
+          <ScreenshotExplorer />
+        </Suspense>
       </div>
     </VisualLayout>
   );

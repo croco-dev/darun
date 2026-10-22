@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, ImageOff, RefreshCw } from '@darun/ui';
-import { Link, notFound, useRouter } from '@darun/utils-router';
+import { Link, notFound } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { SaveButton } from '../collections/SaveButton';
@@ -25,7 +25,6 @@ function DetailSkeletons() {
 
 const View = (props: AppDetailState & { slug: string }) => {
   const { status, detail, retry } = props;
-  const router = useRouter();
 
   if (status === 'loading') {
     return <DetailSkeletons />;
@@ -64,7 +63,7 @@ const View = (props: AppDetailState & { slug: string }) => {
   const appHref = `/apps/${encodeURIComponent(detail.slug)}`;
 
   return (
-    <div className="flex w-full flex-col gap-6 md:gap-10">
+    <div className="flex w-full min-w-0 flex-col gap-4 md:gap-6">
       <nav
         aria-label="이동 경로"
         className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-dark-600"
@@ -82,26 +81,19 @@ const View = (props: AppDetailState & { slug: string }) => {
           {detail.name}
         </span>
       </nav>
-      <button
-        type="button"
-        onClick={() => router.back()}
-        className="inline-flex min-h-[44px] items-center self-start rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-      >
-        ← 뒤로 가기
-      </button>
-      <header className="flex items-center gap-4">
+      <header className="flex min-w-0 items-center gap-3">
         <img
           src={detail.logoUrl || DEFAULT_ICON}
           alt={`${detail.name} 로고`}
-          className="h-16 w-16 shrink-0 rounded-2xl border border-dark-150 bg-surface-100 object-cover md:h-20 md:w-20"
+          className="h-11 w-11 shrink-0 rounded-xl border border-dark-150 bg-surface-100 object-cover"
         />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h1 className="break-words text-[28px] font-bold leading-tight tracking-tight text-dark-900 [word-break:keep-all] md:text-[32px]">
+          <h1 className="min-w-0 break-words text-xl font-bold leading-tight tracking-tight text-dark-900 [overflow-wrap:anywhere] [word-break:keep-all] md:text-2xl">
             {detail.name}
           </h1>
-          {detail.summary.trim().length > 0 && (
-            <p className="line-clamp-2 text-sm leading-relaxed text-dark-600">{detail.summary}</p>
-          )}
+          <p className="text-xs text-dark-500 tabular-nums">
+            화면 {detail.screenshotTotalCount}개 · 플로 {detail.flowTotalCount}개
+          </p>
         </div>
         <SaveButton
           item={{
@@ -114,19 +106,11 @@ const View = (props: AppDetailState & { slug: string }) => {
           }}
         />
       </header>
-      {detail.description !== null && detail.description.trim().length > 0 && (
-        <div className="border-t border-dark-100 pt-6 md:pt-8">
-          <AppDescription description={detail.description} />
-        </div>
-      )}
 
-      <section
-        aria-labelledby="app-screenshots-heading"
-        className="flex flex-col gap-4 border-t border-dark-100 pt-6 md:pt-8"
-      >
+      <section aria-labelledby="app-screenshots-heading" className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <h2 id="app-screenshots-heading" className="text-lg font-bold text-dark-900">
-            화면 모음 ({detail.screenshotTotalCount})
+            화면 ({detail.screenshotTotalCount})
           </h2>
           <Link
             href={screenshotsHref}
@@ -140,19 +124,19 @@ const View = (props: AppDetailState & { slug: string }) => {
             등록된 화면이 없습니다.
           </p>
         ) : (
-          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 md:gap-6 xl:grid-cols-5">
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
             {detail.screenshots.map(item => (
               <li key={item.id} className="min-w-0">
                 <Link
                   href={`/screenshots/${encodeURIComponent(item.id)}`}
                   className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
-                  <div className="flex h-48 items-center justify-center bg-surface-100 md:h-56">
+                  <div className="aspect-[9/19.5] bg-surface-50">
                     <img
                       src={item.imageUrl}
                       alt={item.imageAlt || item.title || `${detail.name} 스크린샷`}
                       loading={VISUAL_CARD_IMAGE_LOADING}
-                      className="max-h-full w-auto max-w-full object-contain"
+                      className="h-full w-full object-contain object-top"
                     />
                   </div>
                   {item.title && <div className="truncate p-2.5 text-xs font-semibold text-dark-900">{item.title}</div>}
@@ -208,6 +192,20 @@ const View = (props: AppDetailState & { slug: string }) => {
           </ul>
         )}
       </section>
+      {(detail.summary.trim().length > 0 || (detail.description !== null && detail.description.trim().length > 0)) && (
+        <details className="border-t border-dark-100">
+          <summary className="cursor-pointer py-4 text-sm font-semibold text-dark-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60">
+            앱 정보
+          </summary>
+          <div className="pb-4">
+            {detail.description !== null && detail.description.trim().length > 0 ? (
+              <AppDescription description={detail.description} />
+            ) : (
+              <p className="text-sm leading-relaxed text-dark-600">{detail.summary}</p>
+            )}
+          </div>
+        </details>
+      )}
     </div>
   );
 };

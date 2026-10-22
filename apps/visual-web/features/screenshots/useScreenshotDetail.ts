@@ -33,7 +33,13 @@ export type ScreenshotDetailData = {
   title: string | null;
   platform: VisualPlatform | null;
   screenType: VisualScreenType | null;
-  product: { id: string; name: string; slug: string; summary: string | null; logoUrl: string };
+  product: {
+    id: string;
+    name: string;
+    slug: string;
+    summary: string | null;
+    logoUrl: string;
+  };
   flows: ScreenshotDetailRelatedFlow[];
   flowTotalCount: number;
   relatedScreenshots: ScreenshotDetailRelatedScreenshot[];
@@ -57,7 +63,7 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
     | { status: 'loaded'; detail: ScreenshotDetailData }
   >({ status: 'loading' });
   const [requestKey, setRequestKey] = useState(0);
-  const [isImageError, setIsImageError] = useState(false);
+  const [failedImageId, setFailedImageId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -81,7 +87,10 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
         }
         // M2 조회 기록: fire-and-forget, 상세 로딩 경로에 영향 금지
         void apolloClient
-          .mutate({ mutation: TrackVisualScreenshotViewDocument, variables: { id } })
+          .mutate({
+            mutation: TrackVisualScreenshotViewDocument,
+            variables: { id },
+          })
           .catch((e: unknown) => console.error('Failed to track screenshot view', e));
         const slug = screenshot.product.slug;
         let siblings: ScreenshotDetailRelatedScreenshot[] = [];
@@ -89,7 +98,10 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
         try {
           const siblingResult = await apolloClient.query({
             query: VisualSiblingScreenshotsOnDetailDocument,
-            variables: { productSlug: slug, first: VISUAL_SCREENSHOT_DETAIL_RELATED_FETCH_SIZE },
+            variables: {
+              productSlug: slug,
+              first: VISUAL_SCREENSHOT_DETAIL_RELATED_FETCH_SIZE,
+            },
             fetchPolicy: 'no-cache',
           });
           if (!active) {
@@ -149,10 +161,10 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
   return {
     status: queryState.status,
     detail: queryState.status === 'loaded' ? queryState.detail : null,
-    isImageError,
-    onImageError: () => setIsImageError(true),
+    isImageError: failedImageId === id,
+    onImageError: () => setFailedImageId(id),
     retry: () => {
-      setIsImageError(false);
+      setFailedImageId(null);
       setRequestKey(key => key + 1);
     },
   };

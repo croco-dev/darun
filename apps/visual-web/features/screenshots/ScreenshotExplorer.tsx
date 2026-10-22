@@ -2,7 +2,6 @@
 
 import { Button } from '@darun/ui';
 import { Link, useNavigate, useSearchParams } from '@darun/utils-router';
-import { bind } from '@darun/utils-structure-react';
 import { useRef, useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
 import { ExplorerShell } from '../explorer/ExplorerShell';
@@ -15,13 +14,10 @@ import {
 import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
 import { useProductSearchSuggest, type ProductSuggestion } from '../product-search/useProductSearchSuggest';
 import { ScreenshotImage } from './ScreenshotImage';
-import { useScreenshotCatalog } from './useScreenshotCatalog';
-import { ScreenshotExplorerState, ScreenshotCard, useScreenshotExplorer } from './useScreenshotExplorer';
+import { groupScreenshotCatalog, useScreenshotCatalog } from './useScreenshotCatalog';
+import { type ScreenshotExplorerState, type ScreenshotCard, useScreenshotExplorer } from './useScreenshotExplorer';
 import {
-  UNCLASSIFIED_LABEL,
-  VISUAL_PLATFORM_LABELS,
   VISUAL_PLATFORM_OPTIONS,
-  VISUAL_SCREEN_TYPE_LABELS,
   VISUAL_SCREEN_TYPE_OPTIONS,
   VISUAL_UI_ELEMENT_OPTIONS,
   isVisualPlatformValue,
@@ -29,330 +25,67 @@ import {
   isVisualUiElementValue,
 } from './visualClassifications';
 
-type ScreenshotViewMode = 'grid' | 'list';
-
-function cardTitle(card: ScreenshotCard): string {
-  return card.title ?? card.imageAlt ?? '스크린샷';
-}
-
-const DEFAULT_PRODUCT_ICON = '/images/default-product-icon.svg';
-
-function toSaveItem(card: ScreenshotCard) {
-  return {
-    kind: 'screenshot' as const,
-    id: card.id,
-    title: cardTitle(card),
-    imageUrl: card.imageUrl,
-    href: `/screenshots/${encodeURIComponent(card.id)}`,
-    productName: card.product.name,
-  };
-}
-
-function ScreenshotMeta({ card }: { card: ScreenshotCard }) {
-  const platformLabel =
-    card.platform && isVisualPlatformValue(card.platform) ? VISUAL_PLATFORM_LABELS[card.platform] : UNCLASSIFIED_LABEL;
-  const typeLabel =
-    card.screenType && isVisualScreenTypeValue(card.screenType)
-      ? VISUAL_SCREEN_TYPE_LABELS[card.screenType]
-      : UNCLASSIFIED_LABEL;
+function ScreenshotPreview({ card, showIdentity = false }: { card: ScreenshotCard; showIdentity?: boolean }) {
+  const title = card.title || card.imageAlt || `${card.product.name} 스크린샷`;
   return (
-    <div className="flex flex-col gap-1 p-3">
-      <span className="flex min-w-0 items-center gap-1.5">
-        {card.product.logoUrl ? (
-          <img
-            src={card.product.logoUrl}
-            alt=""
-            aria-hidden="true"
-            loading="lazy"
-            width={20}
-            height={20}
-            className="h-5 w-5 shrink-0 rounded object-contain"
+    <div className="min-w-0">
+      <div className="min-w-0">
+        <Link
+          href={`/screenshots/${encodeURIComponent(card.id)}`}
+          aria-label={`${title} 화면 보기`}
+          className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900"
+        >
+          <ScreenshotImage src={card.imageUrl} alt={card.imageAlt || title} />
+        </Link>
+        <div className="flex justify-end pt-1">
+          <SaveButton
+            item={{
+              kind: 'screenshot',
+              id: card.id,
+              title,
+              imageUrl: card.imageUrl,
+              href: `/screenshots/${encodeURIComponent(card.id)}`,
+              productName: card.product.name,
+            }}
           />
-        ) : null}
-        <span className="truncate text-sm font-medium text-dark-700">{card.product.name}</span>
-      </span>
-      <span className="truncate text-sm font-semibold text-dark-900">{cardTitle(card)}</span>
-      <span className="text-xs text-dark-600">
-        {platformLabel} · {typeLabel}
-      </span>
-    </div>
-  );
-}
-
-// Home catalog identity: screenshot first, then a quiet app link below the
-// representative shot. Sibling of the screenshot link, never nested in it.
-function AppIdentityLink({ card }: { card: ScreenshotCard }) {
-  return (
-    <Link
-      href={`/apps/${encodeURIComponent(card.product.slug)}`}
-      aria-label={`${card.product.name} 앱으로 이동`}
-      className="flex min-w-0 items-center gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-    >
-      <img
-        src={card.product.logoUrl || DEFAULT_PRODUCT_ICON}
-        alt=""
-        aria-hidden="true"
-        loading="lazy"
-        width={20}
-        height={20}
-        className="h-5 w-5 shrink-0 rounded object-contain"
-      />
-      <span className="min-w-0 flex-1 truncate text-sm font-medium text-dark-700 [overflow-wrap:anywhere]">
-        {card.product.name}
-      </span>
-    </Link>
-  );
-}
-
-function ScreenshotCardGrid({ cards, catalogMode }: { cards: ScreenshotCard[]; catalogMode?: boolean }) {
-  if (catalogMode === true) {
-    return (
-      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-        {cards.map(card => (
-          <li key={card.id} className="min-w-0">
-            <div className="flex h-full flex-col overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300">
-              <Link
-                href={`/screenshots/${encodeURIComponent(card.id)}`}
-                aria-label={`${cardTitle(card)} 화면으로 이동`}
-                className="block min-w-0 bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-inset"
-              >
-                <ScreenshotImage
-                  src={card.imageUrl}
-                  alt={
-                    card.imageAlt ||
-                    card.title ||
-                    (card.product.name ? `${card.product.name} 스크린샷` : '스크린샷 이미지')
-                  }
-                  platform={card.platform}
-                  variant="card"
-                />
-              </Link>
-              <div className="flex min-w-0 items-center gap-2 px-3 pt-2">
-                <AppIdentityLink card={card} />
-              </div>
-              <span className="block line-clamp-2 px-3 pt-1 text-sm font-semibold text-dark-900">
-                {cardTitle(card)}
-              </span>
-              <div className="flex items-center justify-end border-t border-dark-100 px-2 py-1">
-                <SaveButton item={toSaveItem(card)} />
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  return (
-    <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-      {cards.map(card => (
-        <li key={card.id} className="min-w-0">
-          <div className="flex h-full flex-col overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300">
-            <Link
-              href={`/screenshots/${encodeURIComponent(card.id)}`}
-              className="group block min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-inset"
-            >
-              <ScreenshotImage
-                src={card.imageUrl}
-                alt={
-                  card.imageAlt ||
-                  card.title ||
-                  (card.product.name ? `${card.product.name} 스크린샷` : '스크린샷 이미지')
-                }
-                platform={card.platform}
-                variant="card"
-              />
-              <ScreenshotMeta card={card} />
-            </Link>
-            <div className="flex items-center justify-end border-t border-dark-100 px-2 py-1">
-              <SaveButton item={toSaveItem(card)} />
-            </div>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function ScreenshotCardList({ cards, catalogMode }: { cards: ScreenshotCard[]; catalogMode?: boolean }) {
-  if (catalogMode === true) {
-    return (
-      <ul className="flex flex-col gap-2">
-        {cards.map(card => (
-          <li key={card.id} className="min-w-0 overflow-hidden rounded-xl border border-dark-150 bg-white p-2">
-            <div className="flex min-w-0 items-center gap-2 px-1 pt-1 pb-2">
-              <AppIdentityLink card={card} />
-              <SaveButton item={toSaveItem(card)} className="shrink-0" />
-            </div>
-            <Link
-              href={`/screenshots/${encodeURIComponent(card.id)}`}
-              aria-label={`${cardTitle(card)} 화면으로 이동`}
-              className="flex min-w-0 items-center gap-3 rounded-lg bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-            >
-              <ScreenshotImage
-                src={card.imageUrl}
-                alt={
-                  card.imageAlt ||
-                  card.title ||
-                  (card.product.name ? `${card.product.name} 스크린샷` : '스크린샷 이미지')
-                }
-                platform={card.platform}
-                variant="thumb"
-              />
-              <span className="min-w-0 flex-1 bg-white py-1 text-sm font-semibold text-dark-900 line-clamp-2 [overflow-wrap:anywhere]">
-                {cardTitle(card)}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  return (
-    <ul className="flex flex-col gap-2">
-      {cards.map(card => (
-        <li key={card.id} className="flex gap-3 overflow-hidden rounded-xl border border-dark-150 bg-white p-2">
+        </div>
+      </div>
+      {showIdentity && (
+        <div className="min-w-0 pt-2">
+          <Link
+            href={`/apps/${encodeURIComponent(card.product.slug)}`}
+            className="block truncate text-xs text-dark-600 hover:text-dark-900"
+          >
+            {card.product.name}
+          </Link>
           <Link
             href={`/screenshots/${encodeURIComponent(card.id)}`}
-            className="group flex min-w-0 flex-1 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+            className="mt-0.5 block truncate text-sm font-medium text-dark-900"
           >
-            <ScreenshotImage
-              src={card.imageUrl}
-              alt={
-                card.imageAlt || card.title || (card.product.name ? `${card.product.name} 스크린샷` : '스크린샷 이미지')
-              }
-              platform={card.platform}
-              variant="thumb"
-            />
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-1">
-              <span className="flex min-w-0 items-center gap-1.5">
-                {card.product.logoUrl ? (
-                  <img
-                    src={card.product.logoUrl}
-                    alt=""
-                    aria-hidden="true"
-                    loading="lazy"
-                    width={20}
-                    height={20}
-                    className="h-5 w-5 shrink-0 rounded object-contain"
-                  />
-                ) : null}
-                <span className="truncate text-sm font-medium text-dark-700">{card.product.name}</span>
-              </span>
-              <span className="truncate text-sm font-semibold text-dark-900">{cardTitle(card)}</span>
-              <span className="text-xs text-dark-600">
-                {(card.platform && isVisualPlatformValue(card.platform)
-                  ? VISUAL_PLATFORM_LABELS[card.platform]
-                  : UNCLASSIFIED_LABEL) +
-                  ' · ' +
-                  (card.screenType && isVisualScreenTypeValue(card.screenType)
-                    ? VISUAL_SCREEN_TYPE_LABELS[card.screenType]
-                    : UNCLASSIFIED_LABEL)}
-              </span>
-            </span>
+            {title}
           </Link>
-          <SaveButton item={toSaveItem(card)} className="shrink-0 self-start" />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function ScreenshotCardSkeletons() {
-  return (
-    <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5" aria-hidden="true">
-      {Array.from({ length: 12 }, (_, index) => (
-        <li key={index} className="overflow-hidden rounded-xl border border-dark-150 bg-white">
-          <div className="min-h-40 w-full animate-pulse bg-surface-200 motion-reduce:animate-none" />
-          <div className="flex flex-col gap-2 p-3">
-            <div className="h-4 w-3/4 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
-            <div className="h-3 w-1/2 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function ScreenshotViewSwitch({
-  mode,
-  onChange,
-}: {
-  mode: ScreenshotViewMode;
-  onChange: (mode: ScreenshotViewMode) => void;
-}) {
-  return (
-    <div role="group" aria-label="보기 방식" className="flex shrink-0 items-center gap-1">
-      <button
-        type="button"
-        aria-pressed={mode === 'grid'}
-        aria-label="격자 보기"
-        onClick={() => onChange('grid')}
-        className="min-h-11 min-w-11 rounded-lg border px-2.5 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 data-[active=true]:border-dark-900 data-[active=true]:bg-dark-900 data-[active=true]:text-white border-dark-150 bg-white text-dark-700"
-        data-active={mode === 'grid'}
-      >
-        격자
-      </button>
-      <button
-        type="button"
-        aria-pressed={mode === 'list'}
-        aria-label="목록 보기"
-        onClick={() => onChange('list')}
-        className="min-h-11 min-w-11 rounded-lg border px-2.5 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 data-[active=true]:border-dark-900 data-[active=true]:bg-dark-900 data-[active=true]:text-white border-dark-150 bg-white text-dark-700"
-        data-active={mode === 'list'}
-      >
-        목록
-      </button>
+        </div>
+      )}
     </div>
   );
 }
 
-const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode?: boolean }) => {
-  const {
-    cards,
-    searchInput,
-    platform,
-    screenType,
-    element,
-    product,
-    onSearchInputChange,
-    onSearchSubmit,
-    onPlatformChange,
-    onScreenTypeChange,
-    onElementChange,
-    onClearFilters,
-    suggestions,
-    isSearchingSuggestions,
-    onSuggestionSelect,
-    onSuggestClose,
-    onSearchInputFocus,
-    hideHero,
-    catalogMode,
-  } = props;
+function View(props: ScreenshotExplorerState & { catalogMode?: boolean }) {
+  const { cards, searchInput, platform, screenType, element, product, catalogMode } = props;
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [viewMode, setViewMode] = useState<ScreenshotViewMode>('grid');
-  const hasFilters =
-    searchInput.trim().length > 0 || platform !== null || screenType !== null || element !== null || product !== null;
-
+  const groups = catalogMode ? groupScreenshotCatalog(cards) : [];
+  const hasFilters = !!(searchInput.trim() || platform || screenType || element || product);
   return (
     <ExplorerShell
-      state={{ ...props, hasFilters }}
-      hero={
-        hideHero !== true ? (
-          <header className="flex flex-col gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-dark-900 break-words [word-break:keep-all] md:text-3xl">
-              디자인과 UX를 화면으로 탐색하세요
-            </h1>
-            <p className="max-w-2xl text-sm leading-relaxed text-dark-500 break-words [word-break:keep-all] md:text-base">
-              다른 팀이 손수 등록한 서비스 화면을 검색하고, 플랫폼과 화면 유형으로 나누어 살펴보세요.
-            </p>
-          </header>
-        ) : (
-          <h1 className="sr-only">화면 탐색</h1>
-        )
-      }
+      hero={<h1 className="sr-only">화면 탐색</h1>}
+      state={{
+        ...props,
+        totalCount: catalogMode ? groups.length : props.totalCount,
+        hasFilters,
+      }}
       searchForm={
-        <form onSubmit={onSearchSubmit} role="search" className="flex flex-col gap-2 lg:flex-row lg:items-center">
-          <div className="relative min-w-0 w-full lg:flex-1">
+        <form onSubmit={props.onSearchSubmit} role="search" className="flex min-w-0 flex-wrap items-center gap-2">
+          <div className="relative min-w-0 basis-full md:basis-56 md:flex-1">
             <label htmlFor="screenshot-search" className="sr-only">
               스크린샷 검색
             </label>
@@ -361,220 +94,235 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
               id="screenshot-search"
               type="search"
               autoComplete="off"
-              aria-expanded={suggestions.length > 0 || (searchInput.trim().length > 0 && isSearchingSuggestions)}
+              aria-expanded={
+                props.suggestions.length > 0 || (searchInput.trim().length > 0 && props.isSearchingSuggestions)
+              }
               aria-controls="screenshot-search-suggest-listbox"
               value={searchInput}
-              onChange={event => onSearchInputChange(event.currentTarget.value)}
-              onFocus={onSearchInputFocus}
-              placeholder="서비스명, 화면 제목, 설명으로 검색"
+              onChange={event => props.onSearchInputChange(event.currentTarget.value)}
+              onFocus={props.onSearchInputFocus}
+              placeholder="앱, 화면 검색"
               data-visual-search="screenshots"
-              className="min-h-[44px] w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-900 placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+              className="min-h-11 w-full rounded-lg border border-dark-150 bg-white px-3 text-sm text-dark-900 placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
             />
             <ProductSearchSuggest
               inputId="screenshot-search"
               inputRef={searchInputRef}
               inputValue={searchInput}
-              suggestions={suggestions}
-              isSearching={isSearchingSuggestions}
-              onSelect={onSuggestionSelect}
-              onClose={onSuggestClose}
+              suggestions={props.suggestions}
+              isSearching={props.isSearchingSuggestions}
+              onSelect={props.onSuggestionSelect}
+              onClose={props.onSuggestClose}
             />
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <label htmlFor="screenshot-platform" className="sr-only">
-              플랫폼
-            </label>
+          {[
+            {
+              id: 'platform',
+              label: '플랫폼',
+              value: platform,
+              options: VISUAL_PLATFORM_OPTIONS,
+              change: props.onPlatformChange,
+            },
+            {
+              id: 'screen-type',
+              label: '화면 유형',
+              value: screenType,
+              options: VISUAL_SCREEN_TYPE_OPTIONS,
+              change: props.onScreenTypeChange,
+            },
+            {
+              id: 'element',
+              label: 'UI 요소',
+              value: element,
+              options: VISUAL_UI_ELEMENT_OPTIONS,
+              change: props.onElementChange,
+            },
+          ].map(filter => (
             <select
-              id="screenshot-platform"
-              aria-label="플랫폼"
-              value={platform ?? ''}
-              onChange={event => onPlatformChange(event.currentTarget.value)}
-              className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+              key={filter.id}
+              id={`screenshot-${filter.id}`}
+              aria-label={filter.label}
+              value={filter.value ?? ''}
+              onChange={event => filter.change(event.currentTarget.value)}
+              className="min-h-11 min-w-0 max-w-full flex-1 cursor-pointer rounded-lg border border-dark-150 bg-white px-2 text-sm text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60 sm:flex-none"
             >
-              <option value="">전체 플랫폼</option>
-              {VISUAL_PLATFORM_OPTIONS.map(option => (
+              <option value="">{filter.label}</option>
+              {filter.options.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
-            <label htmlFor="screenshot-screen-type" className="sr-only">
-              화면 유형
-            </label>
-            <select
-              id="screenshot-screen-type"
-              aria-label="화면 유형"
-              value={screenType ?? ''}
-              onChange={event => onScreenTypeChange(event.currentTarget.value)}
-              className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+          ))}
+          <Button type="submit" variant="contained" color="primary" size="md" className="min-h-11 shrink-0">
+            검색
+          </Button>
+          {product && (
+            <button
+              type="button"
+              onClick={props.onProductClear}
+              className="min-h-11 max-w-full truncate rounded-lg bg-surface-100 px-3 text-sm text-dark-700"
+              aria-label={`${product} 서비스 필터 해제`}
             >
-              <option value="">전체 유형</option>
-              {VISUAL_SCREEN_TYPE_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              size="md"
-              className="min-h-[44px] shrink-0 active:scale-[0.98] motion-reduce:transform-none"
+              {product} ×
+            </button>
+          )}
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={props.onClearFilters}
+              className="min-h-11 px-2 text-xs text-dark-600 underline underline-offset-4"
             >
-              <span className="whitespace-nowrap">검색</span>
-            </Button>
-            <label htmlFor="screenshot-element" className="sr-only">
-              UI 요소
-            </label>
-            <select
-              id="screenshot-element"
-              aria-label="UI 요소"
-              value={element ?? ''}
-              onChange={event => onElementChange(event.currentTarget.value)}
-              className="min-h-[44px] cursor-pointer rounded-xl border border-dark-150 bg-white px-3 py-2.5 text-sm text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
-            >
-              <option value="">전체 UI 요소</option>
-              {VISUAL_UI_ELEMENT_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {product !== null && (
-              <Button
-                variant="shadow"
-                color="primary"
-                size="sm"
-                onClick={() => onClearFilters()}
-                className="active:scale-[0.98] motion-reduce:transform-none"
-              >
-                <span className="max-w-48 truncate">{product}</span>
-                <span aria-hidden="true" className="ml-1 font-bold">
-                  ×
-                </span>
-                <span className="sr-only">서비스 필터 해제</span>
-              </Button>
-            )}
-          </div>
+              초기화
+            </button>
+          )}
         </form>
       }
-      skeleton={<ScreenshotCardSkeletons />}
+      skeleton={
+        <div aria-hidden="true" className="grid grid-cols-1 gap-10 md:grid-cols-2">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div key={index} className="h-96 animate-pulse rounded-lg bg-surface-100 motion-reduce:animate-none" />
+          ))}
+        </div>
+      }
       grid={
-        viewMode === 'grid' ? (
-          <ScreenshotCardGrid cards={cards} catalogMode={catalogMode} />
+        catalogMode ? (
+          <ul className="grid grid-cols-1 gap-x-10 gap-y-12 md:grid-cols-2">
+            {groups.map(({ product: app, screenshots }) => (
+              <li key={app.id} className="min-w-0">
+                <div className="mb-4 flex min-w-0 items-center justify-between gap-3">
+                  <Link
+                    href={`/apps/${encodeURIComponent(app.slug)}`}
+                    className="flex min-w-0 items-center gap-2.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900"
+                  >
+                    <img
+                      src={app.logoUrl || '/images/default-product-icon.svg'}
+                      alt=""
+                      width={32}
+                      height={32}
+                      loading="lazy"
+                      className="h-8 w-8 shrink-0 rounded-lg object-contain"
+                    />
+                    <span className="truncate text-sm font-semibold text-dark-900">{app.name}</span>
+                  </Link>
+                  <Link
+                    href={`/apps/${encodeURIComponent(app.slug)}`}
+                    className="shrink-0 text-xs text-dark-500 hover:text-dark-900"
+                    aria-label={`${app.name} 화면 ${screenshots.length}개 모두 보기`}
+                  >
+                    {screenshots.length}개 화면 ↗
+                  </Link>
+                </div>
+                <div className="grid grid-cols-3 items-start gap-2 sm:gap-3">
+                  {screenshots.slice(0, 3).map(card => (
+                    <ScreenshotPreview key={card.id} card={card} />
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
         ) : (
-          <ScreenshotCardList cards={cards} catalogMode={catalogMode} />
+          <ul className="grid grid-cols-2 items-start gap-x-3 gap-y-7 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+            {cards.map(card => (
+              <li key={card.id} className="min-w-0">
+                <ScreenshotPreview card={card} showIdentity />
+              </li>
+            ))}
+          </ul>
         )
       }
-      resourceName={catalogMode === true ? '앱' : '스크린샷'}
-      unitName={catalogMode === true ? '개의 앱 · 앱당 최신 1장' : '개의 화면'}
-      resultsControls={<ScreenshotViewSwitch mode={viewMode} onChange={setViewMode} />}
+      resourceName={catalogMode ? '앱' : '스크린샷'}
+      unitName={catalogMode ? '개의 앱' : '개의 화면'}
     />
   );
-};
-
-const EMPTY_CATALOG_FILTERS: ExplorerFilters = { query: null, platform: null, secondary: null, product: null };
-
-const BoundFilteredExplorer = bind<{ hideHero?: boolean }, ScreenshotExplorerState & { hideHero?: boolean }>(
-  props => ({ ...useScreenshotExplorer(), hideHero: props.hideHero }),
-  View,
-  {
-    displayName: 'ScreenshotExplorer',
-  }
-);
-
-function CatalogExplorer({ hideHero }: { hideHero?: boolean }) {
-  const navigate = useNavigate();
-  const { suggestions, isSearching: isSearchingSuggestions, clearSuggestions, suggest } = useProductSearchSuggest();
-  const { cards, loading, networkError, retry } = useScreenshotCatalog(true);
-  const [searchInput, setSearchInput] = useState('');
-  const handleSearchInputChange = (value: string) => {
-    setSearchInput(value);
-    suggest(value);
-  };
-  const handleSearchSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    clearSuggestions();
-    navigate(
-      buildExplorerUrl('/', EMPTY_CATALOG_FILTERS, 'screenType', {
-        q: searchInput.trim().length > 0 ? searchInput : null,
-      })
-    );
-  };
-  const handleSuggestionSelect = (selected: ProductSuggestion) => {
-    clearSuggestions();
-    setSearchInput('');
-    navigate(buildExplorerUrl('/', EMPTY_CATALOG_FILTERS, 'screenType', { q: null, product: selected.slug }));
-  };
-  const viewState: ScreenshotExplorerState & { hideHero?: boolean; catalogMode?: boolean } = {
-    loading,
-    error: undefined,
-    queryLengthError: false,
-    networkError,
-    cards,
-    totalCount: cards.length,
-    hasNextPage: false,
-    loadingMore: false,
-    loadMoreError: false,
-    searchInput,
-    platform: null,
-    secondary: null,
-    product: null,
-    query: null,
-    screenType: null,
-    element: null,
-    onElementChange: (value: string) =>
-      navigate(buildExplorerUrl('/', EMPTY_CATALOG_FILTERS, 'screenType', { element: value.length > 0 ? value : null })),
-    onSearchInputChange: handleSearchInputChange,
-    onSearchSubmit: handleSearchSubmit,
-    onPlatformChange: (value: string) =>
-      navigate(
-        buildExplorerUrl('/', EMPTY_CATALOG_FILTERS, 'screenType', { platform: value.length > 0 ? value : null })
-      ),
-    onSecondaryChange: (value: string) =>
-      navigate(
-        buildExplorerUrl('/', EMPTY_CATALOG_FILTERS, 'screenType', { secondary: value.length > 0 ? value : null })
-      ),
-    onScreenTypeChange: (value: string) =>
-      navigate(
-        buildExplorerUrl('/', EMPTY_CATALOG_FILTERS, 'screenType', { secondary: value.length > 0 ? value : null })
-      ),
-    onClearFilters: () => {
-      setSearchInput('');
-      clearSuggestions();
-      navigate('/');
-    },
-    onLoadMore: () => {},
-    retry,
-    suggestions,
-    isSearchingSuggestions,
-    onSuggestionSelect: handleSuggestionSelect,
-    onSuggestClose: clearSuggestions,
-    onSearchInputFocus: () => {
-      if (searchInput.trim().length > 0) {
-        suggest(searchInput);
-      }
-    },
-    hideHero,
-    catalogMode: true,
-  };
-  return <View {...viewState} />;
 }
 
-export function ScreenshotExplorer({ hideHero }: { hideHero?: boolean }) {
+const EMPTY_FILTERS: ExplorerFilters = {
+  query: null,
+  platform: null,
+  secondary: null,
+  product: null,
+};
+
+function CatalogExplorer() {
+  const navigate = useNavigate();
+  const { cards, loading, networkError, retry } = useScreenshotCatalog();
+  const { suggestions, isSearching, clearSuggestions, suggest } = useProductSearchSuggest();
+  const [searchInput, setSearchInput] = useState('');
+  const navigateFilter = (next: Parameters<typeof buildExplorerUrl>[3]) =>
+    navigate(
+      buildExplorerUrl('/', EMPTY_FILTERS, 'screenType', {
+        q: searchInput.trim() || null,
+        ...next,
+      })
+    );
+  const clear = () => {
+    setSearchInput('');
+    clearSuggestions();
+    navigate('/');
+  };
+  const onSuggestionSelect = (selected: ProductSuggestion) => {
+    clearSuggestions();
+    navigateFilter({ q: null, product: selected.slug });
+  };
+  return (
+    <View
+      catalogMode
+      cards={cards}
+      loading={loading}
+      networkError={networkError}
+      retry={retry}
+      error={undefined}
+      queryLengthError={false}
+      totalCount={cards.length}
+      hasNextPage={false}
+      loadingMore={false}
+      loadMoreError={false}
+      searchInput={searchInput}
+      platform={null}
+      secondary={null}
+      product={null}
+      query={null}
+      screenType={null}
+      element={null}
+      onSearchInputChange={value => {
+        setSearchInput(value);
+        suggest(value);
+      }}
+      onSearchSubmit={event => {
+        event.preventDefault();
+        clearSuggestions();
+        navigateFilter({});
+      }}
+      onPlatformChange={value => navigateFilter({ platform: value || null })}
+      onSecondaryChange={value => navigateFilter({ secondary: value || null })}
+      onScreenTypeChange={value => navigateFilter({ secondary: value || null })}
+      onElementChange={value => navigateFilter({ element: value || null })}
+      onClearFilters={clear}
+      onProductClear={clear}
+      onLoadMore={retry}
+      suggestions={suggestions}
+      isSearchingSuggestions={isSearching}
+      onSuggestionSelect={onSuggestionSelect}
+      onSuggestClose={clearSuggestions}
+      onSearchInputFocus={() => {
+        if (searchInput.trim()) suggest(searchInput);
+      }}
+    />
+  );
+}
+
+function FilteredExplorer() {
+  return <View {...useScreenshotExplorer()} />;
+}
+
+export function ScreenshotExplorer() {
   const searchParams = useSearchParams();
-  const platformParam = searchParams.get('platform');
-  const screenTypeParam = searchParams.get('screenType');
-  const elementParam = searchParams.get('element');
-  const catalogMode =
-    readExplorerQueryParam(searchParams) === null &&
-    readExplorerProductParam(searchParams) === null &&
-    (platformParam === null || !isVisualPlatformValue(platformParam)) &&
-    (screenTypeParam === null || !isVisualScreenTypeValue(screenTypeParam)) &&
-    (elementParam === null || !isVisualUiElementValue(elementParam));
-  if (catalogMode) {
-    return <CatalogExplorer hideHero={hideHero} />;
-  }
-  return <BoundFilteredExplorer hideHero={hideHero} />;
+  const filtered =
+    readExplorerQueryParam(searchParams) !== null ||
+    readExplorerProductParam(searchParams) !== null ||
+    isVisualPlatformValue(searchParams.get('platform')) ||
+    isVisualScreenTypeValue(searchParams.get('screenType')) ||
+    isVisualUiElementValue(searchParams.get('element'));
+  return filtered ? <FilteredExplorer /> : <CatalogExplorer />;
 }

@@ -6,15 +6,23 @@ import { VisualScreenshotsOnExplorerDocument, type VisualScreenshotsOnExplorerQu
 import { useEffect, useState } from 'react';
 import { mapEdgeToCard, type ScreenshotCard } from './useScreenshotExplorer';
 
-export function representativeScreenshots(cards: ScreenshotCard[]): ScreenshotCard[] {
+export function groupScreenshotCatalog(cards: ScreenshotCard[]) {
+  const groups = new Map<string, { product: ScreenshotCard['product']; screenshots: ScreenshotCard[] }>();
   const seen = new Set<string>();
-  return cards.filter(card => {
-    if (!card.product.id || seen.has(card.product.id)) {
-      return false;
+  for (const card of cards) {
+    if (!card.product.id || seen.has(card.id)) continue;
+    seen.add(card.id);
+    const group = groups.get(card.product.id);
+    if (group) {
+      group.screenshots.push(card);
+    } else {
+      groups.set(card.product.id, {
+        product: card.product,
+        screenshots: [card],
+      });
     }
-    seen.add(card.product.id);
-    return true;
-  });
+  }
+  return [...groups.values()];
 }
 
 export async function loadScreenshotCatalog(client: ApolloClient): Promise<ScreenshotCard[]> {
@@ -25,7 +33,14 @@ export async function loadScreenshotCatalog(client: ApolloClient): Promise<Scree
   for (;;) {
     const result: { data?: VisualScreenshotsOnExplorerQuery } = await client.query({
       query: VisualScreenshotsOnExplorerDocument,
-      variables: { first: 48, after, query: null, platform: null, screenType: null, productSlug: null },
+      variables: {
+        first: 48,
+        after,
+        query: null,
+        platform: null,
+        screenType: null,
+        productSlug: null,
+      },
     });
     const connection = result.data?.visualScreenshots;
     if (!connection) {
@@ -38,7 +53,7 @@ export async function loadScreenshotCatalog(client: ApolloClient): Promise<Scree
       }
     }
     if (!connection.pageInfo.hasNextPage) {
-      return representativeScreenshots(cards);
+      return cards;
     }
     const cursor = connection.pageInfo.endCursor;
     if (!cursor || cursors.has(cursor)) {

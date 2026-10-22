@@ -1,4 +1,3 @@
-import { ContentArea } from '@darun/ui';
 import { Collections } from '../../features/collections/Collections';
 import { VisualLayout } from '../VisualLayout';
 
@@ -10,12 +9,8 @@ export const metadata = {
 export default function CollectionsPage() {
   return (
     <VisualLayout>
-      <div className="w-full">
-        <ContentArea>
-          <div className="w-full py-8">
-            <Collections />
-          </div>
-        </ContentArea>
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-8 md:py-8">
+        <Collections />
       </div>
     </VisualLayout>
   );
