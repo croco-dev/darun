@@ -349,6 +349,8 @@ Next.js 버전은 workspace catalog와 override를 함께 갱신하며 모든 �
 
 HTML/Markdown 의미 전환의 공통 원문과 영어 기대값은 `libs/translation/datasource/src/__tests__/descriptionMeaningTransitions.fixture.ts`에서 관리합니다. 단위 검사와 DB 통합 검사는 같은 입력만 공유하며, 영어 기대값은 생산 비교 함수나 번역 응답으로 계산하지 않는 명시적 리터럴을 유지합니다. 자격 증명 거절 사례는 `apps/graphql-api/__tests__/llmSettingCredential.fixture.ts`에서 실행 시 생성하며, HTTP와 SDK 검사 각각의 URI 인코딩 차이는 해당 검사에 남깁니다.
 
+모델 선택 검사는 모델 ID가 표시되어 목록 로딩이 끝난 뒤 버튼의 접근성 역할·검색 필터·선택 결과를 확인합니다. 로딩을 기다리는 동안 접근성 트리 전체를 반복 탐색하지 않으며, 개별·전역 timeout은 늘리지 않습니다.
+
 포맷 자동 수정은 다음 명령을 사용합니다.
 
 ```bash

@@ -68,10 +68,9 @@ describe('ModelSelectModal', () => {
     );
 
     // Wait for models to load
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /google\/gemini-2.5-flash/ })).toBeDefined();
-      expect(screen.getByRole('button', { name: /x-ai\/grok-4-fast/ })).toBeDefined();
-    });
+    await screen.findByText('google/gemini-2.5-flash');
+    expect(screen.getByRole('button', { name: /google\/gemini-2.5-flash/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /x-ai\/grok-4-fast/ })).toBeDefined();
 
     // 브라우저 직접 fetch fallback 없이 서버 프록시만 호출한다.
     expect(fetchMock).toHaveBeenCalledTimes(1);
