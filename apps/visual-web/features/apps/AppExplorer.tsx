@@ -8,6 +8,7 @@ import { SaveButton } from '../collections/SaveButton';
 import { ExplorerShell } from '../explorer/ExplorerShell';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
+import { CatalogPagination } from './CatalogPagination';
 import { AppExplorerState, AppCard, useAppExplorer } from './useAppExplorer';
 
 const DEFAULT_ICON = '/images/default-product-icon.svg';
@@ -131,6 +132,8 @@ const View = (props: AppExplorerState) => {
                 id="app-search"
                 type="search"
                 autoComplete="off"
+                role="combobox"
+                aria-autocomplete="list"
                 aria-expanded={suggestions.length > 0 || (searchInput.trim().length > 0 && isSearchingSuggestions)}
                 aria-controls="app-search-suggest-listbox"
                 value={searchInput}
@@ -184,7 +187,14 @@ const View = (props: AppExplorerState) => {
       grid={<AppCardGrid cards={cards} />}
       resourceName="앱"
       unitName="개의 앱"
-    />
+    >
+      <CatalogPagination
+        {...props.pagination}
+        loading={loading}
+        networkError={networkError}
+        queryLengthError={queryLengthError}
+      />
+    </ExplorerShell>
   );
 };
 
