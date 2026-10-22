@@ -43,7 +43,7 @@
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
-    "@opennextjs/cloudflare": "1.20.10",
+    "@opennextjs/cloudflare": "1.20.13",
     "@tailwindcss/postcss": "catalog:",
     "@types/node": "25.2.3",
     "@types/react": "catalog:",
