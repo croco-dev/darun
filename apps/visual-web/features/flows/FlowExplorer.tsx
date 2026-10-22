@@ -141,6 +141,8 @@ const View = (props: FlowExplorerState & { hideHero?: boolean }) => {
                   id="flow-search"
                   type="search"
                   autoComplete="off"
+                  role="combobox"
+                  aria-autocomplete="list"
                   aria-expanded={suggestions.length > 0 || (searchInput.trim().length > 0 && isSearchingSuggestions)}
                   aria-controls="flow-search-suggest-listbox"
                   value={searchInput}
