@@ -14,7 +14,7 @@ export class GetProductsByCategory {
     private readonly categoryRepository: CategoryRepository
   ) {}
 
-  async execute({ slug }: { slug: string }): Promise<{
+  async execute({ slug, limit, afterId }: { slug: string; limit: number; afterId?: string }): Promise<{
     category: {
       id: string;
       slug: string;
@@ -22,14 +22,18 @@ export class GetProductsByCategory {
       labelEn: string;
     } | null;
     products: Product[];
+    total: number;
   }> {
     const category = await this.categoryRepository.findOneBySlug(slug);
 
     if (!category) {
-      return { category: null, products: [] };
+      return { category: null, products: [], total: 0 };
     }
 
-    const products = await this.productRepository.findPublishedByCategoryId(category.id);
+    const [products, total] = await Promise.all([
+      this.productRepository.findPublishedByCategoryId(category.id, limit, afterId),
+      this.productRepository.countPublishedByCategoryId(category.id),
+    ]);
 
     return {
       category: {
@@ -39,6 +43,7 @@ export class GetProductsByCategory {
         labelEn: category.labelEn,
       },
       products,
+      total,
     };
   }
 }

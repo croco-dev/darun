@@ -2,6 +2,7 @@ import { ProductTagRepository } from '@darun/products-domain';
 import { ProductTag, ProductTagRepositoryToken, Tag, TagType } from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
+import DataLoader from 'dataloader';
 import { eq, inArray } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { productTags } from '../entities/ProductTagsSchema';
@@ -9,6 +10,14 @@ import { tags } from '../entities/TagSchema';
 
 @Service(ProductTagRepositoryToken)
 export class PostgresqlProductTagRepository implements ProductTagRepository {
+  private readonly loader = new DataLoader<string, ProductTag | null>(
+    async ids => {
+      const rows = await this.findByProductIds(ids);
+      const byId = new Map(rows.map(row => [row.productId, row]));
+      return ids.map(id => byId.get(id) ?? null);
+    },
+    { cache: false }
+  );
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
   upsert(productTag: ProductTag): Promise<ProductTag> {
@@ -60,18 +69,7 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
   }
 
   async findOneByProductId(productId: string): Promise<ProductTag | null> {
-    const rows = await this.db
-      .select()
-      .from(productTags)
-      .innerJoin(tags, eq(productTags.tagId, tags.id))
-      .where(eq(productTags.productId, productId));
-
-    return rows[0]?.product_tags
-      ? this.mapper(
-          rows[0].product_tags.productId,
-          rows.map(({ tags }) => this.toTag(tags))
-        )
-      : null;
+    return this.loader.load(productId);
   }
 
   async findByProductIds(productIds: readonly string[]): Promise<readonly ProductTag[]> {

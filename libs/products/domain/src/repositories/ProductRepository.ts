@@ -1,5 +1,6 @@
 import { Token } from 'typedi';
 import { Product } from '../entities/Product';
+import type { ProductScreenshot } from '../entities/ProductScreenshot';
 
 export interface ProductRepository {
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product>;
@@ -12,7 +13,17 @@ export interface ProductRepository {
   findOneBySlug(slug: string): Promise<Product | null>;
   findOneById(id: string): Promise<Product | null>;
   findPublishedOneBySlug(slug: string): Promise<Product | null>;
-  findPublishedByCategoryId(categoryId: string): Promise<Product[]>;
+  findPublishedByCategoryId(categoryId: string, limit: number, afterId?: string): Promise<Product[]>;
+  countPublishedByCategoryId(categoryId: string): Promise<number>;
+  findVisualApps(params: {
+    limit: number;
+    afterId?: string;
+    query?: string;
+    productSlug?: string;
+  }): Promise<{ products: Product[]; total: number }>;
+  findVisualAppCover(productId: string): Promise<ProductScreenshot | null>;
+  countVisualAppScreenshots(productId: string): Promise<number>;
+  hasPublishedAlternatives(productId: string): Promise<boolean>;
   findPublishedByCategoryIdAndLimit(categoryId: string, limit: number): Promise<Product[]>;
   countPublishedAll(): Promise<number>;
   countAll(): Promise<number>;

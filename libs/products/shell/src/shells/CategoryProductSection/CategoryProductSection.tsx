@@ -5,21 +5,31 @@ import { useSuspenseQuery } from '@apollo/client/react';
 import { Breadcrumb, Button, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { ProductCard } from '../../components';
 import { getCategoryIcon } from '../CategoryNavigationSection/CategoryNavigationSection';
 
 const PRODUCTS_BY_CATEGORY_QUERY = gql`
-  query ProductsByCategoryOnSection($slug: String!, $locale: String!) {
-    productsByCategory(slug: $slug, locale: $locale) {
-      id
-      name
-      slug
-      logoUrl
-      summary
-      voteCount
-      tags {
-        id
-        name
+  query ProductsByCategoryOnSection($slug: String!, $locale: String!, $after: String) {
+    productsByCategory(slug: $slug, locale: $locale, first: 24, after: $after) {
+      totalCount
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      edges {
+        node {
+          id
+          name
+          slug
+          logoUrl
+          summary
+          voteCount
+          tags {
+            id
+            name
+          }
+        }
       }
     }
     categories(first: 100, locale: $locale) {
@@ -52,21 +62,50 @@ type Category = {
 };
 
 type ProductsByCategoryQueryData = {
-  productsByCategory?: Product[] | null;
+  productsByCategory: {
+    totalCount: number;
+    edges: Array<{ node: Product }>;
+    pageInfo: { hasNextPage: boolean; endCursor?: string | null };
+  };
   categories?: Category[] | null;
 };
 
 export function CategoryProductSection({ slug }: { slug: string }) {
   const locale = useLocale();
   const t = useTranslations('category');
-  const { data } = useSuspenseQuery<ProductsByCategoryQueryData>(PRODUCTS_BY_CATEGORY_QUERY, {
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [pageError, setPageError] = useState(false);
+  const { data, fetchMore } = useSuspenseQuery<ProductsByCategoryQueryData>(PRODUCTS_BY_CATEGORY_QUERY, {
     variables: {
       slug,
       locale,
     },
   });
 
-  const products = data?.productsByCategory ?? [];
+  const products = data.productsByCategory.edges.map(edge => edge.node);
+  const totalCount = data.productsByCategory.totalCount;
+  const loadMore = async () => {
+    if (loadingMore || !data.productsByCategory.pageInfo.hasNextPage || !data.productsByCategory.pageInfo.endCursor)
+      return;
+    setLoadingMore(true);
+    setPageError(false);
+    try {
+      await fetchMore({
+        variables: { after: data.productsByCategory.pageInfo.endCursor },
+        updateQuery: (previous, { fetchMoreResult }) => ({
+          ...fetchMoreResult,
+          productsByCategory: {
+            ...fetchMoreResult.productsByCategory,
+            edges: [...previous.productsByCategory.edges, ...fetchMoreResult.productsByCategory.edges],
+          },
+        }),
+      });
+    } catch {
+      setPageError(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
   const category = (data?.categories ?? []).find(c => c.slug === slug);
   const categoryLabel = category ? (locale === 'ko' ? category.labelKo : category.labelEn) : '';
   const emptyLabel = t('empty');
@@ -101,8 +140,8 @@ export function CategoryProductSection({ slug }: { slug: string }) {
                   className="inline-flex select-none whitespace-nowrap items-center rounded-lg border border-dark-150/80 bg-surface-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-dark-700 shadow-2xs"
                 >
                   {locale === 'ko'
-                    ? `${products.length.toLocaleString(locale)}개 도구`
-                    : `${products.length.toLocaleString(locale)} ${products.length === 1 ? 'tool' : 'tools'}`}
+                    ? `${totalCount.toLocaleString(locale)}개 도구`
+                    : `${totalCount.toLocaleString(locale)} ${totalCount === 1 ? 'tool' : 'tools'}`}
                 </span>
               )}
             </div>
@@ -158,6 +197,27 @@ export function CategoryProductSection({ slug }: { slug: string }) {
               />
             ))}
           </div>
+        )}
+        <p role="status" className="sr-only">
+          {locale === 'ko' ? `${products.length}개 도구 표시됨` : `${products.length} tools shown`}
+        </p>
+        {pageError && (
+          <p role="alert">
+            {locale === 'ko'
+              ? '목록을 불러오지 못했습니다. 다시 시도해 주세요.'
+              : 'Could not load more tools. Please try again.'}
+          </p>
+        )}
+        {data.productsByCategory.pageInfo.hasNextPage && (
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            aria-busy={loadingMore}
+            className="self-center rounded-xl border border-dark-200 px-5 py-3 focus-visible:outline focus-visible:outline-2"
+          >
+            {loadingMore ? (locale === 'ko' ? '불러오는 중…' : 'Loading…') : locale === 'ko' ? '더 보기' : 'Load more'}
+          </button>
         )}
       </div>
     </SectionWrapper>

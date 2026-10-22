@@ -287,8 +287,10 @@ type PageInfo {
 
 type Product {
   alternatives: [Product!]!
+  coverScreenshot: Screenshot
   description: String
   features: [Feature!]!
+  hasAlternatives: Boolean!
   id: ID!
   links: [Link!]!
   logoUrl: String!
@@ -296,6 +298,7 @@ type Product {
   ownedCompany: Company
   ownedCompanyId: String
   publishedAt: DateTimeISO
+  screenshotCount: Int!
   screenshots: [Screenshot!]!
   slug: String!
   summary: String!
@@ -404,7 +407,7 @@ type Query {
   productDescriptionJob(id: String!): ProductDescriptionJob
   productDescriptionJobs(limit: Int, offset: Int, status: String): [ProductDescriptionJob!]!
   productResearchJob(id: String!): ProductResearchJob
-  productsByCategory(locale: String! = "ko", slug: String!): [Product!]!
+  productsByCategory(after: String, first: Int! = 24, locale: String! = "ko", slug: String!): ProductConnection!
   productsCount: Int!
   publishedMagazines: [Magazine!]!
   publishedProductsForSitemap(after: String, first: Int! = 100): [Product!]!
@@ -417,6 +420,7 @@ type Query {
   tempProductBySlug(locale: String! = "ko", slug: String!): Product
   translationJob(id: String!): TranslationJob
   translationJobs(limit: Int, offset: Int, status: String): [TranslationJob!]!
+  visualApps(after: String, first: Int! = 24, productSlug: String, query: String): ProductConnection!
   visualFlow(id: String!): VisualFlow
   visualFlowSaveStatus(id: String!): VisualSaveStatusPayload!
   visualFlows(after: String, first: Int! = 24, flowType: VisualFlowType, page: Int, platform: VisualPlatform, productSlug: String, query: String, sort: VisualSort): VisualFlowConnection!

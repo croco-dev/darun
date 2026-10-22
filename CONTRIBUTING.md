@@ -251,6 +251,8 @@ pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 
 GraphQL 변경은 Node.js 22에서 `pnpm --filter graphql-api build:lambda`와 `pnpm --filter graphql-api verify:lambda`도 실행합니다. 이 검사는 번들 초기화뿐 아니라 실제 resolver 스키마와 커밋된 `schema.graphql`의 일치 여부를 확인합니다.
 
+목록 API의 `productsByCategory`와 `visualApps`는 기본 24개씩 반환합니다. 호출자는 `pageInfo.endCursor`와 `hasNextPage`로 이어 읽으며, 목록 표시를 위해 모든 페이지나 각 앱의 화면 목록을 미리 읽지 않습니다. 앱 카드에는 `coverScreenshot`과 `screenshotCount`를 사용합니다. 상품의 태그·추천 수는 선택된 필드만 배치 조회하며, 변경 가능한 데이터를 읽는 상품 ID loader는 요청 사이에 결과를 보관하지 않습니다.
+
 포맷 자동 수정은 다음 명령을 사용합니다.
 
 ```bash
