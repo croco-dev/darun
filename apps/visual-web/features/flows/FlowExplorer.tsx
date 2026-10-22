@@ -6,8 +6,8 @@ import { bind } from '@darun/utils-structure-react';
 import { useRef } from 'react';
 import { SaveButton } from '../collections/SaveButton';
 import { ExplorerShell } from '../explorer/ExplorerShell';
-import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
+import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
 import {
   VISUAL_PLATFORM_LABELS,
   VISUAL_PLATFORM_OPTIONS,

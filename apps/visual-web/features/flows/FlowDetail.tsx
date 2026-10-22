@@ -18,8 +18,8 @@ import { SaveButton } from '../collections/SaveButton';
 import { VISUAL_CARD_IMAGE_LOADING, VISUAL_DETAIL_IMAGE_FETCH_PRIORITY } from '../perf/imageLoading';
 import { VisualSaveButton } from '../saves/VisualSaveButton';
 import { VISUAL_PLATFORM_LABELS, VISUAL_FLOW_TYPE_LABELS } from './flowClassifications';
-import { FlowDetailState, useFlowDetail } from './useFlowDetail';
 import { stepSearch } from './stepSearch';
+import { FlowDetailState, useFlowDetail } from './useFlowDetail';
 
 const STEP_QUERY_KEY = 'step';
 
