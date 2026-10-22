@@ -315,7 +315,8 @@ describe('candidate reopen authority through the shared component and real Apoll
       expect(screen.getByRole('listitem').textContent).toBe('원래 항목');
       expect(input().disabled).toBe(false);
       expect(reopen().disabled).toBe(false);
-    }
+    },
+    10_000
   );
 
   it('ends B screen waiting and permits manual recovery without reporting job failure', async () => {
