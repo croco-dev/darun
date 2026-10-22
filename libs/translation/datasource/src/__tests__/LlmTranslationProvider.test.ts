@@ -312,6 +312,93 @@ describe('Actual LlmTranslationProvider', () => {
     expect(result.translatedText).toBe('Body text `literal-code` See more\n\n    들여쓰기 코드 블록');
   });
 
+  it.each(['single', 'bundle'] as const)('%s 문서의 HTML code/pre literal은 Writer/Reviewer에도 숨긴다', async path => {
+    const source =
+      '본문 <code>  안내<span>중첩</span>\n\t리터럴 </code>\n\n<pre>  고정값\n<span>하위</span> </pre>\n\n더보기';
+    const prompts: string[] = [];
+    const llm = {
+      getConfig: vi.fn().mockResolvedValue({ model: 'document-model' }),
+      completion: vi.fn().mockImplementation(async (_model, messages) => {
+        const prompt = messages[1].content as string;
+        prompts.push(prompt);
+        const text =
+          path === 'bundle'
+            ? prompt.split('번역할 원본 데이터 (JSON):\n')[1]!.split('\n\n검토할 번역 초안:')[0]!
+            : prompt.includes('[한국어 원문]')
+              ? prompt.split('[한국어 원문]\n')[1]!.split('\n\n[영어 번역 초안]')[0]!
+              : prompt.split('번역할 원문:\n')[1]!;
+        return { content: text.replaceAll('본문', 'Body').replaceAll('더보기', 'More').replaceAll('안내', 'Guide') };
+      }),
+    };
+    const provider = new LlmTranslationProvider(llm as unknown as LlmClient);
+    const result =
+      path === 'bundle'
+        ? (await provider.translateProductBundle({ ...request, description: source })).product
+        : await provider.translateSingle({
+            entityType: 'Product',
+            entityId: 'p1',
+            field: 'description',
+            koreanText: source,
+            mode: 'editorial',
+          });
+    expect(prompts).toHaveLength(2);
+    for (const prompt of prompts) {
+      expect(prompt).toContain('본문');
+      for (const literal of ['안내', '중첩', '리터럴', '고정값', '하위']) expect(prompt).not.toContain(literal);
+    }
+    const expected =
+      'Body <code>  안내<span>중첩</span>\n\t리터럴 </code>\n\n<pre>  고정값\n<span>하위</span> </pre>\n\nMore';
+    const hash = createHash('sha256').update(source).digest('hex');
+    if ('description' in result) {
+      expect(result.description).toBe(expected);
+      expect(result.descriptionSourceHash).toBe(hash);
+    } else {
+      expect(result.translatedText).toBe(expected);
+      expect(result.sourceHash).toBe(hash);
+    }
+  });
+
+  it.each([
+    ['Product', 'description'],
+    ['Magazine', 'content'],
+    ['bundle', 'description'],
+  ])('%s %s는 escaped HTML 본문을 두 단계로 번역하고 실제 literal과 목적지를 보존한다', async (entityType, field) => {
+    const source =
+      '\\<code> **본문** [안내][] \\</code> <code>  고정<span>하위</span>\r\n\t값 </code>\n\n\\<pre> [안내] 본문 \\</pre>\n\n<pre>  보존전용\n<span>리터럴</span> </pre>\n\n[안내]: <https://example.com/docs?x=1&amp;y=2>';
+    const expected =
+      '\\<code> **Final article** [Final guide][안내] \\</code> <code>  고정<span>하위</span>\r\n\t값 </code>\n\n\\<pre> [Final guide][안내] Final article \\</pre>\n\n<pre>  보존전용\n<span>리터럴</span> </pre>\n\n[안내]: <https://example.com/docs?x=1&amp;y=2>';
+    const llm = referenceClient();
+    const provider = new LlmTranslationProvider(llm as unknown as LlmClient);
+    const result =
+      entityType === 'bundle'
+        ? (await provider.translateProductBundle({ ...request, description: source })).product
+        : await provider.translateSingle({
+            entityType,
+            entityId: 'escaped-html-entity',
+            field,
+            koreanText: source,
+            mode: 'editorial',
+          });
+    expect(llm.completion).toHaveBeenCalledTimes(2);
+    const writer = llm.completion.mock.calls[0]![1][1].content as string;
+    const reviewer = llm.completion.mock.calls[1]![1][1].content as string;
+    for (const prompt of [writer, reviewer]) {
+      expect(prompt).toContain('본문');
+      expect(prompt).toContain('안내');
+      for (const literal of ['고정', '하위', '값', '보존전용', '리터럴']) expect(prompt).not.toContain(literal);
+    }
+    expect(reviewer).toContain('Writer article');
+    expect(reviewer).toContain('Writer guide');
+    const hash = createHash('sha256').update(source.replace(/\r\n/g, '\n')).digest('hex');
+    if ('description' in result) {
+      expect(result.description).toBe(expected);
+      expect(result.descriptionSourceHash).toBe(hash);
+    } else {
+      expect(result.translatedText).toBe(expected);
+      expect(result.sourceHash).toBe(hash);
+    }
+  });
+
   it('응답을 감싼 ```json 안의 literal fence 값도 잘리지 않고 bundle로 저장한다', async () => {
     const bundle = {
       productId: 'p1',

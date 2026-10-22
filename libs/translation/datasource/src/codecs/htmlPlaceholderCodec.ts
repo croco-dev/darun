@@ -20,17 +20,17 @@ const markdown = unified().use(remarkParse);
 function protectedHtmlRanges(source: string, document: MarkdownNode): Span[] {
   const fragments: string[] = [];
   let cursor = 0;
-  // HTML-looking bytes in Markdown code cannot open a protected HTML region outside the literal.
-  const maskCode = (node: MarkdownNode) => {
+  // Only Markdown HTML nodes can open/close HTML regions; escaped tags and code literals cannot.
+  const collectHtml = (node: MarkdownNode) => {
     const start = node.position?.start.offset;
     const end = node.position?.end.offset;
-    if ((node.type === 'code' || node.type === 'inlineCode') && start !== undefined && end !== undefined) {
-      fragments.push(source.slice(cursor, start), ' '.repeat(end - start));
+    if (node.type === 'html' && start !== undefined && end !== undefined) {
+      fragments.push(' '.repeat(start - cursor), source.slice(start, end));
       cursor = end;
-    } else if (node.children) for (const child of node.children) maskCode(child);
+    } else if (node.children) for (const child of node.children) collectHtml(child);
   };
-  maskCode(document);
-  fragments.push(source.slice(cursor));
+  collectHtml(document);
+  fragments.push(' '.repeat(source.length - cursor));
   const ranges: Span[] = [];
   const walk = (node: DefaultTreeAdapterMap['node']) => {
     if ('tagName' in node && ['script', 'style', 'pre', 'code'].includes(node.tagName) && node.sourceCodeLocation) {
@@ -90,8 +90,8 @@ function editableSpans(source: string): Span[] {
   const walk = (node: MarkdownNode) => {
     const start = node.position?.start.offset;
     const end = node.position?.end.offset;
+    // Inline HTML tags and their text are separate Markdown nodes; the whole HTML range owns both.
     if (
-      node.type === 'linkReference' &&
       start !== undefined &&
       end !== undefined &&
       protectedRanges.some(range => start >= range.start && end <= range.end)

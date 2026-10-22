@@ -23,19 +23,19 @@ export function translationMeaning(html: string): string {
   const document = markdown.parse(html) as MarkdownNode;
   const htmlFragments: string[] = [];
   let htmlCursor = 0;
-  const maskMarkdownCode = (node: MarkdownNode): void => {
+  const collectHtml = (node: MarkdownNode): void => {
     const start = node.position?.start.offset;
     const end = node.position?.end.offset;
-    if ((node.type === 'code' || node.type === 'inlineCode') && start !== undefined && end !== undefined) {
-      htmlFragments.push(html.slice(htmlCursor, start), ' '.repeat(end - start));
+    if (node.type === 'html' && start !== undefined && end !== undefined) {
+      htmlFragments.push(' '.repeat(start - htmlCursor), html.slice(start, end));
       htmlCursor = end;
     } else if (node.children) {
-      for (const child of node.children) maskMarkdownCode(child);
+      for (const child of node.children) collectHtml(child);
     }
   };
-  // HTML-looking text inside Markdown literals must not create protected HTML ranges.
-  maskMarkdownCode(document);
-  htmlFragments.push(html.slice(htmlCursor));
+  // Only parsed HTML can delimit literals; escaped tags and Markdown code cannot.
+  collectHtml(document);
+  htmlFragments.push(' '.repeat(html.length - htmlCursor));
   const htmlCodeRanges: Array<{ start: number; end: number }> = [];
   const findHtmlCode = (node: DefaultTreeAdapterMap['node']): void => {
     if ('tagName' in node && (node.tagName === 'pre' || node.tagName === 'code') && node.sourceCodeLocation) {
@@ -104,18 +104,25 @@ export function translationMeaning(html: string): string {
       if (htmlCodeRanges.some(range => start >= range.start && end <= range.end)) return;
       // A quoted block's raw slice includes line markers; remark's literal excludes them while
       // retaining code whitespace. Keep language/meta too, and leave unquoted block source intact.
+      // CommonMark code spans render each line ending as one space, without collapsing spaces/tabs.
       codeLiterals.push(
         node.type === 'inlineCode'
-          ? node.value!
+          ? node.value!.replace(/\r\n|\r|\n/g, ' ')
           : inBlockquote
             ? JSON.stringify([node.lang ?? null, node.meta ?? null, node.value])
             : html.slice(start, end)
       );
       fragments.push(html.slice(cursor, start), node.type === 'code' ? '<pre></pre>' : '<code></code>');
       cursor = end;
-    } else if (node.type === 'text' && inBlockquote && start !== undefined && end !== undefined) {
+    } else if (
+      node.type === 'text' &&
+      (inBlockquote || node.value?.includes('<')) &&
+      start !== undefined &&
+      end !== undefined
+    ) {
       if (htmlCodeRanges.some(range => start > range.start && start < range.end)) return;
-      // Only parsed text distinguishes a line's quote marker from a literal > in its body.
+      // Parsed text owns literal angle brackets and excludes a quoted line's marker.
+      // Escape it before parse5 so escaped tags cannot become HTML a second time.
       fragments.push(html.slice(cursor, start), node.value!.replace(/&/g, '&amp;').replace(/</g, '&lt;'));
       cursor = end;
     } else if (node.type === 'html' && inBlockquote && start !== undefined && end !== undefined) {

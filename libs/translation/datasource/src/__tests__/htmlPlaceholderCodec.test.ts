@@ -91,17 +91,110 @@ describe('Document placeholder fidelity', () => {
     expect(() => assertDocumentStructure(source, translated)).not.toThrow();
   });
 
-  it('HTML code 안의 참조는 literal로 남고 Markdown code 안 HTML은 뒤 참조 번역을 막지 않는다', () => {
-    const source = '<code>[안내][]</code> `[안내] <code>` [안내][]\n\n[안내]: https://example.com/a';
+  it('HTML code 안 참조는 literal로 남고 Markdown code 안 HTML은 뒤 본문·참조 번역을 막지 않는다', () => {
+    const source = '<code>[안내][]</code> `[안내] <code>` 본문 [안내][]\n\n[안내]: https://example.com/a';
     const encoded = encodeHtml(source);
     const translated = decodeHtml(
-      encoded.encodedText.replaceAll('안내', 'Directions'),
+      encoded.encodedText.replaceAll('안내', 'Directions').replaceAll('본문', 'Body'),
       encoded.placeholders,
       encoded.tokenOrder
     );
     expect(translated).toBe(
-      '<code>[안내][]</code> `[안내] <code>` [Directions][안내]\n\n[안내]: https://example.com/a'
+      '<code>[안내][]</code> `[안내] <code>` Body [Directions][안내]\n\n[안내]: https://example.com/a'
     );
+    expect(() => assertDocumentStructure(source, translated)).not.toThrow();
+  });
+
+  it.each([
+    ['inline code', '본문 <code>안내</code> 더보기', 'Body <code>안내</code> More'],
+    [
+      '중첩 inline code와 공백',
+      '본문 <code>  안내<span>중첩</span>\r\n\t리터럴 </code> 더보기',
+      'Body <code>  안내<span>중첩</span>\r\n\t리터럴 </code> More',
+    ],
+    [
+      'pre의 직접 text와 하위 wrapper',
+      '<div>본문<pre>  안내\n<span>중첩\t리터럴 </span>\n</pre>더보기</div>',
+      '<div>Body<pre>  안내\n<span>중첩\t리터럴 </span>\n</pre>More</div>',
+    ],
+  ])('%s의 literal은 숨기고 바깥 본문만 번역한다', (_kind, source, expected) => {
+    const encoded = encodeHtml(source);
+    expect(encoded.encodedText).toContain('본문');
+    expect(encoded.encodedText).toContain('더보기');
+    for (const literal of ['안내', '중첩', '리터럴']) expect(encoded.encodedText).not.toContain(literal);
+    const translated = decodeHtml(
+      encoded.encodedText.replaceAll('본문', 'Body').replaceAll('더보기', 'More').replaceAll('안내', 'Guide'),
+      encoded.placeholders,
+      encoded.tokenOrder
+    );
+    expect(translated).toBe(expected);
+    expect(() => assertDocumentStructure(source, translated)).not.toThrow();
+  });
+
+  it.each([
+    ['escaped code pair', '\\<code> **번역 대상** \\</code>', '\\<code> **Translation target** \\</code>'],
+    ['escaped pre pair', '\\<pre> **번역 대상** \\</pre>', '\\<pre> **Translation target** \\</pre>'],
+    ['escaped opening code', '\\<code> **번역 대상** </code>', '\\<code> **Translation target** </code>'],
+    ['escaped opening pre', '\\<pre> **번역 대상** </pre>', '\\<pre> **Translation target** </pre>'],
+    ['escaped closing code', '<code> **번역 대상** \\</code>', '<code> **번역 대상** \\</code>'],
+    ['escaped closing pre', '<pre> **번역 대상** \\</pre>', '<pre> **번역 대상** \\</pre>'],
+    ['even backslashes', '\\\\<code> **번역 대상** </code>', '\\\\<code> **번역 대상** </code>'],
+    ['odd backslashes', '\\\\\\<code> **번역 대상** \\</code>', '\\\\\\<code> **Translation target** \\</code>'],
+  ])('%s는 Markdown이 해석한 실제 HTML 위치에서만 literal을 보호한다', (_kind, source, expected) => {
+    const encoded = encodeHtml(source);
+    expect(encoded.encodedText.includes('번역 대상')).toBe(expected.includes('Translation target'));
+    const translated = decodeHtml(
+      encoded.encodedText.replaceAll('번역 대상', 'Translation target'),
+      encoded.placeholders,
+      encoded.tokenOrder
+    );
+    expect(translated).toBe(expected);
+    expect(() => assertDocumentStructure(source, translated)).not.toThrow();
+  });
+
+  it('escaped 태그의 본문·강조·참조는 번역하고 혼용된 실제 HTML literal은 숨긴다', () => {
+    const source =
+      '\\<code> **본문** [안내][] \\</code> <code>  고정<span>하위</span>\r\n\t값 </code>\n\n\\<pre> [안내] 본문 \\</pre>\n\n<pre>  원문\n<span>리터럴</span> </pre>\n\n[안내]: <https://example.com/docs?x=1&amp;y=2> "Guide"';
+    const encoded = encodeHtml(source);
+    expect(encoded.encodedText).toContain('본문');
+    expect(encoded.encodedText).toContain('안내');
+    for (const literal of ['고정', '하위', '값', '원문', '리터럴']) expect(encoded.encodedText).not.toContain(literal);
+    const translated = decodeHtml(
+      encoded.encodedText.replaceAll('본문', 'Article').replaceAll('안내', 'Directions'),
+      encoded.placeholders,
+      encoded.tokenOrder
+    );
+    expect(translated).toBe(
+      '\\<code> **Article** [Directions][안내] \\</code> <code>  고정<span>하위</span>\r\n\t값 </code>\n\n\\<pre> [Directions][안내] Article \\</pre>\n\n<pre>  원문\n<span>리터럴</span> </pre>\n\n[안내]: <https://example.com/docs?x=1&amp;y=2> "Guide"'
+    );
+    expect(() => assertDocumentStructure(source, translated)).not.toThrow();
+  });
+
+  it.each(['```\n[안내] <code>\n```', '    [안내] <pre>'])(
+    '%s의 HTML-looking text는 뒤 본문·참조 번역을 막지 않는다',
+    literal => {
+      const source = `${literal}\n\n본문 [안내][]\n\n[안내]: https://example.com/a`;
+      const encoded = encodeHtml(source);
+      const translated = decodeHtml(
+        encoded.encodedText.replaceAll('본문', 'Body').replaceAll('안내', 'Directions'),
+        encoded.placeholders,
+        encoded.tokenOrder
+      );
+      expect(translated).toBe(`${literal}\n\nBody [Directions][안내]\n\n[안내]: https://example.com/a`);
+      expect(() => assertDocumentStructure(source, translated)).not.toThrow();
+    }
+  );
+
+  it('raw HTML block의 backslash는 Markdown escape가 아니며 script/style literal도 계속 보호한다', () => {
+    const source = '<div>본문 \\<code>고정</code><script>실행금지</script><style>서식금지</style> 더보기</div>';
+    const encoded = encodeHtml(source);
+    for (const literal of ['고정', '실행금지', '서식금지']) expect(encoded.encodedText).not.toContain(literal);
+    const translated = decodeHtml(
+      encoded.encodedText.replaceAll('본문', 'Body').replaceAll('더보기', 'More'),
+      encoded.placeholders,
+      encoded.tokenOrder
+    );
+    expect(translated).toBe('<div>Body \\<code>고정</code><script>실행금지</script><style>서식금지</style> More</div>');
     expect(() => assertDocumentStructure(source, translated)).not.toThrow();
   });
 

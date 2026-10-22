@@ -976,6 +976,20 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       '> Introduction\n> Warning',
     ],
     [
+      'Markdown inline code newline을 의미 있는 연속 공백으로 변경',
+      '본문 `left\nright`',
+      'Body `left\nright`',
+      '본문 `left  right`',
+      'Body `left  right`',
+    ],
+    [
+      'Markdown inline code newline을 tab으로 변경',
+      '본문 `left\nright`',
+      'Body `left\nright`',
+      '본문 `left\tright`',
+      'Body `left\tright`',
+    ],
+    [
       'Markdown inline code 공백 축소',
       "본문 `printf 'a  b'`",
       "Body `printf 'a  b'`",
@@ -1142,6 +1156,34 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       'Introduction [Guide][안내] [Guide][안내] [Body][안내]\n\n[안내]: <https://example.com/old>',
       '소개 [안내] [안내][] [본문][안내]\n\n[안내]: <https://example.com/new>',
       'Introduction [Guide][안내] [Guide][안내] [Body][안내]\n\n[안내]: <https://example.com/new>',
+    ],
+    [
+      'escaped code 안 Markdown 링크 목적지 변경',
+      '\\<code> [안내](<https://example.com/old>) \\</code>',
+      '\\<code> [Guide](<https://example.com/old>) \\</code>',
+      '\\<code> [안내](<https://example.com/new>) \\</code>',
+      '\\<code> [Guide](<https://example.com/new>) \\</code>',
+    ],
+    [
+      'escaped pre 안 Markdown 이미지 목적지 변경',
+      '\\<pre> 소개 ![대체](<https://example.com/old.png>) \\</pre>',
+      '\\<pre> Introduction ![대체](<https://example.com/old.png>) \\</pre>',
+      '\\<pre> 소개 ![대체](<https://example.com/new.png>) \\</pre>',
+      '\\<pre> Introduction ![대체](<https://example.com/new.png>) \\</pre>',
+    ],
+    [
+      '여는 code만 escape된 Markdown autolink 목적지 변경',
+      '\\<code> 소개 <https://example.com/old> </code>',
+      '\\<code> Introduction <https://example.com/old> </code>',
+      '\\<code> 소개 <https://example.com/new> </code>',
+      '\\<code> Introduction <https://example.com/new> </code>',
+    ],
+    [
+      '실제 code와 escaped code 혼합 문서의 참조 목적지 변경',
+      '<code>고정 [literal](<https://example.com/fixed>)</code>\n\n\\<code> [안내][d] \\</code>\n\n[d]: <https://example.com/old>',
+      '<code>고정 [literal](<https://example.com/fixed>)</code>\n\n\\<code> [Guide][d] \\</code>\n\n[d]: <https://example.com/old>',
+      '<code>고정 [literal](<https://example.com/fixed>)</code>\n\n\\<code> [안내][d] \\</code>\n\n[d]: <https://example.com/new>',
+      '<code>고정 [literal](<https://example.com/fixed>)</code>\n\n\\<code> [Guide][d] \\</code>\n\n[d]: <https://example.com/new>',
     ],
   ])(
     '%s는 같은 revision에서 search·translation intent와 연결 pending job을 등록한다',
@@ -1404,6 +1446,37 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       'Introduction [Guide][안내] [Guide][안내] [Body][안내]\n\n[안내]: <https://example.com/a>',
     ],
     [
+      '같은 escaped code 안 링크 목적지의 표시용 공백',
+      '\\<code>  [안내](<https://example.com/a>)  \\</code>',
+      '\\<code> [안내](<https://example.com/a>) \\</code>',
+      '\\<code>  [Guide](<https://example.com/a>)  \\</code>',
+    ],
+    [
+      '같은 escaped pre 안 이미지 목적지 앞 soft newline',
+      '\\<pre> 소개\n![대체](<https://example.com/a.png>) \\</pre>',
+      '\\<pre> 소개 ![대체](<https://example.com/a.png>) \\</pre>',
+      '\\<pre> Introduction\n![대체](<https://example.com/a.png>) \\</pre>',
+    ],
+    [
+      '같은 escaped code 안 참조 목적지 앞 soft newline',
+      '\\<code>\n[안내][d] \\</code>\n\n[d]: <https://example.com/a>',
+      '\\<code> [안내][d] \\</code>\n\n[d]: <https://example.com/a>',
+      '\\<code>\n[Guide][d] \\</code>\n\n[d]: <https://example.com/a>',
+    ],
+    ['같은 Markdown inline literal 안의 LF 표현', '본문 `left\nright`', '본문 `left right`', 'Body `left\nright`'],
+    [
+      '같은 Markdown inline literal 안의 CRLF 표현',
+      '본문 `left\r\nright`',
+      '본문 `left right`',
+      'Body `left\r\nright`',
+    ],
+    [
+      '같은 Markdown 인용 inline literal 안의 LF 표현',
+      '> 소개 `left\n> right`',
+      '> 소개 `left right`',
+      '> Introduction `left\n> right`',
+    ],
+    [
       '같은 Markdown inline literal 밖의 soft newline',
       "본문\n`printf 'a  b'` 조건",
       "본문 `printf 'a  b'` 조건",
@@ -1454,7 +1527,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
         if (originalEnglish !== undefined) {
           expect(priorRows.find(row => row?.field === 'description')).toMatchObject({
             value: originalEnglish,
-            sourceHash: createHash('sha256').update(original).digest('hex'),
+            sourceHash: createHash('sha256').update(original.replace(/\r\n/g, '\n').trim()).digest('hex'),
             model: 'offline-readsync',
             promptVersion: TRANSLATION_PROMPT_VERSION,
           });

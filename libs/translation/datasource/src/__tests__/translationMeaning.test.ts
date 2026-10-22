@@ -178,6 +178,31 @@ describe('translationMeaning Markdown 코드 공백', () => {
   ])('%s는 의미가 같다', (_kind, before, after) => {
     expect(translationMeaning(before)).toBe(translationMeaning(after));
   });
+
+  it.each([
+    ['LF', '소개 `left\nright`'],
+    ['CRLF', '소개 `left\r\nright`'],
+    ['CR', '소개 `left\rright`'],
+  ])('inline code의 %s는 CommonMark line ending 하나를 space 하나로 비교한다', (_kind, source) => {
+    expect(JSON.parse(translationMeaning(source))).toEqual(['<p[]>소개 <code[]></code></p>', ['left right']]);
+    expect(translationMeaning(source)).toBe(translationMeaning('소개 `left right`'));
+  });
+
+  it.each([
+    ['newline 옆 space', '소개 `left \nright`', '소개 `left  right`'],
+    ['newline 옆 tab', '소개 `left\t\nright`', '소개 `left\t right`'],
+  ])('%s는 line ending만 space로 바꾸고 이웃 공백은 유지한다', (_kind, source, equivalent) => {
+    expect(translationMeaning(source)).toBe(translationMeaning(equivalent));
+    expect(translationMeaning(source)).not.toBe(translationMeaning('소개 `left right`'));
+  });
+
+  it.each([
+    ['inline 연속 space', '소개 `left  right`', '소개 `left right`'],
+    ['inline tab', '소개 `left\tright`', '소개 `left right`'],
+    ['HTML code newline', '소개 <code>left\nright</code>', '소개 <code>left right</code>'],
+  ])('%s 차이는 inline-code line ending 동등성으로 합치지 않는다', (_kind, before, after) => {
+    expect(translationMeaning(before)).not.toBe(translationMeaning(after));
+  });
 });
 
 describe('translationMeaning Markdown 문단과 inline code', () => {
@@ -702,6 +727,93 @@ describe('translationMeaning Markdown 링크·이미지 angle 목적지', () => 
     ],
     ['bare 목적지 링크', '[안내](https://example.com/a)', '[안내](https://example.com/b)'],
   ])('기존 %s 의미를 보존한다', (_kind, before, after) => {
+    expect(translationMeaning(before)).not.toBe(translationMeaning(after));
+  });
+});
+
+describe('translationMeaning escaped HTML 표기', () => {
+  it.each([
+    ['escaped code', '\\<code> [안내](<https://example.com/old>) \\</code>'],
+    ['escaped pre', '\\<pre> [안내](<https://example.com/old>) \\</pre>'],
+    ['여는 code만 escape', '\\<code> [안내](<https://example.com/old>) </code>'],
+    ['여는 pre만 escape', '\\<pre> [안내](<https://example.com/old>) </pre>'],
+    ['홀수 backslash', '\\\\\\<code> [안내](<https://example.com/old>) \\\\\\</code>'],
+    ['escaped code 안 이미지', '\\<code> ![대체](<https://example.com/old.png>) \\</code>'],
+    ['escaped pre 안 autolink', '\\<pre> <https://example.com/old> \\</pre>'],
+    ['escaped code 안 full 참조', '\\<code> [안내][d] \\</code>\n\n[d]: <https://example.com/old>'],
+    ['escaped pre 안 참조 이미지', '\\<pre> ![대체][] \\</pre>\n\n[대체]: <https://example.com/old.png>'],
+    ['escaped code 안 shortcut 참조', '\\<code> [안내] \\</code>\n\n[안내]: <https://example.com/old>'],
+    [
+      '실제 HTML code와 escaped code 혼합',
+      '<code>고정 [literal](<https://example.com/fixed>)</code>\n\n\\<code> [안내](<https://example.com/old>) \\</code>',
+    ],
+    ['Markdown code의 HTML 표기 뒤 escaped pre', '`<code>`\n\n\\<pre> [안내](<https://example.com/old>) \\</pre>'],
+  ])('%s 안 실제 목적지 변경은 최종 HTML 비교에 남는다', (_kind, source) => {
+    const changed = source.replace('/old', '/new');
+    expect(translationMeaning(source)).not.toBe(translationMeaning(changed));
+    const meaning = JSON.parse(translationMeaning(source))[0] as string;
+    expect(meaning).toContain('"value":"https://example.com/old');
+  });
+
+  it('escaped 태그는 문자로, 그 사이 링크는 독립 목적지로 보존한다', () => {
+    expect(JSON.parse(translationMeaning('\\<code> [안내](<https://example.com/old>) \\</code>'))).toEqual([
+      '<p[]><code> [안내](<a[{"name":"href","value":"https://example.com/old"}]></a>) </code></p>',
+      [],
+    ]);
+  });
+
+  it.each([
+    [
+      'code의 표시용 공백',
+      '\\<code>  [안내](<https://example.com/a>)  \\</code>',
+      '\\<code> [안내](<https://example.com/a>) \\</code>',
+    ],
+    [
+      'pre의 soft newline',
+      '\\<pre>\n[안내](<https://example.com/a>) \\</pre>',
+      '\\<pre> [안내](<https://example.com/a>) \\</pre>',
+    ],
+    [
+      '이미지 앞 soft newline',
+      '\\<code>\n![대체](<https://example.com/a.png>) \\</code>',
+      '\\<code> ![대체](<https://example.com/a.png>) \\</code>',
+    ],
+    [
+      '참조 앞 soft newline',
+      '\\<code>\n[안내][d] \\</code>\n\n[d]: <https://example.com/a>',
+      '\\<code> [안내][d] \\</code>\n\n[d]: <https://example.com/a>',
+    ],
+  ])('%s는 같은 실제 링크 의미를 유지한다', (_kind, source, equivalent) => {
+    expect(translationMeaning(source)).toBe(translationMeaning(equivalent));
+  });
+
+  it.each([
+    ['실제 code', '<code> [안내](<https://example.com/old>) </code>'],
+    ['실제 pre', '<pre> [안내](<https://example.com/old>) </pre>'],
+    ['닫는 code만 escape', '<code> [안내](<https://example.com/old>) \\</code>'],
+    ['닫는 pre만 escape', '<pre> [안내](<https://example.com/old>) \\</pre>'],
+    ['짝수 backslash의 실제 code', '\\\\<code> [안내](<https://example.com/old>) \\\\</code>'],
+    ['Markdown inline code', '`\\<code> [안내](<https://example.com/old>) \\</code>`'],
+    ['Markdown fenced code', '```\n\\<code> [안내](<https://example.com/old>) \\</code>\n```'],
+    ['Markdown indented code', '    \\<code> [안내](<https://example.com/old>) \\</code>'],
+  ])('%s 안 표기는 실제 링크로 재해석하지 않는다', (_kind, source) => {
+    expect(JSON.parse(translationMeaning(source))[0]).not.toContain('"name":"href"');
+  });
+
+  it.each([
+    [
+      '표시 내용',
+      '\\<code> [안내](<https://example.com/a>) \\</code>',
+      '\\<code> [주의](<https://example.com/a>) \\</code>',
+    ],
+    [
+      'alt',
+      '\\<code> ![대체](<https://example.com/a.png>) \\</code>',
+      '\\<code> ![조건](<https://example.com/a.png>) \\</code>',
+    ],
+    ['문단 구조', '\\<code> 안내\n\n주의 \\</code>', '\\<code> 안내 주의 \\</code>'],
+    ['실제 HTML literal 공백', '<code>left  right</code>', '<code>left right</code>'],
+  ])('%s 변경은 계속 구분한다', (_kind, before, after) => {
     expect(translationMeaning(before)).not.toBe(translationMeaning(after));
   });
 });
