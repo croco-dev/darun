@@ -1,29 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { GetAllProducts } from '../usecases/GetAllProducts';
+import { createMockRepository } from './productRepositoryMock';
 
 function repository(): ProductRepository {
   return {
-    updateById: vi.fn(),
+    ...createMockRepository(),
     findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
     findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
-    findPublishedByAfterIdAndLimit: vi.fn(),
-    findTopNSortByPublishedAtDesc: vi.fn(),
-    findPublishedByIds: vi.fn(),
-    findPublishedOneById: vi.fn(),
-    findOneBySlug: vi.fn(),
-    findOneById: vi.fn(),
-    findPublishedOneBySlug: vi.fn(),
-    findPublishedByCategoryId: vi.fn(),
-    findPublishedByCategoryIdAndLimit: vi.fn(),
-    countPublishedByCategoryId: vi.fn(),
-    findVisualApps: vi.fn(),
-    findVisualAppCover: vi.fn(),
-    countVisualAppScreenshots: vi.fn(),
-    hasPublishedAlternatives: vi.fn(),
-    countPublishedAll: vi.fn(),
     countAll: vi.fn().mockResolvedValue(42),
-    insert: vi.fn(),
   };
 }
 

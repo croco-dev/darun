@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
 import { Product } from '../entities/Product';
-import type { ProductRepository } from '../repositories/ProductRepository';
 import { GetPublishedProductsForSitemap } from '../usecases/GetPublishedProductsForSitemap';
+import { createMockRepository } from './productRepositoryMock';
 
 function makeProduct(id: string, name: string): Product {
   return new Product({
@@ -18,28 +18,7 @@ function makeProduct(id: string, name: string): Product {
 async function runWithProducts(ids: string[], params: { limit: number; cursor?: string }) {
   const mockProducts = ids.map(id => makeProduct(id, `Product ${id}`));
   const findPublishedByAfterIdAndLimit = vi.fn().mockResolvedValue(mockProducts);
-  const repository: ProductRepository = {
-    findPublishedByAfterIdAndLimit,
-    updateById: vi.fn(),
-    findAllByBeforeIdAndLimit: vi.fn(),
-    findAllByAfterIdAndLimit: vi.fn(),
-    findTopNSortByPublishedAtDesc: vi.fn(),
-    findPublishedByIds: vi.fn(),
-    findPublishedOneById: vi.fn(),
-    findOneBySlug: vi.fn(),
-    findOneById: vi.fn(),
-    findPublishedOneBySlug: vi.fn(),
-    findPublishedByCategoryId: vi.fn(),
-    countPublishedByCategoryId: vi.fn(),
-    findVisualApps: vi.fn(),
-    findVisualAppCover: vi.fn(),
-    countVisualAppScreenshots: vi.fn(),
-    hasPublishedAlternatives: vi.fn(),
-    findPublishedByCategoryIdAndLimit: vi.fn(),
-    countPublishedAll: vi.fn(),
-    countAll: vi.fn(),
-    insert: vi.fn(),
-  };
+  const repository = { ...createMockRepository(), findPublishedByAfterIdAndLimit };
   const useCase = new GetPublishedProductsForSitemap(repository);
   const result = await useCase.execute(params);
   return { result, findPublishedByAfterIdAndLimit };
