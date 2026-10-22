@@ -37,6 +37,9 @@ type Documents = {
     "\n  query ProductsCountOnHomePage {\n    productsCount\n  }\n": typeof types.ProductsCountOnHomePageDocument,
     "\n  query ProductBySlugOnProductAlternativePageMetadata($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      name\n      summary\n      logoUrl\n      tags {\n        name\n      }\n      alternatives {\n        name\n        tags {\n          name\n        }\n      }\n    }\n  }\n": typeof types.ProductBySlugOnProductAlternativePageMetadataDocument,
     "\n  query ProductBySlugOnProductDetailPageMetadata($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      name\n      summary\n      logoUrl\n      description\n      tags {\n        name\n      }\n      ownedCompany {\n        name\n      }\n    }\n  }\n": typeof types.ProductBySlugOnProductDetailPageMetadataDocument,
+    "\n  query PublishedProductsForSitemap($first: Int!, $after: String) {\n    publishedProductsForSitemap(first: $first, after: $after) {\n      id\n      slug\n      updatedAt\n      publishedAt\n      hasAlternatives\n    }\n  }\n": typeof types.PublishedProductsForSitemapDocument,
+    "\n  query CategoriesForSitemap($first: Int!, $locale: String!) {\n    categories(first: $first, locale: $locale) {\n      id\n      slug\n    }\n  }\n": typeof types.CategoriesForSitemapDocument,
+    "\n  query PublishedMagazinesForSitemap {\n    publishedMagazines {\n      id\n      slug\n      updatedAt\n      publishedAt\n    }\n  }\n": typeof types.PublishedMagazinesForSitemapDocument,
     "\n  query AppDetailOnPageMetadata($slug: String!) {\n    productBySlug(slug: $slug) {\n      id\n      name\n      summary\n    }\n  }\n": typeof types.AppDetailOnPageMetadataDocument,
     "\n  query VisualFlowOnDetailPageMetadata($id: String!) {\n    visualFlow(id: $id) {\n      id\n      title\n      product {\n        name\n        slug\n      }\n    }\n  }\n": typeof types.VisualFlowOnDetailPageMetadataDocument,
     "\n  query VisualScreenshotOnDetailPageMetadata($id: String!) {\n    visualScreenshot(id: $id) {\n      id\n      title\n      imageUrl\n      imageAlt\n      product {\n        name\n        slug\n      }\n    }\n  }\n": typeof types.VisualScreenshotOnDetailPageMetadataDocument,
@@ -135,6 +138,9 @@ const documents: Documents = {
     "\n  query ProductsCountOnHomePage {\n    productsCount\n  }\n": types.ProductsCountOnHomePageDocument,
     "\n  query ProductBySlugOnProductAlternativePageMetadata($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      name\n      summary\n      logoUrl\n      tags {\n        name\n      }\n      alternatives {\n        name\n        tags {\n          name\n        }\n      }\n    }\n  }\n": types.ProductBySlugOnProductAlternativePageMetadataDocument,
     "\n  query ProductBySlugOnProductDetailPageMetadata($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      name\n      summary\n      logoUrl\n      description\n      tags {\n        name\n      }\n      ownedCompany {\n        name\n      }\n    }\n  }\n": types.ProductBySlugOnProductDetailPageMetadataDocument,
+    "\n  query PublishedProductsForSitemap($first: Int!, $after: String) {\n    publishedProductsForSitemap(first: $first, after: $after) {\n      id\n      slug\n      updatedAt\n      publishedAt\n      hasAlternatives\n    }\n  }\n": types.PublishedProductsForSitemapDocument,
+    "\n  query CategoriesForSitemap($first: Int!, $locale: String!) {\n    categories(first: $first, locale: $locale) {\n      id\n      slug\n    }\n  }\n": types.CategoriesForSitemapDocument,
+    "\n  query PublishedMagazinesForSitemap {\n    publishedMagazines {\n      id\n      slug\n      updatedAt\n      publishedAt\n    }\n  }\n": types.PublishedMagazinesForSitemapDocument,
     "\n  query AppDetailOnPageMetadata($slug: String!) {\n    productBySlug(slug: $slug) {\n      id\n      name\n      summary\n    }\n  }\n": types.AppDetailOnPageMetadataDocument,
     "\n  query VisualFlowOnDetailPageMetadata($id: String!) {\n    visualFlow(id: $id) {\n      id\n      title\n      product {\n        name\n        slug\n      }\n    }\n  }\n": types.VisualFlowOnDetailPageMetadataDocument,
     "\n  query VisualScreenshotOnDetailPageMetadata($id: String!) {\n    visualScreenshot(id: $id) {\n      id\n      title\n      imageUrl\n      imageAlt\n      product {\n        name\n        slug\n      }\n    }\n  }\n": types.VisualScreenshotOnDetailPageMetadataDocument,
@@ -316,6 +322,18 @@ export function graphql(source: "\n  query ProductBySlugOnProductAlternativePage
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query ProductBySlugOnProductDetailPageMetadata($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      name\n      summary\n      logoUrl\n      description\n      tags {\n        name\n      }\n      ownedCompany {\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  query ProductBySlugOnProductDetailPageMetadata($slug: String!, $locale: String!) {\n    productBySlug(slug: $slug, locale: $locale) {\n      name\n      summary\n      logoUrl\n      description\n      tags {\n        name\n      }\n      ownedCompany {\n        name\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query PublishedProductsForSitemap($first: Int!, $after: String) {\n    publishedProductsForSitemap(first: $first, after: $after) {\n      id\n      slug\n      updatedAt\n      publishedAt\n      hasAlternatives\n    }\n  }\n"): (typeof documents)["\n  query PublishedProductsForSitemap($first: Int!, $after: String) {\n    publishedProductsForSitemap(first: $first, after: $after) {\n      id\n      slug\n      updatedAt\n      publishedAt\n      hasAlternatives\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query CategoriesForSitemap($first: Int!, $locale: String!) {\n    categories(first: $first, locale: $locale) {\n      id\n      slug\n    }\n  }\n"): (typeof documents)["\n  query CategoriesForSitemap($first: Int!, $locale: String!) {\n    categories(first: $first, locale: $locale) {\n      id\n      slug\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query PublishedMagazinesForSitemap {\n    publishedMagazines {\n      id\n      slug\n      updatedAt\n      publishedAt\n    }\n  }\n"): (typeof documents)["\n  query PublishedMagazinesForSitemap {\n    publishedMagazines {\n      id\n      slug\n      updatedAt\n      publishedAt\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

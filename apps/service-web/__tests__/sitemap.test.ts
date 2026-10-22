@@ -23,7 +23,7 @@ describe('buildSitemapEntries', () => {
   it('모든 URL이 https://www.darun.io canonical origin을 사용한다', async () => {
     const entries = await buildSitemapEntries({
       fetchProducts: async () => [
-        { id: '1', slug: 'notion', publishedAt: '2026-01-01T00:00:00Z', alternatives: [{ slug: 'obsidian' }] },
+        { id: '1', slug: 'notion', publishedAt: '2026-01-01T00:00:00Z', hasAlternatives: true },
       ],
       fetchCategories: async () => [{ id: 'c1', slug: 'productivity' }],
       fetchMagazines: async () => [{ id: 'm1', slug: 'tech-trends', publishedAt: '2026-01-01T00:00:00Z' }],
@@ -40,8 +40,8 @@ describe('buildSitemapEntries', () => {
   it('중복 URL이 존재하지 않는다', async () => {
     const entries = await buildSitemapEntries({
       fetchProducts: async () => [
-        { id: '1', slug: 'p1', alternatives: [] },
-        { id: '2', slug: 'p2', alternatives: [{ slug: 'p1' }] },
+        { id: '1', slug: 'p1', hasAlternatives: false },
+        { id: '2', slug: 'p2', hasAlternatives: true },
       ],
       fetchCategories: async () => [{ slug: 'cat1' }],
       fetchMagazines: async () => [{ slug: 'mag1' }],
@@ -68,9 +68,9 @@ describe('buildSitemapEntries', () => {
   it('대안(alternatives) 경로에는 대안이 존재하는 상품만 포함된다', async () => {
     const entries = await buildSitemapEntries({
       fetchProducts: async () => [
-        { id: '1', slug: 'with-alt', alternatives: [{ slug: 'alt-1' }] },
-        { id: '2', slug: 'no-alt', alternatives: [] },
-        { id: '3', slug: 'null-alt', alternatives: null },
+        { id: '1', slug: 'with-alt', hasAlternatives: true },
+        { id: '2', slug: 'no-alt', hasAlternatives: false },
+        { id: '3', slug: 'null-alt' },
       ],
       fetchCategories: async () => [],
       fetchMagazines: async () => [],
@@ -87,7 +87,7 @@ describe('buildSitemapEntries', () => {
 
   it('내부 검색 URL이나 비교 URL, .md URL이 포함되지 않는다', async () => {
     const entries = await buildSitemapEntries({
-      fetchProducts: async () => [{ id: '1', slug: 'product-1', alternatives: [] }],
+      fetchProducts: async () => [{ id: '1', slug: 'product-1', hasAlternatives: false }],
       fetchCategories: async () => [{ slug: 'cat-1' }],
       fetchMagazines: async () => [{ slug: 'mag-1' }],
     });
@@ -144,7 +144,7 @@ describe('buildSitemapEntries', () => {
     const mockProducts: SitemapProduct[] = Array.from({ length: count }, (_, i) => ({
       id: `p-${i + 1}`,
       slug: `product-${i + 1}`,
-      alternatives: [],
+      hasAlternatives: false,
     }));
 
     const entries = await buildSitemapEntries({
@@ -161,7 +161,7 @@ describe('buildSitemapEntries', () => {
 
   it('각 라우트 유형에 맞는 changeFrequency와 priority를 올바르게 부여한다', async () => {
     const entries = await buildSitemapEntries({
-      fetchProducts: async () => [{ id: '1', slug: 'notion', alternatives: [{ slug: 'obsidian' }] }],
+      fetchProducts: async () => [{ id: '1', slug: 'notion', hasAlternatives: true }],
       fetchCategories: async () => [{ slug: 'productivity' }],
       fetchMagazines: async () => [{ slug: 'trends' }],
     });
@@ -197,7 +197,7 @@ describe('buildSitemapEntries', () => {
 
   it('한글 등 비ASCII 슬러그가 포함된 경우 올바르게 URI 인코딩된다', async () => {
     const entries = await buildSitemapEntries({
-      fetchProducts: async () => [{ id: '1', slug: '생산성-도구', alternatives: [{ slug: '대안-서비스' }] }],
+      fetchProducts: async () => [{ id: '1', slug: '생산성-도구', hasAlternatives: true }],
       fetchCategories: async () => [{ slug: '개발-도구' }],
       fetchMagazines: async () => [{ slug: '트렌드-리포트' }],
     });
