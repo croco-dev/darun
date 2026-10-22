@@ -55,6 +55,23 @@ const nestedMapSecret = `synthetic-http-nested-map-${randomUUID()}`;
 const frameSecret = `synthetic-http-frame-${randomUUID()}`;
 const multilineProperty = `synthetic-http-property-${randomUUID()}\n    at ${frameSecret} (marker)\nend`;
 const escapedProperty = `synthetic-http-property-${randomUUID()}-"quote"-\\slash-\\nline`;
+// Duplicate ObjectFields keep every occurrence in the AST while the JS conversion
+// keeps only the last value; percent hex digits fold case-insensitively in whole-key
+// comparisons, so lowercase and mixed variants of a rejected property name must match.
+const duplicateFieldSecret = `synthetic-http-duplicate-${randomUUID()}`;
+const nestedVariableSecret = `synthetic-http-nested-variable-${randomUUID()}`;
+const uriProperty = `credential/${randomUUID()}a+b c`;
+const uriPropertyHexKeys = [
+  uriProperty,
+  encodeURI(uriProperty),
+  encodeURIComponent(uriProperty),
+  encodeURI(uriProperty).replace(/%[\dA-Fa-f]{2}/g, octet => octet.toLowerCase()),
+  encodeURIComponent(uriProperty).replace(/%[\dA-Fa-f]{2}/g, octet => octet.toLowerCase()),
+  // Mixed hex case: lowercase the first two escapes of each stored form, uppercase the rest.
+  encodeURIComponent(uriProperty).replace(/%[\dA-Fa-f]{2}/g, (octet, offset) =>
+    offset < 20 ? octet.toLowerCase() : octet.toUpperCase()
+  ),
+];
 const coercionCases = [
   { name: 'array', value: [arraySecret], secrets: [arraySecret], echoed: [arraySecret] },
   { name: 'object', value: { token: objectSecret }, secrets: [objectSecret], echoed: [objectSecret] },
@@ -125,8 +142,10 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
   const envelopes: Sentry.Envelope[] = [];
   const integrationBodies: unknown[] = [];
   const transactionBodies: unknown[] = [];
+  const sdkCookieAttributes: Record<string, unknown>[] = [];
   const sdkErrorDiagnostics: {
     eventId?: string;
+    transaction?: string;
     stack?: string;
     exception: Sentry.Event['exception'];
   }[] = [];
@@ -174,6 +193,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
         // the common boundary so a lost stack cannot be excused as GET behavior.
         sdkErrorDiagnostics.push({
           eventId: event.event_id,
+          transaction: event.transaction,
           stack: hint.originalException instanceof Error ? hint.originalException.stack : undefined,
           exception: event.exception ? JSON.parse(JSON.stringify(event.exception)) : undefined,
         });
@@ -190,6 +210,12 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     // Observe the real RequestData input before the common send boundary. Transactions
     // must be produced by incoming HTTP instrumentation, never startTransaction fixtures.
     client?.addEventProcessor(event => {
+      const data = event.contexts?.trace?.data;
+      if (data) {
+        sdkCookieAttributes.push(
+          Object.fromEntries(Object.entries(data).filter(([key]) => key.startsWith('http.request.header.cookie.')))
+        );
+      }
       if (event.type === 'transaction') transactionBodies.push(event.request?.data);
       else integrationBodies.push(event.request?.data);
       return event;
@@ -258,6 +284,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     integrationBodies.length = 0;
     consoleDiagnostics.length = 0;
     sdkErrorDiagnostics.length = 0;
+    sdkCookieAttributes.length = 0;
     // A breadcrumb from an earlier HTTP request must never satisfy the batch oracle.
     Sentry.getIsolationScope().clearBreadcrumbs();
     Sentry.getCurrentScope().clearBreadcrumbs();
@@ -308,7 +335,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     admin = true,
     expectedStatus = 200,
     expectedEventCount = 1,
-    search = ''
+    search = '',
+    fixtureHeaders: Record<string, string> = {}
   ): Promise<Result | Result[]> {
     const rawBody = body === undefined ? undefined : JSON.stringify(body);
     const method = body === undefined ? 'GET' : 'POST';
@@ -323,6 +351,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
             'content-type': 'application/json',
             'x-fixture-admin': String(admin),
             'x-fixture-diagnostic': 'http-fixture',
+            ...fixtureHeaders,
           },
         },
         res => {
@@ -535,6 +564,305 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     expectNoCredentials(event, secrets);
   }
 
+  for (const variable of ['providerCredential', 'searchCredential']) {
+    it(`${variable}: variables-only URL search never reaches HTTP envelopes`, async () => {
+      const property = `url-property-${randomUUID()}-"quote"-\\slash-+/= space`;
+      const credential = { POST: false, graphql: false, [property]: false };
+      const operation = saveOperation('variables');
+      operation.variables = { [variable]: credential };
+      // No query parameter: the POST body identifies the credential argument.
+      const search = `?${new URLSearchParams({ variables: JSON.stringify({ [variable]: credential }) })}`;
+      waitForSettingConsole('BAD_USER_INPUT');
+      const response = await send([operation, diagnostic], true, 400, 2, search);
+      if (!Array.isArray(response)) throw new Error('Expected a batched GraphQL response');
+      expect(response[0].data).toBeUndefined();
+      expect(response[0].errors).toEqual([
+        expect.objectContaining({
+          message: expect.stringContaining('String cannot represent a non string value'),
+          extensions: expect.objectContaining({ code: 'BAD_USER_INPUT' }),
+        }),
+      ]);
+      expect(response[0].errors?.[0].message).toContain(property);
+      expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
+      expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+      expect(repository.findSetting).not.toHaveBeenCalled();
+      expect(repository.upsertSetting).not.toHaveBeenCalled();
+      expectLateDiagnosticEvent('BAD_USER_INPUT', [property]);
+      expectNoCredentials(envelopes, [property]);
+    });
+  }
+
+  it('credential substrings in valid GraphQL variable names never reach HTTP error/transaction envelopes', async () => {
+    const secret = `credential_${randomUUID().replaceAll('-', '_')}`;
+    const variable = `prefix_${secret}_suffix`;
+    const operation = saveOperation('variables');
+    operation.query = operation.query.replaceAll('providerCredential', variable);
+    operation.variables = { [variable]: secret, searchCredential: { type: false, id: false } };
+    const response = await send(operation, true, 400, 1, '', { 'x-credential-echo': secret });
+    expect(response).toMatchObject({ errors: [{ extensions: { code: 'BAD_USER_INPUT' } }] });
+    expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+    expect(repository.upsertSetting).not.toHaveBeenCalled();
+    expectNoCredentials(envelopes, [secret]);
+    expect(events[0].extra?.variables).toEqual({
+      'prefix_[REDACTED]_suffix': '[REDACTED]',
+      searchCredential: '[REDACTED]',
+    });
+  });
+
+  for (const argument of ['apiKey', 'braveApiKey']) {
+    for (const encoding of ['inline', 'defaults']) {
+      for (const shape of ['object', 'array']) {
+        it(`${argument}: rejected ${encoding} ${shape} credentials and custom headers never reach HTTP envelopes`, async () => {
+          const property = `credential_${randomUUID().replaceAll('-', '_')}`;
+          const secret = `literal-${randomUUID()}-"quote"-\\slash`;
+          const object = `{ ${property}: { type: ${JSON.stringify(secret)}, id: false } }`;
+          const literal = shape === 'array' ? `[${object}]` : object;
+          const operation = {
+            query:
+              encoding === 'inline'
+                ? `mutation HttpRejectedLiteral { saved: updateLlmSetting(${argument}: ${literal}) ${selection} }`
+                : `mutation HttpRejectedLiteral($providerCredential: String = ${literal}) { saved: updateLlmSetting(${argument}: $providerCredential) ${selection} }`,
+          };
+          // Validation failures may not have an Apollo operation. The independent
+          // non-sensitive operation guarantees a real error envelope in this batch.
+          const response = await send([operation, diagnostic], true, 400, 1, '', {
+            type: secret,
+            event_id: encodeURIComponent(secret),
+            'x-property-echo': property,
+          });
+          if (!Array.isArray(response)) throw new Error('Expected a batched GraphQL response');
+          expect(response[0].data).toBeUndefined();
+          expect(response[0].errors).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                message: expect.stringContaining('String cannot represent a non string value'),
+                extensions: expect.objectContaining({ code: 'GRAPHQL_VALIDATION_FAILED' }),
+              }),
+            ])
+          );
+          expect(response[0].errors?.[0].message).toContain(property);
+          expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
+          expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+          expect(repository.findSetting).not.toHaveBeenCalled();
+          expect(repository.upsertSetting).not.toHaveBeenCalled();
+          expectProtectedEvent('HttpDiagnostics', 'unrelated');
+          expectNoCredentials(envelopes, [secret, property]);
+          for (const event of [...events, ...transactions]) {
+            expect(event.request?.headers).toMatchObject({
+              type: '[REDACTED]',
+              event_id: '[REDACTED]',
+              'x-property-echo': '[REDACTED]',
+            });
+          }
+        });
+      }
+    }
+  }
+
+  for (const argument of ['apiKey', 'braveApiKey']) {
+    for (const source of ['runtime', 'scalar default']) {
+      it(`${argument}: inline duplicate fields and nested variable ${source} never reach HTTP envelopes`, async () => {
+        const duplicateField = `{ token: "${duplicateFieldSecret}", token: false, nested: { inner: $httpInlineVariable } }`;
+        const operation = {
+          query:
+            source === 'runtime'
+              ? `mutation HttpRejectedDuplicate { saved: updateLlmSetting(${argument}: ${duplicateField}) ${selection} }`
+              : `mutation HttpRejectedDuplicate($httpInlineVariable: String = ${JSON.stringify(
+                  nestedVariableSecret
+                )}) { saved: updateLlmSetting(${argument}: ${duplicateField}) ${selection} }`,
+          ...(source === 'runtime' ? { variables: { httpInlineVariable: nestedVariableSecret } } : {}),
+        };
+        const response = await send([operation, diagnostic], true, 400, 1, '', {
+          'x-duplicate-echo': duplicateFieldSecret,
+          'x-nested-echo': encodeURIComponent(nestedVariableSecret),
+        });
+        if (!Array.isArray(response)) throw new Error('Expected a batched GraphQL response');
+        expect(response[0].data).toBeUndefined();
+        expect(response[0].errors).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ message: expect.stringContaining('String cannot represent a non string value') }),
+          ])
+        );
+        expect(response[0].errors?.[0].message).toContain(duplicateFieldSecret);
+        expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
+        expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+        expect(repository.findSetting).not.toHaveBeenCalled();
+        expect(repository.upsertSetting).not.toHaveBeenCalled();
+        expectProtectedEvent('HttpDiagnostics', 'unrelated');
+        expectNoCredentials(envelopes, [duplicateFieldSecret, nestedVariableSecret]);
+        for (const event of [...events, ...transactions]) {
+          expect(event.request?.headers).toMatchObject({
+            'x-duplicate-echo': '[REDACTED]',
+            'x-nested-echo': '[REDACTED]',
+          });
+        }
+      });
+    }
+  }
+
+  for (const argument of ['apiKey', 'braveApiKey']) {
+    for (const shape of ['object', 'array']) {
+      for (const encoding of ['inline', 'credential const default', 'nested runtime', 'nested scalar default']) {
+        it(`${argument}: ${shape} ${encoding} preserves public rejection without leaking AST occurrences over HTTP`, async () => {
+          const nestedVariable = encoding.startsWith('nested');
+          const secret = nestedVariable ? nestedVariableSecret : duplicateFieldSecret;
+          const object = nestedVariable
+            ? '{ nested: { inner: $httpInlineVariable } }'
+            : `{ token: "${duplicateFieldSecret}", token: false }`;
+          const literal = shape === 'array' ? `[${object}]` : object;
+          const definition =
+            encoding === 'credential const default'
+              ? `($credential: String = ${literal})`
+              : nestedVariable
+                ? `($httpInlineVariable: String${encoding === 'nested scalar default' ? ` = "${nestedVariableSecret}"` : ''})`
+                : '';
+          const operation = {
+            query: `mutation HttpRejectedOccurrences${definition} {
+              saved: updateLlmSetting(${argument}: ${encoding === 'credential const default' ? '$credential' : literal}) ${selection}
+            }`,
+            ...(encoding === 'nested runtime' ? { variables: { httpInlineVariable: secret } } : {}),
+          };
+          // Const credential defaults contain literals only; nested Variable references
+          // belong to inline arguments and use a runtime value or a scalar default.
+          const response = await send([operation, diagnostic], true, 400, 1, '', {
+            'x-occurrence-echo': secret,
+            'x-occurrence-uri': encodeURIComponent(secret),
+          });
+          if (!Array.isArray(response)) throw new Error('Expected a batched GraphQL response');
+          expect(response[0].data).toBeUndefined();
+          expect(response[0].errors).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                message: expect.stringContaining('String cannot represent a non string value'),
+                extensions: expect.objectContaining({ code: 'GRAPHQL_VALIDATION_FAILED' }),
+              }),
+            ])
+          );
+          // The public error keeps the original literal, or the nested Variable reference.
+          expect(response[0].errors?.[0].message).toContain(nestedVariable ? '$httpInlineVariable' : secret);
+          expect(response[1].errors?.[0]).toMatchObject({
+            message: 'Synthetic HTTP search failure: index unavailable',
+            extensions: { code: 'HTTP_SEARCH_FIXTURE_FAILED' },
+          });
+          expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+          expect(repository.findSetting).not.toHaveBeenCalled();
+          expect(repository.upsertSetting).not.toHaveBeenCalled();
+          expectProtectedEvent('HttpDiagnostics', 'unrelated');
+          expectNoCredentials(envelopes, [secret]);
+          for (const event of [...events, ...transactions]) {
+            expect(event.request?.headers).toMatchObject({
+              'x-occurrence-echo': '[REDACTED]',
+              'x-occurrence-uri': '[REDACTED]',
+            });
+          }
+        });
+      }
+    }
+  }
+
+  for (const variable of ['providerCredential', 'searchCredential']) {
+    it(`${variable}: SDK-normalized credential cookie names never reach real HTTP envelopes`, async () => {
+      const secret = `Probe-Mixed-${randomUUID()}-AbC`;
+      const operation = saveOperation('variables');
+      operation.variables = { ...operation.variables, [variable]: secret };
+      const response = await send([operation, diagnostic], true, 200, 1, '', {
+        cookie: `${secret}=fixture-value; Fixture-Flavor=vanilla`,
+        'x-cookie-echo': secret,
+      });
+      if (!Array.isArray(response)) throw new Error('Expected a batched GraphQL response');
+      expect(response[0].data?.saved).toBeDefined();
+      expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
+      expect(repository.upsertSetting).toHaveBeenCalledWith(
+        expect.objectContaining({ [variable === 'providerCredential' ? 'apiKey' : 'braveApiKey']: secret })
+      );
+      // Observe actual SDK output before the common boundary, not a manually
+      // constructed attribute or the SDK utility's return value.
+      const normalized = `probe_mixed_${secret.slice('Probe-Mixed-'.length).replaceAll('-', '_').toLowerCase()}`;
+      expect(sdkCookieAttributes).toContainEqual(
+        expect.objectContaining({
+          [`http.request.header.cookie.${normalized}`]: 'fixture-value',
+          'http.request.header.cookie.fixture_flavor': 'vanilla',
+        })
+      );
+      const transaction = transactions.find(event => event.contexts?.trace?.op === 'http.server');
+      expect(transaction?.contexts?.trace?.data).toMatchObject({
+        'http.request.header.cookie.[REDACTED]': 'fixture-value',
+        'http.request.header.cookie.fixture_flavor': 'vanilla',
+      });
+      expectProtectedEvent('HttpDiagnostics', 'unrelated');
+      expectNoCredentials(envelopes, [secret, normalized]);
+    });
+  }
+
+  it('rejects a runtime variable object with percent-hex property keys without leaking through HTTP envelopes', async () => {
+    const operation = saveOperation('variables');
+    operation.variables = {
+      providerCredential: { [uriProperty]: false },
+      searchCredential: braveApiKey,
+      diagnosticBag: Object.fromEntries(uriPropertyHexKeys.map(key => [key, 'safe'])),
+    };
+    const response = await send(operation, true, 400, 1, '', {
+      'x-property-echo': encodeURIComponent(uriProperty),
+      'x-property-lower': encodeURIComponent(uriProperty).replace(/%[\dA-Fa-f]{2}/g, octet => octet.toLowerCase()),
+    });
+    expect(response).toMatchObject({ errors: [{ extensions: { code: 'BAD_USER_INPUT' } }] });
+    expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+    expect(repository.findSetting).not.toHaveBeenCalled();
+    expect(repository.upsertSetting).not.toHaveBeenCalled();
+    expectNoCredentials(envelopes, [uriProperty, braveApiKey, environmentKey]);
+    expect(events[0].extra?.variables).toEqual({
+      providerCredential: '[REDACTED]',
+      searchCredential: '[REDACTED]',
+      diagnosticBag: { '[REDACTED]': 'safe' },
+    });
+  });
+
+  for (const encoding of ['variables', 'inline', 'defaults'] as const) {
+    for (const saveFirst of [true, false]) {
+      it(`${encoding}: identity 이름의 custom header도 batch 순서(${saveFirst ? '저장 먼저' : '오류 먼저'})와 무관하게 error/transaction에서 정제한다`, async () => {
+        const fixtureHeaders = {
+          type: apiKey,
+          event_id: braveApiKey,
+          trace_id: encodeURIComponent(apiKey),
+          span_id: encodeURI(braveApiKey),
+          parent_span_id: new URLSearchParams({ value: apiKey }).toString().slice('value='.length),
+          'x-fixture-echo': `${apiKey} ${braveApiKey}`,
+        };
+        const save = saveOperation(encoding);
+        const response = await send(
+          saveFirst ? [save, diagnostic] : [diagnostic, save],
+          true,
+          200,
+          1,
+          '',
+          fixtureHeaders
+        );
+        if (!Array.isArray(response)) throw new Error('Expected a batched GraphQL response');
+        expect(response[saveFirst ? 0 : 1]).toEqual({
+          data: { saved: { apiKeyMasked: 'synt...****a71c', braveApiKeyMasked: 'synt...****b92d', model } },
+        });
+        expect(response[saveFirst ? 1 : 0].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
+        expect(repository.upsertSetting).toHaveBeenCalledOnce();
+        expectProtectedEvent('HttpDiagnostics', 'unrelated');
+        const transaction = transactions.find(event => event.contexts?.trace?.op === 'http.server');
+        for (const event of [events[0], transaction]) {
+          expect(event?.request?.headers).toMatchObject({
+            type: '[REDACTED]',
+            event_id: '[REDACTED]',
+            trace_id: '[REDACTED]',
+            span_id: '[REDACTED]',
+            parent_span_id: '[REDACTED]',
+            'x-fixture-echo': '[REDACTED] [REDACTED]',
+            'x-fixture-diagnostic': 'http-fixture',
+          });
+        }
+        // Incoming HTTP cookie attributes have their own cases above; structured
+        // cookies and normalizedRequest bags are supplied in the direct hook suite.
+        expectNoCredentials(envelopes, [apiKey, braveApiKey, environmentKey]);
+      });
+    }
+  }
+
   for (const encoding of ['variables', 'inline', 'defaults'] as const) {
     for (const order of ['single', 'save first', 'save last']) {
       it(`${encoding}: ${order} saves without an error and still sends a protected real HTTP transaction`, async () => {
@@ -654,6 +982,171 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
         expect(events[0].exception?.values?.[0].value).toBe('Synthetic HTTP search failure: index unavailable');
         expect(JSON.stringify(events[0])).toContain('HTTP_SEARCH_FIXTURE_FAILED');
         expect(JSON.stringify(events[0])).toContain('retry HTTP index fixture');
+      });
+    }
+  }
+
+  for (const variable of ['providerCredential', 'searchCredential']) {
+    it(`fixed HTTP attributes: ${variable} preserves method/path but sanitizes input copies`, async () => {
+      const property = `http-property-${randomUUID()}-+/= space`;
+      const invalid = saveOperation('variables');
+      invalid.variables = { [variable]: { POST: false, graphql: false, [property]: false } };
+      waitForSettingConsole('BAD_USER_INPUT');
+      const response = (await send([invalid, diagnostic], true, 400, 2, '', {
+        'x-fixture-collision': 'POST /graphql',
+        'x-transaction-id': `fixture POST /graphql ${property}`,
+      })) as Result[];
+      expect(response[0].data).toBeUndefined();
+      expect(response[0].errors).toEqual([
+        expect.objectContaining({
+          message: expect.stringContaining('String cannot represent a non string value'),
+          extensions: expect.objectContaining({ code: 'BAD_USER_INPUT' }),
+        }),
+      ]);
+      expect(response[0].errors?.[0].message).toContain('POST');
+      expect(response[0].errors?.[0].message).toContain('graphql');
+      expect(response[0].errors?.[0].message).toContain(property);
+      expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
+      expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+      expect(repository.findSetting).not.toHaveBeenCalled();
+      expect(repository.upsertSetting).not.toHaveBeenCalled();
+      for (const event of events) {
+        expect(event.transaction).toBe('fixture [REDACTED] /[REDACTED] [REDACTED]');
+        expect(event.request?.headers?.['x-fixture-collision']).toBe('[REDACTED] /[REDACTED]');
+      }
+      const transaction = transactions.find(event => event.contexts?.trace?.op === 'http.server');
+      expect(transaction?.contexts?.trace?.data).toMatchObject({
+        'http.request.header.x_fixture_collision': '[REDACTED] /[REDACTED]',
+        'http.request.header.x_transaction_id': 'fixture [REDACTED] /[REDACTED] [REDACTED]',
+      });
+      const coercion = events.find(event => String(event.extra?.query).includes('HttpSave'));
+      expect(coercion?.exception?.values?.[0].value).not.toContain('POST');
+      expect(coercion?.exception?.values?.[0].value).not.toContain('graphql');
+      expectLateDiagnosticEvent('BAD_USER_INPUT', [property]);
+      // POST/graphql are intentionally present in fixed diagnostics, not secrets
+      // whose global absence would be a valid oracle.
+      expectNoCredentials(envelopes, [property]);
+      expectNoCredentials(consoleDiagnostics, [property]);
+    });
+  }
+
+  for (const argument of ['apiKey', 'braveApiKey']) {
+    it(`same-string collision: ${argument} property names with an exact POST /graphql header keep the real http.server route name`, async () => {
+      const property = `collision-property-${randomUUID()}-"quote"-\\slash`;
+      // No secret string value: POST/graphql arrive only as rejected property names.
+      const invalid = saveOperation('variables');
+      invalid.variables = {
+        [argument === 'apiKey' ? 'providerCredential' : 'searchCredential']: {
+          POST: false,
+          graphql: false,
+          [property]: false,
+        },
+      };
+      waitForSettingConsole('BAD_USER_INPUT');
+      const response = (await send([invalid, diagnostic], true, 400, 2, '', {
+        'x-transaction-id': 'POST /graphql',
+      })) as Result[];
+      expect(response[0].data).toBeUndefined();
+      expect(response[0].errors).toEqual([
+        expect.objectContaining({
+          message: expect.stringContaining('String cannot represent a non string value'),
+          extensions: expect.objectContaining({ code: 'BAD_USER_INPUT' }),
+        }),
+      ]);
+      expect(response[0].errors?.[0].message).toContain(property);
+      expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
+      expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+      expect(repository.findSetting).not.toHaveBeenCalled();
+      expect(repository.upsertSetting).not.toHaveBeenCalled();
+      // Error events are named from the header copy: input redaction applies.
+      for (const event of events) {
+        expect(event.transaction).toBe('[REDACTED] /[REDACTED]');
+        expect(event.request?.headers?.['x-transaction-id']).toBe('[REDACTED] /[REDACTED]');
+      }
+      // The real incoming transaction name is request-derived, never the header
+      // copy, so it must survive even though the strings are identical.
+      const transaction = transactions.find(event => event.contexts?.trace?.op === 'http.server');
+      expect(transaction?.transaction).toBe('POST /graphql');
+      expect(transaction?.contexts?.trace?.data).toMatchObject({
+        'http.request.header.x_transaction_id': '[REDACTED] /[REDACTED]',
+      });
+      expectLateDiagnosticEvent('BAD_USER_INPUT', [property]);
+      expectNoCredentials(envelopes, [property]);
+      expectNoCredentials(consoleDiagnostics, [property]);
+    });
+  }
+
+  it('header-derived transaction: non-sensitive header names the SDK error without replacing the HTTP route', async () => {
+    const transactionName = `fixture transaction ${randomUUID()}`;
+    await send(diagnostic, true, 200, 1, '', { 'x-transaction-id': transactionName });
+    expect(sdkErrorDiagnostics[0].transaction).toBe(transactionName);
+    expect(events[0].transaction).toBe(transactionName);
+    expect(events[0].request?.headers?.['x-transaction-id']).toBe(transactionName);
+    expectProtectedEvent('HttpDiagnostics', 'unrelated');
+    expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+    expect(repository.findSetting).not.toHaveBeenCalled();
+    expect(repository.upsertSetting).not.toHaveBeenCalled();
+  });
+
+  for (const variable of ['providerCredential', 'searchCredential']) {
+    for (const order of ['single', 'coercion first', 'coercion last']) {
+      it(`header-derived transaction: ${variable}, ${order} protects property-name-only credential copies`, async () => {
+        const property = `header-property-${randomUUID()}-"quote"-\\slash-+/= space`;
+        const copies = [
+          property,
+          JSON.stringify(property).slice(1, -1),
+          encodeURI(property),
+          encodeURIComponent(property),
+          new URLSearchParams({ value: property }).toString().slice('value='.length),
+        ];
+        const transactionName = `fixture transaction ${copies.join(' | ')}`;
+        const invalid = saveOperation('variables');
+        invalid.variables = { [variable]: { [property]: false } };
+        if (order !== 'single') waitForSettingConsole('BAD_USER_INPUT');
+        const response = await send(
+          order === 'single' ? invalid : order === 'coercion first' ? [invalid, diagnostic] : [diagnostic, invalid],
+          true,
+          400,
+          order === 'single' ? 1 : 2,
+          '',
+          { 'x-transaction-id': transactionName }
+        );
+        const rejected = Array.isArray(response) ? response[order === 'coercion first' ? 0 : 1] : response;
+        expect(rejected.data).toBeUndefined();
+        expect(rejected.errors).toEqual([
+          expect.objectContaining({
+            message: expect.stringContaining('String cannot represent a non string value'),
+            extensions: expect.objectContaining({ code: 'BAD_USER_INPUT' }),
+          }),
+        ]);
+        expect(rejected.errors?.[0].message).toContain(property);
+        expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+        expect(repository.findSetting).not.toHaveBeenCalled();
+        expect(repository.upsertSetting).not.toHaveBeenCalled();
+        expectNoCredentials(envelopes, [property]);
+        expectNoCredentials(consoleDiagnostics, [property]);
+        for (const event of events) {
+          expect(event.transaction).toBe(`fixture transaction ${copies.map(() => '[REDACTED]').join(' | ')}`);
+          expect(event.request?.headers?.['x-transaction-id']).toBe(event.transaction);
+        }
+        const coercion = events.find(event => String(event.extra?.query).includes('HttpSave'));
+        expect(coercion).toBeDefined();
+        expect(sdkErrorDiagnostics.find(event => event.eventId === coercion?.event_id)?.transaction).toBe(
+          coercion?.transaction
+        );
+        if (order !== 'single') {
+          if (!Array.isArray(response)) throw new Error('Expected a batched GraphQL response');
+          expect(response[order === 'coercion first' ? 1 : 0].errors?.[0].extensions.code).toBe(
+            'HTTP_SEARCH_FIXTURE_FAILED'
+          );
+          // This operation has no credential arguments. Its actual SDK error still
+          // inherits the raw header name before the batch-wide final send hook.
+          const unrelated = events.find(event => String(event.extra?.query).includes('HttpDiagnostics'));
+          expect(sdkErrorDiagnostics.find(event => event.eventId === unrelated?.event_id)?.transaction).toBe(
+            transactionName
+          );
+          expectLateDiagnosticEvent('BAD_USER_INPUT', [property]);
+        }
       });
     }
   }
