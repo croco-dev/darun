@@ -589,31 +589,41 @@ describe('candidate reopen authority through the shared component and real Apoll
     expect(vi.mocked(notifications.hide).mock.calls.some(([id]) => id === 'generating-description-sample')).toBe(true);
   });
 
-  it('keeps normal generation owning the screen when it reports its own B address', async () => {
-    const fixture = setup('/products/sample');
-    await flush(() => fireEvent.click(generating()));
-    await flush(() => fixture.take('GenerateProductDescription').resolve(generation('B')));
-    expect(new URL(window.location.href).searchParams.get('descriptionJobId')).toBe('B');
-    expect(input().disabled).toBe(true);
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'AI 소개 생성 중...' }).disabled).toBe(true);
-    expect(notices()).toContainEqual(expect.objectContaining({ title: 'AI 소개 생성 중', loading: true }));
-    expect(notifications.hide).not.toHaveBeenCalled();
-    // The self-reported address is not an external switch: no duplicate route reopen poll.
-    await advance();
-    expect(fixture.count('GetProductDescriptionJob', 'B')).toBe(1);
-    await flush(() => fixture.take('GetProductDescriptionJob', 'B').resolve(lookup('B', 'in_progress')));
-    expect(input().disabled).toBe(true);
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'AI 소개 생성 중...' }).disabled).toBe(true);
-    await advance();
-    await flush(() => fixture.take('GetProductDescriptionJob', 'B').resolve(lookup('B')));
-    expect(screen.getByRole('heading', { name: 'B 저장된 소개' })).toBeTruthy();
-    expect(notices().some(notice => notice.title === '후보 다시 열기 실패')).toBe(false);
-    expect(notices().some(notice => notice.title === 'AI 소개 초안 생성 완료')).toBe(true);
-    await closePreview();
-    expect(input().disabled).toBe(false);
-    expect(reopen().disabled).toBe(false);
-    expect(generating().disabled).toBe(false);
-  });
+  it.each(['/products/sample', '/products/sample?descriptionJobId=A'])(
+    'keeps normal generation from %s owning the screen when it reports its own B address',
+    async address => {
+      const fixture = setup(address);
+      if (address.includes('descriptionJobId=A')) {
+        await flush(() => fixture.take('GetProductDescriptionJob', 'A').resolve(lookup('A', 'pending')));
+      }
+      await flush(() => fireEvent.click(generating()));
+      await advance();
+      expect(window.location.pathname + window.location.search).toBe(address);
+      expect(input().disabled).toBe(true);
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'AI 소개 생성 중...' }).disabled).toBe(true);
+      await flush(() => fixture.take('GenerateProductDescription').resolve(generation('B')));
+      expect(new URL(window.location.href).searchParams.get('descriptionJobId')).toBe('B');
+      expect(input().disabled).toBe(true);
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'AI 소개 생성 중...' }).disabled).toBe(true);
+      expect(notices()).toContainEqual(expect.objectContaining({ title: 'AI 소개 생성 중', loading: true }));
+      expect(notifications.hide).not.toHaveBeenCalled();
+      // The self-reported address is not an external switch: no duplicate route reopen poll.
+      await advance();
+      expect(fixture.count('GetProductDescriptionJob', 'B')).toBe(1);
+      await flush(() => fixture.take('GetProductDescriptionJob', 'B').resolve(lookup('B', 'in_progress')));
+      expect(input().disabled).toBe(true);
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'AI 소개 생성 중...' }).disabled).toBe(true);
+      await advance();
+      await flush(() => fixture.take('GetProductDescriptionJob', 'B').resolve(lookup('B')));
+      expect(screen.getByRole('heading', { name: 'B 저장된 소개' })).toBeTruthy();
+      expect(notices().some(notice => notice.title === '후보 다시 열기 실패')).toBe(false);
+      expect(notices().some(notice => notice.title === 'AI 소개 초안 생성 완료')).toBe(true);
+      await closePreview();
+      expect(input().disabled).toBe(false);
+      expect(reopen().disabled).toBe(false);
+      expect(generating().disabled).toBe(false);
+    }
+  );
 
   it.each(['resolve', 'reject'] as const)(
     'ignores late B %s after an external C switch while the mutation is pending',
@@ -637,6 +647,122 @@ describe('candidate reopen authority through the shared component and real Apoll
       await closePreview();
       expect(input().disabled).toBe(false);
       expect(reopen().disabled).toBe(false);
+      expect(generating().disabled).toBe(false);
+    }
+  );
+
+  it.each(['pending', 'completed', 'failed', 'network', 'graphql', 'deadline'] as const)(
+    'revokes B before its mutation %s when the starting A address loses its ID',
+    async ending => {
+      const fixture = setup();
+      await flush(() => fixture.take('GetProductDescriptionJob', 'A').resolve(lookup('A', 'pending')));
+      await flush(() => fireEvent.click(generating()));
+      const mutation = fixture.take('GenerateProductDescription');
+      expect(input().disabled).toBe(true);
+      await navigate('/products/sample');
+      // Release the screen before the mutation responds, not only after a late result.
+      expect(input().disabled).toBe(false);
+      expect(reopen().disabled).toBe(false);
+      expect(generating().disabled).toBe(false);
+      expect(notifications.hide).toHaveBeenCalledWith('generating-description-sample');
+      await flush(() => fireEvent.change(input(), { target: { value: 'manual-after-removal' } }));
+      const before = notices().length;
+      const hiddenBefore = vi.mocked(notifications.hide).mock.calls.length;
+      if (ending === 'deadline') {
+        await advance(25_001);
+        await flush(() => mutation.resolve(generation('B')));
+      } else {
+        await flush(() => {
+          if (ending === 'network') mutation.reject('늦은 B 네트워크 오류');
+          else if (ending === 'graphql') mutation.graphQLError('늦은 B GraphQL 오류', 'INTERNAL_SERVER_ERROR');
+          else mutation.resolve(generation('B', ending));
+        });
+      }
+      await advance(180_001);
+      expect(window.location.pathname + window.location.search).toBe('/products/sample');
+      expect(fixture.jobChanges).toEqual([]);
+      expect(fixture.count('GetProductDescriptionJob', 'B')).toBe(0);
+      expect(input().value).toBe('manual-after-removal');
+      expect(input().disabled).toBe(false);
+      expect(reopen().disabled).toBe(false);
+      expect(generating().disabled).toBe(false);
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(notices()).toHaveLength(before);
+      expect(vi.mocked(notifications.hide).mock.calls).toHaveLength(hiddenBefore);
+      await submitId('manual-after-removal');
+      await flush(() =>
+        fixture.take('GetProductDescriptionJob', 'manual-after-removal').resolve(lookup('manual-after-removal'))
+      );
+      await flush(() =>
+        fixture.take('GetProductDescriptionJob', 'manual-after-removal').resolve(lookup('manual-after-removal'))
+      );
+      expectCandidate('manual-after-removal');
+    }
+  );
+
+  it('does not restore revoked B when its starting A address is revisited', async () => {
+    const fixture = setup();
+    await flush(() => fixture.take('GetProductDescriptionJob', 'A').resolve(lookup('A', 'pending')));
+    await flush(() => fireEvent.click(generating()));
+    const mutation = fixture.take('GenerateProductDescription');
+    await navigate('/products/sample');
+    expect(generating().disabled).toBe(false);
+    await navigate('/products/sample?descriptionJobId=A');
+    const current = fixture.take('GetProductDescriptionJob', 'A');
+    const before = notices().length;
+    await flush(() => mutation.resolve(generation('B')));
+    await advance();
+    expect(window.location.search).toBe('?descriptionJobId=A');
+    expect(fixture.jobChanges).toEqual([]);
+    expect(fixture.count('GetProductDescriptionJob', 'B')).toBe(0);
+    expect(input().value).toBe('A');
+    expect(input().disabled).toBe(true);
+    expect(generating().disabled).toBe(false);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(notices()).toHaveLength(before);
+    await flush(() => current.resolve(lookup('A')));
+    expectCandidate('A');
+  });
+
+  it.each(['resolve', 'reject'] as const)(
+    'keeps D waiting after starting A ID removal and revoked B mutation %s/finally',
+    async ending => {
+      const fixture = setup();
+      await flush(() => fixture.take('GetProductDescriptionJob', 'A').resolve(lookup('A', 'pending')));
+      await flush(() => fireEvent.click(generating()));
+      const oldMutation = fixture.take('GenerateProductDescription');
+      await navigate('/products/sample');
+      expect(generating().disabled).toBe(false);
+      await flush(() => fireEvent.change(input(), { target: { value: 'D-wait-input' } }));
+      await flush(() => fireEvent.click(generating()));
+      const current = fixture.take('GenerateProductDescription');
+      const before = notices().length;
+      const hiddenBefore = vi.mocked(notifications.hide).mock.calls.length;
+      await flush(() =>
+        ending === 'resolve'
+          ? oldMutation.resolve(generation('B', 'completed'))
+          : oldMutation.reject('늦은 B 생성 오류')
+      );
+      expect(window.location.pathname + window.location.search).toBe('/products/sample');
+      expect(fixture.jobChanges).toEqual([]);
+      expect(fixture.count('GetProductDescriptionJob', 'B')).toBe(0);
+      expect(input().value).toBe('D-wait-input');
+      expect(input().disabled).toBe(true);
+      expect(reopen().disabled).toBe(true);
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'AI 소개 생성 중...' }).disabled).toBe(true);
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(notices()).toHaveLength(before);
+      expect(vi.mocked(notifications.hide).mock.calls).toHaveLength(hiddenBefore);
+      await flush(() => current.resolve(generation('D')));
+      expect(window.location.search).toBe('?descriptionJobId=D');
+      expect(fixture.jobChanges).toEqual(['D']);
+      await advance();
+      expect(fixture.count('GetProductDescriptionJob', 'D')).toBe(1);
+      await flush(() => fixture.take('GetProductDescriptionJob', 'D').resolve(lookup('D')));
+      expectCandidate('D');
+      await closePreview();
+      expect(input().disabled).toBe(false);
       expect(generating().disabled).toBe(false);
     }
   );

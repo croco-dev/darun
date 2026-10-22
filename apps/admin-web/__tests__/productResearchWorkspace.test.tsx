@@ -187,7 +187,7 @@ type RaceActionCall<TVariables> = {
 };
 
 type RaceMaterializeCall = {
-  variables: { input: { researchJobId: string; name: string; slug: string; logoUrl: string } };
+  variables: { input: { researchJobId: string; name: string; slug: string; logoUrl: string; tags: string[] } };
   respond: (product?: { id: string; slug: string; name: string }) => void;
   fail: (error: Error) => void;
 };
@@ -498,6 +498,122 @@ function formInputs(): Array<Record<string, FormDataEntryValue>> {
 }
 
 describe('admin research workspace flow', () => {
+  it('태그 순차 입력은 쉼표와 공백을 보존하고 blur 전 제출에서 두 태그를 전달한다', async () => {
+    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+    const scenario = newScenario();
+    scenario.jobResponses = [completedJob];
+    render(
+      <ApolloProvider client={makeClient(scenario)}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+    const tags = (await screen.findByDisplayValue('협업')) as HTMLInputElement;
+    tags.focus();
+    for (const character of ', ') {
+      fireEvent.change(tags, { target: { value: tags.value + character } });
+    }
+    expect(tags.value).toBe('협업, ');
+    for (const character of '생산성') {
+      fireEvent.change(tags, { target: { value: tags.value + character } });
+    }
+    expect(tags.value).toBe('협업, 생산성');
+    fireEvent.change(document.querySelector('[name="review-logo-url"]')!, {
+      target: { value: 'https://linear.app/logo.png' },
+    });
+    expect(document.activeElement).toBe(tags);
+    fireEvent.submit(tags.closest('form')!);
+    await waitFor(() => expect(scenario.materializeVars).toHaveLength(1));
+    expect(scenario.materializeVars[0]).toMatchObject({ input: { tags: ['협업', '생산성'] } });
+  });
+
+  it('태그 원문은 같은 job 조회와 등록 실패 뒤 유지하고 job 전환·재방문은 정규화 배열을 복원한다', async () => {
+    const race = await renderCompletedResearch();
+    const tags = document.querySelector<HTMLInputElement>('[name="review-tags"]')!;
+    for (const character of '협업, 생산성, ') {
+      fireEvent.change(tags, { target: { value: tags.value + character } });
+    }
+    expect(tags.value).toBe('협업, 생산성, ');
+    fireEvent.click(screen.getByRole('button', { name: '결과 새로고침' }));
+    await waitFor(() => expect(race.lookups).toHaveLength(2));
+    await screen.findByRole('button', { name: '결과 새로고침' });
+    expect(tags.value).toBe('협업, 생산성, ');
+    fireEvent.submit(tags.closest('form')!);
+    await waitFor(() => expect(race.materializations).toHaveLength(1));
+    expect(race.materializations[0].variables.input.tags).toEqual(['협업', '생산성']);
+    race.materializations[0].fail(new Error('태그 등록 합성 실패'));
+    await screen.findByRole('alert');
+    expect(tags.value).toBe('협업, 생산성, ');
+    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.tags).toEqual([
+      '협업',
+      '생산성',
+    ]);
+
+    race.jobs['job-2'] = { ...completedJob, id: 'job-2', result: { ...completedJob.result, tags: ['자동화'] } };
+    testGlobal().researchSearchParams = { researchJobId: 'job-2' };
+    race.view.rerender(
+      <ApolloProvider client={race.client}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+    await screen.findByDisplayValue('자동화');
+    expect(document.querySelector<HTMLInputElement>('[name="review-tags"]')!.value).toBe('자동화');
+    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+    race.view.rerender(
+      <ApolloProvider client={race.client}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+    await screen.findByDisplayValue('협업, 생산성');
+    expect(document.querySelector<HTMLInputElement>('[name="review-tags"]')!.value).toBe('협업, 생산성');
+    fireEvent.change(document.querySelector('[name="review-tags"]')!, { target: { value: '협업, 생산성, ' } });
+    race.jobs['job-new'] = {
+      ...completedJob,
+      id: 'job-new',
+      officialUrl: 'https://notion.so/',
+      result: { ...completedJob.result, tags: ['새 조사'] },
+    };
+    submitResearchRequest('https://notion.so/');
+    await waitFor(() => expect(race.requests).toHaveLength(1));
+    race.requests[0].respond();
+    await screen.findByDisplayValue('새 조사');
+    expect(document.querySelector<HTMLInputElement>('[name="review-tags"]')!.value).toBe('새 조사');
+  });
+
+  it.each([
+    { raw: '  협업  , 생산성, 협업,  TEAM   Work , team work, , ', expected: ['협업', '생산성', 'TEAM Work'] },
+    { raw: '', expected: [] },
+  ])('붙여넣기·빈 태그 입력 $raw 은 원문을 유지하고 기존 의미로 제출한다', async ({ raw, expected }) => {
+    const { materializations } = await renderCompletedResearch();
+    const tags = document.querySelector<HTMLInputElement>('[name="review-tags"]')!;
+    fireEvent.change(tags, { target: { value: raw } });
+    expect(tags.value).toBe(raw);
+    fireEvent.submit(tags.closest('form')!);
+    await waitFor(() => expect(materializations).toHaveLength(1));
+    expect(materializations[0].variables.input.tags).toEqual(expected);
+  });
+
+  it('같은 job의 polling 완료 응답은 편집 중 태그 구분자를 덮어쓰지 않는다', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+    const scenario = newScenario();
+    scenario.jobResponses = [{ ...completedJob, status: 'in_progress' }, completedJob];
+    render(
+      <ApolloProvider client={makeClient(scenario)}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+    const tags = (await screen.findByDisplayValue('협업')) as HTMLInputElement;
+    for (const character of ', 생산성, ') {
+      fireEvent.change(tags, { target: { value: tags.value + character } });
+    }
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    await screen.findByText(/작업 ID: job-1 · 상태: completed/);
+    expect(scenario.jobQueries).toEqual(['job-1', 'job-1']);
+    expect(tags.value).toBe('협업, 생산성, ');
+  });
+
   it.each(['URL', 'localStorage'])(
     '%s 재진입의 성공한 null은 안내하고 여러 polling 주기 동안 조회하지 않는다',
     async entry => {
@@ -2103,6 +2219,95 @@ describe('admin research workspace flow', () => {
 });
 
 describe('research registration action ownership with real Apollo', () => {
+  it.each(['success', 'upload', 'network', 'GraphQL'])(
+    '같은 job 로고 pending은 URL·파일·취소를 잠그고 %s 이후 입력과 명시 제출을 보존한다',
+    async outcome => {
+      const logoA = 'https://res.cloudinary.com/demo/logo-a.png';
+      const logoB = 'https://linear.app/replacement-b.png';
+      const upload = Promise.withResolvers<{ ok: boolean; json: () => Promise<{ secure_url: string }> }>();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() => upload.promise)
+      );
+      const { stored, materializations } = await renderCompletedResearch(
+        new File(['logo-a'], 'logo-a.png', { type: 'image/png' })
+      );
+      const url = document.querySelector<HTMLInputElement>('[name="review-logo-url"]')!;
+      const file = document.querySelector<HTMLInputElement>('[name="review-logo-file"]')!;
+      const cancel = screen.getByRole('button', { name: '로고 선택 취소' }) as HTMLButtonElement;
+      const expectLogoDisabled = (disabled: boolean) => {
+        for (const control of [url, file, cancel]) expect(control.matches(':disabled')).toBe(disabled);
+      };
+      const expectWorkspaceLogo = (expectedUrl: string, uploaded: string | null) => {
+        for (const key of [RESEARCH_WORKSPACE_STORAGE_KEY, `${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`]) {
+          expect(JSON.parse(window.localStorage.getItem(key)!)).toMatchObject({
+            version: 1,
+            jobId: 'job-1',
+            review: { logoUrl: expectedUrl },
+            uploadedLogoUrl: uploaded,
+          });
+        }
+      };
+      expectLogoDisabled(false);
+      fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
+      await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+      expectLogoDisabled(true);
+      expect(url.value).toBe(stored.review.logoUrl);
+      expectWorkspaceLogo(stored.review.logoUrl, null);
+      expect(materializations).toHaveLength(0);
+      expect((document.querySelector('[name="review-name"]') as HTMLInputElement).disabled).toBe(false);
+      expect((screen.getByRole('button', { name: '조사 요청' }) as HTMLButtonElement).disabled).toBe(false);
+
+      if (outcome === 'upload') {
+        await act(async () => upload.reject(new Error('합성 A 업로드 실패')));
+        await waitFor(() => expectLogoDisabled(false));
+        expect(materializations).toHaveLength(0);
+        expect(url.value).toBe(stored.review.logoUrl);
+        expectWorkspaceLogo(stored.review.logoUrl, null);
+        expect(notifications.show).toHaveBeenCalledWith({
+          message: '로고 업로드에 실패했습니다. 다시 시도해주세요.',
+          color: 'red',
+        });
+      } else {
+        upload.resolve({ ok: true, json: async () => ({ secure_url: logoA }) });
+        await waitFor(() => expect(materializations).toHaveLength(1));
+        expectLogoDisabled(true);
+        expect(url.value).toBe(logoA);
+        expectWorkspaceLogo(logoA, logoA);
+        expect(materializations[0].variables.input.logoUrl).toBe(logoA);
+        if (outcome === 'success') {
+          materializations[0].respond({ id: 'prod-a', slug: 'uploaded-a', name: 'A' });
+          await waitFor(() => expect(navigated()).toEqual(['/products/uploaded-a']));
+          expectWorkspaceLogo(logoA, logoA);
+          expect(fetch).toHaveBeenCalledTimes(1);
+          return;
+        }
+        materializations[0].fail(
+          outcome === 'GraphQL' ? new GraphQLError('합성 A GraphQL 실패') : new Error('합성 A network 실패')
+        );
+        expect((await screen.findByRole('alert')).textContent).toContain(`합성 A ${outcome} 실패`);
+        expectLogoDisabled(false);
+      }
+
+      fireEvent.change(url, { target: { value: logoB } });
+      expect(url.value).toBe(logoB);
+      expectWorkspaceLogo(logoB, outcome === 'upload' ? null : logoA);
+      expect(navigated()).toEqual([]);
+      expect(materializations).toHaveLength(outcome === 'upload' ? 0 : 1);
+      fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
+      await waitFor(() => expect(materializations).toHaveLength(outcome === 'upload' ? 1 : 2));
+      const resubmission = materializations.at(-1)!;
+      expect(resubmission.variables.input.logoUrl).toBe(logoB);
+      expect(url.value).toBe(logoB);
+      expectLogoDisabled(true);
+      expectWorkspaceLogo(logoB, outcome === 'upload' ? null : logoA);
+      expect(fetch).toHaveBeenCalledTimes(1);
+      resubmission.respond({ id: 'prod-b', slug: 'replacement-b', name: 'B' });
+      await waitFor(() => expect(navigated()).toEqual(['/products/replacement-b']));
+      expectWorkspaceLogo(logoB, outcome === 'upload' ? null : logoA);
+    }
+  );
+
   it.each([
     { outcome: 'success', requestFirst: false },
     { outcome: 'network', requestFirst: false },

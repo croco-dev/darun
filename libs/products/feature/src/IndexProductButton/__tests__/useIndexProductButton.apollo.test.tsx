@@ -17,24 +17,37 @@ const identity = {
   productId: 'product-1',
   sourceRevision: '9007199254740993',
 };
-function response(status = 'completed', overrides: Partial<typeof identity> = {}) {
+function response(
+  status = 'completed',
+  overrides: Partial<typeof identity> = {},
+  translation: { status: string; overrides?: Partial<typeof identity> } | null = null
+) {
   const intent = {
     ...identity,
     ...overrides,
     status,
     error: status === 'failed' ? 'SEARCH_UNAVAILABLE' : null,
   };
+  const translationIntent = translation
+    ? {
+        ...identity,
+        ...translation.overrides,
+        intentId: translation.overrides?.intentId ?? 'translation-intent-1',
+        status: translation.status,
+        error: null,
+      }
+    : null;
   return {
     productContentSyncStatus: {
       productId: intent.productId,
       sourceRevision: intent.sourceRevision,
       searchStatus: status,
-      translationDispatchStatus: 'not_required',
+      translationDispatchStatus: translation ? 'registered' : 'not_required',
       translationJobId: null,
       translationJobStatus: null,
       translationJobDispatchStatus: null,
       searchIntent: intent,
-      translationIntent: null,
+      translationIntent: translationIntent ?? null,
     },
   };
 }
@@ -774,4 +787,106 @@ describe('index completion through real Apollo default cache', () => {
       }
     }
   );
+
+  it.each(['completed', 'failed', 'superseded'])(
+    'stops idle polling after an initial terminal %s status without an owned request',
+    async status => {
+      const fixture = setup();
+      await flush(() => fixture.lookups.shift()!.resolve(response(status)));
+      expect(fixture.result.current.loading).toBe(false);
+      await tick(5000);
+      expect(fixture.lookups).toHaveLength(0);
+      expect(notifications.show).not.toHaveBeenCalled();
+    }
+  );
+
+  it('does not start polling while the initial lookup is unanswered', async () => {
+    const fixture = setup();
+    await tick(5000);
+    expect(fixture.lookups).toHaveLength(1);
+  });
+
+  it('does not reschedule polling after an initial lookup failure without intents', async () => {
+    const fixture = setup();
+    await flush(() => fixture.lookups.shift()!.reject());
+    expect(fixture.result.current.error).toBe('fresh lookup failed');
+    await tick(5000);
+    expect(fixture.lookups).toHaveLength(0);
+    expect(notifications.show).not.toHaveBeenCalled();
+  });
+
+  it('stops idle polling when neither search nor translation intent is required', async () => {
+    const fixture = setup();
+    const notRequired: ProductContentSyncStatusOnIndexProductButtonQuery = {
+      productContentSyncStatus: { ...response('not_required').productContentSyncStatus, searchIntent: null },
+    };
+    await flush(() => fixture.lookups.shift()!.resolve(notRequired));
+    expect(fixture.result.current.loading).toBe(false);
+    await tick(5000);
+    expect(fixture.lookups).toHaveLength(0);
+  });
+
+  it.each(['search', 'translation'])(
+    'observes an externally running %s intent and stops once both intents are terminal',
+    async kind => {
+      const fixture = setup();
+      const running = (status: string) =>
+        kind === 'search' ? response(status) : response('completed', undefined, { status });
+      await flush(() => fixture.lookups.shift()!.resolve(running('pending')));
+      expect(fixture.result.current.loading).toBe(false);
+      expect(notifications.show).not.toHaveBeenCalled();
+      await tick();
+      expect(fixture.lookups).toHaveLength(1);
+      await flush(() => fixture.lookups.shift()!.resolve(running('in_progress')));
+      await tick();
+      expect(fixture.lookups).toHaveLength(1);
+      await flush(() => fixture.lookups.shift()!.resolve(response()));
+      await tick(5000);
+      expect(fixture.lookups).toHaveLength(0);
+      expect(fixture.result.current.loading).toBe(false);
+      expect(notifications.show).not.toHaveBeenCalled();
+    }
+  );
+
+  it('resumes observation when an ownerless retry returns the search intent to pending', async () => {
+    const fixture = setup();
+    await flush(() => fixture.lookups.shift()!.resolve(response('failed')));
+    expect(fixture.result.current.syncStatus?.searchStatus).toBe('failed');
+    await tick(3000);
+    expect(fixture.lookups).toHaveLength(0);
+    const retryAction = await retry(fixture.result);
+    await flush(() => fixture.retries.shift()!.resolve(response('pending')));
+    await flush(() => fixture.lookups.shift()!.resolve(response('pending')));
+    await act(async () => {
+      await retryAction.pending;
+    });
+    expect(fixture.result.current.loading).toBe(false);
+    expect(notifications.show).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ color: 'blue' }));
+    expect(successes()).toHaveLength(0);
+    await tick();
+    expect(fixture.lookups).toHaveLength(1);
+    await flush(() => fixture.lookups.shift()!.resolve(response()));
+    expect(fixture.result.current.loading).toBe(false);
+    expect(successes()).toHaveLength(0);
+    await tick(3000);
+    expect(fixture.lookups).toHaveLength(0);
+  });
+
+  it('stops observing an externally running intent after a route move and rejects its late response', async () => {
+    const fixture = setup();
+    await flush(() => fixture.lookups.shift()!.resolve(response('pending')));
+    await tick();
+    const stale = fixture.lookups.shift()!;
+    fixture.rerender({ slug: 'other' });
+    await flush(() =>
+      fixture.lookups.shift()!.resolve(response('completed', { productId: 'product-B', intentId: 'B' }))
+    );
+    await tick(3000);
+    expect(fixture.lookups).toHaveLength(0);
+    await flush(() => stale.resolve(response('completed')));
+    expect(fixture.lookups).toHaveLength(0);
+    expect(fixture.result.current.syncStatus?.searchIntent?.intentId).toBe('B');
+    expect(notifications.show).not.toHaveBeenCalled();
+    expect(fixture.result.current.loading).toBe(false);
+  });
 });

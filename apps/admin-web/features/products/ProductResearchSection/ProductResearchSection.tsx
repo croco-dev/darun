@@ -238,6 +238,7 @@ export const ProductResearchSection = () => {
   const [officialUrl, setOfficialUrl] = useState('');
   const [jobId, setJobId] = useState<string | null>(null);
   const [review, setReview] = useState<ResearchWorkspaceReviewDraft>(() => createInitialWorkspaceReview());
+  const [tagsInput, setTagsInput] = useState<string | null>(null);
   const [logoSelection, setLogoSelection] = useState<WorkspaceImageSelection | null>(null);
   const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -387,6 +388,7 @@ export const ProductResearchSection = () => {
     setRequestId(stored?.requestId ?? newRequestId());
     setOfficialUrl(stored?.officialUrl ?? '');
     setReview(stored?.review ?? createInitialWorkspaceReview());
+    setTagsInput(null);
     setUploadedLogoUrl(stored?.uploadedLogoUrl ?? null);
     setLogoSelection(stored?.review.logoUrl.trim() ? { kind: 'url', logoUrl: stored.review.logoUrl } : null);
     setLogoPreviewUrl(null);
@@ -499,6 +501,7 @@ export const ProductResearchSection = () => {
       setOfficialUrlConfirmation(null);
       setOfficialUrl(nextOfficialUrl);
       setReview({ ...createInitialWorkspaceReview(nextOfficialUrl) });
+      setTagsInput(null);
       setLogoSelection(null);
       setUploadedLogoUrl(null);
       setMaterializedSlug(null);
@@ -974,9 +977,10 @@ export const ProductResearchSection = () => {
               <AdminField label="태그 (쉼표 구분)">
                 <AdminInput
                   name="review-tags"
-                  value={review.tags.join(', ')}
+                  value={tagsInput ?? review.tags.join(', ')}
                   onChange={event => {
                     const nextValue = event.currentTarget.value;
+                    setTagsInput(nextValue);
                     setReview(previous => ({ ...previous, tags: parseTagsInput(nextValue) }));
                   }}
                   placeholder="ex) 협업, 생산성"
@@ -1012,6 +1016,7 @@ export const ProductResearchSection = () => {
                 <AdminInput
                   name="review-logo-url"
                   value={review.logoUrl}
+                  disabled={isUploadingLogo || isMaterializing}
                   placeholder="https://..."
                   onChange={event => {
                     const nextUrl = event.currentTarget.value;

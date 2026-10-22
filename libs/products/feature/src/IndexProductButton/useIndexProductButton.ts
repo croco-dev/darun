@@ -119,6 +119,10 @@ export function useIndexProductButton({ slug }: { slug: string }) {
       : undefined
     : error?.message;
   const terminal = current && ['completed', 'failed', 'superseded'].includes(current.status);
+  const activeIntentStatuses = ['pending', 'in_progress'];
+  const searchIntentActive = activeIntentStatuses.includes(syncStatus?.searchIntent?.status ?? '');
+  const translationIntentActive = activeIntentStatuses.includes(syncStatus?.translationIntent?.status ?? '');
+  const observingSyncStatus = Boolean(intentId) || searchIntentActive || translationIntentActive;
   useEffect(() => {
     if ((!terminal && !superseded) || !request || notified.current === request.generation) return;
     notified.current = request.generation;
@@ -138,7 +142,7 @@ export function useIndexProductButton({ slug }: { slug: string }) {
     );
   }, [current, request, superseded, terminal]);
   useEffect(() => {
-    if (terminal || superseded) return;
+    if (terminal || superseded || !observingSyncStatus) return;
     let cancelled = false;
     let timer: number;
     const poll = async () => {
@@ -170,7 +174,7 @@ export function useIndexProductButton({ slug }: { slug: string }) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [refetch, request, slug, superseded, terminal]);
+  }, [refetch, request, slug, superseded, terminal, observingSyncStatus]);
   const indexProduct = async () => {
     if (registering) return;
     const requestGeneration = ++generation.current;

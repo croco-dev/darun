@@ -334,7 +334,8 @@ export function useGenerateProductDescriptionButton(
 
     try {
       isSubmittingRef.current = true;
-      generateBaseAddressRef.current = { slug };
+      // mutation 응답 전에는 시작 주소를 소유하고, 수락한 job 주소로만 아래에서 교체한다.
+      generateBaseAddressRef.current = { jobId: descriptionJobId, slug };
       reopenRequestRef.current += 1;
       setReopening(false);
       setLoading(true);
