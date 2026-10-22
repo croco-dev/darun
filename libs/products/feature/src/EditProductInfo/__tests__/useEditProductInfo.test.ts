@@ -98,6 +98,16 @@ describe('useEditProductInfo', () => {
     });
   });
 
+  it('sends an explicit empty summary when cleared', async () => {
+    const { result } = renderHook(() => useEditProductInfo({ slug: defaultSlug }));
+    await act(async () => {
+      await result.current.submit({ name: 'Name', summary: '   ' });
+    });
+    expect(mutateFn).toHaveBeenCalledWith({
+      variables: { slug: defaultSlug, input: { name: 'Name', summary: '' } },
+    });
+  });
+
   it('should show validation notification when values are empty', async () => {
     const { result } = renderHook(() => useEditProductInfo({ slug: defaultSlug }));
 

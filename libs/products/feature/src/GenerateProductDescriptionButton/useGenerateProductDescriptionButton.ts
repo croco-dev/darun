@@ -10,7 +10,7 @@ import {
   TempProductBySlugOnProductDescriptionDocument,
 } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 gql(`
   mutation GenerateProductDescription($input: GenerateProductDescriptionInput!) {
@@ -83,7 +83,19 @@ export function useGenerateProductDescriptionButton(slug: string) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [jobIdInput, setJobIdInput] = useState('');
   const [reopening, setReopening] = useState(false);
+  const activeSlug = useRef(slug);
+  useEffect(() => {
+    activeSlug.current = slug;
+  }, [slug]);
   const [staleApplyNotice, setStaleApplyNotice] = useState<string | null>(null);
+  const [previousSlug, setPreviousSlug] = useState(slug);
+  if (previousSlug !== slug) {
+    setPreviousSlug(slug);
+    setCandidateJob(null);
+    setIsPreviewOpen(false);
+    setJobIdInput('');
+    setStaleApplyNotice(null);
+  }
   const isSubmittingRef = useRef(false);
   const isApplyingRef = useRef(false);
   const apolloClient = useApolloClient();
@@ -92,6 +104,18 @@ export function useGenerateProductDescriptionButton(slug: string) {
   const [getProductDescriptionJob] = useLazyQuery(GetProductDescriptionJobDocument, {
     fetchPolicy: 'network-only',
   });
+  const [getCurrentProduct] = useLazyQuery(TempProductBySlugOnProductDescriptionDocument, {
+    fetchPolicy: 'network-only',
+  });
+  const assertCurrentTarget = async (job: CandidateJobInfo) => {
+    const response = await getCurrentProduct({ variables: { slug } });
+    const productId = response.data?.tempProductBySlug?.id;
+    if (activeSlug.current !== slug || !productId || job.productId !== productId) {
+      throw new Error(
+        `현재 제품(${slug})과 후보 대상(${job.productId ?? '알 수 없음'})이 다릅니다. 대상 제품에서 다시 열어주세요.`
+      );
+    }
+  };
 
   const refetchProductQueries = async () => {
     try {
@@ -103,10 +127,14 @@ export function useGenerateProductDescriptionButton(slug: string) {
     }
   };
 
-  const openPreview = () => setIsPreviewOpen(true);
+  const openPreview = async () => {
+    if (!candidateJob) return;
+    await assertCurrentTarget(candidateJob);
+    setIsPreviewOpen(true);
+  };
   const closePreview = () => setIsPreviewOpen(false);
 
-  const setCandidateFromJob = (job: {
+  const setCandidateFromJob = async (job: {
     id: string;
     productId?: string | null;
     status?: string | null;
@@ -114,6 +142,7 @@ export function useGenerateProductDescriptionButton(slug: string) {
     candidateHtml?: string | null;
     message?: string | null;
   }) => {
+    await assertCurrentTarget(job);
     setCandidateJob({
       id: job.id,
       productId: job.productId ?? null,
@@ -152,7 +181,7 @@ export function useGenerateProductDescriptionButton(slug: string) {
         return;
       }
       // v1 후보 HTML은 저장된 바이트 그대로 렌더링한다.
-      setCandidateFromJob(job);
+      await setCandidateFromJob(job);
       setIsPreviewOpen(true);
       notifications.show({
         title: '후보 다시 열기',
@@ -176,6 +205,7 @@ export function useGenerateProductDescriptionButton(slug: string) {
     try {
       isApplyingRef.current = true;
       setApplying(true);
+      await assertCurrentTarget(candidateJob);
 
       const result = await applyCandidateMutation({
         variables: { jobId: candidateJob.id },
@@ -272,7 +302,7 @@ export function useGenerateProductDescriptionButton(slug: string) {
           message: '소개 초안이 생성되었습니다. 내용을 검토한 후 적용해주세요.',
           color: 'teal',
         });
-        setCandidateFromJob(initialJob);
+        await setCandidateFromJob(initialJob);
         setStaleApplyNotice(null);
         setIsPreviewOpen(true);
         return;
@@ -293,6 +323,10 @@ export function useGenerateProductDescriptionButton(slug: string) {
 
       while (true) {
         await delay(POLL_INTERVAL_MS);
+        if (activeSlug.current !== slug) {
+          notifications.hide(notificationId);
+          break;
+        }
 
         if (Date.now() - startedAt > MAX_POLL_TIMEOUT_MS) {
           notifications.hide(notificationId);
@@ -316,7 +350,7 @@ export function useGenerateProductDescriptionButton(slug: string) {
               message: '소개 초안이 생성되었습니다. 내용을 검토한 후 적용해주세요.',
               color: 'teal',
             });
-            setCandidateFromJob(job);
+            await setCandidateFromJob(job);
             setStaleApplyNotice(null);
             setIsPreviewOpen(true);
             break;

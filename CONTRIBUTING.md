@@ -78,6 +78,8 @@ cp apps/visual-web/.env.sample apps/visual-web/.env.local
 
 Cloudinary 이미지 업로드 요청은 서버가 서명한 `folder`, `timestamp`, `public_id`와 동일한 값을 전송해야 합니다. 공유 `useImageUpload`의 `displayName`은 서명 입력과 업로드 요청의 `public_id`에 함께 사용하며, 이를 누락하거나 변경하면 `Invalid Signature` 오류가 발생합니다.
 
+상품 편집 폼은 실제 입력과 레이블·오류 설명을 연결합니다. 요약을 빈 문자열로 저장할 수 있으며, 편집 중 닫았다 다시 열거나 저장에 실패해도 입력을 보존합니다. 저장 중에는 중복 제출과 닫기를 막습니다. AI 소개 후보는 현재 상품과 `productId`가 일치할 때만 검토·적용할 수 있고, 검토자가 비운 값은 재조회로 복원하지 않습니다.
+
 #### `apps/visual-web`
 
 | 변수 | 설명 | 필수 |

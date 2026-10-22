@@ -22,6 +22,7 @@ export type ResearchWorkspacePersistedState = {
   jobId: string | null;
   dispatchStatus: string | null;
   review: ResearchWorkspaceReviewDraft;
+  prefilledJobId: string | null;
   logoFileName: string | null;
   uploadedLogoUrl: string | null;
   materializedSlug: string | null;
@@ -59,6 +60,7 @@ export function createInitialWorkspaceState(requestId: string): ResearchWorkspac
     jobId: null,
     dispatchStatus: null,
     review: createInitialWorkspaceReview(),
+    prefilledJobId: null,
     logoFileName: null,
     uploadedLogoUrl: null,
     materializedSlug: null,
@@ -68,8 +70,10 @@ export function createInitialWorkspaceState(requestId: string): ResearchWorkspac
 export function prefillReviewFromResult(
   previous: ResearchWorkspaceReviewDraft,
   result: ReviewPrefillSource,
-  officialUrl: string
+  officialUrl: string,
+  alreadyPrefilled = false
 ): ResearchWorkspaceReviewDraft {
+  if (alreadyPrefilled) return previous;
   const name = previous.name.trim() ? previous.name : (result.name?.value ?? '');
   const slug = previous.slug.trim() ? previous.slug : (result.suggestedSlug ?? '');
   const summary = previous.summary.trim() ? previous.summary : (result.summary?.value ?? '');
@@ -128,6 +132,7 @@ export function parseWorkspaceState(raw: string | null): ResearchWorkspacePersis
       officialUrl: typeof parsed.officialUrl === 'string' ? parsed.officialUrl : '',
       jobId: typeof parsed.jobId === 'string' ? parsed.jobId : null,
       dispatchStatus: typeof parsed.dispatchStatus === 'string' ? parsed.dispatchStatus : null,
+      prefilledJobId: typeof parsed.prefilledJobId === 'string' ? parsed.prefilledJobId : null,
       review: {
         name: parsed.review.name,
         slug: parsed.review.slug,

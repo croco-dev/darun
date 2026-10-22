@@ -240,6 +240,7 @@ export const ProductResearchSection = () => {
   const [jobId, setJobId] = useState<string | null>(null);
   const [dispatchStatus, setDispatchStatus] = useState<string | null>(null);
   const [review, setReview] = useState<ResearchWorkspaceReviewDraft>(() => createInitialWorkspaceReview());
+  const [prefilledJobId, setPrefilledJobId] = useState<string | null>(null);
   const [logoSelection, setLogoSelection] = useState<WorkspaceImageSelection | null>(null);
   const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -343,6 +344,7 @@ export const ProductResearchSection = () => {
       setActiveJobId(stored.jobId);
       setDispatchStatus(stored.dispatchStatus);
       setReview(stored.review);
+      setPrefilledJobId(stored.prefilledJobId);
       setUploadedLogoUrl(stored.uploadedLogoUrl);
       if (stored.review.logoUrl.trim()) {
         setLogoSelection({ kind: 'url', logoUrl: stored.review.logoUrl });
@@ -393,6 +395,7 @@ export const ProductResearchSection = () => {
       jobId,
       dispatchStatus,
       review,
+      prefilledJobId,
       logoFileName: logoSelection?.kind === 'file' ? logoSelection.fileName : null,
       uploadedLogoUrl,
       materializedSlug,
@@ -409,6 +412,7 @@ export const ProductResearchSection = () => {
     jobId,
     dispatchStatus,
     review,
+    prefilledJobId,
     logoSelection,
     uploadedLogoUrl,
     materializedSlug,
@@ -448,15 +452,16 @@ export const ProductResearchSection = () => {
     if (!result || materializedSlug) {
       return;
     }
-    if (!jobId || job?.id !== jobId) {
+    if (!jobId || job?.id !== jobId || prefilledJobId === jobId) {
       return;
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 조사 결과 수신 시 Review 초안 prefill에 필요
     setReview(previous => {
-      const next = prefillReviewFromResult(previous, result, job?.officialUrl ?? officialUrl);
+      const next = prefillReviewFromResult(previous, result, job?.officialUrl ?? officialUrl, prefilledJobId === jobId);
       return JSON.stringify(next) === JSON.stringify(previous) ? previous : next;
     });
-  }, [result, job, jobId, officialUrl, materializedSlug]);
+    setPrefilledJobId(jobId);
+  }, [result, job, jobId, officialUrl, materializedSlug, prefilledJobId]);
 
   const startNewRequestId = useCallback(() => {
     const next = newRequestId();
@@ -469,6 +474,7 @@ export const ProductResearchSection = () => {
       setActiveJobId(nextJobId);
       setOfficialUrl(nextOfficialUrl);
       setReview({ ...createInitialWorkspaceReview(nextOfficialUrl) });
+      setPrefilledJobId(null);
       setLogoSelection(null);
       setUploadedLogoUrl(null);
       setMaterializedSlug(null);
