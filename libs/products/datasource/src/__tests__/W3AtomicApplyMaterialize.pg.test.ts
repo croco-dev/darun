@@ -1,5 +1,4 @@
 import { ApplyProductDescriptionCandidate } from '@darun/products-domain';
-import { Product } from '@darun/products-domain';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -8,6 +7,10 @@ import { categories } from '../entities/CategorySchema';
 import { productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
 import { productResearchJobs } from '../entities/ProductResearchJobSchema';
 import { products } from '../entities/ProductSchema';
+import { productFeatures } from '../entities/ProductFeaturesSchema';
+import { productLinks } from '../entities/ProductLinksSchema';
+import { productTags } from '../entities/ProductTagsSchema';
+import { tags } from '../entities/TagSchema';
 import { PostgresqlProductDescriptionApplyStore } from '../repositories/PostgresqlProductDescriptionApplyStore';
 import { PostgresqlProductResearchJobRepository } from '../repositories/PostgresqlProductResearchJobRepository';
 import { PostgresqlProductResearchMaterializationRepository } from '../repositories/PostgresqlProductResearchMaterializationRepository';
@@ -152,51 +155,15 @@ maybeDescribe('W3 atomic apply/materialize (isolated PG)', () => {
     const job = await seedDescJob(product.id, '<p>candidates are byte-identical</p>');
 
     const storeOf = (session: ReturnType<typeof drizzle>) =>
-      new PostgresqlProductDescriptionApplyStore(
-        session as never,
-        {
-          assemble: async () => ({
-            evidence: { productId: product.id, productName: 'W3 Prod', items: [] },
-            evidenceHash: job.evidenceHash!,
-            baseDescriptionHash: job.baseDescriptionHash!,
-          }),
-        } as never
-      );
-    const productRepoOf = (session: ReturnType<typeof drizzle>) => ({
-      findOneById: async (id: string) => {
-        const rows = await session.select().from(products).where(eq(products.id, id)).limit(1);
-        const row = rows[0];
-        return row
-          ? new Product({
-              ...row,
-              ownedCompanyId: row.ownedCompanyId ?? undefined,
-              description: row.description ?? undefined,
-              publishedAt: row.publishedAt ?? undefined,
-              updatedAt: row.updatedAt ?? undefined,
-              categoryIds: row.categoryIds ?? [],
-            })
-          : null;
-      },
-    });
-    const jobRepoStub = { findJobById: async () => null, markApplied: async () => null };
+      new PostgresqlProductDescriptionApplyStore(session as never);
 
     const sqlA = postgres(DATABASE_URL, { prepare: false, max: 2 });
     const sqlB = postgres(DATABASE_URL, { prepare: false, max: 2 });
     try {
       const dbA = drizzle(sqlA);
       const dbB = drizzle(sqlB);
-      const useA = new ApplyProductDescriptionCandidate(
-        productRepoOf(dbA) as never,
-        jobRepoStub as never,
-        { assemble: async () => null } as never,
-        storeOf(dbA)
-      );
-      const useB = new ApplyProductDescriptionCandidate(
-        productRepoOf(dbB) as never,
-        jobRepoStub as never,
-        { assemble: async () => null } as never,
-        storeOf(dbB)
-      );
+      const useA = new ApplyProductDescriptionCandidate(storeOf(dbA));
+      const useB = new ApplyProductDescriptionCandidate(storeOf(dbB));
       const [a, b] = await Promise.all([useA.execute({ jobId: job.id }), useB.execute({ jobId: job.id })]);
       const flags = [a.alreadyApplied, b.alreadyApplied].sort();
       expect(flags).toEqual([false, true]);
@@ -224,35 +191,23 @@ maybeDescribe('W3 atomic apply/materialize (isolated PG)', () => {
       .set({ baseDescriptionHash: baseHash })
       .where(eq(productDescriptionJobs.id, job.id));
 
-    const failingStore = new PostgresqlProductDescriptionApplyStore(
-      db as never,
-      {
-        assemble: async () => ({
-          evidence: { productId: product.id, productName: 'W3 Prod', items: [] },
-          evidenceHash: job.evidenceHash!,
-          baseDescriptionHash: baseHash,
-        }),
-      } as never
-    );
-    const failing = new ApplyProductDescriptionCandidate(
-      {
-        findOneById: async () =>
-          new Product({ id: product.id, slug: 'x', name: 'n', summary: 's', logoUrl: 'https://example.com/l.png' }),
-      } as never,
-      { findJobById: async () => null, markApplied: async () => null } as never,
-      { assemble: async () => null } as never,
-      new Proxy(failingStore, {
-        get(target, prop, receiver) {
-          if (prop === 'markAppliedIfUnappliedLocked') {
-            return async () => {
-              throw new Error('injected job-marker failure');
-            };
-          }
-          const value = Reflect.get(target, prop, receiver);
-          return typeof value === 'function' ? value.bind(target) : value;
-        },
-      })
-    );
+    const failingStore = new PostgresqlProductDescriptionApplyStore(db as never);
+    const failing = new ApplyProductDescriptionCandidate({
+      transaction: {
+        run: work =>
+          failingStore.transaction.run(tx =>
+            work({
+              findLockedJob: id => tx.findLockedJob(id),
+              findLockedProduct: id => tx.findLockedProduct(id),
+              assembleLocked: id => tx.assembleLocked(id),
+              applyLocked: input => tx.applyLocked(input),
+              markAppliedIfUnappliedLocked: async () => {
+                throw new Error('injected job-marker failure');
+              },
+            })
+          ),
+      },
+    });
     await expect(failing.execute({ jobId: job.id })).rejects.toThrow('injected job-marker failure');
     const rows = await db.select().from(products).where(eq(products.id, product.id)).limit(1);
     expect(rows[0]?.description).toBe('<p>rollback-base</p>');
@@ -270,29 +225,80 @@ maybeDescribe('W3 atomic apply/materialize (isolated PG)', () => {
     // 두 번째 커넥션의 human edit: description 변경.
     await db.update(products).set({ description: '<p>human edit</p>' }).where(eq(products.id, product.id));
 
-    const { computeSha256, normalizeString } = await import('@darun/products-domain');
-    const store = new PostgresqlProductDescriptionApplyStore(
-      db as never,
-      {
-        assemble: async () => ({
-          evidence: { productId: product.id, productName: 'W3 Prod', items: [] },
-          evidenceHash: job.evidenceHash!,
-          baseDescriptionHash: computeSha256(normalizeString('<p>human edit</p>')),
-        }),
-      } as never
-    );
-    const usecase = new ApplyProductDescriptionCandidate(
-      {
-        findOneById: async () =>
-          new Product({ id: product.id, slug: 'x', name: 'n', summary: 's', logoUrl: 'https://example.com/l.png' }),
-      } as never,
-      { findJobById: async () => null, markApplied: async () => null } as never,
-      { assemble: async () => null } as never,
-      store
-    );
+    const usecase = new ApplyProductDescriptionCandidate(new PostgresqlProductDescriptionApplyStore(db as never));
     await expect(usecase.execute({ jobId: job.id })).rejects.toThrow('다시 생성해 주세요');
     const rows = await db.select().from(products).where(eq(products.id, product.id)).limit(1);
     expect(rows[0]?.description).toBe('<p>human edit</p>');
+  });
+  it('one singleton store keeps B committed when overlapping A rolls back', async () => {
+    const aProduct = await seedProduct();
+    const bProduct = await seedProduct();
+    let signalStarted!: () => void;
+    let releaseTransaction!: () => void;
+    const started = new Promise<void>(resolve => {
+      signalStarted = resolve;
+    });
+    const release = new Promise<void>(resolve => {
+      releaseTransaction = resolve;
+    });
+    const store = new PostgresqlProductDescriptionApplyStore(db as never);
+    const a = store.transaction.run(async tx => {
+      await tx.applyLocked({ productId: aProduct.id, candidateHtml: '<p>A rollback</p>' });
+      signalStarted();
+      await release;
+      throw new Error('rollback A');
+    });
+    const rejectedA = expect(a).rejects.toThrow('rollback A');
+    await started;
+    try {
+      await store.transaction.run(tx =>
+        tx.applyLocked({ productId: bProduct.id, candidateHtml: '<p>B committed</p>' })
+      );
+    } finally {
+      releaseTransaction();
+    }
+    await rejectedA;
+    expect((await db.select().from(products).where(eq(products.id, aProduct.id)))[0]?.description).toBe('<p>base</p>');
+    expect((await db.select().from(products).where(eq(products.id, bProduct.id)))[0]?.description).toBe(
+      '<p>B committed</p>'
+    );
+  });
+
+  it.each(['feature', 'tag', 'link'] as const)('rejects a candidate after a %s evidence insert', async kind => {
+    const product = await seedProduct();
+    const job = await seedDescJob(product.id, '<p>stale</p>');
+    let tagId: string | undefined;
+    try {
+      if (kind === 'feature') {
+        await db.insert(productFeatures).values({ productId: product.id, name: 'New feature', emoji: '✨' });
+      } else if (kind === 'link') {
+        await db.insert(productLinks).values({
+          productId: product.id,
+          title: 'Official',
+          iconUrl: '',
+          link: 'https://example.com/new',
+          displayLink: 'example.com',
+        });
+      } else {
+        const inserted = await db
+          .insert(tags)
+          .values({ name: unique('w3tag'), type: 'keyword' })
+          .returning();
+        tagId = inserted[0]!.id;
+        await db.insert(productTags).values({ productId: product.id, tagId });
+      }
+      const usecase = new ApplyProductDescriptionCandidate(new PostgresqlProductDescriptionApplyStore(db as never));
+      await expect(usecase.execute({ jobId: job.id })).rejects.toThrow('다시 생성해 주세요');
+      expect((await db.select().from(products).where(eq(products.id, product.id)))[0]?.description).toBe('<p>base</p>');
+      expect(
+        (await db.select().from(productDescriptionJobs).where(eq(productDescriptionJobs.id, job.id)))[0]?.appliedAt
+      ).toBeNull();
+    } finally {
+      await db.delete(productFeatures).where(eq(productFeatures.productId, product.id));
+      await db.delete(productLinks).where(eq(productLinks.productId, product.id));
+      await db.delete(productTags).where(eq(productTags.productId, product.id));
+      if (tagId) await db.delete(tags).where(eq(tags.id, tagId));
+    }
   });
 
   it('W3-A4: concurrent materialize with different slugs yields exactly one product', async () => {
@@ -339,9 +345,7 @@ maybeDescribe('W3 atomic apply/materialize (isolated PG)', () => {
       const fulfilled = [a, b].filter(r => r.status === 'fulfilled');
       const finalJob = await new PostgresqlProductResearchJobRepository(db as never).findById(job.id);
       expect(fulfilled).toHaveLength(2);
-      const results = fulfilled.map(
-        r => (r as PromiseFulfilledResult<{ product: Product; alreadyCreated: boolean }>).value
-      );
+      const results = fulfilled.map(result => result.value);
       const winners = results.filter(r => !r.alreadyCreated);
       const stales = results.filter(r => r.alreadyCreated);
       expect(winners).toHaveLength(1);

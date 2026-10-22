@@ -87,7 +87,6 @@ describe('W9 review remediation: research abort and apply lock order', () => {
     };
     const product = { id: 'prod-w9', description: '<p>기존</p>' };
     const store = {
-      transaction: { run: async <T>(work: () => Promise<T>) => work() },
       findLockedJob: vi.fn(async () => job),
       findLockedProduct: vi.fn(async () => {
         calls.push('findLockedProduct');
@@ -100,7 +99,9 @@ describe('W9 review remediation: research abort and apply lock order', () => {
       applyLocked: vi.fn(async () => product),
       markAppliedIfUnappliedLocked: vi.fn(async () => ({ ...job, appliedAt: new Date() })),
     };
-    const usecase = new ApplyProductDescriptionCandidate({} as never, {} as never, {} as never, store as never);
+    const usecase = new ApplyProductDescriptionCandidate({
+      transaction: { run: async work => work(store as never) },
+    });
     const result = await usecase.execute({ jobId: 'job-w9-apply' });
     expect(result.alreadyApplied).toBe(false);
     // 잠금 트랜잭션 구간 읽기 순서: product 행 잠금이 스냅샷 검증보다 먼저다.

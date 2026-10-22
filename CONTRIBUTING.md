@@ -253,6 +253,8 @@ GraphQL 변경은 Node.js 22에서 `pnpm --filter graphql-api build:lambda`와 `
 
 목록 API의 `productsByCategory`와 `visualApps`는 기본 24개씩 반환합니다. 호출자는 `pageInfo.endCursor`와 `hasNextPage`로 이어 읽으며, 목록 표시를 위해 모든 페이지나 각 앱의 화면 목록을 미리 읽지 않습니다. 앱 카드에는 `coverScreenshot`과 `screenshotCount`를 사용합니다. 상품의 태그·추천 수는 선택된 필드만 배치 조회하며, 변경 가능한 데이터를 읽는 상품 ID loader는 요청 사이에 결과를 보관하지 않습니다.
 
+AI 소개 후보 적용은 주입된 저장소의 트랜잭션 전용 adapter에서 실행합니다. 상품·작업 잠금과 현재 스냅샷 확인, 소개 저장, 적용 완료 기록을 SERIALIZABLE 트랜잭션으로 묶으며 PostgreSQL `40001` 충돌만 새 트랜잭션으로 최대 3회 시도합니다. 잠금 없는 별도 적용 경로는 두지 않습니다. 격리 DB의 `W3_DATABASE_URL`을 지정한 뒤 `W3_PG=1 pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts`로 중복 적용·사람의 수정·서로 겹치는 commit/rollback을 확인합니다.
+
 포맷 자동 수정은 다음 명령을 사용합니다.
 
 ```bash

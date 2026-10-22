@@ -1,7 +1,8 @@
 import {
   Product,
-  ProductDescriptionEvidenceAssemblerToken,
-  type IProductDescriptionEvidenceAssembler,
+  ProductDescriptionEvidenceAssembler,
+  ProductDescriptionApplyStoreToken,
+  type ProductDescriptionApplyTransaction,
   type ProductDescriptionApplyStore,
   type ProductDescriptionJobEntity,
   productNotFound,
@@ -11,6 +12,14 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { type ProductDescriptionJobRow, productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
 import { products } from '../entities/ProductSchema';
+import { PostgresqlProductRepository } from './PostgresqlProductRepository';
+import { PostgresqlProductFeatureRepository } from './PostgresqlProductFeatureRepository';
+import { PostgresqlCategoryRepository } from './PostgresqlCategoryRepository';
+import { PostgresqlProductTagRepository } from './PostgresqlProductTagRepository';
+import { PostgresqlProductLinkRepository } from './PostgresqlProductLinkRepository';
+import { PostgresqlProductScreenshotRepository } from './PostgresqlProductScreenshotRepository';
+import { PostgresqlProductFlowRepository } from './PostgresqlProductFlowRepository';
+import { PostgresqlProductResearchJobRepository } from './PostgresqlProductResearchJobRepository';
 
 type Tx = Parameters<Parameters<Drizzle['transaction']>[0]>[0];
 
@@ -47,49 +56,38 @@ function toProduct(row: typeof products.$inferSelect): Product {
   });
 }
 
-/**
- * 후보 적용의 좁은 트랜잭션 Postgres 어댑터.
- * 잠금 순서: product_description_jobs row(FOR UPDATE) → products row(FOR UPDATE).
- * materialize(PostgresqlProductResearchMaterializationRepository)와 동일한
- * job→product 방향이므로 두 경로가 겹쳐도 교착 방향이 어긋나지 않는다.
- * 스냅샷 검증·product 쓰기·조건부 job 확정을 하나의 트랜잭션에서 수행하므로
- * 동시 적용 경쟁은 하나만 성공하고 나머지는 alreadyApplied가 된다.
- */
-@Service()
+@Service(ProductDescriptionApplyStoreToken)
 export class PostgresqlProductDescriptionApplyStore implements ProductDescriptionApplyStore {
-  private tx: Tx | null = null;
-
-  constructor(
-    @Inject(DrizzleToken) private readonly db: Drizzle,
-    @Inject(ProductDescriptionEvidenceAssemblerToken)
-    private readonly evidenceAssembler?: IProductDescriptionEvidenceAssembler
-  ) {}
+  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
   readonly transaction = {
-    run: async <T>(work: () => Promise<T>): Promise<T> => {
-      if (this.tx) {
-        return work();
-      }
-      return this.db.transaction(async tx => {
-        this.tx = tx;
+    run: async <T>(work: (transaction: ProductDescriptionApplyTransaction) => Promise<T>): Promise<T> => {
+      // SERIALIZABLE gives all evidence reads one snapshot and detects conflicting
+      // product writes. A concurrent same-job winner can invalidate our snapshot;
+      // restart the entire transaction to observe its appliedAt, never reuse its adapter.
+      for (let attempt = 0; ; attempt++) {
         try {
-          return await work();
-        } finally {
-          this.tx = null;
+          return await this.db.transaction(tx => work(new TransactionApplyStore(tx)), {
+            isolationLevel: 'serializable',
+          });
+        } catch (error) {
+          const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+          const cause = error && typeof error === 'object' && 'cause' in error ? error.cause : undefined;
+          const causeCode = cause && typeof cause === 'object' && 'code' in cause ? cause.code : undefined;
+          if ((code !== '40001' && causeCode !== '40001') || attempt >= 2) {
+            throw error;
+          }
         }
-      });
+      }
     },
   };
+}
 
-  private currentTx(): Tx {
-    if (!this.tx) {
-      throw new Error('PostgresqlProductDescriptionApplyStore는 transaction.run 안에서만 호출해야 합니다.');
-    }
-    return this.tx;
-  }
+class TransactionApplyStore implements ProductDescriptionApplyTransaction {
+  constructor(private readonly tx: Tx) {}
 
   async findLockedJob(jobId: string): Promise<ProductDescriptionJobEntity | null> {
-    const tx = this.currentTx();
+    const tx = this.tx;
     const rows = await tx
       .select()
       .from(productDescriptionJobs)
@@ -101,28 +99,31 @@ export class PostgresqlProductDescriptionApplyStore implements ProductDescriptio
   }
 
   async findLockedProduct(productId: string): Promise<Product | null> {
-    const tx = this.currentTx();
+    const tx = this.tx;
     const rows = await tx.select().from(products).where(eq(products.id, productId)).for('update').limit(1);
     const row = rows[0];
     return row ? toProduct(row) : null;
   }
 
   async assembleLocked(productId: string): Promise<{ evidenceHash: string; baseDescriptionHash: string }> {
-    if (!this.evidenceAssembler) {
-      throw new Error('ProductDescriptionEvidenceAssembler가 설정되지 않았습니다.');
-    }
-    // 잠근 job row 다음에 같은 트랜잭션 구간에서 스냅샷을 검증한다.
-    // stub assembler(fake)는 해시를 그대로 반환하고, 운영 assembler는 잠금 구간
-    // 밖의 최신 읽기를 제공한다. 어느 쪽도 후보 바이트를 재렌더링하지 않는다.
-    const snapshot = await this.evidenceAssembler.assemble(productId);
-    if (typeof snapshot.evidenceHash !== 'string' || typeof snapshot.baseDescriptionHash !== 'string') {
-      throw new Error('스냅샷 검증에 필요한 해시가 없습니다.');
-    }
+    const db = this.tx as unknown as Drizzle;
+    // Fresh repository instances have no cached rows from another request; every read uses this tx.
+    const assembler = new ProductDescriptionEvidenceAssembler(
+      new PostgresqlProductRepository(db),
+      new PostgresqlProductFeatureRepository(db),
+      new PostgresqlCategoryRepository(db),
+      new PostgresqlProductTagRepository(db),
+      new PostgresqlProductLinkRepository(db),
+      new PostgresqlProductScreenshotRepository(db),
+      new PostgresqlProductFlowRepository(db),
+      new PostgresqlProductResearchJobRepository(db)
+    );
+    const snapshot = await assembler.assemble(productId);
     return { evidenceHash: snapshot.evidenceHash, baseDescriptionHash: snapshot.baseDescriptionHash };
   }
 
   async applyLocked(input: { productId: string; candidateHtml: string }): Promise<Product> {
-    const tx = this.currentTx();
+    const tx = this.tx;
     const rows = await tx.select().from(products).where(eq(products.id, input.productId)).for('update').limit(1);
     const row = rows[0];
     if (!row) {
@@ -142,7 +143,7 @@ export class PostgresqlProductDescriptionApplyStore implements ProductDescriptio
   }
 
   async markAppliedIfUnappliedLocked(jobId: string, appliedAt: Date): Promise<ProductDescriptionJobEntity | null> {
-    const tx = this.currentTx();
+    const tx = this.tx;
     const rows = await tx
       .update(productDescriptionJobs)
       .set({ appliedAt, updatedAt: new Date() })
