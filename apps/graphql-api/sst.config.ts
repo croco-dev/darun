@@ -119,9 +119,9 @@ export default $config({
 
     productResearchQueue.subscribe(productResearchWorker.arn);
 
-    new sst.aws.Cron('JobRecoveryTick', {
+    const jobRecoveryTick = new sst.aws.CronV2('JobRecoveryTick', {
       schedule: 'rate(1 minute)',
-      job: {
+      function: {
         handler: 'job-recovery-tick.handler',
         bundle: '.build/lambda',
         runtime: 'nodejs22.x',
@@ -199,6 +199,6 @@ export default $config({
       },
     });
 
-    return { api: router.url };
+    return { api: router.url, jobRecoverySchedule: jobRecoveryTick.nodes.schedule.arn };
   },
 });

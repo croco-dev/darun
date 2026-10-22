@@ -185,7 +185,7 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
 
 ## 비동기 작업 복구
 
-SST의 `JobRecoveryTick`은 매분 번역·AI 소개·리서치 작업의 복구 handler를 실행하며, 세 작업 큐에 대한 `sqs:SendMessage` 권한과 큐 URL을 전달합니다. 번역 결과는 작업 행을 잠근 뒤 lease를 다시 확인한 같은 트랜잭션에서만 저장합니다. 동일 대상·종류·언어의 활성 번역 작업은 중복 생성하지 않으며, 번역·소개 작업은 수동 재시도를 포함해 최대 5회 시도합니다.
+SST의 `JobRecoveryTick`은 `CronV2`로 매분 번역·AI 소개·리서치 작업의 복구 handler를 실행하며, 세 작업 큐에 대한 `sqs:SendMessage` 권한과 큐 URL을 전달합니다. 배포 출력의 `jobRecoverySchedule` ARN으로 생성된 스케줄을 확인할 수 있습니다. 번역 결과는 작업 행을 잠근 뒤 lease를 다시 확인한 같은 트랜잭션에서만 저장합니다. 동일 대상·종류·언어의 활성 번역 작업은 중복 생성하지 않으며, 번역·소개 작업은 수동 재시도를 포함해 최대 5회 시도합니다.
 
 격리 PostgreSQL 주소를 `W4_DATABASE_URL`에 지정하고 `W4_PG=1 pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W4JobLeaseRecovery.pg.test.ts`로 만료된 lease, 잠금 대기 중 만료, 병렬 생성, 재시도 상한을 검증합니다. 운영 DB를 이 회귀 검증에 사용하지 않습니다. 공개 GraphQL mutation 이름은 유지하며 내부 소개 생성 호환 alias는 사용하지 않습니다.
 
