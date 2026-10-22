@@ -347,6 +347,8 @@ pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 
 Next.js 버전은 workspace catalog와 override를 함께 갱신하며 모든 웹 앱은 catalog를 사용합니다. OpenTelemetry API는 웹과 서버 SDK의 공통 호환 범위인 `1.9.1`로 통합합니다. 서로 다른 peer 버전으로 Drizzle 타입이 중복 생성되는 것을 방지하며, Lambda의 Sentry·profiling SDK `10.38.0`과 기존 서버 계측 설정은 유지합니다. 의존성 취약점은 감사 기준을 낮추거나 제외하지 않고 수정 버전과 잠금 파일을 함께 갱신합니다.
 
+HTML/Markdown 의미 전환의 공통 원문과 영어 기대값은 `libs/translation/datasource/src/__tests__/descriptionMeaningTransitions.fixture.ts`에서 관리합니다. 단위 검사와 DB 통합 검사는 같은 입력만 공유하며, 영어 기대값은 생산 비교 함수나 번역 응답으로 계산하지 않는 명시적 리터럴을 유지합니다. 자격 증명 거절 사례는 `apps/graphql-api/__tests__/llmSettingCredential.fixture.ts`에서 실행 시 생성하며, HTTP와 SDK 검사 각각의 URI 인코딩 차이는 해당 검사에 남깁니다.
+
 포맷 자동 수정은 다음 명령을 사용합니다.
 
 ```bash

@@ -14,6 +14,7 @@ import { randomUUID } from 'node:crypto';
 import { createServer, request, type Server } from 'node:http';
 import { createRequire } from 'node:module';
 import { LlmSettingResolver } from '../../../libs/translation/feature/src/LlmSetting.resolver';
+import { createCredentialCoercionFixture } from './llmSettingCredential.fixture';
 
 const { GraphQLError } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
 
@@ -46,15 +47,7 @@ const selection = '{ apiKeyMasked braveApiKeyMasked model }';
 const diagnostic = { query: 'mutation HttpDiagnostics { unrelated: diagnosticFailure }' };
 const ready = { query: 'mutation HttpReady { diagnosticSuccess }' };
 const consoleDiagnostics: unknown[][] = [];
-const arraySecret = `synthetic-http-array-${randomUUID()}`;
-const objectSecret = `synthetic-http-object-${randomUUID()}`;
-const nestedSecret = `synthetic-http-nested-${randomUUID()}`;
-const escapedSecret = `synthetic-http-escaped-${randomUUID()}-"quote"-\\slash-\nline`;
-const mapSecret = `synthetic-http-map-${randomUUID()}`;
-const nestedMapSecret = `synthetic-http-nested-map-${randomUUID()}`;
-const frameSecret = `synthetic-http-frame-${randomUUID()}`;
-const multilineProperty = `synthetic-http-property-${randomUUID()}\n    at ${frameSecret} (marker)\nend`;
-const escapedProperty = `synthetic-http-property-${randomUUID()}-"quote"-\\slash-\\nline`;
+const { coercionCases } = createCredentialCoercionFixture('synthetic-http');
 // Duplicate ObjectFields keep every occurrence in the AST while the JS conversion
 // keeps only the last value; percent hex digits fold case-insensitively in whole-key
 // comparisons, so lowercase and mixed variants of a rejected property name must match.
@@ -71,41 +64,6 @@ const uriPropertyHexKeys = [
   encodeURIComponent(uriProperty).replace(/%[\dA-Fa-f]{2}/g, (octet, offset) =>
     offset < 20 ? octet.toLowerCase() : octet.toUpperCase()
   ),
-];
-const coercionCases = [
-  { name: 'array', value: [arraySecret], secrets: [arraySecret], echoed: [arraySecret] },
-  { name: 'object', value: { token: objectSecret }, secrets: [objectSecret], echoed: [objectSecret] },
-  {
-    name: 'type/id protocol properties',
-    value: { type: objectSecret, id: nestedSecret },
-    secrets: [objectSecret, nestedSecret],
-    echoed: [objectSecret, nestedSecret],
-  },
-  {
-    name: 'nested and escaped',
-    value: { tokens: [nestedSecret], nested: { token: escapedSecret } },
-    secrets: [nestedSecret, escapedSecret],
-    echoed: [nestedSecret, JSON.stringify(escapedSecret).slice(1, -1)],
-  },
-  { name: 'credential-keyed map', value: { [mapSecret]: false }, secrets: [mapSecret], echoed: [mapSecret] },
-  {
-    name: 'nested credential-keyed map',
-    value: { mapping: { [nestedMapSecret]: true } },
-    secrets: [nestedMapSecret],
-    echoed: [nestedMapSecret],
-  },
-  {
-    name: 'multiline fake-frame property',
-    value: { [multilineProperty]: false },
-    secrets: [multilineProperty, frameSecret],
-    echoed: [multilineProperty],
-  },
-  {
-    name: 'escaped property',
-    value: { [escapedProperty]: false },
-    secrets: [escapedProperty],
-    echoed: [escapedProperty],
-  },
 ];
 
 interface Operation {

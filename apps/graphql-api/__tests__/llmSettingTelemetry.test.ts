@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vite
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { LlmSettingResolver } from '../../../libs/translation/feature/src/LlmSetting.resolver';
+import { createCredentialCoercionFixture } from './llmSettingCredential.fixture';
 
 const { extendSchema, GraphQLError, parse } = createRequire(`${process.cwd()}/package.json`)(
   'graphql'
@@ -28,15 +29,7 @@ const variableQuery = `mutation SaveSettings($credential: String, $searchCredent
 const inlineQuery = `mutation SaveSettings {
   saved: updateLlmSetting(endpoint: "${endpoint}", apiKey: "${apiKey}", braveApiKey: "${braveApiKey}", model: "${model}") ${selection}
 }`;
-const arraySecret = `synthetic-array-${randomUUID()}`;
-const objectSecret = `synthetic-object-${randomUUID()}`;
-const nestedSecret = `synthetic-nested-${randomUUID()}`;
-const escapedSecret = `synthetic-escaped-${randomUUID()}-"quote"-\\slash-\nline`;
-const mapSecret = `synthetic-map-${randomUUID()}`;
-const nestedMapSecret = `synthetic-nested-map-${randomUUID()}`;
-const frameSecret = `synthetic-frame-${randomUUID()}`;
-const multilineProperty = `synthetic-property-${randomUUID()}\n    at ${frameSecret} (marker)\nend`;
-const escapedProperty = `synthetic-property-${randomUUID()}-"quote"-\\slash-\\nline`;
+const { coercionCases, escapedSecret, mapSecret } = createCredentialCoercionFixture('synthetic');
 // Percent hex digits are case-insensitive in URI encodings, so property-name
 // whole-key matching treats hex case as equal while real letters keep their case.
 const uriProperty = `credential/${randomUUID()}a+b c`;
@@ -57,41 +50,6 @@ const uriPropertyHexKeys = [
 const duplicateFieldSecret = `synthetic-duplicate-${randomUUID()}`;
 const nestedVariableSecret = `synthetic-nested-variable-${randomUUID()}`;
 const bagValueSecret = `synthetic-bag-value-${randomUUID()}`;
-const coercionCases = [
-  { name: 'array', value: [arraySecret], secrets: [arraySecret], echoed: [arraySecret] },
-  { name: 'object', value: { token: objectSecret }, secrets: [objectSecret], echoed: [objectSecret] },
-  {
-    name: 'type/id protocol properties',
-    value: { type: objectSecret, id: nestedSecret },
-    secrets: [objectSecret, nestedSecret],
-    echoed: [objectSecret, nestedSecret],
-  },
-  {
-    name: 'nested and escaped',
-    value: { tokens: [nestedSecret], nested: { token: escapedSecret } },
-    secrets: [nestedSecret, escapedSecret],
-    echoed: [nestedSecret, JSON.stringify(escapedSecret).slice(1, -1)],
-  },
-  { name: 'credential-keyed map', value: { [mapSecret]: false }, secrets: [mapSecret], echoed: [mapSecret] },
-  {
-    name: 'nested credential-keyed map',
-    value: { mapping: { [nestedMapSecret]: true } },
-    secrets: [nestedMapSecret],
-    echoed: [nestedMapSecret],
-  },
-  {
-    name: 'multiline fake-frame property',
-    value: { [multilineProperty]: false },
-    secrets: [multilineProperty, frameSecret],
-    echoed: [multilineProperty],
-  },
-  {
-    name: 'escaped property',
-    value: { [escapedProperty]: false },
-    secrets: [escapedProperty],
-    echoed: [escapedProperty],
-  },
-];
 
 function setting(input: Partial<LlmSetting> = {}): LlmSetting {
   return {

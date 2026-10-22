@@ -2,6 +2,11 @@ import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 import { describe, expect, it } from 'vitest';
 import { translationMeaning } from '../codecs/translationMeaning';
+import {
+  meaningChanges,
+  meaningPreservingEdits,
+  orderedListItemValueChange,
+} from './descriptionMeaningTransitions.fixture';
 
 describe('translationMeaning 목록 번호', () => {
   it.each([
@@ -11,11 +16,7 @@ describe('translationMeaning 목록 번호', () => {
       '<ol><li>본문</li><li>조건</li><li>기능</li></ol>',
       '<ol reversed><li>본문</li><li>조건</li><li>기능</li></ol>',
     ],
-    [
-      '항목 번호',
-      '<ol start="5"><li>본문</li><li value="8">조건</li><li>기능</li></ol>',
-      '<ol start="5"><li>본문</li><li value="12">조건</li><li>기능</li></ol>',
-    ],
+    ['항목 번호', ...orderedListItemValueChange.source],
     [
       '중첩 목록',
       '<ol><li>본문<ol start="2"><li>조건</li></ol></li><li>기능</li></ol>',
@@ -32,7 +33,7 @@ describe('translationMeaning 목록 번호', () => {
   });
 
   it.each([
-    ['기본 시작 번호', '<ol><li>본문</li><li>조건</li></ol>', '<ol start="1"><li>본문</li><li>조건</li></ol>'],
+    ['기본 시작 번호', ...meaningPreservingEdits.defaultOrderedListStart.source],
     [
       '번호 표기와 서식',
       '<ol start="5"><li>본문</li><li>조건</li></ol>',
@@ -97,7 +98,7 @@ describe('translationMeaning 코드 공백', () => {
       '<code><a href="https://example.com/docs">  call() </a></code>',
       '<code><a href="https://example.com/docs">call()</a></code>',
     ],
-    ['inline code 연속 공백', '<p>본문 <code>left  right</code></p>', '<p>본문 <code>left right</code></p>'],
+    ['inline code 연속 공백', ...meaningChanges.htmlInlineCodeSpacing.source],
     ['inline code 앞 공백', '<p>본문 <code> left</code></p>', '<p>본문 <code>left</code></p>'],
     ['inline code 뒤 공백', '<p>본문 <code>left </code></p>', '<p>본문 <code>left</code></p>'],
     ['inline code 탭', '<p>본문 <code>left\tright</code></p>', '<p>본문 <code>left right</code></p>'],
@@ -117,11 +118,7 @@ describe('translationMeaning 코드 공백', () => {
       '<pre><code>if ready:\n    send()\nfinish()  </code></pre>',
       '<pre class="code" style="color:red"><code><span>if ready:\n    send()\n</span><b>finish()  </b></code></pre>',
     ],
-    [
-      'code 밖 표시용 공백',
-      '<p>  본문  <code> left  right </code>  조건  </p>',
-      '<p>본문 <code> left  right </code> 조건</p>',
-    ],
+    ['code 밖 표시용 공백', ...meaningPreservingEdits.textOutsideHtmlCode.source],
   ])('%s는 의미가 같다', (_kind, before, after) => {
     expect(translationMeaning(before)).toBe(translationMeaning(after));
   });
@@ -129,20 +126,12 @@ describe('translationMeaning 코드 공백', () => {
 
 describe('translationMeaning Markdown 코드 공백', () => {
   it.each([
-    [
-      'fenced 조건 안 finish 들여쓰기',
-      '본문\n\n```python\nif ready:\n    send()\nfinish()\n```',
-      '본문\n\n```python\nif ready:\n    send()\n    finish()\n```',
-    ],
-    ['tilde fenced 줄바꿈', '본문\n\n~~~\nprepare() finish()\n~~~', '본문\n\n~~~\nprepare()\nfinish()\n~~~'],
-    ['fenced 연속 공백', '본문\n\n```\nleft  right\n```', '본문\n\n```\nleft right\n```'],
-    [
-      'indented 조건 안 finish 들여쓰기',
-      '본문\n\n    if ready:\n        send()\n    finish()',
-      '본문\n\n    if ready:\n        send()\n        finish()',
-    ],
-    ['indented 줄바꿈', '본문\n\n    prepare() finish()', '본문\n\n    prepare()\n    finish()'],
-    ['indented 연속 공백', '본문\n\n    left  right', '본문\n\n    left right'],
+    ['fenced 조건 안 finish 들여쓰기', ...meaningChanges.fencedIndentation.source],
+    ['tilde fenced 줄바꿈', ...meaningChanges.tildeFenceLineBreak.source],
+    ['fenced 연속 공백', ...meaningChanges.fencedSpacing.source],
+    ['indented 조건 안 finish 들여쓰기', ...meaningChanges.indentedIndentation.source],
+    ['indented 줄바꿈', ...meaningChanges.indentedLineBreak.source],
+    ['indented 연속 공백', ...meaningChanges.indentedSpacing.source],
     [
       '인용 안 fenced 들여쓰기',
       '> 본문\n>\n> ```\n> if ready:\n>     send()\n> finish()\n> ```',
@@ -169,7 +158,7 @@ describe('translationMeaning Markdown 코드 공백', () => {
       '본문  조건\n\n    if ready:\n        send()\n    finish()\n\n추가  설명',
       '본문 조건\n\n    if ready:\n        send()\n    finish()\n\n추가 설명',
     ],
-    ['일반 Markdown 본문 줄바꿈', '본문\n조건', '본문 조건'],
+    ['일반 Markdown 본문 줄바꿈', ...meaningPreservingEdits.markdownSoftNewline.source],
     [
       '동일 fenced HTML literal 밖 본문 공백',
       '본문\n\n```html\n<pre>\n```\n\n추가  설명',
@@ -207,11 +196,11 @@ describe('translationMeaning Markdown 코드 공백', () => {
 
 describe('translationMeaning Markdown 문단과 inline code', () => {
   it.each([
-    ['문단 병합', '소개\n\n주의', '소개 주의'],
-    ['문단 분리', '소개 주의', '소개\n\n주의'],
+    ['문단 병합', ...meaningChanges.paragraphMerge.source],
+    ['문단 분리', ...meaningChanges.paragraphSplit.source],
     ['같은 문단 수의 경계 이동', '소개\n\n주의 조건', '소개 주의\n\n조건'],
-    ['inline code 공백 축소', "본문 `printf 'a  b'`", "본문 `printf 'a b'`"],
-    ['inline code 공백 증가', "본문 `printf 'a b'`", "본문 `printf 'a  b'`"],
+    ['inline code 공백 축소', ...meaningChanges.inlineCodeSpaceReduction.source],
+    ['inline code 공백 증가', ...meaningChanges.inlineCodeSpaceIncrease.source],
     ['inline code의 HTML literal', '본문 `<span>left  right</span>`', '본문 `<span>left right</span>`'],
     ['HTML code의 backtick 앞뒤 공백', '<code>` left `</code>', '<code>`left`</code>'],
     [
@@ -226,11 +215,11 @@ describe('translationMeaning Markdown 문단과 inline code', () => {
 
   it.each([
     ['같은 문단의 soft newline', '소개\n주의', '소개 주의'],
-    ['같은 문단의 표시용 연속 공백', '소개  주의', '소개 주의'],
-    ['같은 문단 경계의 빈 줄 추가', '소개\n\n주의', '소개\n\n\n주의'],
-    ['같은 literal 밖의 soft newline', "본문\n`printf 'a  b'` 조건", "본문 `printf 'a  b'` 조건"],
-    ['같은 literal 밖의 연속 공백', "본문  `printf 'a  b'`  조건", "본문 `printf 'a  b'` 조건"],
-    ['같은 inline literal의 delimiter', "본문 `printf 'a  b'`", "본문 ``printf 'a  b'``"],
+    ['같은 문단의 표시용 연속 공백', ...meaningPreservingEdits.paragraphDisplaySpacing.source],
+    ['같은 문단 경계의 빈 줄 추가', ...meaningPreservingEdits.paragraphBlankLines.source],
+    ['같은 literal 밖의 soft newline', ...meaningPreservingEdits.textBeforeInlineCodeNewline.source],
+    ['같은 literal 밖의 연속 공백', ...meaningPreservingEdits.textOutsideInlineCodeSpacing.source],
+    ['같은 inline literal의 delimiter', ...meaningPreservingEdits.inlineCodeDelimiters.source],
     ['같은 Markdown 문단의 HTML 서식', '소개 <strong>주의</strong>', '소개 <span>주의</span>'],
     [
       'HTML code 안 backtick literal의 presentation wrapper',
@@ -251,10 +240,10 @@ describe('translationMeaning Markdown 제목 경계와 깊이', () => {
   const markdown = unified().use(remarkParse);
 
   it.each([
-    ['두 제목 병합', '# 소개\n# 주의', '# 소개 # 주의'],
-    ['한 제목 분리', '# 소개 # 주의', '# 소개\n# 주의'],
-    ['같은 본문의 깊이 증가', '# 소개\n# 주의', '# 소개\n## 주의'],
-    ['같은 본문의 깊이 감소', '# 소개\n### 주의', '# 소개\n## 주의'],
+    ['두 제목 병합', ...meaningChanges.headingMerge.source],
+    ['한 제목 분리', ...meaningChanges.headingSplit.source],
+    ['같은 본문의 깊이 증가', ...meaningChanges.headingDepthIncrease.source],
+    ['같은 본문의 깊이 감소', ...meaningChanges.headingDepthDecrease.source],
     ['같은 제목 수의 경계 이동', '# 소개\n# 주의 조건', '# 소개 주의\n# 조건'],
     ['목록 안 제목 깊이', '- # 소개\n- ## 주의', '- # 소개\n- ### 주의'],
     ['제목 안 inline code literal', '# 소개 `left  right`', '# 소개 `left right`'],
@@ -306,12 +295,12 @@ describe('translationMeaning Markdown 제목 경계와 깊이', () => {
   });
 
   it.each([
-    ['ATX와 setext', '# 소개\n\n## 주의', '소개\n===\n\n주의\n---'],
-    ['setext와 ATX 역방향', '소개\n===\n\n주의\n---', '# 소개\n\n## 주의'],
-    ['닫는 marker', '# 소개\n## 주의', '# 소개 ###\n## 주의 ##'],
+    ['ATX와 setext', ...meaningPreservingEdits.headingAtxToSetext.source],
+    ['setext와 ATX 역방향', ...meaningPreservingEdits.headingSetextToAtx.source],
+    ['닫는 marker', ...meaningPreservingEdits.headingClosingMarkers.source],
     ['여섯 단계 제목의 닫는 marker', '###### 소개', '###### 소개 ##'],
     ['제목 앞 들여쓰기와 표시용 공백', '# 소개  조건\n## 주의', '  # 소개 조건  ###\n ## 주의 #'],
-    ['일반 본문 표시용 공백', '# 소개\n\n본문  조건\n\n## 주의', '# 소개\n\n본문 조건\n\n## 주의'],
+    ['일반 본문 표시용 공백', ...meaningPreservingEdits.headingBodySpacing.source],
     ['빈 제목의 marker', '#', '# ###'],
     ['같은 inline code와 제목 marker', '# 소개 `left  right`', '# 소개 `left  right` ###'],
   ])('%s는 같은 제목 경계·깊이·본문의 search-only 의미다', (_kind, before, after) => {
@@ -335,14 +324,14 @@ describe('translationMeaning Markdown 인용 경계와 본문', () => {
   const markdown = unified().use(remarkParse);
 
   it.each([
-    ['줄별 marker를 본문 literal로 합침', '> 소개\n> 주의', '> 소개 > 주의'],
-    ['본문 literal을 줄별 marker로 분리', '> 소개 > 주의', '> 소개\n> 주의'],
-    ['인용 제거', '> 소개 주의', '소개 주의'],
-    ['인용 추가', '소개 주의', '> 소개 주의'],
+    ['줄별 marker를 본문 literal로 합침', ...meaningChanges.quoteMarkerMerge.source],
+    ['본문 literal을 줄별 marker로 분리', ...meaningChanges.quoteMarkerSplit.source],
+    ['인용 제거', ...meaningChanges.quoteRemoval.source],
+    ['인용 추가', ...meaningChanges.quoteAddition.source],
     ['인용 안 문단 분리', '> 소개\n> 주의', '> 소개\n>\n> 주의'],
-    ['독립 인용 경계', '> 소개\n>\n> 주의', '> 소개\n\n> 주의'],
-    ['중첩 추가', '> 소개\n> 주의', '> 소개\n> > 주의'],
-    ['중첩 제거', '> 소개\n> > 주의', '> 소개\n> 주의'],
+    ['독립 인용 경계', ...meaningChanges.separateQuoteBoundary.source],
+    ['중첩 추가', ...meaningChanges.quoteNestingAddition.source],
+    ['중첩 제거', ...meaningChanges.quoteNestingRemoval.source],
     ['인용 경계 이동', '> 소개\n\n주의 조건', '소개 주의\n\n> 조건'],
     ['인용 안 제목 깊이', '> # 소개', '> ## 소개'],
     ['인용 안 목록 중첩', '> - 소개\n> - 주의', '> - 소개\n>   - 주의'],
@@ -445,15 +434,15 @@ describe('translationMeaning Markdown 인용 경계와 본문', () => {
   });
 
   it.each([
-    ['soft newline', '> 소개\n> 주의', '> 소개 주의'],
-    ['lazy continuation', '> 소개\n> 주의', '> 소개\n주의'],
-    ['표시용 연속 공백', '> 소개  주의', '> 소개 주의'],
+    ['soft newline', ...meaningPreservingEdits.quoteSoftNewline.source],
+    ['lazy continuation', ...meaningPreservingEdits.quoteLazyContinuation.source],
+    ['표시용 연속 공백', ...meaningPreservingEdits.quoteDisplaySpacing.source],
     ['marker 뒤 공백', '>소개\n>주의', '> 소개\n> 주의'],
-    ['marker 앞 들여쓰기', '> 소개\n> 주의', '   > 소개\n   > 주의'],
-    ['중첩 marker 표현', '> > 소개\n> > 주의', '>>소개\n>>주의'],
+    ['marker 앞 들여쓰기', ...meaningPreservingEdits.quoteMarkerIndentation.source],
+    ['중첩 marker 표현', ...meaningPreservingEdits.nestedQuoteMarkers.source],
     ['같은 인용 안 문단의 빈 줄', '> 소개\n>\n> 주의', '> 소개\n>\n>\n> 주의'],
-    ['같은 inline literal 밖 공백', '> 소개  `left  right`\n> 주의', '> 소개 `left  right` 주의'],
-    ['같은 inline literal의 soft newline', '> 소개 `left\n> right`', '> 소개 `left right`'],
+    ['같은 inline literal 밖 공백', ...meaningPreservingEdits.textOutsideQuotedInlineCode.source],
+    ['같은 inline literal의 soft newline', ...meaningPreservingEdits.quotedInlineCodeLineEnding.source],
     ['같은 fenced literal과 marker', '> ```\n> left  right\n> ```', '>```\n>left  right\n>```'],
     ['같은 hard break 표현', '> 소개  \n> 주의', '> 소개\\\n> 주의'],
     ['같은 목록과 marker', '> - 소개\n> - 주의', '>- 소개\n>- 주의'],
@@ -518,9 +507,9 @@ describe('translationMeaning Markdown 명시 줄바꿈', () => {
   });
 
   it.each([
-    ['two-space와 backslash 표현', '소개  \n주의', '소개\\\n주의'],
+    ['two-space와 backslash 표현', ...meaningPreservingEdits.hardBreakNotation.source],
     ['HTML br와 Markdown hard break 표현', '<p>소개<br>주의</p>', '소개  \n주의'],
-    ['목록 항목 안 같은 hard break', '- 소개  \n  주의', '- 소개\\\n  주의'],
+    ['목록 항목 안 같은 hard break', ...meaningPreservingEdits.listHardBreakNotation.source],
   ])('%s는 같은 break 구조의 search-only 의미를 유지한다', (_kind, before, after) => {
     expect(translationMeaning(before)).toBe(translationMeaning(after));
   });
@@ -545,8 +534,8 @@ describe('translationMeaning Markdown autolink', () => {
   const markdown = unified().use(remarkParse);
 
   it.each([
-    ['URL 경로', '소개 <https://example.com/a>', '소개 <https://example.com/b>'],
-    ['이메일 주소', '소개 <contact@example.com>', '소개 <team@example.com>'],
+    ['URL 경로', ...meaningChanges.autolinkPath.source],
+    ['이메일 주소', ...meaningChanges.autolinkEmail.source],
     ['같은 목적지의 표시 내용', '소개 <contact@example.com>', '소개 <mailto:contact@example.com>'],
     ['목록 항목 안 URL', '- 소개 <https://example.com/a>', '- 소개 <https://example.com/b>'],
     ['URL 안 literal entity', '소개 <https://example.com/a?x=1&y=2>', '소개 <https://example.com/a?x=1&amp;y=2>'],
@@ -585,8 +574,8 @@ describe('translationMeaning Markdown autolink', () => {
   });
 
   it.each([
-    ['주변 표시용 공백', '소개  <https://example.com/a>  주의', '소개 <https://example.com/a> 주의'],
-    ['soft newline', '소개\n<https://example.com/a> 주의', '소개 <https://example.com/a> 주의'],
+    ['주변 표시용 공백', ...meaningPreservingEdits.autolinkDisplaySpacing.source],
+    ['soft newline', ...meaningPreservingEdits.autolinkSoftNewline.source],
     [
       '같은 목적지·표시 내용의 HTML 앵커',
       '소개 <https://example.com/a>',
@@ -697,11 +686,7 @@ describe('translationMeaning Markdown 링크·이미지 angle 목적지', () => 
       '소개 [안내](<https://example.com/a>) 주의',
     ],
     ['링크 앞 soft newline', '소개\n[안내](<https://example.com/a>)', '소개 [안내](<https://example.com/a>)'],
-    [
-      '이미지 앞 soft newline',
-      '소개\n![대체](<https://example.com/a.png>)',
-      '소개 ![대체](<https://example.com/a.png>)',
-    ],
+    ['이미지 앞 soft newline', ...meaningPreservingEdits.imageDestinationSoftNewline.source],
     [
       '동일 URL의 entity 표기',
       '[안내](<https://example.com/a?x=1&y=2>)',
@@ -763,11 +748,7 @@ describe('translationMeaning escaped HTML 표기', () => {
   });
 
   it.each([
-    [
-      'code의 표시용 공백',
-      '\\<code>  [안내](<https://example.com/a>)  \\</code>',
-      '\\<code> [안내](<https://example.com/a>) \\</code>',
-    ],
+    ['code의 표시용 공백', ...meaningPreservingEdits.escapedCodeLinkSpacing.source],
     [
       'pre의 soft newline',
       '\\<pre>\n[안내](<https://example.com/a>) \\</pre>',
@@ -778,11 +759,7 @@ describe('translationMeaning escaped HTML 표기', () => {
       '\\<code>\n![대체](<https://example.com/a.png>) \\</code>',
       '\\<code> ![대체](<https://example.com/a.png>) \\</code>',
     ],
-    [
-      '참조 앞 soft newline',
-      '\\<code>\n[안내][d] \\</code>\n\n[d]: <https://example.com/a>',
-      '\\<code> [안내][d] \\</code>\n\n[d]: <https://example.com/a>',
-    ],
+    ['참조 앞 soft newline', ...meaningPreservingEdits.escapedCodeReferenceSoftNewline.source],
   ])('%s는 같은 실제 링크 의미를 유지한다', (_kind, source, equivalent) => {
     expect(translationMeaning(source)).toBe(translationMeaning(equivalent));
   });
@@ -1036,16 +1013,16 @@ describe('translationMeaning Markdown 목록 계층', () => {
   });
 
   it.each([
-    ['비순서 목록 평탄화', '- 소개\n  - 주의', '- 소개\n- 주의'],
-    ['비순서 목록 중첩', '- 소개\n- 주의', '- 소개\n  - 주의'],
-    ['순서 목록 평탄화', '1. 소개\n   1. 주의', '1. 소개\n1. 주의'],
-    ['순서 목록 중첩', '1. 소개\n1. 주의', '1. 소개\n   1. 주의'],
+    ['비순서 목록 평탄화', ...meaningChanges.unorderedListFlattening.source],
+    ['비순서 목록 중첩', ...meaningChanges.unorderedListNesting.source],
+    ['순서 목록 평탄화', ...meaningChanges.orderedListFlattening.source],
+    ['순서 목록 중첩', ...meaningChanges.orderedListNesting.source],
     ['목록 종류', '- 소개\n- 주의', '1. 소개\n2. 주의'],
-    ['중첩 목록 종류', '- 소개\n  - 주의', '- 소개\n  1. 주의'],
-    ['중첩 목록 시작 번호', '- 소개\n  3. 주의', '- 소개\n  7. 주의'],
-    ['같은 깊이의 부모 항목 이동', '- 소개\n  - 주의\n- 기능\n  - 조건', '- 소개\n- 주의\n  - 기능\n  - 조건'],
+    ['중첩 목록 종류', ...meaningChanges.nestedListKind.source],
+    ['중첩 목록 시작 번호', ...meaningChanges.nestedListStart.source],
+    ['같은 깊이의 부모 항목 이동', ...meaningChanges.listParentMovement.source],
     ['목록 inline literal 공백', '- 소개\n  - `left  right`', '- 소개\n  - `left right`'],
-    ['빈 줄 없이 문단에 남은 숫자와 구두점 literal', paragraphDot, paragraphParenthesis],
+    ['빈 줄 없이 문단에 남은 숫자와 구두점 literal', ...meaningChanges.listParagraphLiteral.source],
     [
       'HTML code 안 목록처럼 보이는 literal 들여쓰기',
       '소개 <code>\n- 주의\n  - 조건\n</code>',
@@ -1056,16 +1033,16 @@ describe('translationMeaning Markdown 목록 계층', () => {
   });
 
   it.each([
-    ['비순서 marker', '- 소개\n  - 주의', '* 소개\n  * 주의'],
+    ['비순서 marker', ...meaningPreservingEdits.unorderedListMarkers.source],
     ['같은 계층의 들여쓰기', '- 소개\n  - 주의', ' - 소개\n    - 주의'],
     ['같은 계층의 본문 공백', '- 소개  조건\n  - 주의', '- 소개 조건\n  - 주의'],
     ['목록 항목의 soft newline', '- 소개\n  조건\n  - 주의', '- 소개 조건\n  - 주의'],
-    ['같은 항목의 빈 줄', '- 소개\n- 주의', '- 소개\n\n- 주의'],
+    ['같은 항목의 빈 줄', ...meaningPreservingEdits.listItemBlankLines.source],
     ['빈 목록 항목 marker', '-\n- 주의', '*\n* 주의'],
     ['같은 시작 번호의 delimiter', '3. 소개\n4. 주의', '03) 소개\n04) 주의'],
     ['같은 실제 후속 번호', '3. 소개\n9. 주의', '3. 소개\n4. 주의'],
-    ['중첩 순서 목록의 delimiter와 들여쓰기', nestedDot, nestedParenthesis],
-    ['같은 inline literal의 delimiter와 목록 marker', '- 소개\n  - `left  right`', '* 소개\n  * ``left  right``'],
+    ['중첩 순서 목록의 delimiter와 들여쓰기', ...meaningPreservingEdits.nestedOrderedListDelimiters.source],
+    ['같은 inline literal의 delimiter와 목록 marker', ...meaningPreservingEdits.listInlineCodeDelimiters.source],
     [
       'HTML code 안 목록 literal의 presentation wrapper',
       '소개 <code>\n- 주의\n  - 조건\n</code>',
