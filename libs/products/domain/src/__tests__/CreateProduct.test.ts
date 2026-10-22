@@ -1,32 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Product } from '../entities/Product';
-import type { ProductRepository } from '../repositories/ProductRepository';
 import { CreateProduct } from '../usecases/CreateProduct';
-
-function createMockRepository(): ProductRepository {
-  return {
-    updateById: vi.fn(),
-    findAllByBeforeIdAndLimit: vi.fn(),
-    findAllByAfterIdAndLimit: vi.fn(),
-    findPublishedByAfterIdAndLimit: vi.fn(),
-    findTopNSortByPublishedAtDesc: vi.fn(),
-    findPublishedByIds: vi.fn(),
-    findPublishedOneById: vi.fn(),
-    findOneBySlug: vi.fn(),
-    findOneById: vi.fn(),
-    findPublishedOneBySlug: vi.fn(),
-    findPublishedByCategoryId: vi.fn(),
-    countPublishedByCategoryId: vi.fn(),
-    findVisualApps: vi.fn(),
-    findVisualAppCover: vi.fn(),
-    countVisualAppScreenshots: vi.fn(),
-    hasPublishedAlternatives: vi.fn(),
-    findPublishedByCategoryIdAndLimit: vi.fn(),
-    countPublishedAll: vi.fn(),
-    countAll: vi.fn(),
-    insert: vi.fn(),
-  };
-}
+import { createMockRepository } from './productRepositoryMock';
 
 describe('CreateProduct', () => {
   describe('execute', () => {
