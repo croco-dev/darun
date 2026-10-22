@@ -25,7 +25,6 @@
     "@apollo/client": "catalog:",
     "@darun/companies-feature": "workspace:*",
     "@darun/products-service": "workspace:*",
-    "@darun/products-ui": "workspace:*",
     "@darun/translation-service": "workspace:*",
     "@darun/ui": "workspace:*",
     "@darun/ui-admin": "workspace:*",

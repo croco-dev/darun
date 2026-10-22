@@ -22,7 +22,9 @@ export function VisualSaveButton({ kind, id, enabled }: VisualSaveButtonProps) {
       <div className="flex flex-col items-start gap-2">
         <p className="text-sm text-dark-500 break-words [word-break:keep-all]">저장은 로그인 후 이용할 수 있어요.</p>
         <VisualLoginButton
-          redirectTo={kind === 'screenshot' ? `/screenshots/${encodeURIComponent(id)}` : `/flows/${encodeURIComponent(id)}`}
+          redirectTo={
+            kind === 'screenshot' ? `/screenshots/${encodeURIComponent(id)}` : `/flows/${encodeURIComponent(id)}`
+          }
         />
       </div>
     );

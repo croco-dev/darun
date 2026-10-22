@@ -226,6 +226,18 @@ type MagazinePagination {
   totalPages: Int!
 }
 
+input MaterializeResearchedProductInput {
+  categoryIds: [String!]!
+  features: [ReviewedResearchFeatureInput!]!
+  logoUrl: String!
+  name: String!
+  officialUrl: String!
+  researchJobId: String!
+  slug: String!
+  summary: String!
+  tags: [String!]!
+}
+
 type Mutation {
   addProductLink(input: AddProductLinkInput!, slug: String!): AddProductLinkPayload!
   addProductScreenshot(input: AddProductScreenshotInput!, slug: String!): AddProductScreenshotPayload!
@@ -241,9 +253,9 @@ type Mutation {
   editProduct(input: EditProductInput!, slug: String!): EditProductPayload!
   generateProductDescription(input: GenerateProductDescriptionInput!): GenerateProductDescriptionPayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
+  materializeResearchedProduct(input: MaterializeResearchedProductInput!): Product!
   publishMagazine(input: PublishMagazineInput!): PublishMagazinePayload!
   publishProduct(input: PublishProductInput!): PublishProductPayload!
-  materializeResearchedProduct(input: MaterializeResearchedProductInput!): Product!
   registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
   requestProductResearch(input: RequestProductResearchInput!): RequestProductResearchPayload!
   requestProductTranslation(productId: String, slug: String): TranslationJob!
@@ -252,6 +264,10 @@ type Mutation {
   retryProductResearch(input: RetryProductResearchInput, jobId: String!): RequestProductResearchPayload
   retryTranslationJob(id: String!): TranslationJob!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
+  toggleVisualFlowSave(id: String!): ToggleVisualSavePayload!
+  toggleVisualScreenshotSave(id: String!): ToggleVisualSavePayload!
+  trackVisualFlowView(id: String!): TrackVisualViewPayload!
+  trackVisualScreenshotView(id: String!): TrackVisualViewPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
   updateLlmSetting(apiKey: String, braveApiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
@@ -260,10 +276,6 @@ type Mutation {
   updateProductScreenshot(input: UpdateProductScreenshotInput!): UpdateProductScreenshotPayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
   upvoteProduct(slug: String!): UpvoteProductPayload!
-  trackVisualFlowView(id: String!): TrackVisualViewPayload!
-  trackVisualScreenshotView(id: String!): TrackVisualViewPayload!
-  toggleVisualFlowSave(id: String!): ToggleVisualSavePayload!
-  toggleVisualScreenshotSave(id: String!): ToggleVisualSavePayload!
 }
 
 type PageInfo {
@@ -290,18 +302,6 @@ type Product {
   tags: [Tag!]!
   updatedAt: DateTimeISO
   voteCount: Int!
-}
-
-input MaterializeResearchedProductInput {
-  categoryIds: [String!]!
-  features: [ReviewedResearchFeatureInput!]!
-  logoUrl: String!
-  name: String!
-  officialUrl: String!
-  researchJobId: String!
-  slug: String!
-  summary: String!
-  tags: [String!]!
 }
 
 type ProductConnection {
@@ -337,21 +337,21 @@ input ProductFlowStepInput {
 }
 
 type ProductResearchDraftGraph {
-  version: Int!
-  originalUrl: String!
-  name: ResearchTextGraph!
-  suggestedSlug: String!
-  summary: ResearchTextGraph
-  features: [ResearchFeatureGraph!]!
-  tags: [String!]!
-  warnings: [String!]!
-  sources: [ResearchSourceGraph!]!
+  alternativeCandidates: [ResearchCandidateGraph!]!
   categoryCandidates: [ResearchCategoryCandidateGraph!]!
   companyCandidate: ResearchCandidateGraph
-  alternativeCandidates: [ResearchCandidateGraph!]!
-  sourceSnapshotHash: String!
-  promptVersion: String!
+  features: [ResearchFeatureGraph!]!
   model: String!
+  name: ResearchTextGraph!
+  originalUrl: String!
+  promptVersion: String!
+  sourceSnapshotHash: String!
+  sources: [ResearchSourceGraph!]!
+  suggestedSlug: String!
+  summary: ResearchTextGraph
+  tags: [String!]!
+  version: Int!
+  warnings: [String!]!
 }
 
 type ProductResearchJob {
@@ -395,6 +395,10 @@ type Query {
   llmSetting: LlmSetting!
   magazine(id: ID!): Magazine
   magazineBySlug(slug: String!): Magazine
+  myVisualFlowSaves(first: Int, page: Int): [String!]!
+  myVisualSavedFlows(first: Int, page: Int): VisualFlowConnection!
+  myVisualSavedScreenshots(first: Int, page: Int): VisualScreenshotConnection!
+  myVisualScreenshotSaves(first: Int, page: Int): [String!]!
   product(id: ID!, locale: String! = "ko"): Product
   productBySlug(locale: String! = "ko", slug: String!): Product
   productDescriptionJob(id: String!): ProductDescriptionJob
@@ -414,15 +418,11 @@ type Query {
   translationJob(id: String!): TranslationJob
   translationJobs(limit: Int, offset: Int, status: String): [TranslationJob!]!
   visualFlow(id: String!): VisualFlow
-  visualFlows(after: String, first: Int! = 24, flowType: VisualFlowType, page: Int, platform: VisualPlatform, productSlug: String, query: String, sort: VisualSort = LATEST): VisualFlowConnection!
-  visualScreenshot(id: String!): VisualScreenshot
-  visualScreenshots(after: String, first: Int! = 24, page: Int, platform: VisualPlatform, productSlug: String, query: String, screenType: VisualScreenType, sort: VisualSort = LATEST, uiElements: [VisualUiElement!]): VisualScreenshotConnection!
-  visualScreenshotSaveStatus(id: String!): VisualSaveStatusPayload!
   visualFlowSaveStatus(id: String!): VisualSaveStatusPayload!
-  myVisualScreenshotSaves(first: Int, page: Int): [String!]!
-  myVisualFlowSaves(first: Int, page: Int): [String!]!
-  myVisualSavedScreenshots(first: Int, page: Int): VisualScreenshotConnection!
-  myVisualSavedFlows(first: Int, page: Int): VisualFlowConnection!
+  visualFlows(after: String, first: Int! = 24, flowType: VisualFlowType, page: Int, platform: VisualPlatform, productSlug: String, query: String, sort: VisualSort): VisualFlowConnection!
+  visualScreenshot(id: String!): VisualScreenshot
+  visualScreenshotSaveStatus(id: String!): VisualSaveStatusPayload!
+  visualScreenshots(after: String, first: Int! = 24, page: Int, platform: VisualPlatform, productSlug: String, query: String, screenType: VisualScreenType, sort: VisualSort, uiElements: [VisualUiElement!]): VisualScreenshotConnection!
 }
 
 input RegisterProductCompanyInput {
@@ -433,9 +433,30 @@ type RegisterProductCompanyPayload {
   product: Product
 }
 
+input RequestProductResearchInput {
+  officialUrl: String!
+  requestId: String!
+}
+
+type RequestProductResearchPayload {
+  dispatchStatus: String!
+  job: ProductResearchJob!
+}
+
 type ResearchAnchorGraph {
   excerpt: String!
   sourceId: String!
+}
+
+type ResearchCandidateGraph {
+  anchors: [ResearchAnchorGraph!]!
+  name: String!
+  website: String
+}
+
+type ResearchCategoryCandidateGraph {
+  categoryId: String!
+  reason: String!
 }
 
 type ResearchFeatureGraph {
@@ -444,17 +465,6 @@ type ResearchFeatureGraph {
   evidenceType: String!
   name: String!
   summary: String!
-}
-
-type ResearchCategoryCandidateGraph {
-  categoryId: String!
-  reason: String!
-}
-
-type ResearchCandidateGraph {
-  name: String!
-  website: String
-  anchors: [ResearchAnchorGraph!]!
 }
 
 type ResearchSourceGraph {
@@ -471,16 +481,6 @@ type ResearchTextGraph {
   anchors: [ResearchAnchorGraph!]!
   evidenceType: String!
   value: String!
-}
-
-input RequestProductResearchInput {
-  officialUrl: String!
-  requestId: String!
-}
-
-type RequestProductResearchPayload {
-  dispatchStatus: String!
-  job: ProductResearchJob!
 }
 
 input RetryProductResearchInput {
@@ -518,6 +518,14 @@ type Tag {
   count: Int!
   id: ID!
   name: String!
+}
+
+type ToggleVisualSavePayload {
+  saved: Boolean!
+}
+
+type TrackVisualViewPayload {
+  tracked: Boolean!
 }
 
 type TranslationJob {
@@ -582,6 +590,7 @@ input UpdateProductScreenshotInput {
   platform: VisualPlatform
   screenType: VisualScreenType
   title: String
+  uiElements: [VisualUiElement!]
 }
 
 type UpdateProductScreenshotPayload {
@@ -598,18 +607,6 @@ type UpdateProductTagsPayload {
 
 type UpvoteProductPayload {
   product: Product
-}
-
-type TrackVisualViewPayload {
-  tracked: Boolean!
-}
-
-type ToggleVisualSavePayload {
-  saved: Boolean!
-}
-
-type VisualSaveStatusPayload {
-  saved: Boolean!
 }
 
 """공개 제품에 속한 UX 플로"""
@@ -661,6 +658,10 @@ enum VisualPlatform {
   WEB
 }
 
+type VisualSaveStatusPayload {
+  saved: Boolean!
+}
+
 """스크린샷이 담고 있는 화면의 종류"""
 enum VisualScreenType {
   CHECKOUT
@@ -673,6 +674,29 @@ enum VisualScreenType {
   SETTINGS
   SIGN_IN
   SIGN_UP
+}
+
+"""공개 제품에 속한 스크린샷과 제품 정보"""
+type VisualScreenshot {
+  flows: [VisualFlow!]!
+  id: ID!
+  imageAlt: String!
+  imageUrl: String!
+  platform: VisualPlatform
+  product: Product!
+  screenType: VisualScreenType
+  title: String
+}
+
+type VisualScreenshotConnection {
+  edges: [VisualScreenshotEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type VisualScreenshotEdge {
+  cursor: String!
+  node: VisualScreenshot!
 }
 
 """Visual 목록 정렬. LATEST는 keyset, POPULAR는 오프셋(page) 방식."""
@@ -700,30 +724,7 @@ enum VisualUiElement {
   PROGRESS
   SEARCH_BAR
   STEPPER
-  TAB_BAR
   TABLE
+  TAB_BAR
   TOGGLE
-}
-
-"""공개 제품에 속한 스크린샷과 제품 정보"""
-type VisualScreenshot {
-  flows: [VisualFlow!]!
-  id: ID!
-  imageAlt: String!
-  imageUrl: String!
-  platform: VisualPlatform
-  product: Product!
-  screenType: VisualScreenType
-  title: String
-}
-
-type VisualScreenshotConnection {
-  edges: [VisualScreenshotEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-type VisualScreenshotEdge {
-  cursor: String!
-  node: VisualScreenshot!
 }

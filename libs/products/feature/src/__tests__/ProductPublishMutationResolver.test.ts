@@ -363,10 +363,9 @@ describe('ProductPublishMutationResolver', () => {
         publishedAt: staleSnapshot.publishedAt,
       };
       // revision guard: 오래된 스냅샷 재실행은 색인 쓰기를 건너뛴다.
-      await (resolver as unknown as { syncPublishedContent: (p: unknown, o: unknown) => Promise<void> }).syncPublishedContent(
-        staleAsProduct,
-        { expectedUpdatedAt: staleSnapshot.updatedAt }
-      );
+      await (
+        resolver as unknown as { syncPublishedContent: (p: unknown, o: unknown) => Promise<void> }
+      ).syncPublishedContent(staleAsProduct, { expectedUpdatedAt: staleSnapshot.updatedAt });
       expect(indexUseCase.execute).not.toHaveBeenCalled();
       // 번역 intent 기록은 정식 경로에서 시도된다(중복 dedup은 서비스 계층 소유).
       expect(translation.requestProductTranslationJob).toHaveBeenCalledTimes(1);

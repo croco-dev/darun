@@ -58,10 +58,7 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
    * 발행된 콘텐츠 동기화: 하나의 논리적 색인 업데이트와 하나의 번역 intent 기록.
    * 재실행은 같은 입력에 대해 같은 결과를 내고, 더 새 리비전을 되돌리지 않는다.
    */
-  protected async syncPublishedContent(
-    product: Product,
-    options?: { expectedUpdatedAt?: Date }
-  ): Promise<void> {
+  protected async syncPublishedContent(product: Product, options?: { expectedUpdatedAt?: Date }): Promise<void> {
     if (product.publishedAt === undefined) {
       return;
     }

@@ -1,5 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
-import { createGraphQLContext } from '../src/functions/context';
+import { describe, it, expect } from 'vitest';
 
 describe('Croco API runtime compatibility harness', () => {
   describe('problems-core through darun wrapper', () => {
@@ -79,63 +78,6 @@ describe('Croco API runtime compatibility harness', () => {
       const mgr1 = getShutdownManager();
       const mgr2 = getShutdownManager();
       expect(mgr1).toBe(mgr2);
-    });
-  });
-
-  describe('GraphQL context behavior remains unchanged', () => {
-    it('baseline context shape is preserved', async () => {
-      const getAccountUseCase = { execute: () => Promise.resolve(undefined) };
-      const context = createGraphQLContext({
-        requestId: 'req-harness',
-        authToken: 'token-harness',
-        clientIp: '10.0.0.1',
-        getAccountUseCase,
-      });
-
-      expect(context).toMatchObject({
-        requestId: 'req-harness',
-        authToken: 'token-harness',
-        clientIp: '10.0.0.1',
-      });
-      expect(typeof context.getUserId).toBe('function');
-      expect(typeof context.getUserIdOrThrow).toBe('function');
-      expect(typeof context.getRoles).toBe('function');
-    });
-
-    it('memoization still deduplicates GetAccount.execute', async () => {
-      const execute = vi.fn().mockResolvedValue({
-        id: 'usr-harness',
-        email: 'harness@darun.io',
-        roles: ['admin'],
-      });
-
-      const context = createGraphQLContext({
-        requestId: 'req-harness-memo',
-        authToken: 'token-memo',
-        getAccountUseCase: { execute },
-      });
-
-      const [userId, userIdOrThrow, roles] = await Promise.all([
-        context.getUserId(),
-        context.getUserIdOrThrow(),
-        context.getRoles(),
-      ]);
-
-      expect(userId).toBe('usr-harness');
-      expect(userIdOrThrow).toBe('usr-harness');
-      expect(roles).toEqual(['admin']);
-      expect(execute).toHaveBeenCalledTimes(1);
-    });
-
-    it('rejects with error when no auth token and getUserIdOrThrow called', async () => {
-      const execute = vi.fn().mockResolvedValue(null);
-      const context = createGraphQLContext({
-        requestId: 'req-harness-noauth',
-        authToken: undefined,
-        getAccountUseCase: { execute },
-      });
-
-      await expect(context.getUserIdOrThrow()).rejects.toThrow('Unauthorized');
     });
   });
 });

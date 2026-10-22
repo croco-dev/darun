@@ -2,12 +2,11 @@
 
 import { Button, Layers } from '@darun/ui';
 import { Link } from '@darun/utils-router';
-import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
-import { VisualLoginButton } from './VisualLoginButton';
-import type { FlowCard } from '../flows/useFlowExplorer';
 import { VISUAL_FLOW_TYPE_LABELS } from '../flows/flowClassifications';
-import { VISUAL_PLATFORM_LABELS } from '../screenshots/visualClassifications';
+import type { FlowCard } from '../flows/useFlowExplorer';
+import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import type { ScreenshotCard } from '../screenshots/useScreenshotExplorer';
+import { VISUAL_PLATFORM_LABELS } from '../screenshots/visualClassifications';
 import {
   UNCLASSIFIED_LABEL,
   VISUAL_PLATFORM_LABELS as SCREENSHOT_PLATFORM_LABELS,
@@ -16,6 +15,7 @@ import {
   isVisualScreenTypeValue,
 } from '../screenshots/visualClassifications';
 import { useSavesPage, type SavesTab } from './useSavesPage';
+import { VisualLoginButton } from './VisualLoginButton';
 
 const TABS: Array<{ value: SavesTab; label: string }> = [
   { value: 'screenshots', label: '화면' },
@@ -209,13 +209,7 @@ export function SavesExplorer() {
           )}
           {state.hasNextPage && (
             <div className="flex justify-center">
-              <Button
-                type="button"
-                variant="shadow"
-                size="md"
-                onClick={state.onLoadMore}
-                disabled={state.loadingMore}
-              >
+              <Button type="button" variant="shadow" size="md" onClick={state.onLoadMore} disabled={state.loadingMore}>
                 {state.loadingMore ? '불러오는 중…' : '더 보기'}
               </Button>
             </div>

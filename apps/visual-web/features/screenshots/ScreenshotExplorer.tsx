@@ -525,7 +525,9 @@ function CatalogExplorer({ hideHero }: { hideHero?: boolean }) {
     screenType: null,
     element: null,
     onElementChange: (value: string) =>
-      navigate(buildExplorerUrl('/', EMPTY_CATALOG_FILTERS, 'screenType', { element: value.length > 0 ? value : null })),
+      navigate(
+        buildExplorerUrl('/', EMPTY_CATALOG_FILTERS, 'screenType', { element: value.length > 0 ? value : null })
+      ),
     onSearchInputChange: handleSearchInputChange,
     onSearchSubmit: handleSearchSubmit,
     onPlatformChange: (value: string) =>

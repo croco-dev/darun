@@ -78,9 +78,7 @@ function validateBundleRowsForCommit(
   if (requestedIdSet.size !== requestedIds.length) {
     throw new Error('번역 커밋 요청에 중복된 기능 ID가 포함되었습니다.');
   }
-  const returnedIds = Array.isArray(bundleResult.features)
-    ? bundleResult.features.map(feature => feature.id)
-    : [];
+  const returnedIds = Array.isArray(bundleResult.features) ? bundleResult.features.map(feature => feature.id) : [];
   const returnedIdSet = new Set(returnedIds);
   if (returnedIdSet.size !== returnedIds.length) {
     throw new Error('번역 결과에 중복된 기능 ID가 포함되었습니다.');
@@ -881,9 +879,7 @@ export class TranslationJobService {
       }
       const currentKorean = this.getKoreanValue(entityType, currentEntity, snapshot.field);
       if (currentKorean !== snapshot.koreanValue) {
-        throw new Error(
-          `${entityType}의 ${snapshot.field} 원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.`
-        );
+        throw new Error(`${entityType}의 ${snapshot.field} 원문이 번역 도중 수정되어 번역 결과가 폐기되었습니다.`);
       }
     }
 

@@ -1496,9 +1496,6 @@ importers:
       '@darun/products-service':
         specifier: workspace:*
         version: link:../service
-      '@darun/products-ui':
-        specifier: workspace:*
-        version: link:../ui
       '@darun/translation-service':
         specifier: workspace:*
         version: link:../../translation/service
@@ -1634,37 +1631,6 @@ importers:
       '@darun/utils-vitest-config':
         specifier: workspace:*
         version: link:../../shared/utils-vitest-config
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 19.2.4(@types/react@19.2.14)
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
-  libs/products/ui:
-    dependencies:
-      '@darun/ui':
-        specifier: workspace:*
-        version: link:../../shared/ui
-      '@mantine/core':
-        specifier: 'catalog:'
-        version: 9.5.1(@mantine/hooks@9.5.1(react@19.2.6))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      react:
-        specifier: 'catalog:'
-        version: 19.2.6
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.2.6(react@19.2.6)
-    devDependencies:
-      '@darun/eslint-config':
-        specifier: workspace:*
-        version: link:../../shared/utils-eslint-config
-      '@darun/utils-tsconfig':
-        specifier: workspace:*
-        version: link:../../shared/utils-tsconfig
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
@@ -2389,6 +2355,9 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../utils-tsconfig
+      '@darun/utils-vitest-config':
+        specifier: workspace:*
+        version: link:../utils-vitest-config
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
@@ -2398,6 +2367,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(jsdom@29.0.2)(vite@7.3.1(@types/node@25.5.0)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.22.4)(yaml@2.9.1))
 
   libs/shared/utils-llm:
     dependencies:

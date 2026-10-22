@@ -1,19 +1,18 @@
 /**
- * Offline eval harness for LLM content lifecycle rules.
+ * Content fixture checks; this is not a translation quality evaluator.
  *
  * Modes:
- * - deterministic (default): no keys, no network, no remote calls. Runs the
- *   synthetic offline invariant checks below and always passes/fails locally.
- * - manual-live (explicit opt-in): runs the approved fixture set against the
- *   real LLM provider. Requires `--live` AND `OPEN_ROUTER_API_KEY`. The live
- *   path is intentionally not part of CI; reviewers run it by hand on the
- *   approved fixtures only. Without keys it reports SKIPPED fixtures, and it
- *   never collects production user data or batch-regenerates production rows.
+ * - deterministic (default): no keys, network, or remote calls. Validates
+ *   description validators, translation source fixtures, HTML codec and hashes.
+ *   It does not generate translations or measure meaning preservation.
+ * - manual-live (explicit opt-in): description generation only, using the
+ *   approved description fixtures. Requires --live and OPEN_ROUTER_API_KEY.
+ *   No live translation evaluation is implemented. Description factual support
+ *   and prose quality still require manual review. Never uses production rows.
  *
-   * Usage:
-   *   pnpm eval:llm-content            # deterministic only
--  *   pnpm eval:llm-content -- --live  # deterministic + manual-live (needs key)
-+  *   pnpm eval:llm-content -- --live  # deterministic + manual-live (needs key)
+ * Usage:
+ *   pnpm eval:llm-content            # offline fixture/codec checks only
+ *   pnpm eval:llm-content -- --live  # also live descriptions (paid, needs key)
  */
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -64,9 +63,8 @@ interface TranslationFixture {
   forkCheck?: 'negation' | 'numeric-condition' | 'same-host-ambiguity';
 }
 
-// Offline axes every translation fixture must cover. Each axis is a
-// deterministic string invariant (no LLM call), so the deterministic mode can
-// assert the fixture itself pins the rule instead of only exercising it live.
+// Fixture-source axes only: coverage here does not establish that a generated
+// translation preserves these properties. No translation provider is called.
 const REQUIRED_TRANSLATION_AXES = [
   'terminology',
   'uncertainty',
@@ -288,10 +286,8 @@ function runDeterministicEvaluations() {
       }
     }
 
-    // Negative-hype tokens must be pinned on the fixture so the live
-    // reviewer (not this offline pass) can reject hallucinated additions.
-    // Injection sources are exempt: the attack payload itself must stay in
-    // the source text so the live pass can prove it is quoted, not obeyed.
+    // Validate source-fixture hygiene, not generated-output hallucinations.
+    // Injection payloads deliberately remain present in the source fixture.
     const isInjectionSource = axisOfFixture(fixture) === 'injection';
     if (!isInjectionSource) {
       for (const keyword of fixture.negativeHypeKeywords) {
@@ -303,9 +299,8 @@ function runDeterministicEvaluations() {
       throw new Error(`[FAIL] ${fixture.id}: injection fixture must pin the forbidden payload token!`);
     }
 
-    // Forced-branch tokens must survive verbatim: dropping a negation,
-    // flattening a numeric condition, or collapsing a same-host distinction
-    // changes meaning even when every other character round-trips.
+    // Pin the source examples used by these offline checks. This does not test
+    // whether any generated translation preserves their meaning.
     for (const token of fixture.preserveTokens ?? []) {
       if (!fixture.koreanText.includes(token)) {
         throw new Error(`[FAIL] ${fixture.id}: preserve token "${token}" missing from source text!`);
@@ -330,7 +325,7 @@ function runDeterministicEvaluations() {
 
   assertDescriptionAxisCoverage(descFixtures);
 
-  console.log('\n✓ All deterministic offline fixture validations passed successfully.');
+  console.log('\n✓ Offline fixture/validator/codec checks passed. Translation output semantics were NOT evaluated.');
 }
 
 function assertDescriptionAxisCoverage(fixtures: DescriptionFixture[]): void {
@@ -417,18 +412,18 @@ async function main() {
 
   const wantsLive = process.argv.includes('--live');
   if (!wantsLive) {
-    console.log('\nℹ [Notice] Deterministic mode only (no keys, no remote calls). Pass --live for manual-live mode.');
+    console.log('\nℹ Offline checks only. --live additionally evaluates description generation, not translation.');
     return;
   }
 
   const apiKey = process.env.OPEN_ROUTER_API_KEY;
   if (!apiKey) {
-    console.log('\n[Manual-live] SKIPPED: OPEN_ROUTER_API_KEY is not set. Approved fixtures were not sent anywhere.');
-    console.log('  Deterministic regression fixtures verified; live run skipped explicitly (SKIPPED, no remote calls).');
-    return;
+    throw new Error(
+      'Live description evaluation requested but OPEN_ROUTER_API_KEY is missing; no live evaluation ran.'
+    );
   }
 
-  console.log('\n[Manual-live LLM Evaluation] Explicit opt-in confirmed (--live + key). Running approved fixtures only...');
+  console.log('\n[Manual-live descriptions only] Explicit opt-in confirmed. Translation semantics are NOT evaluated.');
   await runLiveDescriptionEvaluations();
 }
 

@@ -1,8 +1,10 @@
 import 'reflect-metadata';
 import { createAuthChecker } from '@darun/utils-apollo-server';
-import { graphql } from 'graphql';
+import { buildSchema, graphql, lexicographicSortSchema, printSchema } from 'graphql';
 import { buildSchemaSync, GraphQLISODateTime } from 'type-graphql';
 import { Container } from 'typedi';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { resolvers } from '../src/app/resolvers';
 
 async function main() {
@@ -12,6 +14,14 @@ async function main() {
     authChecker: createAuthChecker(),
     scalarsMap: [{ type: Date, scalar: GraphQLISODateTime }],
   });
+  const snapshot = buildSchema(readFileSync(resolve('schema.graphql'), 'utf8'));
+  const runtimeSDL = printSchema(lexicographicSortSchema(schema));
+  const snapshotSDL = printSchema(lexicographicSortSchema(snapshot));
+  if (runtimeSDL !== snapshotSDL) {
+    throw new Error(
+      'GraphQL schema drift: schema.graphql does not match the runtime resolver schema. Regenerate and review the committed SDL before verifying Lambda.'
+    );
+  }
   const result = await graphql({
     schema,
     source: 'query { __typename hello }',

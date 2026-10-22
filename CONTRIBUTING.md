@@ -247,6 +247,10 @@ pnpm test           # Vitest 단위 테스트
 pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 ```
 
+앱의 ESLint glob은 따옴표로 감싸 중첩 소스까지 검사합니다. Next.js가 생성하는 `.next/`와 `next-env.d.ts`는 검사 대상에서 제외합니다.
+
+GraphQL 변경은 Node.js 22에서 `pnpm --filter graphql-api build:lambda`와 `pnpm --filter graphql-api verify:lambda`도 실행합니다. 이 검사는 번들 초기화뿐 아니라 실제 resolver 스키마와 커밋된 `schema.graphql`의 일치 여부를 확인합니다.
+
 포맷 자동 수정은 다음 명령을 사용합니다.
 
 ```bash
@@ -268,7 +272,7 @@ Lefthook이 설치되어 있으면 커밋 전 ESLint 검사가 자동으로 실�
 
 ### 새 패키지 vitest 설정
 
-새 패키지를 생성할 때 반드시 `vitest.config.ts`를 포함해야 합니다. `@darun/utils-vitest-config`의 팩토리 함수를 사용하고, 계층별 목표를 충족하는 시점에 `thresholds` 상수를 적용합니다.
+테스트가 있는 새 패키지는 `vitest.config.ts`를 포함해야 합니다. `@darun/utils-vitest-config`의 팩토리 함수를 사용하고, 계층별 목표를 충족하는 시점에 `thresholds` 상수를 적용합니다.
 
 ```typescript
 // 백엔드 domain 패키지 — threshold 포함
@@ -291,7 +295,7 @@ import { createNodeConfig } from '@darun/utils-vitest-config';
 export default defineConfig(createNodeConfig());
 ```
 
-실제 테스트 코드가 없는 패키지도 `passWithNoTests: true`(기본값)로 turbo 그래프에 포함됩니다.
+테스트가 없는 패키지는 `test` 스크립트를 생략합니다. `echo`만 실행하는 작업은 검증이 아니므로 Turbo 테스트 그래프에 추가하지 않습니다. 공통 설정의 `passWithNoTests`는 Vitest를 사용하는 패키지에만 적용됩니다.
 
 `pnpm test:coverage` 실행 시 lcov·html 리포트가 각 패키지 `coverage/` 디렉터리에 생성되고, CI에서 `coverage-reports` 아티팩트로 업로드됩니다.
 

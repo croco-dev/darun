@@ -116,7 +116,10 @@ export class ProductDescriptionJobService {
 
     // 큐 전송 실패는 pending으로 남겨 recovery tick이 재발견한다.
     // setImmediate 폴백을 제거하고, 전송 성공 여부만 정직하게 보고한다.
-    const queued = await this.sendToQueue({ jobId: job.id, productId: product.id });
+    const queued = await this.sendToQueue({
+      jobId: job.id,
+      productId: product.id,
+    });
 
     return {
       product,
@@ -173,11 +176,17 @@ export class ProductDescriptionJobService {
         throw new Error(`재시도 조건이 만료된 AI 소개 생성 작업입니다: ${jobId}`);
       }
 
-      const queuedAfterRetry = await this.sendToQueue({ jobId: job.id, productId: job.productId });
+      const queuedAfterRetry = await this.sendToQueue({
+        jobId: job.id,
+        productId: job.productId,
+      });
       return { ...updatedJob, queued: queuedAfterRetry };
     }
     if (job.status === 'pending') {
-      const queued = await this.sendToQueue({ jobId: job.id, productId: job.productId });
+      const queued = await this.sendToQueue({
+        jobId: job.id,
+        productId: job.productId,
+      });
       return { ...job, queued };
     }
     throw new Error(`재시도할 수 없는 AI 소개 생성 작업 상태입니다: ${job.status}`);
@@ -186,7 +195,11 @@ export class ProductDescriptionJobService {
   async executeJob(
     jobId: string,
     productId: string,
-    options?: { leaseToken?: string; signal?: AbortSignal; stageBudgetMs?: number }
+    options?: {
+      leaseToken?: string;
+      signal?: AbortSignal;
+      stageBudgetMs?: number;
+    }
   ): Promise<void> {
     if (!this.productDescriptionJobRepository) {
       await this.generateProductDescriptionUseCase.execute({ productId });
@@ -229,8 +242,7 @@ export class ProductDescriptionJobService {
       // 무관한 stale 읽기(leaseToken 불일치 + 같은 ownedToken 아님)는
       // 재확인의 근거로 삼지 않고 DB 조건부 쓰기 fence에 맡긴다.
       if (typeof repository.completeJobLease === 'function') {
-        const current =
-          typeof repository.findJobById === 'function' ? await repository.findJobById(jobId) : null;
+        const current = typeof repository.findJobById === 'function' ? await repository.findJobById(jobId) : null;
         if (current && current.leaseToken === ownedToken && current.status !== 'in_progress') {
           console.warn(
             `[ProductDescriptionJobService] Job ${jobId} already terminal (${current.status}); skipping outer completion.`
@@ -313,7 +325,10 @@ export class ProductDescriptionJobService {
     });
     let queued = 0;
     for (const job of jobs) {
-      const sent = await this.sendToQueue({ jobId: job.id, productId: job.productId });
+      const sent = await this.sendToQueue({
+        jobId: job.id,
+        productId: job.productId,
+      });
       if (sent) {
         queued += 1;
       }
