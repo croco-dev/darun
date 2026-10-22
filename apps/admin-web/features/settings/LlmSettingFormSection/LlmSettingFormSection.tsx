@@ -15,7 +15,7 @@ import {
   AdminSectionBody,
   AdminSectionHeader,
 } from '@darun/ui-admin';
-import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm';
+import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm/model';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
