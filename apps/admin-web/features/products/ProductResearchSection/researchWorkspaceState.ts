@@ -20,7 +20,6 @@ export type ResearchWorkspacePersistedState = {
   requestId: string;
   officialUrl: string;
   jobId: string | null;
-  dispatchStatus: string | null;
   review: ResearchWorkspaceReviewDraft;
   logoFileName: string | null;
   uploadedLogoUrl: string | null;
@@ -57,7 +56,6 @@ export function createInitialWorkspaceState(requestId: string): ResearchWorkspac
     requestId,
     officialUrl: '',
     jobId: null,
-    dispatchStatus: null,
     review: createInitialWorkspaceReview(),
     logoFileName: null,
     uploadedLogoUrl: null,
@@ -87,7 +85,7 @@ export function prefillReviewFromResult(
     name,
     slug,
     summary,
-    officialUrl,
+    officialUrl: previous.officialUrl.trim() ? previous.officialUrl : officialUrl,
     features,
     tags,
   };
@@ -127,7 +125,6 @@ export function parseWorkspaceState(raw: string | null): ResearchWorkspacePersis
       requestId: parsed.requestId,
       officialUrl: typeof parsed.officialUrl === 'string' ? parsed.officialUrl : '',
       jobId: typeof parsed.jobId === 'string' ? parsed.jobId : null,
-      dispatchStatus: typeof parsed.dispatchStatus === 'string' ? parsed.dispatchStatus : null,
       review: {
         name: parsed.review.name,
         slug: parsed.review.slug,
@@ -159,11 +156,7 @@ export function parseWorkspaceState(raw: string | null): ResearchWorkspacePersis
 }
 
 export function newRequestId(): string {
-  const uuid = crypto.randomUUID().replace(/[^A-Za-z0-9]/g, '');
-  if (uuid.length >= 8) {
-    return uuid.slice(0, 64);
-  }
-  throw new Error('request ID를 생성할 수 없습니다.');
+  return crypto.randomUUID();
 }
 
 export function parseTagsInput(value: string): string[] {

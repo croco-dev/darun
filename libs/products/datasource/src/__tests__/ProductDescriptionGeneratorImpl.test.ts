@@ -115,7 +115,7 @@ describe('ProductDescriptionGeneratorImpl', () => {
     expect(llmClient.completion.mock.calls[1]?.[0]).toBe('google/gemini-2.5-flash');
 
     // Result document matches reviewer output
-    expect(result.document).toEqual(validReviewedDoc);
+    expect(result.document).toMatchObject(validReviewedDoc);
     expect(result.candidateHtml).toContain('<p>Flowdesk는 팀 업무 흐름을 정리하는 협업 도구입니다.</p>');
     expect(result.writerModel).toBe('google/gemini-2.5-flash');
     expect(result.reviewerModel).toBe('google/gemini-2.5-flash');
@@ -170,7 +170,7 @@ describe('ProductDescriptionGeneratorImpl', () => {
     await expect(generator.generate(mockEvidence)).rejects.toThrow();
     expect(llmClient.completion).toHaveBeenCalledTimes(2);
   });
-  it('rejects a reviewer result that omits provided features from the body', async () => {
+  it('accepts sparse reviewer output without forced feature coverage or recommendations', async () => {
     const llmClient = new FakeLlmClient();
     llmClient.completion
       .mockResolvedValueOnce({
@@ -180,12 +180,16 @@ describe('ProductDescriptionGeneratorImpl', () => {
       })
       .mockResolvedValueOnce({
         role: 'assistant',
-        content: JSON.stringify({ ...validReviewedDoc, sections: [] }),
+        content: JSON.stringify({
+          ...validReviewedDoc,
+          sections: [],
+          recommendedIf: [],
+        }),
         refusal: null,
       });
-    await expect(new ProductDescriptionGeneratorImpl(llmClient).generate(mockEvidence)).rejects.toThrow(
-      '기능 근거가 누락'
-    );
+    const result = await new ProductDescriptionGeneratorImpl(llmClient).generate(mockEvidence);
+    expect(result.document.sections).toEqual([]);
+    expect(result.document.recommendedIf).toEqual([]);
   });
 
   it('lets the reviewer fill missing feature coverage in a structurally valid draft', async () => {

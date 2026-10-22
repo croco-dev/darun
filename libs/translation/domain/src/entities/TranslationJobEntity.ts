@@ -5,6 +5,7 @@ export type TranslationJobEntity = {
   entityType: string;
   entityId: string;
   locale: string;
+  fields?: string[] | null;
   status: TranslationJobStatus;
   message?: string | null;
   error?: string | null;
@@ -14,6 +15,10 @@ export type TranslationJobEntity = {
   leaseToken?: string | null;
   leaseUntil?: Date | null;
   attemptCount?: number;
+  runNotBefore?: Date;
+  nextDispatchAt?: Date;
+  retryOfJobId?: string | null;
+  dispatchStatus?: string;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -29,6 +29,9 @@ export function createMongodbConnection(): void | Promise<void> {
         dbName: 'darun',
         autoIndex: IS_LOCAL,
         maxPoolSize: 3,
+        serverSelectionTimeoutMS: 3000,
+        connectTimeoutMS: 3000,
+        socketTimeoutMS: 10000,
       })
       .then(connection => {
         mongooseConnection = connection;

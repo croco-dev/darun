@@ -1,6 +1,6 @@
 import { Token } from 'typedi';
 import type { ProductDescriptionDocument } from './ProductDescriptionDocument';
-import type { ProductDescriptionEvidence } from './ProductDescriptionEvidenceAssembler';
+import type { ProductDescriptionEvidence } from './ProductDescriptionEvidenceProjector';
 
 export interface ProductDescriptionGenerationResult {
   document: ProductDescriptionDocument;

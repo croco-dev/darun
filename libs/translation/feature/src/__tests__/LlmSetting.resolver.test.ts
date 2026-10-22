@@ -107,4 +107,16 @@ describe('LlmSettingResolver', () => {
     expect(result.apiKeyMasked).toBe('sk-s...****1234');
     expect(result.thinkingLevel).toBe('high');
   });
+
+  it.each(['LLM_API_KEY_NOT_ALLOWED', 'LLM_CONFIG_READ_FAILED', 'LLM_SETTING_SAVE_FAILED'])(
+    'propagates %s without returning a masked success',
+    async code => {
+      const error = Object.assign(new Error('설정 작업에 실패했습니다.'), { code });
+      vi.mocked(mockService.updateSetting!).mockRejectedValueOnce(error);
+
+      await expect(
+        resolver.updateLlmSetting(undefined, 'synthetic-input-key', undefined, undefined, undefined)
+      ).rejects.toBe(error);
+    }
+  );
 });

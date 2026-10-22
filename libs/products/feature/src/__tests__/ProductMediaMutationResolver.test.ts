@@ -46,7 +46,6 @@ const createMockUseCase = () => ({ execute: vi.fn() });
 function createResolver() {
   const createProduct = createMockUseCase();
   const editProduct = createMockUseCase();
-  const indexProduct = createMockUseCase();
   const updateProductTag = createMockUseCase();
   const getProduct = createMockUseCase();
   const getProductTags = createMockUseCase();
@@ -62,7 +61,6 @@ function createResolver() {
   const resolver = new ProductMediaMutationResolver(
     createProduct as never,
     editProduct as never,
-    indexProduct as never,
     updateProductTag as never,
     getProduct as never,
     getProductTags as never,
@@ -239,7 +237,6 @@ describe('ProductMediaMutationResolver', () => {
       };
       const { getProduct, generateProductDescription } = createResolver();
       const resolver = new ProductMediaMutationResolver(
-        {} as never,
         {} as never,
         {} as never,
         {} as never,

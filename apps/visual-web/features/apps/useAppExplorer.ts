@@ -105,8 +105,7 @@ export function useAppExplorer(): AppExplorerState {
       ? null
       : scoped.filter(
           app =>
-            app.name.toLowerCase().includes(query.toLowerCase()) ||
-            app.slug.toLowerCase().includes(query.toLowerCase())
+            app.name.toLowerCase().includes(query.toLowerCase()) || app.slug.toLowerCase().includes(query.toLowerCase())
         );
 
   const visibleCards = searched ?? scoped;

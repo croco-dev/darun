@@ -3,8 +3,8 @@
 import { Button, ImageOff, RefreshCw } from '@darun/ui';
 import { Link, notFound, useRouter } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
-import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { SaveButton } from '../collections/SaveButton';
+import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { AppDescription } from './AppDescription';
 import { AppDetailState, useAppDetail } from './useAppDetail';
 
