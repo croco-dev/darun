@@ -3102,7 +3102,10 @@ describe('review registration releases superseded lookup busy with real Apollo',
       await waitFor(() => expect(materializations).toHaveLength(2));
       expect(materializations[1].variables).toEqual(materializations[0].variables);
       expect(screen.queryByRole('alert')).toBeNull();
-      materializations[1].respond({ id: 'prod-existing-a', slug: 'server-current-a', name: '현재 서버 제품' });
+      await act(async () => {
+        materializations[1].respond({ id: 'prod-existing-a', slug: 'server-current-a', name: '현재 서버 제품' });
+        await nextTurn();
+      });
       await waitFor(() => expect(navigated()).toEqual(['/products/server-current-a']));
       expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
         'server-current-a'
