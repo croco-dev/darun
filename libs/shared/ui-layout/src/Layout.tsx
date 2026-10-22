@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUp } from '@darun/ui';
+import { ArrowUp, ContentArea } from '@darun/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { ReactNode, useEffect, useState } from 'react';
 
@@ -44,6 +44,7 @@ function ScrollToTopButton() {
 
 export function Layout({ children }: { children: ReactNode }) {
   const t = useTranslations('Layout');
+  const locale = useLocale();
   const skipToContentText = t('skipToContent');
 
   return (
@@ -56,6 +57,11 @@ export function Layout({ children }: { children: ReactNode }) {
       </a>
       <Header />
       <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">
+        {locale === 'en' && (
+          <ContentArea className="py-2">
+            <p className="text-xs text-dark-600">{t('originalContentNotice')}</p>
+          </ContentArea>
+        )}
         {children}
       </div>
       <Footer />

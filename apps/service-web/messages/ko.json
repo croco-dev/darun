@@ -4,6 +4,7 @@
   },
   "Layout": {
     "skipToContent": "본문 바로가기",
+    "originalContentNotice": "번역이 제공되지 않는 서비스 정보는 원문으로 표시될 수 있습니다.",
     "header": {
       "ranking": "랭킹",
       "browse": "둘러보기",
@@ -27,17 +28,9 @@
     },
     "metadata": {
       "title": "다른 - 서비스 비교를 한 곳에서",
-      "description": "다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다. 다양한 소프트웨어, 웹사이트, 어플리케이션를 검색하고 리뷰를 확인해보세요.",
+      "description": "서비스의 특징과 대안을 한곳에서 찾고 비교합니다. 다양한 소프트웨어, 웹사이트, 애플리케이션을 검색하고 정보를 확인해보세요.",
       "siteName": "다른(darun)",
-      "keywords": [
-        "비교",
-        "대안",
-        "비슷한",
-        "장단점",
-        "다른 사이트",
-        "다른 서비스",
-        "다른 앱"
-      ],
+      "keywords": ["비교", "대안", "비슷한", "장단점", "다른 사이트", "다른 서비스", "다른 앱"],
       "ogImageAlt": "다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다",
       "webSiteName": "다른(darun)"
     }
@@ -50,17 +43,18 @@
         "description": "ex) 서비스 이름: ‘토스’, ‘네이버’ 혹은 카테고리: ‘금융’, ‘영상’ 등..."
       },
       "resultTitle": "‘{query}’ 검색 결과",
-      "popularQueriesTitle": "인기 검색어",
+      "popularQueriesTitle": "검색 예시",
       "categoriesTitle": "카테고리",
       "trendingTitle": "인기 서비스",
       "trendingEmpty": "집계된 인기 서비스가 없습니다"
     },
     "list": {
+      "resultCount": "총 {count}개의 서비스",
       "empty": {
         "title": "검색 결과가 없습니다.",
-        "description": "더 상세한 검색어를 이용해보세요. ex) ‘토스’, ‘네이버’ 등...",
+        "description": "검색어를 줄이거나 서비스의 다른 이름으로 검색해보세요. 아래 카테고리에서도 찾아볼 수 있습니다.",
         "noResults": "‘{query}’에 대한 검색 결과가 없습니다.",
-        "popularQueries": "인기 검색어",
+        "popularQueries": "검색 예시",
         "categories": "카테고리",
         "trending": "인기 서비스"
       },
@@ -112,7 +106,7 @@
     "loading": "페이지를 불러오는 중입니다",
     "action": {
       "upvote": "추천하기",
-      "cancelUpvote": "추천 취소",
+      "upvoted": "추천 완료",
       "voteSuccess": "투표가 완료되었습니다!",
       "alreadyVoted": "이미 투표한 서비스입니다.",
       "rateLimit": "단시간에 너무 많은 투표를 시도했습니다. 잠시 후 다시 시도해주세요.",
@@ -123,7 +117,10 @@
     },
     "compareButton": {
       "add": "비교에 추가",
-      "remove": "비교 취소"
+      "remove": "비교 취소",
+      "limit": "비교는 두 서비스까지 가능합니다. 기존 선택을 먼저 해제해주세요.",
+      "storageError": "비교 목록을 저장하지 못했습니다. 브라우저 저장 설정을 확인하고 다시 시도해주세요.",
+      "viewCompare": "선택한 서비스 비교"
     }
   },
   "Alternative": {
@@ -154,25 +151,21 @@
   },
   "Main": {
     "hero": {
-      "badge": "실시간 소프트웨어 비교 & 디스커버리",
-      "description": "다른 팀이 손수 비교한 서비스들을 찾고, 쓰고, 평가합니다",
-      "subDescription": "팀과 개인의 생산성을 극대화할 최적의 도구를 나란히 비교하고, 실제 커뮤니티 추천 랭킹으로 검증된 서비스를 찾아보세요.",
-      "popularSearch": "인기 탐색:",
-      "title": {
-        "countSuffix": "개의",
-        "highlight": "다른",
-        "ending": "서비스를 발견하세요"
-      }
+      "badge": "소프트웨어 탐색과 비교",
+      "description": "서비스의 특징과 대안을 한곳에서 살펴보세요",
+      "subDescription": "등록된 서비스의 소개와 기능을 살펴보고, 두 서비스를 나란히 비교해보세요.",
+      "popularSearch": "검색 예시:",
+      "headline": "{count}개의 다른 서비스를 발견하세요"
     },
     "recentSection": {
       "title": "새롭게 추가된 서비스",
-      "description": "‘다른’ 팀이 엄격한 기준으로 비교한 서비스를 찾아볼 수 있습니다."
+      "description": "새롭게 등록된 서비스의 특징을 살펴보세요."
     }
   },
   "home": {
     "recent": {
       "title": "최근 등록 서비스",
-      "description": "‘다른’ 팀이 엄격한 기준으로 선별한 신규 등록 서비스를 찾아보세요.",
+      "description": "최근 등록된 서비스의 특징과 대안을 살펴보세요.",
       "more": "더 보기",
       "empty": "최근 등록된 서비스가 없습니다"
     },
@@ -184,7 +177,7 @@
     },
     "trending": {
       "title": "오늘의 추천",
-      "description": "실시간으로 사용자들의 관심을 받고 있는 인기 서비스입니다.",
+      "description": "추천 수와 등록 시점을 반영한 순위입니다.",
       "more": "더 보기",
       "empty": "오늘의 추천 정보를 준비 중입니다"
     },
@@ -197,11 +190,11 @@
   "Ranking": {
     "section": {
       "title": "인기 서비스 Top 30",
-      "description": "가장 많은 관심을 받은 서비스들입니다."
+      "description": "추천 수와 등록 시점을 반영한 순위입니다."
     },
     "empty": {
       "title": "집계된 랭킹 서비스가 없습니다",
-      "description": "아직 투표가 집계된 서비스가 없습니다. 다양한 서비스를 탐색하고 첫 번째 표를 남겨보세요!",
+      "description": "현재 표시할 서비스가 없습니다. 서비스 탐색에서 다른 서비스를 찾아보세요.",
       "button": "서비스 둘러보기"
     }
   },

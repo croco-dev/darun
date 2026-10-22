@@ -8,8 +8,8 @@ import { useLocale, useTranslations } from 'next-intl';
 type MainHeroBannerProps = { productsCount?: number };
 
 const POPULAR_SEARCH_TAGS: Record<string, string[]> = {
-  ko: ['노션', '피그마', '슬랙', 'Linear', 'ChatGPT', 'Supabase'],
-  en: ['Notion', 'Figma', 'Slack', 'Linear', 'ChatGPT', 'Supabase'],
+  ko: ['노션', '피그마', '슬랙'],
+  en: ['Notion', 'Figma', 'Slack'],
 };
 
 export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
@@ -65,13 +65,8 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
             <span className="text-xs font-semibold tracking-tight text-brown-400 sm:text-sm">
               {t('Main.hero.description')}
             </span>
-            <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tight text-white sm:text-4xl md:text-5xl">
-              <span className="tabular-nums">{productsCount?.toLocaleString(locale) ?? 0}</span>
-              {t('Main.hero.title.countSuffix')}{' '}
-              <span className="bg-gradient-to-r from-yellow-300 via-yellow-100 to-yellow-300 bg-clip-text text-transparent">
-                {t('Main.hero.title.highlight')}
-              </span>{' '}
-              <span>{t('Main.hero.title.ending')}</span>
+            <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tight text-white [word-break:keep-all] sm:text-4xl md:text-5xl">
+              {t('Main.hero.headline', { count: productsCount ?? 0 })}
             </h1>
           </div>
 

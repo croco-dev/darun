@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { useSuspenseQuery } from '@apollo/client/react';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -72,12 +73,12 @@ vi.mock('./useSearchProductList', () => ({
 }));
 
 vi.mock('@apollo/client/react', () => ({
-  useSuspenseQuery: () => ({
+  useSuspenseQuery: vi.fn(() => ({
     data: {
       categories: [{ id: '1', slug: 'collaboration', labelKo: '협업툴', labelEn: 'Collaboration' }],
       rankedProducts: [{ id: '100', name: 'Product A', slug: 'product-a', voteCount: 10, tags: [] }],
     },
-  }),
+  })),
 }));
 
 describe('SearchProductList', () => {
@@ -91,6 +92,7 @@ describe('SearchProductList', () => {
     localStorage?.clear();
     mockPush.mockClear();
     mockNavigate.mockClear();
+    vi.mocked(useSuspenseQuery).mockClear();
   });
 
   afterEach(() => {
@@ -124,6 +126,7 @@ describe('SearchProductList', () => {
 
     const searchCard = container.querySelector('[data-source="search"]');
     expect(searchCard).not.toBeNull();
+    expect(useSuspenseQuery).not.toHaveBeenCalled();
   });
 
   it('renders popular queries and categories in empty search state', () => {
@@ -137,5 +140,6 @@ describe('SearchProductList', () => {
 
     expect(container.textContent).toContain('검색 결과가 없습니다');
     expect(container.querySelector('[data-testid="search-empty-popular-queries"]')).not.toBeNull();
+    expect(useSuspenseQuery).toHaveBeenCalledTimes(2);
   });
 });

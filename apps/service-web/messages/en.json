@@ -4,6 +4,7 @@
   },
   "Layout": {
     "skipToContent": "Skip to main content",
+    "originalContentNotice": "Service content may appear in its original language when an English translation is unavailable.",
     "header": {
       "ranking": "Ranking",
       "browse": "Browse",
@@ -50,17 +51,18 @@
         "description": "e.g.) Service name: ‘Toss’, ‘Naver’ or category: ‘Finance’, ‘Video’, etc..."
       },
       "resultTitle": "‘{query}’ search results",
-      "popularQueriesTitle": "Popular searches",
+      "popularQueriesTitle": "Search examples",
       "categoriesTitle": "Categories",
       "trendingTitle": "Trending services",
       "trendingEmpty": "No trending services found"
     },
     "list": {
+      "resultCount": "{count, plural, one {# service found} other {# services found}}",
       "empty": {
         "title": "No search results found.",
-        "description": "Try a more specific query, e.g. ‘Toss’, ‘Naver’...",
+        "description": "Try a shorter query or another name for the service, or browse the categories below.",
         "noResults": "No results found for ‘{query}’.",
-        "popularQueries": "Popular searches",
+        "popularQueries": "Search examples",
         "categories": "Categories",
         "trending": "Trending services"
       },
@@ -112,7 +114,7 @@
     "loading": "Loading page...",
     "action": {
       "upvote": "Upvote",
-      "cancelUpvote": "Cancel upvote",
+      "upvoted": "Upvoted",
       "voteSuccess": "Your vote has been submitted!",
       "alreadyVoted": "You have already voted for this product.",
       "rateLimit": "Too many vote attempts. Please try again in a minute.",
@@ -123,7 +125,10 @@
     },
     "compareButton": {
       "add": "Add to compare",
-      "remove": "Remove from compare"
+      "remove": "Remove from compare",
+      "limit": "You can compare two services at a time. Remove an existing selection first.",
+      "storageError": "Could not save your comparison. Check your browser storage settings and try again.",
+      "viewCompare": "Compare selected services"
     }
   },
   "Alternative": {
@@ -154,25 +159,21 @@
   },
   "Main": {
     "hero": {
-      "badge": "Curated Software Discovery & Comparison",
-      "description": "Find, use, and evaluate services carefully compared by the Darun team",
-      "subDescription": "Discover and compare verified digital tools side-by-side with real community ratings to find what fits your needs.",
-      "popularSearch": "Popular:",
-      "title": {
-        "countSuffix": "",
-        "highlight": "alternative",
-        "ending": "services to discover"
-      }
+      "badge": "Software Discovery & Comparison",
+      "description": "Explore service features and alternatives in one place",
+      "subDescription": "Explore registered services and their features, then compare two services side by side.",
+      "popularSearch": "Try:",
+      "headline": "{count, plural, one {Discover # alternative service} other {Discover # alternative services}}"
     },
     "recentSection": {
       "title": "Newly Added Services",
-      "description": "You can discover services compared under strict criteria by the Darun team."
+      "description": "Explore the features of newly registered services."
     }
   },
   "home": {
     "recent": {
       "title": "Recently Added",
-      "description": "Explore newly registered services curated with strict criteria by the Darun team.",
+      "description": "Explore the features and alternatives of recently registered services.",
       "more": "View More",
       "empty": "No recently added services"
     },
@@ -184,7 +185,7 @@
     },
     "trending": {
       "title": "Top Picks",
-      "description": "Popular services currently receiving interest from users.",
+      "description": "Ranked using votes and publication recency.",
       "more": "See All",
       "empty": "Top Picks Coming Soon"
     },
@@ -197,11 +198,11 @@
   "Ranking": {
     "section": {
       "title": "Top 30 Popular Services",
-      "description": "These are the services that received the most interest."
+      "description": "Ranked using votes and publication recency."
     },
     "empty": {
       "title": "No ranked services yet",
-      "description": "No services have received votes yet. Explore various services and cast the first vote!",
+      "description": "There are no services to display right now. Browse services to discover more.",
       "button": "Explore Services"
     }
   },

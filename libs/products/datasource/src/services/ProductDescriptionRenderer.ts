@@ -50,7 +50,7 @@ export function renderProductDescriptionDocument(doc: ProductDescriptionDocument
 
   // 3. Recommended if
   if (Array.isArray(doc.recommendedIf) && doc.recommendedIf.length > 0) {
-    fragments.push('<h2>추천한다면 -</h2>');
+    fragments.push('<h2>이런 경우에 추천합니다</h2>');
     fragments.push('<ul>');
     for (const item of doc.recommendedIf) {
       if (item.text) {

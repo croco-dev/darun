@@ -9,7 +9,7 @@ import { useProductUserAction } from './useProductUserAction';
 
 export const ProductUserAction = bind(
   useProductUserAction,
-  ({ voteCount, upvoteProduct, voted, loading, error, slug }) => {
+  ({ voteCount, upvoteProduct, voted, loading, error, slug, success }) => {
     const { addToast } = useToast();
     const locale = useLocale();
     const t = useTranslations('ProductDetail.action');
@@ -17,20 +17,25 @@ export const ProductUserAction = bind(
     const hasShownSuccessToastRef = useRef(false);
     const prevErrorRef = useRef<string | null>(null);
 
-    const voteLabel = voted ? t('cancelUpvote') : t('upvote');
+    const voteLabel = voted ? t('upvoted') : t('upvote');
 
+    useEffect(() => {
+      hasShownSuccessToastRef.current = false;
+      prevErrorRef.current = null;
+      setCopied(false);
+    }, [slug]);
     useEffect(() => {
       if (error && error !== prevErrorRef.current) {
         addToast(error, 'error');
         hasShownSuccessToastRef.current = false;
-      } else if (voted && !loading && !hasShownSuccessToastRef.current) {
+      } else if (success && !hasShownSuccessToastRef.current) {
         addToast(t('voteSuccess'), 'success');
         hasShownSuccessToastRef.current = true;
       } else if (!voted) {
         hasShownSuccessToastRef.current = false;
       }
       prevErrorRef.current = error;
-    }, [error, voted, loading, addToast, t]);
+    }, [error, success, voted, loading, addToast, t]);
 
     const handleCopyLink = async () => {
       if (typeof window === 'undefined') return;
@@ -53,7 +58,7 @@ export const ProductUserAction = bind(
           color="secondary"
           size="md"
           onClick={upvoteProduct}
-          disabled={loading}
+          disabled={loading || voted}
           data-testid="upvote-btn"
           aria-label={voteLabel}
           aria-pressed={voted}

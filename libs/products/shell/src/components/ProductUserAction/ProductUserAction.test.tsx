@@ -28,7 +28,7 @@ vi.mock('../CompareButton', () => ({
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => {
     if (key === 'voteSuccess') return '투표가 완료되었습니다!';
-    if (key === 'cancelUpvote') return '추천 취소';
+    if (key === 'upvoted') return '추천 완료';
     if (key === 'upvote') return '추천하기';
     return key;
   },
@@ -65,6 +65,7 @@ describe('ProductUserAction Toast Integration', () => {
           loading={false}
           error="투표에 실패했습니다. 다시 시도해주세요."
           slug="test-product"
+          success={false}
         />
       );
     });
@@ -72,7 +73,7 @@ describe('ProductUserAction Toast Integration', () => {
     expect(mockAddToast).toHaveBeenCalledWith('투표에 실패했습니다. 다시 시도해주세요.', 'error');
   });
 
-  it('calls addToast with success when voted and not loading', () => {
+  it('calls addToast only for a successful current mutation', () => {
     act(() => {
       root?.render(
         <ProductUserAction.ViewComponent
@@ -82,11 +83,32 @@ describe('ProductUserAction Toast Integration', () => {
           loading={false}
           error={null}
           slug="test-product"
+          success={true}
         />
       );
     });
 
     expect(mockAddToast).toHaveBeenCalledWith('투표가 완료되었습니다!', 'success');
+  });
+
+  it('does not toast a restored vote and disables the completed action', () => {
+    act(() => {
+      root?.render(
+        <ProductUserAction.ViewComponent
+          voteCount={11}
+          upvoteProduct={vi.fn()}
+          voted={true}
+          loading={false}
+          error={null}
+          success={false}
+          slug="restored"
+        />
+      );
+    });
+    expect(mockAddToast).not.toHaveBeenCalled();
+    const button = container.querySelector('[data-testid="upvote-btn"]') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('aria-label')).toBe('추천 완료');
   });
 });
 
