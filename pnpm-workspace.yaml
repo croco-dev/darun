@@ -21,7 +21,7 @@ overrides:
   shell-quote: ">=1.11.0"
   velocityjs: ">=2.1.7"
   websocket-driver: ">=0.7.5"
-  next: "16.3.8"
+  next: "16.4.1"
   handlebars: ">=4.7.10"
 
 allowBuilds:
@@ -59,7 +59,7 @@ catalog:
   react-dom: 19.2.6
   '@types/react': 19.2.14
   '@types/react-dom': 19.2.4
-  next: 16.3.8
+  next: 16.4.1
   next-intl: 4.8.2
   next-client-cookies: 2.1.0
   eslint-config-next: 16.3.8
@@ -89,7 +89,7 @@ catalog:
   firebase-admin: 13.6.1
 
   # Sentry
-  '@sentry/nextjs': 10.38.0
+  '@sentry/nextjs': 10.75.2
   '@sentry/aws-serverless': 10.38.0
   '@sentry/esbuild-plugin': 4.9.1
   '@sentry/profiling-node': 10.38.0
