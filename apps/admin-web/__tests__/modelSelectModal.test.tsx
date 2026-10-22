@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModelSelectModal } from '../features/settings/LlmSettingFormSection/ModelSelectModal';
@@ -9,10 +9,12 @@ describe('ModelSelectModal', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
     global.fetch = originalFetch;
   });
 
@@ -66,11 +68,9 @@ describe('ModelSelectModal', () => {
       />
     );
 
-    // Wait for models to load
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /google\/gemini-2.5-flash/ })).toBeDefined();
-      expect(screen.getByRole('button', { name: /x-ai\/grok-4-fast/ })).toBeDefined();
-    });
+    await act(() => vi.runOnlyPendingTimersAsync());
+    expect(screen.getByRole('button', { name: /google\/gemini-2.5-flash/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /x-ai\/grok-4-fast/ })).toBeDefined();
 
     // Test search filter
     const searchInput = screen.getByPlaceholderText(/모델명 또는 모델 ID 검색/i);
@@ -116,7 +116,8 @@ describe('ModelSelectModal', () => {
       />
     );
 
-    const supported = await screen.findByRole('button', {
+    await act(() => vi.runOnlyPendingTimersAsync());
+    const supported = screen.getByRole('button', {
       name: /vendor\/supported/,
     });
     expect(within(supported).getByText('구조화 응답 지원')).toBeDefined();
@@ -173,7 +174,8 @@ describe('ModelSelectModal', () => {
         onSelectModel={onSelectModel}
       />
     );
-    const item = await screen.findByRole('button', {
+    await act(() => vi.runOnlyPendingTimersAsync());
+    const item = screen.getByRole('button', {
       name: new RegExp(`vendor/${id}`),
     });
     expect(
