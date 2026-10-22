@@ -272,6 +272,8 @@ Mongo 연결은 검색에서만 지연 초기화하므로 Mongo 장애 중에도
 
 격리 PostgreSQL 17/MongoDB 8 검증은 로컬 `darun_content_sync` DB만 허용하며 환경변수가 없으면 명시적으로 SKIPPED입니다. PR CI는 임시 서비스와 아래 suite, migration completeness 및 Node 22의 실제 6개 Lambda handler·전체 resolver schema 초기화를 연결합니다. 합성 모델·관리자 인증 fixture만 사용하며 운영 DB, 기존 volume, 원격 모델을 사용하지 않습니다.
 
+PR CI는 MongoDB 8 이미지의 Linux 6.19 기동 호환 문제를 피하려고 `ubuntu-22.04` 실행기를 사용합니다([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)). 실행기를 변경할 때는 PostgreSQL·MongoDB 서비스의 health check와 실제 저장소 통합 검사가 모두 통과하는지 확인합니다.
+
 ```bash
 CONTENT_SYNC_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55447/darun_content_sync CONTENT_SYNC_TEST_MONGODB_URI=mongodb://127.0.0.1:27047 CONTENT_SYNC_TEST_PROXY_PORT=27048 pnpm --filter graphql-api exec vitest run __tests__/contentSync.mongodb.test.ts __tests__/contentSyncMigration.test.ts
 ```

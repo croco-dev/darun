@@ -8,7 +8,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # MongoDB 8은 Linux 6.19에서 기동하지 않아 호환 실행기를 고정합니다.
+    runs-on: ubuntu-22.04
     services:
       content-sync-postgres:
         image: postgres:17
