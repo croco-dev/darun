@@ -28,6 +28,7 @@ import {
   TranslationService,
   type TranslationProvider,
   type ProductBundleTranslationRequest,
+  type TranslationRow,
 } from '@darun/translation-domain';
 import { TranslationJobService } from '@darun/translation-service';
 import { LlmClient } from '@darun/utils-llm';
@@ -425,6 +426,112 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     return Promise.all(source.values.map(value => translationRepository.findOne({ ...value, locale: 'en' })));
   }
 
+  async function translatedDescription(original: string) {
+    const product = await seed();
+    await db.update(products).set({ description: original }).where(eq(products.id, product.id));
+    const firstId = await requestTranslation(product);
+    await runTranslation(firstId, product.id);
+    const priorRows = await storedTranslations(product.id);
+    const priorJobs = await db.select().from(translationJobs).where(eq(translationJobs.entityId, product.id));
+    const firstJob = priorJobs.find(job => job.id === firstId);
+    return { product, firstId, firstJob, priorRows, priorJobs };
+  }
+
+  interface TranslatedDescription {
+    product: typeof products.$inferSelect;
+    firstId: string;
+    firstJob: typeof translationJobs.$inferSelect | undefined;
+    priorRows: Array<TranslationRow | null>;
+    priorJobs: Array<typeof translationJobs.$inferSelect>;
+  }
+
+  async function pendingDescriptionEdit(previous: TranslatedDescription, changed: string, modelCalls: () => number) {
+    const { product, firstId, firstJob, priorRows } = previous;
+    const edited = await mutate(print(EditProductOnEditProductDescriptionDocument), {
+      slug: product.slug,
+      input: { description: changed },
+    });
+    expect(edited.errors).toBeUndefined();
+    expect(edited.data.editProduct.product.description).toBe(changed);
+    expect((await db.select().from(products).where(eq(products.id, product.id)))[0]).toMatchObject({
+      description: changed,
+      contentRevision: 1n,
+    });
+    const registered = await intents(product.id);
+    expect(registered.map(row => row.kind).sort()).toEqual(['search', 'translation']);
+    expect(registered.every(row => row.sourceRevision === 1n)).toBe(true);
+    const translation = registered.find(row => row.kind === 'translation')!;
+    const [pending] = await db
+      .select()
+      .from(translationJobs)
+      .where(eq(translationJobs.id, translation.translationJobId!));
+    expect(pending).toMatchObject({
+      status: 'pending',
+      attemptCount: 0,
+      sourceHash: null,
+      fields: ['name', 'summary', 'description', 'features'],
+      idempotencyKey: `sync:${product.id}:1:translation`,
+    });
+    await expectPublicDescription(product, changed, changed);
+    expect((await freshness(product.id)).find(row => row.field === 'description')?.status).toBe('stale');
+    expect(await storedTranslations(product.id)).toEqual(priorRows);
+    expect((await db.select().from(translationJobs).where(eq(translationJobs.id, firstId)))[0]).toEqual(firstJob);
+    expect(modelCalls()).toBe(2);
+    return { registered, translation };
+  }
+
+  async function completeDescriptionTranslation(
+    previous: TranslatedDescription,
+    translation: typeof productContentSyncIntents.$inferSelect,
+    changed: string,
+    english: string,
+    modelCalls: () => number
+  ) {
+    const { product, firstId, firstJob } = previous;
+    await runTranslation(translation.translationJobId!, product.id);
+    expect(await sync.status(translation.id)).toMatchObject({ status: 'completed' });
+    expect(
+      (await db.select().from(translationJobs).where(eq(translationJobs.id, translation.translationJobId!)))[0]
+    ).toMatchObject({
+      status: 'completed',
+      attemptCount: 1,
+      sourceHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      model: 'offline-readsync',
+      promptVersion: firstJob!.promptVersion,
+    });
+    expect((await storedTranslations(product.id)).find(row => row?.field === 'description')).toMatchObject({
+      value: english,
+      sourceHash: createHash('sha256').update(changed).digest('hex'),
+      model: 'offline-readsync',
+      promptVersion: firstJob!.promptVersion,
+    });
+    await expectPublicDescription(product, changed, english);
+    expect((await freshness(product.id)).every(row => row.status === 'current')).toBe(true);
+    expect((await db.select().from(translationJobs).where(eq(translationJobs.id, firstId)))[0]).toEqual(firstJob);
+    expect(modelCalls()).toBe(4);
+  }
+
+  async function searchOnlyDescriptionEdit(previous: TranslatedDescription, changed: string, modelCalls: () => number) {
+    const { product, priorRows, priorJobs } = previous;
+    const edited = await mutate(print(EditProductOnEditProductDescriptionDocument), {
+      slug: product.slug,
+      input: { description: changed },
+    });
+    expect(edited.errors).toBeUndefined();
+    const registered = await intents(product.id);
+    expect(registered).toEqual([
+      expect.objectContaining({ kind: 'search', sourceRevision: 1n, translationJobId: null }),
+    ]);
+    await runSearch(registered[0]!.id);
+    expect(await sync.status(registered[0]!.id)).toMatchObject({ status: 'completed' });
+    expect((await SearchableProductModel.collection.findOne({ productId: product.id }))?.description).toBe(changed);
+    await expectPublicDescription(product, changed, changed);
+    expect((await freshness(product.id)).find(row => row.field === 'description')?.status).toBe('stale');
+    expect(await storedTranslations(product.id)).toEqual(priorRows);
+    expect(await db.select().from(translationJobs).where(eq(translationJobs.entityId, product.id))).toEqual(priorJobs);
+    expect(modelCalls()).toBe(2);
+  }
+
   it('생성된 관리자 소개 저장 문서와 실제 bundled API의 canonical input 이름이 일치한다', async () => {
     const product = await seed();
     const html =
@@ -690,43 +797,12 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     '%s 변경은 stale 한국어 fallback을 유지하고 durable 번역 worker가 새 provenance를 저장한다',
     async (_kind, changed, english) => {
       await withOfflineTranslationWorker(async modelCalls => {
-        const product = await seed();
         const original = '<p><a href="https://example.com/docs">본문</a></p>';
-        await db.update(products).set({ description: original }).where(eq(products.id, product.id));
-        const firstId = await requestTranslation(product);
-        await runTranslation(firstId, product.id);
+        const previous = await translatedDescription(original);
+        const { product } = previous;
         await expectPublicDescription(product, original, '<p><a href="https://example.com/docs">Body</a></p>');
-        const priorRows = await storedTranslations(product.id);
-        const [firstJob] = await db.select().from(translationJobs).where(eq(translationJobs.id, firstId));
-        const edited = await mutate(print(EditProductOnEditProductDescriptionDocument), {
-          slug: product.slug,
-          input: { description: changed },
-        });
-        expect(edited.errors).toBeUndefined();
-        expect((await intents(product.id)).map(row => row.kind).sort()).toEqual(['search', 'translation']);
-        const translation = (await intents(product.id)).find(row => row.kind === 'translation')!;
-        expect(
-          (await db.select().from(translationJobs).where(eq(translationJobs.id, translation.translationJobId!)))[0]
-        ).toMatchObject({
-          status: 'pending',
-          fields: ['name', 'summary', 'description', 'features'],
-          idempotencyKey: `sync:${product.id}:1:translation`,
-        });
-        await expectPublicDescription(product, changed, changed);
-        expect((await freshness(product.id)).find(row => row.field === 'description')?.status).toBe('stale');
-        expect(await storedTranslations(product.id)).toEqual(priorRows);
-        expect(modelCalls()).toBe(2);
-        await runTranslation(translation.translationJobId!, product.id);
-        expect(await sync.status(translation.id)).toMatchObject({ status: 'completed' });
-        expect((await storedTranslations(product.id)).find(row => row?.field === 'description')).toMatchObject({
-          value: english,
-          sourceHash: createHash('sha256').update(changed).digest('hex'),
-          model: 'offline-readsync',
-        });
-        await expectPublicDescription(product, changed, english);
-        expect((await freshness(product.id)).every(row => row.status === 'current')).toBe(true);
-        expect((await db.select().from(translationJobs).where(eq(translationJobs.id, firstId)))[0]).toEqual(firstJob);
-        expect(modelCalls()).toBe(4);
+        const { translation } = await pendingDescriptionEdit(previous, changed, modelCalls);
+        await completeDescriptionTranslation(previous, translation, changed, english, modelCalls);
       });
     },
     20_000
@@ -767,12 +843,8 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     '%s는 canonical commit의 pending job을 통해 번호와 current provenance를 복구한다',
     async (_kind, original, changed, english) => {
       await withOfflineTranslationWorker(async modelCalls => {
-        const product = await seed();
-        await db.update(products).set({ description: original }).where(eq(products.id, product.id));
-        const firstId = await requestTranslation(product);
-        await runTranslation(firstId, product.id);
-        const priorRows = await storedTranslations(product.id);
-        const [firstJob] = await db.select().from(translationJobs).where(eq(translationJobs.id, firstId));
+        const previous = await translatedDescription(original);
+        const { product, firstJob, priorRows } = previous;
         expect(firstJob).toMatchObject({ status: 'completed', attemptCount: 1 });
         expect(priorRows.find(row => row?.field === 'description')).toMatchObject({
           sourceHash: createHash('sha256').update(original).digest('hex'),
@@ -780,58 +852,11 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
           promptVersion: firstJob!.promptVersion,
         });
         expect((await freshness(product.id)).every(row => row.status === 'current')).toBe(true);
-        const edited = await mutate(print(EditProductOnEditProductDescriptionDocument), {
-          slug: product.slug,
-          input: { description: changed },
-        });
-        expect(edited.errors).toBeUndefined();
-        expect(edited.data.editProduct.product.description).toBe(changed);
-        expect((await db.select().from(products).where(eq(products.id, product.id)))[0]).toMatchObject({
-          description: changed,
-          contentRevision: 1n,
-        });
-        const registered = await intents(product.id);
-        expect(registered.map(row => row.kind).sort()).toEqual(['search', 'translation']);
-        expect(registered.every(row => row.sourceRevision === 1n)).toBe(true);
-        const translation = registered.find(row => row.kind === 'translation')!;
-        const [pending] = await db
-          .select()
-          .from(translationJobs)
-          .where(eq(translationJobs.id, translation.translationJobId!));
-        expect(pending).toMatchObject({
-          status: 'pending',
-          attemptCount: 0,
-          sourceHash: null,
-          fields: ['name', 'summary', 'description', 'features'],
-          idempotencyKey: `sync:${product.id}:1:translation`,
-        });
-        await expectPublicDescription(product, changed, changed);
-        expect((await freshness(product.id)).find(row => row.field === 'description')?.status).toBe('stale');
-        expect(await storedTranslations(product.id)).toEqual(priorRows);
-        expect((await db.select().from(translationJobs).where(eq(translationJobs.id, firstId)))[0]).toEqual(firstJob);
-        expect(modelCalls()).toBe(2);
+        const { registered, translation } = await pendingDescriptionEdit(previous, changed, modelCalls);
         await runSearch(registered.find(row => row.kind === 'search')!.id);
         expect((await SearchableProductModel.collection.findOne({ productId: product.id }))?.description).toBe(changed);
         expect(modelCalls()).toBe(2);
-        await runTranslation(pending!.id, product.id);
-        expect(await sync.status(translation.id)).toMatchObject({ status: 'completed' });
-        expect((await db.select().from(translationJobs).where(eq(translationJobs.id, pending!.id)))[0]).toMatchObject({
-          status: 'completed',
-          attemptCount: 1,
-          sourceHash: expect.stringMatching(/^[a-f0-9]{64}$/),
-          model: 'offline-readsync',
-          promptVersion: firstJob!.promptVersion,
-        });
-        expect((await storedTranslations(product.id)).find(row => row?.field === 'description')).toMatchObject({
-          value: english,
-          sourceHash: createHash('sha256').update(changed).digest('hex'),
-          model: 'offline-readsync',
-          promptVersion: firstJob!.promptVersion,
-        });
-        await expectPublicDescription(product, changed, english);
-        expect((await freshness(product.id)).every(row => row.status === 'current')).toBe(true);
-        expect((await db.select().from(translationJobs).where(eq(translationJobs.id, firstId)))[0]).toEqual(firstJob);
-        expect(modelCalls()).toBe(4);
+        await completeDescriptionTranslation(previous, translation, changed, english, modelCalls);
       });
     },
     20_000
@@ -1189,12 +1214,8 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     '%s는 같은 revision에서 search·translation intent와 연결 pending job을 등록한다',
     async (_kind, original, originalEnglish, changed, english) => {
       await withOfflineTranslationWorker(async modelCalls => {
-        const product = await seed();
-        await db.update(products).set({ description: original }).where(eq(products.id, product.id));
-        const firstId = await requestTranslation(product);
-        await runTranslation(firstId, product.id);
-        const priorRows = await storedTranslations(product.id);
-        const [firstJob] = await db.select().from(translationJobs).where(eq(translationJobs.id, firstId));
+        const previous = await translatedDescription(original);
+        const { product, firstJob, priorRows } = previous;
         expect(firstJob).toMatchObject({
           status: 'completed',
           attemptCount: 1,
@@ -1210,58 +1231,11 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
         expect(originalEnglish).not.toBe(original);
         await expectPublicDescription(product, original, originalEnglish);
         expect((await freshness(product.id)).every(row => row.status === 'current')).toBe(true);
-        const edited = await mutate(print(EditProductOnEditProductDescriptionDocument), {
-          slug: product.slug,
-          input: { description: changed },
-        });
-        expect(edited.errors).toBeUndefined();
-        expect(edited.data.editProduct.product.description).toBe(changed);
-        expect((await db.select().from(products).where(eq(products.id, product.id)))[0]).toMatchObject({
-          description: changed,
-          contentRevision: 1n,
-        });
-        const registered = await intents(product.id);
-        expect(registered.map(row => row.kind).sort()).toEqual(['search', 'translation']);
-        expect(registered.every(row => row.sourceRevision === 1n)).toBe(true);
-        const translation = registered.find(row => row.kind === 'translation')!;
-        const [pending] = await db
-          .select()
-          .from(translationJobs)
-          .where(eq(translationJobs.id, translation.translationJobId!));
-        expect(pending).toMatchObject({
-          status: 'pending',
-          attemptCount: 0,
-          sourceHash: null,
-          fields: ['name', 'summary', 'description', 'features'],
-          idempotencyKey: `sync:${product.id}:1:translation`,
-        });
-        await expectPublicDescription(product, changed, changed);
-        expect((await freshness(product.id)).find(row => row.field === 'description')?.status).toBe('stale');
-        expect(await storedTranslations(product.id)).toEqual(priorRows);
-        expect((await db.select().from(translationJobs).where(eq(translationJobs.id, firstId)))[0]).toEqual(firstJob);
-        expect(modelCalls()).toBe(2);
+        const { registered, translation } = await pendingDescriptionEdit(previous, changed, modelCalls);
         await runSearch(registered.find(row => row.kind === 'search')!.id);
         expect((await SearchableProductModel.collection.findOne({ productId: product.id }))?.description).toBe(changed);
         expect(modelCalls()).toBe(2);
-        await runTranslation(pending!.id, product.id);
-        expect(await sync.status(translation.id)).toMatchObject({ status: 'completed' });
-        expect((await db.select().from(translationJobs).where(eq(translationJobs.id, pending!.id)))[0]).toMatchObject({
-          status: 'completed',
-          attemptCount: 1,
-          sourceHash: expect.stringMatching(/^[a-f0-9]{64}$/),
-          model: 'offline-readsync',
-          promptVersion: TRANSLATION_PROMPT_VERSION,
-        });
-        expect((await storedTranslations(product.id)).find(row => row?.field === 'description')).toMatchObject({
-          value: english,
-          sourceHash: createHash('sha256').update(changed).digest('hex'),
-          model: 'offline-readsync',
-          promptVersion: TRANSLATION_PROMPT_VERSION,
-        });
-        await expectPublicDescription(product, changed, english);
-        expect((await freshness(product.id)).every(row => row.status === 'current')).toBe(true);
-        expect((await db.select().from(translationJobs).where(eq(translationJobs.id, firstId)))[0]).toEqual(firstJob);
-        expect(modelCalls()).toBe(4);
+        await completeDescriptionTranslation(previous, translation, changed, english, modelCalls);
       });
     },
     20_000
@@ -1273,14 +1247,10 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       let damageReview = false;
       await withOfflineTranslationWorker(
         async modelCalls => {
-          const product = await seed();
           const original = '소개 [안내][] [안내] [본문][안내]\n\n[안내]: <https://example.com/old>';
           const english = 'Introduction [Guide][안내] [Guide][안내] [Body][안내]\n\n[안내]: <https://example.com/old>';
-          await db.update(products).set({ description: original }).where(eq(products.id, product.id));
-          const firstId = await requestTranslation(product);
-          await runTranslation(firstId, product.id);
-          const priorRows = await storedTranslations(product.id);
-          const [firstJob] = await db.select().from(translationJobs).where(eq(translationJobs.id, firstId));
+          const previous = await translatedDescription(original);
+          const { product, firstId, firstJob, priorRows } = previous;
           expect(firstJob).toMatchObject({ status: 'completed', attemptCount: 1 });
           expect(priorRows.find(row => row?.field === 'description')).toMatchObject({
             value: english,
@@ -1290,19 +1260,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
           });
           await expectPublicDescription(product, original, english);
           const changed = original.replace('/old>', '/new>');
-          const edited = await mutate(print(EditProductOnEditProductDescriptionDocument), {
-            slug: product.slug,
-            input: { description: changed },
-          });
-          expect(edited.errors).toBeUndefined();
-          const registered = await intents(product.id);
-          expect(registered.map(row => row.kind).sort()).toEqual(['search', 'translation']);
-          expect(registered.every(row => row.sourceRevision === 1n)).toBe(true);
-          const translation = registered.find(row => row.kind === 'translation')!;
-          expect(
-            (await db.select().from(translationJobs).where(eq(translationJobs.id, translation.translationJobId!)))[0]
-          ).toMatchObject({ status: 'pending', attemptCount: 0, sourceHash: null });
-          expect(modelCalls()).toBe(2);
+          const { registered, translation } = await pendingDescriptionEdit(previous, changed, modelCalls);
           damageReview = true;
           await runTranslation(translation.translationJobId!, product.id);
           expect(
@@ -1518,12 +1476,8 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     '%s는 search-only이며 코드 의미 공백과 기존 영어·provenance를 보존한다',
     async (_kind, original, changed, originalEnglish?: string) => {
       await withOfflineTranslationWorker(async modelCalls => {
-        const product = await seed();
-        await db.update(products).set({ description: original }).where(eq(products.id, product.id));
-        const firstId = await requestTranslation(product);
-        await runTranslation(firstId, product.id);
-        const priorRows = await storedTranslations(product.id);
-        const priorJobs = await db.select().from(translationJobs).where(eq(translationJobs.entityId, product.id));
+        const previous = await translatedDescription(original);
+        const { product, firstId, priorRows, priorJobs } = previous;
         if (originalEnglish !== undefined) {
           expect(priorRows.find(row => row?.field === 'description')).toMatchObject({
             value: originalEnglish,
@@ -1535,25 +1489,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
           await expectPublicDescription(product, original, originalEnglish);
           expect((await freshness(product.id)).every(row => row.status === 'current')).toBe(true);
         }
-        const edited = await mutate(print(EditProductOnEditProductDescriptionDocument), {
-          slug: product.slug,
-          input: { description: changed },
-        });
-        expect(edited.errors).toBeUndefined();
-        const registered = await intents(product.id);
-        expect(registered).toEqual([
-          expect.objectContaining({ kind: 'search', sourceRevision: 1n, translationJobId: null }),
-        ]);
-        await runSearch(registered[0]!.id);
-        expect(await sync.status(registered[0]!.id)).toMatchObject({ status: 'completed' });
-        expect((await SearchableProductModel.collection.findOne({ productId: product.id }))?.description).toBe(changed);
-        await expectPublicDescription(product, changed, changed);
-        expect((await freshness(product.id)).find(row => row.field === 'description')?.status).toBe('stale');
-        expect(await storedTranslations(product.id)).toEqual(priorRows);
-        expect(await db.select().from(translationJobs).where(eq(translationJobs.entityId, product.id))).toEqual(
-          priorJobs
-        );
-        expect(modelCalls()).toBe(2);
+        await searchOnlyDescriptionEdit(previous, changed, modelCalls);
       });
     },
     20_000
@@ -1571,31 +1507,8 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     '%s는 search-only이며 기존 영어와 job을 보존하고 한국어 fallback/stale로 남는다',
     async (_kind, original, changed) => {
       await withOfflineTranslationWorker(async modelCalls => {
-        const product = await seed();
-        await db.update(products).set({ description: original }).where(eq(products.id, product.id));
-        const firstId = await requestTranslation(product);
-        await runTranslation(firstId, product.id);
-        const priorRows = await storedTranslations(product.id);
-        const priorJobs = await db.select().from(translationJobs).where(eq(translationJobs.entityId, product.id));
-        const edited = await mutate(print(EditProductOnEditProductDescriptionDocument), {
-          slug: product.slug,
-          input: { description: changed },
-        });
-        expect(edited.errors).toBeUndefined();
-        const registered = await intents(product.id);
-        expect(registered).toEqual([
-          expect.objectContaining({ kind: 'search', sourceRevision: 1n, translationJobId: null }),
-        ]);
-        await runSearch(registered[0]!.id);
-        expect(await sync.status(registered[0]!.id)).toMatchObject({ status: 'completed' });
-        expect((await SearchableProductModel.collection.findOne({ productId: product.id }))?.description).toBe(changed);
-        await expectPublicDescription(product, changed, changed);
-        expect((await freshness(product.id)).find(row => row.field === 'description')?.status).toBe('stale');
-        expect(await storedTranslations(product.id)).toEqual(priorRows);
-        expect(await db.select().from(translationJobs).where(eq(translationJobs.entityId, product.id))).toEqual(
-          priorJobs
-        );
-        expect(modelCalls()).toBe(2);
+        const previous = await translatedDescription(original);
+        await searchOnlyDescriptionEdit(previous, changed, modelCalls);
       });
     },
     20_000

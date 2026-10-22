@@ -160,7 +160,7 @@ test('damaged final output and provider failures retain comparison data instead 
   );
   assert.equal(failures, fixtures.length);
   const damaged = reports.find(report => report.fixture === 'brand-url-markdown');
-  assert.match(damaged.finalTranslation, /figma\.com/);
+  assert.equal(damaged.finalTranslation.match(/\]\(([^)]+)\)/)?.[1], 'https://figma.com/file/darun');
   assert.equal(damaged.source, fixtures.find(fixture => fixture.id === 'brand-url-markdown')!.koreanText);
   assert.equal(damaged.model, 'damaged-output-model');
   assert.equal(damaged.promptVersion, 'damaged-output-version');

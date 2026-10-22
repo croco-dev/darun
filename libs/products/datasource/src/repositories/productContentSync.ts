@@ -29,7 +29,7 @@ function canonical(source: ProductContentSource): string {
       slug: source.product.slug,
       summary: source.product.summary,
       description: source.product.description,
-      categoryIds: [...source.product.categoryIds].sort(),
+      categoryIds: [...source.product.categoryIds].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
       publishedAt: source.product.publishedAt,
     },
     features: sorted(source.features).map(({ id, name, summary }) => ({
@@ -47,7 +47,7 @@ function canonical(source: ProductContentSource): string {
           }
         : null
     ),
-    tags: [...source.tags].sort(),
+    tags: [...source.tags].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
     links: sorted(source.links).map(({ id, title, link, displayLink }) => ({
       id,
       title,

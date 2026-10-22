@@ -366,13 +366,22 @@ function requestWorkspace() {
   );
 }
 
-async function renderCompletedResearch(logoFile?: File, lookupCalls?: RaceLookupCall[]) {
+function renderResearchRace({
+  jobs = { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedRaceJob },
+  searchParams = { researchJobId: 'job-1' },
+  materializations,
+  lookupCalls,
+}: {
+  jobs?: Record<string, unknown>;
+  searchParams?: Record<string, string>;
+  materializations?: RaceMaterializeCall[];
+  lookupCalls?: RaceLookupCall[];
+} = {}) {
   const stored = seedResearchWorkspace();
+  testGlobal().researchSearchParams = searchParams;
   const requests: RaceActionCall<ResearchRequestVariables>[] = [];
   const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-  const materializations: RaceMaterializeCall[] = [];
   const lookups: string[] = [];
-  const jobs: Record<string, unknown> = { 'job-1': completedJob, 'job-new': requestedRaceJob };
   const client = makeRaceClient({
     requestJobs: { 'https://notion.so/': requestedRaceJob },
     retryJobs: { 'job-1': retryRaceJob },
@@ -388,6 +397,22 @@ async function renderCompletedResearch(logoFile?: File, lookupCalls?: RaceLookup
       <ProductResearchSection />
     </ApolloProvider>
   );
+  return { stored, requests, retries, lookups, jobs, client, view };
+}
+
+async function startFailedResearchRetry(retries: RaceActionCall<ResearchRetryVariables>[]) {
+  fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
+  await waitFor(() => expect(retries).toHaveLength(1));
+}
+
+async function renderCompletedResearch(logoFile?: File, lookupCalls?: RaceLookupCall[]) {
+  const materializations: RaceMaterializeCall[] = [];
+  const race = renderResearchRace({
+    jobs: { 'job-1': completedJob, 'job-new': requestedRaceJob },
+    searchParams: testGlobal().researchSearchParams,
+    materializations,
+    lookupCalls,
+  });
   if (lookupCalls) {
     await waitFor(() => expect(lookupCalls).toHaveLength(1));
     lookupCalls[0].respond(completedJob);
@@ -396,7 +421,7 @@ async function renderCompletedResearch(logoFile?: File, lookupCalls?: RaceLookup
   if (logoFile) {
     fireEvent.change(document.querySelector('[name="review-logo-file"]')!, { target: { files: [logoFile] } });
   }
-  return { stored, requests, retries, materializations, lookups, jobs, client, view };
+  return { ...race, materializations };
 }
 
 async function renderMaterializeRace(logoFile?: File) {
@@ -1453,28 +1478,10 @@ describe('admin research workspace flow', () => {
   });
 
   it('재조사 응답이 새 조사 요청보다 먼저 도착해도 최신 요청의 입력·저장 workspace·이동을 차지하지 않는다', async () => {
-    seedResearchWorkspace();
-    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-    const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-    const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-    const lookups: string[] = [];
-    const client = makeRaceClient({
-      requestJobs: { 'https://notion.so/': requestedRaceJob },
-      retryJobs: { 'job-1': retryRaceJob },
-      jobs: { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedRaceJob },
-      requests,
-      retries,
-      lookups,
-    });
-    render(
-      <ApolloProvider client={client}>
-        <ProductResearchSection />
-      </ApolloProvider>
-    );
+    const { requests, retries, lookups } = renderResearchRace();
 
     // 실패한 작업 A에서 재조사 B를 시작한다.
-    fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
-    await waitFor(() => expect(retries).toHaveLength(1));
+    await startFailedResearchRetry(retries);
 
     // B의 응답을 기다리는 동안 다른 URL의 새 조사 요청 C를 시작한다.
     submitResearchRequest('https://notion.so/');
@@ -1509,27 +1516,9 @@ describe('admin research workspace flow', () => {
   });
 
   it('새 조사 요청 응답이 먼저 도착한 뒤 후착한 재조사 응답이 최신 화면을 되돌리지 않는다', async () => {
-    seedResearchWorkspace();
-    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-    const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-    const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-    const lookups: string[] = [];
-    const client = makeRaceClient({
-      requestJobs: { 'https://notion.so/': requestedRaceJob },
-      retryJobs: { 'job-1': retryRaceJob },
-      jobs: { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedRaceJob },
-      requests,
-      retries,
-      lookups,
-    });
-    render(
-      <ApolloProvider client={client}>
-        <ProductResearchSection />
-      </ApolloProvider>
-    );
+    const { requests, retries, lookups } = renderResearchRace();
 
-    fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
-    await waitFor(() => expect(retries).toHaveLength(1));
+    await startFailedResearchRetry(retries);
     submitResearchRequest('https://notion.so/');
     await waitFor(() => expect(requests).toHaveLength(1));
 
@@ -1556,28 +1545,12 @@ describe('admin research workspace flow', () => {
 
   it('재조사 후속 조회를 기다리는 동안 새 조사 요청이 시작되면 이전 retry의 polling·이동을 이어가지 않는다', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-    seedResearchWorkspace();
-    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-    const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-    const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-    const lookups: string[] = [];
     const retryLookup = Promise.withResolvers<unknown>();
-    const client = makeRaceClient({
-      requestJobs: { 'https://notion.so/': requestedRaceJob },
-      retryJobs: { 'job-1': retryRaceJob },
+    const { requests, retries, lookups } = renderResearchRace({
       jobs: { 'job-1': failedRaceJob, 'job-retry': retryLookup.promise, 'job-new': requestedRaceJob },
-      requests,
-      retries,
-      lookups,
     });
-    render(
-      <ApolloProvider client={client}>
-        <ProductResearchSection />
-      </ApolloProvider>
-    );
 
-    fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
-    await waitFor(() => expect(retries).toHaveLength(1));
+    await startFailedResearchRetry(retries);
 
     // retry 응답이 도착하면 새 job으로 전환하고 후속 조회를 시작한다.
     retries[0].respond();
@@ -1605,24 +1578,7 @@ describe('admin research workspace flow', () => {
   });
 
   it('역순 request→retry에서 최신 retry가 화면 전환을 소유하고 후착 요청 응답이 되돌리지 않는다', async () => {
-    seedResearchWorkspace();
-    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-    const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-    const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-    const lookups: string[] = [];
-    const client = makeRaceClient({
-      requestJobs: { 'https://notion.so/': requestedRaceJob },
-      retryJobs: { 'job-1': retryRaceJob },
-      jobs: { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedRaceJob },
-      requests,
-      retries,
-      lookups,
-    });
-    render(
-      <ApolloProvider client={client}>
-        <ProductResearchSection />
-      </ApolloProvider>
-    );
+    const { requests, retries } = renderResearchRace();
 
     // 실패 작업 A의 화면이 복원되면 새 조사 요청 C를 먼저 시작하고, 그 응답을 기다리는 동안 재조사 B를 시작한다.
     await screen.findByRole('button', { name: '실패 작업 재조사' });
@@ -1649,26 +1605,9 @@ describe('admin research workspace flow', () => {
   });
 
   it('재조사 응답을 기다리는 동안 같은 job route 재진입이 최신이면 이전 retry 응답이 초기화·이동하지 않는다', async () => {
-    seedResearchWorkspace();
-    const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-    const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-    const lookups: string[] = [];
-    const client = makeRaceClient({
-      requestJobs: { 'https://notion.so/': requestedRaceJob },
-      retryJobs: { 'job-1': retryRaceJob },
-      jobs: { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedRaceJob },
-      requests,
-      retries,
-      lookups,
-    });
-    const view = render(
-      <ApolloProvider client={client}>
-        <ProductResearchSection />
-      </ApolloProvider>
-    );
+    const { retries, lookups, client, view } = renderResearchRace({ searchParams: {} });
 
-    fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
-    await waitFor(() => expect(retries).toHaveLength(1));
+    await startFailedResearchRetry(retries);
 
     // 응답을 기다리는 동안 같은 job의 URL로 재진입한다.
     testGlobal().researchSearchParams = { researchJobId: 'job-1' };
@@ -1699,29 +1638,13 @@ describe('admin research workspace flow', () => {
   it.each([{ kind: 'network' }, { kind: 'GraphQL' }])(
     '최신 재조사의 실제 $kind 실패는 표시하고 새 요청 성공이 이전 오류를 해제한다',
     async ({ kind }) => {
-      seedResearchWorkspace();
-      testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-      const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-      const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-      const lookups: string[] = [];
       const requestedCompletedJob = { ...completedJob, id: 'job-new', officialUrl: 'https://notion.so/' };
-      const client = makeRaceClient({
-        requestJobs: { 'https://notion.so/': requestedRaceJob },
-        retryJobs: { 'job-1': retryRaceJob },
+      const { requests, retries } = renderResearchRace({
         jobs: { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedCompletedJob },
-        requests,
-        retries,
-        lookups,
       });
-      render(
-        <ApolloProvider client={client}>
-          <ProductResearchSection />
-        </ApolloProvider>
-      );
 
       // 실패한 작업 A의 재조사 B가 최신 세대에서 실패하면 현재 실패를 명확히 표시한다.
-      fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
-      await waitFor(() => expect(retries).toHaveLength(1));
+      await startFailedResearchRetry(retries);
       retries[0].fail(
         kind === 'GraphQL' ? new GraphQLError('현재 재조사 GraphQL 실패') : new Error('현재 재조사 network 실패')
       );
@@ -1752,29 +1675,13 @@ describe('admin research workspace flow', () => {
   it.each([{ kind: 'network' }, { kind: 'GraphQL' }])(
     '새 요청 성공 뒤 도착한 이전 재조사 $kind 실패는 최신 화면에 오류를 남기지 않는다',
     async ({ kind }) => {
-      seedResearchWorkspace();
-      testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-      const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-      const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-      const lookups: string[] = [];
       const requestedCompletedJob = { ...completedJob, id: 'job-new', officialUrl: 'https://notion.so/' };
-      const client = makeRaceClient({
-        requestJobs: { 'https://notion.so/': requestedRaceJob },
-        retryJobs: { 'job-1': retryRaceJob },
+      const { requests, retries } = renderResearchRace({
         jobs: { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedCompletedJob },
-        requests,
-        retries,
-        lookups,
       });
-      render(
-        <ApolloProvider client={client}>
-          <ProductResearchSection />
-        </ApolloProvider>
-      );
 
       // 재조사 B를 시작하고 응답을 기다리는 동안 새 요청 C가 B를 대체한 뒤 성공한다.
-      fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
-      await waitFor(() => expect(retries).toHaveLength(1));
+      await startFailedResearchRetry(retries);
       submitResearchRequest('https://notion.so/');
       await waitFor(() => expect(requests).toHaveLength(1));
       requests[0].respond();
@@ -1804,28 +1711,10 @@ describe('admin research workspace flow', () => {
   it.each([{ kind: 'network' }, { kind: 'GraphQL' }])(
     '최신 요청 응답 대기 중 도착한 이전 재조사 $kind 실패도 오류를 표시하지 않는다',
     async ({ kind }) => {
-      seedResearchWorkspace();
-      testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-      const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-      const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-      const lookups: string[] = [];
-      const client = makeRaceClient({
-        requestJobs: { 'https://notion.so/': requestedRaceJob },
-        retryJobs: { 'job-1': retryRaceJob },
-        jobs: { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedRaceJob },
-        requests,
-        retries,
-        lookups,
-      });
-      render(
-        <ApolloProvider client={client}>
-          <ProductResearchSection />
-        </ApolloProvider>
-      );
+      const { requests, retries } = renderResearchRace();
 
       // 재조사 B 대기 중 새 요청 C를 시작하고, C 응답 전에 B의 실패가 먼저 후착한다.
-      fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
-      await waitFor(() => expect(retries).toHaveLength(1));
+      await startFailedResearchRetry(retries);
       submitResearchRequest('https://notion.so/');
       await waitFor(() => expect(requests).toHaveLength(1));
       retries[0].fail(
@@ -1860,24 +1749,7 @@ describe('admin research workspace flow', () => {
   it.each([{ kind: 'network' }, { kind: 'GraphQL' }])(
     '역순 제출에서 최신 재조사의 $kind 실패는 표시되고 재조사 성공이 오류를 해제한다',
     async ({ kind }) => {
-      seedResearchWorkspace();
-      testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-      const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-      const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-      const lookups: string[] = [];
-      const client = makeRaceClient({
-        requestJobs: { 'https://notion.so/': requestedRaceJob },
-        retryJobs: { 'job-1': retryRaceJob },
-        jobs: { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedRaceJob },
-        requests,
-        retries,
-        lookups,
-      });
-      render(
-        <ApolloProvider client={client}>
-          <ProductResearchSection />
-        </ApolloProvider>
-      );
+      const { requests, retries } = renderResearchRace();
 
       // 요청 C를 먼저 보내고 재조사 B가 C를 대체한다.
       await screen.findByRole('button', { name: '실패 작업 재조사' });
@@ -1925,27 +1797,10 @@ describe('admin research workspace flow', () => {
   it.each([{ kind: 'network' }, { kind: 'GraphQL' }])(
     'route 재진입 뒤 도착한 이전 재조사 $kind 실패는 오류를 남기지 않고 편집을 보존한다',
     async ({ kind }) => {
-      seedResearchWorkspace();
-      const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-      const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-      const lookups: string[] = [];
-      const client = makeRaceClient({
-        requestJobs: { 'https://notion.so/': requestedRaceJob },
-        retryJobs: { 'job-1': retryRaceJob },
-        jobs: { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedRaceJob },
-        requests,
-        retries,
-        lookups,
-      });
-      const view = render(
-        <ApolloProvider client={client}>
-          <ProductResearchSection />
-        </ApolloProvider>
-      );
+      const { retries, lookups, client, view } = renderResearchRace({ searchParams: {} });
 
       // 저장된 job-1 화면에서 재조사 B를 시작한다.
-      fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
-      await waitFor(() => expect(retries).toHaveLength(1));
+      await startFailedResearchRetry(retries);
 
       // 응답을 기다리는 동안 같은 job의 URL로 재진입한다.
       testGlobal().researchSearchParams = { researchJobId: 'job-1' };
@@ -1984,25 +1839,10 @@ describe('admin research workspace flow', () => {
   it.each([{ kind: 'network' }, { kind: 'GraphQL' }])(
     '최신 요청의 실제 $kind 실패는 표시하고 같은 URL 재시도는 같은 키로 성공해 오류를 해제한다',
     async ({ kind }) => {
-      seedResearchWorkspace();
-      testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-      const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-      const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-      const lookups: string[] = [];
       const requestedCompletedJob = { ...completedJob, id: 'job-new', officialUrl: 'https://notion.so/' };
-      const client = makeRaceClient({
-        requestJobs: { 'https://notion.so/': requestedRaceJob },
-        retryJobs: { 'job-1': retryRaceJob },
+      const { requests } = renderResearchRace({
         jobs: { 'job-1': failedRaceJob, 'job-retry': retryRaceJob, 'job-new': requestedCompletedJob },
-        requests,
-        retries,
-        lookups,
       });
-      render(
-        <ApolloProvider client={client}>
-          <ProductResearchSection />
-        </ApolloProvider>
-      );
 
       // 실패한 작업 A 화면에서 새 요청 C가 최신 세대에서 실패하면 현재 실패를 명확히 표시한다.
       await screen.findByRole('button', { name: '실패 작업 재조사' });
@@ -2046,25 +1886,10 @@ describe('admin research workspace flow', () => {
     '재조사 $failure 실패와 이전 요청 도착(requestFirst=$requestFirst) 뒤 같은 URL의 새 action은 새 UUID를 쓴다',
     async ({ failure, requestFirst }) => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-      const stored = seedResearchWorkspace();
-      testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-      const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-      const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-      const lookups: string[] = [];
       const latestJob = { ...requestedRaceJob, id: 'job-latest', status: 'completed', result: null };
-      const client = makeRaceClient({
-        requestJobs: { 'https://notion.so/': requestedRaceJob },
-        retryJobs: { 'job-1': retryRaceJob },
+      const { stored, requests, retries, lookups } = renderResearchRace({
         jobs: { 'job-1': failedRaceJob, 'job-latest': latestJob },
-        requests,
-        retries,
-        lookups,
       });
-      render(
-        <ApolloProvider client={client}>
-          <ProductResearchSection />
-        </ApolloProvider>
-      );
 
       // 실패 작업 A에서 요청 C를 시작한 뒤, 재조사 B가 그 요청을 대체한다.
       await screen.findByRole('button', { name: '실패 작업 재조사' });
@@ -2140,25 +1965,10 @@ describe('admin research workspace flow', () => {
     '이전 action의 %s 후착은 최신 요청의 중복 전송 키를 해제하지 않는다',
     async staleOutcome => {
       const staleRetry = staleOutcome.startsWith('retry');
-      const stored = seedResearchWorkspace();
-      testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-      const requests: RaceActionCall<ResearchRequestVariables>[] = [];
-      const retries: RaceActionCall<ResearchRetryVariables>[] = [];
-      const lookups: string[] = [];
       const latestJob = { ...requestedRaceJob, id: 'job-latest', status: 'completed', result: null };
-      const client = makeRaceClient({
-        requestJobs: { 'https://notion.so/': requestedRaceJob },
-        retryJobs: { 'job-1': retryRaceJob },
+      const { stored, requests, retries, lookups } = renderResearchRace({
         jobs: { 'job-1': failedRaceJob, 'job-latest': latestJob },
-        requests,
-        retries,
-        lookups,
       });
-      render(
-        <ApolloProvider client={client}>
-          <ProductResearchSection />
-        </ApolloProvider>
-      );
       await screen.findByRole('button', { name: '실패 작업 재조사' });
       submitResearchRequest('https://notion.so/');
       await waitFor(() => expect(requests).toHaveLength(1));

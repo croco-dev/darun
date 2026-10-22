@@ -29,11 +29,12 @@ const environment = {
   CURSOR_SIGNATURE_SECRET: 'verification-cursor-secret',
 };
 
-function run(args, networkGuard) {
+function run(args, networkGuard, input) {
   const result = spawnSync(process.execPath, ['--require', networkGuard, ...args], {
     cwd: root,
     env: environment,
-    stdio: 'inherit',
+    stdio: input === undefined ? 'inherit' : ['pipe', 'inherit', 'inherit'],
+    input,
     timeout: 30000,
   });
   if (result.error) throw result.error;
@@ -85,15 +86,11 @@ async function main() {
     const context = await loadContext(path.join(providerRoot, 'codegen.ts'));
     context.updateConfig({ cwd: providerRoot });
     const documents = await context.loadDocuments(context.getConfig().documents);
-    const documentsFile = path.join(directory, 'consumer-documents.json');
-    writeFileSync(
-      documentsFile,
-      JSON.stringify(
-        documents.map(({ location, document }) => {
-          if (!document) throw new Error(`Codegen document was not parsed: ${location}`);
-          return { location, source: print(document) };
-        })
-      )
+    const consumerDocuments = JSON.stringify(
+      documents.map(({ location, document }) => {
+        if (!document) throw new Error(`Codegen document was not parsed: ${location}`);
+        return { location, source: print(document) };
+      })
     );
     const outfile = path.join(directory, 'schema.cjs');
     await build({
@@ -112,7 +109,7 @@ async function main() {
       plugins,
       logLevel: 'error',
     });
-    run([outfile, documentsFile, ...process.argv.slice(2)], networkGuard);
+    run([outfile, ...process.argv.slice(2)], networkGuard, consumerDocuments);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

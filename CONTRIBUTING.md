@@ -338,11 +338,14 @@ UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어�
 PR을 올리기 전에 아래 명령이 모두 통과해야 합니다.
 
 ```bash
+pnpm audit --audit-level=critical  # Critical 의존성 취약점 검사
 pnpm lint           # ESLint + Prettier 검사
 pnpm typecheck      # TypeScript 타입 검사
 pnpm test           # Vitest 단위 테스트
 pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 ```
+
+Next.js 버전은 workspace catalog와 override를 함께 갱신하며 모든 웹 앱은 catalog를 사용합니다. OpenTelemetry API는 웹과 서버 SDK의 공통 호환 범위인 `1.9.1`로 통합합니다. 서로 다른 peer 버전으로 Drizzle 타입이 중복 생성되는 것을 방지하며, Lambda의 Sentry·profiling SDK `10.38.0`과 기존 서버 계측 설정은 유지합니다. 의존성 취약점은 감사 기준을 낮추거나 제외하지 않고 수정 버전과 잠금 파일을 함께 갱신합니다.
 
 포맷 자동 수정은 다음 명령을 사용합니다.
 

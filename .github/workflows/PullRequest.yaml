@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: ["trunk"]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     # MongoDB 8은 Linux 6.19에서 기동하지 않아 호환 실행기를 고정합니다.
