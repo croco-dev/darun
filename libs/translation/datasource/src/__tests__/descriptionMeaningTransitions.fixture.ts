@@ -34,8 +34,14 @@ export const meaningChanges = {
     english: ['Body\n\n```\nleft  right\n```', 'Body\n\n```\nleft right\n```'],
   },
   indentedIndentation: {
-    source: ['본문\n\n    if ready:\n        send()\n    finish()', '본문\n\n    if ready:\n        send()\n        finish()'],
-    english: ['Body\n\n    if ready:\n        send()\n    finish()', 'Body\n\n    if ready:\n        send()\n        finish()'],
+    source: [
+      '본문\n\n    if ready:\n        send()\n    finish()',
+      '본문\n\n    if ready:\n        send()\n        finish()',
+    ],
+    english: [
+      'Body\n\n    if ready:\n        send()\n    finish()',
+      'Body\n\n    if ready:\n        send()\n        finish()',
+    ],
   },
   indentedLineBreak: {
     source: ['본문\n\n    prepare() finish()', '본문\n\n    prepare()\n    finish()'],
@@ -98,12 +104,12 @@ export const meaningChanges = {
     english: ['> Introduction\n> > Warning', '> Introduction\n> Warning'],
   },
   inlineCodeSpaceReduction: {
-    source: ['본문 `printf \'a  b\'`', '본문 `printf \'a b\'`'],
-    english: ['Body `printf \'a  b\'`', 'Body `printf \'a b\'`'],
+    source: ["본문 `printf 'a  b'`", "본문 `printf 'a b'`"],
+    english: ["Body `printf 'a  b'`", "Body `printf 'a b'`"],
   },
   inlineCodeSpaceIncrease: {
-    source: ['본문 `printf \'a b\'`', '본문 `printf \'a  b\'`'],
-    english: ['Body `printf \'a b\'`', 'Body `printf \'a  b\'`'],
+    source: ["본문 `printf 'a b'`", "본문 `printf 'a  b'`"],
+    english: ["Body `printf 'a b'`", "Body `printf 'a  b'`"],
   },
   unorderedListFlattening: {
     source: ['- 소개\n  - 주의', '- 소개\n- 주의'],
@@ -131,7 +137,10 @@ export const meaningChanges = {
   },
   listParentMovement: {
     source: ['- 소개\n  - 주의\n- 기능\n  - 조건', '- 소개\n- 주의\n  - 기능\n  - 조건'],
-    english: ['- Introduction\n  - Warning\n- Feature\n  - Condition', '- Introduction\n- Warning\n  - Feature\n  - Condition'],
+    english: [
+      '- Introduction\n  - Warning\n- Feature\n  - Condition',
+      '- Introduction\n- Warning\n  - Feature\n  - Condition',
+    ],
   },
   listParagraphLiteral: {
     source: ['3. 소개\n   7. 주의', '03) 소개\n    07) 주의'],
@@ -224,7 +233,10 @@ export const meaningPreservingEdits = {
     english: 'Introduction\n![대체](<https://example.com/a.png>)',
   },
   escapedCodeLinkSpacing: {
-    source: ['\\<code>  [안내](<https://example.com/a>)  \\</code>', '\\<code> [안내](<https://example.com/a>) \\</code>'],
+    source: [
+      '\\<code>  [안내](<https://example.com/a>)  \\</code>',
+      '\\<code> [안내](<https://example.com/a>) \\</code>',
+    ],
     english: '\\<code>  [Guide](<https://example.com/a>)  \\</code>',
   },
   escapedCodeReferenceSoftNewline: {
@@ -239,16 +251,16 @@ export const meaningPreservingEdits = {
     english: '> Introduction `left\n> right`',
   },
   textBeforeInlineCodeNewline: {
-    source: ['본문\n`printf \'a  b\'` 조건', '본문 `printf \'a  b\'` 조건'],
-    english: 'Body\n`printf \'a  b\'` Condition',
+    source: ["본문\n`printf 'a  b'` 조건", "본문 `printf 'a  b'` 조건"],
+    english: "Body\n`printf 'a  b'` Condition",
   },
   textOutsideInlineCodeSpacing: {
-    source: ['본문  `printf \'a  b\'`  조건', '본문 `printf \'a  b\'` 조건'],
-    english: 'Body  `printf \'a  b\'`  Condition',
+    source: ["본문  `printf 'a  b'`  조건", "본문 `printf 'a  b'` 조건"],
+    english: "Body  `printf 'a  b'`  Condition",
   },
   inlineCodeDelimiters: {
-    source: ['본문 `printf \'a  b\'`', '본문 ``printf \'a  b\'``'],
-    english: 'Body `printf \'a  b\'`',
+    source: ["본문 `printf 'a  b'`", "본문 ``printf 'a  b'``"],
+    english: "Body `printf 'a  b'`",
   },
   unorderedListMarkers: {
     source: ['- 소개\n  - 주의', '* 소개\n  * 주의'],
