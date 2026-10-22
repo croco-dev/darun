@@ -16,11 +16,19 @@ export function AppCard({ id, name, description, iconUrl, tier }: AppCardProps) 
   const cleanDescription = description?.replace(/\s+/g, ' ').trim();
 
   return (
-    <Link href={`/apps/${id}`} className="group block h-full min-w-0">
+    <Link href={`/apps/${id}`} aria-label={`${name} 상세 보기`} className="group block h-full min-w-0">
       <article className="flex h-full items-center gap-3 rounded-[var(--radius-glass-panel)] border border-border bg-card p-3 shadow-sm transition-colors hover:bg-accent/40 sm:p-4">
         <div className="flex size-14 shrink-0 items-center justify-center rounded-[0.75rem] border border-border bg-background p-1.5 sm:size-15">
           {iconUrl ? (
-            <img src={getHighResImage(iconUrl)} alt={name} className="size-full rounded-[20%] object-contain" />
+            <img
+              src={getHighResImage(iconUrl, 120)}
+              alt=""
+              width={60}
+              height={60}
+              loading="lazy"
+              decoding="async"
+              className="size-full rounded-[20%] object-contain"
+            />
           ) : (
             <div className="flex size-full items-center justify-center rounded-[20%] bg-muted text-[10px] text-muted-foreground">
               No Icon
