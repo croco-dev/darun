@@ -1,5 +1,6 @@
 import {
-  GenerateProductDescription,
+  GenerateProductDescriptionCandidate,
+  type GenerateProductDescriptionCandidateResult,
   GetProduct,
   type Product,
   type ProductDescriptionJobEntity,
@@ -64,7 +65,7 @@ function withWorkerDeadline<T>(
 export class ProductDescriptionJobService {
   constructor(
     private readonly getProductUseCase: GetProduct,
-    private readonly generateProductDescriptionUseCase: GenerateProductDescription,
+    private readonly generateProductDescriptionUseCase: GenerateProductDescriptionCandidate,
     @Inject(ProductDescriptionJobRepositoryToken)
     private readonly productDescriptionJobRepository?: ProductDescriptionJobRepository,
     private readonly productDescriptionQueueService?: ProductDescriptionQueueService
@@ -155,23 +156,15 @@ export class ProductDescriptionJobService {
     if (!job) {
       throw new Error(`존재하지 않는 AI 소개 생성 작업입니다: ${jobId}`);
     }
-    // 재시도는 failed 한정: in_progress lease 소유권을 건드리지 않고
-    // 조건부 상태 전이로만 pending에 복귀한다. 레거시 repository가
-    // claimJobStatus 없이 updateJobStatus만 가진 경우에도 동작한다.
-    // 소유권을 잃은 pending 재진입(재전송 경쟁)은 업데이트 없이 큐로만 보낸다.
+    if ((job.attemptCount ?? 0) >= 5) {
+      throw new Error('AI 소개 생성 작업의 최대 시도 횟수(5회)를 초과했습니다.');
+    }
     if (job.status === 'failed') {
-      const updatedJob =
-        typeof this.productDescriptionJobRepository.claimJobStatus === 'function'
-          ? await this.productDescriptionJobRepository.claimJobStatus(jobId, ['failed'], 'pending', {
-              message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
-              error: null,
-              appliedAt: null,
-            })
-          : await this.productDescriptionJobRepository.updateJobStatus(jobId, 'pending', {
-              message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
-              error: null,
-              appliedAt: null,
-            });
+      const updatedJob = await this.productDescriptionJobRepository.claimJobStatus(jobId, ['failed'], 'pending', {
+        message: 'AI 소개 생성 작업이 재시도 대기열에 등록되었습니다.',
+        error: null,
+        appliedAt: null,
+      });
       if (!updatedJob) {
         throw new Error(`재시도 조건이 만료된 AI 소개 생성 작업입니다: ${jobId}`);
       }
@@ -225,8 +218,7 @@ export class ProductDescriptionJobService {
     const ownedToken = claim.leaseToken ?? leaseToken;
 
     try {
-      type CandidateResult = Awaited<ReturnType<GenerateProductDescription['execute']>>;
-      const candidateResult = await withWorkerDeadline<CandidateResult>(
+      const candidateResult = await withWorkerDeadline<GenerateProductDescriptionCandidateResult>(
         signal =>
           this.generateProductDescriptionUseCase.execute({
             productId,

@@ -65,7 +65,3 @@ export class GenerateProductDescriptionCandidate {
     };
   }
 }
-
-// Alias for backwards compatibility
-export const GenerateProductDescription = GenerateProductDescriptionCandidate;
-export type GenerateProductDescription = GenerateProductDescriptionCandidate;

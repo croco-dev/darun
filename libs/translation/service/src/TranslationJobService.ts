@@ -317,12 +317,7 @@ export class TranslationJobService {
         ...(options?.signal ? { signal: options.signal } : {}),
       });
 
-      // lease fence: 번역 row 쓰기 직전 소유권을 재확인한다.
-      // 구 attempt의 늦은 쓰기는 여기서 거부된다.
-      // findJobById 재확인은 leaseToken 회전(reclaim)까지 보지만
-      // 토큰 교체와 row 쓰기 사이의 TOCTOU를 완전히 닫지는 못한다.
-      // 완전한 원자성은 DB 쓰기 조건(lease 조건부 upsert)으로만 닫히며,
-      // 여기서는 메모리/테스트 더블 경계에서 가능한 좁은 방어를 둔다.
+      // Early discard avoids unnecessary source reads; commitTranslations owns the atomic fence.
       if (jobId && options?.leaseToken !== undefined && this.translationJobRepository) {
         const current = await this.translationJobRepository.findJobById(jobId);
         if (!current || current.leaseToken !== options.leaseToken) {
@@ -483,25 +478,14 @@ export class TranslationJobService {
         }
       }
 
-      // lease 조건 안의 커밋 구간: 번역 행 쓰기 직전 소유권을 한 번 더
-      // 재확인한다. LLM 호출·스냅샷 재조회 사이에 lease가 회전했으면
-      // 이 attempt의 늦은 쓰기를 여기서 거부해 row 0개를 보장한다.
-      if (jobId && options?.leaseToken !== undefined && this.translationJobRepository) {
-        const guard = await this.translationJobRepository.findJobById(jobId);
-        if (!guard || guard.leaseToken !== options.leaseToken || guard.status !== 'in_progress') {
-          console.warn(
-            `[TranslationJobService] Lease guard before commit failed for job ${jobId}; discarding translation rows.`
-          );
+      if (jobId) {
+        if (!options?.leaseToken || !this.translationJobRepository) {
           return { productId, leaseLost: true };
         }
-      }
-
-      if (typeof this.translationService.upsertTranslations === 'function') {
-        await this.translationService.upsertTranslations(rows);
+        const committed = await this.translationJobRepository.commitTranslations(jobId, options.leaseToken, rows);
+        if (!committed) return { productId, leaseLost: true };
       } else {
-        for (const row of rows) {
-          await this.translationService.upsertTranslation(row);
-        }
+        await this.translationService.upsertTranslations(rows);
       }
 
       completedModel = bundleResult.model;
@@ -548,43 +532,7 @@ export class TranslationJobService {
       };
     }
 
-    // 반복 발행 동기화는 중복 intent를 만들지 않는다: 같은 entity·locale의
-    // 활성(pending/in_progress) job이 있으면 기존 intent를 재사용하고,
-    // pending 재전송 시도 결과를 그대로 보고한다. in_progress 재사용은
-    // 이미 실행 중인 attempt가 있으므로 전송하지 않고 queued=true로 둔다.
-    if (typeof this.translationJobRepository.findActiveJob === 'function') {
-      const active = await this.translationJobRepository.findActiveJob({
-        entityType: 'Product',
-        entityId: productId,
-        locale: 'en',
-      });
-      if (active) {
-        if (active.status === 'pending') {
-          const queued = await this.sendToQueue({
-            jobId: active.id,
-            entityType: 'Product',
-            entityId: productId,
-          });
-          return {
-            id: active.id,
-            entityType: 'Product',
-            entityId: productId,
-            status: active.status,
-            message: active.message,
-            queued,
-          };
-        }
-        return {
-          id: active.id,
-          entityType: 'Product',
-          entityId: productId,
-          status: active.status,
-          message: active.message,
-          queued: true,
-        };
-      }
-    }
-
+    // createJob serializes active-intent lookup and creation in the repository.
     const job = await this.translationJobRepository.createJob({
       entityType: 'Product',
       entityId: productId,
@@ -595,11 +543,13 @@ export class TranslationJobService {
 
     // 큐 전송 실패는 pending으로 남겨 recovery tick이 재발견한다.
     // setImmediate 폴백을 제거하고, 전송 성공 여부만 정직하게 보고한다.
-    const queued = await this.sendToQueue({
-      jobId: job.id,
-      entityType: 'Product',
-      entityId: productId,
-    });
+    const queued =
+      job.status === 'in_progress' ||
+      (await this.sendToQueue({
+        jobId: job.id,
+        entityType: 'Product',
+        entityId: productId,
+      }));
 
     return {
       id: job.id,
@@ -638,29 +588,25 @@ export class TranslationJobService {
     if (!job) {
       throw new Error(`존재하지 않는 번역 작업입니다: ${jobId}`);
     }
-    // 재시도는 failed 한정: in_progress lease 소유권을 건드리지 않고
-    // 조건부 상태 전이로만 pending에 복귀한다. 레거시 repository가
-    // claimJobStatus 없이 updateJobStatus만 가진 경우에도 동작한다.
-    // 소유권을 잃은 pending 재진입(재전송 경쟁)은 업데이트 없이 큐로만 보낸다.
+    if ((job.attemptCount ?? 0) >= 5) {
+      throw new Error('번역 작업의 최대 시도 횟수(5회)를 초과했습니다.');
+    }
+    // Retry participates in the same entity lock as new intent creation.
     if (job.status === 'failed') {
-      const updatedJob =
-        typeof this.translationJobRepository.claimJobStatus === 'function'
-          ? await this.translationJobRepository.claimJobStatus(jobId, ['failed'], 'pending', {
-              message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
-              error: null,
-            })
-          : await this.translationJobRepository.updateJobStatus(jobId, 'pending', {
-              message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
-              error: null,
-            });
+      const updatedJob = await this.translationJobRepository.claimJobStatus(jobId, ['failed'], 'pending', {
+        message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
+        error: null,
+      });
       if (!updatedJob) {
         throw new Error(`재시도 조건이 만료된 번역 작업입니다: ${jobId}`);
       }
-      const queuedAfterRetry = await this.sendToQueue({
-        jobId: job.id,
-        entityType: job.entityType as 'Product' | 'Magazine' | 'ProductFeature',
-        entityId: job.entityId,
-      });
+      const queuedAfterRetry =
+        updatedJob.status === 'in_progress' ||
+        (await this.sendToQueue({
+          jobId: updatedJob.id,
+          entityType: updatedJob.entityType as 'Product' | 'Magazine' | 'ProductFeature',
+          entityId: updatedJob.entityId,
+        }));
       return { ...updatedJob, queued: queuedAfterRetry };
     }
     if (job.status === 'pending') {

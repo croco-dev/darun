@@ -6,7 +6,7 @@ import {
   type UpdateProductDescriptionJobOptions,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { and, asc, desc, eq, inArray, isNull, lte, or, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, lt, lte, or, sql, type SQL } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { type ProductDescriptionJobRow, productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
 
@@ -106,8 +106,11 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       id,
       nextStatus,
       options,
-      and(eq(productDescriptionJobs.id, id), inArray(productDescriptionJobs.status, expectedStatuses)) ??
+      and(
         eq(productDescriptionJobs.id, id),
+        inArray(productDescriptionJobs.status, expectedStatuses),
+        nextStatus === 'pending' ? lt(productDescriptionJobs.attemptCount, 5) : undefined
+      )!,
       false
     );
   }
@@ -125,11 +128,13 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
         message: 'LLM으로 AI 소개를 생성하고 있습니다...',
         leaseToken: input.leaseToken,
         leaseUntil: input.leaseUntil,
+        attemptCount: sql`${productDescriptionJobs.attemptCount} + 1`,
         updatedAt: now,
       })
       .where(
         and(
           eq(productDescriptionJobs.id, input.jobId),
+          lt(productDescriptionJobs.attemptCount, 5),
           or(
             eq(productDescriptionJobs.status, 'pending'),
             and(
@@ -141,19 +146,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       )
       .returning();
     const row = rows[0];
-    if (!row) {
-      return null;
-    }
-    // attempt 소유권은 DB 조건으로 분리한다: lease 선점에 성공한
-    // attempt만 attemptCount를 1 증가시킨다.
-    const bumped = await this.db
-      .update(productDescriptionJobs)
-      .set({ attemptCount: row.attemptCount + 1, updatedAt: new Date() })
-      .where(
-        and(eq(productDescriptionJobs.id, input.jobId), eq(productDescriptionJobs.leaseToken, input.leaseToken))
-      )
-      .returning();
-    return this.toEntity(bumped[0] ?? row);
+    return row ? this.toEntity(row) : null;
   }
 
   async completeJobLease(
@@ -179,6 +172,28 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
 
   async findRecoverableJobs(input: { now: Date; limit?: number }): Promise<ProductDescriptionJobEntity[]> {
     const limit = Math.min(Math.max(input.limit ?? 50, 1), 200);
+    await this.db
+      .update(productDescriptionJobs)
+      .set({
+        status: 'failed',
+        message: '소개 생성 작업의 최대 시도 횟수를 초과했습니다.',
+        error: 'Maximum attempts (5) exhausted',
+        leaseToken: null,
+        leaseUntil: null,
+        updatedAt: input.now,
+      })
+      .where(
+        and(
+          sql`${productDescriptionJobs.attemptCount} >= 5`,
+          or(
+            eq(productDescriptionJobs.status, 'pending'),
+            and(
+              eq(productDescriptionJobs.status, 'in_progress'),
+              or(isNull(productDescriptionJobs.leaseUntil), lte(productDescriptionJobs.leaseUntil, input.now))
+            )
+          )
+        )
+      );
     try {
       const rows = await this.db
         .select()

@@ -43,7 +43,7 @@ import {
   CreateProduct,
   DeleteProductScreenshot,
   EditProduct,
-  GenerateProductDescription,
+  GenerateProductDescriptionCandidate,
   GetProduct,
   GetProductTags,
   Product as DomainProduct,
@@ -143,7 +143,7 @@ describe('ProductPublishMutationResolver', () => {
         createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
         createMockUseCase<UpdateProductScreenshot>() as unknown as UpdateProductScreenshot,
         createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
-        createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
+        createMockUseCase<GenerateProductDescriptionCandidate>() as unknown as GenerateProductDescriptionCandidate,
         publishProductUseCase as unknown as PublishProduct,
         indexProductUseCase as unknown as IndexProduct,
         translationJobService
@@ -228,7 +228,7 @@ describe('ProductPublishMutationResolver', () => {
         createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
         createMockUseCase<UpdateProductScreenshot>() as unknown as UpdateProductScreenshot,
         createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
-        createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
+        createMockUseCase<GenerateProductDescriptionCandidate>() as unknown as GenerateProductDescriptionCandidate,
         publishProductUseCase as unknown as PublishProduct,
         indexProductUseCase as unknown as IndexProduct,
         translationJobService
@@ -292,7 +292,7 @@ describe('ProductPublishMutationResolver', () => {
         createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
         createMockUseCase<UpdateProductScreenshot>() as unknown as UpdateProductScreenshot,
         createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
-        createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
+        createMockUseCase<GenerateProductDescriptionCandidate>() as unknown as GenerateProductDescriptionCandidate,
         createMockUseCase<PublishProduct>() as unknown as PublishProduct,
         createMockUseCase<IndexProduct>() as unknown as IndexProduct,
         translation
@@ -348,7 +348,7 @@ describe('ProductPublishMutationResolver', () => {
         createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
         createMockUseCase<UpdateProductScreenshot>() as unknown as UpdateProductScreenshot,
         createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
-        createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
+        createMockUseCase<GenerateProductDescriptionCandidate>() as unknown as GenerateProductDescriptionCandidate,
         createMockUseCase<PublishProduct>() as unknown as PublishProduct,
         indexUseCase as unknown as IndexProduct,
         translation
@@ -412,7 +412,7 @@ describe('ProductPublishMutationResolver', () => {
         createMockUseCase<UpdateProductLink>() as unknown as UpdateProductLink,
         createMockUseCase<UpdateProductScreenshot>() as unknown as UpdateProductScreenshot,
         createMockUseCase<RegisterProductCompany>() as unknown as RegisterProductCompany,
-        createMockUseCase<GenerateProductDescription>() as unknown as GenerateProductDescription,
+        createMockUseCase<GenerateProductDescriptionCandidate>() as unknown as GenerateProductDescriptionCandidate,
         createMockUseCase<PublishProduct>() as unknown as PublishProduct,
         createMockUseCase<IndexProduct>() as unknown as IndexProduct,
         mockTranslationJobService

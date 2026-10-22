@@ -3,7 +3,7 @@ import {
   AddProductLink,
   AddProductScreenshot,
   DeleteProductScreenshot,
-  GenerateProductDescription,
+  GenerateProductDescriptionCandidate,
   GetProduct,
   RegisterProductCompany,
   UpdateProductLink,
@@ -56,7 +56,7 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
     protected readonly updateProductLinkUseCase: UpdateProductLink,
     protected readonly updateProductScreenshotUseCase: UpdateProductScreenshot,
     protected readonly registerProductCompanyUseCase: RegisterProductCompany,
-    protected readonly generateProductDescriptionUseCase: GenerateProductDescription,
+    protected readonly generateProductDescriptionUseCase: GenerateProductDescriptionCandidate,
     protected readonly productDescriptionJobService?: ProductDescriptionJobService
   ) {
     super(

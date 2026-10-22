@@ -183,6 +183,12 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
    배포 명령: `sst deploy --stage prod`
    이때 `RUNNING_ENV=prod` 값은 Sentry 환경 분류와 Cloudinary 업로드 폴더 규칙에 영향을 주므로 그대로 유지해야 합니다.
 
+## 비동기 작업 복구
+
+SST의 `JobRecoveryTick`은 매분 번역·AI 소개·리서치 작업의 복구 handler를 실행하며, 세 작업 큐에 대한 `sqs:SendMessage` 권한과 큐 URL을 전달합니다. 번역 결과는 작업 행을 잠근 뒤 lease를 다시 확인한 같은 트랜잭션에서만 저장합니다. 동일 대상·종류·언어의 활성 번역 작업은 중복 생성하지 않으며, 번역·소개 작업은 수동 재시도를 포함해 최대 5회 시도합니다.
+
+격리 PostgreSQL 주소를 `W4_DATABASE_URL`에 지정하고 `W4_PG=1 pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W4JobLeaseRecovery.pg.test.ts`로 만료된 lease, 잠금 대기 중 만료, 병렬 생성, 재시도 상한을 검증합니다. 운영 DB를 이 회귀 검증에 사용하지 않습니다. 공개 GraphQL mutation 이름은 유지하며 내부 소개 생성 호환 alias는 사용하지 않습니다.
+
 ## UX 플로 기능 출시 절차 (VISUAL_FLOW_WRITES_ENABLED)
 
 UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어합니다. 값이 정확히 `true`일 때만 플로 생성·수정·삭제 mutation이 동작하고, 값이 없거나 `false`, 그 외 어떤 값이어도 Admin 권한 검사를 통과한 뒤 DB 작업 전에 `product-flow/writes-disabled` 오류로 거절합니다. 조회와 "플로가 참조 중인 스크린샷 삭제·플랫폼 변경 거절" 방어는 flag 값과 무관하게 항상 동작합니다. 기본값은 `false`이며 `.env.sample`, `sst.config.ts`, GitHub Actions `Deploy.yaml` 모두 `false`를 전달합니다.

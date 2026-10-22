@@ -154,10 +154,9 @@ describe('W10 lease abort fix: translation worker', () => {
       status: 'pending',
       message: '번역 작업이 대기열에 등록되었습니다.',
     };
-    const createJob = vi.fn();
+    const createJob = vi.fn().mockResolvedValue(active);
     const queue = { sendJob: vi.fn().mockResolvedValue(true) };
     const repository = {
-      findActiveJob: vi.fn().mockResolvedValue(active),
       createJob,
       findJobs: vi.fn(),
     };
@@ -176,7 +175,7 @@ describe('W10 lease abort fix: translation worker', () => {
     const second = await service.requestProductTranslationJob(product.id);
     expect(first.id).toBe('job-active');
     expect(second.id).toBe('job-active');
-    expect(createJob).not.toHaveBeenCalled();
+    expect(createJob).toHaveBeenCalledTimes(2);
     expect(queue.sendJob).toHaveBeenCalledTimes(2);
     expect(queue.sendJob).toHaveBeenCalledWith({
       jobId: 'job-active',
@@ -199,10 +198,9 @@ describe('W10 lease abort fix: translation worker', () => {
       status: 'in_progress',
       message: '진행 중',
     };
-    const createJob = vi.fn();
+    const createJob = vi.fn().mockResolvedValue(active);
     const queue = { sendJob: vi.fn() };
     const repository = {
-      findActiveJob: vi.fn().mockResolvedValue(active),
       createJob,
       findJobs: vi.fn(),
     };
@@ -220,7 +218,7 @@ describe('W10 lease abort fix: translation worker', () => {
     const result = await service.requestProductTranslationJob(product.id);
     expect(result.id).toBe('job-running');
     expect(result.queued).toBe(true);
-    expect(createJob).not.toHaveBeenCalled();
+    expect(createJob).toHaveBeenCalledOnce();
     expect(queue.sendJob).not.toHaveBeenCalled();
   });
 });

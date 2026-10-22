@@ -17,12 +17,11 @@ vi.mock('typedi', async importOriginal => ({
 let TranslationJobService: typeof import('@darun/translation-service').TranslationJobService;
 let TRANSLATABLE_FIELD_METADATA: typeof import('@darun/translation-service').TRANSLATABLE_FIELD_METADATA;
 
-type UpsertParams = Parameters<TranslationService['upsertTranslation']>[0];
-
 const createTranslationService = () =>
   ({
     upsertTranslation: vi.fn<TranslationService['upsertTranslation']>().mockResolvedValue(undefined),
-  }) satisfies Pick<TranslationService, 'upsertTranslation'>;
+    upsertTranslations: vi.fn<TranslationService['upsertTranslations']>().mockResolvedValue(undefined),
+  }) satisfies Pick<TranslationService, 'upsertTranslation' | 'upsertTranslations'>;
 
 type CustomLlmImplementation = (modelOrMessages: unknown, maybeMessages?: unknown) => Promise<{ content: string }>;
 
@@ -111,11 +110,10 @@ describe('TranslationJobService', () => {
 
     await service.translateEntity('Product', product.id, [' name ', 'summary', 'name', 'description']);
 
-    expect(translationService.upsertTranslation).toHaveBeenCalledTimes(3);
-    expect(translationService.upsertTranslation.mock.calls.map(([params]: [UpsertParams]) => params.field)).toEqual([
-      'name',
-      'summary',
-      'description',
+    expect(translationService.upsertTranslations).toHaveBeenCalledWith([
+      expect.objectContaining({ entityId: product.id, field: 'name', value: 'en:제품명' }),
+      expect.objectContaining({ entityId: product.id, field: 'summary', value: 'en:요약' }),
+      expect.objectContaining({ entityId: product.id, field: 'description', value: 'en:설명' }),
     ]);
   });
 
@@ -132,10 +130,10 @@ describe('TranslationJobService', () => {
 
     await service.translateEntity('Magazine', magazine.id, ['title', 'summary', 'content']);
 
-    expect(translationService.upsertTranslation.mock.calls.map(([params]: [UpsertParams]) => params.field)).toEqual([
-      'title',
-      'summary',
-      'content',
+    expect(translationService.upsertTranslations).toHaveBeenCalledWith([
+      expect.objectContaining({ entityId: magazine.id, field: 'title', value: 'en:매거진 제목' }),
+      expect.objectContaining({ entityId: magazine.id, field: 'summary', value: 'en:매거진 요약' }),
+      expect.objectContaining({ entityId: magazine.id, field: 'content', value: 'en:매거진 본문' }),
     ]);
   });
 
@@ -173,15 +171,15 @@ describe('TranslationJobService', () => {
 
     await service.translateEntity('Product', product.id, ['tagline']);
 
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+    expect(translationService.upsertTranslations).toHaveBeenCalledWith([
       expect.objectContaining({
         entityType: 'Product',
         entityId: product.id,
         locale: 'en',
         field: 'tagline',
         value: 'en:한 줄 소개',
-      })
-    );
+      }),
+    ]);
     delete TRANSLATABLE_FIELD_METADATA.Product.fields.tagline;
   });
 
@@ -197,25 +195,22 @@ describe('TranslationJobService', () => {
 
     await service.translateEntity('ProductFeature', feature.id, ['name', 'summary']);
 
-    expect(translationService.upsertTranslation).toHaveBeenCalledTimes(2);
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+    expect(translationService.upsertTranslations).toHaveBeenCalledWith([
       expect.objectContaining({
         entityType: 'ProductFeature',
         entityId: feature.id,
         locale: 'en',
         field: 'name',
         value: 'en:핵심 기능',
-      })
-    );
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      }),
       expect.objectContaining({
         entityType: 'ProductFeature',
         entityId: feature.id,
         locale: 'en',
         field: 'summary',
         value: 'en:기능 요약 설명',
-      })
-    );
+      }),
+    ]);
   });
 
   it('translates product with features in a single contextual JSON LLM call', async () => {
@@ -261,51 +256,45 @@ describe('TranslationJobService', () => {
     await service.translateProductWithFeatures(product.id);
 
     expect(llmClient.completion).toHaveBeenCalledTimes(1);
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+    expect(translationService.upsertTranslations).toHaveBeenCalledOnce();
+    expect(translationService.upsertTranslations).toHaveBeenCalledWith([
       expect.objectContaining({
         entityType: 'Product',
         entityId: product.id,
         locale: 'en',
         field: 'name',
         value: 'Toss',
-      })
-    );
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      }),
       expect.objectContaining({
         entityType: 'Product',
         entityId: product.id,
         locale: 'en',
         field: 'summary',
         value: 'All-in-one finance platform',
-      })
-    );
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      }),
       expect.objectContaining({
         entityType: 'Product',
         entityId: product.id,
         locale: 'en',
         field: 'description',
         value: '<p>Simple money transfer and payments</p>',
-      })
-    );
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      }),
       expect.objectContaining({
         entityType: 'ProductFeature',
         entityId: 'feat-1',
         locale: 'en',
         field: 'name',
         value: 'Easy Transfer',
-      })
-    );
-    expect(translationService.upsertTranslation).toHaveBeenCalledWith(
+      }),
       expect.objectContaining({
         entityType: 'ProductFeature',
         entityId: 'feat-1',
         locale: 'en',
         field: 'summary',
         value: 'Free money transfers',
-      })
-    );
+      }),
+    ]);
+    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
   });
 
   it('fails fast and throws descriptive error when LLM completion fails without cascading fallback', async () => {
@@ -415,7 +404,7 @@ describe('TranslationJobService', () => {
         createdAt: now,
         updatedAt: now,
       }),
-      updateJobStatus: vi.fn().mockResolvedValue({
+      claimJobStatus: vi.fn().mockResolvedValue({
         id: 'job-failed',
         entityType: 'Product',
         entityId: 'prod-123',
@@ -450,7 +439,7 @@ describe('TranslationJobService', () => {
     const result = await service.retryProductTranslationJob('job-failed');
 
     expect(mockRepo.findJobById).toHaveBeenCalledWith('job-failed');
-    expect(mockRepo.updateJobStatus).toHaveBeenCalledWith('job-failed', 'pending', {
+    expect(mockRepo.claimJobStatus).toHaveBeenCalledWith('job-failed', ['failed'], 'pending', {
       message: 'LLM 번역 작업이 재시도 대기열에 등록되었습니다.',
       error: null,
     });

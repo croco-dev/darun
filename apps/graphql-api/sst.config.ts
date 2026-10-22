@@ -119,6 +119,30 @@ export default $config({
 
     productResearchQueue.subscribe(productResearchWorker.arn);
 
+    new sst.aws.Cron('JobRecoveryTick', {
+      schedule: 'rate(1 minute)',
+      job: {
+        handler: 'job-recovery-tick.handler',
+        bundle: '.build/lambda',
+        runtime: 'nodejs22.x',
+        architecture: 'arm64',
+        timeout: '1 minute',
+        logging: { retention: '1 week' },
+        permissions: [
+          {
+            actions: ['sqs:SendMessage'],
+            resources: [translationQueue.arn, productDescriptionQueue.arn, productResearchQueue.arn],
+          },
+        ],
+        environment: {
+          ...environment,
+          TRANSLATION_QUEUE_URL: translationQueue.url,
+          PRODUCT_DESCRIPTION_QUEUE_URL: productDescriptionQueue.url,
+          PRODUCT_RESEARCH_QUEUE_URL: productResearchQueue.url,
+        },
+      },
+    });
+
     const router = new sst.aws.Router('GraphqlRouter', {
       domain: {
         name: 'api.darun.io',

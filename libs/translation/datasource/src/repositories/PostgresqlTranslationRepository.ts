@@ -11,7 +11,7 @@ import { translations } from '../entities/TranslationSchema';
 
 @Service(TranslationRepositoryToken)
 export class PostgresqlTranslationRepository implements TranslationRepository {
-  constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
+  constructor(@Inject(DrizzleToken) private readonly db: Pick<Drizzle, 'select' | 'insert'>) {}
 
   async findOne(params: {
     entityType: string;

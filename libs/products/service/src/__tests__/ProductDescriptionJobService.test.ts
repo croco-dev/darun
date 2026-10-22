@@ -1,5 +1,5 @@
 import {
-  GenerateProductDescription,
+  GenerateProductDescriptionCandidate,
   GetProduct,
   Product,
   type ProductDescriptionJobEntity,
@@ -11,7 +11,7 @@ import type { ProductDescriptionQueueService } from '../ProductDescriptionQueueS
 
 describe('ProductDescriptionJobService', () => {
   let getProductUseCase: GetProduct;
-  let generateProductDescriptionUseCase: GenerateProductDescription;
+  let generateProductDescriptionUseCase: GenerateProductDescriptionCandidate;
   let mockRepository: ProductDescriptionJobRepository;
   let mockQueueService: ProductDescriptionQueueService;
 
@@ -52,7 +52,7 @@ describe('ProductDescriptionJobService', () => {
 
     generateProductDescriptionUseCase = {
       execute: vi.fn().mockResolvedValue(mockCandidateResult),
-    } as unknown as GenerateProductDescription;
+    } as unknown as GenerateProductDescriptionCandidate;
 
     mockRepository = {
       createJob: vi.fn().mockResolvedValue({
@@ -142,6 +142,42 @@ describe('ProductDescriptionJobService', () => {
     mockQueueService = {
       sendJob: vi.fn().mockResolvedValue(true),
     } as unknown as ProductDescriptionQueueService;
+  });
+
+  it.each(['failed', 'pending'] as const)('rejects exhausted %s jobs before retry dispatch', async status => {
+    vi.mocked(mockRepository.findJobById).mockResolvedValue({
+      id: 'exhausted',
+      productId: 'prod-123',
+      status,
+      attemptCount: 5,
+    } as ProductDescriptionJobEntity);
+    const service = new ProductDescriptionJobService(
+      getProductUseCase,
+      generateProductDescriptionUseCase,
+      mockRepository,
+      mockQueueService
+    );
+    await expect(service.retryProductDescriptionJob('exhausted')).rejects.toThrow('최대 시도 횟수');
+    expect(mockRepository.claimJobStatus).not.toHaveBeenCalled();
+    expect(mockQueueService.sendJob).not.toHaveBeenCalled();
+  });
+
+  it('does not dispatch when retry loses its conditional transition to concurrent recovery', async () => {
+    vi.mocked(mockRepository.findJobById).mockResolvedValue({
+      id: 'racing',
+      productId: 'prod-123',
+      status: 'failed',
+      attemptCount: 4,
+    } as ProductDescriptionJobEntity);
+    vi.mocked(mockRepository.claimJobStatus).mockResolvedValue(null);
+    const service = new ProductDescriptionJobService(
+      getProductUseCase,
+      generateProductDescriptionUseCase,
+      mockRepository,
+      mockQueueService
+    );
+    await expect(service.retryProductDescriptionJob('racing')).rejects.toThrow('재시도 조건이 만료');
+    expect(mockQueueService.sendJob).not.toHaveBeenCalled();
   });
 
   it('throws an error if product is not found', async () => {
