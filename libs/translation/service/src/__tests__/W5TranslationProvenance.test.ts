@@ -1,8 +1,84 @@
+// @vitest-environment node
+
 import 'reflect-metadata';
-import { describe, expect, it } from 'vitest';
+import { LlmClient, withRetry } from '@darun/utils-llm';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { translationJobFixture } from './translationJobFixture';
 
 describe('Source complete translation orchestration', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([new TypeError('fetch failed'), new DOMException('Synthetic transport deadline', 'AbortError')])(
+    'SDK 연결 실패 %s의 provider 예산 소진은 소유 token의 durable retry를 요청한다',
+    async transportError => {
+      const f = translationJobFixture();
+      const fetch = vi.fn().mockRejectedValue(transportError);
+      vi.stubGlobal('fetch', fetch);
+      const llm = new LlmClient({
+        getConfig: async () => ({
+          endpoint: 'https://synthetic.invalid/v1',
+          apiKey: 'synthetic-key',
+          model: 'fixture',
+        }),
+      });
+      f.provider.translateSingle.mockImplementationOnce(async () => {
+        await withRetry(() => llm.completion([{ role: 'user', content: 'Synthetic input' }]), {
+          maxRetries: 1,
+          baseDelay: 0,
+          maxDelay: 0,
+        });
+        throw new Error('Synthetic transport unexpectedly succeeded');
+      });
+      await f.service.executeTranslationJob(
+        'job-1',
+        { entityType: 'Magazine', entityId: 'm1' },
+        { leaseToken: 'attempt-1' }
+      );
+      expect(fetch).toHaveBeenCalledTimes(2);
+      expect(f.repository.retryJobLease).toHaveBeenCalledExactlyOnceWith(
+        'job-1',
+        'attempt-1',
+        transportError instanceof TypeError ? 'Connection error.' : 'Request timed out.'
+      );
+      expect(f.repository.completeJobLease).not.toHaveBeenCalled();
+      expect(f.source.commit).not.toHaveBeenCalled();
+    }
+  );
+
+  it('실제 SDK caller abort 뒤 row commit이나 durable 상태 전이를 요청하지 않는다', async () => {
+    const f = translationJobFixture();
+    const parent = new AbortController();
+    const fetch = vi.fn(async () => {
+      parent.abort();
+      throw new DOMException('Synthetic caller cancellation', 'AbortError');
+    });
+    vi.stubGlobal('fetch', fetch);
+    const llm = new LlmClient({
+      getConfig: async () => ({
+        endpoint: 'https://synthetic.invalid/v1',
+        apiKey: 'synthetic-key',
+        model: 'fixture',
+      }),
+    });
+    f.provider.translateSingle.mockImplementationOnce(async request => {
+      await withRetry(() =>
+        llm.completion('fixture', [{ role: 'user', content: 'Synthetic input' }], { signal: request.signal })
+      );
+      throw new Error('Synthetic transport unexpectedly succeeded');
+    });
+    await f.service.executeTranslationJob(
+      'job-1',
+      { entityType: 'Magazine', entityId: 'm1' },
+      {
+        leaseToken: 'attempt-1',
+        signal: parent.signal,
+      }
+    );
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(f.repository.retryJobLease).not.toHaveBeenCalled();
+    expect(f.repository.completeJobLease).not.toHaveBeenCalled();
+    expect(f.source.commit).not.toHaveBeenCalled();
+  });
   it.each(['Product', 'Magazine', 'ProductFeature'] as const)(
     '%s 요청을 실제 pending job으로 영속화하고 LLM은 호출하지 않는다',
     async entityType => {

@@ -1,6 +1,8 @@
+// @vitest-environment node
+
 import type { ProductDescriptionJobEntity, ProductDescriptionJobRepository } from '@darun/products-domain';
-import { RetryableError } from '@darun/utils-llm';
-import { describe, expect, it, vi } from 'vitest';
+import { LlmClient, RetryableError, withRetry } from '@darun/utils-llm';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProductDescriptionJobService } from '../ProductDescriptionJobService';
 
 function fixture(status: ProductDescriptionJobEntity['status'] = 'pending') {
@@ -49,6 +51,69 @@ function fixture(status: ProductDescriptionJobEntity['status'] = 'pending') {
 }
 
 describe('ProductDescriptionJobService durable attempts', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([new TypeError('fetch failed'), new DOMException('Synthetic transport deadline', 'AbortError')])(
+    'SDK 연결 실패 %s의 provider 예산 소진은 소유 token의 durable retry를 요청한다',
+    async transportError => {
+      const f = fixture();
+      const fetch = vi.fn().mockRejectedValue(transportError);
+      vi.stubGlobal('fetch', fetch);
+      const llm = new LlmClient({
+        getConfig: async () => ({
+          endpoint: 'https://synthetic.invalid/v1',
+          apiKey: 'synthetic-key',
+          model: 'fixture',
+        }),
+      });
+      f.generate.execute.mockImplementationOnce(async () => {
+        await withRetry(() => llm.completion([{ role: 'user', content: 'Synthetic input' }]), {
+          maxRetries: 1,
+          baseDelay: 0,
+          maxDelay: 0,
+        });
+        return f.candidate;
+      });
+      await f.service.executeJob('old-job', 'product', {
+        leaseToken: 'attempt',
+      });
+      expect(fetch).toHaveBeenCalledTimes(2);
+      expect(f.repository.retryJobLease).toHaveBeenCalledExactlyOnceWith(
+        'old-job',
+        'attempt',
+        transportError instanceof TypeError ? 'Connection error.' : 'Request timed out.'
+      );
+      expect(f.repository.completeJobLease).not.toHaveBeenCalled();
+    }
+  );
+
+  it('실제 SDK caller abort 뒤 durable retry나 terminal commit을 요청하지 않는다', async () => {
+    const f = fixture();
+    const parent = new AbortController();
+    const fetch = vi.fn(async () => {
+      parent.abort();
+      throw new DOMException('Synthetic caller cancellation', 'AbortError');
+    });
+    vi.stubGlobal('fetch', fetch);
+    const llm = new LlmClient({
+      getConfig: async () => ({
+        endpoint: 'https://synthetic.invalid/v1',
+        apiKey: 'synthetic-key',
+        model: 'fixture',
+      }),
+    });
+    f.generate.execute.mockImplementationOnce(async ({ signal }: { signal: AbortSignal }) => {
+      await withRetry(() => llm.completion('fixture', [{ role: 'user', content: 'Synthetic input' }], { signal }));
+      return f.candidate;
+    });
+    await f.service.executeJob('old-job', 'product', {
+      leaseToken: 'attempt',
+      signal: parent.signal,
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(f.repository.retryJobLease).not.toHaveBeenCalled();
+    expect(f.repository.completeJobLease).not.toHaveBeenCalled();
+  });
   it('미존재 Product 요청은 job을 만들지 않는다', async () => {
     const f = fixture();
     f.product.execute.mockResolvedValueOnce(null);
