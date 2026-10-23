@@ -53,7 +53,16 @@ async function main() {
       definition.kind === 'OperationDefinition' && definition.name ? [definition.name.value] : []
     )
   );
-  for (const name of ['CreateProductOnNewProductForm', 'PublishProductOnPublishProductButton', 'SignImageUpload']) {
+  for (const name of [
+    'CreateProductOnNewProductForm',
+    'PublishProductOnPublishProductButton',
+    'SignImageUpload',
+    'ProductOnMarkdown',
+    'CategoriesOnMarkdown',
+    'ProductsByCategoryOnMarkdown',
+    'RankedProductsOnMarkdown',
+    'MagazineOnMarkdown',
+  ]) {
     if (!operationNames.has(name)) throw new Error(`Required consumer operation was not loaded: ${name}`);
   }
   const storedSchema = buildSchema(readFileSync('schema.graphql', 'utf8'));

@@ -1,5 +1,5 @@
-import { gql } from '@apollo/client';
 import { NextRequest, NextResponse } from 'next/server';
+import { graphql } from '../../../../../../libs/__generated__/gql';
 import { getClient } from '../../../../app/getServerClient';
 import { appendVary } from '../../../../lib/seo/accept';
 import {
@@ -16,7 +16,7 @@ import { absolutePublicUrl, isPublicLocale, normalizeLocale, PublicLocale } from
 
 export const revalidate = 3600; // 1 hour
 
-const PRODUCT_QUERY = gql`
+const PRODUCT_QUERY = graphql(`
   query ProductOnMarkdown($slug: String!, $locale: String!) {
     productBySlug(slug: $slug, locale: $locale) {
       id
@@ -34,13 +34,12 @@ const PRODUCT_QUERY = gql`
         emoji
         summary
       }
-      company {
+      company: ownedCompany {
         name
-        websiteUrl
       }
       links {
         title
-        url
+        url: link
       }
       alternatives {
         id
@@ -50,9 +49,9 @@ const PRODUCT_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-const CATEGORIES_QUERY = gql`
+const CATEGORIES_QUERY = graphql(`
   query CategoriesOnMarkdown($first: Int!, $locale: String!) {
     categories(first: $first, locale: $locale) {
       id
@@ -61,9 +60,9 @@ const CATEGORIES_QUERY = gql`
       labelEn
     }
   }
-`;
+`);
 
-const PRODUCTS_BY_CATEGORY_QUERY = gql`
+const PRODUCTS_BY_CATEGORY_QUERY = graphql(`
   query ProductsByCategoryOnMarkdown($slug: String!, $locale: String!, $after: String) {
     productsByCategory(slug: $slug, locale: $locale, first: 100, after: $after) {
       edges {
@@ -80,9 +79,9 @@ const PRODUCTS_BY_CATEGORY_QUERY = gql`
       }
     }
   }
-`;
+`);
 
-const RANKED_PRODUCTS_QUERY = gql`
+const RANKED_PRODUCTS_QUERY = graphql(`
   query RankedProductsOnMarkdown($first: Int!, $locale: String!) {
     rankedProducts(first: $first, locale: $locale) {
       id
@@ -92,9 +91,9 @@ const RANKED_PRODUCTS_QUERY = gql`
       voteCount
     }
   }
-`;
+`);
 
-const MAGAZINE_QUERY = gql`
+const MAGAZINE_QUERY = graphql(`
   query MagazineOnMarkdown($slug: String!) {
     magazineBySlug(slug: $slug) {
       id
@@ -108,35 +107,10 @@ const MAGAZINE_QUERY = gql`
       }
     }
   }
-`;
+`);
 
 type RouteParams = {
   params: Promise<{ path?: string[] }>;
-};
-
-type ProductQueryResult = {
-  id: string;
-  name: string;
-  slug: string;
-  summary?: string | null;
-  description?: string | null;
-  updatedAt?: string | null;
-  publishedAt?: string | null;
-  tags?: Array<{ name: string }>;
-  features?: Array<{ name: string; emoji?: string | null; summary?: string | null }>;
-  company?: { name: string; websiteUrl?: string | null } | null;
-  links?: Array<{ title?: string | null; url: string }>;
-  alternatives?: Array<{ id: string; name: string; slug: string; summary?: string | null }>;
-};
-
-type MagazineQueryResult = {
-  id: string;
-  title: string;
-  slug: string;
-  content?: string | null;
-  publishedAt?: string | null;
-  updatedAt?: string | null;
-  author?: { name: string } | null;
 };
 
 export async function GET(req: NextRequest, props: RouteParams): Promise<NextResponse> {
@@ -231,11 +205,11 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
     // 1. Home route
     if (subPath.length === 0) {
       const [catResult, rankResult] = await Promise.all([
-        client.query<{ categories: Array<{ slug: string; labelKo: string; labelEn: string }> }>({
+        client.query({
           query: CATEGORIES_QUERY,
           variables: { first: 12, locale },
         }),
-        client.query<{ rankedProducts: Array<{ slug: string; name: string; summary?: string | null }> }>({
+        client.query({
           query: RANKED_PRODUCTS_QUERY,
           variables: { first: 10, locale },
         }),
@@ -256,9 +230,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
 
     // 2. Ranking route
     if (subPath.length === 1 && subPath[0] === 'ranking') {
-      const result = await client.query<{
-        rankedProducts: Array<{ name: string; slug: string; summary?: string | null; voteCount?: number }>;
-      }>({
+      const result = await client.query({
         query: RANKED_PRODUCTS_QUERY,
         variables: { first: 30, locale },
       });
@@ -298,7 +270,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
       const slug = safeDecode(subPath[1] ?? '');
       if (!slug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
-      const result = await client.query<{ productBySlug: ProductQueryResult | null }>({
+      const result = await client.query({
         query: PRODUCT_QUERY,
         variables: { slug, locale },
       });
@@ -336,7 +308,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
       if (!slug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
       const [catListResult, products] = await Promise.all([
-        client.query<{ categories: Array<{ slug: string; labelKo: string; labelEn: string }> }>({
+        client.query({
           query: CATEGORIES_QUERY,
           variables: { first: 100, locale },
         }),
@@ -345,12 +317,10 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
           const products: Item[] = [];
           let after: string | undefined;
           for (;;) {
-            const result = await client.query<{
-              productsByCategory: {
-                edges: Array<{ node: Item }>;
-                pageInfo: { hasNextPage: boolean; endCursor?: string | null };
-              };
-            }>({ query: PRODUCTS_BY_CATEGORY_QUERY, variables: { slug, locale, after } });
+            const result = await client.query({
+              query: PRODUCTS_BY_CATEGORY_QUERY,
+              variables: { slug, locale, after },
+            });
             const connection = result.data?.productsByCategory;
             if (!connection) throw new Error('Missing category product page');
             products.push(...connection.edges.map(edge => edge.node));
@@ -385,11 +355,11 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
       if (!slug1 || !slug2) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
       const [prod1Result, prod2Result] = await Promise.all([
-        client.query<{ productBySlug: ProductQueryResult | null }>({
+        client.query({
           query: PRODUCT_QUERY,
           variables: { slug: slug1, locale },
         }),
-        client.query<{ productBySlug: ProductQueryResult | null }>({
+        client.query({
           query: PRODUCT_QUERY,
           variables: { slug: slug2, locale },
         }),
@@ -416,7 +386,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
       const slug = safeDecode(subPath[1] ?? '');
       if (!slug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
-      const result = await client.query<{ magazineBySlug: MagazineQueryResult | null }>({
+      const result = await client.query({
         query: MAGAZINE_QUERY,
         variables: { slug },
       });
