@@ -51,6 +51,8 @@ jobs:
         run: node --test scripts/deployment-guard.test.mjs
       - name: Verify recursive lint coverage
         run: node --test scripts/lint-coverage.test.mjs
+      - name: Verify deployment smoke checks with isolated HTTP fixtures
+        run: node --test scripts/verify-deployment.test.mjs
       - run: pnpm run lint
       - name: Type Check
         run: pnpm run typecheck

@@ -117,3 +117,9 @@ jobs:
           CURSOR_SIGNATURE_SECRET: ${{ secrets.CURSOR_SIGNATURE_SECRET }}
           VISUAL_FLOW_WRITES_ENABLED: "false"
           VOTE_IP_SALT: ${{ secrets.VOTE_IP_SALT }}
+      - name: Verify deployed GraphQL
+        if: steps.revision.outputs.deploy == 'true'
+        run: node scripts/verify-deployment.mjs
+        timeout-minutes: 2
+        env:
+          GITHUB_SHA: ${{ github.sha }}
