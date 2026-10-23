@@ -194,6 +194,18 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
    배포 명령: `sst deploy --stage prod`
    이때 `RUNNING_ENV=prod` 값은 Sentry 환경 분류와 Cloudinary 업로드 폴더 규칙에 영향을 주므로 그대로 유지해야 합니다.
 
+### 운영 배포 직렬화·재실행·rollback
+
+Production Deploy의 `deploy` job은 트리거·브랜치·revision과 무관하게 고정 `prod-graphql` concurrency group을 사용합니다. 잠금은 revision 확인부터 migration·SST 배포와 향후 같은 job에 추가되는 후속 검증까지 유지합니다. 새 요청은 실행 중인 배포를 취소하지 않습니다. GitHub concurrency는 FIFO가 아니며 대기 중인 요청은 더 새로운 요청으로 대체될 수 있습니다.
+
+잠금을 얻은 뒤 `scripts/deployment-guard.mjs`가 GitHub API로 현재 trunk SHA를 다시 읽습니다. push와 repository_dispatch는 실행 SHA가 최신 trunk와 다르면 `Skip stale deployment`를 기록하고 설치·운영 자격 증명 설정·migration·SST 단계를 건너뜁니다. 수동 실행과 재실행도 기본적으로 같은 정책을 사용합니다. API 조회 실패는 배포를 중단합니다. 확인 뒤 trunk가 전진해도 다음 배포는 같은 잠금이 풀린 뒤 시작하므로, 먼저 시작한 배포가 나중에 완료한 배포를 덮어쓰지 않습니다.
+
+실패한 최신 배포는 GitHub Actions에서 해당 실행을 재실행합니다. 이미 trunk가 전진했다면 과거 실행을 재시도하는 대신 최신 trunk에서 Production Deploy를 수동 실행합니다. 과거 revision을 의도적으로 배포할 때만 `workflow_dispatch`의 `allow_rollback`을 명시합니다. 예를 들어 `gh workflow run Deploy.yaml --repo croco-dev/darun --ref <보호된-배포-workflow가-포함된-ref> -f allow_rollback=true`로 요청합니다. 선택한 ref에 이 직렬화·revision 확인 workflow가 포함되어 있어야 하며, 도입 전의 workflow를 직접 실행하지 않습니다. 더 오래된 코드로 복구해야 하면 현재 workflow를 유지한 revert commit을 만들어 정상 검증·병합 경로를 거칩니다. rollback도 선택된 SHA의 quality를 통과해야 하며 DB migration을 되돌리지 않으므로, 이전 코드와 이미 적용한 schema의 호환성을 먼저 확인합니다. 이후 최신 자동 배포는 rollback을 다시 대체할 수 있습니다.
+
+이 정책 도입 전에 이미 실행 중인 구 workflow는 새 잠금을 사용하지 않습니다. 최초 전환 시 기존 migration·배포가 종료됐는지 확인하고, 진행 중인 migration을 수동 취소하지 않습니다. 이 잠금은 GitHub Actions 밖의 직접 AWS CLI 실행에는 적용되지 않습니다.
+
+`node --test scripts/deployment-guard.test.mjs`는 실제 guard subprocess로 최신·오래된 세 이벤트, 명시적 rollback과 API 실패를 검증합니다. PR의 Deployment guard CI는 운영 설정에서 concurrency 정책을 읽어 실행별 별도 group에 두 합성 배포를 요청합니다. 운영 자격 증명 없이 시작·종료 시각을 artifact로 보관하고, 두 요청이 취소 없이 끝나며 임계 구간이 겹치지 않아야 성공합니다.
+
 ## 비동기 작업 복구
 
 SST의 `JobRecoveryTick`은 `CronV2`로 매분 번역·AI 소개·리서치·상품 콘텐츠 동기화 작업의 복구 handler를 실행하며, 네 작업 큐에 대한 `sqs:SendMessage` 권한과 큐 URL을 전달합니다. 배포 출력의 `jobRecoveryScheduleArn` ARN으로 생성된 스케줄을 확인할 수 있습니다. 번역 결과는 작업 행을 잠근 뒤 lease를 다시 확인한 같은 트랜잭션에서만 저장합니다. 동일 대상·종류·언어의 활성 번역 작업은 중복 생성하지 않으며, 번역·소개 작업은 logical job별로 최대 5회 시도합니다. 수동 재시도는 실패한 작업 이력을 보존하고 `retryOfJobId`로 연결한 새 logical job을 만듭니다.
