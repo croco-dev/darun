@@ -40,9 +40,10 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
 
   async replaceByProductId(productId: string, alternativeProductIds: string[]): Promise<void> {
     const nextIds = [...new Set(alternativeProductIds.filter(Boolean))];
+    const lockKey = `alternative-products:${productId}`;
     await this.db.transaction(async tx => {
       // Lock even an empty list. Read the current set only after acquiring this product's lock.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`alternative-products:${productId}`}, 0))`);
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
       const previous = await tx.select().from(alternativeProducts).where(eq(alternativeProducts.productId, productId));
       const nextIdSet = new Set(nextIds);
       const previousIdSet = new Set(previous.map(row => row.alternativeProductId));
