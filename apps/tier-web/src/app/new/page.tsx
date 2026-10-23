@@ -1,6 +1,7 @@
 import { AppCard } from '@/components/AppCard';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
+import type { AppListRow } from '../apps/app-list';
 
 export const revalidate = 0;
 
@@ -20,11 +21,12 @@ export default async function NewArrivalsPage() {
     `
     )
     .order('created_at', { ascending: false })
-    .limit(30);
+    .limit(30)
+    .overrideTypes<Array<AppListRow & { created_at: string | null }>, { merge: false }>();
 
   if (error) {
     console.error('Error fetching apps:', error);
-    return <div className="page-shell py-16">Error loading new arrivals</div>;
+    throw new Error('최근 추가된 앱을 불러오지 못했습니다. 다시 시도해 주세요.');
   }
 
   const apps = (data ?? []).map(app => ({
@@ -32,7 +34,7 @@ export default async function NewArrivalsPage() {
     name: app.name,
     description: app.description,
     iconUrl: app.icon_url,
-    tier: app.tiers?.[0]?.tier || 0,
+    tier: app.tiers?.tier ?? 0,
     createdAt: app.created_at,
   }));
 

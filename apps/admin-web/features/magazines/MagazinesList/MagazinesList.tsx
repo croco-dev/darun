@@ -15,6 +15,7 @@ import {
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminPanel } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
+import { TranslationRecovery } from '../../llm-jobs/TranslationRecovery';
 import { useMagazinesList } from './useMagazinesList';
 
 function MagazineThumbnail({ src, alt }: { src?: string | null; alt: string }) {
@@ -142,6 +143,11 @@ export const MagazinesList = bind(
                       {item.summary}
                     </p>
                   )}
+                  <TranslationRecovery
+                    entityType="Magazine"
+                    entityId={item.id}
+                    fields={['title', 'summary', 'content']}
+                  />
 
                   {/* Meta info & links */}
                   <div className="mt-auto pt-3 border-t border-dark-150 flex items-center justify-between text-xs text-dark-500">

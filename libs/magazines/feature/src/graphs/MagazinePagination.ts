@@ -1,7 +1,7 @@
 import { Field, Int, ObjectType } from 'type-graphql';
 import { Magazine } from './Magazine';
 
-@ObjectType()
+@ObjectType('MagazinePagination')
 export class MagazinePagination {
   @Field(() => Int)
   totalCount: number;

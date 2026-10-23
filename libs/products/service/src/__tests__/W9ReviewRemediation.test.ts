@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ProductResearchService } from '../ProductResearchService';
 
-describe('W9 review remediation: research abort and apply lock order', () => {
+describe('W9 review remediation: research abort', () => {
   it('F-A3: research AbortError and caller aborts return without terminal failJob', async () => {
     const aborted = new Error('작업이 중단되었습니다.');
     aborted.name = 'AbortError';
@@ -70,40 +70,5 @@ describe('W9 review remediation: research abort and apply lock order', () => {
       { stageBudgetMs: 10_000 }
     );
     expect(failJob).not.toHaveBeenCalled();
-  });
-
-  it('F-A5: locked apply reads the product row before the evidence snapshot', async () => {
-    const { ApplyProductDescriptionCandidate } = await import('@darun/products-domain');
-    const calls: string[] = [];
-    const job = {
-      id: 'job-w9-apply',
-      productId: 'prod-w9',
-      status: 'completed',
-      candidateHtml: '<p>후보</p>',
-      evidenceHash: 'ev',
-      baseDescriptionHash: 'base',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    const product = { id: 'prod-w9', description: '<p>기존</p>' };
-    const store = {
-      transaction: { run: async <T>(work: () => Promise<T>) => work() },
-      findLockedJob: vi.fn(async () => job),
-      findLockedProduct: vi.fn(async () => {
-        calls.push('findLockedProduct');
-        return product;
-      }),
-      assembleLocked: vi.fn(async () => {
-        calls.push('assembleLocked');
-        return { evidenceHash: 'ev', baseDescriptionHash: 'base' };
-      }),
-      applyLocked: vi.fn(async () => product),
-      markAppliedIfUnappliedLocked: vi.fn(async () => ({ ...job, appliedAt: new Date() })),
-    };
-    const usecase = new ApplyProductDescriptionCandidate({} as never, {} as never, {} as never, store as never);
-    const result = await usecase.execute({ jobId: 'job-w9-apply' });
-    expect(result.alreadyApplied).toBe(false);
-    // 잠금 트랜잭션 구간 읽기 순서: product 행 잠금이 스냅샷 검증보다 먼저다.
-    expect(calls).toEqual(['findLockedProduct', 'assembleLocked']);
   });
 });

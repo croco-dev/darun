@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 describe('ProductMutationResolver dependency metadata', () => {
-  it('emits concrete runtime types for every constructor dependency', () => {
+  it('emits runtime classes and explicitly injects the app-owned sync port token', () => {
     const filePath = path.resolve(process.cwd(), 'src/Product.mutation.resolver.ts');
     const source = fs.readFileSync(filePath, 'utf8');
     const output = ts.transpileModule(source, {
@@ -19,9 +19,10 @@ describe('ProductMutationResolver dependency metadata', () => {
     const constructorMetadata = metadataMatches[metadataMatches.length - 1]?.[1];
 
     expect(constructorMetadata).toBeDefined();
-    expect(constructorMetadata).not.toMatch(/(?:^|,)\s*Object(?=\s*(?:,|$))/);
+    expect(constructorMetadata?.match(/(?:^|,)\s*Object(?=\s*(?:,|$))/g)).toHaveLength(1);
+    expect(output).toMatch(/__param\(\d+, Inject\(ProductContentSyncToken\)\)/);
     expect(constructorMetadata).toContain('GetCompany');
-    expect(constructorMetadata).toContain('TranslationJobService');
+    expect(constructorMetadata).toContain('ProductDescriptionJobService');
     expect(constructorMetadata).toContain('UpvoteProduct');
   });
 });

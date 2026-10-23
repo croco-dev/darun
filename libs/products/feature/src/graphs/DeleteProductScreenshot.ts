@@ -1,6 +1,6 @@
 import { Field, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('DeleteProductScreenshotPayload')
 export class DeleteProductScreenshotPayload {
   @Field()
   success: boolean;

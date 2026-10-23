@@ -103,6 +103,7 @@ const createProductRepository = (overrides: Partial<ProductRepository> = {}): Pr
   findPublishedOneById: vi.fn<ProductRepository['findPublishedOneById']>().mockResolvedValue(null),
   findOneBySlug: vi.fn<ProductRepository['findOneBySlug']>().mockResolvedValue(null),
   findOneById: vi.fn<ProductRepository['findOneById']>().mockResolvedValue(null),
+  findOneFreshById: vi.fn<ProductRepository['findOneFreshById']>().mockResolvedValue(null),
   findPublishedOneBySlug: vi.fn<ProductRepository['findPublishedOneBySlug']>().mockResolvedValue(null),
   findPublishedByCategoryId: vi.fn<ProductRepository['findPublishedByCategoryId']>().mockResolvedValue([]),
   countPublishedByCategoryId: vi.fn().mockResolvedValue(0),

@@ -1,132 +1,75 @@
 import 'reflect-metadata';
-import { describe, expect, it, vi } from 'vitest';
-import { voteRecords } from '../entities/VoteRecordSchema';
-import { votes } from '../entities/VoteSchema';
+import { randomUUID } from 'node:crypto';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { UpvoteProduct } from '@darun/voting-domain';
 import { PostgresqlVoteRecordRepository } from '../repositories/PostgresqlVoteRecordRepository';
 
-describe('PostgresqlVoteRecordRepository', () => {
-  describe('incrementVote', () => {
-    it('uses atomic upsert with count increment, not select-then-update', async () => {
-      const mockReturning = vi.fn().mockResolvedValue([{ id: 'vote-1', targetId: 'target-1', count: 1 }]);
-      const capturedOnConflictArgs: unknown[] = [];
-      const mockOnConflictDoUpdate = vi.fn().mockImplementation((...args: unknown[]) => {
-        capturedOnConflictArgs.push(args[0]);
-        return { returning: mockReturning };
-      });
-      const mockValuesForVotes = vi.fn().mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate });
-      const mockValuesForVoteRecords = vi.fn().mockResolvedValue(undefined);
-
-      const mockTx = {
-        insert: vi.fn((table: unknown) => {
-          if (table === votes) {
-            return { values: mockValuesForVotes };
-          }
-          if (table === voteRecords) {
-            return { values: mockValuesForVoteRecords };
-          }
-          return { values: vi.fn() };
-        }),
-      };
-
-      const mockDb = {
-        transaction: vi.fn().mockImplementation(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
-      };
-
-      const repository = new PostgresqlVoteRecordRepository(
-        mockDb as unknown as ConstructorParameters<typeof PostgresqlVoteRecordRepository>[0]
-      );
-      const result = await repository.incrementVote('target-1', 'hash-123');
-
-      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
-      expect(mockTx.insert).toHaveBeenCalledWith(votes);
-      expect(mockValuesForVotes).toHaveBeenCalledWith({
-        targetId: 'target-1',
-        count: 1,
-      });
-      expect(mockOnConflictDoUpdate).toHaveBeenCalledTimes(1);
-      expect(capturedOnConflictArgs[0]).toEqual(
-        expect.objectContaining({
-          target: votes.targetId,
-          set: expect.objectContaining({ count: expect.anything() }),
-        })
-      );
-
-      const conflictArg = capturedOnConflictArgs[0] as Record<string, { count: unknown }>;
-      const setCount = conflictArg.set.count;
-      expect(setCount).not.toBeNull();
-      expect(typeof setCount).toBe('object');
-      expect(setCount).toHaveProperty('queryChunks');
-
-      // Verify the SQL expression references the column and increments by 1
-      // sql`${votes.count} + 1` produces queryChunks: [StringChunk, ColumnRef, StringChunk(" + 1")]
-      const chunks = (setCount as { queryChunks: unknown[] }).queryChunks;
-      expect(chunks.length).toBeGreaterThanOrEqual(2);
-
-      const hasColumnRef = chunks.some(
-        (chunk: unknown) =>
-          typeof chunk === 'object' &&
-          chunk !== null &&
-          !('value' in (chunk as Record<string, unknown>)) &&
-          'table' in (chunk as Record<string, unknown>)
-      );
-      expect(hasColumnRef).toBe(true);
-
-      const hasPlusOne = chunks.some((chunk: unknown) => {
-        if (typeof chunk === 'object' && chunk !== null && 'value' in (chunk as Record<string, unknown>)) {
-          const values = (chunk as { value: string[] }).value;
-          return Array.isArray(values) && values.some(v => typeof v === 'string' && v.includes('+ 1'));
-        }
-        return false;
-      });
-      expect(hasPlusOne).toBe(true);
-
-      expect(mockTx.insert).toHaveBeenCalledWith(voteRecords);
-      expect(mockValuesForVoteRecords).toHaveBeenCalledWith({
-        targetId: 'target-1',
-        voterIpHash: 'hash-123',
-      });
-      expect(mockReturning).toHaveBeenCalledTimes(1);
-      expect(result.targetId).toBe('target-1');
-      expect(result.count).toBe(1);
-    });
-
-    it('inserts vote record in the same transaction callback as vote upsert', async () => {
-      const mockReturning = vi.fn().mockResolvedValue([{ id: 'vote-1', targetId: 'target-1', count: 1 }]);
-      const mockValuesForVotes = vi.fn().mockReturnValue({
-        onConflictDoUpdate: vi.fn().mockReturnValue({ returning: mockReturning }),
-      });
-      const mockValuesForVoteRecords = vi.fn().mockResolvedValue(undefined);
-
-      const mockTx = {
-        insert: vi.fn((table: unknown) => {
-          if (table === votes) {
-            return { values: mockValuesForVotes };
-          }
-          if (table === voteRecords) {
-            return { values: mockValuesForVoteRecords };
-          }
-          return { values: vi.fn() };
-        }),
-      };
-
-      let capturedCallback: ((tx: typeof mockTx) => Promise<unknown>) | null = null;
-
-      const mockDb = {
-        transaction: vi.fn().mockImplementation(async (cb: (tx: typeof mockTx) => Promise<unknown>) => {
-          capturedCallback = cb;
-          return cb(mockTx);
-        }),
-      };
-
-      const repository = new PostgresqlVoteRecordRepository(
-        mockDb as unknown as ConstructorParameters<typeof PostgresqlVoteRecordRepository>[0]
-      );
-      await repository.incrementVote('target-1', 'hash-123');
-
-      expect(capturedCallback).not.toBeNull();
-      expect(mockTx.insert).toHaveBeenCalledWith(votes);
-      expect(mockTx.insert).toHaveBeenCalledWith(voteRecords);
-      expect(mockTx.insert).toHaveBeenCalledTimes(2);
-    });
+// Explicit opt-in URL must point at a disposable local database, never production.
+const databaseUrl = process.env['VOTING_TEST_DATABASE_URL'];
+const suite = databaseUrl ? describe : describe.skip;
+suite('atomic vote writes (isolated PostgreSQL schema)', () => {
+  const schema = `vote_test_${randomUUID().replace(/-/g, '')}`;
+  let admin: ReturnType<typeof postgres>;
+  let client: ReturnType<typeof postgres>;
+  let repository: PostgresqlVoteRecordRepository;
+  const previousSalt = process.env['VOTE_IP_SALT'];
+  beforeAll(async () => {
+    const url = new URL(databaseUrl!);
+    if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))
+      throw new Error('Local disposable database required');
+    admin = postgres(databaseUrl!, { max: 1 });
+    await admin.unsafe(`create schema ${schema}`);
+    client = postgres(databaseUrl!, { max: 12, connection: { search_path: schema } });
+    await client.unsafe(
+      `create table votes (id varchar(26) primary key, target_id varchar(26) not null unique, count bigint not null default 0, created_at timestamp not null default now())`
+    );
+    await client.unsafe(
+      `create table vote_records (id varchar(26) primary key, target_id varchar(26) not null, voter_ip_hash varchar(64) not null, created_at timestamp not null default now(), unique(target_id, voter_ip_hash))`
+    );
+    process.env['VOTE_IP_SALT'] = 'isolated-voting-test-salt';
+    repository = new PostgresqlVoteRecordRepository(drizzle(client) as never);
+  });
+  afterAll(async () => {
+    if (previousSalt === undefined) delete process.env['VOTE_IP_SALT'];
+    else process.env['VOTE_IP_SALT'] = previousSalt;
+    await client?.end();
+    if (admin) {
+      await admin.unsafe(`drop schema if exists ${schema} cascade`);
+      await admin.end();
+    }
+  });
+  it('allows exactly ten of eleven distinct targets for one IP across database connections', async () => {
+    const upvote = new UpvoteProduct(repository);
+    const results = await Promise.allSettled(
+      Array.from({ length: 11 }, (_, i) => upvote.execute({ productId: `target-${i}`, voterIp: '127.0.0.42' }))
+    );
+    expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(10);
+    expect(results.filter(result => result.status === 'rejected').map(result => result.reason.code)).toEqual([
+      'voting/rate-limit-exceeded',
+    ]);
+    const [row] =
+      await client`select (select count(*) from vote_records)::int as records, (select sum(count) from votes)::int as votes`;
+    expect(row).toEqual({ records: 10, votes: 10 });
+  });
+  it('keeps per-target uniqueness and does not increment on duplicates', async () => {
+    const results = await Promise.allSettled(
+      Array.from({ length: 11 }, () => repository.incrementVote('duplicate', 'other-ip'))
+    );
+    expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+    expect(
+      results
+        .filter(result => result.status === 'rejected')
+        .every(result => result.reason.code === 'voting/duplicate-vote')
+    ).toBe(true);
+    const [row] = await client`select count::int from votes where target_id = 'duplicate'`;
+    expect(row.count).toBe(1);
+  });
+  it('rolls back the count if the vote record insert fails', async () => {
+    await client.unsafe(`alter table vote_records add constraint reject_failure_target check (target_id <> 'failure')`);
+    await expect(repository.incrementVote('failure', 'failure-ip')).rejects.toThrow();
+    expect(await client`select * from votes where target_id = 'failure'`).toHaveLength(0);
+    expect(await client`select * from vote_records where target_id = 'failure'`).toHaveLength(0);
   });
 });

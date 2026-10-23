@@ -1,9 +1,17 @@
 import { CategoryRepository } from '@darun/products-domain';
-import { Category, CategoryRepositoryToken, productCategoryNotFound, productUpdateFailed } from '@darun/products-domain';
+import {
+  Category,
+  CategoryRepositoryToken,
+  productCategoryNotFound,
+  productUpdateFailed,
+} from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { eq, inArray } from 'drizzle-orm';
+import { asc, eq, inArray, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { categories } from '../entities/CategorySchema';
+import { products } from '../entities/ProductSchema';
+import { beginProductContentWrite } from './productContentSync';
+import { lockCategoryMembership } from './productSourceMutex';
 
 @Service(CategoryRepositoryToken)
 export class PostgresqlCategoryRepository implements CategoryRepository {
@@ -46,10 +54,20 @@ export class PostgresqlCategoryRepository implements CategoryRepository {
 
   async updateById(id: string, modifier: (category: Category) => Category): Promise<Category> {
     return this.db.transaction(async tx => {
+      // Freeze membership before the owner query, then retain Product-first → Category row locks.
+      await lockCategoryMembership(tx, 'exclusive');
+      const owners = await tx
+        .select({ id: products.id })
+        .from(products)
+        .where(sql`${products.categoryIds}::jsonb @> ${JSON.stringify([id])}::jsonb`)
+        .orderBy(asc(products.id));
+      const finishWrites: Array<() => Promise<void>> = [];
+      for (const owner of owners) finishWrites.push(await beginProductContentWrite(tx, owner.id));
       const prevCategory = await tx
         .select()
         .from(categories)
         .where(eq(categories.id, id))
+        .for('update')
         .limit(1)
         .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
 
@@ -67,6 +85,7 @@ export class PostgresqlCategoryRepository implements CategoryRepository {
         throw productUpdateFailed();
       }
 
+      for (const finish of finishWrites) await finish();
       return this.mapper(updated[0]);
     });
   }

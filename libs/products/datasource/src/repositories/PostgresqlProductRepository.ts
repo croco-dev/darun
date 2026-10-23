@@ -1,5 +1,6 @@
 import { ProductRepository } from '@darun/products-domain';
 import { Product, ProductRepositoryToken, productNotFound, productUpdateFailed } from '@darun/products-domain';
+import { ProductScreenshot } from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
@@ -7,8 +8,10 @@ import { and, asc, count, desc, eq, gt, ilike, inArray, isNotNull, lt, sql } fro
 import { keyBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
-import { ProductScreenshot } from '@darun/products-domain';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
+
+import { beginProductContentWrite } from './productContentSync';
+import { lockCategoryMembership } from './productSourceMutex';
 
 @Service(ProductRepositoryToken)
 export class PostgresqlProductRepository implements ProductRepository {
@@ -60,6 +63,7 @@ export class PostgresqlProductRepository implements ProductRepository {
 
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {
     return this.db.transaction(async tx => {
+      const finishContentWrite = await beginProductContentWrite(tx, id);
       const prevProduct = await tx
         .select()
         .from(products)
@@ -80,6 +84,7 @@ export class PostgresqlProductRepository implements ProductRepository {
         throw productUpdateFailed();
       }
 
+      await finishContentWrite();
       return this.mapper(updated[0]);
     });
   }
@@ -125,6 +130,7 @@ export class PostgresqlProductRepository implements ProductRepository {
 
   async insert(values: Product): Promise<Product | null> {
     return this.db.transaction(async tx => {
+      await lockCategoryMembership(tx, 'shared');
       const inserted = await tx
         .insert(products)
         .values({ ...values })
@@ -153,6 +159,12 @@ export class PostgresqlProductRepository implements ProductRepository {
 
   async findOneById(id: string): Promise<Product | null> {
     return this.idLoader.load(id);
+  }
+
+  /** 요청 간 DataLoader cache를 우회해 현재 commit된 Product 행을 읽는다. */
+  async findOneFreshById(id: string): Promise<Product | null> {
+    const [product] = await this.findByIdsInternal([id]);
+    return product ?? null;
   }
 
   async findPublishedOneBySlug(slug: string): Promise<Product | null> {
@@ -254,7 +266,10 @@ export class PostgresqlProductRepository implements ProductRepository {
         .limit(limit),
       this.db.select({ value: count() }).from(products).where(filter),
     ]);
-    return { products: rows.map(row => this.mapper(row)), total: Number(totals[0]?.value ?? 0) };
+    return {
+      products: rows.map(row => this.mapper(row)),
+      total: Number(totals[0]?.value ?? 0),
+    };
   }
 
   async findVisualAppCover(productId: string): Promise<ProductScreenshot | null> {

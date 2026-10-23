@@ -9,7 +9,7 @@ import {
 } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 gql`
   query TempProductBySlugOnEditProductDescription($slug: String!) {
@@ -40,6 +40,7 @@ export type UseEditProductDescriptionProps = {
 };
 
 export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditProductDescriptionProps) {
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { data } = useQuery(TempProductBySlugOnEditProductDescriptionDocument, {
     variables: { slug },
   });
@@ -77,9 +78,6 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
         onSubmit?.();
       }
     },
-    onError: error => {
-      notifications.show({ message: error.message, color: 'red' });
-    },
   });
 
   const submit = async (values: FormValues) => {
@@ -104,17 +102,20 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
       return;
     }
 
-    await editDescription({
-      variables: {
-        slug,
-        input: {
-          description: values.description || '',
-        },
-      },
-    });
+    setSaveError(null);
+    try {
+      await editDescription({
+        variables: { slug, input: { description: values.description || '' } },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '설명 저장에 실패했습니다.';
+      setSaveError(message);
+      notifications.show({ message, color: 'red' });
+    }
   };
 
   return {
+    saveError,
     form,
     submit,
     onCancel,

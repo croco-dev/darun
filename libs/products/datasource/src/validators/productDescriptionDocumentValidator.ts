@@ -1,7 +1,15 @@
 import {
   MAX_EVIDENCE_BULLETS,
   MAX_EVIDENCE_BULLET_LENGTH,
-  safeEvidenceUrl,
+  safeReaderFacingUrl,
+  MAX_INTRO_LENGTH,
+  MAX_CLOSING_LENGTH,
+  MAX_PARAGRAPH_LENGTH,
+  MAX_SECTION_TITLE_LENGTH,
+  MAX_RECOMMENDED_LENGTH,
+  MAX_SECTIONS,
+  MAX_PARAGRAPHS_PER_SECTION,
+  MAX_RECOMMENDED_ITEMS,
   type EvidenceBackedText,
   type EvidenceRichLink,
   type ProductDescriptionDocument,
@@ -9,14 +17,6 @@ import {
   type ProductDescriptionEvidenceItem,
 } from '@darun/products-domain';
 
-const MAX_INTRO_LENGTH = 600;
-const MAX_CLOSING_LENGTH = 600;
-const MAX_PARAGRAPH_LENGTH = 600;
-const MAX_SECTION_TITLE_LENGTH = 150;
-const MAX_RECOMMENDED_LENGTH = 300;
-const MAX_SECTIONS = 3;
-const MAX_PARAGRAPHS_PER_SECTION = 2;
-const MAX_RECOMMENDED_ITEMS = 3;
 const HTML_TAG_PATTERN = /<[a-zA-Z][^<>]*>/;
 
 function containsMarkdownFormat(text: string): boolean {
@@ -91,9 +91,15 @@ export function validateProductDescriptionDocument(
       throw new Error(`sections[${sectionIdx}]는 객체여야 합니다.`);
     }
     const section = sectionRaw as Record<string, unknown>;
+    for (const key of Object.keys(section)) {
+      if (key !== 'title' && key !== 'paragraphs') {
+        throw new Error(`sections[${sectionIdx}]에 허용되지 않은 필드가 포함되어 있습니다: ${key}`);
+      }
+    }
     if (typeof section.title !== 'string' || !section.title.trim()) {
       throw new Error(`sections[${sectionIdx}].title은 비어있지 않은 문자열이어야 합니다.`);
     }
+    assertPlainRichText(section.title, `sections[${sectionIdx}].title`);
     const title = section.title.trim();
     if (title.length > MAX_SECTION_TITLE_LENGTH) {
       throw new Error(`sections[${sectionIdx}].title 길이가 제한(${MAX_SECTION_TITLE_LENGTH}자)을 초과했습니다.`);
@@ -166,6 +172,11 @@ function validateEvidenceBackedText(
   }
 
   const obj = raw as Record<string, unknown>;
+  for (const key of Object.keys(obj)) {
+    if (!['text', 'evidenceRefs', 'bullets', 'quote', 'link'].includes(key)) {
+      throw new Error(`${fieldName}에 허용되지 않은 필드가 포함되어 있습니다: ${key}`);
+    }
+  }
   if (typeof obj.text !== 'string' || !obj.text.trim()) {
     throw new Error(`${fieldName}.text는 비어있지 않은 문자열이어야 합니다.`);
   }
@@ -213,9 +224,9 @@ function validateEvidenceBackedText(
   return {
     text,
     evidenceRefs,
-    ...(bullets ? { bullets } : {}),
-    ...(quote ? { quote: true as const } : {}),
-    ...(link ? { link } : {}),
+    bullets,
+    quote,
+    link,
   };
 }
 
@@ -230,15 +241,12 @@ function assertPlainRichText(text: string, fieldName: string): void {
   }
 }
 
-function validateBullets(raw: unknown, fieldName: string): string[] | undefined {
-  if (raw === undefined || raw === null) {
-    return undefined;
+function validateBullets(raw: unknown, fieldName: string): string[] {
+  if (raw === undefined) {
+    return [];
   }
   if (!Array.isArray(raw)) {
     throw new Error(`${fieldName}.bullets는 문자열 배열이어야 합니다.`);
-  }
-  if (raw.length === 0) {
-    return undefined;
   }
   if (raw.length > MAX_EVIDENCE_BULLETS) {
     throw new Error(`${fieldName}.bullets 항목은 최대 ${MAX_EVIDENCE_BULLETS}개까지 허용됩니다.`);
@@ -257,13 +265,16 @@ function validateBullets(raw: unknown, fieldName: string): string[] | undefined 
 }
 
 function validateQuote(raw: unknown, fieldName: string): boolean {
-  if (raw === undefined || raw === null || raw === false) {
+  if (raw === undefined) {
     return false;
   }
-  if (raw === true) {
-    return true;
+  if (typeof raw !== 'boolean') {
+    throw new Error(`${fieldName}.quote는 boolean이어야 합니다.`);
   }
-  throw new Error(`${fieldName}.quote는 boolean이어야 합니다.`);
+  if (raw) {
+    throw new Error(`${fieldName}.quote: 새 생성에서는 직접 인용을 입증할 수 없어 true를 허용하지 않습니다.`);
+  }
+  return false;
 }
 
 function validateRichLink(
@@ -271,15 +282,19 @@ function validateRichLink(
   fieldName: string,
   evidenceById: Map<string, ProductDescriptionEvidenceItem>,
   evidenceRefs: string[]
-): EvidenceRichLink | undefined {
-  // Wire sentinels for absence (strict schema emits `link: null`).
+): EvidenceRichLink | null {
   if (raw === undefined || raw === null) {
-    return undefined;
+    return null;
   }
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     throw new Error(`${fieldName}.link는 { label, url } 객체여야 합니다.`);
   }
   const link = raw as Record<string, unknown>;
+  for (const key of Object.keys(link)) {
+    if (key !== 'label' && key !== 'url') {
+      throw new Error(`${fieldName}.link에 허용되지 않은 필드가 포함되어 있습니다: ${key}`);
+    }
+  }
   if (typeof link.label !== 'string' || !link.label.trim()) {
     throw new Error(`${fieldName}.link.label은 비어있지 않은 문자열이어야 합니다.`);
   }
@@ -288,27 +303,21 @@ function validateRichLink(
   }
   const label = link.label.trim();
   assertPlainRichText(label, `${fieldName}.link.label`);
-  const safeUrl = safeEvidenceUrl(link.url.trim());
+  const safeUrl = safeReaderFacingUrl(link.url.trim());
   if (!safeUrl) {
-    throw new Error(`${fieldName}.link.url은 http(s) URL이어야 합니다.`);
+    throw new Error(`${fieldName}.link.url은 credential 없는 공개 http(s) URL이어야 합니다.`);
   }
 
   const linkedEvidence = evidenceRefs
     .map(ref => evidenceById.get(ref))
-    .find(item => item?.kind === 'link' || item?.kind === 'research');
-  if (!linkedEvidence) {
+    .filter(item => item?.kind === 'link' || item?.kind === 'research');
+  if (linkedEvidence.length === 0) {
     throw new Error(`${fieldName}.link를 쓰려면 link:* 또는 research:* 근거를 evidenceRefs에 포함해야 합니다.`);
   }
-  // The link must match at least one cited link/research evidence URL —
-  // not merely the first cited one — while unmatched URLs are rejected.
-  const citedUrls = new Set(
-    evidenceRefs
-      .map(ref => evidenceById.get(ref))
-      .flatMap(item => (item?.kind === 'link' || item?.kind === 'research' ? [item.url] : []))
-  );
-  if (!citedUrls.has(safeUrl)) {
-    const kindLabel = linkedEvidence.kind === 'research' ? 'research' : 'link';
-    throw new Error(`${fieldName}.link.url은 인용한 ${kindLabel} 근거의 URL과 일치해야 합니다.`);
+  if (
+    !linkedEvidence.some(item => item && (item.kind === 'link' || item.kind === 'research') && item.url === safeUrl)
+  ) {
+    throw new Error(`${fieldName}.link.url은 인용한 link 또는 research 근거의 URL과 일치해야 합니다.`);
   }
   return { label, url: safeUrl };
 }

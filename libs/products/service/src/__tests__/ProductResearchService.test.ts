@@ -71,18 +71,128 @@ describe('ProductResearchService.buildDraftValidator', () => {
       })
     ).toThrow();
   });
+  it('같은 hostname의 다른 제품 경로는 서버 경고를 만들고 외부 근거를 독립 검증으로 승격하지 않는다', () => {
+    const draft = ProductResearchService.buildDraftValidator({
+      raw: {
+        name: 'Suite',
+        nameAnchors: [
+          { sourceId: 's1', excerpt: '제품' },
+          { sourceId: 's2', excerpt: '제품' },
+        ],
+        features: [],
+      },
+      originalUrl: 'https://input.example/tool',
+      sources: [
+        source({
+          id: 's1',
+          hostname: 'suite.example',
+          url: 'https://suite.example/tool/a',
+          snippet: '제품',
+          relationToInput: 'EXTERNAL',
+        }),
+        source({
+          id: 's2',
+          hostname: 'suite.example',
+          url: 'https://suite.example/tool/b',
+          snippet: '제품',
+          relationToInput: 'EXTERNAL',
+        }),
+        source({
+          id: 's3',
+          hostname: 'input.example',
+          url: 'https://input.example/another-tool',
+          snippet: '다른 제품',
+        }),
+      ],
+      categories: [],
+      model: 'test',
+      promptVersion: 'research-v1',
+    });
+    expect(draft.identity.name.evidenceType).toBe('SINGLE_EXTERNAL');
+    expect(draft.warnings).toContain('AMBIGUOUS_PRODUCT');
+    expect(draft.warnings).toContain('SPARSE_FACTS');
+    expect(draft.summary).toBeNull();
+  });
+
+  it('wire schema의 nullable sparse 응답과 검증기가 같은 anchor 계약을 따른다', () => {
+    const schema = ProductResearchService.researchResponseFormat().json_schema.schema;
+    expect(schema.required).toEqual(Object.keys(schema.properties));
+    expect(schema.properties.summary.type).toEqual(['string', 'null']);
+    expect(schema.properties.companyCandidate.type).toEqual(['object', 'null']);
+    const raw = {
+      name: 'Linear',
+      nameAnchors: [{ sourceId: 's1', excerpt: 'Linear는 이슈' }],
+      summary: null,
+      summaryAnchors: [],
+      categoryCandidates: [],
+      features: [],
+      tags: [],
+      companyCandidate: null,
+      alternativeCandidates: [],
+      suggestedSlug: 'linear',
+      warnings: [],
+    };
+    const input = {
+      raw,
+      originalUrl: 'https://linear.app/',
+      sources: [source()],
+      categories: [],
+      model: 'test',
+      promptVersion: 'research-v1',
+    };
+    expect(ProductResearchService.buildDraftValidator(input)).toMatchObject({
+      summary: null,
+      features: [],
+      warnings: ['SPARSE_FACTS'],
+    });
+    expect(() => ProductResearchService.buildDraftValidator({ ...input, raw: { ...raw, summary: '설명' } })).toThrow(
+      '근거'
+    );
+    expect(() => ProductResearchService.buildDraftValidator({ ...input, raw: { ...raw, nameAnchors: [] } })).toThrow(
+      '근거'
+    );
+  });
+  it.each([
+    { summary: 42 },
+    { categoryCandidates: {} },
+    { tags: '협업' },
+    { warnings: ['VERIFIED_OFFICIAL'] },
+    { extraFacts: 'unsupported' },
+    { features: [{ ...llmPayload().features[0], emoji: 'x'.repeat(31) }] },
+    { alternativeCandidates: null },
+    { alternativeCandidates: [null] },
+    { nameAnchors: Array.from({ length: 6 }, () => ({ sourceId: 's1', excerpt: 'Linear는 이슈' })) },
+    { features: [{ ...llmPayload().features[0], unsupported: true }] },
+    { companyCandidate: { name: 'Linear', website: 12, anchors: [{ sourceId: 's1', excerpt: 'Linear는 이슈' }] } },
+    { categoryCandidates: [{ reason: '후보' }] },
+  ])('schema 밖의 wire 값은 sparse 성공으로 숨기지 않고 거절한다: %j', changes => {
+    expect(() =>
+      ProductResearchService.buildDraftValidator({
+        raw: { ...llmPayload(), ...changes },
+        originalUrl: 'https://linear.app/',
+        sources: [source()],
+        categories: [],
+        model: 'test',
+        promptVersion: 'research-v1',
+      })
+    ).toThrow();
+  });
 });
 
 describe('ProductResearchService.requestResearch', () => {
-  function requestDeps(existing: unknown = null, created: unknown = null) {
+  function requestDeps(existing: { requestKey: string } | null = null, created: unknown = null) {
     return {
-      findByRequestKey: vi.fn().mockResolvedValue(existing),
+      findByRequestKey: vi.fn(async (requestKey: string) => (existing?.requestKey === requestKey ? existing : null)),
       createPendingJob: vi.fn().mockResolvedValue(created),
     };
   }
 
   it('returns the same job for the same requestId', async () => {
-    const existing = { id: 'job-1', requestKey: 'req-12345678', officialUrl: 'https://linear.app/' };
+    const existing = {
+      id: 'job-1',
+      requestKey: 'request:e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
+      officialUrl: 'https://linear.app/',
+    };
     const deps = {
       jobRepository: requestDeps(existing, null),
       searchClient: { search: vi.fn() },
@@ -90,44 +200,58 @@ describe('ProductResearchService.requestResearch', () => {
     };
     const service = new ProductResearchService();
     const first = await service.requestResearch(
-      { requestId: 'req-12345678', officialUrl: 'https://linear.app/' },
+      { requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c', officialUrl: 'https://linear.app/' },
       // @ts-expect-error focused dependency shape
       deps
     );
     expect(first.job).toBe(existing);
     expect(first.queued).toBe(false);
+    expect(deps.jobRepository.findByRequestKey).toHaveBeenCalledWith('request:e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c');
     expect(deps.jobRepository.createPendingJob).not.toHaveBeenCalled();
   });
 
   it('creates a new job for a new requestId even with the same URL', async () => {
-    const created = { id: 'job-2', requestKey: 'req-abcdef12', officialUrl: 'https://linear.app/' };
+    const created = {
+      id: 'job-2',
+      requestKey: 'request:f1e2d3c4b5a44127890abcdef1234567',
+      officialUrl: 'https://linear.app/',
+    };
+    const existing = {
+      ...created,
+      id: 'job-1',
+      requestKey: 'request:e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
+    };
     const deps = {
-      jobRepository: requestDeps(null, created),
+      jobRepository: requestDeps(existing, created),
       searchClient: { search: vi.fn() },
       llm: { getModel: vi.fn(), complete: vi.fn() },
     };
     const service = new ProductResearchService();
     const result = await service.requestResearch(
-      { requestId: 'req-abcdef12', officialUrl: 'https://linear.app/' },
+      { requestId: 'f1e2d3c4b5a44127890abcdef1234567', officialUrl: 'https://linear.app/' },
       // @ts-expect-error focused dependency shape
       deps
     );
     expect(result.job).toBe(created);
     expect(result.queued).toBe(true);
     expect(deps.jobRepository.createPendingJob).toHaveBeenCalledWith({
-      requestKey: 'req-abcdef12',
+      requestKey: 'request:f1e2d3c4b5a44127890abcdef1234567',
       officialUrl: 'https://linear.app/',
     });
   });
 
   it('recovers a raced duplicate insert as deduped', async () => {
-    const raced = { id: 'job-9', requestKey: 'req-raced-12', officialUrl: 'https://linear.app/' };
+    const raced = {
+      id: 'job-9',
+      requestKey: 'request:aa11bb22cc334d5599aa11bb22cc3344',
+      officialUrl: 'https://linear.app/',
+    };
     const confinedError = Object.assign(new Error('duplicate key value violates unique constraint'), {
       code: '23505',
     });
     const deps = {
       jobRepository: {
-        findByRequestKey: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(raced),
+        findByRequestKey: requestDeps(raced).findByRequestKey.mockResolvedValueOnce(null),
         createPendingJob: vi.fn().mockRejectedValueOnce(confinedError),
       },
       searchClient: { search: vi.fn() },
@@ -135,7 +259,7 @@ describe('ProductResearchService.requestResearch', () => {
     };
     const service = new ProductResearchService();
     const result = await service.requestResearch(
-      { requestId: 'req-raced-12', officialUrl: 'https://linear.app/' },
+      { requestId: 'aa11bb22cc334d5599aa11bb22cc3344', officialUrl: 'https://linear.app/' },
       // @ts-expect-error focused dependency shape
       deps
     );
@@ -159,26 +283,32 @@ describe('ProductResearchService.requestResearch', () => {
       'job-old',
       // @ts-expect-error focused dependency shape
       deps,
-      'req-retry-99'
+      '1234567812344abc9012345678abcdef'
     );
     expect(result.job).toBe(created);
     expect(result.deduped).toBe(false);
     expect(deps.jobRepository.createPendingJob).toHaveBeenCalledWith({
-      requestKey: 'req-retry-99',
+      requestKey: 'request:1234567812344abc9012345678abcdef',
       officialUrl: 'https://linear.app/',
+      retryOfJobId: 'job-old',
     });
   });
 
   it('returns the existing job as deduped when retry collides on request_key', async () => {
     const failed = { id: 'job-old', status: 'failed', officialUrl: 'https://linear.app/' };
-    const raced = { id: 'job-existing', status: 'pending', officialUrl: 'https://linear.app/' };
+    const raced = {
+      id: 'job-existing',
+      requestKey: 'request:feedfacebeef4d5e8021c0ffee123456',
+      status: 'pending',
+      officialUrl: 'https://linear.app/',
+    };
     const confinedError = Object.assign(new Error('duplicate key value violates unique constraint'), {
       code: '23505',
     });
     const deps = {
       jobRepository: {
         findById: vi.fn().mockResolvedValue(failed),
-        findByRequestKey: vi.fn().mockResolvedValue(raced),
+        findByRequestKey: requestDeps(raced).findByRequestKey,
         createPendingJob: vi.fn().mockRejectedValueOnce(confinedError),
       },
       searchClient: { search: vi.fn() },
@@ -189,23 +319,28 @@ describe('ProductResearchService.requestResearch', () => {
       'job-old',
       // @ts-expect-error focused dependency shape
       deps,
-      'req-collide-1'
+      'feedfacebeef4d5e8021c0ffee123456'
     );
     expect(result.job).toBe(raced);
     expect(result.deduped).toBe(true);
-    expect(deps.jobRepository.findByRequestKey).toHaveBeenCalledWith('req-collide-1');
+    expect(deps.jobRepository.findByRequestKey).toHaveBeenCalledWith('request:feedfacebeef4d5e8021c0ffee123456');
   });
 
   it('rejects a retry request_key collision whose job URL differs from the failed job', async () => {
     const failed = { id: 'job-old', status: 'failed', officialUrl: 'https://linear.app/' };
-    const raced = { id: 'job-existing', status: 'pending', officialUrl: 'https://notion.so/' };
+    const raced = {
+      id: 'job-existing',
+      requestKey: 'request:feedfacebeef4d5e8021c0ffee123456',
+      status: 'pending',
+      officialUrl: 'https://notion.so/',
+    };
     const confinedError = Object.assign(new Error('duplicate key value violates unique constraint'), {
       code: '23505',
     });
     const deps = {
       jobRepository: {
         findById: vi.fn().mockResolvedValue(failed),
-        findByRequestKey: vi.fn().mockResolvedValue(raced),
+        findByRequestKey: requestDeps(raced).findByRequestKey,
         createPendingJob: vi.fn().mockRejectedValueOnce(confinedError),
       },
       searchClient: { search: vi.fn() },
@@ -217,14 +352,18 @@ describe('ProductResearchService.requestResearch', () => {
         'job-old',
         // @ts-expect-error focused dependency shape
         deps,
-        'req-collide-1'
+        'feedfacebeef4d5e8021c0ffee123456'
       )
-    ).rejects.toMatchObject({ code: 'product/invalid-args' });
-    expect(deps.jobRepository.findByRequestKey).toHaveBeenCalledWith('req-collide-1');
+    ).rejects.toMatchObject({ code: 'IDEMPOTENCY_KEY_CONFLICT' });
+    expect(deps.jobRepository.findByRequestKey).toHaveBeenCalledWith('request:feedfacebeef4d5e8021c0ffee123456');
   });
 
   it('rejects a mismatched officialUrl for the same requestId without creating a job', async () => {
-    const existing = { id: 'job-1', requestKey: 'req-12345678', officialUrl: 'https://linear.app/' };
+    const existing = {
+      id: 'job-1',
+      requestKey: 'request:e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
+      officialUrl: 'https://linear.app/',
+    };
     const deps = {
       jobRepository: requestDeps(existing, null),
       searchClient: { search: vi.fn() },
@@ -233,23 +372,27 @@ describe('ProductResearchService.requestResearch', () => {
     const service = new ProductResearchService();
     await expect(
       service.requestResearch(
-        { requestId: 'req-12345678', officialUrl: 'https://notion.so/' },
+        { requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c', officialUrl: 'https://notion.so/' },
         // @ts-expect-error focused dependency shape
         deps
       )
-    ).rejects.toMatchObject({ code: 'product/invalid-args' });
+    ).rejects.toMatchObject({ code: 'IDEMPOTENCY_KEY_CONFLICT' });
     expect(deps.jobRepository.createPendingJob).not.toHaveBeenCalled();
-    expect(deps.jobRepository.findByRequestKey).toHaveBeenCalledWith('req-12345678');
+    expect(deps.jobRepository.findByRequestKey).toHaveBeenCalledWith('request:e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c');
   });
 
   it('rejects a mismatched officialUrl on a raced duplicate insert', async () => {
-    const raced = { id: 'job-9', requestKey: 'req-raced-12', officialUrl: 'https://linear.app/' };
+    const raced = {
+      id: 'job-9',
+      requestKey: 'request:aa11bb22cc334d5599aa11bb22cc3344',
+      officialUrl: 'https://linear.app/',
+    };
     const confinedError = Object.assign(new Error('duplicate key value violates unique constraint'), {
       code: '23505',
     });
     const deps = {
       jobRepository: {
-        findByRequestKey: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(raced),
+        findByRequestKey: requestDeps(raced).findByRequestKey.mockResolvedValueOnce(null),
         createPendingJob: vi.fn().mockRejectedValueOnce(confinedError),
       },
       searchClient: { search: vi.fn() },
@@ -258,11 +401,11 @@ describe('ProductResearchService.requestResearch', () => {
     const service = new ProductResearchService();
     await expect(
       service.requestResearch(
-        { requestId: 'req-raced-12', officialUrl: 'https://notion.so/' },
+        { requestId: 'aa11bb22cc334d5599aa11bb22cc3344', officialUrl: 'https://notion.so/' },
         // @ts-expect-error focused dependency shape
         deps
       )
-    ).rejects.toMatchObject({ code: 'product/invalid-args' });
+    ).rejects.toMatchObject({ code: 'IDEMPOTENCY_KEY_CONFLICT' });
   });
 
   it('returns the terminal job as deduped when retry targets a non-failed job', async () => {
@@ -280,11 +423,31 @@ describe('ProductResearchService.requestResearch', () => {
       'job-done',
       // @ts-expect-error focused dependency shape
       deps,
-      'req-retry-99'
+      '1234567812344abc9012345678abcdef'
     );
     expect(result.job).toBe(terminal);
     expect(result.deduped).toBe(true);
     expect(deps.jobRepository.createPendingJob).not.toHaveBeenCalled();
+  });
+
+  it('표준 UUID v4를 request 네임스페이스에 저장하고 누락된 ID는 거절한다', async () => {
+    const deps = {
+      jobRepository: requestDeps(null, { id: 'new' }),
+      searchClient: { search: vi.fn() },
+      llm: { getModel: vi.fn(), complete: vi.fn() },
+    };
+    const service = new ProductResearchService();
+    const requestId = 'a2f7c964-582e-4971-932e-9ae7e8c4b107';
+    // @ts-expect-error focused dependency shape
+    await service.requestResearch({ requestId, officialUrl: 'https://example.com:8443/tool' }, deps);
+    expect(deps.jobRepository.createPendingJob).toHaveBeenCalledWith({
+      requestKey: `request:${requestId}`,
+      officialUrl: 'https://example.com:8443/tool',
+    });
+    // @ts-expect-error intentionally missing required requestId
+    await expect(service.requestResearch({ officialUrl: 'https://example.com/tool' }, deps)).rejects.toMatchObject({
+      code: 'product/invalid-args',
+    });
   });
 
   it('rejects invalid request ids', async () => {
@@ -301,6 +464,7 @@ describe('ProductResearchService.requestResearch', () => {
         deps
       )
     ).rejects.toThrow();
+    expect(deps.jobRepository.createPendingJob).not.toHaveBeenCalled();
   });
 });
 
@@ -357,6 +521,7 @@ describe('ProductResearchService.executeResearch', () => {
           job: { id: 'job-1', officialUrl: 'https://linear.app/' },
         }),
         failJob: vi.fn().mockResolvedValue(null),
+        retryJobLease: vi.fn().mockResolvedValue(null),
         completeJob: vi.fn().mockImplementation(async (input: { result: unknown }) => input.result),
       },
       categoryRepository: { findAll: vi.fn().mockResolvedValue([]) },
@@ -555,6 +720,48 @@ describe('ProductResearchService.executeResearch', () => {
       expect.objectContaining({ jobId: 'job-1', errorCode: 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED' })
     );
     expect(deps.llm.complete).not.toHaveBeenCalled();
+  });
+
+  it('질의별 rank를 round-robin으로 합친 뒤 URL 중복 제거와 최대 15개를 적용한다', async () => {
+    const fixture = stableFixture({
+      payload: { name: '제품', nameAnchors: [{ sourceId: 's1', excerpt: '공통 근거' }], features: [] },
+    });
+    const deps = executeDeps(fixture);
+    let query = 0;
+    deps.searchClient.search.mockImplementation(async () => {
+      const index = query++;
+      return {
+        ok: true,
+        results: Array.from({ length: 5 }, (_, rank) => ({
+          title: `q${index}r${rank}`,
+          url:
+            rank === 1 ? 'https://duplicate.example/path#fragment' : `https://q${index}.example:8443/product/${rank}`,
+          description: '공통 근거',
+        })),
+      };
+    });
+    // @ts-expect-error focused dependency shape
+    await new ProductResearchService().executeResearch('job-1', deps, 'lease-1');
+    const calls = deps.llm.complete.mock.calls as unknown as Array<[string, string]>;
+    const input = JSON.parse(calls[0]![1].split('\n반드시')[0]!);
+    expect(input.sources.map((item: { url: string }) => item.url)).toEqual([
+      'https://q0.example:8443/product/0',
+      'https://q1.example:8443/product/0',
+      'https://q2.example:8443/product/0',
+      'https://q3.example:8443/product/0',
+      'https://q4.example:8443/product/0',
+      'https://duplicate.example/path',
+      'https://q0.example:8443/product/2',
+      'https://q1.example:8443/product/2',
+      'https://q2.example:8443/product/2',
+      'https://q3.example:8443/product/2',
+      'https://q4.example:8443/product/2',
+      'https://q0.example:8443/product/3',
+      'https://q1.example:8443/product/3',
+      'https://q2.example:8443/product/3',
+      'https://q3.example:8443/product/3',
+    ]);
+    expect(deps.jobRepository.completeJob).toHaveBeenCalledOnce();
   });
 
   it('normalizes sources before LLM synthesis', () => {

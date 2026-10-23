@@ -31,11 +31,15 @@ export interface ProductScreenshotRepository {
     validateLocked?: (locked: ProductScreenshot) => Promise<void>
   ): Promise<ProductScreenshot>;
   /**
-   * 잠금 규약(접근 2): screenshot row를 FOR UPDATE로 잠근 트랜잭션에서
-   * validateLocked를 실행한 뒤, 통과하면 DB 행을 삭제한다.
-   * validateLocked가 실패하면 트랜잭션은 rollback되고 행은 보존된다.
+   * Product-first·screenshot 잠금을 유지하며 참조를 검증하고 DB 행 삭제와
+   * content checkpoint를 먼저 저장한 뒤 deleteImage를 실행한다.
+   * 검증·checkpoint·원격 삭제가 실패하면 트랜잭션은 rollback된다.
    */
-  deleteWithLock(id: string, validateLocked: (locked: ProductScreenshot) => Promise<void>): Promise<void>;
+  deleteWithLock(
+    id: string,
+    validateLocked: (locked: ProductScreenshot) => Promise<void>,
+    deleteImage: (locked: ProductScreenshot) => Promise<void>
+  ): Promise<void>;
   findManyVisualPublishedByFilterAndAfterIdAndLimit(
     filter: VisualScreenshotFilter,
     limit: number,

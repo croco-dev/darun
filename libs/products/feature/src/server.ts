@@ -3,7 +3,6 @@ export { ProductResearchMutationResolver, ProductResearchQueryResolver } from '.
 export {
   ProductResearchJob,
   RequestProductResearchInput,
-  RequestProductResearchPayload,
   RetryProductResearchInput,
   toProductResearchJobGraph,
 } from './graphs/ProductResearch';

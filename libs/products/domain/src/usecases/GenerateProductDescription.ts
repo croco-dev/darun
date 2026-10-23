@@ -4,6 +4,7 @@ import {
   type IProductDescriptionEvidenceAssembler,
   ProductDescriptionEvidenceAssemblerToken,
 } from '../services/ProductDescriptionEvidenceAssembler';
+import type { ProductDescriptionEvidenceHashVersion } from '../services/ProductDescriptionEvidenceProjector';
 import {
   type ProductDescriptionGenerator,
   ProductDescriptionGeneratorToken,
@@ -12,6 +13,7 @@ import {
 export type GenerateProductDescriptionCandidateResult = {
   candidateDocument: ProductDescriptionDocument;
   candidateHtml: string;
+  evidenceHashVersion: ProductDescriptionEvidenceHashVersion;
   evidenceHash: string;
   baseDescriptionHash: string;
   writerModel: string;
@@ -46,6 +48,7 @@ export class GenerateProductDescriptionCandidate {
 
     const currentSnapshot = await this.evidenceAssembler.assemble(productId);
     if (
+      currentSnapshot.evidenceHashVersion !== startSnapshot.evidenceHashVersion ||
       currentSnapshot.evidenceHash !== startSnapshot.evidenceHash ||
       currentSnapshot.baseDescriptionHash !== startSnapshot.baseDescriptionHash
     ) {
@@ -55,6 +58,7 @@ export class GenerateProductDescriptionCandidate {
     return {
       candidateDocument: generationResult.document,
       candidateHtml: generationResult.candidateHtml,
+      evidenceHashVersion: startSnapshot.evidenceHashVersion,
       evidenceHash: startSnapshot.evidenceHash,
       baseDescriptionHash: startSnapshot.baseDescriptionHash,
       writerModel: generationResult.writerModel,
@@ -65,7 +69,3 @@ export class GenerateProductDescriptionCandidate {
     };
   }
 }
-
-// Alias for backwards compatibility
-export const GenerateProductDescription = GenerateProductDescriptionCandidate;
-export type GenerateProductDescription = GenerateProductDescriptionCandidate;
