@@ -335,6 +335,26 @@ UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어�
 
 ## 코드 품질
 
+### PostgreSQL 무결성 검사
+
+PR CI는 임시 PostgreSQL 17 서비스에 `darun_job_config_attempts`, `darun_translation_integrity`,
+`darun_atomic_integrity`를 각각 생성해 작업 설정, 번역 저장, 소개 적용·리서치 materialization 검사를 실행합니다.
+각 suite는 실제 migration을 적용하고 외부 공급자는 mock으로 대체합니다. 운영 자격 증명은 사용하지 않습니다.
+CI 전용 reporter는 세 URL 중 하나가 없거나, 수집된 테스트가 없거나, skip/todo/실패가 하나라도 있으면 명령을 실패시킵니다.
+suite별 실행 건수와 skip 건수는 CI 로그에 남으며 이 단계가 실패하면 PR build job도 실패합니다.
+
+로컬의 일반 `pnpm test`는 URL이 없는 DB suite를 계속 건너뜁니다. 직접 검증하려면 **격리된 로컬 PostgreSQL**에
+위 세 DB를 생성하고 다음 명령을 실행합니다. 예시 포트는 PR CI와 같은 `55437`입니다.
+
+```bash
+export JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_job_config_attempts
+export TRANSLATION_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity
+export ATOMIC_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity
+reporter="$PWD/apps/graphql-api/scripts/required-postgres-reporter.ts"
+pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts --reporter=default --reporter="$reporter"
+pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts --reporter=default --reporter="$reporter"
+```
+
 PR을 올리기 전에 아래 명령이 모두 통과해야 합니다.
 
 ```bash
