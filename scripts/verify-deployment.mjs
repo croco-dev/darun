@@ -19,7 +19,79 @@ const probes = [
   },
 ];
 
-// Never include server bodies, error messages, URLs or category IDs in deployment logs.
+async function readBody(response) {
+  let body = '';
+  let size = 0;
+  const decoder = new TextDecoder();
+  for await (const chunk of response.body ?? []) {
+    size += chunk.byteLength;
+    if (size > 65_536) throw new Error('response_too_large');
+    body += decoder.decode(chunk, { stream: true });
+  }
+  return body + decoder.decode();
+}
+
+function responseResult(status, body, probe) {
+  if (status !== 200) return 'http_error';
+  let payload;
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    return 'invalid_json';
+  }
+  if (payload?.errors !== undefined && (!Array.isArray(payload.errors) || payload.errors.length > 0)) {
+    return 'graphql_error';
+  }
+  return probe.valid(payload?.data) ? 'ok' : 'invalid_data';
+}
+
+async function requestProbe(endpoint, probe, timeoutMs) {
+  const signal = AbortSignal.timeout(timeoutMs);
+  let status = null;
+  let requestId = null;
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: probe.query }),
+      redirect: 'error',
+      signal,
+    });
+    status = response.status;
+    const id = response.headers.get('x-amzn-requestid');
+    if (/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id ?? '')) {
+      requestId = id;
+    }
+    const body = await readBody(response);
+    return { status, requestId, result: responseResult(status, body, probe) };
+  } catch (error) {
+    let result = 'network_error';
+    if (signal.aborted) result = 'timeout';
+    else if (error?.message === 'response_too_large') result = 'response_too_large';
+    return { status, requestId, result };
+  }
+}
+
+async function runProbe(options, probe, attempt = 1) {
+  const { endpoint, revision, attempts, timeoutMs, retryMs, log } = options;
+  const result = await requestProbe(endpoint, probe, timeoutMs);
+  // Never include server bodies, error messages, URLs or category IDs in deployment logs.
+  log(
+    JSON.stringify({
+      revision: /^[a-f0-9]{40}$/i.test(revision ?? '') ? revision : 'unknown',
+      time: new Date().toISOString(),
+      probe: probe.name,
+      attempt,
+      ...result,
+    })
+  );
+  if (result.result === 'ok') return true;
+  if (attempt >= attempts) return false;
+  // The next attempt deliberately waits: parallel retries would remove the backoff.
+  await delay(retryMs);
+  return runProbe(options, probe, attempt + 1);
+}
+
 export async function verifyDeployment({
   endpoint,
   revision,
@@ -28,77 +100,18 @@ export async function verifyDeployment({
   retryMs = 2_000,
   log = console.log,
 }) {
-  let healthy = true;
-  for (const probe of probes) {
-    let passed = false;
-    for (let attempt = 1; attempt <= attempts; attempt++) {
-      const signal = AbortSignal.timeout(timeoutMs);
-      let status = null;
-      let requestId = null;
-      let result = 'network_error';
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ query: probe.query }),
-          redirect: 'error',
-          signal,
-        });
-        status = response.status;
-        const id = response.headers.get('x-amzn-requestid');
-        if (/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id ?? '')) {
-          requestId = id;
-        }
-        // Bound memory even if a proxy returns an unrelated page or an unending stream.
-        let body = '';
-        let size = 0;
-        const decoder = new TextDecoder();
-        for await (const chunk of response.body ?? []) {
-          size += chunk.byteLength;
-          if (size > 65_536) throw new Error('response_too_large');
-          body += decoder.decode(chunk, { stream: true });
-        }
-        body += decoder.decode();
-        if (status !== 200) {
-          result = 'http_error';
-        } else {
-          result = 'invalid_json';
-          const payload = JSON.parse(body);
-          if (payload?.errors !== undefined && (!Array.isArray(payload.errors) || payload.errors.length > 0)) {
-            result = 'graphql_error';
-          } else {
-            result = probe.valid(payload?.data) ? 'ok' : 'invalid_data';
-          }
-        }
-      } catch (error) {
-        if (signal.aborted) result = 'timeout';
-        else if (error?.message === 'response_too_large') result = 'response_too_large';
-      }
-      log(
-        JSON.stringify({
-          revision: /^[a-f0-9]{40}$/i.test(revision ?? '') ? revision : 'unknown',
-          time: new Date().toISOString(),
-          probe: probe.name,
-          attempt,
-          status,
-          requestId,
-          result,
-        })
-      );
-      if (result === 'ok') {
-        passed = true;
-        break;
-      }
-      if (attempt < attempts) await delay(retryMs);
-    }
-    healthy = passed && healthy;
-  }
-  return healthy;
+  const options = { endpoint, revision, attempts, timeoutMs, retryMs, log };
+  const initialization = await runProbe(options, probes[0]);
+  // Always record the DB outcome, including when initialization exhausts its attempts.
+  const database = await runProbe(options, probes[1]);
+  return initialization && database;
 }
 
-export async function main(outputsPath = 'apps/graphql-api/.sst/outputs.json') {
+export async function main() {
   try {
-    const outputs = JSON.parse(await readFile(outputsPath, 'utf8'));
+    const outputs = JSON.parse(
+      await readFile(new URL('../apps/graphql-api/.sst/outputs.json', import.meta.url), 'utf8')
+    );
     const api = new URL(outputs.api);
     // HTTP is accepted only for isolated local smoke fixtures.
     const local = api.protocol === 'http:' && ['127.0.0.1', '[::1]', 'localhost'].includes(api.hostname);
@@ -118,5 +131,5 @@ export async function main(outputsPath = 'apps/graphql-api/.sst/outputs.json') {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  process.exitCode = await main(process.argv[2]);
+  process.exitCode = await main();
 }

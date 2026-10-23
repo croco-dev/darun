@@ -123,6 +123,24 @@ for (const [name, body, status, result] of [
   });
 }
 
+test('invalid initialization data fails even when the independent database probe succeeds', async t => {
+  const { endpoint, requests } = await fixture(t, (query, res) => {
+    if (query.includes('__typename')) return res.end(JSON.stringify({ data: { __typename: 'Unexpected' } }));
+    success(query, res);
+  });
+  const { healthy, logs } = await check(endpoint);
+  assert.equal(healthy, false);
+  assert.deepEqual(
+    logs.map(line => [line.probe, line.result]),
+    [
+      ['initialization', 'invalid_data'],
+      ['initialization', 'invalid_data'],
+      ['database', 'ok'],
+    ]
+  );
+  assert.equal(requests.length, 3);
+});
+
 test('a populated database is accepted and its ID is never logged', async t => {
   const { endpoint } = await fixture(t, (query, res) => {
     if (query.includes('__typename')) return success(query, res);
@@ -197,15 +215,13 @@ test('oversized responses and redirects fail without following the target', asyn
 async function cli(t, output, workflow = false) {
   const dir = await mkdtemp(join(tmpdir(), 'darun-smoke-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
-  const path = join(dir, 'outputs.json');
-  await writeFile(path, JSON.stringify(output));
+  await mkdir(join(dir, 'apps/graphql-api/.sst'), { recursive: true });
+  await writeFile(join(dir, 'apps/graphql-api/.sst/outputs.json'), JSON.stringify(output));
+  await mkdir(join(dir, 'scripts'));
+  await copyFile(new URL('./verify-deployment.mjs', import.meta.url), join(dir, 'scripts/verify-deployment.mjs'));
   let executable = process.execPath;
   let args;
   if (workflow) {
-    await mkdir(join(dir, 'apps/graphql-api/.sst'), { recursive: true });
-    await writeFile(join(dir, 'apps/graphql-api/.sst/outputs.json'), JSON.stringify(output));
-    await mkdir(join(dir, 'scripts'));
-    await copyFile(new URL('./verify-deployment.mjs', import.meta.url), join(dir, 'scripts/verify-deployment.mjs'));
     const pnpm = join(dir, 'pnpm');
     await writeFile(pnpm, '#!/bin/sh\nexit 0\n');
     await chmod(pnpm, 0o700);
@@ -215,7 +231,7 @@ async function cli(t, output, workflow = false) {
     executable = '/bin/bash';
     args = ['-e', '-c', commands.join('\n')];
   }
-  const child = spawn(executable, args ?? [new URL('./verify-deployment.mjs', import.meta.url).pathname, path], {
+  const child = spawn(executable, args ?? [join(dir, 'scripts/verify-deployment.mjs')], {
     cwd: dir,
     env: {
       ...process.env,

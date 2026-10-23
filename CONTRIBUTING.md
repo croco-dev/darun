@@ -223,7 +223,8 @@ JSON 로그의 `revision`, UTC `time`, `probe`, `attempt`, HTTP `status`, UUID �
 검사 실패는 이미 적용된 migration이나 SST 배포를 자동으로 되돌리지 않습니다.
 기록된 revision·시각·request ID를 같은 시간대의 Lambda 로그와 대조해 일시적 라우팅 지연인지,
 초기화 예외인지, DB 조회 실패인지 확인합니다. 일시 장애 복구 뒤 동일 revision의 출력을 사용해
-검사만 다시 실행할 수 있습니다. 로컬에서는 `GITHUB_SHA=<40자리 revision> node scripts/verify-deployment.mjs <outputs.json 경로>`를 사용합니다.
+검사만 다시 실행할 수 있습니다. 로컬에서는 해당 revision의 checkout에서 `GITHUB_SHA=<40자리 revision> node scripts/verify-deployment.mjs`를 사용합니다.
+출력 파일은 스크립트와 같은 checkout의 `apps/graphql-api/.sst/outputs.json`으로 고정하며 임의 경로 인자를 받지 않습니다.
 재배포가 필요하면 검증을 통과한 revision으로 workflow를 다시 실행합니다. rollback은 현재 DB 스키마와
 이전 코드의 호환성을 먼저 확인한 뒤 승인된 배포 절차로 수행하며, 이미 적용된 SQL 이력을 수정하지 않습니다.
 
