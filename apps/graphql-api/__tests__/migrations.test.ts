@@ -115,5 +115,17 @@ describe('database migrations', () => {
         tags.add(entry.tag);
       }
     });
+
+    it('request identity 데이터 migration snapshot을 이전 schema와 연결하고 schema 변경 없이 보존한다', () => {
+      const journal = JSON.parse(readFileSync(journalPath, 'utf8')) as { entries: JournalEntry[] };
+      const index = journal.entries.findIndex(entry => entry.tag.endsWith('_research_request_namespace'));
+      expect(index).toBeGreaterThan(0);
+      const snapshotFor = (entry: JournalEntry) =>
+        JSON.parse(readFileSync(join(migrationsFolder, 'meta', `${entry.tag.split('_')[0]}_snapshot.json`), 'utf8'));
+      const previous = snapshotFor(journal.entries[index - 1]!);
+      const snapshot = snapshotFor(journal.entries[index]!);
+      expect(snapshot.id).not.toBe(previous.id);
+      expect(snapshot).toEqual({ ...previous, id: snapshot.id, prevId: previous.id });
+    });
   });
 });

@@ -6,7 +6,7 @@ import {
   CreateProduct,
   DeleteProductScreenshot,
   EditProduct,
-  GenerateProductDescription,
+  GenerateProductDescriptionCandidate,
   GetProduct,
   GetProductTags,
   GetPublishedProduct,
@@ -16,18 +16,16 @@ import {
   UpdateProductScreenshot,
   UpdateProductTag,
 } from '@darun/products-domain';
+import { ProductContentSyncToken, type ProductContentSync } from '@darun/products-domain';
 import { productNotFound, productInvalidArgs } from '@darun/products-domain';
 import { ProductDescriptionJobService } from '@darun/products-service';
 import { UpdateAlternativeProduct } from '@darun/recommendation-domain';
-import { IndexProduct } from '@darun/search-domain';
-import { TranslationJobService } from '@darun/translation-service';
 import { AuthRole } from '@darun/utils-apollo-server';
 import type { GraphQLContext } from '@darun/utils-apollo-server/src/libs/GraphQLContext';
 import { UpvoteProduct } from '@darun/voting-domain';
 import { Arg, Ctx, Authorized, Mutation, Resolver } from 'type-graphql';
-import { Service } from 'typedi';
-import { IndexProductInput } from './graphs/IndexProduct';
-import { IndexProductPayload } from './graphs/IndexProduct';
+import { Inject, Service } from 'typedi';
+import { IndexProductInput, IndexProductPayload, ProductContentSyncOverview } from './graphs/IndexProduct';
 import { Product } from './graphs/Product';
 import { UpvoteProductPayload } from './graphs/UpvoteProduct';
 import { ProductRecommendationMutationResolver } from './ProductRecommendationMutationResolver';
@@ -44,7 +42,6 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
     getCompanyUseCase: GetCompany,
     createProductUseCase: CreateProduct,
     editProductUseCase: EditProduct,
-    coreIndexProductUseCase: IndexProduct,
     updateProductTagUseCase: UpdateProductTag,
     getProductUseCase: GetProduct,
     getProductTagsUseCase: GetProductTags,
@@ -54,14 +51,12 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
     updateProductLinkUseCase: UpdateProductLink,
     updateProductScreenshotUseCase: UpdateProductScreenshot,
     registerProductCompanyUseCase: RegisterProductCompany,
-    generateProductDescriptionUseCase: GenerateProductDescription,
+    generateProductDescriptionUseCase: GenerateProductDescriptionCandidate,
     publishProductUseCase: PublishProduct,
-    publishIndexProductUseCase: IndexProduct,
-    translationJobService: TranslationJobService,
     updateAlternativeProductUseCase: UpdateAlternativeProduct,
-    private readonly standaloneIndexProductUseCase: IndexProduct,
     private readonly getPublishedProductUseCase: GetPublishedProduct,
     private readonly upvoteProductUseCase: UpvoteProduct,
+    @Inject(ProductContentSyncToken) private readonly contentSync: ProductContentSync,
     applyProductDescriptionCandidateUseCase?: ApplyProductDescriptionCandidate,
     productDescriptionJobService?: ProductDescriptionJobService
   ) {
@@ -69,7 +64,6 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
       getCompanyUseCase,
       createProductUseCase,
       editProductUseCase,
-      coreIndexProductUseCase,
       updateProductTagUseCase,
       getProductUseCase,
       getProductTagsUseCase,
@@ -81,8 +75,6 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
       registerProductCompanyUseCase,
       generateProductDescriptionUseCase,
       publishProductUseCase,
-      publishIndexProductUseCase,
-      translationJobService,
       updateAlternativeProductUseCase,
       applyProductDescriptionCandidateUseCase,
       productDescriptionJobService
@@ -92,26 +84,16 @@ export class ProductMutationResolver extends ProductRecommendationMutationResolv
   @Authorized([AuthRole.Admin])
   @Mutation(() => IndexProductPayload)
   async indexProduct(@Arg('input') input: IndexProductInput): Promise<IndexProductPayload> {
-    const product = await this.getPublishedProductUseCase.execute({
-      slug: input.slug,
-    });
+    return this.contentSync.requestSearch(input.slug);
+  }
 
-    if (!product) {
-      throw productNotFound();
-    }
-
-    const indexed = await this.standaloneIndexProductUseCase.execute({
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      summary: product.summary,
-      description: product.description,
-      publishedAt: product.publishedAt,
-    });
-
-    return {
-      indexed,
-    };
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => ProductContentSyncOverview, {
+    description:
+      '관리자만 호출할 수 있다. 각 kind 최신 failed intent만 재예약하며 실패 번역은 새 logical job으로 연결한다. canonical 원문과 과거 job 이력은 유지하고 완료되지 않은 예약을 성공으로 표시하지 않는다. 실패한 최신 intent가 없으면 CONTENT_SYNC_NOT_RETRYABLE.',
+  })
+  retryProductContentSync(@Arg('slug') slug: string): Promise<ProductContentSyncOverview> {
+    return this.contentSync.retry(slug);
   }
 
   @Mutation(() => UpvoteProductPayload)

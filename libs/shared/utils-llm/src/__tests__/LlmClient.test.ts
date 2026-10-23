@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LlmClient } from '../libs/LlmClient';
 import type { LlmConfigProvider } from '../libs/LlmConfig';
+import { LLM_DEFAULT_KEY_REJECTION_MESSAGE, LlmConfigReadFailedError } from '../libs/LlmEndpointKeyPolicy';
 import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '../libs/LlmModel';
 
 const mockCreate = vi.fn();
@@ -116,6 +117,101 @@ describe('LlmClient', () => {
       },
     });
   });
+
+  it('propagates provider config failures instead of falling back to defaults', async () => {
+    mockCreate.mockReset();
+
+    const customProvider: LlmConfigProvider = {
+      getConfig: vi.fn().mockRejectedValue(new Error('db unreachable')),
+    };
+
+    const client = new LlmClient(customProvider);
+
+    await expect(client.getConfig()).rejects.toBeInstanceOf(LlmConfigReadFailedError);
+    await expect(client.completion([{ role: 'user', content: 'Hi' }])).rejects.toMatchObject({
+      code: 'LLM_CONFIG_READ_FAILED',
+    });
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('refuses the default environment key on a custom endpoint from the provider', async () => {
+    mockCreate.mockReset();
+    process.env['OPEN_ROUTER_API_KEY'] = 'test-env-key';
+
+    const customProvider: LlmConfigProvider = {
+      getConfig: vi.fn().mockResolvedValue({
+        endpoint: 'https://custom-llm.com/v1',
+        apiKey: 'test-env-key',
+        model: 'custom-model-x',
+      }),
+    };
+
+    const client = new LlmClient(customProvider);
+
+    await expect(client.getConfig()).rejects.toThrow(LLM_DEFAULT_KEY_REJECTION_MESSAGE);
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('does not send environment credentials to an environment-configured custom endpoint', async () => {
+    vi.stubEnv('OPEN_ROUTER_ENDPOINT', 'https://custom.example.com/v1');
+    try {
+      const client = new LlmClient();
+      expect((await client.getConfig()).apiKey).toBe('');
+      await expect(client.completion([{ role: 'user', content: 'No credential' }])).rejects.toThrow(
+        'API key is not provided'
+      );
+      expect(mockCreate).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('does not send completion without a custom provider key', async () => {
+    const client = new LlmClient({
+      getConfig: vi
+        .fn()
+        .mockResolvedValue({ endpoint: 'https://custom.example.com/v1', apiKey: '', model: 'custom-model' }),
+    });
+    await expect(client.completion([{ role: 'user', content: 'No credential' }])).rejects.toThrow(
+      'API key is not provided'
+    );
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('does not resolve configuration until claimed work consumes it', async () => {
+    const getConfig = vi.fn().mockRejectedValue(new Error('synthetic settings outage'));
+    const client = new LlmClient({ getConfig });
+    await client.withConfigSnapshot(async () => {});
+    expect(getConfig).not.toHaveBeenCalled();
+    let claimed = false;
+    await client.withConfigSnapshot(async () => {
+      claimed = true;
+      await expect(client.getConfig()).rejects.toMatchObject({ code: 'LLM_CONFIG_READ_FAILED' });
+      await expect(client.getConfig()).rejects.toMatchObject({ code: 'LLM_CONFIG_READ_FAILED' });
+    });
+    expect(claimed).toBe(true);
+    expect(getConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it('pins concurrent reads and completions to one snapshot, then refreshes the next attempt', async () => {
+    let model = 'first-model';
+    const getConfig = vi.fn(async () => ({ endpoint: DEFAULT_LLM_ENDPOINT, apiKey: 'synthetic', model }));
+    const client = new LlmClient({ getConfig });
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: 'Synthetic result' } }] });
+    await client.withConfigSnapshot(async () => {
+      const configs = await Promise.all([client.getConfig(), client.getConfig()]);
+      configs[0]!.model = 'caller-mutation';
+      model = 'next-model';
+      await client.completion([{ role: 'user', content: 'Synthetic input' }]);
+      expect((await client.getConfig()).model).toBe('first-model');
+    });
+    expect(getConfig).toHaveBeenCalledTimes(1);
+    expect(mockCreate).toHaveBeenLastCalledWith(expect.objectContaining({ model: 'first-model' }));
+    await client.withConfigSnapshot(async () => {
+      expect((await client.getConfig()).model).toBe('next-model');
+    });
+    expect(getConfig).toHaveBeenCalledTimes(2);
+  });
 });
 
 const responseFormat = {
@@ -147,7 +243,7 @@ describe('structured completions', () => {
       const client = new LlmClient({
         getConfig: vi.fn().mockResolvedValue({
           endpoint,
-          apiKey: 'test-key',
+          apiKey: endpoint.includes('openrouter.ai') ? 'test-key' : 'custom-provider-key',
           model: 'test-model',
         }),
       });

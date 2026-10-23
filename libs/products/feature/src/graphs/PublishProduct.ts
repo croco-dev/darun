@@ -1,13 +1,13 @@
 import { Field, InputType, ObjectType } from 'type-graphql';
 import { Product } from './Product';
 
-@ObjectType()
+@ObjectType('PublishProductPayload')
 export class PublishProductPayload {
   @Field(() => Product)
   product: Product;
 }
 
-@InputType()
+@InputType('PublishProductInput')
 export class PublishProductInput {
   @Field()
   slug: string;

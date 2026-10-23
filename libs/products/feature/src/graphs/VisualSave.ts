@@ -1,12 +1,12 @@
 import { Field, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('ToggleVisualSavePayload')
 export class ToggleVisualSavePayload {
   @Field(() => Boolean)
   saved: boolean;
 }
 
-@ObjectType()
+@ObjectType('VisualSaveStatusPayload')
 export class VisualSaveStatusPayload {
   @Field(() => Boolean)
   saved: boolean;

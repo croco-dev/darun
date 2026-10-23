@@ -11,9 +11,10 @@ import {
 import { Button } from '@darun/ui';
 import { AlertCircle, CheckCircle2, Clock, Copy, Globe, Info, RefreshCw, RotateCw, Sparkles } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal, AdminPanel } from '@darun/ui-admin';
+import { Link, usePathname, useRouter } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { formatAsKst, parseAsUtc } from '../../lib/datetime';
 
 gql`
@@ -55,6 +56,7 @@ gql`
     productDescriptionJobs(status: $status, limit: $limit, offset: $offset) {
       id
       productId
+      productSlug
       status
       writerModel
       reviewerModel
@@ -71,6 +73,7 @@ gql`
     retryProductDescriptionJob(id: $id) {
       id
       productId
+      productSlug
       status
       writerModel
       reviewerModel
@@ -88,6 +91,7 @@ export type UnifiedLlmJob = {
   jobTypeLabel: string;
   entityType: string;
   entityId: string;
+  productSlug?: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed' | string;
   model?: string | null;
   message?: string | null;
@@ -175,6 +179,15 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function LlmJobListSection() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const retryRequestRef = useRef(0);
+  useEffect(
+    () => () => {
+      retryRequestRef.current += 1;
+    },
+    [pathname]
+  );
   const [jobTypeFilter, setJobTypeFilter] = useState<'all' | 'translation' | 'description'>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedErrorJob, setSelectedErrorJob] = useState<UnifiedLlmJob | null>(null);
@@ -234,6 +247,7 @@ export function LlmJobListSection() {
     jobTypeLabel: '상품 AI 소개 생성',
     entityType: 'Product',
     entityId: j.productId,
+    productSlug: j.productSlug,
     status: j.status,
     model:
       j.writerModel && j.reviewerModel && j.writerModel !== j.reviewerModel
@@ -294,16 +308,22 @@ export function LlmJobListSection() {
   }, [hasActiveJobs, jobTypeFilter, refetchAll]);
 
   const handleRetry = async (job: UnifiedLlmJob) => {
+    const request = ++retryRequestRef.current;
     try {
       setRetryingId(job.id);
       if (job.jobType === 'translation') {
         await retryTranslation({
           variables: { id: job.id },
         });
+        if (retryRequestRef.current !== request) return;
       } else {
-        await retryDescription({
-          variables: { id: job.id },
-        });
+        const response = await retryDescription({ variables: { id: job.id } });
+        if (retryRequestRef.current !== request) return;
+        const retry = response.data?.retryProductDescriptionJob;
+        if (!retry) throw new Error('새 소개 작업을 확인하지 못했습니다.');
+        router.push(
+          `/products/${encodeURIComponent(retry.productSlug)}?descriptionJobId=${encodeURIComponent(retry.id)}`
+        );
       }
       notifications.show({
         title: '재시도 요청 성공',
@@ -311,14 +331,16 @@ export function LlmJobListSection() {
         color: 'teal',
       });
       await refetchAll();
+      if (retryRequestRef.current !== request) return;
     } catch (err) {
+      if (retryRequestRef.current !== request) return;
       notifications.show({
         title: '재시도 요청 실패',
         message: err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.',
         color: 'red',
       });
     } finally {
-      setRetryingId(null);
+      if (retryRequestRef.current === request) setRetryingId(null);
     }
   };
 
@@ -613,7 +635,16 @@ export function LlmJobListSection() {
 
                       {/* Actions */}
                       <td className="px-4 py-3 text-center text-xs">
-                        {job.status === 'failed' || job.status === 'superseded' ? (
+                        {job.jobType === 'description' && job.productSlug && (
+                          <Link
+                            href={`/products/${encodeURIComponent(job.productSlug)}?descriptionJobId=${encodeURIComponent(job.id)}`}
+                            className="block underline focus-visible:ring-2"
+                            aria-label={`${job.id} 소개 후보 열기`}
+                          >
+                            후보 열기
+                          </Link>
+                        )}
+                        {job.status === 'failed' ? (
                           <Button
                             type="button"
                             size="sm"
@@ -628,9 +659,7 @@ export function LlmJobListSection() {
                               className={`shrink-0 ${isRetrying ? 'animate-spin motion-reduce:animate-none' : ''}`}
                               aria-hidden="true"
                             />
-                            <span className="whitespace-nowrap">
-                              {job.status === 'superseded' ? '다시 생성' : '재시도'}
-                            </span>
+                            <span className="whitespace-nowrap">재시도</span>
                           </Button>
                         ) : job.status === 'pending' || job.status === 'in_progress' ? (
                           <span className="text-xs text-brown-600 font-medium whitespace-nowrap">처리 중</span>

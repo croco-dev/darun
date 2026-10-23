@@ -17,11 +17,18 @@ const createMockRepositories = (screenshot: ProductScreenshot | null) => {
     findById: vi.fn().mockResolvedValue(screenshot),
     deleteWithLock: vi
       .fn()
-      .mockImplementation(async (_id: string, validateLocked: (locked: ProductScreenshot) => Promise<void>) => {
-        if (screenshot) {
-          await validateLocked(screenshot);
+      .mockImplementation(
+        async (
+          _id: string,
+          validateLocked: (locked: ProductScreenshot) => Promise<void>,
+          deleteImage: (locked: ProductScreenshot) => Promise<void>
+        ) => {
+          if (screenshot) {
+            await validateLocked(screenshot);
+            await deleteImage(screenshot);
+          }
         }
-      }),
+      ),
     deleteById: vi.fn(),
     findManyByProductIdSortByPriorityDesc: vi.fn(),
     insert: vi.fn(),
@@ -132,7 +139,7 @@ describe('DeleteProductScreenshot', () => {
     expect(mockImageDeleter.delete).not.toHaveBeenCalled();
   });
 
-  it('외부 이미지 삭제 실패는 실패 응답으로 이어지고 DB 행 삭제를 호출하지 않는다', async () => {
+  it('외부 이미지 삭제 실패는 실패 응답으로 이어지고 별도 DB 삭제를 호출하지 않는다', async () => {
     const mockScreenshot = createScreenshot();
     const { screenshotRepository, flowRepository } = createMockRepositories(mockScreenshot);
 
@@ -168,7 +175,11 @@ describe('DeleteProductScreenshot', () => {
 
     await useCase.execute('screenshot-1');
 
-    expect(screenshotRepository.deleteWithLock).toHaveBeenCalledWith('screenshot-1', expect.any(Function));
+    expect(screenshotRepository.deleteWithLock).toHaveBeenCalledWith(
+      'screenshot-1',
+      expect.any(Function),
+      expect.any(Function)
+    );
     expect(mockImageDeleter.delete).toHaveBeenCalledWith(mockScreenshot.imageUrl);
   });
 });

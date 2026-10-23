@@ -19,11 +19,11 @@ function SavesExplorerSkeleton() {
 export default function SavesPage() {
   return (
     <VisualLayout>
-      <main id="main-content" tabIndex={-1} className="w-full py-8 focus:outline-none md:py-12">
+      <div className="w-full py-8 md:py-12">
         <Suspense fallback={<SavesExplorerSkeleton />}>
           <SavesExplorer />
         </Suspense>
-      </main>
+      </div>
     </VisualLayout>
   );
 }

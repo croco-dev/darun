@@ -73,51 +73,31 @@ export function ModelSelectModal({
     setIsLoading(true);
     setError(null);
 
-    const normalizedEndpoint = (endpoint.trim() || 'https://openrouter.ai/api/v1').replace(/\/+$/, '');
-    const directUrl = normalizedEndpoint.endsWith('/models') ? normalizedEndpoint : `${normalizedEndpoint}/models`;
-
     try {
-      let data: unknown = null;
+      // Never bypass server authorization or endpoint policy with a direct provider request.
+      const proxyRes = await fetch('/api/llm/models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpoint: endpoint.trim() || 'https://openrouter.ai/api/v1',
+          apiKey: apiKey?.trim() || undefined,
+        }),
+      });
 
-      // 1. Try Next.js API route proxy (bypasses browser CORS & uses server env key if needed)
-      try {
-        const proxyRes = await fetch('/api/llm/models', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endpoint: normalizedEndpoint,
-            apiKey: apiKey?.trim() || undefined,
-          }),
-        });
-
-        if (proxyRes.ok) {
-          data = await proxyRes.json();
-        }
-      } catch {
-        // Fallback to direct fetch
-      }
-
-      // 2. If proxy didn't return data, fallback to direct fetch
-      if (!data) {
-        const directHeaders: Record<string, string> = {
-          Accept: 'application/json',
-        };
-        if (apiKey?.trim()) {
-          directHeaders['Authorization'] = `Bearer ${apiKey.trim()}`;
-        }
-        const directRes = await fetch(directUrl, { headers: directHeaders });
-        if (!directRes.ok) {
-          const errText = await directRes.text();
-          throw new Error(`HTTP ${directRes.status}: ${errText.slice(0, 150)}`);
-        }
-        data = await directRes.json();
+      const payload: unknown = await proxyRes.json().catch(() => null);
+      if (!proxyRes.ok) {
+        const message =
+          payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string'
+            ? payload.error
+            : '모델 목록 조회에 실패했습니다.';
+        throw new Error(message);
       }
 
       const rawList: unknown[] =
-        data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown }).data)
-          ? (data as { data: unknown[] }).data
-          : Array.isArray(data)
-            ? data
+        payload && typeof payload === 'object' && 'data' in payload && Array.isArray(payload.data)
+          ? payload.data
+          : Array.isArray(payload)
+            ? payload
             : [];
 
       const parsedModels: LlmModelItem[] = rawList
@@ -127,33 +107,32 @@ export function ModelSelectModal({
             typeof item === 'object' &&
             !Array.isArray(item) &&
             'id' in item &&
-            (typeof (item as Record<string, unknown>)['id'] === 'string' ||
-              typeof (item as Record<string, unknown>)['id'] === 'number')
+            (typeof item.id === 'string' || typeof item.id === 'number')
         )
-        .map(item => ({
-          id: String(item['id']),
-          name: typeof item['name'] === 'string' ? item['name'] : undefined,
-          description: typeof item['description'] === 'string' ? item['description'] : undefined,
-          context_length: typeof item['context_length'] === 'number' ? item['context_length'] : undefined,
-          supported_parameters:
-            Array.isArray(item['supported_parameters']) &&
-            item['supported_parameters'].every((parameter: unknown) => typeof parameter === 'string')
-              ? item['supported_parameters']
-              : undefined,
-          pricing:
-            item['pricing'] && typeof item['pricing'] === 'object'
-              ? {
-                  prompt:
-                    typeof (item['pricing'] as Record<string, unknown>)['prompt'] === 'string'
-                      ? ((item['pricing'] as Record<string, unknown>)['prompt'] as string)
-                      : undefined,
-                  completion:
-                    typeof (item['pricing'] as Record<string, unknown>)['completion'] === 'string'
-                      ? ((item['pricing'] as Record<string, unknown>)['completion'] as string)
-                      : undefined,
-                }
-              : undefined,
-        }));
+        .map(item => {
+          const pricing = item['pricing'];
+          return {
+            id: String(item['id']),
+            name: typeof item['name'] === 'string' ? item['name'] : undefined,
+            description: typeof item['description'] === 'string' ? item['description'] : undefined,
+            context_length: typeof item['context_length'] === 'number' ? item['context_length'] : undefined,
+            supported_parameters:
+              Array.isArray(item['supported_parameters']) &&
+              item['supported_parameters'].every((parameter: unknown) => typeof parameter === 'string')
+                ? item['supported_parameters']
+                : undefined,
+            pricing:
+              pricing && typeof pricing === 'object'
+                ? {
+                    prompt: 'prompt' in pricing && typeof pricing.prompt === 'string' ? pricing.prompt : undefined,
+                    completion:
+                      'completion' in pricing && typeof pricing.completion === 'string'
+                        ? pricing.completion
+                        : undefined,
+                  }
+                : undefined,
+          };
+        });
 
       if (!parsedModels.length) {
         throw new Error('조회된 모델 목록이 비어 있습니다. 엔드포인트 URL을 확인해주세요.');

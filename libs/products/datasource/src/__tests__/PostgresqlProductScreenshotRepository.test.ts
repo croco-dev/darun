@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostgresqlProductScreenshotRepository } from '../repositories/PostgresqlProductScreenshotRepository';
 
+vi.mock('../repositories/productContentSync', () => ({ beginProductContentWrite: vi.fn(async () => vi.fn()) }));
+
 vi.hoisted(() => {
   process.env.VOTE_IP_SALT = 'test-salt';
 });
@@ -23,19 +25,25 @@ describe('PostgresqlProductScreenshotRepository', () => {
     insert: vi.fn().mockReturnThis(),
     values: vi.fn().mockReturnThis(),
     returning: vi.fn(),
+    select: vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue(
+          Object.assign(Promise.resolve([{ productId: 'product-1' }]), {
+            for: vi.fn().mockResolvedValue([{ id: 'product-1' }]),
+          })
+        ),
+      }),
+    }),
+    delete: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
   };
 
   const mockDb = {
     transaction: vi.fn(),
-    delete: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockDb.transaction.mockImplementation(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx));
-    mockDb.delete.mockReturnValue({
-      where: vi.fn().mockResolvedValue(undefined),
-    });
   });
 
   it('should call clearAll() after insert()', async () => {
