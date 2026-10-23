@@ -5,6 +5,7 @@ import type { RankedProductVoteRepository } from '../repositories/RankedProductV
 import { RankingCache } from '../services/RankingCache';
 import { RankingService } from '../services/RankingService';
 import { GetRankedProducts } from '../usecases/GetRankedProducts';
+import { createMockRepository } from './productRepositoryMock';
 
 const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
 const NOW = new Date('2026-01-01T12:00:00.000Z');
@@ -44,30 +45,13 @@ describe('GetRankedProducts', () => {
         findTopNByVoteCount: vi.fn<RankedProductVoteRepository['findTopNByVoteCount']>().mockResolvedValue(votes),
       },
       productRepository: {
-        updateById: vi.fn<ProductRepository['updateById']>(),
-        findAllByBeforeIdAndLimit: vi.fn<ProductRepository['findAllByBeforeIdAndLimit']>().mockResolvedValue([]),
-        findAllByAfterIdAndLimit: vi.fn<ProductRepository['findAllByAfterIdAndLimit']>().mockResolvedValue([]),
-        findPublishedByAfterIdAndLimit: vi
-          .fn<ProductRepository['findPublishedByAfterIdAndLimit']>()
-          .mockResolvedValue([]),
+        ...createMockRepository(),
         findTopNSortByPublishedAtDesc: vi
           .fn<ProductRepository['findTopNSortByPublishedAtDesc']>()
           .mockResolvedValue([]),
         findPublishedByIds: vi
           .fn<ProductRepository['findPublishedByIds']>()
           .mockImplementation(async ids => ids.map(id => productById.get(id) ?? null)),
-        findPublishedOneById: vi.fn<ProductRepository['findPublishedOneById']>().mockResolvedValue(null),
-        findOneBySlug: vi.fn<ProductRepository['findOneBySlug']>().mockResolvedValue(null),
-        findOneById: vi.fn<ProductRepository['findOneById']>().mockResolvedValue(null),
-        findOneFreshById: vi.fn<ProductRepository['findOneFreshById']>().mockResolvedValue(null),
-        findPublishedOneBySlug: vi.fn<ProductRepository['findPublishedOneBySlug']>().mockResolvedValue(null),
-        findPublishedByCategoryId: vi.fn<ProductRepository['findPublishedByCategoryId']>().mockResolvedValue([]),
-        findPublishedByCategoryIdAndLimit: vi
-          .fn<ProductRepository['findPublishedByCategoryIdAndLimit']>()
-          .mockResolvedValue([]),
-        countPublishedAll: vi.fn<ProductRepository['countPublishedAll']>().mockResolvedValue(0),
-        countAll: vi.fn<ProductRepository['countAll']>().mockResolvedValue(0),
-        insert: vi.fn<ProductRepository['insert']>().mockResolvedValue(null),
       } satisfies ProductRepository,
     };
   };
@@ -190,24 +174,11 @@ describe('GetRankedProducts', () => {
     ]);
 
     const productRepository = {
+      ...createMockRepository(),
       findPublishedByIds: vi
         .fn()
         .mockImplementation(async (ids: string[]) => ids.map(id => allProducts.get(id) ?? null)),
-      findPublishedOneById: vi.fn().mockResolvedValue(null),
-      findOneById: vi.fn().mockResolvedValue(null),
-      findOneFreshById: vi.fn().mockResolvedValue(null),
-      findOneBySlug: vi.fn().mockResolvedValue(null),
-      findPublishedOneBySlug: vi.fn().mockResolvedValue(null),
-      findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
-      findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
-      findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
-      findPublishedByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
       findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
-      updateById: vi.fn(),
-      findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
-      countPublishedAll: vi.fn().mockResolvedValue(0),
-      countAll: vi.fn().mockResolvedValue(0),
-      insert: vi.fn().mockResolvedValue(null),
     } satisfies ProductRepository;
 
     const result = await new GetRankedProducts(
@@ -242,24 +213,11 @@ describe('GetRankedProducts', () => {
     );
 
     const productRepository = {
+      ...createMockRepository(),
       findPublishedByIds: vi
         .fn()
         .mockImplementation(async (ids: string[]) => ids.map(id => allProducts.get(id) ?? null)),
-      findPublishedOneById: vi.fn().mockResolvedValue(null),
-      findOneById: vi.fn().mockResolvedValue(null),
-      findOneFreshById: vi.fn().mockResolvedValue(null),
-      findOneBySlug: vi.fn().mockResolvedValue(null),
-      findPublishedOneBySlug: vi.fn().mockResolvedValue(null),
-      findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
-      findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
-      findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
-      findPublishedByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
       findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
-      updateById: vi.fn(),
-      findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
-      countPublishedAll: vi.fn().mockResolvedValue(0),
-      countAll: vi.fn().mockResolvedValue(0),
-      insert: vi.fn().mockResolvedValue(null),
     } satisfies ProductRepository;
 
     const result = await new GetRankedProducts(
@@ -441,26 +399,13 @@ describe('GetRankedProducts', () => {
     } satisfies Pick<RankedProductVoteRepository, 'findTopNByVoteCount'>;
 
     const productRepository = {
+      ...createMockRepository(),
       findPublishedByIds: vi
         .fn()
         .mockImplementation(async (ids: string[]) =>
           ids.map(id => (id === publishedLowVote.id ? publishedLowVote : null))
         ),
-      findPublishedOneById: vi.fn().mockResolvedValue(null),
-      findOneById: vi.fn().mockResolvedValue(null),
-      findOneFreshById: vi.fn().mockResolvedValue(null),
-      findOneBySlug: vi.fn().mockResolvedValue(null),
-      findPublishedOneBySlug: vi.fn().mockResolvedValue(null),
-      findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
-      findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
-      findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
-      findPublishedByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
       findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
-      updateById: vi.fn(),
-      findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
-      countPublishedAll: vi.fn().mockResolvedValue(0),
-      countAll: vi.fn().mockResolvedValue(0),
-      insert: vi.fn().mockResolvedValue(null),
     } satisfies ProductRepository;
 
     const result = await new GetRankedProducts(
@@ -497,24 +442,11 @@ describe('GetRankedProducts', () => {
       ]);
 
       const productRepository = {
+        ...createMockRepository(),
         findPublishedByIds: vi
           .fn()
           .mockImplementation(async (ids: string[]) => ids.map(id => allProducts.get(id) ?? null)),
-        findPublishedOneById: vi.fn().mockResolvedValue(null),
-        findOneById: vi.fn().mockResolvedValue(null),
-        findOneFreshById: vi.fn().mockResolvedValue(null),
-        findOneBySlug: vi.fn().mockResolvedValue(null),
-        findPublishedOneBySlug: vi.fn().mockResolvedValue(null),
-        findPublishedByCategoryId: vi.fn().mockResolvedValue([]),
-        findAllByBeforeIdAndLimit: vi.fn().mockResolvedValue([]),
-        findAllByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
-        findPublishedByAfterIdAndLimit: vi.fn().mockResolvedValue([]),
         findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([]),
-        updateById: vi.fn(),
-        findPublishedByCategoryIdAndLimit: vi.fn().mockResolvedValue([]),
-        countPublishedAll: vi.fn().mockResolvedValue(0),
-        countAll: vi.fn().mockResolvedValue(0),
-        insert: vi.fn().mockResolvedValue(null),
       } satisfies ProductRepository;
 
       const result = await new GetRankedProducts(
