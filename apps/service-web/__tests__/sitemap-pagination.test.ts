@@ -35,6 +35,7 @@ describe('sitemap cursor partitions', () => {
       params: Promise.resolve({ id: `${last}.xml` }),
     });
     expect(response.headers.get('Content-Type')).toContain('application/xml');
+    expect(response.headers.get('Cache-Control')).toBe('public, s-maxage=3600, stale-while-revalidate=86400');
     expect(await response.text()).toContain('<loc>https://www.darun.io/en/products/product-5001/alternatives</loc>');
     expect(query).toHaveBeenCalledTimes(1);
     expect(query.mock.calls[0][0].variables.first).toBe(100);

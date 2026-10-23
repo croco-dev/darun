@@ -1,7 +1,7 @@
 import { getSitemapPartition } from '../../sitemap-data';
 import { serializeSitemap } from '../../sitemap-entries';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -10,6 +10,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
   const entries = await getSitemapPartition(id.slice(0, -4));
   return new Response(serializeSitemap(entries), {
-    headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+    headers: {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+    },
   });
 }
