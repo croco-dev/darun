@@ -13,7 +13,7 @@ describe('GetAlternativeProducts', () => {
       name: id,
       summary: id,
       logoUrl: `${id}.png`,
-      publishedAt: publishedAt ?? new Date(),
+      publishedAt: publishedAt ?? new Date('2026-01-01T00:00:00.000Z'),
       categoryIds,
     });
 

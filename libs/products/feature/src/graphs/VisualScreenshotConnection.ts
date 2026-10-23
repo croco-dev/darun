@@ -2,7 +2,7 @@ import { PageInfo } from '@darun/utils-apollo-server';
 import { Field, Int, ObjectType } from 'type-graphql';
 import { VisualScreenshot } from './VisualScreenshot';
 
-@ObjectType()
+@ObjectType('VisualScreenshotConnection')
 export class VisualScreenshotConnection {
   @Field(() => Int)
   totalCount: number;
@@ -14,7 +14,7 @@ export class VisualScreenshotConnection {
   edges: VisualScreenshotEdge[];
 }
 
-@ObjectType()
+@ObjectType('VisualScreenshotEdge')
 export class VisualScreenshotEdge {
   @Field()
   cursor: string;

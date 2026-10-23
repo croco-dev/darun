@@ -12,6 +12,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { productFeatures } from '../entities/ProductFeaturesSchema';
+import { beginProductContentWrite } from './productContentSync';
 
 @Service(ProductFeatureRepositoryToken)
 export class PostgresqlProductFeatureRepository implements ProductFeatureRepository {
@@ -40,11 +41,13 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
   insert(newFeature: ProductFeature): Promise<ProductFeature> {
     return this.db
       .transaction(async tx => {
+        const finishContentWrite = await beginProductContentWrite(tx, newFeature.productId);
         const inserted = await tx
           .insert(productFeatures)
           .values({ ...newFeature })
           .returning();
 
+        await finishContentWrite();
         return this.mapper(inserted[0]);
       })
       .then(result => {
@@ -56,6 +59,12 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
   updateById(featureId: string, modifier: (feature: ProductFeature) => ProductFeature): Promise<ProductFeature> {
     return this.db
       .transaction(async tx => {
+        const [owner] = await tx
+          .select({ productId: productFeatures.productId })
+          .from(productFeatures)
+          .where(eq(productFeatures.id, featureId));
+        if (!owner) throw productFeatureNotFound();
+        const finishContentWrite = await beginProductContentWrite(tx, owner.productId);
         const prevFeature = await tx
           .select()
           .from(productFeatures)
@@ -67,15 +76,17 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
           throw productFeatureNotFound();
         }
 
+        const next = modifier(prevFeature);
         const updated = await tx
           .update(productFeatures)
-          .set({ ...modifier(prevFeature) })
+          .set({ name: next.name, summary: next.summary, emoji: next.emoji })
           .where(eq(productFeatures.id, featureId))
           .returning();
         if (!updated[0]) {
           throw productFeatureUpdateFailed();
         }
 
+        await finishContentWrite();
         return this.mapper(updated[0]);
       })
       .then(result => {

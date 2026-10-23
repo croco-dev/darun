@@ -1,7 +1,11 @@
+import type * as Router from '@darun/utils-router';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import SavesPage from '../app/saves/page';
 import { VISUAL_NAV_TABS, isTabActive } from '../app/visualNav';
 import { VISUAL_SAVES_PAGE_SIZE } from '../features/saves/saveDocuments';
 import { isSavesTabValue, readSavesTabParam } from '../features/saves/useSavesPage';
@@ -13,8 +17,11 @@ vi.mock('@apollo/client/react', () => ({
   useApolloClient: () => ({ query: vi.fn(), mutate: vi.fn() }),
 }));
 
-vi.mock('@darun/utils-router', () => ({
+vi.mock('@darun/utils-router', async importOriginal => ({
+  ...(await importOriginal<typeof Router>()),
   useNavigate: () => vi.fn(),
+  usePathname: () => '/saves',
+  useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -35,6 +42,19 @@ describe('M4 saves page', () => {
 
   it('저장 페이지 크기는 탐색 페이지와 동일하다', () => {
     expect(VISUAL_SAVES_PAGE_SIZE).toBe(24);
+  });
+
+  it('실제 저장 페이지와 공통 레이아웃은 고유한 본문과 건너뛰기 대상을 렌더한다', () => {
+    const out = renderToStaticMarkup(createElement(SavesPage));
+
+    expect(out.match(/<main\b/g)).toHaveLength(1);
+    expect(out.match(/\bid="main-content"/g)).toHaveLength(1);
+    expect(out).toMatch(/<main id="main-content" tabindex="-1"/);
+    expect(out).toMatch(/<a href="#main-content"[^>]*>본문으로 건너뛰기<\/a>/);
+    expect(out).toContain('w-full py-8 md:py-12');
+    expect(out).toContain('저장한 화면을 불러오는 중');
+    expect(out).toMatch(/<a(?=[^>]*href="\/saves")(?=[^>]*aria-current="page")[^>]*>/);
+    expect(out).toContain('role="search"');
   });
 });
 

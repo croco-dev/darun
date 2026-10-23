@@ -3,8 +3,9 @@ import { ProductFeature } from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import DataLoader from 'dataloader';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { productFeatures } from '../entities/ProductFeaturesSchema';
 import { PostgresqlProductFeatureRepository } from '../repositories/PostgresqlProductFeatureRepository';
+
+vi.mock('../repositories/productContentSync', () => ({ beginProductContentWrite: vi.fn(async () => vi.fn()) }));
 
 describe('PostgresqlProductFeatureRepository DataLoader cache invalidation', () => {
   let mockDb: Drizzle & {
@@ -37,9 +38,12 @@ describe('PostgresqlProductFeatureRepository DataLoader cache invalidation', () 
   function createMockSelectWithLimit(rows: Record<string, unknown>[]) {
     return vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue(rows),
-        }),
+        where: vi.fn().mockReturnValue(
+          Object.assign(Promise.resolve(rows), {
+            limit: vi.fn().mockResolvedValue(rows),
+            for: vi.fn().mockResolvedValue([{ id: 'product-1' }]),
+          })
+        ),
       }),
     });
   }
@@ -90,7 +94,9 @@ describe('PostgresqlProductFeatureRepository DataLoader cache invalidation', () 
 
       mockDb.select = mockSelect;
       mockDb.insert = mockInsert;
-      mockDb.transaction.mockImplementation(async (cb: (tx: typeof mockDb) => Promise<unknown>) => cb(mockDb));
+      mockDb.transaction.mockImplementation(async (cb: (tx: typeof mockDb) => Promise<unknown>) =>
+        cb({ ...mockDb, select: createMockSelectWithLimit([insertedRow]) } as unknown as typeof mockDb)
+      );
 
       const repository = new PostgresqlProductFeatureRepository(mockDb);
 

@@ -1,4 +1,4 @@
-import { withTimeout } from '../withTimeout';
+import { withAbortableStage } from '../withTimeout';
 import type { WebSearchKeyProvider, WebSearchOutcome, WebSearchResult } from './types';
 
 const BRAVE_SEARCH_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
@@ -72,36 +72,48 @@ async function resolveKey(provider?: WebSearchKeyProvider): Promise<string | nul
   if (!provider) {
     return null;
   }
-  try {
-    const key = await provider();
-    if (typeof key !== 'string') {
-      return null;
-    }
-    return key.trim().length > 0 ? key.trim() : null;
-  } catch {
+  const key = await provider();
+  if (typeof key !== 'string') {
     return null;
+  }
+  return key.trim().length > 0 ? key.trim() : null;
+}
+
+type SettledResponse = { ok: boolean; status: number; body: unknown };
+
+/** Success bodies that cannot be parsed keep the existing invalid-JSON classification. */
+class InvalidJsonBodyError extends Error {
+  constructor() {
+    super('Brave search returned invalid JSON');
+    this.name = 'InvalidJsonBodyError';
   }
 }
 
-async function fetchOnce(
-  query: string,
-  count: number,
-  apiKey: string,
-  signal?: AbortSignal
-): Promise<Response> {
+async function fetchOnce(query: string, count: number, apiKey: string, signal?: AbortSignal): Promise<SettledResponse> {
   const url = new URL(BRAVE_SEARCH_ENDPOINT);
   url.searchParams.set('q', query);
   url.searchParams.set('count', String(count));
-  return withTimeout(
-    fetch(url, {
-      headers: {
-        Accept: 'application/json',
-        'X-Subscription-Token': apiKey,
-      },
-      ...(signal ? { signal } : {}),
-    }),
-    REQUEST_TIMEOUT_MS,
-    'Brave search request timed out'
+  // 헤더만 도착한 stalled body도 중단되도록 본문 수신까지 budget·부모 신호가 실제 fetch에 연결된 채로 유지된다.
+  return withAbortableStage(
+    async childSignal => {
+      const response = await fetch(url, {
+        headers: { Accept: 'application/json', 'X-Subscription-Token': apiKey },
+        signal: childSignal,
+      });
+      if (!response.ok) {
+        return { ok: false, status: response.status, body: undefined };
+      }
+      try {
+        return { ok: true, status: response.status, body: await response.json() };
+      } catch (error) {
+        // budget·부모 중단으로 끊긴 본문은 원래 오류로 남겨 TIMEOUT 분류가 되게 한다.
+        if (childSignal.aborted) {
+          throw error;
+        }
+        throw new InvalidJsonBodyError();
+      }
+    },
+    { budgetMs: REQUEST_TIMEOUT_MS, signal, message: 'Brave search request timed out' }
   );
 }
 
@@ -134,7 +146,7 @@ export class BraveSearchClient {
       return { ok: false, code: 'TIMEOUT', message: 'Brave search was aborted' };
     }
 
-    let response: Response;
+    let response: SettledResponse;
     try {
       response = await fetchOnce(normalizedQuery, clampedCount, apiKey, signal);
     } catch (error) {
@@ -152,12 +164,7 @@ export class BraveSearchClient {
       return classifyStatus(response.status);
     }
 
-    let body: unknown;
-    try {
-      body = await response.json();
-    } catch {
-      return { ok: false, code: 'UPSTREAM_ERROR', message: 'Brave search returned invalid JSON' };
-    }
+    const body = response.body;
 
     const rawResults =
       typeof body === 'object' && body !== null && 'web' in body

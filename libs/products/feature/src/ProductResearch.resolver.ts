@@ -4,7 +4,6 @@ import {
   ProductResearchMaterializationRepositoryToken,
   normalizeOfficialUrl,
   type CategoryRepository,
-  type ProductResearchDispatchStatus,
   type ProductResearchJobEntity,
   type ProductResearchJobRepository,
   type ProductResearchMaterializationRepository,
@@ -27,7 +26,6 @@ import {
   MaterializeResearchedProductInput,
   ProductResearchJob,
   RequestProductResearchInput,
-  RequestProductResearchPayload,
   RetryProductResearchInput,
   toProductResearchJobGraph,
 } from './graphs/ProductResearch';
@@ -84,13 +82,12 @@ export class ProductResearchMutationResolver {
     };
   }
 
-  private async dispatchJob(jobId: string): Promise<ProductResearchDispatchStatus> {
+  private async dispatchJob(jobId: string): Promise<void> {
     try {
-      const sent = await this.queueService.sendJob({ jobId });
-      return sent ? 'QUEUED' : 'RETRY_REQUIRED';
+      await this.queueService.sendJob({ jobId });
     } catch (error) {
+      // 큐 전송 실패는 pending으로 남겨 recovery tick이 재발견한다.
       console.warn('[ProductResearchMutationResolver] Failed to send job to SQS:', error);
-      return 'RETRY_REQUIRED';
     }
   }
 
@@ -99,10 +96,8 @@ export class ProductResearchMutationResolver {
   }
 
   @Authorized([AuthRole.Admin])
-  @Mutation(() => RequestProductResearchPayload)
-  async requestProductResearch(
-    @Arg('input') input: RequestProductResearchInput
-  ): Promise<RequestProductResearchPayload> {
+  @Mutation(() => ProductResearchJob)
+  async requestProductResearch(@Arg('input') input: RequestProductResearchInput): Promise<ProductResearchJob> {
     const normalized = normalizeOfficialUrl(input.officialUrl);
     if (!normalized.ok) {
       throw new Error(normalized.reason);
@@ -110,62 +105,40 @@ export class ProductResearchMutationResolver {
     const deps = await this.buildDeps();
     // Manual re-research (new requestId) creates a new logical job;
     // same request-id retransmit returns the single existing job (deduped).
-    // 큐 전송 실패는 pending으로 남겨 recovery tick이 재발견한다 (dispatchJob RETRY_REQUIRED).
     const { job, queued } = await this.researchService.requestResearch(
       { requestId: input.requestId, officialUrl: normalized.url },
       deps
     );
-    if (!queued) {
-      if (!this.isResendable(job)) {
-        return { job: toProductResearchJobGraph(job), dispatchStatus: 'DEDUPED' };
-      }
-      return { job: toProductResearchJobGraph(job), dispatchStatus: await this.dispatchJob(job.id) };
+    if (queued || this.isResendable(job)) {
+      await this.dispatchJob(job.id);
     }
-    return {
-      job: toProductResearchJobGraph(job),
-      dispatchStatus: await this.dispatchJob(job.id),
-    };
+    return toProductResearchJobGraph(job);
   }
 
   @Authorized([AuthRole.Admin])
-  @Mutation(() => RequestProductResearchPayload, { nullable: true })
+  @Mutation(() => ProductResearchJob, { nullable: true })
   async retryProductResearch(
     @Arg('jobId') jobId: string,
     @Arg('input', { nullable: true }) input?: RetryProductResearchInput
-  ): Promise<RequestProductResearchPayload | null> {
+  ): Promise<ProductResearchJob | null> {
     const job = await this.jobRepository.findById(jobId);
     if (!job) {
       throw new Error(`존재하지 않는 조사 작업입니다: ${jobId}`);
     }
     if (job.status !== 'failed') {
-      if (!this.isResendable(job)) {
-        return { job: toProductResearchJobGraph(job), dispatchStatus: 'DEDUPED' };
+      if (this.isResendable(job)) {
+        await this.dispatchJob(job.id);
       }
-      return { job: toProductResearchJobGraph(job), dispatchStatus: await this.dispatchJob(job.id) };
+      return toProductResearchJobGraph(job);
     }
     const deps = await this.buildDeps();
     // 실패 작업 재시도는 새 논리 job을 만들어 이전 결과를 보존한다.
     // 같은 requestId 재전송은 단일 기존 job을 반환한다(deduped).
-    const { job: retried, deduped } = await this.researchService.retryFailedResearch(job.id, deps, input?.requestId);
-    if (deduped || retried.id === job.id) {
-      // 동일 ID 재대기: CAS로 failed→pending 전이를 시도한다 (레거시 same-id mock 호환).
-      if (typeof this.jobRepository.requeueFailedJob === 'function' && retried.id === job.id) {
-        const requeued = await this.jobRepository.requeueFailedJob({ jobId: job.id, expectedStatuses: ['failed'] });
-        const latest = requeued ?? (await this.jobRepository.findById(job.id)) ?? retried;
-        if (!this.isResendable(latest)) {
-          return { job: toProductResearchJobGraph(latest), dispatchStatus: 'DEDUPED' };
-        }
-        return { job: toProductResearchJobGraph(latest), dispatchStatus: await this.dispatchJob(latest.id) };
-      }
-      if (!this.isResendable(retried)) {
-        return { job: toProductResearchJobGraph(retried), dispatchStatus: 'DEDUPED' };
-      }
-      return { job: toProductResearchJobGraph(retried), dispatchStatus: await this.dispatchJob(retried.id) };
+    const { job: retried } = await this.researchService.retryFailedResearch(job.id, deps, input?.requestId);
+    if (this.isResendable(retried)) {
+      await this.dispatchJob(retried.id);
     }
-    return {
-      job: toProductResearchJobGraph(retried),
-      dispatchStatus: await this.dispatchJob(retried.id),
-    };
+    return toProductResearchJobGraph(retried);
   }
 
   /**
@@ -202,6 +175,7 @@ export class ProductResearchMutationResolver {
       summary: input.summary,
       logoUrl: input.logoUrl,
       officialUrl: input.officialUrl,
+      officialUrlConfirmed: input.officialUrlConfirmed,
       categoryIds: input.categoryIds,
       features: input.features.map(feature => ({
         name: feature.name,

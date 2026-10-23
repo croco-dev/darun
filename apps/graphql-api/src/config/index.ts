@@ -12,34 +12,35 @@ import '@darun/voting-datasource';
 import '@darun/magazines-datasource';
 import '@darun/translation-datasource';
 import '@darun/products-datasource';
+import '../adapters/PostgresqlTranslationSourceStore';
 import { CloudinaryImageRepositoryConfig } from '@darun/images-datasource';
+import { ProductContentSyncToken } from '@darun/products-domain';
+import { MongodbSearchConnectionToken } from '@darun/search-datasource';
 import { LlmSettingService } from '@darun/translation-service';
-import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL, LlmClient } from '@darun/utils-llm';
+import { LlmClient } from '@darun/utils-llm';
 import { Container, type ContainerInstance } from 'typedi';
+import { ProductContentSyncRegistrarToken } from '../../../../libs/products/datasource/src/repositories/productContentSync';
+import { PostgresqlProductContentSync, registerProductContentSync } from '../adapters/PostgresqlProductContentSync';
+import { createMongodbConnection } from './database';
 import { RUNNING_ENV } from './environment';
 import { registerRepositoryAliases } from './repositoryAliases';
 
 registerRepositoryAliases();
 
 Container.set(CloudinaryImageRepositoryConfig, new CloudinaryImageRepositoryConfig(RUNNING_ENV));
+Container.set(MongodbSearchConnectionToken, createMongodbConnection);
+Container.set({
+  id: ProductContentSyncToken,
+  factory: (container: ContainerInstance) => container.get(PostgresqlProductContentSync),
+});
+Container.set(ProductContentSyncRegistrarToken, { register: registerProductContentSync });
 
-// LLM 서비스 등록 (DB 설정 연동 - lazy factory)
+// LLM 서비스 등록 (DB 설정 연동 - lazy factory).
+// LlmSettingService.getConfig의 설정 조회 장애는 LLM_CONFIG_READ_FAILED로 그대로 전파된다.
 Container.set({
   id: LlmClient,
   factory: (container: ContainerInstance) =>
     new LlmClient({
-      getConfig: async () => {
-        try {
-          return await container.get(LlmSettingService).getConfig();
-        } catch (error) {
-          console.warn('[LlmClient] Failed to load config from LlmSettingService, falling back to defaults:', error);
-          return {
-            endpoint: process.env['OPEN_ROUTER_ENDPOINT'] || DEFAULT_LLM_ENDPOINT,
-            apiKey: process.env['OPEN_ROUTER_API_KEY'] || '',
-            model: process.env['OPEN_ROUTER_MODEL'] || DEFAULT_LLM_MODEL,
-            thinkingLevel: process.env['OPEN_ROUTER_THINKING_LEVEL'] || null,
-          };
-        }
-      },
+      getConfig: () => container.get(LlmSettingService).getConfig(),
     }),
 });

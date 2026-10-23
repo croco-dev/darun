@@ -12,6 +12,7 @@ export interface ProductRepository {
   findPublishedOneById(id: string): Promise<Product | null>;
   findOneBySlug(slug: string): Promise<Product | null>;
   findOneById(id: string): Promise<Product | null>;
+  findOneFreshById(id: string): Promise<Product | null>;
   findPublishedOneBySlug(slug: string): Promise<Product | null>;
   findPublishedByCategoryId(categoryId: string, limit: number, afterId?: string): Promise<Product[]>;
   countPublishedByCategoryId(categoryId: string): Promise<number>;

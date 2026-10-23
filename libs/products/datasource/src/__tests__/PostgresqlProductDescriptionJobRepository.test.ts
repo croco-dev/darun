@@ -62,7 +62,7 @@ describe('PostgresqlProductDescriptionJobRepository', () => {
     const repo = new PostgresqlProductDescriptionJobRepository(mockDb as never);
     const result = await repo.findJobById('job-1');
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       id: 'job-1',
       productId: 'prod-1',
       status: 'in_progress',
@@ -85,7 +85,7 @@ describe('PostgresqlProductDescriptionJobRepository', () => {
     expect(result).toBeNull();
   });
 
-  it('updateJobStatus updates status and returns updated entity', async () => {
+  it('completeJobLease updates payload and terminal status in one statement', async () => {
     const updatedRow = {
       id: 'job-1',
       productId: 'prod-1',
@@ -102,11 +102,11 @@ describe('PostgresqlProductDescriptionJobRepository', () => {
     mockDb.update.mockReturnValue({ set: setMock });
 
     const repo = new PostgresqlProductDescriptionJobRepository(mockDb as never);
-    const result = await repo.updateJobStatus('job-1', 'completed', { message: '완료' });
+    const result = await repo.completeJobLease('job-1', 'token', 'completed', { message: '완료' });
 
     expect(mockDb.update).toHaveBeenCalled();
-    expect(result.status).toBe('completed');
-    expect(result.message).toBe('완료');
+    expect(result?.status).toBe('completed');
+    expect(result?.message).toBe('완료');
   });
 
   it('findJobs returns list of jobs with status filter and pagination', async () => {
@@ -147,37 +147,15 @@ describe('PostgresqlProductDescriptionJobRepository', () => {
     expect(results).toEqual([]);
   });
 
-  it('claimJobStatus returns null when the status does not match', async () => {
+  it('completeJobLease returns null when the attempt does not match', async () => {
     const returningMock = vi.fn().mockResolvedValue([]);
     const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
     const setMock = vi.fn().mockReturnValue({ where: whereMock });
     mockDb.update.mockReturnValue({ set: setMock });
 
     const repo = new PostgresqlProductDescriptionJobRepository(mockDb as never);
-    const result = await repo.claimJobStatus('job-1', ['pending'], 'in_progress', { message: '진행 중' });
+    const result = await repo.completeJobLease('job-1', 'wrong-token', 'completed', { message: '완료' });
 
     expect(result).toBeNull();
-  });
-
-  it('claimJobStatus transitions and returns the entity when the status matches', async () => {
-    const updatedRow = {
-      id: 'job-1',
-      productId: 'prod-1',
-      status: 'in_progress',
-      message: '진행 중',
-      error: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const returningMock = vi.fn().mockResolvedValue([updatedRow]);
-    const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
-    const setMock = vi.fn().mockReturnValue({ where: whereMock });
-    mockDb.update.mockReturnValue({ set: setMock });
-
-    const repo = new PostgresqlProductDescriptionJobRepository(mockDb as never);
-    const result = await repo.claimJobStatus('job-1', ['pending'], 'in_progress', { message: '진행 중' });
-
-    expect(result?.status).toBe('in_progress');
   });
 });

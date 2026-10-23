@@ -18,6 +18,11 @@ export type ExplorerFilters = {
   element?: string | null;
 };
 
+export type ExplorerSearchDraft = {
+  searchInput: string;
+  setSearchInput: (value: string) => void;
+};
+
 export type ExplorerBaseState<TCard> = {
   loading: boolean;
   error: Error | undefined;
@@ -146,7 +151,10 @@ function mergeEdges<TCard>(previousCards: TCard[], incomingCards: TCard[], getId
 
 export { mergeEdges as mergeCardsForTest };
 
-export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNode, TCard>) {
+export function useExplorerQuery<TNode, TCard>(
+  options: ExplorerQueryOptions<TNode, TCard>,
+  searchDraft?: ExplorerSearchDraft
+) {
   const searchParams = useSearchParams();
   const navigate = useNavigate();
   const apolloClient = useApolloClient();
@@ -158,11 +166,16 @@ export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNo
   const element = filters.element ?? null;
   const elementParamKey = options.elementParamKey ?? 'element';
 
-  const [searchInput, setSearchInput] = useState(query ?? '');
+  const [localSearchInput, setLocalSearchInput] = useState(query ?? '');
+  const searchInput = searchDraft?.searchInput ?? localSearchInput;
+  const setSearchInput = searchDraft?.setSearchInput ?? setLocalSearchInput;
+  const ownsSearchDraft = searchDraft === undefined;
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 검색 파라미터 동기화에 필요
-    setSearchInput(query ?? '');
-  }, [query]);
+    if (ownsSearchDraft) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 검색 파라미터 동기화에 필요
+      setLocalSearchInput(query ?? '');
+    }
+  }, [query, ownsSearchDraft]);
 
   const queryLengthError = isOverlongExplorerQuery(query);
 

@@ -1,71 +1,107 @@
-import { ProductRepository } from '@darun/products-domain';
-import { Product, ProductRepositoryToken, productNotFound, productUpdateFailed } from '@darun/products-domain';
-import { Drizzle } from '@darun/provider-database';
-import { DrizzleToken } from '@darun/provider-database';
-import DataLoader from 'dataloader';
-import { and, asc, count, desc, eq, gt, ilike, inArray, isNotNull, lt, sql } from 'drizzle-orm';
-import { keyBy } from 'es-toolkit';
-import { Inject, Service } from 'typedi';
-import { products } from '../entities/ProductSchema';
-import { ProductScreenshot } from '@darun/products-domain';
-import { productScreenshots } from '../entities/ProductScreenshotsSchema';
+import { ProductRepository } from "@darun/products-domain";
+import {
+  Product,
+  ProductRepositoryToken,
+  productNotFound,
+  productUpdateFailed,
+} from "@darun/products-domain";
+import { Drizzle } from "@darun/provider-database";
+import { DrizzleToken } from "@darun/provider-database";
+import DataLoader from "dataloader";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  ilike,
+  inArray,
+  isNotNull,
+  lt,
+  sql,
+} from "drizzle-orm";
+import { keyBy } from "es-toolkit";
+import { Inject, Service } from "typedi";
+import { products } from "../entities/ProductSchema";
+import { ProductScreenshot } from "@darun/products-domain";
+import { productScreenshots } from "../entities/ProductScreenshotsSchema";
+
+import { beginProductContentWrite } from "./productContentSync";
+import { lockCategoryMembership } from "./productSourceMutex";
 
 @Service(ProductRepositoryToken)
 export class PostgresqlProductRepository implements ProductRepository {
   private idLoader: DataLoader<string, Product | null>;
-  private readonly coverLoader = new DataLoader<string, ProductScreenshot | null>(
-    async ids => {
+  private readonly coverLoader = new DataLoader<
+    string,
+    ProductScreenshot | null
+  >(
+    async (ids) => {
       const rows = await this.db
         .selectDistinctOn([productScreenshots.productId])
         .from(productScreenshots)
         .where(inArray(productScreenshots.productId, [...ids]))
-        .orderBy(asc(productScreenshots.productId), desc(productScreenshots.priority), desc(productScreenshots.id));
+        .orderBy(
+          asc(productScreenshots.productId),
+          desc(productScreenshots.priority),
+          desc(productScreenshots.id),
+        );
       const byId = new Map(
-        rows.map(row => [
+        rows.map((row) => [
           row.productId,
           new ProductScreenshot({
             ...row,
-            platform: row.platform as ProductScreenshot['platform'],
-            screenType: row.screenType as ProductScreenshot['screenType'],
+            platform: row.platform as ProductScreenshot["platform"],
+            screenType: row.screenType as ProductScreenshot["screenType"],
           }),
-        ])
+        ]),
       );
-      return ids.map(id => byId.get(id) ?? null);
+      return ids.map((id) => byId.get(id) ?? null);
     },
-    { cache: false }
+    { cache: false },
   );
 
   private readonly screenshotCountLoader = new DataLoader<string, number>(
-    async ids => {
+    async (ids) => {
       const rows = await this.db
         .select({ productId: productScreenshots.productId, value: count() })
         .from(productScreenshots)
         .where(inArray(productScreenshots.productId, [...ids]))
         .groupBy(productScreenshots.productId);
-      const byId = new Map(rows.map(row => [row.productId, Number(row.value)]));
-      return ids.map(id => byId.get(id) ?? 0);
+      const byId = new Map(
+        rows.map((row) => [row.productId, Number(row.value)]),
+      );
+      return ids.map((id) => byId.get(id) ?? 0);
     },
-    { cache: false }
+    { cache: false },
   );
 
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
-    this.idLoader = new DataLoader(async (ids: readonly string[]) => this.findByIdsInternal(ids), {
-      cache: false,
-    });
+    this.idLoader = new DataLoader(
+      async (ids: readonly string[]) => this.findByIdsInternal(ids),
+      {
+        cache: false,
+      },
+    );
   }
 
   async findPublishedByIds(ids: string[]): Promise<(Product | null)[]> {
     return this.findPublishedByIdsInternal(ids);
   }
 
-  updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {
-    return this.db.transaction(async tx => {
+  updateById(
+    id: string,
+    modifier: (product: Product) => Product,
+  ): Promise<Product> {
+    return this.db.transaction(async (tx) => {
+      const finishContentWrite = await beginProductContentWrite(tx, id);
       const prevProduct = await tx
         .select()
         .from(products)
         .where(eq(products.id, id))
         .limit(1)
-        .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+        .then((rows) => (rows[0] ? this.mapper(rows[0]) : null));
 
       if (!prevProduct) {
         throw productNotFound();
@@ -80,11 +116,15 @@ export class PostgresqlProductRepository implements ProductRepository {
         throw productUpdateFailed();
       }
 
+      await finishContentWrite();
       return this.mapper(updated[0]);
     });
   }
 
-  async findAllByBeforeIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+  async findAllByBeforeIdAndLimit(
+    limit: number,
+    id?: string | undefined,
+  ): Promise<Product[]> {
     return (
       await this.db
         .select()
@@ -92,39 +132,51 @@ export class PostgresqlProductRepository implements ProductRepository {
         .where(id ? and(gt(products.id, id)) : undefined)
         .limit(limit)
         .orderBy(asc(products.id))
-        .then(rows => rows.map(row => this.mapper(row)))
+        .then((rows) => rows.map((row) => this.mapper(row)))
     ).reverse();
   }
 
-  async findAllByAfterIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+  async findAllByAfterIdAndLimit(
+    limit: number,
+    id?: string | undefined,
+  ): Promise<Product[]> {
     return this.db
       .select()
       .from(products)
       .where(id ? and(lt(products.id, id)) : undefined)
       .limit(limit)
       .orderBy(desc(products.id))
-      .then(rows => rows.map(row => this.mapper(row)));
+      .then((rows) => rows.map((row) => this.mapper(row)));
   }
 
-  async findPublishedByAfterIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+  async findPublishedByAfterIdAndLimit(
+    limit: number,
+    id?: string | undefined,
+  ): Promise<Product[]> {
     return this.db
       .select()
       .from(products)
-      .where(and(isNotNull(products.publishedAt), id ? lt(products.id, id) : undefined))
+      .where(
+        and(
+          isNotNull(products.publishedAt),
+          id ? lt(products.id, id) : undefined,
+        ),
+      )
       .limit(limit)
       .orderBy(desc(products.id))
-      .then(rows => rows.map(row => this.mapper(row)));
+      .then((rows) => rows.map((row) => this.mapper(row)));
   }
 
   async countAll(): Promise<number> {
     return this.db
       .select({ value: count() })
       .from(products)
-      .then(rows => Number(rows[0]?.value ?? 0));
+      .then((rows) => Number(rows[0]?.value ?? 0));
   }
 
   async insert(values: Product): Promise<Product | null> {
-    return this.db.transaction(async tx => {
+    return this.db.transaction(async (tx) => {
+      await lockCategoryMembership(tx, "shared");
       const inserted = await tx
         .insert(products)
         .values({ ...values })
@@ -139,7 +191,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .select({ value: count() })
       .from(products)
       .where(isNotNull(products.publishedAt))
-      .then(rows => Number(rows[0]?.value ?? 0));
+      .then((rows) => Number(rows[0]?.value ?? 0));
   }
 
   async findOneBySlug(slug: string): Promise<Product | null> {
@@ -148,11 +200,17 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(eq(products.slug, slug))
       .limit(1)
-      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+      .then((rows) => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findOneById(id: string): Promise<Product | null> {
     return this.idLoader.load(id);
+  }
+
+  /** 요청 간 DataLoader cache를 우회해 현재 commit된 Product 행을 읽는다. */
+  async findOneFreshById(id: string): Promise<Product | null> {
+    const [product] = await this.findByIdsInternal([id]);
+    return product ?? null;
   }
 
   async findPublishedOneBySlug(slug: string): Promise<Product | null> {
@@ -161,11 +219,11 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(and(eq(products.slug, slug), isNotNull(products.publishedAt)))
       .limit(1)
-      .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+      .then((rows) => (rows[0] ? this.mapper(rows[0]) : null));
   }
 
   async findPublishedOneById(id: string): Promise<Product | null> {
-    return this.findPublishedByIds([id]).then(results => results[0] ?? null);
+    return this.findPublishedByIds([id]).then((results) => results[0] ?? null);
   }
 
   async findTopNSortByPublishedAtDesc(n: number): Promise<Product[]> {
@@ -175,10 +233,14 @@ export class PostgresqlProductRepository implements ProductRepository {
       .where(isNotNull(products.publishedAt))
       .orderBy(desc(products.publishedAt))
       .limit(n)
-      .then(rows => rows.map(row => this.mapper(row)));
+      .then((rows) => rows.map((row) => this.mapper(row)));
   }
 
-  async findPublishedByCategoryId(categoryId: string, limit: number, afterId?: string): Promise<Product[]> {
+  async findPublishedByCategoryId(
+    categoryId: string,
+    limit: number,
+    afterId?: string,
+  ): Promise<Product[]> {
     return this.db
       .select()
       .from(products)
@@ -186,12 +248,12 @@ export class PostgresqlProductRepository implements ProductRepository {
         and(
           isNotNull(products.publishedAt),
           sql`${products.categoryIds}::jsonb @> ${JSON.stringify([categoryId])}`,
-          afterId ? lt(products.id, afterId) : undefined
-        )
+          afterId ? lt(products.id, afterId) : undefined,
+        ),
       )
       .orderBy(desc(products.id))
       .limit(limit)
-      .then(rows => rows.map(row => this.mapper(row)));
+      .then((rows) => rows.map((row) => this.mapper(row)));
   }
 
   async hasPublishedAlternatives(productId: string): Promise<boolean> {
@@ -223,7 +285,10 @@ export class PostgresqlProductRepository implements ProductRepository {
       .select({ value: count() })
       .from(products)
       .where(
-        and(isNotNull(products.publishedAt), sql`${products.categoryIds}::jsonb @> ${JSON.stringify([categoryId])}`)
+        and(
+          isNotNull(products.publishedAt),
+          sql`${products.categoryIds}::jsonb @> ${JSON.stringify([categoryId])}`,
+        ),
       );
     return Number(rows[0]?.value ?? 0);
   }
@@ -242,8 +307,10 @@ export class PostgresqlProductRepository implements ProductRepository {
     const filter = and(
       isNotNull(products.publishedAt),
       sql`exists (select 1 from ${productScreenshots} where ${productScreenshots.productId} = ${products.id})`,
-      query ? ilike(products.name, `%${query.replace(/[\\%_]/g, '\\$&')}%`) : undefined,
-      productSlug ? eq(products.slug, productSlug) : undefined
+      query
+        ? ilike(products.name, `%${query.replace(/[\\%_]/g, "\\$&")}%`)
+        : undefined,
+      productSlug ? eq(products.slug, productSlug) : undefined,
     );
     const [rows, totals] = await Promise.all([
       this.db
@@ -254,10 +321,15 @@ export class PostgresqlProductRepository implements ProductRepository {
         .limit(limit),
       this.db.select({ value: count() }).from(products).where(filter),
     ]);
-    return { products: rows.map(row => this.mapper(row)), total: Number(totals[0]?.value ?? 0) };
+    return {
+      products: rows.map((row) => this.mapper(row)),
+      total: Number(totals[0]?.value ?? 0),
+    };
   }
 
-  async findVisualAppCover(productId: string): Promise<ProductScreenshot | null> {
+  async findVisualAppCover(
+    productId: string,
+  ): Promise<ProductScreenshot | null> {
     return this.coverLoader.load(productId);
   }
 
@@ -265,19 +337,27 @@ export class PostgresqlProductRepository implements ProductRepository {
     return this.screenshotCountLoader.load(productId);
   }
 
-  async findPublishedByCategoryIdAndLimit(categoryId: string, limit: number): Promise<Product[]> {
+  async findPublishedByCategoryIdAndLimit(
+    categoryId: string,
+    limit: number,
+  ): Promise<Product[]> {
     return this.db
       .select()
       .from(products)
       .where(
-        and(isNotNull(products.publishedAt), sql`${products.categoryIds}::jsonb @> ${JSON.stringify([categoryId])}`)
+        and(
+          isNotNull(products.publishedAt),
+          sql`${products.categoryIds}::jsonb @> ${JSON.stringify([categoryId])}`,
+        ),
       )
       .orderBy(desc(products.publishedAt))
       .limit(limit)
-      .then(rows => rows.map(row => this.mapper(row)));
+      .then((rows) => rows.map((row) => this.mapper(row)));
   }
 
-  private async findPublishedByIdsInternal(ids: readonly string[]): Promise<(Product | null)[]> {
+  private async findPublishedByIdsInternal(
+    ids: readonly string[],
+  ): Promise<(Product | null)[]> {
     if (!ids.length) {
       return [];
     }
@@ -285,14 +365,20 @@ export class PostgresqlProductRepository implements ProductRepository {
     const docs = await this.db
       .select()
       .from(products)
-      .where(and(inArray(products.id, [...ids]), isNotNull(products.publishedAt)));
+      .where(
+        and(inArray(products.id, [...ids]), isNotNull(products.publishedAt)),
+      );
 
-    const groupByDocs = keyBy(docs, doc => doc.id);
+    const groupByDocs = keyBy(docs, (doc) => doc.id);
 
-    return ids.map(id => (groupByDocs[id] ? this.mapper(groupByDocs[id]) : null));
+    return ids.map((id) =>
+      groupByDocs[id] ? this.mapper(groupByDocs[id]) : null,
+    );
   }
 
-  private async findByIdsInternal(ids: readonly string[]): Promise<(Product | null)[]> {
+  private async findByIdsInternal(
+    ids: readonly string[],
+  ): Promise<(Product | null)[]> {
     if (!ids.length) {
       return [];
     }
@@ -302,14 +388,17 @@ export class PostgresqlProductRepository implements ProductRepository {
       .from(products)
       .where(inArray(products.id, [...ids]));
 
-    const groupByDocs = keyBy(docs, doc => doc.id);
+    const groupByDocs = keyBy(docs, (doc) => doc.id);
 
-    return ids.map(id => (groupByDocs[id] ? this.mapper(groupByDocs[id]) : null));
+    return ids.map((id) =>
+      groupByDocs[id] ? this.mapper(groupByDocs[id]) : null,
+    );
   }
 
-  private mapper<ProductType extends typeof products.$inferSelect | typeof products.$inferInsert>(
-    schema: ProductType
-  ): Product {
+  private mapper<
+    ProductType extends
+      typeof products.$inferSelect | typeof products.$inferInsert,
+  >(schema: ProductType): Product {
     return new Product({
       ...schema,
       ownedCompanyId: schema.ownedCompanyId ?? undefined,

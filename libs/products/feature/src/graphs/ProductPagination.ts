@@ -2,7 +2,7 @@ import { PageInfo } from '@darun/utils-apollo-server';
 import { Field, Int, ObjectType } from 'type-graphql';
 import { Product } from './Product';
 
-@ObjectType()
+@ObjectType('ProductConnection')
 export class ProductConnection {
   @Field(() => Int)
   totalCount: number;
@@ -14,7 +14,7 @@ export class ProductConnection {
   edges: ProductEdge[];
 }
 
-@ObjectType()
+@ObjectType('ProductEdge')
 export class ProductEdge {
   @Field()
   cursor: string;

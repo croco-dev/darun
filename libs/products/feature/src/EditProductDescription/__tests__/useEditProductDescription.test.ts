@@ -112,12 +112,19 @@ describe('description validation', () => {
     expect(notifications.show).not.toHaveBeenCalled();
   });
 
-  it('propagates a failed save without completing the form', async () => {
+  it('shows failed save without completing or clearing the edited form', async () => {
     const onSubmit = vi.fn();
     const { result } = renderHook(() => useEditProductDescription({ slug: 'product-1', onSubmit }));
     mutate.mockRejectedValueOnce(new Error('Network error'));
 
-    await expect(result.current.submit({ description: '<p>Draft</p>' })).rejects.toThrow('Network error');
+    act(() => {
+      result.current.form.getInputProps('description').onChange('<p>Draft</p>');
+    });
+    await act(async () => {
+      await result.current.submit({ description: '<p>Draft</p>' });
+    });
+    expect(result.current.saveError).toBe('Network error');
+    expect(result.current.form.getValues().description).toBe('<p>Draft</p>');
     expect(onSubmit).not.toHaveBeenCalled();
   });
 });

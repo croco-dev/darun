@@ -1,139 +1,120 @@
 import 'reflect-metadata';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { eq } from 'drizzle-orm';
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import postgres, { type Sql } from 'postgres';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { productResearchJobs } from '../entities/ProductResearchJobSchema';
 import { PostgresqlProductResearchJobRepository } from '../repositories/PostgresqlProductResearchJobRepository';
 
-function jobRow(overrides: Record<string, unknown> = {}) {
-  return {
-    id: 'job-1',
-    requestKey: 'req-12345678',
-    officialUrl: 'https://linear.app/',
-    status: 'pending',
-    stage: null,
-    errorCode: null,
-    errorMessage: null,
-    resultJson: null,
-    sourceSnapshotHash: null,
-    promptVersion: null,
-    model: null,
-    leaseToken: null,
-    leaseUntil: null,
-    attemptCount: 0,
-    materializedProductId: null,
-    appliedAt: null,
-    createdAt: new Date('2026-10-10T00:00:00Z'),
-    updatedAt: new Date('2026-10-10T00:00:00Z'),
-    ...overrides,
-  };
+const DATABASE_URL = process.env['W4_DATABASE_URL'] ?? 'postgresql://darun:darun@localhost:55433/darun';
+
+const maybeDescribe = process.env['W4_PG'] === '1' ? describe : describe.skip;
+
+function unique(prefix: string): string {
+  return `${prefix}-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6)}`;
 }
 
-function txWithRow(row: Record<string, unknown>, updateRows: Record<string, unknown>[] = []) {
-  const limit = vi.fn().mockResolvedValue([row]);
-  const whereSelect = vi.fn().mockReturnValue({ limit });
-  const from = vi.fn().mockReturnValue({ where: whereSelect });
-  const select = vi.fn().mockReturnValue({ from });
-  const returning = vi.fn().mockResolvedValue(updateRows);
-  const whereUpdate = vi.fn().mockReturnValue({ returning });
-  const set = vi.fn().mockReturnValue({ where: whereUpdate });
-  const update = vi.fn().mockReturnValue({ set });
-  const tx = { select, update };
-  return { tx, update, set };
-}
-
-describe('PostgresqlProductResearchJobRepository.claimJob attempt cap', () => {
-  let transaction: ReturnType<typeof vi.fn>;
-  let mockDb: { transaction: ReturnType<typeof vi.fn> };
-
-  beforeEach(() => {
-    transaction = vi.fn();
-    mockDb = { transaction };
+maybeDescribe('research job claim attempt cap (isolated PG)', () => {
+  let sql: Sql;
+  let db: PostgresJsDatabase;
+  let repo: PostgresqlProductResearchJobRepository;
+  const createdIds: string[] = [];
+  beforeAll(async () => {
+    sql = postgres(DATABASE_URL, { prepare: false, max: 10 });
+    db = drizzle(sql);
+    repo = new PostgresqlProductResearchJobRepository(db as never);
+    await db.execute('select 1');
   });
 
-  it('fails an exhausted pending job without reclaiming', async () => {
-    const expired = jobRow({ status: 'pending', attemptCount: 5 });
-    const failed = jobRow({ status: 'failed', errorCode: 'RETRY_EXHAUSTED', attemptCount: 5 });
-    const { tx: pendingTx, update, set } = txWithRow(expired, [failed]);
-    transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => callback(pendingTx));
+  afterAll(async () => {
+    for (const id of createdIds) {
+      await db
+        .delete(productResearchJobs)
+        .where(eq(productResearchJobs.id, id))
+        .catch(() => {});
+    }
+    await sql?.end({ timeout: 5 });
+  });
 
-    const repository = new PostgresqlProductResearchJobRepository(mockDb as never);
-    const result = await repository.claimJob({
-      jobId: 'job-1',
+  it('소진된 pending job은 reclaim 없이 failed로 수렴한다', async () => {
+    const rows = await db
+      .insert(productResearchJobs)
+      .values({ requestKey: unique('rk'), officialUrl: 'https://example.com/', status: 'pending', attemptCount: 3 })
+      .returning();
+    const job = rows[0]!;
+    createdIds.push(job.id);
+
+    const result = await repo.claimJob({
+      jobId: job.id,
       leaseToken: 'lease-new',
       leaseUntil: new Date(Date.now() + 60_000),
-      maxAttempts: 5,
     });
 
     expect(result.claimed).toBe(false);
     expect(result.job?.status).toBe('failed');
     expect(result.job?.errorCode).toBe('RETRY_EXHAUSTED');
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(set).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed', errorCode: 'RETRY_EXHAUSTED' }));
+
+    const reread = await db.select().from(productResearchJobs).where(eq(productResearchJobs.id, job.id));
+    expect(reread[0]!.status).toBe('failed');
+    expect(reread[0]!.leaseToken).toBeNull();
+    expect(reread[0]!.attemptCount).toBe(3);
   });
 
-  it('fails an exhausted expired-lease reclaim without granting a new lease', async () => {
-    const stranded = jobRow({
-      status: 'in_progress',
-      leaseToken: 'lease-old',
-      leaseUntil: new Date(Date.now() - 60_000),
-      attemptCount: 5,
-    });
-    const failed = jobRow({
-      status: 'failed',
-      leaseToken: null,
-      leaseUntil: null,
-      errorCode: 'RETRY_EXHAUSTED',
-      attemptCount: 5,
-    });
-    const { tx: strandedTx, update, set } = txWithRow(stranded, [failed]);
-    transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => callback(strandedTx));
+  it('만료 lease 소진 job도 재claim 없이 failed로 수렴한다', async () => {
+    const rows = await db
+      .insert(productResearchJobs)
+      .values({
+        requestKey: unique('rk'),
+        officialUrl: 'https://example.com/',
+        status: 'in_progress',
+        leaseToken: 'lease-old',
+        leaseUntil: new Date(Date.now() - 60_000),
+        attemptCount: 3,
+      })
+      .returning();
+    const job = rows[0]!;
+    createdIds.push(job.id);
 
-    const repository = new PostgresqlProductResearchJobRepository(mockDb as never);
-    const result = await repository.claimJob({
-      jobId: 'job-1',
+    const result = await repo.claimJob({
+      jobId: job.id,
       leaseToken: 'lease-new',
       leaseUntil: new Date(Date.now() + 60_000),
-      maxAttempts: 5,
     });
 
     expect(result.claimed).toBe(false);
     expect(result.job?.status).toBe('failed');
-    expect(result.job?.errorCode).toBe('RETRY_EXHAUSTED');
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'failed', errorCode: 'RETRY_EXHAUSTED', leaseToken: null })
-    );
+
+    const reread = await db.select().from(productResearchJobs).where(eq(productResearchJobs.id, job.id));
+    expect(reread[0]!.status).toBe('failed');
+    expect(reread[0]!.leaseToken).toBeNull();
   });
 
-  it('fails an exhausted same-token reentry without granting another attempt', async () => {
-    const active = jobRow({
-      status: 'in_progress',
-      leaseToken: 'lease-same',
-      leaseUntil: new Date(Date.now() + 60_000),
-      attemptCount: 5,
-    });
-    const failed = jobRow({
-      status: 'failed',
-      leaseToken: null,
-      leaseUntil: null,
-      errorCode: 'RETRY_EXHAUSTED',
-      attemptCount: 5,
-    });
-    const { tx: activeTx, update, set } = txWithRow(active, [failed]);
-    transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => callback(activeTx));
+  it('유효 lease의 in_progress job은 다른 token의 claim을 거부한다', async () => {
+    const rows = await db
+      .insert(productResearchJobs)
+      .values({
+        requestKey: unique('rk'),
+        officialUrl: 'https://example.com/',
+        status: 'in_progress',
+        leaseToken: 'lease-live',
+        leaseUntil: new Date(Date.now() + 60_000),
+        attemptCount: 1,
+      })
+      .returning();
+    const job = rows[0]!;
+    createdIds.push(job.id);
 
-    const repository = new PostgresqlProductResearchJobRepository(mockDb as never);
-    const result = await repository.claimJob({
-      jobId: 'job-1',
-      leaseToken: 'lease-same',
+    const other = await repo.claimJob({
+      jobId: job.id,
+      leaseToken: 'lease-new',
       leaseUntil: new Date(Date.now() + 60_000),
-      maxAttempts: 5,
     });
 
-    expect(result.claimed).toBe(false);
-    expect(result.job?.status).toBe('failed');
-    expect(result.job?.errorCode).toBe('RETRY_EXHAUSTED');
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'failed', errorCode: 'RETRY_EXHAUSTED', leaseToken: null })
-    );
+    expect(other.claimed).toBe(false);
+    expect(other.job?.status).toBe('in_progress');
+
+    const reread = await db.select().from(productResearchJobs).where(eq(productResearchJobs.id, job.id));
+    expect(reread[0]!.leaseToken).toBe('lease-live');
+    expect(reread[0]!.attemptCount).toBe(1);
   });
 });

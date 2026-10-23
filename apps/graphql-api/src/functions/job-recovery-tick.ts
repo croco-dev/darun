@@ -5,9 +5,10 @@ import { ProductDescriptionJobService, ProductResearchQueueService } from '@daru
 import { TranslationJobService } from '@darun/translation-service';
 import type { Handler } from 'aws-lambda';
 import { Container } from 'typedi';
+import { PostgresqlProductContentSync } from '../adapters/PostgresqlProductContentSync';
 import { createPostgresConnection } from '../config/database';
 
-const RECOVERY_LIMIT = 50;
+const RECOVERY_LIMIT = 25;
 
 /**
  * 주기 recovery tick: DB에 남아 있는 전송 누락 pending과 만료 lease
@@ -25,8 +26,11 @@ export const handler: Handler = async (): Promise<{ recovered: number; queued: n
   const now = new Date();
   let recovered = 0;
   let queued = 0;
+  const sync = await Container.get(PostgresqlProductContentSync).dispatch(RECOVERY_LIMIT);
+  recovered += sync.recovered;
+  queued += sync.queued;
 
-  const researchJobs = (await researchRepository.findRecoverableJobs?.({ now, limit: RECOVERY_LIMIT })) ?? [];
+  const researchJobs = await researchRepository.findRecoverableJobs({ now, limit: RECOVERY_LIMIT });
   for (const job of researchJobs) {
     recovered += 1;
     try {

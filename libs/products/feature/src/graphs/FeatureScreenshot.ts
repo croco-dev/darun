@@ -1,6 +1,6 @@
 import { Field, ID, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('FeatureScreenshot')
 export class FeatureScreenshot {
   @Field(() => ID)
   id: string;
