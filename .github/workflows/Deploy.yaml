@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
       - uses: pnpm/action-setup@v4
       - name: Use Node.js 22.x
         uses: actions/setup-node@v6
@@ -23,13 +25,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Lint
-        run: pnpm --filter graphql-api exec eslint **/*.ts*
+        run: pnpm run lint
       - name: Typecheck
-        run: pnpm --filter graphql-api exec tsc --noEmit
+        run: pnpm run typecheck
       - name: Typecheck (tsrs)
-        run: pnpm --filter graphql-api run typecheck:tsrs
+        run: pnpm run typecheck:tsrs --concurrency=4 -- --checkers 1
       - name: Test
-        run: pnpm --filter graphql-api exec vitest run
+        run: pnpm run test
       - name: Check migration completeness
         run: pnpm --filter graphql-api run check:migrations
 
@@ -41,6 +43,8 @@ jobs:
       name: prod-graphql
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
       - uses: pnpm/action-setup@v4
       - name: Use Node.js 22.x
         uses: actions/setup-node@v6
