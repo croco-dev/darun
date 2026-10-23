@@ -5,102 +5,18 @@ import { Button } from '@/components/ui/button';
 import { createClient } from '@/utils/supabase/client';
 import { LoaderCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  APPS_PAGE_SIZE,
-  type AppListItem,
-  type AppListRow,
-  compareHomeApps,
-  getAppsPageRange,
-  getHasNextPage,
-  HOME_APPS_SELECT,
-  HOME_TIERED_APPS_SELECT,
-  mapAppListRow,
-  mergeHomeApps,
-} from './home-app-list';
+import { type AppListItem, fetchHomeAppsPage } from './home-app-list';
 
 const LOAD_MORE_ROOT_MARGIN = '320px 0px';
 
 const supabase = createClient();
-
-type HomeAppsPageResult = {
-  apps: AppListItem[];
-  totalCount: number;
-  hasNextPage: boolean;
-};
-
-async function fetchHomeAppsPage({ page, tier }: { page: number; tier: number }): Promise<HomeAppsPageResult> {
-  const { from, to } = getAppsPageRange(page, APPS_PAGE_SIZE);
-
-  if (tier === 0) {
-    const requestedItemCount = page * APPS_PAGE_SIZE;
-    const untieredRangeEnd = requestedItemCount - 1;
-
-    const [tierZeroResult, unassignedResult] = await Promise.all([
-      supabase
-        .from('apps')
-        .select(HOME_TIERED_APPS_SELECT, { count: 'exact' })
-        .eq('tiers.tier', 0)
-        .order('name', { ascending: true })
-        .order('id', { ascending: true })
-        .range(0, untieredRangeEnd),
-      supabase
-        .from('apps')
-        .select(HOME_APPS_SELECT, { count: 'exact' })
-        .is('tiers', null)
-        .order('name', { ascending: true })
-        .order('id', { ascending: true })
-        .range(0, untieredRangeEnd),
-    ]);
-
-    if (tierZeroResult.error) {
-      throw new Error(tierZeroResult.error.message);
-    }
-
-    if (unassignedResult.error) {
-      throw new Error(unassignedResult.error.message);
-    }
-
-    const mergedApps = mergeHomeApps([
-      (tierZeroResult.data as AppListRow[] | null)?.map(mapAppListRow) ?? [],
-      (unassignedResult.data as AppListRow[] | null)?.map(mapAppListRow) ?? [],
-    ]);
-    const totalCount = (tierZeroResult.count ?? 0) + (unassignedResult.count ?? 0);
-
-    return {
-      apps: mergedApps.slice(from, to + 1),
-      totalCount,
-      hasNextPage: getHasNextPage(totalCount, to),
-    };
-  }
-
-  const { data, error, count } = await supabase
-    .from('apps')
-    .select(HOME_TIERED_APPS_SELECT, { count: 'exact' })
-    .eq('tiers.tier', tier)
-    .order('name', { ascending: true })
-    .order('id', { ascending: true })
-    .range(from, to);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const totalCount = count ?? 0;
-  const apps = (data as AppListRow[] | null)?.map(mapAppListRow) ?? [];
-  apps.sort(compareHomeApps);
-
-  return {
-    apps,
-    totalCount,
-    hasNextPage: getHasNextPage(totalCount, to),
-  };
-}
 
 interface HomeAppsClientProps {
   initialApps: AppListItem[];
   initialTotalCount: number;
   initialHasNextPage: boolean;
   tier: number;
+  initialError?: boolean;
 }
 
 export default function HomeAppsClient({
@@ -108,6 +24,7 @@ export default function HomeAppsClient({
   initialTotalCount,
   initialHasNextPage,
   tier,
+  initialError = false,
 }: HomeAppsClientProps) {
   const [apps, setApps] = useState<AppListItem[]>(initialApps);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
@@ -115,10 +32,12 @@ export default function HomeAppsClient({
   const [hasNextPage, setHasNextPage] = useState(initialHasNextPage);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const [readFailed, setReadFailed] = useState(initialError);
   const [initialSnapshot, setInitialSnapshot] = useState({
     apps: initialApps,
     totalCount: initialTotalCount,
     hasNextPage: initialHasNextPage,
+    error: initialError,
   });
   const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null);
   const activeRequestIdRef = useRef(0);
@@ -128,12 +47,14 @@ export default function HomeAppsClient({
   if (
     initialSnapshot.apps !== initialApps ||
     initialSnapshot.totalCount !== initialTotalCount ||
-    initialSnapshot.hasNextPage !== initialHasNextPage
+    initialSnapshot.hasNextPage !== initialHasNextPage ||
+    initialSnapshot.error !== initialError
   ) {
     setInitialSnapshot({
       apps: initialApps,
       totalCount: initialTotalCount,
       hasNextPage: initialHasNextPage,
+      error: initialError,
     });
     setApps(initialApps);
     setTotalCount(initialTotalCount);
@@ -141,6 +62,7 @@ export default function HomeAppsClient({
     setHasNextPage(initialHasNextPage);
     setIsLoadingMore(false);
     setLoadMoreError(null);
+    setReadFailed(initialError);
   }
 
   useEffect(() => {
@@ -162,7 +84,7 @@ export default function HomeAppsClient({
   }, []);
 
   const loadMore = useCallback(async () => {
-    if (isLoadingMoreRef.current || !hasNextPage) {
+    if (isLoadingMoreRef.current || (!hasNextPage && !readFailed)) {
       return;
     }
 
@@ -171,10 +93,10 @@ export default function HomeAppsClient({
     setLoadMoreError(null);
 
     const requestId = activeRequestIdRef.current;
-    const nextPageNumber = currentPage + 1;
+    const nextPageNumber = readFailed ? 1 : currentPage + 1;
 
     try {
-      const nextPage = await fetchHomeAppsPage({
+      const nextPage = await fetchHomeAppsPage(supabase, {
         page: nextPageNumber,
         tier,
       });
@@ -183,21 +105,22 @@ export default function HomeAppsClient({
         return;
       }
 
-      setApps(currentApps => [...currentApps, ...nextPage.apps]);
+      setApps(currentApps => (readFailed ? nextPage.apps : [...currentApps, ...nextPage.apps]));
+      setReadFailed(false);
       setTotalCount(nextPage.totalCount);
       setCurrentPage(nextPageNumber);
       setHasNextPage(nextPage.hasNextPage);
-    } catch (error: unknown) {
+    } catch {
       if (requestId !== activeRequestIdRef.current) {
         return;
       }
 
-      setLoadMoreError(error instanceof Error ? error.message : '다음 앱 목록을 불러오지 못했습니다.');
+      setLoadMoreError('앱 목록을 불러오지 못했습니다. 다시 시도해 주세요.');
     } finally {
       isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
-  }, [currentPage, hasNextPage, tier]);
+  }, [currentPage, hasNextPage, tier, readFailed]);
 
   useEffect(() => {
     const triggerElement = loadMoreTriggerRef.current;
@@ -226,7 +149,7 @@ export default function HomeAppsClient({
     <>
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-base font-semibold text-foreground">목록</h2>
-        <p className="text-sm text-muted-foreground">총 {totalCount}개</p>
+        {!readFailed && <p className="text-sm text-muted-foreground">총 {totalCount}개</p>}
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -240,12 +163,21 @@ export default function HomeAppsClient({
             tier={app.tier}
           />
         ))}
-        {apps.length === 0 && (
+        {!readFailed && apps.length === 0 && (
           <div className="col-span-full rounded-[var(--radius-glass-panel)] border border-border bg-card p-8 text-center shadow-sm">
             <p className="text-sm text-muted-foreground">이 티어에 배치된 앱이 아직 없습니다.</p>
           </div>
         )}
       </div>
+      {readFailed && (
+        <div role="alert" className="space-y-3 rounded-lg border border-border p-6 text-center">
+          <p>앱 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+          {loadMoreError && <p className="text-sm text-destructive">{loadMoreError}</p>}
+          <Button disabled={isLoadingMore} onClick={() => void loadMore()}>
+            {isLoadingMore ? '불러오는 중…' : '다시 시도'}
+          </Button>
+        </div>
+      )}
 
       {apps.length > 0 && (
         <>
@@ -267,6 +199,11 @@ export default function HomeAppsClient({
               </div>
             )}
 
+            {hasNextPage && !loadMoreError && (
+              <Button type="button" variant="outline" disabled={isLoadingMore} onClick={() => void loadMore()}>
+                {isLoadingMore ? '불러오는 중…' : '앱 더 보기'}
+              </Button>
+            )}
             {!hasNextPage && !loadMoreError && !isLoadingMore && (
               <p className="text-sm text-muted-foreground">모든 앱을 불러왔습니다.</p>
             )}

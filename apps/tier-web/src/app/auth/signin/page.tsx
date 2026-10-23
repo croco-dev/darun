@@ -21,13 +21,13 @@ export default function SignInPage() {
         <div className="space-y-2 text-center">
           <p className="section-label">로그인</p>
           <h1 className="editorial-display text-[1.9rem] text-foreground">다른티어 로그인</h1>
-          <p className="text-sm leading-6 text-muted-foreground">저장된 계정으로 다시 들어오세요.</p>
+          <p className="text-sm leading-6 text-muted-foreground">가입한 이메일과 비밀번호로 로그인하세요.</p>
         </div>
 
         <Card variant="default" className="p-5 md:p-6">
           <CardHeader className="px-0">
             <CardTitle className="text-lg">이메일로 로그인</CardTitle>
-            <CardDescription>기존 인증 흐름을 그대로 사용합니다.</CardDescription>
+            <CardDescription>이메일 인증이 필요한 계정은 받은 편지함의 인증 링크를 먼저 열어 주세요.</CardDescription>
           </CardHeader>
           <CardContent className="px-0">
             <form action={formAction} className="space-y-4">
@@ -40,7 +40,10 @@ export default function SignInPage() {
                 <Input id="password" name="password" type="password" autoComplete="current-password" required />
               </div>
               {state?.error && (
-                <div className="rounded-[0.75rem] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                <div
+                  role="alert"
+                  className="rounded-[0.75rem] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600"
+                >
                   {state.error}
                 </div>
               )}

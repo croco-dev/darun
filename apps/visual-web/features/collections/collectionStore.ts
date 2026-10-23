@@ -33,6 +33,7 @@ let snapshot: StoreSnapshot = EMPTY_SNAPSHOT;
 let initialized = false;
 const listeners = new Set<() => void>();
 let storageAvailable: boolean | null = null;
+let storageCorrupt = false;
 
 function isSavedItem(value: unknown): value is SavedItem {
   if (typeof value !== 'object' || value === null) return false;
@@ -98,16 +99,21 @@ function readStorage(): {
   storageError: string | null;
 } {
   try {
+    storageCorrupt = false;
     if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
       return { collections: [], storageError: null };
     }
     const raw = window.localStorage.getItem(STORAGE_KEY);
     storageAvailable = true;
-    if (raw === null || raw === '') return { collections: [], storageError: null };
+    if (raw === null) return { collections: [], storageError: null };
     const parsed: unknown = JSON.parse(raw);
     const list: unknown[] | null = Array.isArray(parsed)
       ? parsed
-      : parsed !== null && typeof parsed === 'object' && 'collections' in parsed && Array.isArray(parsed.collections)
+      : parsed !== null &&
+          typeof parsed === 'object' &&
+          Object.keys(parsed).every(key => key === 'collections') &&
+          'collections' in parsed &&
+          Array.isArray(parsed.collections)
         ? parsed.collections
         : null;
     if (list === null) throw new Error('bad shape');
@@ -134,13 +140,16 @@ function readStorage(): {
       collections.push({ ...entry, items });
     }
     if (dropped) {
+      storageCorrupt = true;
       return {
         collections,
-        storageError: '저장된 컬렉션 일부가 손상되어 읽을 수 없는 항목은 제외했습니다.',
+        storageError:
+          '저장된 컬렉션 일부를 읽을 수 없습니다. 원문 보호를 위해 변경을 막았습니다. 브라우저 저장소의 원문을 백업하고 복구한 뒤 다시 시도해 주세요.',
       };
     }
     return { collections, storageError: null };
   } catch {
+    storageCorrupt = true;
     if (typeof window !== 'undefined') {
       try {
         void window.localStorage;
@@ -156,7 +165,7 @@ function readStorage(): {
     return {
       collections: [],
       storageError:
-        '저장된 컬렉션 데이터를 읽을 수 없습니다(형식 오류). 기존 데이터를 건드리지 않고 빈 상태로 표시합니다.',
+        '저장된 컬렉션 형식을 읽을 수 없어 변경을 막았습니다. 브라우저 저장소의 원문을 백업하고 복구한 뒤 다시 시도해 주세요.',
     };
   }
 }
@@ -171,6 +180,11 @@ function setSnapshot(next: StoreSnapshot) {
 }
 
 function persist(collections: NamedCollection[]): boolean {
+  const current = readStorage();
+  if (storageCorrupt || storageAvailable === false) {
+    setSnapshot(current);
+    return false;
+  }
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
     storageAvailable = true;
@@ -235,9 +249,9 @@ function newId(): string | null {
 
 export function useCollections(): StoreSnapshot & {
   createCollection: (name: string) => NamedCollection | null;
-  deleteCollection: (id: string) => void;
+  deleteCollection: (id: string) => boolean;
   toggleInCollection: (collectionId: string, item: SavedItem) => void;
-  removeFromCollection: (collectionId: string, kind: SavedItemKind, id: string) => void;
+  removeFromCollection: (collectionId: string, kind: SavedItemKind, id: string) => boolean;
   savedIn: (kind: SavedItemKind, id: string) => NamedCollection[];
   isStorageBlocked: () => boolean;
 } {
@@ -255,12 +269,13 @@ export function useCollections(): StoreSnapshot & {
 
 export function createCollection(name: string): NamedCollection | null {
   ensureInit();
+  snapshot = readStorage();
   const trimmed = name.trim();
   if (trimmed === '') return null;
-  if (storageAvailable === false) {
+  if (storageAvailable === false || storageCorrupt) {
     setSnapshot({
       ...snapshot,
-      storageError: '브라우저 저장소가 차단되어 컬렉션을 만들 수 없습니다.',
+      storageError: snapshot.storageError ?? '브라우저 저장소가 차단되어 컬렉션을 만들 수 없습니다.',
     });
     return null;
   }
@@ -284,11 +299,13 @@ export function createCollection(name: string): NamedCollection | null {
 
 export function deleteCollection(id: string) {
   ensureInit();
-  persist(snapshot.collections.filter(c => c.id !== id));
+  snapshot = readStorage();
+  return persist(snapshot.collections.filter(c => c.id !== id));
 }
 
 export function toggleInCollection(collectionId: string, item: SavedItem) {
   ensureInit();
+  snapshot = readStorage();
   if (!isSavedItem(item) || !isSafeItem(item)) return;
   persist(
     snapshot.collections.map(c => {
@@ -304,7 +321,8 @@ export function toggleInCollection(collectionId: string, item: SavedItem) {
 
 export function removeFromCollection(collectionId: string, kind: SavedItemKind, id: string) {
   ensureInit();
-  persist(
+  snapshot = readStorage();
+  return persist(
     snapshot.collections.map(c =>
       c.id !== collectionId
         ? c
@@ -322,5 +340,5 @@ export function savedIn(kind: SavedItemKind, id: string): NamedCollection[] {
 }
 
 export function isStorageBlocked() {
-  return storageAvailable === false;
+  return storageAvailable === false || storageCorrupt;
 }

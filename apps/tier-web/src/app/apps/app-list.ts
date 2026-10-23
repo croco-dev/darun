@@ -19,7 +19,7 @@ export type AppListRow = {
   name: string;
   description: string | null;
   icon_url: string | null;
-  tiers: AppTierRow[] | null;
+  tiers: AppTierRow | null;
 };
 
 export type AppListItem = {
@@ -43,7 +43,7 @@ export function mapAppListRow(app: AppListRow): AppListItem {
     name: app.name,
     description: app.description,
     iconUrl: app.icon_url,
-    tier: app.tiers?.[0]?.tier ?? 0,
+    tier: app.tiers?.tier ?? 0,
   };
 }
 

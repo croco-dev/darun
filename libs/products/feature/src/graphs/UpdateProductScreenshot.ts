@@ -4,13 +4,13 @@ import { VisualPlatformGraph } from './VisualPlatform';
 import { VisualScreenTypeGraph } from './VisualScreenType';
 import { VisualUiElementGraph } from './VisualUiElement';
 
-@ObjectType()
+@ObjectType('UpdateProductScreenshotPayload')
 export class UpdateProductScreenshotPayload {
   @Field(() => Screenshot)
   screenshot: Screenshot;
 }
 
-@InputType()
+@InputType('UpdateProductScreenshotInput')
 export class UpdateProductScreenshotInput {
   @Field(() => ID)
   id: string;

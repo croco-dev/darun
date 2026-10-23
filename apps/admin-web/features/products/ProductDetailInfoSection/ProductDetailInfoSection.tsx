@@ -1,15 +1,10 @@
 'use client';
 
-import {
-  EditProductInfo,
-  IndexProductButton,
-  ProductInfo,
-  PublishProductButton,
-  TranslateProductButton,
-} from '@darun/products-feature';
+import { EditProductInfo, IndexProductButton, ProductInfo, PublishProductButton } from '@darun/products-feature';
 import { Button, ExternalLink } from '@darun/ui';
 import { AdminModal, AdminPanel } from '@darun/ui-admin';
 import { useDisclosure } from '@mantine/hooks';
+import { ProductTranslationRecovery } from '../../llm-jobs/TranslationRecovery';
 
 type ProductDetailInfoSectionProps = {
   slug: string;
@@ -50,7 +45,7 @@ export const ProductDetailInfoSection = ({ slug }: ProductDetailInfoSectionProps
             >
               <span className="whitespace-nowrap">기본 정보 수정</span>
             </Button>
-            <TranslateProductButton slug={slug} />
+            <ProductTranslationRecovery slug={slug} />
             <IndexProductButton slug={slug} />
             <PublishProductButton slug={slug} />
           </div>

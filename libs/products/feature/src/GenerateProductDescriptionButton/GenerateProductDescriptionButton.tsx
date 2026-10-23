@@ -1,15 +1,21 @@
 'use client';
 
 import { Button, RefreshCw, Sparkles } from '@darun/ui';
-import { AdminModal } from '@darun/ui-admin';
+import { AdminInput, AdminModal } from '@darun/ui-admin';
 import DOMPurify from 'dompurify';
 import { useGenerateProductDescriptionButton } from './useGenerateProductDescriptionButton';
 
 interface GenerateProductDescriptionButtonProps {
   slug: string;
+  descriptionJobId?: string;
+  onJobChange?: (id: string) => void;
 }
 
-export function GenerateProductDescriptionButton({ slug }: GenerateProductDescriptionButtonProps) {
+export function GenerateProductDescriptionButton({
+  slug,
+  descriptionJobId,
+  onJobChange,
+}: GenerateProductDescriptionButtonProps) {
   const {
     handleGenerate,
     isGenerating,
@@ -23,7 +29,7 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
     isReopening,
     handleReopenJob,
     staleApplyNotice,
-  } = useGenerateProductDescriptionButton(slug);
+  } = useGenerateProductDescriptionButton(slug, descriptionJobId, onJobChange);
 
   const handleClick = () => {
     handleGenerate().catch(() => {});
@@ -52,8 +58,13 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
             생성된 AI 소개 초안입니다. 사실에 부합하는지 검토 후 [적용하기]를 눌러 제품 소개로 반영하세요.
           </p>
           {candidateJob?.id && <p className="text-xs text-dark-500">후보 작업 ID: {candidateJob.id}</p>}
+          <p className="text-xs text-dark-500">
+            현재 제품: {slug} · 후보 대상 제품 ID: {candidateJob?.productId ?? '알 수 없음'}
+          </p>
           {candidateJob?.appliedAt && (
-            <p className="text-xs text-dark-500">이미 적용된 후보의 저장된 HTML을 표시합니다.</p>
+            <p className="text-xs text-dark-500">
+              과거에 적용된 후보입니다. 다시 적용해도 이후 사람 편집을 덮어쓰지 않습니다.
+            </p>
           )}
           {staleApplyNotice && (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3" role="alert">
@@ -106,21 +117,21 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
         <label htmlFor={`candidate-job-id-${slug}`} className="sr-only">
           후보 작업 ID로 다시 열기
         </label>
-        <input
+        <AdminInput
           id={`candidate-job-id-${slug}`}
           name="candidateJobId"
           value={jobIdInput}
           onChange={event => setJobIdInput(event.currentTarget.value)}
           placeholder="후보 작업 ID로 다시 열기"
           disabled={isReopening || isGenerating}
-          className="w-full rounded-lg border border-dark-200 bg-white px-3 py-2 text-xs text-dark-900 placeholder:text-dark-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 sm:max-w-56"
+          className="sm:max-w-56"
         />
         <Button
           type="submit"
           variant="base"
           color="secondary"
           size="sm"
-          disabled={isReopening || !jobIdInput.trim()}
+          disabled={isReopening || isGenerating || !jobIdInput.trim()}
           className="active:scale-[0.98] motion-reduce:transform-none"
         >
           <span className="whitespace-nowrap">{isReopening ? '여는 중...' : '후보 다시 열기'}</span>

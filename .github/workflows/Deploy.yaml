@@ -63,6 +63,14 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       - name: Verify Lambda initialization and GraphQL schema
         run: pnpm --filter graphql-api run verify:lambda
+      - name: Require non-overlapping LLM content worker cutover
+        env:
+          LLM_CONTENT_CUTOVER_COMPLETED: ${{ vars.LLM_CONTENT_CUTOVER_COMPLETED }}
+        run: |
+          if [ "$LLM_CONTENT_CUTOVER_COMPLETED" != "true" ]; then
+            echo "Stop old LLM content workers and drain in-flight executions before enabling LLM_CONTENT_CUTOVER_COMPLETED. Migration is blocked."
+            exit 1
+          fi
       - name: Run Database Migrations
         run: pnpm --filter graphql-api run migrate
         env:

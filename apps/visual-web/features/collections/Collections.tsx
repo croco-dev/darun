@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@darun/utils-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   NamedCollection,
   SavedItemKind,
@@ -20,8 +20,10 @@ const KIND_LABEL: Record<SavedItemKind, string> = {
 function SavedCard({
   collectionId,
   item,
+  onRemoved,
 }: {
   collectionId: string;
+  onRemoved: (message: string) => void;
   item: {
     kind: SavedItemKind;
     id: string;
@@ -55,8 +57,11 @@ function SavedCard({
       <div className="flex justify-end border-t border-dark-100 px-2 py-1">
         <button
           type="button"
-          onClick={() => removeFromCollection(collectionId, item.kind, item.id)}
-          aria-label={`${item.title}을(를) 컬렉션에서 제거`}
+          onClick={() => {
+            if (removeFromCollection(collectionId, item.kind, item.id))
+              onRemoved(`${item.title} 항목을 컬렉션에서 제거했습니다.`);
+          }}
+          aria-label={`${item.title} 항목을 컬렉션에서 제거`}
           className="min-h-11 rounded-lg px-2.5 text-xs font-semibold text-dark-600 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
         >
           제거
@@ -66,8 +71,17 @@ function SavedCard({
   );
 }
 
-function CollectionSection({ collection }: { collection: NamedCollection }) {
+function CollectionSection({
+  collection,
+  onRemoved,
+}: {
+  collection: NamedCollection;
+  onRemoved: (message: string) => void;
+}) {
   const [confirming, setConfirming] = useState(false);
+  const remove = () => {
+    if (deleteCollection(collection.id)) onRemoved(`${collection.name} 컬렉션을 삭제했습니다.`);
+  };
   return (
     <section aria-labelledby={`collection-${collection.id}`} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-dark-100 pt-4">
@@ -83,7 +97,7 @@ function CollectionSection({ collection }: { collection: NamedCollection }) {
             </span>
             <button
               type="button"
-              onClick={() => deleteCollection(collection.id)}
+              onClick={remove}
               className="min-h-11 rounded-lg bg-dark-900 px-3 text-xs font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
             >
               삭제 확인
@@ -100,7 +114,7 @@ function CollectionSection({ collection }: { collection: NamedCollection }) {
           <button
             type="button"
             onClick={() => {
-              if (collection.items.length === 0) deleteCollection(collection.id);
+              if (collection.items.length === 0) remove();
               else setConfirming(true);
             }}
             className="min-h-11 rounded-lg px-2.5 text-xs font-semibold text-dark-600 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
@@ -116,7 +130,7 @@ function CollectionSection({ collection }: { collection: NamedCollection }) {
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {collection.items.map(item => (
-            <SavedCard key={`${item.kind}:${item.id}`} collectionId={collection.id} item={item} />
+            <SavedCard key={`${item.kind}:${item.id}`} collectionId={collection.id} item={item} onRemoved={onRemoved} />
           ))}
         </ul>
       )}
@@ -127,6 +141,12 @@ function CollectionSection({ collection }: { collection: NamedCollection }) {
 export function Collections() {
   const { collections, storageError } = useCollections();
   const [draft, setDraft] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [announcement, setAnnouncement] = useState('');
+  const onRemoved = (message: string) => {
+    inputRef.current?.focus();
+    setAnnouncement(message);
+  };
   const total = collections.reduce((n, c) => n + c.items.length, 0);
 
   const create = () => {
@@ -136,6 +156,9 @@ export function Collections() {
 
   return (
     <div className="flex w-full flex-col gap-5">
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight text-dark-900">내 컬렉션</h1>
@@ -151,9 +174,11 @@ export function Collections() {
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
           <input
+            ref={inputRef}
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onKeyDown={e => {
+              if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
               if (e.key === 'Enter') create();
             }}
             placeholder="새 컬렉션 이름 (예: 온보딩 참고)"
@@ -176,7 +201,7 @@ export function Collections() {
           {storageError}
         </p>
       ) : null}
-      {collections.length === 0 ? (
+      {collections.length === 0 && !storageError ? (
         <div className="flex flex-col items-center gap-2 rounded-xl bg-surface-100 px-6 py-16 text-center">
           <p className="text-base font-bold text-dark-900">아직 저장된 컬렉션이 없습니다</p>
           <p className="max-w-md text-sm leading-relaxed text-dark-600">
@@ -191,7 +216,7 @@ export function Collections() {
           </Link>
         </div>
       ) : (
-        collections.map(c => <CollectionSection key={c.id} collection={c} />)
+        collections.map(c => <CollectionSection key={c.id} collection={c} onRemoved={onRemoved} />)
       )}
     </div>
   );

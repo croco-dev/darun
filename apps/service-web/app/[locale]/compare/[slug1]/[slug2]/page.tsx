@@ -62,7 +62,7 @@ type Props = {
   params: Promise<{ locale: string; slug1: string; slug2: string }>;
 };
 
-const getCompareProducts = cache(async ({ slug1, slug2, locale }: Awaited<Props['params']>) => {
+const getCompareProducts = cache(async (slug1: string, slug2: string, locale: string) => {
   const { data } = await getClient().query<{
     product1?: ProductData;
     product2?: ProductData;
@@ -76,11 +76,7 @@ const getCompareProducts = cache(async ({ slug1, slug2, locale }: Awaited<Props[
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
   const currentLocale = normalizeLocale(resolvedParams.locale);
-  const data = await getCompareProducts({
-    slug1: resolvedParams.slug1,
-    slug2: resolvedParams.slug2,
-    locale: currentLocale,
-  });
+  const data = await getCompareProducts(resolvedParams.slug1, resolvedParams.slug2, currentLocale);
 
   const name1 = data?.product1?.name ?? resolvedParams.slug1;
   const name2 = data?.product2?.name ?? resolvedParams.slug2;
@@ -119,7 +115,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ComparePage({ params }: Props) {
   const resolvedParams = await params;
-  const data = await getCompareProducts(resolvedParams);
+  const data = await getCompareProducts(
+    resolvedParams.slug1,
+    resolvedParams.slug2,
+    normalizeLocale(resolvedParams.locale)
+  );
 
   if (!data?.product1 || !data?.product2) {
     return notFound();

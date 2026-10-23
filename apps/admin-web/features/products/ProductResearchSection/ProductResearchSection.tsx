@@ -13,7 +13,7 @@ import {
   AdminTextarea,
 } from '@darun/ui-admin';
 import { useImageUpload } from '@darun/utils-image-upload';
-import { useNavigate } from '@darun/utils-router';
+import { useNavigate, useSearchParams } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -27,20 +27,18 @@ import {
   shouldStopResearchPolling,
   type ResearchWorkspaceFeatureDraft,
   type ResearchWorkspaceReviewDraft,
+  type ResearchWorkspacePersistedState,
   type WorkspaceImageSelection,
 } from './researchWorkspaceState';
 
 const REQUEST_PRODUCT_RESEARCH = gql`
   mutation RequestProductResearchWorkspace($input: RequestProductResearchInput!) {
     requestProductResearch(input: $input) {
-      dispatchStatus
-      job {
-        id
-        officialUrl
-        status
-        errorCode
-        errorMessage
-      }
+      id
+      officialUrl
+      status
+      errorCode
+      errorMessage
     }
   }
 `;
@@ -48,14 +46,11 @@ const REQUEST_PRODUCT_RESEARCH = gql`
 const RETRY_PRODUCT_RESEARCH = gql`
   mutation RetryProductResearchWorkspace($jobId: String!, $input: RetryProductResearchInput) {
     retryProductResearch(jobId: $jobId, input: $input) {
-      dispatchStatus
-      job {
-        id
-        officialUrl
-        status
-        errorCode
-        errorMessage
-      }
+      id
+      officialUrl
+      status
+      errorCode
+      errorMessage
     }
   }
 `;
@@ -190,11 +185,11 @@ type ResearchJobPayload = {
 type CategoryOption = { id: string; slug: string; labelKo: string; labelEn: string };
 
 type RequestResearchPayload = {
-  requestProductResearch?: { dispatchStatus?: string; job?: { id: string; officialUrl?: string } };
+  requestProductResearch?: { id: string; officialUrl?: string };
 };
 
 type RetryResearchPayload = {
-  retryProductResearch?: { dispatchStatus?: string; job?: { id: string; officialUrl?: string } } | null;
+  retryProductResearch?: { id: string; officialUrl?: string } | null;
 };
 
 type MaterializePayload = {
@@ -211,21 +206,24 @@ type MaterializeVariables = {
     summary: string;
     logoUrl: string;
     officialUrl: string;
+    officialUrlConfirmed: boolean;
     categoryIds: string[];
     features: { name: string; summary: string; emoji: string }[];
     tags: string[];
   };
 };
 
-const POLL_INTERVAL_MS = 2500;
+const POLL_INTERVAL_MS = 3000;
 const MAX_LOGO_SIZE = 5 * 1024 * 1024;
 
-function readStoredWorkspace(): ReturnType<typeof parseWorkspaceState> {
+function readStoredWorkspace(targetJobId?: string | null): ResearchWorkspacePersistedState | null {
   if (typeof window === 'undefined') {
     return null;
   }
   try {
-    return parseWorkspaceState(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY));
+    const latest = parseWorkspaceState(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY));
+    if (!targetJobId || latest?.jobId === targetJobId) return latest;
+    return parseWorkspaceState(window.localStorage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:${targetJobId}`));
   } catch {
     return null;
   }
@@ -233,57 +231,65 @@ function readStoredWorkspace(): ReturnType<typeof parseWorkspaceState> {
 
 export const ProductResearchSection = () => {
   const navigate = useNavigate();
+  const researchJobIdParam = useSearchParams().get('researchJobId');
   const { upload } = useImageUpload();
   const [hydrated, setHydrated] = useState(false);
   const [requestId, setRequestId] = useState(() => newRequestId());
   const [officialUrl, setOfficialUrl] = useState('');
   const [jobId, setJobId] = useState<string | null>(null);
-  const [dispatchStatus, setDispatchStatus] = useState<string | null>(null);
   const [review, setReview] = useState<ResearchWorkspaceReviewDraft>(() => createInitialWorkspaceReview());
+  const [tagsInput, setTagsInput] = useState<string | null>(null);
   const [logoSelection, setLogoSelection] = useState<WorkspaceImageSelection | null>(null);
   const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isMaterializing, setIsMaterializing] = useState(false);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [logoInputKey, setLogoInputKey] = useState(0);
   const [isPolling, setIsPolling] = useState(false);
+  const [jobLookup, setJobLookup] = useState<{
+    job?: ResearchJobPayload['productResearchJob'];
+    loading: boolean;
+    error?: { message: string };
+  }>({ loading: false });
+  // 최신 action 세대의 실패만 표시한다. 대체된 이전 action의 후착 오류는 화면에 남지 않는다.
+  const [actionError, setActionError] = useState<{ message: string } | null>(null);
+  const jobLookupSeqRef = useRef(0);
   const [materializedSlug, setMaterializedSlug] = useState<string | null>(null);
+  const [officialUrlConfirmation, setOfficialUrlConfirmation] = useState<{ jobId: string; url: string } | null>(null);
+  const isOfficialUrlConfirmed =
+    officialUrlConfirmation?.jobId === jobId && officialUrlConfirmation?.url === review.officialUrl.trim();
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const jobIdRef = useRef<string | null>(null);
-  // 동일 폼 연속 제출 경합에서 최신 제출만 적용하기 위한 단조 증가 일련번호다.
+  // request/retry/등록/route가 함께 사용하는 단조 증가 action 세대다. 후착 응답은 이 세대가 최신일 때만 화면을 바꾼다.
   const requestSeqRef = useRef(0);
+  const pendingRequestRef = useRef<{ id: string; url: string } | null>(null);
+  const prefilledJobRef = useRef<string | null>(null);
 
   const setActiveJobId = useCallback((nextJobId: string | null) => {
     jobIdRef.current = nextJobId;
+    jobLookupSeqRef.current += 1;
+    setJobLookup({ loading: false });
     setJobId(nextJobId);
   }, []);
 
-  const [requestResearch, { loading: isRequesting, error: requestError }] = useMutation<
-    RequestResearchPayload,
-    RequestResearchVariables
-  >(REQUEST_PRODUCT_RESEARCH);
-  const [retryResearch, { loading: isRetrying, error: retryError }] = useMutation<
-    RetryResearchPayload,
-    RetryResearchVariables
-  >(RETRY_PRODUCT_RESEARCH);
-  const [materialize, { loading: isMaterializing, error: materializeError }] = useMutation<
-    MaterializePayload,
-    MaterializeVariables
-  >(MATERIALIZE_RESEARCHED_PRODUCT);
-  const [fetchJob, { data: jobData, loading: jobLoading, error: jobError }] = useLazyQuery<ResearchJobPayload>(
-    PRODUCT_RESEARCH_JOB,
-    { fetchPolicy: 'network-only' }
+  const [requestResearch, { loading: isRequesting }] = useMutation<RequestResearchPayload, RequestResearchVariables>(
+    REQUEST_PRODUCT_RESEARCH
   );
+  const [retryResearch, { loading: isRetrying }] = useMutation<RetryResearchPayload, RetryResearchVariables>(
+    RETRY_PRODUCT_RESEARCH
+  );
+  const [materialize] = useMutation<MaterializePayload, MaterializeVariables>(MATERIALIZE_RESEARCHED_PRODUCT);
+  const [fetchJob] = useLazyQuery<ResearchJobPayload>(PRODUCT_RESEARCH_JOB, { fetchPolicy: 'network-only' });
   const { data: categoryData } = useQuery<{ categories?: CategoryOption[] }>(CATEGORIES, {
     variables: { first: 100, locale: 'ko' },
   });
 
-  const queriedJob = jobData?.productResearchJob ?? null;
-  // useLazyQuery 캐시는 jobId 전환 직후 이전 Job을 잠시 반환할 수 있다.
-  // jobId와 일치하는 응답만 현재 Job·Review·materialize 입력으로 사용한다.
-  const job = queriedJob && queriedJob.id === jobId ? queriedJob : null;
+  const job = jobLookup.job?.id === jobId ? jobLookup.job : null;
+  const jobMissing = jobLookup.job === null;
+  const jobLoading = jobLookup.loading;
   const result = job?.result ?? null;
   const categories = useMemo(() => categoryData?.categories ?? [], [categoryData]);
-  const mutationError = requestError ?? retryError ?? materializeError ?? jobError ?? null;
+  const mutationError = actionError ?? jobLookup.error ?? null;
 
   const stopPolling = useCallback(() => {
     if (pollTimer.current) {
@@ -303,57 +309,99 @@ export const ProductResearchSection = () => {
     [stopPolling]
   );
 
+  // 모든 조회 경로가 같은 job/요청/조회 순서 fence를 통과해야 현재 화면을 바꿀 수 있다.
+  const loadJob = useCallback(
+    async (targetJobId: string) => {
+      if (jobIdRef.current !== targetJobId) return;
+      const lookupSeq = ++jobLookupSeqRef.current;
+      const requestSeq = requestSeqRef.current;
+      const isCurrent = () =>
+        jobIdRef.current === targetJobId &&
+        jobLookupSeqRef.current === lookupSeq &&
+        requestSeqRef.current === requestSeq;
+      setJobLookup(previous => ({ ...previous, loading: true, error: undefined }));
+      try {
+        const response = await fetchJob({ variables: { id: targetJobId } });
+        if (!isCurrent()) return;
+        if (response.error) throw response.error;
+        const payloadJob = response.data?.productResearchJob;
+        if (payloadJob === undefined || (payloadJob && payloadJob.id !== targetJobId)) {
+          setJobLookup(previous => ({ ...previous, loading: false }));
+          return;
+        }
+        setJobLookup({ job: payloadJob, loading: false });
+        if (payloadJob === null || shouldStopResearchPolling(payloadJob.status)) {
+          stopPollingForJob(targetJobId);
+        }
+        return payloadJob;
+      } catch (error) {
+        if (isCurrent()) {
+          setJobLookup(previous => ({
+            ...previous,
+            loading: false,
+            error: { message: error instanceof Error ? error.message : '조사 작업 조회에 실패했습니다.' },
+          }));
+        }
+      }
+    },
+    [fetchJob, stopPollingForJob]
+  );
+
   const pollJob = useCallback(
     (targetJobId: string) => {
-      jobIdRef.current = targetJobId;
+      if (jobIdRef.current !== targetJobId) return;
       if (pollTimer.current) {
         clearInterval(pollTimer.current);
         pollTimer.current = null;
       }
+      if (document.visibilityState !== 'visible') {
+        setIsPolling(false);
+        return;
+      }
       setIsPolling(true);
-      pollTimer.current = setInterval(async () => {
-        try {
-          const response = await fetchJob({ variables: { id: targetJobId } });
-          if (jobIdRef.current !== targetJobId) {
-            return;
-          }
-          const payloadJob = response.data?.productResearchJob;
-          if (!payloadJob || payloadJob.id !== targetJobId) {
-            return;
-          }
-          if (shouldStopResearchPolling(payloadJob.status)) {
-            stopPollingForJob(targetJobId);
-          }
-        } catch {
-          // 폴링 실패는 다음 틱에서 재시도한다.
-        }
+      pollTimer.current = setInterval(() => {
+        if (document.visibilityState === 'visible') void loadJob(targetJobId);
       }, POLL_INTERVAL_MS);
     },
-    [fetchJob, stopPollingForJob]
+    [loadJob]
   );
 
   const restoredJobIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const stored = readStoredWorkspace();
-    if (stored) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 새로고침 복구 시 저장된 워크스페이스 초기화에 필요
-      setRequestId(stored.requestId);
-      setOfficialUrl(stored.officialUrl);
-      setActiveJobId(stored.jobId);
-      setDispatchStatus(stored.dispatchStatus);
-      setReview(stored.review);
-      setUploadedLogoUrl(stored.uploadedLogoUrl);
-      if (stored.review.logoUrl.trim()) {
-        setLogoSelection({ kind: 'url', logoUrl: stored.review.logoUrl });
-      }
-      setMaterializedSlug(stored.materializedSlug);
-      if (stored.jobId && !stored.materializedSlug) {
-        restoredJobIdRef.current = stored.jobId;
+    stopPolling();
+    requestSeqRef.current += 1;
+    setActionError(null);
+    setIsUploadingLogo(false);
+    setIsMaterializing(false);
+    pendingRequestRef.current = null;
+    const stored = readStoredWorkspace(researchJobIdParam);
+    const latest = readStoredWorkspace();
+    if (latest?.jobId) {
+      try {
+        window.localStorage.setItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:${latest.jobId}`, JSON.stringify(latest));
+      } catch {
+        /* Storage failure must not prevent resuming a job. */
       }
     }
+
+    setRequestId(stored?.requestId ?? newRequestId());
+    setOfficialUrl(stored?.officialUrl ?? '');
+    setReview(stored?.review ?? createInitialWorkspaceReview());
+    setTagsInput(null);
+    setUploadedLogoUrl(stored?.uploadedLogoUrl ?? null);
+    setLogoSelection(stored?.review.logoUrl.trim() ? { kind: 'url', logoUrl: stored.review.logoUrl } : null);
+    setLogoPreviewUrl(null);
+    setLogoInputKey(key => key + 1);
+    setOfficialUrlConfirmation(null);
+    setMaterializedSlug(stored?.materializedSlug ?? null);
+    const selectedJobId = researchJobIdParam ?? stored?.jobId ?? null;
+    prefilledJobRef.current =
+      stored?.prefilledJobId === selectedJobId || stored?.review.name || stored?.review.slug ? selectedJobId : null;
+    setActiveJobId(selectedJobId);
+    restoredJobIdRef.current = stored?.materializedSlug ? null : selectedJobId;
     setHydrated(true);
-  }, [setActiveJobId]);
+  }, [researchJobIdParam, setActiveJobId, stopPolling]);
 
   useEffect(() => {
     const restoredJobId = restoredJobIdRef.current;
@@ -362,25 +410,10 @@ export const ProductResearchSection = () => {
     }
     restoredJobIdRef.current = null;
     jobIdRef.current = restoredJobId;
-    void (async () => {
-      try {
-        const response = await fetchJob({ variables: { id: restoredJobId } });
-        if (jobIdRef.current !== restoredJobId) {
-          return;
-        }
-        const payloadJob = response.data?.productResearchJob;
-        if (payloadJob && payloadJob.id !== restoredJobId) {
-          return;
-        }
-        const status = payloadJob?.status;
-        if (!shouldStopResearchPolling(status)) {
-          pollJob(restoredJobId);
-        }
-      } catch {
-        // 복구 조회 실패는 에러 상태로 표시하고 수동 새로고침을 유도한다.
-      }
-    })();
-  }, [hydrated, fetchJob, pollJob]);
+    void loadJob(restoredJobId).then(payloadJob => {
+      if (payloadJob && !shouldStopResearchPolling(payloadJob.status)) pollJob(restoredJobId);
+    });
+  }, [hydrated, jobId, researchJobIdParam, loadJob, pollJob]);
 
   useEffect(() => {
     if (!hydrated || typeof window === 'undefined') {
@@ -391,37 +424,45 @@ export const ProductResearchSection = () => {
       requestId,
       officialUrl,
       jobId,
-      dispatchStatus,
       review,
+      prefilledJobId: prefilledJobRef.current,
       logoFileName: logoSelection?.kind === 'file' ? logoSelection.fileName : null,
       uploadedLogoUrl,
       materializedSlug,
     };
     try {
       window.localStorage.setItem(RESEARCH_WORKSPACE_STORAGE_KEY, JSON.stringify(payload));
+      if (jobId) window.localStorage.setItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:${jobId}`, JSON.stringify(payload));
     } catch {
       // 저장 실패는 작업 흐름을 막지 않는다.
     }
-  }, [
-    hydrated,
-    requestId,
-    officialUrl,
-    jobId,
-    dispatchStatus,
-    review,
-    logoSelection,
-    uploadedLogoUrl,
-    materializedSlug,
-  ]);
+  }, [hydrated, requestId, officialUrl, jobId, review, logoSelection, uploadedLogoUrl, materializedSlug]);
 
   useEffect(() => {
     return () => {
+      // 다른 route로 떠난 화면도 후착 등록·로고 후처리의 권한을 잃는다.
+      requestSeqRef.current += 1;
       if (pollTimer.current) {
         clearInterval(pollTimer.current);
         pollTimer.current = null;
       }
     };
   }, []);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') {
+        stopPolling();
+      } else if (jobIdRef.current && !materializedSlug) {
+        const target = jobIdRef.current;
+        void loadJob(target).then(payloadJob => {
+          if (payloadJob && !shouldStopResearchPolling(payloadJob.status)) pollJob(target);
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [loadJob, materializedSlug, pollJob, stopPolling]);
 
   useEffect(() => {
     return () => {
@@ -432,26 +473,16 @@ export const ProductResearchSection = () => {
   }, [logoPreviewUrl]);
 
   useEffect(() => {
-    if (!job?.status || materializedSlug) {
-      return;
-    }
-    if (job.id !== jobId) {
-      return;
-    }
-    if (shouldStopResearchPolling(job.status)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 완료 Job 수신 시 폴링 타이머 정리에 필요
-      stopPolling();
-    }
-  }, [job, jobId, materializedSlug, stopPolling]);
-
-  useEffect(() => {
     if (!result || materializedSlug) {
       return;
     }
     if (!jobId || job?.id !== jobId) {
       return;
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 조사 결과 수신 시 Review 초안 prefill에 필요
+    if (prefilledJobRef.current === jobId) return;
+    prefilledJobRef.current = jobId;
+    setOfficialUrl(previous => previous || job?.officialUrl || '');
+
     setReview(previous => {
       const next = prefillReviewFromResult(previous, result, job?.officialUrl ?? officialUrl);
       return JSON.stringify(next) === JSON.stringify(previous) ? previous : next;
@@ -466,9 +497,13 @@ export const ProductResearchSection = () => {
 
   const resetWorkspaceForJob = useCallback(
     (nextJobId: string, nextOfficialUrl: string) => {
+      stopPolling();
       setActiveJobId(nextJobId);
+      prefilledJobRef.current = null;
+      setOfficialUrlConfirmation(null);
       setOfficialUrl(nextOfficialUrl);
       setReview({ ...createInitialWorkspaceReview(nextOfficialUrl) });
+      setTagsInput(null);
       setLogoSelection(null);
       setUploadedLogoUrl(null);
       setMaterializedSlug(null);
@@ -478,7 +513,7 @@ export const ProductResearchSection = () => {
       }
       setLogoInputKey(key => key + 1);
     },
-    [logoPreviewUrl, setActiveJobId]
+    [logoPreviewUrl, setActiveJobId, stopPolling]
   );
 
   const handleRequest = async (event: React.FormEvent) => {
@@ -488,58 +523,57 @@ export const ProductResearchSection = () => {
       notifications.show({ message: '공식 사이트 URL을 입력해주세요.', color: 'red' });
       return;
     }
-    const sameAsCurrentJob = Boolean(jobId && job?.officialUrl && trimmedUrl === job.officialUrl);
-    const activeRequestId = sameAsCurrentJob ? requestId : startNewRequestId();
+    const pendingRequest = pendingRequestRef.current;
+    const activeRequestId = pendingRequest?.url === trimmedUrl ? pendingRequest.id : startNewRequestId();
+    pendingRequestRef.current = { id: activeRequestId, url: trimmedUrl };
     // 연속 제출 경합에서 최신 제출만 Job·Review·poll 입력을 차지한다.
     // jobId state/closure는 제출 사이 렌더 이전에 갱신되지 않을 수 있어 제출 순서 판정에 쓸 수 없다.
     const submittedSeq = requestSeqRef.current + 1;
     requestSeqRef.current = submittedSeq;
+    setActionError(null);
+    setIsUploadingLogo(false);
+    setIsMaterializing(false);
     try {
       const response = await requestResearch({
         variables: { input: { requestId: activeRequestId, officialUrl: trimmedUrl } },
       });
-      const payload = response.data?.requestProductResearch;
-      const nextJobId = payload?.job?.id;
+      const nextJobId = response.data?.requestProductResearch?.id;
       if (!nextJobId) {
         return;
       }
       if (requestSeqRef.current !== submittedSeq) {
         return;
       }
-      if (payload?.dispatchStatus) {
-        setDispatchStatus(payload.dispatchStatus);
+      pendingRequestRef.current = null;
+      const requestedJobId = jobId;
+      const switchedJob = nextJobId !== requestedJobId;
+      if (switchedJob) {
+        resetWorkspaceForJob(nextJobId, trimmedUrl);
+      } else {
+        setActiveJobId(nextJobId);
+        setOfficialUrl(trimmedUrl);
+        setReview(previous => ({ ...previous, officialUrl: trimmedUrl }));
+        setMaterializedSlug(null);
       }
-      if (nextJobId) {
-        const requestedJobId = jobId;
-        const switchedJob = nextJobId !== requestedJobId;
-        if (switchedJob) {
-          resetWorkspaceForJob(nextJobId, trimmedUrl);
-        } else {
-          setActiveJobId(nextJobId);
-          setOfficialUrl(trimmedUrl);
-          setReview(previous => ({ ...previous, officialUrl: trimmedUrl }));
-          setMaterializedSlug(null);
-        }
-        const fetched = await fetchJob({ variables: { id: nextJobId } });
-        if (requestSeqRef.current !== submittedSeq) {
-          return;
-        }
-        if (jobIdRef.current !== nextJobId) {
-          return;
-        }
-        if (fetched.data?.productResearchJob && fetched.data.productResearchJob.id !== nextJobId) {
-          return;
-        }
-        pollJob(nextJobId);
-        if (payload?.dispatchStatus === 'RETRY_REQUIRED') {
-          notifications.show({
-            message: '조사 작업은 저장됐지만 전송이 지연되고 있습니다. 결과 새로고침으로 확인해주세요.',
-            color: 'yellow',
-          });
-        }
+      const payloadJob = await loadJob(nextJobId);
+      if (requestSeqRef.current !== submittedSeq) {
+        return;
       }
-    } catch {
-      // useMutation error 상태로 표시하며 입력은 그대로 둔다.
+      if (jobIdRef.current !== nextJobId) {
+        return;
+      }
+      if (payloadJob && !shouldStopResearchPolling(payloadJob.status)) pollJob(nextJobId);
+      navigate(`/products/new?researchJobId=${encodeURIComponent(nextJobId)}`, {
+        replace: true,
+        preventScrollReset: true,
+      });
+    } catch (error) {
+      // 최신 action의 실제 실패만 표시하고 대체된 이전 요청의 후착 오류는 버린다. 입력은 그대로 둔다.
+      if (requestSeqRef.current === submittedSeq) {
+        setActionError({
+          message: error instanceof Error && error.message ? error.message : '조사 요청에 실패했습니다.',
+        });
+      }
     }
   };
 
@@ -549,34 +583,49 @@ export const ProductResearchSection = () => {
       return;
     }
     const retryRequestId = newRequestId();
+    // 재조사도 request와 같은 action 세대를 사용한다. 새 action/route가 시작되면 이전 retry 응답은 화면을 바꾸지 못한다.
+    const submittedSeq = requestSeqRef.current + 1;
+    requestSeqRef.current = submittedSeq;
+    setActionError(null);
+    setIsUploadingLogo(false);
+    setIsMaterializing(false);
+    // 재조사가 대체한 request의 키는 응답 순서·성공 여부와 무관하게 여기서 수명을 끝낸다.
+    pendingRequestRef.current = null;
     try {
       const response = await retryResearch({
         variables: { jobId: retriedJobId, input: { requestId: retryRequestId } },
       });
       const payload = response.data?.retryProductResearch;
-      const nextJobId = payload?.job?.id;
-      if (!nextJobId || jobIdRef.current !== retriedJobId) {
+      const nextJobId = payload?.id;
+      if (!nextJobId || requestSeqRef.current !== submittedSeq || jobIdRef.current !== retriedJobId) {
         return;
-      }
-      if (payload?.dispatchStatus) {
-        setDispatchStatus(payload.dispatchStatus);
       }
       if (nextJobId !== retriedJobId) {
         setRequestId(retryRequestId);
         resetWorkspaceForJob(nextJobId, job?.officialUrl ?? officialUrl);
-        const fetched = await fetchJob({ variables: { id: nextJobId } });
-        if (jobIdRef.current !== nextJobId) {
+        const payloadJob = await loadJob(nextJobId);
+        if (requestSeqRef.current !== submittedSeq || jobIdRef.current !== nextJobId) {
           return;
         }
-        if (fetched.data?.productResearchJob && fetched.data.productResearchJob.id !== nextJobId) {
-          return;
-        }
-        pollJob(nextJobId);
+        if (payloadJob && !shouldStopResearchPolling(payloadJob.status)) pollJob(nextJobId);
+        navigate(`/products/new?researchJobId=${encodeURIComponent(nextJobId)}`, {
+          replace: true,
+          preventScrollReset: true,
+        });
       } else {
-        await fetchJob({ variables: { id: nextJobId } });
+        const payloadJob = await loadJob(nextJobId);
+        if (requestSeqRef.current !== submittedSeq || jobIdRef.current !== nextJobId) {
+          return;
+        }
+        if (payloadJob && !shouldStopResearchPolling(payloadJob.status)) pollJob(nextJobId);
       }
-    } catch {
-      // 실패해도 기존 Job 상태와 편집값을 유지한다.
+    } catch (error) {
+      // 최신 action의 실제 실패만 표시하고 대체된 이전 재조사의 후착 오류는 버린다. 기존 Job 상태와 편집값을 유지한다.
+      if (requestSeqRef.current === submittedSeq) {
+        setActionError({
+          message: error instanceof Error && error.message ? error.message : '재조사 요청에 실패했습니다.',
+        });
+      }
     }
   };
 
@@ -585,21 +634,9 @@ export const ProductResearchSection = () => {
     if (!refreshedJobId) {
       return;
     }
-    try {
-      const response = await fetchJob({ variables: { id: refreshedJobId } });
-      if (jobIdRef.current !== refreshedJobId) {
-        return;
-      }
-      if (response.data?.productResearchJob && response.data.productResearchJob.id !== refreshedJobId) {
-        return;
-      }
-      if (shouldStopResearchPolling(response.data?.productResearchJob?.status)) {
-        stopPollingForJob(refreshedJobId);
-      }
-    } catch {
-      // 조회 실패는 에러 상태로 표시한다.
-    }
-  }, [fetchJob, jobId, stopPollingForJob]);
+    const payloadJob = await loadJob(refreshedJobId);
+    if (payloadJob && !shouldStopResearchPolling(payloadJob.status)) pollJob(refreshedJobId);
+  }, [loadJob, jobId, pollJob]);
 
   const updateFeature = (index: number, patch: Partial<ResearchWorkspaceFeatureDraft>) => {
     setReview(previous => ({
@@ -633,33 +670,37 @@ export const ProductResearchSection = () => {
     setUploadedLogoUrl(null);
   };
 
-  const ensureUploadedLogo = useCallback(async () => {
-    if (logoSelection?.kind === 'file') {
-      if (uploadedLogoUrl) {
-        return uploadedLogoUrl;
-      }
-      const slugSeed = review.slug.trim() || 'research-logo';
-      setIsUploadingLogo(true);
-      try {
-        const url = await upload('images/logos', logoSelection.file, slugSeed);
-        if (!url) {
-          return null;
+  const ensureUploadedLogo = useCallback(
+    async (isCurrent: () => boolean) => {
+      if (logoSelection?.kind === 'file') {
+        if (uploadedLogoUrl) {
+          return uploadedLogoUrl;
         }
-        setUploadedLogoUrl(url);
-        setReview(previous => ({ ...previous, logoUrl: url }));
-        return url;
-      } catch {
-        notifications.show({ message: '로고 업로드에 실패했습니다. 다시 시도해주세요.', color: 'red' });
-        return null;
-      } finally {
-        setIsUploadingLogo(false);
+        const slugSeed = review.slug.trim() || 'research-logo';
+        setIsUploadingLogo(true);
+        try {
+          const url = await upload('images/logos', logoSelection.file, slugSeed);
+          if (!isCurrent()) return null;
+          if (!url) return null;
+          setUploadedLogoUrl(url);
+          setReview(previous => ({ ...previous, logoUrl: url }));
+          return url;
+        } catch {
+          if (isCurrent()) {
+            notifications.show({ message: '로고 업로드에 실패했습니다. 다시 시도해주세요.', color: 'red' });
+          }
+          return null;
+        } finally {
+          if (isCurrent()) setIsUploadingLogo(false);
+        }
       }
-    }
-    if (logoSelection?.kind === 'url') {
-      return logoSelection.logoUrl.trim() || null;
-    }
-    return resolveLogoUrlForMaterialize(null, uploadedLogoUrl);
-  }, [logoSelection, review.slug, upload, uploadedLogoUrl]);
+      if (logoSelection?.kind === 'url') {
+        return logoSelection.logoUrl.trim() || null;
+      }
+      return resolveLogoUrlForMaterialize(null, uploadedLogoUrl);
+    },
+    [logoSelection, review.slug, upload, uploadedLogoUrl]
+  );
 
   const handleMaterialize = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -667,25 +708,33 @@ export const ProductResearchSection = () => {
       notifications.show({ message: '완료된 조사 결과에서만 서비스를 생성할 수 있습니다.', color: 'red' });
       return;
     }
-    if (job.materializedProductId) {
-      notifications.show({ message: '이미 생성된 조사 작업입니다.', color: 'yellow' });
-      return;
-    }
-    const logoUrl = await ensureUploadedLogo();
+    // 등록도 첫 로고 await 전에 이전 request/retry·조회의 화면 권한과 중복 전송 키 수명을 끝낸다.
+    const submittedSeq = requestSeqRef.current + 1;
+    requestSeqRef.current = submittedSeq;
+    pendingRequestRef.current = null;
+    // 대체된 조회의 응답 권한뿐 아니라 대기도 종료하되 현재 job·근거·편집값은 유지한다.
+    setJobLookup(previous => ({ ...previous, loading: false }));
+    const submittedJobId = jobId;
+    const isCurrent = () => requestSeqRef.current === submittedSeq && jobIdRef.current === submittedJobId;
+    setActionError(null);
+    const logoUrl = await ensureUploadedLogo(isCurrent);
+    if (!isCurrent()) return;
     if (!logoUrl) {
       notifications.show({ message: '로고 파일을 올리거나 로고 URL을 직접 입력해주세요.', color: 'red' });
       return;
     }
+    setIsMaterializing(true);
     try {
       const response = await materialize({
         variables: {
           input: {
-            researchJobId: jobId,
+            researchJobId: submittedJobId,
             name: review.name.trim(),
             slug: review.slug.trim(),
             summary: review.summary.trim(),
             logoUrl,
             officialUrl: review.officialUrl.trim() || job.officialUrl,
+            officialUrlConfirmed: isOfficialUrlConfirmed,
             categoryIds: review.categoryIds,
             features: review.features.map(feature => ({
               name: feature.name.trim(),
@@ -696,15 +745,26 @@ export const ProductResearchSection = () => {
           },
         },
       });
+      if (!isCurrent()) return;
       const slug = response.data?.materializeResearchedProduct?.slug;
       if (slug) {
-        notifications.show({ message: '미발행 서비스가 생성되었습니다.', color: 'teal' });
+        notifications.show({
+          message: job.materializedProductId ? '기존 서비스로 이동합니다.' : '미발행 서비스가 생성되었습니다.',
+          color: 'teal',
+        });
         setMaterializedSlug(slug);
         stopPolling();
         navigate(`/products/${encodeURIComponent(slug)}`);
       }
-    } catch {
-      // 입력값은 그대로 유지하고 에러 메시지로 안내한다.
+    } catch (error) {
+      // 서버 등록·이력은 유지하고 최신 action의 실패만 입력을 보존한 채 표시한다.
+      if (isCurrent()) {
+        setActionError({
+          message: error instanceof Error && error.message ? error.message : '검토 등록에 실패했습니다.',
+        });
+      }
+    } finally {
+      if (isCurrent()) setIsMaterializing(false);
     }
   };
 
@@ -717,10 +777,24 @@ export const ProductResearchSection = () => {
     }));
   };
 
-  const companyCandidate = result?.companyCandidate?.name;
+  // 회사/대안 후보는 근거(출처)를 함께 보여주는 읽기 전용 제안으로만 제공한다.
+  const sourceByAnchor = (sourceId: string) => (result?.sources ?? []).find(source => source.id === sourceId);
+  const evidenceOfCandidate = (candidate: { anchors?: Array<{ sourceId: string }> | null }) =>
+    Array.from(new Set((candidate.anchors ?? []).map(anchor => sourceByAnchor(anchor.sourceId))))
+      .filter((source): source is NonNullable<ReturnType<typeof sourceByAnchor>> => Boolean(source))
+      .map(source => source.hostname);
+  const companyCandidate = result?.companyCandidate
+    ? {
+        label: result.companyCandidate.name,
+        hostnames: evidenceOfCandidate(result.companyCandidate),
+      }
+    : null;
   const alternativeCandidates = (result?.alternativeCandidates ?? [])
-    .map(candidate => (candidate?.name ? `${candidate.name}${candidate.website ? ` (${candidate.website})` : ''}` : ''))
-    .filter((name): name is string => Boolean(name));
+    .filter((candidate): candidate is NonNullable<typeof candidate> => Boolean(candidate?.name))
+    .map(candidate => ({
+      label: `${candidate.name}${candidate.website ? ` (${candidate.website})` : ''}`,
+      hostnames: evidenceOfCandidate(candidate),
+    }));
 
   return (
     <AdminPanel>
@@ -762,9 +836,15 @@ export const ProductResearchSection = () => {
         {jobId && (
           <p className="text-xs text-dark-500">
             작업 ID: {jobId}
-            {dispatchStatus ? ` · 전송 상태: ${dispatchStatus}` : ''}
             {job?.status ? ` · 상태: ${job.status}` : ''}
             {job?.errorMessage ? ` · ${job.errorMessage}` : ''}
+          </p>
+        )}
+
+        {jobMissing && (
+          <p role="status" className="text-xs text-amber-700">
+            조사 작업을 찾을 수 없습니다. 자동 확인을 중단했습니다. 결과를 새로고침하거나 URL로 새 조사를 요청해주세요.
+            아래 수동 등록도 계속 사용할 수 있습니다. 저장된 편집값은 유지됩니다.
           </p>
         )}
 
@@ -823,10 +903,25 @@ export const ProductResearchSection = () => {
                   value={review.officialUrl}
                   onChange={event => {
                     const nextValue = event.currentTarget.value;
+                    setOfficialUrlConfirmation(null);
                     setReview(previous => ({ ...previous, officialUrl: nextValue }));
                   }}
                 />
               </AdminField>
+              {review.officialUrl.trim() !== result.originalUrl && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={isOfficialUrlConfirmed}
+                    onChange={event =>
+                      setOfficialUrlConfirmation(
+                        event.currentTarget.checked && jobId ? { jobId, url: review.officialUrl.trim() } : null
+                      )
+                    }
+                  />
+                  변경한 URL이 공식 사이트인지 직접 확인했습니다.
+                </label>
+              )}
 
               <AdminField label="카테고리 (선택, 비워둘 수 있음)">
                 <div className="flex flex-wrap gap-2">
@@ -884,9 +979,10 @@ export const ProductResearchSection = () => {
               <AdminField label="태그 (쉼표 구분)">
                 <AdminInput
                   name="review-tags"
-                  value={review.tags.join(', ')}
+                  value={tagsInput ?? review.tags.join(', ')}
                   onChange={event => {
                     const nextValue = event.currentTarget.value;
+                    setTagsInput(nextValue);
                     setReview(previous => ({ ...previous, tags: parseTagsInput(nextValue) }));
                   }}
                   placeholder="ex) 협업, 생산성"
@@ -922,6 +1018,7 @@ export const ProductResearchSection = () => {
                 <AdminInput
                   name="review-logo-url"
                   value={review.logoUrl}
+                  disabled={isUploadingLogo || isMaterializing}
                   placeholder="https://..."
                   onChange={event => {
                     const nextUrl = event.currentTarget.value;
@@ -977,9 +1074,22 @@ export const ProductResearchSection = () => {
                   </li>
                 ))}
               </ul>
-              {companyCandidate && <p className="text-xs text-dark-500">회사 후보(참고용): {companyCandidate}</p>}
+              {companyCandidate && (
+                <p className="text-xs text-dark-500">
+                  회사 후보(읽기 전용 제안): {companyCandidate.label}
+                  {companyCandidate.hostnames.length > 0 && ` · 근거: ${companyCandidate.hostnames.join(', ')}`}
+                </p>
+              )}
               {alternativeCandidates.length > 0 && (
-                <p className="text-xs text-dark-500">대안 후보(참고용): {alternativeCandidates.join(', ')}</p>
+                <p className="text-xs text-dark-500">
+                  대안 후보(읽기 전용 제안):{' '}
+                  {alternativeCandidates
+                    .map(
+                      candidate =>
+                        `${candidate.label}${candidate.hostnames.length > 0 ? ` (근거: ${candidate.hostnames.join(', ')})` : ''}`
+                    )
+                    .join(', ')}
+                </p>
               )}
             </div>
           </div>

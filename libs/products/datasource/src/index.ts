@@ -13,6 +13,7 @@ export { PostgresqlCategoryRepository } from './repositories/PostgresqlCategoryR
 export { PostgresqlProductDescriptionJobRepository } from './repositories/PostgresqlProductDescriptionJobRepository';
 export { PostgresqlProductDescriptionApplyStore } from './repositories/PostgresqlProductDescriptionApplyStore';
 export { productDescriptionJobs } from './entities/ProductDescriptionJobSchema';
+export { PostgresqlProductDescriptionEvidenceAssembler } from './repositories/PostgresqlProductDescriptionEvidenceAssembler';
 export {
   renderProductDescriptionDocument,
   formatEditorByline,

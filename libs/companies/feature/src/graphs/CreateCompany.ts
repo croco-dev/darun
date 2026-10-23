@@ -1,13 +1,13 @@
 import { Field, GraphQLISODateTime, InputType, ObjectType } from 'type-graphql';
 import { Company } from './Company';
 
-@ObjectType()
+@ObjectType('CreateCompanyPayload')
 export class CreateCompanyPayload {
   @Field(() => Company)
   company: Company;
 }
 
-@InputType()
+@InputType('CreateCompanyInput')
 export class CreateCompanyInput {
   @Field()
   name: string;

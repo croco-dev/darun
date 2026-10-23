@@ -11,7 +11,7 @@ import {
   type VisualPlatform,
 } from '@darun/provider-graphql';
 import { ArrowDown, ArrowUp, Button, Check, ImageOff, Loader2, Plus, X } from '@darun/ui';
-import { AdminErrorState } from '@darun/ui-admin';
+import { AdminErrorState, AdminSelect } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -320,7 +320,7 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
         <div className="flex flex-wrap gap-4">
           <label className="flex flex-col gap-1.5 text-sm font-medium text-dark-900">
             플랫폼
-            <select
+            <AdminSelect
               value={platform}
               onChange={e => {
                 setPlatform(e.target.value as VisualPlatform);
@@ -328,28 +328,23 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
                   current.filter(step => screenshotById.get(step.screenshotId)?.platform === e.target.value)
                 );
               }}
-              className="rounded-md border border-dark-300 bg-surface-50 px-3 py-2 text-sm font-normal text-dark-900 focus:border-primary-500 focus:outline-none"
             >
               {PLATFORM_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
-            </select>
+            </AdminSelect>
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-medium text-dark-900">
             플로 유형
-            <select
-              value={flowType}
-              onChange={e => setFlowType(e.target.value as VisualFlowType)}
-              className="rounded-md border border-dark-300 bg-surface-50 px-3 py-2 text-sm font-normal text-dark-900 focus:border-primary-500 focus:outline-none"
-            >
+            <AdminSelect value={flowType} onChange={e => setFlowType(e.target.value as VisualFlowType)}>
               {FLOW_TYPE_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
-            </select>
+            </AdminSelect>
           </label>
         </div>
       </div>

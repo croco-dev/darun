@@ -39,15 +39,17 @@ export type AppExplorerState = {
   onSuggestionSelect: (product: ProductSuggestion) => void;
   onSuggestClose: () => void;
   onSearchInputFocus: () => void;
+  pagination: { firstHref: string; nextHref: string | null; isFirstPage: boolean };
 };
 
 export function useAppExplorer(): AppExplorerState {
   const searchParams = useSearchParams();
   const navigate = useNavigate();
-  const { cards, loading, networkError, retry } = useScreenshotCatalog();
 
   const query = readExplorerQueryParam(searchParams);
   const product = readExplorerProductParam(searchParams);
+  const catalog = useScreenshotCatalog(query, product);
+  const { loading, networkError, retry } = catalog;
   const [searchInput, setSearchInput] = useState(query ?? '');
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 검색 파라미터 동기화에 필요
@@ -58,14 +60,13 @@ export function useAppExplorer(): AppExplorerState {
 
   const { suggestions, isSearching, clearSuggestions, suggest } = useProductSearchSuggest();
 
-  const apps = cards.flatMap(card => {
-    const { product: app } = card;
-    if (!app.id || !app.name || !app.slug) {
-      return [];
-    }
-    return [{ id: app.id, name: app.name, slug: app.slug, summary: app.summary ?? '', logoUrl: app.logoUrl ?? '' }];
-  });
-  const scoped = product !== null ? apps.filter(app => app.slug.toLowerCase() === product.toLowerCase()) : apps;
+  const apps: AppCard[] = catalog.apps.map(app => ({
+    id: app.id,
+    name: app.name,
+    slug: app.slug,
+    summary: app.summary ?? '',
+    logoUrl: app.logoUrl ?? '',
+  }));
 
   const handleSearchInputChange = (value: string) => {
     setSearchInput(value);
@@ -100,15 +101,12 @@ export function useAppExplorer(): AppExplorerState {
     }
   };
 
-  const searched: AppCard[] | null =
-    query === null || queryLengthError
-      ? null
-      : scoped.filter(
-          app =>
-            app.name.toLowerCase().includes(query.toLowerCase()) || app.slug.toLowerCase().includes(query.toLowerCase())
-        );
-
-  const visibleCards = searched ?? scoped;
+  const searched = query === null ? null : apps;
+  const visibleCards = apps;
+  const firstParams = new URLSearchParams(searchParams);
+  firstParams.delete('after');
+  const nextParams = new URLSearchParams(firstParams);
+  if (catalog.endCursor) nextParams.set('after', catalog.endCursor);
   const hasFilters = query !== null || product !== null;
 
   return {
@@ -118,7 +116,7 @@ export function useAppExplorer(): AppExplorerState {
     cards: visibleCards,
     searchInput,
     query,
-    totalCount: visibleCards.length,
+    totalCount: catalog.totalCount,
     hasFilters,
     onSearchInputChange: handleSearchInputChange,
     onSearchSubmit,
@@ -135,5 +133,10 @@ export function useAppExplorer(): AppExplorerState {
     onSuggestionSelect,
     onSuggestClose: clearSuggestions,
     onSearchInputFocus,
+    pagination: {
+      firstHref: `/apps${firstParams.size ? `?${firstParams}` : ''}`,
+      nextHref: catalog.hasNextPage && catalog.endCursor ? `/apps?${nextParams}` : null,
+      isFirstPage: catalog.isFirstPage,
+    },
   };
 }

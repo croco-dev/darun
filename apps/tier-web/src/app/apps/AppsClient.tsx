@@ -44,7 +44,7 @@ async function fetchAppsPage({ page, searchTerm }: { page: number; searchTerm: s
     queryBuilder = queryBuilder.or(buildAppsSearchFilter(normalizedSearchTerm));
   }
 
-  const { data, error, count } = await queryBuilder.range(from, to);
+  const { data, error, count } = await queryBuilder.range(from, to).overrideTypes<AppListRow[], { merge: false }>();
 
   if (error) {
     throw new Error(error.message);
@@ -53,7 +53,7 @@ async function fetchAppsPage({ page, searchTerm }: { page: number; searchTerm: s
   const totalCount = count ?? 0;
 
   return {
-    apps: (data as AppListRow[] | null)?.map(mapAppListRow) ?? [],
+    apps: data?.map(mapAppListRow) ?? [],
     totalCount,
     hasNextPage: getHasNextPage(totalCount, to),
   };

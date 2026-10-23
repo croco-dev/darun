@@ -1,7 +1,6 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { AllProductsOnProductListTableDocument } from '@darun/provider-graphql';
-import { useNavigate } from '@darun/utils-router';
 import { useEffect, useRef, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -32,7 +31,6 @@ gql`
 const defaultViewCount = 50;
 
 export function useProductListTable() {
-  const navigate = useNavigate();
   const [pageCount, setPageCount] = useState(1);
   const [isNavigating, setIsNavigating] = useState(false);
   const { data, refetch } = useSuspenseQuery(AllProductsOnProductListTableDocument, {
@@ -88,10 +86,6 @@ export function useProductListTable() {
       });
   };
 
-  const handleRowClick = ({ record: { slug } }: { record: { slug: string } }) => {
-    navigate(`/products/${encodeURIComponent(slug)}`);
-  };
-
   return {
     products: data?.allProducts?.edges ?? [],
     totalCount: data?.allProducts?.totalCount,
@@ -101,6 +95,5 @@ export function useProductListTable() {
     isNavigating,
     loadNextPage,
     loadPreviousPage,
-    handleRowClick,
   };
 }

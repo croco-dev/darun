@@ -18,7 +18,9 @@ export const visualViewEvents = pgTable(
     }),
     flowId: varchar('flow_id', { length: 26 }).references(() => productFlows.id, { onDelete: 'cascade' }),
     viewerHash: varchar('viewer_hash', { length: 64 }).notNull(),
-    createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: timestamp('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
   },
   table => [
     check('visual_view_events_target_check', sql`num_nonnulls(${table.screenshotId}, ${table.flowId}) = 1`),
@@ -35,12 +37,14 @@ export const visualSaves = pgTable(
   'visual_saves',
   {
     id: varchar('id', { length: 26 }).primaryKey().$default(ulid),
-    userId: varchar('user_id', { length: 26 }).notNull(),
+    userId: varchar('user_id', { length: 128 }).notNull(),
     screenshotId: varchar('screenshot_id', { length: 26 }).references(() => productScreenshots.id, {
       onDelete: 'cascade',
     }),
     flowId: varchar('flow_id', { length: 26 }).references(() => productFlows.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: timestamp('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
   },
   table => [
     check('visual_saves_target_check', sql`num_nonnulls(${table.screenshotId}, ${table.flowId}) = 1`),

@@ -1,5 +1,6 @@
 import { GetCompany } from '@darun/companies-domain';
 import { Company } from '@darun/companies-feature/server';
+import type { ProductRepository } from '@darun/products-domain';
 import {
   GetAllProducts,
   GetProduct,
@@ -15,6 +16,7 @@ import {
   GetProductsByCategory,
   Product as DomainProduct,
 } from '@darun/products-domain';
+import { ProductRepositoryToken } from '@darun/products-domain';
 import { GetAlternativeProducts } from '@darun/recommendation-domain';
 import { SearchProduct } from '@darun/search-domain';
 import { TranslationService } from '@darun/translation-domain';
@@ -22,7 +24,7 @@ import { ConnectionArgs } from '@darun/utils-apollo-server';
 import { AuthRole, Connection, Cursor } from '@darun/utils-apollo-server';
 import { GetVoteCount } from '@darun/voting-domain';
 import { Arg, Args, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
-import { Service } from 'typedi';
+import { Inject, Service } from 'typedi';
 import { Feature } from './graphs/Feature';
 import { Link } from './graphs/Link';
 import { Product } from './graphs/Product';
@@ -34,14 +36,6 @@ type ProductWithLocale = Product & {
   locale?: string;
 };
 
-type ProductWithPreload = ProductWithLocale & {
-  __preloadedTags?: Tag[];
-  __preloadedVoteCount?: number;
-  __preloadedLinks?: Link[];
-  __preloadedScreenshots?: Screenshot[];
-  __preloadedFeatures?: Feature[];
-};
-
 type PublishedProduct = DomainProduct;
 
 const MAX_LIST_LIMIT = 100;
@@ -49,7 +43,7 @@ const MAX_SITEMAP_LIMIT = 200;
 const MAX_SEARCH_RESULTS = 100;
 
 function validateListLimit(first: number, max: number): number {
-  const limit = Math.floor(first);
+  const limit = first;
   if (!Number.isInteger(limit) || limit < 1 || limit > max) {
     throw new Error('pagination/invalid-connection-args');
   }
@@ -76,41 +70,12 @@ export class ProductQueryResolver {
     private readonly getVoteCountUseCase: GetVoteCount,
     private readonly getProductsByCategoryUseCase: GetProductsByCategory,
     private readonly translationService: TranslationService,
-    private readonly getPublishedProductsForSitemapUseCase: GetPublishedProductsForSitemap
+    private readonly getPublishedProductsForSitemapUseCase: GetPublishedProductsForSitemap,
+    @Inject(ProductRepositoryToken) private readonly productRepository: ProductRepository
   ) {}
 
   private normalizeLocale(locale: string): 'ko' | 'en' {
     return locale === 'en' ? 'en' : 'ko';
-  }
-
-  private async preloadFields(products: ProductWithLocale[]): Promise<ProductWithPreload[]> {
-    if (products.length === 0) return [];
-
-    const productIds = products.map(p => p.id);
-
-    const [productTagsResult, voteCountsResult, productLinksResult, screenshotsResult, featuresResult] =
-      await Promise.allSettled([
-        Promise.all(productIds.map(id => this.getProductTagsUseCase.execute({ productId: id }))),
-        Promise.all(productIds.map(id => this.getVoteCountUseCase.execute({ productId: id }))),
-        Promise.all(productIds.map(id => this.getProductLinksUseCase.execute({ productId: id }))),
-        Promise.all(productIds.map(id => this.getProductScreenshotsUseCase.execute({ productId: id }))),
-        Promise.all(productIds.map(id => this.getProductFeaturesUseCase.execute({ productId: id }))),
-      ]);
-
-    const productTags = productTagsResult.status === 'fulfilled' ? productTagsResult.value : [];
-    const voteCounts = voteCountsResult.status === 'fulfilled' ? voteCountsResult.value : [];
-    const productLinks = productLinksResult.status === 'fulfilled' ? productLinksResult.value : [];
-    const screenshots = screenshotsResult.status === 'fulfilled' ? screenshotsResult.value : [];
-    const features = featuresResult.status === 'fulfilled' ? featuresResult.value : [];
-
-    return products.map((product, i) => ({
-      ...product,
-      __preloadedTags: productTags[i]?.tags ?? [],
-      __preloadedVoteCount: voteCounts[i] ?? 0,
-      __preloadedLinks: (productLinks[i] ?? []).map((link, j) => ({ ...link, isPrimary: j === 0 })),
-      __preloadedScreenshots: screenshots[i] ?? [],
-      __preloadedFeatures: features[i] ?? [],
-    }));
   }
 
   private async translateProduct(product: PublishedProduct, locale: string): Promise<ProductWithLocale> {
@@ -195,7 +160,7 @@ export class ProductQueryResolver {
       limit: validateListLimit(first, MAX_LIST_LIMIT),
     });
     const translated = await this.translateProducts(products, locale);
-    return this.preloadFields(translated);
+    return translated;
   }
 
   @Query(() => [Product])
@@ -207,7 +172,7 @@ export class ProductQueryResolver {
       limit: validateListLimit(first, MAX_LIST_LIMIT),
     });
     const translated = await this.translateProducts(products, locale);
-    return this.preloadFields(translated);
+    return translated;
   }
 
   @Query(() => Product, { nullable: true })
@@ -261,7 +226,7 @@ export class ProductQueryResolver {
       products.filter((product): product is PublishedProduct => Boolean(product)).slice(0, MAX_SEARCH_RESULTS),
       locale
     );
-    return this.preloadFields(translated);
+    return translated;
   }
 
   @Authorized([AuthRole.Admin])
@@ -300,46 +265,47 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => [Link])
-  public async links(@Root() product: ProductWithPreload) {
-    if (product.__preloadedLinks !== undefined) {
-      return product.__preloadedLinks;
-    }
-
-    const links = await this.getProductLinksUseCase.execute({
-      productId: product.id,
-    });
+  public async links(@Root() product: ProductWithLocale) {
+    const links = await this.getProductLinksUseCase
+      .execute({
+        productId: product.id,
+      })
+      .catch(error => {
+        console.error('Product links lookup failed', product.id, error);
+        return [];
+      });
 
     return links.map((link, index) => ({ ...link, isPrimary: index === 0 }));
   }
 
   @FieldResolver(() => [Tag])
-  public async tags(@Root() product: ProductWithPreload): Promise<Tag[]> {
-    if (product.__preloadedTags !== undefined) {
-      return product.__preloadedTags;
-    }
-
-    const productTag = await this.getProductTagsUseCase.execute({
-      productId: product.id,
-    });
+  public async tags(@Root() product: ProductWithLocale): Promise<Tag[]> {
+    const productTag = await this.getProductTagsUseCase
+      .execute({
+        productId: product.id,
+      })
+      .catch(error => {
+        console.error('Product tags lookup failed', product.id, error);
+        return null;
+      });
 
     return productTag?.tags ?? [];
   }
 
   @FieldResolver(() => [Screenshot])
-  public async screenshots(@Root() product: ProductWithPreload) {
-    if (product.__preloadedScreenshots !== undefined) {
-      return product.__preloadedScreenshots;
-    }
-
-    return this.getProductScreenshotsUseCase.execute({ productId: product.id });
+  public async screenshots(@Root() product: ProductWithLocale) {
+    return this.getProductScreenshotsUseCase.execute({ productId: product.id }).catch(error => {
+      console.error('Product screenshots lookup failed', product.id, error);
+      return [];
+    });
   }
 
   @FieldResolver(() => [Feature])
-  public async features(@Root() product: ProductWithPreload) {
-    const features =
-      product.__preloadedFeatures !== undefined
-        ? product.__preloadedFeatures
-        : await this.getProductFeaturesUseCase.execute({ productId: product.id });
+  public async features(@Root() product: ProductWithLocale) {
+    const features = await this.getProductFeaturesUseCase.execute({ productId: product.id }).catch(error => {
+      console.error('Product features lookup failed', product.id, error);
+      return [];
+    });
 
     const locale = this.normalizeLocale(product.locale ?? 'ko');
 
@@ -393,7 +359,7 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => [Product])
-  public async alternatives(@Root() product: ProductWithPreload) {
+  public async alternatives(@Root() product: ProductWithLocale) {
     const alternativeProducts = await this.getAlternativeProductsUseCase.execute({
       productId: product.id,
     });
@@ -414,25 +380,71 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => Int)
-  public async voteCount(@Root() product: ProductWithPreload) {
-    if (product.__preloadedVoteCount !== undefined) {
-      return product.__preloadedVoteCount;
-    }
-
-    return this.getVoteCountUseCase.execute({ productId: product.id });
+  public async voteCount(@Root() product: ProductWithLocale) {
+    return this.getVoteCountUseCase.execute({ productId: product.id }).catch(error => {
+      console.error('Product vote count lookup failed', product.id, error);
+      return 0;
+    });
   }
 
-  @Query(() => [Product])
+  @Query(() => ProductConnection)
   public async productsByCategory(
     @Arg('slug', () => String) slug: string,
-    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
+    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string,
+    @Arg('first', () => Int, { defaultValue: 24 }) first: number,
+    @Arg('after', () => String, { nullable: true }) after?: string
   ) {
-    const { products } = await this.getProductsByCategoryUseCase.execute({
-      slug,
-    });
+    const limit = validateListLimit(first, MAX_LIST_LIMIT);
+    const afterId = after ? Cursor.decode(after, ['id'] as const).id : undefined;
+    const { products, total } = await this.getProductsByCategoryUseCase.execute({ slug, limit: limit + 1, afterId });
+    return this.productConnection(await this.translateProducts(products, locale), total, limit, after);
+  }
 
-    const translated = await this.translateProducts(products, locale);
-    return this.preloadFields(translated);
+  @Query(() => ProductConnection)
+  public async visualApps(
+    @Arg('first', () => Int, { defaultValue: 24 }) first: number,
+    @Arg('after', () => String, { nullable: true }) after?: string,
+    @Arg('query', () => String, { nullable: true }) query?: string,
+    @Arg('productSlug', () => String, { nullable: true }) productSlug?: string
+  ) {
+    const limit = validateListLimit(first, MAX_LIST_LIMIT);
+    const afterId = after ? Cursor.decode(after, ['id'] as const).id : undefined;
+    const { products, total } = await this.productRepository.findVisualApps({
+      limit: limit + 1,
+      afterId,
+      query,
+      productSlug,
+    });
+    return this.productConnection(products, total, limit, after);
+  }
+
+  private productConnection(products: Product[], totalCount: number, limit: number, after?: string) {
+    const edges = products.slice(0, limit).map(node => ({ node, cursor: Cursor.encode(node, ['id'] as const) }));
+    return {
+      totalCount,
+      edges,
+      pageInfo: {
+        hasNextPage: products.length > limit,
+        hasPreviousPage: Boolean(after),
+        startCursor: edges[0]?.cursor,
+        endCursor: edges[edges.length - 1]?.cursor,
+      },
+    };
+  }
+
+  @FieldResolver(() => Screenshot, { nullable: true })
+  public coverScreenshot(@Root() product: Product) {
+    return this.productRepository.findVisualAppCover(product.id);
+  }
+
+  @FieldResolver(() => Int)
+  public screenshotCount(@Root() product: Product) {
+    return this.productRepository.countVisualAppScreenshots(product.id);
+  }
+
+  @FieldResolver(() => Boolean)
+  public hasAlternatives(@Root() product: Product) {
+    return this.productRepository.hasPublishedAlternatives(product.id);
   }
 
   @Authorized([AuthRole.Admin])

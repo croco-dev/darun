@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp, integer } from 'drizzle-orm/pg-core';
+import { index, pgTable, text, timestamp, integer, jsonb } from 'drizzle-orm/pg-core';
 
 export const productResearchJobs = pgTable(
   'product_research_jobs',
@@ -19,8 +19,21 @@ export const productResearchJobs = pgTable(
     leaseToken: text('lease_token'),
     leaseUntil: timestamp('lease_until'),
     attemptCount: integer('attempt_count').notNull().default(0),
+    runNotBefore: timestamp('run_not_before').defaultNow().notNull(),
+    nextDispatchAt: timestamp('next_dispatch_at').defaultNow().notNull(),
+    retryOfJobId: text('retry_of_job_id'),
     materializedProductId: text('materialized_product_id'),
     appliedAt: timestamp('applied_at'),
+    reviewedInput: jsonb('reviewed_input').$type<{
+      name: string;
+      slug: string;
+      summary: string;
+      logoUrl: string;
+      officialUrl: string;
+      categoryIds: string[];
+      features: { name: string; summary: string; emoji: string }[];
+      tags: string[];
+    }>(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },

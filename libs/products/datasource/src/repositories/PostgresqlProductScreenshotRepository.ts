@@ -17,6 +17,7 @@ import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 import { productScreenshotUiElements } from '../entities/ProductScreenshotUiElementsSchema';
 import { visualSaves, visualViewEvents } from '../entities/VisualPopularitySchema';
+import { beginProductContentWrite } from './productContentSync';
 
 type ScreenshotRow = typeof productScreenshots.$inferSelect;
 
@@ -143,6 +144,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
   insert(productScreenshot: ProductScreenshot): Promise<ProductScreenshot> {
     return this.db
       .transaction(async tx => {
+        const finishContentWrite = await beginProductContentWrite(tx, productScreenshot.productId);
         const inserted = await tx
           .insert(productScreenshots)
           .values({
@@ -160,6 +162,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
         if (!inserted[0]) {
           throw productScreenshotInsertFailed();
         }
+        await finishContentWrite();
         return toDomain(inserted[0]);
       })
       .then(result => {
@@ -186,6 +189,12 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
   ): Promise<ProductScreenshot> {
     return this.db
       .transaction(async tx => {
+        const [owner] = await tx
+          .select({ productId: productScreenshots.productId })
+          .from(productScreenshots)
+          .where(eq(productScreenshots.id, id));
+        if (!owner) throw productScreenshotNotFound();
+        const finishContentWrite = await beginProductContentWrite(tx, owner.productId);
         const rows = await tx
           .select()
           .from(productScreenshots)
@@ -217,6 +226,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
         if (!updated[0]) {
           throw productScreenshotNotFound();
         }
+        await finishContentWrite();
         return toDomain(updated[0]);
       })
       .then(result => {
@@ -226,17 +236,32 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
   }
 
   async deleteById(id: string): Promise<void> {
-    await this.db.delete(productScreenshots).where(eq(productScreenshots.id, id));
+    await this.db.transaction(async tx => {
+      const [owner] = await tx
+        .select({ productId: productScreenshots.productId })
+        .from(productScreenshots)
+        .where(eq(productScreenshots.id, id));
+      if (!owner) return;
+      const finishContentWrite = await beginProductContentWrite(tx, owner.productId);
+      await tx.delete(productScreenshots).where(eq(productScreenshots.id, id));
+      await finishContentWrite();
+    });
     this.productIdLoader.clearAll();
   }
 
-  /**
-   * 잠금 규약(접근 2): screenshot row를 FOR UPDATE로 잠근 트랜잭션에서
-   * validateLocked를 실행한다. 통과하면 DB 행을 삭제한다. 실패하면
-   * 트랜잭션이 rollback되고 행은 보존된다.
-   */
-  async deleteWithLock(id: string, validateLocked: (locked: ProductScreenshot) => Promise<void>): Promise<void> {
+  /** Keep Product-first·screenshot locks through checkpoint and remote deletion; either failure rolls back. */
+  async deleteWithLock(
+    id: string,
+    validateLocked: (locked: ProductScreenshot) => Promise<void>,
+    deleteImage: (locked: ProductScreenshot) => Promise<void>
+  ): Promise<void> {
     await this.db.transaction(async tx => {
+      const [owner] = await tx
+        .select({ productId: productScreenshots.productId })
+        .from(productScreenshots)
+        .where(eq(productScreenshots.id, id));
+      if (!owner) throw productScreenshotNotFound();
+      const finishContentWrite = await beginProductContentWrite(tx, owner.productId);
       const rows = await tx
         .select()
         .from(productScreenshots)
@@ -251,6 +276,8 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
 
       await validateLocked(locked);
       await tx.delete(productScreenshots).where(eq(productScreenshots.id, id));
+      await finishContentWrite();
+      await deleteImage(locked);
     });
     this.productIdLoader.clearAll();
   }
