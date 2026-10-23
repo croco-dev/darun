@@ -206,6 +206,32 @@ Production Deploy의 `deploy` job은 트리거·브랜치·revision과 무관하
 
 `node --test scripts/deployment-guard.test.mjs`는 실제 guard subprocess로 최신·오래된 세 이벤트, 명시적 rollback과 API 실패를 검증합니다. PR의 Deployment guard CI는 운영 설정에서 concurrency 정책을 읽어 실행별 별도 group에 두 합성 배포를 요청합니다. 운영 자격 증명 없이 시작·종료 시각을 artifact로 보관하고, 두 요청이 취소 없이 끝나며 임계 구간이 겹치지 않아야 성공합니다.
 
+### 배포 후 GraphQL 응답 확인과 실패 대응
+
+운영 workflow는 SST 성공 후 `node scripts/verify-deployment.mjs`를 필수 실행합니다.
+[SST가 성공한 배포의 출력을 기록하는 `.sst/outputs.json`](https://sst.dev/docs/reference/config/#run)의
+`api` URL에 `/graphql`을 붙이며 URL이나 출력 파일 전체를 로그에 남기지 않습니다.
+`query { __typename }`로 초기화를, `query { categories(first: 1) { id } }`로 DB 읽기를
+각각 확인합니다. HTTP 200, GraphQL 오류 부재, 예상 data 구조를 모두 요구하며 빈 categories는 정상입니다.
+두 검사를 모두 수행하므로 초기화 성공과 DB 조회 실패를 별도로 확인할 수 있습니다.
+각 검사는 최대 3회, 요청·응답 본문 수신을 포함한 회당 10초 제한, 재시도 간격 2초,
+응답 64KiB 제한을 사용합니다. redirect는 따르지 않으며 하나라도 끝내 실패하면 job이 실패합니다.
+
+JSON 로그의 `revision`, UTC `time`, `probe`, `attempt`, HTTP `status`, UUID 형식의
+`requestId`, 정제된 `result`를 확인합니다. 응답 본문·GraphQL 오류 문구·조회된 ID·자격 증명은
+출력하지 않습니다. `initialization: ok`만으로 DB가 정상이라고 판단하지 않습니다.
+검사 실패는 이미 적용된 migration이나 SST 배포를 자동으로 되돌리지 않습니다.
+기록된 revision·시각·request ID를 같은 시간대의 Lambda 로그와 대조해 일시적 라우팅 지연인지,
+초기화 예외인지, DB 조회 실패인지 확인합니다. 일시 장애 복구 뒤 동일 revision의 출력을 사용해
+검사만 다시 실행할 수 있습니다. 로컬에서는 `GITHUB_SHA=<40자리 revision> node scripts/verify-deployment.mjs <outputs.json 경로>`를 사용합니다.
+재배포가 필요하면 검증을 통과한 revision으로 workflow를 다시 실행합니다. rollback은 현재 DB 스키마와
+이전 코드의 호환성을 먼저 확인한 뒤 승인된 배포 절차로 수행하며, 이미 적용된 SQL 이력을 수정하지 않습니다.
+
+`node --test scripts/verify-deployment.test.mjs`는 격리 HTTP 서버와 임시 SST 출력으로 성공·빈 결과·
+HTTP/GraphQL 오류·잘못된 JSON/data·timeout·재시도·로그 정제를 검사하고 실패 시 명령 종료 코드도 확인합니다.
+HTTP는 이 로컬 fixture의 loopback 주소에만 허용하고 실제 배포 URL은 HTTPS를 사용합니다.
+운영 배포나 실제 DB 데이터를 사용하는 검사는 아닙니다.
+
 ## 비동기 작업 복구
 
 SST의 `JobRecoveryTick`은 `CronV2`로 매분 번역·AI 소개·리서치·상품 콘텐츠 동기화 작업의 복구 handler를 실행하며, 네 작업 큐에 대한 `sqs:SendMessage` 권한과 큐 URL을 전달합니다. 배포 출력의 `jobRecoveryScheduleArn` ARN으로 생성된 스케줄을 확인할 수 있습니다. 번역 결과는 작업 행을 잠근 뒤 lease를 다시 확인한 같은 트랜잭션에서만 저장합니다. 동일 대상·종류·언어의 활성 번역 작업은 중복 생성하지 않으며, 번역·소개 작업은 logical job별로 최대 5회 시도합니다. 수동 재시도는 실패한 작업 이력을 보존하고 `retryOfJobId`로 연결한 새 logical job을 만듭니다.
