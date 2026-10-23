@@ -1,7 +1,10 @@
-import { CodegenConfig } from '@graphql-codegen/cli';
+import type { CodegenConfig } from '@graphql-codegen/cli';
 
 const config: CodegenConfig = {
   schema: '../../../apps/graphql-api/schema.graphql',
+  // Documents are static gql sources; never execute application modules while generating or verifying them.
+  noRequire: true,
+  noSilentErrors: true,
   documents: [
     '../../../libs/**/*.{ts,tsx}',
     '../../../apps/admin-web/**/*.{ts,tsx}',

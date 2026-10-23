@@ -18,6 +18,8 @@ import { productResearchJobs } from '../entities/ProductResearchJobSchema';
 import { products } from '../entities/ProductSchema';
 import { productTags } from '../entities/ProductTagsSchema';
 import { tags } from '../entities/TagSchema';
+import { beginProductContentWrite } from './productContentSync';
+import { lockCategoryMembership } from './productSourceMutex';
 
 const PG_UNIQUE_VIOLATION = '23505';
 
@@ -77,12 +79,21 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           };
         }
 
+        if (!jobRow.resultJson) {
+          throw productInvalidArgs('완료된 조사 결과가 없습니다.');
+        }
+        if (new URL(jobRow.officialUrl).toString() !== input.officialUrl && input.officialUrlConfirmed !== true) {
+          throw productInvalidArgs('변경한 공식 URL을 명시적으로 확인해 주세요.');
+        }
+        // Keep job-first locking, but enter membership before Category shares or new Product rows.
+        await lockCategoryMembership(tx, 'shared');
         const categoryRows =
           input.categoryIds.length > 0
             ? await tx
                 .select()
                 .from(categories)
                 .where(inArray(categories.id, [...input.categoryIds]))
+                .for('share')
             : [];
         if (categoryRows.length !== input.categoryIds.length) {
           throw productInvalidArgs('카테고리를 다시 선택해 주세요.');
@@ -105,6 +116,7 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           throw productInvalidArgs('서비스 저장에 실패했습니다.');
         }
         const productId = inserted.id;
+        const finishContentWrite = await beginProductContentWrite(tx, productId);
 
         const hostname = new URL(input.officialUrl).hostname.toLowerCase();
         await tx.insert(productLinks).values({
@@ -153,6 +165,16 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           .set({
             materializedProductId: productId,
             appliedAt: new Date(),
+            reviewedInput: {
+              name: input.name,
+              slug: input.slug,
+              summary: input.summary,
+              logoUrl: input.logoUrl,
+              officialUrl: input.officialUrl,
+              categoryIds: input.categoryIds,
+              features: input.features,
+              tags: input.tags,
+            },
             updatedAt: new Date(),
           })
           .where(
@@ -161,32 +183,10 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           .returning({ id: productResearchJobs.id });
         const claimed = claimedRows[0];
         if (!claimed) {
-          const lostRows = await tx
-            .select()
-            .from(productResearchJobs)
-            .where(eq(productResearchJobs.id, input.researchJobId))
-            .limit(1);
-          const lost = lostRows[0]?.materializedProductId;
-          if (lost) {
-            const existingRows = await tx.select().from(products).where(eq(products.id, lost)).limit(1);
-            const existing = existingRows[0];
-            if (existing) {
-              return {
-                product: new Product({
-                  ...existing,
-                  ownedCompanyId: existing.ownedCompanyId ?? undefined,
-                  description: existing.description ?? undefined,
-                  publishedAt: existing.publishedAt ?? undefined,
-                  updatedAt: existing.updatedAt ?? undefined,
-                  categoryIds: existing.categoryIds ?? [],
-                }),
-                alreadyCreated: true,
-              };
-            }
-          }
-          throw productSlugAlreadyExists();
+          throw productInvalidArgs('조사 작업 적용 상태가 변경되었습니다.');
         }
 
+        await finishContentWrite();
         return {
           product: new Product({
             ...inserted,

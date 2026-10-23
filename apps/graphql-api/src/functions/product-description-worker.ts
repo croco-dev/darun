@@ -1,14 +1,14 @@
 import 'reflect-metadata';
 import '../config';
 import { ProductDescriptionJobService } from '@darun/products-service';
+import { LlmClient } from '@darun/utils-llm';
 import type { SQSEvent, SQSHandler } from 'aws-lambda';
 import { Container } from 'typedi';
-import { createMongodbConnection, createPostgresConnection } from '../config/database';
+import { createPostgresConnection } from '../config/database';
+import { withJobDeadline } from './jobDeadline';
 
-const WORKER_DEADLINE_MS = 4 * 60 * 1000;
-
-export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
-  await Promise.all([createPostgresConnection(), createMongodbConnection()]);
+export const handler: SQSHandler = async (event: SQSEvent, context): Promise<void> => {
+  createPostgresConnection();
 
   const productDescriptionJobService = Container.get(ProductDescriptionJobService);
 
@@ -22,15 +22,11 @@ export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
       console.log(`[ProductDescriptionWorker] Processing message ${record.messageId}:`, payload);
 
       if (payload.jobId && payload.productId) {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), WORKER_DEADLINE_MS);
-        try {
-          await productDescriptionJobService.executeJob(payload.jobId, payload.productId, {
-            signal: controller.signal,
-          });
-        } finally {
-          clearTimeout(timeout);
-        }
+        await withJobDeadline(context, options =>
+          Container.get(LlmClient).withConfigSnapshot(() =>
+            productDescriptionJobService.executeJob(payload.jobId, payload.productId, options)
+          )
+        );
       }
     } catch (error) {
       console.error(`[ProductDescriptionWorker] Error processing record ${record.messageId}:`, error);

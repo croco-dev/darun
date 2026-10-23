@@ -1,7 +1,6 @@
 import { GetProduct } from '@darun/products-domain';
 import { productNotFound } from '@darun/products-domain';
 import { UpdateAlternativeProduct } from '@darun/recommendation-domain';
-import { IndexProduct } from '@darun/search-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Product } from './graphs/Product';
@@ -15,7 +14,6 @@ export class ProductRecommendationMutationResolver extends ProductPublishMutatio
     getCompanyUseCase: ProductPublishMutationResolver['getCompanyUseCase'],
     createProductUseCase: ProductPublishMutationResolver['createProductUseCase'],
     editProductUseCase: ProductPublishMutationResolver['editProductUseCase'],
-    coreIndexProductUseCase: ProductPublishMutationResolver['indexProductUseCase'],
     updateProductTagUseCase: ProductPublishMutationResolver['updateProductTagUseCase'],
     getProductUseCase: GetProduct,
     getProductTagsUseCase: ProductPublishMutationResolver['getProductTagsUseCase'],
@@ -27,8 +25,6 @@ export class ProductRecommendationMutationResolver extends ProductPublishMutatio
     registerProductCompanyUseCase: ProductPublishMutationResolver['registerProductCompanyUseCase'],
     generateProductDescriptionUseCase: ProductPublishMutationResolver['generateProductDescriptionUseCase'],
     publishProductUseCase: ProductPublishMutationResolver['publishProductUseCase'],
-    publishIndexProductUseCase: IndexProduct,
-    translationJobService: ProductPublishMutationResolver['translationJobService'],
     protected readonly updateAlternativeProductUseCase: UpdateAlternativeProduct,
     applyProductDescriptionCandidateUseCase?: ProductPublishMutationResolver['applyProductDescriptionCandidateUseCase'],
     productDescriptionJobService?: ProductPublishMutationResolver['productDescriptionJobService']
@@ -37,7 +33,6 @@ export class ProductRecommendationMutationResolver extends ProductPublishMutatio
       getCompanyUseCase,
       createProductUseCase,
       editProductUseCase,
-      coreIndexProductUseCase,
       updateProductTagUseCase,
       getProductUseCase,
       getProductTagsUseCase,
@@ -49,8 +44,6 @@ export class ProductRecommendationMutationResolver extends ProductPublishMutatio
       registerProductCompanyUseCase,
       generateProductDescriptionUseCase,
       publishProductUseCase,
-      publishIndexProductUseCase,
-      translationJobService,
       applyProductDescriptionCandidateUseCase,
       productDescriptionJobService
     );

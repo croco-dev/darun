@@ -7,6 +7,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { productTags } from '../entities/ProductTagsSchema';
 import { tags } from '../entities/TagSchema';
+import { beginProductContentWrite } from './productContentSync';
 
 @Service(ProductTagRepositoryToken)
 export class PostgresqlProductTagRepository implements ProductTagRepository {
@@ -22,6 +23,7 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
 
   upsert(productTag: ProductTag): Promise<ProductTag> {
     return this.db.transaction(async tx => {
+      const finishContentWrite = await beginProductContentWrite(tx, productTag.productId);
       const existTags = await tx
         .select()
         .from(tags)
@@ -61,6 +63,7 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
         );
       }
 
+      await finishContentWrite();
       return new ProductTag({
         productId: productTag.productId,
         tags: totalTags.map(this.toTag),

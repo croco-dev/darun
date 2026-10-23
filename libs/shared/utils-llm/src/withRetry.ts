@@ -1,3 +1,5 @@
+import { APIConnectionError } from 'openai/error';
+
 export interface RetryOptions {
   maxRetries?: number;
   baseDelay?: number;
@@ -38,7 +40,12 @@ export function isAbortError(error: unknown): boolean {
   return false;
 }
 
-function isRetryableError(error: unknown): boolean {
+export function isRetryableError(error: unknown): boolean {
+  // Includes APIConnectionTimeoutError, but not the SDK's separate APIUserAbortError.
+  if (error instanceof APIConnectionError) return true;
+  if (typeof error === 'object' && error !== null && 'retryable' in error && error.retryable === true) return true;
+  if (typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number')
+    return error.status === 429 || error.status >= 500;
   if (error instanceof RetryableError) {
     const statusCode = error.statusCode;
     if (statusCode !== undefined) {

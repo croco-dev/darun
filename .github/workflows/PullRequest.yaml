@@ -6,9 +6,30 @@ on:
   pull_request:
     branches: ["trunk"]
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # MongoDB 8은 Linux 6.19에서 기동하지 않아 호환 실행기를 고정합니다.
+    runs-on: ubuntu-22.04
+    services:
+      content-sync-postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sync
+          POSTGRES_PASSWORD: sync
+          POSTGRES_DB: darun_content_sync
+        ports: ["55437:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sync -d darun_content_sync"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+      content-sync-mongo:
+        image: mongo:8
+        ports: ["27037:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok'"
+          --health-interval 2s --health-timeout 3s --health-retries 30
 
     strategy:
       matrix:
@@ -37,6 +58,11 @@ jobs:
           INFRA_ENV: prod
       - name: Verify Lambda initialization and GraphQL schema
         run: pnpm --filter graphql-api run verify:lambda
+      - name: Verify durable publication sync in PostgreSQL and MongoDB
+        run: pnpm --filter graphql-api exec vitest run __tests__/contentSync.mongodb.test.ts
+        env:
+          CONTENT_SYNC_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_content_sync
+          CONTENT_SYNC_TEST_MONGODB_URI: mongodb://127.0.0.1:27037
       - run: pnpm run test:coverage
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4

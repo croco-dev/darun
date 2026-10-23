@@ -3,7 +3,7 @@ import { Field, ID, ObjectType } from 'type-graphql';
 import { VisualPlatformGraph } from './VisualPlatform';
 import { VisualScreenTypeGraph } from './VisualScreenType';
 
-@ObjectType({ description: '제품 스크린샷' })
+@ObjectType('Screenshot', { description: '제품 스크린샷' })
 export class Screenshot {
   @Field(() => ID)
   id: string;

@@ -5,7 +5,7 @@ import { VisualFlow } from './VisualFlow';
 import { VisualPlatformGraph } from './VisualPlatform';
 import { VisualScreenTypeGraph } from './VisualScreenType';
 
-@ObjectType({ description: '공개 제품에 속한 스크린샷과 제품 정보' })
+@ObjectType('VisualScreenshot', { description: '공개 제품에 속한 스크린샷과 제품 정보' })
 export class VisualScreenshot {
   @Field(() => ID)
   id: string;

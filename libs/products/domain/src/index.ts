@@ -31,6 +31,7 @@ export {
   productCompanyNotFound,
   productCreateFailed,
   productDeleteFailed,
+  productIdempotencyKeyConflict,
   productInvalidArgs,
   productLinkInsertFailed,
   productLinkNotFound,
@@ -53,6 +54,11 @@ export {
   productFlowWritesDisabled,
   productScreenshotInUse,
 } from './errors/productFlowError';
+export {
+  ProductDescriptionError,
+  productDescriptionEvidenceReadFailed,
+  productDescriptionStaleCandidate,
+} from './errors/productDescriptionError';
 export type { ProductFeatureRepository } from './repositories/ProductFeatureRepository';
 export { ProductFeatureRepositoryToken } from './repositories/ProductFeatureRepository';
 export type { ProductFeatureScreenshotRepository } from './repositories/ProductFeatureScreenshotRepository';
@@ -138,9 +144,25 @@ export type {
   EvidenceRichLink,
 } from './services/ProductDescriptionDocument';
 export {
-  ProductDescriptionEvidenceAssembler,
-  ProductDescriptionEvidenceAssemblerToken,
-  projectEvidenceSnapshot,
+  MAX_INTRO_LENGTH,
+  MAX_CLOSING_LENGTH,
+  MAX_PARAGRAPH_LENGTH,
+  MAX_SECTION_TITLE_LENGTH,
+  MAX_RECOMMENDED_LENGTH,
+  MAX_SECTIONS,
+  MAX_PARAGRAPHS_PER_SECTION,
+  MAX_RECOMMENDED_ITEMS,
+} from './services/ProductDescriptionDocument';
+export { ProductDescriptionEvidenceAssemblerToken } from './services/ProductDescriptionEvidenceAssembler';
+export type { IProductDescriptionEvidenceAssembler } from './services/ProductDescriptionEvidenceAssembler';
+export type {
+  AssembledProductDescriptionEvidence,
+  ProductDescriptionEvidence,
+  ProductDescriptionEvidenceItem,
+  ProductDescriptionEvidenceHashVersion,
+  ProductDescriptionEvidenceSources,
+} from './services/ProductDescriptionEvidenceProjector';
+export {
   MAX_EVIDENCE_TAGS,
   MAX_EVIDENCE_LINKS,
   MAX_EVIDENCE_SCREENSHOTS,
@@ -151,15 +173,10 @@ export {
   normalizeString,
   computeSha256,
   safeEvidenceUrl,
+  safeReaderFacingUrl,
   truncateEvidenceText,
-} from './services/ProductDescriptionEvidenceAssembler';
-export type {
-  IProductDescriptionEvidenceAssembler,
-  EvidenceSnapshotInput,
-  ProductDescriptionEvidence,
-  ProductDescriptionEvidenceItem,
-  AssembledProductDescriptionEvidence,
-} from './services/ProductDescriptionEvidenceAssembler';
+  projectProductDescriptionEvidence,
+} from './services/ProductDescriptionEvidenceProjector';
 export { RankingCache } from './services/RankingCache';
 export { RankingService } from './services/RankingService';
 export { SystemClock } from './services/SystemClock';
@@ -167,9 +184,10 @@ export { AddProductLink } from './usecases/AddProductLink';
 export { AddProductScreenshot } from './usecases/AddProductScreenshot';
 export {
   ApplyProductDescriptionCandidate,
-  ProductDescriptionApplyStoreToken,
   type ApplyProductDescriptionCandidateResult,
+  ProductDescriptionApplyStoreToken,
   type ProductDescriptionApplyStore,
+  type ProductDescriptionApplySession,
   type ProductDescriptionApplyTransaction,
 } from './usecases/ApplyProductDescriptionCandidate';
 export { CreateProduct } from './usecases/CreateProduct';
@@ -177,7 +195,6 @@ export { CreateProductFeature } from './usecases/CreateProductFeature';
 export { DeleteProductScreenshot } from './usecases/DeleteProductScreenshot';
 export { EditProduct } from './usecases/EditProduct';
 export {
-  GenerateProductDescription,
   GenerateProductDescriptionCandidate,
   type GenerateProductDescriptionCandidateResult,
 } from './usecases/GenerateProductDescription';
@@ -247,3 +264,9 @@ export {
   normalizeFlowType,
   normalizeFlowCaption,
 } from './usecases/ProductFlowMetadata';
+export {
+  ProductContentSyncToken,
+  type ProductContentSync,
+  type ProductContentSyncStatus,
+  type ProductContentSyncOverview,
+} from './services/ProductContentSync';

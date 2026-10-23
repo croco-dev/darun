@@ -3,7 +3,7 @@
 import { Button } from '@darun/ui';
 import { Link, useNavigate, useSearchParams } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CatalogPagination } from '../apps/CatalogPagination';
 import { SaveButton } from '../collections/SaveButton';
 import { ExplorerShell } from '../explorer/ExplorerShell';
@@ -12,6 +12,7 @@ import {
   readExplorerProductParam,
   readExplorerQueryParam,
   type ExplorerFilters,
+  type ExplorerSearchDraft,
 } from '../explorer/useExplorerQuery';
 import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
 import { useProductSearchSuggest, type ProductSuggestion } from '../product-search/useProductSearchSuggest';
@@ -488,22 +489,24 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
 
 const EMPTY_CATALOG_FILTERS: ExplorerFilters = { query: null, platform: null, secondary: null, product: null };
 
-const BoundFilteredExplorer = bind<{ hideHero?: boolean }, ScreenshotExplorerState & { hideHero?: boolean }>(
-  props => ({ ...useScreenshotExplorer(), hideHero: props.hideHero }),
+type ScreenshotExplorerProps = { hideHero?: boolean; searchDraft: ExplorerSearchDraft };
+
+const BoundFilteredExplorer = bind<ScreenshotExplorerProps, ScreenshotExplorerState & { hideHero?: boolean }>(
+  props => ({ ...useScreenshotExplorer(props.searchDraft), hideHero: props.hideHero }),
   View,
   {
     displayName: 'ScreenshotExplorer',
   }
 );
 
-function CatalogExplorer({ hideHero }: { hideHero?: boolean }) {
+function CatalogExplorer({ hideHero, searchDraft }: ScreenshotExplorerProps) {
   const navigate = useNavigate();
   const { suggestions, isSearching: isSearchingSuggestions, clearSuggestions, suggest } = useProductSearchSuggest();
   const catalog = useScreenshotCatalog();
   const { cards, loading, networkError, retry } = catalog;
   const params = new URLSearchParams();
   if (catalog.endCursor) params.set('after', catalog.endCursor);
-  const [searchInput, setSearchInput] = useState('');
+  const { searchInput, setSearchInput } = searchDraft;
   const handleSearchInputChange = (value: string) => {
     setSearchInput(value);
     suggest(value);
@@ -586,17 +589,24 @@ function CatalogExplorer({ hideHero }: { hideHero?: boolean }) {
 
 export function ScreenshotExplorer({ hideHero }: { hideHero?: boolean }) {
   const searchParams = useSearchParams();
+  const query = readExplorerQueryParam(searchParams);
+  const [searchInput, setSearchInput] = useState(query ?? '');
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Only submitted URL q changes replace the draft, not individual filters.
+    setSearchInput(query ?? '');
+  }, [query]);
+  const searchDraft = { searchInput, setSearchInput };
   const platformParam = searchParams.get('platform');
   const screenTypeParam = searchParams.get('screenType');
   const elementParam = searchParams.get('element');
   const catalogMode =
-    readExplorerQueryParam(searchParams) === null &&
+    query === null &&
     readExplorerProductParam(searchParams) === null &&
     (platformParam === null || !isVisualPlatformValue(platformParam)) &&
     (screenTypeParam === null || !isVisualScreenTypeValue(screenTypeParam)) &&
     (elementParam === null || !isVisualUiElementValue(elementParam));
   if (catalogMode) {
-    return <CatalogExplorer hideHero={hideHero} />;
+    return <CatalogExplorer hideHero={hideHero} searchDraft={searchDraft} />;
   }
-  return <BoundFilteredExplorer hideHero={hideHero} />;
+  return <BoundFilteredExplorer hideHero={hideHero} searchDraft={searchDraft} />;
 }

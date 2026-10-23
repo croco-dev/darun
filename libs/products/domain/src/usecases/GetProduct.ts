@@ -10,7 +10,7 @@ export class GetProduct {
     private readonly productRepository: ProductRepository
   ) {}
 
-  async execute({ id, slug }: { id?: string; slug?: string }) {
+  async execute({ id, slug, fresh }: { id?: string; slug?: string; fresh?: boolean }) {
     if (slug) {
       return this.productRepository.findOneBySlug(slug);
     }
@@ -18,6 +18,6 @@ export class GetProduct {
     if (!id) {
       throw productInvalidArgs('id or slug is required to get a product.');
     }
-    return this.productRepository.findOneById(id);
+    return fresh ? this.productRepository.findOneFreshById(id) : this.productRepository.findOneById(id);
   }
 }
