@@ -40,6 +40,15 @@ describe('production GraphQL error responses', () => {
     expect(response.message).toBe(error.message);
     expect(response.extensions).toEqual({ code });
   });
+  it('preserves an explicit public GraphQL error while stripping arbitrary extensions', () => {
+    const error = new GraphQLError('Please retry', { extensions: { code: 'RETRY_LATER', private: 'secret' } });
+    const wrapped = new GraphQLError(error.message, { originalError: error });
+    expect(formatServerError(wrapped.toJSON(), wrapped, false)).toMatchObject({
+      message: 'Please retry',
+      extensions: { code: 'RETRY_LATER' },
+    });
+    expect(JSON.stringify(formatServerError(wrapped.toJSON(), wrapped, false))).not.toContain('secret');
+  });
   it('preserves GraphQL validation errors without arbitrary extensions', () => {
     const error = new GraphQLError('Unknown field', {
       extensions: { code: 'GRAPHQL_VALIDATION_FAILED', secret: 'secret' },

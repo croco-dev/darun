@@ -54,12 +54,19 @@ export function formatServerError(
     callSite: findErrorCallSite(error),
     locations: formatted.locations,
   });
-  if (domain || authCode || safeGraphQLCodes[String(formatted.extensions?.code)] === true) {
+  const explicitCode =
+    original instanceof GraphQLError &&
+    !original.originalError &&
+    typeof original.extensions.code === 'string' &&
+    original.extensions.code !== 'INTERNAL_SERVER_ERROR'
+      ? original.extensions.code
+      : undefined;
+  if (domain || authCode || explicitCode || safeGraphQLCodes[String(formatted.extensions?.code)] === true) {
     return {
       message: domain?.message ?? formatted.message,
       locations: formatted.locations,
       path: formatted.path,
-      extensions: { code: domain?.code ?? authCode ?? formatted.extensions?.code },
+      extensions: { code: domain?.code ?? authCode ?? explicitCode ?? formatted.extensions?.code },
     };
   }
   if (development) return formatted;
