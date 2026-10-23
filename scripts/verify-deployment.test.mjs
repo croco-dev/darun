@@ -231,7 +231,7 @@ async function cli(t, output, workflow = false) {
     executable = '/bin/bash';
     args = ['-e', '-c', commands.join('\n')];
   }
-  const child = spawn(executable, args ?? [join(dir, 'scripts/verify-deployment.mjs')], {
+  const child = spawn(executable, args ?? ['scripts/verify-deployment.mjs'], {
     cwd: dir,
     env: {
       ...process.env,
