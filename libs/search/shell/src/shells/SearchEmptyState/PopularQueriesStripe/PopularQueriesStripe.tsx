@@ -2,30 +2,8 @@ import { Link } from '@darun/utils-router';
 import { useLocale } from 'next-intl';
 
 const POPULAR_QUERIES: Record<string, string[]> = {
-  ko: [
-    '프로덕트헌트',
-    '노션',
-    '피그마',
-    '슬랙',
-    '깃허브',
-    'Notion 대체',
-    'Figma 대체',
-    'AI 도구',
-    '프로젝트 관리',
-    '디자인 도구',
-  ],
-  en: [
-    'Product Hunt',
-    'Notion',
-    'Figma',
-    'Slack',
-    'GitHub',
-    'Notion alternatives',
-    'Figma alternatives',
-    'AI tools',
-    'Project management',
-    'Design tools',
-  ],
+  ko: ['프로덕트헌트', '노션', '피그마'],
+  en: ['Product Hunt', 'Notion', 'Figma'],
 };
 
 export const PopularQueriesStripe = () => {
@@ -38,7 +16,7 @@ export const PopularQueriesStripe = () => {
       tabIndex={0}
       className="flex gap-2 overflow-x-auto px-1 py-1.5 scrollbar-hide scroll-smooth scroll-pl-1 touch-pan-x rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
       role="group"
-      aria-label={locale === 'ko' ? '인기 검색어' : 'Popular searches'}
+      aria-label={locale === 'ko' ? '검색 예시' : 'Search examples'}
     >
       {queries.map(query => (
         <Link

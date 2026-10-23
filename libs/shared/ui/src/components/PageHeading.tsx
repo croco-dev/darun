@@ -49,7 +49,7 @@ export function PageHeading({
       >
         <h1
           className={cn(
-            'break-words [word-break:keep-all] font-extrabold leading-tight tracking-tight text-dark-900',
+            'min-w-0 break-words [word-break:keep-all] font-extrabold leading-tight tracking-tight text-dark-900',
             isSmall ? 'text-2xl sm:text-3xl' : 'text-2xl sm:text-3xl md:text-4xl'
           )}
         >

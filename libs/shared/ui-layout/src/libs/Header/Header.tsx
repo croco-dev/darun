@@ -16,7 +16,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
   return (
     <header className="sticky top-0 z-40 w-full border-b border-dark-150 bg-white/85 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       <ContentArea>
-        <div className="flex w-full items-center gap-4 py-3 md:gap-6">
+        <div className="flex w-full flex-wrap items-center gap-3 py-3 md:flex-nowrap md:gap-6">
           <div className="flex shrink-0 items-center gap-4 md:gap-6">
             <Link
               href={headerUrl}
@@ -53,7 +53,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
             fallback={
               <div
                 aria-hidden="true"
-                className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-dark-150 bg-white px-3.5 py-2 shadow-button"
+                className="order-last basis-full flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-dark-150 bg-white px-3.5 py-2 shadow-button md:order-none md:basis-auto"
               >
                 <div className="h-4 w-4 animate-pulse rounded-full bg-gradient-to-r from-surface-100 via-surface-200 to-surface-100 motion-reduce:animate-none" />
                 <div className="h-4 w-32 animate-pulse rounded bg-gradient-to-r from-surface-100 via-surface-200 to-surface-100 motion-reduce:animate-none" />
@@ -62,7 +62,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
           >
             <HeaderSearchForm />
           </Suspense>
-          <div className="hidden h-max shrink-0 items-center gap-2.5 md:flex">
+          <div className="flex h-max shrink-0 items-center gap-2.5 ml-auto">
             <HeaderLoginButton />
             <Button
               as="a"
@@ -73,7 +73,7 @@ export const Header = bind(useHeader, ({ headerUrl, rankingUrl, browseUrl, isRan
               color="primary"
               size="sm"
               aria-label={locale === 'ko' ? `${t('submit')} (새 창에서 열림)` : `${t('submit')} (opens in a new tab)`}
-              className="select-none whitespace-nowrap active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
+              className="hidden md:inline-flex select-none whitespace-nowrap active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none"
             >
               {t('submit')}
             </Button>

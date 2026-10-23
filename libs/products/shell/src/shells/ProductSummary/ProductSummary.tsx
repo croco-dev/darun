@@ -18,7 +18,7 @@ export const ProductSummary = ({ slug, infoLinkHref }: ProductSummaryProps) => (
       )}
     </div>
     <div className="shrink-0">
-      <ProductUserAction slug={slug} />
+      <ProductUserAction key={slug} slug={slug} />
     </div>
   </div>
 );

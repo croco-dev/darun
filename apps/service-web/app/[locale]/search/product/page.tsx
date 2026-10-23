@@ -1,4 +1,4 @@
-import { SearchProductPage } from '@darun/pages-shell';
+import { normalizeSearchQuery, SearchProductPage } from '@darun/pages-shell';
 import { sanitizeQuery, TITLE_MAX_LENGTH } from '@darun/sanitize';
 import { Metadata } from 'next';
 
@@ -16,8 +16,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const currentLocale = normalizeLocale(locale);
   const copy = SITE_COPY[currentLocale];
   const resolvedSearchParams = (await searchParams) ?? {};
-  const rawQuery = resolvedSearchParams.query;
-  const query = typeof rawQuery === 'string' ? rawQuery : Array.isArray(rawQuery) ? rawQuery[0] : undefined;
+  const query = normalizeSearchQuery(resolvedSearchParams.query);
 
   const sanitizedQuery = query ? sanitizeQuery(query) : undefined;
 
