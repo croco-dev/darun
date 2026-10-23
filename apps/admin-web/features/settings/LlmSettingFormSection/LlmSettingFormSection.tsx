@@ -15,7 +15,7 @@ import {
   AdminSectionBody,
   AdminSectionHeader,
 } from '@darun/ui-admin';
-import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm';
+import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '@darun/utils-llm/model';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
@@ -280,7 +280,7 @@ function LlmSettingForm({
         </div>
         {clearApiKey ? (
           <div className="rounded-lg border border-cherry-200 bg-cherry-50 p-2.5 text-xs text-cherry-700">
-            DB에 등록된 API 키가 저장 시 삭제됩니다. (기본 환경변수 OPEN_ROUTER_API_KEY 로 복원됨)
+            DB에 등록된 API 키가 저장 시 삭제됩니다.
           </div>
         ) : (
           <AdminInput
@@ -293,12 +293,13 @@ function LlmSettingForm({
             placeholder={
               currentSetting?.apiKeyMasked
                 ? `현재 등록됨 (${currentSetting.apiKeyMasked}) - 변경 시에만 입력`
-                : '등록된 키 없음 (입력하지 않으면 환경변수 OPEN_ROUTER_API_KEY 사용)'
+                : '등록된 키 없음 (입력하지 않으면 기본 OpenRouter 엔드포인트에서 환경변수 OPEN_ROUTER_API_KEY 사용)'
             }
           />
         )}
         <p id="apiKey-help" className="text-xs text-dark-500">
-          새 API 키를 입력하면 DB에 갱신됩니다. 비워두면 기존 등록된 키 또는 환경변수가 유지됩니다.
+          새 API 키를 입력하면 DB에 갱신됩니다. 기본 OpenRouter 엔드포인트가 아니면 해당 공급자 전용 키를 입력해야 하고,
+          엔드포인트를 변경할 때 키를 비워두면 기존 키가 삭제됩니다.
         </p>
       </div>
 

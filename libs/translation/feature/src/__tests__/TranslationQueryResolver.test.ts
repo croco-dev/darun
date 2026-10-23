@@ -1,10 +1,13 @@
 import 'reflect-metadata';
 import type { TranslationJobService } from '@darun/translation-service';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
 import { TranslationQueryResolver } from '../Translation.query.resolver';
 
 vi.mock('typedi', () => ({
   Service: () => () => {},
+  Inject: () => () => {},
+  Token: class Token {},
 }));
 
 vi.mock('@darun/utils-apollo-server', () => ({
@@ -32,7 +35,7 @@ describe('TranslationQueryResolver', () => {
     mockJobService = {
       getJob: vi.fn(),
     };
-    resolver = new TranslationQueryResolver(mockJobService as TranslationJobService);
+    resolver = new TranslationQueryResolver(mockJobService as TranslationJobService, {} as never, {} as never);
   });
 
   it('returns null when job is not found', async () => {
@@ -49,6 +52,7 @@ describe('TranslationQueryResolver', () => {
       entityType: 'Product',
       entityId: 'prod-456',
       locale: 'en',
+      fields: ['summary'],
       status: 'completed',
       message: '번역 완료',
       error: null,
@@ -62,6 +66,8 @@ describe('TranslationQueryResolver', () => {
       entityType: 'Product',
       entityId: 'prod-456',
       locale: 'en',
+      fields: ['summary'],
+      model: undefined,
       status: 'completed',
       message: '번역 완료',
       error: undefined,
@@ -98,11 +104,42 @@ describe('TranslationQueryResolver', () => {
       entityType: 'Product',
       entityId: 'prod-1',
       locale: 'en',
+      fields: ['name', 'summary', 'description', 'features'],
+      model: undefined,
       status: 'failed',
       message: '실패',
       error: '429 Provider error',
       createdAt: now,
       updatedAt: now,
     });
+  });
+  it('distinguishes missing, null provenance, changed source, current and absent optional sources', async () => {
+    const values = [
+      { entityType: 'Magazine', entityId: 'm', field: 'title', value: '새 제목' },
+      { entityType: 'Magazine', entityId: 'm', field: 'summary', value: '원문 요약' },
+      { entityType: 'Magazine', entityId: 'm', field: 'content', value: '<p>본문</p>' },
+    ];
+    const findOne = vi
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ sourceHash: null })
+      .mockResolvedValueOnce({ sourceHash: createHash('sha256').update('<p>옛 본문</p>').digest('hex') });
+    const read = vi.fn().mockResolvedValue({ values });
+    const query = new TranslationQueryResolver({} as never, { findOne } as never, { read } as never);
+    expect(
+      (await query.translationFreshness('Magazine', 'm', ['title', 'summary', 'content'])).map(row => row.status)
+    ).toEqual(['missing', 'stale', 'stale']);
+    read.mockResolvedValue({
+      values: [
+        { ...values[0], value: '현재 제목' },
+        { ...values[1], value: '' },
+      ],
+    });
+    findOne.mockResolvedValue({ sourceHash: createHash('sha256').update('현재 제목').digest('hex') });
+    expect((await query.translationFreshness('Magazine', 'm', ['title', 'summary'])).map(row => row.status)).toEqual([
+      'current',
+      'current',
+    ]);
+    await expect(query.translationFreshness('Unsupported', 'm', ['title'])).rejects.toThrow();
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { LlmConfigReadFailedError } from '../libs/LlmEndpointKeyPolicy';
 import { BraveSearchClient } from '../search/BraveSearchClient';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -21,6 +22,22 @@ describe('BraveSearchClient', () => {
     expect(blankKey.ok).toBe(false);
     if (!blankKey.ok) {
       expect(blankKey.code).toBe('NOT_CONFIGURED');
+    }
+  });
+
+  it('키 조회 장애는 키 부재로 바꾸지 않고 검색 전 그대로 전달한다', async () => {
+    const error = new LlmConfigReadFailedError();
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      await expect(
+        new BraveSearchClient(async () => {
+          throw error;
+        }).search('linear')
+      ).rejects.toBe(error);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
     }
   });
 

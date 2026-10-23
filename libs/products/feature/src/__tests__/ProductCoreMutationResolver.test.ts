@@ -35,181 +35,46 @@ vi.mock('type-graphql', () => {
   };
 });
 
-import {
-  CreateProduct,
-  EditProduct,
-  GetProduct,
-  GetProductTags,
-  Product as DomainProduct,
-  ProductTag,
-  Tag,
-  UpdateProductTag,
-} from '@darun/products-domain';
-import { IndexProduct } from '@darun/search-domain';
+import { Product } from '@darun/products-domain';
 import { describe, expect, it, vi } from 'vitest';
 import { ProductCoreMutationResolver } from '../ProductCoreMutationResolver';
 
-type MockedUseCase<T> = {
-  execute: ReturnType<typeof vi.fn>;
-};
-
-const createMockUseCase = <T>(): MockedUseCase<T> => ({
-  execute: vi.fn(),
-});
-
 describe('ProductCoreMutationResolver', () => {
-  describe('editProduct', () => {
-    it('search index payload includes tags and category when product is published', async () => {
-      const publishedAt = new Date();
-      const existingProduct = new DomainProduct({
-        id: 'p1',
-        slug: 'product-1',
-        name: 'Product 1',
-        summary: 'Summary 1',
-        logoUrl: 'https://example.com/logo.png',
-      });
-
-      const updatedProduct = new DomainProduct({
-        id: 'p1',
-        slug: 'product-1',
-        name: 'Updated Product 1',
-        summary: 'Updated Summary 1',
-        logoUrl: 'https://example.com/logo.png',
-        description: 'Updated description',
-        categoryIds: ['category-1', 'category-2'],
-        publishedAt,
-      });
-
-      const productTag = new ProductTag({
-        productId: 'p1',
-        tags: [new Tag({ name: 'tag-a' }), new Tag({ name: 'tag-b' })],
-      });
-
-      const getProductUseCase = createMockUseCase<GetProduct>();
-      getProductUseCase.execute.mockResolvedValue(existingProduct);
-
-      const editProductUseCase = createMockUseCase<EditProduct>();
-      editProductUseCase.execute.mockResolvedValue(updatedProduct);
-
-      const getProductTagsUseCase = createMockUseCase<GetProductTags>();
-      getProductTagsUseCase.execute.mockResolvedValue(productTag);
-
-      const indexProductUseCase = createMockUseCase<IndexProduct>();
-      indexProductUseCase.execute.mockResolvedValue(true);
-
-      const resolver = new ProductCoreMutationResolver(
-        createMockUseCase<CreateProduct>() as unknown as CreateProduct,
-        editProductUseCase as unknown as EditProduct,
-        indexProductUseCase as unknown as IndexProduct,
-        createMockUseCase<UpdateProductTag>() as unknown as UpdateProductTag,
-        getProductUseCase as unknown as GetProduct,
-        getProductTagsUseCase as unknown as GetProductTags
-      );
-
-      await resolver.editProduct('product-1', { name: 'Updated Product 1' });
-
-      expect(indexProductUseCase.execute).toHaveBeenCalledTimes(1);
-      expect(indexProductUseCase.execute).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: 'p1',
-          name: 'Updated Product 1',
-          slug: 'product-1',
-          summary: 'Updated Summary 1',
-          description: 'Updated description',
-          tags: ['tag-a', 'tag-b'],
-          category: 'category-1',
-          publishedAt,
-        })
-      );
+  it('발행 편집은 canonical write 결과를 반환한다', async () => {
+    const product = new Product({
+      id: 'p1',
+      slug: 'memo',
+      name: '메모',
+      summary: '이전',
+      logoUrl: 'logo',
+      publishedAt: new Date(),
     });
+    const updated = new Product({ ...product, summary: '새 요약' });
+    const edit = { execute: vi.fn().mockResolvedValue(updated) };
+    const resolver = new ProductCoreMutationResolver(
+      {} as never,
+      edit as never,
+      {} as never,
+      { execute: vi.fn().mockResolvedValue(product) } as never,
+      {} as never
+    );
+    await expect(resolver.editProduct('memo', { summary: '새 요약' })).resolves.toEqual({ product: updated });
+    expect(edit.execute).toHaveBeenCalledWith({ id: 'p1', summary: '새 요약' });
+  });
 
-    it('search index payload uses empty tags and category fallback when product has none', async () => {
-      const publishedAt = new Date();
-      const existingProduct = new DomainProduct({
-        id: 'p1',
-        slug: 'product-1',
-        name: 'Product 1',
-        summary: 'Summary 1',
-        logoUrl: 'https://example.com/logo.png',
-      });
-
-      const updatedProduct = new DomainProduct({
-        id: 'p1',
-        slug: 'product-1',
-        name: 'Updated Product 1',
-        summary: 'Updated Summary 1',
-        logoUrl: 'https://example.com/logo.png',
-        publishedAt,
-      });
-
-      const getProductUseCase = createMockUseCase<GetProduct>();
-      getProductUseCase.execute.mockResolvedValue(existingProduct);
-
-      const editProductUseCase = createMockUseCase<EditProduct>();
-      editProductUseCase.execute.mockResolvedValue(updatedProduct);
-
-      const getProductTagsUseCase = createMockUseCase<GetProductTags>();
-      getProductTagsUseCase.execute.mockResolvedValue(null);
-
-      const indexProductUseCase = createMockUseCase<IndexProduct>();
-      indexProductUseCase.execute.mockResolvedValue(true);
-
-      const resolver = new ProductCoreMutationResolver(
-        createMockUseCase<CreateProduct>() as unknown as CreateProduct,
-        editProductUseCase as unknown as EditProduct,
-        indexProductUseCase as unknown as IndexProduct,
-        createMockUseCase<UpdateProductTag>() as unknown as UpdateProductTag,
-        getProductUseCase as unknown as GetProduct,
-        getProductTagsUseCase as unknown as GetProductTags
-      );
-
-      await resolver.editProduct('product-1', { name: 'Updated Product 1' });
-
-      expect(indexProductUseCase.execute).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tags: [],
-          category: '',
-        })
-      );
-    });
-
-    it('does not trigger search index when product is not published', async () => {
-      const existingProduct = new DomainProduct({
-        id: 'p1',
-        slug: 'product-1',
-        name: 'Product 1',
-        summary: 'Summary 1',
-        logoUrl: 'https://example.com/logo.png',
-      });
-
-      const updatedProduct = new DomainProduct({
-        id: 'p1',
-        slug: 'product-1',
-        name: 'Updated Product 1',
-        summary: 'Updated Summary 1',
-        logoUrl: 'https://example.com/logo.png',
-      });
-
-      const getProductUseCase = createMockUseCase<GetProduct>();
-      getProductUseCase.execute.mockResolvedValue(existingProduct);
-
-      const editProductUseCase = createMockUseCase<EditProduct>();
-      editProductUseCase.execute.mockResolvedValue(updatedProduct);
-
-      const indexProductUseCase = createMockUseCase<IndexProduct>();
-
-      const resolver = new ProductCoreMutationResolver(
-        createMockUseCase<CreateProduct>() as unknown as CreateProduct,
-        editProductUseCase as unknown as EditProduct,
-        indexProductUseCase as unknown as IndexProduct,
-        createMockUseCase<UpdateProductTag>() as unknown as UpdateProductTag,
-        getProductUseCase as unknown as GetProduct,
-        createMockUseCase<GetProductTags>() as unknown as GetProductTags
-      );
-
-      await resolver.editProduct('product-1', { name: 'Updated Product 1' });
-
-      expect(indexProductUseCase.execute).not.toHaveBeenCalled();
-    });
+  it('미존재 Product와 canonical commit 실패를 숨기지 않는다', async () => {
+    const get = { execute: vi.fn().mockResolvedValue(null) };
+    const edit = { execute: vi.fn().mockRejectedValue(new Error('intent transaction failed')) };
+    const resolver = new ProductCoreMutationResolver(
+      {} as never,
+      edit as never,
+      {} as never,
+      get as never,
+      {} as never
+    );
+    await expect(resolver.editProduct('missing', { name: '새 이름' })).rejects.toThrow();
+    expect(edit.execute).not.toHaveBeenCalled();
+    get.execute.mockResolvedValue({ id: 'p1' });
+    await expect(resolver.editProduct('memo', { name: '새 이름' })).rejects.toThrow('intent transaction failed');
   });
 });

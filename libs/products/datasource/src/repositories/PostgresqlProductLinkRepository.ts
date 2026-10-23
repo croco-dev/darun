@@ -13,6 +13,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { productLinks } from '../entities/ProductLinksSchema';
+import { beginProductContentWrite } from './productContentSync';
 
 @Service(ProductLinkRepositoryToken)
 export class PostgresqlProductLinkRepository implements ProductLinkRepository {
@@ -40,11 +41,13 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
   insert(link: ProductLink): Promise<ProductLink> {
     return this.db
       .transaction(async tx => {
+        const finishContentWrite = await beginProductContentWrite(tx, link.productId);
         const inserted = await tx.insert(productLinks).values(link).returning();
 
         if (!inserted[0]) {
           throw productLinkInsertFailed();
         }
+        await finishContentWrite();
         return this.mapper(inserted[0]);
       })
       .then(result => {
@@ -60,6 +63,12 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
   updateById(linkId: string, modifier: (link: ProductLink) => ProductLink): Promise<ProductLink> {
     return this.db
       .transaction(async tx => {
+        const [owner] = await tx
+          .select({ productId: productLinks.productId })
+          .from(productLinks)
+          .where(eq(productLinks.id, linkId));
+        if (!owner) throw productLinkNotFound();
+        const finishContentWrite = await beginProductContentWrite(tx, owner.productId);
         const prevLink = await tx
           .select()
           .from(productLinks)
@@ -71,9 +80,10 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
           throw productLinkNotFound();
         }
 
+        const next = modifier(prevLink);
         const updated = await tx
           .update(productLinks)
-          .set({ ...modifier(prevLink) })
+          .set({ title: next.title, link: next.link, displayLink: next.displayLink, iconUrl: next.iconUrl })
           .where(eq(productLinks.id, linkId))
           .returning();
 
@@ -81,6 +91,7 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
           throw productUpdateFailed();
         }
 
+        await finishContentWrite();
         return this.mapper(updated[0]);
       })
       .then(result => {

@@ -1,12 +1,10 @@
 import {
   ProductResearchJobRepositoryToken,
   ProductResearchMaterializationRepositoryToken,
-  type ProductResearchDraftV1,
   type ProductResearchJobRepository,
   type ProductResearchMaterializationRepository,
   type ReviewedResearchFeature,
   productInvalidArgs,
-  productSlugAlreadyExists,
 } from '@darun/products-domain';
 import { Inject, Service } from 'typedi';
 
@@ -17,6 +15,7 @@ export type ReviewedProductDraftInput = {
   summary: string;
   logoUrl: string;
   officialUrl: string;
+  officialUrlConfirmed: boolean;
   categoryIds: string[];
   features: ReviewedResearchFeature[];
   tags: string[];
@@ -136,6 +135,7 @@ export class ProductResearchReviewService {
       summary,
       logoUrl: logo,
       officialUrl: official,
+      officialUrlConfirmed: input.officialUrlConfirmed,
       categoryIds: [...new Set(input.categoryIds)],
       features,
       tags,
@@ -154,23 +154,6 @@ export class ProductResearchReviewService {
       throw productInvalidArgs('리서치 저장소가 설정되지 않았습니다.');
     }
     const validated = this.validateReviewedInput(input);
-    const job = await this.jobRepository.findById(validated.researchJobId);
-    if (!job) {
-      throw productInvalidArgs('존재하지 않는 조사 작업입니다.');
-    }
-    if (job.status !== 'completed' || !job.result) {
-      throw productInvalidArgs('완료된 조사 작업만 적용할 수 있습니다.');
-    }
-    if (job.materializedProductId) {
-      throw productSlugAlreadyExists();
-    }
-    const draft: ProductResearchDraftV1 = job.result;
-    if (
-      draft.originalUrl !== validated.officialUrl &&
-      new URL(draft.originalUrl).hostname !== new URL(validated.officialUrl).hostname
-    ) {
-      throw productInvalidArgs('공식 URL 호스트가 조사 결과와 다릅니다.');
-    }
     return this.materializationRepository.materialize(validated);
   }
 }

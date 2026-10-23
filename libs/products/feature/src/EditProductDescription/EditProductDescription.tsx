@@ -7,7 +7,7 @@ import { useEditProductDescription } from './useEditProductDescription';
 
 export const EditProductDescription = bind(
   useEditProductDescription,
-  ({ form, submit, onCancel, defaultValue, loading }) => (
+  ({ form, submit, onCancel, defaultValue, loading, saveError }) => (
     <form onSubmit={form.onSubmit(submit)}>
       <div className="flex flex-col gap-2">
         <Editor
@@ -17,6 +17,11 @@ export const EditProductDescription = bind(
           editable={!loading}
         />
       </div>
+      {saveError && (
+        <p role="alert" className="mt-2 text-sm text-cherry-700">
+          {saveError} 입력한 내용은 유지됩니다.
+        </p>
+      )}
 
       <AdminActions>
         {onCancel && (

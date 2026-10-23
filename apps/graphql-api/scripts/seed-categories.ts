@@ -2,10 +2,16 @@ import 'reflect-metadata';
 import { eq, isNotNull } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { Container } from 'typedi';
 import { categories } from '../../../libs/products/datasource/src/entities/CategorySchema';
 import { products } from '../../../libs/products/datasource/src/entities/ProductSchema';
 import { productTags } from '../../../libs/products/datasource/src/entities/ProductTagsSchema';
 import { tags } from '../../../libs/products/datasource/src/entities/TagSchema';
+import {
+  beginProductContentWrite,
+  ProductContentSyncRegistrarToken,
+} from '../../../libs/products/datasource/src/repositories/productContentSync';
+import { registerProductContentSync } from '../src/adapters/PostgresqlProductContentSync';
 
 /**
  * categories 테이블 시드 + products.categoryIds 역채우기
@@ -47,6 +53,7 @@ async function main() {
   console.log('📊 데이터베이스 연결 중...');
   const client = postgres(databaseUrl);
   const db = drizzle(client);
+  Container.set(ProductContentSyncRegistrarToken, { register: registerProductContentSync });
 
   // --- 1. categories 테이블 시드 ---
   console.log('🌱 categories 테이블 시드 시작...');
@@ -75,7 +82,6 @@ async function main() {
   const slugToId = new Map(allCategories.map(c => [c.slug, c.id]));
 
   // --- 2. tag name → category id 매핑 ---
-  const allTags = await db.select().from(tags);
   const tagNameToCategoryIds = new Map<string, string[]>();
 
   for (const mapping of TAG_TO_CATEGORY) {
@@ -88,9 +94,6 @@ async function main() {
     }
   }
 
-  // tag name → tag id 매핑
-  const tagNameToTagId = new Map(allTags.map(t => [t.name, t.id]));
-
   // --- 3. 각 product의 categoryIds 갱신 ---
   console.log('🌱 products.categoryIds 갱신 시작...');
 
@@ -99,33 +102,26 @@ async function main() {
   let updatedCount = 0;
 
   for (const product of publishedProducts) {
-    // product의 tag 조회
-    const productTagRows = await db
-      .select({ tagId: productTags.tagId })
-      .from(productTags)
-      .where(eq(productTags.productId, product.id));
-
-    if (productTagRows.length === 0) continue;
-
-    // tag id → tag name → category id 수집
-    const categoryIds = new Set<string>();
-    for (const row of productTagRows) {
-      const tag = allTags.find(t => t.id === row.tagId);
-      if (!tag) continue;
-      const catIds = tagNameToCategoryIds.get(tag.name);
-      if (catIds) {
-        catIds.forEach(id => categoryIds.add(id));
+    const updated = await db.transaction(async tx => {
+      const finishContentWrite = await beginProductContentWrite(tx, product.id);
+      const productTagRows = await tx
+        .select({ name: tags.name })
+        .from(productTags)
+        .innerJoin(tags, eq(tags.id, productTags.tagId))
+        .where(eq(productTags.productId, product.id));
+      const categoryIds = new Set<string>();
+      for (const tag of productTagRows) {
+        for (const id of tagNameToCategoryIds.get(tag.name) ?? []) categoryIds.add(id);
       }
-    }
-
-    if (categoryIds.size === 0) continue;
-
-    await db
-      .update(products)
-      .set({ categoryIds: [...categoryIds] })
-      .where(eq(products.id, product.id));
-
-    updatedCount++;
+      if (!categoryIds.size) return false;
+      await tx
+        .update(products)
+        .set({ categoryIds: [...categoryIds] })
+        .where(eq(products.id, product.id));
+      await finishContentWrite();
+      return true;
+    });
+    if (updated) updatedCount++;
   }
 
   console.log(`  ✓ ${updatedCount}개 product의 categoryIds 갱신 완료`);

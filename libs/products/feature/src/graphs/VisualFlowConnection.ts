@@ -2,7 +2,7 @@ import { PageInfo } from '@darun/utils-apollo-server';
 import { Field, Int, ObjectType } from 'type-graphql';
 import { VisualFlow } from './VisualFlow';
 
-@ObjectType()
+@ObjectType('VisualFlowConnection')
 export class VisualFlowConnection {
   @Field(() => Int)
   totalCount: number;
@@ -14,7 +14,7 @@ export class VisualFlowConnection {
   edges: VisualFlowEdge[];
 }
 
-@ObjectType()
+@ObjectType('VisualFlowEdge')
 export class VisualFlowEdge {
   @Field()
   cursor: string;

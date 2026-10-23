@@ -12,6 +12,7 @@ export function createMockRepository(): ProductRepository {
     findPublishedOneById: vi.fn(),
     findOneBySlug: vi.fn(),
     findOneById: vi.fn(),
+    findOneFreshById: vi.fn(),
     findPublishedOneBySlug: vi.fn(),
     findPublishedByCategoryId: vi.fn(),
     countPublishedByCategoryId: vi.fn(),

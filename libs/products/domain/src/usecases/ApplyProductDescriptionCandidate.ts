@@ -1,20 +1,25 @@
 import { Inject, Service, Token } from 'typedi';
 import type { Product } from '../entities/Product';
 import type { ProductDescriptionJobEntity } from '../entities/ProductDescriptionJobEntity';
+import { productDescriptionStaleCandidate } from '../errors/productDescriptionError';
 import { productNotFound } from '../errors/productError';
+import type { AssembledProductDescriptionEvidence } from '../services/ProductDescriptionEvidenceProjector';
 
 export interface ProductDescriptionApplyTransaction {
-  findLockedJob(jobId: string): Promise<ProductDescriptionJobEntity | null>;
+  run<T>(work: (store: ProductDescriptionApplySession) => Promise<T>): Promise<T>;
+}
+
+/** A session is owned by one transaction, never shared between requests. */
+export interface ProductDescriptionApplySession {
+  findJob(jobId: string, lock: boolean): Promise<ProductDescriptionJobEntity | null>;
   findLockedProduct(productId: string): Promise<Product | null>;
-  assembleLocked(productId: string): Promise<{ evidenceHash: string; baseDescriptionHash: string }>;
+  assembleLocked(productId: string): Promise<AssembledProductDescriptionEvidence>;
   applyLocked(input: { productId: string; candidateHtml: string }): Promise<Product>;
-  markAppliedIfUnappliedLocked(jobId: string, appliedAt: Date): Promise<ProductDescriptionJobEntity | null>;
+  markAppliedLocked(jobId: string, appliedAt: Date): Promise<ProductDescriptionJobEntity>;
 }
 
 export interface ProductDescriptionApplyStore {
-  transaction: {
-    run<T>(work: (transaction: ProductDescriptionApplyTransaction) => Promise<T>): Promise<T>;
-  };
+  transaction: ProductDescriptionApplyTransaction;
 }
 
 export const ProductDescriptionApplyStoreToken = new Token<ProductDescriptionApplyStore>(
@@ -29,36 +34,34 @@ export type ApplyProductDescriptionCandidateResult = {
 
 @Service()
 export class ApplyProductDescriptionCandidate {
-  constructor(
-    @Inject(ProductDescriptionApplyStoreToken)
-    private readonly applyStore: ProductDescriptionApplyStore
-  ) {}
+  constructor(@Inject(ProductDescriptionApplyStoreToken) private readonly applyStore: ProductDescriptionApplyStore) {}
 
-  execute({ jobId }: { jobId: string }): Promise<ApplyProductDescriptionCandidateResult> {
+  async execute({ jobId }: { jobId: string }): Promise<ApplyProductDescriptionCandidateResult> {
     return this.applyStore.transaction.run(async store => {
-      const job = await store.findLockedJob(jobId);
-      if (!job) {
-        throw new Error(`존재하지 않는 AI 소개 생성 작업입니다: ${jobId}`);
-      }
+      // The first read discovers the owner only. Revalidate the job after locking Product.
+      const discovered = await store.findJob(jobId, false);
+      if (!discovered) throw new Error(`존재하지 않는 AI 소개 생성 작업입니다: ${jobId}`);
+      const product = await store.findLockedProduct(discovered.productId);
+      if (!product) throw productNotFound();
+      const job = await store.findJob(jobId, true);
+      if (!job || job.productId !== product.id) throw productDescriptionStaleCandidate();
+      // Historical application remains true even if the candidate/status or current body changed.
+      if (job.appliedAt) return { product, job, alreadyApplied: true };
       if (job.status !== 'completed' || !job.candidateHtml) {
         throw new Error('적용 가능한 완료된 AI 소개 초안이 존재하지 않습니다.');
       }
-      const product = await store.findLockedProduct(job.productId);
-      if (!product) {
-        throw productNotFound();
+      const snapshot = await store.assembleLocked(product.id);
+      const evidenceMatches =
+        job.evidenceHashVersion === 'v2'
+          ? snapshot.evidenceHash === job.evidenceHash
+          : job.evidenceHashVersion == null &&
+            !snapshot.evidence.items.some(item => item.kind === 'link') &&
+            snapshot.legacyEvidenceHash === job.evidenceHash;
+      if (!evidenceMatches || snapshot.baseDescriptionHash !== job.baseDescriptionHash) {
+        throw productDescriptionStaleCandidate();
       }
-      if (job.appliedAt) {
-        return { product, job, alreadyApplied: true };
-      }
-      const snapshot = await store.assembleLocked(job.productId);
-      if (snapshot.evidenceHash !== job.evidenceHash || snapshot.baseDescriptionHash !== job.baseDescriptionHash) {
-        throw new Error('제품 정보가 생성 이후 변경되어 이 초안을 적용할 수 없습니다. 다시 생성해 주세요.');
-      }
-      const updatedProduct = await store.applyLocked({ productId: job.productId, candidateHtml: job.candidateHtml });
-      const updatedJob = await store.markAppliedIfUnappliedLocked(jobId, new Date());
-      if (!updatedJob) {
-        throw new Error('AI 소개 적용 작업 상태가 변경되었습니다.');
-      }
+      const updatedProduct = await store.applyLocked({ productId: product.id, candidateHtml: job.candidateHtml });
+      const updatedJob = await store.markAppliedLocked(job.id, new Date());
       return { product: updatedProduct, job: updatedJob, alreadyApplied: false };
     });
   }

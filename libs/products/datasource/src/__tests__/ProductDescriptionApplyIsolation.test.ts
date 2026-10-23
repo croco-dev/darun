@@ -18,12 +18,11 @@ describe('description apply transaction isolation', () => {
       transaction: vi.fn(async (work: (tx: unknown) => Promise<unknown>) => {
         const id = ++next;
         const tx = {
+          execute: vi.fn().mockResolvedValue([]),
           select: () => ({
             from: () => ({
               where: () => ({
-                for: () => ({
-                  limit: async () => [{ id: String(id), name: 'product', slug: String(id), summary: '', logoUrl: '' }],
-                }),
+                for: async () => [{ id: String(id), name: 'product', slug: String(id), summary: '', logoUrl: '' }],
               }),
             }),
           }),
@@ -57,24 +56,5 @@ describe('description apply transaction isolation', () => {
     expect(rolledBack).toEqual([1]);
     expect(committed).toEqual([2]);
     expect(db.transaction).toHaveBeenCalledTimes(2);
-  });
-
-  it('restarts serialization failures with a fresh adapter and bounds retries', async () => {
-    const adapters = new Set<unknown>();
-    const db = {
-      transaction: vi.fn(async (work: (tx: unknown) => Promise<unknown>) => {
-        await work({});
-        throw Object.assign(new Error('serialization conflict'), { code: '40001' });
-      }),
-    };
-    const store = new PostgresqlProductDescriptionApplyStore(db as never);
-    await expect(
-      store.transaction.run(async tx => {
-        adapters.add(tx);
-      })
-    ).rejects.toThrow('serialization conflict');
-    expect(db.transaction).toHaveBeenCalledTimes(3);
-    expect(adapters.size).toBe(3);
-    expect(db.transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: 'serializable' });
   });
 });

@@ -181,6 +181,12 @@ export const createAuthChecker = (): AuthChecker<GraphQLContext> => {
 - 미인증 요청(`authToken` 없음)은 `getRoles()`가 빈 배열을 반환하므로 자동으로 차단된다.
 - 현재 정의된 role은 `AuthRole.Admin = 'admin'` 하나다.
 
+## 공개 투표와 오류 응답
+
+`upvoteProduct`는 IP별 PostgreSQL advisory transaction lock 안에서 중복 투표·최근 1분 상한을 확인하고 투표와 제한 기록을 함께 저장한다. 잠금을 기다린 뒤의 DB 시각으로 제한 구간을 계산하므로 병렬 요청도 상한을 우회하지 못하며, 다른 IP의 투표는 같은 잠금으로 직렬화하지 않는다.
+
+`playground: false`인 운영 설정에서는 예상하지 못한 내부 예외를 `INTERNAL_SERVER_ERROR`로 응답하고 원래 메시지·stacktrace·임의 extensions를 노출하지 않는다. 도메인 오류, 인증·권한 오류와 GraphQL 입력 검증 오류는 사용자에게 필요한 메시지와 `code`만 유지한다. 원인은 서버 로그에서 확인한다.
+
 ---
 
 ## Out of Scope
@@ -189,4 +195,4 @@ export const createAuthChecker = (): AuthChecker<GraphQLContext> => {
 
 - **Input validation 전면 개편**: `@IsNotEmpty`, `class-validator` 등 validation 레이어 정비는 별도 태스크로 분리한다.
 - **새 AuthRole 추가**: `AuthRole` enum 확장은 별도 설계 검토가 필요하다.
-- **Rate limiting / IP throttling**: `upvoteProduct`의 IP 기반 중복 방지 외 추가 rate limiting은 별도 인프라 레이어에서 처리한다.
+- **추가 Rate limiting**: 공개 투표의 IP별 중복 방지·분당 상한 외 API 전반의 throttling은 별도 인프라 레이어에서 처리한다.
