@@ -5,6 +5,12 @@ on:
     branches:
       - trunk
   workflow_dispatch:
+    inputs:
+      allow_rollback:
+        description: "Explicitly deploy the selected revision even when it is not current trunk"
+        required: false
+        default: false
+        type: boolean
   repository_dispatch:
     types: [TRIGGER_DEPLOY]
 
@@ -38,6 +44,10 @@ jobs:
   deploy:
     name: deploy
     needs: quality
+    # One lock covers revision selection, migration, SST and any later smoke checks.
+    concurrency:
+      group: prod-graphql
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
       name: prod-graphql
@@ -45,15 +55,25 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.sha }}
+      - name: Select deployment revision
+        id: revision
+        run: node scripts/deployment-guard.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ALLOW_ROLLBACK: ${{ inputs.allow_rollback }}
       - uses: pnpm/action-setup@v4
+        if: steps.revision.outputs.deploy == 'true'
       - name: Use Node.js 22.x
+        if: steps.revision.outputs.deploy == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 22.x
           cache: "pnpm"
       - name: Install dependencies
+        if: steps.revision.outputs.deploy == 'true'
         run: pnpm install
       - name: Configure AWS Profile iam
+        if: steps.revision.outputs.deploy == 'true'
         uses: croco-dev/aws-profile-action@v1.3
         with:
           profile: darun
@@ -61,19 +81,24 @@ jobs:
           access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Install SST providers
+        if: steps.revision.outputs.deploy == 'true'
         run: pnpm --filter graphql-api exec sst install
       - name: Build Lambda bundles
+        if: steps.revision.outputs.deploy == 'true'
         run: pnpm --filter graphql-api run build:lambda
         env:
           INFRA_ENV: prod
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       - name: Verify Lambda initialization and GraphQL schema
+        if: steps.revision.outputs.deploy == 'true'
         run: pnpm --filter graphql-api run verify:lambda
       - name: Run Database Migrations
+        if: steps.revision.outputs.deploy == 'true'
         run: pnpm --filter graphql-api run migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - name: Deploy
+        if: steps.revision.outputs.deploy == 'true'
         run: pnpm --filter graphql-api exec sst deploy --stage prod
         env:
           AWS_PROFILE: darun

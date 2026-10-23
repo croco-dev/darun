@@ -1,0 +1,87 @@
+name: Deployment guard CI
+
+on:
+  pull_request:
+    branches: ["trunk"]
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      group: ${{ steps.policy.outputs.group }}
+      cancel: ${{ steps.policy.outputs.cancel }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Read production serialization policy
+        id: policy
+        # Append a run-specific suffix: this probe never locks production.
+        run: |
+          ruby -ryaml -e '
+            policy = YAML.load_file(".github/workflows/Deploy.yaml").fetch("jobs").fetch("deploy").fetch("concurrency")
+            abort "Expected fixed production group" unless policy.fetch("group") == "prod-graphql"
+            abort "Running deployment must not be cancelled" unless policy.fetch("cancel-in-progress") == false
+            File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |f|
+              f.puts "group=#{policy.fetch("group")}-probe-#{ENV.fetch("GITHUB_RUN_ID")}-#{ENV.fetch("GITHUB_RUN_ATTEMPT")}"
+              f.puts "cancel=#{policy.fetch("cancel-in-progress")}"
+            end
+          '
+
+  probe:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        request: [first, second]
+    concurrency:
+      group: ${{ needs.prepare.outputs.group }}
+      cancel-in-progress: ${{ fromJSON(needs.prepare.outputs.cancel) }}
+    steps:
+      - name: Record a synthetic migration and deployment interval
+        env:
+          REQUEST: ${{ matrix.request }}
+        # The fixed work interval stands in for the migration/SST critical section.
+        run: |
+          python3 - <<'PY'
+          import json, os, time
+          start = time.time_ns()
+          time.sleep(20)
+          end = time.time_ns()
+          record = dict(request=os.environ['REQUEST'], start=start, end=end)
+          print(json.dumps(record))
+          with open(os.environ['REQUEST'] + '.json', 'w') as f:
+              json.dump(record, f)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deployment-probe-${{ matrix.request }}
+          path: ${{ matrix.request }}.json
+          retention-days: 7
+
+  verify:
+    if: always()
+    needs: [prepare, probe]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require both requests to finish
+        env:
+          PREPARE_RESULT: ${{ needs.prepare.result }}
+          PROBE_RESULT: ${{ needs.probe.result }}
+        run: test "$PREPARE_RESULT" = success && test "$PROBE_RESULT" = success
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: deployment-probe-*
+          merge-multiple: true
+      - name: Verify critical sections never overlap
+        run: |
+          python3 - <<'PY'
+          import json
+          records = [json.load(open(name + '.json')) for name in ['first', 'second']]
+          records.sort(key=lambda r: r['start'])
+          assert all(r['end'] > r['start'] for r in records), records
+          assert records[0]['end'] <= records[1]['start'], records
+          print('Both requests completed without cancellation or overlap:', records)
+          PY
