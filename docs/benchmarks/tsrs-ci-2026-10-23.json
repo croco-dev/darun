@@ -1,0 +1,2952 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-23",
+  "run_url": "https://github.com/croco-dev/darun/actions/runs/39896478587",
+  "source_commit": "d23d7669d9158331fcb5364b8307810a892a3704",
+  "memory_metric": "cgroup v2 memory.peak in bytes, including descendants and charged filesystem cache",
+  "workloads": [
+    {
+      "workload": "workspace",
+      "selected_case": "c4-k1",
+      "environment": {
+        "commit": "d23d7669d9158331fcb5364b8307810a892a3704",
+        "kernel": "6.8.0-1064-azure",
+        "image": "ubuntu22 20261012.322.1",
+        "architecture": "x86_64",
+        "cpus": 4,
+        "cpu_model": "AMD EPYC 7763 64-Core Processor",
+        "memory_total_bytes": 16765403136,
+        "memory_available_bytes": 14836072448,
+        "memory_budget_bytes": 13412322508,
+        "swap_total_bytes": 3221221376,
+        "node": "v22.23.3",
+        "pnpm": "11.2.2",
+        "tsrs": "Version 7.1.0-dev.20260930.4 (tsrs 0.18.0-ts7.1.0-dev.20260929, microsoft/TypeScript@b85298b6a81f)",
+        "run_url": "https://github.com/croco-dev/darun/actions/runs/39896478587"
+      },
+      "expected_tasks": 68,
+      "rounds": 3,
+      "cases": [
+        {
+          "name": "c10-auto",
+          "concurrency": 10,
+          "flags": [],
+          "cache": "off"
+        },
+        {
+          "name": "c4-auto",
+          "concurrency": 4,
+          "flags": [],
+          "cache": "off"
+        },
+        {
+          "name": "c2-auto",
+          "concurrency": 2,
+          "flags": [],
+          "cache": "off"
+        },
+        {
+          "name": "c1-auto",
+          "concurrency": 1,
+          "flags": [],
+          "cache": "off"
+        },
+        {
+          "name": "c10-k2",
+          "concurrency": 10,
+          "flags": ["--checkers", "2"],
+          "cache": "off"
+        },
+        {
+          "name": "c4-k2",
+          "concurrency": 4,
+          "flags": ["--checkers", "2"],
+          "cache": "off"
+        },
+        {
+          "name": "c2-k2",
+          "concurrency": 2,
+          "flags": ["--checkers", "2"],
+          "cache": "off"
+        },
+        {
+          "name": "c4-k1",
+          "concurrency": 4,
+          "flags": ["--checkers", "1"],
+          "cache": "off"
+        },
+        {
+          "name": "c4-k4",
+          "concurrency": 4,
+          "flags": ["--checkers", "4"],
+          "cache": "off"
+        },
+        {
+          "name": "c4-single",
+          "concurrency": 4,
+          "flags": ["--singleThreaded"],
+          "cache": "off"
+        },
+        {
+          "name": "c2-single",
+          "concurrency": 2,
+          "flags": ["--singleThreaded"],
+          "cache": "off"
+        },
+        {
+          "name": "c4-k2-memory-256M",
+          "concurrency": 4,
+          "flags": ["--checkers", "2", "--maxMemory", "256M"],
+          "cache": "off"
+        },
+        {
+          "name": "c4-k2-memory-512M",
+          "concurrency": 4,
+          "flags": ["--checkers", "2", "--maxMemory", "512M"],
+          "cache": "off"
+        },
+        {
+          "name": "c4-k2-cost-cold",
+          "concurrency": 4,
+          "flags": [
+            "--checkers",
+            "2",
+            "--checkerCostCache",
+            ".turbo/tsrs-benchmark-cost.json"
+          ],
+          "cache": "cold"
+        },
+        {
+          "name": "c4-k2-cost-warm",
+          "concurrency": 4,
+          "flags": [
+            "--checkers",
+            "2",
+            "--checkerCostCache",
+            ".turbo/tsrs-benchmark-cost.json"
+          ],
+          "cache": "warm"
+        },
+        {
+          "name": "c4-k2-go-eager",
+          "concurrency": 4,
+          "flags": [
+            "--checkers",
+            "2",
+            "--checkerAssignment",
+            "go",
+            "--noLazyMembers"
+          ],
+          "cache": "off"
+        }
+      ],
+      "samples": [
+        {
+          "case": "c4-k2-memory-512M",
+          "round": 1,
+          "seconds": 27.348820413999988,
+          "cpu_seconds": 75.165899,
+          "peak_bytes": 757817344,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c2-single",
+          "round": 1,
+          "seconds": 30.79383935499999,
+          "cpu_seconds": 60.118232,
+          "peak_bytes": 516956160,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c10-k2",
+          "round": 1,
+          "seconds": 27.544395754999982,
+          "cpu_seconds": 76.538433,
+          "peak_bytes": 1073545216,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-go-eager",
+          "round": 1,
+          "seconds": 27.05375903700002,
+          "cpu_seconds": 73.874734,
+          "peak_bytes": 785825792,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-auto",
+          "round": 1,
+          "seconds": 27.737949614,
+          "cpu_seconds": 76.477902,
+          "peak_bytes": 873058304,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-memory-256M",
+          "round": 1,
+          "seconds": 27.18027996799998,
+          "cpu_seconds": 74.341767,
+          "peak_bytes": 745197568,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c2-auto",
+          "round": 1,
+          "seconds": 30.695639580000034,
+          "cpu_seconds": 67.792412,
+          "peak_bytes": 510341120,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-single",
+          "round": 1,
+          "seconds": 26.14762371400002,
+          "cpu_seconds": 69.384148,
+          "peak_bytes": 792571904,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c1-auto",
+          "round": 1,
+          "seconds": 44.79351683200002,
+          "cpu_seconds": 60.003261,
+          "peak_bytes": 442560512,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-cost-cold",
+          "round": 1,
+          "seconds": 27.795044168999993,
+          "cpu_seconds": 75.103843,
+          "peak_bytes": 766959616,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c10-auto",
+          "round": 1,
+          "seconds": 27.789298708999922,
+          "cpu_seconds": 78.015826,
+          "peak_bytes": 1135767552,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k1",
+          "round": 1,
+          "seconds": 25.739196862000085,
+          "cpu_seconds": 70.894066,
+          "peak_bytes": 769363968,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2",
+          "round": 1,
+          "seconds": 26.476587221000045,
+          "cpu_seconds": 73.860237,
+          "peak_bytes": 891121664,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k4",
+          "round": 1,
+          "seconds": 27.19159782899999,
+          "cpu_seconds": 76.471359,
+          "peak_bytes": 733790208,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-cost-warm",
+          "round": 1,
+          "seconds": 26.97535961999995,
+          "cpu_seconds": 73.610161,
+          "peak_bytes": 922263552,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c2-k2",
+          "round": 1,
+          "seconds": 30.265339840000024,
+          "cpu_seconds": 65.34694,
+          "peak_bytes": 583901184,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-auto",
+          "round": 2,
+          "seconds": 27.110366057999954,
+          "cpu_seconds": 75.983578,
+          "peak_bytes": 814448640,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-memory-512M",
+          "round": 2,
+          "seconds": 27.83260807700003,
+          "cpu_seconds": 75.373088,
+          "peak_bytes": 926531584,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k1",
+          "round": 2,
+          "seconds": 25.803389093999954,
+          "cpu_seconds": 70.827363,
+          "peak_bytes": 739717120,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c10-auto",
+          "round": 2,
+          "seconds": 28.041014808,
+          "cpu_seconds": 77.785217,
+          "peak_bytes": 1092964352,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c1-auto",
+          "round": 2,
+          "seconds": 44.98148165099997,
+          "cpu_seconds": 60.000074,
+          "peak_bytes": 449474560,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-go-eager",
+          "round": 2,
+          "seconds": 26.669670976000134,
+          "cpu_seconds": 73.034421,
+          "peak_bytes": 747704320,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-cost-warm",
+          "round": 2,
+          "seconds": 26.98115477500005,
+          "cpu_seconds": 74.353283,
+          "peak_bytes": 914337792,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c2-k2",
+          "round": 2,
+          "seconds": 29.894034406999936,
+          "cpu_seconds": 64.711916,
+          "peak_bytes": 561762304,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-memory-256M",
+          "round": 2,
+          "seconds": 27.390613777999988,
+          "cpu_seconds": 75.741948,
+          "peak_bytes": 756924416,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-cost-cold",
+          "round": 2,
+          "seconds": 27.71529971100017,
+          "cpu_seconds": 74.43875,
+          "peak_bytes": 771624960,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k4",
+          "round": 2,
+          "seconds": 28.17366930000003,
+          "cpu_seconds": 76.776337,
+          "peak_bytes": 796770304,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c2-auto",
+          "round": 2,
+          "seconds": 30.506666660000064,
+          "cpu_seconds": 67.550626,
+          "peak_bytes": 596856832,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2",
+          "round": 2,
+          "seconds": 27.007400124000014,
+          "cpu_seconds": 73.948527,
+          "peak_bytes": 808390656,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-single",
+          "round": 2,
+          "seconds": 26.434108711999897,
+          "cpu_seconds": 70.662,
+          "peak_bytes": 700706816,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c2-single",
+          "round": 2,
+          "seconds": 30.062039522000077,
+          "cpu_seconds": 58.739711,
+          "peak_bytes": 535068672,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c10-k2",
+          "round": 2,
+          "seconds": 27.44115084300006,
+          "cpu_seconds": 75.809465,
+          "peak_bytes": 1116033024,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k4",
+          "round": 3,
+          "seconds": 27.76770533900003,
+          "cpu_seconds": 77.329342,
+          "peak_bytes": 822030336,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2",
+          "round": 3,
+          "seconds": 27.141813905999925,
+          "cpu_seconds": 75.48207,
+          "peak_bytes": 770351104,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c10-k2",
+          "round": 3,
+          "seconds": 27.208382350000193,
+          "cpu_seconds": 76.57836,
+          "peak_bytes": 1129160704,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k1",
+          "round": 3,
+          "seconds": 26.46631842900001,
+          "cpu_seconds": 71.825759,
+          "peak_bytes": 759435264,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c10-auto",
+          "round": 3,
+          "seconds": 28.044567551,
+          "cpu_seconds": 77.706533,
+          "peak_bytes": 1132220416,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c2-auto",
+          "round": 3,
+          "seconds": 31.035928701999865,
+          "cpu_seconds": 67.818599,
+          "peak_bytes": 631521280,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c2-single",
+          "round": 3,
+          "seconds": 30.534093905999953,
+          "cpu_seconds": 58.888648,
+          "peak_bytes": 554414080,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c2-k2",
+          "round": 3,
+          "seconds": 29.634533195999893,
+          "cpu_seconds": 64.350644,
+          "peak_bytes": 575229952,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-single",
+          "round": 3,
+          "seconds": 26.08718901400016,
+          "cpu_seconds": 69.590582,
+          "peak_bytes": 653053952,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-auto",
+          "round": 3,
+          "seconds": 26.923908112999925,
+          "cpu_seconds": 75.797039,
+          "peak_bytes": 802988032,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c1-auto",
+          "round": 3,
+          "seconds": 45.59580627499986,
+          "cpu_seconds": 60.954077,
+          "peak_bytes": 445808640,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-memory-512M",
+          "round": 3,
+          "seconds": 27.281051769999976,
+          "cpu_seconds": 74.622683,
+          "peak_bytes": 770625536,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-cost-cold",
+          "round": 3,
+          "seconds": 26.847051283000155,
+          "cpu_seconds": 73.622865,
+          "peak_bytes": 783040512,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-memory-256M",
+          "round": 3,
+          "seconds": 27.141226812000014,
+          "cpu_seconds": 74.372287,
+          "peak_bytes": 785166336,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-go-eager",
+          "round": 3,
+          "seconds": 26.111173887000177,
+          "cpu_seconds": 72.196152,
+          "peak_bytes": 738738176,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "c4-k2-cost-warm",
+          "round": 3,
+          "seconds": 26.727336041999934,
+          "cpu_seconds": 74.676431,
+          "peak_bytes": 765452288,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 68,
+          "cost_cache_files": 68,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        }
+      ],
+      "warmup_count": 4,
+      "summary": [
+        {
+          "case": "c10-auto",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 28.041014808,
+          "seconds_min": 27.789298708999922,
+          "seconds_max": 28.044567551,
+          "peak_mib_median": 1079.76953125,
+          "peak_mib_max": 1083.15234375,
+          "cpu_seconds_median": 77.785217
+        },
+        {
+          "case": "c4-auto",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 27.110366057999954,
+          "seconds_min": 26.923908112999925,
+          "seconds_max": 27.737949614,
+          "peak_mib_median": 776.71875,
+          "peak_mib_max": 832.61328125,
+          "cpu_seconds_median": 75.983578
+        },
+        {
+          "case": "c2-auto",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 30.695639580000034,
+          "seconds_min": 30.506666660000064,
+          "seconds_max": 31.035928701999865,
+          "peak_mib_median": 569.20703125,
+          "peak_mib_max": 602.265625,
+          "cpu_seconds_median": 67.792412
+        },
+        {
+          "case": "c1-auto",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 44.98148165099997,
+          "seconds_min": 44.79351683200002,
+          "seconds_max": 45.59580627499986,
+          "peak_mib_median": 425.15625,
+          "peak_mib_max": 428.65234375,
+          "cpu_seconds_median": 60.003261
+        },
+        {
+          "case": "c10-k2",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 27.44115084300006,
+          "seconds_min": 27.208382350000193,
+          "seconds_max": 27.544395754999982,
+          "peak_mib_median": 1064.33203125,
+          "peak_mib_max": 1076.8515625,
+          "cpu_seconds_median": 76.538433
+        },
+        {
+          "case": "c4-k2",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 27.007400124000014,
+          "seconds_min": 26.476587221000045,
+          "seconds_max": 27.141813905999925,
+          "peak_mib_median": 770.94140625,
+          "peak_mib_max": 849.83984375,
+          "cpu_seconds_median": 73.948527
+        },
+        {
+          "case": "c2-k2",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 29.894034406999936,
+          "seconds_min": 29.634533195999893,
+          "seconds_max": 30.265339840000024,
+          "peak_mib_median": 548.58203125,
+          "peak_mib_max": 556.8515625,
+          "cpu_seconds_median": 64.711916
+        },
+        {
+          "case": "c4-k1",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 25.803389093999954,
+          "seconds_min": 25.739196862000085,
+          "seconds_max": 26.46631842900001,
+          "peak_mib_median": 724.25390625,
+          "peak_mib_max": 733.72265625,
+          "cpu_seconds_median": 70.894066
+        },
+        {
+          "case": "c4-k4",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 27.76770533900003,
+          "seconds_min": 27.19159782899999,
+          "seconds_max": 28.17366930000003,
+          "peak_mib_median": 759.859375,
+          "peak_mib_max": 783.94921875,
+          "cpu_seconds_median": 76.776337
+        },
+        {
+          "case": "c4-single",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 26.14762371400002,
+          "seconds_min": 26.08718901400016,
+          "seconds_max": 26.434108711999897,
+          "peak_mib_median": 668.24609375,
+          "peak_mib_max": 755.85546875,
+          "cpu_seconds_median": 69.590582
+        },
+        {
+          "case": "c2-single",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 30.534093905999953,
+          "seconds_min": 30.062039522000077,
+          "seconds_max": 30.79383935499999,
+          "peak_mib_median": 510.28125,
+          "peak_mib_max": 528.73046875,
+          "cpu_seconds_median": 58.888648
+        },
+        {
+          "case": "c4-k2-memory-256M",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 27.18027996799998,
+          "seconds_min": 27.141226812000014,
+          "seconds_max": 27.390613777999988,
+          "peak_mib_median": 721.859375,
+          "peak_mib_max": 748.79296875,
+          "cpu_seconds_median": 74.372287
+        },
+        {
+          "case": "c4-k2-memory-512M",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 27.348820413999988,
+          "seconds_min": 27.281051769999976,
+          "seconds_max": 27.83260807700003,
+          "peak_mib_median": 734.92578125,
+          "peak_mib_max": 883.609375,
+          "cpu_seconds_median": 75.165899
+        },
+        {
+          "case": "c4-k2-cost-cold",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 27.71529971100017,
+          "seconds_min": 26.847051283000155,
+          "seconds_max": 27.795044168999993,
+          "peak_mib_median": 735.87890625,
+          "peak_mib_max": 746.765625,
+          "cpu_seconds_median": 74.43875
+        },
+        {
+          "case": "c4-k2-cost-warm",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 26.97535961999995,
+          "seconds_min": 26.727336041999934,
+          "seconds_max": 26.98115477500005,
+          "peak_mib_median": 871.98046875,
+          "peak_mib_max": 879.5390625,
+          "cpu_seconds_median": 74.353283
+        },
+        {
+          "case": "c4-k2-go-eager",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 26.669670976000134,
+          "seconds_min": 26.111173887000177,
+          "seconds_max": 27.05375903700002,
+          "peak_mib_median": 713.06640625,
+          "peak_mib_max": 749.421875,
+          "cpu_seconds_median": 73.034421
+        }
+      ]
+    },
+    {
+      "workload": "graphql-api",
+      "selected_case": "auto",
+      "environment": {
+        "commit": "d23d7669d9158331fcb5364b8307810a892a3704",
+        "kernel": "6.17.0-1022-azure",
+        "image": "ubuntu24 20261012.334.1",
+        "architecture": "x86_64",
+        "cpus": 4,
+        "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+        "memory_total_bytes": 16766414848,
+        "memory_available_bytes": 15177490432,
+        "memory_budget_bytes": 13413131878,
+        "swap_total_bytes": 3221221376,
+        "node": "v22.23.3",
+        "pnpm": "11.2.2",
+        "tsrs": "Version 7.1.0-dev.20260930.4 (tsrs 0.18.0-ts7.1.0-dev.20260929, microsoft/TypeScript@b85298b6a81f)",
+        "run_url": "https://github.com/croco-dev/darun/actions/runs/39896478587"
+      },
+      "expected_tasks": 1,
+      "rounds": 3,
+      "cases": [
+        {
+          "name": "auto",
+          "concurrency": null,
+          "flags": [],
+          "cache": "off"
+        },
+        {
+          "name": "k1",
+          "concurrency": null,
+          "flags": ["--checkers", "1"],
+          "cache": "off"
+        },
+        {
+          "name": "k2",
+          "concurrency": null,
+          "flags": ["--checkers", "2"],
+          "cache": "off"
+        },
+        {
+          "name": "k4",
+          "concurrency": null,
+          "flags": ["--checkers", "4"],
+          "cache": "off"
+        },
+        {
+          "name": "single",
+          "concurrency": null,
+          "flags": ["--singleThreaded"],
+          "cache": "off"
+        },
+        {
+          "name": "k2-memory-256M",
+          "concurrency": null,
+          "flags": ["--checkers", "2", "--maxMemory", "256M"],
+          "cache": "off"
+        },
+        {
+          "name": "k2-memory-512M",
+          "concurrency": null,
+          "flags": ["--checkers", "2", "--maxMemory", "512M"],
+          "cache": "off"
+        },
+        {
+          "name": "k2-cost-cold",
+          "concurrency": null,
+          "flags": [
+            "--checkers",
+            "2",
+            "--checkerCostCache",
+            ".turbo/tsrs-benchmark-cost.json"
+          ],
+          "cache": "cold"
+        },
+        {
+          "name": "k2-cost-warm",
+          "concurrency": null,
+          "flags": [
+            "--checkers",
+            "2",
+            "--checkerCostCache",
+            ".turbo/tsrs-benchmark-cost.json"
+          ],
+          "cache": "warm"
+        },
+        {
+          "name": "k2-go-eager",
+          "concurrency": null,
+          "flags": [
+            "--checkers",
+            "2",
+            "--checkerAssignment",
+            "go",
+            "--noLazyMembers"
+          ],
+          "cache": "off"
+        }
+      ],
+      "samples": [
+        {
+          "case": "k2-memory-512M",
+          "round": 1,
+          "seconds": 0.5534150600000203,
+          "cpu_seconds": 0.895714,
+          "peak_bytes": 339214336,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-cold",
+          "round": 1,
+          "seconds": 0.5558492399999864,
+          "cpu_seconds": 0.891098,
+          "peak_bytes": 324194304,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2",
+          "round": 1,
+          "seconds": 0.5689204029999928,
+          "cpu_seconds": 0.904412,
+          "peak_bytes": 330092544,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k1",
+          "round": 1,
+          "seconds": 0.6185378019999916,
+          "cpu_seconds": 0.849943,
+          "peak_bytes": 289898496,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "single",
+          "round": 1,
+          "seconds": 0.7304416439999954,
+          "cpu_seconds": 0.806148,
+          "peak_bytes": 235442176,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "auto",
+          "round": 1,
+          "seconds": 0.5408181710000122,
+          "cpu_seconds": 1.018821,
+          "peak_bytes": 368586752,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-warm",
+          "round": 1,
+          "seconds": 0.5740463230000046,
+          "cpu_seconds": 0.916382,
+          "peak_bytes": 335736832,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-memory-256M",
+          "round": 1,
+          "seconds": 0.623094846000015,
+          "cpu_seconds": 0.951953,
+          "peak_bytes": 342458368,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k4",
+          "round": 1,
+          "seconds": 0.5505333759999758,
+          "cpu_seconds": 1.022569,
+          "peak_bytes": 356093952,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-go-eager",
+          "round": 1,
+          "seconds": 0.6056897270000263,
+          "cpu_seconds": 0.89469,
+          "peak_bytes": 341659648,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "auto",
+          "round": 2,
+          "seconds": 0.5496654329999728,
+          "cpu_seconds": 1.014257,
+          "peak_bytes": 366821376,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-cold",
+          "round": 2,
+          "seconds": 0.578677416000005,
+          "cpu_seconds": 0.91487,
+          "peak_bytes": 330039296,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k4",
+          "round": 2,
+          "seconds": 0.5503083989999595,
+          "cpu_seconds": 1.028753,
+          "peak_bytes": 366489600,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k1",
+          "round": 2,
+          "seconds": 0.6152928850000308,
+          "cpu_seconds": 0.84742,
+          "peak_bytes": 295354368,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-memory-512M",
+          "round": 2,
+          "seconds": 0.5662954609999815,
+          "cpu_seconds": 0.906856,
+          "peak_bytes": 340893696,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-warm",
+          "round": 2,
+          "seconds": 0.5467952589999641,
+          "cpu_seconds": 0.883782,
+          "peak_bytes": 326918144,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "single",
+          "round": 2,
+          "seconds": 0.7104537409999807,
+          "cpu_seconds": 0.774946,
+          "peak_bytes": 236486656,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-go-eager",
+          "round": 2,
+          "seconds": 0.5909360429999992,
+          "cpu_seconds": 0.888662,
+          "peak_bytes": 336191488,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-memory-256M",
+          "round": 2,
+          "seconds": 0.569775557000014,
+          "cpu_seconds": 0.911717,
+          "peak_bytes": 337895424,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2",
+          "round": 2,
+          "seconds": 0.5443220329999576,
+          "cpu_seconds": 0.860137,
+          "peak_bytes": 324132864,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-memory-512M",
+          "round": 3,
+          "seconds": 0.610996656999987,
+          "cpu_seconds": 1.006434,
+          "peak_bytes": 337264640,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2",
+          "round": 3,
+          "seconds": 0.5766330209999637,
+          "cpu_seconds": 0.925121,
+          "peak_bytes": 336797696,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-go-eager",
+          "round": 3,
+          "seconds": 0.5891921990000242,
+          "cpu_seconds": 0.867726,
+          "peak_bytes": 329437184,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-warm",
+          "round": 3,
+          "seconds": 0.565450640999984,
+          "cpu_seconds": 0.91082,
+          "peak_bytes": 326320128,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "auto",
+          "round": 3,
+          "seconds": 0.5437896390000105,
+          "cpu_seconds": 1.021305,
+          "peak_bytes": 355069952,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-memory-256M",
+          "round": 3,
+          "seconds": 0.5340590300000372,
+          "cpu_seconds": 0.863824,
+          "peak_bytes": 332570624,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "single",
+          "round": 3,
+          "seconds": 0.6898351539999794,
+          "cpu_seconds": 0.744365,
+          "peak_bytes": 236683264,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k1",
+          "round": 3,
+          "seconds": 0.654046204999986,
+          "cpu_seconds": 0.859501,
+          "peak_bytes": 299102208,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k4",
+          "round": 3,
+          "seconds": 0.5426112729999772,
+          "cpu_seconds": 0.979397,
+          "peak_bytes": 362352640,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-cold",
+          "round": 3,
+          "seconds": 0.5655779129999701,
+          "cpu_seconds": 0.868987,
+          "peak_bytes": 330678272,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        }
+      ],
+      "warmup_count": 4,
+      "summary": [
+        {
+          "case": "auto",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.5437896390000105,
+          "seconds_min": 0.5408181710000122,
+          "seconds_max": 0.5496654329999728,
+          "peak_mib_median": 349.828125,
+          "peak_mib_max": 351.51171875,
+          "cpu_seconds_median": 1.018821
+        },
+        {
+          "case": "k1",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.6185378019999916,
+          "seconds_min": 0.6152928850000308,
+          "seconds_max": 0.654046204999986,
+          "peak_mib_median": 281.671875,
+          "peak_mib_max": 285.24609375,
+          "cpu_seconds_median": 0.849943
+        },
+        {
+          "case": "k2",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.5689204029999928,
+          "seconds_min": 0.5443220329999576,
+          "seconds_max": 0.5766330209999637,
+          "peak_mib_median": 314.80078125,
+          "peak_mib_max": 321.1953125,
+          "cpu_seconds_median": 0.904412
+        },
+        {
+          "case": "k4",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.5503083989999595,
+          "seconds_min": 0.5426112729999772,
+          "seconds_max": 0.5505333759999758,
+          "peak_mib_median": 345.56640625,
+          "peak_mib_max": 349.51171875,
+          "cpu_seconds_median": 1.022569
+        },
+        {
+          "case": "single",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.7104537409999807,
+          "seconds_min": 0.6898351539999794,
+          "seconds_max": 0.7304416439999954,
+          "peak_mib_median": 225.53125,
+          "peak_mib_max": 225.71875,
+          "cpu_seconds_median": 0.774946
+        },
+        {
+          "case": "k2-memory-256M",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.569775557000014,
+          "seconds_min": 0.5340590300000372,
+          "seconds_max": 0.623094846000015,
+          "peak_mib_median": 322.2421875,
+          "peak_mib_max": 326.59375,
+          "cpu_seconds_median": 0.911717
+        },
+        {
+          "case": "k2-memory-512M",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.5662954609999815,
+          "seconds_min": 0.5534150600000203,
+          "seconds_max": 0.610996656999987,
+          "peak_mib_median": 323.5,
+          "peak_mib_max": 325.1015625,
+          "cpu_seconds_median": 0.906856
+        },
+        {
+          "case": "k2-cost-cold",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.5655779129999701,
+          "seconds_min": 0.5558492399999864,
+          "seconds_max": 0.578677416000005,
+          "peak_mib_median": 314.75,
+          "peak_mib_max": 315.359375,
+          "cpu_seconds_median": 0.891098
+        },
+        {
+          "case": "k2-cost-warm",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.565450640999984,
+          "seconds_min": 0.5467952589999641,
+          "seconds_max": 0.5740463230000046,
+          "peak_mib_median": 311.7734375,
+          "peak_mib_max": 320.18359375,
+          "cpu_seconds_median": 0.91082
+        },
+        {
+          "case": "k2-go-eager",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.5909360429999992,
+          "seconds_min": 0.5891921990000242,
+          "seconds_max": 0.6056897270000263,
+          "peak_mib_median": 320.6171875,
+          "peak_mib_max": 325.83203125,
+          "cpu_seconds_median": 0.888662
+        }
+      ]
+    },
+    {
+      "workload": "tier-web",
+      "selected_case": "auto",
+      "environment": {
+        "commit": "d23d7669d9158331fcb5364b8307810a892a3704",
+        "kernel": "6.17.0-1022-azure",
+        "image": "ubuntu24 20261012.334.1",
+        "architecture": "x86_64",
+        "cpus": 4,
+        "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+        "memory_total_bytes": 16766414848,
+        "memory_available_bytes": 15463481344,
+        "memory_budget_bytes": 13413131878,
+        "swap_total_bytes": 3221221376,
+        "node": "v22.23.3",
+        "pnpm": "11.2.2",
+        "tsrs": "Version 7.1.0-dev.20260930.4 (tsrs 0.18.0-ts7.1.0-dev.20260929, microsoft/TypeScript@b85298b6a81f)",
+        "run_url": "https://github.com/croco-dev/darun/actions/runs/39896478587"
+      },
+      "expected_tasks": 1,
+      "rounds": 3,
+      "cases": [
+        {
+          "name": "auto",
+          "concurrency": null,
+          "flags": [],
+          "cache": "off"
+        },
+        {
+          "name": "k1",
+          "concurrency": null,
+          "flags": ["--checkers", "1"],
+          "cache": "off"
+        },
+        {
+          "name": "k2",
+          "concurrency": null,
+          "flags": ["--checkers", "2"],
+          "cache": "off"
+        },
+        {
+          "name": "k4",
+          "concurrency": null,
+          "flags": ["--checkers", "4"],
+          "cache": "off"
+        },
+        {
+          "name": "single",
+          "concurrency": null,
+          "flags": ["--singleThreaded"],
+          "cache": "off"
+        },
+        {
+          "name": "k2-memory-256M",
+          "concurrency": null,
+          "flags": ["--checkers", "2", "--maxMemory", "256M"],
+          "cache": "off"
+        },
+        {
+          "name": "k2-memory-512M",
+          "concurrency": null,
+          "flags": ["--checkers", "2", "--maxMemory", "512M"],
+          "cache": "off"
+        },
+        {
+          "name": "k2-cost-cold",
+          "concurrency": null,
+          "flags": [
+            "--checkers",
+            "2",
+            "--checkerCostCache",
+            ".turbo/tsrs-benchmark-cost.json"
+          ],
+          "cache": "cold"
+        },
+        {
+          "name": "k2-cost-warm",
+          "concurrency": null,
+          "flags": [
+            "--checkers",
+            "2",
+            "--checkerCostCache",
+            ".turbo/tsrs-benchmark-cost.json"
+          ],
+          "cache": "warm"
+        },
+        {
+          "name": "k2-go-eager",
+          "concurrency": null,
+          "flags": [
+            "--checkers",
+            "2",
+            "--checkerAssignment",
+            "go",
+            "--noLazyMembers"
+          ],
+          "cache": "off"
+        }
+      ],
+      "samples": [
+        {
+          "case": "k2-memory-512M",
+          "round": 1,
+          "seconds": 0.7005421480000109,
+          "cpu_seconds": 1.043094,
+          "peak_bytes": 317566976,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 0,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-cold",
+          "round": 1,
+          "seconds": 0.6933801499999959,
+          "cpu_seconds": 1.017642,
+          "peak_bytes": 313397248,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2",
+          "round": 1,
+          "seconds": 0.685316580999995,
+          "cpu_seconds": 1.019622,
+          "peak_bytes": 321785856,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k1",
+          "round": 1,
+          "seconds": 0.7381354330000249,
+          "cpu_seconds": 0.9901,
+          "peak_bytes": 287223808,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "single",
+          "round": 1,
+          "seconds": 0.796191484000019,
+          "cpu_seconds": 0.932017,
+          "peak_bytes": 224575488,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "auto",
+          "round": 1,
+          "seconds": 0.6822919420000062,
+          "cpu_seconds": 1.113076,
+          "peak_bytes": 355553280,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-warm",
+          "round": 1,
+          "seconds": 0.80181829899999,
+          "cpu_seconds": 1.133679,
+          "peak_bytes": 323616768,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-memory-256M",
+          "round": 1,
+          "seconds": 0.713867238999967,
+          "cpu_seconds": 1.048787,
+          "peak_bytes": 324280320,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k4",
+          "round": 1,
+          "seconds": 0.7413304240000116,
+          "cpu_seconds": 1.163308,
+          "peak_bytes": 334700544,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-go-eager",
+          "round": 1,
+          "seconds": 0.7449882090000415,
+          "cpu_seconds": 1.048587,
+          "peak_bytes": 317587456,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "auto",
+          "round": 2,
+          "seconds": 0.6980348859999594,
+          "cpu_seconds": 1.120915,
+          "peak_bytes": 341127168,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-cold",
+          "round": 2,
+          "seconds": 0.7221966139999836,
+          "cpu_seconds": 1.077066,
+          "peak_bytes": 318115840,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k4",
+          "round": 2,
+          "seconds": 0.7079171069999575,
+          "cpu_seconds": 1.150585,
+          "peak_bytes": 349958144,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k1",
+          "round": 2,
+          "seconds": 0.7445563429999993,
+          "cpu_seconds": 1.016431,
+          "peak_bytes": 279371776,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-memory-512M",
+          "round": 2,
+          "seconds": 0.714811606000012,
+          "cpu_seconds": 1.064533,
+          "peak_bytes": 323219456,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-warm",
+          "round": 2,
+          "seconds": 0.6996396899999695,
+          "cpu_seconds": 1.032395,
+          "peak_bytes": 315256832,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "single",
+          "round": 2,
+          "seconds": 0.8198139289999631,
+          "cpu_seconds": 0.949294,
+          "peak_bytes": 228429824,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-go-eager",
+          "round": 2,
+          "seconds": 0.7324424610000051,
+          "cpu_seconds": 1.02121,
+          "peak_bytes": 323538944,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-memory-256M",
+          "round": 2,
+          "seconds": 0.7208072070000071,
+          "cpu_seconds": 1.079466,
+          "peak_bytes": 314802176,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2",
+          "round": 2,
+          "seconds": 0.7075746879999656,
+          "cpu_seconds": 1.051562,
+          "peak_bytes": 324083712,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-memory-512M",
+          "round": 3,
+          "seconds": 0.7508159459999888,
+          "cpu_seconds": 1.112103,
+          "peak_bytes": 318091264,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2",
+          "round": 3,
+          "seconds": 0.7587311130000103,
+          "cpu_seconds": 1.110231,
+          "peak_bytes": 318324736,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-go-eager",
+          "round": 3,
+          "seconds": 0.7443640980000055,
+          "cpu_seconds": 1.045984,
+          "peak_bytes": 309743616,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-warm",
+          "round": 3,
+          "seconds": 0.6989666000000057,
+          "cpu_seconds": 1.04517,
+          "peak_bytes": 326238208,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "auto",
+          "round": 3,
+          "seconds": 0.7086799819999783,
+          "cpu_seconds": 1.129936,
+          "peak_bytes": 336896000,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-memory-256M",
+          "round": 3,
+          "seconds": 0.705817986999989,
+          "cpu_seconds": 1.053132,
+          "peak_bytes": 332238848,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "single",
+          "round": 3,
+          "seconds": 0.8714327559999901,
+          "cpu_seconds": 1.02197,
+          "peak_bytes": 229298176,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k1",
+          "round": 3,
+          "seconds": 0.7099626240000134,
+          "cpu_seconds": 0.976969,
+          "peak_bytes": 280100864,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k4",
+          "round": 3,
+          "seconds": 0.7151614910000603,
+          "cpu_seconds": 1.140961,
+          "peak_bytes": 343797760,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        },
+        {
+          "case": "k2-cost-cold",
+          "round": 3,
+          "seconds": 0.7427771720000464,
+          "cpu_seconds": 1.070538,
+          "peak_bytes": 321028096,
+          "exit_code": 0,
+          "timed_out": false,
+          "tasks": 1,
+          "cost_cache_files": 1,
+          "memory_events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "invalid": []
+        }
+      ],
+      "warmup_count": 4,
+      "summary": [
+        {
+          "case": "auto",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.6980348859999594,
+          "seconds_min": 0.6822919420000062,
+          "seconds_max": 0.7086799819999783,
+          "peak_mib_median": 325.32421875,
+          "peak_mib_max": 339.08203125,
+          "cpu_seconds_median": 1.120915
+        },
+        {
+          "case": "k1",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.7381354330000249,
+          "seconds_min": 0.7099626240000134,
+          "seconds_max": 0.7445563429999993,
+          "peak_mib_median": 267.125,
+          "peak_mib_max": 273.91796875,
+          "cpu_seconds_median": 0.9901
+        },
+        {
+          "case": "k2",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.7075746879999656,
+          "seconds_min": 0.685316580999995,
+          "seconds_max": 0.7587311130000103,
+          "peak_mib_median": 306.87890625,
+          "peak_mib_max": 309.0703125,
+          "cpu_seconds_median": 1.051562
+        },
+        {
+          "case": "k4",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.7151614910000603,
+          "seconds_min": 0.7079171069999575,
+          "seconds_max": 0.7413304240000116,
+          "peak_mib_median": 327.87109375,
+          "peak_mib_max": 333.74609375,
+          "cpu_seconds_median": 1.150585
+        },
+        {
+          "case": "single",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.8198139289999631,
+          "seconds_min": 0.796191484000019,
+          "seconds_max": 0.8714327559999901,
+          "peak_mib_median": 217.84765625,
+          "peak_mib_max": 218.67578125,
+          "cpu_seconds_median": 0.949294
+        },
+        {
+          "case": "k2-memory-256M",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.713867238999967,
+          "seconds_min": 0.705817986999989,
+          "seconds_max": 0.7208072070000071,
+          "peak_mib_median": 309.2578125,
+          "peak_mib_max": 316.84765625,
+          "cpu_seconds_median": 1.053132
+        },
+        {
+          "case": "k2-memory-512M",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.714811606000012,
+          "seconds_min": 0.7005421480000109,
+          "seconds_max": 0.7508159459999888,
+          "peak_mib_median": 303.35546875,
+          "peak_mib_max": 308.24609375,
+          "cpu_seconds_median": 1.064533
+        },
+        {
+          "case": "k2-cost-cold",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.7221966139999836,
+          "seconds_min": 0.6933801499999959,
+          "seconds_max": 0.7427771720000464,
+          "peak_mib_median": 303.37890625,
+          "peak_mib_max": 306.15625,
+          "cpu_seconds_median": 1.070538
+        },
+        {
+          "case": "k2-cost-warm",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.6996396899999695,
+          "seconds_min": 0.6989666000000057,
+          "seconds_max": 0.80181829899999,
+          "peak_mib_median": 308.625,
+          "peak_mib_max": 311.125,
+          "cpu_seconds_median": 1.04517
+        },
+        {
+          "case": "k2-go-eager",
+          "valid": true,
+          "samples": 3,
+          "invalid": [],
+          "seconds_median": 0.7443640980000055,
+          "seconds_min": 0.7324424610000051,
+          "seconds_max": 0.7449882090000415,
+          "peak_mib_median": 302.875,
+          "peak_mib_max": 308.55078125,
+          "cpu_seconds_median": 1.045984
+        }
+      ]
+    }
+  ]
+}

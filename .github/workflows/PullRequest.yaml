@@ -51,7 +51,8 @@ jobs:
       - name: Type Check
         run: pnpm run typecheck
       - name: Type Check (tsrs)
-        run: pnpm run typecheck:tsrs
+        # 4 vCPU 실행기 측정 결과: docs/tsrs-ci-performance.md
+        run: pnpm run typecheck:tsrs --concurrency=4 -- --checkers 1
       - name: Check migration completeness
         run: pnpm --filter graphql-api run check:migrations
       - name: Build Lambda bundles

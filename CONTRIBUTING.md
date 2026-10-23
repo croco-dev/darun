@@ -348,7 +348,11 @@ pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 
 `pnpm typecheck:tsrs`는 기존 `pnpm typecheck`와 같은 패키지 및 `tsconfig.json`을 검사합니다. 개별 패키지는 `pnpm --filter <package-name> typecheck:tsrs`로 검사할 수 있습니다. PR CI, GraphQL 배포 전 quality 검사, tier-web CI에서 두 검사를 모두 필수로 실행합니다.
 
+PR CI의 전체 패키지 검사는 `pnpm run typecheck:tsrs --concurrency=4 -- --checkers 1`을 사용합니다. 로컬 명령과 GraphQL·tier-web 단독 CI 검사는 기본 옵션을 사용합니다. 실행 조건별 비교와 선택 근거는 [CI 성능 측정 결과](docs/tsrs-ci-performance.md)에 기록합니다.
+
 `tsrs`는 버전을 고정하고 `--noEmit --incremental false`로 실행해 JavaScript를 출력하거나 기존 TypeScript의 증분 캐시를 덮어쓰지 않습니다. 기존 `typescript` 의존성과 `tsc` 명령은 유지하며, Lambda의 decorator metadata 변환과 테스트에서 사용하는 TypeScript API도 그대로 유지합니다. 새 패키지에도 두 검사 스크립트를 함께 정의합니다.
+
+`tsrs performance` 워크플로는 수동 실행용입니다. 기본 브랜치에 워크플로가 반영된 뒤 GitHub Actions에서 실행하면, PR CI와 같은 Ubuntu 22.04·DB 서비스 조건의 전체 검사와 Ubuntu 최신 실행기의 앱별 검사를 비교합니다. Turbo 결과 캐시를 끄고 각 설정을 3회 실행하며, 매번 별도 cgroup v2의 `memory.peak`로 모든 하위 프로세스의 최대 메모리를 측정합니다. 원본 측정값과 로그는 workflow artifact에 보관합니다. 측정 도구의 회귀 테스트는 `python3 -B -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'`로 실행합니다.
 
 Next.js 버전은 workspace catalog와 override를 함께 갱신하며 모든 웹 앱은 catalog를 사용합니다. OpenTelemetry API는 웹과 서버 SDK의 공통 호환 범위인 `1.9.1`로 통합합니다. 서로 다른 peer 버전으로 Drizzle 타입이 중복 생성되는 것을 방지하며, Lambda의 Sentry·profiling SDK `10.38.0`과 기존 서버 계측 설정은 유지합니다. 의존성 취약점은 감사 기준을 낮추거나 제외하지 않고 수정 버전과 잠금 파일을 함께 갱신합니다.
 

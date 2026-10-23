@@ -2,12 +2,6 @@ name: tsrs performance
 
 on:
   workflow_dispatch:
-  push:
-    branches: ["perf/tsrs-ci"]
-    paths:
-      - ".github/workflows/TsrsPerformance.yaml"
-      - "scripts/benchmark_tsrs.py"
-      - "scripts/test_benchmark_tsrs.py"
 
 permissions:
   contents: read
