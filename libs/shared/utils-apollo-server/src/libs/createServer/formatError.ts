@@ -31,13 +31,26 @@ function findErrorCallSite(error: unknown): string | undefined {
   return undefined;
 }
 
+// CJS Apollo and ESM consumers can load separate GraphQL constructors.
+function isGraphQLError(error: unknown): error is GraphQLError {
+  return (
+    error instanceof Error &&
+    error.name === 'GraphQLError' &&
+    'extensions' in error &&
+    typeof error.extensions === 'object' &&
+    error.extensions !== null &&
+    'toJSON' in error &&
+    typeof error.toJSON === 'function'
+  );
+}
+
 export function formatServerError(
   formatted: GraphQLFormattedError,
   error: unknown,
   development: boolean
 ): GraphQLFormattedError {
   let original = error;
-  for (let depth = 0; depth < 5 && original instanceof GraphQLError && original.originalError; depth += 1) {
+  for (let depth = 0; depth < 5 && isGraphQLError(original) && original.originalError; depth += 1) {
     original = original.originalError;
   }
   const domain =
@@ -55,7 +68,7 @@ export function formatServerError(
     locations: formatted.locations,
   });
   const explicitCode =
-    original instanceof GraphQLError &&
+    isGraphQLError(original) &&
     !original.originalError &&
     typeof original.extensions.code === 'string' &&
     original.extensions.code !== 'INTERNAL_SERVER_ERROR'
