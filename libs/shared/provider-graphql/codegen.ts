@@ -15,7 +15,6 @@ const config: CodegenConfig = {
     '!../../../apps/**/node_modules/**',
     '!../../../libs/**/__tests__/**',
     '!../../../apps/**/__tests__/**',
-    '!../../../apps/service-web/app/api/markdown/**',
     '!../../../apps/service-web/app/sitemap.ts',
   ],
   generates: {
