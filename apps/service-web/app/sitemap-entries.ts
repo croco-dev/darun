@@ -6,7 +6,7 @@ export type SitemapProduct = {
   slug: string;
   updatedAt?: string | Date | null;
   publishedAt?: string | Date | null;
-  alternatives?: Array<{ slug?: string | null }> | null;
+  hasAlternatives?: boolean;
 };
 
 export type SitemapCategory = {
@@ -25,6 +25,7 @@ export type SitemapDeps = {
   fetchProducts: () => Promise<SitemapProduct[]>;
   fetchCategories: () => Promise<SitemapCategory[]>;
   fetchMagazines: () => Promise<SitemapMagazine[]>;
+  includeFixedRoutes?: boolean;
 };
 
 function parseDate(val?: string | Date | null): Date | undefined {
@@ -62,15 +63,14 @@ export async function buildSitemapEntries(deps: SitemapDeps): Promise<MetadataRo
     entries.push(item);
   };
 
-  // 1. Homepages (ko, en)
-  addEntry('ko', '', { changeFrequency: 'daily', priority: 1.0 });
-  addEntry('en', '', { changeFrequency: 'daily', priority: 1.0 });
-
-  // 2. Fixed site routes (ko, en)
-  addEntry('ko', '/ranking', { changeFrequency: 'daily', priority: 0.9 });
-  addEntry('en', '/ranking', { changeFrequency: 'daily', priority: 0.9 });
-  addEntry('ko', '/about', { changeFrequency: 'monthly', priority: 0.5 });
-  addEntry('en', '/about', { changeFrequency: 'monthly', priority: 0.5 });
+  if (deps.includeFixedRoutes !== false) {
+    addEntry('ko', '', { changeFrequency: 'daily', priority: 1.0 });
+    addEntry('en', '', { changeFrequency: 'daily', priority: 1.0 });
+    addEntry('ko', '/ranking', { changeFrequency: 'daily', priority: 0.9 });
+    addEntry('en', '/ranking', { changeFrequency: 'daily', priority: 0.9 });
+    addEntry('ko', '/about', { changeFrequency: 'monthly', priority: 0.5 });
+    addEntry('en', '/about', { changeFrequency: 'monthly', priority: 0.5 });
+  }
 
   // 3. Categories (ko, en)
   for (const category of categories) {
@@ -89,7 +89,7 @@ export async function buildSitemapEntries(deps: SitemapDeps): Promise<MetadataRo
     addEntry('en', `/products/${productSlug}`, { lastModified, changeFrequency: 'weekly', priority: 0.8 });
 
     // Only include alternatives route if product has at least one alternative
-    if (product.alternatives && product.alternatives.length > 0) {
+    if (product.hasAlternatives) {
       addEntry('ko', `/products/${productSlug}/alternatives`, {
         lastModified,
         changeFrequency: 'weekly',
@@ -112,4 +112,62 @@ export async function buildSitemapEntries(deps: SitemapDeps): Promise<MetadataRo
   }
 
   return entries;
+}
+
+export function partitionSitemapEntries(entries: MetadataRoute.Sitemap): MetadataRoute.Sitemap[] {
+  const partitions: MetadataRoute.Sitemap[] = [[]];
+  let bytes = 1024; // XML declaration and urlset namespaces.
+  for (const entry of entries) {
+    // JSON overestimates our fixed metadata fields; six bytes per URL character
+    // bounds XML entity escaping, including non-ASCII UTF-8.
+    const entryBytes = new TextEncoder().encode(JSON.stringify(entry)).length * 6 + 512;
+    if (entryBytes + 1024 > 50 * 1024 * 1024) throw new Error('Sitemap entry exceeds XML size limit');
+    let partition = partitions[partitions.length - 1];
+    if (partition.length === 50_000 || bytes + entryBytes > 50 * 1024 * 1024) {
+      partition = [];
+      partitions.push(partition);
+      bytes = 1024;
+    }
+    partition.push(entry);
+    bytes += entryBytes;
+  }
+  if (partitions.length > 50_000) throw new Error('Sitemap index exceeds URL limit');
+  return partitions;
+}
+
+export function serializeSitemap(entries: MetadataRoute.Sitemap): string {
+  const escapeXml = (value: string) =>
+    value.replace(/[<>&"']/g, character => {
+      switch (character) {
+        case '<':
+          return '&lt;';
+        case '>':
+          return '&gt;';
+        case '&':
+          return '&amp;';
+        case '"':
+          return '&quot;';
+        default:
+          return '&apos;';
+      }
+    });
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+    entries
+      .map(entry => {
+        const modified = entry.lastModified instanceof Date ? entry.lastModified.toISOString() : entry.lastModified;
+        return (
+          '<url><loc>' +
+          escapeXml(entry.url) +
+          '</loc>' +
+          (modified ? `<lastmod>${escapeXml(modified)}</lastmod>` : '') +
+          (entry.changeFrequency ? `<changefreq>${escapeXml(entry.changeFrequency)}</changefreq>` : '') +
+          (entry.priority !== undefined ? `<priority>${entry.priority}</priority>` : '') +
+          '</url>'
+        );
+      })
+      .join('') +
+    '</urlset>'
+  );
 }

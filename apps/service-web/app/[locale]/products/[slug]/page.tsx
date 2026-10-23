@@ -41,7 +41,7 @@ type ProductBySlugData = {
   };
 };
 
-const getProductBySlug = cache(async ({ slug, locale }: Awaited<Props['params']>) => {
+const getProductBySlug = cache(async (slug: string, locale: string) => {
   const { data } = await getClient().query<ProductBySlugData>({
     query: productQuery,
     variables: { slug, locale },
@@ -54,10 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
   const currentLocale = normalizeLocale(resolvedParams.locale);
 
-  const product = await getProductBySlug({
-    slug: resolvedParams.slug,
-    locale: currentLocale,
-  });
+  const product = await getProductBySlug(resolvedParams.slug, currentLocale);
 
   if (!product?.name) {
     return notFound();
@@ -126,10 +123,7 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
   const resolvedParams = await params;
   const currentLocale = normalizeLocale(resolvedParams.locale);
 
-  const product = await getProductBySlug({
-    slug: resolvedParams.slug,
-    locale: currentLocale,
-  });
+  const product = await getProductBySlug(resolvedParams.slug, currentLocale);
 
   if (!product?.name) {
     return notFound();
