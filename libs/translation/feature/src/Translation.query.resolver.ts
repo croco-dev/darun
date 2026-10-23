@@ -49,7 +49,11 @@ export class TranslationQueryResolver {
           entityType: source.entityType,
           entityId: source.entityId,
           field: source.field,
-          status: !row ? 'missing' : row.sourceHash === computeSourceHash(source.value) ? 'current' : 'stale',
+          status: !row
+            ? 'missing'
+            : row.sourceHash === computeSourceHash(source.value, source.field)
+              ? 'current'
+              : 'stale',
         };
       })
     );

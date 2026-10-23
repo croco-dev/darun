@@ -19,3 +19,12 @@ describe('sourceHash', () => {
     expect(hash1).not.toBe(hash2);
   });
 });
+
+describe('document source identity', () => {
+  it.each(['description', 'content'])('%s preserves indentation and trailing code spaces', field => {
+    expect(computeSourceHash('    코드', field)).not.toBe(computeSourceHash('코드', field));
+    expect(computeSourceHash('    코드 ', field)).not.toBe(computeSourceHash('    코드', field));
+    expect(computeSourceHash('    코드\r\n다음', field)).toBe(computeSourceHash('    코드\n다음', field));
+    expect(computeSourceHash('코드', field)).not.toBe(computeSourceHash('코드'));
+  });
+});

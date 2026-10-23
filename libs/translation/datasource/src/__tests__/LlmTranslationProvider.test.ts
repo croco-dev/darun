@@ -47,7 +47,7 @@ describe('Actual LlmTranslationProvider', () => {
     expect(result.features).toMatchObject([{ id: 'feature-1', name: 'Feature', summary: 'Summary' }]);
     expect(result.model).toBe('test-model');
     expect(result.promptVersion).toBe('v2.0.0');
-    expect(result.product.descriptionSourceHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(result.product.descriptionSourceHash).toMatch(/^document:v1:[a-f0-9]{64}$/);
   });
 
   const referenceSource = '[안내][] [안내] [본문][안내]\n\n[안내]: <https://example.com/guide?x=1&amp;y=2>';
@@ -97,7 +97,7 @@ describe('Actual LlmTranslationProvider', () => {
     });
     expect(result).toMatchObject({
       translatedText: referenceEnglish,
-      sourceHash: createHash('sha256').update(referenceSource).digest('hex'),
+      sourceHash: `document:v1:${createHash('sha256').update(referenceSource).digest('hex')}`,
       model: 'reference-model',
       promptVersion: 'v2.0.0',
     });
@@ -115,7 +115,7 @@ describe('Actual LlmTranslationProvider', () => {
       name: 'Name Darun',
       summary: 'Summary 42',
       description: referenceEnglish,
-      descriptionSourceHash: createHash('sha256').update(referenceSource).digest('hex'),
+      descriptionSourceHash: `document:v1:${createHash('sha256').update(referenceSource).digest('hex')}`,
     });
     expect(result.features).toMatchObject([{ id: 'feature-1', name: 'Feature', summary: 'Summary' }]);
   });
@@ -348,7 +348,7 @@ describe('Actual LlmTranslationProvider', () => {
     }
     const expected =
       'Body <code>  안내<span>중첩</span>\n\t리터럴 </code>\n\n<pre>  고정값\n<span>하위</span> </pre>\n\nMore';
-    const hash = createHash('sha256').update(source).digest('hex');
+    const hash = `document:v1:${createHash('sha256').update(source).digest('hex')}`;
     if ('description' in result) {
       expect(result.description).toBe(expected);
       expect(result.descriptionSourceHash).toBe(hash);
@@ -389,7 +389,7 @@ describe('Actual LlmTranslationProvider', () => {
     }
     expect(reviewer).toContain('Writer article');
     expect(reviewer).toContain('Writer guide');
-    const hash = createHash('sha256').update(source.replace(/\r\n/g, '\n')).digest('hex');
+    const hash = `document:v1:${createHash('sha256').update(source.replace(/\r\n/g, '\n')).digest('hex')}`;
     if ('description' in result) {
       expect(result.description).toBe(expected);
       expect(result.descriptionSourceHash).toBe(hash);

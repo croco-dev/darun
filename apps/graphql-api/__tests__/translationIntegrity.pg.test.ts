@@ -9,6 +9,7 @@ import {
 } from '@darun/translation-datasource';
 import {
   computeSourceHash,
+  TranslationService,
   TranslationProviderToken,
   TranslationJobRepositoryToken,
   TranslationSourceStoreToken,
@@ -33,6 +34,7 @@ import { products } from '../../../libs/products/datasource/src/entities/Product
 import { lockProductSource } from '../../../libs/products/datasource/src/repositories/productSourceMutex';
 import { translationJobs } from '../../../libs/translation/datasource/src/entities/TranslationJobSchema';
 import { translations } from '../../../libs/translation/datasource/src/entities/TranslationSchema';
+import { TranslationQueryResolver } from '../../../libs/translation/feature/src/Translation.query.resolver';
 import { TranslationQueueService } from '../../../libs/translation/service/src/TranslationQueueService';
 import { PostgresqlTranslationSourceStore } from '../src/adapters/PostgresqlTranslationSourceStore';
 
@@ -158,6 +160,71 @@ suite('Translation integrity in isolated PostgreSQL', () => {
     };
   }
 
+  it.each([
+    ['Product', 'description'],
+    ['Magazine', 'content'],
+  ] as const)(
+    '%s %s whitespace edits invalidate public reads and freshness; retranslation recovers',
+    async (entityType, field) => {
+      const { product } = await seedProduct();
+      const [magazine] = await db
+        .insert(magazines)
+        .values({
+          title: '제목',
+          summary: '요약',
+          content: '    코드 ',
+          backgroundImageUrl: 'https://example.com/background.png',
+          authorId: 'author',
+          slug: randomUUID(),
+        })
+        .returning();
+      const entityId = entityType === 'Product' ? product.id : magazine!.id;
+      const update = async (value: string) => {
+        if (entityType === 'Product')
+          await db.update(products).set({ description: value }).where(eq(products.id, entityId));
+        else await db.update(magazines).set({ content: value }).where(eq(magazines.id, entityId));
+      };
+      const service = new TranslationService(repository);
+      const resolver = new TranslationQueryResolver({} as never, repository, store);
+      const read = (koreanValue: string) =>
+        service.getTranslation({
+          entityType,
+          entityId,
+          field,
+          locale: 'en',
+          koreanValue,
+        });
+      const freshness = async () => (await resolver.translationFreshness(entityType, entityId, [field]))[0]!.status;
+      await update('    코드 ');
+      const input = await attempt(entityType, entityId, [field]);
+      expect(await store.commit(input)).toBe('completed');
+      expect(await read('    코드 ')).toBe(`English ${field}`);
+      expect(await freshness()).toBe('current');
+      for (const changed of ['코드 ', '    코드']) {
+        await update(changed);
+        expect(await read(changed)).toBe(changed);
+        expect(await freshness()).toBe('stale');
+      }
+      const retried = await attempt(entityType, entityId, [field]);
+      expect(await store.commit(retried)).toBe('completed');
+      expect(await read('    코드')).toBe(`English ${field}`);
+      expect(await freshness()).toBe('current');
+      await repository.upsert({
+        entityType,
+        entityId,
+        field,
+        locale: 'en',
+        value: 'Legacy English',
+        sourceHash: createHash('sha256').update('코드').digest('hex'),
+        model: 'legacy',
+        promptVersion: 'legacy',
+      });
+      await update('코드');
+      expect(await read('코드')).toBe('코드');
+      expect(await freshness()).toBe('stale');
+    }
+  );
+
   it('source/token/全rows/completed를 한 commit으로 저장하며 실제 DB job hash는 server snapshot이다', async () => {
     const { product } = await seedProduct();
     const input = await attempt('Product', product.id, ['name', 'summary', 'description', 'features']);
@@ -177,7 +244,7 @@ suite('Translation integrity in isolated PostgreSQL', () => {
     expect(
       own.every(
         row =>
-          /^[a-f\d]{64}$/.test(row.sourceHash!) &&
+          /^(document:v1:)?[a-f\d]{64}$/.test(row.sourceHash!) &&
           row.model === 'verified-model' &&
           row.promptVersion === 'verified-version'
       )
@@ -527,7 +594,7 @@ suite('Translation integrity in isolated PostgreSQL', () => {
     // Document description keeps its real code literal while surrounding Korean is translated.
     expect(rows.find(row => row.field === 'description')).toMatchObject({
       value: '<p>Description <code>literal-code</code> Korean</p>',
-      sourceHash: computeSourceHash('<p>설명 <code>literal-code</code> 한국어</p>'),
+      sourceHash: computeSourceHash('<p>설명 <code>literal-code</code> 한국어</p>', 'description'),
     });
     expect(featureRows.find(row => row.field === 'name')).toMatchObject({
       value: '```Fenced feature name```',
@@ -745,7 +812,7 @@ suite('Translation integrity in isolated PostgreSQL', () => {
       expect(rows).toHaveLength(kind === 'bundle' ? 3 : 1);
       expect(rows.find(row => row.field === fixture.field)).toMatchObject({
         value: referenceEnglish,
-        sourceHash: createHash('sha256').update(referenceSource).digest('hex'),
+        sourceHash: `document:v1:${createHash('sha256').update(referenceSource).digest('hex')}`,
         model: 'reference-model',
         promptVersion: 'v2.0.0',
       });

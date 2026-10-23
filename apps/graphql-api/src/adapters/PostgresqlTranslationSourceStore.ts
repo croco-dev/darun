@@ -206,7 +206,7 @@ export class PostgresqlTranslationSourceStore implements TranslationSourceStore 
           throw new Error('Incomplete translation value');
         return {
           ...row,
-          sourceHash: computeSourceHash(source.value),
+          sourceHash: computeSourceHash(source.value, source.field),
           model: input.model,
           promptVersion: input.promptVersion,
         };
