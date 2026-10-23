@@ -345,6 +345,9 @@ pnpm test           # Vitest 단위 테스트
 pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 ```
 
+앱의 ESLint glob은 따옴표로 감싸 중첩 소스까지 검사합니다. Next.js가 생성하는 `.next/`와 `next-env.d.ts`는 검사 대상에서 제외합니다.
+
+GraphQL 변경은 Node.js 22에서 `pnpm --filter graphql-api build:lambda`와 `pnpm --filter graphql-api verify:lambda`도 실행합니다. 이 검사는 번들 초기화뿐 아니라 실제 resolver 스키마와 커밋된 `schema.graphql`의 일치 여부를 확인합니다.
 Next.js 버전은 workspace catalog와 override를 함께 갱신하며 모든 웹 앱은 catalog를 사용합니다. OpenTelemetry API는 웹과 서버 SDK의 공통 호환 범위인 `1.9.1`로 통합합니다. 서로 다른 peer 버전으로 Drizzle 타입이 중복 생성되는 것을 방지하며, Lambda의 Sentry·profiling SDK `10.38.0`과 기존 서버 계측 설정은 유지합니다. 의존성 취약점은 감사 기준을 낮추거나 제외하지 않고 수정 버전과 잠금 파일을 함께 갱신합니다.
 
 HTML/Markdown 의미 전환의 공통 원문과 영어 기대값은 `libs/translation/datasource/src/__tests__/descriptionMeaningTransitions.fixture.ts`에서 관리합니다. 단위 검사와 DB 통합 검사는 같은 입력만 공유하며, 영어 기대값은 생산 비교 함수나 번역 응답으로 계산하지 않는 명시적 리터럴을 유지합니다. 자격 증명 거절 사례는 `apps/graphql-api/__tests__/llmSettingCredential.fixture.ts`에서 실행 시 생성하며, HTTP와 SDK 검사 각각의 URI 인코딩 차이는 해당 검사에 남깁니다.
@@ -372,7 +375,7 @@ Lefthook이 설치되어 있으면 커밋 전 ESLint 검사가 자동으로 실�
 
 ### 새 패키지 vitest 설정
 
-새 패키지를 생성할 때 반드시 `vitest.config.ts`를 포함해야 합니다. `@darun/utils-vitest-config`의 팩토리 함수를 사용하고, 계층별 목표를 충족하는 시점에 `thresholds` 상수를 적용합니다.
+테스트가 있는 새 패키지는 `vitest.config.ts`를 포함해야 합니다. `@darun/utils-vitest-config`의 팩토리 함수를 사용하고, 계층별 목표를 충족하는 시점에 `thresholds` 상수를 적용합니다.
 
 ```typescript
 // 백엔드 domain 패키지 — threshold 포함
@@ -395,7 +398,7 @@ import { createNodeConfig } from '@darun/utils-vitest-config';
 export default defineConfig(createNodeConfig());
 ```
 
-실제 테스트 코드가 없는 패키지도 `passWithNoTests: true`(기본값)로 turbo 그래프에 포함됩니다.
+테스트가 없는 패키지는 `test` 스크립트를 생략합니다. `echo`만 실행하는 작업은 검증이 아니므로 Turbo 테스트 그래프에 추가하지 않습니다. 공통 설정의 `passWithNoTests`는 Vitest를 사용하는 패키지에만 적용됩니다.
 
 `pnpm test:coverage` 실행 시 lcov·html 리포트가 각 패키지 `coverage/` 디렉터리에 생성되고, CI에서 `coverage-reports` 아티팩트로 업로드됩니다.
 

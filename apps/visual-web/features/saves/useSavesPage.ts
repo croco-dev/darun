@@ -120,9 +120,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
   const apolloClient = useApolloClient();
   const searchParams = useSearchParams();
   const navigate = useNavigate();
-  const urlTab = readSavesTabParam(searchParams);
-  const resolvedInitial = isSavesTabValue(searchParams.get('tab')) ? urlTab : initialTab;
-  const [tab, setTab] = useState<SavesTab>(resolvedInitial);
+  const tab = isSavesTabValue(searchParams.get('tab')) ? readSavesTabParam(searchParams) : initialTab;
   const [status, setStatus] = useState<'loading' | 'login-required' | 'error' | 'loaded'>('loading');
   const [screenshotCards, setScreenshotCards] = useState<ScreenshotCard[]>([]);
   const [flowCards, setFlowCards] = useState<FlowCard[]>([]);
@@ -140,10 +138,6 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
 
   useEffect(() => {
     let active = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 재시도 시 로딩 상태 리셋에 필요
-    setStatus('loading');
-    setScreenshotLoadMoreError(false);
-    setFlowLoadMoreError(false);
     Promise.all([
       apolloClient.query({
         query: MyVisualSavedScreenshotsDocument,
@@ -201,12 +195,14 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
   }, [apolloClient, reloadKey]);
 
   const retry = useCallback(() => {
+    setStatus('loading');
+    setScreenshotLoadMoreError(false);
+    setFlowLoadMoreError(false);
     setReloadKey(key => key + 1);
   }, []);
 
   const onTabChange = useCallback(
     (next: SavesTab) => {
-      setTab(next);
       if (next === 'screenshots') {
         setScreenshotLoadMoreError(false);
       } else {
@@ -216,18 +212,6 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
     },
     [navigate]
   );
-
-  useEffect(() => {
-    if (urlTab !== tab) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 탭 파라미터 동기화에 필요
-      setTab(urlTab);
-      if (urlTab === 'screenshots') {
-        setScreenshotLoadMoreError(false);
-      } else {
-        setFlowLoadMoreError(false);
-      }
-    }
-  }, [urlTab]);
 
   const onLoadMore = useCallback(() => {
     const setTabLoadingMore = tab === 'screenshots' ? setScreenshotLoadingMore : setFlowLoadingMore;

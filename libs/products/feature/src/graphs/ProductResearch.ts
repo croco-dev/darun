@@ -274,7 +274,11 @@ function toSourceGraph(source: ResearchSource): ResearchSourceGraph {
 }
 
 function toCandidateGraph(
-  candidate: { name: string; website?: string; anchors: ResearchAnchor[] } | null
+  candidate: {
+    name: string;
+    website?: string;
+    anchors: ResearchAnchor[];
+  } | null
 ): ResearchCandidateGraph | null {
   if (!candidate) {
     return null;

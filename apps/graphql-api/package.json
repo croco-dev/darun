@@ -9,7 +9,7 @@
     "check:migrations": "node scripts/check-migrations.cjs",
     "deploy": "pnpm run check:migrations && pnpm run build:lambda && pnpm run verify:lambda && sst deploy --stage prod",
     "dev": "node scripts/dev.cjs",
-    "lint": "eslint **/*.ts*",
+    "lint": "eslint \"**/*.{ts,tsx}\"",
     "local:bootstrap": "tsx scripts/bootstrap-local.ts",
     "migrate": "tsx scripts/migrate.ts",
     "seed:categories": "tsx scripts/seed-categories.ts",

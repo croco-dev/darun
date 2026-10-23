@@ -10,7 +10,7 @@
  *   produced; meaning judgments a model would have to make are not simulated.
  * - manual-live (--mode=manual-live, explicit opt-in): runs the approved
  *   fixture set against the real description and translation providers.
- *   Without OPEN_ROUTER_API_KEY every live fixture is reported SKIPPED and
+ *   Without OPEN_ROUTER_API_KEY the explicit live run fails and
  *   nothing is sent anywhere. The live path is intentionally not part of CI;
  *   reviewers run it by hand on the approved fixtures only, and it never
  *   collects production user data, telemetry, or an LLM judge, and never
@@ -604,11 +604,7 @@ async function main() {
 
   const apiKey = process.env.OPEN_ROUTER_API_KEY?.trim();
   if (!apiKey) {
-    console.log('\n[Manual-live] SKIPPED: OPEN_ROUTER_API_KEY is not set. Approved fixtures were not sent anywhere.');
-    console.log(
-      '  Deterministic regression fixtures verified; live run skipped explicitly (SKIPPED, no remote calls).'
-    );
-    return;
+    throw new Error('Live evaluation requested but OPEN_ROUTER_API_KEY is missing; no live evaluation ran.');
   }
 
   console.log(
