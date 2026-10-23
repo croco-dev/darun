@@ -9,9 +9,8 @@ import {
 } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation UpdateProductLinkOnEditProductLinkItem($slug: String!, $id: String!, $input: UpdateProductLinkInput!) {
     updateProductLink(slug: $slug, id: $id, input: $input) {
@@ -68,16 +67,21 @@ export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditP
     },
   });
 
+  const initializedLink = useRef({ slug, id: link.id });
+  const { setInitialValues, setValues } = form;
+
   useEffect(() => {
+    if (initializedLink.current.slug === slug && initializedLink.current.id === link.id) return;
+    initializedLink.current = { slug, id: link.id };
     const values = {
       title: link.title,
       link: link.link,
       displayLink: link.displayLink,
       iconUrl: link.iconUrl,
     };
-    form.setInitialValues(values);
-    form.setValues(values);
-  }, [link, form]);
+    setInitialValues(values);
+    setValues(values);
+  }, [slug, link.id, link.title, link.link, link.displayLink, link.iconUrl, setInitialValues, setValues]);
 
   const submit = async (values: FormValues) => {
     if (loading) return;
