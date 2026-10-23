@@ -6,7 +6,7 @@ import type * as RouterContextModule from 'next/dist/shared/lib/app-router-conte
 import type * as SearchContextModule from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
 import { useMemo, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import { FlowExplorer } from '../features/flows/FlowExplorer';
 import { ScreenshotExplorer } from '../features/screenshots/ScreenshotExplorer';
@@ -54,6 +54,7 @@ function RouteFixture({ children }: { children: ReactNode }) {
 
 const clients: ApolloClient[] = [];
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
   clients.splice(0).forEach(client => client.stop());
 });
@@ -198,7 +199,10 @@ it.each(['/', '/?platform=IOS'])('explicit reset clears the draft at %s', async 
 it.each(['/', '/?platform=IOS'])('service suggestion selection clears the draft at %s', async route => {
   const requests = mount(route);
   await screen.findByText('검색 결과가 없습니다.');
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
   fireEvent.change(input(), { target: { value: '합성' } });
+  await act(() => vi.advanceTimersByTimeAsync(300));
+  vi.useRealTimers();
   const suggestion = await screen.findByRole('option', { name: '합성 서비스' });
   fireEvent.mouseDown(suggestion);
   await waitFor(() =>
