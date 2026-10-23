@@ -92,10 +92,12 @@ jobs:
       - name: Verify Lambda initialization and GraphQL schema
         if: steps.revision.outputs.deploy == 'true'
         run: pnpm --filter graphql-api run verify:lambda
-      - name: Run Database Migrations
+      - name: Verify production prerequisites and apply migrations
         if: steps.revision.outputs.deploy == 'true'
-        run: pnpm --filter graphql-api run migrate
+        run: pnpm --filter graphql-api run predeploy:prod
         env:
+          INFRA_ENV: prod
+          RUNNING_ENV: ${{ secrets.RUNNING_ENV }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - name: Deploy
         if: steps.revision.outputs.deploy == 'true'

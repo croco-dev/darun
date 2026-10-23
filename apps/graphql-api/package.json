@@ -7,11 +7,12 @@
   "scripts": {
     "build:lambda": "node scripts/build-lambda.cjs",
     "check:migrations": "node scripts/check-migrations.cjs",
-    "deploy": "pnpm run check:migrations && pnpm run build:lambda && pnpm run verify:lambda && sst deploy --stage prod",
+    "deploy": "node scripts/deploy-prod.mjs",
     "dev": "node scripts/dev.cjs",
     "lint": "eslint \"**/*.{ts,tsx}\"",
     "local:bootstrap": "tsx scripts/bootstrap-local.ts",
     "migrate": "tsx scripts/migrate.ts",
+    "predeploy:prod": "node scripts/predeploy-prod.mjs",
     "seed:categories": "tsx scripts/seed-categories.ts",
     "seed:e2e": "tsx scripts/seed-e2e.ts",
     "test": "vitest run",
