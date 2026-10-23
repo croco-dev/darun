@@ -3,12 +3,12 @@ import { container } from '../app/container';
 
 describe('service-web smoke', () => {
   it('Apollo Client가 초기화된다', () => {
-    expect(container.apolloClient).toBeDefined();
-    expect(typeof container.apolloClient.query).toBe('function');
+    expect(container.getApolloClient('ko')).toBeDefined();
+    expect(typeof container.getApolloClient('ko').query).toBe('function');
   });
 
   it('container는 singleton을 반환한다', () => {
-    expect(container.apolloClient).toBe(container.apolloClient);
+    expect(container.getApolloClient('ko')).toBe(container.getApolloClient('ko'));
     expect(container.authService).toBe(container.authService);
   });
 
