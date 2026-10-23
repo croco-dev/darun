@@ -28,7 +28,9 @@ export default function SignUpPage() {
         <Card variant="default" className="p-5 md:p-6">
           <CardHeader className="px-0">
             <CardTitle className="text-lg">이메일로 회원가입</CardTitle>
-            <CardDescription>가입 후 설정과 관리자 접근 흐름은 그대로 유지됩니다.</CardDescription>
+            <CardDescription>
+              비밀번호는 6자 이상 입력하세요. 가입 후 받은 이메일의 인증 링크를 열어 주세요.
+            </CardDescription>
           </CardHeader>
           <CardContent className="px-0">
             <form action={formAction} className="space-y-4">
@@ -48,12 +50,18 @@ export default function SignUpPage() {
                 />
               </div>
               {state?.error && (
-                <div className="rounded-[0.75rem] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                <div
+                  role="alert"
+                  className="rounded-[0.75rem] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600"
+                >
                   {state.error}
                 </div>
               )}
               {state?.message && (
-                <div className="rounded-[0.75rem] border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                <div
+                  role="status"
+                  className="rounded-[0.75rem] border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+                >
                   {state.message}
                 </div>
               )}

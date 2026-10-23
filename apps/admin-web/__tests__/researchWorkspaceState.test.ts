@@ -18,6 +18,7 @@ describe('researchWorkspaceState', () => {
       jobId: 'job-1',
       // 이전 버전이 저장한 전송 상태는 버리고 사용자 편집값만 복구한다.
       dispatchStatus: 'QUEUED',
+      prefilledJobId: 'job-1',
       review: {
         name: 'Linear',
         slug: 'linear',
@@ -38,6 +39,7 @@ describe('researchWorkspaceState', () => {
       officialUrl: 'https://linear.app/',
       jobId: 'job-1',
       review: state.review,
+      prefilledJobId: state.prefilledJobId,
       logoFileName: 'logo.png',
       uploadedLogoUrl: null,
       materializedSlug: null,
@@ -100,6 +102,31 @@ describe('researchWorkspaceState', () => {
     expect(prefilled.summary).toBe('조사 요약');
     expect(prefilled.features).toHaveLength(1);
     expect(prefilled.tags).toEqual(['협업']);
+  });
+
+  it('restores explicitly cleared fields without repopulating the same job', () => {
+    const state = {
+      ...createInitialWorkspaceState('req-12345678'),
+      jobId: 'job-1',
+      prefilledJobId: 'job-1',
+    };
+    const restored = parseWorkspaceState(JSON.stringify(state))!;
+    const review = prefillReviewFromResult(
+      restored.review,
+      {
+        name: { value: 'Original' },
+        summary: { value: 'Original summary' },
+        tags: ['original'],
+        features: [{ name: 'Original feature' }],
+      },
+      'https://example.com',
+      restored.prefilledJobId === restored.jobId
+    );
+    expect(review).toBe(restored.review);
+    expect(review.name).toBe('');
+    expect(review.summary).toBe('');
+    expect(review.tags).toEqual([]);
+    expect(review.features).toEqual([]);
   });
 
   it('요청 ID는 서버 requestId 형식을 만족한다', () => {

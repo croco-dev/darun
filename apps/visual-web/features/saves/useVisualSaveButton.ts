@@ -7,7 +7,8 @@ import {
   VisualFlowSaveStatusDocument,
   VisualScreenshotSaveStatusDocument,
 } from '@darun/provider-graphql';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useVisualAccount } from './useVisualAccount';
 
 export type VisualSaveButtonState = {
   saved: boolean;
@@ -37,12 +38,26 @@ export function useVisualSaveButton(params: {
 }): VisualSaveButtonState {
   const { kind, id, enabled } = params;
   const apolloClient = useApolloClient();
+  const account = useVisualAccount();
+  const generation = useRef(0);
+  const toggling = useRef(false);
   const [saved, setSaved] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [toggleError, setToggleError] = useState(false);
+  const [owner, setOwner] = useState({ account, kind, id, enabled });
+  if (owner.account !== account || owner.kind !== kind || owner.id !== id || owner.enabled !== enabled) {
+    setOwner({ account, kind, id, enabled });
+    setSaved(false);
+    setIsToggling(false);
+    setToggleError(false);
+    setNeedsLogin(account === null);
+  }
 
   useEffect(() => {
+    const requestGeneration = ++generation.current;
+    toggling.current = false;
+    if (!account) return;
     if (!enabled) {
       return;
     }
@@ -53,13 +68,17 @@ export function useVisualSaveButton(params: {
             query: VisualScreenshotSaveStatusDocument,
             variables: { id },
             fetchPolicy: 'no-cache',
+            context: { queryDeduplication: false },
           })
-        : apolloClient.query({ query: VisualFlowSaveStatusDocument, variables: { id }, fetchPolicy: 'no-cache' });
+        : apolloClient.query({
+            query: VisualFlowSaveStatusDocument,
+            variables: { id },
+            fetchPolicy: 'no-cache',
+            context: { queryDeduplication: false },
+          });
     request
       .then(result => {
-        if (!active) {
-          return;
-        }
+        if (!active || generation.current !== requestGeneration) return;
         const status =
           kind === 'screenshot'
             ? (result.data as { visualScreenshotSaveStatus?: { saved: boolean } } | undefined)
@@ -69,9 +88,7 @@ export function useVisualSaveButton(params: {
         setNeedsLogin(false);
       })
       .catch((e: unknown) => {
-        if (!active) {
-          return;
-        }
+        if (!active || generation.current !== requestGeneration) return;
         if (isUnauthorized(e)) {
           setNeedsLogin(true);
           return;
@@ -80,13 +97,16 @@ export function useVisualSaveButton(params: {
       });
     return () => {
       active = false;
+      generation.current += 1;
     };
-  }, [apolloClient, kind, id, enabled]);
+  }, [apolloClient, kind, id, enabled, account]);
 
   const toggle = useCallback(() => {
-    if (isToggling) {
+    if (toggling.current || !enabled || !account) {
       return;
     }
+    const requestGeneration = generation.current;
+    toggling.current = true;
     setIsToggling(true);
     setToggleError(false);
     const request =
@@ -95,6 +115,7 @@ export function useVisualSaveButton(params: {
         : apolloClient.mutate({ mutation: ToggleVisualFlowSaveDocument, variables: { id } });
     request
       .then(result => {
+        if (generation.current !== requestGeneration) return;
         const payload =
           kind === 'screenshot'
             ? (result.data as { toggleVisualScreenshotSave?: { saved: boolean } } | undefined)
@@ -106,6 +127,7 @@ export function useVisualSaveButton(params: {
         }
       })
       .catch((e: unknown) => {
+        if (generation.current !== requestGeneration) return;
         if (isUnauthorized(e)) {
           setNeedsLogin(true);
           return;
@@ -114,9 +136,11 @@ export function useVisualSaveButton(params: {
         setToggleError(true);
       })
       .finally(() => {
+        if (generation.current !== requestGeneration) return;
+        toggling.current = false;
         setIsToggling(false);
       });
-  }, [apolloClient, kind, id, isToggling]);
+  }, [apolloClient, kind, id, enabled, account]);
 
   const retry = useCallback(() => {
     setToggleError(false);

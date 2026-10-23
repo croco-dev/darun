@@ -6,7 +6,7 @@ import type * as RouterContextModule from 'next/dist/shared/lib/app-router-conte
 import type * as SearchContextModule from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
 import { useMemo, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import { FlowExplorer } from '../features/flows/FlowExplorer';
 import { ScreenshotExplorer } from '../features/screenshots/ScreenshotExplorer';
@@ -54,6 +54,7 @@ function RouteFixture({ children }: { children: ReactNode }) {
 
 const clients: ApolloClient[] = [];
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
   clients.splice(0).forEach(client => client.stop());
 });
@@ -81,7 +82,12 @@ function mount(route = '/', flow = false) {
             },
           });
         } else {
-          const field = operation.operationName === 'VisualFlowsOnExplorer' ? 'visualFlows' : 'visualScreenshots';
+          const field =
+            operation.operationName === 'VisualFlowsOnExplorer'
+              ? 'visualFlows'
+              : operation.operationName === 'VisualAppsOnCatalog'
+                ? 'visualApps'
+                : 'visualScreenshots';
           observer.next({
             data: {
               [field]: {
@@ -105,7 +111,7 @@ function mount(route = '/', flow = false) {
   return requests;
 }
 
-const input = () => screen.getByRole<HTMLInputElement>('searchbox', { name: '스크린샷 검색' });
+const input = () => screen.getByRole<HTMLInputElement>('combobox', { name: '스크린샷 검색' });
 const variables = {
   query: null,
   platform: null,
@@ -198,7 +204,10 @@ it.each(['/', '/?platform=IOS'])('explicit reset clears the draft at %s', async 
 it.each(['/', '/?platform=IOS'])('service suggestion selection clears the draft at %s', async route => {
   const requests = mount(route);
   await screen.findByText('검색 결과가 없습니다.');
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
   fireEvent.change(input(), { target: { value: '합성' } });
+  await act(() => vi.advanceTimersByTimeAsync(300));
+  vi.useRealTimers();
   const suggestion = await screen.findByRole('option', { name: '합성 서비스' });
   fireEvent.mouseDown(suggestion);
   await waitFor(() =>
@@ -216,7 +225,7 @@ it.each(['/', '/?platform=IOS'])('service suggestion selection clears the draft 
 it('the actual flow consumer keeps its own draft, explicit submit and reset behavior', async () => {
   const requests = mount('/flows?q=기존플로우', true);
   await screen.findByText('검색 결과가 없습니다.');
-  const flowInput = screen.getByRole<HTMLInputElement>('searchbox');
+  const flowInput = screen.getByRole<HTMLInputElement>('combobox', { name: '플로 검색' });
   expect(flowInput.value).toBe('기존플로우');
   fireEvent.change(flowInput, { target: { value: '결제 플로우' } });
   fireEvent.change(screen.getByRole('combobox', { name: '플랫폼' }), { target: { value: 'WEB' } });

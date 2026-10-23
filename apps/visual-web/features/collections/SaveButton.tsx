@@ -90,13 +90,20 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
               })}
             </ul>
           )}
-          <div className="mt-3 flex gap-2 border-t border-dark-100 pt-4">
+          <form
+            onSubmit={event => {
+              event.preventDefault();
+              if (draft.trim() !== '') create();
+            }}
+            className="mt-3 flex gap-2 border-t border-dark-100 pt-4"
+          >
             <input
               value={draft}
               onChange={e => setDraft(e.target.value)}
-              onKeyDown={e => {
-                if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
-                if (e.key === 'Enter' && draft.trim() !== '') create();
+              onKeyDown={event => {
+                if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) {
+                  event.preventDefault();
+                }
               }}
               placeholder="새 컬렉션 이름"
               maxLength={60}
@@ -104,14 +111,13 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
               className="min-h-11 min-w-0 flex-1 rounded-lg border border-dark-150 bg-white px-3 text-sm text-dark-900 placeholder:text-dark-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
             />
             <button
-              type="button"
-              onClick={create}
+              type="submit"
               disabled={draft.trim() === ''}
               className="min-h-11 shrink-0 rounded-lg bg-dark-900 px-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               만들기
             </button>
-          </div>
+          </form>
           <div className="mt-3 flex items-center justify-between">
             <button
               type="button"

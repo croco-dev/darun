@@ -195,7 +195,6 @@ export { CreateProductFeature } from './usecases/CreateProductFeature';
 export { DeleteProductScreenshot } from './usecases/DeleteProductScreenshot';
 export { EditProduct } from './usecases/EditProduct';
 export {
-  GenerateProductDescription,
   GenerateProductDescriptionCandidate,
   type GenerateProductDescriptionCandidateResult,
 } from './usecases/GenerateProductDescription';

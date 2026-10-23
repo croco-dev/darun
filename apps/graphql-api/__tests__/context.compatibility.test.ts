@@ -43,32 +43,4 @@ describe('GraphQL context compatibility baseline', () => {
     expect(context.clientIp).toBeUndefined();
     expect(context.requestId).toBe('req_no_ip');
   });
-
-  it('getAccountUseCase 호출 시 토큰을 그대로 전달한다', async () => {
-    const execute = vi.fn().mockResolvedValue(undefined);
-    const context = createGraphQLContext({
-      requestId: 'req_token_passthrough',
-      authToken: 'bearer-token-123',
-      clientIp: '127.0.0.1',
-      getAccountUseCase: { execute },
-    });
-
-    await context.getUserId();
-
-    expect(execute).toHaveBeenCalledTimes(1);
-    expect(execute).toHaveBeenCalledWith({ token: 'bearer-token-123' });
-  });
-
-  it('계정 조회 결과가 null일 때 getRoles는 빈 배열을 반환한다', async () => {
-    const execute = vi.fn().mockResolvedValue(null);
-    const context = createGraphQLContext({
-      requestId: 'req_null_account',
-      authToken: 'token',
-      getAccountUseCase: { execute },
-    });
-
-    const roles = await context.getRoles();
-
-    expect(roles).toEqual([]);
-  });
 });

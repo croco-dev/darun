@@ -1,18 +1,7 @@
 import { TierTabs } from '@/components/TierTabs';
 import { supabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
-import {
-  APPS_PAGE_SIZE,
-  type AppListItem,
-  type AppListRow,
-  compareHomeApps,
-  getAppsPageRange,
-  getHasNextPage,
-  HOME_APPS_SELECT,
-  HOME_TIERED_APPS_SELECT,
-  mapAppListRow,
-  mergeHomeApps,
-} from './home-app-list';
+import { type AppListItem, fetchHomeAppsPage, normalizeHomeTier } from './home-app-list';
 import HomeAppsClient from './HomeAppsClient';
 
 interface HomePageProps {
@@ -22,7 +11,7 @@ interface HomePageProps {
 export const metadata: Metadata = {
   title: '홈',
   description:
-    'iOS 26 Liquid Glass를 대응하는 앱들을 티어별로 확인하세요. 1티어는 Liquid Glass 가이드라인을 완벽히 준수하는 앱, 2티어는 어느 정도 준수하는 앱, 3티어는 일부 대응한 앱입니다.',
+    '다른티어에 등록된 iOS 앱의 Liquid Glass 대응 분류를 확인하세요. 티어는 Croco 팀의 분류 기준에 따른 참고 정보입니다.',
   openGraph: {
     title: '다른티어 - iOS 26 Liquid Glass 대응 앱 분류',
     description: 'iOS 26 Liquid Glass를 대응하는 앱들을 티어별로 확인하세요. Croco 팀이 직접 분류합니다.',
@@ -31,90 +20,24 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
-async function fetchHomeAppsPage({ page, tier }: { page: number; tier: number }) {
-  const { from, to } = getAppsPageRange(page, APPS_PAGE_SIZE);
-
-  if (tier === 0) {
-    const requestedItemCount = page * APPS_PAGE_SIZE;
-    const untieredRangeEnd = requestedItemCount - 1;
-
-    const [tierZeroResult, unassignedResult] = await Promise.all([
-      supabase
-        .from('apps')
-        .select(HOME_TIERED_APPS_SELECT, { count: 'exact' })
-        .eq('tiers.tier', 0)
-        .order('name', { ascending: true })
-        .order('id', { ascending: true })
-        .range(0, untieredRangeEnd),
-      supabase
-        .from('apps')
-        .select(HOME_APPS_SELECT, { count: 'exact' })
-        .is('tiers', null)
-        .order('name', { ascending: true })
-        .order('id', { ascending: true })
-        .range(0, untieredRangeEnd),
-    ]);
-
-    if (tierZeroResult.error) {
-      throw tierZeroResult.error;
-    }
-
-    if (unassignedResult.error) {
-      throw unassignedResult.error;
-    }
-
-    const mergedApps = mergeHomeApps([
-      (tierZeroResult.data as AppListRow[] | null)?.map(mapAppListRow) ?? [],
-      (unassignedResult.data as AppListRow[] | null)?.map(mapAppListRow) ?? [],
-    ]);
-    const totalCount = (tierZeroResult.count ?? 0) + (unassignedResult.count ?? 0);
-
-    return {
-      apps: mergedApps.slice(from, to + 1),
-      totalCount,
-      hasNextPage: getHasNextPage(totalCount, to),
-    };
-  }
-
-  const { data, error, count } = await supabase
-    .from('apps')
-    .select(HOME_TIERED_APPS_SELECT, { count: 'exact' })
-    .eq('tiers.tier', tier)
-    .order('name', { ascending: true })
-    .order('id', { ascending: true })
-    .range(from, to);
-
-  if (error) {
-    throw error;
-  }
-
-  const apps = (data as AppListRow[] | null)?.map(mapAppListRow) ?? [];
-  apps.sort(compareHomeApps);
-
-  return {
-    apps,
-    totalCount: count ?? 0,
-    hasNextPage: getHasNextPage(count ?? 0, to),
-  };
-}
-
 export default async function HomePage({ searchParams }: HomePageProps) {
   const resolvedSearchParams = await searchParams;
-  const currentTier = typeof resolvedSearchParams.tier === 'string' ? resolvedSearchParams.tier : '1';
-  const parsedTier = Number.parseInt(currentTier, 10);
-  const tier = Number.isNaN(parsedTier) ? 1 : parsedTier;
+  const tier = normalizeHomeTier(resolvedSearchParams.tier);
+  const currentTier = String(tier);
   let initialApps: AppListItem[] = [];
   let initialTotalCount = 0;
   let initialHasNextPage = false;
+  let initialError = false;
 
   try {
-    const firstPage = await fetchHomeAppsPage({ page: 1, tier });
+    const firstPage = await fetchHomeAppsPage(supabase, { page: 1, tier });
 
     initialApps = firstPage.apps;
     initialTotalCount = firstPage.totalCount;
     initialHasNextPage = firstPage.hasNextPage;
   } catch (error) {
     console.error('Error fetching apps:', error);
+    initialError = true;
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tier.darun.io';
@@ -133,16 +56,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <>
-      <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      />
       <div className="page-shell py-8 md:py-10">
         <section className="space-y-5 border-b border-border pb-6 md:pb-8">
           <div className="space-y-2">
             <p className="section-label">다른티어 랭킹</p>
-            <h1 className="editorial-display text-[1.9rem] text-foreground md:text-[2.2rem]">
+            <h1 className="editorial-display text-[1.9rem] text-balance text-foreground md:text-[2.2rem]">
               iOS 26 Liquid Glass 대응 앱
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-[15px]">
-              Croco 팀이 직접 살펴본 앱을 티어별로 정리했습니다.
+              등록된 앱을 Croco 팀의 기준으로 분류했습니다. 티어는 공식 인증이 아닌 참고 정보입니다.
             </p>
           </div>
 
@@ -156,6 +82,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             initialHasNextPage={initialHasNextPage}
             initialTotalCount={initialTotalCount}
             tier={tier}
+            initialError={initialError}
           />
         </section>
       </div>

@@ -20,9 +20,11 @@ export function VisualSaveButton({ kind, id, enabled }: VisualSaveButtonProps) {
   if (needsLogin) {
     return (
       <div className="flex flex-col items-start gap-2">
-        <p className="text-sm text-dark-500 break-words [word-break:keep-all]">저장은 로그인 후 이용할 수 있어요.</p>
+        <p className="text-xs text-dark-600">계정에 저장하려면 로그인해 주세요.</p>
         <VisualLoginButton
-          redirectTo={kind === 'screenshot' ? `/screenshots/${encodeURIComponent(id)}` : `/flows/${encodeURIComponent(id)}`}
+          redirectTo={
+            kind === 'screenshot' ? `/screenshots/${encodeURIComponent(id)}` : `/flows/${encodeURIComponent(id)}`
+          }
         />
       </div>
     );
@@ -41,8 +43,9 @@ export function VisualSaveButton({ kind, id, enabled }: VisualSaveButtonProps) {
         className="active:scale-[0.98] motion-reduce:transform-none"
       >
         <Bookmark size={16} className="shrink-0" aria-hidden="true" />
-        <span className="whitespace-nowrap">{saved ? '저장됨' : '저장하기'}</span>
+        <span className="whitespace-nowrap">{saved ? '계정에 저장됨' : '계정에 저장'}</span>
       </Button>
+      <p className="text-xs text-dark-500">계정 저장함에서 확인할 수 있습니다. 브라우저 컬렉션과는 별개입니다.</p>
       {toggleError && (
         <div role="alert" className="flex items-center gap-2">
           <span className="text-xs text-dark-500">저장에 실패했어요.</span>

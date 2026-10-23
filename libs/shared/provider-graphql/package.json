@@ -7,7 +7,6 @@
   "scripts": {
     "codegen": "graphql-codegen --config ./codegen.ts",
     "lint": "eslint --no-warn-ignored **/*.ts*",
-    "test": "echo 1",
     "typecheck": "tsc --noEmit",
     "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },

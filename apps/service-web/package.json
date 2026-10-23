@@ -8,7 +8,7 @@
     "dev": "next dev --turbopack",
     "e2e": "playwright test",
     "e2e:install": "playwright install --with-deps chromium",
-    "lint": "eslint --no-warn-ignored **/*.ts*",
+    "lint": "eslint --no-warn-ignored \"**/*.{ts,tsx}\"",
     "start": "next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

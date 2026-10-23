@@ -2,9 +2,9 @@
 
 import { AnalyticsEvents, track, type ProductAttributionSource } from '@darun/analytics-client';
 import { Button, Check, Plus } from '@darun/ui';
-import { useRouter } from '@darun/utils-router';
+import { Link, useRouter } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 
 const STORAGE_KEY = 'compare-products';
 const MAX_COMPARE_ITEMS = 2;
@@ -54,6 +54,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
   const locale = useLocale();
   const t = useTranslations('ProductDetail.compareButton');
   const compareList = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [notice, setNotice] = useState<'limit' | 'storage' | null>(null);
 
   const isAdded = compareList.includes(slug);
 
@@ -64,12 +65,19 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       newList = newList.filter(item => item !== slug);
     } else {
       if (newList.length >= MAX_COMPARE_ITEMS) {
-        newList.shift();
+        setNotice('limit');
+        return;
       }
       newList.push(slug);
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
+    } catch {
+      setNotice('storage');
+      return;
+    }
+    setNotice(null);
     window.dispatchEvent(new Event('compare-updated'));
 
     const effectiveSource = source ?? 'direct';
@@ -107,33 +115,48 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
   const buttonLabel = isAdded ? t('remove') : t('add');
 
   return (
-    <Button
-      variant="shadow"
-      color={isAdded ? 'primary' : 'secondary'}
-      size="md"
-      onClick={handleClick}
-      data-testid="compare-button"
-      aria-label={buttonLabel}
-      aria-pressed={isAdded}
-      title={buttonLabel}
-      className={`group h-10 sm:h-11 px-3.5 sm:px-4 transition-all duration-150 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none ${
-        isAdded
-          ? 'border-dark-900 bg-dark-900 text-white shadow-button hover:border-dark-800 hover:bg-dark-800'
-          : 'border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover'
-      }`}
-    >
-      <div className="flex items-center gap-1.5">
-        {isAdded ? (
-          <Check size={16} className="text-current stroke-[2.25] shrink-0" aria-hidden="true" />
-        ) : (
-          <Plus
-            size={16}
-            className="text-dark-600 stroke-[2.25] shrink-0 transition-colors duration-200 group-hover:text-dark-900"
-            aria-hidden="true"
-          />
-        )}
-        <span className="select-none whitespace-nowrap text-sm font-semibold">{buttonLabel}</span>
-      </div>
-    </Button>
+    <div className="flex flex-col items-start gap-2">
+      <Button
+        variant="shadow"
+        color={isAdded ? 'primary' : 'secondary'}
+        size="md"
+        onClick={handleClick}
+        data-testid="compare-button"
+        aria-label={buttonLabel}
+        aria-pressed={isAdded}
+        title={buttonLabel}
+        className={`group h-10 sm:h-11 px-3.5 sm:px-4 transition-all duration-150 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none ${
+          isAdded
+            ? 'border-dark-900 bg-dark-900 text-white shadow-button hover:border-dark-800 hover:bg-dark-800'
+            : 'border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover'
+        }`}
+      >
+        <div className="flex items-center gap-1.5">
+          {isAdded ? (
+            <Check size={16} className="text-current stroke-[2.25] shrink-0" aria-hidden="true" />
+          ) : (
+            <Plus
+              size={16}
+              className="text-dark-600 stroke-[2.25] shrink-0 transition-colors duration-200 group-hover:text-dark-900"
+              aria-hidden="true"
+            />
+          )}
+          <span className="select-none whitespace-nowrap text-sm font-semibold">{buttonLabel}</span>
+        </div>
+      </Button>
+      {notice && (
+        <p role="status" className="max-w-xs text-sm text-dark-700">
+          {t(notice === 'limit' ? 'limit' : 'storageError')}{' '}
+          {notice === 'limit' && compareList.length === 2 && (
+            <Link
+              className="underline"
+              href={`/${locale}/compare/${encodeURIComponent(compareList[0])}/${encodeURIComponent(compareList[1])}`}
+            >
+              {t('viewCompare')}
+            </Link>
+          )}
+        </p>
+      )}
+    </div>
   );
 };

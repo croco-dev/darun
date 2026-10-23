@@ -2,7 +2,7 @@
 
 import { NewProductScreenForm } from '@darun/products-feature';
 import { Button } from '@darun/ui';
-import { AdminField, AdminInput, AdminActions } from '@darun/ui-admin';
+import { AdminField, AdminInput, AdminActions, AdminSelect } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
@@ -106,25 +106,15 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
             />
           </AdminField>
           <AdminField label="플랫폼 (선택)" error={form.errors.platform}>
-            <select
-              name="platform"
-              disabled={loading}
-              className="h-11 w-full rounded-xl border border-dark-200 bg-white px-3.5 text-sm text-dark-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-dark-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
-              {...form.getInputProps('platform')}
-            >
+            <AdminSelect name="platform" disabled={loading} {...form.getInputProps('platform')}>
               <option value="">미분류</option>
               <option value="WEB">웹</option>
               <option value="IOS">iOS</option>
               <option value="ANDROID">Android</option>
-            </select>
+            </AdminSelect>
           </AdminField>
           <AdminField label="화면 유형 (선택)" error={form.errors.screenType}>
-            <select
-              name="screenType"
-              disabled={loading}
-              className="h-11 w-full rounded-xl border border-dark-200 bg-white px-3.5 text-sm text-dark-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-dark-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
-              {...form.getInputProps('screenType')}
-            >
+            <AdminSelect name="screenType" disabled={loading} {...form.getInputProps('screenType')}>
               <option value="">미분류</option>
               <option value="HOME">홈</option>
               <option value="ONBOARDING">온보딩</option>
@@ -136,7 +126,7 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
               <option value="CHECKOUT">결제</option>
               <option value="SETTINGS">설정</option>
               <option value="OTHER">기타</option>
-            </select>
+            </AdminSelect>
           </AdminField>
           <AdminActions>
             <Button

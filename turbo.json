@@ -21,7 +21,7 @@
     },
     "test": {
       "dependsOn": ["^test"],
-      "inputs": ["src/**", "vitest.config.{ts,js}", "vitest.setup.{ts,js}"],
+      "inputs": ["$TURBO_DEFAULT$", "__tests__/**", "src/**", "vitest.config.{ts,js}", "vitest.setup.{ts,js}"],
       "outputs": ["coverage/**"]
     },
     "prepare": {

@@ -40,7 +40,7 @@ export function ExplorerShell({
   children?: ReactNode;
 }) {
   return (
-    <div className="flex w-full min-w-0 flex-col gap-5">
+    <div className="flex w-full min-w-0 flex-col gap-4">
       {hero}
       {searchForm}
       {state.queryLengthError ? (
@@ -91,7 +91,7 @@ export function ExplorerShell({
         </div>
       ) : (
         <>
-          <div className="flex min-h-11 flex-wrap items-center justify-between gap-3 border-t border-dark-100 pt-4">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-dark-600 tabular-nums" aria-live="polite">
               총 {state.totalCount}
               {unitName}

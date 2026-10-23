@@ -6,7 +6,7 @@
 
 ## 적용 설정
 
-PR CI의 68개 패키지 검사는 다음 명령을 사용한다.
+PR CI의 전체 패키지 검사는 다음 명령을 사용한다. 측정 당시에는 68개였으며, 최신 `trunk`에서 사용하지 않는 `products/ui` 패키지를 삭제해 현재 검사 대상은 67개다. 아래 수치는 측정 커밋의 결과이며 최신 소스의 실행 시간으로 간주하지 않는다.
 
 ```bash
 pnpm run typecheck:tsrs --concurrency=4 -- --checkers 1

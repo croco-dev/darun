@@ -143,9 +143,9 @@ export default $config({
     });
     contentSyncQueue.subscribe(contentSyncWorker.arn);
 
-    const jobRecoveryTick = new sst.aws.Cron('JobRecoveryTick', {
+    const jobRecoveryTick = new sst.aws.CronV2('JobRecoveryTick', {
       schedule: 'rate(1 minute)',
-      job: {
+      function: {
         handler: 'job-recovery-tick.handler',
         bundle: '.build/lambda',
         runtime: 'nodejs22.x',
@@ -228,6 +228,6 @@ export default $config({
       },
     });
 
-    return { api: router.url, jobRecoveryScheduleArn: jobRecoveryTick.nodes.rule.arn };
+    return { api: router.url, jobRecoveryScheduleArn: jobRecoveryTick.nodes.schedule.arn };
   },
 });

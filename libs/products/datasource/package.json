@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@darun/products-domain": "workspace:*",
-    "@darun/utils-llm": "workspace:*"
+    "@darun/utils-llm": "workspace:*",
+    "dataloader": "2.2.2"
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",

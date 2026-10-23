@@ -3,10 +3,10 @@ import { DrizzleToken } from '@darun/provider-database';
 import { VoteRecordRepository } from '@darun/voting-domain';
 import {
   Vote,
-  VoteRecord,
   VoteRecordRepositoryToken,
   votingVoteInsertFailed,
-  votingVoteRecordInsertFailed,
+  votingDuplicateVote,
+  votingRateLimitExceeded,
 } from '@darun/voting-domain';
 import { and, count, eq, gte, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
@@ -17,53 +17,51 @@ import { votes } from '../entities/VoteSchema';
 export class PostgresqlVoteRecordRepository implements VoteRecordRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
-  async existsByTargetIdAndVoterIpHash(targetId: string, voterIpHash: string): Promise<boolean> {
-    const rows = await this.db
-      .select()
-      .from(voteRecords)
-      .where(and(eq(voteRecords.targetId, targetId), eq(voteRecords.voterIpHash, voterIpHash)))
-      .limit(1);
-
-    return rows.length > 0;
-  }
-
-  async countByVoterIpHashSince(voterIpHash: string, since: Date): Promise<number> {
-    return this.db
-      .select({ value: count() })
-      .from(voteRecords)
-      .where(and(eq(voteRecords.voterIpHash, voterIpHash), gte(voteRecords.createdAt, since)))
-      .then(rows => Number(rows[0]?.value ?? 0));
-  }
-
-  async insert(record: VoteRecord): Promise<VoteRecord> {
-    const inserted = await this.db.insert(voteRecords).values(record).returning();
-
-    if (!inserted[0]) {
-      throw votingVoteRecordInsertFailed();
-    }
-
-    return new VoteRecord(inserted[0].id, inserted[0].targetId, inserted[0].voterIpHash, inserted[0].createdAt);
-  }
-
   async incrementVote(targetId: string, voterIpHash: string): Promise<Vote> {
-    return this.db.transaction(async tx => {
-      const rows = await tx
-        .insert(votes)
-        .values({ targetId, count: 1 })
-        .onConflictDoUpdate({
-          target: votes.targetId,
-          set: { count: sql`${votes.count} + 1` },
-        })
-        .returning();
+    return this.db.transaction(
+      async tx => {
+        // Serialize across Lambda instances, not just within one process. The lock
+        // and both checks must use this transaction's connection.
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${voterIpHash}, 0))`);
+        const duplicate = await tx
+          .select({ id: voteRecords.id })
+          .from(voteRecords)
+          .where(and(eq(voteRecords.targetId, targetId), eq(voteRecords.voterIpHash, voterIpHash)))
+          .limit(1);
+        if (duplicate.length > 0) {
+          throw votingDuplicateVote();
+        }
+        const recent = await tx
+          .select({ value: count() })
+          .from(voteRecords)
+          .where(
+            and(
+              eq(voteRecords.voterIpHash, voterIpHash),
+              gte(voteRecords.createdAt, sql`clock_timestamp() - interval '1 minute'`)
+            )
+          );
+        if (Number(recent[0]?.value ?? 0) >= 10) {
+          throw votingRateLimitExceeded('1분 내 최대 10회까지 투표할 수 있습니다.');
+        }
+        const rows = await tx
+          .insert(votes)
+          .values({ targetId, count: 1 })
+          .onConflictDoUpdate({
+            target: votes.targetId,
+            set: { count: sql`${votes.count} + 1` },
+          })
+          .returning();
 
-      const vote = rows[0];
-      if (!vote) {
-        throw votingVoteInsertFailed();
-      }
+        const vote = rows[0];
+        if (!vote) {
+          throw votingVoteInsertFailed();
+        }
 
-      await tx.insert(voteRecords).values({ targetId, voterIpHash });
+        await tx.insert(voteRecords).values({ targetId, voterIpHash, createdAt: sql`clock_timestamp()` });
 
-      return new Vote(vote);
-    });
+        return new Vote(vote);
+      },
+      { isolationLevel: 'read committed' }
+    );
   }
 }

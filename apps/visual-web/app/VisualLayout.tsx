@@ -1,6 +1,6 @@
 'use client';
 
-import { ContentArea, Logo, Search } from '@darun/ui';
+import { Logo, Search } from '@darun/ui';
 import { Link, usePathname, useRouter, useSearchParams } from '@darun/utils-router';
 import { FormEvent, ReactNode, Suspense, useCallback, useEffect, useRef } from 'react';
 import { VISUAL_NAV_TABS, isTabActive } from './visualNav';
@@ -43,19 +43,7 @@ export function getRetainedNavHref(
   return queryString ? `${targetHref}?${queryString}` : targetHref;
 }
 
-type NavTabItem = {
-  href: string;
-  label: string;
-};
-
-const NAV_ITEMS: readonly NavTabItem[] = [...VISUAL_NAV_TABS, { href: '/collections', label: '컬렉션' }];
-
-function isNavItemActive(pathname: string | null, href: string) {
-  if (href === '/collections') {
-    return pathname === '/collections' || (pathname !== null && pathname.startsWith('/collections/'));
-  }
-  return isTabActive(pathname, href);
-}
+const NAV_ITEMS = VISUAL_NAV_TABS;
 
 function VisualHeader() {
   const pathname = usePathname();
@@ -94,12 +82,12 @@ function VisualHeader() {
     const targetBasePath =
       pathname && pathname.startsWith('/flows') ? '/flows' : pathname && pathname.startsWith('/apps') ? '/apps' : '/';
 
-    const retainedKeys = ['platform', 'product'];
+    const retainedKeys: string[] = [];
     if (targetBasePath === '/') {
-      retainedKeys.push('screenType');
+      retainedKeys.push('platform', 'product', 'screenType', 'element');
     }
     if (targetBasePath === '/flows') {
-      retainedKeys.push('flowType');
+      retainedKeys.push('platform', 'product', 'flowType');
     }
     const nextParams = new URLSearchParams();
     if (searchParams) {
@@ -124,16 +112,12 @@ function VisualHeader() {
   const isAppRoute = Boolean(pathname && pathname.startsWith('/apps'));
   const isFlowRoute = Boolean(pathname && pathname.startsWith('/flows'));
   const searchLabel = isAppRoute ? '앱 검색' : isFlowRoute ? '플로우 검색' : '스크린샷 검색';
-  const searchPlaceholder = isAppRoute
-    ? '어떤 앱을 찾고 있나요?'
-    : isFlowRoute
-      ? '어떤 플로우를 찾고 있나요?'
-      : '제품, 화면, 키워드로 검색하세요.';
+  const searchPlaceholder = isAppRoute ? '앱 검색' : isFlowRoute ? '플로우 검색' : '앱, 화면 검색';
   const hasPageSearch = pathname === '/' || pathname === '/apps' || pathname === '/flows';
 
   return (
     <div className="flex w-full flex-wrap items-center justify-between gap-3 py-2.5 sm:min-h-16 sm:py-2">
-      <div className="flex min-w-0 items-center gap-3 sm:gap-8">
+      <div className="flex min-w-0 w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-nowrap sm:gap-8">
         <Link
           href="/"
           aria-label="다른 Visual 홈"
@@ -144,17 +128,20 @@ function VisualHeader() {
             다른 <span className="font-medium text-dark-600">Visual</span>
           </span>
         </Link>
-        <nav aria-label="Visual 탐색" className="flex min-w-0 items-center gap-1">
+        <nav
+          aria-label="Visual 탐색"
+          className="flex min-w-0 w-full flex-wrap items-center gap-1 sm:w-auto sm:flex-nowrap"
+        >
           {NAV_ITEMS.map(tab => {
-            const active = isNavItemActive(pathname, tab.href);
+            const active = isTabActive(pathname, tab.href);
             const href = getRetainedNavHref(tab.href, pathname, searchParams);
             return (
               <Link
                 key={tab.href}
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className={`relative inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 ${
-                  active ? 'bg-surface-100 text-dark-900' : 'text-dark-600 hover:bg-surface-50 hover:text-dark-900'
+                className={`inline-flex min-h-11 items-center border-b-2 px-2 text-sm font-semibold whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 ${
+                  active ? 'border-dark-900 text-dark-900' : 'border-transparent text-dark-600 hover:text-dark-900'
                 }`}
               >
                 {tab.label}
@@ -202,7 +189,7 @@ function VisualHeader() {
 function VisualHeaderFallback() {
   return (
     <div className="flex w-full items-center py-2.5 sm:min-h-16 sm:py-2">
-      <div className="flex min-w-0 items-center gap-3 sm:gap-8">
+      <div className="flex min-w-0 w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-nowrap sm:gap-8">
         <Link
           href="/"
           aria-label="다른 Visual 홈"
@@ -213,7 +200,10 @@ function VisualHeaderFallback() {
             다른 <span className="font-medium text-dark-600">Visual</span>
           </span>
         </Link>
-        <nav aria-label="Visual 탐색" className="flex min-w-0 items-center gap-1">
+        <nav
+          aria-label="Visual 탐색"
+          className="flex min-w-0 w-full flex-wrap items-center gap-1 sm:w-auto sm:flex-nowrap"
+        >
           {NAV_ITEMS.map(tab => (
             <Link
               key={tab.href}
@@ -239,7 +229,7 @@ export function VisualLayout({ children }: { children: ReactNode }) {
         본문으로 건너뛰기
       </a>
       <header className="sticky top-0 z-40 w-full border-b border-dark-150 bg-white">
-        <div className="mx-auto w-full max-w-[1440px] px-4 md:px-6">
+        <div className="mx-auto w-full max-w-[1440px] px-4 md:px-8">
           <Suspense fallback={<VisualHeaderFallback />}>
             <VisualHeader />
           </Suspense>
@@ -248,21 +238,21 @@ export function VisualLayout({ children }: { children: ReactNode }) {
       <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">
         {children}
       </main>
-      <footer className="mt-8 border-t border-dark-150 bg-white py-6">
-        <ContentArea>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-dark-600 break-words [word-break:keep-all]">
-              © <span className="tabular-nums">{new Date().getFullYear()}</span> Croco · 다른 Visual은 서비스 화면과
-              UX를 소개하는 다른(darun)의 공간입니다.
-            </p>
+      <footer className="mt-8 border-t border-dark-100 py-5">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 text-xs text-dark-600 md:px-8">
+          <p>© {new Date().getFullYear()} 다른 Visual</p>
+          <div className="flex flex-wrap items-center gap-5">
+            <Link href="/saves" className="inline-flex min-h-11 items-center whitespace-nowrap hover:text-dark-900">
+              계정에 저장한 화면
+            </Link>
             <a
               href="https://darun.io/ko"
-              className="inline-flex min-h-11 items-center rounded-lg text-xs font-semibold text-dark-600 whitespace-nowrap transition-colors duration-150 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 sm:text-sm"
+              className="inline-flex min-h-11 items-center whitespace-nowrap hover:text-dark-900"
             >
-              darun.io 서비스 비교
+              darun.io
             </a>
           </div>
-        </ContentArea>
+        </div>
       </footer>
     </div>
   );

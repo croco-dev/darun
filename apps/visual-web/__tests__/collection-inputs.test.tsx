@@ -19,6 +19,11 @@ function persisted(): NamedCollection[] {
   return JSON.parse(localStorage.getItem(KEY) ?? '[]');
 }
 
+function pressEnter(input: HTMLInputElement, init: Record<string, unknown>) {
+  // jsdom does not submit forms as the browser default action for keyDown.
+  if (fireEvent.keyDown(input, init)) fireEvent.submit(input.closest('form')!);
+}
+
 beforeEach(() => {
   localStorage.clear();
   window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
@@ -74,7 +79,7 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
       const writes = vi.spyOn(Storage.prototype, 'setItem');
       fireEvent.compositionStart(input);
       fireEvent.change(input, { target: { value: '  결제 참고  ' } });
-      fireEvent.keyDown(input, { key: 'Enter', ...boundary });
+      pressEnter(input, { key: 'Enter', ...boundary });
       expect(input.value).toBe('  결제 참고  ');
       expect(writes).not.toHaveBeenCalled();
       expect(localStorage.getItem(KEY)).toBeNull();
@@ -86,11 +91,11 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
       fireEvent.compositionEnd(input, { data: '고' });
       expect(input.value).toBe('  결제 참고  ');
       expect(writes).not.toHaveBeenCalled();
-      fireEvent.keyDown(input, { key: 'Enter', keyCode: 13, isComposing: false });
+      pressEnter(input, { key: 'Enter', keyCode: 13, isComposing: false });
       expectCreated('결제 참고');
       expect(input.value).toBe('');
       expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
-      fireEvent.keyDown(input, { key: 'Enter', keyCode: 13 });
+      pressEnter(input, { key: 'Enter', keyCode: 13 });
       expectCreated('결제 참고');
       expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
     });
@@ -100,13 +105,13 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
       const button = screen.getByRole('button', { name: surface === 'Collections' ? '컬렉션 만들기' : '만들기' });
       const writes = vi.spyOn(Storage.prototype, 'setItem');
       fireEvent.change(input, { target: { value: '   ' } });
-      fireEvent.keyDown(input, { key: 'Enter', keyCode: 13 });
+      pressEnter(input, { key: 'Enter', keyCode: 13 });
       expect(button).toHaveProperty('disabled', true);
       fireEvent.click(button);
       expect(writes).not.toHaveBeenCalled();
       expect(input.maxLength).toBe(60);
       fireEvent.change(input, { target: { value: '  일반 참고  ' } });
-      if (submit === 'Enter') fireEvent.keyDown(input, { key: 'Enter', keyCode: 13 });
+      if (submit === 'Enter') pressEnter(input, { key: 'Enter', keyCode: 13 });
       else fireEvent.click(button);
       expectCreated('일반 참고');
       expect(input.value).toBe('');
@@ -119,7 +124,7 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
         throw new Error('synthetic quota');
       });
       fireEvent.change(input, { target: { value: '다시 저장' } });
-      fireEvent.keyDown(input, { key: 'Enter', keyCode: 13 });
+      pressEnter(input, { key: 'Enter', keyCode: 13 });
       expect(screen.getByRole('alert').textContent).toContain('저장하지 못했습니다');
       expect(input.value).toBe('다시 저장');
       expect(persisted()).toEqual([]);

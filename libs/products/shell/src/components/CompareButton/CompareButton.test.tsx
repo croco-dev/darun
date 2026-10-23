@@ -45,7 +45,16 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'ko',
-  useTranslations: () => (key: string) => (key === 'remove' ? '비교 취소' : '비교에 추가'),
+  useTranslations: () => (key: string) =>
+    new Map(
+      Object.entries({
+        remove: '비교 취소',
+        add: '비교에 추가',
+        limit: '두 서비스까지 비교할 수 있습니다',
+        viewCompare: '선택한 서비스 비교',
+        storageError: '저장 실패',
+      })
+    ).get(key) ?? key,
 }));
 
 const STORAGE_KEY = 'compare-products';
@@ -147,7 +156,7 @@ describe('CompareButton', () => {
     expect(mockPush).toHaveBeenCalledWith('/ko/compare/product-a/product-b');
   });
 
-  it('shifts first item when adding a third item and navigates to compare page', () => {
+  it('preserves both products and explains the limit when adding a third', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(['product-a', 'product-b']));
 
     act(() => {
@@ -161,8 +170,10 @@ describe('CompareButton', () => {
       button.click();
     });
 
-    expect(localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(['product-b', 'product-c']));
-    expect(mockPush).toHaveBeenCalledWith('/ko/compare/product-b/product-c');
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(['product-a', 'product-b']));
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(container.querySelector('[role="status"]')?.textContent).toContain('두 서비스까지');
+    expect(container.querySelector('a')?.getAttribute('href')).toBe('/ko/compare/product-a/product-b');
   });
 
   it('emits add event when first product is added to empty compare list', () => {
@@ -230,7 +241,7 @@ describe('CompareButton', () => {
     });
   });
 
-  it('emits shift+navigate event when third product is added', () => {
+  it('does not emit navigation analytics when the compare limit is reached', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(['product-a', 'product-b']));
 
     act(() => {
@@ -243,13 +254,25 @@ describe('CompareButton', () => {
       button.click();
     });
 
-    expect(mockTrack).toHaveBeenCalledTimes(1);
-    expect(mockTrack).toHaveBeenCalledWith('compare_cta_clicked', {
-      productSlug: 'product-c',
-      action: 'navigate',
-      source: 'trending',
-      compareCount: 2,
-      targetSlug: 'product-b',
+    expect(mockTrack).not.toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('does not navigate or change selection when browser storage rejects the write', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(['product-a']));
+    act(() => {
+      root?.render(<CompareButton slug="product-b" />);
     });
+    const write = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    act(() => {
+      (container.querySelector('[data-testid="compare-button"]') as HTMLButtonElement).click();
+    });
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockTrack).not.toHaveBeenCalled();
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(['product-a']));
+    expect(container.querySelector('[role="status"]')?.textContent).toContain('저장 실패');
+    write.mockRestore();
   });
 });

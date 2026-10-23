@@ -396,7 +396,8 @@ export const ProductResearchSection = () => {
     setOfficialUrlConfirmation(null);
     setMaterializedSlug(stored?.materializedSlug ?? null);
     const selectedJobId = researchJobIdParam ?? stored?.jobId ?? null;
-    prefilledJobRef.current = stored?.review.name || stored?.review.slug ? selectedJobId : null;
+    prefilledJobRef.current =
+      stored?.prefilledJobId === selectedJobId || stored?.review.name || stored?.review.slug ? selectedJobId : null;
     setActiveJobId(selectedJobId);
     restoredJobIdRef.current = stored?.materializedSlug ? null : selectedJobId;
     setHydrated(true);
@@ -424,6 +425,7 @@ export const ProductResearchSection = () => {
       officialUrl,
       jobId,
       review,
+      prefilledJobId: prefilledJobRef.current,
       logoFileName: logoSelection?.kind === 'file' ? logoSelection.fileName : null,
       uploadedLogoUrl,
       materializedSlug,

@@ -78,6 +78,7 @@ cp apps/visual-web/.env.sample apps/visual-web/.env.local
 
 Cloudinary 이미지 업로드 요청은 서버가 서명한 `folder`, `timestamp`, `public_id`와 동일한 값을 전송해야 합니다. 공유 `useImageUpload`의 `displayName`은 서명 입력과 업로드 요청의 `public_id`에 함께 사용하며, 이를 누락하거나 변경하면 `Invalid Signature` 오류가 발생합니다.
 
+상품 편집 폼은 실제 입력과 레이블·오류 설명을 연결합니다. 요약을 빈 문자열로 저장할 수 있으며, 편집 중 닫았다 다시 열거나 저장에 실패해도 입력을 보존합니다. 저장 중에는 중복 제출과 닫기를 막습니다. AI 소개 후보는 현재 상품과 `productId`가 일치할 때만 검토·적용할 수 있고, 검토자가 비운 값은 재조회로 복원하지 않습니다.
 LLM 모델 조회는 Firebase 토큰으로 확인된 관리자만 `POST /api/llm/models`의 JSON 본문 `{endpoint?, apiKey?}`로 요청합니다. 인증된 GET은 `405`와 `Allow: POST`를 반환하며 키를 query에 넣지 않습니다. 공개 HTTPS 호스트와 기본 443 포트만 허용하고, 전체 DNS 결과를 검증한 뒤 연결 주소를 고정합니다. 내부 주소·IP literal·credential/query/fragment·redirect는 허용하지 않습니다. 요청 JSON은 16KiB, 공급자 응답은 2MiB, DNS부터 응답 종료까지는 10초로 제한합니다. 프록시 실패 시 브라우저에서 공급자로 직접 재요청하지 않습니다. 모델의 구조화 응답 표시는 공급자 메타데이터에 따른 힌트이며 Darun schema 검증 결과가 아닙니다.
 
 브라우저에서 LLM 모델 기본값과 타입은 `@darun/utils-llm/model`에서 가져옵니다. 패키지 루트는 Node.js `AsyncLocalStorage`를 사용하는 서버용 LLM 클라이언트를 포함하므로 클라이언트 컴포넌트에서 참조하지 않습니다.
@@ -192,6 +193,11 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
    배포 명령: `sst deploy --stage prod`
    이때 `RUNNING_ENV=prod` 값은 Sentry 환경 분류와 Cloudinary 업로드 폴더 규칙에 영향을 주므로 그대로 유지해야 합니다.
 
+## 비동기 작업 복구
+
+SST의 `JobRecoveryTick`은 `CronV2`로 매분 번역·AI 소개·리서치·상품 콘텐츠 동기화 작업의 복구 handler를 실행하며, 네 작업 큐에 대한 `sqs:SendMessage` 권한과 큐 URL을 전달합니다. 배포 출력의 `jobRecoveryScheduleArn` ARN으로 생성된 스케줄을 확인할 수 있습니다. 번역 결과는 작업 행을 잠근 뒤 lease를 다시 확인한 같은 트랜잭션에서만 저장합니다. 동일 대상·종류·언어의 활성 번역 작업은 중복 생성하지 않으며, 번역·소개 작업은 logical job별로 최대 5회 시도합니다. 수동 재시도는 실패한 작업 이력을 보존하고 `retryOfJobId`로 연결한 새 logical job을 만듭니다.
+
+격리 PostgreSQL 주소를 `W4_DATABASE_URL`에 지정하고 `W4_PG=1 pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W4JobLeaseRecovery.pg.test.ts`로 lease 소유권과 만료된 실행의 확정 쓰기 거절을 검증합니다. 운영 DB를 이 회귀 검증에 사용하지 않습니다. 공개 GraphQL mutation 이름은 유지하며 내부 소개 생성 호환 alias는 사용하지 않습니다.
 ## AI 소개 후보의 근거와 출력 계약
 
 소개 생성은 Writer/Reviewer 두 번의 구조화 응답을 검증합니다. 각 backed text는 `text`, `evidenceRefs`, `bullets`, `quote`, `link`를 모두 요구하며 미사용 값은 `[]`, `false`, `null`입니다. 새 생성은 직접 인용을 입증할 근거 계약이 없어 `quote:true`를 거절합니다. 기존 blockquote와 저장된 후보 HTML은 그대로 유지하며, schema·근거 ID 존재·LLM reviewer 결과를 사실성 인증으로 표시하지 않습니다. 근거가 적으면 짧은 소개와 빈 추천 목록을 허용합니다.
@@ -335,6 +341,26 @@ UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어�
 
 ## 코드 품질
 
+### PostgreSQL 무결성 검사
+
+PR CI는 임시 PostgreSQL 17 서비스에 `darun_job_config_attempts`, `darun_translation_integrity`,
+`darun_atomic_integrity`를 각각 생성해 작업 설정, 번역 저장, 소개 적용·리서치 materialization 검사를 실행합니다.
+각 suite는 실제 migration을 적용하고 외부 공급자는 mock으로 대체합니다. 운영 자격 증명은 사용하지 않습니다.
+CI 전용 reporter는 세 URL 중 하나가 없거나, 수집된 테스트가 없거나, skip/todo/실패가 하나라도 있으면 명령을 실패시킵니다.
+suite별 실행 건수와 skip 건수는 CI 로그에 남으며 이 단계가 실패하면 PR build job도 실패합니다.
+
+로컬의 일반 `pnpm test`는 URL이 없는 DB suite를 계속 건너뜁니다. 직접 검증하려면 **격리된 로컬 PostgreSQL**에
+위 세 DB를 생성하고 다음 명령을 실행합니다. 예시 포트는 PR CI와 같은 `55437`입니다.
+
+```bash
+export JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_job_config_attempts
+export TRANSLATION_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity
+export ATOMIC_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity
+reporter="$PWD/apps/graphql-api/scripts/required-postgres-reporter.ts"
+pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts --reporter=default --reporter="$reporter"
+pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts --reporter=default --reporter="$reporter"
+```
+
 PR을 올리기 전에 아래 명령이 모두 통과해야 합니다.
 
 ```bash
@@ -353,6 +379,12 @@ PR CI의 전체 패키지 검사는 `pnpm run typecheck:tsrs --concurrency=4 -- 
 `tsrs`는 버전을 고정하고 `--noEmit --incremental false`로 실행해 JavaScript를 출력하거나 기존 TypeScript의 증분 캐시를 덮어쓰지 않습니다. 기존 `typescript` 의존성과 `tsc` 명령은 유지하며, Lambda의 decorator metadata 변환과 테스트에서 사용하는 TypeScript API도 그대로 유지합니다. 새 패키지에도 두 검사 스크립트를 함께 정의합니다.
 
 `tsrs performance` 워크플로는 수동 실행용입니다. 기본 브랜치에 워크플로가 반영된 뒤 GitHub Actions에서 실행하면, PR CI와 같은 Ubuntu 22.04·DB 서비스 조건의 전체 검사와 Ubuntu 최신 실행기의 앱별 검사를 비교합니다. Turbo 결과 캐시를 끄고 각 설정을 3회 실행하며, 매번 별도 cgroup v2의 `memory.peak`로 모든 하위 프로세스의 최대 메모리를 측정합니다. 원본 측정값과 로그는 workflow artifact에 보관합니다. 측정 도구의 회귀 테스트는 `python3 -B -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'`로 실행합니다.
+
+앱의 ESLint glob은 따옴표로 감싸 중첩 소스까지 검사합니다. Next.js가 생성하는 `.next/`와 `next-env.d.ts`는 검사 대상에서 제외합니다.
+
+GraphQL 변경은 Node.js 22에서 `pnpm --filter graphql-api build:lambda`와 `pnpm --filter graphql-api verify:lambda`도 실행합니다. 이 검사는 번들 초기화뿐 아니라 실제 resolver 스키마와 커밋된 `schema.graphql`의 일치 여부를 확인합니다.
+
+목록 API의 `productsByCategory`와 `visualApps`는 기본 24개씩 반환합니다. 호출자는 `pageInfo.endCursor`와 `hasNextPage`로 이어 읽으며, 목록 표시를 위해 모든 페이지나 각 앱의 화면 목록을 미리 읽지 않습니다. 앱 카드에는 `coverScreenshot`과 `screenshotCount`를 사용합니다. 상품의 태그·추천 수는 선택된 필드만 배치 조회하며, 변경 가능한 데이터를 읽는 상품 ID loader는 요청 사이에 결과를 보관하지 않습니다.
 
 Next.js 버전은 workspace catalog와 override를 함께 갱신하며 모든 웹 앱은 catalog를 사용합니다. OpenTelemetry API는 웹과 서버 SDK의 공통 호환 범위인 `1.9.1`로 통합합니다. 서로 다른 peer 버전으로 Drizzle 타입이 중복 생성되는 것을 방지하며, Lambda의 Sentry·profiling SDK `10.38.0`과 기존 서버 계측 설정은 유지합니다. 의존성 취약점은 감사 기준을 낮추거나 제외하지 않고 수정 버전과 잠금 파일을 함께 갱신합니다.
 
@@ -381,7 +413,7 @@ Lefthook이 설치되어 있으면 커밋 전 ESLint 검사가 자동으로 실�
 
 ### 새 패키지 vitest 설정
 
-새 패키지를 생성할 때 반드시 `vitest.config.ts`를 포함해야 합니다. `@darun/utils-vitest-config`의 팩토리 함수를 사용하고, 계층별 목표를 충족하는 시점에 `thresholds` 상수를 적용합니다.
+테스트가 있는 새 패키지는 `vitest.config.ts`를 포함해야 합니다. `@darun/utils-vitest-config`의 팩토리 함수를 사용하고, 계층별 목표를 충족하는 시점에 `thresholds` 상수를 적용합니다.
 
 ```typescript
 // 백엔드 domain 패키지 — threshold 포함
@@ -404,7 +436,9 @@ import { createNodeConfig } from '@darun/utils-vitest-config';
 export default defineConfig(createNodeConfig());
 ```
 
-실제 테스트 코드가 없는 패키지도 `passWithNoTests: true`(기본값)로 turbo 그래프에 포함됩니다.
+테스트가 없는 패키지는 `test` 스크립트를 생략합니다. `echo`만 실행하는 작업은 검증이 아니므로 Turbo 테스트 그래프에 추가하지 않습니다. 공통 설정의 `passWithNoTests`는 Vitest를 사용하는 패키지에만 적용됩니다.
+
+타이머로 시작하는 UI 조회 테스트는 가짜 타이머와 `act`로 예약된 작업을 실행한 뒤 결과를 확인하고, 테스트 종료 시 실제 타이머를 복구합니다. 병렬 실행 부하 때문에 실패하는 테스트의 대기 시간을 임의로 늘리지 않습니다.
 
 `pnpm test:coverage` 실행 시 lcov·html 리포트가 각 패키지 `coverage/` 디렉터리에 생성되고, CI에서 `coverage-reports` 아티팩트로 업로드됩니다.
 

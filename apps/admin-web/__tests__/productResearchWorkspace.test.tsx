@@ -2386,7 +2386,12 @@ describe('research registration action ownership with real Apollo', () => {
       await waitFor(() => expect(materializations).toHaveLength(1));
       expect(materializations[0].variables.input.logoUrl).toBe('https://res.cloudinary.com/demo/current-logo.png');
       materializations[0].respond({ id: 'prod-current', slug: 'current', name: '현재 Product' });
-      await waitFor(() => expect(navigated()).toEqual(['/products/current']));
+      await waitFor(() => {
+        expect(navigated()).toEqual(['/products/current']);
+        expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
+          'current'
+        );
+      });
       const completed = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(completed.uploadedLogoUrl).toBe('https://res.cloudinary.com/demo/current-logo.png');
       expect(completed.materializedSlug).toBe('current');
@@ -2440,6 +2445,9 @@ describe('research registration action ownership with real Apollo', () => {
         </ApolloProvider>
       );
       await screen.findByDisplayValue('Notion');
+      await waitFor(() =>
+        expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.name).toBe('Notion')
+      );
       const latest = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       await act(async () => {
         finishStaleMaterialization(materializations[0], outcome);

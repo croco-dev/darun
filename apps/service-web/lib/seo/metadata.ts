@@ -28,10 +28,10 @@ export const SITE_COPY: Record<
   ko: {
     title: '다른 - 서비스 비교를 한 곳에서',
     description:
-      '서비스의 특징과 대안을 한곳에서 찾고 비교합니다. 다양한 소프트웨어, 웹사이트, 어플리케이션을 검색하고 정보를 확인해보세요.',
+      '서비스의 특징과 대안을 한곳에서 찾고 비교합니다. 다양한 소프트웨어, 웹사이트, 애플리케이션을 검색하고 정보를 확인해보세요.',
     ogImageAlt: '서비스의 특징과 대안을 한곳에서 찾고 비교합니다',
     rankingTitle: '인기 서비스 랭킹 Top 30 - 다른',
-    rankingDescription: '가장 많은 관심을 받은 서비스들의 랭킹입니다. 다양한 인기 서비스의 특징과 대안을 확인해보세요.',
+    rankingDescription: '추천 수와 등록 시점을 반영한 서비스 순위입니다. 서비스의 특징과 대안을 확인해보세요.',
     categoriesTitle: '서비스 카테고리 - 다른',
     categoriesDescription: '카테고리별로 다양한 서비스와 대안을 찾아보세요.',
     searchTitle: '서비스 검색 - 다른',
@@ -45,8 +45,7 @@ export const SITE_COPY: Record<
       'Discover and compare software, websites, and applications in one place. Explore features, alternatives, and company info.',
     ogImageAlt: 'Discover and compare software, websites, and applications in one place',
     rankingTitle: 'Top 30 Popular Services - Darun',
-    rankingDescription:
-      'Rankings of services receiving the most attention. Explore features and alternatives of popular services.',
+    rankingDescription: 'Services ranked using votes and publication recency. Explore their features and alternatives.',
     categoriesTitle: 'Service Categories - Darun',
     categoriesDescription: 'Browse services and alternatives by category.',
     searchTitle: 'Search Services - Darun',

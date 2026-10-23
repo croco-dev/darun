@@ -54,6 +54,34 @@ describe('useGenerateProductDescriptionButton', () => {
     >);
   });
 
+  it('blocks a completed candidate belonging to another product', async () => {
+    const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
+    lazyQueryFn.mockResolvedValueOnce({
+      data: {
+        tempProductBySlug: { id: 'prod-1' },
+        productDescriptionJob: {
+          id: 'wrong-job',
+          productId: 'prod-other',
+          status: 'completed',
+          candidateHtml: '<p>Other</p>',
+        },
+      },
+    });
+    act(() => result.current.setJobIdInput('wrong-job'));
+    await act(async () => {
+      await result.current.handleReopenJob();
+    });
+    expect(result.current.isPreviewOpen).toBe(false);
+    expect(result.current.candidateJob).toBeNull();
+    await act(async () => {
+      await result.current.handleApply();
+    });
+    expect(applyMutateFn).not.toHaveBeenCalled();
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '후보 다시 열기 실패', color: 'red' })
+    );
+  });
+
   it('calls generateProductDescription mutation with slug and opens preview on immediate completion', async () => {
     const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
 

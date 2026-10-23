@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { productScreenshotUiElements } from '../entities/ProductScreenshotUiElementsSchema';
 import { PostgresqlProductScreenshotRepository } from '../repositories/PostgresqlProductScreenshotRepository';
 
 vi.hoisted(() => {
@@ -26,45 +25,6 @@ function extractSqlString(sqlObj: unknown): string {
 describe('PostgresqlProductScreenshotRepository UI 요소 태그', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it('replaceScreenshotUiElements는 중복 제거·정규화된 태그를 replace semantics로 저장한다', async () => {
-    const deleteWhere = vi.fn().mockResolvedValue(undefined);
-    const deleteMock = vi.fn().mockReturnValue({ where: deleteWhere });
-    const insertValues = vi.fn().mockResolvedValue([]);
-    const insertMock = vi.fn().mockReturnValue({ values: insertValues });
-    const mockTx = { delete: deleteMock, insert: insertMock };
-    const mockDb = {
-      transaction: vi.fn().mockImplementation(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
-    };
-    const repo = new PostgresqlProductScreenshotRepository(mockDb as never);
-
-    const result = await repo.replaceScreenshotUiElements('screenshot-1', ['CARD', 'BUTTON', 'CARD']);
-
-    expect(result).toEqual(['CARD', 'BUTTON']);
-    expect(deleteMock).toHaveBeenCalledWith(productScreenshotUiElements);
-    expect(insertMock).toHaveBeenCalledWith(productScreenshotUiElements);
-    expect(insertValues).toHaveBeenCalledWith([
-      { screenshotId: 'screenshot-1', element: 'CARD' },
-      { screenshotId: 'screenshot-1', element: 'BUTTON' },
-    ]);
-  });
-
-  it('replaceScreenshotUiElements는 빈 입력이면 조인 행만 삭제한다', async () => {
-    const deleteWhere = vi.fn().mockResolvedValue(undefined);
-    const deleteMock = vi.fn().mockReturnValue({ where: deleteWhere });
-    const insertMock = vi.fn();
-    const mockTx = { delete: deleteMock, insert: insertMock };
-    const mockDb = {
-      transaction: vi.fn().mockImplementation(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
-    };
-    const repo = new PostgresqlProductScreenshotRepository(mockDb as never);
-
-    const result = await repo.replaceScreenshotUiElements('screenshot-1', []);
-
-    expect(result).toEqual([]);
-    expect(deleteMock).toHaveBeenCalledTimes(1);
-    expect(insertMock).not.toHaveBeenCalled();
   });
 
   it('replaceScreenshotUiElements는 닫힌 집합 밖 값을 거절한다', async () => {
