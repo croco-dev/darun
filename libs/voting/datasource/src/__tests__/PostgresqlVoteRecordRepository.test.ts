@@ -1,9 +1,9 @@
 import 'reflect-metadata';
-import { randomUUID } from 'node:crypto';
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { UpvoteProduct } from '@darun/voting-domain';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import { PostgresqlVoteRecordRepository } from '../repositories/PostgresqlVoteRecordRepository';
 
 // Explicit opt-in URL must point at a disposable local database, never production.

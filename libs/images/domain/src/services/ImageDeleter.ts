@@ -1,7 +1,7 @@
-import { Token } from "typedi";
+import { Token } from 'typedi';
 
 export interface ImageDeleter {
   delete(imageUrl: string): Promise<void>;
 }
 
-export const ImageDeleterToken = new Token<ImageDeleter>("ImageDeleter");
+export const ImageDeleterToken = new Token<ImageDeleter>('ImageDeleter');

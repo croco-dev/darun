@@ -47,6 +47,8 @@ jobs:
         run: pnpm install
       - name: Audit dependencies
         run: pnpm audit --audit-level=critical
+      - name: Verify recursive lint coverage
+        run: node --test scripts/lint-coverage.test.mjs
       - run: pnpm run lint
       - name: Type Check
         run: pnpm run typecheck

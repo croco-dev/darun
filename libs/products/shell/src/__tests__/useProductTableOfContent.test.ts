@@ -1,11 +1,11 @@
-import { renderHook, act } from "@testing-library/react";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { useProductTableOfContent } from "../components/ProductTableOfContent/useProductTableOfContent";
+import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { useProductTableOfContent } from '../components/ProductTableOfContent/useProductTableOfContent';
 
 class MockIntersectionObserver implements IntersectionObserver {
   readonly root: Element | Document | null = null;
-  readonly rootMargin: string = "";
-  readonly scrollMargin: string = "";
+  readonly rootMargin: string = '';
+  readonly scrollMargin: string = '';
   readonly thresholds: readonly number[] = [];
 
   static observers = new Set<MockIntersectionObserver>();
@@ -35,7 +35,7 @@ class MockIntersectionObserver implements IntersectionObserver {
   }
 
   trigger(entries: Partial<IntersectionObserverEntry>[]) {
-    const fullEntries = entries.map((entry) => ({
+    const fullEntries = entries.map(entry => ({
       boundingClientRect: {
         top: 0,
         bottom: 0,
@@ -61,7 +61,7 @@ class MockIntersectionObserver implements IntersectionObserver {
       },
       isIntersecting: false,
       rootBounds: null,
-      target: document.createElement("div"),
+      target: document.createElement('div'),
       time: Date.now(),
       ...entry,
     })) as IntersectionObserverEntry[];
@@ -70,15 +70,23 @@ class MockIntersectionObserver implements IntersectionObserver {
   }
 }
 
-global.IntersectionObserver =
-  MockIntersectionObserver as unknown as typeof IntersectionObserver;
+global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
 
-describe("useProductTableOfContent", () => {
+function createHeadingSection(id: string, text: string) {
+  const section = document.createElement('section');
+  section.id = id;
+  const heading = document.createElement('h2');
+  heading.textContent = text;
+  section.appendChild(heading);
+  return section;
+}
+
+describe('useProductTableOfContent', () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
-    container = document.createElement("div");
-    container.id = "detail-content";
+    container = document.createElement('div');
+    container.id = 'detail-content';
     document.body.appendChild(container);
     MockIntersectionObserver.observers.clear();
   });
@@ -87,47 +95,27 @@ describe("useProductTableOfContent", () => {
     document.body.removeChild(container);
   });
 
-  it("should detect headings inside detail-content", () => {
-    const section1 = document.createElement("section");
-    section1.id = "heading-1";
-    const h2_1 = document.createElement("h2");
-    h2_1.textContent = "Heading 1";
-    section1.appendChild(h2_1);
-    container.appendChild(section1);
-
-    const section2 = document.createElement("section");
-    section2.id = "heading-2";
-    const h2_2 = document.createElement("h2");
-    h2_2.textContent = "Heading 2";
-    section2.appendChild(h2_2);
-    container.appendChild(section2);
+  it('should detect headings inside detail-content', () => {
+    const section1 = createHeadingSection('heading-1', 'Heading 1');
+    const section2 = createHeadingSection('heading-2', 'Heading 2');
+    container.append(section1, section2);
 
     const { result } = renderHook(() => useProductTableOfContent());
 
     expect(result.current.headings).toEqual([
-      { id: "heading-1", text: "Heading 1" },
-      { id: "heading-2", text: "Heading 2" },
+      { id: 'heading-1', text: 'Heading 1' },
+      { id: 'heading-2', text: 'Heading 2' },
     ]);
   });
 
-  it("should update active heading based on IntersectionObserver events", () => {
-    const section1 = document.createElement("section");
-    section1.id = "heading-1";
-    const h2_1 = document.createElement("h2");
-    h2_1.textContent = "Heading 1";
-    section1.appendChild(h2_1);
-    container.appendChild(section1);
-
-    const section2 = document.createElement("section");
-    section2.id = "heading-2";
-    const h2_2 = document.createElement("h2");
-    h2_2.textContent = "Heading 2";
-    section2.appendChild(h2_2);
-    container.appendChild(section2);
+  it('should update active heading based on IntersectionObserver events', () => {
+    const section1 = createHeadingSection('heading-1', 'Heading 1');
+    const section2 = createHeadingSection('heading-2', 'Heading 2');
+    container.append(section1, section2);
 
     const { result } = renderHook(() => useProductTableOfContent());
 
-    expect(result.current.activeHeadingId).toBe("heading-1");
+    expect(result.current.activeHeadingId).toBe('heading-1');
 
     const observer = Array.from(MockIntersectionObserver.observers)[0];
     expect(observer).toBeDefined();
@@ -142,7 +130,7 @@ describe("useProductTableOfContent", () => {
       ]);
     });
 
-    expect(result.current.activeHeadingId).toBe("heading-1");
+    expect(result.current.activeHeadingId).toBe('heading-1');
 
     act(() => {
       observer.trigger([
@@ -154,7 +142,7 @@ describe("useProductTableOfContent", () => {
       ]);
     });
 
-    expect(result.current.activeHeadingId).toBe("heading-2");
+    expect(result.current.activeHeadingId).toBe('heading-2');
 
     act(() => {
       observer.trigger([
@@ -166,30 +154,24 @@ describe("useProductTableOfContent", () => {
       ]);
     });
 
-    expect(result.current.activeHeadingId).toBe("heading-1");
+    expect(result.current.activeHeadingId).toBe('heading-1');
   });
 
-  it("should handle dynamic DOM changes with MutationObserver", async () => {
+  it('should handle dynamic DOM changes with MutationObserver', async () => {
     const { result } = renderHook(() => useProductTableOfContent());
 
     expect(result.current.headings).toEqual([]);
 
-    const section1 = document.createElement("section");
-    section1.id = "heading-1";
-    const h2_1 = document.createElement("h2");
-    h2_1.textContent = "Heading 1";
-    section1.appendChild(h2_1);
+    const section1 = createHeadingSection('heading-1', 'Heading 1');
 
     act(() => {
       container.appendChild(section1);
     });
 
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise(resolve => setTimeout(resolve, 0));
     });
 
-    expect(result.current.headings).toEqual([
-      { id: "heading-1", text: "Heading 1" },
-    ]);
+    expect(result.current.headings).toEqual([{ id: 'heading-1', text: 'Heading 1' }]);
   });
 });

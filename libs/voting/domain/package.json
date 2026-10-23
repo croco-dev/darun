@@ -5,7 +5,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "lint": "eslint **/*.ts*",
+    "lint": "eslint \"**/*.{ts,tsx}\"",
     "test": "VOTE_IP_SALT=test vitest run",
     "typecheck": "tsc --noEmit",
     "typecheck:tsrs": "tsrs --noEmit --incremental false"

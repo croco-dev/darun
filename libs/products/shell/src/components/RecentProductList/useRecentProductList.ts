@@ -3,7 +3,6 @@ import { useSuspenseQuery } from '@apollo/client/react';
 import { RecentProductsOnRecentProductListDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 
-
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query RecentProductsOnRecentProductList($locale: String!) {

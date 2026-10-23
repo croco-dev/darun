@@ -11,7 +11,8 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => {
     if (key === 'empty.title') return '집계된 랭킹 서비스가 없습니다';
-    if (key === 'empty.description') return '아직 투표가 집계된 서비스가 없습니다. 다양한 서비스를 탐색하고 첫 번째 표를 남겨보세요!';
+    if (key === 'empty.description')
+      return '아직 투표가 집계된 서비스가 없습니다. 다양한 서비스를 탐색하고 첫 번째 표를 남겨보세요!';
     if (key === 'empty.button') return '서비스 둘러보기';
     return key;
   },

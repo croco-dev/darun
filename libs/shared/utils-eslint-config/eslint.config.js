@@ -169,7 +169,7 @@ const baseConfig = [
   baseSourceConfig,
   packageJsonConfig,
   {
-    ignores: ['**/__generated__/**'],
+    ignores: ['**/__generated__/**', '**/dist/**', '**/build/**', '**/coverage/**'],
   },
 ];
 

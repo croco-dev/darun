@@ -69,9 +69,7 @@ export function createTimeoutLink(options: TimeoutLinkOptions = {}): ApolloLink 
     const context = operation.getContext();
     const rawTimeout = context.timeout;
     const timeoutMs: number =
-      typeof rawTimeout === 'number' && Number.isFinite(rawTimeout)
-        ? rawTimeout
-        : defaultTimeoutMs;
+      typeof rawTimeout === 'number' && Number.isFinite(rawTimeout) ? rawTimeout : defaultTimeoutMs;
 
     if (timeoutMs <= 0) {
       return forward(operation);
@@ -82,15 +80,11 @@ export function createTimeoutLink(options: TimeoutLinkOptions = {}): ApolloLink 
       const rawFetchOptions = (currentContext.fetchOptions || {}) as Record<string, unknown>;
 
       const upstreamSignal = (
-        '__darunOriginalSignal' in currentContext
-          ? currentContext.__darunOriginalSignal
-          : rawFetchOptions.signal
+        '__darunOriginalSignal' in currentContext ? currentContext.__darunOriginalSignal : rawFetchOptions.signal
       ) as AbortSignal | undefined;
 
       if (upstreamSignal?.aborted) {
-        const abortReason =
-          upstreamSignal.reason ??
-          new DOMException('This operation was aborted', 'AbortError');
+        const abortReason = upstreamSignal.reason ?? new DOMException('This operation was aborted', 'AbortError');
         observer.error(abortReason);
         return;
       }

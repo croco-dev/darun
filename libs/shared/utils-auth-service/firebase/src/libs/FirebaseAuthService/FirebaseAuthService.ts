@@ -87,9 +87,7 @@ export class FirebaseAuthService implements AuthService {
     return {
       id: decodedToken.uid,
       email: decodedToken.email ?? '',
-      isAdmin:
-        (decodedToken.roles?.includes('admin') ?? false) ||
-        process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local',
+      isAdmin: (decodedToken.roles?.includes('admin') ?? false) || process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local',
     };
   }
 
@@ -105,9 +103,7 @@ export class FirebaseAuthService implements AuthService {
       handler({
         id: user.uid,
         email: user.email ?? '',
-        isAdmin:
-          roles.includes('admin') ||
-          process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local',
+        isAdmin: roles.includes('admin') || process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local',
       });
 
       this.authStorage?.set({

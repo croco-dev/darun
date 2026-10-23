@@ -42,9 +42,7 @@ describe('PostgresqlAlternativeProductRepository', () => {
     clearAllSpy = vi.spyOn(DataLoader.prototype, 'clearAll');
 
     mockTxDeleteWhere = vi.fn().mockResolvedValue({ count: 2 });
-    mockTxReturning = vi.fn().mockResolvedValue([
-      { id: 'new-1', productId: 'p1', alternativeProductId: 'alt-1' },
-    ]);
+    mockTxReturning = vi.fn().mockResolvedValue([{ id: 'new-1', productId: 'p1', alternativeProductId: 'alt-1' }]);
 
     mockTx = {
       delete: vi.fn(() => ({ where: mockTxDeleteWhere })),
@@ -56,9 +54,11 @@ describe('PostgresqlAlternativeProductRepository', () => {
     };
 
     const mockWhere = vi.fn() as MockWhere;
-    mockSelect = vi.fn().mockResolvedValue([
-      { id: '1', productId: 'p1', alternativeProductId: 'alt-1', createdAt: new Date() },
-    ]) as MockWhere;
+    mockSelect = vi
+      .fn()
+      .mockResolvedValue([
+        { id: '1', productId: 'p1', alternativeProductId: 'alt-1', createdAt: new Date() },
+      ]) as MockWhere;
     mockWhere.mockImplementation(() => (mockSelect as MockWhere)());
 
     mockDb = {
@@ -201,9 +201,7 @@ describe('PostgresqlAlternativeProductRepository', () => {
           { id: 'stale-1', productId: 'p1', alternativeProductId: 'alt-stale', createdAt: new Date() },
           { id: 'created-1', productId: 'p1', alternativeProductId: 'alt-new', createdAt: new Date() },
         ]);
-      mockTxReturning.mockResolvedValueOnce([
-        { id: 'created-1', productId: 'p1', alternativeProductId: 'alt-new' },
-      ]);
+      mockTxReturning.mockResolvedValueOnce([{ id: 'created-1', productId: 'p1', alternativeProductId: 'alt-new' }]);
 
       const before = await repository.findManyByProductId('p1');
       expect(before.map(a => a.alternativeProductId)).toEqual(['alt-stale']);
@@ -213,9 +211,7 @@ describe('PostgresqlAlternativeProductRepository', () => {
 
       const after = await repository.findManyByProductId('p1');
 
-      expect(after.map(a => a.alternativeProductId)).toEqual(
-        expect.arrayContaining(['alt-stale', 'alt-new'])
-      );
+      expect(after.map(a => a.alternativeProductId)).toEqual(expect.arrayContaining(['alt-stale', 'alt-new']));
       expect(after).toHaveLength(2);
       expect(clearAllSpy).toHaveBeenCalled();
     });
@@ -265,9 +261,7 @@ describe('PostgresqlAlternativeProductRepository', () => {
 
       const after = await repository.findManyByProductId('p1');
 
-      expect(after.map(a => a.alternativeProductId)).toEqual(
-        expect.arrayContaining(['alt-stale', 'alt-1', 'alt-2'])
-      );
+      expect(after.map(a => a.alternativeProductId)).toEqual(expect.arrayContaining(['alt-stale', 'alt-1', 'alt-2']));
       expect(after).toHaveLength(3);
       expect(clearAllSpy).toHaveBeenCalled();
     });
@@ -286,9 +280,7 @@ describe('PostgresqlAlternativeProductRepository', () => {
       mockTxDeleteWhere.mockResolvedValueOnce({ count: 1 });
 
       const before = await repository.findManyByProductId('p1');
-      expect(before.map(a => a.alternativeProductId)).toEqual(
-        expect.arrayContaining(['alt-removed', 'alt-remaining'])
-      );
+      expect(before.map(a => a.alternativeProductId)).toEqual(expect.arrayContaining(['alt-removed', 'alt-remaining']));
 
       const alternatives = [
         new AlternativeProduct({ id: 'removed-1', productId: 'p1', alternativeProductId: 'alt-removed' }),

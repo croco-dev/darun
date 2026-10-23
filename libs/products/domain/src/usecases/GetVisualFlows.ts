@@ -3,8 +3,8 @@ import { isVisualPlatform } from '../entities/VisualClassification';
 import { isVisualFlowType } from '../entities/VisualFlowType';
 import { productInvalidArgs } from '../errors/productError';
 import type { ProductFlowRepository, VisualFlowFilter, VisualFlowSummary } from '../repositories/ProductFlowRepository';
-import type { VisualSort } from '../repositories/ProductScreenshotRepository';
 import { ProductFlowRepositoryToken } from '../repositories/ProductFlowRepository';
+import type { VisualSort } from '../repositories/ProductScreenshotRepository';
 import { normalizeVisualQuery } from './ProductScreenshotMetadata';
 
 export const VISUAL_FLOWS_MAX_FIRST = 48;
@@ -77,11 +77,7 @@ export class GetVisualFlows {
           })()
         : await (async () => {
             const [rows, count] = await Promise.all([
-              this.productFlowRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit(
-                filter,
-                first + 1,
-                afterId
-              ),
+              this.productFlowRepository.findManyVisualPublishedByFilterAndAfterIdAndLimit(filter, first + 1, afterId),
               this.productFlowRepository.countVisualPublishedByFilter(filter),
             ]);
             return [rows, count] as const;

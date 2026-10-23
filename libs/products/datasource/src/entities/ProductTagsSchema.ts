@@ -5,17 +5,19 @@ import { ulid } from 'ulid';
 import { products } from './ProductSchema';
 import { tags } from './TagSchema';
 
-export const productTags = pgTable('product_tags', {
-  id: varchar('id', { length: 26 }).primaryKey().$default(ulid),
-  productId: varchar('product_id', { length: 26 })
-    .notNull()
-    .references(() => products.id),
-  tagId: varchar('tag_id', { length: 26 })
-    .notNull()
-    .references(() => tags.id),
-  createdAt: timestamp('created_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-}, (productTags) => [
-  unique('product_tags_product_id_tag_id_unique').on(productTags.productId, productTags.tagId),
-]);
+export const productTags = pgTable(
+  'product_tags',
+  {
+    id: varchar('id', { length: 26 }).primaryKey().$default(ulid),
+    productId: varchar('product_id', { length: 26 })
+      .notNull()
+      .references(() => products.id),
+    tagId: varchar('tag_id', { length: 26 })
+      .notNull()
+      .references(() => tags.id),
+    createdAt: timestamp('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  productTags => [unique('product_tags_product_id_tag_id_unique').on(productTags.productId, productTags.tagId)]
+);
