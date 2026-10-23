@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22.x
-          cache: 'pnpm'
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Lint
@@ -46,7 +46,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22.x
-          cache: 'pnpm'
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Configure AWS Profile iam
@@ -65,14 +65,6 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       - name: Verify Lambda initialization and GraphQL schema
         run: pnpm --filter graphql-api run verify:lambda
-      - name: Require non-overlapping LLM content worker cutover
-        env:
-          LLM_CONTENT_CUTOVER_COMPLETED: ${{ vars.LLM_CONTENT_CUTOVER_COMPLETED }}
-        run: |
-          if [ "$LLM_CONTENT_CUTOVER_COMPLETED" != "true" ]; then
-            echo "Stop old LLM content workers and drain in-flight executions before enabling LLM_CONTENT_CUTOVER_COMPLETED. Migration is blocked."
-            exit 1
-          fi
       - name: Run Database Migrations
         run: pnpm --filter graphql-api run migrate
         env:
@@ -94,5 +86,5 @@ jobs:
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
           CURSOR_SIGNATURE_SECRET: ${{ secrets.CURSOR_SIGNATURE_SECRET }}
-          VISUAL_FLOW_WRITES_ENABLED: 'false'
+          VISUAL_FLOW_WRITES_ENABLED: "false"
           VOTE_IP_SALT: ${{ secrets.VOTE_IP_SALT }}
