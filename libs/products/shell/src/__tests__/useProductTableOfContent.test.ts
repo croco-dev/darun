@@ -72,6 +72,15 @@ class MockIntersectionObserver implements IntersectionObserver {
 
 global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
 
+function createHeadingSection(id: string, text: string) {
+  const section = document.createElement('section');
+  section.id = id;
+  const heading = document.createElement('h2');
+  heading.textContent = text;
+  section.appendChild(heading);
+  return section;
+}
+
 describe('useProductTableOfContent', () => {
   let container: HTMLDivElement;
 
@@ -87,19 +96,9 @@ describe('useProductTableOfContent', () => {
   });
 
   it('should detect headings inside detail-content', () => {
-    const section1 = document.createElement('section');
-    section1.id = 'heading-1';
-    const h2_1 = document.createElement('h2');
-    h2_1.textContent = 'Heading 1';
-    section1.appendChild(h2_1);
-    container.appendChild(section1);
-
-    const section2 = document.createElement('section');
-    section2.id = 'heading-2';
-    const h2_2 = document.createElement('h2');
-    h2_2.textContent = 'Heading 2';
-    section2.appendChild(h2_2);
-    container.appendChild(section2);
+    const section1 = createHeadingSection('heading-1', 'Heading 1');
+    const section2 = createHeadingSection('heading-2', 'Heading 2');
+    container.append(section1, section2);
 
     const { result } = renderHook(() => useProductTableOfContent());
 
@@ -110,19 +109,9 @@ describe('useProductTableOfContent', () => {
   });
 
   it('should update active heading based on IntersectionObserver events', () => {
-    const section1 = document.createElement('section');
-    section1.id = 'heading-1';
-    const h2_1 = document.createElement('h2');
-    h2_1.textContent = 'Heading 1';
-    section1.appendChild(h2_1);
-    container.appendChild(section1);
-
-    const section2 = document.createElement('section');
-    section2.id = 'heading-2';
-    const h2_2 = document.createElement('h2');
-    h2_2.textContent = 'Heading 2';
-    section2.appendChild(h2_2);
-    container.appendChild(section2);
+    const section1 = createHeadingSection('heading-1', 'Heading 1');
+    const section2 = createHeadingSection('heading-2', 'Heading 2');
+    container.append(section1, section2);
 
     const { result } = renderHook(() => useProductTableOfContent());
 
@@ -173,11 +162,7 @@ describe('useProductTableOfContent', () => {
 
     expect(result.current.headings).toEqual([]);
 
-    const section1 = document.createElement('section');
-    section1.id = 'heading-1';
-    const h2_1 = document.createElement('h2');
-    h2_1.textContent = 'Heading 1';
-    section1.appendChild(h2_1);
+    const section1 = createHeadingSection('heading-1', 'Heading 1');
 
     act(() => {
       container.appendChild(section1);
