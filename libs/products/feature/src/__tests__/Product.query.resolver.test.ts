@@ -191,6 +191,7 @@ const createSearchableProductRepository = (): SearchableProductRepository => ({
 const createAlternativeProductRepository = (
   overrides: Partial<AlternativeProductRepository> = {}
 ): AlternativeProductRepository => ({
+  replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
   findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
   create: vi.fn<AlternativeProductRepository['create']>(),
   deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>().mockResolvedValue(true),
@@ -476,6 +477,7 @@ describe('ProductQueryResolver', () => {
     it('should return alternatives even when some lookups fail', async () => {
       const mockGetAlternativeProducts = new GetAlternativeProducts(
         createAlternativeProductRepository({
+          replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
           findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([
             new AlternativeProduct({
               productId: 'p1',
