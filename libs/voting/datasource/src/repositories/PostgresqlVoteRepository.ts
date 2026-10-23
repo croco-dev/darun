@@ -2,23 +2,28 @@ import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import { VoteRepository } from '@darun/voting-domain';
 import { Vote, VoteRepositoryToken, votingVoteInsertFailed, votingVoteUpdateFailed } from '@darun/voting-domain';
-import { asc, desc, eq } from 'drizzle-orm';
+import DataLoader from 'dataloader';
+import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { votes } from '../entities/VoteSchema';
 
 @Service(VoteRepositoryToken)
 export class PostgresqlVoteRepository implements VoteRepository {
+  private readonly countLoader = new DataLoader<string, Vote | null>(
+    async ids => {
+      const rows = await this.db
+        .select()
+        .from(votes)
+        .where(inArray(votes.targetId, [...ids]));
+      const byId = new Map(rows.map(row => [row.targetId, new Vote(row)]));
+      return ids.map(id => byId.get(id) ?? null);
+    },
+    { cache: false }
+  );
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
   findByTargetId(productId: string): Promise<Vote | null> {
-    return this.db.transaction(async tx =>
-      tx
-        .select()
-        .from(votes)
-        .where(eq(votes.targetId, productId))
-        .limit(1)
-        .then(rows => (rows[0] ? new Vote(rows[0]) : null))
-    );
+    return this.countLoader.load(productId);
   }
 
   upsertByTargetId(id: string, modifier: (vote: Vote) => Vote): Promise<Vote> {

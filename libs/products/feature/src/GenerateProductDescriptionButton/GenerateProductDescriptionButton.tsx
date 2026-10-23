@@ -7,9 +7,15 @@ import { useGenerateProductDescriptionButton } from './useGenerateProductDescrip
 
 interface GenerateProductDescriptionButtonProps {
   slug: string;
+  descriptionJobId?: string;
+  onJobChange?: (id: string) => void;
 }
 
-export function GenerateProductDescriptionButton({ slug }: GenerateProductDescriptionButtonProps) {
+export function GenerateProductDescriptionButton({
+  slug,
+  descriptionJobId,
+  onJobChange,
+}: GenerateProductDescriptionButtonProps) {
   const {
     handleGenerate,
     isGenerating,
@@ -23,7 +29,7 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
     isReopening,
     handleReopenJob,
     staleApplyNotice,
-  } = useGenerateProductDescriptionButton(slug);
+  } = useGenerateProductDescriptionButton(slug, descriptionJobId, onJobChange);
 
   const handleClick = () => {
     handleGenerate().catch(() => {});
@@ -56,7 +62,9 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
             현재 제품: {slug} · 후보 대상 제품 ID: {candidateJob?.productId ?? '알 수 없음'}
           </p>
           {candidateJob?.appliedAt && (
-            <p className="text-xs text-dark-500">이미 적용된 후보의 저장된 HTML을 표시합니다.</p>
+            <p className="text-xs text-dark-500">
+              과거에 적용된 후보입니다. 다시 적용해도 이후 사람 편집을 덮어쓰지 않습니다.
+            </p>
           )}
           {staleApplyNotice && (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3" role="alert">
@@ -123,7 +131,7 @@ export function GenerateProductDescriptionButton({ slug }: GenerateProductDescri
           variant="base"
           color="secondary"
           size="sm"
-          disabled={isReopening || !jobIdInput.trim()}
+          disabled={isReopening || isGenerating || !jobIdInput.trim()}
           className="active:scale-[0.98] motion-reduce:transform-none"
         >
           <span className="whitespace-nowrap">{isReopening ? '여는 중...' : '후보 다시 열기'}</span>

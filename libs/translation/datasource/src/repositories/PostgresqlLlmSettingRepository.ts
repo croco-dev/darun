@@ -11,31 +11,23 @@ export class PostgresqlLlmSettingRepository implements LlmSettingRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
   async findSetting(): Promise<LlmSetting | null> {
-    try {
-      const rows = await this.db.select().from(llmSettings).where(eq(llmSettings.id, DEFAULT_SETTING_ID)).limit(1);
+    const rows = await this.db.select().from(llmSettings).where(eq(llmSettings.id, DEFAULT_SETTING_ID)).limit(1);
 
-      const row = rows[0];
-      if (!row) {
-        return null;
-      }
-
-      return {
-        id: row.id,
-        endpoint: row.endpoint,
-        apiKey: row.apiKey,
-        model: row.model,
-        thinkingLevel: row.thinkingLevel,
-        braveApiKey: row.braveApiKey,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-      };
-    } catch (error) {
-      console.warn(
-        '[PostgresqlLlmSettingRepository] Failed to query llm_settings table (table may not exist yet):',
-        error
-      );
+    const row = rows[0];
+    if (!row) {
       return null;
     }
+
+    return {
+      id: row.id,
+      endpoint: row.endpoint,
+      apiKey: row.apiKey,
+      model: row.model,
+      thinkingLevel: row.thinkingLevel,
+      braveApiKey: row.braveApiKey,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
   }
 
   async upsertSetting(input: {

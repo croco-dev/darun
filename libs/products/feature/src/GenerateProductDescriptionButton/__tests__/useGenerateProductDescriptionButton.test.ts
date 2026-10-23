@@ -1,8 +1,6 @@
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useApolloClient, useLazyQuery, useMutation } from '@apollo/client/react';
-import {
-  ApplyProductDescriptionCandidateDocument,
-  TempProductBySlugOnProductDescriptionDocument,
-} from '@darun/provider-graphql';
+import { ApplyProductDescriptionCandidateDocument } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -32,7 +30,6 @@ describe('useGenerateProductDescriptionButton', () => {
   let applyMutateFn: ReturnType<typeof vi.fn>;
   let lazyQueryFn: ReturnType<typeof vi.fn>;
   let refetchQueriesFn: ReturnType<typeof vi.fn>;
-  let currentProductQueryFn: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,7 +37,6 @@ describe('useGenerateProductDescriptionButton', () => {
     applyMutateFn = vi.fn();
     lazyQueryFn = vi.fn();
     refetchQueriesFn = vi.fn().mockResolvedValue([]);
-    currentProductQueryFn = vi.fn().mockResolvedValue({ data: { tempProductBySlug: { id: 'prod-1' } } });
 
     vi.mocked(useApolloClient).mockReturnValue({
       refetchQueries: refetchQueriesFn,
@@ -53,19 +49,16 @@ describe('useGenerateProductDescriptionButton', () => {
       return [generateMutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
     });
 
-    vi.mocked(useLazyQuery).mockImplementation(
-      (document: unknown) =>
-        [
-          document === TempProductBySlugOnProductDescriptionDocument ? currentProductQueryFn : lazyQueryFn,
-          { loading: false },
-        ] as unknown as ReturnType<typeof useLazyQuery>
-    );
+    vi.mocked(useLazyQuery).mockReturnValue([lazyQueryFn, { loading: false }] as unknown as ReturnType<
+      typeof useLazyQuery
+    >);
   });
 
   it('blocks a completed candidate belonging to another product', async () => {
     const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
     lazyQueryFn.mockResolvedValueOnce({
       data: {
+        tempProductBySlug: { id: 'prod-1' },
         productDescriptionJob: {
           id: 'wrong-job',
           productId: 'prod-other',
@@ -87,101 +80,6 @@ describe('useGenerateProductDescriptionButton', () => {
     expect(notifications.show).toHaveBeenCalledWith(
       expect.objectContaining({ title: '후보 다시 열기 실패', color: 'red' })
     );
-  });
-
-  it('rechecks product identity before applying an already opened candidate', async () => {
-    const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
-    lazyQueryFn.mockResolvedValueOnce({
-      data: {
-        productDescriptionJob: {
-          id: 'same-job',
-          productId: 'prod-1',
-          status: 'completed',
-          candidateHtml: '<p>Draft</p>',
-        },
-      },
-    });
-    act(() => result.current.setJobIdInput('same-job'));
-    await act(async () => {
-      await result.current.handleReopenJob();
-    });
-    expect(result.current.isPreviewOpen).toBe(true);
-    currentProductQueryFn.mockResolvedValueOnce({ data: { tempProductBySlug: { id: 'prod-other' } } });
-    await act(async () => {
-      await result.current.handleApply();
-    });
-    expect(applyMutateFn).not.toHaveBeenCalled();
-    expect(result.current.candidateJob?.id).toBe('same-job');
-  });
-
-  it('retains the same product candidate through close/reopen but clears it on product change', async () => {
-    const { result, rerender } = renderHook(({ slug }) => useGenerateProductDescriptionButton(slug), {
-      initialProps: { slug: defaultSlug },
-    });
-    lazyQueryFn.mockResolvedValueOnce({
-      data: {
-        productDescriptionJob: {
-          id: 'same-job',
-          productId: 'prod-1',
-          status: 'completed',
-          candidateHtml: '<p>Draft</p>',
-        },
-      },
-    });
-    act(() => result.current.setJobIdInput('same-job'));
-    await act(async () => {
-      await result.current.handleReopenJob();
-    });
-    act(() => result.current.closePreview());
-    rerender({ slug: defaultSlug });
-    expect(result.current.candidateJob?.candidateHtml).toBe('<p>Draft</p>');
-    await act(async () => {
-      await result.current.openPreview();
-    });
-    expect(result.current.isPreviewOpen).toBe(true);
-    rerender({ slug: 'other-product' });
-    expect(result.current.candidateJob).toBeNull();
-    expect(result.current.isPreviewOpen).toBe(false);
-    expect(result.current.jobIdInput).toBe('');
-  });
-
-  it('rejects a previous product response arriving after a product change', async () => {
-    type JobResponse = {
-      data: { productDescriptionJob: { id: string; productId: string; status: string; candidateHtml: string } };
-    };
-    let resolvePending!: (value: JobResponse) => void;
-    const pending = new Promise<JobResponse>(resolve => {
-      resolvePending = resolve;
-    });
-    lazyQueryFn.mockReturnValueOnce(pending);
-    const { result, rerender } = renderHook(({ slug }) => useGenerateProductDescriptionButton(slug), {
-      initialProps: { slug: defaultSlug },
-    });
-    act(() => result.current.setJobIdInput('old-job'));
-    let reopening!: Promise<void>;
-    act(() => {
-      reopening = result.current.handleReopenJob();
-    });
-    rerender({ slug: 'other-product' });
-    await act(async () => {
-      resolvePending({
-        data: {
-          productDescriptionJob: {
-            id: 'old-job',
-            productId: 'prod-1',
-            status: 'completed',
-            candidateHtml: '<p>Old draft</p>',
-          },
-        },
-      });
-      await reopening;
-    });
-    expect(result.current.candidateJob).toBeNull();
-    expect(result.current.isPreviewOpen).toBe(false);
-    await act(async () => {
-      await result.current.handleApply();
-    });
-    expect(applyMutateFn).not.toHaveBeenCalled();
   });
 
   it('calls generateProductDescription mutation with slug and opens preview on immediate completion', async () => {
@@ -312,7 +210,7 @@ describe('useGenerateProductDescriptionButton', () => {
         data: {
           generateProductDescription: {
             product: { id: 'prod-1' },
-            job: { status: 'completed', id: 'job-1', productId: 'prod-1', candidateHtml: '<p>test</p>' },
+            job: { status: 'completed', id: 'job-1', candidateHtml: '<p>test</p>' },
           },
         },
       });
@@ -382,7 +280,6 @@ describe('useGenerateProductDescriptionButton', () => {
       data: {
         productDescriptionJob: {
           id: 'job-123',
-          productId: 'prod-1',
           status: 'completed',
           message: 'AI 소개를 생성했어요.',
           candidateHtml: '<p>폴링 완료 설명</p>',
@@ -404,7 +301,7 @@ describe('useGenerateProductDescriptionButton', () => {
     });
 
     expect(lazyQueryFn).toHaveBeenCalledWith({
-      variables: { id: 'job-123' },
+      variables: { id: 'job-123', slug: defaultSlug },
     });
 
     expect(notifications.show).toHaveBeenCalledWith(
@@ -415,7 +312,7 @@ describe('useGenerateProductDescriptionButton', () => {
     );
     expect(result.current.candidateJob).toEqual({
       id: 'job-123',
-      productId: 'prod-1',
+      productId: null,
       status: 'completed',
       appliedAt: null,
       candidateHtml: '<p>폴링 완료 설명</p>',
@@ -497,7 +394,16 @@ describe('useGenerateProductDescriptionButton', () => {
       },
     });
 
-    applyMutateFn.mockRejectedValueOnce(new Error('Base description has changed since candidate was generated'));
+    applyMutateFn.mockRejectedValueOnce(
+      new CombinedGraphQLErrors({
+        errors: [
+          {
+            message: 'Base description has changed since candidate was generated',
+            extensions: { code: 'STALE_CANDIDATE' },
+          },
+        ],
+      })
+    );
 
     const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
 
@@ -524,6 +430,7 @@ describe('useGenerateProductDescriptionButton', () => {
   it('reopens a completed candidate by job ID rendering stored HTML', async () => {
     lazyQueryFn.mockResolvedValueOnce({
       data: {
+        tempProductBySlug: { id: 'prod-1' },
         productDescriptionJob: {
           id: 'job-stored',
           productId: 'prod-1',
@@ -545,7 +452,7 @@ describe('useGenerateProductDescriptionButton', () => {
       await result.current.handleReopenJob();
     });
 
-    expect(lazyQueryFn).toHaveBeenCalledWith({ variables: { id: 'job-stored' } });
+    expect(lazyQueryFn).toHaveBeenCalledWith({ variables: { id: 'job-stored', slug: defaultSlug } });
     expect(result.current.candidateJob?.candidateHtml).toBe('<p>stored bytes</p>');
     expect(result.current.isPreviewOpen).toBe(true);
   });
@@ -566,6 +473,7 @@ describe('useGenerateProductDescriptionButton', () => {
     });
     lazyQueryFn.mockResolvedValueOnce({
       data: {
+        tempProductBySlug: { id: 'prod-1' },
         productDescriptionJob: {
           id: 'job-pending',
           productId: 'prod-1',
@@ -622,5 +530,58 @@ describe('useGenerateProductDescriptionButton', () => {
     expect(result.current.candidateJob).toBeNull();
     expect(result.current.isPreviewOpen).toBe(false);
     vi.useRealTimers();
+  });
+  it('opens a legacy stored candidate directly from the route and refuses another product', async () => {
+    lazyQueryFn.mockResolvedValue({
+      data: {
+        tempProductBySlug: { id: 'prod-1' },
+        productDescriptionJob: {
+          id: 'legacy-route',
+          productId: 'prod-1',
+          status: 'completed',
+          candidateHtml: '<h2>저장된 제목</h2><p>원본 본문</p>',
+          appliedAt: null,
+        },
+      },
+    });
+    const { result, rerender } = renderHook(({ id }) => useGenerateProductDescriptionButton(defaultSlug, id), {
+      initialProps: { id: 'legacy-route' },
+    });
+    await act(async () => {});
+    expect(result.current.isPreviewOpen).toBe(true);
+    expect(result.current.candidateJob?.candidateHtml).toContain('<h2>저장된 제목</h2>');
+    lazyQueryFn.mockResolvedValue({
+      data: {
+        tempProductBySlug: { id: 'prod-1' },
+        productDescriptionJob: {
+          id: 'foreign',
+          productId: 'prod-2',
+          status: 'completed',
+          candidateHtml: '<p>다른 제품</p>',
+        },
+      },
+    });
+    rerender({ id: 'foreign' });
+    await act(async () => {});
+    expect(result.current.candidateJob).toBeNull();
+    expect(result.current.isPreviewOpen).toBe(false);
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '후보 다시 열기 실패', message: expect.stringContaining('다른 제품') })
+    );
+  });
+
+  it('does not reinterpret a message-only error as STALE_CANDIDATE', async () => {
+    generateMutateFn.mockResolvedValue({
+      data: {
+        generateProductDescription: { job: { id: 'not-stale', status: 'completed', candidateHtml: '<p>후보</p>' } },
+      },
+    });
+    applyMutateFn.mockRejectedValue(new Error('Base description has changed'));
+    const { result } = renderHook(() => useGenerateProductDescriptionButton(defaultSlug));
+    await act(async () => {
+      await result.current.handleGenerate();
+      await result.current.handleApply();
+    });
+    expect(result.current.staleApplyNotice).toBeNull();
   });
 });

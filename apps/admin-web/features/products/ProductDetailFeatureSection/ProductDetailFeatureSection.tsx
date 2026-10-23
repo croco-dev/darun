@@ -6,6 +6,7 @@ import { AdminModal, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@d
 import { Link } from '@darun/utils-router';
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useState } from 'react';
+import { TranslationRecovery } from '../../llm-jobs/TranslationRecovery';
 
 type ProductDetailFeatureSectionProps = {
   slug: string;
@@ -42,7 +43,13 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
           }
         />
         <AdminSectionBody className="p-0">
-          <ProductFeatureTable slug={slug} editFeature={editFeature} />
+          <ProductFeatureTable
+            slug={slug}
+            editFeature={editFeature}
+            translationAction={id => (
+              <TranslationRecovery entityType="ProductFeature" entityId={id} fields={['name', 'summary']} />
+            )}
+          />
         </AdminSectionBody>
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="기능 정보 수정">

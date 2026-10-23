@@ -12,6 +12,7 @@ import {
   useExplorerQuery,
   type ExplorerBaseState,
   type ExplorerFilters,
+  type ExplorerSearchDraft,
 } from '../explorer/useExplorerQuery';
 import { isVisualPlatformValue, isVisualScreenTypeValue, isVisualUiElementValue } from '../explorer/visualTaxonomy';
 import { VISUAL_SCREENSHOTS_PAGE_SIZE } from './documents';
@@ -75,6 +76,7 @@ const SCREENSHOT_OPTIONS = {
   document: VisualScreenshotsOnExplorerDocument,
   connectionKey: 'visualScreenshots',
   pageSize: VISUAL_SCREENSHOTS_PAGE_SIZE,
+  boundedPagination: true,
   basePath: '/',
   secondaryParamKey: 'screenType',
   clearFiltersTo: '/',
@@ -94,8 +96,8 @@ const SCREENSHOT_OPTIONS = {
   loadMoreLabel: 'Failed to load more screenshots',
 } as const;
 
-export function useScreenshotExplorer(): ScreenshotExplorerState {
-  const state = useExplorerQuery(SCREENSHOT_OPTIONS);
+export function useScreenshotExplorer(searchDraft?: ExplorerSearchDraft): ScreenshotExplorerState {
+  const state = useExplorerQuery(SCREENSHOT_OPTIONS, searchDraft);
   return {
     ...state,
     screenType: state.secondary,

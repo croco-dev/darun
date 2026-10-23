@@ -8,6 +8,7 @@ export enum ProductError {
   DeleteFailed = 'product/delete-failed',
   ScreenshotNotFound = 'product-screenshot/not-found',
   InvalidArgs = 'product/invalid-args',
+  IdempotencyKeyConflict = 'IDEMPOTENCY_KEY_CONFLICT',
   CompanyNotFound = 'product/company-not-found',
   CategoryNotFound = 'product/category-not-found',
   ScreenshotInsertFailed = 'product/screenshot-insert-failed',
@@ -22,6 +23,8 @@ export const productUpdateFailed = () => createDomainError(ProductError.UpdateFa
 export const productDeleteFailed = () => createDomainError(ProductError.DeleteFailed);
 export const productScreenshotNotFound = () => createDomainError(ProductError.ScreenshotNotFound);
 export const productInvalidArgs = (message?: string) => createDomainError(ProductError.InvalidArgs, message);
+export const productIdempotencyKeyConflict = (message?: string) =>
+  createDomainError(ProductError.IdempotencyKeyConflict, message);
 export const productCompanyNotFound = () => createDomainError(ProductError.CompanyNotFound);
 export const productCategoryNotFound = () => createDomainError(ProductError.CategoryNotFound);
 export const productScreenshotInsertFailed = () => createDomainError(ProductError.ScreenshotInsertFailed);

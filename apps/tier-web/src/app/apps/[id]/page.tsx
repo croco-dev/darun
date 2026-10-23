@@ -13,6 +13,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import type { AppListRow } from '../app-list';
 
 interface AppDetail {
   id: string;
@@ -40,7 +41,8 @@ async function getAppDetail(id: string): Promise<AppDetail | null> {
       `
       )
       .eq('id', id)
-      .single();
+      .single()
+      .overrideTypes<AppListRow & { app_store_id: string }, { merge: false }>();
 
     if (error) throw error;
 
@@ -51,7 +53,7 @@ async function getAppDetail(id: string): Promise<AppDetail | null> {
         description: data.description,
         iconUrl: data.icon_url,
         appStoreId: data.app_store_id,
-        tier: data.tiers?.[0]?.tier || 0,
+        tier: data.tiers?.tier ?? 0,
       };
     }
 
@@ -141,14 +143,6 @@ export default async function AppDetailPage({ params }: { params: Promise<{ id: 
       '@type': 'Offer',
       url: `https://apps.apple.com/app/id${app.appStoreId}`,
     },
-    aggregateRating: app.tier
-      ? {
-          '@type': 'AggregateRating',
-          ratingValue: app.tier,
-          bestRating: 3,
-          worstRating: 1,
-        }
-      : undefined,
     image: app.iconUrl,
     url: `${siteUrl}/apps/${app.id}`,
   };
@@ -161,7 +155,10 @@ export default async function AppDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      />
       <div className="page-shell py-8 md:py-10">
         <div className="space-y-5">
           <Link
@@ -193,7 +190,11 @@ export default async function AppDetailPage({ params }: { params: Promise<{ id: 
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button type="button" className="text-muted-foreground hover:text-foreground">
+                        <button
+                          type="button"
+                          aria-label="티어 분류 기준"
+                          className="text-muted-foreground hover:text-foreground"
+                        >
                           <HelpCircle className="size-4" />
                         </button>
                       </TooltipTrigger>

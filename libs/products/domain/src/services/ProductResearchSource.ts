@@ -36,7 +36,7 @@ function canonicalizeUrl(rawUrl: string): string | null {
     if (pathname.length > 1 && pathname.endsWith('/')) {
       pathname = pathname.slice(0, -1);
     }
-    return `${parsed.protocol}//${parsed.hostname.toLowerCase()}${pathname}${parsed.search}`;
+    return `${parsed.protocol}//${parsed.host.toLowerCase()}${pathname}${parsed.search}`;
   } catch {
     return null;
   }
@@ -103,22 +103,10 @@ export function normalizeResearchSources(
         .map(snippet => snippet.slice(0, MAX_SOURCE_SNIPPET_CHARS)),
       relationToInput: isSameHostOrSubdomain(hostname, inputHostname) ? 'INPUT_HOST_MATCH' : 'EXTERNAL',
     });
+    if (collected.length >= RESEARCH_LIMITS.maxUniqueSources) break;
   }
 
-  const ranked = collected
-    .map((source, index) => ({ source, index }))
-    .sort((a, b) => {
-      const rankA = a.source.relationToInput === 'INPUT_HOST_MATCH' ? 0 : 1;
-      const rankB = b.source.relationToInput === 'INPUT_HOST_MATCH' ? 0 : 1;
-      if (rankA !== rankB) {
-        return rankA - rankB;
-      }
-      return a.index - b.index;
-    })
-    .slice(0, RESEARCH_LIMITS.maxUniqueSources)
-    .map(entry => entry.source);
-
-  return ranked.map((source, index) => ({ ...source, id: `s${index + 1}` }));
+  return collected;
 }
 
 export function hashSourceSnapshot(sources: NormalizedResearchSource[]): string {

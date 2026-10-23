@@ -1,6 +1,6 @@
 import { Field, GraphQLISODateTime, ID, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('TranslationJob')
 export class TranslationJob {
   @Field(() => ID)
   id: string;
@@ -19,6 +19,18 @@ export class TranslationJob {
 
   @Field(() => String)
   status: string;
+
+  @Field(() => String, { nullable: true })
+  dispatchStatus?: string;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  runNotBefore?: Date;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  nextDispatchAt?: Date;
+
+  @Field(() => String, { nullable: true })
+  retryOfJobId?: string;
 
   @Field(() => String, { nullable: true })
   model?: string;

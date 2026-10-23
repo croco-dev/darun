@@ -3,7 +3,9 @@
 import { EditProductDescription, GenerateProductDescriptionButton, ProductDescription } from '@darun/products-feature';
 import { Button, Pencil } from '@darun/ui';
 import { AdminModal, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
+import { useRouter, usePathname, useSearchParams } from '@darun/utils-router';
 import { useDisclosure } from '@mantine/hooks';
+import { useCallback } from 'react';
 
 type ProductDetailDescriptionSectionProps = {
   slug: string;
@@ -11,6 +13,18 @@ type ProductDetailDescriptionSectionProps = {
 
 export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescriptionSectionProps) => {
   const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const descriptionJobId = params.get('descriptionJobId') ?? undefined;
+  const onJobChange = useCallback(
+    (id: string) => {
+      const next = new URLSearchParams(params.toString());
+      next.set('descriptionJobId', id);
+      router.replace(`${pathname}?${next}`, { scroll: false });
+    },
+    [params, pathname, router]
+  );
 
   return (
     <>
@@ -19,7 +33,11 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
           title="설명"
           rightSide={
             <div className="flex gap-2">
-              <GenerateProductDescriptionButton slug={slug} />
+              <GenerateProductDescriptionButton
+                slug={slug}
+                descriptionJobId={descriptionJobId}
+                onJobChange={onJobChange}
+              />
               <Button
                 type="button"
                 onClick={openEditModal}
