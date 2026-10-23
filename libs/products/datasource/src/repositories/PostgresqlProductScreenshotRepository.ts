@@ -185,8 +185,10 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
   updateById(
     id: string,
     modifier: (screenshot: ProductScreenshot) => ProductScreenshot,
-    validateLocked?: (locked: ProductScreenshot) => Promise<void>
+    validateLocked?: (locked: ProductScreenshot) => Promise<void>,
+    uiElements?: readonly string[] | null
   ): Promise<ProductScreenshot> {
+    const normalizedUiElements = uiElements === undefined ? undefined : normalizeVisualUiElements(uiElements);
     return this.db
       .transaction(async tx => {
         const [owner] = await tx
@@ -225,6 +227,17 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
 
         if (!updated[0]) {
           throw productScreenshotNotFound();
+        }
+        if (normalizedUiElements !== undefined) {
+          await tx.delete(productScreenshotUiElements).where(eq(productScreenshotUiElements.screenshotId, id));
+          if (normalizedUiElements.length > 0) {
+            await tx.insert(productScreenshotUiElements).values(
+              normalizedUiElements.map(element => ({
+                screenshotId: id,
+                element,
+              }))
+            );
+          }
         }
         await finishContentWrite();
         return toDomain(updated[0]);
@@ -483,13 +496,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
     elements: readonly string[] | null | undefined
   ): Promise<VisualUiElement[]> {
     const normalized = normalizeVisualUiElements(elements);
-    await this.db.transaction(async tx => {
-      await tx.delete(productScreenshotUiElements).where(eq(productScreenshotUiElements.screenshotId, screenshotId));
-      if (normalized.length > 0) {
-        await tx.insert(productScreenshotUiElements).values(normalized.map(element => ({ screenshotId, element })));
-      }
-    });
-    this.productIdLoader.clearAll();
+    await this.updateById(screenshotId, current => current, undefined, normalized);
     return normalized;
   }
 

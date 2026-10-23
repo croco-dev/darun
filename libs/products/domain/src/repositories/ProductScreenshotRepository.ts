@@ -28,7 +28,9 @@ export interface ProductScreenshotRepository {
   updateById(
     id: string,
     modifier: (screenshot: ProductScreenshot) => ProductScreenshot,
-    validateLocked?: (locked: ProductScreenshot) => Promise<void>
+    validateLocked?: (locked: ProductScreenshot) => Promise<void>,
+    /** Same transaction as metadata; undefined preserves tags, null/[] clears them. */
+    uiElements?: readonly string[] | null
   ): Promise<ProductScreenshot>;
   /**
    * Product-first·screenshot 잠금을 유지하며 참조를 검증하고 DB 행 삭제와

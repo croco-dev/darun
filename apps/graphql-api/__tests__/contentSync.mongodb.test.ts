@@ -53,6 +53,7 @@ import { productFeatures } from '../../../libs/products/datasource/src/entities/
 import { productFlows, productFlowSteps } from '../../../libs/products/datasource/src/entities/ProductFlowsSchema';
 import { products } from '../../../libs/products/datasource/src/entities/ProductSchema';
 import { productScreenshots } from '../../../libs/products/datasource/src/entities/ProductScreenshotsSchema';
+import { productScreenshotUiElements } from '../../../libs/products/datasource/src/entities/ProductScreenshotUiElementsSchema';
 import { PostgresqlCategoryRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlCategoryRepository';
 import { PostgresqlProductFlowRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlProductFlowRepository';
 import { PostgresqlProductScreenshotRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlProductScreenshotRepository';
@@ -60,6 +61,7 @@ import { ProductContentSyncRegistrarToken } from '../../../libs/products/datasou
 import { lockProductSource } from '../../../libs/products/datasource/src/repositories/productSourceMutex';
 import { CreateProductFlow } from '../../../libs/products/domain/src/usecases/CreateProductFlow';
 import { DeleteProductScreenshot } from '../../../libs/products/domain/src/usecases/DeleteProductScreenshot';
+import { UpdateProductScreenshot } from '../../../libs/products/domain/src/usecases/UpdateProductScreenshot';
 import { ProductMutationResolver } from '../../../libs/products/feature/src/Product.mutation.resolver';
 import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/src/ProductDescription.query.resolver';
 import { ProductContentSyncQueueService } from '../../../libs/products/service/src/ProductContentSyncQueueService';
@@ -2760,11 +2762,11 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     return { promise, resolve };
   }
 
-  async function waitForWriterLock() {
+  async function waitForWriterLock(applicationName = writerName) {
     const deadline = Date.now() + 3000;
     while (Date.now() < deadline) {
       const rows =
-        await connection`select 1 from pg_stat_activity where application_name = ${writerName} and wait_event_type = 'Lock'`;
+        await connection`select 1 from pg_stat_activity where application_name = ${applicationName} and wait_event_type = 'Lock'`;
       if (rows.length) return;
       await new Promise<void>(resolve => setImmediate(resolve));
     }
@@ -2784,6 +2786,166 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
       })),
     };
   }
+
+  it('UI 요소 저장 실패는 메타데이터·요소·revision·intent와 캐시를 모두 보존한다', async () => {
+    const { product, screenshot } = await seed();
+    await db.insert(productScreenshotUiElements).values({ screenshotId: screenshot.id, element: 'CARD' });
+    const repository = new PostgresqlProductScreenshotRepository(db as never);
+    const update = new UpdateProductScreenshot(repository, new PostgresqlProductFlowRepository(db as never));
+    const cached = await repository.findManyByProductIdSortByPriorityDesc(product.id);
+    const before = await state(product.id);
+    const elementsBefore = await db
+      .select()
+      .from(productScreenshotUiElements)
+      .where(eq(productScreenshotUiElements.screenshotId, screenshot.id));
+    await connection.unsafe(
+      `CREATE FUNCTION reject_screenshot_elements() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic UI element insertion failure'; END $$`
+    );
+    await connection.unsafe(
+      `CREATE TRIGGER reject_screenshot_elements BEFORE INSERT ON product_screenshot_ui_elements FOR EACH ROW WHEN (NEW.screenshot_id = '${screenshot.id}') EXECUTE FUNCTION reject_screenshot_elements()`
+    );
+    try {
+      await expect(
+        update.execute({
+          id: screenshot.id,
+          imageAlt: '바뀐 설명',
+          title: '바뀐 제목',
+          platform: 'IOS',
+          uiElements: ['BUTTON'],
+        })
+      ).rejects.toThrow();
+      expect(await state(product.id)).toEqual(before);
+      expect(
+        await db
+          .select()
+          .from(productScreenshotUiElements)
+          .where(eq(productScreenshotUiElements.screenshotId, screenshot.id))
+      ).toEqual(elementsBefore);
+      expect(await repository.findManyByProductIdSortByPriorityDesc(product.id)).toEqual(cached);
+    } finally {
+      await connection.unsafe('DROP TRIGGER reject_screenshot_elements ON product_screenshot_ui_elements');
+      await connection.unsafe('DROP FUNCTION reject_screenshot_elements()');
+    }
+  });
+
+  it.each([undefined, null, []] as const)('UI 요소 입력 %j의 유지·전체 삭제 의미를 보존한다', async uiElements => {
+    const { product, screenshot } = await seed();
+    await db.insert(productScreenshotUiElements).values({ screenshotId: screenshot.id, element: 'CARD' });
+    const repository = new PostgresqlProductScreenshotRepository(db as never);
+    await repository.findManyByProductIdSortByPriorityDesc(product.id);
+    const update = new UpdateProductScreenshot(repository, new PostgresqlProductFlowRepository(db as never));
+    await update.execute({
+      id: screenshot.id,
+      imageAlt: '변경 후 설명',
+      platform: 'WEB',
+      uiElements,
+    });
+    expect((await repository.findById(screenshot.id))?.imageAlt).toBe('변경 후 설명');
+    expect(
+      (await repository.findManyByProductIdSortByPriorityDesc(product.id)).find(row => row.id === screenshot.id)
+        ?.imageAlt
+    ).toBe('변경 후 설명');
+    expect((await repository.findScreenshotUiElementsByScreenshotIds([screenshot.id]))[screenshot.id]).toEqual(
+      uiElements === undefined ? ['CARD'] : []
+    );
+    expect((await state(product.id)).product?.contentRevision).toBe(BigInt(8));
+    expect((await state(product.id)).intents.map(intent => intent.sourceRevision)).toEqual([BigInt(7), BigInt(8)]);
+  });
+
+  it('요소 삽입 중에도 Product 잠금을 유지하고 동시 수정의 메타데이터·요소를 함께 확정한다', async () => {
+    const { product, screenshot } = await seed();
+    await db.insert(productScreenshotUiElements).values({ screenshotId: screenshot.id, element: 'CARD' });
+    const before = await state(product.id);
+    const gate = postgres(databaseUrl!, { prepare: false, max: 1 });
+    const secondName = `screenshot-update-${randomUUID()}`;
+    const secondConnection = postgres(databaseUrl!, {
+      prepare: false,
+      max: 2,
+      connection: { application_name: secondName, statement_timeout: 10000 },
+    });
+    await gate`select pg_advisory_lock(4502026, 1)`;
+    await connection.unsafe(
+      `CREATE FUNCTION pause_screenshot_elements() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock(4502026, 1); RETURN NEW; END $$`
+    );
+    await connection.unsafe(
+      `CREATE TRIGGER pause_screenshot_elements BEFORE INSERT ON product_screenshot_ui_elements FOR EACH ROW WHEN (NEW.screenshot_id = '${screenshot.id}') EXECUTE FUNCTION pause_screenshot_elements()`
+    );
+    const first = new UpdateProductScreenshot(
+      new PostgresqlProductScreenshotRepository(writerDb as never),
+      new PostgresqlProductFlowRepository(writerDb as never)
+    );
+    const secondDb = drizzle(secondConnection);
+    const second = new UpdateProductScreenshot(
+      new PostgresqlProductScreenshotRepository(secondDb as never),
+      new PostgresqlProductFlowRepository(secondDb as never)
+    );
+    const writes: Promise<unknown>[] = [];
+    try {
+      writes.push(
+        first.execute({
+          id: screenshot.id,
+          title: '첫 요청',
+          imageAlt: '첫 설명',
+          platform: 'IOS',
+          uiElements: ['CARD', 'BUTTON', 'CARD'],
+        })
+      );
+      await waitForWriterLock();
+      // A separate reader cannot observe metadata or a checkpoint before tags are committed.
+      expect(await state(product.id)).toEqual(before);
+      writes.push(
+        second.execute({
+          id: screenshot.id,
+          title: '둘째 요청',
+          imageAlt: '둘째 설명',
+          platform: 'ANDROID',
+          uiElements: ['MODAL'],
+        })
+      );
+      await waitForWriterLock(secondName);
+      const [blocked] =
+        await connection`select cardinality(pg_blocking_pids(pid)) as count from pg_stat_activity where application_name = ${secondName} and wait_event_type = 'Lock'`;
+      expect(blocked?.count).toBeGreaterThan(0);
+      await gate`select pg_advisory_unlock(4502026, 1)`;
+      await Promise.all(writes);
+      const repository = new PostgresqlProductScreenshotRepository(db as never);
+      expect(await repository.findById(screenshot.id)).toMatchObject({
+        title: '둘째 요청',
+        imageAlt: '둘째 설명',
+        platform: 'ANDROID',
+      });
+      expect((await repository.findScreenshotUiElementsByScreenshotIds([screenshot.id]))[screenshot.id]).toEqual([
+        'MODAL',
+      ]);
+      const final = await state(product.id);
+      expect(final.product?.contentRevision).toBe(BigInt(9));
+      expect(final.intents.map(intent => intent.sourceRevision)).toEqual([BigInt(7), BigInt(8), BigInt(9)]);
+    } finally {
+      await gate`select pg_advisory_unlock(4502026, 1)`;
+      await Promise.allSettled(writes);
+      await connection.unsafe('DROP TRIGGER pause_screenshot_elements ON product_screenshot_ui_elements');
+      await connection.unsafe('DROP FUNCTION pause_screenshot_elements()');
+      await secondConnection.end({ timeout: 5 });
+      await gate.end({ timeout: 5 });
+    }
+  });
+
+  it('요소만 교체하는 저장도 중복 정규화·전체 삭제와 metadata 보존을 지원한다', async () => {
+    const { product, screenshot } = await seed();
+    const before = await state(product.id);
+    const repository = new PostgresqlProductScreenshotRepository(db as never);
+    expect(await repository.replaceScreenshotUiElements(screenshot.id, ['CARD', 'BUTTON', 'CARD'])).toEqual([
+      'CARD',
+      'BUTTON',
+    ]);
+    expect((await repository.findScreenshotUiElementsByScreenshotIds([screenshot.id]))[screenshot.id]).toEqual([
+      'BUTTON',
+      'CARD',
+    ]);
+    expect(await state(product.id)).toEqual(before);
+    expect(await repository.replaceScreenshotUiElements(screenshot.id, [])).toEqual([]);
+    expect((await repository.findScreenshotUiElementsByScreenshotIds([screenshot.id]))[screenshot.id]).toEqual([]);
+  });
 
   it.each(['revision', 'intent'] as const)(
     '%s 저장 실패는 원격 호출 없이 행·이미지·revision·기존 intent를 보존한다',

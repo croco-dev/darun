@@ -64,12 +64,9 @@ export class UpdateProductScreenshot {
             throw productScreenshotInUse();
           }
         }
-      }
+      },
+      normalizedUiElements
     );
-
-    if (normalizedUiElements !== undefined) {
-      await this.productScreenshotRepository.replaceScreenshotUiElements(id, normalizedUiElements);
-    }
 
     return screenshot;
   }
