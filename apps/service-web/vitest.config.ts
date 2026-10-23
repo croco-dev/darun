@@ -5,6 +5,7 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  esbuild: { jsx: 'automatic' },
   test: {
     environment: 'node',
     include: ['__tests__/**/*.test.{ts,tsx}'],
@@ -12,6 +13,7 @@ export default defineConfig({
 
   resolve: {
     alias: {
+      '@darun/provider-auth/client': path.resolve(__dirname, '../../libs/shared/provider-auth/client/src/index.ts'),
       '@darun/utils-apollo-client/client': path.resolve(
         __dirname,
         '../../libs/shared/utils-apollo-client/client/src/index.ts'

@@ -17,7 +17,7 @@ export const ClientRootProvider = ({ children }: { children: ReactNode }) => {
   initPostHog();
   return (
     <MotionProvider>
-      <ApolloProvider makeClient={() => container.apolloClient} cookies={cookies}>
+      <ApolloProvider key={locale} makeClient={() => container.getApolloClient(locale)} cookies={cookies}>
         <AuthProvider authService={container.authService} cookies={cookies}>
           <ToastProvider closeAriaLabel={locale === 'en' ? 'Close notification' : '알림 닫기'}>
             {children}

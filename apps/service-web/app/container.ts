@@ -5,6 +5,7 @@ import { ErrorLink } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
 import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
+import { normalizeLocale, type PublicLocale } from '../lib/seo/url';
 
 const httpErrorLink = new ErrorLink(({ error }) => {
   if (CombinedGraphQLErrors.is(error)) {
@@ -31,24 +32,38 @@ const httpLink = new BatchHttpLink({
   batchInterval: 20,
 });
 
-const apolloClient = new ApolloClient({
-  cache: new InMemoryCache(),
-  link: ApolloLink.from([
-    new RetryLink({
-      delay: {
-        initial: 100,
-        jitter: true,
-      },
-      attempts: {
-        max: 2,
-        retryIf: shouldRetryOperation,
-      },
-    }),
-    httpErrorLink,
-    createTimeoutLink(),
-    httpLink,
-  ]),
-});
+function createApolloClient() {
+  return new ApolloClient({
+    cache: new InMemoryCache(),
+    link: ApolloLink.from([
+      new RetryLink({
+        delay: {
+          initial: 100,
+          jitter: true,
+        },
+        attempts: {
+          max: 2,
+          retryIf: shouldRetryOperation,
+        },
+      }),
+      httpErrorLink,
+      createTimeoutLink(),
+      httpLink,
+    ]),
+  });
+}
+
+const apolloClients = new Map<PublicLocale, ApolloClient>();
+
+function getApolloClient(locale: string): ApolloClient {
+  const key = normalizeLocale(locale);
+  let client = apolloClients.get(key);
+  if (!client) {
+    client = createApolloClient();
+    apolloClients.set(key, client);
+  }
+  return client;
+}
 
 const authService = new FirebaseAuthService({
   projectId: process.env['NEXT_PUBLIC_FIREBASE_PROJECT_ID'] ?? 'darun-io',
@@ -61,5 +76,5 @@ const authService = new FirebaseAuthService({
 export const container = {
   authService,
   httpLink,
-  apolloClient,
+  getApolloClient,
 };

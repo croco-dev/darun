@@ -5,6 +5,6 @@ describe('service-web container', () => {
   it('container exports stable singleton instances', () => {
     expect(container.authService).toBe(container.authService);
     expect(container.httpLink).toBe(container.httpLink);
-    expect(container.apolloClient).toBe(container.apolloClient);
+    expect(container.getApolloClient('ko')).toBe(container.getApolloClient('ko'));
   });
 });
