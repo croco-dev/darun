@@ -118,6 +118,7 @@ jobs:
           VISUAL_FLOW_WRITES_ENABLED: "false"
           VOTE_IP_SALT: ${{ secrets.VOTE_IP_SALT }}
       - name: Verify deployed GraphQL
+        if: steps.revision.outputs.deploy == 'true'
         run: node scripts/verify-deployment.mjs
         timeout-minutes: 2
         env:

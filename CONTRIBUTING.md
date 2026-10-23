@@ -208,7 +208,8 @@ Production Deploy의 `deploy` job은 트리거·브랜치·revision과 무관하
 
 ### 배포 후 GraphQL 응답 확인과 실패 대응
 
-운영 workflow는 SST 성공 후 `node scripts/verify-deployment.mjs`를 필수 실행합니다.
+운영 workflow는 실제 배포 대상으로 선택된 revision의 SST 성공 후 `node scripts/verify-deployment.mjs`를 필수 실행합니다.
+오래된 revision을 건너뛰면 응답 검사도 건너뛰며, 검사는 같은 `prod-graphql` 잠금이 유지되는 deploy job 안에서 실행합니다.
 [SST가 성공한 배포의 출력을 기록하는 `.sst/outputs.json`](https://sst.dev/docs/reference/config/#run)의
 `api` URL에 `/graphql`을 붙이며 URL이나 출력 파일 전체를 로그에 남기지 않습니다.
 `query { __typename }`로 초기화를, `query { categories(first: 1) { id } }`로 DB 읽기를
