@@ -1,0 +1,1 @@
+ALTER TABLE "product_research_jobs" ADD COLUMN "reviewed_input" jsonb;

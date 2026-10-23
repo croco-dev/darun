@@ -23,7 +23,8 @@ describe('production GraphQL error responses', () => {
       expect(response.message).toBe('Internal server error');
       expect(response.extensions).toEqual({ code: 'INTERNAL_SERVER_ERROR' });
       expect(JSON.stringify(response)).not.toContain('secret');
-      expect(diagnostic).toHaveBeenCalledWith('[GraphQL Error]', original);
+      expect(diagnostic).toHaveBeenCalledWith('[GraphQL Error]', expect.objectContaining({ path: ['broken'] }));
+      expect(JSON.stringify(diagnostic.mock.calls)).not.toContain('secret');
       expect(formatServerError(original.toJSON(), original, true).message).toContain('secret');
     } finally {
       diagnostic.mockRestore();

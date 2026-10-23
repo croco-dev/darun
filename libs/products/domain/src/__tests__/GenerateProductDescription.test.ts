@@ -15,7 +15,13 @@ describe('GenerateProductDescriptionCandidate', () => {
   const mockEvidence = {
     productId: 'prod-1',
     productName: '테스트',
-    items: [{ id: 'product:summary' as const, kind: 'product_summary' as const, text: '요약' }],
+    items: [
+      {
+        id: 'product:summary' as const,
+        kind: 'product_summary' as const,
+        text: '요약',
+      },
+    ],
   };
 
   const mockDoc = {
@@ -33,6 +39,8 @@ describe('GenerateProductDescriptionCandidate', () => {
     vi.mocked(assembler.assemble).mockResolvedValue({
       evidence: mockEvidence,
       evidenceHash: 'hash-ev-1',
+      evidenceHashVersion: 'v2',
+      legacyEvidenceHash: 'legacy-1',
       baseDescriptionHash: 'hash-desc-1',
     });
 
@@ -64,11 +72,15 @@ describe('GenerateProductDescriptionCandidate', () => {
       .mockResolvedValueOnce({
         evidence: mockEvidence,
         evidenceHash: 'hash-ev-1',
+        evidenceHashVersion: 'v2',
+        legacyEvidenceHash: 'legacy-1',
         baseDescriptionHash: 'hash-desc-1',
       })
       .mockResolvedValueOnce({
         evidence: mockEvidence,
         evidenceHash: 'hash-ev-MODIFIED',
+        evidenceHashVersion: 'v2',
+        legacyEvidenceHash: 'legacy-2',
         baseDescriptionHash: 'hash-desc-1',
       });
 

@@ -7,7 +7,7 @@ import { useProductFeatureTable } from './useProductFeatureTable';
 
 export const ProductFeatureTable = bind(
   useProductFeatureTable,
-  ({ features, loading, error, editFeature, refetch }) => {
+  ({ features, loading, error, editFeature, refetch, translationAction }) => {
     if (loading) {
       return <AdminLoadingState />;
     }
@@ -43,7 +43,7 @@ export const ProductFeatureTable = bind(
               <th className="w-[70px] border-b border-r border-dark-200 px-4 py-3 font-medium text-center">이모지</th>
               <th className="w-[180px] border-b border-r border-dark-200 px-4 py-3 font-medium">이름</th>
               <th className="border-b border-r border-dark-200 px-4 py-3 font-medium">설명</th>
-              <th className="w-[120px] border-b border-dark-200 px-4 py-3 last:border-r-0">
+              <th className="w-[230px] border-b border-dark-200 px-4 py-3 last:border-r-0">
                 <span className="sr-only">작업</span>
               </th>
             </tr>
@@ -65,7 +65,7 @@ export const ProductFeatureTable = bind(
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex justify-end">
+                  <div className="flex flex-col items-end gap-2">
                     <Button
                       onClick={() => editFeature(feature.id)}
                       variant="contained"
@@ -76,6 +76,7 @@ export const ProductFeatureTable = bind(
                       <Pencil size={16} className="shrink-0" aria-hidden="true" />
                       정보 수정
                     </Button>
+                    {translationAction?.(feature.id)}
                   </div>
                 </td>
               </tr>

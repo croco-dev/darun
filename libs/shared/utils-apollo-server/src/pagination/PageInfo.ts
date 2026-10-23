@@ -1,6 +1,6 @@
 import { Field, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('PageInfo')
 export class PageInfo {
   @Field()
   hasNextPage: boolean;

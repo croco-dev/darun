@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import type { ProductResearchJobEntity } from '@darun/products-domain';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as ProductResearchGraphs from '../graphs/ProductResearch';
 import { ProductResearchMutationResolver, ProductResearchQueryResolver } from '../ProductResearch.resolver';
 
 vi.mock('typedi', async importOriginal => {
@@ -12,7 +13,16 @@ vi.mock('typedi', async importOriginal => {
   };
 });
 vi.mock('@darun/utils-apollo-server', () => ({ AuthRole: { Admin: 'Admin' } }));
-vi.mock('@darun/utils-llm', () => ({ BraveSearchClient: vi.fn(), LlmClient: vi.fn() }));
+vi.mock('@darun/utils-llm', () => ({
+  BraveSearchClient: vi.fn(),
+  LlmClient: vi.fn(),
+  JOB_LEASE_MS: 300_000,
+  JOB_COMMIT_MARGIN_MS: 15_000,
+  JOB_MAX_ATTEMPTS: 3,
+  isAbortError: (error: unknown) => error instanceof Error && error.name === 'AbortError',
+  isRetryableError: (error: unknown) => error instanceof Error && error.name === 'RetryableError',
+  withAbortableStage: vi.fn(),
+}));
 vi.mock('@darun/translation-service', () => ({ LlmSettingService: vi.fn() }));
 vi.mock('type-graphql', () => {
   const dummyDecorator = () => () => {};
@@ -34,7 +44,7 @@ vi.mock('type-graphql', () => {
 function jobEntity(overrides: Partial<ProductResearchJobEntity> = {}): ProductResearchJobEntity {
   return {
     id: 'job-1',
-    requestKey: 'req-12345678',
+    requestKey: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
     officialUrl: 'https://linear.app/',
     status: 'completed',
     stage: null,
@@ -91,17 +101,19 @@ describe('ProductResearchMutationResolver', () => {
     );
 
     const result = await resolver.requestProductResearch({
-      requestId: 'req-12345678',
+      requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
       officialUrl: 'https://linear.app/',
     });
-    expect(result.job.id).toBe('job-1');
-    expect(result.dispatchStatus).toBe('QUEUED');
-    expect(requestResearch).toHaveBeenCalledWith({ requestId: 'req-12345678', officialUrl: 'https://linear.app/' }, {});
+    expect(result.id).toBe('job-1');
+    expect(requestResearch).toHaveBeenCalledWith(
+      { requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c', officialUrl: 'https://linear.app/' },
+      {}
+    );
     expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-1' });
     expect(executeResearch).not.toHaveBeenCalled();
   });
 
-  it('returns RETRY_REQUIRED with the job id when SQS dispatch fails', async () => {
+  it('returns the job id even when SQS dispatch fails', async () => {
     const job = jobEntity({ status: 'pending' });
     requestResearch.mockResolvedValueOnce({ job, queued: true });
     sendJob.mockRejectedValueOnce(new Error('sqs down'));
@@ -111,11 +123,11 @@ describe('ProductResearchMutationResolver', () => {
     );
 
     const result = await resolver.requestProductResearch({
-      requestId: 'req-12345678',
+      requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
       officialUrl: 'https://linear.app/',
     });
-    expect(result.job.id).toBe('job-1');
-    expect(result.dispatchStatus).toBe('RETRY_REQUIRED');
+    expect(result.id).toBe('job-1');
+    expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-1' });
     expect(executeResearch).not.toHaveBeenCalled();
   });
 
@@ -129,15 +141,14 @@ describe('ProductResearchMutationResolver', () => {
     );
 
     const result = await resolver.requestProductResearch({
-      requestId: 'req-12345678',
+      requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
       officialUrl: 'https://linear.app/',
     });
-    expect(result.job.id).toBe('job-1');
-    expect(result.dispatchStatus).toBe('QUEUED');
+    expect(result.id).toBe('job-1');
     expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-1' });
   });
 
-  it('returns RETRY_REQUIRED for a stranded pending job when resend fails', async () => {
+  it('returns the stranded pending job when resend fails', async () => {
     const stranded = jobEntity({ status: 'pending' });
     requestResearch.mockResolvedValueOnce({ job: stranded, queued: false });
     sendJob.mockRejectedValueOnce(new Error('sqs down'));
@@ -147,14 +158,14 @@ describe('ProductResearchMutationResolver', () => {
     );
 
     const result = await resolver.requestProductResearch({
-      requestId: 'req-12345678',
+      requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
       officialUrl: 'https://linear.app/',
     });
-    expect(result.job.id).toBe('job-1');
-    expect(result.dispatchStatus).toBe('RETRY_REQUIRED');
+    expect(result.id).toBe('job-1');
+    expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-1' });
   });
 
-  it('returns DEDUPED without dispatch for a terminal job on a deduped requestId', async () => {
+  it('returns the terminal job without dispatch for a deduped requestId', async () => {
     const terminal = jobEntity({ status: 'completed' });
     requestResearch.mockResolvedValueOnce({ job: terminal, queued: false });
     const resolver = createResolver();
@@ -163,17 +174,16 @@ describe('ProductResearchMutationResolver', () => {
     );
 
     const result = await resolver.requestProductResearch({
-      requestId: 'req-12345678',
+      requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
       officialUrl: 'https://linear.app/',
     });
-    expect(result.job.id).toBe('job-1');
-    expect(result.dispatchStatus).toBe('DEDUPED');
+    expect(result.id).toBe('job-1');
     expect(sendJob).not.toHaveBeenCalled();
   });
 
   it('propagates a typed invalid-args rejection for a requestId URL mismatch without dispatch', async () => {
     const mismatch = Object.assign(new Error('요청 ID에 이미 다른 공식 URL이 연결되어 있습니다.'), {
-      code: 'product/invalid-args',
+      code: 'IDEMPOTENCY_KEY_CONFLICT',
     });
     requestResearch.mockRejectedValueOnce(mismatch);
     const resolver = createResolver();
@@ -182,8 +192,11 @@ describe('ProductResearchMutationResolver', () => {
     );
 
     await expect(
-      resolver.requestProductResearch({ requestId: 'req-12345678', officialUrl: 'https://notion.so/' })
-    ).rejects.toMatchObject({ code: 'product/invalid-args' });
+      resolver.requestProductResearch({
+        requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
+        officialUrl: 'https://notion.so/',
+      })
+    ).rejects.toMatchObject({ code: 'IDEMPOTENCY_KEY_CONFLICT' });
     expect(sendJob).not.toHaveBeenCalled();
   });
 
@@ -198,10 +211,9 @@ describe('ProductResearchMutationResolver', () => {
       {} as never
     );
 
-    const result = await resolver.retryProductResearch('job-old', { requestId: 'req-retry-99' });
-    expect(result?.job.id).toBe('job-new');
-    expect(result?.dispatchStatus).toBe('QUEUED');
-    expect(retryFailedResearch).toHaveBeenCalledWith('job-old', {}, 'req-retry-99');
+    const result = await resolver.retryProductResearch('job-old', { requestId: '1234567812344abc9012345678abcdef' });
+    expect(result?.id).toBe('job-new');
+    expect(retryFailedResearch).toHaveBeenCalledWith('job-old', {}, '1234567812344abc9012345678abcdef');
     expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-new' });
   });
 
@@ -216,13 +228,12 @@ describe('ProductResearchMutationResolver', () => {
       {} as never
     );
 
-    const result = await resolver.retryProductResearch('job-old', { requestId: 'req-collide-1' });
-    expect(result?.job.id).toBe('job-existing');
-    expect(result?.dispatchStatus).toBe('QUEUED');
+    const result = await resolver.retryProductResearch('job-old', { requestId: 'feedfacebeef4d5e8021c0ffee123456' });
+    expect(result?.id).toBe('job-existing');
     expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-existing' });
   });
 
-  it('returns RETRY_REQUIRED for a stranded pending job when retry resend fails', async () => {
+  it('returns the stranded pending job when retry resend fails', async () => {
     const failed = jobEntity({ id: 'job-old', status: 'failed' });
     const raced = jobEntity({ id: 'job-existing', status: 'pending' });
     findById.mockResolvedValueOnce(failed);
@@ -233,19 +244,18 @@ describe('ProductResearchMutationResolver', () => {
       {} as never
     );
 
-    const result = await resolver.retryProductResearch('job-old', { requestId: 'req-collide-1' });
-    expect(result?.job.id).toBe('job-existing');
-    expect(result?.dispatchStatus).toBe('RETRY_REQUIRED');
+    const result = await resolver.retryProductResearch('job-old', { requestId: 'feedfacebeef4d5e8021c0ffee123456' });
+    expect(result?.id).toBe('job-existing');
+    expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-existing' });
   });
 
-  it('returns DEDUPED for a completed job queried directly via retry', async () => {
+  it('returns the completed job without dispatch when retried directly', async () => {
     const terminal = jobEntity({ id: 'job-done', status: 'completed' });
     findById.mockResolvedValueOnce(terminal);
     const resolver = createResolver();
 
     const result = await resolver.retryProductResearch('job-done');
-    expect(result?.job.id).toBe('job-done');
-    expect(result?.dispatchStatus).toBe('DEDUPED');
+    expect(result?.id).toBe('job-done');
     expect(sendJob).not.toHaveBeenCalled();
     expect(retryFailedResearch).not.toHaveBeenCalled();
   });
@@ -253,7 +263,7 @@ describe('ProductResearchMutationResolver', () => {
   it('propagates a typed invalid-args rejection when retry collides on a different URL without dispatch', async () => {
     const failed = jobEntity({ id: 'job-old', status: 'failed' });
     const mismatch = Object.assign(new Error('요청 ID에 이미 다른 공식 URL이 연결되어 있습니다.'), {
-      code: 'product/invalid-args',
+      code: 'IDEMPOTENCY_KEY_CONFLICT',
     });
     findById.mockResolvedValueOnce(failed);
     retryFailedResearch.mockRejectedValueOnce(mismatch);
@@ -262,8 +272,10 @@ describe('ProductResearchMutationResolver', () => {
       {} as never
     );
 
-    await expect(resolver.retryProductResearch('job-old', { requestId: 'req-collide-1' })).rejects.toMatchObject({
-      code: 'product/invalid-args',
+    await expect(
+      resolver.retryProductResearch('job-old', { requestId: 'feedfacebeef4d5e8021c0ffee123456' })
+    ).rejects.toMatchObject({
+      code: 'IDEMPOTENCY_KEY_CONFLICT',
     });
     expect(sendJob).not.toHaveBeenCalled();
   });
@@ -287,6 +299,7 @@ describe('ProductResearchMutationResolver', () => {
       summary: '요약',
       logoUrl: 'https://linear.app/logo.png',
       officialUrl: 'https://linear.app/',
+      officialUrlConfirmed: false,
       categoryIds: ['cat-1'],
       features: [],
       tags: [],
@@ -299,18 +312,18 @@ describe('ProductResearchMutationResolver', () => {
 });
 
 describe('ProductResearchGraphSchema', () => {
-  it('exposes requestId input and payload dispatch status via decorator metadata', async () => {
-    const { RequestProductResearchInput, RequestProductResearchPayload } = await import('../graphs/ProductResearch');
+  it('exposes the request/retry input shapes without the wrapper payload type', () => {
+    const { RequestProductResearchInput, RetryProductResearchInput } = ProductResearchGraphs;
     expect(new RequestProductResearchInput()).toBeTruthy();
-    expect(new RequestProductResearchPayload()).toBeTruthy();
+    expect(new RetryProductResearchInput()).toBeTruthy();
+    expect('RequestProductResearchPayload' in ProductResearchGraphs).toBe(false);
     const mutationSource = ProductResearchMutationResolver.prototype.requestProductResearch as never as object;
     expect(mutationSource).toBeTruthy();
     expect(ProductResearchQueryResolver).toBeTruthy();
   });
 
-  it('maps reference-only candidates without touching persisted semantics', async () => {
-    const { toProductResearchJobGraph } = await import('../graphs/ProductResearch');
-    const graph = toProductResearchJobGraph(
+  it('maps reference-only candidates without touching persisted semantics', () => {
+    const graph = ProductResearchGraphs.toProductResearchJobGraph(
       jobEntity({
         status: 'completed',
         result: {

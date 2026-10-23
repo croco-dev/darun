@@ -1,6 +1,13 @@
 import OpenAI from 'openai';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { getOpenRouterApiKey } from '../constant';
 import type { LlmConfig, LlmConfigProvider } from './LlmConfig';
+import {
+  LlmEndpointKeyError,
+  LlmConfigReadFailedError,
+  normalizeLlmEndpointBase,
+  resolveLlmEndpointKey,
+} from './LlmEndpointKeyPolicy';
 import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL, type LlmModel } from './LlmModel';
 
 export type LlmChatMessage = {
@@ -10,31 +17,49 @@ export type LlmChatMessage = {
 
 export class LlmClient {
   private readonly clientCache = new Map<string, OpenAI>();
+  private readonly attemptConfig = new AsyncLocalStorage<{ config?: Promise<LlmConfig> }>();
 
   constructor(private readonly configProvider?: LlmConfigProvider) {}
 
-  async getConfig(): Promise<LlmConfig> {
-    const envApiKey = getOpenRouterApiKey() || '';
+  /** Resolve on first use inside claimed work; credentials and the snapshot stay attempt-local. */
+  async withConfigSnapshot<T>(run: () => Promise<T>): Promise<T> {
+    return this.attemptConfig.run({}, run);
+  }
 
+  async getConfig(): Promise<LlmConfig> {
+    const attempt = this.attemptConfig.getStore();
+    if (attempt) {
+      attempt.config ??= this.readConfig();
+      return { ...(await attempt.config) };
+    }
+    return this.readConfig();
+  }
+
+  private async readConfig(): Promise<LlmConfig> {
+    let config: LlmConfig;
     if (this.configProvider) {
       try {
-        const config = await this.configProvider.getConfig();
-        return {
-          endpoint: config.endpoint || DEFAULT_LLM_ENDPOINT,
-          apiKey: config.apiKey || envApiKey,
-          model: config.model || DEFAULT_LLM_MODEL,
-          thinkingLevel: config.thinkingLevel ?? process.env['OPEN_ROUTER_THINKING_LEVEL'] ?? null,
-        };
+        config = await this.configProvider.getConfig();
       } catch (error) {
-        console.warn('[LlmClient] Failed to load config from provider, falling back to default configuration:', error);
+        if (error instanceof LlmConfigReadFailedError || error instanceof LlmEndpointKeyError) throw error;
+        throw new LlmConfigReadFailedError();
       }
+    } else {
+      config = {
+        endpoint: process.env['OPEN_ROUTER_ENDPOINT'] || DEFAULT_LLM_ENDPOINT,
+        apiKey: '',
+        model: process.env['OPEN_ROUTER_MODEL'] || DEFAULT_LLM_MODEL,
+        thinkingLevel: process.env['OPEN_ROUTER_THINKING_LEVEL'] || null,
+      };
     }
-
+    const endpoint = normalizeLlmEndpointBase(config.endpoint || DEFAULT_LLM_ENDPOINT);
+    const key = resolveLlmEndpointKey({ endpoint, explicitApiKey: config.apiKey, envApiKey: getOpenRouterApiKey() });
+    if (!key.allowed) throw new LlmEndpointKeyError();
     return {
-      endpoint: process.env['OPEN_ROUTER_ENDPOINT'] || DEFAULT_LLM_ENDPOINT,
-      apiKey: envApiKey,
-      model: process.env['OPEN_ROUTER_MODEL'] || DEFAULT_LLM_MODEL,
-      thinkingLevel: process.env['OPEN_ROUTER_THINKING_LEVEL'] || null,
+      endpoint,
+      apiKey: key.apiKey ?? '',
+      model: config.model || DEFAULT_LLM_MODEL,
+      thinkingLevel: config.thinkingLevel ?? process.env['OPEN_ROUTER_THINKING_LEVEL'] ?? null,
     };
   }
 
@@ -51,6 +76,7 @@ export class LlmClient {
         baseURL: endpoint,
         apiKey,
         timeout: 120_000,
+        maxRetries: 0,
       });
       this.clientCache.set(key, client);
     }

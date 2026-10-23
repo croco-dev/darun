@@ -11,7 +11,7 @@ import { Container } from 'typedi';
 import http from 'http';
 import { parse as urlParse } from 'url';
 import { resolvers } from './app/resolvers';
-import { createMongodbConnection, createPostgresConnection } from './config/database';
+import { createPostgresConnection } from './config/database';
 import { IS_LOCAL } from './config/environment';
 import { createGraphQLContext } from './functions/context';
 
@@ -42,7 +42,7 @@ function setCorsHeaders(req: http.IncomingMessage, res: http.ServerResponse): bo
 }
 
 async function bootstrap() {
-  await Promise.all([createPostgresConnection(), createMongodbConnection()]);
+  createPostgresConnection();
 
   let requestHandler: (req: http.IncomingMessage, res: http.ServerResponse) => void = (_req, res) => {
     res.statusCode = 503;

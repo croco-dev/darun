@@ -13,12 +13,29 @@ const safeGraphQLCodes: Record<string, true> = {
   FORBIDDEN: true,
 };
 
+function findErrorCallSite(error: unknown): string | undefined {
+  let current = error;
+  for (let depth = 0; depth < 5 && current instanceof Error; depth += 1) {
+    const header = `${current.name}: ${current.message}`;
+    if (current.stack?.startsWith(`${header}\n`)) {
+      // V8's entire message may contain newlines and fake `at` lines. Only inspect
+      // the suffix after its exact header, never lines inside the message itself.
+      return current.stack
+        .slice(header.length)
+        .split('\n')
+        .find(line => /^\s+at\s/.test(line));
+    }
+    // GraphQL wrappers can inherit the original error's stack and a different message.
+    current = 'originalError' in current ? current.originalError : undefined;
+  }
+  return undefined;
+}
+
 export function formatServerError(
   formatted: GraphQLFormattedError,
   error: unknown,
   development: boolean
 ): GraphQLFormattedError {
-  console.error('[GraphQL Error]', error);
   let original = error;
   for (let depth = 0; depth < 5 && original instanceof GraphQLError && original.originalError; depth += 1) {
     original = original.originalError;
@@ -31,6 +48,12 @@ export function formatServerError(
       : original instanceof AuthorizationError
         ? 'FORBIDDEN'
         : undefined;
+  console.error('[GraphQL Error]', {
+    code: domain?.code ?? formatted.extensions?.code,
+    path: formatted.path,
+    callSite: findErrorCallSite(error),
+    locations: formatted.locations,
+  });
   if (domain || authCode || safeGraphQLCodes[String(formatted.extensions?.code)] === true) {
     return {
       message: domain?.message ?? formatted.message,

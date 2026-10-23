@@ -1,9 +1,12 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, varchar, timestamp, text, json } from 'drizzle-orm/pg-core';
+import { bigint, pgTable, varchar, timestamp, text, json } from 'drizzle-orm/pg-core';
 import { ulid } from 'ulid';
 
 export const products = pgTable('products', {
   id: varchar('id', { length: 26 }).primaryKey().$default(ulid),
+  contentRevision: bigint('content_revision', { mode: 'bigint' })
+    .notNull()
+    .default(sql`0`),
   name: varchar('name', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 100 }).notNull().unique(),
   summary: varchar('summary', { length: 255 }).notNull(),

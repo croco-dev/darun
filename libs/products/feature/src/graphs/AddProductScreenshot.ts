@@ -3,13 +3,13 @@ import { Product } from './Product';
 import { VisualPlatformGraph } from './VisualPlatform';
 import { VisualScreenTypeGraph } from './VisualScreenType';
 
-@ObjectType()
+@ObjectType('AddProductScreenshotPayload')
 export class AddProductScreenshotPayload {
   @Field(() => Product, { nullable: true })
   product: Product | null;
 }
 
-@InputType()
+@InputType('AddProductScreenshotInput')
 export class AddProductScreenshotInput {
   @Field()
   imageUrl: string;

@@ -23,61 +23,34 @@ export type AbortableStageOptions = {
   message: string;
 };
 
-/**
- * Stage wall-clock budget with AbortSignal propagation. Rejects with
- * RetryableError on budget expiry (retryable class) and AbortError when the
- * parent signal fires (caller intent, never retried). The wrapped promise
- * must honor `signal` for actual cancellation at the HTTP layer.
- */
-export function withAbortableStage<T>(
+/** Abort the actual transport and wait for settlement before a retry can start. */
+export async function withAbortableStage<T>(
   run: (signal: AbortSignal) => Promise<T>,
   options: AbortableStageOptions
 ): Promise<T> {
   const { budgetMs, signal, message } = options;
-  if (!Number.isFinite(budgetMs) || budgetMs <= 0) {
+  if (!Number.isFinite(budgetMs) || budgetMs <= 0)
     throw new Error('withAbortableStage requires a finite positive budgetMs');
-  }
-  if (signal?.aborted) {
-    return Promise.reject(new AbortError(message));
-  }
+  if (signal?.aborted) throw new AbortError(message);
   const controller = new AbortController();
+  let timedOut = false;
   const onParentAbort = () => controller.abort();
-  if (signal) {
-    signal.addEventListener('abort', onParentAbort, { once: true });
-  }
-  const cleanup = () => {
+  signal?.addEventListener('abort', onParentAbort, { once: true });
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, budgetMs);
+  try {
+    const value = await run(controller.signal);
+    if (signal?.aborted) throw new AbortError(message);
+    if (timedOut) throw new RetryableError(message);
+    return value;
+  } catch (error) {
+    if (signal?.aborted) throw new AbortError(message);
+    if (timedOut) throw new RetryableError(message);
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
     signal?.removeEventListener('abort', onParentAbort);
-  };
-  let timeoutId: NodeJS.Timeout | undefined;
-  const budget = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      controller.abort();
-      reject(new RetryableError(message));
-    }, budgetMs);
-  });
-  const attempt = run(controller.signal).then(
-    value => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      cleanup();
-      return value;
-    },
-    error => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      cleanup();
-      if (signal?.aborted || controller.signal.aborted) {
-        throw new AbortError(error instanceof Error ? error.message : message);
-      }
-      throw error;
-    }
-  );
-  return Promise.race([attempt, budget]).finally(() => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    cleanup();
-  });
+  }
 }

@@ -4,10 +4,10 @@ import {
   ApolloServerPluginLandingPageLocalDefault,
   ApolloServerPluginLandingPageProductionDefault,
 } from '@apollo/server/plugin/landingPage/default';
-import { formatServerError } from './formatError';
 import { GraphQLSchema } from 'graphql/type';
 import { BuildSchemaOptions } from 'type-graphql';
 import { buildSchemaSync } from 'type-graphql';
+import { formatServerError } from './formatError';
 
 type CreateApolloServerParams = {
   options: Omit<BuildSchemaOptions, 'skipCheck'>;

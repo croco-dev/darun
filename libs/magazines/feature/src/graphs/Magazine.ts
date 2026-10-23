@@ -1,6 +1,6 @@
 import { Field, GraphQLISODateTime, ID, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('Magazine')
 export class Magazine {
   @Field(() => ID)
   id: string;

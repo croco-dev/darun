@@ -16,6 +16,7 @@ describe('researchWorkspaceState', () => {
       requestId: 'req-12345678',
       officialUrl: 'https://linear.app/',
       jobId: 'job-1',
+      // 이전 버전이 저장한 전송 상태는 버리고 사용자 편집값만 복구한다.
       dispatchStatus: 'QUEUED',
       review: {
         name: 'Linear',
@@ -31,7 +32,16 @@ describe('researchWorkspaceState', () => {
       uploadedLogoUrl: null,
       materializedSlug: null,
     };
-    expect(parseWorkspaceState(JSON.stringify(state))).toEqual(state);
+    expect(parseWorkspaceState(JSON.stringify(state))).toEqual({
+      version: 1,
+      requestId: 'req-12345678',
+      officialUrl: 'https://linear.app/',
+      jobId: 'job-1',
+      review: state.review,
+      logoFileName: 'logo.png',
+      uploadedLogoUrl: null,
+      materializedSlug: null,
+    });
   });
 
   it('이전 저장값에 업로드 URL이 없어도 Cloudinary 로고는 복구된다', () => {
@@ -40,7 +50,6 @@ describe('researchWorkspaceState', () => {
       requestId: 'req-12345678',
       officialUrl: 'https://linear.app/',
       jobId: 'job-1',
-      dispatchStatus: 'QUEUED',
       review: {
         name: 'Linear',
         slug: 'linear',
@@ -94,8 +103,10 @@ describe('researchWorkspaceState', () => {
   });
 
   it('요청 ID는 서버 requestId 형식을 만족한다', () => {
-    expect(newRequestId()).toMatch(/^[A-Za-z0-9]{8,64}$/);
-    expect(createInitialWorkspaceState(newRequestId()).requestId).toMatch(/^[A-Za-z0-9]{8,64}$/);
+    expect(newRequestId()).toMatch(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
+    expect(createInitialWorkspaceState(newRequestId()).requestId).toMatch(
+      /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/
+    );
   });
 
   it('태그 입력은 중복 없이 정리된다', () => {

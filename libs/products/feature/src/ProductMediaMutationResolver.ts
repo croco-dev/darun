@@ -45,7 +45,6 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
   constructor(
     createProductUseCase: ProductCoreMutationResolver['createProductUseCase'],
     editProductUseCase: ProductCoreMutationResolver['editProductUseCase'],
-    indexProductUseCase: ProductCoreMutationResolver['indexProductUseCase'],
     updateProductTagUseCase: ProductCoreMutationResolver['updateProductTagUseCase'],
     getProductUseCase: GetProduct,
     getProductTagsUseCase: ProductCoreMutationResolver['getProductTagsUseCase'],
@@ -59,14 +58,7 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
     protected readonly generateProductDescriptionUseCase: GenerateProductDescription,
     protected readonly productDescriptionJobService?: ProductDescriptionJobService
   ) {
-    super(
-      createProductUseCase,
-      editProductUseCase,
-      indexProductUseCase,
-      updateProductTagUseCase,
-      getProductUseCase,
-      getProductTagsUseCase
-    );
+    super(createProductUseCase, editProductUseCase, updateProductTagUseCase, getProductUseCase, getProductTagsUseCase);
   }
 
   @Authorized([AuthRole.Admin])
@@ -201,6 +193,10 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
           id: job.id,
           productId: job.productId,
           status: job.status,
+          dispatchStatus: job.dispatchStatus,
+          runNotBefore: job.runNotBefore,
+          nextDispatchAt: job.nextDispatchAt,
+          retryOfJobId: job.retryOfJobId ?? undefined,
           message: job.message ?? undefined,
           error: job.error ?? undefined,
         },
