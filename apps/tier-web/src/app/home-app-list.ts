@@ -1,62 +1,39 @@
-import { APPS_SELECT, type AppListItem } from './apps/app-list';
-
-export {
+import type { SupabaseClient } from '@supabase/supabase-js';
+import {
   APPS_PAGE_SIZE,
-  type AppListItem,
+  APPS_SELECT,
   type AppListRow,
   getAppsPageRange,
   getHasNextPage,
   mapAppListRow,
 } from './apps/app-list';
 
-export const HOME_APPS_SELECT = APPS_SELECT;
+export { type AppListItem } from './apps/app-list';
 
-export const HOME_TIERED_APPS_SELECT = `
-  id,
-  name,
-  description,
-  icon_url,
-  tiers!inner (
-    tier
-  )
-`;
-
-export function buildHomeTierFilter(tier: number) {
-  if (tier === 0) {
-    return 'tier.eq.0,tier.is.null';
-  }
-
-  return `tier.eq.${tier}`;
+export function normalizeHomeTier(value: unknown): number {
+  return typeof value === 'string' && /^[0-3]$/.test(value) ? Number(value) : 1;
 }
 
-const appNameCollator = new Intl.Collator('en', {
-  sensitivity: 'base',
-  numeric: true,
-});
-
-export function compareHomeApps(a: AppListItem, b: AppListItem) {
-  const nameComparison = appNameCollator.compare(a.name, b.name);
-
-  if (nameComparison !== 0) {
-    return nameComparison;
-  }
-
-  return a.id.localeCompare(b.id);
-}
-
-export function mergeHomeApps(lists: AppListItem[][]) {
-  const mergedApps = lists.flat().sort(compareHomeApps);
-  const uniqueApps: AppListItem[] = [];
-  const seenAppIds = new Set<string>();
-
-  for (const app of mergedApps) {
-    if (seenAppIds.has(app.id)) {
-      continue;
-    }
-
-    seenAppIds.add(app.id);
-    uniqueApps.push(app);
-  }
-
-  return uniqueApps;
+export async function fetchHomeAppsPage(supabase: SupabaseClient, { page, tier }: { page: number; tier: number }) {
+  const { from, to } = getAppsPageRange(page, APPS_PAGE_SIZE);
+  // Anti-join excludes assigned tiers 1–3 without excluding explicit tier 0 or unassigned apps.
+  let query =
+    tier === 0
+      ? supabase
+          .from('apps')
+          .select(`${APPS_SELECT},assigned_tier:tiers()`, { count: 'exact' })
+          .gt('assigned_tier.tier', 0)
+          .is('assigned_tier', null)
+      : supabase
+          .from('apps')
+          .select(APPS_SELECT.replace('tiers (', 'tiers!inner ('), { count: 'exact' })
+          .eq('tiers.tier', tier);
+  query = query.order('name', { ascending: true }).order('id', { ascending: true });
+  const { data, error, count } = await query.range(from, to).overrideTypes<AppListRow[], { merge: false }>();
+  if (error) throw new Error(error.message);
+  return {
+    apps: data?.map(mapAppListRow) ?? [],
+    totalCount: count ?? 0,
+    hasNextPage: getHasNextPage(count ?? 0, to),
+  };
 }
