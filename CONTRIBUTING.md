@@ -191,7 +191,11 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
 
 3. **배포 실행**:
    품질 검사를 모두 통과하면 백엔드 리소스가 자동으로 배포됩니다.
-   배포 명령: `sst deploy --stage prod`
+   저장소의 수동 배포 명령은 `pnpm --filter graphql-api run deploy`입니다. `INFRA_ENV=prod`, `RUNNING_ENV=prod`, `DATABASE_URL`을 실행 환경에 설정해야 합니다. `NODE_ENV=test` 환경에서는 migration이 실행되지 않으므로 배포 명령이 이를 거절합니다. CI와 수동 명령 모두 일회성 cutover 변수를 요구하지 않습니다. 비밀 값은 로그나 명령 이력에 남기지 않습니다.
+
+   수동 명령은 환경 확인 → `check:migrations` → `build:lambda` → `verify:lambda` → `predeploy:prod` → SST 순서로 실행합니다. `check:migrations`는 SQL 생성 누락만 검사하며 DB에 적용하지 않습니다. CI와 수동 명령이 공유하는 `predeploy:prod`는 prod 환경을 다시 확인한 뒤 `migrate`로 journal의 pending SQL을 실제 적용합니다. 어느 단계든 실패하면 이후 migration 또는 SST를 호출하지 않습니다. CI는 quality 성공 후 Lambda build/verify와 이 공통 단계를 거쳐 배포합니다.
+
+   migration 실패 시 오류와 DB 상태를 확인하고 후속 migration 등으로 원인을 해결한 뒤 같은 명령을 다시 실행합니다. 이미 적용된 SQL을 수정하거나 journal을 지우지 않습니다. migration 성공 뒤 SST가 실패한 경우에도 같은 명령으로 재실행하며 이미 기록된 migration은 다시 적용하지 않습니다. 이 명령은 자동 rollback이나 실행 간 직렬화를 제공하지 않으므로 수동 실행은 다른 운영 배포가 진행 중이지 않을 때 수행합니다.
    이때 `RUNNING_ENV=prod` 값은 Sentry 환경 분류와 Cloudinary 업로드 폴더 규칙에 영향을 주므로 그대로 유지해야 합니다.
 
 ### 운영 배포 직렬화·재실행·rollback
