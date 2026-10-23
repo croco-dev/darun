@@ -120,7 +120,7 @@ export class TranslationJobService {
         async signal => {
           stageSignal = signal;
           const snapshot = await this.sourceStore.read({ entityType, entityId: job.entityId, fields });
-          const result = await this.translateSnapshot(snapshot, signal);
+          const result = await this.translateSnapshot(snapshot, signal, options?.deadline);
           // Deadline aborts cannot commit even if a provider ignores its AbortSignal.
           signal.throwIfAborted();
           await this.sourceStore.commit({
@@ -154,12 +154,12 @@ export class TranslationJobService {
   async executeProductTranslationJob(
     jobId: string,
     productId: string,
-    options?: { leaseToken?: string; signal?: AbortSignal; stageBudgetMs?: number }
+    options?: { leaseToken?: string; signal?: AbortSignal; stageBudgetMs?: number; deadline?: Date }
   ) {
     await this.executeTranslationJob(jobId, { entityType: 'Product', entityId: productId }, options);
   }
 
-  private async translateSnapshot(snapshot: TranslationSourceSnapshot, signal: AbortSignal) {
+  private async translateSnapshot(snapshot: TranslationSourceSnapshot, signal: AbortSignal, deadline?: Date) {
     const rows: UpsertTranslationParams[] = [];
     let model = '';
     let promptVersion = '';
@@ -182,6 +182,7 @@ export class TranslationJobService {
         description: productValues['description']!,
         features,
         signal,
+        ...(deadline ? { deadline } : {}),
       });
       model = result.model;
       promptVersion = result.promptVersion;
@@ -216,6 +217,7 @@ export class TranslationJobService {
                 : 'product_copy',
           isHtml: source.field === 'description' || source.field === 'content',
           signal,
+          ...(deadline ? { deadline } : {}),
         });
         if (model && (model !== result.model || promptVersion !== result.promptVersion))
           throw new Error('Translation provenance changed within a job');

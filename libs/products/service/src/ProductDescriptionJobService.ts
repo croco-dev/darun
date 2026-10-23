@@ -106,7 +106,11 @@ export class ProductDescriptionJobService {
       const candidateResult = await withAbortableStage(
         async signal => {
           stageSignal = signal;
-          const result = await this.generateProductDescriptionUseCase.execute({ productId: claim.productId, signal });
+          const result = await this.generateProductDescriptionUseCase.execute({
+            productId: claim.productId,
+            signal,
+            ...(options?.deadline ? { deadline: options.deadline } : {}),
+          });
           signal.throwIfAborted();
           return result;
         },

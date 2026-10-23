@@ -40,7 +40,7 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
 
   async generate(
     evidence: ProductDescriptionEvidence,
-    options?: { model?: string; signal?: AbortSignal }
+    options?: { model?: string; signal?: AbortSignal; deadline?: Date }
   ): Promise<ProductDescriptionGenerationResult> {
     const config = await this.llmClient.getConfig();
     const model = options?.model ?? config.model;
@@ -68,7 +68,13 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
             message: '상품 설명 초안 생성 요청이 시간 초과되었습니다.',
           }
         ),
-      { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
+      {
+        maxRetries: 1,
+        baseDelay: 1000,
+        maxDelay: 5000,
+        signal: options?.signal,
+        deadline: options?.deadline,
+      }
     );
 
     const writerContent = writerResponse.content?.trim();
@@ -99,7 +105,13 @@ export class ProductDescriptionGeneratorImpl implements ProductDescriptionGenera
             message: '상품 설명 검수 요청이 시간 초과되었습니다.',
           }
         ),
-      { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
+      {
+        maxRetries: 1,
+        baseDelay: 1000,
+        maxDelay: 5000,
+        signal: options?.signal,
+        deadline: options?.deadline,
+      }
     );
 
     const reviewerContent = reviewerResponse.content?.trim();
