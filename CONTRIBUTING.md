@@ -192,6 +192,11 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
    배포 명령: `sst deploy --stage prod`
    이때 `RUNNING_ENV=prod` 값은 Sentry 환경 분류와 Cloudinary 업로드 폴더 규칙에 영향을 주므로 그대로 유지해야 합니다.
 
+## 비동기 작업 복구
+
+SST의 `JobRecoveryTick`은 `CronV2`로 매분 번역·AI 소개·리서치·상품 콘텐츠 동기화 작업의 복구 handler를 실행하며, 네 작업 큐에 대한 `sqs:SendMessage` 권한과 큐 URL을 전달합니다. 배포 출력의 `jobRecoveryScheduleArn` ARN으로 생성된 스케줄을 확인할 수 있습니다. 번역 결과는 작업 행을 잠근 뒤 lease를 다시 확인한 같은 트랜잭션에서만 저장합니다. 동일 대상·종류·언어의 활성 번역 작업은 중복 생성하지 않으며, 번역·소개 작업은 logical job별로 최대 5회 시도합니다. 수동 재시도는 실패한 작업 이력을 보존하고 `retryOfJobId`로 연결한 새 logical job을 만듭니다.
+
+격리 PostgreSQL 주소를 `W4_DATABASE_URL`에 지정하고 `W4_PG=1 pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W4JobLeaseRecovery.pg.test.ts`로 lease 소유권과 만료된 실행의 확정 쓰기 거절을 검증합니다. 운영 DB를 이 회귀 검증에 사용하지 않습니다. 공개 GraphQL mutation 이름은 유지하며 내부 소개 생성 호환 alias는 사용하지 않습니다.
 ## AI 소개 후보의 근거와 출력 계약
 
 소개 생성은 Writer/Reviewer 두 번의 구조화 응답을 검증합니다. 각 backed text는 `text`, `evidenceRefs`, `bullets`, `quote`, `link`를 모두 요구하며 미사용 값은 `[]`, `false`, `null`입니다. 새 생성은 직접 인용을 입증할 근거 계약이 없어 `quote:true`를 거절합니다. 기존 blockquote와 저장된 후보 HTML은 그대로 유지하며, schema·근거 ID 존재·LLM reviewer 결과를 사실성 인증으로 표시하지 않습니다. 근거가 적으면 짧은 소개와 빈 추천 목록을 허용합니다.

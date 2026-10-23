@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import {
   ApplyProductDescriptionCandidate,
-  GenerateProductDescription,
+  GenerateProductDescriptionCandidate,
   GetProduct,
   CategoryRepositoryToken,
   ProductResearchJobRepositoryToken,
@@ -123,7 +123,7 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
     const getProduct = new GetProduct(new PostgresqlProductRepository(db as never));
     descriptionService = new ProductDescriptionJobService(
       getProduct,
-      new GenerateProductDescription(
+      new GenerateProductDescriptionCandidate(
         new PostgresqlProductDescriptionEvidenceAssembler(db as never),
         new ProductDescriptionGeneratorImpl(client)
       ),

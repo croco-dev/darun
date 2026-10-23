@@ -1,5 +1,5 @@
 import {
-  GenerateProductDescription,
+  GenerateProductDescriptionCandidate,
   GetProduct,
   type Product,
   type ProductDescriptionJobEntity,
@@ -26,7 +26,7 @@ export const PRODUCT_DESCRIPTION_STAGE_BUDGET_MS = 270_000 - JOB_COMMIT_MARGIN_M
 export class ProductDescriptionJobService {
   constructor(
     private readonly getProductUseCase: GetProduct,
-    private readonly generateProductDescriptionUseCase: GenerateProductDescription,
+    private readonly generateProductDescriptionUseCase: GenerateProductDescriptionCandidate,
     @Inject(ProductDescriptionJobRepositoryToken)
     private readonly productDescriptionJobRepository: ProductDescriptionJobRepository,
     private readonly productDescriptionQueueService: ProductDescriptionQueueService
