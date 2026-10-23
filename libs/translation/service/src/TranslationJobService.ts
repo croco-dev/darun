@@ -196,7 +196,7 @@ export class TranslationJobService {
           ...source,
           locale: 'en',
           value,
-          sourceHash: computeSourceHash(source.value),
+          sourceHash: computeSourceHash(source.value, source.field),
           model,
           promptVersion,
         });
@@ -225,7 +225,7 @@ export class TranslationJobService {
           ...source,
           locale: 'en',
           value: result.translatedText,
-          sourceHash: computeSourceHash(source.value),
+          sourceHash: computeSourceHash(source.value, source.field),
           model,
           promptVersion,
         });

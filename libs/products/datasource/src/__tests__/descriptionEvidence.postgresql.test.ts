@@ -1,10 +1,13 @@
+import { ApplyProductDescriptionCandidate } from '@darun/products-domain';
 import 'reflect-metadata';
 import { type Drizzle } from '@darun/provider-database';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres, { type Sql } from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
+import { PostgresqlProductDescriptionApplyStore } from '../repositories/PostgresqlProductDescriptionApplyStore';
 import { PostgresqlProductDescriptionEvidenceAssembler } from '../repositories/PostgresqlProductDescriptionEvidenceAssembler';
 import { PostgresqlProductDescriptionJobRepository } from '../repositories/PostgresqlProductDescriptionJobRepository';
 
@@ -61,6 +64,38 @@ suite('isolated PostgreSQL description evidence (SKIPPED without DESCRIPTION_EVI
     });
     expect(stored?.evidenceHashVersion).toBe('v2');
     expect((await repository.findJobById(job.id))?.evidenceHash).toBe(second.evidenceHash);
+  });
+
+  it.each([
+    ['    코드', '코드'],
+    ['    코드 ', '    코드'],
+    ['legacy', '코드'],
+  ])('rejects stale document candidates and preserves persisted body and marker: %j -> %j', async (before, after) => {
+    await sql`update products set description = ${before === 'legacy' ? after : before} where id = 'evidence-product'`;
+    const snapshot = await new PostgresqlProductDescriptionEvidenceAssembler(db).assemble('evidence-product');
+    const repository = new PostgresqlProductDescriptionJobRepository(db);
+    const job = await repository.createJob({
+      productId: 'evidence-product',
+    });
+    await repository.claimJobLease({
+      jobId: job.id,
+      leaseToken: 'document-lease',
+      leaseUntil: new Date(Date.now() + 60_000),
+    });
+    await repository.completeJobLease(job.id, 'document-lease', 'completed', {
+      evidenceHashVersion: snapshot.evidenceHashVersion,
+      evidenceHash: snapshot.evidenceHash,
+      baseDescriptionHash:
+        before === 'legacy' ? createHash('sha256').update(after).digest('hex') : snapshot.baseDescriptionHash,
+      candidateHtml: '<p>이전 소개</p>',
+    });
+    await sql`update products set description = ${after} where id = 'evidence-product'`;
+    const apply = new ApplyProductDescriptionCandidate(new PostgresqlProductDescriptionApplyStore(db));
+    await expect(apply.execute({ jobId: job.id })).rejects.toMatchObject({
+      code: 'STALE_CANDIDATE',
+    });
+    expect((await sql`select description from products where id = 'evidence-product'`)[0]?.description).toBe(after);
+    expect((await repository.findJobById(job.id))?.appliedAt).toBeNull();
   });
 
   it.each(['product_tags', 'product_links', 'product_screenshots', 'product_flows', 'product_research_jobs'])(

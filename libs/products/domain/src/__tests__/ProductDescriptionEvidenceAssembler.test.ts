@@ -1,8 +1,11 @@
+import { vi } from 'vitest';
 import { describe, expect, it } from 'vitest';
+import { createHash } from 'node:crypto';
 import {
   projectProductDescriptionEvidence,
   type ProductDescriptionEvidenceSources,
 } from '../services/ProductDescriptionEvidenceProjector';
+import { GenerateProductDescriptionCandidate } from '../usecases/GenerateProductDescription';
 
 const source: ProductDescriptionEvidenceSources = {
   product: {
@@ -131,6 +134,46 @@ describe('pure description evidence projection', () => {
     });
     expect(first.evidenceHash).toBe(second.evidenceHash);
     expect(first.baseDescriptionHash).not.toBe(second.baseDescriptionHash);
+  });
+
+  it.each([
+    ['    코드', '코드'],
+    ['    코드 ', '    코드'],
+  ])('distinguishes meaningful document whitespace: %j -> %j', (before, after) => {
+    const snapshot = (description: string) =>
+      projectProductDescriptionEvidence({
+        ...source,
+        product: { ...source.product, description },
+      });
+    expect(snapshot(before).baseDescriptionHash).not.toBe(snapshot(after).baseDescriptionHash);
+  });
+
+  it('normalizes line endings but never reuses the legacy trimmed identity', () => {
+    const snapshot = (description: string) =>
+      projectProductDescriptionEvidence({
+        ...source,
+        product: { ...source.product, description },
+      });
+    expect(snapshot('    코드\r\n다음').baseDescriptionHash).toBe(snapshot('    코드\n다음').baseDescriptionHash);
+    expect(snapshot('코드').baseDescriptionHash).not.toBe(createHash('sha256').update('코드').digest('hex'));
+  });
+
+  it.each([
+    ['    코드', '코드'],
+    ['    코드 ', '    코드'],
+  ])('rejects document whitespace edits while generation is running', async (before, after) => {
+    let description = before;
+    const assemble = async () =>
+      projectProductDescriptionEvidence({
+        ...source,
+        product: { ...source.product, description },
+      });
+    const generate = vi.fn().mockImplementation(async () => {
+      description = after;
+      return { candidateHtml: '<p>예전 후보</p>' };
+    });
+    const usecase = new GenerateProductDescriptionCandidate({ assemble }, { generate });
+    await expect(usecase.execute({ productId: 'p' })).rejects.toThrow('stale:');
   });
 
   it('accepts normal empty evidence and rejects unresolved category data', () => {

@@ -46,7 +46,7 @@ export class TranslationService {
       });
 
       if (translated?.value) {
-        const expectedHash = computeSourceHash(koreanValue);
+        const expectedHash = computeSourceHash(koreanValue, field);
         if (translated.sourceHash && translated.sourceHash === expectedHash) {
           return translated.value;
         }
@@ -89,7 +89,7 @@ export class TranslationService {
         const entry = entryMap.get(key);
         if (!entry) continue;
 
-        const expectedHash = computeSourceHash(entry.koreanValue);
+        const expectedHash = computeSourceHash(entry.koreanValue, entry.field);
         if (translatedRow.value && translatedRow.sourceHash && translatedRow.sourceHash === expectedHash) {
           fallbackTranslations.set(key, translatedRow.value);
         }
