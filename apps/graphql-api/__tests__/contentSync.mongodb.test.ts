@@ -542,7 +542,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     });
     expect((await storedTranslations(product.id)).find(row => row?.field === 'description')).toMatchObject({
       value: english,
-      sourceHash: createHash('sha256').update(changed).digest('hex'),
+      sourceHash: `document:v1:${createHash('sha256').update(changed.replace(/\r\n/g, '\n')).digest('hex')}`,
       model: 'offline-readsync',
       promptVersion: firstJob!.promptVersion,
     });
@@ -743,7 +743,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       );
       expect(priorRows.find(row => row?.field === 'description')).toMatchObject({
         value: '<p>Body</p>',
-        sourceHash: createHash('sha256').update('<p>본문</p>').digest('hex'),
+        sourceHash: `document:v1:${createHash('sha256').update('<p>본문</p>'.replace(/\r\n/g, '\n')).digest('hex')}`,
       });
       await expectPublicDescription(product, '<p>본문</p>', '<p>Body</p>');
       expect((await freshness(product.id)).map(row => row.status)).toEqual(Array(5).fill('current'));
@@ -806,7 +806,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       expect(currentRows).toHaveLength(5);
       expect(currentRows.find(row => row?.field === 'description')).toMatchObject({
         value: '<p class="display"><strong>Body</strong></p>',
-        sourceHash: createHash('sha256').update(formatted).digest('hex'),
+        sourceHash: `document:v1:${createHash('sha256').update(formatted.replace(/\r\n/g, '\n')).digest('hex')}`,
         model: 'offline-readsync',
         promptVersion: firstJob!.promptVersion,
       });
@@ -883,7 +883,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
         const { product, firstJob, priorRows } = previous;
         expect(firstJob).toMatchObject({ status: 'completed', attemptCount: 1 });
         expect(priorRows.find(row => row?.field === 'description')).toMatchObject({
-          sourceHash: createHash('sha256').update(original).digest('hex'),
+          sourceHash: `document:v1:${createHash('sha256').update(original.replace(/\r\n/g, '\n')).digest('hex')}`,
           model: 'offline-readsync',
           promptVersion: firstJob!.promptVersion,
         });
@@ -1284,7 +1284,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
         });
         expect(priorRows.find(row => row?.field === 'description')).toMatchObject({
           value: originalEnglish,
-          sourceHash: createHash('sha256').update(original).digest('hex'),
+          sourceHash: `document:v1:${createHash('sha256').update(original.replace(/\r\n/g, '\n')).digest('hex')}`,
           model: 'offline-readsync',
           promptVersion: TRANSLATION_PROMPT_VERSION,
         });
@@ -1314,7 +1314,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
           expect(firstJob).toMatchObject({ status: 'completed', attemptCount: 1 });
           expect(priorRows.find(row => row?.field === 'description')).toMatchObject({
             value: english,
-            sourceHash: createHash('sha256').update(original).digest('hex'),
+            sourceHash: `document:v1:${createHash('sha256').update(original.replace(/\r\n/g, '\n')).digest('hex')}`,
             model: 'offline-readsync',
             promptVersion: TRANSLATION_PROMPT_VERSION,
           });
@@ -1569,7 +1569,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
         if (originalEnglish !== undefined) {
           expect(priorRows.find(row => row?.field === 'description')).toMatchObject({
             value: originalEnglish,
-            sourceHash: createHash('sha256').update(original.replace(/\r\n/g, '\n').trim()).digest('hex'),
+            sourceHash: `document:v1:${createHash('sha256').update(original.replace(/\r\n/g, '\n')).digest('hex')}`,
             model: 'offline-readsync',
             promptVersion: TRANSLATION_PROMPT_VERSION,
           });
