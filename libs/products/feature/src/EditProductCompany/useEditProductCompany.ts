@@ -72,6 +72,7 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
 
   const [search] = useLazyQuery(SearchCompaniesOnEditProductCompanyDocument);
   const [companies, setCompanies] = useState<{ label: string; value: string }[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<{ label: string; value: string } | null>(null);
   const latestSearchRequestId = useRef(0);
 
   const searchCompany = useThrottledCallback(async (query: string) => {
@@ -125,6 +126,15 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
     initialValues: {
       companyId: currentCompany?.id ?? '',
     },
+    onValuesChange: ({ companyId }) => {
+      setSelectedCompany(previous => {
+        if (previous?.value === companyId) return previous;
+        if (currentCompany?.id === companyId) {
+          return { label: currentCompany.name, value: currentCompany.id };
+        }
+        return companies.find(company => company.value === companyId) ?? null;
+      });
+    },
     validate: {
       companyId: value => (!value ? '회사를 선택해주세요.' : null),
     },
@@ -152,12 +162,11 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
     });
   };
 
-  const displayedCompanies = currentCompany
-    ? [
-        { label: `${currentCompany.name} (현재 연결됨)`, value: currentCompany.id },
-        ...companies.filter(c => c.value !== currentCompany.id),
-      ]
-    : companies;
+  const displayedCompanies = [
+    ...(currentCompany ? [{ label: `${currentCompany.name} (현재 연결됨)`, value: currentCompany.id }] : []),
+    ...(selectedCompany ? [selectedCompany] : []),
+    ...companies,
+  ].filter((company, index, options) => options.findIndex(option => option.value === company.value) === index);
 
   const handleCancel = () => {
     if (onCancel) {
