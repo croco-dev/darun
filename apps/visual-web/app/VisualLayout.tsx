@@ -133,7 +133,7 @@ function VisualHeader() {
 
   return (
     <div className="flex w-full flex-wrap items-center justify-between gap-3 py-2.5 sm:min-h-16 sm:py-2">
-      <div className="flex min-w-0 items-center gap-3 sm:gap-8">
+      <div className="flex min-w-0 w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-nowrap sm:gap-8">
         <Link
           href="/"
           aria-label="다른 Visual 홈"
@@ -144,7 +144,10 @@ function VisualHeader() {
             다른 <span className="font-medium text-dark-600">Visual</span>
           </span>
         </Link>
-        <nav aria-label="Visual 탐색" className="flex min-w-0 items-center gap-1">
+        <nav
+          aria-label="Visual 탐색"
+          className="flex min-w-0 w-full flex-wrap items-center gap-1 sm:w-auto sm:flex-nowrap"
+        >
           {NAV_ITEMS.map(tab => {
             const active = isNavItemActive(pathname, tab.href);
             const href = getRetainedNavHref(tab.href, pathname, searchParams);
@@ -202,7 +205,7 @@ function VisualHeader() {
 function VisualHeaderFallback() {
   return (
     <div className="flex w-full items-center py-2.5 sm:min-h-16 sm:py-2">
-      <div className="flex min-w-0 items-center gap-3 sm:gap-8">
+      <div className="flex min-w-0 w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-nowrap sm:gap-8">
         <Link
           href="/"
           aria-label="다른 Visual 홈"
@@ -213,7 +216,10 @@ function VisualHeaderFallback() {
             다른 <span className="font-medium text-dark-600">Visual</span>
           </span>
         </Link>
-        <nav aria-label="Visual 탐색" className="flex min-w-0 items-center gap-1">
+        <nav
+          aria-label="Visual 탐색"
+          className="flex min-w-0 w-full flex-wrap items-center gap-1 sm:w-auto sm:flex-nowrap"
+        >
           {NAV_ITEMS.map(tab => (
             <Link
               key={tab.href}

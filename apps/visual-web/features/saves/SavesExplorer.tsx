@@ -136,10 +136,27 @@ function SavesSkeletons() {
  */
 export function SavesExplorer() {
   const state = useSavesPage();
+  const tabs = (
+    <div role="tablist" aria-label="저장 목록" className="flex gap-2">
+      {TABS.map(tab => (
+        <button
+          key={tab.value}
+          role="tab"
+          aria-selected={state.tab === tab.value}
+          type="button"
+          onClick={() => state.onTabChange(tab.value)}
+          className="min-h-11 rounded-full border border-dark-150 px-4 py-2 text-sm font-semibold"
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
 
   if (state.status === 'loading') {
     return (
       <div className="flex w-full flex-col gap-6 md:gap-10">
+        {tabs}
         <SavesSkeletons />
         <span className="sr-only">저장한 화면을 불러오는 중</span>
       </div>
@@ -149,6 +166,7 @@ export function SavesExplorer() {
   if (state.status === 'login-required') {
     return (
       <div className="flex w-full flex-col items-center gap-3 py-16 text-center">
+        {tabs}
         <p className="text-lg font-bold text-dark-900">저장은 로그인 후 이용할 수 있어요.</p>
         <p className="text-sm text-dark-500">로그인하면 저장한 화면과 플로우를 여기서 모아볼 수 있어요.</p>
         <VisualLoginButton redirectTo="/saves" />
@@ -159,6 +177,7 @@ export function SavesExplorer() {
   if (state.status === 'error') {
     return (
       <div role="alert" className="flex w-full flex-col items-center gap-3 py-16 text-center">
+        {tabs}
         <p className="text-lg font-bold text-dark-900">저장 목록을 불러오지 못했어요.</p>
         <Button type="button" variant="shadow" size="sm" onClick={state.retry}>
           다시 시도
@@ -173,6 +192,7 @@ export function SavesExplorer() {
 
   return (
     <div className="flex w-full flex-col gap-6 md:gap-10">
+      <p className="text-sm text-dark-500">계정에 저장한 항목입니다. 이 브라우저의 컬렉션과는 별개입니다.</p>
       <div role="tablist" aria-label="저장 목록" className="flex gap-2">
         {TABS.map(tab => (
           <button

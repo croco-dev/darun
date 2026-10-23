@@ -225,7 +225,7 @@ it.each(['/', '/?platform=IOS'])('service suggestion selection clears the draft 
 it('the actual flow consumer keeps its own draft, explicit submit and reset behavior', async () => {
   const requests = mount('/flows?q=기존플로우', true);
   await screen.findByText('검색 결과가 없습니다.');
-  const flowInput = screen.getByRole<HTMLInputElement>('searchbox');
+  const flowInput = screen.getByRole<HTMLInputElement>('combobox', { name: '플로 검색' });
   expect(flowInput.value).toBe('기존플로우');
   fireEvent.change(flowInput, { target: { value: '결제 플로우' } });
   fireEvent.change(screen.getByRole('combobox', { name: '플랫폼' }), { target: { value: 'WEB' } });
