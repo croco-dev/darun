@@ -25,6 +25,7 @@ describe('GetAlternativeProducts', () => {
       new AlternativeProduct({ id: 'alt-2', productId: 'prod-1', alternativeProductId: 'manual-2' }),
     ];
     const alternativeRepository = {
+      replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue(manual),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
@@ -65,6 +66,7 @@ describe('GetAlternativeProducts', () => {
 
   it('ranks category matches before tag-only matches', async () => {
     const alternativeRepository = {
+      replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
@@ -113,6 +115,7 @@ describe('GetAlternativeProducts', () => {
 
   it('batches tag lookup into a single call', async () => {
     const alternativeRepository = {
+      replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
@@ -143,6 +146,7 @@ describe('GetAlternativeProducts', () => {
 
   it('deduplicates products appearing in multiple categories', async () => {
     const alternativeRepository = {
+      replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
@@ -174,6 +178,7 @@ describe('GetAlternativeProducts', () => {
 
   it('calls bounded category fetch with the candidate cap', async () => {
     const alternativeRepository = {
+      replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
@@ -199,6 +204,7 @@ describe('GetAlternativeProducts', () => {
 
   it('uses tag overlap and latestness as tie-breakers without overriding category match', async () => {
     const alternativeRepository = {
+      replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),

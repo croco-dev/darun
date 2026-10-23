@@ -3,7 +3,7 @@ import { DrizzleToken } from '@darun/provider-database';
 import { AlternativeProduct, AlternativeProductRepository } from '@darun/recommendation-domain';
 import { AlternativeProductRepositoryToken } from '@darun/recommendation-domain';
 import DataLoader from 'dataloader';
-import { inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { alternativeProducts } from '../entities/AlternativeProductSchema';
@@ -20,9 +20,7 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
           .where(inArray(alternativeProducts.productId, [...productIds]));
 
         const groupByDocs = groupBy(docs, doc => doc.productId);
-        return productIds.map(productId =>
-          (groupByDocs[productId] || []).map(doc => this.toDomain(doc))
-        );
+        return productIds.map(productId => (groupByDocs[productId] || []).map(doc => this.toDomain(doc)));
       },
       {
         cache: true,
@@ -38,6 +36,35 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
       productId: doc.productId,
       alternativeProductId: doc.alternativeProductId,
     });
+  }
+
+  async replaceByProductId(productId: string, alternativeProductIds: string[]): Promise<void> {
+    const nextIds = [...new Set(alternativeProductIds.filter(Boolean))];
+    const lockKey = `alternative-products:${productId}`;
+    await this.db.transaction(async tx => {
+      // Lock even an empty list. Read the current set only after acquiring this product's lock.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+      const previous = await tx.select().from(alternativeProducts).where(eq(alternativeProducts.productId, productId));
+      const nextIdSet = new Set(nextIds);
+      const previousIdSet = new Set(previous.map(row => row.alternativeProductId));
+      const removed = previous.filter(row => !nextIdSet.has(row.alternativeProductId));
+      const added = nextIds.filter(id => !previousIdSet.has(id));
+
+      if (removed.length > 0) {
+        await tx.delete(alternativeProducts).where(
+          inArray(
+            alternativeProducts.id,
+            removed.map(row => row.id)
+          )
+        );
+      }
+      if (added.length > 0) {
+        await tx
+          .insert(alternativeProducts)
+          .values(added.map(alternativeProductId => ({ productId, alternativeProductId })));
+      }
+    });
+    this.productIdLoader.clear(productId);
   }
 
   deleteMany(removedAlternatives: AlternativeProduct[]): Promise<boolean> {
