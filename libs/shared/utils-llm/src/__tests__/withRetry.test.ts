@@ -2,7 +2,20 @@ import { APIConnectionError, APIConnectionTimeoutError, APIUserAbortError, APIEr
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LlmEndpointKeyError } from '../libs/LlmEndpointKeyPolicy';
-import { RetryableError, isRetryableError, withRetry } from '../withRetry';
+import { RetryableError, isRetryableError, withRetry, type RetryOptions } from '../withRetry';
+
+const createRateLimitError = (retryAfter: string) =>
+  APIError.generate(
+    429,
+    { error: { message: 'rate limited' } },
+    'request-id',
+    new Headers({ 'retry-after': retryAfter })
+  );
+
+const createRetryFixture = (error: Error, options: RetryOptions) => {
+  const fn = vi.fn().mockRejectedValueOnce(error).mockResolvedValueOnce('ok');
+  return { fn, result: withRetry(fn, options) };
+};
 
 describe('withRetry', () => {
   beforeEach(() => {
@@ -33,15 +46,7 @@ describe('withRetry', () => {
   });
 
   it('실제 OpenAI APIError의 Retry-After 헤더를 자르지 않고 기다린다', async () => {
-    const error = APIError.generate(
-      429,
-      { error: { message: 'provider request rejected' } },
-      'request-id',
-      new Headers({ 'retry-after': '30' })
-    );
-    const fn = vi.fn().mockRejectedValueOnce(error).mockResolvedValueOnce('ok');
-
-    const result = withRetry(fn, {
+    const { fn, result } = createRetryFixture(createRateLimitError('30'), {
       maxRetries: 1,
       baseDelay: 1000,
       maxDelay: 500,
@@ -60,15 +65,10 @@ describe('withRetry', () => {
   it('HTTP-date Retry-After를 현재 시각 기준으로 기다린다', async () => {
     vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
     const retryAt = new Date(Date.now() + 2000).toUTCString();
-    const error = APIError.generate(
-      429,
-      { error: { message: 'rate limited' } },
-      'request-id',
-      new Headers({ 'retry-after': retryAt })
-    );
-    const fn = vi.fn().mockRejectedValueOnce(error).mockResolvedValueOnce('ok');
-
-    const result = withRetry(fn, { maxRetries: 1, baseDelay: 1000 });
+    const { fn, result } = createRetryFixture(createRateLimitError(retryAt), {
+      maxRetries: 1,
+      baseDelay: 1000,
+    });
     await vi.advanceTimersByTimeAsync(1999);
     expect(fn).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1);
@@ -78,15 +78,10 @@ describe('withRetry', () => {
   });
 
   it('잘못된 SDK Retry-After 헤더는 지수 백오프로 대체한다', async () => {
-    const error = APIError.generate(
-      429,
-      { error: { message: 'rate limited' } },
-      'request-id',
-      new Headers({ 'retry-after': 'invalid' })
-    );
-    const fn = vi.fn().mockRejectedValueOnce(error).mockResolvedValueOnce('ok');
-
-    const result = withRetry(fn, { maxRetries: 1, baseDelay: 1000 });
+    const { fn, result } = createRetryFixture(createRateLimitError('invalid'), {
+      maxRetries: 1,
+      baseDelay: 1000,
+    });
     await vi.advanceTimersByTimeAsync(999);
     expect(fn).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1);
@@ -97,14 +92,10 @@ describe('withRetry', () => {
 
   it('대기 중 caller abort를 전달하고 timer를 해제한다', async () => {
     const controller = new AbortController();
-    const error = APIError.generate(
-      429,
-      { error: { message: 'rate limited' } },
-      'request-id',
-      new Headers({ 'retry-after': '30' })
-    );
-    const fn = vi.fn().mockRejectedValue(error);
-    const result = withRetry(fn, { maxRetries: 1, signal: controller.signal });
+    const { fn, result } = createRetryFixture(createRateLimitError('30'), {
+      maxRetries: 1,
+      signal: controller.signal,
+    });
     await Promise.resolve();
 
     controller.abort();
@@ -115,15 +106,13 @@ describe('withRetry', () => {
   });
 
   it('Retry-After가 남은 deadline보다 길면 재시도 timer를 만들지 않는다', async () => {
-    const error = APIError.generate(
-      429,
-      { error: { message: 'rate limited' } },
-      'request-id',
-      new Headers({ 'retry-after': '30' })
-    );
-    const fn = vi.fn().mockRejectedValue(error);
+    const error = createRateLimitError('30');
+    const { fn, result } = createRetryFixture(error, {
+      maxRetries: 1,
+      deadline: new Date(Date.now() + 1000),
+    });
 
-    await expect(withRetry(fn, { maxRetries: 1, deadline: new Date(Date.now() + 1000) })).rejects.toBe(error);
+    await expect(result).rejects.toBe(error);
     expect(fn).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
   });
