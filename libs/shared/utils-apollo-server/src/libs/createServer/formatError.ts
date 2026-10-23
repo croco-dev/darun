@@ -9,6 +9,7 @@ const safeGraphQLCodes: Record<string, true> = {
   GRAPHQL_PARSE_FAILED: true,
   GRAPHQL_VALIDATION_FAILED: true,
   BAD_USER_INPUT: true,
+  BAD_REQUEST: true,
   UNAUTHENTICATED: true,
   FORBIDDEN: true,
 };
@@ -55,6 +56,15 @@ export function formatServerError(
   }
   const domain =
     original instanceof Error && domainErrorPrototype.isPrototypeOf(original) ? (original as DomainError) : undefined;
+  const settingError =
+    original instanceof Error &&
+    'code' in original &&
+    (original.code === 'LLM_API_KEY_NOT_ALLOWED' ||
+      original.code === 'LLM_SETTING_SAVE_FAILED' ||
+      original.code === 'LLM_CONFIG_READ_FAILED')
+      ? original
+      : undefined;
+  const publicError = domain ?? settingError;
   const authCode =
     original instanceof AuthenticationError
       ? 'UNAUTHENTICATED'
@@ -62,7 +72,7 @@ export function formatServerError(
         ? 'FORBIDDEN'
         : undefined;
   console.error('[GraphQL Error]', {
-    code: domain?.code ?? formatted.extensions?.code,
+    code: publicError?.code ?? formatted.extensions?.code,
     path: formatted.path,
     callSite: findErrorCallSite(error),
     locations: formatted.locations,
@@ -74,12 +84,12 @@ export function formatServerError(
     original.extensions.code !== 'INTERNAL_SERVER_ERROR'
       ? original.extensions.code
       : undefined;
-  if (domain || authCode || explicitCode || safeGraphQLCodes[String(formatted.extensions?.code)] === true) {
+  if (publicError || authCode || explicitCode || safeGraphQLCodes[String(formatted.extensions?.code)] === true) {
     return {
-      message: domain?.message ?? formatted.message,
+      message: publicError?.message ?? formatted.message,
       locations: formatted.locations,
       path: formatted.path,
-      extensions: { code: domain?.code ?? authCode ?? explicitCode ?? formatted.extensions?.code },
+      extensions: { code: publicError?.code ?? authCode ?? explicitCode ?? formatted.extensions?.code },
     };
   }
   if (development) return formatted;

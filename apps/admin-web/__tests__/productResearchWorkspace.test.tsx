@@ -2445,6 +2445,9 @@ describe('research registration action ownership with real Apollo', () => {
         </ApolloProvider>
       );
       await screen.findByDisplayValue('Notion');
+      await waitFor(() =>
+        expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.name).toBe('Notion')
+      );
       const latest = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       await act(async () => {
         finishStaleMaterialization(materializations[0], outcome);
