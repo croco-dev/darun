@@ -21,9 +21,9 @@ import { TierSelect } from './TierSelect';
 interface AdminAppRecord {
   id: string;
   name: string;
-  tiers: Array<{
+  tiers: {
     tier: number | null;
-  }> | null;
+  } | null;
   memos: Array<{
     content: string | null;
   }> | null;
@@ -59,7 +59,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const { data, count, error } = await queryBuilder
     .order('name', { ascending: true })
     .order('id', { ascending: true })
-    .range(from, to);
+    .range(from, to)
+    .overrideTypes<AdminAppRecord[], { merge: false }>();
 
   if (error) {
     throw new Error(error.message);
@@ -78,10 +79,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   }
 
   const apps =
-    (data as AdminAppRecord[] | null)?.map(app => ({
+    data?.map(app => ({
       id: app.id,
       name: app.name,
-      tier: app.tiers?.[0]?.tier || 0,
+      tier: app.tiers?.tier ?? 0,
       memo: app.memos?.[0]?.content || '',
     })) || [];
 

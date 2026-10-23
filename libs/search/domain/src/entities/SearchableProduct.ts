@@ -10,6 +10,7 @@ export class SearchableProduct {
   public votes?: number;
   public createdAt?: Date;
   public publishedAt?: Date;
+  public sourceRevision?: string;
 
   constructor({
     id,
@@ -23,6 +24,7 @@ export class SearchableProduct {
     votes,
     createdAt,
     publishedAt,
+    sourceRevision,
   }: {
     id?: string;
     slug: string;
@@ -35,6 +37,7 @@ export class SearchableProduct {
     votes?: number;
     createdAt?: Date;
     publishedAt?: Date;
+    sourceRevision?: string;
   }) {
     this.slug = slug;
     this.name = name;
@@ -46,6 +49,7 @@ export class SearchableProduct {
     this.votes = votes;
     this.createdAt = createdAt;
     this.publishedAt = publishedAt;
+    this.sourceRevision = sourceRevision;
 
     if (id) {
       this.id = id;

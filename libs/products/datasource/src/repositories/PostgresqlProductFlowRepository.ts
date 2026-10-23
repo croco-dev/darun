@@ -15,6 +15,7 @@ import { productFlowSteps, productFlows } from '../entities/ProductFlowsSchema';
 import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 import { visualSaves, visualViewEvents } from '../entities/VisualPopularitySchema';
+import { beginProductContentWrite } from './productContentSync';
 
 type FlowRow = typeof productFlows.$inferSelect;
 type StepRow = typeof productFlowSteps.$inferSelect;
@@ -156,12 +157,12 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
    * 잠금 규약(접근 2): 단계 screenshot rows를 ID 오름차순으로 FOR UPDATE로 잠근다.
    * 호출한 검증기가 실패하면 트랜잭션이 rollback되고 잠금도 해제된다.
    */
-  private async lockStepScreenshots(tx: Tx, screenshotIds: string[]): Promise<ProductScreenshot[]> {
+  private async lockStepScreenshots(tx: Tx, productId: string, screenshotIds: string[]): Promise<ProductScreenshot[]> {
     const sortedIds = [...screenshotIds].sort();
     const rows = await tx
       .select()
       .from(productScreenshots)
-      .where(inArray(productScreenshots.id, sortedIds))
+      .where(and(eq(productScreenshots.productId, productId), inArray(productScreenshots.id, sortedIds)))
       .for('update')
       .orderBy(asc(productScreenshots.id));
     return rows.map(toScreenshotDomain);
@@ -172,8 +173,10 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
     validateSteps: (lockedScreenshots: ProductScreenshot[]) => void
   ): Promise<ProductFlow> {
     return this.db.transaction(async tx => {
+      const finishContentWrite = await beginProductContentWrite(tx, flow.productId);
       const locked = await this.lockStepScreenshots(
         tx,
+        flow.productId,
         flow.steps.map(step => step.screenshotId)
       );
       validateSteps(locked);
@@ -204,6 +207,7 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
         }))
       );
 
+      await finishContentWrite();
       return toDomain(insertedFlow, await this.findSteps(tx, insertedFlow.id));
     });
   }
@@ -214,6 +218,12 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
     validateSteps: (lockedScreenshots: ProductScreenshot[], lockedFlow: ProductFlow) => void
   ): Promise<ProductFlow> {
     return this.db.transaction(async tx => {
+      const [owner] = await tx
+        .select({ productId: productFlows.productId })
+        .from(productFlows)
+        .where(eq(productFlows.id, id));
+      if (!owner) throw productFlowNotFound();
+      const finishContentWrite = await beginProductContentWrite(tx, owner.productId);
       const lockedFlowRows = await tx.select().from(productFlows).where(eq(productFlows.id, id)).for('update').limit(1);
       const current = lockedFlowRows[0];
       if (!current) {
@@ -225,6 +235,7 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
 
       const locked = await this.lockStepScreenshots(
         tx,
+        current.productId,
         next.steps.map(step => step.screenshotId)
       );
       validateSteps(locked, toDomain(current, currentSteps));
@@ -255,12 +266,22 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
       if (!updated) {
         throw productFlowNotFound();
       }
+      await finishContentWrite();
       return toDomain(updated, await this.findSteps(tx, id));
     });
   }
 
   async deleteById(id: string): Promise<void> {
-    await this.db.delete(productFlows).where(eq(productFlows.id, id));
+    await this.db.transaction(async tx => {
+      const [owner] = await tx
+        .select({ productId: productFlows.productId })
+        .from(productFlows)
+        .where(eq(productFlows.id, id));
+      if (!owner) return;
+      const finishContentWrite = await beginProductContentWrite(tx, owner.productId);
+      await tx.delete(productFlows).where(eq(productFlows.id, id));
+      await finishContentWrite();
+    });
   }
 
   private async findSteps(tx: Tx, flowId: string): Promise<StepRow[]> {

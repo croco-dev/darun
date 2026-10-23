@@ -178,6 +178,7 @@ export function Collections() {
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onKeyDown={e => {
+              if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
               if (e.key === 'Enter') create();
             }}
             placeholder="새 컬렉션 이름 (예: 온보딩 참고)"

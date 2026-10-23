@@ -6,6 +6,9 @@ import { revalidatePath } from 'next/cache';
 import { type AppStoreApp, parseAppleSearchResponse, parseAppStoreKeyword } from './app-store-search';
 
 export async function updateTier(appId: string, tier: number) {
+  if (!Number.isInteger(tier) || tier < 0 || tier > 3) {
+    throw new Error('티어는 0부터 3까지의 정수여야 합니다.');
+  }
   await requireAdmin();
   const supabase = await createClient();
   const {
@@ -18,18 +21,17 @@ export async function updateTier(appId: string, tier: number) {
 
   if (!dbUser?.data?.is_admin) throw new Error('Unauthorized');
 
-  // Delete existing tier
-  await supabase.from('tiers').delete().eq('app_id', appId);
-
-  if (tier !== 0) {
-    const { error } = await supabase.from('tiers').insert({
+  const { error } = await supabase.from('tiers').upsert(
+    {
       app_id: appId,
       assigned_by: dbUser.data.id,
-      tier: tier,
-    });
+      tier,
+      assigned_at: new Date().toISOString(),
+    },
+    { onConflict: 'app_id' }
+  );
 
-    if (error) throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
 
   revalidatePath('/admin');
   revalidatePath('/admin/tiers');
@@ -201,10 +203,6 @@ export async function updateAppMemo(appId: string, content: string) {
 export async function deleteApp(appId: string) {
   await requireAdmin();
   const supabase = await createClient();
-
-  // Delete related records first (cascade should handle this if configured, but doing it manually to be safe)
-  await supabase.from('tiers').delete().eq('app_id', appId);
-  await supabase.from('memos').delete().eq('app_id', appId);
 
   const { error } = await supabase.from('apps').delete().eq('id', appId);
 

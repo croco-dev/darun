@@ -59,18 +59,17 @@ export class AutoRecommender {
     );
   }
 
-  private async collectCandidates(
-    product: Product,
-    excludedIds: Set<string>,
-    startTime: number
-  ): Promise<Candidate[]> {
+  private async collectCandidates(product: Product, excludedIds: Set<string>, startTime: number): Promise<Candidate[]> {
     const candidates = new Map<string, Candidate>();
     let order = 0;
     let categoryCandidateCount = 0;
 
-    for (const categoryId of product.categoryIds) {
-      const products = await this.productRepository.findPublishedByCategoryIdAndLimit(categoryId, CATEGORY_CANDIDATE_CAP);
-
+    const categoryProducts = await Promise.all(
+      product.categoryIds.map(categoryId =>
+        this.productRepository.findPublishedByCategoryIdAndLimit(categoryId, CATEGORY_CANDIDATE_CAP)
+      )
+    );
+    for (const products of categoryProducts) {
       for (const candidateProduct of products) {
         if (excludedIds.has(candidateProduct.id)) {
           continue;
@@ -173,9 +172,7 @@ export class AutoRecommender {
     const dedupedCandidateCount = candidates.size;
     const totalRawCandidates = categoryCandidateCount + tagCandidateCount;
     const finalSourceRatio =
-      totalRawCandidates > 0
-        ? Number((categoryCandidateCount / totalRawCandidates).toFixed(2))
-        : 0;
+      totalRawCandidates > 0 ? Number((categoryCandidateCount / totalRawCandidates).toFixed(2)) : 0;
 
     console.info({
       event: 'recommendation.candidates_collected',

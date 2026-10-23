@@ -9,6 +9,34 @@
     "preserveTokens": ["추가될 예정입니다", "발생할 수 있습니다"]
   },
   {
+    "id": "criticism-preservation",
+    "description": "제품에 대한 비판적 평가(느리다, 아쉽다)가 호평으로 왜곡되지 않고 비판으로 보존되는지 검증",
+    "koreanText": "인터페이스는 직관적이지만 대용량 파일을 열 때 로딩이 느립니다. 모바일 앱이 없다는 점이 아쉽습니다.",
+    "isHtml": false,
+    "mode": "editorial",
+    "negativeHypeKeywords": ["blazing fast", "lightning", "lightweight", "flawless"],
+    "preserveTokens": ["느립니다", "아쉽습니다"]
+  },
+  {
+    "id": "price-precision",
+    "description": "가격 조건(월 9,900원, 연간 결제 시 20% 할인)이 금액·통화·할인율 임의 변경 없이 유지되는지 검증",
+    "koreanText": "유료 플랜은 월 9,900원이며, 연간 결제 시 20% 할인됩니다. 학생은 학교 이메일 인증 후 무료로 사용할 수 있습니다.",
+    "isHtml": false,
+    "mode": "product_copy",
+    "negativeHypeKeywords": ["free forever", "$0"],
+    "preserveTokens": ["9,900원", "20%"]
+  },
+  {
+    "id": "brand-url-markdown",
+    "description": "Markdown 링크의 브랜드 URL(Notion, Figma)과 제품명이 서로 교체·삭제되지 않고 보존되는지 검증",
+    "koreanText": "공유 링크는 [Notion 페이지](https://notion.so/darun-team)와 [Figma 파일](https://figma.com/file/darun)에서 확인할 수 있습니다.",
+    "isHtml": false,
+    "mode": "editorial",
+    "negativeHypeKeywords": [],
+    "preserveTokens": ["Notion 페이지", "Figma 파일", "https://notion.so/darun-team", "https://figma.com/file/darun"],
+    "forkCheck": "brand-url"
+  },
+  {
     "id": "html-nested-preservation",
     "description": "복합 중첩 HTML 태그 구조가 100% 손실 없이 정확히 보존되는지 검증",
     "koreanText": "<div class=\"feature-box\"><p><strong>핵심 안내:</strong> 자세한 내용은 <a href=\"https://darun.io/docs\" target=\"_blank\">공식 문서</a>를 참고하세요.</p></div>",
@@ -66,11 +94,11 @@
   {
     "id": "rich-product-features",
     "description": "풍부한 기능 목록(HRV 분석, 호흡 가이드)이 요약·병합·누락 없이 각각 보존되는지 검증",
-    "koreanText": "심박변이도 데이터를 기반으로 스트레스 지수를 산출하고, 지수가 높을 때 햅틱 호흡 세션을 제공합니다.",
+    "koreanText": "심박변이도(HRV) 데이터를 기반으로 스트레스 지수를 산출하고, 지수가 높을 때 햅틱 호흡 세션을 제공합니다.",
     "isHtml": false,
     "mode": "product_copy",
     "negativeHypeKeywords": ["guaranteed", "perfect"],
-    "preserveTokens": ["심박변이도", "스트레스 지수", "햅틱 호흡 세션"]
+    "preserveTokens": ["심박변이도", "HRV", "스트레스 지수", "햅틱 호흡 세션"]
   },
   {
     "id": "injection-resistance",

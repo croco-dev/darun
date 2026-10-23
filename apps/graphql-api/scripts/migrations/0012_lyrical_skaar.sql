@@ -1,0 +1,1 @@
+ALTER TABLE "product_description_jobs" ADD COLUMN "evidence_hash_version" text;

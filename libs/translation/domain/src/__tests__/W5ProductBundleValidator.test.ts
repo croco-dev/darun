@@ -1,74 +1,50 @@
 import { describe, expect, it } from 'vitest';
 import { validateProductBundleTranslation } from '../validators/productBundleTranslationValidator';
-
-describe('productBundleTranslationValidator', () => {
-  const request = {
-    features: [
-      { id: 'f-1', name: '기능1', summary: '요약1' },
-      { id: 'f-2', name: '기능2', summary: '요약2' },
-    ],
-  };
-
-  it('합법적인 빈 선택 설명을 받아들이고 요청 순서대로 정규화한다', () => {
-    const validated = validateProductBundleTranslation(request, {
-      name: '  Name  ',
-      summary: '',
-      description: null,
-      features: [
-        { id: 'f-2', name: '  F2  ', summary: '' },
-        { id: 'f-1', name: 'F1', summary: null },
-      ],
-    });
-
-    expect(validated).toEqual({
+const request = {
+  name: '이름',
+  summary: '',
+  description: '',
+  features: [
+    { id: 'f-2', name: '둘', summary: '' },
+    { id: 'f-1', name: '하나', summary: '조건' },
+  ],
+};
+const response = {
+  name: 'Name',
+  summary: null,
+  features: [
+    { id: 'f-1', name: 'One', summary: 'Condition' },
+    { id: 'f-2', name: 'Two', summary: '' },
+  ],
+};
+describe('Bundle source completeness validator', () => {
+  it('빈 optional만 정규화하며 응답 순서 대신 요청 ID 순서로 매핑한다', () => {
+    expect(validateProductBundleTranslation(request, response)).toEqual({
       product: { name: 'Name', summary: '', description: '' },
       features: [
-        { id: 'f-1', name: 'F1', summary: '' },
-        { id: 'f-2', name: 'F2', summary: '' },
+        { id: 'f-2', name: 'Two', summary: '' },
+        { id: 'f-1', name: 'One', summary: 'Condition' },
       ],
     });
   });
-
-  it('중복·미지·누락 ID와 빈 필수명을 각각 거부한다', () => {
-    const validFeature = { id: 'f-1', name: 'F1', summary: 'S1' };
+  it('원문에 있는 optional의 누락/null/빈 값을 거부한다', () => {
+    for (const summary of [undefined, null, '', '  '])
+      expect(() =>
+        validateProductBundleTranslation({ ...request, summary: '한계' }, { ...response, summary })
+      ).toThrow();
+  });
+  it('원문이 없는 optional에 새 내용을 만들지 않는다', () => {
+    expect(() => validateProductBundleTranslation(request, { ...response, description: 'Invented claim' })).toThrow();
+  });
+  it('요청 자체의 중복 ID와 잘못된 ID 길이를 거부한다', () => {
     expect(() =>
-      validateProductBundleTranslation(request, {
-        name: 'Name',
-        description: 'Desc',
-        features: [validFeature, { id: 'f-1', name: 'F1-dup', summary: 'S1-dup' }],
-      })
-    ).toThrow(/중복된 기능 ID\(f-1\)/);
-
+      validateProductBundleTranslation({ ...request, features: [request.features[0]!, request.features[0]!] }, response)
+    ).toThrow(/중복/);
     expect(() =>
-      validateProductBundleTranslation(request, {
-        name: 'Name',
-        description: 'Desc',
-        features: [{ id: 'f-evil', name: 'Evil', summary: 'Evil' }],
-      })
-    ).toThrow(/알 수 없는 기능 ID\(f-evil\)/);
-
-    expect(() =>
-      validateProductBundleTranslation(request, {
-        name: 'Name',
-        description: 'Desc',
-        features: [validFeature],
-      })
-    ).toThrow(/요청된 기능 ID\(f-2\)가 누락/);
-
-    expect(() =>
-      validateProductBundleTranslation(request, {
-        name: '   ',
-        description: 'Desc',
-        features: [validFeature, { id: 'f-2', name: 'F2', summary: 'S2' }],
-      })
-    ).toThrow(/name이 누락/);
-
-    expect(() =>
-      validateProductBundleTranslation(request, {
-        name: 'Name',
-        description: 'Desc',
-        features: [{ id: 'f-1', name: '   ', summary: 'S1' }],
-      })
-    ).toThrow(/기능\(f-1\) name이 누락/);
+      validateProductBundleTranslation(
+        { ...request, features: [{ id: 'x'.repeat(27), name: '이름', summary: '' }] },
+        response
+      )
+    ).toThrow(/길이/);
   });
 });

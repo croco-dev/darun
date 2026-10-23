@@ -1,4 +1,4 @@
-import { safeEvidenceUrl, type EvidenceBackedText, type ProductDescriptionDocument } from '@darun/products-domain';
+import { safeReaderFacingUrl, type EvidenceBackedText, type ProductDescriptionDocument } from '@darun/products-domain';
 
 export const PRODUCT_DESCRIPTION_RENDERER_VERSION = 'v2';
 
@@ -87,7 +87,7 @@ function renderInlineContent(block: EvidenceBackedText): string {
   if (!block.link) {
     return escapedText;
   }
-  const safeUrl = safeEvidenceUrl(block.link.url);
+  const safeUrl = safeReaderFacingUrl(block.link.url);
   if (!safeUrl) {
     return escapedText;
   }

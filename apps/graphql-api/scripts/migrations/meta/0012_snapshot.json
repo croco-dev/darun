@@ -1,5 +1,5 @@
 {
-  "id": "71a861be-6870-4266-a75c-ddeeb189dddc",
+  "id": "b1aa61c7-89e5-453c-82c3-13c86816835e",
   "prevId": "97681fb0-0c61-4222-b7b2-d7f9908b303f",
   "version": "7",
   "dialect": "postgresql",
@@ -284,6 +284,12 @@
         },
         "evidence_hash": {
           "name": "evidence_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "evidence_hash_version": {
+          "name": "evidence_hash_version",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1346,7 +1352,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "varchar(128)",
+          "type": "varchar(26)",
           "primaryKey": false,
           "notNull": true
         },

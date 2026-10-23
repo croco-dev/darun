@@ -1,6 +1,6 @@
 {
   "extends": "@darun/utils-tsconfig/tsconfig.node.json",
-  "include": ["src/**/*.ts", "scripts/verify-schema.ts"],
+  "include": ["src/**/*.ts", "scripts/verify-schema.ts", "scripts/required-postgres-reporter.ts"],
   "compilerOptions": {
     "paths": {
       "@companies/domain": [

@@ -1,5 +1,7 @@
 import { cn } from '@darun/ui';
-import { ReactNode, cloneElement, isValidElement, useId } from 'react';
+import { Children, ReactElement, ReactNode, cloneElement, isValidElement, useId } from 'react';
+import { AdminInput, AdminTextarea } from './AdminInput';
+import { AdminSelect } from './AdminSelect';
 
 type AdminFieldProps = {
   label?: ReactNode;
@@ -10,25 +12,41 @@ type AdminFieldProps = {
   className?: string;
 };
 
+function connectFieldControls(children: ReactNode, initialInputId: string, help: ReactNode, error: ReactNode) {
+  let inputId = initialInputId;
+  let connected = false;
+  const connectControl = (nodes: ReactNode): ReactNode =>
+    Children.map(nodes, node => {
+      if (!isValidElement(node) || connected) return node;
+      const element = node as ReactElement<Record<string, unknown>>;
+      const props = element.props;
+      if (
+        ['input', 'textarea', 'select'].includes(element.type as string) ||
+        element.type === AdminInput ||
+        element.type === AdminTextarea ||
+        element.type === AdminSelect
+      ) {
+        connected = true;
+        inputId = (props.id as string | undefined) ?? inputId;
+        const describedBy =
+          [props['aria-describedby'], help ? `${inputId}-help` : '', error ? `${inputId}-error` : '']
+            .filter(Boolean)
+            .join(' ') || undefined;
+        return cloneElement(element, {
+          id: inputId,
+          'aria-describedby': describedBy,
+          ...(error ? { 'aria-invalid': true } : {}),
+        });
+      }
+      return props.children ? cloneElement(element, { children: connectControl(props.children as ReactNode) }) : node;
+    });
+  const enhancedChild = connectControl(children);
+  return { inputId, enhancedChild };
+}
+
 export function AdminField({ label, htmlFor, error, help, children, className }: AdminFieldProps) {
   const autoId = useId();
-  const inputId = htmlFor ?? autoId;
-
-  const describedBy =
-    [help ? `${inputId}-help` : '', error ? `${inputId}-error` : ''].filter(Boolean).join(' ').trim() || undefined;
-
-  const isSingleElement = isValidElement(children);
-  const childProps = isSingleElement ? (children as React.ReactElement<Record<string, unknown>>).props || {} : {};
-  const existingDescribedBy = childProps['aria-describedby'];
-  const finalDescribedBy = [existingDescribedBy, describedBy].filter(Boolean).join(' ').trim() || undefined;
-
-  const enhancedChild = isSingleElement
-    ? cloneElement(children as React.ReactElement<Record<string, unknown>>, {
-        id: childProps['id'] ?? inputId,
-        ...(finalDescribedBy ? { 'aria-describedby': finalDescribedBy } : {}),
-        ...(error ? { 'aria-invalid': true } : {}),
-      })
-    : children;
+  const { inputId, enhancedChild } = connectFieldControls(children, htmlFor ?? autoId, help, error);
 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>

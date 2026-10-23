@@ -11,6 +11,7 @@ vi.mock('@/utils/supabase/client', () => ({
       select: () => query,
       order: () => query,
       or: () => query,
+      overrideTypes: () => query,
       range,
     };
     return { from: () => query };
@@ -48,7 +49,7 @@ test('clearing a pending search restores the catalog and ignores its late respon
     await changeSearch('');
     await act(async () => {
       completeSearch({
-        data: [{ id: 'late', name: 'Late search app', description: null, icon_url: null, tiers: [] }],
+        data: [{ id: 'late', name: 'Late search app', description: null, icon_url: null, tiers: null }],
         count: 1,
         error: null,
       });

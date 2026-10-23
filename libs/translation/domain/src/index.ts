@@ -21,8 +21,20 @@ export type {
 } from './ports/TranslationProvider';
 export { TranslationProviderToken } from './ports/TranslationProvider';
 
-export { validateProductBundleTranslation } from './validators/productBundleTranslationValidator';
+export {
+  validateProductBundleTranslation,
+  validateTranslationText,
+} from './validators/productBundleTranslationValidator';
 export type { ValidatedProductBundleTranslation } from './validators/productBundleTranslationValidator';
 
 export { TranslationService } from './services/TranslationService';
 export { computeSourceHash, normalizeSourceText } from './utils/sourceHash';
+export type {
+  TranslationEntityType,
+  TranslationSourceRequest,
+  TranslationSourceSnapshot,
+  TranslationSourceStore,
+  TranslationCommit,
+  TranslationCommitResult,
+} from './ports/TranslationSourceStore';
+export { TranslationSourceStoreToken, TRANSLATION_FIELDS, translationFields } from './ports/TranslationSourceStore';

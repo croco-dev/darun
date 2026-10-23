@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModelSelectModal } from '../features/settings/LlmSettingFormSection/ModelSelectModal';
@@ -9,10 +9,12 @@ describe('ModelSelectModal', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
     global.fetch = originalFetch;
   });
 
@@ -48,10 +50,11 @@ describe('ModelSelectModal', () => {
       ],
     };
 
-    global.fetch = vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockModels,
     });
+    global.fetch = fetchMock as unknown as typeof fetch;
 
     const onSelectModel = vi.fn();
     const onClose = vi.fn();
@@ -66,11 +69,16 @@ describe('ModelSelectModal', () => {
       />
     );
 
-    // Wait for models to load
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /google\/gemini-2.5-flash/ })).toBeDefined();
-      expect(screen.getByRole('button', { name: /x-ai\/grok-4-fast/ })).toBeDefined();
-    });
+    await act(() => vi.runOnlyPendingTimersAsync());
+    expect(screen.getByRole('button', { name: /google\/gemini-2.5-flash/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /x-ai\/grok-4-fast/ })).toBeDefined();
+    // 브라우저 직접 fetch fallback 없이 서버 프록시만 호출한다.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [calledUrl, calledOptions] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(calledUrl).toBe('/api/llm/models');
+    expect(new URL(calledUrl, 'http://localhost:3001').host).toBe('localhost:3001');
+    expect(String(calledOptions.method)).toBe('POST');
+    expect(String(new Headers(calledOptions.headers).get('content-type'))).toBe('application/json');
 
     // Test search filter
     const searchInput = screen.getByPlaceholderText(/모델명 또는 모델 ID 검색/i);
@@ -84,6 +92,36 @@ describe('ModelSelectModal', () => {
 
     expect(onSelectModel).toHaveBeenCalledWith('google/gemini-2.5-flash');
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('서버 프록시 오류 응답의 error 메시지를 그대로 표시하고 외부 URL을 호출하지 않는다', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: '커스텀 엔드포인트에는 기본 환경 키(OPEN_ROUTER_API_KEY)를 사용할 수 없습니다.' }),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    render(
+      <ModelSelectModal
+        opened={true}
+        onClose={vi.fn()}
+        endpoint="https://custom-api.example.com/v1"
+        apiKey="sk-env-default"
+        selectedModel=""
+        onSelectModel={vi.fn()}
+      />
+    );
+
+    await act(() => vi.runOnlyPendingTimersAsync());
+    expect(screen.getByText('모델 목록 조회 실패')).toBeDefined();
+    expect(
+      screen.getByText(/커스텀 엔드포인트에는 기본 환경 키\(OPEN_ROUTER_API_KEY\)를 사용할 수 없습니다\./)
+    ).toBeDefined();
+
+    // 실패 시에도 서버 프록시 외부 호출은 없다.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((fetchMock.mock.calls[0] as unknown[])[0]).toBe('/api/llm/models');
   });
 
   it('shows capability status and filters only models supporting both required parameters', async () => {
@@ -116,7 +154,8 @@ describe('ModelSelectModal', () => {
       />
     );
 
-    const supported = await screen.findByRole('button', {
+    await act(() => vi.runOnlyPendingTimersAsync());
+    const supported = screen.getByRole('button', {
       name: /vendor\/supported/,
     });
     expect(within(supported).getByText('구조화 응답 지원')).toBeDefined();
@@ -173,7 +212,8 @@ describe('ModelSelectModal', () => {
         onSelectModel={onSelectModel}
       />
     );
-    const item = await screen.findByRole('button', {
+    await act(() => vi.runOnlyPendingTimersAsync());
+    const item = screen.getByRole('button', {
       name: new RegExp(`vendor/${id}`),
     });
     expect(
