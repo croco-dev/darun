@@ -26,6 +26,8 @@ jobs:
         run: pnpm --filter graphql-api exec eslint **/*.ts*
       - name: Typecheck
         run: pnpm --filter graphql-api exec tsc --noEmit
+      - name: Typecheck (tsrs)
+        run: pnpm --filter graphql-api run typecheck:tsrs
       - name: Test
         run: pnpm --filter graphql-api exec vitest run
       - name: Check migration completeness

@@ -10,7 +10,8 @@
   "scripts": {
     "lint": "eslint **/*.ts*",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@darun/utils-router": "workspace:*",

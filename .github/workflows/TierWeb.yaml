@@ -34,6 +34,8 @@ jobs:
         run: pnpm --filter tier-web run lint
       - name: Typecheck
         run: pnpm --filter tier-web run typecheck
+      - name: Typecheck (tsrs)
+        run: pnpm --filter tier-web run typecheck:tsrs
       - name: Test
         run: pnpm --filter tier-web run test
       - name: Cloudflare build

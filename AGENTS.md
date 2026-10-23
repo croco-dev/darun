@@ -54,6 +54,7 @@ ICU MessageFormat에서 **ASCII 작은따옴표(`'`)는 중괄호(`{}`)와 같�
 ```bash
 pnpm lint           # ESLint + Prettier 검사
 pnpm typecheck      # TypeScript 타입 검사
+pnpm typecheck:tsrs # tsrs 추가 타입 검사
 pnpm test           # 단위 테스트 실행
 ```
 

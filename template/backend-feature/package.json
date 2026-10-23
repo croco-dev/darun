@@ -5,7 +5,8 @@
   "types": "./src/index.ts",
   "scripts": {
     "lint": "eslint **/*.ts*",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@darun/{domain}-datasource": "workspace:*",

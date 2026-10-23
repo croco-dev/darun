@@ -16,7 +16,8 @@
     "prepare": "lefthook install",
     "test": "turbo test",
     "test:coverage": "turbo test -- --coverage",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "typecheck:tsrs": "turbo typecheck:tsrs"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
@@ -44,6 +45,7 @@
     "sonner": "catalog:",
     "tailwind-merge": "catalog:",
     "tailwindcss": "catalog:",
+    "tsrs": "0.18.0-ts7.1.0-dev.20260929",
     "turbo": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",

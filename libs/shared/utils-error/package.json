@@ -1,22 +1,23 @@
 {
-	"name": "@darun/utils-error",
-	"version": "0.0.0",
-	"type": "module",
-	"main": "./src/index.ts",
-	"types": "./src/index.ts",
-	"exports": {
-		".": "./src/index.ts"
-	},
-	"scripts": {
-		"lint": "eslint **/*.ts*",
-		"test": "vitest run",
-		"typecheck": "tsc --noEmit"
-	},
-	"dependencies": {
-		"@darun/utils-croco-adapter": "workspace:*"
-	},
-	"devDependencies": {
-		"@darun/eslint-config": "workspace:*",
-		"@darun/utils-tsconfig": "workspace:*"
-	}
+  "name": "@darun/utils-error",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint **/*.ts*",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "typecheck:tsrs": "tsrs --noEmit --incremental false"
+  },
+  "dependencies": {
+    "@darun/utils-croco-adapter": "workspace:*"
+  },
+  "devDependencies": {
+    "@darun/eslint-config": "workspace:*",
+    "@darun/utils-tsconfig": "workspace:*"
+  }
 }

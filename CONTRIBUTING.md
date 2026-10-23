@@ -185,7 +185,7 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
 
 2. **자동 품질 검사 (품질 게이트)**:
    `trunk` 브랜치에 병합되거나 코드가 푸시되면 GitHub Actions가 품질 검사를 실행합니다.
-   검사 순서: `lint` → `typecheck` → `test`
+   검사 순서: `lint` → `typecheck` → `typecheck:tsrs` → `test`
    GraphQL 변경은 TypeGraphQL 선언에 canonical 공개 타입 이름을 명시해 번들러의 클래스명 변경이 API 이름에 반영되지 않게 합니다. Node.js 22에서 `pnpm --filter graphql-api build:lambda` 다음 `pnpm --filter graphql-api verify:lambda`를 실행합니다. 검증은 임시 RSA·검증 전용 환경과 네트워크 연결 차단 아래 6개 배포 handler를 초기화하고, 배포와 같은 decorator metadata·minify 설정의 전체 resolver schema와 저장 SDL이 일치하는지 확인합니다. codegen 설정이 수집하는 libs 및 admin/service/visual 앱의 모든 operation·fragment를 두 schema에 검증한 뒤 health query만 실행하며, DB 연결·업무 mutation·worker 실행은 하지 않습니다. 문서는 앱 모듈을 실행하지 않고 정적으로 추출하며, 일치하는 파일의 문서 파싱 오류도 생략하지 않고 실패로 처리합니다. SDL 갱신이 필요하면 `pnpm --filter graphql-api verify:lambda -- --emit-schema`로 생성하고 `pnpm --filter @darun/provider-graphql codegen`으로 저장 SDL의 실제 문서 검증과 생성 타입 갱신을 완료합니다.
 
 3. **배포 실행**:
@@ -367,9 +367,18 @@ PR을 올리기 전에 아래 명령이 모두 통과해야 합니다.
 pnpm audit --audit-level=critical  # Critical 의존성 취약점 검사
 pnpm lint           # ESLint + Prettier 검사
 pnpm typecheck      # TypeScript 타입 검사
+pnpm typecheck:tsrs # tsrs 추가 타입 검사
 pnpm test           # Vitest 단위 테스트
 pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 ```
+
+`pnpm typecheck:tsrs`는 기존 `pnpm typecheck`와 같은 패키지 및 `tsconfig.json`을 검사합니다. 개별 패키지는 `pnpm --filter <package-name> typecheck:tsrs`로 검사할 수 있습니다. PR CI, GraphQL 배포 전 quality 검사, tier-web CI에서 두 검사를 모두 필수로 실행합니다.
+
+PR CI의 전체 패키지 검사는 `pnpm run typecheck:tsrs --concurrency=4 -- --checkers 1`을 사용합니다. 로컬 명령과 GraphQL·tier-web 단독 CI 검사는 기본 옵션을 사용합니다. 실행 조건별 비교와 선택 근거는 [CI 성능 측정 결과](docs/tsrs-ci-performance.md)에 기록합니다.
+
+`tsrs`는 버전을 고정하고 `--noEmit --incremental false`로 실행해 JavaScript를 출력하거나 기존 TypeScript의 증분 캐시를 덮어쓰지 않습니다. 기존 `typescript` 의존성과 `tsc` 명령은 유지하며, Lambda의 decorator metadata 변환과 테스트에서 사용하는 TypeScript API도 그대로 유지합니다. 새 패키지에도 두 검사 스크립트를 함께 정의합니다.
+
+`tsrs performance` 워크플로는 수동 실행용입니다. 기본 브랜치에 워크플로가 반영된 뒤 GitHub Actions에서 실행하면, PR CI와 같은 Ubuntu 22.04·DB 서비스 조건의 전체 검사와 Ubuntu 최신 실행기의 앱별 검사를 비교합니다. Turbo 결과 캐시를 끄고 각 설정을 3회 실행하며, 매번 별도 cgroup v2의 `memory.peak`로 모든 하위 프로세스의 최대 메모리를 측정합니다. 원본 측정값과 로그는 workflow artifact에 보관합니다. 측정 도구의 회귀 테스트는 `python3 -B -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'`로 실행합니다.
 
 앱의 ESLint glob은 따옴표로 감싸 중첩 소스까지 검사합니다. Next.js가 생성하는 `.next/`와 `next-env.d.ts`는 검사 대상에서 제외합니다.
 

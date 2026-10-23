@@ -1,0 +1,79 @@
+name: tsrs performance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  TURBO_TELEMETRY_DISABLED: "1"
+
+jobs:
+  workspace:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    services:
+      content-sync-postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sync
+          POSTGRES_PASSWORD: sync
+          POSTGRES_DB: darun_content_sync
+        ports: ["55437:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sync -d darun_content_sync"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+      content-sync-mongo:
+        image: mongo:8
+        ports: ["27037:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok'"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.x
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Verify benchmark accounting
+        run: python3 -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'
+      - name: Measure all package type checks
+        run: sudo -E env "PATH=$PATH" python3 scripts/benchmark_tsrs.py --workload workspace --rounds 3 --output benchmark-results/workspace
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tsrs-workspace
+          path: benchmark-results/workspace
+          retention-days: 14
+
+  standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.x
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Verify benchmark accounting
+        run: python3 -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'
+      - name: Measure GraphQL type checks
+        run: sudo -E env "PATH=$PATH" python3 scripts/benchmark_tsrs.py --workload graphql-api --rounds 3 --output benchmark-results/graphql-api
+      - name: Measure tier-web type checks
+        run: sudo -E env "PATH=$PATH" python3 scripts/benchmark_tsrs.py --workload tier-web --rounds 3 --output benchmark-results/tier-web
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tsrs-standalone
+          path: benchmark-results
+          retention-days: 14

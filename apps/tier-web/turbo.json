@@ -34,6 +34,16 @@
         "next.config.*",
         "!**/.next/**"
       ]
+    },
+    "typecheck:tsrs": {
+      "inputs": [
+        "src/**",
+        "scripts/**",
+        "*.ts",
+        "tsconfig.json",
+        "next.config.*",
+        "!**/.next/**"
+      ]
     }
   }
 }

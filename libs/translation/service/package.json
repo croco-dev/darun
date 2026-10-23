@@ -7,7 +7,8 @@
   "scripts": {
     "lint": "eslint **/*.ts*",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "3.1133.0",

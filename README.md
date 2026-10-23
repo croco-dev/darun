@@ -102,6 +102,7 @@ pnpm --filter tier-web dev      # http://localhost:3003
 ```bash
 pnpm lint
 pnpm typecheck
+pnpm typecheck:tsrs
 pnpm test
 ```
 
