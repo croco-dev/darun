@@ -394,7 +394,9 @@ PR CI의 전체 패키지 검사는 `pnpm run typecheck:tsrs --concurrency=4 -- 
 
 `tsrs performance` 워크플로는 수동 실행용입니다. 기본 브랜치에 워크플로가 반영된 뒤 GitHub Actions에서 실행하면, PR CI와 같은 Ubuntu 22.04·DB 서비스 조건의 전체 검사와 Ubuntu 최신 실행기의 앱별 검사를 비교합니다. Turbo 결과 캐시를 끄고 각 설정을 3회 실행하며, 매번 별도 cgroup v2의 `memory.peak`로 모든 하위 프로세스의 최대 메모리를 측정합니다. 원본 측정값과 로그는 workflow artifact에 보관합니다. 측정 도구의 회귀 테스트는 `python3 -B -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'`로 실행합니다.
 
-앱의 ESLint glob은 따옴표로 감싸 중첩 소스까지 검사합니다. Next.js가 생성하는 `.next/`와 `next-env.d.ts`는 검사 대상에서 제외합니다.
+앱·라이브러리·패키지 템플릿의 ESLint glob은 따옴표로 감싸 `ts`와 `tsx` 중첩 소스까지 검사합니다. 셸이 `**`를 먼저 확장하지 않도록 따옴표를 유지합니다. 공통 설정은 `__generated__`, `dist`, `build`, `coverage` 생성물을 제외하고, Next.js가 생성하는 `.next/`와 `next-env.d.ts`도 루트 설정에서 제외합니다.
+
+`node --test scripts/lint-coverage.test.mjs`는 임시 workspace에서 실제 패키지·루트 lint 명령을 실행합니다. 깊은 TS/TSX 파일의 오류를 거절하는지, 오류를 고치면 통과하는지, 생성물의 잘못된 문법은 검사하지 않는지 확인하며 PR CI에서도 실행합니다. 임시 workspace는 설치된 도구를 공유하고 별도 의존성을 설치하지 않습니다.
 
 GraphQL 변경은 Node.js 22에서 `pnpm --filter graphql-api build:lambda`와 `pnpm --filter graphql-api verify:lambda`도 실행합니다. 이 검사는 번들 초기화뿐 아니라 실제 resolver 스키마와 커밋된 `schema.graphql`의 일치 여부를 확인합니다.
 

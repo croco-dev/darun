@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  VISUAL_POPULARITY_DECAY_DAYS,
-  visualPopularityScore,
-} from '../usecases/VisualPopularity';
+import { VISUAL_POPULARITY_DECAY_DAYS, visualPopularityScore } from '../usecases/VisualPopularity';
 
 describe('visualPopularityScore', () => {
   it('v30/saves가 0이면 조회·저장 기여 없이 감쇠만 남는다', () => {

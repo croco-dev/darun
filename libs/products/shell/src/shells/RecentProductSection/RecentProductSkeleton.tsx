@@ -1,6 +1,6 @@
-import { SectionWrapper } from "@darun/ui";
+import { SectionWrapper } from '@darun/ui';
 
-const Skeleton = ({ className = "" }: { className?: string }) => (
+const Skeleton = ({ className = '' }: { className?: string }) => (
   <div
     aria-hidden="true"
     className={`${className} animate-pulse bg-gradient-to-r from-surface-100 via-surface-200 to-surface-100 motion-reduce:animate-none`}
@@ -9,11 +9,7 @@ const Skeleton = ({ className = "" }: { className?: string }) => (
 
 export const RecentProductSkeleton = () => {
   return (
-    <SectionWrapper
-      background="white"
-      spacing="md"
-      className="border-t border-dark-100/70"
-    >
+    <SectionWrapper background="white" spacing="md" className="border-t border-dark-100/70">
       <div
         data-testid="skel-recent"
         aria-busy="true"

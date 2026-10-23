@@ -1,6 +1,9 @@
 import { gql } from '@apollo/client';
 import { useSuspenseQuery } from '@apollo/client/react';
-import { SearchProductsOnSearchProductListDocument, SearchProductsOnSearchProductListQuery } from '@darun/provider-graphql';
+import {
+  SearchProductsOnSearchProductListDocument,
+  SearchProductsOnSearchProductListQuery,
+} from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 
 const SEARCH_PRODUCTS_QUERY = gql`

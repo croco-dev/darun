@@ -4,7 +4,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "lint": "eslint **/*.ts*",
+    "lint": "eslint \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },

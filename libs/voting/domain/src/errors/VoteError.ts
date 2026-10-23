@@ -8,8 +8,7 @@ export enum VoteError {
   VoteRecordInsertFailed = 'voting/vote-record-insert-failed',
 }
 
-export const votingRateLimitExceeded = (message?: string) =>
-  createDomainError(VoteError.RateLimitExceeded, message);
+export const votingRateLimitExceeded = (message?: string) => createDomainError(VoteError.RateLimitExceeded, message);
 export const votingDuplicateVote = () => createDomainError(VoteError.DuplicateVote);
 export const votingVoteInsertFailed = () => createDomainError(VoteError.VoteInsertFailed);
 export const votingVoteUpdateFailed = () => createDomainError(VoteError.VoteUpdateFailed);

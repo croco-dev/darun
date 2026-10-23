@@ -3,7 +3,6 @@ import { useSuspenseQuery } from '@apollo/client/react';
 import { ProductBySlugOnProductCompanyDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 
-
 gql`
   query ProductBySlugOnProductCompany($slug: String!, $locale: String!) {
     productBySlug(slug: $slug, locale: $locale) {

@@ -64,8 +64,8 @@ describe('withTimeout', () => {
   it('withRetry retries a timed-out call and then succeeds', async () => {
     const fn = vi
       .fn()
-      .mockImplementationOnce(
-        () => withTimeout(new Promise<string>(() => {}), 500, 'LLM 번역 요청이 시간 초과되었습니다.')
+      .mockImplementationOnce(() =>
+        withTimeout(new Promise<string>(() => {}), 500, 'LLM 번역 요청이 시간 초과되었습니다.')
       )
       .mockResolvedValueOnce('ok');
 

@@ -1,5 +1,5 @@
 import { useNavigate, usePathname, useSearchParams } from '@darun/utils-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { routing } from '../../i18n/routing';
 
 type SubmitEventLike = {
@@ -34,10 +34,12 @@ export function useHeaderSearchForm() {
   const searchPath = useMemo(() => resolveSearchPath(pathname), [pathname]);
   const queryFromSearchParam = searchParams.get('query') ?? '';
   const [query, setQuery] = useState(queryFromSearchParam);
+  const [previousSearchQuery, setPreviousSearchQuery] = useState(queryFromSearchParam);
 
-  useEffect(() => {
+  if (previousSearchQuery !== queryFromSearchParam) {
+    setPreviousSearchQuery(queryFromSearchParam);
     setQuery(queryFromSearchParam);
-  }, [queryFromSearchParam]);
+  }
 
   const onSubmit = (e: SubmitEventLike) => {
     e.preventDefault();

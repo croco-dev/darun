@@ -1,7 +1,6 @@
 import { Token } from 'typedi';
 import type { ProductFlow } from '../entities/ProductFlow';
 import type { ProductScreenshot } from '../entities/ProductScreenshot';
-import type { VisualSort } from './ProductScreenshotRepository';
 
 export type VisualFlowFilter = {
   query: string;

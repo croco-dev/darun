@@ -6,7 +6,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "codegen": "graphql-codegen --config ./codegen.ts",
-    "lint": "eslint --no-warn-ignored **/*.ts*",
+    "lint": "eslint --no-warn-ignored \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },

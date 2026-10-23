@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ProductFlowRepository } from '../repositories/ProductFlowRepository';
 import type { ProductScreenshotRepository } from '../repositories/ProductScreenshotRepository';
 import { ToggleVisualFlowSave, ToggleVisualScreenshotSave } from '../usecases/ToggleVisualSave';
-import { GetMyVisualSavedFlows, GetMyVisualSavedScreenshots, GetMyVisualSaves, GetVisualSaveStatus } from '../usecases/VisualSaveQuery';
+import {
+  GetMyVisualSavedFlows,
+  GetMyVisualSavedScreenshots,
+  GetMyVisualSaves,
+  GetVisualSaveStatus,
+} from '../usecases/VisualSaveQuery';
 
 const SCREENSHOT_ID = '01M4J60S333ZQJYAFX4RA6SBWM';
 const FLOW_ID = '01M4J60S358KTV7R3SX2B8H9NS';
@@ -95,9 +100,7 @@ describe('VisualSaveQuery (M3)', () => {
 
   it('내 저장 목록을 LATEST 정렬(offset 기반)로 조회한다', async () => {
     const sRepo = screenshotRepo({
-      findVisualSavesByUser: vi
-        .fn()
-        .mockResolvedValue({ screenshotIds: [SCREENSHOT_ID], flowIds: [], totalCount: 1 }),
+      findVisualSavesByUser: vi.fn().mockResolvedValue({ screenshotIds: [SCREENSHOT_ID], flowIds: [], totalCount: 1 }),
     });
     const useCase = new GetMyVisualSaves(sRepo);
     const result = await useCase.execute({ userId: USER_ID, kind: 'screenshot', first: 24, page: 1 });
@@ -124,7 +127,9 @@ describe('VisualSaveQuery (M3)', () => {
 
   it('내 저장 화면 카드를 LATEST 정렬(offset 기반)로 조회한다', async () => {
     const sRepo = screenshotRepo({
-      findManyVisualSavedScreenshotsByUser: vi.fn().mockResolvedValue({ screenshots: [{ id: SCREENSHOT_ID }], totalCount: 1 }),
+      findManyVisualSavedScreenshotsByUser: vi
+        .fn()
+        .mockResolvedValue({ screenshots: [{ id: SCREENSHOT_ID }], totalCount: 1 }),
     });
     const useCase = new GetMyVisualSavedScreenshots(sRepo);
     const result = await useCase.execute({ userId: USER_ID, first: 24, page: 1 });

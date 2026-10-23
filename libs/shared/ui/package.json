@@ -11,7 +11,7 @@
     "./lib/utils": "./src/lib/utils.ts"
   },
   "scripts": {
-    "lint": "eslint **/*.ts*",
+    "lint": "eslint \"**/*.{ts,tsx}\"",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "typecheck:tsrs": "tsrs --noEmit --incremental false"
