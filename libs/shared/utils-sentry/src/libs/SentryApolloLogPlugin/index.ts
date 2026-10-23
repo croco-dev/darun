@@ -1,1 +1,1 @@
-export { createSentryApolloLogPlugin } from './SentryApolloLogPlugin';
+export { createSentryApolloLogPlugin, sentryRequestRedaction } from './SentryApolloLogPlugin';

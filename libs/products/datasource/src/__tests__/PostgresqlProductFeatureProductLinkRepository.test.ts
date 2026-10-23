@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostgresqlProductFeatureRepository } from '../repositories/PostgresqlProductFeatureRepository';
 import { PostgresqlProductLinkRepository } from '../repositories/PostgresqlProductLinkRepository';
 
+vi.mock('../repositories/productContentSync', () => ({ beginProductContentWrite: vi.fn(async () => vi.fn()) }));
+
 vi.hoisted(() => {
   process.env.VOTE_IP_SALT = 'test-salt';
 });
@@ -28,6 +30,8 @@ describe('PostgresqlProductFeatureRepository', () => {
     select: vi.fn().mockReturnThis(),
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
+    for: vi.fn().mockResolvedValue([{ id: 'product-1' }]),
+    then: vi.fn((resolve: (rows: { productId: string }[]) => unknown) => resolve([{ productId: 'product-1' }])),
     limit: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     set: vi.fn().mockReturnThis(),
@@ -45,7 +49,7 @@ describe('PostgresqlProductFeatureRepository', () => {
   describe('insert()', () => {
     it('should call clearAll() after insert()', async () => {
       const repo = new PostgresqlProductFeatureRepository(
-        mockDb as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        mockDb as any // eslint-disable-line @typescript-eslint/no-explicit-any
       );
       const feature = new ProductFeature({
         id: 'feature-1',
@@ -64,7 +68,7 @@ describe('PostgresqlProductFeatureRepository', () => {
 
     it('should return the inserted feature', async () => {
       const repo = new PostgresqlProductFeatureRepository(
-        mockDb as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        mockDb as any // eslint-disable-line @typescript-eslint/no-explicit-any
       );
       const feature = new ProductFeature({
         id: 'feature-2',
@@ -87,7 +91,7 @@ describe('PostgresqlProductFeatureRepository', () => {
   describe('updateById()', () => {
     it('should call clearAll() after updateById()', async () => {
       const repo = new PostgresqlProductFeatureRepository(
-        mockDb as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        mockDb as any // eslint-disable-line @typescript-eslint/no-explicit-any
       );
       const existingFeature = new ProductFeature({
         id: 'feature-1',
@@ -124,6 +128,8 @@ describe('PostgresqlProductLinkRepository', () => {
     select: vi.fn().mockReturnThis(),
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
+    for: vi.fn().mockResolvedValue([{ id: 'product-1' }]),
+    then: vi.fn((resolve: (rows: { productId: string }[]) => unknown) => resolve([{ productId: 'product-1' }])),
     limit: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     set: vi.fn().mockReturnThis(),
@@ -141,7 +147,7 @@ describe('PostgresqlProductLinkRepository', () => {
   describe('insert()', () => {
     it('should call clearAll() after insert()', async () => {
       const repo = new PostgresqlProductLinkRepository(
-        mockDb as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        mockDb as any // eslint-disable-line @typescript-eslint/no-explicit-any
       );
       const link = new ProductLink({
         id: 'link-1',
@@ -162,7 +168,7 @@ describe('PostgresqlProductLinkRepository', () => {
 
     it('should return the inserted link', async () => {
       const repo = new PostgresqlProductLinkRepository(
-        mockDb as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        mockDb as any // eslint-disable-line @typescript-eslint/no-explicit-any
       );
       const link = new ProductLink({
         id: 'link-2',
@@ -187,7 +193,7 @@ describe('PostgresqlProductLinkRepository', () => {
   describe('updateById()', () => {
     it('should call clearAll() after updateById()', async () => {
       const repo = new PostgresqlProductLinkRepository(
-        mockDb as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        mockDb as any // eslint-disable-line @typescript-eslint/no-explicit-any
       );
       const existingLink = new ProductLink({
         id: 'link-1',

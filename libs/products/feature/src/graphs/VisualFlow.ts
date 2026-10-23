@@ -5,7 +5,7 @@ import { VisualFlowStep } from './VisualFlowStep';
 import { VisualFlowTypeGraph } from './VisualFlowType';
 import { VisualPlatformGraph } from './VisualPlatform';
 
-@ObjectType({ description: '공개 제품에 속한 UX 플로' })
+@ObjectType('VisualFlow', { description: '공개 제품에 속한 UX 플로' })
 export class VisualFlow {
   @Field(() => ID)
   id: string;

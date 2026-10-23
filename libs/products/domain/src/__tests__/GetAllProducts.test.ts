@@ -27,6 +27,7 @@ const productRepository = (products: Product[]) =>
     findPublishedOneById: vi.fn<ProductRepository['findPublishedOneById']>().mockResolvedValue(null),
     findOneBySlug: vi.fn<ProductRepository['findOneBySlug']>().mockResolvedValue(null),
     findOneById: vi.fn<ProductRepository['findOneById']>().mockResolvedValue(null),
+    findOneFreshById: vi.fn<ProductRepository['findOneFreshById']>().mockResolvedValue(null),
     findPublishedOneBySlug: vi.fn<ProductRepository['findPublishedOneBySlug']>().mockResolvedValue(null),
     findPublishedByCategoryId: vi.fn<ProductRepository['findPublishedByCategoryId']>().mockResolvedValue([]),
     findPublishedByCategoryIdAndLimit: vi

@@ -10,6 +10,12 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LlmJobListSection } from '../features/llm-jobs/LlmJobListSection';
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock('@darun/utils-router', () => ({
+  useRouter: () => ({ push }),
+  usePathname: () => '/llm-jobs',
+  Link: ({ children, ...props }: React.ComponentProps<'a'>) => <a {...props}>{children}</a>,
+}));
 
 vi.mock('@apollo/client/react', () => ({
   useQuery: vi.fn(),
@@ -44,7 +50,7 @@ describe('LlmJobListSection', () => {
     vi.clearAllMocks();
     mockRetryTranslation.mockResolvedValue({ data: { retryTranslationJob: { id: 'job-1', status: 'pending' } } });
     mockRetryDescription.mockResolvedValue({
-      data: { retryProductDescriptionJob: { id: 'desc-job-1', status: 'pending' } },
+      data: { retryProductDescriptionJob: { id: 'desc-job-new', productSlug: 'test-product', status: 'pending' } },
     });
 
     vi.mocked(useMutation).mockImplementation(document => {

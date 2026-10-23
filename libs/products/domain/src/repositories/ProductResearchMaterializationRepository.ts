@@ -18,6 +18,7 @@ export type ValidatedReviewedProductInput = {
   summary: string;
   logoUrl: string;
   officialUrl: string;
+  officialUrlConfirmed: boolean;
   categoryIds: string[];
   features: ReviewedResearchFeature[];
   tags: string[];

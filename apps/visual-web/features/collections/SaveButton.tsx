@@ -95,6 +95,7 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
               value={draft}
               onChange={e => setDraft(e.target.value)}
               onKeyDown={e => {
+                if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
                 if (e.key === 'Enter' && draft.trim() !== '') create();
               }}
               placeholder="새 컬렉션 이름"

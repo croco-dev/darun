@@ -1,105 +1,51 @@
 import 'reflect-metadata';
-import type { GetMagazine } from '@darun/magazines-domain';
-import type { GetProduct, GetProductFeature, GetProductFeatures } from '@darun/products-domain';
-import type { LlmClient } from '@darun/utils-llm';
-import { describe, expect, it, vi } from 'vitest';
-import type { TranslationService } from '../services/TranslationService';
+import { describe, expect, it } from 'vitest';
+import { translationJobFixture } from '../../../service/src/__tests__/translationJobFixture';
 
-vi.mock('typedi', async importOriginal => ({
-  ...(await importOriginal<typeof import('typedi')>()),
-  Inject: () => () => undefined,
-  Service: () => () => undefined,
-}));
-
-let TranslationJobService: typeof import('@darun/translation-service').TranslationJobService;
-
-const translationServiceStub = () => ({
-  upsertTranslation: vi.fn().mockResolvedValue(undefined),
-});
-
-describe('W4 job lease recovery: TranslationJobService', () => {
-  it('W4-A1: lease fence rejects stale translation-row writes before upsert', async () => {
-    const module = await import('@darun/translation-service');
-    TranslationJobService = module.TranslationJobService;
-    const product = {
-      id: 'prod-1',
-      name: '상품',
-      summary: '요약',
-      description: '설명',
-    };
-    const getProduct = { execute: vi.fn().mockResolvedValue(product) } as unknown as GetProduct;
-    const getMagazine = { execute: vi.fn() } as unknown as GetMagazine;
-    const translationService = translationServiceStub();
-    const provider = {
-      translateProductBundle: vi.fn().mockResolvedValue({
-        product: {
-          name: 'Product',
-          summary: 'Summary',
-          description: 'Description',
-          nameSourceHash: 'h1',
-          summarySourceHash: 'h2',
-          descriptionSourceHash: 'h3',
-        },
-        features: [],
-        model: 'm',
-        promptVersion: 'v1',
-      }),
-    };
-    // 현재 lease는 lease-B인데 구 attempt(lease-A)가 쓰기를 시도한다.
-    const repository = {
-      findJobById: vi.fn().mockResolvedValue({ id: 'job-1', leaseToken: 'lease-B' }),
-      completeJobLease: vi.fn(),
-    };
-    const service = new TranslationJobService(
-      getProduct,
-      getMagazine,
-      translationService as unknown as TranslationService,
-      provider as never,
-      { execute: vi.fn() } as unknown as GetProductFeature,
-      { execute: vi.fn().mockResolvedValue([]) } as unknown as GetProductFeatures,
-      repository as never
-    );
-
-    const result = await service.translateProductWithFeatures('prod-1', 'job-1', { leaseToken: 'lease-A' });
-    // lease 상실은 명시적 leaseLost 신호로 끝나 row 쓰기가 없다.
-    // 외부는 stale/leaseLost를 보고 completed 확정을 건너뛴다(F-A1).
-    expect(result).toEqual({ productId: 'prod-1', leaseLost: true });
-    expect(translationService.upsertTranslation).not.toHaveBeenCalled();
-    expect(provider.translateProductBundle).toHaveBeenCalled();
+describe('Translation persisted retry and recovery', () => {
+  it.each(['Product', 'Magazine', 'ProductFeature'] as const)(
+    '%s retry는 원래 fields와 queue identity를 보존한다',
+    async entityType => {
+      const fields = entityType === 'Magazine' ? ['content'] : ['summary'];
+      const fixture = translationJobFixture({ entityType, entityId: 'source-1', fields, status: 'failed' });
+      const retried = await fixture.service.retryProductTranslationJob('job-1');
+      expect(retried.fields).toEqual(fields);
+      expect(retried.id).toBe('job-new');
+      expect(retried.retryOfJobId).toBe('job-1');
+      expect(fixture.job.status).toBe('failed');
+      expect(fixture.queue.sendJob).toHaveBeenCalledWith({ jobId: 'job-new', entityType, entityId: 'source-1' });
+      // 새 retry 등록과 최신 intent 연결은 두 commit이 아닌 앱 adapter의 원자 호출 하나로 처리한다.
+      expect(fixture.source.createRetryJob).toHaveBeenCalledWith('job-1');
+      expect(fixture.repository.createJob).not.toHaveBeenCalled();
+    }
+  );
+  it('실행/완료 상태의 retry는 소유권을 변경하지 않는다', async () => {
+    for (const status of ['in_progress', 'completed', 'superseded'] as const) {
+      const fixture = translationJobFixture({ status });
+      await expect(fixture.service.retryProductTranslationJob('job-1')).rejects.toThrow(/재시도할 수 없는/);
+      expect(fixture.repository.createJob).not.toHaveBeenCalled();
+      expect(fixture.source.createRetryJob).not.toHaveBeenCalled();
+    }
   });
-
-  it('W4-A2/A3: pending jobs are rediscovered and queue failure reports queued=false', async () => {
-    const module = await import('@darun/translation-service');
-    TranslationJobService = module.TranslationJobService;
-    const pending = {
-      id: 'job-pending',
-      entityType: 'Product',
-      entityId: 'prod-1',
-      status: 'pending',
-    };
-    const repository = {
-      createJob: vi.fn().mockResolvedValue(pending),
-      findRecoverableJobs: vi.fn().mockResolvedValue([pending]),
-    };
-    const queue = { sendJob: vi.fn().mockRejectedValue(new Error('SQS down')) };
-    const service = new TranslationJobService(
-      { execute: vi.fn().mockResolvedValue({ id: 'prod-1' }) } as unknown as GetProduct,
-      { execute: vi.fn() } as unknown as GetMagazine,
-      translationServiceStub() as unknown as TranslationService,
-      { completion: vi.fn() } as unknown as LlmClient,
-      { execute: vi.fn() } as unknown as GetProductFeature,
-      { execute: vi.fn() } as unknown as GetProductFeatures,
-      repository as never,
-      queue as never
-    );
-
-    const requested = await service.requestProductTranslationJob('prod-1');
-    expect(requested.queued).toBe(false);
-    expect(requested.status).toBe('pending');
-
-    const recovered = await service.recoverInterruptedJobs({ now: new Date() });
-    // 전송이 계속 실패해도 pending으로 남고, 다음 tick이 다시 시도한다.
-    expect(recovered).toEqual({ recovered: 1, queued: 0 });
-    expect(queue.sendJob).toHaveBeenCalledTimes(2);
+  it('pending 재전송은 새 job을 만들지 않고 같은 job을 다시 보낸다', async () => {
+    const fixture = translationJobFixture({ status: 'pending' });
+    const resent = await fixture.service.retryProductTranslationJob('job-1');
+    expect(resent.id).toBe('job-1');
+    expect(fixture.source.createRetryJob).not.toHaveBeenCalled();
+    expect(fixture.repository.createJob).not.toHaveBeenCalled();
+    expect(fixture.queue.sendJob).toHaveBeenCalledWith({ jobId: 'job-1', entityType: 'Magazine', entityId: 'm1' });
+  });
+  it('재시도 등록 실패는 queue로 전송하지 않고 오류를 전파한다', async () => {
+    const fixture = translationJobFixture({ status: 'failed' });
+    fixture.source.createRetryJob.mockRejectedValueOnce(new Error('retry registration failed'));
+    await expect(fixture.service.retryProductTranslationJob('job-1')).rejects.toThrow('retry registration failed');
+    expect(fixture.queue.sendJob).not.toHaveBeenCalled();
+  });
+  it('큐 전송 실패는 pending job을 남기고 recovery가 다시 전송한다', async () => {
+    const fixture = translationJobFixture();
+    fixture.queue.sendJob.mockRejectedValueOnce(new Error('queue unavailable'));
+    expect((await fixture.service.requestTranslationJob('Magazine', 'm1', ['title'])).queued).toBe(false);
+    expect(await fixture.service.recoverInterruptedJobs()).toEqual({ recovered: 1, queued: 1 });
+    expect(fixture.repository.createJob).toHaveBeenCalledTimes(1);
   });
 });

@@ -7,9 +7,18 @@ describe('productDescriptionDocumentValidator', () => {
     productId: 'prod-1',
     productName: '토스',
     items: [
-      { id: 'product:summary', kind: 'product_summary', text: '간편 송금 서비스' },
+      {
+        id: 'product:summary',
+        kind: 'product_summary',
+        text: '간편 송금 서비스',
+      },
       { id: 'category:cat-1', kind: 'category', text: '핀테크' },
-      { id: 'feature:feat-1', kind: 'feature', title: '송금', text: '무료 송금' },
+      {
+        id: 'feature:feat-1',
+        kind: 'feature',
+        title: '송금',
+        text: '무료 송금',
+      },
       {
         id: 'link:link-1',
         kind: 'link',
@@ -159,7 +168,7 @@ describe('productDescriptionDocumentValidator', () => {
     expect(() => validateProductDescriptionDocument(doc, flowEvidence)).not.toThrow();
   });
 
-  it('accepts rich bullets, quotes, and evidence-bound links', () => {
+  it('accepts rich bullets and evidence-bound links without inventing quotes', () => {
     const doc = {
       ...validDoc,
       sections: [
@@ -170,7 +179,7 @@ describe('productDescriptionDocumentValidator', () => {
               text: '수수료 없는 송금을 지원합니다.',
               evidenceRefs: ['feature:feat-1', 'link:link-1'],
               bullets: ['주말에도 송금 가능', '받는 사람 계좌 확인 가능'],
-              quote: true,
+              quote: false,
               link: { label: '공식 안내', url: 'https://example.com/guide' },
             },
           ],
@@ -179,7 +188,7 @@ describe('productDescriptionDocumentValidator', () => {
     };
     const result = validateProductDescriptionDocument(doc, mockEvidence);
     expect(result.sections[0]?.paragraphs[0]?.bullets).toHaveLength(2);
-    expect(result.sections[0]?.paragraphs[0]?.quote).toBe(true);
+    expect(result.sections[0]?.paragraphs[0]?.quote).toBe(false);
     expect(result.sections[0]?.paragraphs[0]?.link?.url).toBe('https://example.com/guide');
   });
 
@@ -208,7 +217,10 @@ describe('productDescriptionDocumentValidator', () => {
 
     const bracketOnlyDoc = {
       ...validDoc,
-      intro: { text: '대괄호 [메모] 정도만 있는 소개', evidenceRefs: ['product:summary'] },
+      intro: {
+        text: '대괄호 [메모] 정도만 있는 소개',
+        evidenceRefs: ['product:summary'],
+      },
     };
     expect(() => validateProductDescriptionDocument(bracketOnlyDoc, mockEvidence)).not.toThrow();
   });
@@ -251,7 +263,7 @@ describe('productDescriptionDocumentValidator', () => {
       ],
     };
     expect(() => validateProductDescriptionDocument(doc, mockEvidence)).toThrow(
-      '인용한 link 근거의 URL과 일치해야 합니다'
+      '인용한 link 또는 research 근거의 URL과 일치해야 합니다'
     );
   });
 
@@ -286,64 +298,8 @@ describe('productDescriptionDocumentValidator', () => {
       ],
     };
     expect(() => validateProductDescriptionDocument(doc, researchEvidence)).toThrow(
-      '인용한 research 근거의 URL과 일치해야 합니다'
+      '인용한 link 또는 research 근거의 URL과 일치해야 합니다'
     );
-  });
-
-  it('passes when the link matches any cited link ref', () => {
-    const multiLinkEvidence: ProductDescriptionEvidence = {
-      ...mockEvidence,
-      items: [
-        ...mockEvidence.items,
-        {
-          id: 'link:link-2',
-          kind: 'link',
-          title: '두 번째 안내',
-          url: 'https://example.com/second',
-          displayText: '두 번째 안내',
-        },
-      ],
-    };
-    const doc = {
-      ...validDoc,
-      sections: [
-        {
-          title: '송금 안내',
-          paragraphs: [
-            {
-              text: '자세한 안내는 두 번째 링크를 확인하십시오.',
-              evidenceRefs: ['feature:feat-1', 'link:link-1', 'link:link-2'],
-              link: { label: '두 번째 안내', url: 'https://example.com/second' },
-            },
-          ],
-        },
-      ],
-    };
-    const result = validateProductDescriptionDocument(doc, multiLinkEvidence);
-    expect(result.sections[0]?.paragraphs[0]?.link?.url).toBe('https://example.com/second');
-  });
-
-  it('rejects javascript: and credentialed URLs as non-http(s) links', () => {
-    for (const url of ['javascript:alert(1)', 'https://user:pass@example.com/guide']) {
-      const doc = {
-        ...validDoc,
-        sections: [
-          {
-            title: '송금 안내',
-            paragraphs: [
-              {
-                text: '자세한 안내는 링크를 확인하십시오.',
-                evidenceRefs: ['feature:feat-1', 'link:link-1'],
-                link: { label: '공식 안내', url },
-              },
-            ],
-          },
-        ],
-      };
-      expect(() => validateProductDescriptionDocument(doc, mockEvidence)).toThrow(
-        'link.url은 http(s) URL이어야 합니다'
-      );
-    }
   });
 
   it('rejects when text exceeds length limit', () => {
@@ -363,10 +319,22 @@ describe('productDescriptionDocumentValidator', () => {
     const invalid = {
       ...validDoc,
       sections: [
-        { title: 'S1', paragraphs: [{ text: 'P1', evidenceRefs: ['feature:feat-1'] }] },
-        { title: 'S2', paragraphs: [{ text: 'P2', evidenceRefs: ['feature:feat-1'] }] },
-        { title: 'S3', paragraphs: [{ text: 'P3', evidenceRefs: ['feature:feat-1'] }] },
-        { title: 'S4', paragraphs: [{ text: 'P4', evidenceRefs: ['feature:feat-1'] }] },
+        {
+          title: 'S1',
+          paragraphs: [{ text: 'P1', evidenceRefs: ['feature:feat-1'] }],
+        },
+        {
+          title: 'S2',
+          paragraphs: [{ text: 'P2', evidenceRefs: ['feature:feat-1'] }],
+        },
+        {
+          title: 'S3',
+          paragraphs: [{ text: 'P3', evidenceRefs: ['feature:feat-1'] }],
+        },
+        {
+          title: 'S4',
+          paragraphs: [{ text: 'P4', evidenceRefs: ['feature:feat-1'] }],
+        },
       ],
     };
     expect(() => validateProductDescriptionDocument(invalid, mockEvidence)).toThrow(

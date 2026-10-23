@@ -2,9 +2,11 @@ import 'reflect-metadata';
 import { Product } from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import DataLoader from 'dataloader';
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { products } from '../entities/ProductSchema';
 import { PostgresqlProductRepository } from '../repositories/PostgresqlProductRepository';
+
+vi.mock('../repositories/productContentSync', () => ({ beginProductContentWrite: vi.fn(async () => vi.fn()) }));
 
 function createMockDb(rows: Record<string, unknown>[]) {
   const orderByMock = vi.fn().mockResolvedValue(rows);
@@ -35,6 +37,7 @@ function extractSqlString(sqlObj: unknown): string {
 describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
   let mockDb: Drizzle & {
     transaction: ReturnType<typeof vi.fn>;
+    execute: Mock;
     select?: ReturnType<typeof vi.fn>;
     insert?: ReturnType<typeof vi.fn>;
     update?: ReturnType<typeof vi.fn>;
@@ -44,6 +47,7 @@ describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
   beforeEach(() => {
     mockDb = {
       transaction: vi.fn(),
+      execute: vi.fn().mockResolvedValue([]),
     } as unknown as typeof mockDb;
     clearAllSpy = vi.spyOn(DataLoader.prototype, 'clearAll');
   });
@@ -65,10 +69,22 @@ describe('PostgresqlProductRepository DataLoader cache invalidation', () => {
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
           limit: vi.fn().mockResolvedValue(rows),
+          for: vi.fn().mockResolvedValue(rows),
         }),
       }),
     });
   }
+
+  it('reads current state without consulting a warm ID cache, including deletion', async () => {
+    const row = { id: 'product-1', slug: 'before', name: '제품', summary: '요약', logoUrl: 'logo', categoryIds: [] };
+    mockDb.select = createMockSelect([row]);
+    const reader = new PostgresqlProductRepository(mockDb);
+    expect((await reader.findOneById(row.id))?.slug).toBe('before');
+    mockDb.select = createMockSelect([{ ...row, slug: 'after' }]);
+    expect((await reader.findOneFreshById(row.id))?.slug).toBe('after');
+    mockDb.select = createMockSelect([]);
+    expect(await reader.findOneFreshById(row.id)).toBeNull();
+  });
 
   describe('insert()', () => {
     it('should call publishedIdLoader.clearAll() after successful insert', async () => {

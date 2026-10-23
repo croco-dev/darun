@@ -28,6 +28,7 @@ async function runWithProducts(ids: string[], params: { limit: number; cursor?: 
     findPublishedOneById: vi.fn(),
     findOneBySlug: vi.fn(),
     findOneById: vi.fn(),
+    findOneFreshById: vi.fn(),
     findPublishedOneBySlug: vi.fn(),
     findPublishedByCategoryId: vi.fn(),
     findPublishedByCategoryIdAndLimit: vi.fn(),
