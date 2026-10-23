@@ -33,7 +33,7 @@ describe('production GraphQL error responses', () => {
   it.each([
     [createDomainError('voting/duplicate-vote', 'Already voted'), 'voting/duplicate-vote'],
     [new AuthenticationError(), 'UNAUTHENTICATED'],
-    [new AuthorizationError(), 'FORBIDDEN'],
+    [new AuthorizationError(), 'UNAUTHORIZED'],
   ])('preserves safe domain and authorization errors', (error, code) => {
     const wrapped = new GraphQLError(error.message, { originalError: error, extensions: { stacktrace: ['secret'] } });
     const response = formatServerError(wrapped.toJSON(), wrapped, false);

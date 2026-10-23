@@ -4,6 +4,7 @@ import { Button } from '@darun/ui';
 import { Link, useNavigate, useSearchParams } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useEffect, useRef, useState } from 'react';
+import { CatalogPagination } from '../apps/CatalogPagination';
 import { SaveButton } from '../collections/SaveButton';
 import { ExplorerShell } from '../explorer/ExplorerShell';
 import {
@@ -336,7 +337,7 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
 
   return (
     <ExplorerShell
-      state={{ ...props, hasFilters }}
+      state={{ ...props, hasFilters, hasNextPage: props.pagination ? false : props.hasNextPage }}
       hero={
         hideHero !== true ? (
           <header className="flex flex-col gap-3">
@@ -362,6 +363,8 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
               id="screenshot-search"
               type="search"
               autoComplete="off"
+              role="combobox"
+              aria-autocomplete="list"
               aria-expanded={suggestions.length > 0 || (searchInput.trim().length > 0 && isSearchingSuggestions)}
               aria-controls="screenshot-search-suggest-listbox"
               value={searchInput}
@@ -471,7 +474,16 @@ const View = (props: ScreenshotExplorerState & { hideHero?: boolean; catalogMode
       resourceName={catalogMode === true ? '앱' : '스크린샷'}
       unitName={catalogMode === true ? '개의 앱 · 앱당 최신 1장' : '개의 화면'}
       resultsControls={<ScreenshotViewSwitch mode={viewMode} onChange={setViewMode} />}
-    />
+    >
+      {props.pagination && (
+        <CatalogPagination
+          {...props.pagination}
+          loading={props.loading}
+          networkError={props.networkError}
+          queryLengthError={props.queryLengthError}
+        />
+      )}
+    </ExplorerShell>
   );
 };
 
@@ -490,7 +502,10 @@ const BoundFilteredExplorer = bind<ScreenshotExplorerProps, ScreenshotExplorerSt
 function CatalogExplorer({ hideHero, searchDraft }: ScreenshotExplorerProps) {
   const navigate = useNavigate();
   const { suggestions, isSearching: isSearchingSuggestions, clearSuggestions, suggest } = useProductSearchSuggest();
-  const { cards, loading, networkError, retry } = useScreenshotCatalog(true);
+  const catalog = useScreenshotCatalog();
+  const { cards, loading, networkError, retry } = catalog;
+  const params = new URLSearchParams();
+  if (catalog.endCursor) params.set('after', catalog.endCursor);
   const { searchInput, setSearchInput } = searchDraft;
   const handleSearchInputChange = (value: string) => {
     setSearchInput(value);
@@ -516,7 +531,7 @@ function CatalogExplorer({ hideHero, searchDraft }: ScreenshotExplorerProps) {
     queryLengthError: false,
     networkError,
     cards,
-    totalCount: cards.length,
+    totalCount: catalog.totalCount,
     hasNextPage: false,
     loadingMore: false,
     loadMoreError: false,
@@ -563,6 +578,11 @@ function CatalogExplorer({ hideHero, searchDraft }: ScreenshotExplorerProps) {
     },
     hideHero,
     catalogMode: true,
+    pagination: {
+      firstHref: '/',
+      nextHref: catalog.hasNextPage && catalog.endCursor ? `/?${params}` : null,
+      isFirstPage: catalog.isFirstPage,
+    },
   };
   return <View {...viewState} />;
 }

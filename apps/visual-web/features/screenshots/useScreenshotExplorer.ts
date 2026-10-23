@@ -76,6 +76,7 @@ const SCREENSHOT_OPTIONS = {
   document: VisualScreenshotsOnExplorerDocument,
   connectionKey: 'visualScreenshots',
   pageSize: VISUAL_SCREENSHOTS_PAGE_SIZE,
+  boundedPagination: true,
   basePath: '/',
   secondaryParamKey: 'screenType',
   clearFiltersTo: '/',

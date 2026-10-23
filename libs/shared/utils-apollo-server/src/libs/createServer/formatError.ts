@@ -69,7 +69,7 @@ export function formatServerError(
     original instanceof AuthenticationError
       ? 'UNAUTHENTICATED'
       : original instanceof AuthorizationError
-        ? 'FORBIDDEN'
+        ? 'UNAUTHORIZED'
         : undefined;
   console.error('[GraphQL Error]', {
     code: publicError?.code ?? formatted.extensions?.code,
