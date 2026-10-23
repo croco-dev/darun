@@ -50,6 +50,8 @@ jobs:
       - run: pnpm run lint
       - name: Type Check
         run: pnpm run typecheck
+      - name: Type Check (tsrs)
+        run: pnpm run typecheck:tsrs
       - name: Check migration completeness
         run: pnpm --filter graphql-api run check:migrations
       - name: Build Lambda bundles

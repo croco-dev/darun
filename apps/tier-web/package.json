@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "next typegen && tsc --noEmit",
+    "typecheck:tsrs": "next typegen && tsrs --noEmit --incremental false",
     "upload": "pnpm cloudflare:build && opennextjs-cloudflare upload"
   },
   "dependencies": {

@@ -16,6 +16,7 @@
     "seed:e2e": "tsx scripts/seed-e2e.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "typecheck:tsrs": "tsrs --noEmit --incremental false",
     "verify:lambda": "node scripts/verify-lambda-bundle.js"
   },
   "dependencies": {

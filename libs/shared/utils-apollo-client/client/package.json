@@ -11,10 +11,10 @@
     }
   },
   "scripts": {
-
     "lint": "eslint **/*.ts*",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },
   "peerDependencies": {
     "@apollo/client": "catalog:",
@@ -29,4 +29,3 @@
     "@types/react-dom": "catalog:"
   }
 }
-

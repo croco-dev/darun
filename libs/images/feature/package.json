@@ -13,7 +13,8 @@
   "scripts": {
     "lint": "eslint **/*.ts*",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@darun/images-datasource": "workspace:*",

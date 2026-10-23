@@ -14,7 +14,8 @@
   "scripts": {
     "lint": "eslint .",
     "test": "echo 'No tests yet'",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@darun/ui": "workspace:*",

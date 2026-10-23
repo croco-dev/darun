@@ -19,7 +19,8 @@
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@apollo/client": "catalog:",

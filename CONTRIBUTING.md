@@ -184,7 +184,7 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
 
 2. **자동 품질 검사 (품질 게이트)**:
    `trunk` 브랜치에 병합되거나 코드가 푸시되면 GitHub Actions가 품질 검사를 실행합니다.
-   검사 순서: `lint` → `typecheck` → `test`
+   검사 순서: `lint` → `typecheck` → `typecheck:tsrs` → `test`
    GraphQL 변경은 TypeGraphQL 선언에 canonical 공개 타입 이름을 명시해 번들러의 클래스명 변경이 API 이름에 반영되지 않게 합니다. Node.js 22에서 `pnpm --filter graphql-api build:lambda` 다음 `pnpm --filter graphql-api verify:lambda`를 실행합니다. 검증은 임시 RSA·검증 전용 환경과 네트워크 연결 차단 아래 6개 배포 handler를 초기화하고, 배포와 같은 decorator metadata·minify 설정의 전체 resolver schema와 저장 SDL이 일치하는지 확인합니다. codegen 설정이 수집하는 libs 및 admin/service/visual 앱의 모든 operation·fragment를 두 schema에 검증한 뒤 health query만 실행하며, DB 연결·업무 mutation·worker 실행은 하지 않습니다. 문서는 앱 모듈을 실행하지 않고 정적으로 추출하며, 일치하는 파일의 문서 파싱 오류도 생략하지 않고 실패로 처리합니다. SDL 갱신이 필요하면 `pnpm --filter graphql-api verify:lambda -- --emit-schema`로 생성하고 `pnpm --filter @darun/provider-graphql codegen`으로 저장 SDL의 실제 문서 검증과 생성 타입 갱신을 완료합니다.
 
 3. **배포 실행**:
@@ -341,9 +341,14 @@ PR을 올리기 전에 아래 명령이 모두 통과해야 합니다.
 pnpm audit --audit-level=critical  # Critical 의존성 취약점 검사
 pnpm lint           # ESLint + Prettier 검사
 pnpm typecheck      # TypeScript 타입 검사
+pnpm typecheck:tsrs # tsrs 추가 타입 검사
 pnpm test           # Vitest 단위 테스트
 pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 ```
+
+`pnpm typecheck:tsrs`는 기존 `pnpm typecheck`와 같은 패키지 및 `tsconfig.json`을 검사합니다. 개별 패키지는 `pnpm --filter <package-name> typecheck:tsrs`로 검사할 수 있습니다. PR CI, GraphQL 배포 전 quality 검사, tier-web CI에서 두 검사를 모두 필수로 실행합니다.
+
+`tsrs`는 버전을 고정하고 `--noEmit --incremental false`로 실행해 JavaScript를 출력하거나 기존 TypeScript의 증분 캐시를 덮어쓰지 않습니다. 기존 `typescript` 의존성과 `tsc` 명령은 유지하며, Lambda의 decorator metadata 변환과 테스트에서 사용하는 TypeScript API도 그대로 유지합니다. 새 패키지에도 두 검사 스크립트를 함께 정의합니다.
 
 Next.js 버전은 workspace catalog와 override를 함께 갱신하며 모든 웹 앱은 catalog를 사용합니다. OpenTelemetry API는 웹과 서버 SDK의 공통 호환 범위인 `1.9.1`로 통합합니다. 서로 다른 peer 버전으로 Drizzle 타입이 중복 생성되는 것을 방지하며, Lambda의 Sentry·profiling SDK `10.38.0`과 기존 서버 계측 설정은 유지합니다. 의존성 취약점은 감사 기준을 낮추거나 제외하지 않고 수정 버전과 잠금 파일을 함께 갱신합니다.
 

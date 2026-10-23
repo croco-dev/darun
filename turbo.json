@@ -31,6 +31,10 @@
     "typecheck": {
       "cache": true,
       "dependsOn": ["^typecheck"]
+    },
+    "typecheck:tsrs": {
+      "cache": true,
+      "dependsOn": ["^typecheck:tsrs"]
     }
   }
 }
