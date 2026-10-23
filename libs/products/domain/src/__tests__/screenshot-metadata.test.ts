@@ -139,7 +139,6 @@ describe('screenshot metadata normalization (add + update share one policy)', ()
           })
         )
     );
-    vi.mocked(mockRepository.replaceScreenshotUiElements).mockResolvedValue(['CARD', 'BUTTON']);
     const useCase = new UpdateProductScreenshot(
       mockRepository as unknown as ProductScreenshotRepository,
       { findFlowIdsByScreenshotId: vi.fn().mockResolvedValue([]) } as never
@@ -152,7 +151,11 @@ describe('screenshot metadata normalization (add + update share one policy)', ()
     });
 
     expect(updated.imageAlt).toBe('새 alt');
-    expect(mockRepository.replaceScreenshotUiElements).toHaveBeenCalledWith('screenshot-1', ['CARD', 'BUTTON']);
+    expect(mockRepository.updateById).toHaveBeenCalledWith('screenshot-1', expect.any(Function), expect.any(Function), [
+      'CARD',
+      'BUTTON',
+    ]);
+    expect(mockRepository.replaceScreenshotUiElements).not.toHaveBeenCalled();
   });
 
   it('update에 잘못된 uiElements를 주면 DB 작업 없이 invalid-args로 거절한다', async () => {
@@ -189,6 +192,12 @@ describe('screenshot metadata normalization (add + update share one policy)', ()
 
     await useCase.execute({ id: 'screenshot-1', imageAlt: '새 alt' });
 
+    expect(mockRepository.updateById).toHaveBeenCalledWith(
+      'screenshot-1',
+      expect.any(Function),
+      expect.any(Function),
+      undefined
+    );
     expect(mockRepository.replaceScreenshotUiElements).not.toHaveBeenCalled();
   });
 
