@@ -14,6 +14,7 @@ import platform
 import pwd
 import random
 import re
+import signal
 import statistics
 import subprocess
 import sys
@@ -229,12 +230,20 @@ class Benchmark:
                 process = subprocess.Popen(command, cwd=self.root, env=self.env,
                                            stdout=log, stderr=subprocess.STDOUT,
                                            preexec_fn=enter_cgroup)
-                try:
-                    exit_code = process.wait(timeout=self.args.timeout)
-                except subprocess.TimeoutExpired:
+
+                def stop_on_timeout(_signum, _frame):
+                    nonlocal timed_out
                     timed_out = True
                     (cgroup / 'cgroup.kill').write_text('1')
-                    exit_code = process.wait(timeout=15)
+
+                previous_handler = signal.signal(signal.SIGALRM, stop_on_timeout)
+                signal.setitimer(signal.ITIMER_REAL, self.args.timeout)
+                try:
+                    # A timed Popen.wait polls in 50 ms steps, biasing short samples.
+                    exit_code = process.wait()
+                finally:
+                    signal.setitimer(signal.ITIMER_REAL, 0)
+                    signal.signal(signal.SIGALRM, previous_handler)
             seconds = time.monotonic() - started
             output = ANSI.sub('', log_path.read_text())
             count = re.search(r'Tasks:\s+(\d+) successful, (\d+) total', output)
