@@ -103,7 +103,7 @@ export function useEditProductInfo({ slug, onSubmit, onCancel }: UseEditProductI
           slug,
           input: {
             name,
-            summary: summary || undefined,
+            summary: summary ?? '',
           },
         },
       });

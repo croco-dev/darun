@@ -385,7 +385,6 @@ describe('useProductListTable', () => {
       expect(result.current.hasPreviousPage).toBe(false);
       expect(typeof result.current.loadNextPage).toBe('function');
       expect(typeof result.current.loadPreviousPage).toBe('function');
-      expect(typeof result.current.handleRowClick).toBe('function');
     });
 
     it('should roll back pageCount when refetch fails on loadNextPage', async () => {

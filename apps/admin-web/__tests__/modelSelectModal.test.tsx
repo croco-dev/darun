@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModelSelectModal } from '../features/settings/LlmSettingFormSection/ModelSelectModal';
@@ -9,10 +9,12 @@ describe('ModelSelectModal', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
     global.fetch = originalFetch;
   });
 
@@ -67,11 +69,9 @@ describe('ModelSelectModal', () => {
       />
     );
 
-    // Wait for models to load
-    await screen.findByText('google/gemini-2.5-flash');
+    await act(() => vi.runOnlyPendingTimersAsync());
     expect(screen.getByRole('button', { name: /google\/gemini-2.5-flash/ })).toBeDefined();
     expect(screen.getByRole('button', { name: /x-ai\/grok-4-fast/ })).toBeDefined();
-
     // 브라우저 직접 fetch fallback 없이 서버 프록시만 호출한다.
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [calledUrl, calledOptions] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -113,9 +113,8 @@ describe('ModelSelectModal', () => {
       />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('모델 목록 조회 실패')).toBeDefined();
-    });
+    await act(() => vi.runOnlyPendingTimersAsync());
+    expect(screen.getByText('모델 목록 조회 실패')).toBeDefined();
     expect(
       screen.getByText(/커스텀 엔드포인트에는 기본 환경 키\(OPEN_ROUTER_API_KEY\)를 사용할 수 없습니다\./)
     ).toBeDefined();
@@ -155,7 +154,8 @@ describe('ModelSelectModal', () => {
       />
     );
 
-    const supported = await screen.findByRole('button', {
+    await act(() => vi.runOnlyPendingTimersAsync());
+    const supported = screen.getByRole('button', {
       name: /vendor\/supported/,
     });
     expect(within(supported).getByText('구조화 응답 지원')).toBeDefined();
@@ -212,7 +212,8 @@ describe('ModelSelectModal', () => {
         onSelectModel={onSelectModel}
       />
     );
-    const item = await screen.findByRole('button', {
+    await act(() => vi.runOnlyPendingTimersAsync());
+    const item = screen.getByRole('button', {
       name: new RegExp(`vendor/${id}`),
     });
     expect(

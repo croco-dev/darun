@@ -78,6 +78,7 @@ cp apps/visual-web/.env.sample apps/visual-web/.env.local
 
 Cloudinary 이미지 업로드 요청은 서버가 서명한 `folder`, `timestamp`, `public_id`와 동일한 값을 전송해야 합니다. 공유 `useImageUpload`의 `displayName`은 서명 입력과 업로드 요청의 `public_id`에 함께 사용하며, 이를 누락하거나 변경하면 `Invalid Signature` 오류가 발생합니다.
 
+상품 편집 폼은 실제 입력과 레이블·오류 설명을 연결합니다. 요약을 빈 문자열로 저장할 수 있으며, 편집 중 닫았다 다시 열거나 저장에 실패해도 입력을 보존합니다. 저장 중에는 중복 제출과 닫기를 막습니다. AI 소개 후보는 현재 상품과 `productId`가 일치할 때만 검토·적용할 수 있고, 검토자가 비운 값은 재조회로 복원하지 않습니다.
 LLM 모델 조회는 Firebase 토큰으로 확인된 관리자만 `POST /api/llm/models`의 JSON 본문 `{endpoint?, apiKey?}`로 요청합니다. 인증된 GET은 `405`와 `Allow: POST`를 반환하며 키를 query에 넣지 않습니다. 공개 HTTPS 호스트와 기본 443 포트만 허용하고, 전체 DNS 결과를 검증한 뒤 연결 주소를 고정합니다. 내부 주소·IP literal·credential/query/fragment·redirect는 허용하지 않습니다. 요청 JSON은 16KiB, 공급자 응답은 2MiB, DNS부터 응답 종료까지는 10초로 제한합니다. 프록시 실패 시 브라우저에서 공급자로 직접 재요청하지 않습니다. 모델의 구조화 응답 표시는 공급자 메타데이터에 따른 힌트이며 Darun schema 검증 결과가 아닙니다.
 
 브라우저에서 LLM 모델 기본값과 타입은 `@darun/utils-llm/model`에서 가져옵니다. 패키지 루트는 Node.js `AsyncLocalStorage`를 사용하는 서버용 LLM 클라이언트를 포함하므로 클라이언트 컴포넌트에서 참조하지 않습니다.
@@ -427,6 +428,8 @@ export default defineConfig(createNodeConfig());
 ```
 
 테스트가 없는 패키지는 `test` 스크립트를 생략합니다. `echo`만 실행하는 작업은 검증이 아니므로 Turbo 테스트 그래프에 추가하지 않습니다. 공통 설정의 `passWithNoTests`는 Vitest를 사용하는 패키지에만 적용됩니다.
+
+타이머로 시작하는 UI 조회 테스트는 가짜 타이머와 `act`로 예약된 작업을 실행한 뒤 결과를 확인하고, 테스트 종료 시 실제 타이머를 복구합니다. 병렬 실행 부하 때문에 실패하는 테스트의 대기 시간을 임의로 늘리지 않습니다.
 
 `pnpm test:coverage` 실행 시 lcov·html 리포트가 각 패키지 `coverage/` 디렉터리에 생성되고, CI에서 `coverage-reports` 아티팩트로 업로드됩니다.
 

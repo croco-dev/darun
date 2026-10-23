@@ -1,7 +1,7 @@
 'use client';
 
 import { X, cn } from '@darun/ui';
-import { ReactNode, useCallback, useEffect, useRef } from 'react';
+import { ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
 
 export type AdminModalProps = {
   opened: boolean;
@@ -16,6 +16,9 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
   const modalContentRef = useRef<HTMLDivElement | null>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const mouseDownOnBackdropRef = useRef(false);
+  const [hasOpened, setHasOpened] = useState(opened);
+  if (opened && !hasOpened) setHasOpened(true);
+  const titleId = useId();
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -79,7 +82,7 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
     };
   }, [opened, handleKeyDown]);
 
-  if (!opened) {
+  if (!hasOpened) {
     return null;
   }
 
@@ -87,7 +90,9 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? 'admin-modal-title' : undefined}
+      aria-labelledby={title ? titleId : undefined}
+      hidden={!opened}
+      style={!opened ? { display: 'none' } : undefined}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity"
       onMouseDown={e => {
         mouseDownOnBackdropRef.current = e.target === e.currentTarget;
@@ -108,7 +113,7 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
       >
         <div className="mb-4 flex items-center justify-between gap-4">
           {title ? (
-            <h2 id="admin-modal-title" className="text-lg font-bold text-dark-900 break-words [word-break:keep-all]">
+            <h2 id={titleId} className="text-lg font-bold text-dark-900 break-words [word-break:keep-all]">
               {title}
             </h2>
           ) : (
