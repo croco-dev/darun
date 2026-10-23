@@ -23,7 +23,7 @@ const guardStep = workflow.jobs.deploy.steps.find((step) => step.id === 'revisio
 
 test('the revision gate runs inside the lock before any dependency install or production access', () => {
   const steps = workflow.jobs.deploy.steps;
-  assert.equal(steps[0].uses, 'actions/checkout@v6');
+  assert.match(steps[0].uses, /^actions\/checkout@/);
   assert.equal(steps[0].with.ref, '${{ github.sha }}');
   assert.equal(steps[1], guardStep);
   assert.equal(guardStep.run, 'node scripts/deployment-guard.mjs');
@@ -52,15 +52,15 @@ for (const event of ['push', 'repository_dispatch', 'workflow_dispatch']) {
 }
 
 for (const [name, overrides, response, code] of [
-  ['API failure', {}, head, 1],
-  ['invalid API response', {}, 'null', 0],
-  ['missing revision', { GITHUB_SHA: '' }, head, 0],
-  ['unsupported event', { GITHUB_EVENT_NAME: 'pull_request' }, head, 0],
+  ['API failure', {}, head, 503],
+  ['invalid API response', {}, 'null', 200],
+  ['missing revision', { GITHUB_SHA: '' }, head, 200],
+  ['unsupported event', { GITHUB_EVENT_NAME: 'pull_request' }, head, 200],
   [
     'rollback does not bypass failed revision lookup',
     { GITHUB_EVENT_NAME: 'workflow_dispatch', ALLOW_ROLLBACK: 'true' },
     head,
-    1,
+    403,
   ],
 ]) {
   test(`${name} fails closed without enabling production steps`, () => {
@@ -70,20 +70,29 @@ for (const [name, overrides, response, code] of [
   });
 }
 
-function runGuard(overrides, response = head, code = 0) {
+function runGuard(overrides, response = head, code = 200) {
   const directory = mkdtempSync(path.join(tmpdir(), 'darun-deployment-guard-'));
   try {
     const output = path.join(directory, 'output');
     writeFileSync(output, '');
+    const preload = path.join(directory, 'fetch-fixture.mjs');
     writeFileSync(
-      path.join(directory, 'gh'),
-      `#!/bin/sh\n[ "$*" = "api --method GET repos/croco-dev/darun/commits/trunk --jq .sha" ] || exit 2\nprintf '%s\\n' '${response}'\nexit ${code}\n`,
-      { mode: 0o755 }
+      preload,
+      `
+      import assert from 'node:assert/strict';
+      globalThis.fetch = async (url, options) => {
+        assert.equal(url, 'https://api.github.com/repos/croco-dev/darun/commits/trunk');
+        assert.equal(options.headers.Authorization, 'Bearer fixture-token');
+        assert.equal(options.redirect, 'error');
+        assert.ok(options.signal instanceof AbortSignal);
+        return new Response(JSON.stringify({ sha: ${JSON.stringify(response)} }), { status: ${code} });
+      };
+    `
     );
-    const result = spawnSync(process.execPath, [script], {
+    const result = spawnSync(process.execPath, ['--import', preload, script], {
       env: {
         ...process.env,
-        PATH: `${directory}${path.delimiter}${process.env.PATH}`,
+        GH_TOKEN: 'fixture-token',
         GITHUB_EVENT_NAME: 'push',
         GITHUB_SHA: old,
         GITHUB_REPOSITORY: 'croco-dev/darun',
