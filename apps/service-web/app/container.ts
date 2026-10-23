@@ -1,7 +1,7 @@
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
-import { BatchHttpLink } from '@apollo/client/link/batch-http';
 import { ErrorLink } from '@apollo/client/link/error';
+import { HttpLink } from '@apollo/client/link/http';
 import { RetryLink } from '@apollo/client/link/retry';
 import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
@@ -25,11 +25,9 @@ const httpErrorLink = new ErrorLink(({ error }) => {
 const isLocalEnvironment = process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local';
 const firebaseApiKey = process.env['NEXT_PUBLIC_FIREBASE_API_KEY'];
 
-const httpLink = new BatchHttpLink({
+const httpLink = new HttpLink({
   uri: process.env['NEXT_PUBLIC_GRAPHQL_URL'] ?? 'http://localhost:4000/graphql',
   credentials: isLocalEnvironment ? 'omit' : 'include',
-  batchMax: 10,
-  batchInterval: 20,
 });
 
 function createApolloClient() {
