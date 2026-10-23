@@ -5,7 +5,7 @@ import {
   UpvoteProductOnProductUserActionDocument,
 } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
-import { useState, useSyncExternalStore } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 
 void gql`
   query ProductBySlugOnProductUserAction($slug: String!, $locale: String!) {
@@ -77,68 +77,75 @@ export function useProductUserAction({ slug }: ProductUserActionProps) {
       locale,
     },
   });
-  const [upvoteProductMutation] = useMutation(UpvoteProductOnProductUserActionDocument, {
-    variables: {
-      slug,
-    },
-  });
 
   const votedRaw = useSyncExternalStore(subscribeVoted, getVotedSnapshot, getServerVotedSnapshot);
   const isPersistedVoted = votedRaw.includes(`"${slug}"`);
-  const [localVoted, setLocalVoted] = useState(false);
-  const voted = isPersistedVoted || localVoted;
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [optimisticCount, setOptimisticCount] = useState<number | null>(null);
+  const [upvoteProductMutation] = useMutation(UpvoteProductOnProductUserActionDocument);
+  const inFlight = useRef(new Set<string>());
+  const [state, setState] = useState<{
+    identity: { slug: string };
+    voted: boolean;
+    loading: boolean;
+    error: string | null;
+    success: boolean;
+  }>({
+    identity: { slug },
+    voted: false,
+    loading: false,
+    error: null,
+    success: false,
+  });
+  if (state.identity.slug !== slug) {
+    setState({ identity: { slug }, voted: false, loading: false, error: null, success: false });
+  }
+  const current = state.identity.slug === slug ? state : { voted: false, loading: false, error: null, success: false };
+  const voted = isPersistedVoted || current.voted;
 
   const upvoteProduct = async () => {
-    if (loading) return;
-
-    setLoading(true);
-    setError(null);
-
-    // Optimistic update: immediately increment count
-    const currentCount = optimisticCount ?? data?.productBySlug?.voteCount ?? 0;
-    setOptimisticCount(currentCount + 1);
-    setLocalVoted(true);
-
+    if (voted || inFlight.current.has(slug)) return;
+    const requestSlug = slug;
+    const requestIdentity = state.identity;
+    inFlight.current.add(requestSlug);
+    setState({ identity: requestIdentity, voted: false, loading: true, error: null, success: false });
     try {
-      await upvoteProductMutation({ variables: { slug } });
-      // Success: persist vote and clear local optimistic counter
-      saveVotedSlug(slug);
-      setOptimisticCount(null);
+      await upvoteProductMutation({ variables: { slug: requestSlug } });
+      saveVotedSlug(requestSlug);
+      setState(current =>
+        current.identity === requestIdentity
+          ? { identity: requestIdentity, voted: true, loading: false, error: null, success: true }
+          : current
+      );
     } catch (err: unknown) {
-      // Error: revert optimistic update
-      setOptimisticCount(null);
       const message = err instanceof Error ? err.message : '';
-      const isEn = locale === 'en';
-
-      if (message.includes('duplicate-vote')) {
-        setLocalVoted(true);
-        saveVotedSlug(slug);
-        setError(isEn ? 'You have already voted for this product.' : '이미 투표한 서비스입니다.');
-      } else if (message.includes('rate-limit-exceeded')) {
-        setLocalVoted(false);
-        setError(
-          isEn
-            ? 'Too many vote attempts. Please try again in a minute.'
-            : '단시간에 너무 많은 투표를 시도했습니다. 잠시 후 다시 시도해주세요.'
-        );
-      } else {
-        setLocalVoted(false);
-        setError(isEn ? 'Failed to vote. Please try again.' : '투표에 실패했습니다. 다시 시도해주세요.');
-      }
+      const duplicate = message.includes('duplicate-vote');
+      if (duplicate) saveVotedSlug(requestSlug);
+      setState(current => {
+        if (current.identity !== requestIdentity) return current;
+        const error = duplicate
+          ? locale === 'en'
+            ? 'You have already voted for this product.'
+            : '이미 투표한 서비스입니다.'
+          : message.includes('rate-limit-exceeded')
+            ? locale === 'en'
+              ? 'Too many vote attempts. Please try again in a minute.'
+              : '단시간에 너무 많은 투표를 시도했습니다. 잠시 후 다시 시도해주세요.'
+            : locale === 'en'
+              ? 'Failed to vote. Please try again.'
+              : '투표에 실패했습니다. 다시 시도해주세요.';
+        return { identity: requestIdentity, voted: duplicate, loading: false, error, success: false };
+      });
     } finally {
-      setLoading(false);
+      inFlight.current.delete(requestSlug);
     }
   };
 
   return {
     upvoteProduct,
-    voteCount: optimisticCount ?? data?.productBySlug?.voteCount ?? 0,
+    voteCount: data?.productBySlug?.voteCount ?? 0,
     voted,
-    loading,
-    error,
+    loading: current.loading,
+    error: current.error,
+    success: current.success,
     slug,
   };
 }

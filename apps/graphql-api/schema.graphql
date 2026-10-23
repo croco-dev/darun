@@ -27,6 +27,7 @@ type AddProductScreenshotPayload {
 }
 
 type ApplyProductDescriptionCandidatePayload {
+  alreadyApplied: Boolean!
   job: ProductDescriptionJob!
   product: Product!
 }
@@ -185,9 +186,18 @@ input IndexProductInput {
 }
 
 type IndexProductPayload {
-  indexed: Boolean!
+  dispatchStatus: String
+  error: String
+  intentId: String!
+  productId: String!
+  sourceRevision: String!
+  status: String!
+  translationDispatchStatus: String
+  translationJobId: String
+  translationJobStatus: String
 }
 
+"""Product에 등록한 서비스 링크. 공식 여부를 자동 인증하지 않는다."""
 type Link {
   displayLink: String!
   iconUrl: String!
@@ -226,6 +236,19 @@ type MagazinePagination {
   totalPages: Int!
 }
 
+input MaterializeResearchedProductInput {
+  categoryIds: [String!]!
+  features: [ReviewedResearchFeatureInput!]!
+  logoUrl: String!
+  name: String!
+  officialUrl: String!
+  officialUrlConfirmed: Boolean!
+  researchJobId: String!
+  slug: String!
+  summary: String!
+  tags: [String!]!
+}
+
 type Mutation {
   addProductLink(input: AddProductLinkInput!, slug: String!): AddProductLinkPayload!
   addProductScreenshot(input: AddProductScreenshotInput!, slug: String!): AddProductScreenshotPayload!
@@ -241,17 +264,26 @@ type Mutation {
   editProduct(input: EditProductInput!, slug: String!): EditProductPayload!
   generateProductDescription(input: GenerateProductDescriptionInput!): GenerateProductDescriptionPayload!
   indexProduct(input: IndexProductInput!): IndexProductPayload!
+  materializeResearchedProduct(input: MaterializeResearchedProductInput!): Product!
   publishMagazine(input: PublishMagazineInput!): PublishMagazinePayload!
   publishProduct(input: PublishProductInput!): PublishProductPayload!
-  materializeResearchedProduct(input: MaterializeResearchedProductInput!): Product!
   registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
-  requestProductResearch(input: RequestProductResearchInput!): RequestProductResearchPayload!
+  requestProductResearch(input: RequestProductResearchInput!): ProductResearchJob!
   requestProductTranslation(productId: String, slug: String): TranslationJob!
   requestTranslation(entityId: String!, entityType: String!, fields: [String!]!): TranslationJob!
+
+  """
+  관리자만 호출할 수 있다. 각 kind 최신 failed intent만 재예약하며 실패 번역은 새 logical job으로 연결한다. canonical 원문과 과거 job 이력은 유지하고 완료되지 않은 예약을 성공으로 표시하지 않는다. 실패한 최신 intent가 없으면 CONTENT_SYNC_NOT_RETRYABLE.
+  """
+  retryProductContentSync(slug: String!): ProductContentSyncOverview!
   retryProductDescriptionJob(id: String!): ProductDescriptionJob!
-  retryProductResearch(input: RetryProductResearchInput, jobId: String!): RequestProductResearchPayload
+  retryProductResearch(input: RetryProductResearchInput, jobId: String!): ProductResearchJob
   retryTranslationJob(id: String!): TranslationJob!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
+  toggleVisualFlowSave(id: String!): ToggleVisualSavePayload!
+  toggleVisualScreenshotSave(id: String!): ToggleVisualSavePayload!
+  trackVisualFlowView(id: String!): TrackVisualViewPayload!
+  trackVisualScreenshotView(id: String!): TrackVisualViewPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
   updateLlmSetting(apiKey: String, braveApiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
@@ -260,10 +292,6 @@ type Mutation {
   updateProductScreenshot(input: UpdateProductScreenshotInput!): UpdateProductScreenshotPayload!
   updateProductTags(input: UpdateProductTagsInput!, slug: String!): UpdateProductTagsPayload!
   upvoteProduct(slug: String!): UpvoteProductPayload!
-  trackVisualFlowView(id: String!): TrackVisualViewPayload!
-  trackVisualScreenshotView(id: String!): TrackVisualViewPayload!
-  toggleVisualFlowSave(id: String!): ToggleVisualSavePayload!
-  toggleVisualScreenshotSave(id: String!): ToggleVisualSavePayload!
 }
 
 type PageInfo {
@@ -273,17 +301,22 @@ type PageInfo {
   startCursor: String
 }
 
+"""서비스 정보와 관련 콘텐츠를 조회하는 Product."""
 type Product {
   alternatives: [Product!]!
+  coverScreenshot: Screenshot
   description: String
   features: [Feature!]!
+  hasAlternatives: Boolean!
   id: ID!
   links: [Link!]!
   logoUrl: String!
   name: String!
   ownedCompany: Company
   ownedCompanyId: String
+  previewScreenshots: [Screenshot!]!
   publishedAt: DateTimeISO
+  screenshotCount: Int!
   screenshots: [Screenshot!]!
   slug: String!
   summary: String!
@@ -292,22 +325,46 @@ type Product {
   voteCount: Int!
 }
 
-input MaterializeResearchedProductInput {
-  categoryIds: [String!]!
-  features: [ReviewedResearchFeatureInput!]!
-  logoUrl: String!
-  name: String!
-  officialUrl: String!
-  researchJobId: String!
-  slug: String!
-  summary: String!
-  tags: [String!]!
-}
-
 type ProductConnection {
   edges: [ProductEdge!]!
   pageInfo: PageInfo!
   totalCount: Int!
+}
+
+"""관리자용 Product 원문 revision과 종류별 최신 동기화 의도 및 연결 번역 작업 상태."""
+type ProductContentSyncOverview {
+  """조회한 Product의 ID."""
+  productId: String!
+
+  """종류가 search인 최신 intent. 검색 의도가 없으면 null이며 전역 revision으로 필터하지 않는다."""
+  searchIntent: IndexProductPayload
+
+  """최신 검색 intent 상태. intent가 없으면 not_required."""
+  searchStatus: String!
+
+  """현재 전역 원문 revision의 무손실 10진수 문자열. 각 intent revision과 다를 수 있다."""
+  sourceRevision: String!
+
+  """
+  최신 번역 의도의 등록 상태. registered는 job 등록만 뜻하며 영어 번역 완료는 translationJobStatus로 확인한다. 의도가 없으면 not_required, 대체된 의도는 superseded.
+  """
+  translationDispatchStatus: String!
+
+  """
+  종류가 translation인 최신 intent. 번역 의도가 없으면 null이며 검색 전용 후속 revision은 이를 대체하지 않는다.
+  """
+  translationIntent: IndexProductPayload
+
+  """연결된 번역 job의 dispatcher/실행 예약 상태. 연결 job이 없으면 null이며 등록 상태와 다르다."""
+  translationJobDispatchStatus: String
+
+  """
+  최신 번역 intent에 연결된 logical job ID. 수동 retry 성공 시 새 ID로 바뀌며 번역 의도가 없으면 null.
+  """
+  translationJobId: String
+
+  """연결된 번역 job의 실제 상태. completed만 번역 저장 완료를 뜻하며 연결 job이 없으면 null."""
+  translationJobStatus: String
 }
 
 type ProductDescriptionJob {
@@ -315,12 +372,19 @@ type ProductDescriptionJob {
   baseDescriptionHash: String
   candidateHtml: String
   createdAt: DateTimeISO
+  dispatchStatus: String
   error: String
   evidenceHash: String
   id: ID!
   message: String
+  nextDispatchAt: DateTimeISO
   productId: String!
+
+  """후보가 소속된 Product의 현재 slug. 관리자 후보 재진입 주소에 사용한다."""
+  productSlug: String!
+  retryOfJobId: String
   reviewerModel: String
+  runNotBefore: DateTimeISO
   status: String!
   updatedAt: DateTimeISO
   writerModel: String
@@ -337,32 +401,36 @@ input ProductFlowStepInput {
 }
 
 type ProductResearchDraftGraph {
-  version: Int!
-  originalUrl: String!
-  name: ResearchTextGraph!
-  suggestedSlug: String!
-  summary: ResearchTextGraph
-  features: [ResearchFeatureGraph!]!
-  tags: [String!]!
-  warnings: [String!]!
-  sources: [ResearchSourceGraph!]!
+  alternativeCandidates: [ResearchCandidateGraph!]!
   categoryCandidates: [ResearchCategoryCandidateGraph!]!
   companyCandidate: ResearchCandidateGraph
-  alternativeCandidates: [ResearchCandidateGraph!]!
-  sourceSnapshotHash: String!
-  promptVersion: String!
+  features: [ResearchFeatureGraph!]!
   model: String!
+  name: ResearchTextGraph!
+  originalUrl: String!
+  promptVersion: String!
+  sourceSnapshotHash: String!
+  sources: [ResearchSourceGraph!]!
+  suggestedSlug: String!
+  summary: ResearchTextGraph
+  tags: [String!]!
+  version: Int!
+  warnings: [String!]!
 }
 
 type ProductResearchJob {
   createdAt: DateTimeISO!
+  dispatchStatus: String
   errorCode: String
   errorMessage: String
   id: ID!
   materializedProductId: String
+  nextDispatchAt: DateTimeISO
   officialUrl: String!
   requestKey: String!
   result: ProductResearchDraftGraph
+  retryOfJobId: String
+  runNotBefore: DateTimeISO
   stage: String
   status: String!
   updatedAt: DateTimeISO!
@@ -395,12 +463,21 @@ type Query {
   llmSetting: LlmSetting!
   magazine(id: ID!): Magazine
   magazineBySlug(slug: String!): Magazine
+  myVisualFlowSaves(first: Int, page: Int): [String!]!
+  myVisualSavedFlows(first: Int, page: Int): VisualFlowConnection!
+  myVisualSavedScreenshots(first: Int, page: Int): VisualScreenshotConnection!
+  myVisualScreenshotSaves(first: Int, page: Int): [String!]!
   product(id: ID!, locale: String! = "ko"): Product
   productBySlug(locale: String! = "ko", slug: String!): Product
+
+  """
+  관리자만 조회할 수 있는 Product별 최신 검색·번역 상태. 현재 전역 revision과 독립적으로 각 kind 최신 intent를 반환한다.
+  """
+  productContentSyncStatus(slug: String!): ProductContentSyncOverview!
   productDescriptionJob(id: String!): ProductDescriptionJob
   productDescriptionJobs(limit: Int, offset: Int, status: String): [ProductDescriptionJob!]!
   productResearchJob(id: String!): ProductResearchJob
-  productsByCategory(locale: String! = "ko", slug: String!): [Product!]!
+  productsByCategory(after: String, first: Int! = 24, locale: String! = "ko", slug: String!): ProductConnection!
   productsCount: Int!
   publishedMagazines: [Magazine!]!
   publishedProductsForSitemap(after: String, first: Int! = 100): [Product!]!
@@ -411,18 +488,20 @@ type Query {
   tempAllMagazines(page: Int!): MagazinePagination!
   tempMagazineBySlug(slug: String!): Magazine
   tempProductBySlug(locale: String! = "ko", slug: String!): Product
+
+  """
+  관리자만 조회할 수 있다. 요청한 Product/Magazine/ProductFeature 필드의 현재 서버 원문과 저장된 영어 provenance를 비교하며 번역 작업을 생성하지 않는다.
+  """
+  translationFreshness(entityId: String!, entityType: String!, fields: [String!]!): [TranslationFreshness!]!
   translationJob(id: String!): TranslationJob
   translationJobs(limit: Int, offset: Int, status: String): [TranslationJob!]!
+  visualApps(after: String, first: Int! = 24, productSlug: String, query: String): ProductConnection!
   visualFlow(id: String!): VisualFlow
-  visualFlows(after: String, first: Int! = 24, flowType: VisualFlowType, page: Int, platform: VisualPlatform, productSlug: String, query: String, sort: VisualSort = LATEST): VisualFlowConnection!
-  visualScreenshot(id: String!): VisualScreenshot
-  visualScreenshots(after: String, first: Int! = 24, page: Int, platform: VisualPlatform, productSlug: String, query: String, screenType: VisualScreenType, sort: VisualSort = LATEST, uiElements: [VisualUiElement!]): VisualScreenshotConnection!
-  visualScreenshotSaveStatus(id: String!): VisualSaveStatusPayload!
   visualFlowSaveStatus(id: String!): VisualSaveStatusPayload!
-  myVisualScreenshotSaves(first: Int, page: Int): [String!]!
-  myVisualFlowSaves(first: Int, page: Int): [String!]!
-  myVisualSavedScreenshots(first: Int, page: Int): VisualScreenshotConnection!
-  myVisualSavedFlows(first: Int, page: Int): VisualFlowConnection!
+  visualFlows(after: String, first: Int! = 24, flowType: VisualFlowType, page: Int, platform: VisualPlatform, productSlug: String, query: String, sort: VisualSort): VisualFlowConnection!
+  visualScreenshot(id: String!): VisualScreenshot
+  visualScreenshotSaveStatus(id: String!): VisualSaveStatusPayload!
+  visualScreenshots(after: String, first: Int! = 24, page: Int, platform: VisualPlatform, productSlug: String, query: String, screenType: VisualScreenType, sort: VisualSort, uiElements: [VisualUiElement!]): VisualScreenshotConnection!
 }
 
 input RegisterProductCompanyInput {
@@ -433,9 +512,25 @@ type RegisterProductCompanyPayload {
   product: Product
 }
 
+input RequestProductResearchInput {
+  officialUrl: String!
+  requestId: String!
+}
+
 type ResearchAnchorGraph {
   excerpt: String!
   sourceId: String!
+}
+
+type ResearchCandidateGraph {
+  anchors: [ResearchAnchorGraph!]!
+  name: String!
+  website: String
+}
+
+type ResearchCategoryCandidateGraph {
+  categoryId: String!
+  reason: String!
 }
 
 type ResearchFeatureGraph {
@@ -444,17 +539,6 @@ type ResearchFeatureGraph {
   evidenceType: String!
   name: String!
   summary: String!
-}
-
-type ResearchCategoryCandidateGraph {
-  categoryId: String!
-  reason: String!
-}
-
-type ResearchCandidateGraph {
-  name: String!
-  website: String
-  anchors: [ResearchAnchorGraph!]!
 }
 
 type ResearchSourceGraph {
@@ -471,16 +555,6 @@ type ResearchTextGraph {
   anchors: [ResearchAnchorGraph!]!
   evidenceType: String!
   value: String!
-}
-
-input RequestProductResearchInput {
-  officialUrl: String!
-  requestId: String!
-}
-
-type RequestProductResearchPayload {
-  dispatchStatus: String!
-  job: ProductResearchJob!
 }
 
 input RetryProductResearchInput {
@@ -520,8 +594,36 @@ type Tag {
   name: String!
 }
 
+type ToggleVisualSavePayload {
+  saved: Boolean!
+}
+
+type TrackVisualViewPayload {
+  tracked: Boolean!
+}
+
+"""현재 원문과 저장된 영어 번역 provenance를 비교한 필드별 최신 여부."""
+type TranslationFreshness {
+  """해당 필드를 소유하는 엔티티 ID."""
+  entityId: String!
+
+  """
+  해당 필드의 Product, ProductFeature 또는 Magazine 종류. Product features 요청은 ProductFeature 행으로 반환된다.
+  """
+  entityType: String!
+
+  """비교한 원문 필드 이름."""
+  field: String!
+
+  """
+  current: 서버 원문 hash 일치 또는 원문 없는 optional 필드. stale: hash 불일치 또는 legacy null provenance. missing: 필요한 영어 번역 행이 없음.
+  """
+  status: String!
+}
+
 type TranslationJob {
   createdAt: DateTimeISO
+  dispatchStatus: String
   entityId: String!
   entityType: String!
   error: String
@@ -530,6 +632,9 @@ type TranslationJob {
   locale: String!
   message: String
   model: String
+  nextDispatchAt: DateTimeISO
+  retryOfJobId: String
+  runNotBefore: DateTimeISO
   status: String!
   updatedAt: DateTimeISO
 }
@@ -582,6 +687,7 @@ input UpdateProductScreenshotInput {
   platform: VisualPlatform
   screenType: VisualScreenType
   title: String
+  uiElements: [VisualUiElement!]
 }
 
 type UpdateProductScreenshotPayload {
@@ -598,18 +704,6 @@ type UpdateProductTagsPayload {
 
 type UpvoteProductPayload {
   product: Product
-}
-
-type TrackVisualViewPayload {
-  tracked: Boolean!
-}
-
-type ToggleVisualSavePayload {
-  saved: Boolean!
-}
-
-type VisualSaveStatusPayload {
-  saved: Boolean!
 }
 
 """공개 제품에 속한 UX 플로"""
@@ -661,6 +755,10 @@ enum VisualPlatform {
   WEB
 }
 
+type VisualSaveStatusPayload {
+  saved: Boolean!
+}
+
 """스크린샷이 담고 있는 화면의 종류"""
 enum VisualScreenType {
   CHECKOUT
@@ -673,6 +771,29 @@ enum VisualScreenType {
   SETTINGS
   SIGN_IN
   SIGN_UP
+}
+
+"""공개 제품에 속한 스크린샷과 제품 정보"""
+type VisualScreenshot {
+  flows: [VisualFlow!]!
+  id: ID!
+  imageAlt: String!
+  imageUrl: String!
+  platform: VisualPlatform
+  product: Product!
+  screenType: VisualScreenType
+  title: String
+}
+
+type VisualScreenshotConnection {
+  edges: [VisualScreenshotEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type VisualScreenshotEdge {
+  cursor: String!
+  node: VisualScreenshot!
 }
 
 """Visual 목록 정렬. LATEST는 keyset, POPULAR는 오프셋(page) 방식."""
@@ -700,30 +821,7 @@ enum VisualUiElement {
   PROGRESS
   SEARCH_BAR
   STEPPER
-  TAB_BAR
   TABLE
+  TAB_BAR
   TOGGLE
-}
-
-"""공개 제품에 속한 스크린샷과 제품 정보"""
-type VisualScreenshot {
-  flows: [VisualFlow!]!
-  id: ID!
-  imageAlt: String!
-  imageUrl: String!
-  platform: VisualPlatform
-  product: Product!
-  screenType: VisualScreenType
-  title: String
-}
-
-type VisualScreenshotConnection {
-  edges: [VisualScreenshotEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-type VisualScreenshotEdge {
-  cursor: String!
-  node: VisualScreenshot!
 }

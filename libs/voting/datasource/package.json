@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@darun/voting-domain": "workspace:*",
+    "dataloader": "2.2.2",
     "drizzle-orm": "catalog:"
   },
   "peerDependencies": {

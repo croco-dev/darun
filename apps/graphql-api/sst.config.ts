@@ -61,7 +61,7 @@ export default $config({
       environment,
     });
 
-    translationQueue.subscribe(translationWorker.arn);
+    translationQueue.subscribe(translationWorker.arn, { batch: { size: 1 } });
 
     const productDescriptionQueue = new sst.aws.Queue('ProductDescriptionQueue', {
       visibilityTimeout: '6 minutes',
@@ -93,7 +93,7 @@ export default $config({
       environment,
     });
 
-    productDescriptionQueue.subscribe(productDescriptionWorker.arn);
+    productDescriptionQueue.subscribe(productDescriptionWorker.arn, { batch: { size: 1 } });
 
     const productResearchWorker = new sst.aws.Function('ProductResearchWorker', {
       handler: 'product-research-worker.handler',
@@ -117,7 +117,60 @@ export default $config({
       environment,
     });
 
-    productResearchQueue.subscribe(productResearchWorker.arn);
+    productResearchQueue.subscribe(productResearchWorker.arn, { batch: { size: 1 } });
+
+    const contentSyncQueue = new sst.aws.Queue('ProductContentSyncQueue', { visibilityTimeout: '2 minutes' });
+    const contentSyncWorker = new sst.aws.Function('ProductContentSyncWorker', {
+      handler: 'product-content-sync-worker.handler',
+      bundle: '.build/lambda',
+      runtime: 'nodejs22.x',
+      architecture: 'arm64',
+      timeout: '1 minute',
+      logging: { retention: '1 week' },
+      environment,
+      permissions: [
+        {
+          actions: [
+            'sqs:ChangeMessageVisibility',
+            'sqs:DeleteMessage',
+            'sqs:GetQueueAttributes',
+            'sqs:GetQueueUrl',
+            'sqs:ReceiveMessage',
+          ],
+          resources: [contentSyncQueue.arn],
+        },
+      ],
+    });
+    contentSyncQueue.subscribe(contentSyncWorker.arn);
+
+    const jobRecoveryTick = new sst.aws.CronV2('JobRecoveryTick', {
+      schedule: 'rate(1 minute)',
+      function: {
+        handler: 'job-recovery-tick.handler',
+        bundle: '.build/lambda',
+        runtime: 'nodejs22.x',
+        architecture: 'arm64',
+        timeout: '1 minute',
+        environment: {
+          ...environment,
+          PRODUCT_CONTENT_SYNC_QUEUE_URL: contentSyncQueue.url,
+          TRANSLATION_QUEUE_URL: translationQueue.url,
+          PRODUCT_DESCRIPTION_QUEUE_URL: productDescriptionQueue.url,
+          PRODUCT_RESEARCH_QUEUE_URL: productResearchQueue.url,
+        },
+        permissions: [
+          {
+            actions: ['sqs:SendMessage'],
+            resources: [
+              contentSyncQueue.arn,
+              translationQueue.arn,
+              productDescriptionQueue.arn,
+              productResearchQueue.arn,
+            ],
+          },
+        ],
+      },
+    });
 
     const router = new sst.aws.Router('GraphqlRouter', {
       domain: {
@@ -175,6 +228,6 @@ export default $config({
       },
     });
 
-    return { api: router.url };
+    return { api: router.url, jobRecoveryScheduleArn: jobRecoveryTick.nodes.schedule.arn };
   },
 });

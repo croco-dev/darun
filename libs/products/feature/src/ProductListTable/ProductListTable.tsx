@@ -53,9 +53,13 @@ const columns = [
     header: '이름',
     size: 200,
     cell: info => (
-      <div className="truncate font-medium text-dark-900" title={info.getValue()}>
+      <a
+        className="block truncate font-medium text-dark-900 underline focus-visible:outline focus-visible:outline-2"
+        href={`/products/${encodeURIComponent(info.row.original.slug)}`}
+        title={info.getValue()}
+      >
         {info.getValue()}
-      </div>
+      </a>
     ),
   }),
   columnHelper.accessor('summary', {
@@ -87,7 +91,6 @@ export function ProductListTable() {
     isNavigating,
     loadNextPage,
     loadPreviousPage,
-    handleRowClick,
   } = useProductListTable();
 
   const table = useReactTable({
@@ -128,12 +131,7 @@ export function ProductListTable() {
               {table.getRowModel().rows.map((row, index) => (
                 <tr
                   key={row.id}
-                  tabIndex={0}
-                  onClick={() => handleRowClick({ record: row.original })}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') handleRowClick({ record: row.original });
-                  }}
-                  className={`cursor-pointer border-b border-dark-200 transition hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-dark-900/40 ${
+                  className={`border-b border-dark-200 transition hover:bg-surface-100 ${
                     index % 2 === 0 ? 'bg-white' : 'bg-surface-100/30'
                   }`}
                 >

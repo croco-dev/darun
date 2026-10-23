@@ -2,7 +2,6 @@ import { gql } from '@apollo/client';
 
 export const VISUAL_FLOWS_PAGE_SIZE = 24;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query VisualFlowsOnExplorer(
     $query: String

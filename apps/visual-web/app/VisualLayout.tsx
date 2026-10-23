@@ -116,8 +116,8 @@ function VisualHeader() {
   const hasPageSearch = pathname === '/' || pathname === '/apps' || pathname === '/flows';
 
   return (
-    <div className="flex w-full flex-wrap items-center justify-between gap-3 py-2 sm:min-h-18">
-      <div className="flex min-w-0 items-center gap-3 sm:gap-10">
+    <div className="flex w-full flex-wrap items-center justify-between gap-3 py-2.5 sm:min-h-16 sm:py-2">
+      <div className="flex min-w-0 w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-nowrap sm:gap-8">
         <Link
           href="/"
           aria-label="다른 Visual 홈"
@@ -128,7 +128,10 @@ function VisualHeader() {
             다른 <span className="font-medium text-dark-600">Visual</span>
           </span>
         </Link>
-        <nav aria-label="Visual 탐색" className="flex min-w-0 items-center gap-1 sm:gap-4">
+        <nav
+          aria-label="Visual 탐색"
+          className="flex min-w-0 w-full flex-wrap items-center gap-1 sm:w-auto sm:flex-nowrap"
+        >
           {NAV_ITEMS.map(tab => {
             const active = isTabActive(pathname, tab.href);
             const href = getRetainedNavHref(tab.href, pathname, searchParams);
@@ -185,9 +188,33 @@ function VisualHeader() {
 
 function VisualHeaderFallback() {
   return (
-    <div className="flex min-h-15 items-center sm:min-h-18" aria-busy="true">
-      <Logo size={32} title="다른 Visual" />
-      <span className="sr-only">탐색 메뉴를 불러오는 중</span>
+    <div className="flex w-full items-center py-2.5 sm:min-h-16 sm:py-2">
+      <div className="flex min-w-0 w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-nowrap sm:gap-8">
+        <Link
+          href="/"
+          aria-label="다른 Visual 홈"
+          className="flex shrink-0 items-center gap-2.5 rounded-xl transition-opacity duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+        >
+          <Logo size={32} title="다른 Visual 홈" />
+          <span className="hidden text-base font-bold tracking-tight text-dark-900 select-none sm:inline">
+            다른 <span className="font-medium text-dark-600">Visual</span>
+          </span>
+        </Link>
+        <nav
+          aria-label="Visual 탐색"
+          className="flex min-w-0 w-full flex-wrap items-center gap-1 sm:w-auto sm:flex-nowrap"
+        >
+          {NAV_ITEMS.map(tab => (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold whitespace-nowrap text-dark-600 hover:bg-surface-50 hover:text-dark-900"
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
     </div>
   );
 }

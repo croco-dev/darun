@@ -18,6 +18,11 @@ export type ExplorerFilters = {
   element?: string | null;
 };
 
+export type ExplorerSearchDraft = {
+  searchInput: string;
+  setSearchInput: (value: string) => void;
+};
+
 export type ExplorerBaseState<TCard> = {
   loading: boolean;
   error: Error | undefined;
@@ -48,6 +53,7 @@ export type ExplorerBaseState<TCard> = {
   onSuggestionSelect: (product: ProductSuggestion) => void;
   onSuggestClose: () => void;
   onSearchInputFocus: () => void;
+  pagination?: { firstHref: string; nextHref: string | null; isFirstPage: boolean };
 };
 
 type BuildUrlNext = {
@@ -79,6 +85,7 @@ type ExplorerQueryOptions<TNode, TCard> = {
   getNodeId: (node: TNode) => string | undefined;
   refetchLabel: string;
   loadMoreLabel: string;
+  boundedPagination?: boolean;
 };
 
 type EdgeLike<TNode> = { node?: TNode | null } | null;
@@ -150,7 +157,10 @@ function mergeEdges<TCard>(previousCards: TCard[], incomingCards: TCard[], getId
 
 export { mergeEdges as mergeCardsForTest };
 
-export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNode, TCard>) {
+export function useExplorerQuery<TNode, TCard>(
+  options: ExplorerQueryOptions<TNode, TCard>,
+  searchDraft?: ExplorerSearchDraft
+) {
   const searchParams = useSearchParams();
   const navigate = useNavigate();
   const apolloClient = useApolloClient();
@@ -162,13 +172,19 @@ export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNo
   const element = filters.element ?? null;
   const elementParamKey = options.elementParamKey ?? 'element';
 
-  const [searchInput, setSearchInput] = useState(query ?? '');
+  const [localSearchInput, setLocalSearchInput] = useState(query ?? '');
+  const searchInput = searchDraft?.searchInput ?? localSearchInput;
+  const setSearchInput = searchDraft?.setSearchInput ?? setLocalSearchInput;
+  const ownsSearchDraft = searchDraft === undefined;
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 검색 파라미터 동기화에 필요
-    setSearchInput(query ?? '');
-  }, [query]);
+    if (ownsSearchDraft) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 검색 파라미터 동기화에 필요
+      setLocalSearchInput(query ?? '');
+    }
+  }, [query, ownsSearchDraft]);
 
   const queryLengthError = isOverlongExplorerQuery(query);
+  const after = options.boundedPagination ? searchParams.get('after') : null;
 
   const observable = useMemo(
     () =>
@@ -183,19 +199,19 @@ export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNo
             element,
           }),
           first: options.pageSize,
-          after: null,
+          after,
         },
         notifyOnNetworkStatusChange: true,
+        fetchPolicy: options.boundedPagination ? 'no-cache' : 'cache-first',
       }),
-    [apolloClient, options, query, platform, secondary, product, element, queryLengthError]
+    [apolloClient, options, query, platform, secondary, product, element, queryLengthError, after]
   );
 
-  const [result, setResult] = useState(() => observable.getCurrentResult());
+  const [snapshot, setSnapshot] = useState(() => ({ observable, result: observable.getCurrentResult() }));
+  const result = snapshot.observable === observable ? snapshot.result : observable.getCurrentResult();
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- observable 교체 시 결과 재동기화에 필요
-    setResult(observable.getCurrentResult());
     const subscription = observable.subscribe(nextResult => {
-      setResult({ ...nextResult });
+      setSnapshot({ observable, result: { ...nextResult } });
     });
     return () => subscription.unsubscribe();
   }, [observable]);
@@ -227,9 +243,17 @@ export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNo
   const buildUrl = (next: BuildUrlNext) =>
     buildExplorerUrl(options.basePath, filters, options.secondaryParamKey, next, elementParamKey);
 
-  const navigateTo = (next: BuildUrlNext) => navigate(buildUrl({ q: searchInput.trim() || null, ...next }));
+  const navigateTo = (next: BuildUrlNext) => navigate(buildUrl(next));
 
   const onLoadMore = () => {
+    if (options.boundedPagination) {
+      if (hasNextPage && endCursor !== null) {
+        const params = new URLSearchParams(searchParams);
+        params.set('after', endCursor);
+        navigate(`${options.basePath}?${params}`);
+      }
+      return;
+    }
     if (loadingMore || !hasNextPage || endCursor === null) {
       return;
     }
@@ -351,6 +375,20 @@ export function useExplorerQuery<TNode, TCard>(options: ExplorerQueryOptions<TNo
     },
     onLoadMore,
     retry,
+    pagination: options.boundedPagination
+      ? {
+          firstHref: buildUrl({}),
+          nextHref:
+            hasNextPage && endCursor !== null
+              ? (() => {
+                  const params = new URLSearchParams(searchParams);
+                  params.set('after', endCursor);
+                  return `${options.basePath}?${params}`;
+                })()
+              : null,
+          isFirstPage: after === null,
+        }
+      : undefined,
     suggestions,
     isSearchingSuggestions,
     onSuggestionSelect,

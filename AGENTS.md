@@ -65,8 +65,8 @@ pnpm test           # 단위 테스트 실행
 - `@Field`에서 union, nullable, 배열, enum 등 추론이 불명확한 타입은 반환 타입을 명시합니다. 예: `stage?: string | null`에는 `@Field(() => String, { nullable: true })`를 사용합니다. `nullable` 옵션만으로 GraphQL 타입이 정해지지는 않습니다.
 - resolver mock 테스트와 별도로 전체 resolver 목록으로 스키마를 생성하는 테스트를 두고, 배포용 설정으로 만든 Lambda 번들도 별도 Node.js 프로세스에서 로드해 초기화 성공과 `handler` export를 검증합니다. 두 검증은 PR CI와 운영 배포 전 필수 체크로 연결해야 합니다.
 - 검증 환경은 운영과 같은 Node.js 22와 `tsconfig.lambda.json`의 decorator metadata 설정을 사용합니다. 운영 자격 증명을 가져오는 대신 검증 전용 환경변수와 유효한 임시 RSA private key를 사용하고, DB 연결이나 실제 Lambda invocation 없이 모듈 초기화를 확인합니다.
-- PR CI와 운영 배포 workflow는 `build:lambda` 다음에 `verify:lambda`를 실행합니다. `apps/graphql-api/scripts/verify-lambda-bundle.js`는 유효한 임시 RSA 키와 검증 전용 환경으로 실제 배포 번들의 모든 handler를 로드한 뒤, 전체 resolver로 별도 스키마를 생성하고 health query를 실행합니다. DB 연결과 worker 실행은 포함하지 않습니다.
-- 상품 발행과 발행된 콘텐츠 변경에서는 `requestProductTranslationJob`으로 번역 작업을 등록합니다. `translateProductWithFeatures`를 직접 기다리면 LLM 응답 시간이 어드민의 기본 15초 제한을 넘길 수 있습니다. 운영의 `TRANSLATION_QUEUE_URL` 설정과 translation worker의 SQS 연결을 확인합니다.
+- PR CI와 운영 배포 workflow는 `build:lambda` 다음에 `verify:lambda`를 실행합니다. `apps/graphql-api/scripts/verify-lambda-bundle.js`는 유효한 임시 RSA 키와 검증 전용 환경으로 6개 배포 handler를 로드한 뒤, 배포와 같은 metadata·minify 설정의 전체 resolver schema를 생성합니다. codegen 설정이 수집한 libs 및 admin/service/visual 앱의 모든 operation·fragment를 실행 schema와 저장 SDL에 검증하고 두 schema의 일치와 health query를 확인합니다. 검증 프로세스는 네트워크 연결을 차단하며 DB 연결·업무 mutation·worker 실행은 포함하지 않습니다. GraphQL 선언은 canonical 공개 이름을 명시하고, SDL 재생성은 `pnpm --filter graphql-api verify:lambda -- --emit-schema`, 생성 타입 갱신과 실제 codegen validation은 `pnpm --filter @darun/provider-graphql codegen`으로 실행합니다.
+- 상품 발행과 발행된 canonical 콘텐츠 변경은 Product-first transaction의 `beginProductContentWrite`에서 revision·검색/번역 intent를 함께 기록합니다. 앱 registrar가 번역 job도 같은 commit에 등록하므로 resolver에서 별도 색인이나 번역을 중복 요청하지 않습니다. LLM 응답은 기다리지 않고 기존 recovery tick과 `PRODUCT_CONTENT_SYNC_QUEUE_URL`·`TRANSLATION_QUEUE_URL` worker가 독립적으로 재처리합니다.
 
 ## 4. PostgreSQL migration 변경 검증
 

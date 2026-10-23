@@ -2,30 +2,44 @@
  * Offline eval harness for LLM content lifecycle rules.
  *
  * Modes:
- * - deterministic (default): no keys, no network, no remote calls. Runs the
- *   synthetic offline invariant checks below and always passes/fails locally.
- * - manual-live (explicit opt-in): runs the approved fixture set against the
- *   real LLM provider. Requires `--live` AND `OPEN_ROUTER_API_KEY`. The live
- *   path is intentionally not part of CI; reviewers run it by hand on the
- *   approved fixtures only. Without keys it reports SKIPPED fixtures, and it
- *   never collects production user data or batch-regenerates production rows.
+ * - deterministic (default, or --mode=deterministic): no keys, no network, no
+ *   remote calls — regardless of which API keys are present in the
+ *   environment. Runs the synthetic offline invariant checks below and always
+ *   passes/fails locally. The real description and translation providers are
+ *   never imported or executed in this mode, and no real model output is
+ *   produced; meaning judgments a model would have to make are not simulated.
+ * - manual-live (--mode=manual-live, explicit opt-in): runs the approved
+ *   fixture set against the real description and translation providers.
+ *   Without OPEN_ROUTER_API_KEY the explicit live run fails and
+ *   nothing is sent anywhere. The live path is intentionally not part of CI;
+ *   reviewers run it by hand on the approved fixtures only, and it never
+ *   collects production user data, telemetry, or an LLM judge, and never
+ *   batch-regenerates production rows.
  *
-   * Usage:
-   *   pnpm eval:llm-content            # deterministic only
--  *   pnpm eval:llm-content -- --live  # deterministic + manual-live (needs key)
-+  *   pnpm eval:llm-content -- --live  # deterministic + manual-live (needs key)
+ * Usage:
+ *   pnpm eval:llm-content                       # deterministic only (default)
+ *   pnpm eval:llm-content -- --mode=deterministic
+ *   pnpm eval:llm-content -- --mode=manual-live # needs OPEN_ROUTER_API_KEY
  */
+import type { LlmClient } from '@darun/utils-llm';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import {
   createProductDescriptionWriterPrompt,
   createProductDescriptionReviewerPrompt,
+  PRODUCT_DESCRIPTION_WRITER_PROMPT_VERSION,
+  PRODUCT_DESCRIPTION_REVIEWER_PROMPT_VERSION,
 } from '../../libs/products/datasource/src/prompts/productDescriptionPrompt';
 import { createProductDescriptionResponseFormat } from '../../libs/products/datasource/src/prompts/productDescriptionSchema';
-import { validateProductDescriptionCoverage } from '../../libs/products/datasource/src/validators/productDescriptionCoverageValidator';
 import { validateProductDescriptionDocument } from '../../libs/products/datasource/src/validators/productDescriptionDocumentValidator';
-import type { ProductDescriptionEvidence } from '../../libs/products/domain/src/services/ProductDescriptionEvidenceAssembler';
-import { decodeHtml, encodeHtml } from '../../libs/translation/datasource/src/codecs/htmlPlaceholderCodec';
+import type { ProductDescriptionEvidence } from '../../libs/products/domain/src/services/ProductDescriptionEvidenceProjector';
+import {
+  assertDocumentStructure,
+  decodeHtml,
+  encodeHtml,
+} from '../../libs/translation/datasource/src/codecs/htmlPlaceholderCodec';
+import { TRANSLATION_PROMPT_VERSION } from '../../libs/translation/datasource/src/prompts/translationPrompt';
+import type { TranslationMode, TranslationProvider } from '../../libs/translation/domain/src';
 import { computeSourceHash } from '../../libs/translation/domain/src/utils/sourceHash';
 
 interface DescriptionFixture {
@@ -53,26 +67,29 @@ interface DescriptionFixture {
   };
 }
 
-interface TranslationFixture {
+export interface TranslationFixture {
   id: string;
   description: string;
   koreanText: string;
   isHtml: boolean;
-  mode: string;
+  mode: TranslationMode;
   negativeHypeKeywords: string[];
   preserveTokens?: string[];
-  forkCheck?: 'negation' | 'numeric-condition' | 'same-host-ambiguity';
+  forkCheck?: 'negation' | 'numeric-condition' | 'same-host-ambiguity' | 'brand-url';
 }
 
-// Offline axes every translation fixture must cover. Each axis is a
-// deterministic string invariant (no LLM call), so the deterministic mode can
-// assert the fixture itself pins the rule instead of only exercising it live.
+// This is fixture coverage, not semantic grading. The local checks validate
+// source manifests and document guards; they do not evaluate model meaning.
 const REQUIRED_TRANSLATION_AXES = [
   'terminology',
   'uncertainty',
+  'criticism',
+  'price',
+  'brand-url',
   'negation',
   'numeric-condition',
   'html-structure',
+  'markdown-structure',
   'sparse-product',
   'rich-product',
   'injection',
@@ -81,23 +98,42 @@ const REQUIRED_TRANSLATION_AXES = [
 
 type TranslationAxis = (typeof REQUIRED_TRANSLATION_AXES)[number];
 
-function axisOfFixture(fixture: TranslationFixture): TranslationAxis | null {
+function axesOfFixture(fixture: TranslationFixture): ReadonlySet<TranslationAxis> {
+  const axes = new Set<TranslationAxis>();
   // Explicit forced-branch markers win over id prefixes: an HTML same-host
   // case must count as same-host-ambiguity, not generic html-structure.
-  if (fixture.forkCheck === 'negation') return 'negation';
-  if (fixture.forkCheck === 'numeric-condition') return 'numeric-condition';
-  if (fixture.forkCheck === 'same-host-ambiguity') return 'same-host-ambiguity';
+  if (fixture.forkCheck === 'negation') axes.add('negation');
+  if (fixture.forkCheck === 'numeric-condition') axes.add('numeric-condition');
+  if (fixture.forkCheck === 'same-host-ambiguity') axes.add('same-host-ambiguity');
+  if (fixture.forkCheck === 'brand-url') {
+    axes.add('brand-url');
+    // The brand-url fixture is Markdown link syntax: it must also prove the
+    // offline Markdown structure guard, not only URL freezing.
+    axes.add('markdown-structure');
+  }
   const id = fixture.id;
-  if (id.startsWith('terminology')) return 'terminology';
-  if (id.startsWith('hedge') || id.startsWith('uncertainty')) return 'uncertainty';
-  if (id.startsWith('negation')) return 'negation';
-  if (id.startsWith('numeric')) return 'numeric-condition';
-  if (id.startsWith('same-host')) return 'same-host-ambiguity';
-  if (id.startsWith('html') || fixture.isHtml) return 'html-structure';
-  if (id.startsWith('sparse')) return 'sparse-product';
-  if (id.startsWith('rich')) return 'rich-product';
-  if (id.startsWith('injection') || id.startsWith('promotional')) return 'injection';
-  return null;
+  if (id.startsWith('terminology')) axes.add('terminology');
+  if (id.startsWith('hedge') || id.startsWith('uncertainty')) axes.add('uncertainty');
+  if (id.startsWith('criticism')) axes.add('criticism');
+  if (id.startsWith('price')) axes.add('price');
+  if (id.startsWith('brand')) axes.add('brand-url');
+  if (id.startsWith('negation')) axes.add('negation');
+  if (id.startsWith('numeric')) axes.add('numeric-condition');
+  if (id.startsWith('same-host')) axes.add('same-host-ambiguity');
+  if (id.startsWith('html')) axes.add('html-structure');
+  if (id.startsWith('markdown')) axes.add('markdown-structure');
+  if (fixture.isHtml) axes.add('html-structure');
+  if (id.startsWith('sparse')) axes.add('sparse-product');
+  if (id.startsWith('rich')) axes.add('rich-product');
+  if (id.startsWith('injection') || id.startsWith('promotional')) axes.add('injection');
+  return axes;
+}
+
+function axisOfFixture(fixture: TranslationFixture): TranslationAxis | null {
+  // The forced-branch marker is the primary axis; id prefixes and isHtml are
+  // secondary signals for fixtures without a marker.
+  if (fixture.forkCheck) return fixture.forkCheck;
+  return [...axesOfFixture(fixture)][0] ?? null;
 }
 
 function assembleFixtureEvidence(fixture: DescriptionFixture): ProductDescriptionEvidence {
@@ -122,39 +158,109 @@ function assembleFixtureEvidence(fixture: DescriptionFixture): ProductDescriptio
   };
 }
 
-async function runLiveDescriptionEvaluations() {
-  // Lazy import keeps the deterministic default path free of any LLM client
-  // (and free of any network-capable import side effects).
-  const { LlmClient } = await import('@darun/utils-llm');
-  const client = new LlmClient();
+export async function runLiveDescriptionEvaluations(client: Pick<LlmClient, 'getConfig' | 'completion'>) {
   const config = await client.getConfig();
   const fixtures: DescriptionFixture[] = JSON.parse(
     readFileSync(resolve(__dirname, 'fixtures/description-fixtures.json'), 'utf8')
   );
+  let failures = 0;
   for (const fixture of fixtures) {
     const evidence = assembleFixtureEvidence(fixture);
     const responseFormat = createProductDescriptionResponseFormat(evidence);
-    const complete = async (prompts: { systemPrompt: string; userPrompt: string }) => {
-      const response = await client.completion(
-        config.model,
-        [
-          { role: 'system', content: prompts.systemPrompt },
-          { role: 'user', content: prompts.userPrompt },
-        ],
-        { thinkingLevel: config.thinkingLevel, responseFormat }
-      );
-      if (!response.content) throw new Error(`${fixture.id}: Empty LLM response`);
-      return validateProductDescriptionDocument(JSON.parse(response.content), evidence);
+    const report = {
+      kind: 'description',
+      fixture: fixture.id,
+      source: evidence,
+      model: config.model,
+      writerVersion: PRODUCT_DESCRIPTION_WRITER_PROMPT_VERSION,
+      reviewerVersion: PRODUCT_DESCRIPTION_REVIEWER_PROMPT_VERSION,
+      writerDraft: null as unknown,
+      finalDocument: null as unknown,
+      formatStatus: 'PROVIDER_OR_FORMAT_FAILURE',
+      formatFailure: null as string | null,
+      meaningStatus: 'HUMAN_REVIEW_REQUIRED',
     };
-    const draft = await complete(createProductDescriptionWriterPrompt(evidence));
-    const document = await complete(createProductDescriptionReviewerPrompt(evidence, draft));
-    validateProductDescriptionCoverage(document, evidence);
-    console.log(`  ✓ ${fixture.id}: Structured generation and feature coverage passed (${config.model}).`);
-    console.log(JSON.stringify(document, null, 2));
+    try {
+      const complete = async (prompts: { systemPrompt: string; userPrompt: string }) => {
+        const response = await client.completion(
+          config.model,
+          [
+            { role: 'system', content: prompts.systemPrompt },
+            { role: 'user', content: prompts.userPrompt },
+          ],
+          { thinkingLevel: config.thinkingLevel, responseFormat }
+        );
+        if (!response.content) throw new Error('Empty LLM response');
+        return validateProductDescriptionDocument(JSON.parse(response.content), evidence);
+      };
+      const draft = await complete(createProductDescriptionWriterPrompt(evidence));
+      report.writerDraft = draft;
+      report.finalDocument = await complete(createProductDescriptionReviewerPrompt(evidence, draft));
+      report.formatStatus = 'PASSED';
+    } catch (error) {
+      failures++;
+      report.formatFailure = error instanceof Error ? error.message : String(error);
+    }
+    console.log(JSON.stringify(report, null, 2));
+  }
+  return failures;
+}
+
+export async function runLiveTranslationEvaluations(
+  provider: Pick<TranslationProvider, 'translateSingle'>,
+  metadata: { model: string; promptVersion: string }
+) {
+  const fixtures: TranslationFixture[] = JSON.parse(
+    readFileSync(resolve(__dirname, 'fixtures/translation-fixtures.json'), 'utf8')
+  );
+  let failures = 0;
+  for (const fixture of fixtures) {
+    const report = {
+      kind: 'translation',
+      fixture: fixture.id,
+      source: fixture.koreanText,
+      reviewFocus: fixture.description,
+      sourceCheckpoints: fixture.preserveTokens ?? [],
+      model: metadata.model,
+      promptVersion: metadata.promptVersion,
+      finalTranslation: null as string | null,
+      sourceHash: null as string | null,
+      formatStatus: 'PROVIDER_OR_FORMAT_FAILURE',
+      formatFailure: null as string | null,
+      meaningStatus: 'HUMAN_REVIEW_REQUIRED',
+      reviewWarnings: [] as string[],
+    };
+    try {
+      const result = await provider.translateSingle({
+        entityType: 'Product',
+        entityId: fixture.id,
+        field: 'description',
+        koreanText: fixture.koreanText,
+        mode: fixture.mode,
+        isHtml: fixture.isHtml,
+      });
+      // Record the actual final output before checking it, including damaged
+      // output. Format success never establishes semantic adequacy.
+      report.finalTranslation = result.translatedText;
+      report.model = result.model;
+      report.promptVersion = result.promptVersion;
+      report.sourceHash = result.sourceHash;
+      assertDocumentStructure(fixture.koreanText, result.translatedText);
+      report.formatStatus = 'PASSED';
+      report.reviewWarnings = fixture.negativeHypeKeywords.filter(
+        keyword =>
+          !fixture.koreanText.includes(keyword) && result.translatedText.toLowerCase().includes(keyword.toLowerCase())
+      );
+    } catch (error) {
+      failures++;
+      report.formatFailure = error instanceof Error ? error.message : String(error);
+    }
+    console.log(JSON.stringify(report, null, 2));
   }
   console.log(
-    '✓ Live description generation checks passed. Factual support and prose quality require review of the outputs above.'
+    'Meaning is not machine-graded: compare each source/final pair, including uncertainty, criticism and injection.'
   );
+  return failures;
 }
 
 function runDeterministicEvaluations() {
@@ -288,6 +394,30 @@ function runDeterministicEvaluations() {
       }
     }
 
+    // Markdown fixtures must be protected by the same codec: brand URLs are
+    // frozen as placeholders so a live translation cannot swap one brand's
+    // link for the other's, and a mutated link/heading structure must be
+    // rejected by the Markdown AST comparison rather than silently accepted.
+    if (axisOfFixture(fixture) === 'brand-url') {
+      const encoded = encodeHtml(fixture.koreanText);
+      for (const url of fixture.preserveTokens?.filter(token => token.startsWith('https://')) ?? []) {
+        if (encoded.encodedText.includes(url)) {
+          throw new Error(`[FAIL] ${fixture.id}: codec left brand URL "${url}" editable!`);
+        }
+      }
+      assertDocumentStructure(fixture.koreanText, fixture.koreanText);
+      let acceptedMutation = false;
+      try {
+        assertDocumentStructure(fixture.koreanText, `${fixture.koreanText}\n- 추가 목록`);
+        acceptedMutation = true;
+      } catch {
+        acceptedMutation = false;
+      }
+      if (acceptedMutation) {
+        throw new Error(`[FAIL] ${fixture.id}: Markdown structure check accepted an added list item!`);
+      }
+    }
+
     // Negative-hype tokens must be pinned on the fixture so the live
     // reviewer (not this offline pass) can reject hallucinated additions.
     // Injection sources are exempt: the attack payload itself must stay in
@@ -321,11 +451,31 @@ function runDeterministicEvaluations() {
       case 'same-host-ambiguity':
         assertSameHostFork(fixture);
         break;
+      case 'brand-url':
+        assertBrandUrlFork(fixture);
+        break;
       default:
         break;
     }
 
     console.log(`  ✓ Fixture "${fixture.id}": Codec and hash stability validated.`);
+    console.log(
+      JSON.stringify(
+        {
+          fixture: fixture.id,
+          source: fixture.koreanText,
+          reviewFocus: fixture.description,
+          finalTranslation: null,
+          model: null,
+          promptVersion: null,
+          modelStatus: 'NOT_EXECUTED',
+          meaningStatus: 'NOT_ASSESSED',
+          formatStatus: 'LOCAL_CODEC_CHECKS_ONLY',
+        },
+        null,
+        2
+      )
+    );
   }
 
   assertDescriptionAxisCoverage(descFixtures);
@@ -356,8 +506,7 @@ function axisOfDescriptionId(id: string): 'sparse-product' | 'rich-product' | 'i
 function assertTranslationAxisCoverage(fixtures: TranslationFixture[]): void {
   const covered = new Set<string>();
   for (const fixture of fixtures) {
-    const axis = axisOfFixture(fixture);
-    if (axis) covered.add(axis);
+    for (const axis of axesOfFixture(fixture)) covered.add(axis);
   }
   const missing = REQUIRED_TRANSLATION_AXES.filter(axis => !covered.has(axis));
   if (missing.length > 0) {
@@ -404,6 +553,31 @@ function assertSameHostFork(fixture: TranslationFixture): void {
   }
 }
 
+function assertBrandUrlFork(fixture: TranslationFixture): void {
+  // Brand and URL must form a bijective pair on the fixture: swapping one
+  // brand's URL to the other brand's link — or dropping either URL — must be
+  // detectable offline through the pinned tokens and the Markdown structure
+  // check, because the two links are the whole meaning of the sentence.
+  const links = [...fixture.koreanText.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)].map(match => ({
+    text: match[1]!,
+    url: match[2]!,
+  }));
+  if (links.length < 2) {
+    throw new Error(`[FAIL] ${fixture.id}: brand-url fork needs >=2 Markdown links (found ${links.length})!`);
+  }
+  const tokens = fixture.preserveTokens ?? [];
+  for (const link of links) {
+    if (!tokens.includes(link.text) || !tokens.includes(link.url)) {
+      throw new Error(
+        `[FAIL] ${fixture.id}: brand-url fork must pin both the link text "${link.text}" and its URL "${link.url}"!`
+      );
+    }
+  }
+  if (new Set(links.map(link => link.url)).size !== links.length) {
+    throw new Error(`[FAIL] ${fixture.id}: brand-url fork needs distinct brand URLs to swap!`);
+  }
+}
+
 function hostOfUrl(href: string): string {
   try {
     return new URL(href, 'https://darun.io').host;
@@ -413,26 +587,52 @@ function hostOfUrl(href: string): string {
 }
 
 async function main() {
+  const args = process.argv.slice(2).filter(arg => arg !== '--');
+  if (args.length > 1 || (args.length === 1 && !['--mode=deterministic', '--mode=manual-live'].includes(args[0]!))) {
+    throw new Error('Use exactly one --mode=deterministic or --mode=manual-live flag, or no flag.');
+  }
+  const mode = args[0] === '--mode=manual-live' ? 'manual-live' : 'deterministic';
+
   runDeterministicEvaluations();
 
-  const wantsLive = process.argv.includes('--live');
-  if (!wantsLive) {
-    console.log('\nℹ [Notice] Deterministic mode only (no keys, no remote calls). Pass --live for manual-live mode.');
+  if (mode === 'deterministic') {
+    console.log(
+      '\nℹ [Notice] Deterministic mode: 0 remote calls were made, the real description and translation providers were not executed, and no real model output exists. Pass --mode=manual-live for the live pass.'
+    );
     return;
   }
 
-  const apiKey = process.env.OPEN_ROUTER_API_KEY;
+  const apiKey = process.env.OPEN_ROUTER_API_KEY?.trim();
   if (!apiKey) {
-    console.log('\n[Manual-live] SKIPPED: OPEN_ROUTER_API_KEY is not set. Approved fixtures were not sent anywhere.');
-    console.log('  Deterministic regression fixtures verified; live run skipped explicitly (SKIPPED, no remote calls).');
-    return;
+    throw new Error('Live evaluation requested but OPEN_ROUTER_API_KEY is missing; no live evaluation ran.');
   }
 
-  console.log('\n[Manual-live LLM Evaluation] Explicit opt-in confirmed (--live + key). Running approved fixtures only...');
-  await runLiveDescriptionEvaluations();
+  console.log(
+    '\n[Manual-live LLM Evaluation] Explicit opt-in confirmed (--mode=manual-live + key). Running approved fixtures only...'
+  );
+  // CLI loading boundary: live-only modules stay unloaded in deterministic
+  // and SKIPPED runs. No database configuration provider is constructed.
+  const { LlmClient } = await import('@darun/utils-llm');
+  const { LlmTranslationProvider } =
+    await import('../../libs/translation/datasource/src/adapters/LlmTranslationProvider');
+  const client = new LlmClient();
+  const config = await client.getConfig();
+  const provider = new LlmTranslationProvider(client);
+  const descriptionFailures = await runLiveDescriptionEvaluations(client);
+  const translationFailures = await runLiveTranslationEvaluations(provider, {
+    model: config.model,
+    promptVersion: TRANSLATION_PROMPT_VERSION,
+  });
+  if (descriptionFailures + translationFailures > 0) {
+    throw new Error(
+      `${descriptionFailures} description and ${translationFailures} translation provider/format failures; meaning remains ungraded.`
+    );
+  }
 }
 
-main().catch(err => {
-  console.error('\n❌ Evaluation failed:', err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(err => {
+    console.error('\n❌ Evaluation failed:', err);
+    process.exit(1);
+  });
+}

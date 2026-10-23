@@ -28,10 +28,21 @@ export function ProductSearchSuggest({
 }: ProductSearchSuggestProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const activeIndexRef = useRef(activeIndex);
   const listboxId = `${inputId}-suggest-listbox`;
 
   const isOpen = suggestions.length > 0 || (inputValue.trim().length > 0 && isSearching);
 
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    if (isOpen && activeIndex >= 0 && activeIndex < suggestions.length) {
+      input.setAttribute('aria-activedescendant', `${inputId}-suggest-option-${activeIndex}`);
+    } else {
+      input.removeAttribute('aria-activedescendant');
+    }
+    return () => input.removeAttribute('aria-activedescendant');
+  }, [activeIndex, inputId, inputRef, isOpen, suggestions]);
   // Sync latest callbacks into refs via effect (not during render)
   const callbacksRef = useRef({ onSelect, onClose });
   useEffect(() => {
@@ -43,6 +54,7 @@ export function ProductSearchSuggest({
   useEffect(() => {
     if (prevSuggestionsRef.current !== suggestions) {
       prevSuggestionsRef.current = suggestions;
+      activeIndexRef.current = -1;
       setActiveIndex(-1);
     }
   }, [suggestions]);
@@ -58,7 +70,6 @@ export function ProductSearchSuggest({
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
-  const activeIndexRef = useRef(activeIndex);
   useEffect(() => {
     activeIndexRef.current = activeIndex;
   }, [activeIndex]);

@@ -5,7 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev --turbopack --port 3001",
-    "lint": "eslint --no-warn-ignored **/*.ts*",
+    "lint": "eslint --no-warn-ignored \"**/*.{ts,tsx}\"",
     "start": "next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
@@ -36,6 +36,7 @@
     "@mantine/hooks": "catalog:",
     "@mantine/notifications": "catalog:",
     "dayjs": "1.11.19",
+    "ipaddr.js": "2.5.0",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "next-client-cookies": "catalog:",

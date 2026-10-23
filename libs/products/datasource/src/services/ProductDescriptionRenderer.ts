@@ -1,4 +1,4 @@
-import { safeEvidenceUrl, type EvidenceBackedText, type ProductDescriptionDocument } from '@darun/products-domain';
+import { safeReaderFacingUrl, type EvidenceBackedText, type ProductDescriptionDocument } from '@darun/products-domain';
 
 export const PRODUCT_DESCRIPTION_RENDERER_VERSION = 'v2';
 
@@ -50,7 +50,7 @@ export function renderProductDescriptionDocument(doc: ProductDescriptionDocument
 
   // 3. Recommended if
   if (Array.isArray(doc.recommendedIf) && doc.recommendedIf.length > 0) {
-    fragments.push('<h2>추천한다면 -</h2>');
+    fragments.push('<h2>이런 경우에 추천합니다</h2>');
     fragments.push('<ul>');
     for (const item of doc.recommendedIf) {
       if (item.text) {
@@ -87,7 +87,7 @@ function renderInlineContent(block: EvidenceBackedText): string {
   if (!block.link) {
     return escapedText;
   }
-  const safeUrl = safeEvidenceUrl(block.link.url);
+  const safeUrl = safeReaderFacingUrl(block.link.url);
   if (!safeUrl) {
     return escapedText;
   }

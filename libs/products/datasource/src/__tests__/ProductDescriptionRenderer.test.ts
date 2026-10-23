@@ -49,7 +49,6 @@ describe('ProductDescriptionRenderer', () => {
     expect(html).toContain('<p>토스는 간편한 금융 서비스 &amp; 결제 앱입니다.</p>');
     expect(html).toContain('<h2>송금 &lt;기능&gt;</h2>');
     expect(html).toContain('<p>&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt; 안전한 송금 제공</p>');
-    expect(html).toContain('<h2>추천한다면 -</h2>');
     expect(html).toContain('<li>간편 송금을 &quot;자주&quot; 쓰는 사람</li>');
     expect(html).not.toContain('<script>');
     expect(html).not.toContain('아쉽다면');

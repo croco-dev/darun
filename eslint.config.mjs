@@ -27,7 +27,7 @@ const config = [
     ...reactCompiler.configs.recommended,
   },
   {
-    ignores: ["libs/shared/provider-graphql/src/index.ts"],
+    ignores: ["libs/shared/provider-graphql/src/index.ts", "**/.next/**", "**/next-env.d.ts"],
   },
   {
     // Bare `gql` tagged templates (e.g. in **/documents.ts, **/explorerDocuments.ts,

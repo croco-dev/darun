@@ -2,9 +2,11 @@
 
 import { Button } from '@darun/ui';
 import { Link, useNavigate, useSearchParams } from '@darun/utils-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { CatalogPagination } from '../apps/CatalogPagination';
 import { SaveButton } from '../collections/SaveButton';
 import { ExplorerShell } from '../explorer/ExplorerShell';
+import type { ExplorerSearchDraft } from '../explorer/useExplorerQuery';
 import {
   buildExplorerUrl,
   readExplorerProductParam,
@@ -80,7 +82,8 @@ function View(props: ScreenshotExplorerState & { catalogMode?: boolean }) {
       hero={<h1 className="sr-only">화면 탐색</h1>}
       state={{
         ...props,
-        totalCount: catalogMode ? groups.length : props.totalCount,
+        totalCount: props.totalCount,
+        hasNextPage: props.pagination ? false : props.hasNextPage,
         hasFilters,
       }}
       searchForm={
@@ -94,6 +97,8 @@ function View(props: ScreenshotExplorerState & { catalogMode?: boolean }) {
               id="screenshot-search"
               type="search"
               autoComplete="off"
+              role="combobox"
+              aria-autocomplete="list"
               aria-expanded={
                 props.suggestions.length > 0 || (searchInput.trim().length > 0 && props.isSearchingSuggestions)
               }
@@ -208,9 +213,9 @@ function View(props: ScreenshotExplorerState & { catalogMode?: boolean }) {
                   <Link
                     href={`/apps/${encodeURIComponent(app.slug)}`}
                     className="shrink-0 text-xs text-dark-500 hover:text-dark-900"
-                    aria-label={`${app.name} 화면 ${screenshots.length}개 모두 보기`}
+                    aria-label={`${app.name} 화면 ${app.screenshotCount ?? screenshots.length}개 모두 보기`}
                   >
-                    {screenshots.length}개 화면 ↗
+                    {app.screenshotCount ?? screenshots.length}개 화면 ↗
                   </Link>
                 </div>
                 <div className="grid grid-cols-3 items-start gap-2 sm:gap-3">
@@ -231,6 +236,7 @@ function View(props: ScreenshotExplorerState & { catalogMode?: boolean }) {
           </ul>
         )
       }
+      children={props.pagination ? <CatalogPagination {...props.pagination} /> : undefined}
       resourceName={catalogMode ? '앱' : '스크린샷'}
       unitName={catalogMode ? '개의 앱' : '개의 화면'}
     />
@@ -244,15 +250,17 @@ const EMPTY_FILTERS: ExplorerFilters = {
   product: null,
 };
 
-function CatalogExplorer() {
+function CatalogExplorer({ searchDraft }: { searchDraft: ExplorerSearchDraft }) {
   const navigate = useNavigate();
-  const { cards, loading, networkError, retry } = useScreenshotCatalog();
+  const catalog = useScreenshotCatalog();
+  const { cards, loading, networkError, retry } = catalog;
+  const params = new URLSearchParams();
+  if (catalog.endCursor) params.set('after', catalog.endCursor);
   const { suggestions, isSearching, clearSuggestions, suggest } = useProductSearchSuggest();
-  const [searchInput, setSearchInput] = useState('');
+  const { searchInput, setSearchInput } = searchDraft;
   const navigateFilter = (next: Parameters<typeof buildExplorerUrl>[3]) =>
     navigate(
       buildExplorerUrl('/', EMPTY_FILTERS, 'screenType', {
-        q: searchInput.trim() || null,
         ...next,
       })
     );
@@ -263,6 +271,7 @@ function CatalogExplorer() {
   };
   const onSuggestionSelect = (selected: ProductSuggestion) => {
     clearSuggestions();
+    setSearchInput('');
     navigateFilter({ q: null, product: selected.slug });
   };
   return (
@@ -274,7 +283,12 @@ function CatalogExplorer() {
       retry={retry}
       error={undefined}
       queryLengthError={false}
-      totalCount={cards.length}
+      totalCount={catalog.totalCount}
+      pagination={{
+        firstHref: '/',
+        nextHref: catalog.hasNextPage && catalog.endCursor ? `/?${params}` : null,
+        isFirstPage: catalog.isFirstPage,
+      }}
       hasNextPage={false}
       loadingMore={false}
       loadMoreError={false}
@@ -292,7 +306,7 @@ function CatalogExplorer() {
       onSearchSubmit={event => {
         event.preventDefault();
         clearSuggestions();
-        navigateFilter({});
+        navigateFilter({ q: searchInput.trim() || null });
       }}
       onPlatformChange={value => navigateFilter({ platform: value || null })}
       onSecondaryChange={value => navigateFilter({ secondary: value || null })}
@@ -312,17 +326,24 @@ function CatalogExplorer() {
   );
 }
 
-function FilteredExplorer() {
-  return <View {...useScreenshotExplorer()} />;
+function FilteredExplorer({ searchDraft }: { searchDraft: ExplorerSearchDraft }) {
+  return <View {...useScreenshotExplorer(searchDraft)} />;
 }
 
 export function ScreenshotExplorer() {
   const searchParams = useSearchParams();
+  const query = readExplorerQueryParam(searchParams);
+  const [searchInput, setSearchInput] = useState(query ?? '');
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Only submitted URL queries replace a draft.
+    setSearchInput(query ?? '');
+  }, [query]);
+  const searchDraft = { searchInput, setSearchInput };
   const filtered =
     readExplorerQueryParam(searchParams) !== null ||
     readExplorerProductParam(searchParams) !== null ||
     isVisualPlatformValue(searchParams.get('platform')) ||
     isVisualScreenTypeValue(searchParams.get('screenType')) ||
     isVisualUiElementValue(searchParams.get('element'));
-  return filtered ? <FilteredExplorer /> : <CatalogExplorer />;
+  return filtered ? <FilteredExplorer searchDraft={searchDraft} /> : <CatalogExplorer searchDraft={searchDraft} />;
 }

@@ -100,6 +100,11 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
             <input
               value={draft}
               onChange={e => setDraft(e.target.value)}
+              onKeyDown={event => {
+                if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) {
+                  event.preventDefault();
+                }
+              }}
               placeholder="새 컬렉션 이름"
               maxLength={60}
               aria-label="새 컬렉션 이름"

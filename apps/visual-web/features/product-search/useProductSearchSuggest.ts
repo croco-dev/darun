@@ -27,6 +27,7 @@ export function useProductSearchSuggest() {
 
   useEffect(() => {
     return () => {
+      latestSearchRequestId.current += 1;
       if (debounceTimerRef.current !== null) {
         clearTimeout(debounceTimerRef.current);
       }
@@ -49,17 +50,18 @@ export function useProductSearchSuggest() {
         clearTimeout(debounceTimerRef.current);
       }
 
+      const requestId = ++latestSearchRequestId.current;
+      setSuggestions([]);
       const trimmed = query.trim();
 
       if (trimmed.length === 0) {
-        latestSearchRequestId.current += 1;
+        debounceTimerRef.current = null;
         setSuggestions([]);
         setIsSearching(false);
         return;
       }
 
       if (trimmed.length > MAX_QUERY_LENGTH) {
-        latestSearchRequestId.current += 1;
         setSuggestions([]);
         setIsSearching(false);
         return;
@@ -68,8 +70,7 @@ export function useProductSearchSuggest() {
       setIsSearching(true);
 
       debounceTimerRef.current = setTimeout(async () => {
-        const requestId = latestSearchRequestId.current + 1;
-        latestSearchRequestId.current = requestId;
+        debounceTimerRef.current = null;
 
         try {
           const { data } = await search({ variables: { query: trimmed } });

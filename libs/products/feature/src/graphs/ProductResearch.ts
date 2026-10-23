@@ -1,5 +1,4 @@
 import {
-  type ProductResearchDispatchStatus,
   type ProductResearchDraftV1,
   type ProductResearchJobEntity,
   type ResearchAnchor,
@@ -10,7 +9,7 @@ import {
 } from '@darun/products-domain';
 import { Field, GraphQLISODateTime, ID, InputType, Int, ObjectType } from 'type-graphql';
 
-@ObjectType()
+@ObjectType('ResearchAnchorGraph')
 export class ResearchAnchorGraph {
   @Field()
   sourceId: string;
@@ -19,7 +18,7 @@ export class ResearchAnchorGraph {
   excerpt: string;
 }
 
-@ObjectType()
+@ObjectType('ResearchTextGraph')
 export class ResearchTextGraph {
   @Field()
   value: string;
@@ -31,7 +30,7 @@ export class ResearchTextGraph {
   evidenceType: string;
 }
 
-@ObjectType()
+@ObjectType('ResearchSourceGraph')
 export class ResearchSourceGraph {
   @Field()
   id: string;
@@ -55,7 +54,7 @@ export class ResearchSourceGraph {
   relationToInput: string;
 }
 
-@ObjectType()
+@ObjectType('ResearchFeatureGraph')
 export class ResearchFeatureGraph {
   @Field()
   name: string;
@@ -73,7 +72,7 @@ export class ResearchFeatureGraph {
   evidenceType: string;
 }
 
-@ObjectType()
+@ObjectType('ResearchCandidateGraph')
 export class ResearchCandidateGraph {
   @Field()
   name: string;
@@ -85,7 +84,7 @@ export class ResearchCandidateGraph {
   anchors: ResearchAnchorGraph[];
 }
 
-@ObjectType()
+@ObjectType('ResearchCategoryCandidateGraph')
 export class ResearchCategoryCandidateGraph {
   @Field()
   categoryId: string;
@@ -94,7 +93,7 @@ export class ResearchCategoryCandidateGraph {
   reason: string;
 }
 
-@ObjectType()
+@ObjectType('ProductResearchDraftGraph')
 export class ProductResearchDraftGraph {
   @Field(() => Int)
   version: number;
@@ -142,7 +141,7 @@ export class ProductResearchDraftGraph {
   model: string;
 }
 
-@ObjectType()
+@ObjectType('ProductResearchJob')
 export class ProductResearchJob {
   @Field(() => ID)
   id: string;
@@ -155,6 +154,18 @@ export class ProductResearchJob {
 
   @Field()
   status: string;
+
+  @Field(() => String, { nullable: true })
+  dispatchStatus?: string;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  runNotBefore?: Date;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  nextDispatchAt?: Date;
+
+  @Field(() => String, { nullable: true })
+  retryOfJobId?: string | null;
 
   @Field(() => String, { nullable: true })
   stage?: string | null;
@@ -178,11 +189,8 @@ export class ProductResearchJob {
   updatedAt: Date;
 }
 
-@InputType()
+@InputType('RequestProductResearchInput')
 export class RequestProductResearchInput {
-  @Field({ nullable: true })
-  requestId?: string;
-
   @Field()
   requestId: string;
 
@@ -190,22 +198,13 @@ export class RequestProductResearchInput {
   officialUrl: string;
 }
 
-@InputType()
+@InputType('RetryProductResearchInput')
 export class RetryProductResearchInput {
   @Field({ nullable: true })
   requestId?: string;
 }
 
-@ObjectType()
-export class RequestProductResearchPayload {
-  @Field(() => ProductResearchJob)
-  job: ProductResearchJob;
-
-  @Field(() => String)
-  dispatchStatus: ProductResearchDispatchStatus;
-}
-
-@InputType()
+@InputType('ReviewedResearchFeatureInput')
 export class ReviewedResearchFeatureInput {
   @Field()
   name: string;
@@ -217,7 +216,7 @@ export class ReviewedResearchFeatureInput {
   emoji?: string;
 }
 
-@InputType()
+@InputType('MaterializeResearchedProductInput')
 export class MaterializeResearchedProductInput {
   @Field()
   researchJobId: string;
@@ -236,6 +235,9 @@ export class MaterializeResearchedProductInput {
 
   @Field()
   officialUrl: string;
+
+  @Field(() => Boolean)
+  officialUrlConfirmed: boolean;
 
   @Field(() => [String])
   categoryIds: string[];
@@ -272,7 +274,11 @@ function toSourceGraph(source: ResearchSource): ResearchSourceGraph {
 }
 
 function toCandidateGraph(
-  candidate: { name: string; website?: string; anchors: ResearchAnchor[] } | null
+  candidate: {
+    name: string;
+    website?: string;
+    anchors: ResearchAnchor[];
+  } | null
 ): ResearchCandidateGraph | null {
   if (!candidate) {
     return null;
@@ -324,6 +330,10 @@ export function toProductResearchJobGraph(job: ProductResearchJobEntity): Produc
     requestKey: job.requestKey,
     officialUrl: job.officialUrl,
     status: job.status,
+    dispatchStatus: job.dispatchStatus,
+    runNotBefore: job.runNotBefore,
+    nextDispatchAt: job.nextDispatchAt,
+    retryOfJobId: job.retryOfJobId,
     stage: job.stage,
     errorCode: job.errorCode,
     errorMessage: job.errorMessage,

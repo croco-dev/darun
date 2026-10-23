@@ -17,6 +17,7 @@ import {
   AdminPanel,
   AdminSectionBody,
   AdminSectionHeader,
+  AdminSelect,
 } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
@@ -249,7 +250,7 @@ function ScreenshotMetadataEditor({
       </label>
       <label className="flex flex-col gap-1 text-2xs font-semibold text-dark-600">
         플랫폼
-        <select
+        <AdminSelect
           value={draft.platform}
           onChange={event =>
             setDraft(previous => ({
@@ -258,18 +259,17 @@ function ScreenshotMetadataEditor({
             }))
           }
           disabled={isSaving}
-          className="h-9 rounded-lg border border-dark-200 bg-white px-2 text-xs font-normal text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
         >
           {PLATFORM_SELECT_OPTIONS.map(option => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}
-        </select>
+        </AdminSelect>
       </label>
       <label className="flex flex-col gap-1 text-2xs font-semibold text-dark-600">
         화면 유형
-        <select
+        <AdminSelect
           value={draft.screenType}
           onChange={event =>
             setDraft(previous => ({
@@ -278,14 +278,13 @@ function ScreenshotMetadataEditor({
             }))
           }
           disabled={isSaving}
-          className="h-9 rounded-lg border border-dark-200 bg-white px-2 text-xs font-normal text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
         >
           {SCREEN_TYPE_SELECT_OPTIONS.map(option => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}
-        </select>
+        </AdminSelect>
       </label>
       <div className="flex items-center gap-2">
         <Button

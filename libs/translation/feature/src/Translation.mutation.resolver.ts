@@ -21,16 +21,18 @@ export class TranslationMutationResolver {
     const normalizedEntityType = this.validateEntityType(entityType);
     const normalizedFields = this.validateFields(fields);
 
-    await this.translationJobService.translateEntity(normalizedEntityType, entityId, normalizedFields);
-
-    return {
-      id: `${normalizedEntityType}:${entityId}`,
-      entityType: normalizedEntityType,
+    const job = await this.translationJobService.requestTranslationJob(
+      normalizedEntityType,
       entityId,
-      fields: normalizedFields,
-      locale: 'en',
-      status: 'completed',
-      message: '번역이 완료되었습니다.',
+      normalizedFields
+    );
+    return {
+      ...job,
+      fields: job.fields ?? normalizedFields,
+      message: job.message ?? undefined,
+      error: job.error ?? undefined,
+      model: job.model ?? undefined,
+      retryOfJobId: job.retryOfJobId ?? undefined,
     };
   }
 
@@ -44,28 +46,9 @@ export class TranslationMutationResolver {
       throw new Error('productId 또는 slug가 필요합니다.');
     }
 
-    let job: {
-      id: string;
-      entityId: string;
-      status: string;
-      message?: string | null;
-    };
-
-    if (typeof this.translationJobService.requestProductTranslationJob === 'function') {
-      job = await this.translationJobService.requestProductTranslationJob(
-        productId ? { id: productId } : { slug: slug! }
-      );
-    } else {
-      const resolvedTranslation = await this.translationJobService.translateProductWithFeatures(
-        productId ? { id: productId } : { slug: slug! }
-      );
-      job = {
-        id: resolvedTranslation.productId,
-        entityId: resolvedTranslation.productId,
-        status: 'completed',
-        message: '상품 및 주요 기능 번역이 완료되었습니다.',
-      };
-    }
+    const job = await this.translationJobService.requestProductTranslationJob(
+      productId ? { id: productId } : { slug: slug! }
+    );
 
     return {
       id: job.id,
@@ -74,6 +57,10 @@ export class TranslationMutationResolver {
       fields: ['name', 'summary', 'description', 'features'],
       locale: 'en',
       status: job.status,
+      dispatchStatus: job.dispatchStatus,
+      runNotBefore: job.runNotBefore,
+      nextDispatchAt: job.nextDispatchAt,
+      retryOfJobId: job.retryOfJobId ?? undefined,
       message: job.message ?? undefined,
     };
   }
@@ -87,9 +74,13 @@ export class TranslationMutationResolver {
       id: job.id,
       entityType: job.entityType,
       entityId: job.entityId,
-      fields: ['name', 'summary', 'description', 'features'],
+      fields: job.fields ?? ['name', 'summary', 'description', 'features'],
       locale: job.locale,
       status: job.status,
+      dispatchStatus: job.dispatchStatus,
+      runNotBefore: job.runNotBefore,
+      nextDispatchAt: job.nextDispatchAt,
+      retryOfJobId: job.retryOfJobId ?? undefined,
       model: job.model ?? undefined,
       message: job.message ?? undefined,
       error: job.error ?? undefined,

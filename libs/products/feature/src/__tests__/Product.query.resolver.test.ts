@@ -1,12 +1,15 @@
 import 'reflect-metadata';
 
-vi.mock('@darun/utils-apollo-server', () => ({
-  AuthRole: { Admin: 'Admin' },
-  Connection: class Connection {},
-  ConnectionArgs: class ConnectionArgs {},
-  Cursor: class Cursor {},
-  PageInfo: class PageInfo {},
-}));
+vi.mock('@darun/utils-apollo-server', async importOriginal => {
+  const actual = await importOriginal<typeof ApolloServer>();
+  return {
+    AuthRole: { Admin: 'Admin' },
+    Connection: class Connection {},
+    ConnectionArgs: class ConnectionArgs {},
+    Cursor: actual.Cursor,
+    PageInfo: class PageInfo {},
+  };
+});
 
 vi.mock('typedi', () => ({
   Inject: () => () => {},
@@ -52,6 +55,9 @@ import {
   GetRecentProducts,
   Product as DomainProduct,
   ProductFeature as DomainProductFeature,
+  ProductTag,
+  Category,
+  Tag,
   type CategoryRepository,
   type ProductFeatureRepository,
   type ProductLinkRepository,
@@ -66,12 +72,15 @@ import {
 } from '@darun/recommendation-domain';
 import { SearchProduct, type SearchableProductRepository } from '@darun/search-domain';
 import { TranslationService, type TranslationRepository, computeSourceHash } from '@darun/translation-domain';
+import type * as ApolloServer from '@darun/utils-apollo-server';
 import { GetVoteCount, type VoteRepository } from '@darun/voting-domain';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product } from '../graphs/Product';
 import { ProductQueryResolver } from '../Product.query.resolver';
 
 type ResolverOverrides = Partial<{
+  productRepository: ProductRepository;
+  categoryRepository: CategoryRepository;
   getProductFeaturesUseCase: GetProductFeatures;
   getPublishedProductUseCase: GetPublishedProduct;
   getAlternativeProductsUseCase: GetAlternativeProducts;
@@ -94,8 +103,15 @@ const createProductRepository = (overrides: Partial<ProductRepository> = {}): Pr
   findPublishedOneById: vi.fn<ProductRepository['findPublishedOneById']>().mockResolvedValue(null),
   findOneBySlug: vi.fn<ProductRepository['findOneBySlug']>().mockResolvedValue(null),
   findOneById: vi.fn<ProductRepository['findOneById']>().mockResolvedValue(null),
+  findOneFreshById: vi.fn<ProductRepository['findOneFreshById']>().mockResolvedValue(null),
   findPublishedOneBySlug: vi.fn<ProductRepository['findPublishedOneBySlug']>().mockResolvedValue(null),
   findPublishedByCategoryId: vi.fn<ProductRepository['findPublishedByCategoryId']>().mockResolvedValue([]),
+  countPublishedByCategoryId: vi.fn().mockResolvedValue(0),
+  findVisualApps: vi.fn().mockResolvedValue({ products: [], total: 0 }),
+  findVisualAppPreviews: vi.fn().mockResolvedValue([]),
+  findVisualAppCover: vi.fn().mockResolvedValue(null),
+  countVisualAppScreenshots: vi.fn().mockResolvedValue(0),
+  hasPublishedAlternatives: vi.fn().mockResolvedValue(false),
   findPublishedByCategoryIdAndLimit: vi
     .fn<ProductRepository['findPublishedByCategoryIdAndLimit']>()
     .mockResolvedValue([]),
@@ -230,7 +246,7 @@ const createProductRoot = (locale: string): Product => ({
 });
 
 const createProductQueryResolver = (overrides: ResolverOverrides = {}) => {
-  const productRepository = createProductRepository();
+  const productRepository = overrides.productRepository ?? createProductRepository();
   const voteRepository = createVoteRepository();
 
   return new ProductQueryResolver(
@@ -248,13 +264,69 @@ const createProductQueryResolver = (overrides: ResolverOverrides = {}) => {
     new SearchProduct(createSearchableProductRepository()),
     overrides.getAlternativeProductsUseCase ?? new GetAlternativeProducts(createAlternativeProductRepository()),
     overrides.getVoteCountUseCase ?? new GetVoteCount(voteRepository),
-    new GetProductsByCategory(productRepository, createCategoryRepository()),
+    new GetProductsByCategory(productRepository, overrides.categoryRepository ?? createCategoryRepository()),
     overrides.translationService ?? createTranslationService(),
-    overrides.getPublishedProductsForSitemapUseCase ?? new GetPublishedProductsForSitemap(productRepository)
+    overrides.getPublishedProductsForSitemapUseCase ?? new GetPublishedProductsForSitemap(productRepository),
+    productRepository
   );
 };
 
 describe('ProductQueryResolver', () => {
+  beforeEach(() => vi.stubEnv('CURSOR_SIGNATURE_SECRET', 'category-pagination-test'));
+  afterEach(() => vi.unstubAllEnvs());
+  it('pages category results without omitting products sharing publication timestamps', async () => {
+    const products = ['p3', 'p2', 'p1'].map(
+      id =>
+        new DomainProduct({
+          id,
+          name: id,
+          slug: id,
+          summary: '',
+          logoUrl: '',
+          publishedAt: new Date('2026-01-01'),
+        })
+    );
+    const repository = createProductRepository({
+      findPublishedByCategoryId: vi.fn(async (_category, limit, afterId) =>
+        products.filter(product => !afterId || product.id < afterId).slice(0, limit)
+      ),
+      countPublishedByCategoryId: vi.fn().mockResolvedValue(3),
+    });
+    const categories = createCategoryRepository();
+    vi.mocked(categories.findOneBySlug).mockResolvedValue(
+      new Category({
+        id: 'category',
+        slug: 'tools',
+        labelKo: '도구',
+        labelEn: 'Tools',
+      })
+    );
+    const resolver = createProductQueryResolver({ productRepository: repository, categoryRepository: categories });
+    const first = await resolver.productsByCategory('tools', 'ko', 2);
+    expect(first.edges.map(edge => edge.node.id)).toEqual(['p3', 'p2']);
+    expect(first.totalCount).toBe(3);
+    expect(first.pageInfo.hasNextPage).toBe(true);
+    const second = await resolver.productsByCategory('tools', 'ko', 2, first.pageInfo.endCursor);
+    expect(second.edges.map(edge => edge.node.id)).toEqual(['p1']);
+    expect(second.pageInfo.hasNextPage).toBe(false);
+  });
+
+  it('fetches a bounded visual app page without fetching screenshot collections', async () => {
+    const repository = createProductRepository({
+      findVisualApps: vi.fn().mockResolvedValue({ products: [], total: 9000 }),
+    });
+    const resolver = createProductQueryResolver({ productRepository: repository });
+    const result = await resolver.visualApps(24, undefined, 'App', 'app');
+    expect(repository.findVisualApps).toHaveBeenCalledWith({
+      limit: 25,
+      afterId: undefined,
+      query: 'App',
+      productSlug: 'app',
+    });
+    expect(repository.findVisualAppCover).not.toHaveBeenCalled();
+    expect(repository.countVisualAppScreenshots).not.toHaveBeenCalled();
+    expect(result.totalCount).toBe(9000);
+  });
   describe('features', () => {
     it('should return all features even when some translations fail', async () => {
       const features = [
@@ -463,7 +535,52 @@ describe('ProductQueryResolver', () => {
     });
   });
 
-  describe('preloadFields', () => {
+  describe('selected field isolation', () => {
+    it('does not eagerly load any related fields for 30 product nodes', async () => {
+      const products = Array.from(
+        { length: 30 },
+        (_, index) =>
+          new DomainProduct({
+            id: `p${index}`,
+            name: 'Product',
+            slug: `product-${index}`,
+            summary: '',
+            logoUrl: '',
+          })
+      );
+      const related = {
+        getProductTagsUseCase: new GetProductTags(createProductTagRepository()),
+        getVoteCountUseCase: new GetVoteCount(createVoteRepository()),
+        getProductLinksUseCase: new GetProductLinks(createProductLinkRepository()),
+        getProductScreenshotsUseCase: new GetProductScreenshots(createProductScreenshotRepository()),
+        getProductFeaturesUseCase: new GetProductFeatures(createProductFeatureRepository()),
+      };
+      const spies = Object.values(related).map(useCase => vi.spyOn(useCase, 'execute'));
+      const resolver = createProductQueryResolver({
+        ...related,
+        getRecentProductsUseCase: new GetRecentProducts(
+          createProductRepository({
+            findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue(products),
+          })
+        ),
+      });
+      expect(await resolver.recentProducts(30, 'ko')).toHaveLength(30);
+      for (const spy of spies) expect(spy).not.toHaveBeenCalled();
+    });
+    it('does not erase a healthy selected field when a peer product lookup fails', async () => {
+      const tags = new GetProductTags(createProductTagRepository());
+      const healthy = new ProductTag({ productId: 'healthy', tags: [new Tag({ id: 'tag', name: 'Healthy' })] });
+      vi.spyOn(tags, 'execute').mockImplementation(async ({ productId }) => {
+        if (productId === 'broken') throw new Error('one item failed');
+        return healthy;
+      });
+      const resolver = createProductQueryResolver({ getProductTagsUseCase: tags });
+      const result = await Promise.all([
+        resolver.tags({ ...createProductRoot('ko'), id: 'broken' }),
+        resolver.tags({ ...createProductRoot('ko'), id: 'healthy' }),
+      ]);
+      expect(result).toEqual([[], healthy.tags]);
+    });
     it('일부 보조 배치가 실패해도 product node는 생존한다', async () => {
       const recentProductsUseCase = new GetRecentProducts(
         createProductRepository({
@@ -491,6 +608,7 @@ describe('ProductQueryResolver', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('p1');
+      expect(rejectingTagsUseCase.execute).not.toHaveBeenCalled();
 
       const tags = await resolver.tags(result[0]);
       expect(tags).toEqual([]);
