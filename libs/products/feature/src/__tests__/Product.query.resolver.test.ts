@@ -108,6 +108,7 @@ const createProductRepository = (overrides: Partial<ProductRepository> = {}): Pr
   findPublishedByCategoryId: vi.fn<ProductRepository['findPublishedByCategoryId']>().mockResolvedValue([]),
   countPublishedByCategoryId: vi.fn().mockResolvedValue(0),
   findVisualApps: vi.fn().mockResolvedValue({ products: [], total: 0 }),
+  findVisualAppPreviews: vi.fn().mockResolvedValue([]),
   findVisualAppCover: vi.fn().mockResolvedValue(null),
   countVisualAppScreenshots: vi.fn().mockResolvedValue(0),
   hasPublishedAlternatives: vi.fn().mockResolvedValue(false),

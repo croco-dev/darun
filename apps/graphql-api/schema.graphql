@@ -314,6 +314,7 @@ type Product {
   name: String!
   ownedCompany: Company
   ownedCompanyId: String
+  previewScreenshots: [Screenshot!]!
   publishedAt: DateTimeISO
   screenshotCount: Int!
   screenshots: [Screenshot!]!

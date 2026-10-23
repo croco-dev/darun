@@ -10,12 +10,14 @@ import {
 import type { ProductSuggestion } from '../product-search/useProductSearchSuggest';
 import { useProductSearchSuggest } from '../product-search/useProductSearchSuggest';
 import { useScreenshotCatalog } from '../screenshots/useScreenshotCatalog';
+import type { ScreenshotCard } from '../screenshots/useScreenshotExplorer';
 
 export type AppCard = {
   id: string;
   name: string;
   slug: string;
-  summary: string;
+  screenshots: ScreenshotCard[];
+  screenshotCount: number;
   logoUrl: string;
 };
 
@@ -64,8 +66,9 @@ export function useAppExplorer(): AppExplorerState {
     id: app.id,
     name: app.name,
     slug: app.slug,
-    summary: app.summary ?? '',
     logoUrl: app.logoUrl ?? '',
+    screenshots: catalog.cards.filter(card => card.product.id === app.id).slice(0, 3),
+    screenshotCount: app.screenshotCount,
   }));
 
   const handleSearchInputChange = (value: string) => {

@@ -241,6 +241,40 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       .returning();
     return product!;
   }
+  it('Visual gallery returns three ordered previews per app in one SQL batch', async () => {
+    const appIds = Array.from({ length: 24 }, () => randomUUID().slice(0, 26));
+    await db.insert(productScreenshots).values(
+      appIds.flatMap(productId =>
+        [1, 2, 3, 4, 5].map(priority => ({
+          productId,
+          imageUrl: `https://fixture.invalid/${priority}.png`,
+          imageAlt: 'preview',
+          priority,
+        }))
+      )
+    );
+    const queries: string[] = [];
+    const previewRepository = new PostgresqlProductRepository(
+      drizzle(connection, {
+        logger: {
+          logQuery(query) {
+            queries.push(query);
+          },
+        },
+      }) as never
+    );
+    const previews = await Promise.all(
+      [...appIds, 'missing-preview-app'].map(id => previewRepository.findVisualAppPreviews(id))
+    );
+    expect(queries).toHaveLength(1);
+    expect(previews[24]).toEqual([]);
+    for (const group of previews.slice(0, 24)) {
+      expect(group.map(screen => screen.imageUrl)).toEqual(
+        [5, 4, 3].map(priority => `https://fixture.invalid/${priority}.png`)
+      );
+    }
+  });
+
   async function intents(productId: string) {
     return db.select().from(productContentSyncIntents).where(eq(productContentSyncIntents.productId, productId));
   }

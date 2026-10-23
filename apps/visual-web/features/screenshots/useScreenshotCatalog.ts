@@ -8,6 +8,25 @@ import { useEffect, useState } from 'react';
 import { VISUAL_APPS_PAGE_SIZE } from '../apps/documents';
 import type { ScreenshotCard } from './useScreenshotExplorer';
 
+export function groupScreenshotCatalog(cards: ScreenshotCard[]) {
+  const groups = new Map<string, { product: ScreenshotCard['product']; screenshots: ScreenshotCard[] }>();
+  const seen = new Set<string>();
+  for (const card of cards) {
+    if (!card.product.id || seen.has(card.id)) continue;
+    seen.add(card.id);
+    const group = groups.get(card.product.id);
+    if (group) {
+      group.screenshots.push(card);
+    } else {
+      groups.set(card.product.id, {
+        product: card.product,
+        screenshots: [card],
+      });
+    }
+  }
+  return [...groups.values()];
+}
+
 export async function loadScreenshotCatalog(
   client: ApolloClient,
   after: string | null = null,
@@ -27,21 +46,24 @@ export async function loadScreenshotCatalog(
     throw new Error('App catalog cursor did not advance');
   }
   const apps = connection.edges.flatMap(edge => (edge?.node ? [edge.node] : []));
-  const cards: ScreenshotCard[] = apps.flatMap(app => {
-    const cover = app.coverScreenshot;
-    if (!cover) return [];
-    return [
-      {
-        id: cover.id,
-        imageUrl: cover.imageUrl,
-        imageAlt: cover.imageAlt ?? '',
-        title: cover.title ?? null,
-        platform: cover.platform ?? null,
-        screenType: cover.screenType ?? null,
-        product: { id: app.id, name: app.name, slug: app.slug, logoUrl: app.logoUrl ?? '', summary: app.summary ?? '' },
+  const cards: ScreenshotCard[] = apps.flatMap(app =>
+    (app.previewScreenshots ?? (app.coverScreenshot ? [app.coverScreenshot] : [])).map(preview => ({
+      id: preview.id,
+      imageUrl: preview.imageUrl,
+      imageAlt: preview.imageAlt ?? '',
+      title: preview.title ?? null,
+      platform: preview.platform ?? null,
+      screenType: preview.screenType ?? null,
+      product: {
+        id: app.id,
+        name: app.name,
+        slug: app.slug,
+        logoUrl: app.logoUrl ?? '',
+        summary: app.summary ?? '',
+        screenshotCount: app.screenshotCount,
       },
-    ];
-  });
+    }))
+  );
   return { cards, apps, totalCount: connection.totalCount, pageInfo: connection.pageInfo };
 }
 

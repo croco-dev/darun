@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Dialog, ExternalLink, ImageOff, Maximize2, RefreshCw } from '@darun/ui';
-import { Link, notFound, useRouter } from '@darun/utils-router';
+import { Link, notFound } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
@@ -43,7 +43,7 @@ function DetailImage({ src, alt, onError }: { src: string; alt: string; onError:
         setFailedSrc(src);
         onError();
       }}
-      className="mx-auto max-h-[70dvh] w-auto max-w-full rounded-lg object-contain lg:max-h-[calc(100dvh-22rem)]"
+      className="mx-auto max-h-[78dvh] w-auto max-w-full object-contain"
     />
   );
 }
@@ -86,13 +86,12 @@ function CopyLinkButton() {
 }
 
 const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotDetailState) => {
-  const router = useRouter();
-  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [zoomedScreenshotId, setZoomedScreenshotId] = useState<string | null>(null);
 
   if (status === 'loading') {
     return (
-      <div className="w-full py-6 md:py-8">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-6" aria-busy="true">
+      <div className="w-full py-5 md:py-8">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-8" aria-busy="true">
           <div
             className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none"
             aria-hidden="true"
@@ -117,8 +116,8 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
 
   if (status === 'error' || detail === null) {
     return (
-      <div className="w-full py-6 md:py-8">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 md:px-6">
+      <div className="w-full py-5 md:py-8">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 md:px-8">
           <div
             role="alert"
             className="flex flex-col items-center gap-3 rounded-2xl border border-dark-200 bg-surface-50 p-8 text-center"
@@ -164,35 +163,8 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
   const appHref = `/apps/${encodeURIComponent(product.slug)}`;
 
   return (
-    <div className="w-full py-6 md:py-8">
-      <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-6 px-4 md:px-6">
-        <nav
-          aria-label="이동 경로"
-          className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-dark-600"
-        >
-          <Link
-            href="/apps"
-            className="inline-flex min-h-[44px] shrink-0 items-center rounded font-semibold transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
-          >
-            앱
-          </Link>
-          <span aria-hidden="true" className="text-dark-300">
-            /
-          </span>
-          <Link
-            href={appHref}
-            className="inline-flex max-w-40 min-h-[44px] shrink-0 items-center truncate rounded font-semibold transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
-          >
-            {product.name}
-          </Link>
-          <span aria-hidden="true" className="text-dark-300">
-            /
-          </span>
-          <span aria-current="page" className="min-w-0 flex-1 truncate font-semibold text-dark-900">
-            {displayTitle}
-          </span>
-        </nav>
-
+    <div className="w-full py-5 md:py-8">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 px-4 md:px-8">
         <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <img
@@ -201,8 +173,10 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
               className="h-10 w-10 shrink-0 rounded-xl border border-dark-150 bg-surface-100 object-cover"
             />
             <div className="flex min-w-0 flex-col gap-0.5">
-              <p className="truncate text-xs font-semibold text-dark-600">{product.name}</p>
-              <h1 className="break-words [word-break:keep-all] text-[28px] font-bold leading-tight tracking-tight text-dark-900 md:text-[32px]">
+              <Link href={appHref} className="truncate text-xs font-semibold text-dark-600 hover:underline">
+                {product.name}
+              </Link>
+              <h1 className="break-words [overflow-wrap:anywhere] text-xl font-bold leading-tight tracking-tight text-dark-900">
                 {displayTitle}
               </h1>
             </div>
@@ -235,8 +209,8 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           </div>
         </div>
 
-        <div className="grid w-full grid-cols-1 items-start gap-4 md:gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <section aria-label="스크린샷 크게 보기" className="min-w-0 rounded-xl bg-surface-100 p-4 md:p-6">
+        <div className="grid w-full grid-cols-1 items-start gap-4 md:gap-6 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <section aria-label="스크린샷 크게 보기" className="min-w-0 bg-surface-100 p-3 md:p-5">
             <div className="relative">
               <DetailImage src={imageUrl} alt={imageAlt} onError={onImageError} />
               {!isImageError && (
@@ -245,7 +219,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
                   variant="shadow"
                   color="primary"
                   size="sm"
-                  onClick={() => setIsZoomOpen(true)}
+                  onClick={() => setZoomedScreenshotId(id)}
                   className="absolute right-3 bottom-3 min-h-[44px] min-w-[44px] active:scale-[0.98] motion-reduce:transform-none"
                   aria-haspopup="dialog"
                 >
@@ -258,30 +232,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           </section>
 
           <aside className="flex min-w-0 flex-col gap-5 self-start border-t border-dark-150 pt-5 lg:sticky lg:top-20">
-            <h2 className="text-sm font-bold text-dark-900">화면 정보</h2>
-            <dl className="flex flex-col gap-3 text-sm">
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <dt className="text-xs font-semibold text-dark-600">서비스</dt>
-                <dd className="min-w-0 truncate font-semibold text-dark-900">{product.name}</dd>
-              </div>
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <dt className="text-xs font-semibold text-dark-600">플랫폼</dt>
-                <dd className="text-dark-900">{platformLabel}</dd>
-              </div>
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <dt className="text-xs font-semibold text-dark-600">화면 유형</dt>
-                <dd className="text-dark-900">{screenTypeLabel}</dd>
-              </div>
-              {product.summary !== null && product.summary.trim().length > 0 && (
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <dt className="text-xs font-semibold text-dark-600">서비스 소개</dt>
-                  <dd className="text-sm leading-relaxed text-dark-700 break-words [word-break:keep-all]">
-                    {product.summary}
-                  </dd>
-                </div>
-              )}
-            </dl>
-            <div className="flex flex-col gap-2 border-t border-dark-100 pt-4">
+            <div className="flex flex-col gap-2">
               <Button
                 as="a"
                 href={`/?product=${encodeURIComponent(product.slug)}`}
@@ -293,12 +244,6 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
                 <span className="whitespace-nowrap">이 서비스의 화면</span>
               </Button>
               <a
-                href={appHref}
-                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-dark-150 bg-white px-3.5 py-2 text-sm font-semibold text-dark-900 transition-colors hover:border-dark-300 hover:bg-surface-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-              >
-                <span className="whitespace-nowrap">앱 상세 보기</span>
-              </a>
-              <a
                 href={`https://darun.io/ko/products/${encodeURIComponent(product.slug)}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -307,16 +252,6 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
                 <ExternalLink size={16} className="shrink-0" aria-hidden="true" />
                 <span className="whitespace-nowrap">서비스 소개</span>
               </a>
-              <Button
-                type="button"
-                variant="text"
-                color="primary"
-                size="md"
-                onClick={() => router.back()}
-                className="min-h-[44px] w-full active:scale-[0.98] motion-reduce:transform-none"
-              >
-                <span className="whitespace-nowrap">뒤로 가기</span>
-              </Button>
             </div>
           </aside>
         </div>
@@ -325,7 +260,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           <section aria-labelledby="screenshot-related-heading" className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
               <h2 id="screenshot-related-heading" className="text-lg font-bold text-dark-900">
-                같은 앱의 다른 화면 ({relatedScreenshotTotalCount})
+                다른 화면 ({relatedScreenshotTotalCount})
               </h2>
               <Link
                 href={`/apps/${encodeURIComponent(product.slug)}`}
@@ -341,7 +276,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
                     href={`/screenshots/${encodeURIComponent(item.id)}`}
                     className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
-                    <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-surface-100 p-2">
+                    <div className="flex aspect-[9/16] w-full items-start justify-center overflow-hidden bg-surface-100">
                       <img
                         src={item.imageUrl}
                         alt={item.imageAlt || item.title || `${product.name} 스크린샷`}
@@ -363,7 +298,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
           <section aria-labelledby="screenshot-flows-heading" className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
               <h2 id="screenshot-flows-heading" className="text-lg font-bold text-dark-900">
-                이 화면이 포함된 플로 ({flowTotalCount})
+                관련 플로 ({flowTotalCount})
               </h2>
               <Link
                 href={`/apps/${encodeURIComponent(product.slug)}`}
@@ -400,19 +335,19 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
       </div>
 
       <Dialog
-        open={isZoomOpen}
-        onClose={() => setIsZoomOpen(false)}
+        open={zoomedScreenshotId === id}
+        onClose={() => setZoomedScreenshotId(null)}
         labelledBy="screenshot-zoom-heading"
-        className="w-full"
+        className="h-[calc(100dvh-2rem)] w-full"
       >
-        <div className="flex max-h-[calc(100dvh-3rem)] flex-col items-center gap-3 p-4">
+        <div className="flex h-full flex-col items-center gap-3 p-3">
           <h2
             id="screenshot-zoom-heading"
             className="max-w-full break-words [word-break:keep-all] text-base font-bold text-white"
           >
             {displayTitle}
           </h2>
-          <div className="max-h-[calc(100dvh-9rem)] w-full overflow-y-auto overscroll-contain">
+          <div className="min-h-0 w-full flex-1 overflow-auto overscroll-contain">
             <img src={imageUrl} alt={imageAlt} className="mx-auto max-w-full rounded-lg object-contain" />
           </div>
           <Button
@@ -420,7 +355,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
             variant="contained"
             color="primary"
             size="sm"
-            onClick={() => setIsZoomOpen(false)}
+            onClick={() => setZoomedScreenshotId(null)}
             className="min-h-[44px] active:scale-[0.98] motion-reduce:transform-none"
           >
             <span className="whitespace-nowrap">닫기</span>

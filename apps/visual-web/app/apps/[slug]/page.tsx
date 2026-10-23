@@ -59,8 +59,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 function AppDetailSkeleton() {
   return (
-    <div className="w-full py-8 md:py-12">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-6" aria-busy="true">
+    <div className="w-full py-5 md:py-8">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-8" aria-busy="true">
         <div className="h-8 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" aria-hidden="true" />
         <div
           className="min-h-72 w-full animate-pulse rounded-2xl bg-surface-200 motion-reduce:animate-none"
@@ -82,8 +82,8 @@ export default async function Page({ params }: Props) {
 
   return (
     <VisualLayout>
-      <div className="w-full py-8 md:py-12">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:gap-10 md:px-6">
+      <div className="w-full py-5 md:py-8">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 md:px-8">
           <Suspense fallback={<AppDetailSkeleton />}>
             <AppDetail slug={slug} />
           </Suspense>

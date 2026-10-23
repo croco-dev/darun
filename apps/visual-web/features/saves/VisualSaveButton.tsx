@@ -20,7 +20,7 @@ export function VisualSaveButton({ kind, id, enabled }: VisualSaveButtonProps) {
   if (needsLogin) {
     return (
       <div className="flex flex-col items-start gap-2">
-        <p className="text-sm text-dark-500 break-words [word-break:keep-all]">저장은 로그인 후 이용할 수 있어요.</p>
+        <p className="text-xs text-dark-600">계정에 저장하려면 로그인해 주세요.</p>
         <VisualLoginButton
           redirectTo={
             kind === 'screenshot' ? `/screenshots/${encodeURIComponent(id)}` : `/flows/${encodeURIComponent(id)}`

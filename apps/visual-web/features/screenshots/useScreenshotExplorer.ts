@@ -24,7 +24,14 @@ export type ScreenshotCard = {
   title: string | null;
   platform: VisualPlatform | null;
   screenType: VisualScreenType | null;
-  product: { id: string; name: string; slug: string; logoUrl: string; summary: string };
+  product: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl: string;
+    summary: string;
+    screenshotCount?: number;
+  };
 };
 
 export type ScreenshotExplorerState = ExplorerBaseState<ScreenshotCard> & {
@@ -52,7 +59,7 @@ function readFilterParams(searchParams: URLSearchParams): ExplorerFilters {
 
 export function mapEdgeToCard(node: ScreenshotNode): ScreenshotCard | null {
   const productNode = node.product;
-  if (!productNode) {
+  if (!productNode?.id || !productNode.slug || !node.id || !node.imageUrl) {
     return null;
   }
   return {

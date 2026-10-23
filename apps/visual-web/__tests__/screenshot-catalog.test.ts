@@ -15,6 +15,15 @@ function page(hasNextPage = true, endCursor: string | null = 'app-24') {
               slug: 'app-a',
               summary: '',
               logoUrl: '',
+              screenshotCount: 1000,
+              previewScreenshots: ['a', 'b', 'c'].map(id => ({
+                id: `preview-${id}`,
+                imageUrl: `/${id}.png`,
+                imageAlt: id,
+                title: null,
+                platform: null,
+                screenType: null,
+              })),
               coverScreenshot: {
                 id: 'cover-a',
                 imageUrl: '/a.png',
@@ -33,12 +42,13 @@ function page(hasNextPage = true, endCursor: string | null = 'app-24') {
 }
 
 describe('bounded app catalog', () => {
-  it('returns first useful cover without requesting later pages and retains complete server count', async () => {
+  it('returns three previews without requesting later pages and retains full app and screen counts', async () => {
     const query = vi.fn().mockResolvedValue(page());
     const result = await loadScreenshotCatalog({ query } as unknown as ApolloClient);
     expect(query).toHaveBeenCalledTimes(1);
     expect(query.mock.calls[0][0].variables).toEqual({ first: 24, after: null, query: null, productSlug: null });
-    expect(result.cards.map(card => card.id)).toEqual(['cover-a']);
+    expect(result.cards.map(card => card.id)).toEqual(['preview-a', 'preview-b', 'preview-c']);
+    expect(result.cards[0].product.screenshotCount).toBe(1000);
     expect(result.totalCount).toBe(100000);
     expect(result.pageInfo.hasNextPage).toBe(true);
   });

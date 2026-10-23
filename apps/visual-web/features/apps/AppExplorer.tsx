@@ -15,29 +15,27 @@ const DEFAULT_ICON = '/images/default-product-icon.svg';
 
 function AppCardGrid({ cards }: { cards: AppCard[] }) {
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <ul className="grid grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2">
       {cards.map(card => (
         <li key={card.id} className="min-w-0">
-          <div className="flex h-full flex-col overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300">
-            <Link
-              href={`/apps/${encodeURIComponent(card.slug)}`}
-              className="flex min-w-0 flex-1 items-center gap-3 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-inset"
-            >
-              <img
-                src={card.logoUrl || DEFAULT_ICON}
-                alt=""
-                aria-hidden="true"
-                loading={VISUAL_CARD_IMAGE_LOADING}
-                className="h-12 w-12 shrink-0 rounded-xl border border-dark-150 bg-surface-100 object-cover"
-              />
-              <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="truncate text-sm font-semibold text-dark-900">{card.name}</span>
-                {card.summary.trim().length > 0 && (
-                  <span className="line-clamp-2 text-xs leading-relaxed text-dark-600">{card.summary}</span>
-                )}
-              </span>
-            </Link>
-            <div className="flex items-center justify-end border-t border-dark-100 px-2 py-1">
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link
+                href={`/apps/${encodeURIComponent(card.slug)}`}
+                className="flex min-w-0 flex-1 items-center gap-2.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+              >
+                <img
+                  src={card.logoUrl || DEFAULT_ICON}
+                  alt=""
+                  aria-hidden="true"
+                  loading={VISUAL_CARD_IMAGE_LOADING}
+                  className="h-9 w-9 shrink-0 rounded-lg border border-dark-100 bg-surface-100 object-cover"
+                />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-dark-900">{card.name}</span>
+                  <span className="block text-xs text-dark-500 tabular-nums">화면 {card.screenshotCount}개</span>
+                </span>
+              </Link>
               <SaveButton
                 item={{
                   kind: 'app',
@@ -49,6 +47,23 @@ function AppCardGrid({ cards }: { cards: AppCard[] }) {
                 }}
               />
             </div>
+            <ul className="grid grid-cols-3 gap-2">
+              {card.screenshots.map(screenshot => (
+                <li key={screenshot.id} className="min-w-0">
+                  <Link
+                    href={`/screenshots/${encodeURIComponent(screenshot.id)}`}
+                    className="block overflow-hidden rounded-lg border border-dark-100 bg-surface-50 transition-colors hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                  >
+                    <img
+                      src={screenshot.imageUrl}
+                      alt={screenshot.imageAlt || screenshot.title || `${card.name} 화면`}
+                      loading={VISUAL_CARD_IMAGE_LOADING}
+                      className="aspect-[9/19.5] w-full object-contain object-top"
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </li>
       ))}
@@ -58,13 +73,17 @@ function AppCardGrid({ cards }: { cards: AppCard[] }) {
 
 function AppCardSkeletons() {
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-hidden="true">
-      {Array.from({ length: 8 }, (_, index) => (
-        <li key={index} className="flex items-center gap-3 rounded-xl border border-dark-150 bg-white p-4">
-          <div className="h-12 w-12 shrink-0 animate-pulse rounded-xl bg-surface-200 motion-reduce:animate-none" />
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <div className="h-4 w-2/3 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
-            <div className="h-3 w-full animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
+    <ul className="grid grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2" aria-hidden="true">
+      {Array.from({ length: 6 }, (_, index) => (
+        <li key={index} className="flex min-w-0 flex-col gap-3">
+          <div className="h-9 w-1/2 animate-pulse rounded bg-surface-200 motion-reduce:animate-none" />
+          <div className="grid grid-cols-3 gap-2">
+            {Array.from({ length: 3 }, (_, preview) => (
+              <div
+                key={preview}
+                className="aspect-[9/19.5] animate-pulse rounded-lg bg-surface-100 motion-reduce:animate-none"
+              />
+            ))}
           </div>
         </li>
       ))}
@@ -110,20 +129,11 @@ const View = (props: AppExplorerState) => {
         onLoadMore: () => {},
         retry,
       }}
-      hero={
-        <header className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-dark-900 break-words [word-break:keep-all] md:text-3xl">
-            앱으로 탐색하세요
-          </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-dark-500 break-words [word-break:keep-all] md:text-base">
-            서비스별로 모은 화면과 플로를 앱 상세에서 한 번에 살펴보세요.
-          </p>
-        </header>
-      }
+      hero={<h1 className="sr-only">앱</h1>}
       searchForm={
         <form onSubmit={onSearchSubmit} role="search" className="flex flex-col gap-2">
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-            <div className="relative min-w-0 w-full lg:flex-1">
+          <div className="flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
               <label htmlFor="app-search" className="sr-only">
                 앱 검색
               </label>
@@ -132,8 +142,6 @@ const View = (props: AppExplorerState) => {
                 id="app-search"
                 type="search"
                 autoComplete="off"
-                role="combobox"
-                aria-autocomplete="list"
                 aria-expanded={suggestions.length > 0 || (searchInput.trim().length > 0 && isSearchingSuggestions)}
                 aria-controls="app-search-suggest-listbox"
                 value={searchInput}
@@ -142,7 +150,7 @@ const View = (props: AppExplorerState) => {
                 placeholder="서비스명으로 검색"
                 data-visual-search="apps"
                 aria-describedby={query !== null ? 'app-search-status' : undefined}
-                className="min-h-[44px] w-full rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-900 placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
+                className="min-h-[44px] w-full rounded-lg border border-dark-150 bg-white px-3 py-2 text-sm text-dark-900 placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
               />
               <ProductSearchSuggest
                 inputId="app-search"
@@ -154,7 +162,7 @@ const View = (props: AppExplorerState) => {
                 onClose={onSuggestClose}
               />
             </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1">
               <Button
                 type="submit"
                 variant="contained"
@@ -178,23 +186,17 @@ const View = (props: AppExplorerState) => {
               )}
             </div>
           </div>
-          <p id="app-search-status" className="min-h-4 text-xs text-dark-600" aria-live="polite">
+          <p id="app-search-status" className={query !== null ? 'text-xs text-dark-600' : 'sr-only'} aria-live="polite">
             {query !== null && !loading && !networkError ? `‘${query}’ 검색 결과 ${totalCount}개` : ''}
           </p>
         </form>
       }
       skeleton={<AppCardSkeletons />}
       grid={<AppCardGrid cards={cards} />}
+      children={<CatalogPagination {...props.pagination} />}
       resourceName="앱"
       unitName="개의 앱"
-    >
-      <CatalogPagination
-        {...props.pagination}
-        loading={loading}
-        networkError={networkError}
-        queryLengthError={queryLengthError}
-      />
-    </ExplorerShell>
+    />
   );
 };
 

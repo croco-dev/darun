@@ -437,6 +437,11 @@ export class ProductQueryResolver {
     return this.productRepository.findVisualAppCover(product.id);
   }
 
+  @FieldResolver(() => [Screenshot])
+  public previewScreenshots(@Root() product: Product) {
+    return this.productRepository.findVisualAppPreviews(product.id);
+  }
+
   @FieldResolver(() => Int)
   public screenshotCount(@Root() product: Product) {
     return this.productRepository.countVisualAppScreenshots(product.id);

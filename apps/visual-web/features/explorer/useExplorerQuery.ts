@@ -45,6 +45,7 @@ export type ExplorerBaseState<TCard> = {
   onSecondaryChange: (value: string) => void;
   onElementChange?: (value: string) => void;
   onClearFilters: () => void;
+  onProductClear: () => void;
   onLoadMore: () => void;
   retry: () => void;
   suggestions: ProductSuggestion[];
@@ -75,9 +76,12 @@ type ExplorerQueryOptions<TNode, TCard> = {
   buildVariables: (filters: ExplorerFilters) => Record<string, unknown>;
   mapEdgeToCard: (node: TNode) => TCard | null;
   getEdges: (data: unknown) => Array<{ node?: TNode | null } | null> | undefined;
-  getConnection: (
-    data: unknown
-  ) => { totalCount?: number; pageInfo?: { hasNextPage?: boolean; endCursor?: string | null } } | undefined;
+  getConnection: (data: unknown) =>
+    | {
+        totalCount?: number;
+        pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+      }
+    | undefined;
   getNodeId: (node: TNode) => string | undefined;
   refetchLabel: string;
   loadMoreLabel: string;
@@ -322,7 +326,7 @@ export function useExplorerQuery<TNode, TCard>(
   };
 
   const onPlatformChange = (value: string) => {
-    navigate(buildUrl({ platform: value.length > 0 ? value : null }));
+    navigateTo({ platform: value.length > 0 ? value : null });
   };
 
   const onClearFilters = () => {
@@ -365,6 +369,10 @@ export function useExplorerQuery<TNode, TCard>(
     onSecondaryChange: (value: string) => navigateTo({ secondary: value.length > 0 ? value : null }),
     onElementChange: (value: string) => navigateTo({ element: value.length > 0 ? value : null }),
     onClearFilters,
+    onProductClear: () => {
+      clearSuggestions();
+      navigateTo({ product: null });
+    },
     onLoadMore,
     retry,
     pagination: options.boundedPagination

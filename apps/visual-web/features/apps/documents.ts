@@ -14,6 +14,15 @@ gql`
           slug
           summary
           logoUrl
+          screenshotCount
+          previewScreenshots {
+            id
+            imageUrl
+            imageAlt
+            title
+            platform
+            screenType
+          }
           coverScreenshot {
             id
             imageUrl

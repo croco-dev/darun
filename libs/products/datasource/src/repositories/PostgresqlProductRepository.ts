@@ -4,7 +4,7 @@ import { ProductScreenshot } from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
-import { and, asc, count, desc, eq, gt, ilike, inArray, isNotNull, lt, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, ilike, inArray, isNotNull, lt, lte, getTableColumns, sql } from 'drizzle-orm';
 import { keyBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
@@ -34,6 +34,41 @@ export class PostgresqlProductRepository implements ProductRepository {
         ])
       );
       return ids.map(id => byId.get(id) ?? null);
+    },
+    { cache: false }
+  );
+
+  private readonly previewLoader = new DataLoader<string, ProductScreenshot[]>(
+    async ids => {
+      const ranked = this.db
+        .select({
+          ...getTableColumns(productScreenshots),
+          position:
+            sql<number>`row_number() over (partition by ${productScreenshots.productId} order by ${productScreenshots.priority} desc, ${productScreenshots.id} desc)`.as(
+              'preview_position'
+            ),
+        })
+        .from(productScreenshots)
+        .where(inArray(productScreenshots.productId, [...ids]))
+        .as('ranked_previews');
+      const rows = await this.db
+        .select()
+        .from(ranked)
+        .where(lte(ranked.position, 3))
+        .orderBy(asc(ranked.productId), asc(ranked.position));
+      const byId = new Map<string, ProductScreenshot[]>();
+      for (const row of rows) {
+        const previews = byId.get(row.productId) ?? [];
+        previews.push(
+          new ProductScreenshot({
+            ...row,
+            platform: row.platform as ProductScreenshot['platform'],
+            screenType: row.screenType as ProductScreenshot['screenType'],
+          })
+        );
+        byId.set(row.productId, previews);
+      }
+      return ids.map(id => byId.get(id) ?? []);
     },
     { cache: false }
   );
@@ -270,6 +305,10 @@ export class PostgresqlProductRepository implements ProductRepository {
       products: rows.map(row => this.mapper(row)),
       total: Number(totals[0]?.value ?? 0),
     };
+  }
+
+  async findVisualAppPreviews(productId: string): Promise<ProductScreenshot[]> {
+    return this.previewLoader.load(productId);
   }
 
   async findVisualAppCover(productId: string): Promise<ProductScreenshot | null> {
