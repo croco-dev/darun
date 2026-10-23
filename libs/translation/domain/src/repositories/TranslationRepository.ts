@@ -20,9 +20,9 @@ export interface UpsertTranslationParams {
   locale: string;
   field: string;
   value: string;
-  sourceHash?: string | null;
-  model?: string | null;
-  promptVersion?: string | null;
+  sourceHash: string;
+  model: string;
+  promptVersion: string;
 }
 
 export interface TranslationRepository {

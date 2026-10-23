@@ -4,12 +4,12 @@ import {
   type TranslationJobRepository,
   TranslationJobRepositoryToken,
   type TranslationJobStatus,
+  translationFields,
 } from '@darun/translation-domain';
-import type { UpsertTranslationParams } from '@darun/translation-domain';
-import { and, asc, desc, eq, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
+import { JOB_DISPATCH_RESERVATION_MS, JOB_MAX_ATTEMPTS, jobDispatchStatus, jobRetryDelay } from '@darun/utils-llm';
+import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { translationJobs } from '../entities/TranslationJobSchema';
-import { PostgresqlTranslationRepository } from './PostgresqlTranslationRepository';
 
 type TranslationJobStatusOptions = {
   message?: string | null;
@@ -19,77 +19,67 @@ type TranslationJobStatusOptions = {
   promptVersion?: string | null;
 };
 
+type JobDbTx = Parameters<Parameters<Drizzle['transaction']>[0]>[0];
+
 @Service(TranslationJobRepositoryToken)
 export class PostgresqlTranslationJobRepository implements TranslationJobRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
-  async commitTranslations(jobId: string, leaseToken: string, rows: UpsertTranslationParams[]): Promise<boolean> {
-    return this.db.transaction(async tx => {
-      const [job] = await tx
-        .select()
-        .from(translationJobs)
-        .where(
-          and(
-            eq(translationJobs.id, jobId),
-            eq(translationJobs.leaseToken, leaseToken),
-            eq(translationJobs.status, 'in_progress')
-          )
-        )
-        .for('update');
-      if (!job || !job.leaseUntil || job.leaseUntil.getTime() <= Date.now()) return false;
-      await new PostgresqlTranslationRepository(tx).upsertMany(rows);
-      return true;
-    });
+  /** Lease scheduling compares against the database clock, not the worker clock. */
+  private async dbNow(tx: JobDbTx): Promise<Date> {
+    const rows = (await tx.execute(sql`select clock_timestamp() as "now"`)) as { now: Date | string }[];
+    const raw = rows[0]?.now;
+    return raw instanceof Date ? raw : new Date(raw!);
   }
 
   async createJob(job: {
     entityType: string;
     entityId: string;
     locale?: string;
-    status?: TranslationJobStatus;
+    fields: string[];
+    retryOfJobId?: string;
+    idempotencyKey?: string;
+    status?: 'pending';
     message?: string;
     sourceHash?: string | null;
     model?: string | null;
     promptVersion?: string | null;
   }): Promise<TranslationJobEntity> {
-    return this.db.transaction(async tx => {
-      await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtextextended(${JSON.stringify([job.entityType, job.entityId, job.locale ?? 'en'])}, 0))`
-      );
-      const [active] = await tx
-        .select()
-        .from(translationJobs)
-        .where(
-          and(
-            eq(translationJobs.entityType, job.entityType),
-            eq(translationJobs.entityId, job.entityId),
-            eq(translationJobs.locale, job.locale ?? 'en'),
-            inArray(translationJobs.status, ['pending', 'in_progress'])
-          )
-        )
-        .limit(1);
-      if (active) return this.toEntity(active);
-      const rows = await tx
-        .insert(translationJobs)
-        .values({
-          entityType: job.entityType,
-          entityId: job.entityId,
-          locale: job.locale ?? 'en',
-          status: job.status ?? 'pending',
-          message: job.message ?? '번역 작업이 대기 중입니다.',
-          sourceHash: job.sourceHash ?? null,
-          model: job.model ?? null,
-          promptVersion: job.promptVersion ?? null,
-        })
-        .returning();
-
-      const row = rows[0];
-      if (!row) {
-        throw new Error('TranslationJob creation failed');
-      }
-
-      return this.toEntity(row);
+    if (
+      !['Product', 'Magazine', 'ProductFeature'].includes(job.entityType) ||
+      !Array.isArray(job.fields) ||
+      (job.status && job.status !== 'pending')
+    ) {
+      throw new Error('New translation jobs require an explicit entity and fields in pending state');
+    }
+    const fields = translationFields({
+      entityType: job.entityType as 'Product' | 'Magazine' | 'ProductFeature',
+      entityId: job.entityId,
+      fields: job.fields,
     });
+    const rows = await this.db
+      .insert(translationJobs)
+      .values({
+        entityType: job.entityType,
+        entityId: job.entityId,
+        locale: job.locale ?? 'en',
+        fields,
+        retryOfJobId: job.retryOfJobId,
+        idempotencyKey: job.idempotencyKey,
+        status: job.status ?? 'pending',
+        message: job.message ?? '번역 작업이 대기 중입니다.',
+        sourceHash: job.sourceHash ?? null,
+        model: job.model ?? null,
+        promptVersion: job.promptVersion ?? null,
+      })
+      .returning();
+
+    const row = rows[0];
+    if (!row) {
+      throw new Error('TranslationJob creation failed');
+    }
+
+    return this.toEntity(row);
   }
 
   private toEntity(row: {
@@ -97,6 +87,7 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
     entityType: string;
     entityId: string;
     locale: string;
+    fields: string[] | null;
     status: string;
     message: string | null;
     error: string | null;
@@ -106,6 +97,9 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
     leaseToken: string | null;
     leaseUntil: Date | null;
     attemptCount: number;
+    runNotBefore: Date;
+    nextDispatchAt: Date;
+    retryOfJobId: string | null;
     createdAt: Date;
     updatedAt: Date;
   }): TranslationJobEntity {
@@ -114,6 +108,7 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
       entityType: row.entityType,
       entityId: row.entityId,
       locale: row.locale,
+      fields: row.fields,
       status: row.status as TranslationJobStatus,
       message: row.message,
       error: row.error,
@@ -123,6 +118,10 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
       leaseToken: row.leaseToken,
       leaseUntil: row.leaseUntil,
       attemptCount: row.attemptCount,
+      runNotBefore: row.runNotBefore,
+      nextDispatchAt: row.nextDispatchAt,
+      retryOfJobId: row.retryOfJobId,
+      dispatchStatus: jobDispatchStatus(row),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -143,174 +142,51 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
     }
   }
 
-  async updateJobStatus(
-    id: string,
-    status: TranslationJobStatus,
-    options?: {
-      message?: string | null;
-      error?: string | null;
-      sourceHash?: string | null;
-      model?: string | null;
-      promptVersion?: string | null;
-    }
-  ): Promise<TranslationJobEntity> {
-    const updateValues: Record<string, unknown> = {
-      status,
-      updatedAt: new Date(),
-    };
-
-    if (options?.message !== undefined) {
-      updateValues.message = options.message;
-    }
-    if (options?.error !== undefined) {
-      updateValues.error = options.error;
-    }
-    if (options?.sourceHash !== undefined) {
-      updateValues.sourceHash = options.sourceHash;
-    }
-    if (options?.model !== undefined) {
-      updateValues.model = options.model;
-    }
-    if (options?.promptVersion !== undefined) {
-      updateValues.promptVersion = options.promptVersion;
-    }
-
-    const rows = await this.db.update(translationJobs).set(updateValues).where(eq(translationJobs.id, id)).returning();
-
-    const row = rows[0];
-    if (!row) {
-      throw new Error(`TranslationJob not found for update: ${id}`);
-    }
-
-    return this.toEntity(row);
-  }
-
-  async claimJobStatus(
-    id: string,
-    expectedStatuses: TranslationJobStatus[],
-    nextStatus: TranslationJobStatus,
-    options?: {
-      message?: string | null;
-      error?: string | null;
-      sourceHash?: string | null;
-      model?: string | null;
-      promptVersion?: string | null;
-    }
-  ): Promise<TranslationJobEntity | null> {
-    if (nextStatus === 'pending' && expectedStatuses.includes('failed')) {
-      return this.db.transaction(async tx => {
-        const [original] = await tx.select().from(translationJobs).where(eq(translationJobs.id, id)).limit(1);
-        if (!original) return null;
-        await tx.execute(
-          sql`select pg_advisory_xact_lock(hashtextextended(${JSON.stringify([original.entityType, original.entityId, original.locale])}, 0))`
-        );
-        const [active] = await tx
-          .select()
-          .from(translationJobs)
-          .where(
-            and(
-              eq(translationJobs.entityType, original.entityType),
-              eq(translationJobs.entityId, original.entityId),
-              eq(translationJobs.locale, original.locale),
-              inArray(translationJobs.status, ['pending', 'in_progress'])
-            )
-          )
-          .limit(1);
-        if (active) return this.toEntity(active);
-        const [retried] = await tx
-          .update(translationJobs)
-          .set({
-            status: 'pending',
-            message: options?.message,
-            error: options?.error,
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(translationJobs.id, id),
-              inArray(translationJobs.status, expectedStatuses),
-              lt(translationJobs.attemptCount, 5)
-            )
-          )
-          .returning();
-        return retried ? this.toEntity(retried) : null;
-      });
-    }
-    const updateValues: Record<string, unknown> = {
-      status: nextStatus,
-      updatedAt: new Date(),
-    };
-
-    if (options?.message !== undefined) {
-      updateValues.message = options.message;
-    }
-    if (options?.error !== undefined) {
-      updateValues.error = options.error;
-    }
-    if (options?.sourceHash !== undefined) {
-      updateValues.sourceHash = options.sourceHash;
-    }
-    if (options?.model !== undefined) {
-      updateValues.model = options.model;
-    }
-    if (options?.promptVersion !== undefined) {
-      updateValues.promptVersion = options.promptVersion;
-    }
-
-    const rows = await this.db
-      .update(translationJobs)
-      .set(updateValues)
-      .where(and(eq(translationJobs.id, id), inArray(translationJobs.status, expectedStatuses)))
-      .returning();
-
-    const row = rows[0];
-    if (!row) {
-      return null;
-    }
-
-    return this.toEntity(row);
-  }
-
   async claimJobLease(input: {
     jobId: string;
     leaseToken: string;
     leaseUntil: Date;
   }): Promise<TranslationJobEntity | null> {
-    const now = new Date();
-    const rows = await this.db
-      .update(translationJobs)
-      .set({
-        status: 'in_progress',
-        message: 'LLM으로 영문 번역을 생성하고 있습니다...',
-        leaseToken: input.leaseToken,
-        leaseUntil: input.leaseUntil,
-        attemptCount: sql`${translationJobs.attemptCount} + 1`,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(translationJobs.id, input.jobId),
-          lt(translationJobs.attemptCount, 5),
-          or(
-            eq(translationJobs.status, 'pending'),
-            and(
-              eq(translationJobs.status, 'in_progress'),
-              or(isNull(translationJobs.leaseUntil), lte(translationJobs.leaseUntil, now))
-            )
-          )
-        )
+    return this.db.transaction(async tx => {
+      const [row] = await tx.select().from(translationJobs).where(eq(translationJobs.id, input.jobId)).for('update');
+      const now = await this.dbNow(tx);
+      if (
+        !row ||
+        (row.status !== 'pending' && row.status !== 'in_progress') ||
+        (row.status === 'pending' && row.runNotBefore > now) ||
+        (row.status === 'in_progress' && row.leaseUntil && row.leaseUntil > now)
       )
-      .returning();
-    const claimed = rows[0];
-    return claimed ? this.toEntity(claimed) : null;
+        return null;
+      if (row.attemptCount >= JOB_MAX_ATTEMPTS) {
+        await tx
+          .update(translationJobs)
+          .set({ status: 'failed', error: 'RETRY_EXHAUSTED', leaseToken: null, leaseUntil: null, updatedAt: now })
+          .where(eq(translationJobs.id, row.id));
+        return null;
+      }
+      const [claimed] = await tx
+        .update(translationJobs)
+        .set({
+          status: 'in_progress',
+          message: 'LLM으로 영문 번역을 생성하고 있습니다...',
+          leaseToken: input.leaseToken,
+          leaseUntil: input.leaseUntil,
+          attemptCount: row.attemptCount + 1,
+          updatedAt: now,
+        })
+        .where(eq(translationJobs.id, row.id))
+        .returning();
+      return claimed ? this.toEntity(claimed) : null;
+    });
   }
 
   async completeJobLease(
     jobId: string,
     leaseToken: string,
-    nextStatus: Extract<TranslationJobStatus, 'completed' | 'failed' | 'superseded'>,
+    nextStatus: 'failed',
     options?: TranslationJobStatusOptions
   ): Promise<TranslationJobEntity | null> {
+    if (nextStatus !== 'failed') throw new Error('Translation completion requires the atomic source store');
     const updateValues: Record<string, unknown> = {
       status: nextStatus,
       updatedAt: new Date(),
@@ -339,7 +215,8 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
         and(
           eq(translationJobs.id, jobId),
           eq(translationJobs.leaseToken, leaseToken),
-          eq(translationJobs.status, 'in_progress')
+          eq(translationJobs.status, 'in_progress'),
+          gt(translationJobs.leaseUntil, new Date())
         )
       )
       .returning();
@@ -347,50 +224,101 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
     return row ? this.toEntity(row) : null;
   }
 
-  async findRecoverableJobs(input: { now: Date; limit?: number }): Promise<TranslationJobEntity[]> {
-    const limit = Math.min(Math.max(input.limit ?? 50, 1), 200);
-    await this.db
-      .update(translationJobs)
-      .set({
-        status: 'failed',
-        message: '번역 작업의 최대 시도 횟수를 초과했습니다.',
-        error: 'Maximum attempts (5) exhausted',
-        leaseToken: null,
-        leaseUntil: null,
-        updatedAt: input.now,
-      })
+  async findActiveJob(input: {
+    entityType: string;
+    entityId: string;
+    locale?: string;
+  }): Promise<TranslationJobEntity | null> {
+    const rows = await this.db
+      .select()
+      .from(translationJobs)
       .where(
         and(
-          sql`${translationJobs.attemptCount} >= 5`,
-          or(
-            eq(translationJobs.status, 'pending'),
-            and(
-              eq(translationJobs.status, 'in_progress'),
-              or(isNull(translationJobs.leaseUntil), lte(translationJobs.leaseUntil, input.now))
-            )
-          )
+          eq(translationJobs.entityType, input.entityType),
+          eq(translationJobs.entityId, input.entityId),
+          eq(translationJobs.locale, input.locale ?? 'en'),
+          inArray(translationJobs.status, ['pending', 'in_progress'] as const)
         )
-      );
-    try {
-      const rows = await this.db
+      )
+      .orderBy(desc(translationJobs.createdAt))
+      .limit(1);
+    const row = rows[0];
+    return row ? this.toEntity(row) : null;
+  }
+
+  async retryJobLease(jobId: string, leaseToken: string, error: string): Promise<TranslationJobEntity | null> {
+    return this.db.transaction(async tx => {
+      const [row] = await tx
         .select()
         .from(translationJobs)
         .where(
-          or(
-            eq(translationJobs.status, 'pending'),
-            and(
-              eq(translationJobs.status, 'in_progress'),
-              or(isNull(translationJobs.leaseUntil), lte(translationJobs.leaseUntil, input.now))
+          and(
+            eq(translationJobs.id, jobId),
+            eq(translationJobs.leaseToken, leaseToken),
+            eq(translationJobs.status, 'in_progress')
+          )
+        )
+        .for('update');
+      const now = await this.dbNow(tx);
+      if (!row || !row.leaseUntil || row.leaseUntil <= now) return null;
+      const retryAt = new Date(now.getTime() + jobRetryDelay(row.attemptCount));
+      const [updated] = await tx
+        .update(translationJobs)
+        .set({
+          status: row.attemptCount >= JOB_MAX_ATTEMPTS ? 'failed' : 'pending',
+          error,
+          message: '번역 작업을 재시도합니다.',
+          leaseToken: null,
+          leaseUntil: null,
+          runNotBefore: retryAt,
+          nextDispatchAt: retryAt,
+          updatedAt: now,
+        })
+        .where(eq(translationJobs.id, row.id))
+        .returning();
+      return updated ? this.toEntity(updated) : null;
+    });
+  }
+
+  async findRecoverableJobs(input: { now: Date; limit?: number }): Promise<TranslationJobEntity[]> {
+    return this.db.transaction(async tx => {
+      const now = await this.dbNow(tx);
+      const rows = await tx
+        .select()
+        .from(translationJobs)
+        .where(
+          and(
+            lte(translationJobs.nextDispatchAt, now),
+            or(
+              and(eq(translationJobs.status, 'pending'), lte(translationJobs.runNotBefore, now)),
+              and(
+                eq(translationJobs.status, 'in_progress'),
+                or(isNull(translationJobs.leaseUntil), lte(translationJobs.leaseUntil, now))
+              )
             )
           )
         )
-        .orderBy(asc(translationJobs.updatedAt))
-        .limit(limit);
-      return rows.map(row => this.toEntity(row));
-    } catch (error) {
-      console.warn('[PostgresqlTranslationJobRepository] Failed to find recoverable jobs:', error);
-      return [];
-    }
+        .orderBy(asc(translationJobs.updatedAt), asc(translationJobs.id))
+        .limit(Math.min(Math.max(input.limit ?? 25, 1), 25))
+        .for('update', { skipLocked: true });
+      const reserved: TranslationJobEntity[] = [];
+      for (const row of rows) {
+        if (row.attemptCount >= JOB_MAX_ATTEMPTS) {
+          await tx
+            .update(translationJobs)
+            .set({ status: 'failed', error: 'RETRY_EXHAUSTED', leaseToken: null, leaseUntil: null, updatedAt: now })
+            .where(eq(translationJobs.id, row.id));
+          continue;
+        }
+        const [next] = await tx
+          .update(translationJobs)
+          .set({ nextDispatchAt: new Date(now.getTime() + JOB_DISPATCH_RESERVATION_MS) })
+          .where(eq(translationJobs.id, row.id))
+          .returning();
+        if (next) reserved.push(this.toEntity(next));
+      }
+      return reserved;
+    });
   }
 
   async findJobs(options?: {

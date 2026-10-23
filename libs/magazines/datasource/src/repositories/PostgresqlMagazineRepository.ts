@@ -16,6 +16,7 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
         .select()
         .from(magazines)
         .where(eq(magazines.id, id))
+        .for('update')
         .limit(1)
         .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
 

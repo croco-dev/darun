@@ -1,13 +1,13 @@
 import { Field, InputType, ObjectType } from 'type-graphql';
 import { Feature } from './Feature';
 
-@ObjectType()
+@ObjectType('CreateProductFeaturePayload')
 export class CreateProductFeaturePayload {
   @Field(() => Feature)
   feature: Feature;
 }
 
-@InputType()
+@InputType('CreateProductFeatureInput')
 export class CreateProductFeatureInput {
   @Field()
   productSlug: string;

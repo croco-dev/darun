@@ -71,60 +71,69 @@ export class PostgresqlTranslationRepository implements TranslationRepository {
   }
 
   async upsert(params: UpsertTranslationParams): Promise<TranslationRow> {
-    const { entityType, entityId, locale, field, value, sourceHash, model, promptVersion } = params;
-
-    const rows = await this.db
-      .insert(translations)
-      .values({ entityType, entityId, locale, field, value, sourceHash, model, promptVersion })
-      .onConflictDoUpdate({
-        target: [translations.entityType, translations.entityId, translations.locale, translations.field],
-        set: {
-          value,
-          sourceHash: sourceHash !== undefined ? sourceHash : sql`${translations.sourceHash}`,
-          model: model !== undefined ? model : sql`${translations.model}`,
-          promptVersion: promptVersion !== undefined ? promptVersion : sql`${translations.promptVersion}`,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-
-    if (!rows[0]) {
-      throw new Error('Translation upsert failed');
-    }
-
-    return rows[0];
+    const [row] = await this.upsertMany([params]);
+    if (!row) throw new Error('Translation upsert failed');
+    return row;
   }
 
   async upsertMany(paramsList: UpsertTranslationParams[]): Promise<TranslationRow[]> {
-    if (paramsList.length === 0) {
-      return [];
-    }
-
-    const values = paramsList.map(p => ({
-      entityType: p.entityType,
-      entityId: p.entityId,
-      locale: p.locale,
-      field: p.field,
-      value: p.value,
-      sourceHash: p.sourceHash ?? null,
-      model: p.model ?? null,
-      promptVersion: p.promptVersion ?? null,
-    }));
-
-    return this.db
-      .insert(translations)
-      .values(values)
-      .onConflictDoUpdate({
-        target: [translations.entityType, translations.entityId, translations.locale, translations.field],
-        set: {
-          value: sql`excluded.value`,
-          sourceHash: sql`COALESCE(excluded.source_hash, ${translations.sourceHash})`,
-          model: sql`COALESCE(excluded.model, ${translations.model})`,
-          promptVersion: sql`COALESCE(excluded.prompt_version, ${translations.promptVersion})`,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+    if (!paramsList.length) return [];
+    return this.db.transaction(async tx => {
+      const writes: UpsertTranslationParams[] = [];
+      const unchanged: TranslationRow[] = [];
+      const keys = new Set<string>();
+      for (const params of paramsList) {
+        const key = JSON.stringify([params.entityType, params.entityId, params.locale, params.field]);
+        if (keys.has(key)) throw new Error('Duplicate translation write');
+        keys.add(key);
+      }
+      for (const params of [...paramsList].sort((a, b) =>
+        JSON.stringify([a.entityType, a.entityId, a.locale, a.field]).localeCompare(
+          JSON.stringify([b.entityType, b.entityId, b.locale, b.field])
+        )
+      )) {
+        const complete = [params.sourceHash, params.model, params.promptVersion].every(
+          value => typeof value === 'string' && value.trim().length > 0
+        );
+        if (complete) {
+          writes.push(params);
+          continue;
+        }
+        const [existing] = await tx
+          .select()
+          .from(translations)
+          .where(
+            and(
+              eq(translations.entityType, params.entityType),
+              eq(translations.entityId, params.entityId),
+              eq(translations.locale, params.locale),
+              eq(translations.field, params.field)
+            )
+          )
+          .for('update');
+        if (!existing || existing.value !== params.value) {
+          throw new Error('Translation value changes require sourceHash, model and promptVersion');
+        }
+        // A legacy same-value no-op cannot replace or erase the stored provenance.
+        unchanged.push(existing);
+      }
+      if (!writes.length) return unchanged;
+      const written = await tx
+        .insert(translations)
+        .values(writes)
+        .onConflictDoUpdate({
+          target: [translations.entityType, translations.entityId, translations.locale, translations.field],
+          set: {
+            value: sql`excluded.value`,
+            sourceHash: sql`excluded.source_hash`,
+            model: sql`excluded.model`,
+            promptVersion: sql`excluded.prompt_version`,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      return [...written, ...unchanged];
+    });
   }
 
   async findByEntity(params: { entityType: string; entityId: string; locale: string }): Promise<TranslationRow[]> {

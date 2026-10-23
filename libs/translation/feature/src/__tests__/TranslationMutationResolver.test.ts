@@ -25,128 +25,60 @@ import { describe, expect, it, vi } from 'vitest';
 import { TranslationMutationResolver } from '../Translation.mutation.resolver';
 
 describe('TranslationMutationResolver', () => {
-  describe('requestTranslation', () => {
-    it('번역 작업을 요청하고 완료 상태를 반환한다', async () => {
-      const translationJobService = {
-        translateEntity: vi.fn().mockResolvedValue(undefined),
-      };
-
-      const resolver = new TranslationMutationResolver(translationJobService as never);
-      const result = await resolver.requestTranslation('Product', 'prod-1', ['name', 'summary']);
-
-      expect(translationJobService.translateEntity).toHaveBeenCalledWith('Product', 'prod-1', ['name', 'summary']);
-      expect(result.status).toBe('completed');
-      expect(result.entityType).toBe('Product');
-      expect(result.entityId).toBe('prod-1');
-    });
-
-    it('지원하지 않는 entityType이면 에러를 던진다', async () => {
-      const translationJobService = { translateEntity: vi.fn() };
-      const resolver = new TranslationMutationResolver(translationJobService as never);
-
-      await expect(resolver.requestTranslation('InvalidType', 'prod-1', ['name'])).rejects.toThrow();
-    });
-
-    it('fields가 비어있으면 에러를 던진다', async () => {
-      const translationJobService = { translateEntity: vi.fn() };
-      const resolver = new TranslationMutationResolver(translationJobService as never);
-
-      await expect(resolver.requestTranslation('Product', 'prod-1', [])).rejects.toThrow();
-    });
-
-    it('중복 field를 제거하고 처리한다', async () => {
-      const translationJobService = {
-        translateEntity: vi.fn().mockResolvedValue(undefined),
-      };
-      const resolver = new TranslationMutationResolver(translationJobService as never);
-
-      const result = await resolver.requestTranslation('Magazine', 'mag-1', ['name', 'name', 'summary']);
-
-      expect(translationJobService.translateEntity).toHaveBeenCalledWith('Magazine', 'mag-1', ['name', 'summary']);
-      expect(result.fields).toEqual(['name', 'summary']);
-    });
-
-    it('ProductFeature entityType 번역 작업을 정상 요청한다', async () => {
-      const translationJobService = {
-        translateEntity: vi.fn().mockResolvedValue(undefined),
-      };
-
-      const resolver = new TranslationMutationResolver(translationJobService as never);
-      const result = await resolver.requestTranslation('ProductFeature', 'feat-1', ['name', 'summary']);
-
-      expect(translationJobService.translateEntity).toHaveBeenCalledWith('ProductFeature', 'feat-1', [
-        'name',
-        'summary',
-      ]);
-      expect(result.entityType).toBe('ProductFeature');
-      expect(result.status).toBe('completed');
-    });
-  });
-
-  describe('requestProductTranslation', () => {
-    it('productId로 상품과 하위 기능 통합 번역을 요청하고 완료 상태를 반환한다', async () => {
-      const translationJobService = {
-        translateProductWithFeatures: vi.fn().mockResolvedValue({ productId: 'prod-123' }),
-      };
-
-      const resolver = new TranslationMutationResolver(translationJobService as never);
-      const result = await resolver.requestProductTranslation('prod-123');
-
-      expect(translationJobService.translateProductWithFeatures).toHaveBeenCalledWith({ id: 'prod-123' });
-      expect(result.entityType).toBe('Product');
-      expect(result.entityId).toBe('prod-123');
-      expect(result.status).toBe('completed');
-      expect(result.message).toContain('완료');
-    });
-
-    it('slug로 상품과 하위 기능 통합 번역을 요청하고 완료 상태를 반환한다', async () => {
-      const translationJobService = {
-        translateProductWithFeatures: vi.fn().mockResolvedValue({ productId: 'prod-123' }),
-      };
-
-      const resolver = new TranslationMutationResolver(translationJobService as never);
-      const result = await resolver.requestProductTranslation(undefined, 'toss');
-
-      expect(translationJobService.translateProductWithFeatures).toHaveBeenCalledWith({ slug: 'toss' });
-      expect(result.entityType).toBe('Product');
-      expect(result.entityId).toBe('prod-123');
-      expect(result.status).toBe('completed');
-    });
-
-    it('productId와 slug가 모두 없으면 에러를 던진다', async () => {
-      const translationJobService = {
-        translateProductWithFeatures: vi.fn(),
-      };
-
-      const resolver = new TranslationMutationResolver(translationJobService as never);
-      await expect(resolver.requestProductTranslation()).rejects.toThrow('productId 또는 slug가 필요합니다.');
-    });
-  });
-
-  describe('retryTranslationJob', () => {
-    it('재시도 대상 작업을 pending 상태로 갱신하고 결과를 반환한다', async () => {
-      const now = new Date();
-      const translationJobService = {
-        retryProductTranslationJob: vi.fn().mockResolvedValue({
-          id: 'job-failed',
-          entityType: 'Product',
-          entityId: 'prod-123',
+  it.each(['Product', 'Magazine', 'ProductFeature'])(
+    'requestTranslation %s는 동일 공개 인자로 pending job과 fields를 반환한다',
+    async entityType => {
+      const fields = entityType === 'Magazine' ? ['title', 'summary'] : ['name', 'summary'];
+      const service = {
+        requestTranslationJob: vi.fn().mockResolvedValue({
+          id: 'durable-job',
+          entityType,
+          entityId: 'source-1',
+          fields,
           locale: 'en',
           status: 'pending',
-          message: '재시도 대기 중',
-          error: null,
-          createdAt: now,
-          updatedAt: now,
         }),
       };
-
-      const resolver = new TranslationMutationResolver(translationJobService as never);
-      const result = await resolver.retryTranslationJob('job-failed');
-
-      expect(translationJobService.retryProductTranslationJob).toHaveBeenCalledWith('job-failed');
-      expect(result.id).toBe('job-failed');
-      expect(result.status).toBe('pending');
-      expect(result.message).toBe('재시도 대기 중');
-    });
+      const result = await new TranslationMutationResolver(service as never).requestTranslation(
+        entityType,
+        'source-1',
+        [...fields, fields[0]!]
+      );
+      expect(service.requestTranslationJob).toHaveBeenCalledWith(entityType, 'source-1', fields);
+      expect(result).toMatchObject({ id: 'durable-job', status: 'pending', fields });
+    }
+  );
+  it('미지원 entityType 또는 빈 fields는 job을 등록하지 않는다', async () => {
+    const service = { requestTranslationJob: vi.fn() };
+    const resolver = new TranslationMutationResolver(service as never);
+    await expect(resolver.requestTranslation('Invalid', 'source', ['name'])).rejects.toThrow();
+    await expect(resolver.requestTranslation('Product', 'source', [])).rejects.toThrow();
+    expect(service.requestTranslationJob).not.toHaveBeenCalled();
+  });
+  it('requestProductTranslation은 ID/slug를 보존하고 동기 LLM fallback을 하지 않는다', async () => {
+    const service = {
+      requestProductTranslationJob: vi.fn().mockResolvedValue({ id: 'durable-job', entityId: 'p1', status: 'pending' }),
+    };
+    const resolver = new TranslationMutationResolver(service as never);
+    expect((await resolver.requestProductTranslation('p1')).status).toBe('pending');
+    expect(service.requestProductTranslationJob).toHaveBeenLastCalledWith({ id: 'p1' });
+    await resolver.requestProductTranslation(undefined, 'source-slug');
+    expect(service.requestProductTranslationJob).toHaveBeenLastCalledWith({ slug: 'source-slug' });
+    await expect(resolver.requestProductTranslation()).rejects.toThrow();
+  });
+  it('retry는 Magazine의 원래 fields를 응답한다', async () => {
+    const service = {
+      retryProductTranslationJob: vi.fn().mockResolvedValue({
+        id: 'job',
+        entityType: 'Magazine',
+        entityId: 'm1',
+        fields: ['content'],
+        locale: 'en',
+        status: 'pending',
+      }),
+    };
+    const result = await new TranslationMutationResolver(service as never).retryTranslationJob('job');
+    expect(result.fields).toEqual(['content']);
+    expect(result.status).toBe('pending');
   });
 });

@@ -4,7 +4,7 @@ import { VisualFlowStep } from './VisualFlowStep';
 import { VisualFlowTypeGraph } from './VisualFlowType';
 import { VisualPlatformGraph } from './VisualPlatform';
 
-@InputType()
+@InputType('ProductFlowStepInput')
 export class ProductFlowStepInput {
   @Field(() => ID)
   screenshotId: string;
@@ -13,7 +13,7 @@ export class ProductFlowStepInput {
   caption: string;
 }
 
-@InputType()
+@InputType('CreateProductFlowInput')
 export class CreateProductFlowInput {
   @Field(() => String)
   productSlug: string;
@@ -34,13 +34,13 @@ export class CreateProductFlowInput {
   steps: ProductFlowStepInput[];
 }
 
-@ObjectType()
+@ObjectType('CreateProductFlowPayload')
 export class CreateProductFlowPayload {
   @Field(() => VisualFlow)
   flow: VisualFlow;
 }
 
-@InputType()
+@InputType('UpdateProductFlowInput')
 export class UpdateProductFlowInput {
   @Field(() => ID)
   id: string;
@@ -61,19 +61,19 @@ export class UpdateProductFlowInput {
   steps: ProductFlowStepInput[];
 }
 
-@ObjectType()
+@ObjectType('UpdateProductFlowPayload')
 export class UpdateProductFlowPayload {
   @Field(() => VisualFlow)
   flow: VisualFlow;
 }
 
-@InputType()
+@InputType('DeleteProductFlowInput')
 export class DeleteProductFlowInput {
   @Field(() => ID)
   id: string;
 }
 
-@ObjectType()
+@ObjectType('DeleteProductFlowPayload')
 export class DeleteProductFlowPayload {
   @Field()
   success: boolean;

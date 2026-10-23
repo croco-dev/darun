@@ -64,12 +64,20 @@ const CATEGORIES_QUERY = gql`
 `;
 
 const PRODUCTS_BY_CATEGORY_QUERY = gql`
-  query ProductsByCategoryOnMarkdown($slug: String!, $locale: String!) {
-    productsByCategory(slug: $slug, locale: $locale) {
-      id
-      name
-      slug
-      summary
+  query ProductsByCategoryOnMarkdown($slug: String!, $locale: String!, $after: String) {
+    productsByCategory(slug: $slug, locale: $locale, first: 100, after: $after) {
+      edges {
+        node {
+          id
+          name
+          slug
+          summary
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
     }
   }
 `;
@@ -327,15 +335,31 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
       const slug = safeDecode(subPath[1] ?? '');
       if (!slug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
-      const [catListResult, prodResult] = await Promise.all([
+      const [catListResult, products] = await Promise.all([
         client.query<{ categories: Array<{ slug: string; labelKo: string; labelEn: string }> }>({
           query: CATEGORIES_QUERY,
           variables: { first: 100, locale },
         }),
-        client.query<{ productsByCategory: Array<{ name: string; slug: string; summary?: string | null }> }>({
-          query: PRODUCTS_BY_CATEGORY_QUERY,
-          variables: { slug, locale },
-        }),
+        (async () => {
+          type Item = { name: string; slug: string; summary?: string | null };
+          const products: Item[] = [];
+          let after: string | undefined;
+          for (;;) {
+            const result = await client.query<{
+              productsByCategory: {
+                edges: Array<{ node: Item }>;
+                pageInfo: { hasNextPage: boolean; endCursor?: string | null };
+              };
+            }>({ query: PRODUCTS_BY_CATEGORY_QUERY, variables: { slug, locale, after } });
+            const connection = result.data?.productsByCategory;
+            if (!connection) throw new Error('Missing category product page');
+            products.push(...connection.edges.map(edge => edge.node));
+            if (!connection.pageInfo.hasNextPage) return products;
+            const next = connection.pageInfo.endCursor;
+            if (!next || next === after) throw new Error('Invalid category product cursor');
+            after = next;
+          }
+        })(),
       ]);
 
       const category = (catListResult.data?.categories ?? []).find(c => c.slug === slug);
@@ -349,7 +373,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
           slug: category.slug,
           label: locale === 'ko' ? category.labelKo : category.labelEn,
         },
-        products: prodResult.data?.productsByCategory ?? [],
+        products,
       });
       return createResponse(body);
     }

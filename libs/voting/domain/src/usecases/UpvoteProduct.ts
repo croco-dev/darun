@@ -1,16 +1,7 @@
 import { Inject, Service } from 'typedi';
-import { votingRateLimitExceeded, votingDuplicateVote } from '../errors/VoteError';
 import type { VoteRecordRepository } from '../repositories/VoteRecordRepository';
 import { VoteRecordRepositoryToken } from '../repositories/VoteRecordRepository';
 import { hashVoterIp } from '../utils/hashVoterIp';
-
-function isUniqueConstraintViolation(error: unknown): boolean {
-  if (error instanceof Error) {
-    const anyError = error as { code?: string; constraint?: string };
-    return anyError.code === '23505';
-  }
-  return false;
-}
 
 @Service()
 export class UpvoteProduct {
@@ -22,26 +13,6 @@ export class UpvoteProduct {
   async execute({ productId, voterIp }: { productId: string; voterIp: string }) {
     const voterIpHash = hashVoterIp(voterIp);
 
-    const alreadyVoted = await this.voteRecordRepository.existsByTargetIdAndVoterIpHash(productId, voterIpHash);
-
-    if (alreadyVoted) {
-      throw votingDuplicateVote();
-    }
-
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-    const recentVoteCount = await this.voteRecordRepository.countByVoterIpHashSince(voterIpHash, oneMinuteAgo);
-
-    if (recentVoteCount >= 10) {
-      throw votingRateLimitExceeded('1분 내 최대 10회까지 투표할 수 있습니다.');
-    }
-
-    try {
-      return await this.voteRecordRepository.incrementVote(productId, voterIpHash);
-    } catch (error) {
-      if (isUniqueConstraintViolation(error)) {
-        throw votingDuplicateVote();
-      }
-      throw error;
-    }
+    return this.voteRecordRepository.incrementVote(productId, voterIpHash);
   }
 }

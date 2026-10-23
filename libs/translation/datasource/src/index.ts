@@ -5,3 +5,4 @@ export { PostgresqlTranslationRepository } from './repositories/PostgresqlTransl
 export { PostgresqlLlmSettingRepository } from './repositories/PostgresqlLlmSettingRepository';
 export { PostgresqlTranslationJobRepository } from './repositories/PostgresqlTranslationJobRepository';
 export { LlmTranslationProvider } from './adapters/LlmTranslationProvider';
+export { translationMeaning } from './codecs/translationMeaning';

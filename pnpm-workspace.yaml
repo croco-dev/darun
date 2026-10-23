@@ -23,6 +23,7 @@ overrides:
   websocket-driver: ">=0.7.5"
   next: "16.4.1"
   handlebars: ">=4.7.10"
+  '@opentelemetry/api': 1.9.1
 
 allowBuilds:
   '@apollo/protobufjs': true
@@ -62,7 +63,7 @@ catalog:
   next: 16.4.1
   next-intl: 4.8.2
   next-client-cookies: 2.1.0
-  eslint-config-next: 16.3.8
+  eslint-config-next: 16.4.1
 
   # Apollo / GraphQL
   '@apollo/client': 4.2.0
