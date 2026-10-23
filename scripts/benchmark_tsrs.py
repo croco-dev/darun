@@ -289,7 +289,7 @@ class Benchmark:
             raise RuntimeError('Baseline warmup failed; inspect initial-warmup.log.')
         for round_index in range(self.args.rounds):
             order = list(self.report['cases'])
-            random.Random(101 + round_index).shuffle(order)
+            random.SystemRandom().shuffle(order)
             for case in order:
                 if case['cache'] != 'off':
                     self.clear_cost_cache()
