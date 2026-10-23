@@ -35,15 +35,17 @@ export class GenerateProductDescriptionCandidate {
   async execute({
     productId,
     signal,
+    deadline,
   }: {
     productId: string;
     signal?: AbortSignal;
+    deadline?: Date;
   }): Promise<GenerateProductDescriptionCandidateResult> {
     const startSnapshot = await this.evidenceAssembler.assemble(productId);
 
     const generationResult = await this.productDescriptionGenerator.generate(
       startSnapshot.evidence,
-      signal ? { signal } : undefined
+      signal || deadline ? { signal, deadline } : undefined
     );
 
     const currentSnapshot = await this.evidenceAssembler.assemble(productId);

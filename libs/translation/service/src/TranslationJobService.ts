@@ -120,7 +120,7 @@ export class TranslationJobService {
         async signal => {
           stageSignal = signal;
           const snapshot = await this.sourceStore.read({ entityType, entityId: job.entityId, fields });
-          const result = await this.translateSnapshot(snapshot, signal);
+          const result = await this.translateSnapshot(snapshot, signal, options?.deadline);
           // Deadline aborts cannot commit even if a provider ignores its AbortSignal.
           signal.throwIfAborted();
           await this.sourceStore.commit({
@@ -154,84 +154,94 @@ export class TranslationJobService {
   async executeProductTranslationJob(
     jobId: string,
     productId: string,
-    options?: { leaseToken?: string; signal?: AbortSignal; stageBudgetMs?: number }
+    options?: { leaseToken?: string; signal?: AbortSignal; stageBudgetMs?: number; deadline?: Date }
   ) {
     await this.executeTranslationJob(jobId, { entityType: 'Product', entityId: productId }, options);
   }
 
-  private async translateSnapshot(snapshot: TranslationSourceSnapshot, signal: AbortSignal) {
+  private async translateSnapshot(snapshot: TranslationSourceSnapshot, signal: AbortSignal, deadline?: Date) {
+    const fields = translationFields(snapshot);
+    const result =
+      snapshot.entityType === 'Product' && fields.includes('features')
+        ? await this.translateProductBundle(snapshot, signal, deadline)
+        : await this.translateSingleFields(snapshot, signal, deadline);
+    if (!result.model || !result.promptVersion) throw new Error('Missing translation provenance');
+    return result;
+  }
+
+  private async translateProductBundle(snapshot: TranslationSourceSnapshot, signal: AbortSignal, deadline?: Date) {
+    const rows: UpsertTranslationParams[] = [];
+    if (!snapshot.product) throw new Error('Product bundle source context is missing');
+    const productValues = snapshot.product;
+    const featureIds = [
+      ...new Set(snapshot.values.filter(value => value.entityType === 'ProductFeature').map(value => value.entityId)),
+    ];
+    const features = featureIds.map(id => ({
+      id,
+      name: snapshot.values.find(value => value.entityId === id && value.field === 'name')!.value,
+      summary: snapshot.values.find(value => value.entityId === id && value.field === 'summary')!.value,
+    }));
+    const result = await this.provider.translateProductBundle({
+      productId: snapshot.entityId,
+      name: productValues['name']!,
+      summary: productValues['summary']!,
+      description: productValues['description']!,
+      features,
+      signal,
+      ...(deadline ? { deadline } : {}),
+    });
+    for (const source of snapshot.values) {
+      const feature = result.features.find(feature => feature.id === source.entityId);
+      const value =
+        source.entityType === 'Product'
+          ? result.product[source.field as 'name' | 'summary' | 'description']
+          : feature?.[source.field as 'name' | 'summary'];
+      if (typeof value !== 'string') throw new Error('Incomplete provider translation result');
+      rows.push({
+        ...source,
+        locale: 'en',
+        value,
+        sourceHash: computeSourceHash(source.value),
+        model: result.model,
+        promptVersion: result.promptVersion,
+      });
+    }
+    return { rows, model: result.model, promptVersion: result.promptVersion };
+  }
+
+  private async translateSingleFields(snapshot: TranslationSourceSnapshot, signal: AbortSignal, deadline?: Date) {
     const rows: UpsertTranslationParams[] = [];
     let model = '';
     let promptVersion = '';
-    const fields = translationFields(snapshot);
-    if (snapshot.entityType === 'Product' && fields.includes('features')) {
-      if (!snapshot.product) throw new Error('Product bundle source context is missing');
-      const productValues = snapshot.product;
-      const featureIds = [
-        ...new Set(snapshot.values.filter(value => value.entityType === 'ProductFeature').map(value => value.entityId)),
-      ];
-      const features = featureIds.map(id => ({
-        id,
-        name: snapshot.values.find(value => value.entityId === id && value.field === 'name')!.value,
-        summary: snapshot.values.find(value => value.entityId === id && value.field === 'summary')!.value,
-      }));
-      const result = await this.provider.translateProductBundle({
-        productId: snapshot.entityId,
-        name: productValues['name']!,
-        summary: productValues['summary']!,
-        description: productValues['description']!,
-        features,
+    for (const source of snapshot.values) {
+      const result = await this.provider.translateSingle({
+        entityType: source.entityType,
+        entityId: source.entityId,
+        field: source.field,
+        koreanText: source.value,
+        mode:
+          source.entityType === 'Magazine' || source.field === 'description'
+            ? 'editorial'
+            : source.field === 'name'
+              ? 'label'
+              : 'product_copy',
+        isHtml: source.field === 'description' || source.field === 'content',
         signal,
+        ...(deadline ? { deadline } : {}),
       });
+      if (model && (model !== result.model || promptVersion !== result.promptVersion))
+        throw new Error('Translation provenance changed within a job');
       model = result.model;
       promptVersion = result.promptVersion;
-      for (const source of snapshot.values) {
-        const feature = result.features.find(feature => feature.id === source.entityId);
-        const value =
-          source.entityType === 'Product'
-            ? result.product[source.field as 'name' | 'summary' | 'description']
-            : feature?.[source.field as 'name' | 'summary'];
-        if (typeof value !== 'string') throw new Error('Incomplete provider translation result');
-        rows.push({
-          ...source,
-          locale: 'en',
-          value,
-          sourceHash: computeSourceHash(source.value),
-          model,
-          promptVersion,
-        });
-      }
-    } else {
-      for (const source of snapshot.values) {
-        const result = await this.provider.translateSingle({
-          entityType: source.entityType,
-          entityId: source.entityId,
-          field: source.field,
-          koreanText: source.value,
-          mode:
-            source.entityType === 'Magazine' || source.field === 'description'
-              ? 'editorial'
-              : source.field === 'name'
-                ? 'label'
-                : 'product_copy',
-          isHtml: source.field === 'description' || source.field === 'content',
-          signal,
-        });
-        if (model && (model !== result.model || promptVersion !== result.promptVersion))
-          throw new Error('Translation provenance changed within a job');
-        model = result.model;
-        promptVersion = result.promptVersion;
-        rows.push({
-          ...source,
-          locale: 'en',
-          value: result.translatedText,
-          sourceHash: computeSourceHash(source.value),
-          model,
-          promptVersion,
-        });
-      }
+      rows.push({
+        ...source,
+        locale: 'en',
+        value: result.translatedText,
+        sourceHash: computeSourceHash(source.value),
+        model,
+        promptVersion,
+      });
     }
-    if (!model || !promptVersion) throw new Error('Missing translation provenance');
     return { rows, model, promptVersion };
   }
 
