@@ -28,7 +28,7 @@ async function searchFor(query: string) {
 
 beforeEach(() => {
   vi.useFakeTimers();
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   vi.mocked(useQuery).mockReturnValue({
     data: { tempProductBySlug: { ownedCompany: currentCompany } },
   } as ReturnType<typeof useQuery>);
@@ -51,6 +51,7 @@ describe('회사 선택과 저장 대상', () => {
       fireEvent.change(screen.getByRole('combobox'), {
         target: { value: companyA.id },
       });
+      expect(screen.getByRole<HTMLSelectElement>('combobox').value).toBe(companyA.id);
 
       if (state === '실패') search.mockRejectedValueOnce(new Error('fixture search failure'));
       else
@@ -81,6 +82,7 @@ describe('회사 선택과 저장 대상', () => {
     fireEvent.change(screen.getByRole('combobox'), {
       target: { value: companyA.id },
     });
+    expect(screen.getByRole<HTMLSelectElement>('combobox').value).toBe(companyA.id);
     search.mockResolvedValueOnce({
       data: { searchCompanies: [companyA, currentCompany, companyB] },
     });
