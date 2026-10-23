@@ -12,18 +12,6 @@ vi.mock('@apollo/client/react', async importOriginal => {
   };
 });
 
-const mockForm = {
-  reset: vi.fn(),
-  setValues: vi.fn(),
-  setInitialValues: vi.fn(),
-  getInputProps: vi.fn(() => ({ key: 'test-form-key', defaultValue: '' })),
-  onSubmit: vi.fn((handler: (values: Record<string, string>) => Promise<void>) => handler),
-};
-
-vi.mock('@mantine/form', () => ({
-  useForm: vi.fn(() => mockForm),
-}));
-
 vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn() },
 }));
@@ -125,32 +113,79 @@ describe('useEditProductLinkItem', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('should sync form values when link prop updates', () => {
-    const { rerender } = renderHook(props => useEditProductLinkItem(props), {
-      initialProps: defaultProps,
+  it('settles with the real Mantine form without an initialization render loop', () => {
+    let renders = 0;
+    const { result } = renderHook(() => {
+      if (++renders > 20) throw new Error('Link form initialization does not settle');
+      return useEditProductLinkItem(defaultProps);
     });
-
-    expect(mockForm.setValues).toHaveBeenCalledWith({
+    expect(result.current.form.getValues()).toEqual({
       title: defaultProps.link.title,
       link: defaultProps.link.link,
       displayLink: defaultProps.link.displayLink,
       iconUrl: defaultProps.link.iconUrl,
     });
+  });
 
+  it('keeps the draft for the same link across parent renders and mutation loading changes', () => {
+    const { result, rerender } = renderHook(props => useEditProductLinkItem(props), {
+      initialProps: defaultProps,
+    });
+    act(() => result.current.form.setFieldValue('title', 'Draft title'));
+    rerender({ ...defaultProps, link: { ...defaultProps.link, title: 'Refetched title' } });
+    expect(result.current.form.getValues().title).toBe('Draft title');
+    vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: true }] as unknown as ReturnType<typeof useMutation>);
+    rerender({ ...defaultProps });
+    expect(result.current.loading).toBe(true);
+    expect(result.current.form.getValues().title).toBe('Draft title');
+    vi.mocked(useMutation).mockReturnValue([mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>);
+    rerender({ ...defaultProps });
+    expect(result.current.form.getValues().title).toBe('Draft title');
+  });
+
+  it('initializes a different link and submits its current draft with the new identity', async () => {
+    const { result, rerender } = renderHook(props => useEditProductLinkItem(props), {
+      initialProps: defaultProps,
+    });
+    act(() => result.current.form.setFieldValue('title', 'Old draft'));
     const updatedLink = {
       ...defaultProps.link,
+      id: 'link-2',
       title: 'New Link Title',
       link: 'https://newlink.com',
     };
 
     rerender({ ...defaultProps, link: updatedLink });
 
-    expect(mockForm.setValues).toHaveBeenCalledWith({
+    expect(result.current.form.getValues()).toEqual({
       title: updatedLink.title,
       link: updatedLink.link,
       displayLink: updatedLink.displayLink,
       iconUrl: updatedLink.iconUrl,
     });
+    act(() => result.current.form.setFieldValue('title', 'New draft'));
+    rerender({ ...defaultProps, link: { ...updatedLink } });
+    expect(result.current.form.getValues().title).toBe('New draft');
+    await act(async () => result.current.submit(result.current.form.getValues()));
+    expect(mutateFn).toHaveBeenCalledWith({
+      variables: {
+        slug: defaultProps.slug,
+        id: updatedLink.id,
+        input: {
+          title: 'New draft',
+          link: updatedLink.link,
+          displayLink: updatedLink.displayLink,
+          iconUrl: updatedLink.iconUrl,
+        },
+      },
+    });
+  });
+
+  it('initializes when switching products even if the link identifier is reused', () => {
+    const { result, rerender } = renderHook(props => useEditProductLinkItem(props), { initialProps: defaultProps });
+    act(() => result.current.form.setFieldValue('title', 'Old product draft'));
+    rerender({ ...defaultProps, slug: 'another-product', link: { ...defaultProps.link, title: 'Other product' } });
+    expect(result.current.form.getValues().title).toBe('Other product');
   });
 
   it('rejects submissions when all fields are empty or whitespace only', async () => {
