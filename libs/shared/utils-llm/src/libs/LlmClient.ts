@@ -17,7 +17,9 @@ export type LlmChatMessage = {
 
 export class LlmClient {
   private readonly clientCache = new Map<string, OpenAI>();
-  private readonly attemptConfig = new AsyncLocalStorage<{ config?: Promise<LlmConfig> }>();
+  private readonly attemptConfig = new AsyncLocalStorage<{
+    config?: Promise<LlmConfig>;
+  }>();
 
   constructor(private readonly configProvider?: LlmConfigProvider) {}
 
@@ -53,7 +55,11 @@ export class LlmClient {
       };
     }
     const endpoint = normalizeLlmEndpointBase(config.endpoint || DEFAULT_LLM_ENDPOINT);
-    const key = resolveLlmEndpointKey({ endpoint, explicitApiKey: config.apiKey, envApiKey: getOpenRouterApiKey() });
+    const key = resolveLlmEndpointKey({
+      endpoint,
+      explicitApiKey: config.apiKey,
+      envApiKey: getOpenRouterApiKey(),
+    });
     if (!key.allowed) throw new LlmEndpointKeyError();
     return {
       endpoint,
@@ -139,7 +145,9 @@ export class LlmClient {
     }
 
     const completion = options?.signal
-      ? await client.chat.completions.create(requestBody, { signal: options.signal })
+      ? await client.chat.completions.create(requestBody, {
+          signal: options.signal,
+        })
       : await client.chat.completions.create(requestBody);
 
     const choice = completion.choices[0];
@@ -149,13 +157,14 @@ export class LlmClient {
       throw new Error(`LLM completion is empty for model: ${model}`);
     }
 
-    if (options?.responseFormat?.type === 'json_schema') {
-      if (message.refusal) {
-        throw new Error(`LLM structured completion was refused for model: ${model}`);
-      }
-      if (choice?.finish_reason !== 'stop') {
-        throw new Error(`LLM structured completion did not finish for model: ${model} (${choice?.finish_reason})`);
-      }
+    const structured = options?.responseFormat?.type === 'json_schema';
+    if (message.refusal) {
+      throw new Error(`LLM ${structured ? 'structured ' : ''}completion was refused for model: ${model}`);
+    }
+    if (choice?.finish_reason !== 'stop') {
+      throw new Error(
+        `LLM ${structured ? 'structured ' : ''}completion did not finish for model: ${model} (${choice?.finish_reason})`
+      );
     }
 
     return message;
