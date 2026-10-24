@@ -72,30 +72,7 @@ describe('translation job completion reasons', () => {
           model: 'fixture',
         }),
       });
-      const productRepository: ProductRepository = {
-        updateById: vi.fn(),
-        findAllByBeforeIdAndLimit: vi.fn(),
-        findAllByAfterIdAndLimit: vi.fn(),
-        findPublishedByAfterIdAndLimit: vi.fn(),
-        findTopNSortByPublishedAtDesc: vi.fn(),
-        findPublishedByIds: vi.fn(),
-        findPublishedOneById: vi.fn(),
-        findOneBySlug: vi.fn(),
-        findOneById: vi.fn(),
-        findOneFreshById: vi.fn(),
-        findPublishedOneBySlug: vi.fn(),
-        findPublishedByCategoryId: vi.fn(),
-        countPublishedByCategoryId: vi.fn(),
-        findVisualApps: vi.fn(),
-        findVisualAppPreviews: vi.fn(),
-        findVisualAppCover: vi.fn(),
-        countVisualAppScreenshots: vi.fn(),
-        hasPublishedAlternatives: vi.fn(),
-        findPublishedByCategoryIdAndLimit: vi.fn(),
-        countPublishedAll: vi.fn(),
-        countAll: vi.fn(),
-        insert: vi.fn(),
-      };
+      const productRepository = { findOneById: vi.fn() } as unknown as ProductRepository;
       const repository: TranslationJobRepository = {
         createJob: vi.fn(),
         findJobById: vi.fn().mockResolvedValue(job),
