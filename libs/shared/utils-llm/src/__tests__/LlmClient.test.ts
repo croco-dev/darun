@@ -6,6 +6,15 @@ import { DEFAULT_LLM_ENDPOINT, DEFAULT_LLM_MODEL } from '../libs/LlmModel';
 
 const mockCreate = vi.fn();
 
+const mockTextCompletion = (content: string, refusal: string | null = null, finishReason: string | null = 'stop') => ({
+  choices: [
+    {
+      finish_reason: finishReason,
+      message: { role: 'assistant', content, refusal },
+    },
+  ],
+});
+
 vi.mock('openai', () => {
   return {
     default: class MockOpenAI {
@@ -25,9 +34,7 @@ describe('LlmClient', () => {
   });
 
   it('should fall back to env and default model when no config provider is given', async () => {
-    mockCreate.mockResolvedValueOnce({
-      choices: [{ message: { role: 'assistant', content: 'test response' } }],
-    });
+    mockCreate.mockResolvedValueOnce(mockTextCompletion('test response'));
 
     const client = new LlmClient();
     const config = await client.getConfig();
@@ -47,9 +54,7 @@ describe('LlmClient', () => {
 
   it('should use dynamic config from provider when provided', async () => {
     mockCreate.mockReset();
-    mockCreate.mockResolvedValueOnce({
-      choices: [{ message: { role: 'assistant', content: 'custom response' } }],
-    });
+    mockCreate.mockResolvedValueOnce(mockTextCompletion('custom response'));
 
     const customProvider: LlmConfigProvider = {
       getConfig: vi.fn().mockResolvedValue({
@@ -77,9 +82,7 @@ describe('LlmClient', () => {
 
   it('should respect explicitly passed model while using config endpoint and apiKey', async () => {
     mockCreate.mockReset();
-    mockCreate.mockResolvedValueOnce({
-      choices: [{ message: { role: 'assistant', content: 'specific model response' } }],
-    });
+    mockCreate.mockResolvedValueOnce(mockTextCompletion('specific model response'));
 
     const client = new LlmClient();
     await client.completion('x-ai/grok-4-fast', [{ role: 'user', content: 'Translate this' }]);
@@ -92,9 +95,7 @@ describe('LlmClient', () => {
 
   it('should pass reasoning / reasoning_effort when thinkingLevel is configured', async () => {
     mockCreate.mockReset();
-    mockCreate.mockResolvedValueOnce({
-      choices: [{ message: { role: 'assistant', content: 'thinking response' } }],
-    });
+    mockCreate.mockResolvedValueOnce(mockTextCompletion('thinking response'));
 
     const customProvider: LlmConfigProvider = {
       getConfig: vi.fn().mockResolvedValue({
@@ -168,9 +169,11 @@ describe('LlmClient', () => {
 
   it('does not send completion without a custom provider key', async () => {
     const client = new LlmClient({
-      getConfig: vi
-        .fn()
-        .mockResolvedValue({ endpoint: 'https://custom.example.com/v1', apiKey: '', model: 'custom-model' }),
+      getConfig: vi.fn().mockResolvedValue({
+        endpoint: 'https://custom.example.com/v1',
+        apiKey: '',
+        model: 'custom-model',
+      }),
     });
     await expect(client.completion([{ role: 'user', content: 'No credential' }])).rejects.toThrow(
       'API key is not provided'
@@ -186,8 +189,12 @@ describe('LlmClient', () => {
     let claimed = false;
     await client.withConfigSnapshot(async () => {
       claimed = true;
-      await expect(client.getConfig()).rejects.toMatchObject({ code: 'LLM_CONFIG_READ_FAILED' });
-      await expect(client.getConfig()).rejects.toMatchObject({ code: 'LLM_CONFIG_READ_FAILED' });
+      await expect(client.getConfig()).rejects.toMatchObject({
+        code: 'LLM_CONFIG_READ_FAILED',
+      });
+      await expect(client.getConfig()).rejects.toMatchObject({
+        code: 'LLM_CONFIG_READ_FAILED',
+      });
     });
     expect(claimed).toBe(true);
     expect(getConfig).toHaveBeenCalledTimes(1);
@@ -195,9 +202,13 @@ describe('LlmClient', () => {
 
   it('pins concurrent reads and completions to one snapshot, then refreshes the next attempt', async () => {
     let model = 'first-model';
-    const getConfig = vi.fn(async () => ({ endpoint: DEFAULT_LLM_ENDPOINT, apiKey: 'synthetic', model }));
+    const getConfig = vi.fn(async () => ({
+      endpoint: DEFAULT_LLM_ENDPOINT,
+      apiKey: 'synthetic',
+      model,
+    }));
     const client = new LlmClient({ getConfig });
-    mockCreate.mockResolvedValue({ choices: [{ message: { content: 'Synthetic result' } }] });
+    mockCreate.mockResolvedValue(mockTextCompletion('Synthetic result'));
     await client.withConfigSnapshot(async () => {
       const configs = await Promise.all([client.getConfig(), client.getConfig()]);
       configs[0]!.model = 'caller-mutation';
@@ -282,5 +293,35 @@ describe('structured completions', () => {
       ],
     });
     await expect(new LlmClient().completion('test-model', [], { responseFormat })).rejects.toThrow('was refused');
+  });
+});
+
+describe('plain text completions', () => {
+  beforeEach(() => {
+    mockCreate.mockReset();
+    process.env['OPEN_ROUTER_API_KEY'] = 'test-key';
+  });
+
+  it('returns normal text only after a stop finish reason', async () => {
+    mockCreate.mockResolvedValueOnce(mockTextCompletion('Complete translation'));
+
+    await expect(new LlmClient().completion('test-model', [])).resolves.toMatchObject({
+      content: 'Complete translation',
+    });
+  });
+
+  it.each(['length', 'content_filter', 'tool_calls', null])(
+    'rejects non-stop plain text output even when content is nonempty: %s',
+    async finishReason => {
+      mockCreate.mockResolvedValueOnce(mockTextCompletion('Only the beginning', null, finishReason));
+
+      await expect(new LlmClient().completion('test-model', [])).rejects.toThrow('did not finish');
+    }
+  );
+
+  it('rejects a refusal even when it includes plain text', async () => {
+    mockCreate.mockResolvedValueOnce(mockTextCompletion('Partial text', 'refused'));
+
+    await expect(new LlmClient().completion('test-model', [])).rejects.toThrow('was refused');
   });
 });
