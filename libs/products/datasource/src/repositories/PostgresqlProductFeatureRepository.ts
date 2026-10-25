@@ -79,7 +79,7 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
         const next = modifier(prevFeature);
         const updated = await tx
           .update(productFeatures)
-          .set({ name: next.name, summary: next.summary, emoji: next.emoji })
+          .set({ name: next.name, summary: next.summary ?? null, emoji: next.emoji })
           .where(eq(productFeatures.id, featureId))
           .returning();
         if (!updated[0]) {
