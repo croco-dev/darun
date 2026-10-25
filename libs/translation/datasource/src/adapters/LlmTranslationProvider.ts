@@ -36,7 +36,14 @@ function parseJson(raw: string): unknown {
 export class LlmTranslationProvider implements TranslationProvider {
   constructor(@Inject(() => LlmClient) private readonly llmClient: LlmClient) {}
 
-  private async completion(model: string, system: string, prompt: string, signal?: AbortSignal, budgetMs = 30_000) {
+  private async completion(
+    model: string,
+    system: string,
+    prompt: string,
+    signal?: AbortSignal,
+    deadline?: Date,
+    budgetMs = 30_000
+  ) {
     const response = await withRetry(
       () =>
         withAbortableStage(
@@ -51,7 +58,7 @@ export class LlmTranslationProvider implements TranslationProvider {
             ),
           { budgetMs, signal, message: 'LLM 번역 요청이 시간 초과되었습니다.' }
         ),
-      { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
+      { maxRetries: 1, baseDelay: 1000, maxDelay: 5000, signal, deadline }
     );
     const content = response.content?.trim();
     if (!content) throw new Error('LLM 번역 또는 검토 결과가 비어 있습니다.');
@@ -88,7 +95,8 @@ export class LlmTranslationProvider implements TranslationProvider {
         text: sourceText,
         mode: request.mode,
       }),
-      request.signal
+      request.signal,
+      request.deadline
     );
     // Validate the writer before reviewer so a reviewer cannot conceal structural damage.
     if (encoded) this.decode(request.koreanText, candidate, encoded);
@@ -98,7 +106,8 @@ export class LlmTranslationProvider implements TranslationProvider {
         model,
         TRANSLATION_AUDIT_SYSTEM_PROMPT,
         buildAuditPrompt({ sourceText, candidateTranslation: candidate }),
-        request.signal
+        request.signal,
+        request.deadline
       );
     }
     const translatedText = encoded
@@ -129,7 +138,14 @@ export class LlmTranslationProvider implements TranslationProvider {
       })),
     };
     const prompt = buildProductBundleTranslationPrompt(encodedRequest);
-    const writer = await this.completion(model, TRANSLATION_SYSTEM_PROMPT, prompt, request.signal, 120_000);
+    const writer = await this.completion(
+      model,
+      TRANSLATION_SYSTEM_PROMPT,
+      prompt,
+      request.signal,
+      request.deadline,
+      120_000
+    );
     const decodeBundle = (raw: string) => {
       const validated = validateProductBundleTranslation(encodedRequest, parseJson(raw));
       const decoded = {
@@ -146,6 +162,7 @@ export class LlmTranslationProvider implements TranslationProvider {
       TRANSLATION_AUDIT_SYSTEM_PROMPT,
       `${prompt}\n\n검토할 번역 초안:\n${writer}\n\n원문과 대조하여 모든 필드를 검토하고 동일한 JSON 형식의 최종 번역만 반환하십시오.`,
       request.signal,
+      request.deadline,
       120_000
     );
     const validated = decodeBundle(reviewer);

@@ -15,7 +15,7 @@ export interface ProductDescriptionGenerationResult {
 export interface ProductDescriptionGenerator {
   generate(
     evidence: ProductDescriptionEvidence,
-    options?: { model?: string; signal?: AbortSignal }
+    options?: { model?: string; signal?: AbortSignal; deadline?: Date }
   ): Promise<ProductDescriptionGenerationResult>;
 }
 

@@ -4,6 +4,8 @@ export interface RetryOptions {
   maxRetries?: number;
   baseDelay?: number;
   maxDelay?: number;
+  signal?: AbortSignal;
+  deadline?: Date;
 }
 
 export class RetryableError extends Error {
@@ -88,6 +90,10 @@ function is429Error(error: unknown): boolean {
     return error.statusCode === 429;
   }
 
+  if (typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number') {
+    return error.status === 429;
+  }
+
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
     return message.includes('429') || message.includes('rate limit');
@@ -96,45 +102,68 @@ function is429Error(error: unknown): boolean {
   return false;
 }
 
-export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) return new Promise(resolve => setTimeout(resolve, ms));
+  signal.throwIfAborted();
+  const abortSignal: AbortSignal = signal;
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      abortSignal.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    function onAbort() {
+      clearTimeout(timeout);
+      abortSignal.removeEventListener('abort', onAbort);
+      try {
+        abortSignal.throwIfAborted();
+        reject(new AbortError());
+      } catch (error) {
+        reject(error);
+      }
+    }
+
+    abortSignal.addEventListener('abort', onAbort, { once: true });
+    if (abortSignal.aborted) onAbort();
+  });
 }
 
 function getRetryAfterDelay(error: unknown): number | undefined {
-  if (!(error instanceof RetryableError) || !error.cause || typeof error.cause !== 'object') {
-    return undefined;
-  }
+  const responseError = error instanceof RetryableError ? error.cause : error;
+  if (!responseError || typeof responseError !== 'object') return undefined;
 
-  const headers = (error.cause as { headers?: unknown }).headers;
-  if (!headers || typeof headers !== 'object') {
-    return undefined;
-  }
+  const headers = (responseError as { headers?: unknown }).headers;
+  if (!headers || typeof headers !== 'object') return undefined;
 
   const getter = (headers as { get?: unknown }).get;
   const value =
     typeof getter === 'function'
       ? getter.call(headers, 'retry-after')
-      : (headers as Record<string, unknown>)['retry-after'];
+      : Object.entries(headers).find(([name]) => name.toLowerCase() === 'retry-after')?.[1];
   if (typeof value !== 'string') {
     return undefined;
   }
 
-  const seconds = Number(value);
-  if (Number.isFinite(seconds) && seconds >= 0) {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return undefined;
+
+  const seconds = Number(trimmedValue);
+  if (/^\d+(?:\.\d+)?$/.test(trimmedValue) && Number.isFinite(seconds)) {
     return seconds * 1000;
   }
 
-  const dateMs = Date.parse(value);
+  const dateMs = Date.parse(trimmedValue);
   return Number.isNaN(dateMs) ? undefined : Math.max(dateMs - Date.now(), 0);
 }
 
 export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
-  const { maxRetries = 3, baseDelay = 1000, maxDelay = 30000 } = options;
+  const { maxRetries = 3, baseDelay = 1000, maxDelay = 30000, signal, deadline } = options;
 
   let lastError: unknown;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
+      signal?.throwIfAborted();
       return await fn();
     } catch (error) {
       lastError = error;
@@ -161,7 +190,10 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
       const jitter = Math.random() * baseDelay;
       const delay = retryAfterDelay ?? Math.min(exponentialDelay + jitter, maxDelay);
 
-      await sleep(delay);
+      if (deadline && deadline.getTime() - Date.now() <= delay) break;
+
+      await sleep(delay, signal);
+      if (deadline && Date.now() >= deadline.getTime()) break;
     }
   }
 

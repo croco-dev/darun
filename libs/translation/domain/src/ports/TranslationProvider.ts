@@ -10,6 +10,7 @@ export interface SingleTranslationRequest {
   mode: TranslationMode;
   isHtml?: boolean;
   signal?: AbortSignal;
+  deadline?: Date;
 }
 
 export interface SingleTranslationResult {
@@ -30,6 +31,7 @@ export interface ProductBundleTranslationRequest {
     summary: string;
   }>;
   signal?: AbortSignal;
+  deadline?: Date;
 }
 
 export interface ProductBundleTranslationResult {

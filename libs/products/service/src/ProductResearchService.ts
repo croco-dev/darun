@@ -865,9 +865,19 @@ export class ProductResearchService {
             withAbortableStage(
               signal =>
                 deps.llm.complete(systemPrompt, `${userPrompt}\n반드시 JSON 객체 하나만 출력하십시오.`, { signal }),
-              { budgetMs: stageBudgetMs, signal: options?.signal, message: 'LLM 합성 요청이 시간 초과되었습니다.' }
+              {
+                budgetMs: stageBudgetMs,
+                signal: options?.signal,
+                message: 'LLM 합성 요청이 시간 초과되었습니다.',
+              }
             ),
-          { maxRetries: 1, baseDelay: 1000, maxDelay: 5000 }
+          {
+            maxRetries: 1,
+            baseDelay: 1000,
+            maxDelay: 5000,
+            signal: options?.signal,
+            deadline: options?.deadline,
+          }
         );
       } catch (error) {
         // 호출자 abort는 terminal failJob 없이 lease 만료·recovery에 맡긴다.
