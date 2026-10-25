@@ -1,15 +1,15 @@
 import { gql } from '@apollo/client';
-import { useMutation } from '@apollo/client/react';
+import { useApolloClient, useMutation } from '@apollo/client/react';
 import {
   AllCompaniesOnAllCompanyListTableDocument,
   CreateCompanyOnNewCompanyFormDocument,
 } from '@darun/provider-graphql';
+import { notifySavedWithRefresh } from '@darun/ui-admin';
 import { useNavigate } from '@darun/utils-router';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation CreateCompanyOnNewCompanyForm($input: CreateCompanyInput!) {
     createCompany(input: $input) {
@@ -61,14 +61,13 @@ export function useNewCompanyForm() {
     },
   });
   const navigate = useNavigate();
+  const client = useApolloClient();
 
   const [mutate, { loading }] = useMutation(CreateCompanyOnNewCompanyFormDocument, {
-    refetchQueries: [AllCompaniesOnAllCompanyListTableDocument],
-    awaitRefetchQueries: true,
     onCompleted: ({ createCompany }) => {
-      isSubmittingRef.current = false;
       if (createCompany?.company?.id) {
-        notifications.show({ message: '생성되었습니다.', color: 'teal' });
+        const queries = [...client.getObservableQueries([AllCompaniesOnAllCompanyListTableDocument])];
+        notifySavedWithRefresh(() => Promise.all(queries.map(query => query.refetch())));
         form.reset();
         navigate('/companies');
       }
@@ -111,5 +110,11 @@ export function useNewCompanyForm() {
     });
   };
 
-  return { handleSubmit, form, startAtIsDisabled, handleToggleStartAtDisabled, loading };
+  return {
+    handleSubmit,
+    form,
+    startAtIsDisabled,
+    handleToggleStartAtDisabled,
+    loading,
+  };
 }

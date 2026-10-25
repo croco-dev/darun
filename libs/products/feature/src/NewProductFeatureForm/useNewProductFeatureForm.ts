@@ -1,17 +1,17 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useMutation } from '@apollo/client/react';
+import { useApolloClient, useMutation } from '@apollo/client/react';
 import {
   CreateProductFeatureOnNewProductFeatureFormDocument,
   TempProductBySlugOnProductFeatureTableDocument,
 } from '@darun/provider-graphql';
+import { notifySavedWithRefresh } from '@darun/ui-admin';
 import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { ReactNode } from 'react';
+import { ReactNode, useRef } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation CreateProductFeatureOnNewProductFeatureForm($input: CreateProductFeatureInput!) {
     createProductFeature(input: $input) {
@@ -39,6 +39,8 @@ type NewProductFormProps = {
 
 export function useNewProductFeatureForm({ productSlug, children }: NewProductFormProps) {
   const navigate = useNavigate();
+  const client = useApolloClient();
+  const isSubmittingRef = useRef(false);
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: {
@@ -55,16 +57,21 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
   const [createProductFeature, { loading: isCreating }] = useMutation(
     CreateProductFeatureOnNewProductFeatureFormDocument,
     {
-      refetchQueries: [{ query: TempProductBySlugOnProductFeatureTableDocument, variables: { slug: productSlug } }],
-      awaitRefetchQueries: true,
       onCompleted: ({ createProductFeature }) => {
         if (createProductFeature?.feature?.id) {
-          notifications.show({ message: '생성되었습니다.', color: 'teal' });
+          notifySavedWithRefresh(() =>
+            client.query({
+              query: TempProductBySlugOnProductFeatureTableDocument,
+              variables: { slug: productSlug },
+              fetchPolicy: 'network-only',
+            })
+          );
           form.reset();
           navigate(`/products/${encodeURIComponent(productSlug)}`);
         }
       },
       onError: error => {
+        isSubmittingRef.current = false;
         notifications.show({ message: error.message, color: 'red' });
       },
     }
@@ -75,13 +82,14 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
   };
 
   const submit = async (values: FormValues) => {
-    if (isCreating) return;
+    if (isCreating || isSubmittingRef.current) return;
     const name = values.name?.trim();
     const emoji = values.emoji?.trim();
     const summary = values.summary?.trim();
 
     if (!name || !emoji || !summary) return;
 
+    isSubmittingRef.current = true;
     try {
       await createProductFeature({
         variables: {

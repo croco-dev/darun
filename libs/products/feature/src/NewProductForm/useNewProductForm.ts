@@ -1,13 +1,14 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useMutation } from '@apollo/client/react';
+import { useApolloClient, useMutation } from '@apollo/client/react';
 import { AllProductsOnProductListTableDocument, CreateProductOnNewProductFormDocument } from '@darun/provider-graphql';
+import { notifySavedWithRefresh } from '@darun/ui-admin';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useRef, useState } from 'react';
 
 gql(`
   mutation CreateProductOnNewProductForm($input: CreateProductInput!) {
@@ -51,19 +52,21 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     },
   });
   const navigate = useNavigate();
+  const client = useApolloClient();
+  const isSubmittingRef = useRef(false);
   const { upload } = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
   const [createProduct, { loading: isCreating }] = useMutation(CreateProductOnNewProductFormDocument, {
-    refetchQueries: [AllProductsOnProductListTableDocument],
-    awaitRefetchQueries: true,
     onCompleted: ({ createProduct }) => {
       if (createProduct?.product?.slug) {
-        notifications.show({ message: '생성되었습니다.', color: 'teal' });
+        const queries = [...client.getObservableQueries([AllProductsOnProductListTableDocument])];
+        notifySavedWithRefresh(() => Promise.all(queries.map(query => query.refetch())));
         form.reset();
         navigate(`/products/${encodeURIComponent(createProduct.product.slug)}`);
       }
     },
     onError: error => {
+      isSubmittingRef.current = false;
       notifications.show({
         title: '오류 발생',
         message: error.message,
@@ -73,7 +76,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
   });
 
   const submit = async (values: FormValues) => {
-    if (isUploading || isCreating) return;
+    if (isUploading || isCreating || isSubmittingRef.current) return;
     const name = values.name?.trim();
     const slug = values.slug?.trim();
     const summary = values.summary?.trim();
@@ -86,11 +89,13 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       return;
     }
 
+    isSubmittingRef.current = true;
     let url: string | undefined;
     try {
       setIsUploading(true);
       url = await upload('images/logos', values.file, slug);
     } catch {
+      isSubmittingRef.current = false;
       notifications.show({
         title: '업로드 실패',
         message: '이미지 업로드에 실패했습니다.',
@@ -102,6 +107,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     }
 
     if (!url) {
+      isSubmittingRef.current = false;
       return;
     }
 
