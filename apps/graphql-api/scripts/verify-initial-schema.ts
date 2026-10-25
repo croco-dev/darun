@@ -24,17 +24,23 @@ type InitialTable = {
 
 // These normalizations are limited to equivalent spellings in the immutable initial snapshot.
 function normalize(value: string): string {
-  return value
-    .replace(/"([a-z_][a-z0-9_]*)"/g, '$1')
-    .replaceAll('character varying', 'varchar')
-    .replaceAll('timestamp without time zone', 'timestamp')
-    .replaceAll('CURRENT_TIMESTAMP', 'now()')
-    .replace(/\s+/g, ' ')
-    .replaceAll(' ON DELETE no action', '')
-    .replaceAll(' ON UPDATE no action', '')
-    .replace(/ ASC\b/g, '')
-    .replace(/ desc\b/g, ' DESC')
-    .replaceAll(' ', '');
+  return (
+    value
+      // Consume the entire quoted identifier, including escaped double quotes, before unquoting.
+      .replace(/"(?:[^"]|"")*"/g, identifier => {
+        const name = identifier.slice(1, -1);
+        return /^[a-z_][a-z0-9_]*$/.test(name) ? name : identifier;
+      })
+      .replaceAll('character varying', 'varchar')
+      .replaceAll('timestamp without time zone', 'timestamp')
+      .replaceAll('CURRENT_TIMESTAMP', 'now()')
+      .replace(/\s+/g, ' ')
+      .replaceAll(' ON DELETE no action', '')
+      .replaceAll(' ON UPDATE no action', '')
+      .replace(/ ASC\b/g, '')
+      .replace(/ desc\b/g, ' DESC')
+      .replaceAll(' ', '')
+  );
 }
 
 /** Read only: no DDL, journal creation, or writes are performed before this passes. */

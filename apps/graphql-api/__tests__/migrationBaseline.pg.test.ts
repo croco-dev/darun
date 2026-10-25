@@ -183,6 +183,24 @@ describe.skipIf(!databaseUrl)('legacy migration baseline (isolated PostgreSQL)',
         'ALTER TABLE votes ADD COLUMN "public.count" integer; DROP INDEX votes_count_idx; CREATE INDEX votes_count_idx ON votes ("public.count" DESC)',
       diagnostic: 'votes_count_idx',
     },
+    {
+      label: 'escaped-quote foreign key target',
+      change:
+        'CREATE TABLE "ta""gs" (id varchar(26) PRIMARY KEY); ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES "ta""gs"(id)',
+      diagnostic: 'product_tags',
+    },
+    {
+      label: 'escaped-quote primary key column',
+      change:
+        'ALTER TABLE profiles ADD COLUMN "i""d" varchar(26) NOT NULL; ALTER TABLE profiles DROP CONSTRAINT profiles_pkey; ALTER TABLE profiles ADD PRIMARY KEY ("i""d")',
+      diagnostic: 'profiles',
+    },
+    {
+      label: 'escaped-quote index column',
+      change:
+        'ALTER TABLE votes ADD COLUMN "co""unt" integer; DROP INDEX votes_count_idx; CREATE INDEX votes_count_idx ON votes ("co""unt" DESC)',
+      diagnostic: 'votes_count_idx',
+    },
     { label: 'index', change: 'DROP INDEX unique_translation', diagnostic: 'unique_translation' },
     {
       label: 'index shape',
