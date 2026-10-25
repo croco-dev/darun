@@ -724,7 +724,7 @@ describe('ProductQueryResolver', () => {
             locale: 'en',
             field: 'description',
             value: 'English description',
-            sourceHash: computeSourceHash('한국어 설명'),
+            sourceHash: computeSourceHash('한국어 설명', 'description'),
             createdAt: new Date(),
             updatedAt: new Date(),
           },

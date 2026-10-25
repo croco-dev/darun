@@ -18,6 +18,42 @@ describe('TranslationService', () => {
     service = new TranslationService(repository);
   });
 
+  it.each(['description', 'content'])(
+    'rejects legacy and whitespace-stale %s provenance in single and batch reads',
+    async field => {
+      const koreanValue = '    코드 ';
+      const row = {
+        id: 'document-row',
+        entityType: 'Product',
+        entityId: 'p',
+        locale: 'en',
+        field,
+        value: 'English document',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      for (const [sourceHash, expected] of [
+        [computeSourceHash(koreanValue), koreanValue],
+        [computeSourceHash('코드', field), koreanValue],
+        [computeSourceHash('    코드', field), koreanValue],
+        [computeSourceHash(koreanValue, field), row.value],
+      ] as const) {
+        vi.mocked(repository.findOne).mockResolvedValue({ ...row, sourceHash });
+        vi.mocked(repository.findMany).mockResolvedValue([{ ...row, sourceHash }]);
+        expect(await service.getTranslation({ ...row, koreanValue })).toBe(expected);
+        expect(
+          (
+            await service.getTranslations({
+              entityType: 'Product',
+              locale: 'en',
+              entries: [{ entityId: 'p', field, koreanValue }],
+            })
+          ).get(`p:${field}`)
+        ).toBe(expected);
+      }
+    }
+  );
+
   describe('getTranslation', () => {
     it('returns koreanValue directly when locale is ko', async () => {
       const result = await service.getTranslation({

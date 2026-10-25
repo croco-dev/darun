@@ -43,6 +43,31 @@ pnpm exec turbo run cloudflare:build --filter=tier-web
 - `scripts/remove-duplicates.ts`, `scripts/enforce-schema-manual.ts`는 수동 실행 전용이며 `DATABASE_URL`만 사용한다.
 - 관리자 여부는 DB `users.is_admin`으로 판단한다.
 
+### 중복 앱 정리
+
+`pnpm --filter tier-web exec tsx scripts/remove-duplicates.ts`는 기본 dry-run이다.
+`--dry-run`도 같은 동작이며 DB를 쓰지 않는다. JSON 보고서에서 정규화할 App Store ID,
+남길 앱, 삭제할 앱, 이전할 메모·분류, 충돌의 양쪽 값을 확인한 뒤 같은 명령에
+`--apply`를 붙여 적용한다. 보고서에는 메모 내용과 분류 정보가 있으므로 공개 로그에 올리지 않는다.
+운영 DB 적용은 별도 승인 범위에서 수행한다.
+
+분류가 있는 앱, 메모가 있는 앱, 최근 생성 앱 순으로 남길 앱을 정하고 동률은 UUID로 결정한다.
+남길 앱에 없는 메모·분류는 원래 행 ID와 시각을 보존해 이전한다. 메모 본문이 다르거나
+분류의 tier·notes·assignedBy가 다르면 그룹 전체를 변경하지 않고 `conflict`로 보고한다.
+같은 내용의 중복만 제거하며, 남길 앱의 행을 우선 보존한다. 시각만 다른 동일 내용도 중복으로 본다.
+충돌 그룹이 있어도 다른 정상 그룹은 처리하므로 `groups[].status`를 모두 확인한다.
+
+적용은 앱·분류·메모 테이블의 쓰기를 잠그고 최신 데이터를 읽어 하나의 transaction으로 확정한다.
+중간 쓰기나 commit이 실패하면 이번 실행 전체가 롤백된다. 읽기는 계속 가능하지만 관리자 쓰기는
+완료까지 대기하므로 유지보수 시간에 실행한다. dry-run은 잠금을 잡지 않으며 적용은 당시 데이터를
+다시 판단하므로 두 보고서가 달라질 수 있다. 같은 입력을 다시 적용하면 추가 변경이 없다.
+
+격리 PostgreSQL의 **빈 전용 DB**를 `DEDUPE_TEST_DATABASE_URL`로 지정하고
+`pnpm --filter tier-web exec vitest run src/remove-duplicates.pg.test.ts`를 실행하면 실제 CLI의
+기본 dry-run·데이터 보존·충돌·쓰기 단계별 롤백·재실행을 검증한다. 테스트는 실제 Tier SQL을
+적용하고 fixture 테이블을 삭제하므로 운영 DB나 다른 테스트의 DB를 사용하지 않는다.
+환경변수가 없으면 이 DB suite는 건너뛴다.
+
 ### 원자적 티어 변경 전제
 
 `0002_atomic_tiers.sql`은 기존 마이그레이션 이후 적용하는 전방 전용 변경이다. 배포 전에 별도 승인된 DB 백업과 격리 DB 검증이 필요하며, 앱 코드보다 먼저 적용한다. 자동 실행하거나 기존 마이그레이션을 다시 적용하지 않는다.

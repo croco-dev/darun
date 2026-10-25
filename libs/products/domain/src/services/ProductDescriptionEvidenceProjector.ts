@@ -375,7 +375,7 @@ export function projectProductDescriptionEvidence(
     evidenceHashVersion: 'v2',
     evidenceHash: computeSha256(JSON.stringify(canonicalEvidenceData)),
     legacyEvidenceHash: computeSha256(JSON.stringify(legacyCanonicalEvidenceData)),
-    baseDescriptionHash: computeSha256(normalizeString(sources.product.description || '')),
+    baseDescriptionHash: `document:v1:${computeSha256((sources.product.description || '').replace(/\r\n/g, '\n'))}`,
   };
 }
 

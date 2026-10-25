@@ -2641,6 +2641,11 @@ describe('review registration supersedes pending research with real Apollo', () 
     }
     materializations[0].respond({ id: 'prod-a', slug: 'actual-a-product', name: '서버 Product A' });
     await waitFor(() => expect(navigated()).toEqual(['/products/actual-a-product']));
+    await waitFor(() =>
+      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
+        'actual-a-product'
+      )
+    );
     const completed = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     if (!requestFirst) {
       await act(async () => {
@@ -2709,6 +2714,11 @@ describe('review registration supersedes pending research with real Apollo', () 
       });
       materializations[0].respond({ id: 'prod-a', slug: 'uploaded-a-product', name: '현재 A' });
       await waitFor(() => expect(navigated()).toEqual(['/products/uploaded-a-product']));
+      await waitFor(() =>
+        expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
+          'uploaded-a-product'
+        )
+      );
       const completed = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(completed.review).toEqual({ ...stored.review, logoUrl: 'https://res.cloudinary.com/demo/current-a.png' });
       expect(completed.uploadedLogoUrl).toBe('https://res.cloudinary.com/demo/current-a.png');

@@ -397,6 +397,8 @@ UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어�
 - [ ] **Serverless Framework 정리**:
   GitHub Secrets의 `SERVERLESS_ACCESS_KEY`를 삭제합니다. Serverless Dashboard `croco/darun` 앱을 정리합니다. SST 마이그레이션 전환 완료 후 기존 `prod-graphql-api` CloudFormation 스택을 AWS 콘솔 또는 `serverless remove --stage prod`로 삭제하고, `darun-deploy-bucket` S3 버킷의 serverless 배포 아티팩트를 비웁니다.
 
+상품 소개 후보의 `baseDescriptionHash`와 번역 `description`/`content`의 `sourceHash`는 `document:v1:` 형식을 사용합니다. 문서에서는 CRLF만 LF로 통일하고 코드 들여쓰기와 끝 공백을 보존합니다. 이름·제목·요약의 기존 trim 계약은 유지합니다. 기존 형식의 문서 번역은 원문으로 fallback하며 재번역이 필요하고, 미적용 소개 후보는 다시 생성해야 합니다. 이미 적용한 후보의 재요청은 기존 `alreadyApplied` 응답을 유지합니다. 기존 hash를 새 원문에 맞춰 자동 갱신하지 않습니다.
+
 ## 코드 품질
 
 ### PostgreSQL 무결성 검사

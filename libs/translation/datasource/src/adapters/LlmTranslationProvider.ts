@@ -76,7 +76,7 @@ export class LlmTranslationProvider implements TranslationProvider {
     if (!request.koreanText.trim())
       return {
         translatedText: '',
-        sourceHash: computeSourceHash(request.koreanText),
+        sourceHash: computeSourceHash(request.koreanText, request.field),
         model,
         promptVersion: TRANSLATION_PROMPT_VERSION,
       };
@@ -115,7 +115,7 @@ export class LlmTranslationProvider implements TranslationProvider {
       : validateTranslationText(request.koreanText, candidate, request.field);
     return {
       translatedText,
-      sourceHash: computeSourceHash(request.koreanText),
+      sourceHash: computeSourceHash(request.koreanText, request.field),
       model,
       promptVersion: TRANSLATION_PROMPT_VERSION,
     };
@@ -171,7 +171,7 @@ export class LlmTranslationProvider implements TranslationProvider {
         ...validated.product,
         nameSourceHash: computeSourceHash(request.name),
         summarySourceHash: computeSourceHash(request.summary),
-        descriptionSourceHash: computeSourceHash(request.description),
+        descriptionSourceHash: computeSourceHash(request.description, 'description'),
       },
       features: validated.features.map(feature => {
         const source = request.features.find(source => source.id === feature.id)!;
