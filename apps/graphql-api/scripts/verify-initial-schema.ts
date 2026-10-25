@@ -25,15 +25,15 @@ type InitialTable = {
 // These normalizations are limited to equivalent spellings in the immutable initial snapshot.
 function normalize(value: string): string {
   return value
-    .toLowerCase()
-    .replaceAll('"', '')
+    .replace(/"([a-z_][a-z0-9_]*)"/g, '$1')
     .replaceAll('character varying', 'varchar')
     .replaceAll('timestamp without time zone', 'timestamp')
-    .replaceAll('current_timestamp', 'now()')
+    .replaceAll('CURRENT_TIMESTAMP', 'now()')
     .replace(/\s+/g, ' ')
-    .replaceAll(' on delete no action', '')
-    .replaceAll(' on update no action', '')
-    .replace(/ asc\b/g, '')
+    .replaceAll(' ON DELETE no action', '')
+    .replaceAll(' ON UPDATE no action', '')
+    .replace(/ ASC\b/g, '')
+    .replace(/ desc\b/g, ' DESC')
     .replaceAll(' ', '');
 }
 
@@ -44,7 +44,7 @@ export async function verifyInitialSchema(client: postgres.Sql, migrationsFolder
   ) as {
     tables: Record<string, InitialTable>;
   };
-  const columns = await client`
+  const columns = await client<CatalogColumn[]>`
     SELECT c.relname AS table_name, a.attname AS column_name,
       format_type(a.atttypid, a.atttypmod) AS type, a.attnotnull AS not_null,
       pg_get_expr(d.adbin, d.adrelid) AS default_value
@@ -54,7 +54,7 @@ export async function verifyInitialSchema(client: postgres.Sql, migrationsFolder
     LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid = c.oid AND d.adnum = a.attnum
     WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p')
   `;
-  const constraints = await client`
+  const constraints = await client<CatalogConstraint[]>`
     SELECT c.relname AS table_name, pg_get_constraintdef(k.oid) AS definition,
       k.convalidated AS validated, k.condeferrable AS deferrable
     FROM pg_catalog.pg_constraint k
@@ -62,7 +62,7 @@ export async function verifyInitialSchema(client: postgres.Sql, migrationsFolder
     JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
     WHERE n.nspname = 'public'
   `;
-  const indexes = await client`
+  const indexes = await client<CatalogIndex[]>`
     SELECT c.relname AS table_name, i.relname AS index_name,
       pg_get_indexdef(x.indexrelid) AS definition, x.indisvalid AS valid, x.indisready AS ready
     FROM pg_catalog.pg_index x
@@ -79,21 +79,29 @@ export async function verifyInitialSchema(client: postgres.Sql, migrationsFolder
   }
 }
 
-type CatalogRow = Record<string, unknown>;
+type CatalogColumn = {
+  table_name: string;
+  column_name: string;
+  type: string;
+  not_null: boolean;
+  default_value: string | null;
+};
+type CatalogConstraint = { table_name: string; definition: string; validated: boolean; deferrable: boolean };
+type CatalogIndex = { table_name: string; index_name: string; definition: string; valid: boolean; ready: boolean };
 
-function compareColumn(table: string, column: Column, found: CatalogRow | undefined): string[] {
+function compareColumn(table: string, column: Column, found: CatalogColumn | undefined): string[] {
   const path = `${table}.${column.name}`;
   if (!found) return [`${path}: missing column`];
   const differences: string[] = [];
-  if (normalize(String(found['type'])) !== normalize(column.type)) differences.push(`${path}: incompatible type`);
+  if (normalize(found['type']) !== normalize(column.type)) differences.push(`${path}: incompatible type`);
   if (found['not_null'] !== column.notNull) differences.push(`${path}: incompatible nullability`);
-  if (normalize(String(found['default_value'] ?? '')) !== normalize(String(column.default ?? ''))) {
+  if (normalize(found['default_value'] ?? '') !== normalize(String(column.default ?? ''))) {
     differences.push(`${path}: incompatible default`);
   }
   return differences;
 }
 
-function compareConstraints(table: InitialTable, constraints: CatalogRow[]): string[] {
+function compareConstraints(table: InitialTable, constraints: CatalogConstraint[]): string[] {
   const primary = Object.values(table.columns)
     .filter(column => column.primaryKey)
     .map(column => column.name);
@@ -113,7 +121,7 @@ function compareConstraints(table: InitialTable, constraints: CatalogRow[]): str
             row['table_name'] === table.name &&
             row['validated'] &&
             !row['deferrable'] &&
-            normalize(String(row['definition']).replaceAll('public.', '')) === normalize(definition)
+            normalize(row['definition'].replaceAll('public.', '')) === normalize(definition)
         )
     )
     .map(definition => `${table.name}: missing or incompatible ${definition}`);
@@ -127,7 +135,7 @@ function indexColumn(column: InitialTable['indexes'][string]['columns'][number])
   return `${column.expression}${direction}${nulls}`;
 }
 
-function compareIndexes(table: InitialTable, indexes: CatalogRow[]): string[] {
+function compareIndexes(table: InitialTable, indexes: CatalogIndex[]): string[] {
   return Object.values(table.indexes)
     .filter(index => {
       const expressions = index.columns.map(indexColumn);
@@ -139,7 +147,7 @@ function compareIndexes(table: InitialTable, indexes: CatalogRow[]): string[] {
           row['index_name'] === index.name &&
           row['valid'] &&
           row['ready'] &&
-          normalize(String(row['definition']).replaceAll('public.', '')) === normalize(expected)
+          normalize(row['definition'].replaceAll('public.', '')) === normalize(expected)
       );
     })
     .map(index => `${table.name}.${index.name}: missing or incompatible index`);
@@ -147,9 +155,9 @@ function compareIndexes(table: InitialTable, indexes: CatalogRow[]): string[] {
 
 function compareTable(
   table: InitialTable,
-  columns: CatalogRow[],
-  constraints: CatalogRow[],
-  indexes: CatalogRow[]
+  columns: CatalogColumn[],
+  constraints: CatalogConstraint[],
+  indexes: CatalogIndex[]
 ): string[] {
   const actual = columns.filter(row => row['table_name'] === table.name);
   if (!actual.length) return [`${table.name}: missing table`];

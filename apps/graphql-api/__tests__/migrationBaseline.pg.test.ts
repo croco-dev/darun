@@ -141,6 +141,11 @@ describe.skipIf(!databaseUrl)('legacy migration baseline (isolated PostgreSQL)',
       'ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES tags(id) NOT VALID',
       'product_tags',
     ],
+    [
+      'foreign key target identity',
+      'CREATE TABLE "Tags" (id varchar(26) PRIMARY KEY); ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES "Tags"(id)',
+      'product_tags',
+    ],
     ['index', 'DROP INDEX unique_translation', 'unique_translation'],
     ['index shape', 'DROP INDEX votes_count_idx; CREATE INDEX votes_count_idx ON votes (count ASC)', 'votes_count_idx'],
   ])('%s 불일치를 진단하고 baseline 이력을 남기지 않는다', async (_label, change, diagnostic) => {
