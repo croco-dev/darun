@@ -54,6 +54,7 @@ import { productFlows, productFlowSteps } from '../../../libs/products/datasourc
 import { products } from '../../../libs/products/datasource/src/entities/ProductSchema';
 import { productScreenshots } from '../../../libs/products/datasource/src/entities/ProductScreenshotsSchema';
 import { productScreenshotUiElements } from '../../../libs/products/datasource/src/entities/ProductScreenshotUiElementsSchema';
+import { screenshotCleanupIntents } from '../../../libs/products/datasource/src/entities/ScreenshotCleanupIntentSchema';
 import { PostgresqlCategoryRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlCategoryRepository';
 import { PostgresqlProductFlowRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlProductFlowRepository';
 import { PostgresqlProductScreenshotRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlProductScreenshotRepository';
@@ -65,6 +66,7 @@ import { UpdateProductScreenshot } from '../../../libs/products/domain/src/useca
 import { ProductMutationResolver } from '../../../libs/products/feature/src/Product.mutation.resolver';
 import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/src/ProductDescription.query.resolver';
 import { ProductContentSyncQueueService } from '../../../libs/products/service/src/ProductContentSyncQueueService';
+import { ScreenshotCleanupQueueService } from '../../../libs/products/service/src/ScreenshotCleanupQueueService';
 import { SearchableProductModel } from '../../../libs/search/datasource/src/entities/SearchableProductSchema';
 import {
   meaningChanges,
@@ -76,6 +78,7 @@ import { translations } from '../../../libs/translation/datasource/src/entities/
 import { TRANSLATION_PROMPT_VERSION } from '../../../libs/translation/datasource/src/prompts/translationPrompt';
 import { TranslationQueueService } from '../../../libs/translation/service/src/TranslationQueueService';
 import { PostgresqlProductContentSync, registerProductContentSync } from '../src/adapters/PostgresqlProductContentSync';
+import { PostgresqlScreenshotCleanup } from '../src/adapters/PostgresqlScreenshotCleanup';
 import { PostgresqlTranslationSourceStore } from '../src/adapters/PostgresqlTranslationSourceStore';
 
 const databaseUrl = process.env['CONTENT_SYNC_TEST_DATABASE_URL'];
@@ -141,6 +144,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     });
     // Leftover intents and translation jobs from a previous run would consume
     // the tick's per-kind rediscovery limit and starve this suite's own rows.
+    await connection`delete from screenshot_cleanup_intents`;
     await connection`delete from product_content_sync_intents`;
     await connection`delete from translation_jobs`;
     const { privateKey } = generateKeyPairSync('rsa', {
@@ -243,6 +247,58 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       .returning();
     return product!;
   }
+  it('기존 recovery tick과 전용 SQS handler가 commit된 cleanup을 처리한다', async () => {
+    const product = await seed();
+    const [screenshot] = await db
+      .insert(productScreenshots)
+      .values({
+        productId: product.id,
+        imageUrl: 'https://res.cloudinary.com/synthetic/image/upload/v1/fixture.png',
+        imageAlt: '정리할 화면',
+      })
+      .returning();
+    await new DeleteProductScreenshot(
+      new PostgresqlProductScreenshotRepository(db as never),
+      new PostgresqlProductFlowRepository(db as never)
+    ).execute(screenshot!.id);
+    const [job] = await db
+      .select()
+      .from(screenshotCleanupIntents)
+      .where(eq(screenshotCleanupIntents.screenshotId, screenshot!.id));
+    const images = { delete: vi.fn(async () => {}) };
+    const sendIntent = vi.fn().mockResolvedValue(true);
+    const previousCleanup = Container.get(PostgresqlScreenshotCleanup);
+    Container.set(
+      PostgresqlScreenshotCleanup,
+      new PostgresqlScreenshotCleanup(db as never, images, {
+        sendIntent,
+      } as never)
+    );
+    try {
+      await recoveryTick({}, {} as never, () => {});
+      expect(sendIntent).toHaveBeenCalledWith(job!.id);
+      expect(images.delete).not.toHaveBeenCalled();
+      const worker = (await import('../src/functions/screenshot-cleanup-worker')).handler;
+      await worker({ Records: [{ body: JSON.stringify({ intentId: job!.id }) }] } as never, {} as never, () => {});
+      await worker({ Records: [{ body: JSON.stringify({ intentId: job!.id }) }] } as never, {} as never, () => {});
+      expect(images.delete).toHaveBeenCalledExactlyOnceWith(screenshot!.imageUrl);
+      expect(
+        (await db.select().from(screenshotCleanupIntents).where(eq(screenshotCleanupIntents.id, job!.id)))[0]
+      ).toMatchObject({ status: 'completed', attemptCount: 1 });
+      await expect(
+        worker(
+          {
+            Records: [{ body: JSON.stringify({ imageUrl: 'untrusted' }) }],
+          } as never,
+          {} as never,
+          () => {}
+        )
+      ).rejects.toThrow('SCREENSHOT_CLEANUP_QUEUE_IDENTITY_INVALID');
+    } finally {
+      Container.set(PostgresqlScreenshotCleanup, previousCleanup);
+    }
+  });
+
   it('Visual gallery returns three ordered previews per app in one SQL batch', async () => {
     const appIds = Array.from({ length: 24 }, () => randomUUID().slice(0, 26));
     await db.insert(productScreenshots).values(
@@ -2780,12 +2836,27 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     const screenshots = new PostgresqlProductScreenshotRepository(session as never);
     return {
       screenshots,
-      usecase: new DeleteProductScreenshot(
-        screenshots,
-        new PostgresqlProductFlowRepository(session as never),
-        imageDeleter
-      ),
+      usecase: new DeleteProductScreenshot(screenshots, new PostgresqlProductFlowRepository(session as never)),
+      cleanup: new PostgresqlScreenshotCleanup(session as never, imageDeleter, new ScreenshotCleanupQueueService()),
     };
+  }
+
+  async function intent(screenshotId: string) {
+    return (
+      await db.select().from(screenshotCleanupIntents).where(eq(screenshotCleanupIntents.screenshotId, screenshotId))
+    )[0];
+  }
+
+  function pausedDeletion(remote: { delete(url: string): Promise<void> }) {
+    const ready = deferred();
+    const release = deferred();
+    const execute = (id: string) =>
+      db.transaction(async tx => {
+        await deletion(remote, tx as never).usecase.execute(id);
+        ready.resolve();
+        await release.promise;
+      });
+    return { ready, release, execute };
   }
 
   function deferred() {
@@ -2981,7 +3052,28 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     expect((await repository.findScreenshotUiElementsByScreenshotIds([screenshot.id]))[screenshot.id]).toEqual([]);
   });
 
-  it.each(['revision', 'intent'] as const)(
+  it('DB commit 실패는 원격 이미지를 삭제하지 않는다', async () => {
+    const { product, screenshot } = await seed();
+    const before = await state(product.id);
+    const remote = { delete: vi.fn(async () => {}) };
+    await connection.unsafe(
+      `CREATE FUNCTION reject_screenshot_commit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic commit failure'; END $$`
+    );
+    await connection.unsafe(
+      `CREATE CONSTRAINT TRIGGER reject_screenshot_commit AFTER UPDATE ON products DEFERRABLE INITIALLY DEFERRED FOR EACH ROW WHEN (NEW.id = '${product.id}') EXECUTE FUNCTION reject_screenshot_commit()`
+    );
+    try {
+      await expect(deletion(remote).usecase.execute(screenshot.id)).rejects.toThrow();
+      expect(remote.delete).not.toHaveBeenCalled();
+      expect(await intent(screenshot.id)).toBeUndefined();
+      expect(await state(product.id)).toEqual(before);
+    } finally {
+      await connection.unsafe('DROP TRIGGER reject_screenshot_commit ON products');
+      await connection.unsafe('DROP FUNCTION reject_screenshot_commit()');
+    }
+  });
+
+  it.each(['revision', 'intent', 'cleanup'] as const)(
     '%s 저장 실패는 원격 호출 없이 행·이미지·revision·기존 intent를 보존한다',
     async checkpoint => {
       const { product, screenshot } = await seed();
@@ -2994,9 +3086,19 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
       };
       const { usecase, screenshots } = deletion(remote);
       await screenshots.findManyByProductIdSortByPriorityDesc(product.id);
-      const table = checkpoint === 'revision' ? 'products' : 'product_content_sync_intents';
+      const table =
+        checkpoint === 'revision'
+          ? 'products'
+          : checkpoint === 'intent'
+            ? 'product_content_sync_intents'
+            : 'screenshot_cleanup_intents';
       const event = checkpoint === 'revision' ? 'UPDATE OF content_revision' : 'INSERT';
-      const predicate = checkpoint === 'revision' ? `NEW.id = '${product.id}'` : `NEW.product_id = '${product.id}'`;
+      const predicate =
+        checkpoint === 'revision'
+          ? `NEW.id = '${product.id}'`
+          : checkpoint === 'cleanup'
+            ? `NEW.screenshot_id = '${screenshot.id}'`
+            : `NEW.product_id = '${product.id}'`;
       await connection.unsafe(
         `CREATE FUNCTION reject_screenshot_checkpoint() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic screenshot checkpoint rejection'; END $$`
       );
@@ -3006,6 +3108,7 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
       try {
         await expect(usecase.execute(screenshot.id)).rejects.toThrow();
         expect(remote.delete).not.toHaveBeenCalled();
+        expect(await intent(screenshot.id)).toBeUndefined();
         expect(images.has(screenshot.imageUrl)).toBe(true);
         expect(await state(product.id)).toEqual(before);
         expect(await screenshots.findManyByProductIdSortByPriorityDesc(product.id)).toHaveLength(2);
@@ -3016,7 +3119,7 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     }
   );
 
-  it.each([true, false])('정상 삭제는 원격 존재=%s에서도 cache를 비우고 검색 intent만 등록한다', async exists => {
+  it.each([true, false])('정상 삭제는 원격 존재=%s에서도 commit 이후 worker가 이미지를 정리한다', async exists => {
     const { product, screenshot } = await seed();
     const images = new Set(exists ? [screenshot.imageUrl] : []);
     const remote = {
@@ -3024,38 +3127,167 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
         images.delete(url);
       }),
     };
-    const { usecase, screenshots } = deletion(remote);
+    const { usecase, screenshots, cleanup } = deletion(remote);
     expect(await screenshots.findManyByProductIdSortByPriorityDesc(product.id)).toHaveLength(2);
     await usecase.execute(screenshot.id);
+    expect(remote.delete).not.toHaveBeenCalled();
+    expect(await intent(screenshot.id)).toMatchObject({
+      status: 'pending',
+      imageUrl: screenshot.imageUrl,
+    });
+    await cleanup.execute((await intent(screenshot.id))!.id);
+    expect(await intent(screenshot.id)).toMatchObject({
+      status: 'completed',
+      attemptCount: 1,
+    });
     expect(remote.delete).toHaveBeenCalledExactlyOnceWith(screenshot.imageUrl);
     expect(images.size).toBe(0);
     expect(await screenshots.findManyByProductIdSortByPriorityDesc(product.id)).toHaveLength(1);
     const after = await state(product.id);
     expect(after.screenshots.map(row => row.id)).not.toContain(screenshot.id);
     expect(after.product?.contentRevision).toBe(BigInt(8));
-    expect(after.intents.map(({ sourceRevision, kind, status }) => ({ sourceRevision, kind, status }))).toEqual([
+    expect(
+      after.intents.map(({ sourceRevision, kind, status }) => ({
+        sourceRevision,
+        kind,
+        status,
+      }))
+    ).toEqual([
       { sourceRevision: BigInt(7), kind: 'search', status: 'superseded' },
       { sourceRevision: BigInt(8), kind: 'search', status: 'pending' },
     ]);
     expect(after.jobs).toEqual([]);
   });
 
-  it('원격 삭제 실패는 checkpoint를 포함한 모든 DB 변경을 rollback한다', async () => {
+  it('원격 삭제 실패는 commit된 삭제를 되돌리지 않고 재시도 의도를 남긴다', async () => {
     const { product, screenshot } = await seed();
-    const before = await state(product.id);
-    const images = new Set([screenshot.imageUrl]);
     const remote = {
       delete: vi.fn(async () => {
-        throw new Error('synthetic remote deletion failure');
+        throw new Error('provider failed');
       }),
     };
-    const { usecase, screenshots } = deletion(remote);
-    await screenshots.findManyByProductIdSortByPriorityDesc(product.id);
-    await expect(usecase.execute(screenshot.id)).rejects.toThrow('synthetic remote deletion failure');
-    expect(remote.delete).toHaveBeenCalledExactlyOnceWith(screenshot.imageUrl);
-    expect(images.has(screenshot.imageUrl)).toBe(true);
-    expect(await state(product.id)).toEqual(before);
-    expect(await screenshots.findManyByProductIdSortByPriorityDesc(product.id)).toHaveLength(2);
+    const { usecase, screenshots, cleanup } = deletion(remote);
+    await usecase.execute(screenshot.id);
+    await cleanup.execute((await intent(screenshot.id))!.id);
+    expect(await screenshots.findById(screenshot.id)).toBeNull();
+    expect((await state(product.id)).product?.contentRevision).toBe(BigInt(8));
+    expect(await intent(screenshot.id)).toMatchObject({
+      status: 'pending',
+      attemptCount: 1,
+      error: 'SCREENSHOT_IMAGE_DELETE_FAILED',
+    });
+    await cleanup.execute((await intent(screenshot.id))!.id);
+    expect(remote.delete).toHaveBeenCalledTimes(1); // retryAfter prevents early duplicates.
+  });
+
+  it('원격 삭제 응답 유실 후 재시도는 이미 없는 이미지를 성공 처리한다', async () => {
+    const { screenshot } = await seed();
+    const images = new Set([screenshot.imageUrl]);
+    const remote = {
+      delete: vi.fn(async (url: string) => {
+        if (images.delete(url)) throw new Error('response lost after delete');
+      }),
+    };
+    const { usecase, cleanup } = deletion(remote);
+    await usecase.execute(screenshot.id);
+    const job = (await intent(screenshot.id))!;
+    await cleanup.execute(job.id);
+    expect(images.size).toBe(0);
+    expect(await intent(screenshot.id)).toMatchObject({
+      status: 'pending',
+      attemptCount: 1,
+    });
+    await db
+      .update(screenshotCleanupIntents)
+      .set({ retryAfter: new Date(0) })
+      .where(eq(screenshotCleanupIntents.id, job.id));
+    await cleanup.execute(job.id);
+    await cleanup.execute(job.id);
+    expect(remote.delete).toHaveBeenCalledTimes(2);
+    expect(await intent(screenshot.id)).toMatchObject({
+      status: 'completed',
+      attemptCount: 2,
+      error: null,
+    });
+  });
+
+  it('원격 I/O 동안 Product 잠금을 놓고 중복 worker와 만료된 worker의 후착 실패를 격리한다', async () => {
+    const fixture = await seed();
+    const ready = deferred();
+    const release = deferred();
+    const images = new Set([fixture.screenshot.imageUrl]);
+    const remote = {
+      delete: vi.fn(async (url: string) => {
+        if (images.delete(url)) {
+          ready.resolve();
+          await release.promise;
+          throw new Error('terminated worker resumes with failure');
+        }
+      }),
+    };
+    const { usecase, cleanup } = deletion(remote);
+    await usecase.execute(fixture.screenshot.id);
+    const job = (await intent(fixture.screenshot.id))!;
+    const pending = cleanup.execute(job.id);
+    try {
+      await Promise.race([ready.promise, pending]);
+      await cleanup.execute(job.id);
+      expect(remote.delete).toHaveBeenCalledTimes(1);
+      // Separate DB connection can acquire the Product lock while provider I/O is still suspended.
+      await writerDb.transaction(async tx => {
+        const product = await lockProductSource(tx as never, fixture.product.id);
+        expect(product.contentRevision).toBe(BigInt(8));
+      });
+      await expect(
+        new CreateProductFlow(new PostgresqlProductFlowRepository(writerDb as never)).execute(flowInput(fixture))
+      ).rejects.toMatchObject({ code: 'product-flow/invalid-args' });
+      // Simulate a worker ending after remote success and before recording completion.
+      await db
+        .update(screenshotCleanupIntents)
+        .set({ leaseUntil: new Date(0) })
+        .where(eq(screenshotCleanupIntents.id, job.id));
+      await cleanup.execute(job.id);
+      expect(await intent(fixture.screenshot.id)).toMatchObject({
+        status: 'completed',
+        attemptCount: 2,
+      });
+    } finally {
+      release.resolve();
+      await pending;
+    }
+    expect(await intent(fixture.screenshot.id)).toMatchObject({
+      status: 'completed',
+      attemptCount: 2,
+      error: null,
+    });
+    expect(remote.delete).toHaveBeenCalledTimes(2);
+    expect(
+      await db.select().from(productFlowSteps).where(eq(productFlowSteps.screenshotId, fixture.screenshot.id))
+    ).toEqual([]);
+  }, 15_000);
+
+  it('전송 실패와 worker 종료는 다음 recovery dispatch에서 다시 보낸다', async () => {
+    // Isolate this dispatch's budget from previously generated pending cleanup fixtures.
+    await db.update(screenshotCleanupIntents).set({ dispatchAfter: new Date('2100-01-01') });
+    const { screenshot } = await seed();
+    await deletion({ delete: vi.fn() }).usecase.execute(screenshot.id);
+    const job = (await intent(screenshot.id))!;
+    const sendIntent = vi.fn().mockRejectedValueOnce(new Error('SQS response lost')).mockResolvedValue(true);
+    const cleanup = new PostgresqlScreenshotCleanup(db as never, { delete: vi.fn() }, { sendIntent } as never);
+    expect(await cleanup.dispatch()).toEqual({ recovered: 1, queued: 0 });
+    expect(await cleanup.dispatch()).toEqual({ recovered: 0, queued: 0 });
+    await db
+      .update(screenshotCleanupIntents)
+      .set({
+        dispatchAfter: new Date(0),
+        status: 'in_progress',
+        leaseToken: 'dead-worker',
+        leaseUntil: new Date(0),
+        attemptCount: 1,
+      })
+      .where(eq(screenshotCleanupIntents.id, job.id));
+    expect(await cleanup.dispatch()).toEqual({ recovered: 1, queued: 1 });
+    expect(sendIntent).toHaveBeenNthCalledWith(2, job.id);
   });
 
   it('미발행 제품 삭제는 revision만 갱신하고 검색·번역 작업은 만들지 않는다', async () => {
@@ -3063,7 +3295,11 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     const remote = { delete: vi.fn(async () => {}) };
     await deletion(remote).usecase.execute(screenshot.id);
     const after = await state(product.id);
-    expect(remote.delete).toHaveBeenCalledExactlyOnceWith(screenshot.imageUrl);
+    expect(remote.delete).not.toHaveBeenCalled();
+    expect(await intent(screenshot.id)).toMatchObject({
+      status: 'pending',
+      imageUrl: screenshot.imageUrl,
+    });
     expect(after.product?.contentRevision).toBe(BigInt(8));
     expect(after.screenshots).toHaveLength(1);
     expect(after.intents).toEqual([]);
@@ -3083,7 +3319,9 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     });
     await Promise.race([ready.promise, flow]);
     const pending = deletion(remote, writerDb).usecase.execute(fixture.screenshot.id);
-    const rejected = expect(pending).rejects.toMatchObject({ code: 'product-screenshot/in-use' });
+    const rejected = expect(pending).rejects.toMatchObject({
+      code: 'product-screenshot/in-use',
+    });
     try {
       await waitForWriterLock();
     } finally {
@@ -3104,22 +3342,18 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     expect(await state(fixture.product.id)).toEqual(after);
   }, 15_000);
 
-  it('삭제 checkpoint와 원격 삭제 동안 잠금을 유지하여 후행 Flow가 dangling 참조를 만들지 못한다', async () => {
+  it('삭제 commit까지 잠금을 유지하여 후행 Flow가 dangling 참조를 만들지 못한다', async () => {
     const fixture = await seed();
-    const ready = deferred();
-    const release = deferred();
-    const remote = {
-      delete: vi.fn(async () => {
-        ready.resolve();
-        await release.promise;
-      }),
-    };
-    const pending = deletion(remote).usecase.execute(fixture.screenshot.id);
+    const remote = { delete: vi.fn(async () => {}) };
+    const { ready, release, execute } = pausedDeletion(remote);
+    const pending = execute(fixture.screenshot.id);
     await Promise.race([ready.promise, pending]);
     const flow = new CreateProductFlow(new PostgresqlProductFlowRepository(writerDb as never)).execute(
       flowInput(fixture)
     );
-    const rejected = expect(flow).rejects.toMatchObject({ code: 'product-flow/invalid-args' });
+    const rejected = expect(flow).rejects.toMatchObject({
+      code: 'product-flow/invalid-args',
+    });
     try {
       await waitForWriterLock();
     } finally {
@@ -3138,72 +3372,47 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     expect(after.jobs).toEqual([]);
   }, 15_000);
 
-  it.each([false, true])(
-    '삭제 원격 실패=%s 이후 대기하던 Apply가 commit된 screenshot 근거만 사용한다',
-    async remoteFails => {
-      const fixture = await seed();
-      const evidence = await new PostgresqlProductDescriptionEvidenceAssembler(db as never).assemble(
-        fixture.product.id
+  it('삭제 commit을 기다린 Apply는 삭제 전 screenshot 근거 후보를 거절한다', async () => {
+    const fixture = await seed();
+    const evidence = await new PostgresqlProductDescriptionEvidenceAssembler(db as never).assemble(fixture.product.id);
+    const [candidate] = await db
+      .insert(productDescriptionJobs)
+      .values({
+        productId: fixture.product.id,
+        status: 'completed',
+        candidateHtml: '<p>스크린샷 근거 소개</p>',
+        evidenceHash: evidence.evidenceHash,
+        evidenceHashVersion: 'v2',
+        baseDescriptionHash: evidence.baseDescriptionHash,
+      })
+      .returning();
+    const remote = { delete: vi.fn(async () => {}) };
+    const { ready, release, execute } = pausedDeletion(remote);
+    const pending = execute(fixture.screenshot.id);
+    await Promise.race([ready.promise, pending]);
+    const applied = new ApplyProductDescriptionCandidate(new PostgresqlProductDescriptionApplyStore(writerDb as never))
+      .execute({ jobId: candidate!.id })
+      .then(
+        result => ({ result }),
+        error => ({ error })
       );
-      const [candidate] = await db
-        .insert(productDescriptionJobs)
-        .values({
-          productId: fixture.product.id,
-          status: 'completed',
-          candidateHtml: '<p>스크린샷 근거로 검토한 소개</p>',
-          evidenceHash: evidence.evidenceHash,
-          evidenceHashVersion: 'v2',
-          baseDescriptionHash: evidence.baseDescriptionHash,
-        })
-        .returning();
-      const ready = deferred();
-      const release = deferred();
-      const remote = {
-        delete: vi.fn(async () => {
-          ready.resolve();
-          await release.promise;
-          if (remoteFails) throw new Error('synthetic remote deletion failure');
-        }),
-      };
-      const pending = deletion(remote).usecase.execute(fixture.screenshot.id);
-      const deleted = remoteFails ? expect(pending).rejects.toThrow('synthetic remote deletion failure') : pending;
-      await Promise.race([ready.promise, deleted]);
-      const applied = new ApplyProductDescriptionCandidate(
-        new PostgresqlProductDescriptionApplyStore(writerDb as never)
-      )
-        .execute({ jobId: candidate!.id })
-        .then(
-          result => ({ result }),
-          error => ({ error })
-        );
-      try {
-        await waitForWriterLock();
-      } finally {
-        release.resolve();
-      }
-      await deleted;
-      expect(await applied).toMatchObject(
-        remoteFails
-          ? { result: { alreadyApplied: false, product: { description: candidate!.candidateHtml } } }
-          : { error: { code: 'STALE_CANDIDATE' } }
-      );
-      const after = await state(fixture.product.id);
-      expect(after.product?.contentRevision).toBe(BigInt(8));
-      expect(after.screenshots).toHaveLength(remoteFails ? 2 : 1);
-      expect(after.product?.description).toBe(remoteFails ? candidate!.candidateHtml : fixture.product.description);
-      expect(after.jobs).toHaveLength(remoteFails ? 1 : 0);
-      expect(
-        after.intents
-          .filter(row => row.sourceRevision === BigInt(8))
-          .map(row => row.kind)
-          .sort()
-      ).toEqual(remoteFails ? ['search', 'translation'] : ['search']);
-      const [job] = await db.select().from(productDescriptionJobs).where(eq(productDescriptionJobs.id, candidate!.id));
-      if (remoteFails) expect(job?.appliedAt).toBeInstanceOf(Date);
-      else expect(job?.appliedAt).toBeNull();
-    },
-    15_000
-  );
+    try {
+      await waitForWriterLock();
+    } finally {
+      release.resolve();
+    }
+    await pending;
+    expect(await applied).toMatchObject({ error: { code: 'STALE_CANDIDATE' } });
+    expect(remote.delete).not.toHaveBeenCalled();
+    const after = await state(fixture.product.id);
+    expect(after.product?.contentRevision).toBe(BigInt(8));
+    expect(after.screenshots).toHaveLength(1);
+    expect(after.product?.description).toBe(fixture.product.description);
+    expect(after.jobs).toEqual([]);
+    expect(after.intents.filter(row => row.sourceRevision === BigInt(8)).map(row => row.kind)).toEqual(['search']);
+    const [job] = await db.select().from(productDescriptionJobs).where(eq(productDescriptionJobs.id, candidate!.id));
+    expect(job?.appliedAt).toBeNull();
+  }, 15_000);
 
   it('삭제를 기다린 번역 commit은 screenshot-only revision으로 폐기되거나 새 job을 만들지 않는다', async () => {
     const fixture = await seed();
@@ -3224,21 +3433,19 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
       entityId: fixture.product.id,
       fields: ['name', 'summary'],
     });
-    const ready = deferred();
-    const release = deferred();
-    const remote = {
-      delete: vi.fn(async () => {
-        ready.resolve();
-        await release.promise;
-      }),
-    };
-    const pending = deletion(remote).usecase.execute(fixture.screenshot.id);
+    const remote = { delete: vi.fn(async () => {}) };
+    const { ready, release, execute } = pausedDeletion(remote);
+    const pending = execute(fixture.screenshot.id);
     await Promise.race([ready.promise, pending]);
     const completed = store.commit({
       jobId: job.id,
       leaseToken: 'screenshot-translation',
       snapshot,
-      rows: snapshot.values.map(source => ({ ...source, locale: 'en', value: `English ${source.field}` })),
+      rows: snapshot.values.map(source => ({
+        ...source,
+        locale: 'en',
+        value: `English ${source.field}`,
+      })),
       model: 'offline-screenshot-fixture',
       promptVersion: 'screenshot-mutex-test',
     });
@@ -3253,7 +3460,11 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     expect(after.screenshots).toHaveLength(1);
     expect(after.product?.contentRevision).toBe(BigInt(8));
     expect(after.jobs).toHaveLength(1);
-    expect(after.jobs[0]).toMatchObject({ id: job.id, status: 'completed', sourceHash: snapshot.sourceHash });
+    expect(after.jobs[0]).toMatchObject({
+      id: job.id,
+      status: 'completed',
+      sourceHash: snapshot.sourceHash,
+    });
     expect(after.intents.filter(row => row.sourceRevision === BigInt(8)).map(row => row.kind)).toEqual(['search']);
     const rows = await db.select().from(translations).where(eq(translations.entityId, fixture.product.id));
     expect(rows).toHaveLength(2);

@@ -16,6 +16,7 @@ import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 import { productScreenshotUiElements } from '../entities/ProductScreenshotUiElementsSchema';
+import { screenshotCleanupIntents } from '../entities/ScreenshotCleanupIntentSchema';
 import { visualSaves, visualViewEvents } from '../entities/VisualPopularitySchema';
 import { beginProductContentWrite } from './productContentSync';
 
@@ -262,12 +263,8 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
     this.productIdLoader.clearAll();
   }
 
-  /** Keep Product-first·screenshot locks through checkpoint and remote deletion; either failure rolls back. */
-  async deleteWithLock(
-    id: string,
-    validateLocked: (locked: ProductScreenshot) => Promise<void>,
-    deleteImage: (locked: ProductScreenshot) => Promise<void>
-  ): Promise<void> {
+  /** Commit deletion, checkpoint and cleanup intent atomically under the Product-first mutex. */
+  async deleteWithLock(id: string, validateLocked: (locked: ProductScreenshot) => Promise<void>): Promise<void> {
     await this.db.transaction(async tx => {
       const [owner] = await tx
         .select({ productId: productScreenshots.productId })
@@ -290,7 +287,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
       await validateLocked(locked);
       await tx.delete(productScreenshots).where(eq(productScreenshots.id, id));
       await finishContentWrite();
-      await deleteImage(locked);
+      await tx.insert(screenshotCleanupIntents).values({ screenshotId: locked.id, imageUrl: locked.imageUrl });
     });
     this.productIdLoader.clearAll();
   }
