@@ -37,6 +37,43 @@ export function validateJournalEntries(entries: JournalEntry[]): void {
   }
 }
 
+async function verifyAppliedHistory(
+  client: postgres.Sql,
+  entries: JournalEntry[],
+  migrationsFolder: string
+): Promise<void> {
+  const [table] = await client`SELECT to_regclass('drizzle.__drizzle_migrations') AS name`;
+  if (!table?.['name']) return;
+  const recorded = await client`SELECT hash, created_at FROM "drizzle"."__drizzle_migrations" ORDER BY created_at`;
+  const byTimestamp = new Map(entries.map(entry => [String(entry.when), entry]));
+  const seen = new Set<string>();
+  for (const row of recorded) {
+    const timestamp = String(row['created_at']);
+    const entry = byTimestamp.get(timestamp);
+    if (!entry) {
+      throw new Error('Unknown applied migration history: timestamp is absent from the journal; history is unchanged');
+    }
+    if (seen.has(timestamp)) {
+      throw new Error(`Duplicate applied migration history: "${entry.tag}"; history is unchanged`);
+    }
+    seen.add(timestamp);
+    const sql = readFileSync(join(migrationsFolder, `${entry.tag}.sql`), 'utf8');
+    const expectedHash = createHash('sha256').update(sql).digest('hex');
+    if (row['hash'] !== expectedHash) {
+      throw new Error(
+        `Applied migration hash mismatch: "${entry.tag}"; restore the original SQL, history is unchanged`
+      );
+    }
+  }
+  // Drizzle resumes after the greatest timestamp, so a hole would silently skip SQL.
+  for (let i = 0; i < recorded.length; i++) {
+    const entry = entries[i]!;
+    if (!seen.has(String(entry.when))) {
+      throw new Error(`Missing applied migration history: "${entry.tag}"; history is unchanged`);
+    }
+  }
+}
+
 async function verifyBaselineRequest(
   client: postgres.Sql,
   initialEntry: JournalEntry,
@@ -96,6 +133,8 @@ async function runMigrations(): Promise<void> {
     const journal = JSON.parse(readFileSync(journalPath, 'utf8')) as Journal;
     validateJournalEntries(journal.entries);
 
+    await verifyAppliedHistory(client, journal.entries, migrationsFolder);
+
     const initialEntry = journal.entries[0]!;
     await verifyBaselineRequest(client, initialEntry, migrationsFolder, baselineInitial);
 
@@ -127,6 +166,8 @@ async function runMigrations(): Promise<void> {
     );
 
     await migrate(db, { migrationsFolder });
+
+    await verifyAppliedHistory(client, journal.entries, migrationsFolder);
 
     // Verify that every migration in _journal.json is recorded in __drizzle_migrations
     const afterMigrations = await client`

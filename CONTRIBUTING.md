@@ -198,6 +198,11 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
    migration 실패 시 오류와 DB 상태를 확인하고 후속 migration 등으로 원인을 해결한 뒤 같은 명령을 다시 실행합니다. 이미 적용된 SQL을 수정하거나 journal을 지우지 않습니다. migration 성공 뒤 SST가 실패한 경우에도 같은 명령으로 재실행하며 이미 기록된 migration은 다시 적용하지 않습니다. 이 명령은 자동 rollback이나 실행 간 직렬화를 제공하지 않으므로 수동 실행은 다른 운영 배포가 진행 중이지 않을 때 수행합니다.
    이때 `RUNNING_ENV=prod` 값은 Sentry 환경 분류와 Cloudinary 업로드 폴더 규칙에 영향을 주므로 그대로 유지해야 합니다.
 
+`migrate`는 새 SQL이나 baseline 이력을 쓰기 전에 기록된 timestamp와 현재 SQL의 SHA-256을 대조합니다.
+기존 SQL 변경, 중복 timestamp, journal에 없는 이력(NULL 포함), 중간 이력 누락은 실행을 중단합니다.
+오류에 표시된 migration tag를 기준으로 원래 SQL과 적용 이력을 읽기 전용으로 확인하고 원본 SQL을 복구합니다.
+기록된 hash를 자동 보정하거나 이력을 삭제하지 않습니다. 적용 후에도 hash와 전체 journal 기록을 검증합니다.
+
 ### 기존 DB의 초기 migration 기준 등록
 
 일반 `migrate`는 기존 테이블을 발견해도 초기 migration을 자동으로 기록하지 않습니다.
