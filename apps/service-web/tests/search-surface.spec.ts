@@ -42,12 +42,12 @@ test.describe('Search Surface Focus & Responsive Layout', () => {
 
 test.describe('Search No Results Surface', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/ko/search/product?query=zzzz-no-product');
+    await page.goto('/ko/search/product?query=zzzzzzzzzzzzzzzz');
     await page.waitForLoadState('networkidle');
   });
 
   test('Displays no-results view @smoke', async ({ page }) => {
-    const noResultsText = page.locator('text=zzzz-no-product');
+    const noResultsText = page.getByText('‘zzzzzzzzzzzzzzzz’에 대한 검색 결과가 없습니다.', { exact: true });
     await expect(noResultsText).toBeVisible();
   });
 
@@ -93,7 +93,7 @@ test.describe('Search No Results Surface', () => {
 
     for (const vp of viewports) {
       await page.setViewportSize(vp);
-      await expect(page.locator('text=zzzz-no-product')).toBeVisible();
+      await expect(page.getByText('‘zzzzzzzzzzzzzzzz’에 대한 검색 결과가 없습니다.', { exact: true })).toBeVisible();
 
       const isOverflowing = await page.evaluate(() => {
         return document.documentElement.scrollWidth > document.documentElement.clientWidth;
