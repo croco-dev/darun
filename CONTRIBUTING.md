@@ -535,6 +535,21 @@ export default defineConfig(createNodeConfig());
 
 `pnpm test:coverage` 실행 시 lcov·html 리포트가 각 패키지 `coverage/` 디렉터리에 생성되고, CI에서 `coverage-reports` 아티팩트로 업로드됩니다.
 
+### Turbo 환경변수
+
+루트 `pnpm build`와 `pnpm dev`는 strict 환경 필터를 유지합니다. 앱별 `turbo.json`에서
+`GRAPHQL_INTERNAL_URL`, `ENABLE_EXPERIMENTAL_REACT_COMPILER`, service-web의 `BUNDLE_ANALYZE`는
+`env`로 선언하여 전달과 빌드 캐시 무효화를 함께 보장합니다. Firebase 서버 인증 정보와
+Sentry 업로드 토큰은 `passThroughEnv`로 전달하며 캐시 키에는 포함하지 않습니다.
+GraphQL의 캐시하지 않는 `dev`는 로컬 서버 설정을 `passThroughEnv`로 받습니다.
+Next의 `NEXT_PUBLIC_*` 자동 추론, tier-web의 기존 공개 변수 선언과 서버 키 전달,
+각 앱의 `.env` 로더는 유지합니다. 새 서버 변수는 해당 앱의 실제 소비 경로를 확인한 뒤 선언합니다.
+환경변수 값이나 비밀정보를 진단 로그에 출력하지 않습니다.
+
+`node --test scripts/turbo-environment.test.mjs`는 합성 값만 사용하는 격리 workspace에서
+실제 Turbo 자식 프로세스의 변수 전달, 미선언 변수 차단, 빌드 옵션별 해시 변경과
+업로드 토큰 교체 시 캐시 유지 여부를 확인합니다. PR CI에서도 같은 검사를 실행합니다.
+
 ## 모노레포 구조
 
 ```text

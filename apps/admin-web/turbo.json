@@ -1,0 +1,22 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "env": ["GRAPHQL_INTERNAL_URL", "ENABLE_EXPERIMENTAL_REACT_COMPILER"],
+      "passThroughEnv": [
+        "FIREBASE_PRIVATE_KEY",
+        "FIREBASE_CLIENT_EMAIL",
+        "FIREBASE_AUTH_EMULATOR_HOST"
+      ]
+    },
+    "dev": {
+      "env": ["GRAPHQL_INTERNAL_URL", "ENABLE_EXPERIMENTAL_REACT_COMPILER"],
+      "passThroughEnv": [
+        "FIREBASE_PRIVATE_KEY",
+        "FIREBASE_CLIENT_EMAIL",
+        "FIREBASE_AUTH_EMULATOR_HOST"
+      ]
+    }
+  }
+}

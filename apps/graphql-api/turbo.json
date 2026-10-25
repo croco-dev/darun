@@ -1,0 +1,31 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "dev": {
+      "passThroughEnv": [
+        "INFRA_ENV",
+        "RUNNING_ENV",
+        "DATABASE_URL",
+        "MONGODB_URI",
+        "FIREBASE_PROJECT_ID",
+        "FIREBASE_PRIVATE_KEY",
+        "FIREBASE_CLIENT_EMAIL",
+        "FIREBASE_AUTH_EMULATOR_HOST",
+        "CLOUDINARY_CLOUD_NAME",
+        "CLOUDINARY_API_KEY",
+        "CLOUDINARY_API_SECRET",
+        "OPEN_ROUTER_API_KEY",
+        "OPEN_ROUTER_ENDPOINT",
+        "OPEN_ROUTER_MODEL",
+        "OPEN_ROUTER_THINKING_LEVEL",
+        "BRAVE_API_KEY",
+        "CURSOR_SIGNATURE_SECRET",
+        "VOTE_IP_SALT",
+        "VISUAL_VIEW_IP_SALT",
+        "VISUAL_FLOW_WRITES_ENABLED",
+        "ALLOW_LEGACY_CURSOR"
+      ]
+    }
+  }
+}
