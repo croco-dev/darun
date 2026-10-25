@@ -81,7 +81,12 @@ function setup(translation = false) {
         log.push(request);
       })
   );
-  const client = new ApolloClient({ cache: new InMemoryCache(), link });
+  const client = new ApolloClient({
+    cache: new InMemoryCache(),
+    link,
+    // The extension suggestion timer can outlive this jsdom environment.
+    devtools: { enabled: false },
+  });
   clients.push(client);
   const view = render(
     <ApolloProvider client={client}>

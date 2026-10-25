@@ -146,6 +146,7 @@ function setup(query: DocumentNode, variables: Record<string, unknown>) {
     fail: () => void;
   }[] = [];
   const client = new ApolloClient({
+    devtools: { enabled: false },
     cache: new InMemoryCache(),
     link: new ApolloLink(
       operation =>
