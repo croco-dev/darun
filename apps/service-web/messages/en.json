@@ -207,6 +207,10 @@
     }
   },
   "Magazine": {
+    "content": {
+      "label": "‘{title}’ article",
+      "empty": "This article has no body yet."
+    },
     "info": {
       "badge": "Another Magazine",
       "title": "Featured article",

@@ -108,6 +108,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
 
   const data = await getMagazine(resolvedParams.slug, currentLocale);
   const magazine = data?.magazineBySlug;
+  if (!magazine) return notFound();
 
   const canonicalUrl = absolutePublicUrl('ko', `/magazines/${encodeURIComponent(resolvedParams.slug)}`);
 
