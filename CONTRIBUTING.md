@@ -154,11 +154,14 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
    - `admin-web`: 3001 (어드민 웹)
    - `visual-web`: 3002 (비주얼 웹)
 
-3. **데이터베이스 초기화**:
-   `pnpm local:bootstrap` 명령을 실행해서 PostgreSQL 데이터베이스 스키마를 초기화(Drizzle 마이그레이션 적용)합니다.
+3. **데이터베이스 준비·갱신**:
+   `pnpm local:bootstrap`은 빈 DB에 스키마를 만들고, 이후에는 미적용 Drizzle migration만 적용합니다. 반복 실행해도 기존 데이터와 migration 이력을 보존합니다. 기존 스키마나 이력이 호환되지 않으면 진단과 함께 중단하며 자동으로 삭제하거나 baseline하지 않습니다.
    ```bash
    pnpm local:bootstrap
    ```
+   전체 삭제가 필요한 경우에만 `pnpm local:reset --confirm-delete-local-data`를 사용합니다. 이 명령은 대상 호스트·포트·DB와 삭제 범위를 먼저 표시하고, `public`의 모든 객체·데이터와 `drizzle` migration 이력을 삭제한 뒤 스키마를 다시 만듭니다. 삭제 옵션이 없으면 실행하지 않습니다. reset 이후 migration이 실패해도 삭제한 데이터는 복구되지 않습니다. 두 명령은 로컬 호스트의 `darun` DB만 허용합니다.
+
+   회귀 검사는 기존 개발 DB와 분리된 빈 PostgreSQL 서버에서만 실행합니다. `bootstrap_fixture` 사용자와 `darun` DB를 만들고 `LOCAL_BOOTSTRAP_TEST_DATABASE_URL`을 지정한 뒤 `pnpm --filter graphql-api exec vitest run __tests__/bootstrapLocal.pg.test.ts`를 실행합니다. 검사는 일반 준비·재실행·migration 실패·명시 reset을 비교하며, 비어 있지 않은 DB는 거절하고 자신이 만든 스키마만 정리합니다.
 
 4. **접속 확인**:
    브라우저로 아래 주소에 접속해서 정상 작동하는지 확인합니다.

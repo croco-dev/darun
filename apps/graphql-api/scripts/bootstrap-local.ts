@@ -1,99 +1,67 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
+import { spawnSync } from 'child_process';
 import { join } from 'path';
 
-const LOCAL_HOST_MARKERS = ['localhost', '127.0.0.1', '::1', 'postgres'];
-const PROD_HOST_MARKERS = ['prod', 'production', 'aws', 'amazonaws'];
-const ALLOWED_DATABASES = ['darun'];
-
-function isLocalUrl(url: string): boolean {
-  const lower = url.toLowerCase();
-
-  if (PROD_HOST_MARKERS.some(marker => lower.includes(marker))) {
-    return false;
-  }
-
-  return LOCAL_HOST_MARKERS.some(marker => lower.includes(marker));
-}
-
-function extractDatabaseName(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    return parsed.pathname.replace(/^\//, '') || null;
-  } catch {
-    return null;
-  }
-}
-
-function maskDatabaseUrl(url: string): string {
-  return url.replace(/:[^:@]+@/, ':****@');
-}
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'postgres'];
 
 async function main() {
-  const databaseUrl = process.env.DATABASE_URL;
-
-  if (!databaseUrl) {
-    console.error('DATABASE_URL 환경 변수가 필요합니다');
-    process.exit(1);
+  const args = process.argv.slice(2);
+  const reset = args.includes('--reset');
+  if (args.length !== 0 && !(args.length === 2 && reset && args.includes('--confirm-delete-local-data'))) {
+    throw new Error('Usage: local:bootstrap | local:reset --confirm-delete-local-data (기존 데이터 전체 삭제)');
   }
 
-  if (!isLocalUrl(databaseUrl)) {
-    console.error(
-      '로컬 데이터베이스 URL이 아닙니다. bootstrap은 localhost/127.0.0.1/postgres 호스트만 허용하며, prod/production/aws 마커를 거부합니다.'
-    );
-    process.exit(1);
-  }
+  const databaseUrl = process.env['DATABASE_URL'];
+  if (!databaseUrl) throw new Error('DATABASE_URL 환경 변수가 필요합니다');
 
-  const databaseName = extractDatabaseName(databaseUrl);
-  if (!databaseName || !ALLOWED_DATABASES.includes(databaseName)) {
-    console.error(`데이터베이스 이름이 darun이어야 합니다. 현재: ${databaseName ?? '알 수 없음'}`);
-    process.exit(1);
-  }
-
-  console.log(`PostgreSQL 부트스트랩 시작: ${maskDatabaseUrl(databaseUrl)}`);
-
-  const client = postgres(databaseUrl, { prepare: false, max: 1 });
-  const db = drizzle(client);
-
+  let target: URL;
   try {
-    const publicTables = await client`
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-        AND table_type = 'BASE TABLE'
-    `;
-
-    if (publicTables.length > 0) {
-      console.log(`기존 테이블 ${publicTables.length}개 제거 중...`);
-      for (const row of publicTables) {
-        const tableName = row.table_name as string;
-        await client.unsafe(`DROP TABLE IF EXISTS "${tableName}" CASCADE`);
-      }
-    }
-
-    await client`DROP SCHEMA IF EXISTS drizzle CASCADE`;
-
-    console.log('Drizzle 스키마 동기화 중...');
-    await migrate(db, { migrationsFolder: join(__dirname, 'migrations') });
-
-    const afterTables = await client`
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-        AND table_type = 'BASE TABLE'
-    `;
-
-    console.log(`부트스트랩 완료. public 스키마 테이블 ${afterTables.length}개 생성됨:`);
-    for (const row of afterTables) {
-      console.log(`  - ${row.table_name}`);
-    }
-  } catch (error) {
-    console.error('부트스트랩 실패:', error);
-    process.exit(1);
-  } finally {
-    await client.end();
+    target = new URL(databaseUrl);
+  } catch {
+    throw new Error('유효한 PostgreSQL DATABASE_URL이 필요합니다');
   }
+  if (
+    !['postgres:', 'postgresql:'].includes(target.protocol) ||
+    !LOCAL_HOSTS.includes(target.hostname) ||
+    target.pathname !== '/darun' ||
+    target.search ||
+    target.hash
+  ) {
+    throw new Error('로컬 localhost/127.0.0.1/[::1]/postgres 호스트의 darun DB만 허용합니다 (query/fragment 불가)');
+  }
+
+  // Never print credentials or arbitrary URL components.
+  console.log(`PostgreSQL 로컬 준비 대상: ${target.hostname}:${target.port || '5432'}/darun`);
+  if (reset) {
+    console.log('명시적 reset: public 스키마의 모든 객체·데이터와 drizzle migration 이력을 삭제합니다.');
+    const client = postgres(databaseUrl, { prepare: false, max: 1 });
+    try {
+      await client.begin(async transaction => {
+        await transaction`DROP SCHEMA IF EXISTS public CASCADE`;
+        await transaction`DROP SCHEMA IF EXISTS drizzle CASCADE`;
+        await transaction`CREATE SCHEMA public`;
+      });
+    } finally {
+      await client.end();
+    }
+  }
+
+  // Use the same history verification and pending-only migration path as migrate.
+  const result = spawnSync(process.execPath, [...process.execArgv, join(__dirname, 'migrate.ts')], {
+    stdio: 'inherit',
+    env: { ...process.env, NODE_ENV: 'development' },
+  });
+  if (result.error || result.status !== 0) {
+    throw new Error('로컬 migration 실패: 기존 DB와 migration 이력을 확인하세요. 자동 삭제로 복구하지 않습니다.');
+  }
+  console.log('로컬 준비 완료');
 }
 
-main();
+void main().catch((error: unknown) => {
+  const message =
+    error instanceof Error && !(error instanceof postgres.PostgresError)
+      ? error.message
+      : 'DB 작업 실패: 접속 설정과 DB 진단을 안전하게 확인하세요.';
+  console.error('로컬 준비 실패:', message);
+  process.exitCode = 1;
+});

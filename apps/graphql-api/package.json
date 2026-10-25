@@ -11,6 +11,7 @@
     "dev": "node scripts/dev.cjs",
     "lint": "eslint \"**/*.{ts,tsx}\"",
     "local:bootstrap": "tsx scripts/bootstrap-local.ts",
+    "local:reset": "tsx scripts/bootstrap-local.ts --reset",
     "migrate": "tsx scripts/migrate.ts",
     "predeploy:prod": "node scripts/predeploy-prod.mjs",
     "seed:categories": "tsx scripts/seed-categories.ts",

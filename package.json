@@ -12,6 +12,7 @@
     "local:bootstrap": "DATABASE_URL=postgresql://darun:darun@localhost:5432/darun pnpm --filter graphql-api local:bootstrap",
     "local:down": "docker compose -f docker-compose.yml down",
     "local:logs": "docker compose -f docker-compose.yml logs -f",
+    "local:reset": "DATABASE_URL=postgresql://darun:darun@localhost:5432/darun pnpm --filter graphql-api local:reset",
     "local:up": "docker compose -f docker-compose.yml up -d",
     "prepare": "lefthook install",
     "test": "turbo test",
