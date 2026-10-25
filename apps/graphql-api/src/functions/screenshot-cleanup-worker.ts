@@ -6,7 +6,7 @@ import { PostgresqlScreenshotCleanup } from '../adapters/PostgresqlScreenshotCle
 import { createPostgresConnection } from '../config/database';
 
 export const handler: SQSHandler = async (event: SQSEvent): Promise<void> => {
-  await createPostgresConnection();
+  createPostgresConnection();
   const cleanup = Container.get(PostgresqlScreenshotCleanup);
   for (const record of event.Records) {
     const payload: unknown = JSON.parse(record.body);
