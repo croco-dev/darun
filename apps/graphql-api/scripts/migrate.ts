@@ -37,6 +37,36 @@ export function validateJournalEntries(entries: JournalEntry[]): void {
   }
 }
 
+async function verifyBaselineRequest(
+  client: postgres.Sql,
+  initialEntry: JournalEntry,
+  migrationsFolder: string,
+  baselineInitial: boolean
+): Promise<void> {
+  const [journalTable] = await client`SELECT to_regclass('drizzle.__drizzle_migrations') AS name`;
+  const recorded = journalTable?.['name'] ? await client`SELECT created_at FROM "drizzle"."__drizzle_migrations"` : [];
+  const hasInitial = recorded.some(row => Number(row['created_at']) === initialEntry.when);
+  if (baselineInitial && recorded.length > 0) {
+    throw new Error('Baseline requires an unrecorded legacy database; existing migration history is unchanged');
+  }
+  if (!hasInitial) {
+    if (baselineInitial) {
+      await verifyInitialSchema(client, migrationsFolder, initialEntry.tag);
+    } else {
+      const tables = await client`
+        SELECT 1 FROM pg_catalog.pg_class c
+        JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'f') LIMIT 1
+      `;
+      if (tables.length) {
+        throw new Error(
+          'Unrecorded existing schema: inspect it and explicitly run migrate --baseline-initial; no baseline recorded'
+        );
+      }
+    }
+  }
+}
+
 async function runMigrations(): Promise<void> {
   const databaseUrl = process.env['DATABASE_URL'];
   if (!databaseUrl) {
@@ -55,7 +85,7 @@ async function runMigrations(): Promise<void> {
   const db = drizzle(client);
 
   try {
-    await client`SET search_path TO public, pg_catalog`;
+    await client`SET search_path TO public`;
     const migrationsFolder = join(__dirname, 'migrations');
     const journalPath = join(migrationsFolder, 'meta', '_journal.json');
 
@@ -67,30 +97,7 @@ async function runMigrations(): Promise<void> {
     validateJournalEntries(journal.entries);
 
     const initialEntry = journal.entries[0]!;
-    const [journalTable] = await client`SELECT to_regclass('drizzle.__drizzle_migrations') AS name`;
-    const recorded = journalTable?.['name']
-      ? await client`SELECT created_at FROM "drizzle"."__drizzle_migrations"`
-      : [];
-    const hasInitial = recorded.some(row => Number(row['created_at']) === initialEntry.when);
-    if (baselineInitial && recorded.length > 0) {
-      throw new Error('Baseline requires an unrecorded legacy database; existing migration history is unchanged');
-    }
-    if (!hasInitial) {
-      if (baselineInitial) {
-        await verifyInitialSchema(client, migrationsFolder, initialEntry.tag);
-      } else {
-        const tables = await client`
-          SELECT 1 FROM pg_catalog.pg_class c
-          JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-          WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'f') LIMIT 1
-        `;
-        if (tables.length) {
-          throw new Error(
-            'Unrecorded existing schema: inspect it and explicitly run migrate --baseline-initial; no baseline recorded'
-          );
-        }
-      }
-    }
+    await verifyBaselineRequest(client, initialEntry, migrationsFolder, baselineInitial);
 
     await client`CREATE SCHEMA IF NOT EXISTS "drizzle"`;
     await client`

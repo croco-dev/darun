@@ -110,12 +110,29 @@ describe.skipIf(!databaseUrl)('legacy migration baseline (isolated PostgreSQL)',
     });
   });
 
+  it('public의 동명 함수 대신 PostgreSQL catalog 함수로 구조를 확인한다', async () => {
+    await withDatabase(async (sql, url) => {
+      await sql.unsafe(initialSql);
+      await sql.unsafe(
+        "CREATE FUNCTION public.format_type(oid, integer) RETURNS text LANGUAGE sql AS $$ SELECT 'unexpected_type'::text $$"
+      );
+      const result = migrate(url, '--baseline-initial');
+      expect(result.status, result.output).toBe(0);
+      expect((await records(sql)).map(row => Number(row['created_at']))).toEqual(journal.entries.map(e => e.when));
+    });
+  });
+
   it.each([
     ['table', 'DROP TABLE companies', 'companies'],
     ['column', 'ALTER TABLE profiles DROP COLUMN display_name', 'profiles.display_name'],
     ['type', 'ALTER TABLE profiles ALTER COLUMN user_id TYPE varchar(12)', 'profiles.user_id'],
     ['nullable', 'ALTER TABLE profiles ALTER COLUMN user_id DROP NOT NULL', 'profiles.user_id'],
     ['default', 'ALTER TABLE profiles ALTER COLUMN created_at DROP DEFAULT', 'profiles.created_at'],
+    [
+      'different default function',
+      "CREATE FUNCTION public.now() RETURNS timestamp LANGUAGE sql AS $$ SELECT timestamp '2001-01-01' $$; ALTER TABLE profiles ALTER COLUMN created_at SET DEFAULT public.now()",
+      'profiles.created_at',
+    ],
     ['primary key', 'ALTER TABLE profiles DROP CONSTRAINT profiles_pkey', 'profiles'],
     ['unique', 'ALTER TABLE tags DROP CONSTRAINT tags_name_unique', 'tags'],
     ['foreign key', 'ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk', 'product_tags'],

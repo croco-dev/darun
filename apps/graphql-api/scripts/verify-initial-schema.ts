@@ -1,6 +1,6 @@
 import type postgres from 'postgres';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 type Column = { name: string; type: string; notNull: boolean; primaryKey: boolean; default?: string | number };
 type InitialTable = {
@@ -27,14 +27,14 @@ function normalize(value: string): string {
   return value
     .toLowerCase()
     .replaceAll('"', '')
-    .replaceAll('public.', '')
     .replaceAll('character varying', 'varchar')
     .replaceAll('timestamp without time zone', 'timestamp')
     .replaceAll('current_timestamp', 'now()')
-    .replace(/\s+on (delete|update) no action/g, '')
-    .replace(/\s+asc\b/g, '')
-    .replace(/\s+/g, '')
-    .trim();
+    .replace(/\s+/g, ' ')
+    .replaceAll(' on delete no action', '')
+    .replaceAll(' on update no action', '')
+    .replace(/ asc\b/g, '')
+    .replaceAll(' ', '');
 }
 
 /** Read only: no DDL, journal creation, or writes are performed before this passes. */
@@ -71,71 +71,97 @@ export async function verifyInitialSchema(client: postgres.Sql, migrationsFolder
     JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
     WHERE n.nspname = 'public'
   `;
+  const differences = Object.values(snapshot.tables).flatMap(table =>
+    compareTable(table, columns, constraints, indexes)
+  );
+  if (differences.length) {
+    throw new Error(`Initial schema is incompatible; no baseline recorded:\n${differences.join('\n')}`);
+  }
+}
+
+type CatalogRow = Record<string, unknown>;
+
+function compareColumn(table: string, column: Column, found: CatalogRow | undefined): string[] {
+  const path = `${table}.${column.name}`;
+  if (!found) return [`${path}: missing column`];
   const differences: string[] = [];
-  for (const table of Object.values(snapshot.tables)) {
-    const actual = columns.filter(row => row['table_name'] === table.name);
-    if (!actual.length) {
-      differences.push(`${table.name}: missing table`);
-      continue;
-    }
-    for (const column of Object.values(table.columns)) {
-      const found = actual.find(row => row['column_name'] === column.name);
-      const path = `${table.name}.${column.name}`;
-      if (!found) differences.push(`${path}: missing column`);
-      else {
-        if (normalize(String(found['type'])) !== normalize(column.type)) differences.push(`${path}: incompatible type`);
-        if (found['not_null'] !== column.notNull) differences.push(`${path}: incompatible nullability`);
-        if (normalize(String(found['default_value'] ?? '')) !== normalize(String(column.default ?? ''))) {
-          differences.push(`${path}: incompatible default`);
-        }
-      }
-    }
-    const required = [
-      `PRIMARY KEY (${Object.values(table.columns)
-        .filter(column => column.primaryKey)
-        .map(column => column.name)
-        .join(',')})`,
-      ...Object.values(table.uniqueConstraints).map(key => `UNIQUE (${key.columns.join(',')})`),
-      ...Object.values(table.foreignKeys).map(
-        key =>
-          `FOREIGN KEY (${key.columnsFrom.join(',')}) REFERENCES ${key.tableTo}(${key.columnsTo.join(',')}) ON DELETE ${key.onDelete} ON UPDATE ${key.onUpdate}`
-      ),
-    ];
-    for (const definition of required) {
-      if (
+  if (normalize(String(found['type'])) !== normalize(column.type)) differences.push(`${path}: incompatible type`);
+  if (found['not_null'] !== column.notNull) differences.push(`${path}: incompatible nullability`);
+  if (normalize(String(found['default_value'] ?? '')) !== normalize(String(column.default ?? ''))) {
+    differences.push(`${path}: incompatible default`);
+  }
+  return differences;
+}
+
+function compareConstraints(table: InitialTable, constraints: CatalogRow[]): string[] {
+  const primary = Object.values(table.columns)
+    .filter(column => column.primaryKey)
+    .map(column => column.name);
+  const required = [
+    `PRIMARY KEY (${primary.join(',')})`,
+    ...Object.values(table.uniqueConstraints).map(key => `UNIQUE (${key.columns.join(',')})`),
+    ...Object.values(table.foreignKeys).map(
+      key =>
+        `FOREIGN KEY (${key.columnsFrom.join(',')}) REFERENCES ${key.tableTo}(${key.columnsTo.join(',')}) ON DELETE ${key.onDelete} ON UPDATE ${key.onUpdate}`
+    ),
+  ];
+  return required
+    .filter(
+      definition =>
         !constraints.some(
           row =>
             row['table_name'] === table.name &&
             row['validated'] &&
             !row['deferrable'] &&
-            normalize(String(row['definition'])) === normalize(definition)
+            normalize(String(row['definition']).replaceAll('public.', '')) === normalize(definition)
         )
-      ) {
-        differences.push(`${table.name}: missing or incompatible ${definition}`);
-      }
-    }
-    for (const index of Object.values(table.indexes)) {
-      const expressions = index.columns.map(column =>
-        column.isExpression
-          ? column.expression
-          : `${column.expression}${column.asc ? '' : ' DESC'}${column.nulls === (column.asc ? 'last' : 'first') ? '' : ` NULLS ${column.nulls}`}`
+    )
+    .map(definition => `${table.name}: missing or incompatible ${definition}`);
+}
+
+function indexColumn(column: InitialTable['indexes'][string]['columns'][number]): string {
+  if (column.isExpression) return column.expression;
+  const direction = column.asc ? '' : ' DESC';
+  const defaultNulls = column.asc ? 'last' : 'first';
+  const nulls = column.nulls === defaultNulls ? '' : ` NULLS ${column.nulls}`;
+  return `${column.expression}${direction}${nulls}`;
+}
+
+function compareIndexes(table: InitialTable, indexes: CatalogRow[]): string[] {
+  return Object.values(table.indexes)
+    .filter(index => {
+      const expressions = index.columns.map(indexColumn);
+      const unique = index.isUnique ? 'UNIQUE ' : '';
+      const expected = `CREATE ${unique}INDEX ${index.name} ON ${table.name} USING ${index.method} (${expressions.join(',')})`;
+      return !indexes.some(
+        row =>
+          row['table_name'] === table.name &&
+          row['index_name'] === index.name &&
+          row['valid'] &&
+          row['ready'] &&
+          normalize(String(row['definition']).replaceAll('public.', '')) === normalize(expected)
       );
-      const expected = `CREATE ${index.isUnique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} USING ${index.method} (${expressions.join(',')})`;
-      if (
-        !indexes.some(
-          row =>
-            row['table_name'] === table.name &&
-            row['index_name'] === index.name &&
-            row['valid'] &&
-            row['ready'] &&
-            normalize(String(row['definition'])) === normalize(expected)
-        )
-      ) {
-        differences.push(`${table.name}.${index.name}: missing or incompatible index`);
-      }
-    }
-  }
-  if (differences.length) {
-    throw new Error(`Initial schema is incompatible; no baseline recorded:\n${differences.join('\n')}`);
-  }
+    })
+    .map(index => `${table.name}.${index.name}: missing or incompatible index`);
+}
+
+function compareTable(
+  table: InitialTable,
+  columns: CatalogRow[],
+  constraints: CatalogRow[],
+  indexes: CatalogRow[]
+): string[] {
+  const actual = columns.filter(row => row['table_name'] === table.name);
+  if (!actual.length) return [`${table.name}: missing table`];
+  return [
+    ...Object.values(table.columns).flatMap(column =>
+      compareColumn(
+        table.name,
+        column,
+        actual.find(row => row['column_name'] === column.name)
+      )
+    ),
+    ...compareConstraints(table, constraints),
+    ...compareIndexes(table, indexes),
+  ];
 }
