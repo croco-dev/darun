@@ -2,6 +2,7 @@ import { ProductLinkRepository } from '@darun/products-domain';
 import {
   ProductLink,
   ProductLinkRepositoryToken,
+  productInvalidArgs,
   productLinkInsertFailed,
   productLinkNotFound,
   productUpdateFailed,
@@ -9,7 +10,7 @@ import {
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { productLinks } from '../entities/ProductLinksSchema';
@@ -60,15 +61,10 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
     return this.productIdLoader.load(productId);
   }
 
-  updateById(linkId: string, modifier: (link: ProductLink) => ProductLink): Promise<ProductLink> {
+  updateById(linkId: string, productId: string, modifier: (link: ProductLink) => ProductLink): Promise<ProductLink> {
     return this.db
       .transaction(async tx => {
-        const [owner] = await tx
-          .select({ productId: productLinks.productId })
-          .from(productLinks)
-          .where(eq(productLinks.id, linkId));
-        if (!owner) throw productLinkNotFound();
-        const finishContentWrite = await beginProductContentWrite(tx, owner.productId);
+        const finishContentWrite = await beginProductContentWrite(tx, productId);
         const prevLink = await tx
           .select()
           .from(productLinks)
@@ -80,11 +76,15 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
           throw productLinkNotFound();
         }
 
+        if (prevLink.productId !== productId) {
+          throw productInvalidArgs();
+        }
+
         const next = modifier(prevLink);
         const updated = await tx
           .update(productLinks)
           .set({ title: next.title, link: next.link, displayLink: next.displayLink, iconUrl: next.iconUrl })
-          .where(eq(productLinks.id, linkId))
+          .where(and(eq(productLinks.id, linkId), eq(productLinks.productId, productId)))
           .returning();
 
         if (!updated[0]) {

@@ -215,7 +215,7 @@ describe('PostgresqlProductLinkRepository', () => {
       mockTx.limit.mockResolvedValue([existingLink]);
       mockTx.returning.mockResolvedValue([updatedLink]);
 
-      const result = await repo.updateById('link-1', l => {
+      const result = await repo.updateById('link-1', 'product-1', l => {
         l.update({
           title: 'Updated',
           link: 'https://updated.example.com',

@@ -141,7 +141,11 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
       throw productNotFound();
     }
 
-    await this.updateProductLinkUseCase.execute({ linkId: id, ...input });
+    await this.updateProductLinkUseCase.execute({
+      ...input,
+      linkId: id,
+      productId: product.id,
+    });
 
     return {
       product: await this.getProductUseCase.execute({ slug }),
