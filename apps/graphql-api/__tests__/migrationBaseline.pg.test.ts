@@ -123,47 +123,73 @@ describe.skipIf(!databaseUrl)('legacy migration baseline (isolated PostgreSQL)',
   });
 
   it.each([
-    ['table', 'DROP TABLE companies', 'companies'],
-    ['column', 'ALTER TABLE profiles DROP COLUMN display_name', 'profiles.display_name'],
-    ['type', 'ALTER TABLE profiles ALTER COLUMN user_id TYPE varchar(12)', 'profiles.user_id'],
-    ['nullable', 'ALTER TABLE profiles ALTER COLUMN user_id DROP NOT NULL', 'profiles.user_id'],
-    ['default', 'ALTER TABLE profiles ALTER COLUMN created_at DROP DEFAULT', 'profiles.created_at'],
-    [
-      'different default function',
-      "CREATE FUNCTION public.now() RETURNS timestamp LANGUAGE sql AS $$ SELECT timestamp '2001-01-01' $$; ALTER TABLE profiles ALTER COLUMN created_at SET DEFAULT public.now()",
-      'profiles.created_at',
-    ],
-    ['primary key', 'ALTER TABLE profiles DROP CONSTRAINT profiles_pkey', 'profiles'],
-    ['unique', 'ALTER TABLE tags DROP CONSTRAINT tags_name_unique', 'tags'],
-    ['foreign key', 'ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk', 'product_tags'],
-    [
-      'unvalidated foreign key',
-      'ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES tags(id) NOT VALID',
-      'product_tags',
-    ],
-    [
-      'foreign key target identity',
-      'CREATE TABLE "Tags" (id varchar(26) PRIMARY KEY); ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES "Tags"(id)',
-      'product_tags',
-    ],
-    [
-      'quoted-dot foreign key target',
-      'CREATE TABLE "public.tags" (id varchar(26) PRIMARY KEY); ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES "public.tags"(id)',
-      'product_tags',
-    ],
-    [
-      'quoted-dot primary key column',
-      'ALTER TABLE profiles ADD COLUMN "public.id" varchar(26) NOT NULL; ALTER TABLE profiles DROP CONSTRAINT profiles_pkey; ALTER TABLE profiles ADD PRIMARY KEY ("public.id")',
-      'profiles',
-    ],
-    [
-      'quoted-dot index column',
-      'ALTER TABLE votes ADD COLUMN "public.count" integer; DROP INDEX votes_count_idx; CREATE INDEX votes_count_idx ON votes ("public.count" DESC)',
-      'votes_count_idx',
-    ],
-    ['index', 'DROP INDEX unique_translation', 'unique_translation'],
-    ['index shape', 'DROP INDEX votes_count_idx; CREATE INDEX votes_count_idx ON votes (count ASC)', 'votes_count_idx'],
-  ])('%s 불일치를 진단하고 baseline 이력을 남기지 않는다', async (_label, change, diagnostic) => {
+    { label: 'table', change: 'DROP TABLE companies', diagnostic: 'companies' },
+    { label: 'column', change: 'ALTER TABLE profiles DROP COLUMN display_name', diagnostic: 'profiles.display_name' },
+    {
+      label: 'type',
+      change: 'ALTER TABLE profiles ALTER COLUMN user_id TYPE varchar(12)',
+      diagnostic: 'profiles.user_id',
+    },
+    {
+      label: 'nullable',
+      change: 'ALTER TABLE profiles ALTER COLUMN user_id DROP NOT NULL',
+      diagnostic: 'profiles.user_id',
+    },
+    {
+      label: 'default',
+      change: 'ALTER TABLE profiles ALTER COLUMN created_at DROP DEFAULT',
+      diagnostic: 'profiles.created_at',
+    },
+    {
+      label: 'different default function',
+      change:
+        "CREATE FUNCTION public.now() RETURNS timestamp LANGUAGE sql AS $$ SELECT timestamp '2001-01-01' $$; ALTER TABLE profiles ALTER COLUMN created_at SET DEFAULT public.now()",
+      diagnostic: 'profiles.created_at',
+    },
+    { label: 'primary key', change: 'ALTER TABLE profiles DROP CONSTRAINT profiles_pkey', diagnostic: 'profiles' },
+    { label: 'unique', change: 'ALTER TABLE tags DROP CONSTRAINT tags_name_unique', diagnostic: 'tags' },
+    {
+      label: 'foreign key',
+      change: 'ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk',
+      diagnostic: 'product_tags',
+    },
+    {
+      label: 'unvalidated foreign key',
+      change:
+        'ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES tags(id) NOT VALID',
+      diagnostic: 'product_tags',
+    },
+    {
+      label: 'foreign key target identity',
+      change:
+        'CREATE TABLE "Tags" (id varchar(26) PRIMARY KEY); ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES "Tags"(id)',
+      diagnostic: 'product_tags',
+    },
+    {
+      label: 'quoted-dot foreign key target',
+      change:
+        'CREATE TABLE "public.tags" (id varchar(26) PRIMARY KEY); ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES "public.tags"(id)',
+      diagnostic: 'product_tags',
+    },
+    {
+      label: 'quoted-dot primary key column',
+      change:
+        'ALTER TABLE profiles ADD COLUMN "public.id" varchar(26) NOT NULL; ALTER TABLE profiles DROP CONSTRAINT profiles_pkey; ALTER TABLE profiles ADD PRIMARY KEY ("public.id")',
+      diagnostic: 'profiles',
+    },
+    {
+      label: 'quoted-dot index column',
+      change:
+        'ALTER TABLE votes ADD COLUMN "public.count" integer; DROP INDEX votes_count_idx; CREATE INDEX votes_count_idx ON votes ("public.count" DESC)',
+      diagnostic: 'votes_count_idx',
+    },
+    { label: 'index', change: 'DROP INDEX unique_translation', diagnostic: 'unique_translation' },
+    {
+      label: 'index shape',
+      change: 'DROP INDEX votes_count_idx; CREATE INDEX votes_count_idx ON votes (count ASC)',
+      diagnostic: 'votes_count_idx',
+    },
+  ])('$label 불일치를 진단하고 baseline 이력을 남기지 않는다', async ({ change, diagnostic }) => {
     await withDatabase(async (sql, url) => {
       await sql.unsafe(initialSql);
       await sql.unsafe(change);
