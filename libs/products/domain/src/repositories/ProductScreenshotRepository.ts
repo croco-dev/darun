@@ -32,16 +32,10 @@ export interface ProductScreenshotRepository {
     /** Same transaction as metadata; undefined preserves tags, null/[] clears them. */
     uiElements?: readonly string[] | null
   ): Promise<ProductScreenshot>;
-  /**
-   * Product-first·screenshot 잠금을 유지하며 참조를 검증하고 DB 행 삭제와
-   * content checkpoint를 먼저 저장한 뒤 deleteImage를 실행한다.
-   * 검증·checkpoint·원격 삭제가 실패하면 트랜잭션은 rollback된다.
+  /** Reference validation, row deletion, content checkpoint and media cleanup intent commit together.
+   * Remote cleanup runs after commit in a recoverable worker, outside Product/screenshot locks.
    */
-  deleteWithLock(
-    id: string,
-    validateLocked: (locked: ProductScreenshot) => Promise<void>,
-    deleteImage: (locked: ProductScreenshot) => Promise<void>
-  ): Promise<void>;
+  deleteWithLock(id: string, validateLocked: (locked: ProductScreenshot) => Promise<void>): Promise<void>;
   findManyVisualPublishedByFilterAndAfterIdAndLimit(
     filter: VisualScreenshotFilter,
     limit: number,

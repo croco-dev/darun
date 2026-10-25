@@ -60,6 +60,7 @@ async function main() {
       'product-research-worker',
       'job-recovery-tick',
       'product-content-sync-worker',
+      'screenshot-cleanup-worker',
     ]) {
       const file = path.join(directory, `${name}.js`);
       copyFileSync(path.join(root, '.build/lambda', `${name}.js`), file);

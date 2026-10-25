@@ -17,6 +17,7 @@ async function main() {
       'src/functions/product-research-worker.ts',
       'src/functions/job-recovery-tick.ts',
       'src/functions/product-content-sync-worker.ts',
+      'src/functions/screenshot-cleanup-worker.ts',
     ],
     bundle: true,
     platform: 'node',

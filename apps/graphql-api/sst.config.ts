@@ -143,6 +143,34 @@ export default $config({
     });
     contentSyncQueue.subscribe(contentSyncWorker.arn);
 
+    const screenshotCleanupQueue = new sst.aws.Queue('ScreenshotCleanupQueue', {
+      visibilityTimeout: '2 minutes',
+    });
+    const screenshotCleanupWorker = new sst.aws.Function('ScreenshotCleanupWorker', {
+      handler: 'screenshot-cleanup-worker.handler',
+      bundle: '.build/lambda',
+      runtime: 'nodejs22.x',
+      architecture: 'arm64',
+      timeout: '1 minute',
+      logging: { retention: '1 week' },
+      environment,
+      permissions: [
+        {
+          actions: [
+            'sqs:ChangeMessageVisibility',
+            'sqs:DeleteMessage',
+            'sqs:GetQueueAttributes',
+            'sqs:GetQueueUrl',
+            'sqs:ReceiveMessage',
+          ],
+          resources: [screenshotCleanupQueue.arn],
+        },
+      ],
+    });
+    screenshotCleanupQueue.subscribe(screenshotCleanupWorker.arn, {
+      batch: { size: 1 },
+    });
+
     const jobRecoveryTick = new sst.aws.CronV2('JobRecoveryTick', {
       schedule: 'rate(1 minute)',
       function: {
@@ -153,6 +181,7 @@ export default $config({
         timeout: '1 minute',
         environment: {
           ...environment,
+          SCREENSHOT_CLEANUP_QUEUE_URL: screenshotCleanupQueue.url,
           PRODUCT_CONTENT_SYNC_QUEUE_URL: contentSyncQueue.url,
           TRANSLATION_QUEUE_URL: translationQueue.url,
           PRODUCT_DESCRIPTION_QUEUE_URL: productDescriptionQueue.url,
@@ -162,6 +191,7 @@ export default $config({
           {
             actions: ['sqs:SendMessage'],
             resources: [
+              screenshotCleanupQueue.arn,
               contentSyncQueue.arn,
               translationQueue.arn,
               productDescriptionQueue.arn,

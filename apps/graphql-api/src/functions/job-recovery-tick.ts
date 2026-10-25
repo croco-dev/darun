@@ -6,6 +6,7 @@ import { TranslationJobService } from '@darun/translation-service';
 import type { Handler } from 'aws-lambda';
 import { Container } from 'typedi';
 import { PostgresqlProductContentSync } from '../adapters/PostgresqlProductContentSync';
+import { PostgresqlScreenshotCleanup } from '../adapters/PostgresqlScreenshotCleanup';
 import { createPostgresConnection } from '../config/database';
 
 const RECOVERY_LIMIT = 25;
@@ -50,6 +51,10 @@ export const handler: Handler = async (): Promise<{ recovered: number; queued: n
   const translation = await translationService.recoverInterruptedJobs({ now, limit: RECOVERY_LIMIT });
   recovered += translation.recovered;
   queued += translation.queued;
+
+  const cleanup = await Container.get(PostgresqlScreenshotCleanup).dispatch(RECOVERY_LIMIT);
+  recovered += cleanup.recovered;
+  queued += cleanup.queued;
 
   console.log(`[JobRecoveryTick] Recovered ${recovered} jobs, queued ${queued}.`);
   return { recovered, queued };
