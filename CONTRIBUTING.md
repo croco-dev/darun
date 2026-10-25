@@ -493,6 +493,8 @@ Lefthook이 설치되어 있으면 커밋 전 Git index에 스테이징된 내�
 
 `node --test scripts/lint-staged.test.mjs`는 격리 Git 저장소에서 설치된 Lefthook과 ESLint를 실행해 정상 입력, 수정 가능한 오류, 수정 불가능한 오류, 부분 스테이징, 이름 변경과 삭제를 확인합니다. PR CI에서도 같은 검사를 실행합니다.
 
+관리자의 전송 취소 통합 검사는 service/visual 앱의 실제 container도 읽습니다. `apps/admin-web/turbo.json`은 두 container와 service의 로컬 SEO 의존 파일을 관리자 test 입력에 포함합니다. 새 로컬 의존 파일을 참조하면 이 입력도 함께 갱신합니다. `node --test scripts/transport-test-cache.test.mjs`는 격리 workspace에서 실제 Turbo와 전송 회귀를 실행해 변경 없는 캐시 재사용, 각 sibling의 공유 batch 전송 결함에 대한 캐시 무효화·검사 실패, 관리자·공통 링크 변경의 hash 전파를 확인하며 PR CI에서도 실행합니다.
+
 ### 커버리지 목표
 
 계층별 목표 threshold는 `@darun/utils-vitest-config`의 `thresholds` 상수로 관리됩니다. 현재 목표를 충족하는 패키지는 `vitest.config.ts`에서 적절한 threshold를 적용하고, 아직 충족하지 못하는 패키지는 리포트 생성을 먼저 활성화한 뒤 테스트 보강과 함께 threshold를 적용하세요.
