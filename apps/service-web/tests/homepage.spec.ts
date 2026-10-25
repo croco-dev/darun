@@ -7,7 +7,7 @@ test.describe('Homepage smoke', () => {
   });
 
   test('Homepage renders ranked product list @smoke', async ({ page }) => {
-    const productItems = page.getByRole('heading', { name: 'Intentional smoke negative control', exact: true });
+    const productItems = page.getByRole('heading', { name: 'Notion E2E 32', exact: true });
     await expect(productItems).toBeVisible({ timeout: 15000 });
     const bodyText = await page.locator('body').textContent();
     expect(bodyText?.length).toBeGreaterThan(100);
