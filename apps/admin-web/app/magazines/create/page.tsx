@@ -3,7 +3,7 @@ import { MagazineWriteSection } from '../../../features/magazines/MagazineWriteS
 
 export default function MagazineCreatePage() {
   return (
-    <PageShell title="새로운 매거진 발행" backHref="/magazines">
+    <PageShell title="새 매거진 작성" backHref="/magazines">
       <MagazineWriteSection />
     </PageShell>
   );

@@ -16,8 +16,7 @@ export default function MagazineListPage() {
             color="primary"
             className="flex items-center gap-2"
           >
-            <Plus size={16} />
-            새로운 매거진 발행
+            <Plus size={16} />새 매거진 작성
           </Button>
         </div>
       }

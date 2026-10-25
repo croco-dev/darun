@@ -9,11 +9,19 @@ type EditorProps = {
   value?: string;
   defaultValue?: string;
   onChange?: (content: string) => void;
+  onImageUploadingChange?: (uploading: boolean) => void;
   editable?: boolean;
   disabled?: boolean;
 };
 
-export function Editor({ value, defaultValue, onChange, editable = true, disabled = false }: EditorProps) {
+export function Editor({
+  value,
+  defaultValue,
+  onChange,
+  onImageUploadingChange,
+  editable = true,
+  disabled = false,
+}: EditorProps) {
   const isEditable = editable && !disabled;
   const initialContent = value !== undefined ? value : (defaultValue ?? '');
   const editor = useEditor({
@@ -61,7 +69,7 @@ export function Editor({ value, defaultValue, onChange, editable = true, disable
 
   return (
     <div className="flex flex-col gap-3">
-      <MenuBar editor={editor} disabled={!isEditable} />
+      <MenuBar editor={editor} disabled={!isEditable} onImageUploadingChange={onImageUploadingChange} />
       <EditorContent
         editor={editor}
         className="min-h-72 rounded-card border border-dark-200 bg-white p-4 [&_.ProseMirror]:min-h-60 [&_.ProseMirror]:outline-none"

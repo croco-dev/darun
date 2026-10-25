@@ -144,7 +144,7 @@ export const WriteMagazine = bind(
         </div>
 
         <p className="mt-4 text-xs text-dark-500 break-words [word-break:keep-all]">
-          글 작성은 저장 후, 수정 기능을 이용하여 가능합니다.
+          초안을 저장하면 편집 화면으로 이동합니다. 본문 작성과 발행은 편집 화면에서 진행합니다.
         </p>
 
         <AdminActions>
@@ -165,7 +165,7 @@ export const WriteMagazine = bind(
             disabled={isSubmitting}
             className="active:scale-[0.98] motion-reduce:transform-none"
           >
-            {isSubmitting ? '저장 중...' : '저장'}
+            {isSubmitting ? '저장 중...' : '초안 저장'}
           </Button>
         </AdminActions>
       </form>

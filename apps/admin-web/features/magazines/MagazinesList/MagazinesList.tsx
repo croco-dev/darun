@@ -13,6 +13,7 @@ import {
   formatDate,
 } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminPanel } from '@darun/ui-admin';
+import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { TranslationRecovery } from '../../llm-jobs/TranslationRecovery';
@@ -85,7 +86,7 @@ export const MagazinesList = bind(
         <AdminPanel className="p-8">
           <AdminEmptyState
             title="등록된 매거진이 없습니다."
-            description="우측 상단의 '새로운 매거진 발행' 버튼을 눌러 첫 매거진을 등록해 보세요."
+            description="우측 상단의 '새 매거진 작성' 버튼을 눌러 첫 매거진을 등록해 보세요."
           />
         </AdminPanel>
       );
@@ -164,18 +165,27 @@ export const MagazinesList = bind(
                       </span>
                     </div>
 
-                    {isPublished && (
-                      <a
-                        href={`https://darun.io/ko/magazines/${encodeURIComponent(item.slug)}`}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="inline-flex min-h-[32px] items-center gap-1 px-2 rounded text-dark-600 hover:text-dark-900 font-medium active:scale-95 motion-reduce:transform-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
-                        title="서비스 웹에서 보기"
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/magazines/edit?slug=${encodeURIComponent(item.slug)}`}
+                        className="inline-flex min-h-8 items-center rounded px-2 font-medium text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+                        aria-label={`${item.title} 편집`}
                       >
-                        <span className="whitespace-nowrap">보기</span>
-                        <ExternalLink size={12} className="shrink-0" aria-hidden="true" />
-                      </a>
-                    )}
+                        편집
+                      </Link>
+                      {isPublished && (
+                        <a
+                          href={`https://darun.io/ko/magazines/${encodeURIComponent(item.slug)}`}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="inline-flex min-h-[32px] items-center gap-1 px-2 rounded text-dark-600 hover:text-dark-900 font-medium active:scale-95 motion-reduce:transform-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+                          title="서비스 웹에서 보기"
+                        >
+                          <span className="whitespace-nowrap">보기</span>
+                          <ExternalLink size={12} className="shrink-0" aria-hidden="true" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
