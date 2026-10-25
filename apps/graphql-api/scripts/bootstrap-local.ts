@@ -25,16 +25,19 @@ async function main() {
     !LOCAL_HOSTS.includes(target.hostname) ||
     target.pathname !== '/darun' ||
     target.search ||
-    target.hash
+    target.hash ||
+    databaseUrl.split('@').length > 2
   ) {
     throw new Error('로컬 localhost/127.0.0.1/[::1]/postgres 호스트의 darun DB만 허용합니다 (query/fragment 불가)');
   }
+
+  const localDatabaseUrl = target.toString();
 
   // Never print credentials or arbitrary URL components.
   console.log(`PostgreSQL 로컬 준비 대상: ${target.hostname}:${target.port || '5432'}/darun`);
   if (reset) {
     console.log('명시적 reset: public 스키마의 모든 객체·데이터와 drizzle migration 이력을 삭제합니다.');
-    const client = postgres(databaseUrl, { prepare: false, max: 1 });
+    const client = postgres(localDatabaseUrl, { prepare: false, max: 1 });
     try {
       await client.begin(async transaction => {
         await transaction`DROP SCHEMA IF EXISTS public CASCADE`;
@@ -49,7 +52,7 @@ async function main() {
   // Use the same history verification and pending-only migration path as migrate.
   const result = spawnSync(process.execPath, [...process.execArgv, join(__dirname, 'migrate.ts')], {
     stdio: 'inherit',
-    env: { ...process.env, NODE_ENV: 'development' },
+    env: { ...process.env, NODE_ENV: 'development', DATABASE_URL: localDatabaseUrl },
   });
   if (result.error || result.status !== 0) {
     throw new Error('로컬 migration 실패: 기존 DB와 migration 이력을 확인하세요. 자동 삭제로 복구하지 않습니다.');

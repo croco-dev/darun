@@ -8,26 +8,63 @@ import { join } from 'path';
 const databaseUrl = process.env['LOCAL_BOOTSTRAP_TEST_DATABASE_URL'];
 const appDir = join(__dirname, '..');
 
+async function assertEmptySchemas(sql: postgres.Sql) {
+  const existing = await sql`SELECT 1 FROM pg_depend d
+    JOIN pg_namespace n ON n.oid = d.refobjid
+    WHERE d.refclassid = 'pg_namespace'::regclass AND n.nspname IN ('public', 'drizzle')
+    UNION ALL SELECT 1 FROM pg_namespace WHERE nspname = 'drizzle'
+    LIMIT 1`;
+  if (existing.length) throw new Error('Bootstrap test refuses a nonempty database');
+}
+
 it.skipIf(!databaseUrl)(
   '로컬 준비는 데이터와 이력을 보존하고 명시적 reset만 삭제한다',
   { timeout: 120_000 },
   async () => {
+    if (!URL.canParse(databaseUrl!)) throw new Error('Invalid bootstrap fixture URL');
     const url = new URL(databaseUrl!);
     if (
       !['localhost', '127.0.0.1'].includes(url.hostname) ||
       url.pathname !== '/darun' ||
-      url.username !== 'bootstrap_fixture'
+      url.username !== 'bootstrap_fixture' ||
+      !['postgres:', 'postgresql:'].includes(url.protocol) ||
+      url.search ||
+      url.hash ||
+      databaseUrl!.split('@').length > 2
     ) {
       throw new Error('Use an empty dedicated local PostgreSQL server with bootstrap_fixture user and darun database');
     }
-    const sql = postgres(databaseUrl!, { max: 1 });
+    const sql = postgres(url.toString(), { max: 1 });
     const root = mkdtempSync(join(tmpdir(), 'darun-bootstrap-'));
     let ownsSchema = false;
     try {
-      const existing = await sql`SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname IN ('public', 'drizzle') AND c.relkind IN ('r', 'p', 'v', 'm', 'f')`;
-      if (existing.length) throw new Error('Bootstrap test refuses a nonempty database');
+      await assertEmptySchemas(sql);
       ownsSchema = true;
+      // Objects without table rows are still preexisting work and must prevent ownership.
+      for (const [create, lookup, drop] of [
+        [
+          "CREATE TYPE fixture_existing_enum AS ENUM ('keep')",
+          "SELECT to_regtype('public.fixture_existing_enum') AS object",
+          'DROP TYPE fixture_existing_enum',
+        ],
+        [
+          'CREATE FUNCTION fixture_existing_function() RETURNS integer LANGUAGE sql AS $$ SELECT 73 $$',
+          "SELECT to_regprocedure('public.fixture_existing_function()') AS object",
+          'DROP FUNCTION fixture_existing_function()',
+        ],
+        [
+          'CREATE SEQUENCE fixture_existing_sequence',
+          "SELECT to_regclass('public.fixture_existing_sequence') AS object",
+          'DROP SEQUENCE fixture_existing_sequence',
+        ],
+        ['CREATE SCHEMA drizzle', "SELECT to_regnamespace('drizzle') AS object", 'DROP SCHEMA drizzle'],
+      ]) {
+        await sql.unsafe(create!);
+        await expect(assertEmptySchemas(sql)).rejects.toThrow('nonempty database');
+        expect((await sql.unsafe(lookup!))[0]?.['object']).not.toBeNull();
+        await sql.unsafe(drop!);
+      }
+      await assertEmptySchemas(sql);
       symlinkSync(join(appDir, 'node_modules'), join(root, 'node_modules'), 'dir');
       cpSync(join(appDir, 'scripts'), join(root, 'scripts'), {
         recursive: true,
@@ -39,7 +76,7 @@ it.skipIf(!databaseUrl)(
           env: {
             ...process.env,
             NODE_ENV: 'development',
-            DATABASE_URL: databaseUrl,
+            DATABASE_URL: url.toString(),
           },
           encoding: 'utf8',
           timeout: 30_000,

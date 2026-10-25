@@ -9,6 +9,7 @@ it.each([
   'postgresql://user:secret@127.0.0.1/darun?host=remote.invalid',
   'https://user:secret@localhost/darun',
   'invalid-secret',
+  'postgresql://admin:secret@remote.invalid,localhost@localhost/darun',
 ])('로컬 DB 외 대상과 우회 URL을 접속 전에 거절한다: %s', databaseUrl => {
   const result = spawnSync(
     process.execPath,
