@@ -4,6 +4,7 @@ import postgres from 'postgres';
 import { createHash } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { verifyInitialSchema } from './verify-initial-schema';
 
 export type JournalEntry = {
   idx: number;
@@ -43,13 +44,18 @@ async function runMigrations(): Promise<void> {
     process.exit(1);
   }
 
-  const maskedUrl = databaseUrl.replace(/:[^:@]+@/, ':****@');
-  console.log(`Starting database migrations on: ${maskedUrl}`);
+  const args = process.argv.slice(2);
+  if (args.some(arg => arg !== '--baseline-initial') || args.length > 1) {
+    throw new Error('Usage: migrate [--baseline-initial]');
+  }
+  const baselineInitial = args.includes('--baseline-initial');
+  console.log('Starting database migrations');
 
   const client = postgres(databaseUrl, { prepare: false, max: 1 });
   const db = drizzle(client);
 
   try {
+    await client`SET search_path TO public, pg_catalog`;
     const migrationsFolder = join(__dirname, 'migrations');
     const journalPath = join(migrationsFolder, 'meta', '_journal.json');
 
@@ -60,7 +66,32 @@ async function runMigrations(): Promise<void> {
     const journal = JSON.parse(readFileSync(journalPath, 'utf8')) as Journal;
     validateJournalEntries(journal.entries);
 
-    // Ensure drizzle schema and __drizzle_migrations table exist
+    const initialEntry = journal.entries[0]!;
+    const [journalTable] = await client`SELECT to_regclass('drizzle.__drizzle_migrations') AS name`;
+    const recorded = journalTable?.['name']
+      ? await client`SELECT created_at FROM "drizzle"."__drizzle_migrations"`
+      : [];
+    const hasInitial = recorded.some(row => Number(row['created_at']) === initialEntry.when);
+    if (baselineInitial && recorded.length > 0) {
+      throw new Error('Baseline requires an unrecorded legacy database; existing migration history is unchanged');
+    }
+    if (!hasInitial) {
+      if (baselineInitial) {
+        await verifyInitialSchema(client, migrationsFolder, initialEntry.tag);
+      } else {
+        const tables = await client`
+          SELECT 1 FROM pg_catalog.pg_class c
+          JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'f') LIMIT 1
+        `;
+        if (tables.length) {
+          throw new Error(
+            'Unrecorded existing schema: inspect it and explicitly run migrate --baseline-initial; no baseline recorded'
+          );
+        }
+      }
+    }
+
     await client`CREATE SCHEMA IF NOT EXISTS "drizzle"`;
     await client`
       CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
@@ -69,38 +100,14 @@ async function runMigrations(): Promise<void> {
         created_at bigint
       )
     `;
-
-    // Detect if database was already initialized before Drizzle migrations were introduced
-    // (e.g. core table "profiles" already exists in public schema)
-    const existingProfiles = await client`
-      SELECT 1 FROM information_schema.tables
-      WHERE table_schema = 'public' AND table_name = 'profiles'
-      LIMIT 1
-    `;
-
-    if (existingProfiles.length > 0) {
-      const initialEntry = journal.entries[0];
-
-      if (initialEntry) {
-        const recorded = await client`
-          SELECT 1 FROM "drizzle"."__drizzle_migrations"
-          WHERE created_at = ${initialEntry.when}
-          LIMIT 1
-        `;
-
-        if (recorded.length === 0) {
-          console.log(`Existing database detected. Baselining initial migration (${initialEntry.tag})...`);
-          const initialSqlPath = join(migrationsFolder, `${initialEntry.tag}.sql`);
-          const initialSql = readFileSync(initialSqlPath, 'utf8');
-          const initialHash = createHash('sha256').update(initialSql).digest('hex');
-
-          await client`
-            INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-            VALUES (${initialHash}, ${initialEntry.when})
-          `;
-          console.log(`Baselined ${initialEntry.tag} (when: ${initialEntry.when})`);
-        }
-      }
+    if (baselineInitial) {
+      const initialSql = readFileSync(join(migrationsFolder, `${initialEntry.tag}.sql`), 'utf8');
+      const initialHash = createHash('sha256').update(initialSql).digest('hex');
+      await client`
+        INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+        VALUES (${initialHash}, ${initialEntry.when})
+      `;
+      console.log(`Baselined verified initial schema: ${initialEntry.tag}`);
     }
 
     const beforeMigrations = await client`
@@ -129,8 +136,12 @@ async function runMigrations(): Promise<void> {
 
     console.log('✅ Database migrations completed successfully and verified against journal');
   } catch (error) {
-    console.error('❌ Migration failed:', error);
-    process.exit(1);
+    const message =
+      error instanceof Error && !(error instanceof postgres.PostgresError)
+        ? error.message
+        : 'Database operation failed; inspect database diagnostics securely';
+    console.error('❌ Migration failed:', message);
+    process.exitCode = 1;
   } finally {
     await client.end();
   }

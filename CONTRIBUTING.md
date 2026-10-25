@@ -198,6 +198,30 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
    migration 실패 시 오류와 DB 상태를 확인하고 후속 migration 등으로 원인을 해결한 뒤 같은 명령을 다시 실행합니다. 이미 적용된 SQL을 수정하거나 journal을 지우지 않습니다. migration 성공 뒤 SST가 실패한 경우에도 같은 명령으로 재실행하며 이미 기록된 migration은 다시 적용하지 않습니다. 이 명령은 자동 rollback이나 실행 간 직렬화를 제공하지 않으므로 수동 실행은 다른 운영 배포가 진행 중이지 않을 때 수행합니다.
    이때 `RUNNING_ENV=prod` 값은 Sentry 환경 분류와 Cloudinary 업로드 폴더 규칙에 영향을 주므로 그대로 유지해야 합니다.
 
+### 기존 DB의 초기 migration 기준 등록
+
+일반 `migrate`는 기존 테이블을 발견해도 초기 migration을 자동으로 기록하지 않습니다.
+이력이 없는 기존 DB는 배포·다른 migration·DDL 작업을 중지한 유지보수 시간에 먼저 구조를 확인합니다.
+초기 SQL을 실제 적용한 빈 DB는 별도 기준 등록이 필요하지 않습니다.
+
+기존 구조를 초기 migration으로 등록하려면 대상 `DATABASE_URL`을 안전하게 설정한 뒤
+`pnpm --filter graphql-api run migrate --baseline-initial`을 명시적으로 실행합니다.
+이 명령은 초기 snapshot의 모든 테이블·컬럼 타입·NULL 허용·기본값·PK·unique·FK·인덱스를
+PostgreSQL catalog와 읽기 전용으로 비교합니다. 요구하는 구조가 없거나 다르면 차이만 출력하고
+baseline 이력을 기록하지 않습니다. 검증을 통과하면 초기 SQL의 hash와 timestamp를 기록한 뒤
+후속 migration을 정상 적용합니다. 이미 이력이 있는 DB에서는 이 옵션을 거절하며 이력을 고치지 않습니다.
+기준 등록 후에는 일반 `pnpm --filter graphql-api run migrate`를 사용합니다.
+
+불일치한 DB를 이 명령으로 자동 보정하지 않습니다. 출력된 차이를 초기 SQL·snapshot과 대조하고
+별도 검토된 복구 절차로 해결한 뒤 다시 검증합니다. 적용된 SQL이나 journal을 수정하지 않습니다.
+후속 migration 실패는 이미 검증·기록한 초기 기준을 취소하지 않으므로 오류를 해결한 뒤 일반 명령으로 재실행합니다.
+
+로컬 회귀는 빈 전용 `darun_migration_baseline` DB를
+`MIGRATION_BASELINE_TEST_DATABASE_URL`로 지정하고
+`pnpm --filter graphql-api exec vitest run __tests__/migrationBaseline.pg.test.ts`로 실행합니다.
+각 테스트는 자체 DB를 생성·삭제하며 지정한 DB의 테이블은 변경하지 않습니다.
+PR CI의 PostgreSQL 필수 검사에서도 skip 없이 같은 회귀를 실행합니다.
+
 ### 운영 배포 직렬화·재실행·rollback
 
 Production Deploy의 `deploy` job은 트리거·브랜치·revision과 무관하게 고정 `prod-graphql` concurrency group을 사용합니다. 잠금은 revision 확인부터 migration·SST 배포와 향후 같은 job에 추가되는 후속 검증까지 유지합니다. 새 요청은 실행 중인 배포를 취소하지 않습니다. GitHub concurrency는 FIFO가 아니며 대기 중인 요청은 더 새로운 요청으로 대체될 수 있습니다.
