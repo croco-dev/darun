@@ -489,7 +489,9 @@ HTML/Markdown 의미 전환의 공통 원문과 영어 기대값은 `libs/transl
 pnpm format
 ```
 
-Lefthook이 설치되어 있으면 커밋 전 ESLint 검사가 자동으로 실행됩니다.
+Lefthook이 설치되어 있으면 커밋 전 Git index에 스테이징된 내용을 ESLint로 검사합니다. 작업 파일과 index를 자동 수정하지 않으므로 부분 스테이징에서 제외한 변경은 그대로 유지됩니다. 검사 실패 시 오류를 수정하고 변경 내용을 검토한 뒤 커밋할 부분만 다시 스테이징합니다. `pnpm format`은 작업 파일을 자동 수정하므로 실행 후 변경 내용을 확인해야 합니다.
+
+`node --test scripts/lint-staged.test.mjs`는 격리 Git 저장소에서 설치된 Lefthook과 ESLint를 실행해 정상 입력, 수정 가능한 오류, 수정 불가능한 오류, 부분 스테이징, 이름 변경과 삭제를 확인합니다. PR CI에서도 같은 검사를 실행합니다.
 
 ### 커버리지 목표
 
