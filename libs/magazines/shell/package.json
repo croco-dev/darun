@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@darun/magazines-feature": "workspace:*",
-    "@darun/ui": "workspace:*"
+    "@darun/ui": "workspace:*",
+    "@darun/utils-router": "workspace:*",
+    "isomorphic-dompurify": "3.8.0"
   },
   "peerDependencies": {
     "next": "catalog:",

@@ -199,6 +199,10 @@
     }
   },
   "Magazine": {
+    "content": {
+      "label": "‘{title}’ 본문",
+      "empty": "아직 본문이 없습니다."
+    },
     "info": {
       "badge": "다른 매거진",
       "title": "추천 아티클",
