@@ -2,7 +2,8 @@ import postgres from 'postgres';
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'child_process';
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
+import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { join } from 'path';
 
 const databaseUrl = process.env['MIGRATION_BASELINE_TEST_DATABASE_URL'];
@@ -34,8 +35,8 @@ async function withDatabase(run: (sql: postgres.Sql, url: string) => Promise<voi
   }
 }
 
-function migrate(url: string, ...args: string[]) {
-  const result = spawnSync(process.execPath, [require.resolve('tsx/cli'), 'scripts/migrate.ts', ...args], {
+function migrateScript(script: string, url: string, ...args: string[]) {
+  const result = spawnSync(process.execPath, [require.resolve('tsx/cli'), script, ...args], {
     cwd: appDir,
     env: { ...process.env, NODE_ENV: 'development', DATABASE_URL: url },
     encoding: 'utf8',
@@ -43,6 +44,33 @@ function migrate(url: string, ...args: string[]) {
   });
   if (result.error) throw result.error;
   return { status: result.status, output: result.stdout + result.stderr };
+}
+
+function migrate(url: string, ...args: string[]) {
+  return migrateScript(join(appDir, 'scripts', 'migrate.ts'), url, ...args);
+}
+
+async function withMigrationCopy(run: (folder: string, script: string) => Promise<void>) {
+  const root = mkdtempSync(join(tmpdir(), 'darun-migration-history-'));
+  try {
+    symlinkSync(join(appDir, 'node_modules'), join(root, 'node_modules'), 'dir');
+    const scripts = join(root, 'scripts');
+    cpSync(join(appDir, 'scripts'), scripts, { recursive: true });
+    await run(join(scripts, 'migrations'), join(scripts, 'migrate.ts'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+function appendPending(folder: string) {
+  const path = join(folder, 'meta', '_journal.json');
+  const copy = JSON.parse(readFileSync(path, 'utf8'));
+  const previous = copy.entries.at(-1);
+  const entry = { ...previous, idx: previous.idx + 1, when: previous.when + 1, tag: '9999_history_probe' };
+  copy.entries.push(entry);
+  writeFileSync(path, JSON.stringify(copy));
+  writeFileSync(join(folder, `${entry.tag}.sql`), 'CREATE TABLE history_probe (id integer);');
+  return entry;
 }
 
 async function records(sql: postgres.Sql) {
@@ -54,6 +82,76 @@ async function records(sql: postgres.Sql) {
 
 // Each case owns a fresh database; it never truncates or changes the supplied database.
 describe.skipIf(!databaseUrl)('legacy migration baseline (isolated PostgreSQL)', { timeout: 60_000 }, () => {
+  it('적용된 SQL 한 글자가 바뀌면 후속 SQL과 이력을 변경 전에 거절한다', async () => {
+    await withDatabase(async (sql, url) => {
+      await withMigrationCopy(async (folder, script) => {
+        const installed = migrateScript(script, url);
+        expect(installed.status, installed.output).toBe(0);
+        const before = await records(sql);
+        const path = join(folder, `${first.tag}.sql`);
+        writeFileSync(path, readFileSync(path, 'utf8') + ' ');
+        appendPending(folder);
+        const result = migrateScript(script, url);
+        expect(result.status, result.output).not.toBe(0);
+        expect(result.output).toContain(first.tag);
+        expect(result.output).not.toContain(url);
+        expect(await records(sql)).toEqual(before);
+        expect(await sql`SELECT to_regclass('public.history_probe') AS name`).toEqual([{ name: null }]);
+      });
+    });
+  });
+
+  it('기존 hash가 맞으면 새 migration을 적용하고 재실행은 같은 이력을 보존한다', async () => {
+    await withDatabase(async (sql, url) => {
+      await withMigrationCopy(async (folder, script) => {
+        const installed = migrateScript(script, url);
+        expect(installed.status, installed.output).toBe(0);
+        const before = await records(sql);
+        const pending = appendPending(folder);
+        const result = migrateScript(script, url);
+        expect(result.status, result.output).toBe(0);
+        const after = await records(sql);
+        expect(after.slice(0, -1)).toEqual(before);
+        expect(Number(after.at(-1)?.['created_at'])).toBe(pending.when);
+        expect(await sql`SELECT to_regclass('public.history_probe') AS name`).toEqual([{ name: 'history_probe' }]);
+        const again = migrateScript(script, url);
+        expect(again.status, again.output).toBe(0);
+        expect(await records(sql)).toEqual(after);
+      });
+    });
+  });
+
+  it.each(['duplicate', 'unknown', 'null', 'gap'] as const)(
+    '%s 적용 이력은 새 SQL과 baseline 기록 전에 거절한다',
+    async kind => {
+      await withDatabase(async (sql, url) => {
+        await withMigrationCopy(async (folder, script) => {
+          const installed = migrateScript(script, url);
+          expect(installed.status, installed.output).toBe(0);
+          if (kind === 'duplicate') {
+            await sql`INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+            SELECT hash, created_at FROM drizzle.__drizzle_migrations WHERE created_at = ${first.when}`;
+          } else if (kind === 'gap') {
+            await sql`DELETE FROM drizzle.__drizzle_migrations WHERE created_at = ${journal.entries[1]!.when}`;
+          } else {
+            await sql`INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+            VALUES ('untrusted-history-marker', ${kind === 'null' ? null : first.when - 1})`;
+          }
+          const before = await records(sql);
+          appendPending(folder);
+          for (const args of [[], ['--baseline-initial']]) {
+            const result = migrateScript(script, url, ...args);
+            expect(result.status, result.output).not.toBe(0);
+            expect(result.output).not.toContain('untrusted-history-marker');
+            expect(result.output).not.toContain(url);
+            expect(await records(sql)).toEqual(before);
+            expect(await sql`SELECT to_regclass('public.history_probe') AS name`).toEqual([{ name: null }]);
+          }
+        });
+      });
+    }
+  );
+
   it('profiles만 있는 DB는 일반 실행과 명시적 baseline 모두 이력을 기록하지 않는다', async () => {
     await withDatabase(async (sql, url) => {
       await sql.unsafe('CREATE TABLE profiles (id text PRIMARY KEY)');
