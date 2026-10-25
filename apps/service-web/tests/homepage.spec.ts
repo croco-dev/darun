@@ -7,7 +7,7 @@ test.describe('Homepage smoke', () => {
   });
 
   test('Homepage renders ranked product list @smoke', async ({ page }) => {
-    const productItems = page.locator('[class*="RankedProductList"], [data-testid="product-item"], h2, h3').first();
+    const productItems = page.getByRole('heading', { name: 'Notion E2E 32', exact: true });
     await expect(productItems).toBeVisible({ timeout: 15000 });
     const bodyText = await page.locator('body').textContent();
     expect(bodyText?.length).toBeGreaterThan(100);
@@ -31,15 +31,14 @@ test.describe('Search to product-detail click-through', () => {
     await page.goto('/ko/search/product?query=figma');
     await page.waitForLoadState('networkidle');
 
-    const firstCard = page.getByTestId('search-card').first();
-    await expect(firstCard).toBeVisible({ timeout: 15000 });
-
-    const href = await firstCard.locator('a').first().getAttribute('href');
-    expect(href).toMatch(/\/products\//);
-
-    await firstCard.locator('a').first().click();
+    const result = page
+      .getByRole('group', { name: '‘figma’ 검색 결과', exact: true })
+      .getByRole('link', { name: /Figma E2E/ });
+    await expect(result).toBeVisible({ timeout: 15000 });
+    await expect(result).toHaveAttribute('href', '/ko/products/figma-e2e?from=search');
+    await result.click();
     await page.waitForLoadState('domcontentloaded');
-
-    await expect(page).toHaveURL(/\/products\//, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/products\/figma-e2e/, { timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'Figma E2E', exact: true })).toBeVisible();
   });
 });

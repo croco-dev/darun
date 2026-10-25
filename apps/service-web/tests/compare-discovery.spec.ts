@@ -1,27 +1,31 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Compare discovery journey', () => {
-  test('Journey 1: search result compare buttons activate compare page @smoke', async ({ page }) => {
-    // Search for figma-e2e and wait for results
-    await page.goto('/ko/search/product?query=figma');
-    await page.waitForLoadState('networkidle');
-    await expect(page.getByTestId('search-card').first()).toBeVisible({ timeout: 15000 });
-
-    // Click CompareButton on figma-e2e — adds figma-e2e to compare list
-    const figmaCard = page.getByTestId('search-card').first();
-    await figmaCard.getByTestId('compare-button').click();
-
-    // Navigate to sketch-e2e search to find a second product
-    await page.goto('/ko/search/product?query=sketch');
-    await page.waitForLoadState('networkidle');
-    await expect(page.getByTestId('search-card').first()).toBeVisible({ timeout: 15000 });
-
-    // Click CompareButton on sketch-e2e — triggers navigation to compare page
-    await page.getByTestId('search-card').first().getByTestId('compare-button').click();
-
-    // Verify navigation to compare page with both columns rendered
-    await page.waitForURL(/\/compare\//, { timeout: 15000 });
-    await expect(page.getByTestId('compare-column')).toHaveCount(2);
+  test('Journey 1: search discoveries open a comparison through product details @smoke', async ({ page }) => {
+    for (const [query, slug, name] of [
+      ['figma', 'figma-e2e', 'Figma E2E'],
+      ['sketch', 'sketch-e2e', 'Sketch E2E'],
+    ]) {
+      await page.goto(`/ko/search/product?query=${query}`);
+      await page.waitForLoadState('networkidle');
+      const result = page
+        .getByRole('group', { name: `‘${query}’ 검색 결과`, exact: true })
+        .getByRole('link', { name: new RegExp(name) });
+      await expect(result).toBeVisible({ timeout: 15000 });
+      await expect(result).toHaveAttribute('href', `/ko/products/${slug}?from=search`);
+      await result.click();
+      await page.waitForURL(new RegExp(`/products/${slug}`), { timeout: 15000 });
+      await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
+      await page.getByTestId('compare-button').first().click();
+      if (slug === 'figma-e2e') {
+        await expect(page.getByTestId('compare-button').first()).toHaveAttribute('aria-pressed', 'true');
+      }
+    }
+    await page.waitForURL(/\/compare\/figma-e2e\/sketch-e2e/, { timeout: 15000 });
+    const columns = page.getByTestId('compare-column');
+    await expect(columns).toHaveCount(2);
+    await expect(columns.nth(0)).toContainText('Figma E2E');
+    await expect(columns.nth(1)).toContainText('Sketch E2E');
   });
 
   test('Journey 2: alternatives page compare buttons activate compare page @smoke', async ({ page }) => {

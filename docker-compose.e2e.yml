@@ -1,0 +1,10 @@
+# Use with -p darun-e2e: volumes are separate from the normal development project.
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: darun_e2e
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U darun -d darun_e2e']
+  graphql-api:
+    environment:
+      DATABASE_URL: postgres://darun:darun@postgres:5432/darun_e2e
