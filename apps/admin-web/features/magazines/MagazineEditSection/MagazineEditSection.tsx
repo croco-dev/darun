@@ -71,12 +71,14 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const pending = useRef(false);
+  const imageUploadPending = useRef(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const dirty = values.title !== saved.title || values.summary !== saved.summary || values.content !== saved.content;
   const [edit] = useMutation(EditMagazineOnAdminEditorDocument);
   const [publish] = useMutation(PublishMagazineOnAdminEditorDocument);
 
   const save = async () => {
-    if (pending.current) return;
+    if (pending.current || imageUploadPending.current) return;
     if (!values.title.trim()) {
       setError('글 제목을 입력해주세요.');
       return;
@@ -114,7 +116,7 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
   };
 
   const publishMagazine = async () => {
-    if (pending.current || dirty || publishedAt) return;
+    if (pending.current || imageUploadPending.current || dirty || publishedAt) return;
     pending.current = true;
     setBusy('publish');
     setError(null);
@@ -180,9 +182,18 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
           disabled={!!busy}
           editable={!busy}
           onChange={content => setValues(current => ({ ...current, content }))}
+          onImageUploadingChange={uploading => {
+            imageUploadPending.current = uploading;
+            setImageUploading(uploading);
+          }}
         />
       </section>
       {dirty && <p className="text-sm text-dark-600">저장하지 않은 변경사항이 있습니다. 발행 전에 저장해주세요.</p>}
+      {imageUploading && (
+        <p role="status" className="text-sm text-dark-600">
+          본문 이미지를 업로드하고 있습니다. 완료 후 저장할 수 있습니다.
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-sm text-cherry-700">
           {error}
@@ -197,7 +208,7 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
         <Button as={Link} href="/magazines" variant="contained" color="secondary" disabled={!!busy}>
           목록
         </Button>
-        <Button type="submit" variant="contained" color="primary" disabled={!!busy}>
+        <Button type="submit" variant="contained" color="primary" disabled={!!busy || imageUploading}>
           {busy === 'save' ? '저장 중...' : '저장'}
         </Button>
         {!publishedAt && (
@@ -205,7 +216,7 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
             type="button"
             variant="contained"
             color="primary"
-            disabled={!!busy || dirty}
+            disabled={!!busy || imageUploading || dirty}
             onClick={() => void publishMagazine()}
           >
             {busy === 'publish' ? '발행 중...' : '발행'}

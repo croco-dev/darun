@@ -10,9 +10,10 @@ import { MenuItem, menuItemVariants } from './MenuItem';
 type MenuBarProps = {
   editor: Editor;
   disabled?: boolean;
+  onImageUploadingChange?: (uploading: boolean) => void;
 };
 
-export function MenuBar({ editor, disabled = false }: MenuBarProps) {
+export function MenuBar({ editor, disabled = false, onImageUploadingChange }: MenuBarProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { upload } = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
@@ -48,6 +49,7 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
 
     try {
       setIsUploading(true);
+      onImageUploadingChange?.(true);
       const imageUrl = await upload('images/editor', file, file.name);
 
       if (!imageUrl) {
@@ -71,11 +73,12 @@ export function MenuBar({ editor, disabled = false }: MenuBarProps) {
       });
     } finally {
       setIsUploading(false);
+      onImageUploadingChange?.(false);
       if (inputRef.current) {
         inputRef.current.value = '';
       }
     }
-  }, [disabled, editor, isUploading, upload]);
+  }, [disabled, editor, isUploading, onImageUploadingChange, upload]);
 
   const menuItems = useMemo(
     () => [

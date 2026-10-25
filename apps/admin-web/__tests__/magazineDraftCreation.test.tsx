@@ -18,7 +18,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it.each(['returned-draft', 'create'])('opens saved draft %s without claiming publication', async slug => {
+it.each(['returned-draft', 'create', '.', '..'])('opens saved draft %s without claiming publication', async slug => {
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: new ApolloLink(
@@ -49,7 +49,7 @@ it.each(['returned-draft', 'create'])('opens saved draft %s without claiming pub
       summary: '',
     });
   });
-  expect(navigate).toHaveBeenCalledWith(`/magazines/${slug}/edit`);
+  expect(navigate).toHaveBeenCalledWith(`/magazines/edit?slug=${slug}`);
   expect(notifications.show).toHaveBeenCalledWith(
     expect.objectContaining({ message: expect.stringContaining('초안') })
   );
@@ -89,7 +89,7 @@ it('preserves a failed creation for retry and prevents another write after succe
   await act(async () => {
     await result.current.handleSubmit(result.current.form.values);
   });
-  expect(navigate).toHaveBeenCalledWith('/magazines/saved-slug/edit');
+  expect(navigate).toHaveBeenCalledWith('/magazines/edit?slug=saved-slug');
   await act(async () => {
     await result.current.handleSubmit(result.current.form.values);
   });

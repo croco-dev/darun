@@ -92,7 +92,7 @@ export function useWriteMagazine() {
         message: '매거진 초안을 저장했습니다. 본문을 작성한 뒤 발행해주세요.',
         color: 'teal',
       });
-      navigate(`/magazines/${encodeURIComponent(magazine.slug)}/edit`);
+      navigate(`/magazines/edit?slug=${encodeURIComponent(magazine.slug)}`);
     } catch {
       submitted.current = false;
       notifications.show({

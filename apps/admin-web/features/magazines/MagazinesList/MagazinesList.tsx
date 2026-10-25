@@ -167,7 +167,7 @@ export const MagazinesList = bind(
 
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
-                        href={`/magazines/${encodeURIComponent(item.slug)}/edit`}
+                        href={`/magazines/edit?slug=${encodeURIComponent(item.slug)}`}
                         className="inline-flex min-h-8 items-center rounded px-2 font-medium text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
                         aria-label={`${item.title} 편집`}
                       >
