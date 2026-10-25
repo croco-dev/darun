@@ -9,7 +9,6 @@ import {
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductBySlugOnProductTagsForm($slug: String!) {
     tempProductBySlug(slug: $slug) {
@@ -39,14 +38,22 @@ type ProductTagsFormProps = {
 };
 
 export function useProductTagsForm({ slug }: ProductTagsFormProps) {
-  const [inputValue, setInputValue] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ slug: string; value: string } | null>(null);
+  const setInputValue = (value: string) => setDraft({ slug, value });
 
-  const { data, loading: isLoading } = useQuery(TempProductBySlugOnProductTagsFormDocument, {
+  const {
+    data,
+    loading: isLoading,
+    error,
+    refetch,
+  } = useQuery(TempProductBySlugOnProductTagsFormDocument, {
     variables: { slug },
   });
+  const isReady = !isLoading && !error && Boolean(data?.tempProductBySlug?.id);
+  const isNotFound = !isLoading && !error && !data?.tempProductBySlug;
 
   const fetchedTags = data?.tempProductBySlug?.tags?.map(tag => tag.name) ?? [];
-  const currentInputValue = inputValue !== null ? inputValue : fetchedTags.join(', ');
+  const currentInputValue = draft?.slug === slug ? draft.value : fetchedTags.join(', ');
 
   const currentTags = currentInputValue
     .split(',')
@@ -72,17 +79,18 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
   });
 
   const handleInputChange = (value: string) => {
+    if (isSaving || !isReady) return;
     setInputValue(value);
   };
 
   const removeTag = (tagToRemove: string) => {
-    if (isSaving || isLoading) return;
+    if (isSaving || !isReady) return;
     const nextTags = currentTags.filter(t => t !== tagToRemove);
     setInputValue(nextTags.join(', '));
   };
 
   const applyTags = async () => {
-    if (isSaving || isLoading) return;
+    if (isSaving || !isReady) return;
     try {
       await updateProductTags({
         variables: {
@@ -105,5 +113,9 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
     applyTags,
     isSaving,
     isLoading,
+    isReady,
+    isNotFound,
+    error,
+    retry: () => void refetch().catch(() => {}),
   };
 }

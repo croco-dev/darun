@@ -1,14 +1,26 @@
 'use client';
 
 import { Button, Tag, X } from '@darun/ui';
-import { AdminInput } from '@darun/ui-admin';
+import { AdminEmptyState, AdminErrorState, AdminInput, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useProductTagsForm } from './useProductTagsForm';
 
 export const ProductTagsForm = bind(
   useProductTagsForm,
-  ({ inputValue, tags, handleInputChange, removeTag, applyTags, isSaving, isLoading }) => {
-    const isBusy = isSaving || isLoading;
+  ({
+    inputValue,
+    tags,
+    handleInputChange,
+    removeTag,
+    applyTags,
+    isSaving,
+    isLoading,
+    isReady,
+    isNotFound,
+    error,
+    retry,
+  }) => {
+    const isBusy = isSaving || !isReady;
 
     return (
       <form
@@ -18,6 +30,20 @@ export const ProductTagsForm = bind(
         }}
         className="flex flex-col gap-3"
       >
+        {isLoading ? (
+          <AdminLoadingState title="태그를 불러오는 중..." />
+        ) : error ? (
+          <AdminErrorState
+            error={error}
+            action={
+              <Button type="button" onClick={retry}>
+                다시 시도
+              </Button>
+            }
+          />
+        ) : isNotFound ? (
+          <AdminEmptyState title="상품을 찾을 수 없습니다." />
+        ) : null}
         <div className="flex flex-row gap-2">
           <div className="relative flex-1">
             <AdminInput

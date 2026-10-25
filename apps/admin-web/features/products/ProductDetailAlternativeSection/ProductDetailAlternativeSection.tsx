@@ -26,6 +26,7 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
   });
 
   const alternatives = data?.tempProductBySlug?.alternatives ?? [];
+  const canEdit = !loading && !error && Boolean(data?.tempProductBySlug?.id);
 
   return (
     <>
@@ -33,7 +34,14 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
         <AdminSectionHeader
           title="다른 서비스(대안) 관리"
           rightSide={
-            <Button type="button" onClick={openEditModal} variant="contained" color="primary" size="sm">
+            <Button
+              type="button"
+              onClick={openEditModal}
+              disabled={!canEdit}
+              variant="contained"
+              color="primary"
+              size="sm"
+            >
               <span className="whitespace-nowrap">대안 서비스 수정/추가</span>
             </Button>
           }
@@ -50,12 +58,21 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
                 </Button>
               }
             />
+          ) : !data?.tempProductBySlug ? (
+            <AdminEmptyState title="상품을 찾을 수 없습니다." />
           ) : alternatives.length === 0 ? (
             <AdminEmptyState
               title="등록된 대안 서비스가 없습니다."
               description="상단의 '대안 서비스 수정/추가' 버튼을 눌러 이 서비스와 유사하거나 비교 가능한 대안 서비스를 연결하세요."
               action={
-                <Button type="button" onClick={openEditModal} variant="contained" color="primary" size="sm">
+                <Button
+                  type="button"
+                  onClick={openEditModal}
+                  disabled={!canEdit}
+                  variant="contained"
+                  color="primary"
+                  size="sm"
+                >
                   <span className="whitespace-nowrap">대안 서비스 연결</span>
                 </Button>
               }
@@ -82,6 +99,7 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="다른 서비스(대안) 관리">
         <EditAlternativeProducts
+          key={slug}
           slug={slug}
           onSubmit={() => {
             closeEditModal();
