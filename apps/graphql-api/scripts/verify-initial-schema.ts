@@ -101,6 +101,8 @@ function compareColumn(table: string, column: Column, found: CatalogColumn | und
   return differences;
 }
 
+// The caller pins search_path to public, so constraint targets in public are unqualified.
+// Preserve catalog definitions verbatim: qualifier text may occur inside quoted identifiers.
 function compareConstraints(table: InitialTable, constraints: CatalogConstraint[]): string[] {
   const primary = Object.values(table.columns)
     .filter(column => column.primaryKey)
@@ -121,7 +123,7 @@ function compareConstraints(table: InitialTable, constraints: CatalogConstraint[
             row['table_name'] === table.name &&
             row['validated'] &&
             !row['deferrable'] &&
-            normalize(row['definition'].replaceAll('public.', '')) === normalize(definition)
+            normalize(row['definition']) === normalize(definition)
         )
     )
     .map(definition => `${table.name}: missing or incompatible ${definition}`);
@@ -140,14 +142,15 @@ function compareIndexes(table: InitialTable, indexes: CatalogIndex[]): string[] 
     .filter(index => {
       const expressions = index.columns.map(indexColumn);
       const unique = index.isUnique ? 'UNIQUE ' : '';
-      const expected = `CREATE ${unique}INDEX ${index.name} ON ${table.name} USING ${index.method} (${expressions.join(',')})`;
+      // pg_get_indexdef always qualifies the indexed table with its schema.
+      const expected = `CREATE ${unique}INDEX ${index.name} ON public.${table.name} USING ${index.method} (${expressions.join(',')})`;
       return !indexes.some(
         row =>
           row['table_name'] === table.name &&
           row['index_name'] === index.name &&
           row['valid'] &&
           row['ready'] &&
-          normalize(row['definition'].replaceAll('public.', '')) === normalize(expected)
+          normalize(row['definition']) === normalize(expected)
       );
     })
     .map(index => `${table.name}.${index.name}: missing or incompatible index`);

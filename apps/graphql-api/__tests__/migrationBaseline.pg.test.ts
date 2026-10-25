@@ -146,6 +146,21 @@ describe.skipIf(!databaseUrl)('legacy migration baseline (isolated PostgreSQL)',
       'CREATE TABLE "Tags" (id varchar(26) PRIMARY KEY); ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES "Tags"(id)',
       'product_tags',
     ],
+    [
+      'quoted-dot foreign key target',
+      'CREATE TABLE "public.tags" (id varchar(26) PRIMARY KEY); ALTER TABLE product_tags DROP CONSTRAINT product_tags_tag_id_tags_id_fk; ALTER TABLE product_tags ADD CONSTRAINT product_tags_tag_id_tags_id_fk FOREIGN KEY (tag_id) REFERENCES "public.tags"(id)',
+      'product_tags',
+    ],
+    [
+      'quoted-dot primary key column',
+      'ALTER TABLE profiles ADD COLUMN "public.id" varchar(26) NOT NULL; ALTER TABLE profiles DROP CONSTRAINT profiles_pkey; ALTER TABLE profiles ADD PRIMARY KEY ("public.id")',
+      'profiles',
+    ],
+    [
+      'quoted-dot index column',
+      'ALTER TABLE votes ADD COLUMN "public.count" integer; DROP INDEX votes_count_idx; CREATE INDEX votes_count_idx ON votes ("public.count" DESC)',
+      'votes_count_idx',
+    ],
     ['index', 'DROP INDEX unique_translation', 'unique_translation'],
     ['index shape', 'DROP INDEX votes_count_idx; CREATE INDEX votes_count_idx ON votes (count ASC)', 'votes_count_idx'],
   ])('%s 불일치를 진단하고 baseline 이력을 남기지 않는다', async (_label, change, diagnostic) => {
