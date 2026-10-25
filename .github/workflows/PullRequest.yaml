@@ -55,6 +55,8 @@ jobs:
         run: node --test scripts/lint-coverage.test.mjs
       - name: Verify staged commit lint preserves partial changes
         run: node --test scripts/lint-staged.test.mjs
+      - name: Verify sibling transport changes invalidate cancellation test cache
+        run: node --test scripts/transport-test-cache.test.mjs
       - name: Verify deployment smoke checks with isolated HTTP fixtures
         run: node --test scripts/verify-deployment.test.mjs
       - run: pnpm run lint

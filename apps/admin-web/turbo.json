@@ -17,6 +17,14 @@
         "FIREBASE_CLIENT_EMAIL",
         "FIREBASE_AUTH_EMULATOR_HOST"
       ]
+    },
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/service-web/app/container.ts",
+        "$TURBO_ROOT$/apps/service-web/lib/seo/**",
+        "$TURBO_ROOT$/apps/visual-web/app/container.ts"
+      ]
     }
   }
 }
