@@ -44,7 +44,7 @@ E2E는 일반 개발 환경과 별도 Compose 프로젝트·볼륨을 사용합�
    ```bash
    pnpm --filter service-web e2e
    ```
-   Playwright는 실행 중인 웹을 사용합니다. 전체 smoke의 검색 경로에는 `searchable_products_index`를 제공하는 MongoDB Search가 필요합니다. 현재 기본 `mongo:8` Compose에는 이 검색 엔진이 없으며, 검색 문서를 시드하는 것만으로 `$search`가 준비되지는 않습니다. 로컬 검색 환경 구성은 #476, CI smoke 필수화는 #468에서 다룹니다.
+   Playwright는 실행 중인 웹을 사용합니다. 전체 smoke의 검색 경로에는 `searchable_products_index`를 제공하는 MongoDB Search가 필요합니다. 현재 기본 `mongo:8` Compose에는 이 검색 엔진이 없으며, 검색 문서를 시드하는 것만으로 `$search`가 준비되지는 않습니다. 로컬 검색 환경 구성은 #476, PR CI의 격리 smoke job은 별도의 `docker-compose.smoke.yml`로 검색 엔진을 준비합니다.
 
 ### 2. Standalone 모드
 Docker Compose를 사용하지 않고 로컬 호스트 환경에서 직접 독립 실행하는 방법입니다.
@@ -140,12 +140,21 @@ E2E 테스트 실행 시 Firebase Auth Emulator를 사용합니다.
 
 ## CI/CD
 
-GitHub Actions 등에서 실행 시:
+PR CI의 `smoke` job은 Node.js 22에서 운영 자격 증명 없이 별도 Compose 프로젝트를 준비합니다. PostgreSQL의 전용 `darun_e2e` DB와 MongoDB Search, Firebase Auth emulator가 healthy 상태가 된 뒤 migration과 고정 시드를 실행합니다. `prepare-smoke-search.ts`는 전용 로컬 주소만 허용하며 검색 인덱스가 queryable이고 Figma·Sketch fixture가 실제 검색될 때까지 기다립니다.
+
+Playwright의 `ISOLATED_SMOKE=1` 설정은 API와 웹을 직접 시작하고 기존 서버를 재사용하지 않습니다. global setup은 실제 GraphQL 응답에서 오류가 없는지, 랭킹 첫 상품과 검색 fixture를 확인한 뒤 기존 `@smoke` 6개를 실행합니다. 브라우저 설치·준비·assertion 실패는 job을 실패시키며, 기존 재시도·timeout·assertion은 유지합니다. CI의 고정 Sentry 수집 호스트는 loopback으로 차단해 fixture telemetry를 운영 수집기로 보내지 않습니다.
+
+같은 구성을 로컬에서 검증할 때는 `.github/workflows/PullRequest.yaml`의 `smoke.env` 값을 지정하고 다음 명령을 실행합니다. API·웹의 기본 포트 4000·3000과 emulator 9099가 비어 있어야 합니다. PostgreSQL 55438과 MongoDB 27038은 일반 개발 포트와 분리됩니다. 운영 환경 파일이나 운영 키는 사용하지 않습니다.
 
 ```bash
-# CI 환경에서는 브라우저 자동 설치
+docker compose -p darun-smoke -f docker-compose.smoke.yml up -d --wait --wait-timeout 180
+pnpm --filter graphql-api migrate
+pnpm --filter graphql-api seed:e2e
+pnpm --filter graphql-api exec tsx scripts/prepare-smoke-search.ts
+mkdir -p smoke-artifacts
 pnpm --filter service-web exec playwright install --with-deps chromium
-
-# 테스트 실행
-pnpm --filter service-web e2e
+pnpm --filter service-web exec playwright test --grep '@smoke'
+docker compose -p darun-smoke -f docker-compose.smoke.yml down -v
 ```
+
+CI는 결과와 관계없이 HTML report·test-results의 screenshot/video/첫 재시도 trace와 API·웹·전용 컨테이너 로그를 `service-smoke-<run_id>-<attempt>` artifact에 7일간 보관합니다. 준비 단계에서 실패하면 아직 생성되지 않은 브라우저 자료 대신 서비스 로그를 확인합니다. `down -v`는 이 전용 프로젝트의 데이터만 제거하며 일반 개발 볼륨은 사용하지 않습니다.

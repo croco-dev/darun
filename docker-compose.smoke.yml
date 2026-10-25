@@ -1,0 +1,38 @@
+# Disposable infrastructure for CI smoke only; no development volumes or env files.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: darun
+      POSTGRES_PASSWORD: darun
+      POSTGRES_DB: darun_e2e
+    ports: ["127.0.0.1:55438:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U darun -d darun_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  search:
+    image: mongodb/mongodb-atlas-local:8.0.17
+    ports: ["127.0.0.1:27038:27017"]
+  firebase-auth:
+    image: andreysenov/firebase-tools:14.22.0
+    ports: ["127.0.0.1:9099:9099"]
+    working_dir: /tmp
+    command:
+      - /bin/sh
+      - -c
+      - |
+        printf '%s\n' '{"emulators":{"auth":{"host":"0.0.0.0","port":9099}}}' > /tmp/firebase.json
+        exec firebase emulators:start --only auth --project darun-local --config /tmp/firebase.json
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          'fetch("http://127.0.0.1:9099/").then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))',
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 60
