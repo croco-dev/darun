@@ -15,6 +15,6 @@ export class UpdateProductFeatureInput {
   @Field({ nullable: true })
   emoji?: string;
 
-  @Field({ nullable: true })
-  summary?: string;
+  @Field(() => String, { nullable: true })
+  summary?: string | null;
 }

@@ -18,7 +18,7 @@ export class UpdateProductFeature {
   }: {
     featureId: string;
     name?: string;
-    summary?: string;
+    summary?: string | null;
     emoji?: string;
   }): Promise<ProductFeature> {
     return this.productFeatureRepository.updateById(featureId, feature => {

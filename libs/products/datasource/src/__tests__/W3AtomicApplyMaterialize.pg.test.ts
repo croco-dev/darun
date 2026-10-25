@@ -8,6 +8,10 @@ import {
   ProductLink,
   ProductScreenshot,
   ProductFlow,
+  UpdateProductFeature,
+  CreateProductFeature,
+  GetProduct,
+  GetProductFeature,
   ProductDescriptionApplyStoreToken,
   ProductResearchJobRepositoryToken,
   ProductResearchMaterializationRepositoryToken,
@@ -37,6 +41,7 @@ import { join, resolve } from 'node:path';
 import { registerProductContentSync } from '../../../../../apps/graphql-api/src/adapters/PostgresqlProductContentSync';
 import { translationJobs } from '../../../../translation/datasource/src/entities/TranslationJobSchema';
 import { translations } from '../../../../translation/datasource/src/entities/TranslationSchema';
+import { FeatureMutationResolver } from '../../../feature/src/Feature.mutation.resolver';
 import { ProductPublishMutationResolver } from '../../../feature/src/ProductPublishMutationResolver';
 import {
   ProductResearchMutationResolver,
@@ -319,6 +324,125 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       }))
     );
   }
+
+  async function publishedFeature() {
+    const product = await seed();
+    const [feature] = await db
+      .insert(productFeatures)
+      .values({
+        productId: product.id,
+        name: '기능',
+        emoji: '🔎',
+        summary: '기존 기능 요약',
+      })
+      .returning();
+    await new PostgresqlProductRepository(db as never).updateById(product.id, value => {
+      value.publish();
+      return value;
+    });
+    return { product, feature: feature! };
+  }
+
+  it.each([
+    { label: 'null은 삭제', input: { summary: null }, stored: null },
+    { label: '생략은 보존', input: {}, stored: '기존 기능 요약' },
+    {
+      label: '문자열은 교체',
+      input: { summary: '새 기능 요약' },
+      stored: '새 기능 요약',
+    },
+    { label: '빈 문자열은 그대로 저장', input: { summary: '' }, stored: '' },
+  ])('기능 요약 $label 계약을 실제 DB와 동기화 기록에 반영한다', async ({ input, stored }) => {
+    const { product, feature } = await publishedFeature();
+    const repository = new PostgresqlProductFeatureRepository(db as never);
+    await repository.findManyByProductId(product.id);
+
+    Container.set(
+      FeatureMutationResolver,
+      new FeatureMutationResolver(
+        new CreateProductFeature(repository),
+        new GetProduct(new PostgresqlProductRepository(db as never)),
+        new GetProductFeature(repository),
+        new UpdateProductFeature(repository)
+      )
+    );
+    const schema = buildSchemaSync({
+      resolvers: [FeatureMutationResolver, ProductResearchQueryResolver],
+      container: Container,
+      authChecker: () => true,
+      validate: false,
+    });
+    const result = await graphql({
+      schema,
+      source: `mutation UpdateFeature($id: String!, $input: UpdateProductFeatureInput!) {
+        updateProductFeature(id: $id, input: $input) { feature { id summary emoji } }
+      }`,
+      variableValues: { id: feature.id, input: { emoji: '✨', ...input } },
+    });
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data).toEqual({
+      updateProductFeature: {
+        feature: { id: feature.id, summary: stored, emoji: '✨' },
+      },
+    });
+    const [row] = await db.select().from(productFeatures).where(eq(productFeatures.id, feature.id));
+    expect(row).toMatchObject({
+      summary: stored,
+      name: '기능',
+      emoji: '✨',
+    });
+    expect((await repository.findOneById(feature.id))?.summary).toBe(stored ?? undefined);
+    expect((await repository.findManyByProductId(product.id))[0]?.summary).toBe(stored ?? undefined);
+
+    const revision = stored === feature.summary ? BigInt(1) : BigInt(2);
+    const state = await syncState([product.id]);
+    expect(state.products[0]?.contentRevision).toBe(revision);
+    expect(state.search.filter(intent => intent.status === 'pending').map(intent => intent.sourceRevision)).toEqual([
+      revision,
+    ]);
+    const pendingTranslations = state.translation.intents.filter(intent => intent.status === 'pending');
+    expect(pendingTranslations.map(intent => intent.sourceRevision)).toEqual([revision]);
+    expect(state.translation.jobs.filter(job => job.status === 'pending')).toEqual([
+      expect.objectContaining({
+        id: pendingTranslations[0]?.translationJobId,
+        entityId: product.id,
+        fields: ['name', 'summary', 'description', 'features'],
+      }),
+    ]);
+  });
+
+  it('기능 요약 삭제 후 번역 intent 저장이 실패하면 요약·revision·검색 intent·번역 job을 모두 rollback한다', async () => {
+    const { product, feature } = await publishedFeature();
+    const before = await syncState([product.id]);
+    await sql`create function atomic_fail_feature_summary() returns trigger language plpgsql as $$
+      begin
+        if new.kind = 'translation' and new.product_id = current_setting('darun.feature_summary_failure', true) then
+          raise exception 'injected feature summary intent failure';
+        end if;
+        return new;
+      end $$`;
+    await sql`create trigger atomic_fail_feature_summary before insert on product_content_sync_intents
+      for each row execute function atomic_fail_feature_summary()`;
+    try {
+      await expect(
+        db.transaction(async tx => {
+          await tx.execute(querySql`select set_config('darun.feature_summary_failure', ${product.id}, true)`);
+          await new UpdateProductFeature(new PostgresqlProductFeatureRepository(tx as never)).execute({
+            featureId: feature.id,
+            summary: null,
+          });
+        })
+      ).rejects.toMatchObject({
+        cause: { message: 'injected feature summary intent failure' },
+      });
+      expect((await db.select().from(productFeatures).where(eq(productFeatures.id, feature.id)))[0]).toEqual(feature);
+      expect(await syncState([product.id])).toEqual(before);
+    } finally {
+      await sql`drop trigger atomic_fail_feature_summary on product_content_sync_intents`;
+      await sql`drop function atomic_fail_feature_summary()`;
+    }
+  });
 
   async function withResearchMigrationBaseline(
     baselineTag: string,
