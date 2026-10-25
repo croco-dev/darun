@@ -93,6 +93,35 @@ function createProduct(overrides: Partial<DomainProduct> = {}) {
 }
 
 describe('ProductMediaMutationResolver', () => {
+  describe('updateProductLink', () => {
+    it('slug로 확인한 상품 ID로 링크를 수정하고 최신 상품을 응답한다', async () => {
+      const { resolver, getProduct, updateProductLink } = createResolver();
+      const product = createProduct();
+      const refreshed = createProduct({ name: '갱신된 상품' });
+      getProduct.execute.mockResolvedValueOnce(product).mockResolvedValueOnce(refreshed);
+
+      expect(
+        await resolver.updateProductLink('test', 'link-b', {
+          title: '새 제목',
+        })
+      ).toEqual({ product: refreshed });
+      expect(updateProductLink.execute).toHaveBeenCalledWith({
+        productId: 'prod-1',
+        linkId: 'link-b',
+        title: '새 제목',
+      });
+    });
+
+    it('없는 상품은 기존 not-found로 거절하고 링크를 수정하지 않는다', async () => {
+      const { resolver, getProduct, updateProductLink } = createResolver();
+      getProduct.execute.mockResolvedValue(null);
+      await expect(resolver.updateProductLink('missing', 'link-b', { title: '새 제목' })).rejects.toThrow(
+        'product/not-found'
+      );
+      expect(updateProductLink.execute).not.toHaveBeenCalled();
+    });
+  });
+
   describe('addProductScreenshot', () => {
     it('제품이 없으면 에러를 던진다', async () => {
       const { resolver, getProduct } = createResolver();

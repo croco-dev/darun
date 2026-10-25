@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import type { ApolloServer } from '@apollo/server';
 import {
   ApplyProductDescriptionCandidate,
+  UpdateProductLink,
   Product,
   ProductFeature,
   ProductLink,
@@ -221,6 +222,92 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       },
     };
   }
+
+  it('다른 상품의 링크 수정은 두 상품의 링크와 revision·intent를 보존한다', async () => {
+    const requested = await publishedOwner([]);
+    const owner = await publishedOwner([]);
+    const repository = new PostgresqlProductLinkRepository(db as never);
+    const link = await repository.insert(
+      new ProductLink({
+        productId: owner.id,
+        title: '원래 링크',
+        link: 'https://example.com/original',
+        displayLink: 'original',
+        iconUrl: 'https://example.com/icon.png',
+      })
+    );
+    const ids = [requested.id, owner.id];
+    const before = await syncState(ids);
+    const linksBefore = await db.select().from(productLinks).where(inArray(productLinks.productId, ids));
+    const input = {
+      productId: requested.id,
+      linkId: link.id,
+      title: '잘못된 수정',
+    };
+
+    await expect(new UpdateProductLink(repository).execute(input)).rejects.toThrow('product/invalid-args');
+
+    expect(await syncState(ids)).toEqual(before);
+    expect(await db.select().from(productLinks).where(inArray(productLinks.productId, ids))).toEqual(linksBefore);
+  });
+
+  it('같은 상품의 링크 수정은 해당 상품의 revision과 동기화 intent를 갱신한다', async () => {
+    const owner = await publishedOwner([]);
+    const repository = new PostgresqlProductLinkRepository(db as never);
+    const link = await repository.insert(
+      new ProductLink({
+        productId: owner.id,
+        title: '원래 링크',
+        link: 'https://example.com/original',
+        displayLink: 'original',
+        iconUrl: 'https://example.com/icon.png',
+      })
+    );
+    const before = await syncState([owner.id]);
+    const input = {
+      productId: owner.id,
+      linkId: link.id,
+      title: '새 링크',
+      link: 'https://example.com/new',
+    };
+
+    const result = await new UpdateProductLink(repository).execute(input);
+
+    expect(result).toMatchObject({
+      id: link.id,
+      productId: owner.id,
+      title: '새 링크',
+      link: 'https://example.com/new',
+    });
+    expect(await db.select().from(productLinks).where(eq(productLinks.id, link.id))).toMatchObject([
+      {
+        title: '새 링크',
+        link: 'https://example.com/new',
+        displayLink: 'original',
+        productId: owner.id,
+      },
+    ]);
+    const after = await syncState([owner.id]);
+    expect(after.products[0]!.contentRevision).toBe(before.products[0]!.contentRevision + BigInt(1));
+    expect(after.search[after.search.length - 1]).toMatchObject({
+      sourceRevision: after.products[0]!.contentRevision,
+      status: 'pending',
+    });
+  });
+
+  it('없는 링크 수정은 not-found이며 revision과 intent를 보존한다', async () => {
+    const owner = await publishedOwner([]);
+    const before = await syncState([owner.id]);
+    const input = {
+      productId: owner.id,
+      linkId: randomUUID(),
+      title: '저장하지 않음',
+    };
+    await expect(
+      new UpdateProductLink(new PostgresqlProductLinkRepository(db as never)).execute(input)
+    ).rejects.toThrow('product/link-not-found');
+    expect(await syncState([owner.id])).toEqual(before);
+  });
 
   async function expectSearchRevisions(productId: string, revisions: bigint[]) {
     const state = await syncState([productId]);

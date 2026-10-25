@@ -12,18 +12,20 @@ export class UpdateProductLink {
 
   async execute({
     linkId,
+    productId,
     title,
     link,
     displayLink,
     iconUrl,
   }: {
     linkId: string;
+    productId: string;
     title?: string;
     link?: string;
     displayLink?: string;
     iconUrl?: string;
   }): Promise<ProductLink> {
-    return this.productLinkRepository.updateById(linkId, productLink => {
+    return this.productLinkRepository.updateById(linkId, productId, productLink => {
       productLink.update({ title, link, displayLink, iconUrl });
       return productLink;
     });
