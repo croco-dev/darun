@@ -1,17 +1,17 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useMutation } from '@apollo/client/react';
+import { useApolloClient, useMutation } from '@apollo/client/react';
 import {
   AddProductLinkOnNewProductLinkFormDocument,
   TempProductBySlugOnProductLinkTableDocument,
 } from '@darun/provider-graphql';
+import { notifySavedWithRefresh } from '@darun/ui-admin';
 import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { ReactNode } from 'react';
+import { ReactNode, useRef } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation AddProductLinkOnNewProductLinkForm($slug: String!, $input: AddProductLinkInput!) {
     addProductLink(slug: $slug, input: $input) {
@@ -43,6 +43,8 @@ type NewProductFormProps = {
 
 export function useNewProductLinkForm({ productSlug, children }: NewProductFormProps) {
   const navigate = useNavigate();
+  const client = useApolloClient();
+  const isSubmittingRef = useRef(false);
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: {
@@ -71,16 +73,16 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
     },
   });
   const [addProductLink, { loading }] = useMutation(AddProductLinkOnNewProductLinkFormDocument, {
-    refetchQueries: [TempProductBySlugOnProductLinkTableDocument],
-    awaitRefetchQueries: true,
     onCompleted: ({ addProductLink }) => {
       if (addProductLink?.product?.id) {
-        notifications.show({ message: '생성되었습니다.', color: 'teal' });
+        const queries = [...client.getObservableQueries([TempProductBySlugOnProductLinkTableDocument])];
+        notifySavedWithRefresh(() => Promise.all(queries.map(query => query.refetch())));
         form.reset();
         navigate(`/products/${encodeURIComponent(productSlug)}`);
       }
     },
     onError: error => {
+      isSubmittingRef.current = false;
       notifications.show({ message: error.message, color: 'red' });
     },
   });
@@ -90,7 +92,7 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
     const link = values.link?.trim();
     const title = values.title?.trim();
     const iconUrl = values.iconUrl?.trim();
-    if (loading || !displayLink || !link || !title || !iconUrl) return;
+    if (loading || isSubmittingRef.current || !displayLink || !link || !title || !iconUrl) return;
     if (!/^https?:\/\//i.test(link)) {
       notifications.show({
         message: '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.',
@@ -99,6 +101,7 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
       return;
     }
 
+    isSubmittingRef.current = true;
     try {
       await addProductLink({
         variables: {

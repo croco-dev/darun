@@ -1,18 +1,18 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useMutation } from '@apollo/client/react';
+import { useApolloClient, useMutation } from '@apollo/client/react';
 import {
   AddProductScreenshotOnNewProductScreenshotFormDocument,
   GetProductScreenshotsOnDetailSectionDocument,
 } from '@darun/provider-graphql';
+import { notifySavedWithRefresh } from '@darun/ui-admin';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation AddProductScreenshotOnNewProductScreenshotForm($slug: String!, $input: AddProductScreenshotInput!) {
     addProductScreenshot(slug: $slug, input: $input) {
@@ -57,6 +57,8 @@ type NewProductFormProps = {
 
 export function useNewProductScreenshotForm({ productSlug, children }: NewProductFormProps) {
   const navigate = useNavigate();
+  const client = useApolloClient();
+  const isSubmittingRef = useRef(false);
   const [isUploading, setIsUploading] = useState(false);
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
@@ -80,23 +82,28 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
   const [addProductScreenshot, { loading: isAdding }] = useMutation(
     AddProductScreenshotOnNewProductScreenshotFormDocument,
     {
-      refetchQueries: [{ query: GetProductScreenshotsOnDetailSectionDocument, variables: { slug: productSlug } }],
-      awaitRefetchQueries: true,
       onCompleted: ({ addProductScreenshot }) => {
         if (addProductScreenshot?.product?.id) {
-          notifications.show({ message: '생성되었습니다.', color: 'teal' });
+          notifySavedWithRefresh(() =>
+            client.query({
+              query: GetProductScreenshotsOnDetailSectionDocument,
+              variables: { slug: productSlug },
+              fetchPolicy: 'network-only',
+            })
+          );
           form.reset();
           navigate(`/products/${encodeURIComponent(productSlug)}`);
         }
       },
       onError: error => {
+        isSubmittingRef.current = false;
         notifications.show({ message: error.message, color: 'red' });
       },
     }
   );
 
   const submit = async (values: FormValues) => {
-    if (isUploading || isAdding) return;
+    if (isUploading || isAdding || isSubmittingRef.current) return;
     if (!values.file || !values.imageAlt?.trim()) {
       notifications.show({
         message: '이미지와 설명(alt)을 모두 입력해주세요.',
@@ -105,11 +112,13 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
       return;
     }
 
+    isSubmittingRef.current = true;
     let url: string | undefined;
     try {
       setIsUploading(true);
       url = await upload(`images/screenshots/${productSlug}`, values.file, values.file.name);
     } catch {
+      isSubmittingRef.current = false;
       notifications.show({
         message: '이미지 업로드에 실패했어요.',
         color: 'red',
@@ -120,6 +129,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     }
 
     if (!url) {
+      isSubmittingRef.current = false;
       return;
     }
 

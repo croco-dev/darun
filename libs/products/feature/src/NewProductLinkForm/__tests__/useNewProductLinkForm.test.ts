@@ -10,6 +10,7 @@ vi.mock('@apollo/client/react', async importOriginal => {
   return {
     ...(actual as Record<string, unknown>),
     useMutation: vi.fn(),
+    useApolloClient: () => ({ getObservableQueries: () => [] }),
   };
 });
 
@@ -24,7 +25,7 @@ vi.mock('@mantine/form', () => ({
 }));
 
 vi.mock('@mantine/notifications', () => ({
-  notifications: { show: vi.fn() },
+  notifications: { show: vi.fn(() => 'saved-notice'), update: vi.fn() },
 }));
 
 const mockPush = vi.fn();
@@ -42,7 +43,10 @@ describe('useNewProductLinkForm', () => {
   };
   type MockMutationOptions = MutationHookOptions<unknown, Record<string, unknown>, unknown, ApolloCache>;
   let mutateFn: ReturnType<typeof vi.fn>;
-  let mutationOptions: { onCompleted?: (data: unknown) => void; onError?: (e: Error) => void };
+  let mutationOptions: {
+    onCompleted?: (data: unknown) => void;
+    onError?: (e: Error) => void;
+  };
   let capturedDocument: DocumentNode | undefined;
 
   beforeEach(() => {
@@ -53,7 +57,11 @@ describe('useNewProductLinkForm', () => {
 
     vi.mocked(useMutation).mockImplementation(((document?: DocumentNode, options?: MockMutationOptions) => {
       capturedDocument = document;
-      mutationOptions = (options as { onCompleted?: (data: unknown) => void; onError?: (e: Error) => void }) || {};
+      mutationOptions =
+        (options as {
+          onCompleted?: (data: unknown) => void;
+          onError?: (e: Error) => void;
+        }) || {};
       return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
     }) as typeof useMutation);
   });
@@ -61,7 +69,9 @@ describe('useNewProductLinkForm', () => {
   it('should call mutation with the correct variables on submit', async () => {
     const { result } = renderHook(() => useNewProductLinkForm(defaultProps));
 
-    mutateFn.mockResolvedValueOnce({ data: { addProductLink: { product: { id: 'product-1' } } } });
+    mutateFn.mockResolvedValueOnce({
+      data: { addProductLink: { product: { id: 'product-1' } } },
+    });
 
     await act(async () => {
       await result.current.submit({
@@ -91,10 +101,16 @@ describe('useNewProductLinkForm', () => {
     expect(result.current).toBeDefined();
 
     act(() => {
-      mutationOptions.onCompleted?.({ addProductLink: { product: { id: 'product-1' } } });
+      mutationOptions.onCompleted?.({
+        addProductLink: { product: { id: 'product-1' } },
+      });
     });
 
-    expect(notifications.show).toHaveBeenCalledWith({ message: '생성되었습니다.', color: 'teal' });
+    expect(notifications.show).toHaveBeenCalledWith({
+      message: '생성되었습니다.',
+      color: 'teal',
+      autoClose: false,
+    });
     expect(mockForm.reset).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith('/products/test-slug');
   });
@@ -106,7 +122,10 @@ describe('useNewProductLinkForm', () => {
       mutationOptions.onError?.(new Error('Network error'));
     });
 
-    expect(notifications.show).toHaveBeenCalledWith({ message: 'Network error', color: 'red' });
+    expect(notifications.show).toHaveBeenCalledWith({
+      message: 'Network error',
+      color: 'red',
+    });
   });
 
   it('should request links field in mutation selection instead of screenshots', () => {
