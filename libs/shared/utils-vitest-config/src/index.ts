@@ -73,7 +73,7 @@ export function createJsdomConfig(overrides: UserConfig = {}): UserConfig {
       // Keep true so packages without tests yet don't fail the gate.
       passWithNoTests: true,
       environment: 'jsdom',
-      include: ['src/__tests__/**/*.test.ts', 'src/**/*.test.tsx'],
+      include: ['src/**/*.test.{ts,tsx}'],
       ...testOverrides,
       coverage: {
         ...coverageDefaults,
