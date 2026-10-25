@@ -2,18 +2,14 @@
 
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import {
-  CreateMagazineOnWriteMagazineDocument,
-  TempAllMagazinesOnMagazinesListDocument,
-} from '@darun/provider-graphql';
+import { CreateMagazineOnWriteMagazineDocument } from '@darun/provider-graphql';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { FileWithPath } from '@mantine/dropzone';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation CreateMagazineOnWriteMagazine($input: CreateMagazineInput!) {
     createMagazine(input: $input) {
@@ -35,19 +31,10 @@ type FormValues = {
 
 export function useWriteMagazine() {
   const navigate = useNavigate();
+  const submitted = useRef(false);
   const [createMagazine, { loading: isCreating }] = useMutation(CreateMagazineOnWriteMagazineDocument, {
-    refetchQueries: [TempAllMagazinesOnMagazinesListDocument],
-    awaitRefetchQueries: true,
-    onCompleted: () => {
-      notifications.show({ message: '매거진이 성공적으로 발행되었습니다.', color: 'teal' });
-      navigate('/magazines');
-    },
-    onError: error => {
-      notifications.show({
-        title: '발행 실패',
-        message: error.message,
-        color: 'red',
-      });
+    update(cache) {
+      cache.evict({ id: 'ROOT_QUERY', fieldName: 'tempAllMagazines' });
     },
   });
   const form = useForm<FormValues>({
@@ -82,13 +69,14 @@ export function useWriteMagazine() {
   }, [previewUrl]);
 
   const handleSubmit = async (values: FormValues) => {
-    if (isCreating || isUploading) return;
+    if (submitted.current || isCreating || isUploading) return;
     if (!values.title?.trim()) {
       return;
     }
 
+    submitted.current = true;
     try {
-      await createMagazine({
+      const { data } = await createMagazine({
         variables: {
           input: {
             title: values.title.trim(),
@@ -98,8 +86,20 @@ export function useWriteMagazine() {
           },
         },
       });
-    } catch (error) {
-      console.error('mutation failed:', error);
+      const magazine = data?.createMagazine.magazine;
+      if (!magazine?.slug) throw new Error('Missing saved draft');
+      notifications.show({
+        message: '매거진 초안을 저장했습니다. 본문을 작성한 뒤 발행해주세요.',
+        color: 'teal',
+      });
+      navigate(`/magazines/${encodeURIComponent(magazine.slug)}/edit`);
+    } catch {
+      submitted.current = false;
+      notifications.show({
+        title: '초안 저장 실패',
+        message: '초안을 저장하지 못했습니다. 입력을 확인하고 다시 시도해주세요.',
+        color: 'red',
+      });
     }
   };
 

@@ -5,6 +5,7 @@ import LogoutPage from '../app/auth/logout/page';
 import NewCompanyPage from '../app/companies/new/page';
 import CompanyListPage from '../app/companies/page';
 import LlmJobsPage from '../app/llm-jobs/page';
+import MagazineEditPage from '../app/magazines/[slug]/edit/page';
 import MagazineCreatePage from '../app/magazines/create/page';
 import HomePage from '../app/page';
 import ProductDetailPage, { generateMetadata } from '../app/products/[slug]/page';
@@ -99,10 +100,17 @@ describe('Admin RSC Pages', () => {
     expect(React.isValidElement(element)).toBe(true);
   });
 
+  it('opens the magazine editor for the awaited route slug', async () => {
+    const element = await MagazineEditPage({ params: Promise.resolve({ slug: 'saved-draft' }) });
+    expect(element.props.backHref).toBe('/magazines');
+    expect(element.props.children.props.slug).toBe('saved-draft');
+    expect(element.props.children.key).toBe('saved-draft');
+  });
+
   it('MagazineCreatePage renders PageShell with backHref=/magazines without client hooks', () => {
     const element = MagazineCreatePage();
     expect(React.isValidElement(element)).toBe(true);
-    expect(element.props.title).toBe('새로운 매거진 발행');
+    expect(element.props.title).toBe('새 매거진 작성');
     expect(element.props.backHref).toBe('/magazines');
   });
 
