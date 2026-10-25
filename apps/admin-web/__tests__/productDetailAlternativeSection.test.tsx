@@ -46,6 +46,12 @@ describe('ProductDetailAlternativeSection', () => {
     render(<ProductDetailAlternativeSection slug="test-slug" />);
 
     expect(screen.getByText('대안 서비스를 불러오는 중...')).toBeTruthy();
+    const edit = screen.getByRole<HTMLButtonElement>('button', {
+      name: '대안 서비스 수정/추가',
+    });
+    expect(edit.disabled).toBe(true);
+    fireEvent.click(edit);
+    expect(screen.queryByTestId('edit-alternative-products')).toBeNull();
   });
 
   it('renders error state with retry button when query fails', () => {
@@ -59,15 +65,37 @@ describe('ProductDetailAlternativeSection', () => {
 
     render(<ProductDetailAlternativeSection slug="test-slug" />);
 
+    expect(
+      screen.getByRole<HTMLButtonElement>('button', {
+        name: '대안 서비스 수정/추가',
+      }).disabled
+    ).toBe(true);
     expect(screen.getByText('다시 시도')).toBeTruthy();
     fireEvent.click(screen.getByText('다시 시도'));
     expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not offer editing for a missing product', () => {
+    vi.mocked(useQuery).mockReturnValue({
+      data: { tempProductBySlug: null },
+      loading: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useQuery>);
+    render(<ProductDetailAlternativeSection slug="missing" />);
+    expect(screen.getByText('상품을 찾을 수 없습니다.')).toBeTruthy();
+    expect(
+      screen.getByRole<HTMLButtonElement>('button', {
+        name: '대안 서비스 수정/추가',
+      }).disabled
+    ).toBe(true);
+    expect(screen.queryByRole('button', { name: '대안 서비스 연결' })).toBeNull();
   });
 
   it('renders empty state when alternatives array is empty', () => {
     vi.mocked(useQuery).mockReturnValue({
       data: {
         tempProductBySlug: {
+          id: 'product-a',
           alternatives: [],
         },
       },
@@ -85,6 +113,7 @@ describe('ProductDetailAlternativeSection', () => {
     vi.mocked(useQuery).mockReturnValue({
       data: {
         tempProductBySlug: {
+          id: 'product-a',
           alternatives: [
             { id: 'alt-1', name: '쿠팡' },
             { id: 'alt-2', name: '11번가' },

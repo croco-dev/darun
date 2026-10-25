@@ -7,12 +7,10 @@ import {
   SearchProductsOnEditAlternativeProductsDocument,
   TempProductBySlugOnEditAlternativeProductsDocument,
 } from '@darun/provider-graphql';
-import { useForm } from '@mantine/form';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import { ChangeEvent, useCallback, useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductBySlugOnEditAlternativeProducts($slug: String!) {
     tempProductBySlug(slug: $slug) {
@@ -43,10 +41,6 @@ gql`
   }
 `;
 
-type FormValues = {
-  alternativeIds?: string[];
-};
-
 export type UseEditAlternativeProductsProps = {
   slug: string;
   onSubmit?: () => void;
@@ -56,26 +50,31 @@ export type UseEditAlternativeProductsProps = {
 export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEditAlternativeProductsProps) {
   const [searchedProducts, setSearchedProducts] = useState<Array<{ id: string; name: string }>>([]);
 
-  const { data } = useQuery(TempProductBySlugOnEditAlternativeProductsDocument, {
+  const {
+    data,
+    loading: isLoading,
+    error,
+    refetch,
+  } = useQuery(TempProductBySlugOnEditAlternativeProductsDocument, {
     variables: { slug },
   });
-
-  const form = useForm<FormValues>({
-    mode: 'uncontrolled',
-    initialValues: {
-      alternativeIds: [],
-    },
-  });
+  const product = data?.tempProductBySlug;
+  const isReady = !isLoading && !error && Boolean(product?.id);
+  const isNotFound = !isLoading && !error && !product;
+  const [selection, setSelection] = useState<{
+    slug: string;
+    productId: string;
+    ids: string[];
+  } | null>(null);
+  const currentAlternativeIds =
+    selection?.slug === slug && selection.productId === product?.id
+      ? selection.ids
+      : (product?.alternatives ?? []).map(item => item.id);
+  const setAlternativeIds = (ids: string[]) => {
+    if (!isReady || !product) return;
+    setSelection({ slug, productId: product.id, ids });
+  };
   const [searchProducts, { data: searchData }] = useLazyQuery(SearchProductsOnEditAlternativeProductsDocument);
-
-  useEffect(() => {
-    if (!data?.tempProductBySlug) return;
-    const rawAlternatives = data.tempProductBySlug.alternatives ?? [];
-    const alternativeIds = rawAlternatives.map(item => item.id).filter((id): id is string => typeof id === 'string');
-    form.setInitialValues({ alternativeIds });
-    form.setValues({ alternativeIds });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.tempProductBySlug?.id]);
 
   const [updateAlternativeProducts, { loading }] = useMutation(EditProductOnEditAlternativeProductsDocument, {
     refetchQueries: [TempProductBySlugOnEditAlternativeProductsDocument],
@@ -87,8 +86,11 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
         const alternativeIds = rawAlternatives
           .map(item => item.id)
           .filter((id): id is string => typeof id === 'string');
-        form.setInitialValues({ alternativeIds });
-        form.reset();
+        setSelection({
+          slug,
+          productId: updateAlternativeProduct.product.id,
+          ids: alternativeIds,
+        });
 
         onSubmit?.();
       }
@@ -99,20 +101,15 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
     },
   });
 
-  const submit = async (values: FormValues) => {
-    if (loading) return;
-
-    if (!values.alternativeIds) {
-      notifications.show({ message: '대안 서비스를 선택해주세요.', color: 'red' });
-      return;
-    }
+  const submit = async () => {
+    if (loading || !isReady) return;
 
     try {
       await updateAlternativeProducts({
         variables: {
           slug,
           input: {
-            alternativeProductIds: values.alternativeIds ?? [],
+            alternativeProductIds: currentAlternativeIds,
           },
         },
       });
@@ -141,7 +138,10 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
       }
     } catch (error) {
       console.error('Search failed:', error);
-      notifications.show({ message: '검색 중 오류가 발생했습니다.', color: 'red' });
+      notifications.show({
+        message: '검색 중 오류가 발생했습니다.',
+        color: 'red',
+      });
     }
   }, 300);
 
@@ -167,8 +167,6 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
     }
   }
 
-  const currentAlternativeIds = form.getValues().alternativeIds ?? [];
-
   const selectedItems = currentAlternativeIds.map(id => ({
     value: id,
     label: uniqueProductsMap.get(id) ?? id,
@@ -183,11 +181,17 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
     }));
 
   return {
-    form,
+    alternativeIds: currentAlternativeIds,
+    setAlternativeIds,
     submit,
     onCancel,
     updateQuery,
     loading,
+    isLoading,
+    isReady,
+    isNotFound,
+    error,
+    retry: () => void refetch().catch(() => {}),
     selectData: [
       {
         group: '선택됨',
