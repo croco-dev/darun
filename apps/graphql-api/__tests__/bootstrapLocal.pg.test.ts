@@ -3,7 +3,7 @@ import { expect, it } from 'vitest';
 import { spawnSync } from 'child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { basename, join } from 'path';
 
 const databaseUrl = process.env['LOCAL_BOOTSTRAP_TEST_DATABASE_URL'];
 const appDir = join(__dirname, '..');
@@ -13,6 +13,7 @@ async function assertEmptySchemas(sql: postgres.Sql) {
     JOIN pg_namespace n ON n.oid = d.refobjid
     WHERE d.refclassid = 'pg_namespace'::regclass AND n.nspname IN ('public', 'drizzle')
     UNION ALL SELECT 1 FROM pg_namespace WHERE nspname = 'drizzle'
+    UNION ALL SELECT 1 FROM pg_event_trigger
     LIMIT 1`;
   if (existing.length) throw new Error('Bootstrap test refuses a nonempty database');
 }
@@ -37,6 +38,7 @@ it.skipIf(!databaseUrl)(
     const sql = postgres(url.toString(), { max: 1 });
     const root = mkdtempSync(join(tmpdir(), 'darun-bootstrap-'));
     let ownsSchema = false;
+    let ownsTrigger = false;
     try {
       await assertEmptySchemas(sql);
       ownsSchema = true;
@@ -63,6 +65,22 @@ it.skipIf(!databaseUrl)(
         await expect(assertEmptySchemas(sql)).rejects.toThrow('nonempty database');
         expect((await sql.unsafe(lookup!))[0]?.['object']).not.toBeNull();
         await sql.unsafe(drop!);
+      }
+      // Event triggers are database-wide, even when their function is in another schema.
+      const probeSchema = basename(root).replaceAll('-', '_');
+      await sql`CREATE SCHEMA ${sql(probeSchema)}`;
+      let probeTriggerCreated = false;
+      try {
+        await sql`CREATE FUNCTION ${sql(probeSchema)}.reject_bootstrap_drop() RETURNS event_trigger
+          LANGUAGE plpgsql AS $$ BEGIN RETURN; END $$`;
+        await sql`CREATE EVENT TRIGGER reject_bootstrap_drop ON sql_drop
+          EXECUTE FUNCTION ${sql(probeSchema)}.reject_bootstrap_drop()`;
+        probeTriggerCreated = true;
+        await expect(assertEmptySchemas(sql)).rejects.toThrow('nonempty database');
+        expect(await sql`SELECT 1 FROM pg_event_trigger WHERE evtname = 'reject_bootstrap_drop'`).toHaveLength(1);
+      } finally {
+        if (probeTriggerCreated) await sql.unsafe('DROP EVENT TRIGGER reject_bootstrap_drop');
+        await sql`DROP SCHEMA ${sql(probeSchema)} CASCADE`;
       }
       await assertEmptySchemas(sql);
       symlinkSync(join(appDir, 'node_modules'), join(root, 'node_modules'), 'dir');
@@ -103,6 +121,7 @@ it.skipIf(!databaseUrl)(
       await sql.unsafe(`CREATE FUNCTION public.reject_bootstrap_drop() RETURNS event_trigger LANGUAGE plpgsql AS $$
       BEGIN RAISE EXCEPTION 'ordinary bootstrap attempted DROP'; END $$;
       CREATE EVENT TRIGGER reject_bootstrap_drop ON sql_drop EXECUTE FUNCTION public.reject_bootstrap_drop()`);
+      ownsTrigger = true;
       for (let i = 0; i < 2; i++) {
         result = run();
         expect(result.status, result.output).toBe(0);
@@ -136,6 +155,7 @@ it.skipIf(!databaseUrl)(
         expect(await history()).toEqual(before);
       }
       await sql.unsafe('DROP EVENT TRIGGER reject_bootstrap_drop');
+      ownsTrigger = false;
       result = run('--reset', '--confirm-delete-local-data');
       expect(result.status, result.output).toBe(0);
       expect(result.output).toContain('public');
@@ -151,8 +171,8 @@ it.skipIf(!databaseUrl)(
       expect(result.output).toContain('Unrecorded existing schema');
       expect(await sql`SELECT id FROM incompatible_fixture`).toEqual([{ id: 'preserve-on-error' }]);
     } finally {
+      if (ownsTrigger) await sql.unsafe('DROP EVENT TRIGGER IF EXISTS reject_bootstrap_drop');
       if (ownsSchema) {
-        await sql.unsafe('DROP EVENT TRIGGER IF EXISTS reject_bootstrap_drop');
         await sql.unsafe('DROP SCHEMA public CASCADE; DROP SCHEMA IF EXISTS drizzle CASCADE; CREATE SCHEMA public');
       }
       await sql.end();
