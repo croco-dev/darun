@@ -15,8 +15,8 @@
     "local:reset": "DATABASE_URL=postgresql://darun:darun@localhost:5432/darun pnpm --filter graphql-api local:reset",
     "local:up": "docker compose -f docker-compose.yml up -d",
     "prepare": "lefthook install",
-    "test": "turbo test",
-    "test:coverage": "turbo test -- --coverage",
+    "test": "turbo test --concurrency=1",
+    "test:coverage": "turbo test --concurrency=1 -- --coverage",
     "typecheck": "turbo typecheck",
     "typecheck:tsrs": "turbo typecheck:tsrs"
   },

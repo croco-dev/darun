@@ -538,6 +538,8 @@ export default defineConfig(createNodeConfig());
 
 `pnpm test:coverage` 실행 시 lcov·html 리포트가 각 패키지 `coverage/` 디렉터리에 생성되고, CI에서 `coverage-reports` 아티팩트로 업로드됩니다.
 
+루트 `pnpm test`와 `pnpm test:coverage`는 패키지 작업을 하나씩 실행합니다. 여러 Vitest 실행기와 그 안의 CLI 회귀 검사가 동시에 확장되어 CI의 CPU·메모리를 놓고 경합하는 것을 줄이기 위한 설정입니다. 각 패키지 내부의 Vitest 병렬 처리, 테스트 수집 범위, assertion과 timeout은 유지합니다. 패키지를 직접 실행하는 테스트 명령에는 영향을 주지 않습니다.
+
 ## 모노레포 구조
 
 ```text
