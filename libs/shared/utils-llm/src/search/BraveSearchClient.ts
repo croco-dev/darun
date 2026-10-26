@@ -3,6 +3,7 @@ import type { WebSearchKeyProvider, WebSearchOutcome, WebSearchResult } from './
 
 const BRAVE_SEARCH_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
 const REQUEST_TIMEOUT_MS = 10_000;
+const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 const MAX_COUNT = 20;
 const MAX_QUERY_CHARS = 400;
 const MAX_TITLE_CHARS = 300;
@@ -89,6 +90,48 @@ class InvalidJsonBodyError extends Error {
   }
 }
 
+class ResponseTooLargeError extends Error {
+  constructor() {
+    super(`Brave search response exceeds ${MAX_RESPONSE_BYTES} bytes`);
+    this.name = 'ResponseTooLargeError';
+  }
+}
+
+async function readBoundedJson(response: Response): Promise<unknown> {
+  if (Number(response.headers.get('content-length')) > MAX_RESPONSE_BYTES) {
+    await response.body?.cancel().catch(() => undefined);
+    throw new ResponseTooLargeError();
+  }
+  if (!response.body) {
+    throw new InvalidJsonBodyError();
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let received = 0;
+  let text = '';
+  let finished = false;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) {
+        finished = true;
+        break;
+      }
+      received += value.byteLength;
+      if (received > MAX_RESPONSE_BYTES) {
+        throw new ResponseTooLargeError();
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    return JSON.parse(text + decoder.decode()) as unknown;
+  } finally {
+    if (!finished) {
+      await reader.cancel().catch(() => undefined);
+    }
+    reader.releaseLock();
+  }
+}
+
 async function fetchOnce(query: string, count: number, apiKey: string, signal?: AbortSignal): Promise<SettledResponse> {
   const url = new URL(BRAVE_SEARCH_ENDPOINT);
   url.searchParams.set('q', query);
@@ -101,13 +144,14 @@ async function fetchOnce(query: string, count: number, apiKey: string, signal?: 
         signal: childSignal,
       });
       if (!response.ok) {
+        await response.body?.cancel().catch(() => undefined);
         return { ok: false, status: response.status, body: undefined };
       }
       try {
-        return { ok: true, status: response.status, body: await response.json() };
+        return { ok: true, status: response.status, body: await readBoundedJson(response) };
       } catch (error) {
         // budget·부모 중단으로 끊긴 본문은 원래 오류로 남겨 TIMEOUT 분류가 되게 한다.
-        if (childSignal.aborted) {
+        if (childSignal.aborted || error instanceof ResponseTooLargeError) {
           throw error;
         }
         throw new InvalidJsonBodyError();

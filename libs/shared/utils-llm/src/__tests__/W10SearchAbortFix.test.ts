@@ -93,6 +93,43 @@ describe('W10 lease abort fix: BraveSearchClient caller abort', () => {
     vi.unstubAllGlobals();
   });
 
+  it.each([429, 500])('%i 오류 본문이 끝나지 않아도 실제 HTTP 연결을 종료한다', async status => {
+    const server = await startSearchServer(res => {
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.write('{"error":"unfinished');
+    });
+    try {
+      isolateFetchDestination(server.origin, () => {});
+      expect(await new BraveSearchClient(() => 'synthetic-key').search('linear')).toMatchObject({
+        ok: false,
+        code: status === 429 ? 'RATE_LIMITED' : 'UPSTREAM_ERROR',
+      });
+      await server.drained();
+      expect(server.requests.map(request => request.closed)).toEqual(['aborted']);
+    } finally {
+      await server.close();
+    }
+  });
+
+  it('길이 헤더 없이 초과 전송하는 실제 HTTP 연결을 종료한다', async () => {
+    const server = await startSearchServer(res => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.write(' '.repeat(2 * 1024 * 1024 + 1));
+    });
+    try {
+      isolateFetchDestination(server.origin, () => {});
+      expect(await new BraveSearchClient(() => 'synthetic-key').search('linear')).toEqual({
+        ok: false,
+        code: 'UPSTREAM_ERROR',
+        message: 'Brave search response exceeds 2097152 bytes',
+      });
+      await server.drained();
+      expect(server.requests.map(request => request.closed)).toEqual(['aborted']);
+    } finally {
+      await server.close();
+    }
+  });
+
   it('B-A4: 호출자 abort는 TIMEOUT 계약으로 신호하고 lease를 recovery에 맡긴다', async () => {
     const fetchMock = vi.fn().mockImplementation((_url: unknown, init?: { signal?: AbortSignal }) => {
       expect(init?.signal).toBeInstanceOf(AbortSignal);

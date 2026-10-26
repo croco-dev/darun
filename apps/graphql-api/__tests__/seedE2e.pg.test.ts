@@ -137,6 +137,19 @@ suite('전용 PostgreSQL/MongoDB의 E2E seed CLI', () => {
   }, 30000);
 });
 
+// Invalid destinations must be rejected before loading the database dependency graph.
+const rejectDatabaseImports = `data:text/javascript,${encodeURIComponent(`
+  import { registerHooks } from 'node:module';
+  registerHooks({
+    resolve(specifier, context, nextResolve) {
+      if (['drizzle-orm', 'mongoose', 'postgres'].some(name => specifier === name || specifier.startsWith(name + '/'))) {
+        process.exit(86);
+      }
+      return nextResolve(specifier, context);
+    }
+  });
+`)}`;
+
 it.each([
   [undefined, undefined],
   ['postgres://u:p@remote.example/darun_e2e', 'mongodb://localhost/darun'],
@@ -152,6 +165,7 @@ it.each([
         ...process.env,
         DATABASE_URL: pg ?? '',
         MONGODB_URI: mongoUrl ?? '',
+        NODE_OPTIONS: `${process.env['NODE_OPTIONS'] ?? ''} --import=${rejectDatabaseImports}`,
       },
       timeout: 10000,
     })

@@ -1,12 +1,3 @@
-import { and, eq, inArray, notInArray } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { mongo } from 'mongoose';
-import postgres from 'postgres';
-import { magazines } from '../../../libs/magazines/datasource/src/entities/MagazineSchema';
-import { products } from '../../../libs/products/datasource/src/entities/ProductSchema';
-import { alternativeProducts } from '../../../libs/recommendation/datasource/src/entities/AlternativeProductSchema';
-import { votes } from '../../../libs/voting/datasource/src/entities/VoteSchema';
-
 // Fixture writes are allowed only in the dedicated local E2E database.
 function localDatabaseUrl(value: string | undefined, kind: 'postgres' | 'mongo'): string {
   const message = `${kind}: 전용 로컬 darun_e2e 데이터베이스 URL이 필요합니다`;
@@ -92,6 +83,26 @@ const rankedProducts = Array.from({ length: 32 }, (_, offset) => {
 async function main() {
   const databaseUrl = localDatabaseUrl(process.env.DATABASE_URL, 'postgres');
   const mongodbUrl = localDatabaseUrl(process.env.MONGODB_URI, 'mongo');
+  // Reject invalid destinations without paying the database modules' startup cost.
+  const [
+    { and, eq, inArray, notInArray },
+    { drizzle },
+    { mongo },
+    { default: postgres },
+    { magazines },
+    { products },
+    { alternativeProducts },
+    { votes },
+  ] = await Promise.all([
+    import('drizzle-orm'),
+    import('drizzle-orm/postgres-js'),
+    import('mongoose'),
+    import('postgres'),
+    import('../../../libs/magazines/datasource/src/entities/MagazineSchema'),
+    import('../../../libs/products/datasource/src/entities/ProductSchema'),
+    import('../../../libs/recommendation/datasource/src/entities/AlternativeProductSchema'),
+    import('../../../libs/voting/datasource/src/entities/VoteSchema'),
+  ]);
   const client = postgres(databaseUrl, { max: 1 });
   const search = new mongo.MongoClient(mongodbUrl, {
     serverSelectionTimeoutMS: 3000,
@@ -100,8 +111,13 @@ async function main() {
     await search.connect();
     const seeded = await drizzle(client).transaction(async db => {
       const result: Array<typeof products.$inferSelect & { voteCount: number }> = [];
-      const fixtures: Array<{ slug: string; name: string; summary: string; description: string; voteCount?: number }> =
-        [FIXTURE_A, FIXTURE_B, ...ALTERNATIVE_PRODUCTS, ...rankedProducts];
+      const fixtures: Array<{
+        slug: string;
+        name: string;
+        summary: string;
+        description: string;
+        voteCount?: number;
+      }> = [FIXTURE_A, FIXTURE_B, ...ALTERNATIVE_PRODUCTS, ...rankedProducts];
       for (const fixture of fixtures) {
         const values = {
           slug: fixture.slug,

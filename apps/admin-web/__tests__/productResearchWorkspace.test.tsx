@@ -2079,7 +2079,7 @@ describe('research registration action ownership with real Apollo', () => {
           color: 'red',
         });
       } else {
-        upload.resolve({ ok: true, json: async () => ({ secure_url: logoA }) });
+        await act(async () => upload.resolve({ ok: true, json: async () => ({ secure_url: logoA }) }));
         await waitFor(() => expect(materializations).toHaveLength(1));
         expectLogoDisabled(true);
         expect(url.value).toBe(logoA);
