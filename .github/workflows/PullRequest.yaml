@@ -114,12 +114,65 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_ci_build_only' }}
           NEXT_PUBLIC_SITE_URL: https://tier.darun.io
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-        continue-on-error: true
-
+  smoke:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      ISOLATED_SMOKE: "1"
+      INFRA_ENV: local
+      RUNNING_ENV: local
+      DATABASE_URL: postgresql://darun:darun@127.0.0.1:55438/darun_e2e
+      MONGODB_URI: mongodb://127.0.0.1:27038/darun?directConnection=true
+      FIREBASE_PROJECT_ID: darun-local
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+      VOTE_IP_SALT: smoke-only-vote-salt
+      CURSOR_SIGNATURE_SECRET: smoke-only-cursor-signature-secret-32-bytes
+      NEXT_PUBLIC_INFRA_ENV: local
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: darun-local
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: localhost
+      NEXT_PUBLIC_FIREBASE_API_KEY: local-api-key
+      NEXT_PUBLIC_GRAPHQL_URL: http://localhost:4000/graphql
+      GRAPHQL_INTERNAL_URL: http://127.0.0.1:4000/graphql
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: "1"
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.x
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright browser
+        run: pnpm --filter service-web exec playwright install --with-deps chromium
+      - name: Prepare disposable infrastructure and fixtures
+        run: |
+          mkdir -p smoke-artifacts
+          # The app's fixed Sentry DSNs must not receive CI fixture telemetry.
+          echo '127.0.0.1 o1088571.ingest.us.sentry.io' | sudo tee -a /etc/hosts
+          docker compose -p darun-smoke -f docker-compose.smoke.yml up -d --wait --wait-timeout 180
+          pnpm --filter graphql-api migrate
+          pnpm --filter graphql-api seed:e2e
+          pnpm --filter graphql-api exec tsx scripts/prepare-smoke-search.ts
       - name: Playwright Smoke Tests
-        # Non-blocking until CI has DB/Firebase/seed infrastructure for the webServer.
-        # Re-enable blocking after: DB service + seed-e2e.ts + required env vars are wired.
-        run: pnpm --filter service-web exec playwright test --grep "@smoke"
-        continue-on-error: true
+        run: pnpm --filter service-web exec playwright test --grep '@smoke'
+      - name: Collect disposable service logs
+        if: always()
+        run: |
+          mkdir -p smoke-artifacts
+          docker compose -p darun-smoke -f docker-compose.smoke.yml logs --no-color > smoke-artifacts/services.log 2>&1
+      - name: Upload smoke diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            apps/service-web/playwright-report/
+            apps/service-web/test-results/
+            smoke-artifacts/
+          retention-days: 7
+      - name: Remove disposable infrastructure
+        if: always()
+        run: docker compose -p darun-smoke -f docker-compose.smoke.yml down -v
