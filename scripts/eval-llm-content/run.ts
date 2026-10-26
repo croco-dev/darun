@@ -158,6 +158,14 @@ function assembleFixtureEvidence(fixture: DescriptionFixture): ProductDescriptio
   };
 }
 
+type DescriptionResponseStatus =
+  'NOT_EXECUTED' | 'REQUEST_FAILED' | 'EMPTY_RESPONSE' | 'JSON_PARSE_FAILED' | 'DOCUMENT_VALIDATION_FAILED' | 'PASSED';
+
+interface DescriptionResponseReport {
+  rawContent: string | null;
+  status: DescriptionResponseStatus;
+}
+
 export async function runLiveDescriptionEvaluations(client: Pick<LlmClient, 'getConfig' | 'completion'>) {
   const config = await client.getConfig();
   const fixtures: DescriptionFixture[] = JSON.parse(
@@ -176,12 +184,18 @@ export async function runLiveDescriptionEvaluations(client: Pick<LlmClient, 'get
       reviewerVersion: PRODUCT_DESCRIPTION_REVIEWER_PROMPT_VERSION,
       writerDraft: null as unknown,
       finalDocument: null as unknown,
+      writerResponse: { rawContent: null, status: 'NOT_EXECUTED' } as DescriptionResponseReport,
+      reviewerResponse: { rawContent: null, status: 'NOT_EXECUTED' } as DescriptionResponseReport,
+      failureStage: null as 'writer' | 'reviewer' | null,
       formatStatus: 'PROVIDER_OR_FORMAT_FAILURE',
       formatFailure: null as string | null,
       meaningStatus: 'HUMAN_REVIEW_REQUIRED',
     };
     try {
-      const complete = async (prompts: { systemPrompt: string; userPrompt: string }) => {
+      const complete = async (stage: 'writer' | 'reviewer', prompts: { systemPrompt: string; userPrompt: string }) => {
+        report.failureStage = stage;
+        const stageReport = stage === 'writer' ? report.writerResponse : report.reviewerResponse;
+        stageReport.status = 'REQUEST_FAILED';
         const response = await client.completion(
           config.model,
           [
@@ -190,13 +204,22 @@ export async function runLiveDescriptionEvaluations(client: Pick<LlmClient, 'get
           ],
           { thinkingLevel: config.thinkingLevel, responseFormat }
         );
+        // Keep the exact response even when parsing or document validation fails.
+        stageReport.rawContent = response.content ?? null;
+        stageReport.status = 'EMPTY_RESPONSE';
         if (!response.content) throw new Error('Empty LLM response');
-        return validateProductDescriptionDocument(JSON.parse(response.content), evidence);
+        stageReport.status = 'JSON_PARSE_FAILED';
+        const parsed: unknown = JSON.parse(response.content);
+        stageReport.status = 'DOCUMENT_VALIDATION_FAILED';
+        const document = validateProductDescriptionDocument(parsed, evidence);
+        stageReport.status = 'PASSED';
+        return document;
       };
-      const draft = await complete(createProductDescriptionWriterPrompt(evidence));
+      const draft = await complete('writer', createProductDescriptionWriterPrompt(evidence));
       report.writerDraft = draft;
-      report.finalDocument = await complete(createProductDescriptionReviewerPrompt(evidence, draft));
+      report.finalDocument = await complete('reviewer', createProductDescriptionReviewerPrompt(evidence, draft));
       report.formatStatus = 'PASSED';
+      report.failureStage = null;
     } catch (error) {
       failures++;
       report.formatFailure = error instanceof Error ? error.message : String(error);
