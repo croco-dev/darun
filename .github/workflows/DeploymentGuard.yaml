@@ -71,7 +71,7 @@ jobs:
           PREPARE_RESULT: ${{ needs.prepare.result }}
           PROBE_RESULT: ${{ needs.probe.result }}
         run: test "$PREPARE_RESULT" = success && test "$PROBE_RESULT" = success
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: deployment-probe-*
           merge-multiple: true
