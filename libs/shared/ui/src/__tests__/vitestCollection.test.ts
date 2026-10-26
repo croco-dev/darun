@@ -70,10 +70,12 @@ export default createJsdomConfig();
           },
           (error, stdout, stderr) => {
             controller.signal.removeEventListener('abort', abort);
-            if (error && (typeof error.code !== 'number' || error.killed)) {
-              reject(error);
+            if (!error) {
+              resolve({ status: 0, stdout, stderr });
+            } else if (typeof error.code === 'number' && !error.killed) {
+              resolve({ status: error.code, stdout, stderr });
             } else {
-              resolve({ status: error?.code ?? 0, stdout, stderr });
+              reject(error);
             }
           }
         );
