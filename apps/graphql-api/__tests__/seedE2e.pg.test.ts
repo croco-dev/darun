@@ -145,8 +145,9 @@ it.each([
   ['postgres://u:p@localhost/darun_e2e', 'mongodb://localhost/darun?proxyHost=remote.example'],
 ])('로컬 전용 DB 외의 URL을 연결 전에 거절한다 (%s)', async (pg, mongoUrl) => {
   await expect(
-    run('pnpm', ['--filter', 'graphql-api', 'seed:e2e'], {
-      cwd: resolve(__dirname, '../../..'),
+    // Exercise the CLI guard without starting a package manager for each rejected URL.
+    run(process.execPath, ['--import', 'tsx', 'scripts/seed-e2e.ts'], {
+      cwd: resolve(__dirname, '..'),
       env: {
         ...process.env,
         DATABASE_URL: pg ?? '',
@@ -154,5 +155,5 @@ it.each([
       },
       timeout: 10000,
     })
-  ).rejects.toMatchObject({ code: 1 });
+  ).rejects.toMatchObject({ code: 1, stderr: expect.stringContaining('E2E seed 실패:') });
 });
