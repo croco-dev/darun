@@ -259,6 +259,9 @@ importers:
       tsrs:
         specifier: 0.18.0-ts7.1.0-dev.20260929
         version: 0.18.0-ts7.1.0-dev.20260929
+      tsx:
+        specifier: 4.22.4
+        version: 4.22.4
       turbo:
         specifier: 'catalog:'
         version: 2.10.7

@@ -289,7 +289,7 @@ ALTERNATIVE_TEST_DATABASE_URL=postgresql://alternatives:isolated-only@127.0.0.1:
 
 소개 생성은 Writer/Reviewer 두 번의 구조화 응답을 검증합니다. 각 backed text는 `text`, `evidenceRefs`, `bullets`, `quote`, `link`를 모두 요구하며 미사용 값은 `[]`, `false`, `null`입니다. 새 생성은 직접 인용을 입증할 근거 계약이 없어 `quote:true`를 거절합니다. 기존 blockquote와 저장된 후보 HTML은 그대로 유지하며, schema·근거 ID 존재·LLM reviewer 결과를 사실성 인증으로 표시하지 않습니다. 근거가 적으면 짧은 소개와 빈 추천 목록을 허용합니다.
 
-`pnpm eval:llm-content`는 기본 또는 `--mode=deterministic`에서 키가 있어도 원격 호출 0회이며 실제 모델 미실행을 명시합니다. `--mode=manual-live`만 승인된 합성 fixture로 기존 소개 Writer/Reviewer와 실제 TranslationProvider를 실행하고, 키가 없으면 SKIPPED로 보고합니다. 소개는 같은 문서 validator를 쓰되 모든 Feature 언급을 강제하지 않습니다. HRV·불확실성·비판·가격·브랜드/URL·HTML/Markdown·sparse/rich·injection·same-host 번역은 원문, 최종 번역, model/version, 형식 실패를 함께 출력해 사람이 비교합니다. 형식 통과나 근거 ID 존재는 의미 합격이 아니며 golden 영어 문장, 운영 데이터, telemetry, LLM judge는 사용하지 않습니다. 로컬 transport 스텁으로 실제 Provider와 보고 출력을 검증하려면 `pnpm exec tsx --test scripts/eval-llm-content/run.test.ts`를 실행합니다.
+`pnpm eval:llm-content`는 기본 또는 `--mode=deterministic`에서 키가 있어도 원격 호출 0회이며 실제 모델 미실행을 명시합니다. `--mode=manual-live`만 승인된 합성 fixture로 기존 소개 Writer/Reviewer와 실제 TranslationProvider를 실행하고, 키가 없으면 SKIPPED로 보고합니다. 소개는 같은 문서 validator를 쓰되 모든 Feature 언급을 강제하지 않습니다. HRV·불확실성·비판·가격·브랜드/URL·HTML/Markdown·sparse/rich·injection·same-host 번역은 원문, 최종 번역, model/version, 형식 실패를 함께 출력해 사람이 비교합니다. 형식 통과나 근거 ID 존재는 의미 합격이 아니며 golden 영어 문장, 운영 데이터, telemetry, LLM judge는 사용하지 않습니다. 로컬 transport 스텁으로 실제 Provider와 보고 출력을 검증하려면 `pnpm test:eval-llm-content`를 실행합니다. 이 명령은 키·DB·외부 LLM 요청 없이 `node:test` 회귀 4개를 skip 없이 실행하고, assertion 실패 시 0이 아닌 종료 코드를 반환합니다. 루트 `pnpm test`는 이 회귀가 성공한 뒤 workspace 테스트를 실행하며, PR CI도 같은 명령을 별도 필수 단계로 실행합니다. 실제 모델을 호출하는 `manual-live` 평가는 자동 실행하지 않습니다.
 
 생성 snapshot은 PostgreSQL의 fresh transaction 조회와 하나의 순수 projector를 사용합니다. 선택된 8종 근거의 전체 LLM 입력(링크 `displayText` 포함)을 v2로 해시하고 `evidence_hash_version`에 저장합니다. 근거 조회 오류는 retryable `EVIDENCE_READ_FAILED`이며 정상 빈 근거로 처리하지 않습니다. 미적용 legacy 후보는 현재 선택 링크가 없고 v1 전체 hash와 본문 base hash가 일치할 때만 적용합니다. 링크가 있거나 hash/version을 확인할 수 없으면 `STALE_CANDIDATE`로 거절하고 다시 생성해야 합니다. 과거 applied 후보는 현재 본문을 다시 쓰거나 재해시하지 않고 과거 적용 사실만 반환합니다.
 
@@ -457,7 +457,7 @@ pnpm audit --audit-level=critical  # Critical 의존성 취약점 검사
 pnpm lint           # ESLint + Prettier 검사
 pnpm typecheck      # TypeScript 타입 검사
 pnpm typecheck:tsrs # tsrs 추가 타입 검사
-pnpm test           # Vitest 단위 테스트
+pnpm test           # 오프라인 평가 회귀 + Vitest 단위 테스트
 pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 ```
 

@@ -14,8 +14,9 @@
     "local:logs": "docker compose -f docker-compose.yml logs -f",
     "local:up": "docker compose -f docker-compose.yml up -d",
     "prepare": "lefthook install",
-    "test": "turbo test",
+    "test": "pnpm run test:eval-llm-content && turbo test",
     "test:coverage": "turbo test -- --coverage",
+    "test:eval-llm-content": "tsx --test scripts/eval-llm-content/run.test.ts",
     "typecheck": "turbo typecheck",
     "typecheck:tsrs": "turbo typecheck:tsrs"
   },
@@ -46,6 +47,7 @@
     "tailwind-merge": "catalog:",
     "tailwindcss": "catalog:",
     "tsrs": "0.18.0-ts7.1.0-dev.20260929",
+    "tsx": "4.22.4",
     "turbo": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",

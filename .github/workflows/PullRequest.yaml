@@ -44,9 +44,11 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: "pnpm"
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Audit dependencies
         run: pnpm audit --audit-level=critical
+      - name: Verify offline LLM evaluation contracts
+        run: pnpm run test:eval-llm-content
       - name: Verify deployment revision and serialization contracts
         run: node --test scripts/deployment-guard.test.mjs
       - name: Verify Turbo environment forwarding and cache keys
