@@ -86,17 +86,24 @@ jobs:
             -c 'CREATE DATABASE darun_job_config_attempts' \
             -c 'CREATE DATABASE darun_translation_integrity' \
             -c 'CREATE DATABASE darun_atomic_integrity' \
-            -c 'CREATE DATABASE darun_migration_baseline'
+            -c 'CREATE DATABASE darun_migration_baseline' \
+            -c 'CREATE DATABASE darun_alternative_integrity' \
+            -c 'CREATE DATABASE darun_description_integrity' \
+            -c 'CREATE DATABASE darun_lease_integrity'
       - name: Verify PostgreSQL integrity without skipped tests
         env:
           JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_job_config_attempts
           TRANSLATION_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity
           MIGRATION_BASELINE_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_migration_baseline
+          ALTERNATIVE_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_alternative_integrity
+          DESCRIPTION_EVIDENCE_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_description_integrity
+          W4_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_lease_integrity
+          W4_PG: "1"
           ATOMIC_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity
         run: |
-          pnpm --filter graphql-api exec vitest run __tests__/migrationBaseline.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
-          pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
-          pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
+          REQUIRED_POSTGRES_GROUP=baseline pnpm --filter graphql-api exec vitest run __tests__/migrationBaseline.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
+          REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
+          REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
       - run: pnpm run test:coverage
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4

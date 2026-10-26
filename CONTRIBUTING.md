@@ -435,22 +435,31 @@ UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어�
 
 ### PostgreSQL 무결성 검사
 
-PR CI는 임시 PostgreSQL 17 서비스에 `darun_job_config_attempts`, `darun_translation_integrity`,
-`darun_atomic_integrity`를 각각 생성해 작업 설정, 번역 저장, 소개 적용·리서치 materialization 검사를 실행합니다.
-각 suite는 실제 migration을 적용하고 외부 공급자는 mock으로 대체합니다. 운영 자격 증명은 사용하지 않습니다.
-CI 전용 reporter는 세 URL 중 하나가 없거나, 수집된 테스트가 없거나, skip/todo/실패가 하나라도 있으면 명령을 실패시킵니다.
-suite별 실행 건수와 skip 건수는 CI 로그에 남으며 이 단계가 실패하면 PR build job도 실패합니다.
+PR CI는 임시 PostgreSQL 17 서비스에 suite별 전용 DB를 생성하고 실제 migration을 적용합니다.
+작업 설정·번역 저장·소개 적용/materialization, 대안 교체의 rollback·병렬 실행,
+fresh evidence·lease 복구와 migration baseline을 검사합니다. 외부 공급자는 mock으로 대체하며 운영 자격 증명은 사용하지 않습니다.
+CI 전용 reporter는 `REQUIRED_POSTGRES_GROUP`으로 필수 suite와 URL을 연결합니다.
+필수 URL·suite 수집 누락이나 skip/todo/실패가 하나라도 있으면 명령을 실패시키고,
+suite별 실행 건수와 skip 건수를 기록합니다. lease 검사는 `W4_PG=1`과 명시적인 로컬
+`darun_lease_integrity` DB만 허용하며 기존 개발 DB를 기본값으로 사용하지 않습니다.
 
-로컬의 일반 `pnpm test`는 URL이 없는 DB suite를 계속 건너뜁니다. 직접 검증하려면 **격리된 로컬 PostgreSQL**에
-위 세 DB를 생성하고 다음 명령을 실행합니다. 예시 포트는 PR CI와 같은 `55437`입니다.
+일반 `pnpm test`는 URL 또는 opt-in이 없는 DB suite를 계속 건너뜁니다. 직접 검증하려면
+**격리된 로컬 PostgreSQL**에 다음 URL의 DB 7개를 먼저 생성하고 CI와 같은 명령을 실행합니다.
+예시 포트는 PR CI와 같은 `55437`입니다. 각 suite가 자기 DB의 migration을 준비합니다.
 
 ```bash
 export JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_job_config_attempts
 export TRANSLATION_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity
 export ATOMIC_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity
+export ALTERNATIVE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_alternative_integrity
+export DESCRIPTION_EVIDENCE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_description_integrity
+export W4_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_lease_integrity
+export MIGRATION_BASELINE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_migration_baseline
+export W4_PG=1
 reporter="$PWD/apps/graphql-api/scripts/required-postgres-reporter.ts"
-pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts --reporter=default --reporter="$reporter"
-pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts --reporter=default --reporter="$reporter"
+REQUIRED_POSTGRES_GROUP=baseline pnpm --filter graphql-api exec vitest run __tests__/migrationBaseline.pg.test.ts --reporter=default --reporter="$reporter"
+REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts --reporter=default --reporter="$reporter"
+REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts --reporter=default --reporter="$reporter"
 ```
 
 PR을 올리기 전에 아래 명령이 모두 통과해야 합니다.

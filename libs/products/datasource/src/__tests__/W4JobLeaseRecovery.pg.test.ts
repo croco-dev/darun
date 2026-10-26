@@ -1,13 +1,16 @@
+import 'reflect-metadata';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { resolve } from 'node:path';
 import { productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
 import { productResearchJobs } from '../entities/ProductResearchJobSchema';
 import { PostgresqlProductDescriptionJobRepository } from '../repositories/PostgresqlProductDescriptionJobRepository';
 import { PostgresqlProductResearchJobRepository } from '../repositories/PostgresqlProductResearchJobRepository';
 
-const DATABASE_URL = process.env['W4_DATABASE_URL'] ?? 'postgresql://darun:darun@localhost:55433/darun';
+const databaseUrl = process.env['W4_DATABASE_URL'];
 
 const maybeDescribe = process.env['W4_PG'] === '1' ? describe : describe.skip;
 
@@ -21,20 +24,37 @@ maybeDescribe('W4 job lease recovery (isolated PG)', () => {
   let createdIds: { descJobs: string[]; researchJobs: string[] };
 
   beforeAll(async () => {
-    sql = postgres(DATABASE_URL, { prepare: false, max: 10 });
+    if (!databaseUrl) throw new Error('W4_DATABASE_URL is required when W4_PG=1');
+    const target = new URL(databaseUrl);
+    if (
+      !['postgres:', 'postgresql:'].includes(target.protocol) ||
+      !['localhost', '127.0.0.1'].includes(target.hostname) ||
+      target.pathname !== '/darun_lease_integrity' ||
+      target.search ||
+      target.hash
+    ) {
+      throw new Error('Requires the isolated local darun_lease_integrity database');
+    }
+    sql = postgres(databaseUrl, {
+      prepare: false,
+      max: 10,
+      connect_timeout: 5,
+    });
     db = drizzle(sql);
     createdIds = { descJobs: [], researchJobs: [] };
-    await db.execute('select 1');
-  });
+    await migrate(db, {
+      migrationsFolder: resolve(__dirname, '../../../../../apps/graphql-api/scripts/migrations'),
+    });
+  }, 30_000);
 
   afterAll(async () => {
-    for (const id of createdIds.descJobs) {
+    for (const id of createdIds?.descJobs ?? []) {
       await db
         .delete(productDescriptionJobs)
         .where(eq(productDescriptionJobs.id, id))
         .catch(() => {});
     }
-    for (const id of createdIds.researchJobs) {
+    for (const id of createdIds?.researchJobs ?? []) {
       await db
         .delete(productResearchJobs)
         .where(eq(productResearchJobs.id, id))
@@ -47,7 +67,11 @@ maybeDescribe('W4 job lease recovery (isolated PG)', () => {
     const repo = new PostgresqlProductDescriptionJobRepository(db as never);
     const rows = await db
       .insert(productDescriptionJobs)
-      .values({ productId: unique('prod'), status: 'pending', message: 'pending' })
+      .values({
+        productId: unique('prod'),
+        status: 'pending',
+        message: 'pending',
+      })
       .returning();
     const job = rows[0]!;
     createdIds.descJobs.push(job.id);
@@ -67,7 +91,9 @@ maybeDescribe('W4 job lease recovery (isolated PG)', () => {
     expect(late).toBeNull();
 
     // 소유 lease의 확정은 통과한다.
-    const done = await repo.completeJobLease(job.id, leaseA, 'completed', { message: 'done' });
+    const done = await repo.completeJobLease(job.id, leaseA, 'completed', {
+      message: 'done',
+    });
     expect(done?.status).toBe('completed');
   });
 
@@ -76,7 +102,11 @@ maybeDescribe('W4 job lease recovery (isolated PG)', () => {
     const now = new Date();
     const pendingRows = await db
       .insert(productResearchJobs)
-      .values({ requestKey: unique('rk'), officialUrl: 'https://example.com/', status: 'pending' })
+      .values({
+        requestKey: unique('rk'),
+        officialUrl: 'https://example.com/',
+        status: 'pending',
+      })
       .returning();
     const expiredRows = await db
       .insert(productResearchJobs)
