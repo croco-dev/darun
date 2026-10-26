@@ -535,7 +535,7 @@ export default defineConfig(createNodeConfig());
 
 타이머로 시작하는 UI 조회 테스트는 가짜 타이머와 `act`로 예약된 작업을 실행한 뒤 결과를 확인하고, 테스트 종료 시 실제 타이머를 복구합니다. 병렬 실행 부하 때문에 실패하는 테스트의 대기 시간을 임의로 늘리지 않습니다.
 
-`pnpm test:coverage` 실행 시 lcov·html 리포트가 각 패키지 `coverage/` 디렉터리에 생성되고, CI에서 `coverage-reports` 아티팩트로 업로드됩니다.
+`pnpm test:coverage` 실행 시 lcov·html 리포트가 각 패키지 `coverage/` 디렉터리에 생성되고, PR CI에서 `coverage-<Node 버전>` 아티팩트로 업로드됩니다. 패키지별 경로와 `coverage/` 내부 구조를 유지한 채 상세 HTML·CSS·JavaScript·이미지와 `lcov.info`를 함께 보존하므로, 내려받은 보고서의 `index.html`에서 오프라인으로 파일별 상세를 탐색할 수 있습니다. 테스트 실패 시에도 이미 생성된 보고서를 업로드하며 보존 기간은 7일입니다.
 
 ### Turbo 환경변수
 

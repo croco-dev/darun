@@ -103,9 +103,7 @@ jobs:
         if: always()
         with:
           name: coverage-${{ matrix.node-version }}
-          path: |
-            **/coverage/lcov.info
-            **/coverage/index.html
+          path: "**/coverage/**"
           retention-days: 7
       - name: Build
         run: pnpm run build
