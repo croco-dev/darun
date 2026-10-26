@@ -5,6 +5,9 @@ type TestConfig = NonNullable<UserConfig['test']>;
 type CoverageConfig = NonNullable<TestConfig['coverage']>;
 type CoverageThresholds = NonNullable<CoverageConfig['thresholds']>;
 
+// Leave capacity for nested CLI regressions on the 4-vCPU CI runner.
+const DEFAULT_MAX_WORKERS = 2;
+
 const coverageDefaults: CoverageConfig = {
   provider: 'v8',
   reporter: ['text', 'lcov', 'html'],
@@ -54,6 +57,7 @@ export function createNodeConfig(overrides: UserConfig = {}): UserConfig {
     test: {
       // Keep true so packages without tests yet don't fail the gate.
       passWithNoTests: true,
+      maxWorkers: DEFAULT_MAX_WORKERS,
       environment: 'node',
       include: ['src/__tests__/**/*.test.ts', 'src/**/*.test.{ts,tsx}'],
       ...testOverrides,
@@ -72,6 +76,7 @@ export function createJsdomConfig(overrides: UserConfig = {}): UserConfig {
     test: {
       // Keep true so packages without tests yet don't fail the gate.
       passWithNoTests: true,
+      maxWorkers: DEFAULT_MAX_WORKERS,
       environment: 'jsdom',
       include: ['src/**/*.test.{ts,tsx}'],
       ...testOverrides,
