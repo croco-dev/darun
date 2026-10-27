@@ -10,7 +10,7 @@ import { magazines } from '../entities/MagazineSchema';
 export class PostgresqlMagazineRepository implements MagazineRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
-  async publishById(id: string): Promise<Magazine> {
+  publishById(id: string): Promise<Magazine> {
     return this.db.transaction(async tx => {
       const [row] = await tx.select().from(magazines).where(eq(magazines.id, id)).for('update');
       if (!row) throw magazineNotFound();
