@@ -20,6 +20,9 @@ export const FIREBASE_PRIVATE_KEY = (IS_LOCAL ? optionalEnv : requireEnv)('FIREB
 export const FIREBASE_CLIENT_EMAIL = (IS_LOCAL ? optionalEnv : requireEnv)('FIREBASE_CLIENT_EMAIL');
 export const MONGODB_URI = requireEnv('MONGODB_URI');
 export const VOTE_IP_SALT = requireEnv('VOTE_IP_SALT');
+// Validate before serving requests; keep the original bytes used by existing cursor signatures.
+const cursorSignatureSecret = requireEnv('CURSOR_SIGNATURE_SECRET');
+assert(cursorSignatureSecret.trim(), 'CURSOR_SIGNATURE_SECRET not provided');
 export const CLOUDINARY_CLOUD_NAME = (IS_LOCAL ? optionalEnv : requireEnv)('CLOUDINARY_CLOUD_NAME');
 export const CLOUDINARY_API_KEY = (IS_LOCAL ? optionalEnv : requireEnv)('CLOUDINARY_API_KEY');
 export const CLOUDINARY_API_SECRET = (IS_LOCAL ? optionalEnv : requireEnv)('CLOUDINARY_API_SECRET');
