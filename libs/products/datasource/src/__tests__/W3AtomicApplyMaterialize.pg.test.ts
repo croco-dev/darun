@@ -3,6 +3,10 @@ import type { ApolloServer } from '@apollo/server';
 import {
   ApplyProductDescriptionCandidate,
   UpdateProductLink,
+  UpdateProductTag,
+  ProductTag,
+  Tag,
+  TagType,
   Product,
   ProductFeature,
   ProductLink,
@@ -56,6 +60,7 @@ import { productResearchJobs } from '../entities/ProductResearchJobSchema';
 import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 import { productTags } from '../entities/ProductTagsSchema';
+import { tags } from '../entities/TagSchema';
 import { PostgresqlCategoryRepository } from '../repositories/PostgresqlCategoryRepository';
 import { PostgresqlProductDescriptionApplyStore } from '../repositories/PostgresqlProductDescriptionApplyStore';
 import {
@@ -69,6 +74,7 @@ import { PostgresqlProductRepository } from '../repositories/PostgresqlProductRe
 import { PostgresqlProductResearchJobRepository } from '../repositories/PostgresqlProductResearchJobRepository';
 import { PostgresqlProductResearchMaterializationRepository } from '../repositories/PostgresqlProductResearchMaterializationRepository';
 import { PostgresqlProductScreenshotRepository } from '../repositories/PostgresqlProductScreenshotRepository';
+import { PostgresqlProductTagRepository } from '../repositories/PostgresqlProductTagRepository';
 import { ProductContentSyncRegistrarToken } from '../repositories/productContentSync';
 import { lockProductSource } from '../repositories/productSourceMutex';
 const { graphql } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
@@ -227,6 +233,158 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       },
     };
   }
+
+  it('서로 다른 상품의 역순 태그 생성 경합이 canonical 태그 한 건씩으로 수렴한다', async () => {
+    const first = await publishedOwner([]);
+    const second = await publishedOwner([]);
+    const before = await syncState([first.id, second.id]);
+    const names = [`z-${prefix}-${sequence++}`, `a-${prefix}-${sequence++}`];
+    const firstWriter = new PostgresqlProductTagRepository(db as never);
+    const secondWriter = new PostgresqlProductTagRepository(writerDb as never);
+    let writes: Promise<PromiseSettledResult<ProductTag>[]> | undefined;
+    try {
+      await db.transaction(async tx => {
+        // SHARE permits both initial SELECTs but holds both INSERTs until they are observed.
+        await tx.execute(querySql`lock table tags in share mode`);
+        writes = Promise.allSettled([
+          firstWriter.upsert(
+            new ProductTag({
+              productId: first.id,
+              tags: names.map(name => new Tag({ name })),
+            })
+          ),
+          secondWriter.upsert(
+            new ProductTag({
+              productId: second.id,
+              tags: [...names].reverse().map(name => new Tag({ name })),
+            })
+          ),
+        ]);
+        const deadline = Date.now() + 3000;
+        while (Date.now() < deadline) {
+          const waiting = await sql`
+            select a.pid from pg_stat_activity a
+            where a.datname = current_database() and a.wait_event_type = 'Lock'
+              and a.query like 'insert into "tags"%'
+              and pg_backend_pid() <> a.pid`;
+          if (waiting.length === 2) return;
+          await new Promise<void>(resolve => setImmediate(resolve));
+        }
+        throw new Error('Both tag writers must reach their blocked INSERT before releasing the gate');
+      });
+      const results = await writes!;
+      expect(results.map(result => result.status)).toEqual(['fulfilled', 'fulfilled']);
+      const canonical = await db.select().from(tags).where(inArray(tags.name, names));
+      expect(canonical.map(tag => tag.name).sort()).toEqual([...names].sort());
+      for (const [index, product] of [first, second].entries()) {
+        const linked = await db.select().from(productTags).where(eq(productTags.productId, product.id));
+        expect(linked.map(link => link.tagId).sort()).toEqual(canonical.map(tag => tag.id).sort());
+        const result = results[index]!;
+        if (result.status === 'fulfilled') {
+          expect(result.value.tags.map(tag => tag.id).sort()).toEqual(canonical.map(tag => tag.id).sort());
+        }
+      }
+      const after = await syncState([first.id, second.id]);
+      expect(after.products.map(product => product.contentRevision)).toEqual(
+        before.products.map(product => product.contentRevision + BigInt(1))
+      );
+      expect(after.search).toHaveLength(before.search.length + 2);
+      expect(after.translation).toEqual(before.translation);
+    } finally {
+      await writes;
+    }
+  });
+
+  it('중복 태그 입력·기존 태그 재사용·빈 목록 교체에도 연결과 revision을 일관되게 유지한다', async () => {
+    const product = await publishedOwner([]);
+    const name = `duplicate-${prefix}-${sequence++}`;
+    const repository = new PostgresqlProductTagRepository(db as never);
+    const result = await repository.upsert(
+      new ProductTag({
+        productId: product.id,
+        tags: [new Tag({ name }), new Tag({ name })],
+      })
+    );
+    expect(result.tags).toHaveLength(1);
+    const [canonical] = await db
+      .update(tags)
+      .set({ type: TagType.Featured, count: 17 })
+      .where(eq(tags.name, name))
+      .returning();
+    expect(result.tags[0]?.id).toBe(canonical!.id);
+    expect(await db.select().from(productTags).where(eq(productTags.productId, product.id))).toHaveLength(1);
+    const before = await syncState([product.id]);
+    await new UpdateProductTag(repository).execute({
+      productId: product.id,
+      tagNames: [name, name],
+    });
+    expect(await syncState([product.id])).toEqual(before);
+    expect(await db.select().from(tags).where(eq(tags.name, name))).toEqual([canonical]);
+    expect((await repository.findOneByProductId(product.id))?.tags).toEqual([
+      expect.objectContaining({
+        id: canonical!.id,
+        name,
+        type: TagType.Featured,
+        count: 17,
+      }),
+    ]);
+    await new UpdateProductTag(repository).execute({
+      productId: product.id,
+      tagNames: [],
+    });
+    expect(await repository.findOneByProductId(product.id)).toBeNull();
+    expect(await db.select().from(tags).where(eq(tags.name, name))).toEqual([canonical]);
+    const cleared = await syncState([product.id]);
+    expect(cleared.products[0]?.contentRevision).toBe(before.products[0]!.contentRevision + BigInt(1));
+    expect(cleared.search).toHaveLength(before.search.length + 1);
+    expect(cleared.translation).toEqual(before.translation);
+  });
+
+  it('태그 교체의 intent INSERT 실패는 기존 연결·신규 태그·revision·intent를 모두 rollback한다', async () => {
+    const product = await publishedOwner([]);
+    const oldName = `old-${prefix}-${sequence++}`;
+    const newName = `new-${prefix}-${sequence++}`;
+    const repository = new PostgresqlProductTagRepository(db as never);
+    await new UpdateProductTag(repository).execute({
+      productId: product.id,
+      tagNames: [oldName],
+    });
+    const before = await syncState([product.id]);
+    const links = await db.select().from(productTags).where(eq(productTags.productId, product.id));
+    await sql`create function atomic_fail_tag_intent() returns trigger language plpgsql as $$
+      begin
+        if new.product_id = current_setting('darun.tag_intent_failure', true) then
+          raise exception 'injected tag intent failure';
+        end if;
+        return new;
+      end $$`;
+    await sql`create trigger atomic_fail_tag_intent before insert on product_content_sync_intents
+      for each row execute function atomic_fail_tag_intent()`;
+    try {
+      await expect(
+        db.transaction(async tx => {
+          await tx.execute(querySql`select set_config('darun.tag_intent_failure', ${product.id}, true)`);
+          await new UpdateProductTag(new PostgresqlProductTagRepository(tx as never)).execute({
+            productId: product.id,
+            tagNames: [newName],
+          });
+        })
+      ).rejects.toMatchObject({
+        cause: { message: 'injected tag intent failure' },
+      });
+      expect(await db.select().from(productTags).where(eq(productTags.productId, product.id))).toEqual(links);
+      expect(await db.select().from(tags).where(eq(tags.name, newName))).toEqual([]);
+      expect(await syncState([product.id])).toEqual(before);
+    } finally {
+      await sql`drop trigger atomic_fail_tag_intent on product_content_sync_intents`;
+      await sql`drop function atomic_fail_tag_intent()`;
+    }
+    await new UpdateProductTag(repository).execute({
+      productId: product.id,
+      tagNames: [newName],
+    });
+    expect((await repository.findOneByProductId(product.id))?.tags.map(tag => tag.name)).toEqual([newName]);
+  });
 
   it('다른 상품의 링크 수정은 두 상품의 링크와 revision·intent를 보존한다', async () => {
     const requested = await publishedOwner([]);
