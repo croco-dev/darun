@@ -30,7 +30,10 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
       }
       if (tagsByName.size > 0) {
         // A consistent insert order also avoids deadlocks for overlapping sets from different Products.
-        const tagValues = [...tagsByName.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+        const tagValues = [...tagsByName.values()].sort((a, b) => {
+          if (a.name < b.name) return -1;
+          return a.name > b.name ? 1 : 0;
+        });
         await tx.insert(tags).values(tagValues).onConflictDoNothing({ target: tags.name });
       }
       // A conflicting insert may belong to another transaction; read its canonical ID after it commits.
