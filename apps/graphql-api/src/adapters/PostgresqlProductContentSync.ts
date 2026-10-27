@@ -18,7 +18,8 @@ import { Inject, Service } from 'typedi';
 import { randomUUID } from 'node:crypto';
 import { productContentSyncIntents } from '../../../../libs/products/datasource/src/entities/ProductContentSyncIntentSchema';
 import { products } from '../../../../libs/products/datasource/src/entities/ProductSchema';
-import { readProductDescriptionEvidenceSources } from '../../../../libs/products/datasource/src/repositories/PostgresqlProductDescriptionEvidenceAssembler';
+import { productTags } from '../../../../libs/products/datasource/src/entities/ProductTagsSchema';
+import { tags } from '../../../../libs/products/datasource/src/entities/TagSchema';
 import {
   type ProductContentSource,
   type ProductContentSyncRegistrar,
@@ -403,14 +404,22 @@ export class PostgresqlProductContentSync implements ProductContentSync {
   }
 
   async executeSearch(intentId: string): Promise<void> {
+    // This unlocked read only skips terminal deliveries. Claim authority is rechecked
+    // below after the Product mutex, in the same order as canonical source writers.
+    const [owner] = await this.db
+      .select({
+        productId: productContentSyncIntents.productId,
+        kind: productContentSyncIntents.kind,
+        status: productContentSyncIntents.status,
+      })
+      .from(productContentSyncIntents)
+      .where(eq(productContentSyncIntents.id, intentId));
+    if (!owner) throw new Error('CONTENT_SYNC_INTENT_NOT_FOUND');
+    if (owner.kind !== 'search') throw new Error('CONTENT_SYNC_QUEUE_IDENTITY_INVALID');
+    if (owner.status === 'completed' || owner.status === 'superseded') return;
     const token = randomUUID();
     const claimed = await this.db.transaction(async tx => {
-      const [owner] = await tx
-        .select({ productId: productContentSyncIntents.productId })
-        .from(productContentSyncIntents)
-        .where(eq(productContentSyncIntents.id, intentId));
-      if (!owner) throw new Error('CONTENT_SYNC_INTENT_NOT_FOUND');
-      const source = await readProductDescriptionEvidenceSources(tx, owner.productId);
+      const product = await lockProductSource(tx, owner.productId);
       const [intent] = await tx
         .select()
         .from(productContentSyncIntents)
@@ -466,7 +475,17 @@ export class PostgresqlProductContentSync implements ProductContentSync {
           updatedAt: new Date(),
         })
         .where(eq(productContentSyncIntents.id, intent.id));
-      return source;
+      // Search uses category IDs from Product, not the description evidence graph.
+      // Read tags under the same Product mutex and revision as the indexed fields.
+      const tagRows = await tx
+        .select({ name: tags.name })
+        .from(productTags)
+        .innerJoin(tags, eq(productTags.tagId, tags.id))
+        .where(eq(productTags.productId, product.id));
+      return {
+        product: { ...product, description: product.description ?? '' },
+        tags: tagRows.map(tag => tag.name),
+      };
     });
     if (!claimed) return;
     try {
