@@ -34,8 +34,17 @@ function transaction(rows: Record<string, unknown>[]) {
     orderBy: vi.fn(),
     where: vi.fn(),
     returning: vi.fn().mockResolvedValue(rows),
+    onConflictDoNothing: vi.fn(),
   });
-  for (const method of [chain.from, chain.innerJoin, chain.for, chain.limit, chain.orderBy, chain.where]) {
+  for (const method of [
+    chain.from,
+    chain.innerJoin,
+    chain.for,
+    chain.limit,
+    chain.orderBy,
+    chain.where,
+    chain.onConflictDoNothing,
+  ]) {
     method.mockReturnValue(chain);
   }
   return {

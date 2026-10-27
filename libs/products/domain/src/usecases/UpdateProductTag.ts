@@ -12,7 +12,7 @@ export class UpdateProductTag {
   ) {}
 
   async execute({ productId, tagNames }: { productId: string; tagNames: string[] }) {
-    const tags = tagNames.map(name => new Tag({ name }));
+    const tags = [...new Set(tagNames)].map(name => new Tag({ name }));
     await this.productTagRepository.upsert(new ProductTag({ productId, tags }));
   }
 }

@@ -24,18 +24,26 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
   upsert(productTag: ProductTag): Promise<ProductTag> {
     return this.db.transaction(async tx => {
       const finishContentWrite = await beginProductContentWrite(tx, productTag.productId);
-      const existTags = await tx
-        .select()
-        .from(tags)
-        .where(
-          inArray(
-            tags.name,
-            productTag.tags.map(tag => tag.name)
-          )
-        );
-      const newTagValues = productTag.tags.filter(tag => !existTags.find(t => t.name === tag.name));
-      const newTags = newTagValues.length > 0 ? await tx.insert(tags).values(newTagValues).returning() : [];
-      const totalTags = [...existTags, ...newTags];
+      const tagsByName = new Map<string, Tag>();
+      for (const tag of productTag.tags) {
+        if (!tagsByName.has(tag.name)) tagsByName.set(tag.name, tag);
+      }
+      if (tagsByName.size > 0) {
+        // A consistent insert order also avoids deadlocks for overlapping sets from different Products.
+        const tagValues = [...tagsByName.values()].sort((a, b) => {
+          if (a.name < b.name) return -1;
+          return a.name > b.name ? 1 : 0;
+        });
+        await tx.insert(tags).values(tagValues).onConflictDoNothing({ target: tags.name });
+      }
+      // A conflicting insert may belong to another transaction; read its canonical ID after it commits.
+      const totalTags =
+        tagsByName.size > 0
+          ? await tx
+              .select()
+              .from(tags)
+              .where(inArray(tags.name, [...tagsByName.keys()]))
+          : [];
 
       const prevProductTags = await tx
         .select()
