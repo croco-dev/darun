@@ -22,7 +22,116 @@ const createMockRepository = () => ({
   findScreenshotUiElementsByScreenshotIds: vi.fn().mockResolvedValue({}),
 });
 
-describe('screenshot metadata normalization (add + update share one policy)', () => {
+describe('screenshot metadata normalization', () => {
+  it.each([
+    {
+      name: '생략',
+      patch: {},
+      expected: { title: '기존 제목', platform: 'WEB', screenType: 'HOME' },
+    },
+    {
+      name: '명시적 null',
+      patch: { title: null, platform: null, screenType: null },
+      expected: { title: null, platform: null, screenType: null },
+    },
+    {
+      name: '동일값',
+      patch: { title: '기존 제목', platform: 'WEB', screenType: 'HOME' },
+      expected: { title: '기존 제목', platform: 'WEB', screenType: 'HOME' },
+    },
+    {
+      name: '변경값',
+      patch: { title: '  새 제목  ', platform: 'IOS', screenType: 'SIGN_IN' },
+      expected: { title: '새 제목', platform: 'IOS', screenType: 'SIGN_IN' },
+    },
+    {
+      name: '일부 필드',
+      patch: { title: null },
+      expected: { title: null, platform: 'WEB', screenType: 'HOME' },
+    },
+  ])('수정의 $name 입력은 잠긴 행에서 선택한 필드만 바꾼다', async ({ patch, expected }) => {
+    const repository = createMockRepository();
+    const current = new ProductScreenshot({
+      id: 'screen-1',
+      productId: 'product-1',
+      imageUrl: 'https://example.com/keep.png',
+      imageAlt: '이전 alt',
+      title: '기존 제목',
+      platform: 'WEB',
+      screenType: 'HOME',
+    });
+    repository.findById.mockRejectedValue(new Error('잠금 이전 읽기는 사용하지 않는다'));
+    repository.updateById.mockImplementation(async (_id, modifier, validateLocked) => {
+      await validateLocked(current);
+      return modifier(current);
+    });
+    const findFlowIdsByScreenshotId = vi.fn().mockResolvedValue([]);
+    const useCase = new UpdateProductScreenshot(
+      repository as unknown as ProductScreenshotRepository,
+      { findFlowIdsByScreenshotId } as never
+    );
+    const updated = await useCase.execute({
+      id: current.id,
+      imageAlt: '  새 alt  ',
+      ...patch,
+    });
+    expect(updated).toMatchObject({
+      ...expected,
+      id: current.id,
+      productId: 'product-1',
+      imageUrl: current.imageUrl,
+      imageAlt: '새 alt',
+    });
+    expect(findFlowIdsByScreenshotId).toHaveBeenCalledTimes(expected.platform === 'WEB' ? 0 : 1);
+  });
+
+  it.each([undefined, 'WEB', null, 'IOS'])(
+    '참조 중인 화면의 platform=%j는 실제 변경일 때만 거절한다',
+    async platform => {
+      const repository = createMockRepository();
+      const current = new ProductScreenshot({
+        id: 'screen-1',
+        productId: 'product-1',
+        imageUrl: 'https://example.com/keep.png',
+        imageAlt: '기존 alt',
+        title: '기존 제목',
+        platform: 'WEB',
+        screenType: 'HOME',
+      });
+      const persisted = vi.fn();
+      repository.updateById.mockImplementation(async (_id, modifier, validateLocked) => {
+        await validateLocked(current);
+        const next = modifier(current);
+        persisted(next);
+        return next;
+      });
+      const useCase = new UpdateProductScreenshot(
+        repository as unknown as ProductScreenshotRepository,
+        {
+          findFlowIdsByScreenshotId: vi.fn().mockResolvedValue(['flow-1']),
+        } as never
+      );
+      const result = useCase.execute({
+        id: current.id,
+        imageAlt: '새 alt',
+        platform,
+      });
+      if (platform === undefined || platform === 'WEB') {
+        await expect(result).resolves.toMatchObject({
+          title: '기존 제목',
+          platform: 'WEB',
+          screenType: 'HOME',
+          imageAlt: '새 alt',
+        });
+      } else {
+        await expect(result).rejects.toMatchObject({
+          code: 'product-screenshot/in-use',
+        });
+        expect(persisted).not.toHaveBeenCalled();
+      }
+    }
+  );
+
   it('신규 필드 없는 기존 유효 생성 입력은 메타데이터 NULL로 저장된다', async () => {
     const mockRepository = createMockRepository();
     mockRepository.insert.mockImplementation(async (screenshot: ProductScreenshot) => screenshot);

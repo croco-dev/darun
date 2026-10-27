@@ -37,10 +37,10 @@ export class UpdateProductScreenshot {
     screenType?: string | null;
     uiElements?: readonly string[] | null;
   }): Promise<ProductScreenshot> {
-    const normalizedTitle = normalizeScreenshotTitle(title);
+    const normalizedTitle = title === undefined ? undefined : normalizeScreenshotTitle(title);
     const normalizedImageAlt = normalizeScreenshotImageAlt(imageAlt);
-    const normalizedPlatform = normalizeVisualPlatform(platform);
-    const normalizedScreenType = normalizeVisualScreenType(screenType);
+    const normalizedPlatform = platform === undefined ? undefined : normalizeVisualPlatform(platform);
+    const normalizedScreenType = screenType === undefined ? undefined : normalizeVisualScreenType(screenType);
     const normalizedUiElements = uiElements === undefined ? undefined : normalizeVisualUiElements(uiElements);
 
     const screenshot = await this.productScreenshotRepository.updateById(
@@ -51,14 +51,14 @@ export class UpdateProductScreenshot {
           imageUrl: current.imageUrl,
           productId: current.productId,
           imageAlt: normalizedImageAlt,
-          title: normalizedTitle,
-          platform: normalizedPlatform,
-          screenType: normalizedScreenType,
+          title: normalizedTitle === undefined ? current.title : normalizedTitle,
+          platform: normalizedPlatform === undefined ? current.platform : normalizedPlatform,
+          screenType: normalizedScreenType === undefined ? current.screenType : normalizedScreenType,
         }),
       // 잠금 규약(접근 2): 참조 중인 화면의 플랫폼 변경은 screenshot row를
       // FOR UPDATE로 잠근 뒤 검증한다. 같은 플랫폼 유지 시 제목/alt/유형 수정은 허용한다.
       async lockedCurrent => {
-        if (lockedCurrent.platform !== normalizedPlatform) {
+        if (normalizedPlatform !== undefined && lockedCurrent.platform !== normalizedPlatform) {
           const lockedFlowIds = await this.productFlowRepository.findFlowIdsByScreenshotId(id);
           if (lockedFlowIds.length > 0) {
             throw productScreenshotInUse();
