@@ -10,7 +10,8 @@ describe('Document placeholder fidelity', () => {
     const encoded = encodeHtml(source);
     expect(encoded.encodedText).toContain('한국어');
     expect(encoded.encodedText).not.toContain('Darun');
-    expect(encoded.encodedText).not.toContain('42');
+    // A random placeholder nonce may contain the same digits; the source number must stay protected.
+    expect(encoded.encodedText).not.toMatch(/\b42\b/);
     expect(encoded.encodedText).not.toContain('&amp;');
     const translated = decodeHtml(
       encoded.encodedText.replace('한국어', 'Korean').replace('링크', 'Link'),
