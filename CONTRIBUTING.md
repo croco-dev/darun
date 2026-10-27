@@ -26,6 +26,13 @@ cp apps/admin-web/.env.sample apps/admin-web/.env.local
 cp apps/visual-web/.env.sample apps/visual-web/.env.local
 ```
 
+GraphQL 개발 서버(`pnpm --filter graphql-api dev`)는 호출 프로세스의 환경변수 →
+`apps/graphql-api/.env.local` → `apps/graphql-api/.env` 순으로 값을 선택합니다.
+빈 문자열도 명시한 값으로 유지하며, 파일이 없어도 실행을 계속합니다.
+Node.js 22의 내장 환경 파일 파서로 인용값, 여러 줄 값, 주석과 `export` 접두어를 읽습니다.
+`INFRA_ENV`가 없으면 `local`을 사용하고, 나머지 필수 설정은 기존 서버 검증을 따릅니다.
+환경변수 값은 개발 로더에서 출력하지 않습니다.
+
 #### `apps/graphql-api`
 
 | 변수 | 설명 | 필수 |
@@ -139,6 +146,11 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
    cp apps/admin-web/.env.sample apps/admin-web/.env.local
    cp apps/visual-web/.env.sample apps/visual-web/.env.local
    ```
+
+   GraphQL 개발 서버의 파일 우선순위는 직접 실행할 때와 같습니다(외부 환경변수 →
+   `.env.local` → `.env`). Compose의 `environment`에 명시된 DB·에뮬레이터 연결값은
+   프로세스 환경변수로 전달되므로 파일보다 우선합니다. `.env.local`의 나머지 값은
+   `env_file`로 전달하며, 여기에 없는 값은 개발 로더가 `.env`에서 보충합니다.
 
 2. **서비스 실행**:
    `pnpm local:up` 명령으로 모든 컨테이너를 백그라운드에서 실행합니다.
