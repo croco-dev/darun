@@ -366,6 +366,36 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       throw new Error('API response is missing');
     return JSON.parse(response.body);
   }
+  it('비어 있지 않은 상품 목록의 커서로 다음 페이지를 조회한다', async () => {
+    const categoryId = `cursor-${randomUUID().slice(0, 16)}`;
+    const firstId = `${categoryId}-a`;
+    const secondId = `${categoryId}-b`;
+    await connection`INSERT INTO categories (id, slug, label_ko, label_en)
+      VALUES (${categoryId}, ${categoryId}, '커서 검사', 'Cursor fixture')`;
+    await connection`INSERT INTO products (id, slug, name, summary, logo_url, category_ids, published_at) VALUES
+      (${firstId}, ${firstId}, 'First', 'First summary', 'https://fixture.invalid/first.png', ${JSON.stringify([categoryId])}::json, now()),
+      (${secondId}, ${secondId}, 'Second', 'Second summary', 'https://fixture.invalid/second.png', ${JSON.stringify([categoryId])}::json, now())`;
+    const query = `query($slug: String!, $after: String) {
+      productsByCategory(slug: $slug, first: 1, after: $after) {
+        totalCount edges { node { id } cursor } pageInfo { hasNextPage endCursor }
+      }
+    }`;
+    const first = await mutate(query, { slug: categoryId });
+    expect(first.errors).toBeUndefined();
+    expect(first.data.productsByCategory).toMatchObject({
+      totalCount: 2,
+      edges: [{ node: { id: secondId }, cursor: expect.any(String) }],
+      pageInfo: { hasNextPage: true, endCursor: expect.any(String) },
+    });
+    const next = await mutate(query, { slug: categoryId, after: first.data.productsByCategory.pageInfo.endCursor });
+    expect(next.errors).toBeUndefined();
+    expect(next.data.productsByCategory).toMatchObject({
+      totalCount: 2,
+      edges: [{ node: { id: firstId } }],
+      pageInfo: { hasNextPage: false },
+    });
+  });
+
   async function runSearch(intentId: string) {
     await searchWorker(
       {

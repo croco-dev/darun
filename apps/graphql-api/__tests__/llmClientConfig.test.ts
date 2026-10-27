@@ -18,6 +18,7 @@ describe('actual application LlmClient factory', () => {
     vi.stubEnv('MONGODB_URI', 'mongodb://127.0.0.1:27018/darun_content_integrity');
     vi.stubEnv('FIREBASE_PROJECT_ID', 'darun-local');
     vi.stubEnv('VOTE_IP_SALT', 'synthetic-fixture-only');
+    vi.stubEnv('CURSOR_SIGNATURE_SECRET', 'synthetic-cursor-fixture-only');
     vi.stubEnv('OPEN_ROUTER_API_KEY', 'environment-key');
     vi.stubEnv('OPEN_ROUTER_ENDPOINT', 'https://openrouter.ai/api/v1');
     // Exercise production registration after isolated environment setup; a static import runs too early.

@@ -43,6 +43,7 @@ cp apps/visual-web/.env.sample apps/visual-web/.env.local
 | `SENTRY_AUTH_TOKEN` | Sentry 소스맵 업로드 토큰 | 선택 |
 | `OPEN_ROUTER_API_KEY` | OpenRouter AI API 키 | 선택 |
 | `VOTE_IP_SALT` | IP 기반 투표 중복 방지를 위한 해시 salt | 필수 |
+| `CURSOR_SIGNATURE_SECRET` | 페이지 커서 HMAC 서명 키. 누락·빈 값·공백만 있는 값은 API 초기화 시 거절 | 필수 |
 
 #### `apps/service-web`
 
@@ -120,6 +121,12 @@ pnpm --filter admin-web dev     # http://localhost:3001
 pnpm --filter visual-web dev    # http://localhost:3002
 ```
 
+직접 실행할 때 `.env.sample`의 `CURSOR_SIGNATURE_SECRET` 로컬 전용 고정값을 `.env` 또는
+`.env.local`에 유지합니다. 기존 파일의 값이 비어 있다면 이 값을 채워야 합니다. 같은 값을
+유지하면 API 프로세스를 재시작해도 이미 발급한 페이지 커서를 사용할 수 있습니다.
+운영에는 이 공개된 로컬 값을 사용하지 말고 별도의 무작위 비밀값을 설정합니다. API는
+모든 환경에서 키 누락·빈 값·공백만 있는 값을 요청 처리 전에 거절하며 운영 기본값은 없습니다.
+
 ## 로컬 개발 환경 (Docker Compose)
 
 Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 같은 인프라 서비스를 컨테이너 환경에서 실행할 수 있습니다.
@@ -173,6 +180,14 @@ Docker Compose로 웹 애플리케이션과 데이터베이스, 에뮬레이터 
 5. **테스트**:
    - 단위 테스트 실행: `pnpm test`
    - E2E 테스트 실행: `pnpm --filter service-web e2e`
+
+Compose는 `INFRA_ENV=local` API에만 로컬 커서 키 기본값을 제공합니다. Compose 호출 환경의
+`CURSOR_SIGNATURE_SECRET` 또는 루트 `.env` 값으로 재정의할 수 있으며, 이 `environment`
+설정이 API의 `env_file`보다 우선합니다. 재시작 사이에 키를 바꾸면 이전 커서는 유효하지 않습니다.
+초기 데이터 준비 뒤에는 빈 DB의 `{ __typename }` 성공만 확인하지 말고, 실제 상품이 있는
+`productsByCategory(slug: "실제-카테고리-slug", first: 1)`에서 `edges { node { id } cursor }`와
+`pageInfo { hasNextPage endCursor }`를 조회합니다. API를 재시작한 후 같은 카테고리의
+`after`에 `endCursor`를 전달해 다음 상품이 조회되는지 확인합니다.
 
 ### 로그 확인 및 서비스 종료
 

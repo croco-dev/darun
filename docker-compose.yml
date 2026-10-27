@@ -65,6 +65,8 @@ services:
       FIREBASE_PROJECT_ID: darun-local
       FIREBASE_AUTH_EMULATOR_HOST: firebase-auth:9099
       VOTE_IP_SALT: ${VOTE_IP_SALT:-local-salt}
+      # Local development only; stable across container restarts.
+      CURSOR_SIGNATURE_SECRET: ${CURSOR_SIGNATURE_SECRET:-darun-local-only-cursor-signature-secret}
     env_file:
       - path: apps/graphql-api/.env.local
         required: false

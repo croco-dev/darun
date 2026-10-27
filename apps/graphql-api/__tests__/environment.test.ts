@@ -7,6 +7,7 @@ const REQUIRED_VARS = [
   'FIREBASE_PROJECT_ID',
   'MONGODB_URI',
   'VOTE_IP_SALT',
+  'CURSOR_SIGNATURE_SECRET',
 ] as const;
 
 const OPTIONAL_WHEN_LOCAL_VARS = [
@@ -26,6 +27,7 @@ function setAllRequiredVars(infraEnv: string) {
   process.env.FIREBASE_PROJECT_ID = 'test-project';
   process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
   process.env.VOTE_IP_SALT = 'test-salt';
+  process.env.CURSOR_SIGNATURE_SECRET = 'test-cursor-secret';
 }
 
 function setAllVars(infraEnv: string) {
@@ -99,6 +101,13 @@ describe('environment variable contract', () => {
         }
       });
     }
+  });
+
+  it.each(['local', 'prod'])('빈 공백 커서 키는 %s 초기화에서 거절한다', async infraEnv => {
+    setAllVars(infraEnv);
+    process.env.CURSOR_SIGNATURE_SECRET = ' \t ';
+
+    await expect(import('../src/config/environment')).rejects.toThrow('CURSOR_SIGNATURE_SECRET not provided');
   });
 
   describe('optional-in-local env vars', () => {
