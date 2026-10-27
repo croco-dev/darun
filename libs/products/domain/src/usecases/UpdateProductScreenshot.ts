@@ -2,8 +2,6 @@ import { Inject, Service } from 'typedi';
 import { ProductScreenshot } from '../entities/ProductScreenshot';
 import { normalizeVisualUiElements } from '../entities/VisualUiElement';
 import { productScreenshotInUse } from '../errors/productFlowError';
-import type { ProductFlowRepository } from '../repositories/ProductFlowRepository';
-import { ProductFlowRepositoryToken } from '../repositories/ProductFlowRepository';
 import type { ProductScreenshotRepository } from '../repositories/ProductScreenshotRepository';
 import { ProductScreenshotRepositoryToken } from '../repositories/ProductScreenshotRepository';
 import {
@@ -17,9 +15,7 @@ import {
 export class UpdateProductScreenshot {
   constructor(
     @Inject(ProductScreenshotRepositoryToken)
-    private readonly productScreenshotRepository: ProductScreenshotRepository,
-    @Inject(ProductFlowRepositoryToken)
-    private readonly productFlowRepository: ProductFlowRepository
+    private readonly productScreenshotRepository: ProductScreenshotRepository
   ) {}
 
   async execute({
@@ -57,9 +53,9 @@ export class UpdateProductScreenshot {
         }),
       // 잠금 규약(접근 2): 참조 중인 화면의 플랫폼 변경은 screenshot row를
       // FOR UPDATE로 잠근 뒤 검증한다. 같은 플랫폼 유지 시 제목/alt/유형 수정은 허용한다.
-      async lockedCurrent => {
+      async (lockedCurrent, findReferencingFlowIds) => {
         if (normalizedPlatform !== undefined && lockedCurrent.platform !== normalizedPlatform) {
-          const lockedFlowIds = await this.productFlowRepository.findFlowIdsByScreenshotId(id);
+          const lockedFlowIds = await findReferencingFlowIds();
           if (lockedFlowIds.length > 0) {
             throw productScreenshotInUse();
           }

@@ -10,16 +10,23 @@ const screenshot = new ProductScreenshot({
 });
 
 function fixture(found: ProductScreenshot | null = screenshot) {
+  const lockedReferences = vi.fn().mockResolvedValue([]);
   const screenshots = {
     findById: vi.fn().mockResolvedValue(found),
-    deleteWithLock: vi.fn(async (_id: string, validate: (locked: ProductScreenshot) => Promise<void>) => {
-      await validate(screenshot);
-    }),
+    deleteWithLock: vi.fn(
+      async (
+        _id: string,
+        validate: (locked: ProductScreenshot, findReferences: () => Promise<string[]>) => Promise<void>
+      ) => {
+        await validate(screenshot, lockedReferences);
+      }
+    ),
   };
   const flows = { findFlowIdsByScreenshotId: vi.fn().mockResolvedValue([]) };
   return {
     screenshots,
     flows,
+    lockedReferences,
     usecase: new DeleteProductScreenshot(screenshots as never, flows as never),
   };
 }
@@ -29,12 +36,12 @@ describe('DeleteProductScreenshot', () => {
     const { screenshots, flows, usecase } = fixture();
     await usecase.execute(screenshot.id);
     expect(screenshots.deleteWithLock).toHaveBeenCalledWith(screenshot.id, expect.any(Function));
-    expect(flows.findFlowIdsByScreenshotId).toHaveBeenCalledTimes(2);
+    expect(flows.findFlowIdsByScreenshotId).toHaveBeenCalledTimes(1);
   });
 
   it('잠금 이후 새로 생긴 참조도 삭제를 거절한다', async () => {
-    const { flows, usecase } = fixture();
-    flows.findFlowIdsByScreenshotId.mockResolvedValueOnce([]).mockResolvedValueOnce(['flow-1']);
+    const { lockedReferences, usecase } = fixture();
+    lockedReferences.mockResolvedValue(['flow-1']);
     await expect(usecase.execute(screenshot.id)).rejects.toMatchObject({
       code: 'product-screenshot/in-use',
     });
