@@ -44,7 +44,7 @@ import { print } from 'graphql';
 import mongoose, { mongo } from 'mongoose';
 import postgres, { type Sql } from 'postgres';
 import { Container } from 'typedi';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHash, generateKeyPairSync, randomUUID } from 'node:crypto';
 import { createServer, connect, type Server, type Socket } from 'node:net';
 import { resolve } from 'node:path';
@@ -3983,5 +3983,113 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     }
     const recovered = await new PublishProduct(stores[0].product).execute({ id: row.id });
     expect(recovered.publishedAt).toBeInstanceOf(Date);
+  });
+});
+
+const identitySuite = mongodbUrl ? describe : describe.skip;
+identitySuite('검색 identity 인덱스 확인의 비용과 비파괴 보호', () => {
+  const commands: mongo.CommandStartedEvent[] = [];
+  const collection = SearchableProductModel.collection;
+  const dbName = `darun_search_identity_${randomUUID()}`;
+  const record = (event: mongo.CommandStartedEvent) => {
+    if (event.databaseName === dbName) commands.push(event);
+  };
+  const fresh = () => new MongodbSearchableProductRepository(async () => {});
+  const payload = (name = '새 문서', sourceRevision = '2') =>
+    new SearchableProduct({ slug: 'identity-fixture', name, summary: '요약', votes: 7, sourceRevision });
+  const aggregates = () => commands.filter(event => event.commandName === 'aggregate');
+
+  beforeAll(async () => {
+    const target = new URL(mongodbUrl!);
+    if (!['127.0.0.1', 'localhost'].includes(target.hostname))
+      throw new Error('Only isolated local MongoDB is allowed');
+    await mongoose.connect(mongodbUrl!, { dbName, monitorCommands: true });
+    await SearchableProductModel.createCollection();
+    mongoose.connection.getClient().on('commandStarted', record);
+  });
+  beforeEach(async () => {
+    await collection.deleteMany({});
+    await collection.dropIndexes();
+    commands.length = 0;
+  });
+  afterAll(async () => {
+    if (mongoose.connection.name === dbName) {
+      mongoose.connection.getClient().off('commandStarted', record);
+      await mongoose.connection.dropDatabase();
+      await mongoose.disconnect();
+    }
+  });
+
+  it.each(['search_product_identity', 'existing_product_id_unique'])(
+    '전체 단일 키 unique 인덱스 %s가 있으면 새 writer들도 전수 집계와 재생성을 생략한다',
+    async name => {
+      await collection.createIndex({ productId: 1 }, { unique: true, name });
+      await collection.insertOne({ productId: 'existing', name: '기존 문서', votes: 31 });
+      commands.length = 0;
+      await Promise.all([fresh().index('existing', payload()), fresh().index('another', payload('다른 문서'))]);
+      expect(aggregates()).toHaveLength(0);
+      expect(commands.filter(event => event.commandName === 'createIndexes')).toHaveLength(0);
+      expect(commands.filter(event => event.commandName === 'listIndexes')).toHaveLength(2);
+      expect(await collection.findOne({ productId: 'existing' })).toMatchObject({ name: '새 문서', votes: 31 });
+      expect(await collection.countDocuments()).toBe(2);
+    }
+  );
+
+  it('인덱스가 없으면 동시 writer가 안전하게 생성하고 늦은 revision과 투표를 보존한다', async () => {
+    await collection.insertOne({ productId: 'shared', name: '원래 문서', votes: 43 });
+    commands.length = 0;
+    await Promise.all([
+      fresh().index('shared', payload('이전', '9007199254740992')),
+      fresh().index('shared', payload('최신', '9007199254740993')),
+    ]);
+    await fresh().index('shared', payload('후착', '1'));
+    const row = await collection.findOne({ productId: 'shared' }, { promoteLongs: false });
+    expect(row).toMatchObject({ name: '최신', votes: 43 });
+    expect(row?.sourceRevision.toString()).toBe('9007199254740993');
+    expect(await collection.countDocuments({ productId: 'shared' })).toBe(1);
+    expect(await collection.listIndexes().toArray()).toContainEqual(
+      expect.objectContaining({ key: { productId: 1 }, unique: true, name: 'search_product_identity' })
+    );
+    expect(aggregates().length).toBeGreaterThan(0);
+  });
+
+  it('인덱스 부재와 중복은 쓰기 전에 거절하며 같은 writer도 복구 후 재시도한다', async () => {
+    await collection.insertMany([
+      { productId: 'duplicate', name: '첫 문서', votes: 17 },
+      { productId: 'duplicate', name: '둘째 문서', votes: 23 },
+    ]);
+    const before = await collection.find({}).toArray();
+    commands.length = 0;
+    const writer = fresh();
+    await expect(writer.index('duplicate', payload())).rejects.toThrow('SEARCH_DUPLICATE_PRODUCT_ID');
+    expect(await collection.find({}).toArray()).toEqual(before);
+    expect(commands.filter(event => ['update', 'delete', 'createIndexes'].includes(event.commandName))).toEqual([]);
+    // Only the fixture owner resolves the duplicate; the repository never removes documents.
+    await collection.deleteOne({ _id: before[1]!._id });
+    await expect(writer.index('duplicate', payload())).resolves.toBe(true);
+    expect(await collection.findOne({ productId: 'duplicate' })).toMatchObject({ name: '새 문서', votes: 17 });
+  });
+
+  it.each([
+    { label: 'non-unique', key: { productId: 1 }, options: {} },
+    { label: 'sparse', key: { productId: 1 }, options: { unique: true, sparse: true } },
+    {
+      label: 'partial',
+      key: { productId: 1 },
+      options: { unique: true, partialFilterExpression: { productId: { $type: 'string' } } },
+    },
+    { label: 'compound', key: { productId: 1, slug: 1 }, options: { unique: true } },
+    { label: 'collation', key: { productId: 1 }, options: { unique: true, collation: { locale: 'en', strength: 2 } } },
+  ])('같은 이름의 $label 인덱스를 전체 identity로 오인하거나 자동 교체하지 않는다', async ({ key, options }) => {
+    await collection.createIndex(key as mongo.IndexSpecification, { ...options, name: 'search_product_identity' });
+    await collection.insertOne({ productId: 'preserved', slug: 'old', name: '보존 문서', votes: 29 });
+    const before = await collection.find({}).toArray();
+    const indexes = await collection.listIndexes().toArray();
+    commands.length = 0;
+    await expect(fresh().index('preserved', payload())).rejects.toBeInstanceOf(Error);
+    expect(aggregates()).toHaveLength(1);
+    expect(await collection.find({}).toArray()).toEqual(before);
+    expect(await collection.listIndexes().toArray()).toEqual(indexes);
+    expect(commands.filter(event => ['update', 'delete', 'dropIndexes'].includes(event.commandName))).toEqual([]);
   });
 });

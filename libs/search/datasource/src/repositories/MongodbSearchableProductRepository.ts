@@ -14,6 +14,19 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
   private ensureIdentity(): Promise<void> {
     this.identityReady ??= (async () => {
       await SearchableProductModel.init();
+      const indexes = await SearchableProductModel.collection.listIndexes().toArray();
+      if (
+        indexes.some(
+          index =>
+            Object.keys(index.key).length === 1 &&
+            index.key['productId'] === 1 &&
+            index.unique === true &&
+            !index.sparse &&
+            !index.partialFilterExpression &&
+            (!index.collation || index.collation.locale === 'simple')
+        )
+      )
+        return;
       const duplicates = await SearchableProductModel.collection
         .aggregate([
           { $group: { _id: '$productId', count: { $sum: 1 } } },
@@ -24,7 +37,7 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
       if (duplicates.length) throw new Error('SEARCH_DUPLICATE_PRODUCT_ID: 중복 검색 문서를 먼저 검토해야 합니다.');
       await SearchableProductModel.collection.createIndex(
         { productId: 1 },
-        { unique: true, name: 'search_product_identity' }
+        { unique: true, name: 'search_product_identity', collation: { locale: 'simple' } }
       );
     })().catch(error => {
       this.identityReady = undefined;
