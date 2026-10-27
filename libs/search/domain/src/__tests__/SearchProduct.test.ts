@@ -65,6 +65,19 @@ describe('SearchProduct', () => {
     expect(repository.searchProduct).toHaveBeenCalledWith('노트북 laptop 랩톱 mouse 마우스 포인팅 디바이스', 5, 15);
   });
 
+  it('구 동의어와 주변 검색어를 정규화해 저장소에 전달한다', async () => {
+    const repository = createRepository([]);
+    const useCase = createUseCase(repository);
+
+    await useCase.execute({ query: '  Wireless 포인팅\t 디바이스 USB  ', limit: 4 });
+
+    expect(repository.searchProduct).toHaveBeenCalledExactlyOnceWith(
+      'wireless 포인팅 디바이스 마우스 mouse usb',
+      4,
+      12
+    );
+  });
+
   it('combines Atlas relevance and ranking score before returning results', async () => {
     const relevantOnly = createProduct('relevant', 5);
     const popular = createProduct('popular', 2);
