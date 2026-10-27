@@ -37,7 +37,7 @@ import {
 import { TranslationJobService } from '@darun/translation-service';
 import { LlmClient } from '@darun/utils-llm';
 import type { APIGatewayProxyHandlerV2, Handler, SQSHandler } from 'aws-lambda';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { print } from 'graphql';
@@ -2361,6 +2361,12 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
   it('3회 소진한 search intent는 자동 재발견되지 않고 수동 retry만 새 시도로 복구한다', async () => {
     const product = await seed();
     const request = await sync.requestSearch(product.slug);
+    // Earlier scenarios can leave eligible search intents. This queue spy must
+    // observe only this fixture's retry budget, regardless of suite duration.
+    await db
+      .update(productContentSyncIntents)
+      .set({ dispatchAfter: new Date('2100-01-01') })
+      .where(and(eq(productContentSyncIntents.kind, 'search'), ne(productContentSyncIntents.id, request.intentId)));
     // 3회 실패를 시뮬레이션한다.
     await db
       .update(productContentSyncIntents)
