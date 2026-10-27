@@ -14,7 +14,7 @@
     "local:reset": "tsx scripts/bootstrap-local.ts --reset",
     "migrate": "tsx scripts/migrate.ts",
     "predeploy:prod": "node scripts/predeploy-prod.mjs",
-    "seed:categories": "tsx scripts/seed-categories.ts",
+    "seed:categories": "tsx --tsconfig tsconfig.lambda.json scripts/seed-categories.ts",
     "seed:e2e": "tsx scripts/seed-e2e.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

@@ -356,6 +356,15 @@ ATOMIC_TEST_DATABASE_URL=postgres://postgres:synthetic-only@127.0.0.1:55441/daru
 DESCRIPTION_EVIDENCE_TEST_DATABASE_URL=postgres://postgres:synthetic-only@127.0.0.1:55433/darun_description_integrity pnpm exec vitest run libs/products/datasource/src/__tests__/descriptionEvidence.postgresql.test.ts
 ```
 
+`pnpm --filter graphql-api seed:categories`는 발행된 상품의 기존 카테고리와 순서를 보존하고,
+태그 매핑에 해당하는 누락된 카테고리만 뒤에 추가합니다. 이미 매핑이 있거나 매핑할 태그가
+없으면 상품을 갱신하지 않습니다. 상품별 Product-first transaction에서 최신 분류를 읽고
+revision과 검색 동기화 intent를 함께 저장하므로 재실행은 추가 revision/job을 만들지 않습니다.
+전체 교체 모드는 제공하지 않습니다. 격리 로컬 `darun_category_backfill` DB에
+`CATEGORY_BACKFILL_TEST_DATABASE_URL`을 지정하고
+`pnpm --filter graphql-api exec vitest run __tests__/seedCategories.pg.test.ts`로
+실제 시드 명령의 보존·반복 실행·intent 실패 rollback을 검증할 수 있습니다.
+
 ## 번역 작업의 완전성과 출처
 
 `requestTranslation(entityType, entityId, fields)`의 공개 이름과 인자는 유지합니다. 응답은 실제 `pending` job이며 LLM을 기다리지 않습니다. 요청 `fields`는 migration `0014_superb_maverick`의 nullable `text[]`에 저장하고 Product/Magazine/ProductFeature worker와 retry가 같은 목록을 사용합니다. 기존 Product의 NULL fields만 전체 Product/Feature bundle로 읽습니다. 다른 엔티티의 NULL 또는 빈/알 수 없는 fields는 명시적으로 거절합니다. 전송 실패는 pending을 보존하며 기존 recovery tick이 다시 전송합니다.

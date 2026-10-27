@@ -18,7 +18,7 @@ import { registerProductContentSync } from '../src/adapters/PostgresqlProductCon
  *
  * tag(name) → category(slug) 매핑을 기준으로:
  * 1. categories 테이블에 없는 카테고리를 삽입한다 (멱등).
- * 2. 각 product의 tag를 조회하여 대응하는 category id로 categoryIds를 갱신한다.
+ * 2. 발행된 product의 기존 categoryIds를 보존하고 태그에 대응하는 누락된 id만 추가한다.
  *
  * 프로덕션 DB URL에서도 안전하게 실행할 수 있도록 fail-fast 가드를 두지 않는다.
  */
@@ -104,16 +104,22 @@ async function main() {
   for (const product of publishedProducts) {
     const updated = await db.transaction(async tx => {
       const finishContentWrite = await beginProductContentWrite(tx, product.id);
+      // beginProductContentWrite가 잡은 Product 잠금 안에서 최신 수동 분류를 읽는다.
+      const [current] = await tx
+        .select({ categoryIds: products.categoryIds })
+        .from(products)
+        .where(eq(products.id, product.id));
       const productTagRows = await tx
         .select({ name: tags.name })
         .from(productTags)
         .innerJoin(tags, eq(tags.id, productTags.tagId))
         .where(eq(productTags.productId, product.id));
-      const categoryIds = new Set<string>();
+      const categoryIds = new Set(current.categoryIds);
+      const previousCount = categoryIds.size;
       for (const tag of productTagRows) {
         for (const id of tagNameToCategoryIds.get(tag.name) ?? []) categoryIds.add(id);
       }
-      if (!categoryIds.size) return false;
+      if (categoryIds.size === previousCount) return false;
       await tx
         .update(products)
         .set({ categoryIds: [...categoryIds] })
