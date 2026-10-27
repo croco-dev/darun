@@ -61,15 +61,13 @@ describe('screenshot metadata normalization', () => {
       screenType: 'HOME',
     });
     repository.findById.mockRejectedValue(new Error('잠금 이전 읽기는 사용하지 않는다'));
+    const findReferencingFlowIds = vi.fn().mockResolvedValue([]);
     repository.updateById.mockImplementation(async (_id, modifier, validateLocked) => {
-      await validateLocked(current);
+      await validateLocked(current, findReferencingFlowIds);
       return modifier(current);
     });
-    const findFlowIdsByScreenshotId = vi.fn().mockResolvedValue([]);
-    const useCase = new UpdateProductScreenshot(
-      repository as unknown as ProductScreenshotRepository,
-      { findFlowIdsByScreenshotId } as never
-    );
+
+    const useCase = new UpdateProductScreenshot(repository as unknown as ProductScreenshotRepository);
     const updated = await useCase.execute({
       id: current.id,
       imageAlt: '  새 alt  ',
@@ -82,7 +80,7 @@ describe('screenshot metadata normalization', () => {
       imageUrl: current.imageUrl,
       imageAlt: '새 alt',
     });
-    expect(findFlowIdsByScreenshotId).toHaveBeenCalledTimes(expected.platform === 'WEB' ? 0 : 1);
+    expect(findReferencingFlowIds).toHaveBeenCalledTimes(expected.platform === 'WEB' ? 0 : 1);
   });
 
   it.each([undefined, 'WEB', null, 'IOS'])(
@@ -98,19 +96,15 @@ describe('screenshot metadata normalization', () => {
         platform: 'WEB',
         screenType: 'HOME',
       });
+      const findReferencingFlowIds = vi.fn().mockResolvedValue(['flow-1']);
       const persisted = vi.fn();
       repository.updateById.mockImplementation(async (_id, modifier, validateLocked) => {
-        await validateLocked(current);
+        await validateLocked(current, findReferencingFlowIds);
         const next = modifier(current);
         persisted(next);
         return next;
       });
-      const useCase = new UpdateProductScreenshot(
-        repository as unknown as ProductScreenshotRepository,
-        {
-          findFlowIdsByScreenshotId: vi.fn().mockResolvedValue(['flow-1']),
-        } as never
-      );
+      const useCase = new UpdateProductScreenshot(repository as unknown as ProductScreenshotRepository);
       const result = useCase.execute({
         id: current.id,
         imageAlt: '새 alt',
@@ -248,10 +242,7 @@ describe('screenshot metadata normalization', () => {
           })
         )
     );
-    const useCase = new UpdateProductScreenshot(
-      mockRepository as unknown as ProductScreenshotRepository,
-      { findFlowIdsByScreenshotId: vi.fn().mockResolvedValue([]) } as never
-    );
+    const useCase = new UpdateProductScreenshot(mockRepository as unknown as ProductScreenshotRepository);
 
     const updated = await useCase.execute({
       id: 'screenshot-1',
@@ -269,13 +260,14 @@ describe('screenshot metadata normalization', () => {
 
   it('update에 잘못된 uiElements를 주면 DB 작업 없이 invalid-args로 거절한다', async () => {
     const mockRepository = createMockRepository();
-    const useCase = new UpdateProductScreenshot(
-      mockRepository as unknown as ProductScreenshotRepository,
-      { findFlowIdsByScreenshotId: vi.fn().mockResolvedValue([]) } as never
-    );
+    const useCase = new UpdateProductScreenshot(mockRepository as unknown as ProductScreenshotRepository);
 
     await expect(
-      useCase.execute({ id: 'screenshot-1', imageAlt: '새 alt', uiElements: ['SIDEBAR'] })
+      useCase.execute({
+        id: 'screenshot-1',
+        imageAlt: '새 alt',
+        uiElements: ['SIDEBAR'],
+      })
     ).rejects.toMatchObject({ code: 'product/invalid-args' });
     expect(mockRepository.updateById).not.toHaveBeenCalled();
   });
@@ -294,10 +286,7 @@ describe('screenshot metadata normalization', () => {
         )
     );
     vi.mocked(mockRepository.replaceScreenshotUiElements).mockClear();
-    const useCase = new UpdateProductScreenshot(
-      mockRepository as unknown as ProductScreenshotRepository,
-      { findFlowIdsByScreenshotId: vi.fn().mockResolvedValue([]) } as never
-    );
+    const useCase = new UpdateProductScreenshot(mockRepository as unknown as ProductScreenshotRepository);
 
     await useCase.execute({ id: 'screenshot-1', imageAlt: '새 alt' });
 
@@ -326,10 +315,7 @@ describe('screenshot metadata normalization', () => {
           })
         )
     );
-    const useCase = new UpdateProductScreenshot(
-      mockRepository as unknown as ProductScreenshotRepository,
-      { findFlowIdsByScreenshotId: vi.fn().mockResolvedValue([]) } as never
-    );
+    const useCase = new UpdateProductScreenshot(mockRepository as unknown as ProductScreenshotRepository);
 
     const updated = await useCase.execute({
       id: 'screenshot-1',

@@ -86,7 +86,7 @@ Node.js 22의 내장 환경 파일 파서로 인용값, 여러 줄 값, 주석�
 
 Cloudinary 이미지 업로드 요청은 서버가 서명한 `folder`, `timestamp`, `public_id`와 동일한 값을 전송해야 합니다. 공유 `useImageUpload`의 `displayName`은 서명 입력과 업로드 요청의 `public_id`에 함께 사용하며, 이를 누락하거나 변경하면 `Invalid Signature` 오류가 발생합니다.
 
-스크린샷 부분 수정(`updateProductScreenshot`)에서 `title`·`platform`·`screenType`·`uiElements`를 생략하면 잠긴 최신 저장값을 유지합니다. 명시적인 `null`은 해당 값을 비우며, 플로가 참조 중인 화면의 플랫폼 삭제·변경은 계속 거절합니다. `imageAlt`는 필수이고 생성 시 생략한 메타데이터는 기존처럼 `null`로 저장합니다.
+스크린샷 부분 수정(`updateProductScreenshot`)에서 `title`·`platform`·`screenType`·`uiElements`를 생략하면 잠긴 최신 저장값을 유지합니다. 명시적인 `null`은 해당 값을 비우며, 플로가 참조 중인 화면의 플랫폼 삭제·변경은 계속 거절합니다. `imageAlt`는 필수이고 생성 시 생략한 메타데이터는 기존처럼 `null`로 저장합니다. 스크린샷 플랫폼 변경·삭제의 잠금 안 참조 검사는 저장소가 제공하는 현재 트랜잭션의 reader로 실행합니다. 전역 flow 저장소를 다시 호출해 추가 연결을 빌리지 않으며, Product-first·화면 행 잠금과 참조 중인 화면의 변경·삭제 거절을 유지합니다.
 
 상품 편집 폼은 실제 입력과 레이블·오류 설명을 연결합니다. 요약을 빈 문자열로 저장할 수 있으며, 편집 중 닫았다 다시 열거나 저장에 실패해도 입력을 보존합니다. 저장 중에는 중복 제출과 닫기를 막습니다. AI 소개 후보는 현재 상품과 `productId`가 일치할 때만 검토·적용할 수 있고, 검토자가 비운 값은 재조회로 복원하지 않습니다.
 LLM 모델 조회는 Firebase 토큰으로 확인된 관리자만 `POST /api/llm/models`의 JSON 본문 `{endpoint?, apiKey?}`로 요청합니다. 인증된 GET은 `405`와 `Allow: POST`를 반환하며 키를 query에 넣지 않습니다. 공개 HTTPS 호스트와 기본 443 포트만 허용하고, 전체 DNS 결과를 검증한 뒤 연결 주소를 고정합니다. 내부 주소·IP literal·credential/query/fragment·redirect는 허용하지 않습니다. 요청 JSON은 16KiB, 공급자 응답은 2MiB, DNS부터 응답 종료까지는 10초로 제한합니다. 프록시 실패 시 브라우저에서 공급자로 직접 재요청하지 않습니다. 모델의 구조화 응답 표시는 공급자 메타데이터에 따른 힌트이며 Darun schema 검증 결과가 아닙니다.

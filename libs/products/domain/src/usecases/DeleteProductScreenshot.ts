@@ -27,8 +27,8 @@ export class DeleteProductScreenshot {
       throw productScreenshotInUse();
     }
 
-    await this.productScreenshotRepository.deleteWithLock(id, async () => {
-      const lockedFlowIds = await this.productFlowRepository.findFlowIdsByScreenshotId(id);
+    await this.productScreenshotRepository.deleteWithLock(id, async (_locked, findReferencingFlowIds) => {
+      const lockedFlowIds = await findReferencingFlowIds();
       if (lockedFlowIds.length > 0) {
         throw productScreenshotInUse();
       }

@@ -25,17 +25,21 @@ export interface ProductScreenshotRepository {
   findById(id: string): Promise<ProductScreenshot | null>;
   insert(productScreenshot: ProductScreenshot): Promise<ProductScreenshot>;
   deleteById(id: string): Promise<void>;
+  /** Locked validation reads references through the supplied transaction-scoped reader. */
   updateById(
     id: string,
     modifier: (screenshot: ProductScreenshot) => ProductScreenshot,
-    validateLocked?: (locked: ProductScreenshot) => Promise<void>,
+    validateLocked?: (locked: ProductScreenshot, findReferencingFlowIds: () => Promise<string[]>) => Promise<void>,
     /** Same transaction as metadata; undefined preserves tags, null/[] clears them. */
     uiElements?: readonly string[] | null
   ): Promise<ProductScreenshot>;
   /** Reference validation, row deletion, content checkpoint and media cleanup intent commit together.
    * Remote cleanup runs after commit in a recoverable worker, outside Product/screenshot locks.
    */
-  deleteWithLock(id: string, validateLocked: (locked: ProductScreenshot) => Promise<void>): Promise<void>;
+  deleteWithLock(
+    id: string,
+    validateLocked: (locked: ProductScreenshot, findReferencingFlowIds: () => Promise<string[]>) => Promise<void>
+  ): Promise<void>;
   findManyVisualPublishedByFilterAndAfterIdAndLimit(
     filter: VisualScreenshotFilter,
     limit: number,

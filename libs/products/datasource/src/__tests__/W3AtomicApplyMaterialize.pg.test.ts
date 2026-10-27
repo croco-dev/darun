@@ -2,6 +2,9 @@ import 'reflect-metadata';
 import type { ApolloServer } from '@apollo/server';
 import {
   ApplyProductDescriptionCandidate,
+  UpdateProductScreenshot,
+  DeleteProductScreenshot,
+  CreateProductFlow,
   UpdateProductLink,
   Product,
   ProductFeature,
@@ -128,6 +131,165 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       .returning();
     return product!;
   }
+  async function screenshotFixture() {
+    const product = await seed();
+    const screens = await db
+      .insert(productScreenshots)
+      .values(
+        [0, 1].map(index => ({
+          productId: product.id,
+          imageUrl: `https://example.com/screen-${index}.png`,
+          imageAlt: `화면 ${index}`,
+          platform: 'WEB',
+          title: `기존 제목 ${index}`,
+        }))
+      )
+      .returning();
+    return { product, screens };
+  }
+
+  function screenshotUsecases(session = writerDb) {
+    const screenshots = new PostgresqlProductScreenshotRepository(session as never);
+    const flows = new PostgresqlProductFlowRepository(session as never);
+    return {
+      update: new UpdateProductScreenshot(screenshots),
+      remove: new DeleteProductScreenshot(screenshots, flows),
+      createFlow: new CreateProductFlow(flows),
+    };
+  }
+
+  it('단일 연결 풀의 동시 스크린샷 플랫폼 수정과 삭제가 완료된다', async () => {
+    const first = await screenshotFixture();
+    const second = await screenshotFixture();
+    const { update, remove } = screenshotUsecases();
+    await Promise.all([
+      update.execute({
+        id: first.screens[0]!.id,
+        imageAlt: '새 alt',
+        platform: 'IOS',
+      }),
+      remove.execute(second.screens[0]!.id),
+    ]);
+    expect(
+      await db.select().from(productScreenshots).where(eq(productScreenshots.id, first.screens[0]!.id))
+    ).toMatchObject([{ platform: 'IOS', imageAlt: '새 alt' }]);
+    expect(await db.select().from(productScreenshots).where(eq(productScreenshots.id, second.screens[0]!.id))).toEqual(
+      []
+    );
+  }, 5000);
+
+  it('단일 연결에서도 참조된 플랫폼 변경과 삭제는 rollback하고 같은 플랫폼 편집은 허용한다', async () => {
+    const { product, screens } = await screenshotFixture();
+    const { update, remove, createFlow } = screenshotUsecases();
+    await createFlow.execute({
+      productId: product.id,
+      title: '가입 플로',
+      description: '검증용',
+      platform: 'WEB',
+      flowType: 'SIGN_UP',
+      steps: screens.map(screen => ({
+        screenshotId: screen.id,
+        caption: '',
+      })),
+    });
+    const [before] = await db.select().from(products).where(eq(products.id, product.id));
+    await expect(
+      update.execute({
+        id: screens[0]!.id,
+        imageAlt: '거절할 alt',
+        platform: 'IOS',
+      })
+    ).rejects.toMatchObject({ code: 'product-screenshot/in-use' });
+    await expect(remove.execute(screens[0]!.id)).rejects.toMatchObject({
+      code: 'product-screenshot/in-use',
+    });
+    const [after] = await db.select().from(products).where(eq(products.id, product.id));
+    expect(after!.contentRevision).toBe(before!.contentRevision);
+    expect(await db.select().from(productScreenshots).where(eq(productScreenshots.id, screens[0]!.id))).toMatchObject([
+      { platform: 'WEB', imageAlt: '화면 0', title: '기존 제목 0' },
+    ]);
+    await expect(
+      update.execute({
+        id: screens[0]!.id,
+        imageAlt: '새 alt',
+        title: '새 제목',
+        platform: 'WEB',
+      })
+    ).resolves.toMatchObject({
+      platform: 'WEB',
+      imageAlt: '새 alt',
+      title: '새 제목',
+    });
+  }, 5000);
+
+  it.each([
+    { first: 'flow', change: 'platform' },
+    { first: 'flow', change: 'delete' },
+    { first: 'screenshot', change: 'platform' },
+    { first: 'screenshot', change: 'delete' },
+  ])('$first 선행·$change 경쟁에서도 플로 참조와 화면 분류가 일치한다', async ({ first, change }) => {
+    const { product, screens } = await screenshotFixture();
+    const secondSql = postgres(databaseUrl!, {
+      max: 1,
+      prepare: false,
+      connection: { application_name: `${prefix}-second`, statement_timeout: 10000, lock_timeout: 5000 },
+    });
+    const secondDb = drizzle(secondSql);
+    const create = (session: PostgresJsDatabase) =>
+      screenshotUsecases(session).createFlow.execute({
+        productId: product.id,
+        title: '경쟁 플로',
+        description: '',
+        platform: 'WEB',
+        flowType: 'SIGN_UP',
+        steps: screens.map(screen => ({ screenshotId: screen.id, caption: '' })),
+      });
+    const modify = (session: PostgresJsDatabase) =>
+      change === 'delete'
+        ? screenshotUsecases(session).remove.execute(screens[0]!.id)
+        : screenshotUsecases(session).update.execute({ id: screens[0]!.id, imageAlt: '변경 alt', platform: 'IOS' });
+    let results: PromiseSettledResult<unknown>[] = [];
+    let settled: Promise<PromiseSettledResult<unknown>[]> | undefined;
+    try {
+      await db.transaction(async tx => {
+        await tx.select().from(products).where(eq(products.id, product.id)).for('update');
+        const firstWrite = first === 'flow' ? create(writerDb) : modify(writerDb);
+        settled = Promise.allSettled([firstWrite]);
+        await waitForWriterLock();
+        const secondWrite = first === 'flow' ? modify(secondDb) : create(secondDb);
+        settled = Promise.allSettled([firstWrite, secondWrite]);
+        const deadline = Date.now() + 3000;
+        while (true) {
+          const waiting = await sql`select 1 from pg_stat_activity
+            where application_name = ${`${prefix}-second`} and wait_event_type = 'Lock'`;
+          if (waiting.length) break;
+          if (Date.now() > deadline) throw new Error('Second writer did not wait for Product lock');
+          await new Promise<void>(resolve => setImmediate(resolve));
+        }
+      });
+      results = await settled!;
+      expect(results[0]!.status).toBe('fulfilled');
+      expect(results[1]).toMatchObject({
+        status: 'rejected',
+        reason: { code: first === 'flow' ? 'product-screenshot/in-use' : 'product-flow/invalid-args' },
+      });
+      const storedFlows = await new PostgresqlProductFlowRepository(db as never).findManyByProductId(product.id);
+      const storedScreen = await new PostgresqlProductScreenshotRepository(db as never).findById(screens[0]!.id);
+      if (first === 'flow') {
+        expect(storedFlows).toHaveLength(1);
+        expect(storedScreen).toMatchObject({ platform: 'WEB', imageAlt: '화면 0' });
+        expect(storedFlows[0]!.steps.map(step => step.screenshotId)).toEqual(screens.map(screen => screen.id));
+      } else {
+        expect(storedFlows).toEqual([]);
+        if (change === 'delete') expect(storedScreen).toBeNull();
+        else expect(storedScreen).toMatchObject({ platform: 'IOS', imageAlt: '변경 alt' });
+      }
+    } finally {
+      await settled;
+      await secondSql.end({ timeout: 5 });
+    }
+  });
+
   async function candidate(productId: string, version: 'v2' | null = 'v2') {
     const snapshot = await new PostgresqlProductDescriptionEvidenceAssembler(db as never).assemble(productId);
     const [job] = await db

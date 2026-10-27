@@ -199,10 +199,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       {} as never,
       {} as never,
       {} as never,
-      new UpdateProductScreenshot(
-        new PostgresqlProductScreenshotRepository(db as never),
-        new PostgresqlProductFlowRepository(db as never)
-      ),
+      new UpdateProductScreenshot(new PostgresqlProductScreenshotRepository(db as never)),
       {} as never,
       {} as never,
       {} as never,
@@ -3056,7 +3053,7 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     const { product, screenshot } = await seed();
     await db.insert(productScreenshotUiElements).values({ screenshotId: screenshot.id, element: 'CARD' });
     const repository = new PostgresqlProductScreenshotRepository(db as never);
-    const update = new UpdateProductScreenshot(repository, new PostgresqlProductFlowRepository(db as never));
+    const update = new UpdateProductScreenshot(repository);
     const cached = await repository.findManyByProductIdSortByPriorityDesc(product.id);
     const before = await state(product.id);
     const elementsBefore = await db
@@ -3098,7 +3095,7 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     await db.insert(productScreenshotUiElements).values({ screenshotId: screenshot.id, element: 'CARD' });
     const repository = new PostgresqlProductScreenshotRepository(db as never);
     await repository.findManyByProductIdSortByPriorityDesc(product.id);
-    const update = new UpdateProductScreenshot(repository, new PostgresqlProductFlowRepository(db as never));
+    const update = new UpdateProductScreenshot(repository);
     await update.execute({
       id: screenshot.id,
       imageAlt: '변경 후 설명',
@@ -3135,15 +3132,9 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     await connection.unsafe(
       `CREATE TRIGGER pause_screenshot_elements BEFORE INSERT ON product_screenshot_ui_elements FOR EACH ROW WHEN (NEW.screenshot_id = '${screenshot.id}') EXECUTE FUNCTION pause_screenshot_elements()`
     );
-    const first = new UpdateProductScreenshot(
-      new PostgresqlProductScreenshotRepository(writerDb as never),
-      new PostgresqlProductFlowRepository(writerDb as never)
-    );
+    const first = new UpdateProductScreenshot(new PostgresqlProductScreenshotRepository(writerDb as never));
     const secondDb = drizzle(secondConnection);
-    const second = new UpdateProductScreenshot(
-      new PostgresqlProductScreenshotRepository(secondDb as never),
-      new PostgresqlProductFlowRepository(secondDb as never)
-    );
+    const second = new UpdateProductScreenshot(new PostgresqlProductScreenshotRepository(secondDb as never));
     const writes: Promise<unknown>[] = [];
     try {
       writes.push(

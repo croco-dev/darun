@@ -13,6 +13,7 @@ import DataLoader from 'dataloader';
 import { and, count, eq, inArray, isNotNull, lt, or, sql, type SQLWrapper } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
+import { productFlowSteps } from '../entities/ProductFlowsSchema';
 import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 import { productScreenshotUiElements } from '../entities/ProductScreenshotUiElementsSchema';
@@ -187,7 +188,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
   updateById(
     id: string,
     modifier: (screenshot: ProductScreenshot) => ProductScreenshot,
-    validateLocked?: (locked: ProductScreenshot) => Promise<void>,
+    validateLocked?: (locked: ProductScreenshot, findReferencingFlowIds: () => Promise<string[]>) => Promise<void>,
     uiElements?: readonly string[] | null
   ): Promise<ProductScreenshot> {
     const normalizedUiElements = uiElements === undefined ? undefined : normalizeVisualUiElements(uiElements);
@@ -212,7 +213,13 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
         }
 
         if (validateLocked) {
-          await validateLocked(prev);
+          await validateLocked(prev, async () => {
+            const references = await tx
+              .select({ flowId: productFlowSteps.flowId })
+              .from(productFlowSteps)
+              .where(eq(productFlowSteps.screenshotId, id));
+            return references.map(reference => reference.flowId);
+          });
         }
 
         const next = modifier(prev);
@@ -265,7 +272,10 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
   }
 
   /** Commit deletion, checkpoint and cleanup intent atomically under the Product-first mutex. */
-  async deleteWithLock(id: string, validateLocked: (locked: ProductScreenshot) => Promise<void>): Promise<void> {
+  async deleteWithLock(
+    id: string,
+    validateLocked: (locked: ProductScreenshot, findReferencingFlowIds: () => Promise<string[]>) => Promise<void>
+  ): Promise<void> {
     await this.db.transaction(async tx => {
       const [owner] = await tx
         .select({ productId: productScreenshots.productId })
@@ -285,7 +295,13 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
         throw productScreenshotNotFound();
       }
 
-      await validateLocked(locked);
+      await validateLocked(locked, async () => {
+        const references = await tx
+          .select({ flowId: productFlowSteps.flowId })
+          .from(productFlowSteps)
+          .where(eq(productFlowSteps.screenshotId, id));
+        return references.map(reference => reference.flowId);
+      });
       await tx.delete(productScreenshots).where(eq(productScreenshots.id, id));
       await finishContentWrite();
       await tx.insert(screenshotCleanupIntents).values({ screenshotId: locked.id, imageUrl: locked.imageUrl });
