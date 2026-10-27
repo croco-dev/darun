@@ -791,29 +791,6 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     expect(modelCalls()).toBe(2);
   }
 
-  it.each(['tableColumnSpan', 'tableRowSpan', 'tableRowGroupSpan'] as const)(
-    '%s 변경은 canonical 저장과 번역을 등록하고 worker 완료 후 영어 표를 current로 읽는다',
-    async key => {
-      const { source, english } = meaningChanges[key];
-      await withOfflineTranslationWorker(async modelCalls => {
-        const previous = await translatedDescription(source[0]);
-        await expectPublicDescription(previous.product, source[0], english[0]);
-        const { translation } = await pendingDescriptionEdit(previous, source[1], modelCalls);
-        await completeDescriptionTranslation(previous, translation, source[1], english[1], modelCalls);
-      });
-    },
-    20_000
-  );
-
-  it('표의 같은 유효 범위·장식만 바꾸면 search-only이며 기존 영어와 provenance를 보존한다', async () => {
-    const { source, english } = meaningPreservingEdits.tableSpanNotation;
-    await withOfflineTranslationWorker(async modelCalls => {
-      const previous = await translatedDescription(source[0]);
-      await expectPublicDescription(previous.product, source[0], english);
-      await searchOnlyDescriptionEdit(previous, source[1], modelCalls);
-    });
-  });
-
   it('생성된 관리자 소개 저장 문서와 실제 bundled API의 canonical input 이름이 일치한다', async () => {
     const product = await seed();
     const html =
@@ -1058,6 +1035,29 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       expect(modelCalls()).toBe(4);
     });
   }, 20_000);
+
+  it.each(['tableColumnSpan', 'tableRowSpan', 'tableRowGroupSpan'] as const)(
+    '%s 변경은 canonical 저장과 번역을 등록하고 worker 완료 후 영어 표를 current로 읽는다',
+    async key => {
+      const { source, english } = meaningChanges[key];
+      await withOfflineTranslationWorker(async modelCalls => {
+        const previous = await translatedDescription(source[0]);
+        await expectPublicDescription(previous.product, source[0], english[0]);
+        const { translation } = await pendingDescriptionEdit(previous, source[1], modelCalls);
+        await completeDescriptionTranslation(previous, translation, source[1], english[1], modelCalls);
+      });
+    },
+    20_000
+  );
+
+  it('표의 같은 유효 범위·장식만 바꾸면 search-only이며 기존 영어와 provenance를 보존한다', async () => {
+    const { source, english } = meaningPreservingEdits.tableSpanNotation;
+    await withOfflineTranslationWorker(async modelCalls => {
+      const previous = await translatedDescription(source[0]);
+      await expectPublicDescription(previous.product, source[0], english);
+      await searchOnlyDescriptionEdit(previous, source[1], modelCalls);
+    });
+  });
 
   it.each([
     [
