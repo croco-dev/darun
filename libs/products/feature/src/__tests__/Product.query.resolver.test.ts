@@ -94,6 +94,7 @@ type ResolverOverrides = Partial<{
 }>;
 
 const createProductRepository = (overrides: Partial<ProductRepository> = {}): ProductRepository => ({
+  publishById: vi.fn(),
   updateById: vi.fn<ProductRepository['updateById']>(),
   findAllByBeforeIdAndLimit: vi.fn<ProductRepository['findAllByBeforeIdAndLimit']>().mockResolvedValue([]),
   findAllByAfterIdAndLimit: vi.fn<ProductRepository['findAllByAfterIdAndLimit']>().mockResolvedValue([]),

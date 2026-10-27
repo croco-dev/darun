@@ -3,6 +3,7 @@ import { Product } from '../entities/Product';
 import type { ProductScreenshot } from '../entities/ProductScreenshot';
 
 export interface ProductRepository {
+  publishById(id: string): Promise<Product>;
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product>;
   findAllByBeforeIdAndLimit(limit: number, id?: string): Promise<Product[]>;
   findAllByAfterIdAndLimit(limit: number, id?: string): Promise<Product[]>;

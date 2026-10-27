@@ -12,6 +12,7 @@ function createMockRepository(): MagazineRepository {
     findAllWithPagination: vi.fn(),
     findAllPublished: vi.fn(),
     insert: vi.fn(),
+    publishById: vi.fn(),
     updateById: vi.fn(),
   };
 }

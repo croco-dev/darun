@@ -2,6 +2,7 @@ import { Token } from 'typedi';
 import { Magazine } from '../entities/Magazine';
 
 export interface MagazineRepository {
+  publishById(id: string): Promise<Magazine>;
   findPublishedOneBySlug(slug: string): Promise<Magazine | null>;
   findPublishedOneById(id: string): Promise<Magazine | null>;
   findOneById(id: string): Promise<Magazine | null>;

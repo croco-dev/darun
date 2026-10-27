@@ -11,7 +11,7 @@ import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 
 import { beginProductContentWrite } from './productContentSync';
-import { lockCategoryMembership } from './productSourceMutex';
+import { lockCategoryMembership, lockProductSource } from './productSourceMutex';
 
 @Service(ProductRepositoryToken)
 export class PostgresqlProductRepository implements ProductRepository {
@@ -94,6 +94,25 @@ export class PostgresqlProductRepository implements ProductRepository {
 
   async findPublishedByIds(ids: string[]): Promise<(Product | null)[]> {
     return this.findPublishedByIdsInternal(ids);
+  }
+
+  publishById(id: string): Promise<Product> {
+    return this.db.transaction(async tx => {
+      const row = await lockProductSource(tx, id);
+      if (row.publishedAt) return this.mapper(row);
+
+      const finishContentWrite = await beginProductContentWrite(tx, id);
+      const product = this.mapper(row);
+      product.publish();
+      const [updated] = await tx
+        .update(products)
+        .set({ publishedAt: product.publishedAt, updatedAt: new Date() })
+        .where(eq(products.id, id))
+        .returning();
+      if (!updated) throw productUpdateFailed();
+      await finishContentWrite();
+      return this.mapper(updated);
+    });
   }
 
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {

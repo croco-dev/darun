@@ -11,9 +11,6 @@ export class PublishMagazine {
   ) {}
 
   async execute({ id }: { id: string }): Promise<Magazine> {
-    return this.magazineRepository.updateById(id, magazine => {
-      magazine.publish();
-      return magazine;
-    });
+    return this.magazineRepository.publishById(id);
   }
 }
