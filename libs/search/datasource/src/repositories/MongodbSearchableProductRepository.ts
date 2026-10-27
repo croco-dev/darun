@@ -6,6 +6,11 @@ import { SearchableProductModel } from '../entities/SearchableProductSchema';
 import { MongodbSearchConnectionToken, SearchUnavailableError } from '../MongodbSearchConnection';
 import { searchRevision, storedSearchRevision, SearchRevisionInvalidError } from './searchRevision';
 
+type IndexCatalogStats = {
+  indexBuilds?: string[];
+  indexSizes?: Record<string, number>;
+};
+
 @Service(SearchableProductRepositoryToken)
 export class MongodbSearchableProductRepository implements SearchableProductRepository {
   constructor(@Inject(MongodbSearchConnectionToken) private readonly connect: () => void | Promise<void>) {}
@@ -14,6 +19,36 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
   private ensureIdentity(): Promise<void> {
     this.identityReady ??= (async () => {
       await SearchableProductModel.init();
+      const indexes = await SearchableProductModel.collection.listIndexes().toArray();
+      const identity = indexes.find(
+        index =>
+          Object.keys(index.key).length === 1 &&
+          index.key['productId'] === 1 &&
+          index.unique === true &&
+          !index.sparse &&
+          !index.partialFilterExpression &&
+          (!index.collation || index.collation.locale === 'simple')
+      );
+      if (identity) {
+        // listIndexes also exposes unfinished specs. Build UUIDs alone do not
+        // distinguish these on standalone MongoDB, so inspect build names too.
+        const stats: IndexCatalogStats & { shards?: Record<string, IndexCatalogStats> } =
+          await SearchableProductModel.db.db!.command({
+            collStats: SearchableProductModel.collection.collectionName,
+          });
+        const catalogs = stats.shards ? Object.values(stats.shards) : [stats];
+        if (
+          catalogs.length > 0 &&
+          catalogs.every(
+            catalog =>
+              catalog.indexSizes &&
+              Object.prototype.hasOwnProperty.call(catalog.indexSizes, identity.name!) &&
+              Array.isArray(catalog.indexBuilds) &&
+              !catalog.indexBuilds.includes(identity.name!)
+          )
+        )
+          return;
+      }
       const duplicates = await SearchableProductModel.collection
         .aggregate([
           { $group: { _id: '$productId', count: { $sum: 1 } } },
@@ -24,7 +59,7 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
       if (duplicates.length) throw new Error('SEARCH_DUPLICATE_PRODUCT_ID: 중복 검색 문서를 먼저 검토해야 합니다.');
       await SearchableProductModel.collection.createIndex(
         { productId: 1 },
-        { unique: true, name: 'search_product_identity' }
+        { unique: true, name: 'search_product_identity', collation: { locale: 'simple' } }
       );
     })().catch(error => {
       this.identityReady = undefined;
