@@ -33,7 +33,8 @@ export class PostgresqlProductFeatureRepository implements ProductFeatureReposit
         return productIds.map(productId => groupByDocs[productId] ?? []);
       },
       {
-        cache: true,
+        // Repository instances outlive requests; retain batching without stale result caching.
+        cache: false,
       }
     );
   }

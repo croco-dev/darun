@@ -458,7 +458,7 @@ suite별 실행 건수와 skip 건수를 기록합니다. lease 검사는 `W4_PG
 `darun_lease_integrity` DB만 허용하며 기존 개발 DB를 기본값으로 사용하지 않습니다.
 
 일반 `pnpm test`는 URL 또는 opt-in이 없는 DB suite를 계속 건너뜁니다. 직접 검증하려면
-**격리된 로컬 PostgreSQL**에 다음 URL의 DB 7개를 먼저 생성하고 CI와 같은 명령을 실행합니다.
+**격리된 로컬 PostgreSQL**에 다음 URL의 DB 8개를 먼저 생성하고 CI와 같은 명령을 실행합니다.
 예시 포트는 PR CI와 같은 `55437`입니다. 각 suite가 자기 DB의 migration을 준비합니다.
 
 ```bash
@@ -466,13 +466,14 @@ export JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55
 export TRANSLATION_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity
 export ATOMIC_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity
 export ALTERNATIVE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_alternative_integrity
+export PRODUCT_DETAIL_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_detail_freshness
 export DESCRIPTION_EVIDENCE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_description_integrity
 export W4_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_lease_integrity
 export MIGRATION_BASELINE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_migration_baseline
 export W4_PG=1
 reporter="$PWD/apps/graphql-api/scripts/required-postgres-reporter.ts"
 REQUIRED_POSTGRES_GROUP=baseline pnpm --filter graphql-api exec vitest run __tests__/migrationBaseline.pg.test.ts --reporter=default --reporter="$reporter"
-REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts --reporter=default --reporter="$reporter"
+REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts __tests__/productDetailFreshness.pg.test.ts --reporter=default --reporter="$reporter"
 REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts --reporter=default --reporter="$reporter"
 ```
 
@@ -500,6 +501,8 @@ PR CI의 전체 패키지 검사는 `pnpm run typecheck:tsrs --concurrency=4 -- 
 `node --test scripts/lint-coverage.test.mjs`는 임시 workspace에서 실제 패키지·루트 lint 명령을 실행합니다. 깊은 TS/TSX 파일의 오류를 거절하는지, 오류를 고치면 통과하는지, 생성물의 잘못된 문법은 검사하지 않는지 확인하며 PR CI에서도 실행합니다. 임시 workspace는 설치된 도구를 공유하고 별도 의존성을 설치하지 않습니다.
 
 GraphQL 변경은 Node.js 22에서 `pnpm --filter graphql-api build:lambda`와 `pnpm --filter graphql-api verify:lambda`도 실행합니다. 이 검사는 번들 초기화뿐 아니라 실제 resolver 스키마와 커밋된 `schema.graphql`의 일치 여부를 확인합니다.
+
+상품 링크·기능·상품/기능 스크린샷·수동 대안의 저장소는 요청 사이에 조회 결과를 캐시하지 않습니다. 같은 tick의 여러 parent ID는 계속 하나의 SQL로 조회하며, 다른 연결이 commit한 변경은 같은 reader의 다음 조회에서 읽습니다. `productDetailFreshness.pg.test.ts`는 별도 로컬 DB에서 수정·삭제·빈 목록의 추가, rollback과 배치 횟수를 검증합니다.
 
 목록 API의 `productsByCategory`와 `visualApps`는 기본 24개씩 반환합니다. 호출자는 `pageInfo.endCursor`와 `hasNextPage`로 이어 읽으며, 목록 표시를 위해 모든 페이지나 각 앱의 화면 목록을 미리 읽지 않습니다. 앱 카드에는 `coverScreenshot`과 `screenshotCount`를 사용합니다. 상품의 태그·추천 수는 선택된 필드만 배치 조회하며, 변경 가능한 데이터를 읽는 상품 ID loader는 요청 사이에 결과를 보관하지 않습니다.
 

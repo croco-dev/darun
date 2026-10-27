@@ -34,7 +34,8 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
         return productIds.map(productId => groupByDocs[productId] || []);
       },
       {
-        cache: true,
+        // Repository instances outlive requests; retain batching without stale result caching.
+        cache: false,
       }
     );
   }
