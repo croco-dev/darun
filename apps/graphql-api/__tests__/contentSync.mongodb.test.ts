@@ -1036,7 +1036,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     });
   }, 20_000);
 
-  it.each(['tableColumnSpan', 'tableRowSpan', 'tableRowGroupSpan'] as const)(
+  it.each(['tableColumnSpan', 'tableRowSpan', 'tableRowGroupSpan', 'tableNegativeZeroRowSpan'] as const)(
     '%s 변경은 canonical 저장과 번역을 등록하고 worker 완료 후 영어 표를 current로 읽는다',
     async key => {
       const { source, english } = meaningChanges[key];

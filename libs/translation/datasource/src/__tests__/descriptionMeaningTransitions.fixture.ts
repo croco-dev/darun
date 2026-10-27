@@ -41,6 +41,16 @@ export const meaningChanges = {
       '<table><tbody><tr><td rowspan="0">Body</td><td>Condition</td></tr><tr><td>Warning</td></tr><tr><td>Feature</td></tr></tbody></table>',
     ],
   },
+  tableNegativeZeroRowSpan: {
+    source: [
+      '<table><tbody><tr><td rowspan="1">본문</td><td>조건</td></tr><tr><td>주의</td></tr><tr><td>기능</td></tr></tbody></table>',
+      '<table><tbody><tr><td rowspan="-0">본문</td><td>조건</td></tr><tr><td>주의</td></tr><tr><td>기능</td></tr></tbody></table>',
+    ],
+    english: [
+      '<table><tbody><tr><td rowspan="1">Body</td><td>Condition</td></tr><tr><td>Warning</td></tr><tr><td>Feature</td></tr></tbody></table>',
+      '<table><tbody><tr><td rowspan="-0">Body</td><td>Condition</td></tr><tr><td>Warning</td></tr><tr><td>Feature</td></tr></tbody></table>',
+    ],
+  },
   htmlInlineCodeSpacing: {
     source: ['<p>본문 <code>left  right</code></p>', '<p>본문 <code>left right</code></p>'],
     english: ['<p>Body <code>left  right</code></p>', '<p>Body <code>left right</code></p>'],
@@ -190,7 +200,7 @@ export const meaningPreservingEdits = {
   tableSpanNotation: {
     source: [
       '<table><tr><th colspan="2" rowspan="1">본문</th><td rowspan="0">조건</td></tr><tr><td>주의</td></tr></table>',
-      '<table class="display"><tr><th style="color:red" colspan="02"><strong>본문</strong></th><td rowspan="00"><span>조건</span></td></tr><tr><td>주의</td></tr></table>',
+      '<table class="display"><tr><th style="color:red" colspan="02"><strong>본문</strong></th><td rowspan="-0"><span>조건</span></td></tr><tr><td>주의</td></tr></table>',
     ],
     english:
       '<table><tr><th colspan="2" rowspan="1">Body</th><td rowspan="0">Condition</td></tr><tr><td>Warning</td></tr></table>',

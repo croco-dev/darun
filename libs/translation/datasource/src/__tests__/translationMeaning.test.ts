@@ -22,7 +22,7 @@ describe('translationMeaning 표 셀 범위', () => {
 
   it.each(['td', 'th'])('%s에서 브라우저가 같은 범위로 해석하는 표기를 정규화한다', tag => {
     for (const name of ['colspan', 'rowspan']) {
-      for (const value of ['', 'bad', '-2', '-0', '1', '01', '+1', ' 1', '1tail']) {
+      for (const value of ['', 'bad', '-2', '1', '01', '+1', ' 1', '1tail']) {
         expect(translationMeaning(table(tag, `${name}="${value}"`))).toBe(translationMeaning(table(tag, '')));
       }
       expect(translationMeaning(table(tag, `${name}=" +02tail"`))).toBe(translationMeaning(table(tag, `${name}="2"`)));
@@ -36,9 +36,11 @@ describe('translationMeaning 표 셀 범위', () => {
     }
     expect(translationMeaning(table(tag, 'colspan="0"'))).toBe(translationMeaning(table(tag, '')));
     expect(translationMeaning(table(tag, 'rowspan="00"'))).toBe(translationMeaning(table(tag, 'rowspan="0"')));
+    expect(translationMeaning(table(tag, 'rowspan="-0"'))).toBe(translationMeaning(table(tag, 'rowspan="0"')));
+    expect(translationMeaning(table(tag, 'colspan="-0"'))).toBe(translationMeaning(table(tag, '')));
   });
 
-  it.each(['tableColumnSpan', 'tableRowSpan', 'tableRowGroupSpan'] as const)(
+  it.each(['tableColumnSpan', 'tableRowSpan', 'tableRowGroupSpan', 'tableNegativeZeroRowSpan'] as const)(
     '%s의 원문 전환을 의미 변경으로 판정한다',
     key => {
       const { source } = meaningChanges[key];

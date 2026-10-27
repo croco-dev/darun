@@ -257,12 +257,10 @@ export function translationMeaning(html: string): string {
     return digits === undefined ? undefined : Number(digits);
   };
   const cellSpan = (node: DefaultTreeAdapterMap['element'], name: 'colspan' | 'rowspan'): number => {
-    const value = node.attrs.find(attr => attr.name === name)?.value;
-    // HTML's non-negative integer parser accepts a leading + and trailing non-digits.
+    // HTML parses a signed integer, then rejects values below zero (so -0 remains 0).
     // colspan=0 defaults to 1; rowspan=0 spans the remaining rows in its row group.
-    const digits = value?.match(/^[\t\n\f\r ]*\+?(\d+)/)?.[1];
-    if (digits === undefined) return 1;
-    const span = Number(digits);
+    const span = integerAttribute(node, name);
+    if (span === undefined || span < 0) return 1;
     return name === 'colspan' ? Math.min(span || 1, 1000) : Math.min(span, 65534);
   };
   const walk = (node: DefaultTreeAdapterMap['node'], ordinal?: number, preserveWhitespace = false): string => {
