@@ -58,11 +58,16 @@ import { productFlows, productFlowSteps } from '../../../libs/products/datasourc
 import { products } from '../../../libs/products/datasource/src/entities/ProductSchema';
 import { productScreenshots } from '../../../libs/products/datasource/src/entities/ProductScreenshotsSchema';
 import { productScreenshotUiElements } from '../../../libs/products/datasource/src/entities/ProductScreenshotUiElementsSchema';
+import { productTags } from '../../../libs/products/datasource/src/entities/ProductTagsSchema';
 import { screenshotCleanupIntents } from '../../../libs/products/datasource/src/entities/ScreenshotCleanupIntentSchema';
+import { tags } from '../../../libs/products/datasource/src/entities/TagSchema';
 import { PostgresqlCategoryRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlCategoryRepository';
 import { PostgresqlProductFlowRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlProductFlowRepository';
 import { PostgresqlProductScreenshotRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlProductScreenshotRepository';
-import { ProductContentSyncRegistrarToken } from '../../../libs/products/datasource/src/repositories/productContentSync';
+import {
+  beginProductContentWrite,
+  ProductContentSyncRegistrarToken,
+} from '../../../libs/products/datasource/src/repositories/productContentSync';
 import { lockProductSource } from '../../../libs/products/datasource/src/repositories/productSourceMutex';
 import { CreateProductFlow } from '../../../libs/products/domain/src/usecases/CreateProductFlow';
 import { DeleteProductScreenshot } from '../../../libs/products/domain/src/usecases/DeleteProductScreenshot';
@@ -2056,6 +2061,174 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       ).toBe('failed');
     } finally {
       send.mockRestore();
+    }
+  });
+
+  it.each(['completed', 'superseded'] as const)(
+    '검색 snapshot: %s 재전달은 원문 잠금과 근거 조회 없이 종료한다',
+    async terminal => {
+      const product = await seed();
+      const request = await sync.requestSearch(product.slug);
+      await db
+        .update(productContentSyncIntents)
+        .set({ status: terminal })
+        .where(eq(productContentSyncIntents.id, request.intentId));
+      const queries: string[] = [];
+      const index = vi.fn().mockResolvedValue(true);
+      const worker = new PostgresqlProductContentSync(
+        drizzle(connection, { logger: { logQuery: query => queries.push(query) } }) as never,
+        { index } as never,
+        queue
+      );
+      await worker.executeSearch(request.intentId);
+      expect(index).not.toHaveBeenCalled();
+      expect(queries.filter(query => /from "products"|pg_advisory|for update/i.test(query))).toEqual([]);
+      expect(queries.filter(query => /(?:from|join) "(?!product_content_sync_intents")/.test(query))).toEqual([]);
+      expect(await sync.status(request.intentId)).toMatchObject({ status: terminal, attemptCount: 0 });
+    }
+  );
+
+  it.each(['<p>검색 본문</p>', null])(
+    '검색 snapshot: 필요한 상품과 태그만 읽고 본문 %s와 revision을 보존한다',
+    async description => {
+      const product = await seed();
+      await db
+        .update(products)
+        .set({
+          description,
+          categoryIds: ['category-primary', 'category-secondary'],
+          contentRevision: 9007199254740993n,
+        })
+        .where(eq(products.id, product.id));
+      const [tag] = await db.insert(tags).values({ name: randomUUID(), type: 'KEYWORD' }).returning();
+      await db.insert(productTags).values({ productId: product.id, tagId: tag!.id });
+      const request = await sync.requestSearch(product.slug);
+      const queries: string[] = [];
+      const index = vi.fn().mockResolvedValue(true);
+      const worker = new PostgresqlProductContentSync(
+        drizzle(connection, { logger: { logQuery: query => queries.push(query) } }) as never,
+        { index } as never,
+        queue
+      );
+      await worker.executeSearch(request.intentId);
+      expect(index).toHaveBeenCalledExactlyOnceWith(
+        product.id,
+        expect.objectContaining({
+          id: product.id,
+          name: '원래 이름',
+          slug: product.slug,
+          summary: '요약',
+          description: description ?? '',
+          tags: [tag!.name],
+          category: 'category-primary',
+          createdAt: product.createdAt,
+          publishedAt: product.publishedAt,
+          sourceRevision: '9007199254740993',
+        })
+      );
+      expect(
+        queries.filter(query =>
+          /(?:from|join) "(?:categories|product_features|product_links|product_screenshots|product_flows|product_flow_steps|product_research_jobs)"/.test(
+            query
+          )
+        )
+      ).toEqual([]);
+      expect(queries.findIndex(query => /from "products".*for update/i.test(query))).toBeLessThan(
+        queries.findIndex(query => /from "product_content_sync_intents".*for update/i.test(query))
+      );
+      expect(await sync.status(request.intentId)).toMatchObject({ status: 'completed', attemptCount: 1 });
+    }
+  );
+
+  it('검색 snapshot: Product 잠금 대기 중 편집이 끝나면 intent를 다시 확인한다', async () => {
+    const product = await seed();
+    const request = await sync.requestSearch(product.slug);
+    const index = vi.fn().mockResolvedValue(true);
+    let reachedProduct!: () => void;
+    const locking = new Promise<void>(resolve => {
+      reachedProduct = resolve;
+    });
+    const queries: string[] = [];
+    const worker = new PostgresqlProductContentSync(
+      drizzle(connection, {
+        logger: {
+          logQuery(query) {
+            queries.push(query);
+            if (/from "products".*for update/i.test(query)) reachedProduct();
+          },
+        },
+      }) as never,
+      { index } as never,
+      queue
+    );
+    let running: Promise<void> | undefined;
+    try {
+      await db.transaction(async tx => {
+        const finish = await beginProductContentWrite(tx as never, product.id);
+        running = worker.executeSearch(request.intentId);
+        await locking;
+        await tx.update(products).set({ name: '잠금 중 저장한 최신 이름' }).where(eq(products.id, product.id));
+        await finish();
+      });
+    } finally {
+      await running;
+    }
+    expect(index).not.toHaveBeenCalled();
+    expect(queries.filter(query => /from "product_tags"/.test(query))).toEqual([]);
+    expect(await sync.status(request.intentId)).toMatchObject({ status: 'superseded', attemptCount: 0 });
+    const latest = (await intents(product.id)).find(row => row.kind === 'search' && row.sourceRevision === 1n)!;
+    await worker.executeSearch(latest.id);
+    expect(index).toHaveBeenCalledExactlyOnceWith(
+      product.id,
+      expect.objectContaining({
+        name: '잠금 중 저장한 최신 이름',
+        sourceRevision: '1',
+      })
+    );
+  });
+
+  it('검색 snapshot: 중복 worker를 막고 늦게 끝난 이전 revision은 최신 색인을 덮지 않는다', async () => {
+    const product = await seed();
+    const request = await sync.requestSearch(product.slug);
+    let started!: () => void;
+    const indexing = new Promise<void>(resolve => {
+      started = resolve;
+    });
+    let release!: () => void;
+    const paused = new Promise<void>(resolve => {
+      release = resolve;
+    });
+    const index = vi.fn(async (id: string, payload: SearchableProduct) => {
+      if (payload.sourceRevision === '0') {
+        started();
+        await paused;
+      }
+      return search.index(id, payload);
+    });
+    const worker = new PostgresqlProductContentSync(db as never, { index } as never, queue);
+    const oldWorker = worker.executeSearch(request.intentId);
+    try {
+      await indexing;
+      await worker.executeSearch(request.intentId);
+      expect(index).toHaveBeenCalledTimes(1);
+      expect(await sync.status(request.intentId)).toMatchObject({ status: 'in_progress', attemptCount: 1 });
+      await repository.updateById(product.id, value => {
+        value.update({ name: '새 revision의 이름' });
+        return value;
+      });
+      const latest = (await intents(product.id)).find(row => row.kind === 'search' && row.sourceRevision === 1n)!;
+      await worker.executeSearch(latest.id);
+      release();
+      await oldWorker;
+      expect(index).toHaveBeenCalledTimes(2);
+      expect(await sync.status(request.intentId)).toMatchObject({ status: 'superseded' });
+      expect(await sync.status(latest.id)).toMatchObject({ status: 'completed', attemptCount: 1 });
+      const projection = await SearchableProductModel.collection.findOne({ productId: product.id });
+      expect(projection?.name).toBe('새 revision의 이름');
+      expect(projection?.sourceRevision.toString()).toBe('1');
+    } finally {
+      release();
+      await oldWorker;
     }
   });
 
