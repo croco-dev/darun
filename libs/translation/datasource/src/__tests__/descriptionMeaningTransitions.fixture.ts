@@ -11,6 +11,36 @@ interface MeaningPreservingEditFixture {
 // 두 테스트가 같은 원문 전환을 검증하는 사례만 소유한다.
 // 영어는 DB/API가 검증할 독립 리터럴이며 생산 비교 함수나 provider 출력으로 계산하지 않는다.
 export const meaningChanges = {
+  tableColumnSpan: {
+    source: [
+      '<table><tr><th colspan="1">본문</th><th>조건</th></tr></table>',
+      '<table><tr><th colspan="2">본문</th><th>조건</th></tr></table>',
+    ],
+    english: [
+      '<table><tr><th colspan="1">Body</th><th>Condition</th></tr></table>',
+      '<table><tr><th colspan="2">Body</th><th>Condition</th></tr></table>',
+    ],
+  },
+  tableRowSpan: {
+    source: [
+      '<table><tr><td rowspan="1">본문</td><td>조건</td></tr><tr><td>주의</td></tr></table>',
+      '<table><tr><td rowspan="2">본문</td><td>조건</td></tr><tr><td>주의</td></tr></table>',
+    ],
+    english: [
+      '<table><tr><td rowspan="1">Body</td><td>Condition</td></tr><tr><td>Warning</td></tr></table>',
+      '<table><tr><td rowspan="2">Body</td><td>Condition</td></tr><tr><td>Warning</td></tr></table>',
+    ],
+  },
+  tableRowGroupSpan: {
+    source: [
+      '<table><tbody><tr><td rowspan="2">본문</td><td>조건</td></tr><tr><td>주의</td></tr><tr><td>기능</td></tr></tbody></table>',
+      '<table><tbody><tr><td rowspan="0">본문</td><td>조건</td></tr><tr><td>주의</td></tr><tr><td>기능</td></tr></tbody></table>',
+    ],
+    english: [
+      '<table><tbody><tr><td rowspan="2">Body</td><td>Condition</td></tr><tr><td>Warning</td></tr><tr><td>Feature</td></tr></tbody></table>',
+      '<table><tbody><tr><td rowspan="0">Body</td><td>Condition</td></tr><tr><td>Warning</td></tr><tr><td>Feature</td></tr></tbody></table>',
+    ],
+  },
   htmlInlineCodeSpacing: {
     source: ['<p>본문 <code>left  right</code></p>', '<p>본문 <code>left right</code></p>'],
     english: ['<p>Body <code>left  right</code></p>', '<p>Body <code>left right</code></p>'],
@@ -157,6 +187,14 @@ export const meaningChanges = {
 } as const satisfies Record<string, MeaningChangeFixture>;
 
 export const meaningPreservingEdits = {
+  tableSpanNotation: {
+    source: [
+      '<table><tr><th colspan="2" rowspan="1">본문</th><td rowspan="0">조건</td></tr><tr><td>주의</td></tr></table>',
+      '<table class="display"><tr><th style="color:red" colspan="02"><strong>본문</strong></th><td rowspan="00"><span>조건</span></td></tr><tr><td>주의</td></tr></table>',
+    ],
+    english:
+      '<table><tr><th colspan="2" rowspan="1">Body</th><td rowspan="0">Condition</td></tr><tr><td>Warning</td></tr></table>',
+  },
   textOutsideHtmlCode: {
     source: ['<p>  본문  <code> left  right </code>  조건  </p>', '<p>본문 <code> left  right </code> 조건</p>'],
   },

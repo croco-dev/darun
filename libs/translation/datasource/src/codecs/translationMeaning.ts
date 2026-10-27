@@ -18,7 +18,7 @@ interface MarkdownNode {
 }
 const markdown = unified().use(remarkParse);
 
-/** Compare document meaning and effective list numbers, ignoring presentation-only formatting. */
+/** Compare document meaning, effective list numbers and cell spans, ignoring presentation-only formatting. */
 export function translationMeaning(html: string): string {
   const document = markdown.parse(html) as MarkdownNode;
   const htmlFragments: string[] = [];
@@ -256,6 +256,15 @@ export function translationMeaning(html: string): string {
     const digits = value?.match(/^[\t\n\f\r ]*([+-]?\d+)/)?.[1];
     return digits === undefined ? undefined : Number(digits);
   };
+  const cellSpan = (node: DefaultTreeAdapterMap['element'], name: 'colspan' | 'rowspan'): number => {
+    const value = node.attrs.find(attr => attr.name === name)?.value;
+    // HTML's non-negative integer parser accepts a leading + and trailing non-digits.
+    // colspan=0 defaults to 1; rowspan=0 spans the remaining rows in its row group.
+    const digits = value?.match(/^[\t\n\f\r ]*\+?(\d+)/)?.[1];
+    if (digits === undefined) return 1;
+    const span = Number(digits);
+    return name === 'colspan' ? Math.min(span || 1, 1000) : Math.min(span, 65534);
+  };
   const walk = (node: DefaultTreeAdapterMap['node'], ordinal?: number, preserveWhitespace = false): string => {
     preserveWhitespace ||= 'tagName' in node && (node.tagName === 'pre' || node.tagName === 'code');
     if (node.nodeName === '#comment') return '';
@@ -281,9 +290,14 @@ export function translationMeaning(html: string): string {
       }
     }
     if (!('tagName' in node) || presentation[node.tagName]) return children;
-    const attributes = node.attrs
-      .filter(attr => ['href', 'src', 'alt'].includes(attr.name))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const attributes = node.attrs.filter(attr => ['href', 'src', 'alt'].includes(attr.name));
+    if (node.tagName === 'td' || node.tagName === 'th') {
+      for (const name of ['colspan', 'rowspan'] as const) {
+        const span = cellSpan(node, name);
+        if (span !== 1) attributes.push({ name, value: String(span) });
+      }
+    }
+    attributes.sort((a, b) => a.name.localeCompare(b.name));
     return `<${node.tagName}${JSON.stringify(attributes)}${ordinal === undefined ? '' : `#${ordinal}`}>${preserveWhitespace ? children : children.trim()}</${node.tagName}>`;
   };
   return JSON.stringify([walk(parseFragment(fragments.join(''))).trim(), codeLiterals]);

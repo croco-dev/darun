@@ -8,6 +8,52 @@ import {
   orderedListItemValueChange,
 } from './descriptionMeaningTransitions.fixture';
 
+describe('translationMeaning 표 셀 범위', () => {
+  const table = (tag: string, attributes: string) =>
+    `<table><tr><${tag} ${attributes}>본문</${tag}><td>조건</td></tr></table>`;
+
+  it.each(['td', 'th'])('%s의 유효 열·행 범위 변경을 구분한다', tag => {
+    for (const name of ['colspan', 'rowspan']) {
+      expect(translationMeaning(table(tag, `${name}="1"`))).not.toBe(translationMeaning(table(tag, `${name}="2"`)));
+      expect(translationMeaning(table(tag, `${name}="2"`))).not.toBe(translationMeaning(table(tag, '')));
+    }
+    expect(translationMeaning(table(tag, 'rowspan="0"'))).not.toBe(translationMeaning(table(tag, 'rowspan="1"')));
+  });
+
+  it.each(['td', 'th'])('%s에서 브라우저가 같은 범위로 해석하는 표기를 정규화한다', tag => {
+    for (const name of ['colspan', 'rowspan']) {
+      for (const value of ['', 'bad', '-2', '-0', '1', '01', '+1', ' 1', '1tail']) {
+        expect(translationMeaning(table(tag, `${name}="${value}"`))).toBe(translationMeaning(table(tag, '')));
+      }
+      expect(translationMeaning(table(tag, `${name}=" +02tail"`))).toBe(translationMeaning(table(tag, `${name}="2"`)));
+      const maximum = name === 'colspan' ? 1000 : 65534;
+      expect(translationMeaning(table(tag, `${name}="${maximum + 1}"`))).toBe(
+        translationMeaning(table(tag, `${name}="${maximum}"`))
+      );
+      expect(translationMeaning(table(tag, `${name}="${maximum - 1}"`))).not.toBe(
+        translationMeaning(table(tag, `${name}="${maximum}"`))
+      );
+    }
+    expect(translationMeaning(table(tag, 'colspan="0"'))).toBe(translationMeaning(table(tag, '')));
+    expect(translationMeaning(table(tag, 'rowspan="00"'))).toBe(translationMeaning(table(tag, 'rowspan="0"')));
+  });
+
+  it.each(['tableColumnSpan', 'tableRowSpan', 'tableRowGroupSpan'] as const)(
+    '%s의 원문 전환을 의미 변경으로 판정한다',
+    key => {
+      const { source } = meaningChanges[key];
+      expect(translationMeaning(source[0])).not.toBe(translationMeaning(source[1]));
+    }
+  );
+
+  it('같은 범위의 속성 순서·장식 wrapper와 셀 밖의 범위 속성은 의미를 바꾸지 않는다', () => {
+    expect(translationMeaning(meaningPreservingEdits.tableSpanNotation.source[0])).toBe(
+      translationMeaning(meaningPreservingEdits.tableSpanNotation.source[1])
+    );
+    expect(translationMeaning('<p colspan="2" rowspan="0">본문</p>')).toBe(translationMeaning('<p>본문</p>'));
+  });
+});
+
 describe('translationMeaning 목록 번호', () => {
   it.each([
     ['시작 번호', '<ol start="1"><li>본문</li><li>조건</li></ol>', '<ol start="5"><li>본문</li><li>조건</li></ol>'],
