@@ -1,19 +1,13 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS entry point, like esbuild.plugins.js. */
 const { context } = require('esbuild');
 const { spawn } = require('child_process');
-const { existsSync, readFileSync } = require('fs');
+const { existsSync } = require('node:fs');
+const { loadEnvFile } = require('node:process');
 
-for (const f of ['.env', '.env.local']) {
-  if (existsSync(f)) {
-    for (const line of readFileSync(f, 'utf8').split('\n')) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-      const eq = trimmed.indexOf('=');
-      if (eq < 0) continue;
-      const key = trimmed.slice(0, eq).trim();
-      const val = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
-      if (!(key in process.env)) process.env[key] = val;
-    }
-  }
+// loadEnvFile preserves existing values, including empty strings.
+// Load local overrides first so shell > .env.local > .env.
+for (const file of ['.env.local', '.env']) {
+  if (existsSync(file)) loadEnvFile(file);
 }
 
 process.env.INFRA_ENV ??= 'local';
