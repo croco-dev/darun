@@ -3,8 +3,8 @@ import { Product } from '../entities/Product';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { PublishProduct } from '../usecases/PublishProduct';
 
-function createMockRepository(): Pick<ProductRepository, 'updateById'> {
-  return { updateById: vi.fn() };
+function createMockRepository(): Pick<ProductRepository, 'publishById'> {
+  return { publishById: vi.fn() };
 }
 
 describe('PublishProduct', () => {
@@ -19,13 +19,13 @@ describe('PublishProduct', () => {
         summary: '요약',
       });
 
-      vi.mocked(repository.updateById).mockImplementation(async (_id, modifier) => modifier(product));
+      vi.mocked(repository.publishById).mockResolvedValue(product);
 
       const usecase = new PublishProduct(repository as never);
       const result = await usecase.execute({ id: 'prod-1' });
 
-      expect(repository.updateById).toHaveBeenCalledWith('prod-1', expect.any(Function));
-      expect(result.publishedAt).toBeInstanceOf(Date);
+      expect(repository.publishById).toHaveBeenCalledWith('prod-1');
+      expect(result).toBe(product);
     });
   });
 });

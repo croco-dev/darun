@@ -11,9 +11,6 @@ export class PublishProduct {
   ) {}
 
   async execute({ id }: { id: string }): Promise<Product> {
-    return this.productRepository.updateById(id, product => {
-      product.publish();
-      return product;
-    });
+    return this.productRepository.publishById(id);
   }
 }

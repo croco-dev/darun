@@ -10,6 +10,24 @@ import { magazines } from '../entities/MagazineSchema';
 export class PostgresqlMagazineRepository implements MagazineRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
+  async publishById(id: string): Promise<Magazine> {
+    return this.db.transaction(async tx => {
+      const [row] = await tx.select().from(magazines).where(eq(magazines.id, id)).for('update');
+      if (!row) throw magazineNotFound();
+      if (row.publishedAt) return this.mapper(row);
+
+      const magazine = this.mapper(row);
+      magazine.publish();
+      const [updated] = await tx
+        .update(magazines)
+        .set({ publishedAt: magazine.publishedAt, updatedAt: new Date() })
+        .where(eq(magazines.id, id))
+        .returning();
+      if (!updated) throw magazineUpdateFailed();
+      return this.mapper(updated);
+    });
+  }
+
   async updateById(id: string, modifier: (magazine: Magazine) => Magazine): Promise<Magazine> {
     return this.db.transaction(async tx => {
       const prev = await tx

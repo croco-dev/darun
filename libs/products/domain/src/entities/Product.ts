@@ -49,7 +49,7 @@ export class Product {
   }
 
   public publish() {
-    this.publishedAt = new Date();
+    this.publishedAt ??= new Date();
   }
 
   public update({

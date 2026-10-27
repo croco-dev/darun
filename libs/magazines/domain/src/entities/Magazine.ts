@@ -49,7 +49,7 @@ export class Magazine {
   }
 
   public publish() {
-    this.publishedAt = new Date();
+    this.publishedAt ??= new Date();
   }
 
   update({

@@ -1,5 +1,7 @@
 import 'reflect-metadata';
 import { GetAccount } from '@darun/accounts-domain';
+import { PostgresqlMagazineRepository } from '@darun/magazines-datasource';
+import { Magazine, PublishMagazine } from '@darun/magazines-domain';
 import {
   PostgresqlProductRepository,
   PostgresqlProductTagRepository,
@@ -8,6 +10,8 @@ import {
   PostgresqlProductDescriptionEvidenceAssembler,
 } from '@darun/products-datasource';
 import {
+  Product,
+  PublishProduct,
   ApplyProductDescriptionCandidate,
   EditProduct,
   GetProduct,
@@ -3604,4 +3608,186 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
       });
     }
   }, 15_000);
+});
+
+// This suite needs PostgreSQL only; the full file is also run by the publication CI gate.
+(databaseUrl ? describe : describe.skip)('publish-once: 최초 발행과 재시도', () => {
+  let control: Sql;
+  const writers: Sql[] = [];
+  let stores: Array<{
+    product: PostgresqlProductRepository;
+    magazine: PostgresqlMagazineRepository;
+  }>;
+  beforeAll(async () => {
+    const target = new URL(databaseUrl!);
+    if (!['127.0.0.1', 'localhost'].includes(target.hostname) || target.pathname !== '/darun_content_sync') {
+      throw new Error('Only isolated local content sync database is allowed');
+    }
+    control = postgres(databaseUrl!, { max: 1 });
+    await migrate(drizzle(control), {
+      migrationsFolder: resolve(process.cwd(), 'scripts/migrations'),
+    });
+    stores = [0, 1].map(() => {
+      const writer = postgres(databaseUrl!, { max: 1 });
+      writers.push(writer);
+      const database = drizzle(writer);
+      return {
+        product: new PostgresqlProductRepository(database),
+        magazine: new PostgresqlMagazineRepository(database),
+      };
+    });
+    Container.set(ProductContentSyncRegistrarToken, {
+      register: registerProductContentSync,
+    });
+  }, 30000);
+  afterAll(async () => {
+    await Promise.all(writers.map(writer => writer.end({ timeout: 5 })));
+    if (control) await control.end({ timeout: 5 });
+    Container.remove(ProductContentSyncRegistrarToken);
+  });
+
+  for (const kind of ['product', 'magazine'] as const) {
+    const table = kind === 'product' ? 'products' : 'magazines';
+    const seed = async () => {
+      const id = randomUUID().replaceAll('-', '').slice(0, 26);
+      const shared = {
+        id,
+        slug: `once-${id}`,
+        updated_at: '2020-01-02T03:04:05Z',
+      };
+      const row =
+        kind === 'product'
+          ? {
+              ...shared,
+              name: '도구',
+              summary: '새 소개',
+              logo_url: 'https://example.com/logo.png',
+            }
+          : {
+              ...shared,
+              title: '새 소식',
+              author_id: 'author',
+              background_image_url: 'https://example.com/bg.png',
+            };
+      await control`insert into ${control(table)} ${control(row)}`;
+      return id;
+    };
+    const snapshot = async (id: string) => {
+      const rows = await control`select *, xmin::text as row_version,
+        (extract(epoch from published_at) * 1000)::float8 as published_at_ms,
+        (extract(epoch from updated_at) * 1000)::float8 as updated_at_ms
+        from ${control(table)} where id = ${id}`;
+      const intents = await control`select * from product_content_sync_intents where product_id = ${id} order by kind`;
+      const jobs = await control`select * from translation_jobs where entity_id = ${id}`;
+      return { rows: [...rows], intents: [...intents], jobs: [...jobs] };
+    };
+
+    it(`${kind}: 응답 유실 뒤 재시도해도 발행일·수정일·revision·intent를 보존한다`, async () => {
+      const id = await seed();
+      const firstOperation =
+        kind === 'product' ? new PublishProduct(stores[0].product) : new PublishMagazine(stores[0].magazine);
+      const result = await firstOperation.execute({ id });
+      expect(result.publishedAt).toBeInstanceOf(Date);
+      const first = await snapshot(id);
+      expect(first.rows[0].updated_at_ms).not.toBe(new Date('2020-01-02T03:04:05Z').getTime());
+      // A persisted old date makes a second timestamp write observably wrong without a clock sleep.
+      const original = new Date('2021-06-07T08:09:10Z');
+      await control`update ${control(table)} set published_at = ${original.toISOString()}, updated_at = ${original.toISOString()} where id = ${id}`;
+      const before = await snapshot(id);
+      const retryOperation =
+        kind === 'product' ? new PublishProduct(stores[1].product) : new PublishMagazine(stores[1].magazine);
+      const retry = await retryOperation.execute({ id });
+      expect(retry.publishedAt).toEqual(original);
+      expect(retry.updatedAt).toEqual(original);
+      expect(await snapshot(id)).toEqual(before);
+      if (kind === 'product') {
+        expect(first.rows[0].content_revision).toBe('1');
+        expect(first.intents.map(intent => intent.kind)).toEqual(['search', 'translation']);
+        expect(first.jobs).toHaveLength(1);
+      }
+    });
+
+    it(`${kind}: 서로 다른 두 connection의 동시 최초 발행이 한 번만 전이한다`, async () => {
+      const id = await seed();
+      const pending: Array<Promise<Product | Magazine>> = [];
+      const identities = await Promise.all(writers.map(writer => writer`select pg_backend_pid() as pid`));
+      const writerPids = identities.map(rows => rows[0].pid);
+      try {
+        await control.begin(async tx => {
+          await tx`select id from ${tx(table)} where id = ${id} for update`;
+          for (const store of stores) {
+            const operation =
+              kind === 'product' ? new PublishProduct(store.product) : new PublishMagazine(store.magazine);
+            const request = operation.execute({ id });
+            // Observe early failures without leaving unhandled promises while the holder runs.
+            void request.catch(() => undefined);
+            pending.push(request);
+          }
+          const deadline = Date.now() + 5000;
+          for (;;) {
+            await tx`select pg_stat_clear_snapshot()`;
+            const [waiting] = await tx`
+              select count(*)::int as count from pg_stat_activity
+              where pid = any(${writerPids}) and wait_event_type = 'Lock'`;
+            if (waiting.count === 2) break;
+            if (Date.now() > deadline) throw new Error('Both publication connections must wait on the held row');
+            await new Promise<void>(resolve => setImmediate(resolve));
+          }
+        });
+        const [first, second] = await Promise.all(pending);
+        expect(first.publishedAt).toBeInstanceOf(Date);
+        expect(second.publishedAt).toEqual(first.publishedAt);
+        expect(second.updatedAt).toEqual(first.updatedAt);
+        const persisted = await snapshot(id);
+        expect(persisted.rows[0].published_at_ms).toBe(first.publishedAt?.getTime());
+        expect(persisted.rows[0].updated_at_ms).toBe(first.updatedAt?.getTime());
+        if (kind === 'product') {
+          expect(persisted.rows[0].content_revision).toBe('1');
+          expect(persisted.intents.map(intent => intent.kind)).toEqual(['search', 'translation']);
+          expect(persisted.jobs).toHaveLength(1);
+        }
+      } finally {
+        await Promise.allSettled(pending);
+      }
+    }, 10000);
+
+    it(`${kind}: 존재하지 않는 대상은 기존 not-found 오류를 반환한다`, async () => {
+      const operation =
+        kind === 'product' ? new PublishProduct(stores[0].product) : new PublishMagazine(stores[0].magazine);
+      await expect(operation.execute({ id: 'missing-publish-once' })).rejects.toMatchObject({
+        code: `${kind}/not-found`,
+      });
+    });
+  }
+
+  it('product: 동기화 등록 실패는 발행일·수정일·revision과 함께 rollback된다', async () => {
+    const [row] = await drizzle(control)
+      .insert(products)
+      .values({
+        name: '등록 실패',
+        slug: `rollback-${randomUUID()}`,
+        summary: '소개',
+        logoUrl: 'https://example.com/logo.png',
+        updatedAt: new Date('2020-01-02T03:04:05Z'),
+      })
+      .returning();
+    Container.set(ProductContentSyncRegistrarToken, {
+      register: async () => {
+        throw new Error('synthetic registrar failure');
+      },
+    });
+    try {
+      await expect(new PublishProduct(stores[0].product).execute({ id: row.id })).rejects.toThrow(
+        'synthetic registrar failure'
+      );
+      const [persisted] = await drizzle(control).select().from(products).where(eq(products.id, row.id));
+      expect(persisted).toEqual(row);
+      expect(await control`select id from product_content_sync_intents where product_id = ${row.id}`).toHaveLength(0);
+      expect(await control`select id from translation_jobs where entity_id = ${row.id}`).toHaveLength(0);
+    } finally {
+      Container.set(ProductContentSyncRegistrarToken, { register: registerProductContentSync });
+    }
+    const recovered = await new PublishProduct(stores[0].product).execute({ id: row.id });
+    expect(recovered.publishedAt).toBeInstanceOf(Date);
+  });
 });
