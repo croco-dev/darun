@@ -137,7 +137,8 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
         return productIds.map(productId => groupByDocs[productId] || []);
       },
       {
-        cache: true,
+        // Repository instances outlive requests; retain batching without stale result caching.
+        cache: false,
       }
     );
   }

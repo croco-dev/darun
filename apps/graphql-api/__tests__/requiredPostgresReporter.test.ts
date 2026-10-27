@@ -12,6 +12,7 @@ const urls = {
   JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_job_config_attempts',
   TRANSLATION_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity',
   ALTERNATIVE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_alternative_integrity',
+  PRODUCT_DETAIL_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_detail_freshness',
   ATOMIC_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity',
   DESCRIPTION_EVIDENCE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_description_integrity',
   W4_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_lease_integrity',
@@ -22,6 +23,7 @@ const groups = {
     '__tests__/jobConfigAttempts.pg.test.ts',
     '__tests__/translationIntegrity.pg.test.ts',
     '__tests__/alternativeReplacement.pg.test.ts',
+    '__tests__/productDetailFreshness.pg.test.ts',
   ],
   products: [
     'src/__tests__/W3AtomicApplyMaterialize.pg.test.ts',
@@ -81,6 +83,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
     ['graphql', 'JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL'],
     ['graphql', 'TRANSLATION_TEST_DATABASE_URL'],
     ['graphql', 'ALTERNATIVE_TEST_DATABASE_URL'],
+    ['graphql', 'PRODUCT_DETAIL_TEST_DATABASE_URL'],
     ['products', 'ATOMIC_TEST_DATABASE_URL'],
     ['products', 'DESCRIPTION_EVIDENCE_TEST_DATABASE_URL'],
     ['products', 'W4_DATABASE_URL'],
@@ -109,6 +112,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
 
   it.each([
     ['graphql', '__tests__/alternativeReplacement.pg.test.ts'],
+    ['graphql', '__tests__/productDetailFreshness.pg.test.ts'],
     ['products', 'src/__tests__/descriptionEvidence.postgresql.test.ts'],
     ['products', 'src/__tests__/W4JobLeaseRecovery.pg.test.ts'],
   ] as const)('fails when %s omits %s even though its other suites pass', (group, file) => {
@@ -121,6 +125,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
 
   describe.each([
     ['graphql', '__tests__/alternativeReplacement.pg.test.ts'],
+    ['graphql', '__tests__/productDetailFreshness.pg.test.ts'],
     ['products', 'src/__tests__/descriptionEvidence.postgresql.test.ts'],
     ['products', 'src/__tests__/W4JobLeaseRecovery.pg.test.ts'],
   ] as const)('%s required suite %s', (group, file) => {

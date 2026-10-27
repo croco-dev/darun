@@ -23,7 +23,8 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
         return productIds.map(productId => (groupByDocs[productId] || []).map(doc => this.toDomain(doc)));
       },
       {
-        cache: true,
+        // Repository instances outlive requests; retain batching without stale result caching.
+        cache: false,
       }
     );
   }

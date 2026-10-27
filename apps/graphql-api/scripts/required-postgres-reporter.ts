@@ -5,6 +5,7 @@ const groups = {
     '__tests__/jobConfigAttempts.pg.test.ts': 'JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL',
     '__tests__/translationIntegrity.pg.test.ts': 'TRANSLATION_TEST_DATABASE_URL',
     '__tests__/alternativeReplacement.pg.test.ts': 'ALTERNATIVE_TEST_DATABASE_URL',
+    '__tests__/productDetailFreshness.pg.test.ts': 'PRODUCT_DETAIL_TEST_DATABASE_URL',
   },
   products: {
     'src/__tests__/W3AtomicApplyMaterialize.pg.test.ts': 'ATOMIC_TEST_DATABASE_URL',

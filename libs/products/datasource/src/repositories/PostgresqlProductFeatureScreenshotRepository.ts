@@ -23,7 +23,8 @@ export class PostgresqlProductFeatureScreenshotRepository implements ProductFeat
         return featureIds.map(featureId => groupByDocs[featureId] || []);
       },
       {
-        cache: true,
+        // Repository instances outlive requests; retain batching without stale result caching.
+        cache: false,
       }
     );
   }
