@@ -4035,6 +4035,74 @@ identitySuite('검색 identity 인덱스 확인의 비용과 비파괴 보호', 
     }
   );
 
+  it.each(['완료', '실패'])(
+    '생성 중인 unique 인덱스의 %s를 기다린 뒤에만 쓰고 실패 후 재시도한다',
+    async outcome => {
+      const admin = mongoose.connection.db!.admin();
+      await collection.insertOne({ productId: 'seed', name: '기존 문서', votes: 41 });
+      const failpoint = await admin.command({ configureFailPoint: 'hangAfterStartingIndexBuild', mode: 'alwaysOn' });
+      let build: Promise<unknown> | undefined;
+      let pending: Promise<boolean> | undefined;
+      let duplicateId: mongo.ObjectId | undefined;
+      let observedCreate!: () => void;
+      const createRequested = new Promise<void>(resolve => {
+        observedCreate = resolve;
+      });
+      const observe = (event: mongo.CommandStartedEvent) => {
+        if (event.databaseName === dbName && event.commandName === 'createIndexes') observedCreate();
+      };
+      const writer = fresh();
+      try {
+        build = collection.createIndex(
+          { productId: 1 },
+          { unique: true, name: 'search_product_identity', collation: { locale: 'simple' } }
+        );
+        // Install rejection handlers before deliberately failing a paused build.
+        const built = build.then(
+          () => ({ ok: true }),
+          error => ({ ok: false, error })
+        );
+        await admin.command({
+          waitForFailPoint: 'hangAfterStartingIndexBuild',
+          timesEntered: failpoint['count'] + 1,
+          maxTimeMS: 10_000,
+        });
+        expect(await collection.listIndexes().toArray()).toContainEqual(
+          expect.objectContaining({ name: 'search_product_identity', unique: true })
+        );
+        commands.length = 0;
+        mongoose.connection.getClient().on('commandStarted', observe);
+        pending = writer.index('target', payload());
+        const written = pending.then(
+          () => ({ ok: true }),
+          error => ({ ok: false, error })
+        );
+        expect(await Promise.race([createRequested.then(() => 'waiting'), written.then(() => 'finished')])).toBe(
+          'waiting'
+        );
+        expect(commands.filter(event => event.commandName === 'update')).toEqual([]);
+        if (outcome === '실패') {
+          duplicateId = (await collection.insertOne({ productId: 'seed', name: '중복 fixture' })).insertedId;
+        }
+        await admin.command({ configureFailPoint: 'hangAfterStartingIndexBuild', mode: 'off' });
+        expect((await built).ok).toBe(outcome === '완료');
+        expect((await written).ok).toBe(outcome === '완료');
+        if (duplicateId) {
+          expect(await collection.findOne({ productId: 'target' })).toBeNull();
+          await collection.deleteOne({ _id: duplicateId });
+          await expect(writer.index('target', payload())).resolves.toBe(true);
+        }
+        expect(await collection.findOne({ productId: 'target' })).toMatchObject({ name: '새 문서', votes: 7 });
+        expect(await collection.findOne({ productId: 'seed' })).toMatchObject({ name: '기존 문서', votes: 41 });
+      } finally {
+        mongoose.connection.getClient().off('commandStarted', observe);
+        await admin.command({ configureFailPoint: 'hangAfterStartingIndexBuild', mode: 'off' });
+        await Promise.allSettled([build, pending]);
+      }
+    },
+    30_000
+  );
+
   it('인덱스가 없으면 동시 writer가 안전하게 생성하고 늦은 revision과 투표를 보존한다', async () => {
     await collection.insertOne({ productId: 'shared', name: '원래 문서', votes: 43 });
     commands.length = 0;

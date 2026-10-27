@@ -15,18 +15,23 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
     this.identityReady ??= (async () => {
       await SearchableProductModel.init();
       const indexes = await SearchableProductModel.collection.listIndexes().toArray();
-      if (
-        indexes.some(
-          index =>
-            Object.keys(index.key).length === 1 &&
-            index.key['productId'] === 1 &&
-            index.unique === true &&
-            !index.sparse &&
-            !index.partialFilterExpression &&
-            (!index.collation || index.collation.locale === 'simple')
-        )
-      )
-        return;
+      const identity = indexes.find(
+        index =>
+          Object.keys(index.key).length === 1 &&
+          index.key['productId'] === 1 &&
+          index.unique === true &&
+          !index.sparse &&
+          !index.partialFilterExpression &&
+          (!index.collation || index.collation.locale === 'simple')
+      );
+      if (identity) {
+        // listIndexes also exposes unfinished specs. Build UUIDs alone do not
+        // distinguish these on standalone MongoDB, so inspect build names too.
+        const stats: { indexBuilds?: string[] } = await SearchableProductModel.db.db!.command({
+          collStats: SearchableProductModel.collection.collectionName,
+        });
+        if (Array.isArray(stats.indexBuilds) && !stats.indexBuilds.includes(identity.name!)) return;
+      }
       const duplicates = await SearchableProductModel.collection
         .aggregate([
           { $group: { _id: '$productId', count: { $sum: 1 } } },
