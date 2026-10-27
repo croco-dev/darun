@@ -27,10 +27,17 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
       if (identity) {
         // listIndexes also exposes unfinished specs. Build UUIDs alone do not
         // distinguish these on standalone MongoDB, so inspect build names too.
-        const stats: { indexBuilds?: string[] } = await SearchableProductModel.db.db!.command({
-          collStats: SearchableProductModel.collection.collectionName,
-        });
-        if (Array.isArray(stats.indexBuilds) && !stats.indexBuilds.includes(identity.name!)) return;
+        const stats: { indexBuilds?: string[]; indexSizes?: Record<string, number> } =
+          await SearchableProductModel.db.db!.command({
+            collStats: SearchableProductModel.collection.collectionName,
+          });
+        if (
+          stats.indexSizes &&
+          Object.prototype.hasOwnProperty.call(stats.indexSizes, identity.name!) &&
+          Array.isArray(stats.indexBuilds) &&
+          !stats.indexBuilds.includes(identity.name!)
+        )
+          return;
       }
       const duplicates = await SearchableProductModel.collection
         .aggregate([

@@ -4035,6 +4035,25 @@ identitySuite('검색 identity 인덱스 확인의 비용과 비파괴 보호', 
     }
   );
 
+  it('목록 조회 뒤 사라진 인덱스는 준비 완료로 캐시하지 않고 쓰기 전에 다시 생성한다', async () => {
+    await collection.createIndex({ productId: 1 }, { unique: true, name: 'search_product_identity' });
+    const database = mongoose.connection.db!;
+    const command = database.command.bind(database);
+    const stats = vi.spyOn(database, 'command').mockImplementationOnce(async (...args) => {
+      await collection.dropIndex('search_product_identity');
+      return command(...args);
+    });
+    try {
+      await fresh().index('target', payload());
+      expect(await collection.listIndexes().toArray()).toContainEqual(
+        expect.objectContaining({ name: 'search_product_identity', key: { productId: 1 }, unique: true })
+      );
+      expect(await collection.findOne({ productId: 'target' })).toMatchObject({ name: '새 문서' });
+    } finally {
+      stats.mockRestore();
+    }
+  });
+
   it.each(['완료', '실패'])(
     '생성 중인 unique 인덱스의 %s를 기다린 뒤에만 쓰고 실패 후 재시도한다',
     async outcome => {
