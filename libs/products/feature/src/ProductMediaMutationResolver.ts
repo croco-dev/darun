@@ -95,9 +95,9 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
     const screenshot = await this.updateProductScreenshotUseCase.execute({
       id: input.id,
       imageAlt: input.imageAlt,
-      title: input.title ?? null,
-      platform: input.platform ?? null,
-      screenType: input.screenType ?? null,
+      title: input.title,
+      platform: input.platform,
+      screenType: input.screenType,
       ...(input.uiElements !== undefined ? { uiElements: input.uiElements ?? null } : {}),
     });
 

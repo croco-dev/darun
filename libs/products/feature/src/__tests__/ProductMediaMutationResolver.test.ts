@@ -169,9 +169,9 @@ describe('ProductMediaMutationResolver', () => {
       expect(updateProductScreenshot.execute).toHaveBeenCalledWith({
         id: 'screenshot-1',
         imageAlt: '이미지',
-        title: null,
-        platform: null,
-        screenType: null,
+        title: undefined,
+        platform: undefined,
+        screenType: undefined,
         uiElements: [VisualUiElementGraph.CARD, VisualUiElementGraph.BUTTON],
       });
     });
@@ -185,9 +185,9 @@ describe('ProductMediaMutationResolver', () => {
       expect(updateProductScreenshot.execute).toHaveBeenCalledWith({
         id: 'screenshot-1',
         imageAlt: '이미지',
-        title: null,
-        platform: null,
-        screenType: null,
+        title: undefined,
+        platform: undefined,
+        screenType: undefined,
       });
       expect(updateProductScreenshot.execute.mock.calls[0][0]).not.toHaveProperty('uiElements');
     });

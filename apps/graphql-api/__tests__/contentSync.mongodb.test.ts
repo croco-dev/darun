@@ -195,7 +195,10 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       {} as never,
       {} as never,
       {} as never,
-      {} as never,
+      new UpdateProductScreenshot(
+        new PostgresqlProductScreenshotRepository(db as never),
+        new PostgresqlProductFlowRepository(db as never)
+      ),
       {} as never,
       {} as never,
       {} as never,
@@ -330,6 +333,129 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       expect(group.map(screen => screen.imageUrl)).toEqual(
         [5, 4, 3].map(priority => `https://fixture.invalid/${priority}.png`)
       );
+    }
+  });
+
+  it.each([
+    {
+      name: '생략',
+      referenced: false,
+      patch: {},
+      expected: { title: '기존 제목', platform: 'WEB', screenType: 'HOME' },
+      rejected: false,
+    },
+    {
+      name: '명시적 삭제',
+      referenced: false,
+      patch: { title: null, platform: null, screenType: null },
+      expected: { title: null, platform: null, screenType: null },
+      rejected: false,
+    },
+    {
+      name: '전체 변경',
+      referenced: false,
+      patch: { title: '  새 제목  ', platform: 'IOS', screenType: 'SIGN_IN' },
+      expected: { title: '새 제목', platform: 'IOS', screenType: 'SIGN_IN' },
+      rejected: false,
+    },
+    {
+      name: '참조 중 생략',
+      referenced: true,
+      patch: {},
+      expected: { title: '기존 제목', platform: 'WEB', screenType: 'HOME' },
+      rejected: false,
+    },
+    {
+      name: '참조 중 같은 플랫폼과 일부 삭제',
+      referenced: true,
+      patch: { platform: 'WEB', title: null },
+      expected: { title: null, platform: 'WEB', screenType: 'HOME' },
+      rejected: false,
+    },
+    {
+      name: '참조 중 플랫폼 삭제',
+      referenced: true,
+      patch: {
+        title: null,
+        platform: null,
+        screenType: null,
+        uiElements: ['BUTTON'],
+      },
+      expected: {},
+      rejected: true,
+    },
+    {
+      name: '참조 중 플랫폼 변경',
+      referenced: true,
+      patch: { title: '새 제목', platform: 'IOS', uiElements: ['BUTTON'] },
+      expected: {},
+      rejected: true,
+    },
+  ])('실제 GraphQL 스크린샷 부분 수정: $name', async ({ referenced, patch, expected, rejected }) => {
+    const product = await seed();
+    const [screenshot] = await db
+      .insert(productScreenshots)
+      .values({
+        productId: product.id,
+        imageUrl: 'https://fixture.invalid/screen.png',
+        imageAlt: '기존 alt',
+        title: '기존 제목',
+        platform: 'WEB',
+        screenType: 'HOME',
+      })
+      .returning();
+    await db.insert(productScreenshotUiElements).values({ screenshotId: screenshot!.id, element: 'CARD' });
+    if (referenced) {
+      const [flow] = await db
+        .insert(productFlows)
+        .values({
+          productId: product.id,
+          title: '가입 플로',
+          platform: 'WEB',
+          flowType: 'SIGN_UP',
+        })
+        .returning();
+      await db.insert(productFlowSteps).values({
+        flowId: flow!.id,
+        screenshotId: screenshot!.id,
+        position: 0,
+      });
+    }
+    const snapshot = async () => ({
+      product: (await db.select().from(products).where(eq(products.id, product.id)))[0],
+      screenshot: (await db.select().from(productScreenshots).where(eq(productScreenshots.id, screenshot!.id)))[0],
+      elements: await db
+        .select()
+        .from(productScreenshotUiElements)
+        .where(eq(productScreenshotUiElements.screenshotId, screenshot!.id)),
+      intents: await intents(product.id),
+      jobs: await db.select().from(translationJobs).where(eq(translationJobs.entityId, product.id)),
+    });
+    const before = await snapshot();
+    const result = await mutate(
+      'mutation($input: UpdateProductScreenshotInput!) { updateProductScreenshot(input: $input) { screenshot { id imageAlt title platform screenType } } }',
+      { input: { id: screenshot!.id, imageAlt: '  새 alt  ', ...patch } }
+    );
+    if (rejected) {
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].extensions.code).toBe('product-screenshot/in-use');
+      expect(await snapshot()).toEqual(before);
+    } else {
+      expect(result.errors).toBeUndefined();
+      expect(result.data.updateProductScreenshot.screenshot).toEqual({
+        id: screenshot!.id,
+        imageAlt: '새 alt',
+        ...expected,
+      });
+      const after = await snapshot();
+      expect(after.screenshot).toMatchObject({
+        imageAlt: '새 alt',
+        ...expected,
+      });
+      expect(after.elements).toEqual(before.elements);
+      expect(after.product!.contentRevision).toBe(before.product!.contentRevision + BigInt(1));
+      expect(after.intents).toHaveLength(before.intents.length + 1);
+      expect(after.intents.at(-1)?.sourceRevision).toBe(after.product!.contentRevision);
     }
   });
 
