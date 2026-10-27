@@ -4041,6 +4041,71 @@ identitySuite('검색 identity 인덱스 확인의 비용과 비파괴 보호', 
     }
   );
 
+  it.each([1, 2])('mongos의 %i개 shard가 준비됐으면 다른 이름의 고유 인덱스도 재사용한다', async shardCount => {
+    const name = 'router_product_id_unique';
+    await collection.createIndex({ productId: 1 }, { unique: true, name });
+    const stats = vi.spyOn(mongoose.connection.db!, 'command').mockResolvedValueOnce({
+      ok: 1,
+      sharded: shardCount > 1,
+      indexSizes: { [name]: 2048 },
+      shards: Object.fromEntries(
+        Array.from({ length: shardCount }, (_, index) => [
+          `shard${index}`,
+          { indexSizes: { [name]: index === 0 ? 2048 : 0 }, indexBuilds: [] },
+        ])
+      ),
+    });
+    commands.length = 0;
+    try {
+      await expect(fresh().index('router-target', payload())).resolves.toBe(true);
+      expect(aggregates()).toHaveLength(0);
+      expect(commands.filter(event => event.commandName === 'createIndexes')).toHaveLength(0);
+      expect(await collection.findOne({ productId: 'router-target' })).toMatchObject({ name: '새 문서' });
+    } finally {
+      stats.mockRestore();
+    }
+  });
+
+  it.each([
+    {
+      label: '생성 중',
+      shards: {
+        ready: { indexSizes: { search_product_identity: 2048 }, indexBuilds: [] },
+        other: { indexSizes: { search_product_identity: 1024 }, indexBuilds: ['search_product_identity'] },
+      },
+    },
+    {
+      label: '인덱스 누락',
+      shards: {
+        ready: { indexSizes: { search_product_identity: 2048 }, indexBuilds: [] },
+        other: { indexSizes: {}, indexBuilds: [] },
+      },
+    },
+    {
+      label: '상태 누락',
+      shards: {
+        ready: { indexSizes: { search_product_identity: 2048 }, indexBuilds: [] },
+        other: { indexSizes: { search_product_identity: 1024 } },
+      },
+    },
+    { label: '빈 목록', shards: {} },
+  ])('mongos shard의 $label 상태는 전체 인덱스 준비 완료로 간주하지 않는다', async ({ shards }) => {
+    await collection.createIndex({ productId: 1 }, { unique: true, name: 'search_product_identity' });
+    const stats = vi.spyOn(mongoose.connection.db!, 'command').mockResolvedValueOnce({
+      ok: 1,
+      indexSizes: { search_product_identity: 4096 },
+      shards,
+    });
+    commands.length = 0;
+    try {
+      await expect(fresh().index('router-target', payload())).resolves.toBe(true);
+      expect(aggregates()).toHaveLength(1);
+      expect(commands.filter(event => event.commandName === 'createIndexes')).toHaveLength(1);
+    } finally {
+      stats.mockRestore();
+    }
+  });
+
   it('목록 조회 뒤 사라진 인덱스는 준비 완료로 캐시하지 않고 쓰기 전에 다시 생성한다', async () => {
     await collection.createIndex({ productId: 1 }, { unique: true, name: 'search_product_identity' });
     const database = mongoose.connection.db!;

@@ -6,6 +6,11 @@ import { SearchableProductModel } from '../entities/SearchableProductSchema';
 import { MongodbSearchConnectionToken, SearchUnavailableError } from '../MongodbSearchConnection';
 import { searchRevision, storedSearchRevision, SearchRevisionInvalidError } from './searchRevision';
 
+type IndexCatalogStats = {
+  indexBuilds?: string[];
+  indexSizes?: Record<string, number>;
+};
+
 @Service(SearchableProductRepositoryToken)
 export class MongodbSearchableProductRepository implements SearchableProductRepository {
   constructor(@Inject(MongodbSearchConnectionToken) private readonly connect: () => void | Promise<void>) {}
@@ -27,15 +32,20 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
       if (identity) {
         // listIndexes also exposes unfinished specs. Build UUIDs alone do not
         // distinguish these on standalone MongoDB, so inspect build names too.
-        const stats: { indexBuilds?: string[]; indexSizes?: Record<string, number> } =
+        const stats: IndexCatalogStats & { shards?: Record<string, IndexCatalogStats> } =
           await SearchableProductModel.db.db!.command({
             collStats: SearchableProductModel.collection.collectionName,
           });
+        const catalogs = stats.shards ? Object.values(stats.shards) : [stats];
         if (
-          stats.indexSizes &&
-          Object.prototype.hasOwnProperty.call(stats.indexSizes, identity.name!) &&
-          Array.isArray(stats.indexBuilds) &&
-          !stats.indexBuilds.includes(identity.name!)
+          catalogs.length > 0 &&
+          catalogs.every(
+            catalog =>
+              catalog.indexSizes &&
+              Object.prototype.hasOwnProperty.call(catalog.indexSizes, identity.name!) &&
+              Array.isArray(catalog.indexBuilds) &&
+              !catalog.indexBuilds.includes(identity.name!)
+          )
         )
           return;
       }
