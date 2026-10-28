@@ -37,7 +37,7 @@ export class PostgresqlLlmSettingRepository implements LlmSettingRepository {
   }
 
   async updateSetting(modify: (current: LlmSetting | null) => LlmSettingWrite): Promise<LlmSetting> {
-    return this.db.transaction(async tx => {
+    return await this.db.transaction(async tx => {
       // Row locks cannot protect an absent singleton. Serialize creation and all
       // later modifiers with the same transaction-scoped lock before reading.
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext('llm_settings'), hashtext(${DEFAULT_SETTING_ID}))`);
