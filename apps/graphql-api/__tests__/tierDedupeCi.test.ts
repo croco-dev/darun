@@ -60,46 +60,53 @@ describe('Tier duplicate cleanup CI prerequisites', () => {
     expect(deploy.if).toBe('${{ inputs.deploy == true }}');
   });
 
-  it.each([0, 17])('Tier build stops before Cloudflare when the database gate exits %i', exitCode => {
-    const directory = mkdtempSync(join(tmpdir(), 'darun-tier-ci-'));
-    try {
-      const log = join(directory, 'calls');
-      writeFileSync(log, '');
-      for (const command of ['pnpm', 'docker']) {
-        const executable = join(directory, command);
-        writeFileSync(
-          executable,
-          `#!/bin/sh
+  it.each([
+    [0, true, 0],
+    [17, true, 17],
+    [0, false, 1],
+  ] as const)(
+    'Tier gate exit %i and build environment %s preserve the prerequisite',
+    (exitCode, configured, expected) => {
+      const directory = mkdtempSync(join(tmpdir(), 'darun-tier-ci-'));
+      try {
+        const log = join(directory, 'calls');
+        writeFileSync(log, '');
+        for (const command of ['pnpm', 'docker']) {
+          const executable = join(directory, command);
+          writeFileSync(
+            executable,
+            `#!/bin/sh
 printf '%s\\n' "$*" >> "$TIER_CI_LOG"
 case "$*" in *src/remove-duplicates.pg.test.ts*) exit "$TIER_CI_GATE_EXIT";; esac
 `
-        );
-        chmodSync(executable, 0o755);
-      }
-      const steps = workflow('TierWeb.yaml').jobs.build.steps.filter(step => step.run);
-      const result = spawnSync(
-        '/bin/sh',
-        ['-e', '-c', steps.map(step => step.run?.replace(/\$\{\{[^}]+\}\}/g, 'fixture-service')).join('\n')],
-        {
-          encoding: 'utf8',
-          timeout: 5000,
-          env: {
-            PATH: `${directory}:${process.env.PATH}`,
-            GITHUB_WORKSPACE: root,
-            NEXT_PUBLIC_SUPABASE_URL: 'https://supabase.invalid',
-            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'ci-fixture',
-            TIER_CI_LOG: log,
-            TIER_CI_GATE_EXIT: String(exitCode),
-          },
+          );
+          chmodSync(executable, 0o755);
         }
-      );
-      expect(result.error).toBeUndefined();
-      expect(result.status, result.stderr).toBe(exitCode);
-      const calls = readFileSync(log, 'utf8').split('\n');
-      expect(calls.some(call => call.includes('src/remove-duplicates.pg.test.ts'))).toBe(true);
-      expect(calls.includes('--filter tier-web run cloudflare:build')).toBe(exitCode === 0);
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
+        const steps = workflow('TierWeb.yaml').jobs.build.steps.filter(step => step.run);
+        const result = spawnSync(
+          '/bin/sh',
+          ['-e', '-c', steps.map(step => step.run?.replace(/\$\{\{[^}]+\}\}/g, 'fixture-service')).join('\n')],
+          {
+            encoding: 'utf8',
+            timeout: 5000,
+            env: {
+              PATH: `${directory}:${process.env.PATH}`,
+              GITHUB_WORKSPACE: root,
+              NEXT_PUBLIC_SUPABASE_URL: configured ? 'https://supabase.invalid' : '',
+              NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'ci-fixture',
+              TIER_CI_LOG: log,
+              TIER_CI_GATE_EXIT: String(exitCode),
+            },
+          }
+        );
+        expect(result.error).toBeUndefined();
+        expect(result.status, result.stderr).toBe(expected);
+        const calls = readFileSync(log, 'utf8').split('\n');
+        expect(calls.some(call => call.includes('src/remove-duplicates.pg.test.ts'))).toBe(true);
+        expect(calls.includes('--filter tier-web run cloudflare:build')).toBe(exitCode === 0 && configured);
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
+      }
     }
-  });
+  );
 });

@@ -61,7 +61,7 @@ function runFixture(group: Group, bodies: Record<string, string> = {}, omit: str
     if (missingEnv) delete env[missingEnv];
     return spawnSync(
       process.execPath,
-      [join(vitestDirectory, 'vitest.mjs'), 'run', '--root', directory, '--reporter', reporter],
+      [join(vitestDirectory, 'vitest.mjs'), 'run', '--maxWorkers=1', '--root', directory, '--reporter', reporter],
       {
         cwd: directory,
         env,

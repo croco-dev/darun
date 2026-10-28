@@ -37,10 +37,6 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
-      - name: Check build environment
-        run: |
-          test -n "$NEXT_PUBLIC_SUPABASE_URL" || { echo "Missing NEXT_PUBLIC_SUPABASE_URL repository variable"; exit 1; }
-          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" || { echo "Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY repository variable"; exit 1; }
       - name: Lint
         run: pnpm --filter tier-web run lint
       - name: Typecheck
@@ -58,6 +54,10 @@ jobs:
         run: pnpm --filter tier-web exec vitest run src/remove-duplicates.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
       - name: Verify Tier CI prerequisites
         run: pnpm --filter graphql-api exec vitest run __tests__/requiredPostgresReporter.test.ts __tests__/tierDedupeCi.test.ts
+      - name: Check build environment
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL" || { echo "Missing NEXT_PUBLIC_SUPABASE_URL repository variable"; exit 1; }
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" || { echo "Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY repository variable"; exit 1; }
       - name: Cloudflare build
         run: pnpm --filter tier-web run cloudflare:build
 
