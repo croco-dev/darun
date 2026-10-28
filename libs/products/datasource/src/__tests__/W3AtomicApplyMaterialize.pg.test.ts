@@ -17,6 +17,7 @@ import {
   ProductFlow,
   UpdateProductFeature,
   CreateProductFeature,
+  CreateProduct,
   GetProduct,
   GetProductFeature,
   ProductDescriptionApplyStoreToken,
@@ -795,7 +796,11 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
     }
   }
 
-  async function withResearchGraphqlServer(database: PostgresJsDatabase, run: (server: ApolloServer) => Promise<void>) {
+  async function withResearchGraphqlServer(
+    database: PostgresJsDatabase,
+    run: (server: ApolloServer) => Promise<void>,
+    productRepository = new PostgresqlProductRepository(database as never)
+  ) {
     // 정적 import는 첫 fixture의 container를 singleton에 고정하므로 이 테스트에서만 module을 다시 로드한다.
     // production factory의 캐시는 유지하고 barrel 재로딩 없이 기존 resolver와 TypeDI token을 사용한다.
     vi.resetModules();
@@ -806,12 +811,34 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
     try {
       container.set(DrizzleToken, database);
       container.set(ProductResearchJobRepositoryToken, new PostgresqlProductResearchJobRepository(database as never));
-      container.set(ProductResearchQueueService, { sendJob: async () => false });
+      container.set(ProductResearchQueueService, {
+        sendJob: async () => false,
+      });
       container.set(LlmClient, {});
       container.set(LlmSettingService, { getBraveApiKey: async () => null });
+      container.set(
+        ProductPublishMutationResolver,
+        new ProductPublishMutationResolver(
+          {} as never,
+          new CreateProduct(productRepository),
+          {} as never,
+          {} as never,
+          {} as never,
+          {} as never,
+          {} as never,
+          {} as never,
+          {} as never,
+          {} as never,
+          {} as never,
+          {} as never,
+          {} as never,
+          {} as never,
+          {} as never
+        )
+      );
       server = createServer({
         options: {
-          resolvers: [ProductResearchMutationResolver, ProductResearchQueryResolver],
+          resolvers: [ProductPublishMutationResolver, ProductResearchMutationResolver, ProductResearchQueryResolver],
           container,
           authChecker: () => true,
         },
@@ -1297,6 +1324,101 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       tags: [`tag-${prefix}`],
     };
   }
+
+  it.each(['수동 생성', '조사 등록'] as const)(
+    '%s의 실제 동시 slug 충돌은 안전한 GraphQL code와 재시도를 제공한다',
+    async kind => {
+      const slug = `${prefix}-${sequence++}`;
+      const jobs = kind === '조사 등록' ? await Promise.all([research(), research()]) : [];
+      const repository = new PostgresqlProductRepository(db as never);
+      // 두 실제 사전 조회를 모두 끝낸 뒤 insert를 허용하여 check-then-insert 경합을 강제한다.
+      const find = repository.findOneBySlug.bind(repository);
+      let release!: () => void;
+      const ready = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      let reads = 0;
+      const precheck = vi.spyOn(repository, 'findOneBySlug').mockImplementation(async value => {
+        const result = await find(value);
+        if (value === slug) {
+          reads += 1;
+          if (reads === 2) release();
+          await ready;
+        }
+        return result;
+      });
+      const beforeJobs = jobs.map(job => ({ ...job }));
+      const beforeCounts =
+        await sql`select 'features' as source, count(*) from product_features union all select 'links', count(*) from product_links union all select 'product_tags', count(*) from product_tags order by source`;
+      try {
+        await withResearchGraphqlServer(
+          db,
+          async server => {
+            const create = async (index: number, nextSlug = slug) => {
+              const response = await server.executeOperation(
+                kind === '수동 생성'
+                  ? {
+                      query:
+                        'mutation($input: CreateProductInput!) { createProduct(input: $input) { product { id slug } } }',
+                      variables: {
+                        input: {
+                          name: '수동 제품',
+                          slug: nextSlug,
+                          summary: '요약',
+                          logoUrl: 'https://example.com/logo.png',
+                        },
+                      },
+                    }
+                  : {
+                      query:
+                        'mutation($input: MaterializeResearchedProductInput!) { materializeResearchedProduct(input: $input) { id slug } }',
+                      variables: { input: review(jobs[index]!.id, nextSlug) },
+                    }
+              );
+              if (response.body.kind !== 'single') throw new Error('Expected single GraphQL response');
+              return response.body.singleResult;
+            };
+            const results = await Promise.all([create(0), create(1)]);
+            const loser = results.findIndex(result => result.errors);
+            expect(results.filter(result => !result.errors)).toHaveLength(1);
+            expect(loser).toBeGreaterThanOrEqual(0);
+            expect(results[loser]!.errors).toMatchObject([{ extensions: { code: 'product/slug-already-exists' } }]);
+            expect(JSON.stringify(results[loser])).not.toMatch(
+              /insert into|Failed query|23505|constraint_name|params/i
+            );
+            const stored = await db.select().from(products).where(eq(products.slug, slug));
+            expect(stored).toHaveLength(1);
+            if (kind === '수동 생성') expect(reads).toBe(2);
+            else {
+              expect(
+                (await db.select().from(productResearchJobs).where(eq(productResearchJobs.id, jobs[loser]!.id)))[0]
+              ).toEqual(beforeJobs[loser]);
+              const afterCounts =
+                await sql`select 'features' as source, count(*) from product_features union all select 'links', count(*) from product_links union all select 'product_tags', count(*) from product_tags order by source`;
+              expect(afterCounts.map((row, i) => Number(row.count) - Number(beforeCounts[i]!.count))).toEqual([
+                1, 1, 1,
+              ]);
+              expect(
+                await db.select().from(productFeatures).where(eq(productFeatures.productId, stored[0]!.id))
+              ).toHaveLength(1);
+              expect(
+                await db.select().from(productLinks).where(eq(productLinks.productId, stored[0]!.id))
+              ).toHaveLength(1);
+              expect(await db.select().from(productTags).where(eq(productTags.productId, stored[0]!.id))).toHaveLength(
+                1
+              );
+            }
+            const retrySlug = `${slug}-retry`;
+            expect((await create(loser, retrySlug)).errors).toBeUndefined();
+            expect(await db.select().from(products).where(eq(products.slug, retrySlug))).toHaveLength(1);
+          },
+          repository
+        );
+      } finally {
+        precheck.mockRestore();
+      }
+    }
+  );
 
   it('creates only one unpublished Product for concurrent different slugs and preserves winner reviewed_input', async () => {
     const job = await research();

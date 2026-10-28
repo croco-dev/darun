@@ -19,18 +19,8 @@ import { products } from '../entities/ProductSchema';
 import { productTags } from '../entities/ProductTagsSchema';
 import { tags } from '../entities/TagSchema';
 import { beginProductContentWrite } from './productContentSync';
+import { isProductSlugConflict } from './productSlugConflict';
 import { lockCategoryMembership } from './productSourceMutex';
-
-const PG_UNIQUE_VIOLATION = '23505';
-
-function isUniqueViolationError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code: string }).code === PG_UNIQUE_VIOLATION
-  );
-}
 
 @Service(ProductResearchMaterializationRepositoryToken)
 export class PostgresqlProductResearchMaterializationRepository implements ProductResearchMaterializationRepository {
@@ -157,7 +147,9 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           await tx
             .insert(productTags)
             .values(tagRows.map(tag => ({ productId, tagId: tag.id })))
-            .onConflictDoNothing({ target: [productTags.productId, productTags.tagId] });
+            .onConflictDoNothing({
+              target: [productTags.productId, productTags.tagId],
+            });
         }
 
         const claimedRows = await tx
@@ -200,7 +192,7 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
         };
       });
     } catch (error) {
-      if (isUniqueViolationError(error)) {
+      if (isProductSlugConflict(error)) {
         throw productSlugAlreadyExists();
       }
       throw error;

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Product } from '../entities/Product';
+import { productSlugAlreadyExists } from '../errors/productError';
 import { CreateProduct } from '../usecases/CreateProduct';
 import { createMockRepository } from './productRepositoryMock';
 
@@ -44,7 +45,12 @@ describe('CreateProduct', () => {
       const usecase = new CreateProduct(repository as never);
 
       await expect(
-        usecase.execute({ name: '테스트', slug: 'test', logoUrl: 'https://example.com/logo.png', summary: '요약' })
+        usecase.execute({
+          name: '테스트',
+          slug: 'test',
+          logoUrl: 'https://example.com/logo.png',
+          summary: '요약',
+        })
       ).rejects.toThrow();
     });
 
@@ -56,20 +62,34 @@ describe('CreateProduct', () => {
       const usecase = new CreateProduct(repository as never);
 
       await expect(
-        usecase.execute({ name: '테스트', slug: 'test', logoUrl: 'https://example.com/logo.png', summary: '요약' })
+        usecase.execute({
+          name: '테스트',
+          slug: 'test',
+          logoUrl: 'https://example.com/logo.png',
+          summary: '요약',
+        })
       ).rejects.toThrow();
     });
 
-    it('DB unique violation 에러가 발생하면 slug 중복 에러를 던진다', async () => {
+    it.each([
+      ['저장소가 분류한 slug 중복', productSlugAlreadyExists()],
+      ['분류하지 않은 DB 제약 오류', { code: '23505' }],
+      ['연결 장애', new Error('connection failed')],
+    ])('%s 오류를 변경하지 않고 전달한다', async (_name, error) => {
       const repository = createMockRepository();
       vi.mocked(repository.findOneBySlug).mockResolvedValue(null);
-      vi.mocked(repository.insert).mockRejectedValue({ code: '23505' });
+      vi.mocked(repository.insert).mockRejectedValue(error);
 
       const usecase = new CreateProduct(repository as never);
 
       await expect(
-        usecase.execute({ name: '테스트', slug: 'test', logoUrl: 'https://example.com/logo.png', summary: '요약' })
-      ).rejects.toThrow();
+        usecase.execute({
+          name: '테스트',
+          slug: 'test',
+          logoUrl: 'https://example.com/logo.png',
+          summary: '요약',
+        })
+      ).rejects.toBe(error);
     });
   });
 });
