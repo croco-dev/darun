@@ -36,13 +36,15 @@ suite('카테고리 건수 지연 조회 (격리 PostgreSQL 필요)', () => {
       migrationsFolder: resolve(__dirname, '../../../../../apps/graphql-api/scripts/migrations'),
     });
     await sql.begin(async tx => {
-      await tx`INSERT INTO categories (id, slug, label_ko, label_en) VALUES ('count-tools', 'count-tools', '도구', 'Tools')`;
-      await tx`INSERT INTO products (id, slug, name, summary, logo_url, category_ids, published_at) VALUES
+      await tx.unsafe(
+        "INSERT INTO categories (id, slug, label_ko, label_en) VALUES ('count-tools', 'count-tools', '도구', 'Tools')"
+      );
+      await tx.unsafe(`INSERT INTO products (id, slug, name, summary, logo_url, category_ids, published_at) VALUES
       ('count-p3', 'count-p3', 'Third', 'summary', '', '["count-tools"]', NOW()),
       ('count-p2', 'count-p2', 'Second', 'summary', '', '["count-tools","other"]', NOW()),
       ('count-p1', 'count-p1', 'First', 'summary', '', '["count-tools"]', NOW()),
       ('count-draft', 'count-draft', 'Draft', 'summary', '', '["count-tools"]', NULL),
-      ('count-other', 'count-other', 'Other', 'summary', '', '["other"]', NOW())`;
+      ('count-other', 'count-other', 'Other', 'summary', '', '["other"]', NOW())`);
     });
     fixturesInserted = true;
     useCase = new GetProductsByCategory(new PostgresqlProductRepository(db), new PostgresqlCategoryRepository(db));
