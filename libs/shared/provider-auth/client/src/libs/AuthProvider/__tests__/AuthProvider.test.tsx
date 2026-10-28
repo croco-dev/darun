@@ -5,10 +5,10 @@ import type { User } from 'firebase/auth';
 import type { Cookies } from 'next-client-cookies';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApolloProvider } from '../../../../../utils-apollo-client/client/src/libs/ApolloProvider';
-import { sdk } from '../../../../../utils-auth-service/firebase/src/__tests__/firebaseSdk.fixture';
-import { useAuthState } from '../AuthStateProvider';
-import { AuthProvider } from './AuthProvider';
+import { ApolloProvider } from '../../../../../../utils-apollo-client/client/src/libs/ApolloProvider';
+import { sdk } from '../../../../../../utils-auth-service/firebase/src/__tests__/firebaseSdk.fixture';
+import { useAuthState } from '../../AuthStateProvider';
+import { AuthProvider } from '../AuthProvider';
 
 const navigation = vi.hoisted(() => ({ navigate: vi.fn() }));
 vi.mock('@darun/utils-router', () => ({ useNavigate: () => navigation.navigate }));
