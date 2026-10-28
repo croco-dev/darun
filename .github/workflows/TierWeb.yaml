@@ -12,6 +12,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      tier-postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sync
+          POSTGRES_PASSWORD: sync
+          POSTGRES_DB: postgres
+        ports: ["55437:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sync -d postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 30
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
@@ -38,6 +49,15 @@ jobs:
         run: pnpm --filter tier-web run typecheck:tsrs
       - name: Test
         run: pnpm --filter tier-web run test
+      - name: Create isolated Tier PostgreSQL database
+        run: docker exec "${{ job.services.tier-postgres.id }}" psql -U sync -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE darun_tier_dedupe'
+      - name: Verify Tier duplicate cleanup without skipped tests
+        env:
+          REQUIRED_POSTGRES_GROUP: tier
+          DEDUPE_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_tier_dedupe
+        run: pnpm --filter tier-web exec vitest run src/remove-duplicates.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
+      - name: Verify Tier CI prerequisites
+        run: pnpm --filter graphql-api exec vitest run __tests__/requiredPostgresReporter.test.ts __tests__/tierDedupeCi.test.ts
       - name: Cloudflare build
         run: pnpm --filter tier-web run cloudflare:build
 

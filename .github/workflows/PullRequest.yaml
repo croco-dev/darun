@@ -97,6 +97,7 @@ jobs:
       - name: Create isolated PostgreSQL integrity databases
         run: |
           docker exec "${{ job.services.content-sync-postgres.id }}" psql -U sync -d postgres -v ON_ERROR_STOP=1 \
+            -c 'CREATE DATABASE darun_tier_dedupe' \
             -c 'CREATE DATABASE darun_job_config_attempts' \
             -c 'CREATE DATABASE darun_translation_integrity' \
             -c 'CREATE DATABASE darun_atomic_integrity' \
@@ -120,6 +121,13 @@ jobs:
           REQUIRED_POSTGRES_GROUP=baseline pnpm --filter graphql-api exec vitest run __tests__/migrationBaseline.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
           REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts __tests__/productDetailFreshness.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
           REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
+      - name: Verify Tier CI prerequisites
+        run: pnpm --filter graphql-api exec vitest run __tests__/requiredPostgresReporter.test.ts __tests__/tierDedupeCi.test.ts
+      - name: Verify Tier duplicate cleanup without skipped tests
+        env:
+          REQUIRED_POSTGRES_GROUP: tier
+          DEDUPE_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_tier_dedupe
+        run: pnpm --filter tier-web exec vitest run src/remove-duplicates.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
       - run: pnpm run test:coverage
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4

@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url);
 const vitestDirectory = dirname(require.resolve('vitest/package.json'));
 const reporter = resolve(__dirname, '../scripts/required-postgres-reporter.ts');
 const urls = {
+  DEDUPE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_tier_dedupe',
   JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_job_config_attempts',
   TRANSLATION_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity',
   ALTERNATIVE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_alternative_integrity',
@@ -31,6 +32,7 @@ const groups = {
     'src/__tests__/W4JobLeaseRecovery.pg.test.ts',
   ],
   baseline: ['__tests__/migrationBaseline.pg.test.ts'],
+  tier: ['src/remove-duplicates.pg.test.ts'],
 };
 type Group = keyof typeof groups;
 const passing = "it('passes', () => expect(2 + 3).toBe(5));";
@@ -88,6 +90,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
     ['products', 'DESCRIPTION_EVIDENCE_TEST_DATABASE_URL'],
     ['products', 'W4_DATABASE_URL'],
     ['baseline', 'MIGRATION_BASELINE_TEST_DATABASE_URL'],
+    ['tier', 'DEDUPE_TEST_DATABASE_URL'],
   ] as const)('fails before running when %s lacks %s', (group, name) => {
     expectFailure(runFixture(group, {}, [], name), `Required PostgreSQL test URL is missing: ${name}`);
   });
@@ -111,6 +114,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
   });
 
   it.each([
+    ['tier', 'src/remove-duplicates.pg.test.ts'],
     ['graphql', '__tests__/alternativeReplacement.pg.test.ts'],
     ['graphql', '__tests__/productDetailFreshness.pg.test.ts'],
     ['products', 'src/__tests__/descriptionEvidence.postgresql.test.ts'],
@@ -124,6 +128,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
   });
 
   describe.each([
+    ['tier', 'src/remove-duplicates.pg.test.ts'],
     ['graphql', '__tests__/alternativeReplacement.pg.test.ts'],
     ['graphql', '__tests__/productDetailFreshness.pg.test.ts'],
     ['products', 'src/__tests__/descriptionEvidence.postgresql.test.ts'],
