@@ -739,7 +739,8 @@ export class ProductResearchService {
       }
       const queries = ProductResearchService.buildQueries(normalized.hostname, normalized.url);
       const queryResults: WebSearchResult[][] = [];
-      let failures = 0;
+      let hadSearchFailure = false;
+      let consecutiveSearchFailures = 0;
       for (const query of queries) {
         throwIfAborted(options?.signal);
         let outcome: Awaited<ReturnType<ProductResearchWebSearch['search']>>;
@@ -757,8 +758,9 @@ export class ProductResearchService {
           }
           // Stage budget 만료(RetryableError)는 단일 공급자 stall일 뿐이므로
           // per-query 실패로 흡수한다. 2회 연속 실패 정책과 부분 성공 지원이 그대로 적용된다.
-          failures += 1;
-          if (failures >= MAX_SEARCH_FAILURES_BEFORE_ABORT) {
+          hadSearchFailure = true;
+          consecutiveSearchFailures += 1;
+          if (consecutiveSearchFailures >= MAX_SEARCH_FAILURES_BEFORE_ABORT) {
             return deps.jobRepository.retryJobLease({
               jobId,
               leaseToken,
@@ -769,7 +771,8 @@ export class ProductResearchService {
           continue;
         }
         if (!outcome.ok) {
-          failures += 1;
+          hadSearchFailure = true;
+          consecutiveSearchFailures += 1;
           // 호출자 abort 도중의 검색 실패(TIMEOUT 등)는 실패 카운트·terminal
           // 확정 없이 in_progress lease를 만료·recovery에 맡긴다. 일반
           // 타임아웃·상류 실패는 기존처럼 실패 카운트로 흡수된다.
@@ -785,7 +788,7 @@ export class ProductResearchService {
               errorMessage: outcome.message ?? 'Brave 검색 키가 설정되지 않았습니다.',
             });
           }
-          if (failures >= MAX_SEARCH_FAILURES_BEFORE_ABORT) {
+          if (consecutiveSearchFailures >= MAX_SEARCH_FAILURES_BEFORE_ABORT) {
             return deps.jobRepository.retryJobLease({
               jobId,
               leaseToken,
@@ -795,6 +798,7 @@ export class ProductResearchService {
           }
           continue;
         }
+        consecutiveSearchFailures = 0;
         queryResults.push(outcome.results.slice(0, RESEARCH_LIMITS.resultsPerQuery));
       }
       const collected: WebSearchResult[] = [];
@@ -929,7 +933,7 @@ export class ProductResearchService {
           errorMessage: error instanceof Error ? error.message : '리서치 결과 검증에 실패했습니다.',
         });
       }
-      if (failures > 0 && !draft.warnings.includes('PARTIAL_SEARCH_FAILURE')) {
+      if (hadSearchFailure && !draft.warnings.includes('PARTIAL_SEARCH_FAILURE')) {
         draft = { ...draft, warnings: [...draft.warnings, 'PARTIAL_SEARCH_FAILURE'] };
       }
       throwIfAborted(options?.signal);
