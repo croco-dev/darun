@@ -1699,6 +1699,9 @@ importers:
 
   libs/recommendation/domain:
     dependencies:
+      '@darun/utils-error':
+        specifier: workspace:*
+        version: link:../../shared/utils-error
       reflect-metadata:
         specifier: 'catalog:'
         version: 0.2.2

@@ -22,6 +22,7 @@ describe('GetAlternativeProducts', () => {
   it('keeps manual alternatives first and fills missing slots from categories', async () => {
     const manual = [
       new AlternativeProduct({ id: 'alt-1', productId: 'prod-1', alternativeProductId: 'manual-1' }),
+      new AlternativeProduct({ id: 'legacy-self', productId: 'prod-1', alternativeProductId: 'prod-1' }),
       new AlternativeProduct({ id: 'alt-2', productId: 'prod-1', alternativeProductId: 'manual-2' }),
     ];
     const alternativeRepository = {
@@ -62,6 +63,31 @@ describe('GetAlternativeProducts', () => {
       'auto-2',
       'auto-3',
     ]);
+  });
+
+  it.each([2, 5])('기존 자기 관계를 제외하고 정상 수동 대안의 순서를 유지한다 (%s건)', async count => {
+    const ids = Array.from({ length: count }, (_, i) => `manual-${i + 1}`);
+    const repository: AlternativeProductRepository = {
+      replaceByProductId: vi.fn(),
+      findManyByProductId: vi.fn().mockResolvedValue(
+        [ids[0], 'source', ...ids.slice(1)].map(
+          alternativeProductId =>
+            new AlternativeProduct({
+              productId: 'source',
+              alternativeProductId,
+            })
+        )
+      ),
+      create: vi.fn(),
+      deleteMany: vi.fn(),
+      createMany: vi.fn(),
+    };
+
+    const result = await new GetAlternativeProducts(repository).execute({
+      productId: 'source',
+    });
+    expect(result.map(alternative => alternative.alternativeProductId)).toEqual(ids);
+    expect(repository.deleteMany).not.toHaveBeenCalled();
   });
 
   it('ranks category matches before tag-only matches', async () => {

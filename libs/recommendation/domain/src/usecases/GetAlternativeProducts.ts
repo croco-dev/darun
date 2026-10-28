@@ -14,7 +14,9 @@ export class GetAlternativeProducts {
   ) {}
 
   async execute({ productId }: { productId: string }) {
-    const manualAlternatives = await this.alternativeProductRepository.findManyByProductId(productId);
+    const manualAlternatives = (await this.alternativeProductRepository.findManyByProductId(productId)).filter(
+      alternative => alternative.alternativeProductId !== productId
+    );
     if (manualAlternatives.length >= DEFAULT_ALTERNATIVE_LIMIT || !this.autoRecommender) {
       return manualAlternatives;
     }

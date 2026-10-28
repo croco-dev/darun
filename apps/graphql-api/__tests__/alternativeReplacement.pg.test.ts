@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
-import { UpdateAlternativeProduct } from '@darun/recommendation-domain';
+import { GetAlternativeProducts, UpdateAlternativeProduct } from '@darun/recommendation-domain';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres, { type Sql } from 'postgres';
@@ -58,6 +58,37 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
     });
     expect(await rows()).toEqual(before);
     expect(await repository.findManyByProductId('source')).toEqual(cached);
+  });
+
+  it('자기 상품을 포함한 교체는 SQL 쓰기 없이 기존 관계를 보존한다', async () => {
+    const before = await rows();
+    const queries: string[] = [];
+    const loggedRepository = new PostgresqlAlternativeProductRepository(
+      drizzle(client, {
+        logger: { logQuery: query => queries.push(query) },
+      })
+    );
+
+    await expect(
+      new UpdateAlternativeProduct(loggedRepository).execute({
+        productId: 'source',
+        alternativeProductIds: ['keep', 'source', 'new'],
+      })
+    ).rejects.toMatchObject({ code: 'alternative-product/invalid-args' });
+    expect(queries.filter(query => /\b(insert|update|delete)\b/i.test(query))).toEqual([]);
+    expect(await rows()).toEqual(before);
+  });
+
+  it('이미 저장된 자기 관계는 삭제하지 않고 조회 결과에서만 제외한다', async () => {
+    await client`insert into alternative_products (id, product_id, alternative_product_id) values ('legacy-self', 'source', 'source')`;
+    const before = await rows();
+
+    const result = await new GetAlternativeProducts(repository).execute({
+      productId: 'source',
+    });
+
+    expect(result.map(row => row.alternativeProductId)).toEqual(['keep', 'old']);
+    expect(await rows()).toEqual(before);
   });
 
   it('유지된 행 ID를 보존하고 중복·빈값을 제거하며 commit 후 캐시를 갱신한다', async () => {
