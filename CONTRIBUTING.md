@@ -416,7 +416,15 @@ CONTENT_SYNC_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55447/darun_cont
 
 ## UX 플로 기능 출시 절차 (VISUAL_FLOW_WRITES_ENABLED)
 
-UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어합니다. 값이 정확히 `true`일 때만 플로 생성·수정·삭제 mutation이 동작하고, 값이 없거나 `false`, 그 외 어떤 값이어도 Admin 권한 검사를 통과한 뒤 DB 작업 전에 `product-flow/writes-disabled` 오류로 거절합니다. 조회와 "플로가 참조 중인 스크린샷 삭제·플랫폼 변경 거절" 방어는 flag 값과 무관하게 항상 동작합니다. 기본값은 `false`이며 `.env.sample`, `sst.config.ts`, GitHub Actions `Deploy.yaml` 모두 `false`를 전달합니다.
+UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어합니다. 값이 정확히 `true`일 때만 플로 생성·수정·삭제 mutation이 동작하고, 값이 없거나 `false`, 그 외 어떤 값이어도 Admin 권한 검사를 통과한 뒤 DB 작업 전에 `product-flow/writes-disabled` 오류로 거절합니다. 조회와 "플로가 참조 중인 스크린샷 삭제·플랫폼 변경 거절" 방어는 flag 값과 무관하게 항상 동작합니다. 기본값은 `false`입니다.
+
+운영 활성 상태의 기준은 GitHub **Settings → Environments → prod-graphql → Environment variables**의 `VISUAL_FLOW_WRITES_ENABLED`입니다. 승인된 `true` 또는 `false`를 이곳에 기록하며 같은 이름의 repository/organization 변수는 두지 않습니다. `Production Deploy`는 모든 배포 진입 경로에서 이 값을 SST에 전달하고, 미설정·빈 값이면 `false`를 전달합니다. SST도 환경변수 누락 시 `false`를 사용합니다. 활성화 후 연속 배포에서도 `true`가 유지되며, 같은 코드 revision을 다시 배포해 `false`로 비활성화할 수 있습니다. Lambda 환경변수만 직접 수정하면 다음 배포에서 기준 설정으로 돌아가므로 이 절차에서 직접 수정하지 않습니다.
+
+수동 CLI 배포도 위 기준 설정을 확인하고 같은 승인값을 `VISUAL_FLOW_WRITES_ENABLED` 환경변수로 명시해 실행합니다. 아래는 비활성화 예시이며 활성 배포는 이 값만 `true`로 지정합니다. 운영 자격 증명과 나머지 필수 환경변수는 먼저 준비해야 합니다. 값을 생략하면 GitHub 설정을 자동 조회하지 않으며 SST 기본값 `false`가 적용됩니다.
+
+```bash
+VISUAL_FLOW_WRITES_ENABLED=false INFRA_ENV=prod RUNNING_ENV=prod pnpm --filter graphql-api deploy
+```
 
 이 기능의 DB 확장과 두 Vercel 웹(admin-web, visual-web) 배포가 겹치지 않도록, 아래 순서를 그대로 따릅니다. 각 단계에서 확인이 실패하면 해당 시점 이후 단계를 진행하지 않습니다.
 
@@ -429,9 +437,9 @@ UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어�
 
 ### 배포
 
-1. `trunk`에 병합하면 품질 검사 → migration 순으로 실행됩니다. 이 시점의 새 API는 `VISUAL_FLOW_WRITES_ENABLED=false`로 배포되므로 플로 쓰기는 거절 상태이며, 기존 기능은 그대로 동작합니다.
+1. 최초 출시 전에는 `prod-graphql`의 `VISUAL_FLOW_WRITES_ENABLED`를 `false`로 기록합니다. `trunk`에 병합하면 품질 검사 → migration 순으로 실행되고 새 API는 플로 쓰기를 거절합니다. 이미 출시한 이후의 일반 배포는 기록된 활성 상태를 유지합니다.
 2. 새 API 배포가 끝나면 Lambda의 `CodeSha256`이 GitHub Actions 로그의 배포 결과와 일치하는지, CloudFormation `LastUpdateStatus`가 `COMPLETE`인지, Lambda가 전체 트래픽을 받고 있는지(별칭 가중치 100%), 최대 `Timeout` 설정이 의도한 값인지를 AWS 콘솔에서 확인합니다.
-3. 확인이 모두 끝나면 Lambda 환경 변수 `VISUAL_FLOW_WRITES_ENABLED`를 `true`로 바꾸고 배포합니다. 값은 정확히 `true`여야 합니다(대소문자·공백 구분).
+3. 확인이 모두 끝나면 `prod-graphql` 환경 변수 `VISUAL_FLOW_WRITES_ENABLED`를 정확히 `true`로 저장합니다(대소문자·공백 구분). `Production Deploy`를 같은 `trunk` revision으로 수동 실행하고, 2번의 배포 확인과 읽기 전용 GraphQL smoke check를 다시 통과한 뒤 웹 승격을 진행합니다. 이후 배포도 이 설정을 사용합니다.
 4. Vercel 콘솔에서 같은 커밋의 새 deployment가 두 웹 모두 **staged** 상태로 존재하는지 확인합니다. 커밋 해시가 일치하지 않으면 승격하지 않습니다.
 5. **admin 승격**: admin-web의 staged deployment를 프로덕션으로 승격하고, admin-web에서 제품 상세 → 플로 등록·수정·삭제가 동작하는지 확인합니다.
 6. **visual 승격**: visual-web의 staged deployment를 프로덕션으로 승격하고, `/flows` 목록·검색·필터와 `/flows/[id]` 단계 탐색이 동작하는지 확인합니다.
@@ -440,7 +448,7 @@ UX 플로 API는 `VISUAL_FLOW_WRITES_ENABLED` 환경 변수로 쓰기를 제어�
 ### 승격·검증 실패 시 복구
 
 - 두 웹 중 하나라도 승격이 실패하거나 검증이 실패하면, **바뀐 두 웹 모두** 사전에 기록해 둔 기존 deployment로 Instant Rollback합니다.
-- 롤백 후에도 새 API, DB 확장, 스크린샷 삭제 방어는 그대로 유지하고 `VISUAL_FLOW_WRITES_ENABLED`만 `false`로 되돌립니다.
+- 롤백 후에도 새 API, DB 확장, 스크린샷 삭제 방어는 그대로 유지합니다. `prod-graphql`의 `VISUAL_FLOW_WRITES_ENABLED`를 `false`로 저장하고 같은 `trunk` revision으로 `Production Deploy`를 다시 실행합니다. 배포와 읽기 전용 smoke check 완료 후 Lambda에 `false`가 반영됐는지 확인합니다. 이 배포가 끝나기 전에는 쓰기가 비활성화됐다고 판단하지 않습니다.
 - 복구와 재시도 동안 domain assignment는 계속 꺼 둡니다. 재시도는 사전 확인부터 다시 시작하며, 두 신규 웹이 모두 성공한 뒤에만 자동 할당을 복원합니다.
 - Instant Rollback 자체가 실패하면 이후 승격을 시도하지 않고 운영 장애로 처리합니다. (장애 처리 절차를 따릅니다.)
 
