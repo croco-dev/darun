@@ -48,7 +48,7 @@ export class LlmSettingService implements LlmConfigProvider {
       endpoint,
       apiKey: keyDecision.apiKey ?? '',
       model: setting?.model || process.env['OPEN_ROUTER_MODEL'] || DEFAULT_LLM_MODEL,
-      thinkingLevel: setting?.thinkingLevel || process.env['OPEN_ROUTER_THINKING_LEVEL'] || null,
+      thinkingLevel: setting ? setting.thinkingLevel : process.env['OPEN_ROUTER_THINKING_LEVEL'] || null,
     };
   }
 
