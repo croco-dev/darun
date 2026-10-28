@@ -53,6 +53,25 @@ describe('Actual LlmTranslationProvider', () => {
     expect(llm.completion).toHaveBeenCalledTimes(2);
   });
 
+  it.each([' \n\t', '    \u00a0\n', '\t\u00a0\n'])(
+    '빈 optional 문서 %j는 bundle의 다른 필드를 막지 않고 정규화한다',
+    async description => {
+      const llm = client();
+      const result = await new LlmTranslationProvider(llm as unknown as LlmClient).translateProductBundle({
+        ...request,
+        description,
+      });
+      expect(result.product).toMatchObject({
+        name: 'Name Darun',
+        summary: 'Summary 42',
+        description: '',
+        descriptionSourceHash: `document:v1:${createHash('sha256').update(description).digest('hex')}`,
+      });
+      expect(result.features).toMatchObject([{ id: 'feature-1', name: 'Feature', summary: 'Summary' }]);
+      expect(llm.completion).toHaveBeenCalledTimes(2);
+    }
+  );
+
   it('writer/reviewer 모두 검증하고 원문 provenance와 보호된 문서 바이트를 반환한다', async () => {
     const llm = client();
     const provider = new LlmTranslationProvider(llm as unknown as LlmClient);

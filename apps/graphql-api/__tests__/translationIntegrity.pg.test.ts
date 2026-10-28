@@ -613,53 +613,58 @@ suite('Translation integrity in isolated PostgreSQL', () => {
     ['    고정 코드\n\n설명  \n', '    고정 코드\n\nDescription  \n'],
     ['    고정 코드만  \n', '    고정 코드만  \n'],
     ['설명  \n다음 줄  ', 'Description  \n다음 줄  '],
-  ])('bundle 번역의 문서 공백을 commit하고 공개 영어로 그대로 조회한다: %j', async (description, expected) => {
-    const { product } = await seedProduct();
-    await db.update(products).set({ description }).where(eq(products.id, product.id));
-    const job = await jobs.createJob({
-      entityType: 'Product',
-      entityId: product.id,
-      fields: ['name', 'summary', 'description', 'features'],
-    });
-    const service = new TranslationJobService(
-      { execute: vi.fn() } as unknown as GetProduct,
-      new LlmTranslationProvider(
-        translateTransport('whitespace-model', [
-          ['이름', 'Name'],
-          ['요약', 'Summary'],
-          ['설명', 'Description'],
-          ['기능', 'Feature'],
-          ['조건', 'Condition'],
-        ]) as unknown as LlmClient
-      ),
-      jobs,
-      store,
-      { sendJob: vi.fn() } as unknown as TranslationQueueService
-    );
-    await service.executeProductTranslationJob(job.id, product.id);
-    expect((await jobs.findJobById(job.id))?.status).toBe('completed');
-    const row = await repository.findOne({
-      entityType: 'Product',
-      entityId: product.id,
-      locale: 'en',
-      field: 'description',
-    });
-    expect(row).toMatchObject({
-      value: expected,
-      sourceHash: `document:v1:${createHash('sha256').update(description).digest('hex')}`,
-      model: 'whitespace-model',
-      promptVersion: 'v2.0.0',
-    });
-    const english = await new TranslationService(repository).getTranslation({
-      entityType: 'Product',
-      entityId: product.id,
-      locale: 'en',
-      field: 'description',
-      koreanValue: description,
-    });
-    expect(english).toBe(expected);
-    expect(() => assertDocumentStructure(description, english)).not.toThrow();
-  });
+    ['    \u00a0\n', '', '    \u00a0\n'],
+    ['\t\u00a0\n', '', '\t\u00a0\n'],
+  ])(
+    'bundle 번역의 문서 공백을 commit하고 공개 영어로 그대로 조회한다: %j',
+    async (description, expected, publicValue = expected) => {
+      const { product } = await seedProduct();
+      await db.update(products).set({ description }).where(eq(products.id, product.id));
+      const job = await jobs.createJob({
+        entityType: 'Product',
+        entityId: product.id,
+        fields: ['name', 'summary', 'description', 'features'],
+      });
+      const service = new TranslationJobService(
+        { execute: vi.fn() } as unknown as GetProduct,
+        new LlmTranslationProvider(
+          translateTransport('whitespace-model', [
+            ['이름', 'Name'],
+            ['요약', 'Summary'],
+            ['설명', 'Description'],
+            ['기능', 'Feature'],
+            ['조건', 'Condition'],
+          ]) as unknown as LlmClient
+        ),
+        jobs,
+        store,
+        { sendJob: vi.fn() } as unknown as TranslationQueueService
+      );
+      await service.executeProductTranslationJob(job.id, product.id);
+      expect((await jobs.findJobById(job.id))?.status).toBe('completed');
+      const row = await repository.findOne({
+        entityType: 'Product',
+        entityId: product.id,
+        locale: 'en',
+        field: 'description',
+      });
+      expect(row).toMatchObject({
+        value: expected,
+        sourceHash: `document:v1:${createHash('sha256').update(description).digest('hex')}`,
+        model: 'whitespace-model',
+        promptVersion: 'v2.0.0',
+      });
+      const english = await new TranslationService(repository).getTranslation({
+        entityType: 'Product',
+        entityId: product.id,
+        locale: 'en',
+        field: 'description',
+        koreanValue: description,
+      });
+      expect(english).toBe(publicValue);
+      expect(() => assertDocumentStructure(description, english)).not.toThrow();
+    }
+  );
 
   const translationRowsByField = async (entityType: string, entityId: string) =>
     Object.fromEntries(

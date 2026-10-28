@@ -155,7 +155,8 @@ export class LlmTranslationProvider implements TranslationProvider {
         features: validated.features.map(feature => ({ id: feature.id, name: feature.name, summary: feature.summary })),
       };
       const result = validateProductBundleTranslation(request, decoded);
-      assertDocumentStructure(request.description, result.product.description);
+      // Empty optional documents normalize to '', including whitespace shaped like indented code.
+      assertDocumentStructure(request.description.trim() ? request.description : '', result.product.description);
       return result;
     };
     decodeBundle(writer);
