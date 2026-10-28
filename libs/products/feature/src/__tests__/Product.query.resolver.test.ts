@@ -476,6 +476,44 @@ describe('ProductQueryResolver', () => {
   });
 
   describe('alternatives', () => {
+    it('발행된 자기 상품의 기존 관계를 제외하고 다른 대안의 순서를 유지한다', async () => {
+      const getAlternativeProducts = new GetAlternativeProducts(
+        createAlternativeProductRepository({
+          findManyByProductId: vi.fn().mockResolvedValue(
+            ['alt-2', 'p1', 'alt-1'].map(
+              alternativeProductId =>
+                new AlternativeProduct({
+                  productId: 'p1',
+                  alternativeProductId,
+                })
+            )
+          ),
+        })
+      );
+      const productRepository = createProductRepository({
+        findPublishedOneById: vi.fn().mockImplementation(
+          async (id: string) =>
+            new DomainProduct({
+              id,
+              name: id,
+              slug: id,
+              summary: id,
+              logoUrl: 'https://example.com/logo.png',
+              publishedAt: new Date('2026-01-01T00:00:00Z'),
+            })
+        ),
+      });
+      const resolver = createProductQueryResolver({
+        getAlternativeProductsUseCase: getAlternativeProducts,
+        getPublishedProductUseCase: new GetPublishedProduct(productRepository),
+      });
+
+      const result = await resolver.alternatives(createProductRoot('ko'));
+
+      expect(result.map(product => product.id)).toEqual(['alt-2', 'alt-1']);
+      expect(productRepository.findPublishedOneById).not.toHaveBeenCalledWith('p1');
+    });
+
     it('should return alternatives even when some lookups fail', async () => {
       const mockGetAlternativeProducts = new GetAlternativeProducts(
         createAlternativeProductRepository({
