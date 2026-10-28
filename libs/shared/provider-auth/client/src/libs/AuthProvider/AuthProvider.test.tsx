@@ -6,30 +6,12 @@ import type { Cookies } from 'next-client-cookies';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApolloProvider } from '../../../../../utils-apollo-client/client/src/libs/ApolloProvider';
+import { sdk } from '../../../../../utils-auth-service/firebase/src/__tests__/firebaseSdk.fixture';
 import { useAuthState } from '../AuthStateProvider';
 import { AuthProvider } from './AuthProvider';
 
-const sdk = vi.hoisted(() => ({
-  listeners: new Set<(user: User | null) => Promise<void>>(),
-  auth: { currentUser: null as User | null, signOut: vi.fn() },
-  navigate: vi.fn(),
-}));
-vi.mock('@darun/utils-router', () => ({ useNavigate: () => sdk.navigate }));
-vi.mock('firebase/app', () => ({
-  getApps: () => [{}],
-  initializeApp: vi.fn(),
-}));
-vi.mock('firebase/auth', () => ({
-  getAuth: () => sdk.auth,
-  onIdTokenChanged: (_auth: unknown, listener: (user: User | null) => Promise<void>) => {
-    sdk.listeners.add(listener);
-    return () => sdk.listeners.delete(listener);
-  },
-  GoogleAuthProvider: vi.fn(),
-  signInWithPopup: vi.fn(),
-  connectAuthEmulator: vi.fn(),
-}));
-vi.mock('next-firebase-auth-edge', () => ({ getFirebaseAuth: () => ({}) }));
+const navigation = vi.hoisted(() => ({ navigate: vi.fn() }));
+vi.mock('@darun/utils-router', () => ({ useNavigate: () => navigation.navigate }));
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -114,7 +96,7 @@ beforeEach(() => {
   sdk.listeners.clear();
   sdk.auth.currentUser = null;
   sdk.auth.signOut.mockReset().mockResolvedValue(undefined);
-  sdk.navigate.mockReset();
+  navigation.navigate.mockReset();
 });
 afterEach(cleanup);
 
@@ -135,7 +117,7 @@ describe('실제 인증 adapter와 provider·쿠키·Apollo 연결', () => {
     expect(screen.getByLabelText('인증 상태').textContent).toBe('signed-out');
     expect(values.get('idToken')).toBeUndefined();
     expect(values.get('refreshToken')).toBeUndefined();
-    expect(sdk.navigate).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalled();
     expect(await request()).toBeUndefined();
   });
 
@@ -158,7 +140,7 @@ describe('실제 인증 adapter와 provider·쿠키·Apollo 연결', () => {
     expect(values.get('idToken')).toBe('token-b');
     expect(values.get('refreshToken')).toBe('refresh-b');
     expect(await request()).toBe('Bearer token-b');
-    expect(sdk.navigate.mock.calls).toEqual([['/saved?from=login']]);
+    expect(navigation.navigate.mock.calls).toEqual([['/saved?from=login']]);
     expect(values.get('redirectUrl')).toBeUndefined();
   });
 
