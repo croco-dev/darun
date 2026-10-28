@@ -282,6 +282,13 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
   }
 
   describe('실제 worker의 인용문 교정과 저장 경계', () => {
+    beforeEach(() => {
+      Container.set(LlmClient, new LlmClient(Container.get(LlmSettingService)));
+    });
+    afterEach(() => {
+      Container.set(LlmClient, client);
+    });
+
     function draftPayload() {
       const anchor = {
         sourceId: 's1',
