@@ -10,10 +10,6 @@ export class RegisterProductCompany {
   ) {}
 
   async execute({ companyId, productId }: { companyId: string; productId: string }) {
-    await this.productRepository.updateById(productId, product => {
-      product.registerCompany(companyId);
-
-      return product;
-    });
+    await this.productRepository.registerCompanyById(productId, companyId);
   }
 }

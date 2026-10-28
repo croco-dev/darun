@@ -122,6 +122,19 @@ export class PostgresqlProductRepository implements ProductRepository {
     });
   }
 
+  registerCompanyById(id: string, companyId: string): Promise<Product> {
+    return this.db.transaction(async tx => {
+      await lockProductSource(tx, id);
+      const [updated] = await tx
+        .update(products)
+        .set({ ownedCompanyId: companyId, updatedAt: new Date() })
+        .where(eq(products.id, id))
+        .returning();
+      if (!updated) throw productUpdateFailed();
+      return this.mapper(updated);
+    });
+  }
+
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {
     return this.db.transaction(async tx => {
       const finishContentWrite = await beginProductContentWrite(tx, id);

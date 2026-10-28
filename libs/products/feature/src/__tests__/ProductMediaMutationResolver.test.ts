@@ -93,6 +93,30 @@ function createProduct(overrides: Partial<DomainProduct> = {}) {
 }
 
 describe('ProductMediaMutationResolver', () => {
+  describe('registerProductCompany', () => {
+    it('존재하는 회사를 연결한 뒤 최신 상품을 응답한다', async () => {
+      const { resolver, getProduct, getCompany, registerProductCompany } = createResolver();
+      getProduct.execute
+        .mockResolvedValueOnce(createProduct())
+        .mockResolvedValueOnce(createProduct({ ownedCompanyId: 'company-722' }));
+      getCompany.execute.mockResolvedValue({ id: 'company-722' });
+      expect(await resolver.registerProductCompany('test', { companyId: 'company-722' })).toEqual({
+        product: createProduct({ ownedCompanyId: 'company-722' }),
+      });
+      expect(registerProductCompany.execute).toHaveBeenCalledWith({ productId: 'prod-1', companyId: 'company-722' });
+    });
+
+    it('회사가 없으면 연결 쓰기를 실행하지 않는다', async () => {
+      const { resolver, getProduct, getCompany, registerProductCompany } = createResolver();
+      getProduct.execute.mockResolvedValue(createProduct());
+      getCompany.execute.mockResolvedValue(null);
+      await expect(resolver.registerProductCompany('test', { companyId: 'missing' })).rejects.toMatchObject({
+        code: 'product/company-not-found',
+      });
+      expect(registerProductCompany.execute).not.toHaveBeenCalled();
+    });
+  });
+
   describe('updateProductLink', () => {
     it('slug로 확인한 상품 ID로 링크를 수정하고 최신 상품을 응답한다', async () => {
       const { resolver, getProduct, updateProductLink } = createResolver();
