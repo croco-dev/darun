@@ -43,6 +43,34 @@ pnpm exec turbo run cloudflare:build --filter=tier-web
 - `scripts/remove-duplicates.ts`, `scripts/enforce-schema-manual.ts`는 수동 실행 전용이며 `DATABASE_URL`만 사용한다.
 - 관리자 여부는 DB `users.is_admin`으로 판단한다.
 
+### 수동 스키마 복구
+
+`pnpm --filter tier-web exec tsx scripts/enforce-schema-manual.ts`는 `DATABASE_URL`의
+`public.memos` 테이블과 누락된 메모 외래 키·앱스토어 ID 유일 제약을 복구한다.
+운영 DB 실행은 별도 승인 범위에서 수행한다. 전체 migration을 대신하는 도구는 아니다.
+
+성공은 메모의 `app_id → public.apps.id` 외래 키가 검증된 `ON DELETE CASCADE /
+ON UPDATE NO ACTION` 제약이고, `public.apps.apps_app_store_id_unique`가 실제
+`app_store_id` 유일 제약임을 확인한 뒤 transaction이 commit됐다는 뜻이다.
+정상 스키마의 재실행은 기존 행과 제약을 그대로 보존한다.
+
+기존 외래 키의 대상·삭제 규칙 등이 다르거나 검증되지 않은 제약이면 실패한다.
+기존 `NO ACTION` 제약은 현재 전방 migration `0002_atomic_tiers.sql`의 적용 여부를
+확인하고 별도 검토한다. 고아 메모·중복 앱스토어 ID도 자동 삭제하지 않는다.
+누락된 객체 생성부터 사후 검증까지 한 transaction에서 수행하므로 중간 실패 시
+이번 실행의 DDL 전체를 rollback한다. 오류를 해결한 뒤 같은 명령으로 재실행한다.
+복구 중 앱·메모 쓰기는 잠금이 풀릴 때까지 대기하므로 유지보수 시간에 실행한다.
+
+격리 PostgreSQL의 **빈 로컬 전용 DB** `darun_schema_recovery`를
+`SCHEMA_RECOVERY_TEST_DATABASE_URL`로 지정하고 다음 명령으로 실제 CLI의 복구·
+제약 불일치·자료 보존·중간 실패 rollback·재실행을 검증한다. 환경변수가 없으면
+일반 테스트에서는 이 suite를 건너뛴다. 테스트는 fixture 테이블을 삭제하므로
+운영 DB나 다른 테스트의 DB를 사용하지 않는다.
+
+```bash
+SCHEMA_RECOVERY_TEST_DATABASE_URL=<isolated-local-db-url> pnpm --filter tier-web exec vitest run src/enforce-schema-manual.pg.test.ts
+```
+
 ### 중복 앱 정리
 
 `pnpm --filter tier-web exec tsx scripts/remove-duplicates.ts`는 기본 dry-run이다.
