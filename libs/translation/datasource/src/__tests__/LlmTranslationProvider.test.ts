@@ -4,6 +4,7 @@ import type { LlmClient } from '@darun/utils-llm';
 import { describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { LlmTranslationProvider } from '../adapters/LlmTranslationProvider';
+import { assertDocumentStructure } from '../codecs/htmlPlaceholderCodec';
 
 function client() {
   const completion = vi.fn().mockImplementation(async (_model, messages) => {
@@ -34,6 +35,43 @@ const request = {
 };
 
 describe('Actual LlmTranslationProvider', () => {
+  it.each([
+    ['    고정 코드\n\n설명  \n', '    고정 코드\n\nDescription  \n'],
+    ['    고정 코드만  \n', '    고정 코드만  \n'],
+    ['설명  \n다음 줄  ', 'Description  \n다음 줄  '],
+  ])('bundle의 최종 본문 바이트와 구조를 보존한다: %j', async (description, expected) => {
+    const llm = client();
+    const result = await new LlmTranslationProvider(llm as unknown as LlmClient).translateProductBundle({
+      ...request,
+      description,
+    });
+    expect(result.product.description).toBe(expected);
+    expect(() => assertDocumentStructure(description, result.product.description)).not.toThrow();
+    expect(result.product.descriptionSourceHash).toBe(
+      `document:v1:${createHash('sha256').update(description).digest('hex')}`
+    );
+    expect(llm.completion).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([' \n\t', '    \u00a0\n', '\t\u00a0\n'])(
+    '빈 optional 문서 %j는 bundle의 다른 필드를 막지 않고 정규화한다',
+    async description => {
+      const llm = client();
+      const result = await new LlmTranslationProvider(llm as unknown as LlmClient).translateProductBundle({
+        ...request,
+        description,
+      });
+      expect(result.product).toMatchObject({
+        name: 'Name Darun',
+        summary: 'Summary 42',
+        description: '',
+        descriptionSourceHash: `document:v1:${createHash('sha256').update(description).digest('hex')}`,
+      });
+      expect(result.features).toMatchObject([{ id: 'feature-1', name: 'Feature', summary: 'Summary' }]);
+      expect(llm.completion).toHaveBeenCalledTimes(2);
+    }
+  );
+
   it('writer/reviewer 모두 검증하고 원문 provenance와 보호된 문서 바이트를 반환한다', async () => {
     const llm = client();
     const provider = new LlmTranslationProvider(llm as unknown as LlmClient);
@@ -48,6 +86,36 @@ describe('Actual LlmTranslationProvider', () => {
     expect(result.model).toBe('test-model');
     expect(result.promptVersion).toBe('v2.0.0');
     expect(result.product.descriptionSourceHash).toMatch(/^document:v1:[a-f0-9]{64}$/);
+  });
+
+  it.each([
+    ['writer', 'tokens'],
+    ['writer', 'structure'],
+    ['reviewer', 'tokens'],
+    ['reviewer', 'structure'],
+  ])('bundle %s의 손상된 %s는 거절한다', async (stage, failure) => {
+    const llm = client();
+    const complete = llm.completion.getMockImplementation()!;
+    llm.completion.mockImplementation(async (model, messages) => {
+      const response = await complete(model, messages);
+      const reviewer = messages[1].content.includes('검토할 번역 초안:');
+      if (reviewer === (stage === 'reviewer')) {
+        const wire = JSON.parse(response.content);
+        wire.description =
+          failure === 'tokens'
+            ? wire.description.replace(/⟦HTML_[^⟧]*⟧/, '')
+            : wire.description.replace('Description', '**Description**');
+        return { content: JSON.stringify(wire) };
+      }
+      return response;
+    });
+    await expect(
+      new LlmTranslationProvider(llm as unknown as LlmClient).translateProductBundle({
+        ...request,
+        description: '    고정 코드\n\n설명  \n',
+      })
+    ).rejects.toThrow(/placeholder|structure/);
+    expect(llm.completion).toHaveBeenCalledTimes(stage === 'writer' ? 1 : 2);
   });
 
   const referenceSource = '[안내][] [안내] [본문][안내]\n\n[안내]: <https://example.com/guide?x=1&amp;y=2>';
