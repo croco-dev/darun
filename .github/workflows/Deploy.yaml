@@ -117,7 +117,7 @@ jobs:
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
           CURSOR_SIGNATURE_SECRET: ${{ secrets.CURSOR_SIGNATURE_SECRET }}
-          VISUAL_FLOW_WRITES_ENABLED: "false"
+          VISUAL_FLOW_WRITES_ENABLED: ${{ vars.VISUAL_FLOW_WRITES_ENABLED || 'false' }}
           VOTE_IP_SALT: ${{ secrets.VOTE_IP_SALT }}
       - name: Verify deployed GraphQL
         if: steps.revision.outputs.deploy == 'true'

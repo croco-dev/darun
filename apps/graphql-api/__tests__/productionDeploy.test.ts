@@ -1,9 +1,23 @@
 import postgres from 'postgres';
+import ts from 'typescript';
 import { afterEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { runInNewContext } from 'node:vm';
+
+const { parse } = createRequire(__filename)('yaml') as { parse: (_source: string) => DeploymentWorkflow };
+
+interface DeploymentWorkflow {
+  jobs: {
+    deploy: {
+      environment: { name: string };
+      steps: Array<{ name?: string; run?: string; env?: Record<string, string> }>;
+    };
+  };
+}
 
 const directory = resolve(__dirname, '..');
 const fixtures: string[] = [];
@@ -14,12 +28,15 @@ function runDeployment(
     env?: NodeJS.ProcessEnv;
     fail?: string;
     databaseUrl?: string;
+    command?: string;
   } = {}
 ) {
   const fixture = mkdtempSync(join(tmpdir(), 'darun-deploy-'));
   fixtures.push(fixture);
   const log = join(fixture, 'commands');
+  const flowSettingLog = join(fixture, 'flow-setting');
   writeFileSync(log, '');
+  writeFileSync(flowSettingLog, '');
   for (const command of ['pnpm', 'sst']) {
     const executable = join(fixture, command);
     writeFileSync(
@@ -27,6 +44,12 @@ function runDeployment(
       `#!/bin/sh
 printf '%s\\n' '${command}'" $*" >> "$DEPLOY_TEST_LOG"
 if [ "${command} $*" = "$DEPLOY_TEST_FAIL" ]; then exit 17; fi
+if [ '${command}' = 'sst' ]; then
+  printf '%s' "\${VISUAL_FLOW_WRITES_ENABLED-__unset__}" > "$DEPLOY_TEST_FLOW_SETTING_LOG"
+fi
+if [ "${command} $*" = 'pnpm --filter graphql-api exec sst deploy --stage prod' ]; then
+  exec sst deploy --stage prod
+fi
 if [ "${command} $*" = 'pnpm run migrate' ] && [ -n "$DEPLOY_TEST_DATABASE_URL" ]; then
   exec "$DEPLOY_TEST_NODE" "$DEPLOY_TEST_TSX" scripts/migrate.ts
 fi
@@ -37,7 +60,7 @@ fi
   const manifest = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8')) as {
     scripts: Record<string, string>;
   };
-  const result = spawnSync('/bin/sh', ['-c', manifest.scripts[options.entry ?? 'deploy']], {
+  const result = spawnSync('/bin/sh', ['-c', options.command ?? manifest.scripts[options.entry ?? 'deploy']], {
     cwd: directory,
     encoding: 'utf8',
     timeout: 30000,
@@ -48,16 +71,64 @@ fi
       INFRA_ENV: 'prod',
       RUNNING_ENV: 'prod',
       LLM_CONTENT_CUTOVER_COMPLETED: undefined,
+      VISUAL_FLOW_WRITES_ENABLED: undefined,
       DATABASE_URL: options.databaseUrl ?? 'postgres://synthetic:fixture@127.0.0.1:1/unused',
       DEPLOY_TEST_DATABASE_URL: options.databaseUrl ?? '',
       DEPLOY_TEST_NODE: process.execPath,
       DEPLOY_TEST_TSX: require.resolve('tsx/cli'),
       DEPLOY_TEST_LOG: log,
+      DEPLOY_TEST_FLOW_SETTING_LOG: flowSettingLog,
       DEPLOY_TEST_FAIL: options.fail ?? '',
       ...options.env,
     },
   });
-  return { ...result, calls: readFileSync(log, 'utf8').trim().split('\n').filter(Boolean) };
+  return {
+    ...result,
+    calls: readFileSync(log, 'utf8').trim().split('\n').filter(Boolean),
+    flowSetting: readFileSync(flowSettingLog, 'utf8'),
+  };
+}
+
+async function lambdaFlowSettings(value: string | undefined): Promise<string[]> {
+  const environments: Array<Record<string, string>> = [];
+  class Queue {
+    arn = 'synthetic-queue-arn';
+    url = 'synthetic-queue-url';
+    subscribe() {}
+  }
+  const exports: { default?: { run: () => Promise<unknown> } } = {};
+  const source = readFileSync(join(directory, 'sst.config.ts'), 'utf8');
+  const compiled = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  });
+  runInNewContext(compiled.outputText, {
+    exports,
+    process: { env: { VISUAL_FLOW_WRITES_ENABLED: value } },
+    $config: (config: unknown) => config,
+    sst: {
+      aws: {
+        Queue,
+        Function: class {
+          arn = 'synthetic-function-arn';
+          constructor(_name: string, options: { environment: Record<string, string> }) {
+            environments.push(options.environment);
+          }
+        },
+        CronV2: class {
+          nodes = { schedule: { arn: 'synthetic-schedule-arn' } };
+          constructor(_name: string, options: { function: { environment: Record<string, string> } }) {
+            environments.push(options.function.environment);
+          }
+        },
+        Router: class {
+          url = 'https://synthetic.invalid';
+        },
+      },
+    },
+  });
+  await exports.default!.run();
+  expect(environments.length).toBeGreaterThan(0);
+  return environments.map(env => env.VISUAL_FLOW_WRITES_ENABLED);
 }
 
 afterEach(() => {
@@ -65,6 +136,42 @@ afterEach(() => {
 });
 
 describe('production deployment entrypoints', () => {
+  it('keeps the environment choice through consecutive CI deployments and an explicit disable', async () => {
+    const workflow = parse(readFileSync(resolve(directory, '../../.github/workflows/Deploy.yaml'), 'utf8'));
+    expect(workflow.jobs.deploy.environment.name).toBe('prod-graphql');
+    const step = workflow.jobs.deploy.steps.find(item => item.name === 'Deploy')!;
+    const expression = step.env!.VISUAL_FLOW_WRITES_ENABLED;
+    // Only the vars lookup/default syntax used by this deployment is evaluated; no GitHub or AWS calls.
+    const lookup = /^\$\{\{ vars\.([A-Z_]+) \|\| '([^']*)' \}\}$/.exec(expression);
+    for (const [setting, expected] of [
+      [undefined, 'false'],
+      ['', 'false'],
+      ['false', 'false'],
+      ['true', 'true'],
+      ['true', 'true'],
+      ['false', 'false'],
+    ]) {
+      const variables: Record<string, string | undefined> = { VISUAL_FLOW_WRITES_ENABLED: setting };
+      const value = lookup ? variables[lookup[1]] || lookup[2] : expression;
+      const result = runDeployment({ command: step.run!, env: { VISUAL_FLOW_WRITES_ENABLED: value } });
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.calls).toContain('sst deploy --stage prod');
+      expect(result.flowSetting).toBe(expected);
+      expect((await lambdaFlowSettings(result.flowSetting)).every(flag => flag === expected)).toBe(true);
+    }
+  });
+
+  it.each([
+    [undefined, 'false'],
+    ['false', 'false'],
+    ['true', 'true'],
+  ])('manual deployment preserves %s and SST defaults it to %s', async (setting, expected) => {
+    const result = runDeployment({ env: { VISUAL_FLOW_WRITES_ENABLED: setting } });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.flowSetting).toBe(setting ?? '__unset__');
+    expect((await lambdaFlowSettings(setting)).every(flag => flag === expected)).toBe(true);
+  });
+
   it('checks the bundle, applies migrations, then deploys the prod stage', () => {
     const result = runDeployment();
     expect(result.status, result.stderr).toBe(0);
