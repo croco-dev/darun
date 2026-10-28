@@ -306,7 +306,7 @@ describe('ProductQueryResolver', () => {
     const resolver = createProductQueryResolver({ productRepository: repository, categoryRepository: categories });
     const first = await resolver.productsByCategory('tools', 'ko', 2);
     expect(first.edges.map(edge => edge.node.id)).toEqual(['p3', 'p2']);
-    expect(first.totalCount).toBe(3);
+    expect(await first.totalCount).toBe(3);
     expect(first.pageInfo.hasNextPage).toBe(true);
     const second = await resolver.productsByCategory('tools', 'ko', 2, first.pageInfo.endCursor);
     expect(second.edges.map(edge => edge.node.id)).toEqual(['p1']);

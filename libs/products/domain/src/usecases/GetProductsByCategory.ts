@@ -22,18 +22,16 @@ export class GetProductsByCategory {
       labelEn: string;
     } | null;
     products: Product[];
-    total: number;
+    getTotalCount: () => Promise<number>;
   }> {
     const category = await this.categoryRepository.findOneBySlug(slug);
 
     if (!category) {
-      return { category: null, products: [], total: 0 };
+      return { category: null, products: [], getTotalCount: async () => 0 };
     }
 
-    const [products, total] = await Promise.all([
-      this.productRepository.findPublishedByCategoryId(category.id, limit, afterId),
-      this.productRepository.countPublishedByCategoryId(category.id),
-    ]);
+    const products = await this.productRepository.findPublishedByCategoryId(category.id, limit, afterId);
+    let totalCount: Promise<number> | undefined;
 
     return {
       category: {
@@ -43,7 +41,7 @@ export class GetProductsByCategory {
         labelEn: category.labelEn,
       },
       products,
-      total,
+      getTotalCount: () => (totalCount ??= this.productRepository.countPublishedByCategoryId(category.id)),
     };
   }
 }
