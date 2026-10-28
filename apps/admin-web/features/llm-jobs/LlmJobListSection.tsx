@@ -192,9 +192,18 @@ export function LlmJobListSection() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedErrorJob, setSelectedErrorJob] = useState<UnifiedLlmJob | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
-  // Backend returns plain arrays without totalCount, so paginate by growing
-  // `limit` (offset stays 0). Initial page size is 100.
+  // Description history still uses its existing growing-limit contract.
   const [visibleLimit, setVisibleLimit] = useState(100);
+  const translationRequest = useRef(0);
+  const translationBusy = useRef(false);
+
+  useEffect(() => {
+    translationRequest.current += 1;
+    translationBusy.current = false;
+    return () => {
+      translationRequest.current += 1;
+    };
+  }, [pathname, jobTypeFilter, statusFilter]);
 
   const queryVariables = {
     status: statusFilter === 'all' ? undefined : statusFilter,
@@ -207,8 +216,9 @@ export function LlmJobListSection() {
     loading: translationLoading,
     error: translationError,
     refetch: refetchTranslation,
+    fetchMore: fetchMoreTranslation,
   } = useQuery(GetTranslationJobsOnAdminDocument, {
-    variables: queryVariables,
+    variables: { ...queryVariables, limit: 100 },
     fetchPolicy: 'cache-and-network',
     skip: jobTypeFilter === 'description',
   });
@@ -274,11 +284,73 @@ export function LlmJobListSection() {
     (translationLoading && translationJobs.length === 0) || (descriptionLoading && descriptionJobs.length === 0);
   const queryError = translationError || descriptionError;
 
+  const readTranslationPage = useCallback(
+    async (offset: number, request: number) => {
+      let pageLength = 0;
+      await fetchMoreTranslation({
+        variables: { limit: 100, offset },
+        updateQuery(previous, { fetchMoreResult }) {
+          if (translationRequest.current !== request || !fetchMoreResult) return previous;
+          const page = fetchMoreResult.translationJobs;
+          pageLength = page.length;
+          const rows = [
+            ...(previous?.translationJobs ?? []).slice(0, offset),
+            ...page,
+            ...(page.length === 100 ? (previous?.translationJobs ?? []).slice(offset + 100) : []),
+          ];
+          return {
+            ...fetchMoreResult,
+            translationJobs: rows.filter((row, index) => rows.findIndex(j => j.id === row.id) === index),
+          };
+        },
+      });
+      return pageLength;
+    },
+    [fetchMoreTranslation]
+  );
+
+  const refreshTranslation = useCallback(async () => {
+    if (translationBusy.current) return;
+    const request = translationRequest.current;
+    const count = translationData?.translationJobs.length ?? 0;
+    translationBusy.current = true;
+    try {
+      if (count <= 100) await refetchTranslation?.();
+      else {
+        for (let offset = 0; offset < count && translationRequest.current === request; offset += 100) {
+          if ((await readTranslationPage(offset, request)) < 100) break;
+        }
+      }
+    } finally {
+      if (translationRequest.current === request) translationBusy.current = false;
+    }
+  }, [translationData?.translationJobs.length, refetchTranslation, readTranslationPage]);
+
+  const loadMore = async () => {
+    if (translationBusy.current) return;
+    if (jobTypeFilter !== 'translation') setVisibleLimit(limit => limit + 100);
+    if (jobTypeFilter === 'description') return;
+    const request = translationRequest.current;
+    translationBusy.current = true;
+    try {
+      await readTranslationPage(translationData?.translationJobs.length ?? 0, request);
+    } catch {
+      if (translationRequest.current === request)
+        notifications.show({
+          title: '목록 조회 실패',
+          message: '번역 작업을 더 불러오지 못했습니다. 다시 시도해 주세요.',
+          color: 'red',
+        });
+    } finally {
+      if (translationRequest.current === request) translationBusy.current = false;
+    }
+  };
+
   const refetchAll = useCallback(async () => {
     const promises: Promise<unknown>[] = [];
     if (jobTypeFilter !== 'description')
       promises.push(
-        Promise.resolve(refetchTranslation?.()).catch(e => {
+        Promise.resolve(refreshTranslation()).catch(e => {
           console.error('Failed to refetch LLM translation jobs', e);
         })
       );
@@ -289,7 +361,7 @@ export function LlmJobListSection() {
         })
       );
     await Promise.all(promises);
-  }, [jobTypeFilter, refetchTranslation, refetchDescription]);
+  }, [jobTypeFilter, refreshTranslation, refetchDescription]);
 
   // Reset pagination when filters change so a stale large limit isn't reused.
   useEffect(() => {
@@ -676,7 +748,7 @@ export function LlmJobListSection() {
         </AdminPanel>
       )}
 
-      {/* Pagination: backend has no totalCount, so grow limit and show loaded count */}
+      {/* Translation requests stay bounded while the displayed list grows. */}
       {jobs.length > 0 && (
         <div className="flex items-center justify-center gap-3 pt-1">
           <span className="text-xs text-dark-500 tabular-nums">현재 {jobs.length.toLocaleString()}건 표시 중</span>
@@ -685,7 +757,7 @@ export function LlmJobListSection() {
             variant="base"
             color="secondary"
             size="sm"
-            onClick={() => setVisibleLimit(limit => limit + 100)}
+            onClick={() => void loadMore()}
             disabled={translationLoading || descriptionLoading}
             className="active:scale-[0.98] motion-reduce:transform-none"
           >
