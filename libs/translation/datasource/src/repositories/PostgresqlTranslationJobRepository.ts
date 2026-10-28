@@ -5,6 +5,7 @@ import {
   TranslationJobRepositoryToken,
   type TranslationJobStatus,
   translationFields,
+  translationJobListArgs,
 } from '@darun/translation-domain';
 import { JOB_DISPATCH_RESERVATION_MS, JOB_MAX_ATTEMPTS, jobDispatchStatus, jobRetryDelay } from '@darun/utils-llm';
 import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql } from 'drizzle-orm';
@@ -326,16 +327,17 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
     limit?: number;
     offset?: number;
   }): Promise<TranslationJobEntity[]> {
+    const { status, limit, offset } = translationJobListArgs(options);
     try {
-      const limit = options?.limit ?? 50;
-      const offset = options?.offset ?? 0;
-
       let query = this.db.select().from(translationJobs);
-      if (options?.status) {
-        query = query.where(eq(translationJobs.status, options.status)) as typeof query;
+      if (status) {
+        query = query.where(eq(translationJobs.status, status)) as typeof query;
       }
 
-      const rows = await query.orderBy(desc(translationJobs.createdAt)).limit(limit).offset(offset);
+      const rows = await query
+        .orderBy(desc(translationJobs.createdAt), desc(translationJobs.id))
+        .limit(limit)
+        .offset(offset);
 
       return rows.map(row => this.toEntity(row));
     } catch (error) {

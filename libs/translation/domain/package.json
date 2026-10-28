@@ -11,6 +11,7 @@
     "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
+    "@darun/utils-error": "workspace:*",
     "reflect-metadata": "catalog:",
     "typedi": "catalog:"
   },

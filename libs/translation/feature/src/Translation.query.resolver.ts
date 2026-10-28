@@ -1,12 +1,13 @@
 import {
   computeSourceHash,
+  translationJobListArgs,
   TranslationRepositoryToken,
   TranslationSourceStoreToken,
   type TranslationRepository,
   type TranslationSourceStore,
   type TranslationEntityType,
 } from '@darun/translation-domain';
-import { TranslationJobService, TranslationJobStatus } from '@darun/translation-service';
+import { TranslationJobService } from '@darun/translation-service';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Int, Query, Resolver } from 'type-graphql';
 import { Inject, Service } from 'typedi';
@@ -93,11 +94,7 @@ export class TranslationQueryResolver {
     @Arg('limit', () => Int, { nullable: true }) limit?: number,
     @Arg('offset', () => Int, { nullable: true }) offset?: number
   ): Promise<TranslationJob[]> {
-    const jobs = await this.translationJobService.getJobs({
-      status: status as TranslationJobStatus | undefined,
-      limit: limit ?? 50,
-      offset: offset ?? 0,
-    });
+    const jobs = await this.translationJobService.getJobs(translationJobListArgs({ status, limit, offset }));
 
     return jobs.map(job => ({
       id: job.id,

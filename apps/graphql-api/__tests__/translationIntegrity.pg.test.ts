@@ -17,7 +17,7 @@ import {
 } from '@darun/translation-domain';
 import { TranslationJobService } from '@darun/translation-service';
 import type { LlmClient } from '@darun/utils-llm';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres, { type Sql } from 'postgres';
@@ -76,6 +76,34 @@ suite('Translation integrity in isolated PostgreSQL', () => {
     Container.reset();
     await writer?.end({ timeout: 5 });
     await connection?.end({ timeout: 5 });
+  });
+
+  it('같은 생성 시각의 번역 작업도 100건 페이지 경계에서 빠짐없이 같은 순서로 조회한다', async () => {
+    const prefix = `list-bounds-${randomUUID()}`;
+    const ids = Array.from({ length: 105 }, (_, i) => `${prefix}-${String(i).padStart(3, '0')}`);
+    try {
+      await db.insert(translationJobs).values(
+        ids.map(id => ({
+          id,
+          entityType: 'Product',
+          entityId: 'list-fixture',
+          fields: ['summary'],
+          status: 'superseded',
+          createdAt: new Date('2099-01-01T00:00:00Z'),
+        }))
+      );
+      const first = await jobs.findJobs({ status: 'superseded', limit: 100, offset: 0 });
+      const next = await jobs.findJobs({ status: 'superseded', limit: 5, offset: 100 });
+      const expected = [...ids].reverse();
+      expect(first.map(job => job.id)).toEqual(expected.slice(0, 100));
+      expect(next.map(job => job.id)).toEqual(expected.slice(100));
+      expect((await jobs.findJobs({ status: 'superseded', limit: 100 })).map(job => job.id)).toEqual(
+        expected.slice(0, 100)
+      );
+      expect(new Set([...first, ...next].map(job => job.id)).size).toBe(105);
+    } finally {
+      await db.delete(translationJobs).where(inArray(translationJobs.id, ids));
+    }
   });
 
   it('0014 fields 이관은 legacy status/hash/provenance와 기존 영어를 보존한다', async () => {
