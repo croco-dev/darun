@@ -122,7 +122,7 @@ jobs:
           REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
       - run: pnpm run test:coverage
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-${{ matrix.node-version }}
