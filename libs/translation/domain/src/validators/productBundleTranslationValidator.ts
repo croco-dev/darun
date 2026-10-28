@@ -27,7 +27,9 @@ export function validateProductBundleTranslation(
   const wire = parsed as { name?: unknown; summary?: unknown; description?: unknown; features?: unknown };
   const name = validateTranslationText(request.name, wire.name, 'name', true);
   const summary = validateTranslationText(request.summary, wire.summary, 'summary');
-  const description = validateTranslationText(request.description, wire.description, 'description');
+  const descriptionText = validateTranslationText(request.description, wire.description, 'description');
+  // Trimming detects empty optional fields, but can remove Markdown code indentation or hard-break whitespace.
+  const description = descriptionText && typeof wire.description === 'string' ? wire.description : '';
   if (!Array.isArray(wire.features)) throw new Error('번역 결과의 features가 배열이 아닙니다.');
   const requested = new Map(request.features.map(feature => [feature.id, feature]));
   if (requested.size !== request.features.length) throw new Error('번역 요청에 중복된 기능 ID가 포함되었습니다.');

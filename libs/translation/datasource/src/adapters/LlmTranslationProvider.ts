@@ -154,7 +154,9 @@ export class LlmTranslationProvider implements TranslationProvider {
         description: this.decode(request.description, validated.product.description, description),
         features: validated.features.map(feature => ({ id: feature.id, name: feature.name, summary: feature.summary })),
       };
-      return validateProductBundleTranslation(request, decoded);
+      const result = validateProductBundleTranslation(request, decoded);
+      assertDocumentStructure(request.description, result.product.description);
+      return result;
     };
     decodeBundle(writer);
     const reviewer = await this.completion(

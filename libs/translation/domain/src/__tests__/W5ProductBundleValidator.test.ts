@@ -33,6 +33,32 @@ describe('Bundle source completeness validator', () => {
         validateProductBundleTranslation({ ...request, summary: '한계' }, { ...response, summary })
       ).toThrow();
   });
+  it.each(['    코드\n\n본문  \n', '    코드만  \n', '본문  \n다음 줄  '])(
+    '문서 description의 비어 있지 않은 공백을 보존한다: %j',
+    description => {
+      const result = validateProductBundleTranslation(
+        { ...request, description },
+        { ...response, name: '  Name  ', description }
+      );
+      expect(result.product.description).toBe(description);
+      expect(result.product.name).toBe('Name');
+    }
+  );
+  it('빈 optional 문서는 빈 문자열로 정규화하고 일반 텍스트는 계속 trim한다', () => {
+    const result = validateProductBundleTranslation(
+      { ...request, summary: '요약', description: ' \n\t' },
+      { ...response, summary: '  Summary  ', description: ' \n\t' }
+    );
+    expect(result.product).toEqual({
+      name: 'Name',
+      summary: 'Summary',
+      description: '',
+    });
+    for (const description of [undefined, null, '', ' \n\t'])
+      expect(() =>
+        validateProductBundleTranslation({ ...request, description: '본문' }, { ...response, description })
+      ).toThrow();
+  });
   it('원문이 없는 optional에 새 내용을 만들지 않는다', () => {
     expect(() => validateProductBundleTranslation(request, { ...response, description: 'Invented claim' })).toThrow();
   });
