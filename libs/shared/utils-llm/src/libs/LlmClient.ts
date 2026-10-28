@@ -65,7 +65,8 @@ export class LlmClient {
       endpoint,
       apiKey: key.apiKey ?? '',
       model: config.model || DEFAULT_LLM_MODEL,
-      thinkingLevel: config.thinkingLevel ?? process.env['OPEN_ROUTER_THINKING_LEVEL'] ?? null,
+      thinkingLevel:
+        config.thinkingLevel !== undefined ? config.thinkingLevel : (process.env['OPEN_ROUTER_THINKING_LEVEL'] ?? null),
     };
   }
 
