@@ -536,6 +536,134 @@ describe('ProductResearchService.executeResearch', () => {
     };
   }
 
+  const failurePairs = [
+    ['실패 응답', '실패 응답'],
+    ['실패 응답', '예외'],
+    ['예외', '실패 응답'],
+    ['예외', '예외'],
+  ] as const;
+
+  function queueFailure(search: ReturnType<typeof executeDeps>['searchClient']['search'], kind: string) {
+    if (kind === '예외') search.mockRejectedValueOnce(new Error('검색 연결 실패'));
+    else search.mockResolvedValueOnce({ ok: false, code: 'TIMEOUT' });
+  }
+
+  it.each(failurePairs)(
+    '%s→성공→%s 순서에서도 모든 질의를 마치고 근거와 부분 실패 경고를 보존한다',
+    async (first, second) => {
+      const fixture = stableFixture();
+      const deps = executeDeps(fixture);
+      const search = deps.searchClient.search;
+      queueFailure(search, first);
+      search.mockResolvedValueOnce({ ok: true, results: fixture.searchResults.slice(0, 1) });
+      queueFailure(search, second);
+
+      // @ts-expect-error focused dependency shape
+      const result = await new ProductResearchService().executeResearch('job-1', deps, 'lease-1');
+
+      expect(search).toHaveBeenCalledTimes(5);
+      expect(deps.llm.complete).toHaveBeenCalledTimes(1);
+      expect(result).toMatchObject({
+        identity: { name: { value: 'Linear' } },
+        sources: [
+          { url: 'https://linear.app/' },
+          { url: 'https://a.example/review' },
+          { url: 'https://b.example/review' },
+        ],
+        warnings: expect.arrayContaining(['PARTIAL_SEARCH_FAILURE']),
+      });
+      expect(deps.jobRepository.completeJob).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ jobId: 'job-1', leaseToken: 'lease-1', result })
+      );
+      expect(deps.jobRepository.retryJobLease).not.toHaveBeenCalled();
+      expect(deps.jobRepository.failJob).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(failurePairs)('성공 뒤 %s→%s는 연속 장애로 기존 재시도에 전달한다', async (first, second) => {
+    const fixture = stableFixture();
+    const deps = executeDeps(fixture);
+    const search = deps.searchClient.search;
+    search.mockResolvedValueOnce({ ok: true, results: fixture.searchResults });
+    queueFailure(search, first);
+    queueFailure(search, second);
+
+    // @ts-expect-error focused dependency shape
+    await new ProductResearchService().executeResearch('job-1', deps, 'lease-1');
+
+    expect(search).toHaveBeenCalledTimes(3);
+    expect(deps.jobRepository.retryJobLease).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ jobId: 'job-1', leaseToken: 'lease-1', errorCode: 'SEARCH_UNAVAILABLE' })
+    );
+    expect(deps.llm.complete).not.toHaveBeenCalled();
+    expect(deps.jobRepository.completeJob).not.toHaveBeenCalled();
+    expect(deps.jobRepository.failJob).not.toHaveBeenCalled();
+  });
+
+  it('빈 결과의 성공도 연속 실패를 끊으며 이전 부분 실패 경고를 지우지 않는다', async () => {
+    const deps = executeDeps(stableFixture());
+    queueFailure(deps.searchClient.search, '예외');
+    deps.searchClient.search.mockResolvedValueOnce({ ok: true, results: [] });
+    queueFailure(deps.searchClient.search, '실패 응답');
+
+    // @ts-expect-error focused dependency shape
+    const result = await new ProductResearchService().executeResearch('job-1', deps, 'lease-1');
+
+    expect(deps.searchClient.search).toHaveBeenCalledTimes(5);
+    expect(result).toMatchObject({ warnings: expect.arrayContaining(['PARTIAL_SEARCH_FAILURE']) });
+    expect(deps.jobRepository.completeJob).toHaveBeenCalledTimes(1);
+    expect(deps.jobRepository.retryJobLease).not.toHaveBeenCalled();
+    expect(deps.jobRepository.failJob).not.toHaveBeenCalled();
+  });
+
+  it.each(['실패 응답', '예외'])(
+    '검색 회복 뒤 호출자 취소 중 %s는 lease를 종료하거나 재예약하지 않는다',
+    async kind => {
+      const fixture = stableFixture();
+      const deps = executeDeps(fixture);
+      const controller = new AbortController();
+      queueFailure(deps.searchClient.search, '실패 응답');
+      deps.searchClient.search.mockResolvedValueOnce({ ok: true, results: fixture.searchResults });
+      deps.searchClient.search.mockImplementationOnce(async () => {
+        controller.abort();
+        if (kind === '예외') throw new Error('취소된 검색 연결');
+        return { ok: false, code: 'TIMEOUT' };
+      });
+
+      const result = await new ProductResearchService().executeResearch(
+        'job-1',
+        // @ts-expect-error focused dependency shape
+        deps,
+        'lease-1',
+        { signal: controller.signal }
+      );
+
+      expect(result).toEqual({ id: 'job-1', officialUrl: 'https://linear.app/' });
+      expect(deps.searchClient.search).toHaveBeenCalledTimes(3);
+      expect(deps.llm.complete).not.toHaveBeenCalled();
+      expect(deps.jobRepository.retryJobLease).not.toHaveBeenCalled();
+      expect(deps.jobRepository.failJob).not.toHaveBeenCalled();
+      expect(deps.jobRepository.completeJob).not.toHaveBeenCalled();
+    }
+  );
+
+  it('단발 장애 뒤 설정 부재는 재시도 대신 즉시 설정 오류로 종료한다', async () => {
+    const deps = executeDeps(stableFixture());
+    queueFailure(deps.searchClient.search, '예외');
+    deps.searchClient.search.mockResolvedValueOnce({ ok: false, code: 'NOT_CONFIGURED' });
+
+    // @ts-expect-error focused dependency shape
+    await new ProductResearchService().executeResearch('job-1', deps, 'lease-1');
+
+    expect(deps.searchClient.search).toHaveBeenCalledTimes(2);
+    expect(deps.jobRepository.failJob).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ jobId: 'job-1', leaseToken: 'lease-1', errorCode: 'SEARCH_NOT_CONFIGURED' })
+    );
+    expect(deps.jobRepository.retryJobLease).not.toHaveBeenCalled();
+    expect(deps.jobRepository.completeJob).not.toHaveBeenCalled();
+    expect(deps.llm.complete).not.toHaveBeenCalled();
+  });
+
   it('fails closed when search key is missing', async () => {
     const failJob = vi.fn().mockResolvedValue(null);
     const deps = {
@@ -571,6 +699,7 @@ describe('ProductResearchService.executeResearch', () => {
       result: { identity: { name: { value: string } }; warnings: string[] };
     };
     expect(completed.result.identity.name.value).toBe('Linear');
+    expect(completed.result.warnings).not.toContain('PARTIAL_SEARCH_FAILURE');
     expect(result).toMatchObject({ identity: { name: { value: 'Linear' } } });
   });
 
