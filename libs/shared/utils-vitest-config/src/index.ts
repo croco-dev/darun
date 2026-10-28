@@ -1,9 +1,32 @@
-import type { UserConfig } from 'vite';
+import type { Plugin, UserConfig } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 type TestConfig = NonNullable<UserConfig['test']>;
 type CoverageConfig = NonNullable<TestConfig['coverage']>;
 type CoverageThresholds = NonNullable<CoverageConfig['thresholds']>;
+
+export function createDecoratorMetadataPlugin(typescript: typeof import('typescript')): Plugin {
+  return {
+    name: 'typescript-decorator-metadata',
+    enforce: 'pre',
+    transform(source, id) {
+      if (
+        !id.endsWith('.ts') ||
+        !/@(?:Field|Arg|Resolver|Service|Inject|ObjectType|InputType|ArgsType|Mutation|Query)\b/.test(source)
+      )
+        return;
+      return typescript.transpileModule(source, {
+        compilerOptions: {
+          target: typescript.ScriptTarget.ES2022,
+          module: typescript.ModuleKind.ESNext,
+          experimentalDecorators: true,
+          emitDecoratorMetadata: true,
+        },
+        fileName: id,
+      }).outputText;
+    },
+  };
+}
 
 const coverageDefaults: CoverageConfig = {
   provider: 'v8',
