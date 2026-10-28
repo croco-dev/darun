@@ -544,6 +544,7 @@ GraphQL SDL이나 원본 operation을 변경하면 `pnpm --filter @darun/provide
 
 관리자 `translationJobs`는 기본 50건, `limit` 1~100 정수와 `offset` 0 이상의 안전한 정수를 허용합니다. `status`는 `pending`, `in_progress`, `completed`, `failed`, `superseded`만 허용하며 생략 또는 `null`이면 전체 상태를 조회합니다. 잘못된 입력은 서비스와 SQL 실행 전에 `translation/invalid-job-list-args`로 거절하며 저장소 직접 호출에도 같은 검증을 적용합니다. 입력 오류를 정상 빈 목록으로 처리하거나 한도 안으로 자동 보정하지 않습니다.
 관리자 목록의 번역 더보기와 이미 읽은 목록의 갱신은 100건씩 `offset`으로 조회합니다. 더보기 실패 시 기존 행을 유지하고 같은 위치에서 재시도하며, 필터 변경 전 요청의 늦은 응답은 현재 목록에 합치지 않습니다.
+번역 작업은 `createdAt DESC, id DESC`로 정렬해 생성 시각이 같아도 페이지 경계의 순서를 고정합니다.
 
 Next.js 버전은 workspace catalog와 override를 함께 갱신하며 모든 웹 앱은 catalog를 사용합니다. OpenTelemetry API는 웹과 서버 SDK의 공통 호환 범위인 `1.9.1`로 통합합니다. 서로 다른 peer 버전으로 Drizzle 타입이 중복 생성되는 것을 방지하며, Lambda의 Sentry·profiling SDK `10.38.0`과 기존 서버 계측 설정은 유지합니다. 의존성 취약점은 감사 기준을 낮추거나 제외하지 않고 수정 버전과 잠금 파일을 함께 갱신합니다.
 

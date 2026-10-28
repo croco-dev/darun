@@ -67,7 +67,7 @@ describe('translation job list input through GraphQL, service and SQL', () => {
     expect(result.data).toEqual({ translationJobs: [] });
     expect(execute).toHaveBeenCalledTimes(1);
     const [sql, actualParams] = execute.mock.calls[0]!;
-    expect(sql).toContain('order by "translation_jobs"."created_at" desc limit $1');
+    expect(sql).toContain('order by "translation_jobs"."created_at" desc, "translation_jobs"."id" desc limit $1');
     expect(actualParams).toEqual(params);
   });
 

@@ -334,7 +334,10 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
         query = query.where(eq(translationJobs.status, status)) as typeof query;
       }
 
-      const rows = await query.orderBy(desc(translationJobs.createdAt)).limit(limit).offset(offset);
+      const rows = await query
+        .orderBy(desc(translationJobs.createdAt), desc(translationJobs.id))
+        .limit(limit)
+        .offset(offset);
 
       return rows.map(row => this.toEntity(row));
     } catch (error) {
