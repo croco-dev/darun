@@ -14,6 +14,23 @@ vi.mock('@darun/utils-router', () => ({
   Link: ({ children, ...props }: React.ComponentProps<'a'>) => <a {...props}>{children}</a>,
 }));
 vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }));
+vi.mock('@darun/ui', async importOriginal => {
+  // Paging uses the real list, Apollo, and buttons; decorative SVGs need not multiply the 100-row fixture DOM.
+  const actual = await importOriginal<Record<string, unknown>>();
+  const DecorativeIcon = () => null;
+  return {
+    ...actual,
+    AlertCircle: DecorativeIcon,
+    CheckCircle2: DecorativeIcon,
+    Clock: DecorativeIcon,
+    Copy: DecorativeIcon,
+    Globe: DecorativeIcon,
+    Info: DecorativeIcon,
+    RefreshCw: DecorativeIcon,
+    RotateCw: DecorativeIcon,
+    Sparkles: DecorativeIcon,
+  };
+});
 vi.mock('@darun/ui-admin', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   AdminModal: ({ opened, children }: { opened: boolean; children: React.ReactNode }) =>
