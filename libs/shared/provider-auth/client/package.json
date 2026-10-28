@@ -10,6 +10,7 @@
   },
   "scripts": {
     "lint": "eslint \"**/*.{ts,tsx}\"",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },
@@ -24,8 +25,12 @@
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",
+    "@darun/utils-apollo-client/client": "workspace:*",
+    "@darun/utils-auth-service-firebase": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
+    "@darun/utils-vitest-config": "workspace:*",
     "@types/react": "catalog:",
-    "@types/react-dom": "catalog:"
+    "@types/react-dom": "catalog:",
+    "firebase": "catalog:"
   }
 }

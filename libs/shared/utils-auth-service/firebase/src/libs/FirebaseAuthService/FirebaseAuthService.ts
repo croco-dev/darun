@@ -17,6 +17,11 @@ export class FirebaseAuthService implements AuthService {
   private authMethods: ReturnType<typeof getFirebaseAuth>;
   private authStorage?: AuthStorage;
   private apiKey: string;
+  private authHandlers = new Set<(user?: AuthUser) => void>();
+  private unsubscribeAuth?: () => void;
+  private authRevision = 0;
+  private signOutsInFlight = 0;
+  private latestAuthResult?: { user?: AuthUser };
 
   constructor({ projectId, privateKey, clientEmail, authDomain, apiKey }: FirebaseAuthConfig) {
     const normalizedPrivateKey = privateKey.replace(/\\n/g, '\n');
@@ -59,8 +64,16 @@ export class FirebaseAuthService implements AuthService {
   }
 
   async signOut() {
-    this.authStorage?.clear();
-    await getAuth().signOut();
+    // Invalidate before clearing cookies, including the interval before Firebase emits null.
+    this.authRevision++;
+    this.latestAuthResult = undefined;
+    this.signOutsInFlight++;
+    try {
+      this.authStorage?.clear();
+      await getAuth().signOut();
+    } finally {
+      this.signOutsInFlight--;
+    }
   }
 
   setAuthStorage(storage: AuthStorage): void {
@@ -92,27 +105,63 @@ export class FirebaseAuthService implements AuthService {
   }
 
   public onIdTokenChanged(handler: (user?: AuthUser) => void) {
-    const unsubscribe = onIdTokenChanged(getAuth(), async user => {
-      if (!user) {
-        handler(undefined);
-        return;
+    // One SDK listener gives all consumers the same event order and token result.
+    // Each subscription owns its wrapper, even if two consumers pass the same handler.
+    const notify = (user?: AuthUser) => handler(user);
+    this.authHandlers.add(notify);
+
+    if (!this.unsubscribeAuth) {
+      const auth = getAuth();
+      this.unsubscribeAuth = onIdTokenChanged(auth, async user => {
+        const revision = ++this.authRevision;
+        this.latestAuthResult = undefined;
+        const isCurrent = () =>
+          revision === this.authRevision && this.authHandlers.size > 0 && auth.currentUser === user;
+
+        let authUser: AuthUser | undefined;
+        if (user) {
+          if (this.signOutsInFlight > 0) return;
+          const idToken = await user.getIdTokenResult(false);
+          if (!isCurrent() || this.signOutsInFlight > 0) return;
+
+          const roles = (idToken.claims.roles ?? []) as string[];
+          authUser = {
+            id: user.uid,
+            email: user.email ?? '',
+            isAdmin: roles.includes('admin') || process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local',
+          };
+          this.authStorage?.set({
+            idToken: idToken.token,
+            refreshToken: user.refreshToken,
+          });
+        } else {
+          if (!isCurrent()) return;
+          this.authStorage?.set({
+            idToken: undefined,
+            refreshToken: undefined,
+          });
+        }
+
+        if (!isCurrent()) return;
+        this.latestAuthResult = { user: authUser };
+        for (const subscriber of [...this.authHandlers]) {
+          if (!isCurrent()) break;
+          if (this.authHandlers.has(subscriber)) subscriber(authUser);
+        }
+      });
+    } else if (this.latestAuthResult) {
+      notify(this.latestAuthResult.user);
+    }
+
+    return () => {
+      this.authHandlers.delete(notify);
+      if (this.authHandlers.size === 0) {
+        this.authRevision++;
+        this.latestAuthResult = undefined;
+        this.unsubscribeAuth?.();
+        this.unsubscribeAuth = undefined;
       }
-
-      const idToken = await user.getIdTokenResult(false);
-      const roles = (idToken.claims.roles ?? []) as string[];
-      handler({
-        id: user.uid,
-        email: user.email ?? '',
-        isAdmin: roles.includes('admin') || process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local',
-      });
-
-      this.authStorage?.set({
-        idToken: idToken.token,
-        refreshToken: user.refreshToken,
-      });
-    });
-
-    return () => unsubscribe();
+    };
   }
 
   public signInWithGoogle() {

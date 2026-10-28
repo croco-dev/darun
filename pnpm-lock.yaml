@@ -1940,15 +1940,27 @@ importers:
       '@darun/eslint-config':
         specifier: workspace:*
         version: link:../../utils-eslint-config
+      '@darun/utils-apollo-client/client':
+        specifier: workspace:*
+        version: link:../../utils-apollo-client/client
+      '@darun/utils-auth-service-firebase':
+        specifier: workspace:*
+        version: link:../../utils-auth-service/firebase
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../utils-tsconfig
+      '@darun/utils-vitest-config':
+        specifier: workspace:*
+        version: link:../../utils-vitest-config
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.2.4(@types/react@19.2.14)
+      firebase:
+        specifier: 'catalog:'
+        version: 10.8.1
 
   libs/shared/provider-auth/server:
     dependencies:
@@ -2274,6 +2286,9 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../utils-tsconfig
+      '@darun/utils-vitest-config':
+        specifier: workspace:*
+        version: link:../../utils-vitest-config
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
