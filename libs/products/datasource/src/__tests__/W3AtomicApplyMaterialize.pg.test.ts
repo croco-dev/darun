@@ -19,6 +19,7 @@ import {
   CreateProductFeature,
   CreateProduct,
   GetProduct,
+  GetProductTags,
   GetProductFeature,
   ProductDescriptionApplyStoreToken,
   ProductResearchJobRepositoryToken,
@@ -50,6 +51,7 @@ import { registerProductContentSync } from '../../../../../apps/graphql-api/src/
 import { translationJobs } from '../../../../translation/datasource/src/entities/TranslationJobSchema';
 import { translations } from '../../../../translation/datasource/src/entities/TranslationSchema';
 import { FeatureMutationResolver } from '../../../feature/src/Feature.mutation.resolver';
+import { ProductQueryResolver } from '../../../feature/src/Product.query.resolver';
 import { ProductPublishMutationResolver } from '../../../feature/src/ProductPublishMutationResolver';
 import {
   ProductResearchMutationResolver,
@@ -396,6 +398,103 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       },
     };
   }
+
+  it('태그 읽기 오류는 GraphQL 오류로 전달하고 기존 연결과 intent를 보존하며 재조회 후 삭제할 수 있다', async () => {
+    const product = await publishedOwner([]);
+    const repository = new PostgresqlProductTagRepository(db as never);
+    const name = `preserved-${prefix}-${sequence++}`;
+    await new UpdateProductTag(repository).execute({
+      productId: product.id,
+      tagNames: [name],
+    });
+    const before = await syncState([product.id]);
+    const links = await db.select().from(productTags).where(eq(productTags.productId, product.id));
+    const productRepository = new PostgresqlProductRepository(db as never);
+    const getProduct = new GetProduct(productRepository);
+    const getTags = new GetProductTags(repository);
+    const query = new ProductQueryResolver(
+      undefined!,
+      undefined!,
+      undefined!,
+      getProduct,
+      undefined!,
+      undefined!,
+      getTags,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      productRepository
+    );
+    const mutation = new ProductPublishMutationResolver(
+      undefined!,
+      undefined!,
+      undefined!,
+      new UpdateProductTag(repository),
+      getProduct,
+      getTags,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!,
+      undefined!
+    );
+    const schema = buildSchemaSync({
+      resolvers: [ProductQueryResolver, ProductPublishMutationResolver],
+      container: {
+        get: type => (type === ProductPublishMutationResolver ? mutation : query),
+      },
+      authChecker: () => true,
+    });
+    const read = () =>
+      graphql({
+        schema,
+        source: 'query($slug: String!) { tempProductBySlug(slug: $slug) { id tags { id name } } }',
+        variableValues: { slug: product.slug },
+      });
+    const failure = vi.spyOn(repository, 'findByProductIds').mockRejectedValueOnce(new Error('tag read failed'));
+    try {
+      const failed = await read();
+      expect(failed.errors?.map(error => error.path)).toEqual([['tempProductBySlug', 'tags']]);
+      expect(failed.data?.tempProductBySlug).toBeNull();
+      expect(await db.select().from(productTags).where(eq(productTags.productId, product.id))).toEqual(links);
+      expect(await syncState([product.id])).toEqual(before);
+
+      const retried = await read();
+      expect(retried.errors).toBeUndefined();
+      expect(retried.data?.tempProductBySlug).toEqual({
+        id: product.id,
+        tags: [{ id: links[0]!.tagId, name }],
+      });
+      const cleared = await graphql({
+        schema,
+        source:
+          'mutation($slug: String!) { updateProductTags(slug: $slug, input: { tagNames: [] }) { product { id tags { name } } } }',
+        variableValues: { slug: product.slug },
+      });
+      expect(cleared.errors).toBeUndefined();
+      expect(cleared.data?.updateProductTags).toEqual({
+        product: { id: product.id, tags: [] },
+      });
+      expect(await db.select().from(productTags).where(eq(productTags.productId, product.id))).toEqual([]);
+      const after = await syncState([product.id]);
+      expect(after.products[0]!.contentRevision).toBe(before.products[0]!.contentRevision + BigInt(1));
+      expect(after.search).toHaveLength(before.search.length + 1);
+      expect(after.translation).toEqual(before.translation);
+    } finally {
+      failure.mockRestore();
+    }
+  });
 
   it('서로 다른 상품의 역순 태그 생성 경합이 canonical 태그 한 건씩으로 수렴한다', async () => {
     const first = await publishedOwner([]);
