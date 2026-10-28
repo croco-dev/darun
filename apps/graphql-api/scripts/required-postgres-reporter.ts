@@ -1,6 +1,9 @@
 import type { Reporter, TestModule } from 'vitest/node';
 
 const groups = {
+  llm: {
+    '__tests__/llmSettingConcurrency.pg.test.ts': 'LLM_SETTING_TEST_DATABASE_URL',
+  },
   tier: {
     'src/remove-duplicates.pg.test.ts': 'DEDUPE_TEST_DATABASE_URL',
   },

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { ApolloServer } from '@apollo/server';
-import type { LlmSetting, LlmSettingRepository } from '@darun/translation-domain';
+import type { LlmSetting, LlmSettingRepository, LlmSettingWrite } from '@darun/translation-domain';
 import { LlmSettingService } from '@darun/translation-service';
 import { createSentryApolloLogPlugin, sentryRequestRedaction } from '@darun/utils-sentry';
 import * as Sentry from '@sentry/node';
@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { LlmSettingResolver } from '../../../libs/translation/feature/src/LlmSetting.resolver';
 import { createCredentialCoercionFixture } from './llmSettingCredential.fixture';
+import { settingRepositoryFixture } from './llmSettingRepository.fixture';
 
 const { extendSchema, GraphQLError, parse } = createRequire(`${process.cwd()}/package.json`)(
   'graphql'
@@ -69,6 +70,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
   let server: ApolloServer | undefined;
   let events: Sentry.Event[];
   let repository: LlmSettingRepository;
+  let writeSetting: ReturnType<typeof vi.fn<(input: LlmSettingWrite) => Promise<LlmSetting>>>;
   let transportSend: Mock;
   let echoedCredential: string | undefined;
   let processorEvents: Sentry.Event[];
@@ -99,10 +101,11 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
       },
     });
     vi.stubEnv('OPEN_ROUTER_API_KEY', apiKey);
-    repository = {
-      findSetting: vi.fn(async () => setting()),
-      upsertSetting: vi.fn(async input => setting(input)),
-    };
+    writeSetting = vi.fn(async input => setting(input));
+    repository = settingRepositoryFixture(
+      vi.fn(async () => setting()),
+      writeSetting
+    );
     const resolver = new LlmSettingResolver(new LlmSettingService(repository));
     const schema = extendSchema(
       buildSchemaSync({
@@ -161,7 +164,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
         if (failure === 'read')
           vi.mocked(repository.findSetting).mockRejectedValue(new Error(`read failed ${storedKey}`));
         if (failure === 'write')
-          vi.mocked(repository.upsertSetting).mockRejectedValue(
+          vi.mocked(writeSetting).mockRejectedValue(
             new Error(`Failed query: insert llm_settings params ${apiKey},${braveApiKey},${storedKey}`)
           );
         const response = await execute(
@@ -200,7 +203,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
     await execute(query, undefined, false);
     expectSecretFreeEvent();
     expect(repository.findSetting).not.toHaveBeenCalled();
-    expect(repository.upsertSetting).not.toHaveBeenCalled();
+    expect(writeSetting).not.toHaveBeenCalled();
     expect(events[0].exception?.values?.[0].value).toContain('Access denied');
   });
 
@@ -213,7 +216,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
     const response = await execute(query, { [variable]: secret, providerCredential: { type: false, id: false } });
     expect(response.http.status).toBe(400);
     expect(repository.findSetting).not.toHaveBeenCalled();
-    expect(repository.upsertSetting).not.toHaveBeenCalled();
+    expect(writeSetting).not.toHaveBeenCalled();
     expect(processorEvents).toHaveLength(1);
     for (const event of [...processorEvents, ...events]) {
       expect(JSON.stringify(event)).not.toContain(secret);
@@ -241,7 +244,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
     });
     expect(response.http.status).toBe(400);
     expect(repository.findSetting).not.toHaveBeenCalled();
-    expect(repository.upsertSetting).not.toHaveBeenCalled();
+    expect(writeSetting).not.toHaveBeenCalled();
     if (response.body.kind !== 'single') throw new Error('Expected single GraphQL response');
     // The public response keeps the original rejection and its echoed property name.
     expect(response.body.singleResult.errors?.[0].message).toContain('String cannot represent a non string value');
@@ -277,7 +280,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
           }),
         ]);
         expect(repository.findSetting).not.toHaveBeenCalled();
-        expect(repository.upsertSetting).not.toHaveBeenCalled();
+        expect(writeSetting).not.toHaveBeenCalled();
         expect(events).toHaveLength(1);
         const event = events[0];
         const serialized = JSON.stringify(event);

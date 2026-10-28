@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url);
 const vitestDirectory = dirname(require.resolve('vitest/package.json'));
 const reporter = resolve(__dirname, '../scripts/required-postgres-reporter.ts');
 const urls = {
+  LLM_SETTING_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_llm_settings',
   DEDUPE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_tier_dedupe',
   JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_job_config_attempts',
   TRANSLATION_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity',
@@ -20,6 +21,7 @@ const urls = {
   MIGRATION_BASELINE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_migration_baseline',
 };
 const groups = {
+  llm: ['__tests__/llmSettingConcurrency.pg.test.ts'],
   graphql: [
     '__tests__/jobConfigAttempts.pg.test.ts',
     '__tests__/translationIntegrity.pg.test.ts',
@@ -82,6 +84,7 @@ function expectFailure(result: ReturnType<typeof runFixture>, message?: string) 
 
 describe('required PostgreSQL CI reporter at the Vitest process boundary', () => {
   it.each([
+    ['llm', 'LLM_SETTING_TEST_DATABASE_URL'],
     ['graphql', 'JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL'],
     ['graphql', 'TRANSLATION_TEST_DATABASE_URL'],
     ['graphql', 'ALTERNATIVE_TEST_DATABASE_URL'],

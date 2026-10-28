@@ -24,7 +24,7 @@ describe('actual application LlmClient factory', () => {
     // Exercise production registration after isolated environment setup; a static import runs too early.
     await import('../src/config');
     // Vitest's esbuild transform omits constructor metadata; the Lambda smoke covers DI construction.
-    Container.set(LlmSettingService, new LlmSettingService({ findSetting, upsertSetting: vi.fn() }));
+    Container.set(LlmSettingService, new LlmSettingService({ findSetting, updateSetting: vi.fn() }));
     findSetting.mockReset();
   });
   afterEach(() => {

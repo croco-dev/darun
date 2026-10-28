@@ -1,4 +1,4 @@
-import type { LlmSetting, LlmSettingRepository } from '@darun/translation-domain';
+import type { LlmSetting, LlmSettingRepository, LlmSettingWrite } from '@darun/translation-domain';
 import { LlmConfigReadFailedError } from '@darun/utils-llm';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LlmSettingService } from '../LlmSettingService';
@@ -20,15 +20,25 @@ function makeSetting(overrides: Partial<LlmSetting>): LlmSetting {
 describe('LlmSettingService', () => {
   let mockRepository: LlmSettingRepository;
   let service: LlmSettingService;
+  let writeSetting: ReturnType<typeof vi.fn<(input: LlmSettingWrite) => Promise<LlmSetting>>>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     process.env['OPEN_ROUTER_API_KEY'] = 'env-api-key';
     delete process.env['OPEN_ROUTER_ENDPOINT'];
 
+    writeSetting = vi.fn(async input => makeSetting(input));
     mockRepository = {
       findSetting: vi.fn(),
-      upsertSetting: vi.fn(),
+      updateSetting: async modify => {
+        let current;
+        try {
+          current = await mockRepository.findSetting();
+        } catch {
+          throw new LlmConfigReadFailedError();
+        }
+        return writeSetting(modify(current));
+      },
     };
 
     service = new LlmSettingService(mockRepository);
@@ -109,7 +119,7 @@ describe('LlmSettingService', () => {
       vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(
         makeSetting({ apiKey: 'old-key', thinkingLevel: 'low' })
       );
-      vi.mocked(mockRepository.upsertSetting).mockImplementationOnce(async input => makeSetting(input));
+      vi.mocked(writeSetting).mockImplementationOnce(async input => makeSetting(input));
 
       await service.updateSetting({
         model: ' anthropic/claude-3.5-sonnet ',
@@ -117,7 +127,7 @@ describe('LlmSettingService', () => {
         thinkingLevel: ' high ',
       });
 
-      expect(mockRepository.upsertSetting).toHaveBeenCalledWith({
+      expect(writeSetting).toHaveBeenCalledWith({
         endpoint: 'https://openrouter.ai/api/v1',
         apiKey: 'new-secret-key',
         model: 'anthropic/claude-3.5-sonnet',
@@ -128,29 +138,29 @@ describe('LlmSettingService', () => {
 
     it('endpoint가 같고 키 입력이 없으면 실제 저장 키를 유지한다', async () => {
       vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(makeSetting({ apiKey: 'stored-key' }));
-      vi.mocked(mockRepository.upsertSetting).mockImplementationOnce(async input => makeSetting(input));
+      vi.mocked(writeSetting).mockImplementationOnce(async input => makeSetting(input));
 
       await service.updateSetting({ model: 'x-ai/grok-4-fast' });
 
-      expect(vi.mocked(mockRepository.upsertSetting).mock.calls[0][0].apiKey).toBe('stored-key');
+      expect(vi.mocked(writeSetting).mock.calls[0][0].apiKey).toBe('stored-key');
     });
 
     it('endpoint가 바뀌는데 키 입력이 없으면 기존 공급자 키를 비운다', async () => {
       vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(makeSetting({ apiKey: 'old-provider-key' }));
-      vi.mocked(mockRepository.upsertSetting).mockImplementationOnce(async input => makeSetting(input));
+      vi.mocked(writeSetting).mockImplementationOnce(async input => makeSetting(input));
 
       await service.updateSetting({ endpoint: 'https://new-provider.example.com/v1' });
 
-      expect(vi.mocked(mockRepository.upsertSetting).mock.calls[0][0].apiKey).toBeNull();
+      expect(vi.mocked(writeSetting).mock.calls[0][0].apiKey).toBeNull();
     });
 
     it('최초 endpoint-only 저장은 환경 키를 저장하지 않는다', async () => {
       vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(null);
-      vi.mocked(mockRepository.upsertSetting).mockImplementationOnce(async input => makeSetting(input));
+      vi.mocked(writeSetting).mockImplementationOnce(async input => makeSetting(input));
 
       await service.updateSetting({ endpoint: 'https://custom.example.com/v1', model: 'm1' });
 
-      expect(vi.mocked(mockRepository.upsertSetting).mock.calls[0][0].apiKey).toBeNull();
+      expect(vi.mocked(writeSetting).mock.calls[0][0].apiKey).toBeNull();
     });
 
     it('커스텀 엔드포인트에 환경 기본 키와 같은 키 저장을 거절한다', async () => {
@@ -160,16 +170,16 @@ describe('LlmSettingService', () => {
         service.updateSetting({ endpoint: 'https://custom.example.com/v1', apiKey: 'env-api-key' })
       ).rejects.toThrow('OPEN_ROUTER_API_KEY');
 
-      expect(mockRepository.upsertSetting).not.toHaveBeenCalled();
+      expect(writeSetting).not.toHaveBeenCalled();
     });
 
     it('기본 OpenRouter 엔드포인트에는 환경과 같은 키 저장을 허용한다', async () => {
       vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(null);
-      vi.mocked(mockRepository.upsertSetting).mockImplementationOnce(async input => makeSetting(input));
+      vi.mocked(writeSetting).mockImplementationOnce(async input => makeSetting(input));
 
       await service.updateSetting({ endpoint: 'https://openrouter.ai/api/v1', apiKey: 'env-api-key' });
 
-      expect(vi.mocked(mockRepository.upsertSetting).mock.calls[0][0].apiKey).toBe('env-api-key');
+      expect(vi.mocked(writeSetting).mock.calls[0][0].apiKey).toBe('env-api-key');
     });
   });
 });
