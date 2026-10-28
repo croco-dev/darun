@@ -71,7 +71,8 @@ export class ProductQueryResolver {
     private readonly getProductsByCategoryUseCase: GetProductsByCategory,
     private readonly translationService: TranslationService,
     private readonly getPublishedProductsForSitemapUseCase: GetPublishedProductsForSitemap,
-    @Inject(ProductRepositoryToken) private readonly productRepository: ProductRepository
+    @Inject(ProductRepositoryToken)
+    private readonly productRepository: ProductRepository
   ) {}
 
   private normalizeLocale(locale: string): 'ko' | 'en' {
@@ -391,8 +392,12 @@ export class ProductQueryResolver {
   ) {
     const limit = validateListLimit(first, MAX_LIST_LIMIT);
     const afterId = after ? Cursor.decode(after, ['id'] as const).id : undefined;
-    const { products, total } = await this.getProductsByCategoryUseCase.execute({ slug, limit: limit + 1, afterId });
-    return this.productConnection(await this.translateProducts(products, locale), total, limit, after);
+    const { products, getTotalCount } = await this.getProductsByCategoryUseCase.execute({
+      slug,
+      limit: limit + 1,
+      afterId,
+    });
+    return this.productConnection(await this.translateProducts(products, locale), getTotalCount, limit, after);
   }
 
   @Query(() => ProductConnection)
@@ -413,10 +418,18 @@ export class ProductQueryResolver {
     return this.productConnection(products, total, limit, after);
   }
 
-  private productConnection(products: Product[], totalCount: number, limit: number, after?: string) {
+  private productConnection(
+    products: Product[],
+    totalCount: number | (() => Promise<number>),
+    limit: number,
+    after?: string
+  ) {
     const edges = products.slice(0, limit).map(node => ({ node, cursor: Cursor.encode(node, ['id'] as const) }));
     return {
-      totalCount,
+      // GraphQL reads this property only when the field survives selection and directives.
+      get totalCount() {
+        return typeof totalCount === 'function' ? totalCount() : totalCount;
+      },
       edges,
       pageInfo: {
         hasNextPage: products.length > limit,
