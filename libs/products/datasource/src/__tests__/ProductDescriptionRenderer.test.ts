@@ -98,6 +98,51 @@ describe('ProductDescriptionRenderer', () => {
     expect(html).not.toContain('<ul>');
   });
 
+  it.each([
+    { bullets: [], expected: '<li>문서를 공유하는 팀</li>' },
+    { bullets: ['PDF로 공유합니다.'], expected: '<li>문서를 공유하는 팀<ul><li>PDF로 공유합니다.</li></ul></li>' },
+    {
+      bullets: ['PDF로 공유합니다.', '팀별로 분류합니다.'],
+      expected: '<li>문서를 공유하는 팀<ul><li>PDF로 공유합니다.</li><li>팀별로 분류합니다.</li></ul></li>',
+    },
+  ])('추천 항목의 하위 목록 $bullets를 해당 항목 안에 순서대로 보존한다', ({ bullets, expected }) => {
+    const html = renderProductDescriptionDocument({
+      ...sampleDoc,
+      recommendedIf: [
+        { text: '문서를 공유하는 팀', evidenceRefs: ['product:summary'], bullets },
+        { text: '간편 송금 사용자', evidenceRefs: ['feature:feat-1'], bullets: [] },
+      ],
+    });
+    expect(html).toContain(`<ul>\n${expected}\n<li>간편 송금 사용자</li>\n</ul>`);
+    for (const bullet of bullets) expect(html.split(bullet)).toHaveLength(2);
+  });
+
+  it('추천 본문과 링크 뒤의 하위 목록을 escape하고 허용되지 않는 링크는 출력하지 않는다', () => {
+    const html = renderProductDescriptionDocument({
+      ...sampleDoc,
+      recommendedIf: [
+        {
+          text: '공유 & 검토',
+          evidenceRefs: ['product:summary'],
+          link: { label: '공식 "안내"', url: 'https://example.com/guide?a=1&b=2' },
+          bullets: ['<img src=x onerror="alert(1)">', "팀의 '문서' & 자료"],
+        },
+        {
+          text: '두 번째 항목',
+          evidenceRefs: ['product:summary'],
+          link: { label: '실행', url: 'javascript:alert(1)' },
+          bullets: ['마지막 문장'],
+        },
+      ],
+    });
+    expect(html).toContain(
+      '<li>공유 &amp; 검토 <a href="https://example.com/guide?a=1&amp;b=2" target="_blank" rel="noopener noreferrer">공식 &quot;안내&quot;</a><ul><li>&lt;img src=x onerror=&quot;alert(1)&quot;&gt;</li><li>팀의 &#39;문서&#39; &amp; 자료</li></ul></li>'
+    );
+    expect(html).toContain('<li>두 번째 항목<ul><li>마지막 문장</li></ul></li>');
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('javascript:');
+  });
+
   it('formats byline in Asia/Seoul timezone consistently', () => {
     // 2026-09-30 23:30 UTC is 2026-10-01 08:30 in Asia/Seoul
     const endOfSeptemberUtc = new Date('2026-09-30T23:30:00Z');

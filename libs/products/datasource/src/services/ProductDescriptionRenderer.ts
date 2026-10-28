@@ -1,6 +1,6 @@
 import { safeReaderFacingUrl, type EvidenceBackedText, type ProductDescriptionDocument } from '@darun/products-domain';
 
-export const PRODUCT_DESCRIPTION_RENDERER_VERSION = 'v2';
+export const PRODUCT_DESCRIPTION_RENDERER_VERSION = 'v3';
 
 export function escapeHtml(text: string): string {
   return text
@@ -54,7 +54,7 @@ export function renderProductDescriptionDocument(doc: ProductDescriptionDocument
     fragments.push('<ul>');
     for (const item of doc.recommendedIf) {
       if (item.text) {
-        fragments.push(`<li>${renderInlineContent(item)}</li>`);
+        fragments.push(`<li>${renderInlineContent(item)}${renderBulletList(item)}</li>`);
       }
     }
     fragments.push('</ul>');
@@ -75,11 +75,14 @@ export function renderProductDescriptionDocument(doc: ProductDescriptionDocument
 function renderRichBlock(block: EvidenceBackedText, tag: 'p'): string {
   const inline = renderInlineContent(block);
   const body = block.quote ? `<blockquote><${tag}>${inline}</${tag}></blockquote>` : `<${tag}>${inline}</${tag}>`;
-  if (!block.bullets || block.bullets.length === 0) {
-    return body;
-  }
+  const bulletList = renderBulletList(block);
+  return bulletList ? `${body}\n${bulletList}` : body;
+}
+
+function renderBulletList(block: EvidenceBackedText): string {
+  if (!block.bullets?.length) return '';
   const bullets = block.bullets.map(bullet => `<li>${escapeHtml(bullet)}</li>`).join('');
-  return `${body}\n<ul>${bullets}</ul>`;
+  return `<ul>${bullets}</ul>`;
 }
 
 function renderInlineContent(block: EvidenceBackedText): string {
