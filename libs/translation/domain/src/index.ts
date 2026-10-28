@@ -10,6 +10,7 @@ export { LlmSettingRepositoryToken } from './repositories/LlmSettingRepository';
 export type { TranslationJobEntity, TranslationJobStatus } from './entities/TranslationJobEntity';
 export type { TranslationJobRepository } from './repositories/TranslationJobRepository';
 export { TranslationJobRepositoryToken } from './repositories/TranslationJobRepository';
+export { translationJobListArgs } from './validators/translationJobListArgs';
 
 export type {
   TranslationMode,
