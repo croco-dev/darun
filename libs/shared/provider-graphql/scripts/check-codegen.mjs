@@ -41,7 +41,7 @@ try {
   });
   if (changedFiles.length > 0) {
     throw new Error(
-      `Missing or outdated GraphQL generated files:\n${changedFiles.sort().join('\n')}\nRun pnpm --filter @darun/provider-graphql codegen and commit the generated files (remove obsolete files).`
+      `Missing or outdated GraphQL generated files:\n${changedFiles.toSorted((left, right) => left.localeCompare(right)).join('\n')}\nRun pnpm --filter @darun/provider-graphql codegen and commit the generated files (remove obsolete files).`
     );
   }
   console.log('GraphQL generated files match the schema and source documents.');
