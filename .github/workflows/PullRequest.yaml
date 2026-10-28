@@ -98,6 +98,7 @@ jobs:
         run: |
           docker exec "${{ job.services.content-sync-postgres.id }}" psql -U sync -d postgres -v ON_ERROR_STOP=1 \
             -c 'CREATE DATABASE darun_tier_dedupe' \
+            -c 'CREATE DATABASE darun_llm_settings' \
             -c 'CREATE DATABASE darun_job_config_attempts' \
             -c 'CREATE DATABASE darun_translation_integrity' \
             -c 'CREATE DATABASE darun_atomic_integrity' \
@@ -108,6 +109,7 @@ jobs:
             -c 'CREATE DATABASE darun_lease_integrity'
       - name: Verify PostgreSQL integrity without skipped tests
         env:
+          LLM_SETTING_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_llm_settings
           JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_job_config_attempts
           TRANSLATION_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity
           MIGRATION_BASELINE_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_migration_baseline
@@ -118,6 +120,7 @@ jobs:
           W4_PG: "1"
           ATOMIC_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity
         run: |
+          REQUIRED_POSTGRES_GROUP=llm pnpm --filter graphql-api exec vitest run __tests__/llmSettingConcurrency.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
           REQUIRED_POSTGRES_GROUP=baseline pnpm --filter graphql-api exec vitest run __tests__/migrationBaseline.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
           REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts __tests__/productDetailFreshness.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
           REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"

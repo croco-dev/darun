@@ -57,7 +57,11 @@ export class LlmSettingService implements LlmConfigProvider {
       return existing;
     }
 
-    // DB에 정상 레코드가 없을 때만 기본 설정을 보여준다. 브라우저에 환경 키를 노출하지 않는다.
+    return this.defaultSetting();
+  }
+
+  private defaultSetting(): LlmSetting {
+    // 정상 row 부재에만 사용하며 환경 기본 LLM 키는 저장하거나 응답하지 않는다.
     return {
       id: 'default',
       endpoint: process.env['OPEN_ROUTER_ENDPOINT'] || DEFAULT_LLM_ENDPOINT,
@@ -87,56 +91,58 @@ export class LlmSettingService implements LlmConfigProvider {
     thinkingLevel?: string | null;
     braveApiKey?: string | null;
   }): Promise<LlmSetting> {
-    const current = await this.getSetting();
-
-    const newEndpoint = input.endpoint?.trim() || current.endpoint;
-    const endpointChanged = newEndpoint !== current.endpoint;
-    const newModel = input.model?.trim() || current.model;
-    const newThinkingLevel =
-      input.thinkingLevel !== undefined
-        ? input.thinkingLevel === '' || input.thinkingLevel === null
-          ? null
-          : input.thinkingLevel.trim()
-        : current.thinkingLevel;
-    const newBraveApiKey =
-      input.braveApiKey !== undefined
-        ? input.braveApiKey === '' || input.braveApiKey === null
-          ? null
-          : input.braveApiKey.trim()
-        : current.braveApiKey;
-
-    // 커스텀 엔드포인트에는 그 공급자 전용 키만 저장한다. 환경 기본 키를 커스텀 base로 저장·전송하지 않는다.
-    const explicitApiKey = input.apiKey !== undefined ? input.apiKey?.trim() || null : null;
-    if (explicitApiKey) {
-      const keyDecision = resolveLlmEndpointKey({
-        endpoint: newEndpoint,
-        explicitApiKey,
-        envApiKey: process.env['OPEN_ROUTER_API_KEY'] ?? null,
-      });
-      if (!keyDecision.allowed) {
-        throw new LlmEndpointKeyError();
-      }
-    }
-
-    let newApiKey: string | null;
-    if (input.apiKey !== undefined) {
-      newApiKey = explicitApiKey;
-    } else if (endpointChanged) {
-      // 엔드포인트가 바뀌는데 새 키 입력이 없으면 이전 공급자의 저장 키도 비운다.
-      newApiKey = null;
-    } else {
-      newApiKey = current.apiKey ?? null;
-    }
-
     try {
-      return await this.llmSettingRepository.upsertSetting({
-        endpoint: newEndpoint,
-        apiKey: newApiKey,
-        model: newModel,
-        thinkingLevel: newThinkingLevel,
-        braveApiKey: newBraveApiKey,
+      return await this.llmSettingRepository.updateSetting(existing => {
+        const current = existing ?? this.defaultSetting();
+        const newEndpoint = input.endpoint?.trim() || current.endpoint;
+        const endpointChanged = newEndpoint !== current.endpoint;
+        const newModel = input.model?.trim() || current.model;
+        const newThinkingLevel =
+          input.thinkingLevel !== undefined
+            ? input.thinkingLevel === '' || input.thinkingLevel === null
+              ? null
+              : input.thinkingLevel.trim()
+            : (current.thinkingLevel ?? null);
+        const newBraveApiKey =
+          input.braveApiKey !== undefined
+            ? input.braveApiKey === '' || input.braveApiKey === null
+              ? null
+              : input.braveApiKey.trim()
+            : (current.braveApiKey ?? null);
+
+        // 커스텀 엔드포인트에는 그 공급자 전용 키만 저장한다. 환경 기본 키를 커스텀 base로 저장·전송하지 않는다.
+        const explicitApiKey = input.apiKey !== undefined ? input.apiKey?.trim() || null : null;
+        if (explicitApiKey) {
+          const keyDecision = resolveLlmEndpointKey({
+            endpoint: newEndpoint,
+            explicitApiKey,
+            envApiKey: process.env['OPEN_ROUTER_API_KEY'] ?? null,
+          });
+          if (!keyDecision.allowed) {
+            throw new LlmEndpointKeyError();
+          }
+        }
+
+        let newApiKey: string | null;
+        if (input.apiKey !== undefined) {
+          newApiKey = explicitApiKey;
+        } else if (endpointChanged) {
+          // 엔드포인트가 바뀌는데 새 키 입력이 없으면 이전 공급자의 저장 키도 비운다.
+          newApiKey = null;
+        } else {
+          newApiKey = current.apiKey ?? null;
+        }
+
+        return {
+          endpoint: newEndpoint,
+          apiKey: newApiKey,
+          model: newModel,
+          thinkingLevel: newThinkingLevel,
+          braveApiKey: newBraveApiKey,
+        };
       });
-    } catch {
+    } catch (error) {
+      if (error instanceof LlmEndpointKeyError || error instanceof LlmConfigReadFailedError) throw error;
       // Database errors may contain SQL parameters, including newly supplied or stored keys.
       throw new LlmSettingSaveFailedError();
     }

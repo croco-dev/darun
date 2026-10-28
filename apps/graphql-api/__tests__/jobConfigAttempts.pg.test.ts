@@ -203,12 +203,13 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       ],
     });
     settingsRead.mockClear();
-    await settings.upsertSetting({
+    await settings.updateSetting(current => ({
+      thinkingLevel: current?.thinkingLevel ?? null,
       endpoint: 'https://synthetic-provider.test/v1',
       apiKey: 'synthetic-provider-key',
       model: 'model-before',
       braveApiKey: 'synthetic-stored-brave-key',
-    });
+    }));
     settingsRead.mockClear();
     [product] = (await db
       .insert(products)
@@ -435,12 +436,13 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       '정상 조회의 키 부재(%j)는 재시도 없이 SEARCH_NOT_CONFIGURED로 끝난다',
       async braveApiKey => {
         process.env['BRAVE_API_KEY'] = '   ';
-        await settings.upsertSetting({
+        await settings.updateSetting(current => ({
+          thinkingLevel: current?.thinkingLevel ?? null,
           endpoint: 'https://synthetic-provider.test/v1',
           apiKey: 'synthetic-provider-key',
           model: 'model-before',
           braveApiKey,
-        });
+        }));
         const fixture = await create('research');
         await deliver(researchWorker, fixture.payload);
         const row = await research.findById(fixture.id);
@@ -523,11 +525,13 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
   it.each(['description', 'translation', 'research'] as const)(
     '%s key rejection is recorded with the existing failure classification and no transport',
     async kind => {
-      await settings.upsertSetting({
+      await settings.updateSetting(current => ({
+        braveApiKey: current?.braveApiKey ?? null,
+        thinkingLevel: current?.thinkingLevel ?? null,
         endpoint: 'https://custom-provider.test/v1',
-        apiKey: process.env['OPEN_ROUTER_API_KEY'],
+        apiKey: process.env['OPEN_ROUTER_API_KEY']!,
         model: 'rejected-model',
-      });
+      }));
       const fixture = await create(kind);
       await deliver(fixture.worker, fixture.payload);
       const row = await fixture.read();
@@ -552,11 +556,13 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
     });
     transport.create.mockImplementation(async () => {
       if (transport.create.mock.calls.length === 1)
-        await settings.upsertSetting({
+        await settings.updateSetting(current => ({
+          braveApiKey: current?.braveApiKey ?? null,
+          thinkingLevel: current?.thinkingLevel ?? null,
           endpoint: 'https://next-provider.test/v1',
           apiKey: 'synthetic-next-key',
           model: 'model-after',
-        });
+        }));
       return {
         choices: [
           {

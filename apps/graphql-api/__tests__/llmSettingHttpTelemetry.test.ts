@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { HeaderMap, type ApolloServer } from '@apollo/server';
-import type { LlmSetting, LlmSettingRepository } from '@darun/translation-domain';
+import type { LlmSetting, LlmSettingWrite } from '@darun/translation-domain';
 import { LlmSettingService } from '@darun/translation-service';
 import { createServer as createApolloServer } from '@darun/utils-apollo-server';
 import { AuthRole } from '@darun/utils-apollo-server';
@@ -15,6 +15,7 @@ import { createServer, request, type Server } from 'node:http';
 import { createRequire } from 'node:module';
 import { LlmSettingResolver } from '../../../libs/translation/feature/src/LlmSetting.resolver';
 import { createCredentialCoercionFixture } from './llmSettingCredential.fixture';
+import { settingRepositoryFixture } from './llmSettingRepository.fixture';
 
 const { GraphQLError } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
 
@@ -120,18 +121,16 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
   let settingConsoleArguments: unknown[] | undefined;
   let collectSettingConsole: ((args: unknown[]) => void) | undefined;
   let cancelSettingConsole: (() => void) | undefined;
-  const repository: LlmSettingRepository = {
-    findSetting: vi.fn(async () => null),
-    upsertSetting: vi.fn(
-      async input =>
-        ({
-          id: 'default',
-          createdAt: new Date('2026-01-01'),
-          updatedAt: new Date('2026-01-01'),
-          ...input,
-        }) as LlmSetting
-    ),
-  };
+  const writeSetting = vi.fn(async (input: LlmSettingWrite): Promise<LlmSetting> => ({
+    id: 'default',
+    createdAt: new Date('2026-01-01'),
+    updatedAt: new Date('2026-01-01'),
+    ...input,
+  }));
+  const repository = settingRepositoryFixture(
+    vi.fn(async () => null),
+    writeSetting
+  );
 
   beforeAll(async () => {
     expect(process.versions.node.split('.')[0], 'HTTP telemetry requires the production Node 22 runtime').toBe('22');
@@ -253,7 +252,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     vi.mocked(settingResolver.updateLlmSetting).mockClear();
     vi.stubEnv('OPEN_ROUTER_API_KEY', environmentKey);
     vi.mocked(repository.findSetting).mockClear();
-    vi.mocked(repository.upsertSetting).mockClear();
+    vi.mocked(writeSetting).mockClear();
   });
 
   afterAll(async () => {
@@ -544,7 +543,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
       expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
       expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
       expect(repository.findSetting).not.toHaveBeenCalled();
-      expect(repository.upsertSetting).not.toHaveBeenCalled();
+      expect(writeSetting).not.toHaveBeenCalled();
       expectLateDiagnosticEvent('BAD_USER_INPUT', [property]);
       expectNoCredentials(envelopes, [property]);
     });
@@ -559,7 +558,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     const response = await send(operation, true, 400, 1, '', { 'x-credential-echo': secret });
     expect(response).toMatchObject({ errors: [{ extensions: { code: 'BAD_USER_INPUT' } }] });
     expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-    expect(repository.upsertSetting).not.toHaveBeenCalled();
+    expect(writeSetting).not.toHaveBeenCalled();
     expectNoCredentials(envelopes, [secret]);
     expect(events[0].extra?.variables).toEqual({
       'prefix_[REDACTED]_suffix': '[REDACTED]',
@@ -602,7 +601,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
           expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
           expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
           expect(repository.findSetting).not.toHaveBeenCalled();
-          expect(repository.upsertSetting).not.toHaveBeenCalled();
+          expect(writeSetting).not.toHaveBeenCalled();
           expectProtectedEvent('HttpDiagnostics', 'unrelated');
           expectNoCredentials(envelopes, [secret, property]);
           for (const event of [...events, ...transactions]) {
@@ -645,7 +644,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
         expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
         expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
         expect(repository.findSetting).not.toHaveBeenCalled();
-        expect(repository.upsertSetting).not.toHaveBeenCalled();
+        expect(writeSetting).not.toHaveBeenCalled();
         expectProtectedEvent('HttpDiagnostics', 'unrelated');
         expectNoCredentials(envelopes, [duplicateFieldSecret, nestedVariableSecret]);
         for (const event of [...events, ...transactions]) {
@@ -704,7 +703,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
           });
           expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
           expect(repository.findSetting).not.toHaveBeenCalled();
-          expect(repository.upsertSetting).not.toHaveBeenCalled();
+          expect(writeSetting).not.toHaveBeenCalled();
           expectProtectedEvent('HttpDiagnostics', 'unrelated');
           expectNoCredentials(envelopes, [secret]);
           for (const event of [...events, ...transactions]) {
@@ -730,7 +729,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
       if (!Array.isArray(response)) throw new Error('Expected a batched GraphQL response');
       expect(response[0].data?.saved).toBeDefined();
       expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
-      expect(repository.upsertSetting).toHaveBeenCalledWith(
+      expect(writeSetting).toHaveBeenCalledWith(
         expect.objectContaining({ [variable === 'providerCredential' ? 'apiKey' : 'braveApiKey']: secret })
       );
       // Observe actual SDK output before the common boundary, not a manually
@@ -766,7 +765,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     expect(response).toMatchObject({ errors: [{ extensions: { code: 'BAD_USER_INPUT' } }] });
     expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
     expect(repository.findSetting).not.toHaveBeenCalled();
-    expect(repository.upsertSetting).not.toHaveBeenCalled();
+    expect(writeSetting).not.toHaveBeenCalled();
     expectNoCredentials(envelopes, [uriProperty, braveApiKey, environmentKey]);
     expect(events[0].extra?.variables).toEqual({
       providerCredential: '[REDACTED]',
@@ -800,7 +799,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
           data: { saved: { apiKeyMasked: 'synt...****a71c', braveApiKeyMasked: 'synt...****b92d', model } },
         });
         expect(response[saveFirst ? 1 : 0].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
-        expect(repository.upsertSetting).toHaveBeenCalledOnce();
+        expect(writeSetting).toHaveBeenCalledOnce();
         expectProtectedEvent('HttpDiagnostics', 'unrelated');
         const transaction = transactions.find(event => event.contexts?.trace?.op === 'http.server');
         for (const event of [events[0], transaction]) {
@@ -841,8 +840,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
             data: { diagnosticSuccess: 'HTTP fixture ready' },
           });
         }
-        expect(repository.upsertSetting).toHaveBeenCalledOnce();
-        expect(repository.upsertSetting).toHaveBeenCalledWith(expect.objectContaining({ apiKey, braveApiKey }));
+        expect(writeSetting).toHaveBeenCalledOnce();
+        expect(writeSetting).toHaveBeenCalledWith(expect.objectContaining({ apiKey, braveApiKey }));
         expect(consoleDiagnostics).toEqual([]);
         expect(events).toEqual([]);
       });
@@ -875,7 +874,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
         });
         expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
         expect(repository.findSetting).not.toHaveBeenCalled();
-        expect(repository.upsertSetting).not.toHaveBeenCalled();
+        expect(writeSetting).not.toHaveBeenCalled();
         expect(events[0].request).toMatchObject({ method: 'GET', url: `http://127.0.0.1:${port}/graphql` });
         expect(events[0].request?.query_string).toBeUndefined();
         expect(events[0].extra?.query).toContain('HttpSave');
@@ -903,7 +902,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
         expect(response).toMatchObject({ errors: [{ extensions: { code: 'BAD_REQUEST' } }] });
         expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
         expect(repository.findSetting).not.toHaveBeenCalled();
-        expect(repository.upsertSetting).not.toHaveBeenCalled();
+        expect(writeSetting).not.toHaveBeenCalled();
         expectNoCredentials(envelopes, fixture.secrets);
         expectNoCredentials(consoleDiagnostics, fixture.secrets);
         expect(events[0].exception?.values?.[0].type).toBe('BadRequestError');
@@ -935,7 +934,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
             extensions: expect.objectContaining({ code: 'HTTP_SEARCH_FIXTURE_FAILED' }),
           }),
         ]);
-        expect(repository.upsertSetting).toHaveBeenCalledOnce();
+        expect(writeSetting).toHaveBeenCalledOnce();
         expectProtectedEvent('HttpDiagnostics', 'unrelated');
         expect(events[0].exception?.values?.[0].value).toBe('Synthetic HTTP search failure: index unavailable');
         expect(JSON.stringify(events[0])).toContain('HTTP_SEARCH_FIXTURE_FAILED');
@@ -967,7 +966,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
       expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
       expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
       expect(repository.findSetting).not.toHaveBeenCalled();
-      expect(repository.upsertSetting).not.toHaveBeenCalled();
+      expect(writeSetting).not.toHaveBeenCalled();
       for (const event of events) {
         expect(event.transaction).toBe('fixture [REDACTED] /[REDACTED] [REDACTED]');
         expect(event.request?.headers?.['x-fixture-collision']).toBe('[REDACTED] /[REDACTED]');
@@ -1015,7 +1014,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
       expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
       expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
       expect(repository.findSetting).not.toHaveBeenCalled();
-      expect(repository.upsertSetting).not.toHaveBeenCalled();
+      expect(writeSetting).not.toHaveBeenCalled();
       // Error events are named from the header copy: input redaction applies.
       for (const event of events) {
         expect(event.transaction).toBe('[REDACTED] /[REDACTED]');
@@ -1043,7 +1042,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     expectProtectedEvent('HttpDiagnostics', 'unrelated');
     expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
     expect(repository.findSetting).not.toHaveBeenCalled();
-    expect(repository.upsertSetting).not.toHaveBeenCalled();
+    expect(writeSetting).not.toHaveBeenCalled();
   });
 
   for (const variable of ['providerCredential', 'searchCredential']) {
@@ -1080,7 +1079,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
         expect(rejected.errors?.[0].message).toContain(property);
         expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
         expect(repository.findSetting).not.toHaveBeenCalled();
-        expect(repository.upsertSetting).not.toHaveBeenCalled();
+        expect(writeSetting).not.toHaveBeenCalled();
         expectNoCredentials(envelopes, [property]);
         expectNoCredentials(consoleDiagnostics, [property]);
         for (const event of events) {
@@ -1117,7 +1116,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
       ],
     });
     expectProtectedEvent('HttpDiagnostics', 'unrelated');
-    expect(repository.upsertSetting).not.toHaveBeenCalled();
+    expect(writeSetting).not.toHaveBeenCalled();
   });
 
   it('단건 비민감 오류의 실제 logger 인자는 원문 message 없이 code·path·호출 위치를 남긴다', async () => {
@@ -1143,7 +1142,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     expectProtectedEvent('HttpSave', 'saved');
     expect(events[0].extra?.query).toContain('[REDACTED]');
     expect(repository.findSetting).not.toHaveBeenCalled();
-    expect(repository.upsertSetting).not.toHaveBeenCalled();
+    expect(writeSetting).not.toHaveBeenCalled();
   });
 
   for (const encoding of ['variables', 'inline', 'defaults'] as const) {
@@ -1158,7 +1157,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
           if (failure.kind === 'read')
             vi.mocked(repository.findSetting).mockRejectedValueOnce(new Error(`read failed ${apiKey},${braveApiKey}`));
           if (failure.kind === 'write')
-            vi.mocked(repository.upsertSetting).mockRejectedValueOnce(
+            vi.mocked(writeSetting).mockRejectedValueOnce(
               new Error(`Failed query: insert llm_settings params ${apiKey},${braveApiKey}`)
             );
           if (order !== 'single') waitForSettingConsole(failure.code);
@@ -1182,8 +1181,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
           }
           expect(settingResolver.updateLlmSetting).toHaveBeenCalledOnce();
           expect(repository.findSetting).toHaveBeenCalledOnce();
-          if (failure.kind === 'write') expect(repository.upsertSetting).toHaveBeenCalledOnce();
-          else expect(repository.upsertSetting).not.toHaveBeenCalled();
+          if (failure.kind === 'write') expect(writeSetting).toHaveBeenCalledOnce();
+          else expect(writeSetting).not.toHaveBeenCalled();
           const settingEvent = events.find(event => String(event.extra?.query).includes('HttpSave'));
           expect(settingEvent).toBeDefined();
           expect(settingEvent?.exception?.values?.[0].value).toEqual(failure.message);
@@ -1222,7 +1221,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
           for (const echo of fixture.echoed) expect(rejected.errors?.[0].message).toContain(echo);
           expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
           expect(repository.findSetting).not.toHaveBeenCalled();
-          expect(repository.upsertSetting).not.toHaveBeenCalled();
+          expect(writeSetting).not.toHaveBeenCalled();
           expect(consoleDiagnostics).toContainEqual([
             '[GraphQL Error]',
             expect.objectContaining({
