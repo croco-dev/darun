@@ -23,6 +23,7 @@ import {
   JOB_MAX_ATTEMPTS,
   JOB_LEASE_MS,
   JOB_COMMIT_MARGIN_MS,
+  RetryableError,
   isAbortError,
   withAbortableStage,
   withRetry,
@@ -61,6 +62,13 @@ export const PRODUCT_RESEARCH_MAX_ATTEMPTS = JOB_MAX_ATTEMPTS;
 const LEASE_MS = JOB_LEASE_MS;
 const RESEARCH_STAGE_BUDGET_MS = 90_000;
 const SEARCH_STAGE_BUDGET_MS = 15_000;
+const MAX_ANCHOR_CORRECTIONS = 1;
+
+class AnchorExcerptMismatchError extends Error {
+  constructor(readonly field: string) {
+    super(`${field}의 발췌가 출처에 존재하지 않습니다.`);
+  }
+}
 
 function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) {
@@ -548,7 +556,7 @@ export class ProductResearchService {
         throw new Error(`${fieldName}의 근거가 유효하지 않습니다.`);
       }
       if (!isAnchorExcerptPresent(excerpt, source)) {
-        throw new Error(`${fieldName}의 발췌가 출처에 존재하지 않습니다.`);
+        throw new AnchorExcerptMismatchError(fieldName);
       }
       const key = `${anchor.sourceId}::${excerpt}`;
       if (seen.has(key)) {
@@ -861,78 +869,102 @@ export class ProductResearchService {
         null,
         2
       );
-      let rawResponse: string;
-      try {
-        throwIfAborted(options?.signal);
-        rawResponse = await withRetry(
-          () =>
-            withAbortableStage(
-              signal =>
-                deps.llm.complete(systemPrompt, `${userPrompt}\n반드시 JSON 객체 하나만 출력하십시오.`, { signal }),
-              {
-                budgetMs: stageBudgetMs,
-                signal: options?.signal,
-                message: 'LLM 합성 요청이 시간 초과되었습니다.',
-              }
-            ),
-          {
-            maxRetries: 1,
-            baseDelay: 1000,
-            maxDelay: 5000,
-            signal: options?.signal,
-            deadline: options?.deadline,
+      // 최초 합성·전송 재시도·인용문 교정이 하나의 시간 예산을 공유한다.
+      const canSettle = () =>
+        !options?.signal?.aborted &&
+        (!options?.deadline || Date.now() < options.deadline.getTime() - JOB_COMMIT_MARGIN_MS) &&
+        (!job.leaseUntil || Date.now() < job.leaseUntil.getTime() - JOB_COMMIT_MARGIN_MS);
+      const synthesisDeadline = new Date(
+        Math.min(
+          Date.now() + stageBudgetMs,
+          options?.deadline ? options.deadline.getTime() - JOB_COMMIT_MARGIN_MS : Infinity,
+          job.leaseUntil ? job.leaseUntil.getTime() - JOB_COMMIT_MARGIN_MS : Infinity
+        )
+      );
+      let correctionField: string | undefined;
+      let draft: ProductResearchDraftV1 | undefined;
+      for (let generation = 0; generation <= MAX_ANCHOR_CORRECTIONS; generation += 1) {
+        if (!canSettle()) return job;
+        const generationPrompt = correctionField
+          ? `${userPrompt}\n${JSON.stringify({
+              correction: { field: correctionField, code: 'EXCERPT_NOT_FOUND' },
+            })}\n이전 응답의 해당 필드에 출처에 없는 발췌가 있습니다. 같은 sources만 사용해 발췌를 그대로 인용하고 전체 초안을 다시 작성하십시오. 근거가 없는 선택 후보는 생략하십시오.`
+          : userPrompt;
+        let rawResponse: string;
+        try {
+          rawResponse = await withRetry(
+            () => {
+              throwIfAborted(options?.signal);
+              const remainingMs = synthesisDeadline.getTime() - Date.now();
+              if (remainingMs <= 0) throw new RetryableError('LLM 합성 요청이 시간 초과되었습니다.');
+              return withAbortableStage(
+                signal =>
+                  deps.llm.complete(systemPrompt, `${generationPrompt}\n반드시 JSON 객체 하나만 출력하십시오.`, {
+                    signal,
+                  }),
+                {
+                  budgetMs: remainingMs,
+                  signal: options?.signal,
+                  message: 'LLM 합성 요청이 시간 초과되었습니다.',
+                }
+              );
+            },
+            {
+              // 교정은 한 번만 호출한다. 최초 요청의 기존 전송 재시도는 유지한다.
+              maxRetries: generation === 0 ? 1 : 0,
+              baseDelay: 1000,
+              maxDelay: 5000,
+              signal: options?.signal,
+              deadline: synthesisDeadline,
+            }
+          );
+        } catch (error) {
+          if (isAbortError(error) || !canSettle()) return job;
+          if (isStructuredOutputUnsupported(error)) {
+            return deps.jobRepository.failJob({
+              jobId,
+              leaseToken,
+              errorCode: 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED',
+              errorMessage: error instanceof Error ? error.message : '구조화 응답 미지원 모델입니다.',
+            });
           }
-        );
-      } catch (error) {
-        // 호출자 abort는 terminal failJob 없이 lease 만료·recovery에 맡긴다.
-        if (isAbortError(error) || options?.signal?.aborted) {
-          console.warn(`[ProductResearchService] Job ${jobId} aborted during LLM stage; leaving lease to expire.`);
-          return job;
+          return deps.jobRepository.retryJobLease({
+            jobId,
+            leaseToken,
+            errorCode: 'LLM_UNAVAILABLE',
+            errorMessage: error instanceof Error ? error.message : 'LLM 호출에 실패했습니다.',
+          });
         }
-        if (isStructuredOutputUnsupported(error)) {
+        if (!canSettle()) return job;
+        try {
+          draft = ProductResearchService.buildDraftValidator({
+            raw: parseStrictJsonObject(rawResponse),
+            originalUrl: normalized.url,
+            sources,
+            categories: categories.map(category => ({ id: category.id })),
+            model,
+            promptVersion: deps.promptVersion ?? PRODUCT_RESEARCH_PROMPT_VERSION,
+          });
+          break;
+        } catch (error) {
+          if (!canSettle()) return job;
+          if (
+            error instanceof AnchorExcerptMismatchError &&
+            generation < MAX_ANCHOR_CORRECTIONS &&
+            Date.now() < synthesisDeadline.getTime()
+          ) {
+            correctionField = error.field;
+            continue;
+          }
           return deps.jobRepository.failJob({
             jobId,
             leaseToken,
-            errorCode: 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED',
-            errorMessage: error instanceof Error ? error.message : '구조화 응답 미지원 모델입니다.',
+            errorCode: 'INVALID_GENERATION',
+            errorMessage: error instanceof Error ? error.message : '리서치 결과 검증에 실패했습니다.',
           });
         }
-        return deps.jobRepository.retryJobLease({
-          jobId,
-          leaseToken,
-          errorCode: 'LLM_UNAVAILABLE',
-          errorMessage: error instanceof Error ? error.message : 'LLM 호출에 실패했습니다.',
-        });
       }
-      let parsed: unknown;
-      try {
-        parsed = parseStrictJsonObject(rawResponse);
-      } catch (error) {
-        return deps.jobRepository.failJob({
-          jobId,
-          leaseToken,
-          errorCode: 'INVALID_GENERATION',
-          errorMessage: error instanceof Error ? error.message : 'LLM 응답 형식이 유효하지 않습니다.',
-        });
-      }
-      let draft: ProductResearchDraftV1;
-      try {
-        draft = ProductResearchService.buildDraftValidator({
-          raw: parsed,
-          originalUrl: normalized.url,
-          sources,
-          categories: categories.map(category => ({ id: category.id })),
-          model,
-          promptVersion: deps.promptVersion ?? PRODUCT_RESEARCH_PROMPT_VERSION,
-        });
-      } catch (error) {
-        return deps.jobRepository.failJob({
-          jobId,
-          leaseToken,
-          errorCode: 'INVALID_GENERATION',
-          errorMessage: error instanceof Error ? error.message : '리서치 결과 검증에 실패했습니다.',
-        });
-      }
+      if (!draft || !canSettle()) return job;
       if (hadSearchFailure && !draft.warnings.includes('PARTIAL_SEARCH_FAILURE')) {
         draft = { ...draft, warnings: [...draft.warnings, 'PARTIAL_SEARCH_FAILURE'] };
       }

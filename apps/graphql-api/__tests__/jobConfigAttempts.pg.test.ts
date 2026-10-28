@@ -41,6 +41,7 @@ import { ProductDescriptionGeneratorImpl } from '../../../libs/products/datasour
 import { ProductDescriptionMutationResolver } from '../../../libs/products/feature/src/ProductDescription.mutation.resolver';
 import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/src/ProductDescription.query.resolver';
 import { ProductPublishMutationResolver } from '../../../libs/products/feature/src/ProductPublishMutationResolver';
+import { ProductResearchQueryResolver } from '../../../libs/products/feature/src/ProductResearch.resolver';
 import { translationJobs } from '../../../libs/translation/datasource/src/entities/TranslationJobSchema';
 import { translations } from '../../../libs/translation/datasource/src/entities/TranslationSchema';
 import { TranslationMutationResolver } from '../../../libs/translation/feature/src/Translation.mutation.resolver';
@@ -279,6 +280,161 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       table: productResearchJobs,
     };
   }
+
+  describe('실제 worker의 인용문 교정과 저장 경계', () => {
+    function draftPayload() {
+      const anchor = {
+        sourceId: 's1',
+        excerpt: 'Synthetic product provides reviewed notes.',
+      };
+      return {
+        name: 'Synthetic product',
+        nameAnchors: [anchor],
+        summary: null,
+        summaryAnchors: [],
+        categoryCandidates: [],
+        features: Array.from({ length: 5 }, (_, index) => ({
+          name: `기능 ${index + 1}`,
+          summary: `검토 메모 ${index + 1}`,
+          emoji: '✨',
+          anchors: [anchor],
+        })),
+        tags: [],
+        companyCandidate: {
+          name: 'Synthetic company',
+          website: null,
+          anchors: [anchor],
+        },
+        alternativeCandidates: [],
+        suggestedSlug: 'synthetic-product',
+        warnings: [],
+      };
+    }
+    function response(payload: ReturnType<typeof draftPayload>) {
+      return {
+        choices: [
+          {
+            message: { role: 'assistant', content: JSON.stringify(payload) },
+            finish_reason: 'stop',
+          },
+        ],
+      };
+    }
+    function invalidPayload() {
+      const payload = draftPayload();
+      payload.companyCandidate.anchors = [{ sourceId: 's1', excerpt: '인용할 수 없는 회사 설명' }];
+      return payload;
+    }
+
+    it.each(['companyCandidate.anchors', 'features[4].anchors'])(
+      '%s 교정 결과와 출처를 저장하고 기존 관리자 GraphQL 조회로 반환한다',
+      async field => {
+        const fixture = await create('research');
+        const invalid = field === 'companyCandidate.anchors' ? invalidPayload() : draftPayload();
+        if (field === 'features[4].anchors')
+          invalid.features[4]!.anchors = [{ sourceId: 's1', excerpt: '인용할 수 없는 다섯 번째 기능' }];
+        transport.create.mockResolvedValueOnce(response(invalid)).mockResolvedValue(response(draftPayload()));
+
+        await deliver(researchWorker, fixture.payload);
+
+        const completed = await research.findById(fixture.id);
+        expect(completed).toMatchObject({
+          status: 'completed',
+          attemptCount: 1,
+          errorCode: null,
+        });
+        expect(transport.create).toHaveBeenCalledTimes(2);
+        expect(transport.search).toHaveBeenCalledTimes(5);
+        Container.set(ProductResearchQueryResolver, new ProductResearchQueryResolver(research));
+        const schema = buildSchemaSync({
+          resolvers: [ProductResearchQueryResolver],
+          container: Container,
+          authChecker: () => true,
+        });
+        const queried = await graphql({
+          schema,
+          source: `query($id: String!) {
+            productResearchJob(id: $id) {
+              status result {
+                name { value anchors { sourceId excerpt } }
+                features { name anchors { sourceId excerpt } }
+                companyCandidate { name anchors { sourceId excerpt } }
+                sources { id url snippet }
+              }
+            }
+          }`,
+          variableValues: { id: fixture.id },
+        });
+        expect(queried.errors).toBeUndefined();
+        expect(queried.data?.['productResearchJob']).toEqual({
+          status: 'completed',
+          result: {
+            name: {
+              value: 'Synthetic product',
+              anchors: draftPayload().nameAnchors,
+            },
+            features: draftPayload().features.map(({ name, anchors }) => ({
+              name,
+              anchors,
+            })),
+            companyCandidate: {
+              name: 'Synthetic company',
+              anchors: draftPayload().companyCandidate.anchors,
+            },
+            sources: [
+              {
+                id: 's1',
+                url: 'https://example.test/about',
+                snippet: 'Synthetic product provides reviewed notes.',
+              },
+            ],
+          },
+        });
+      }
+    );
+
+    it('교정도 잘못되면 한 attempt 안에서 실패하고 결과를 저장하지 않는다', async () => {
+      const fixture = await create('research');
+      transport.create.mockResolvedValue(response(invalidPayload()));
+      await deliver(researchWorker, fixture.payload);
+      expect(await research.findById(fixture.id)).toMatchObject({
+        status: 'failed',
+        attemptCount: 1,
+        errorCode: 'INVALID_GENERATION',
+        result: null,
+      });
+      expect(transport.create).toHaveBeenCalledTimes(2);
+    });
+
+    it.each(['만료', '새 lease'] as const)(
+      '교정 중 %s 상태가 된 행에는 늦은 성공과 실패를 기록하지 않는다',
+      async kind => {
+        for (const valid of [true, false]) {
+          const fixture = await create('research');
+          let changed: Awaited<ReturnType<typeof research.findById>>;
+          transport.create
+            .mockReset()
+            .mockResolvedValueOnce(response(invalidPayload()))
+            .mockImplementation(async () => {
+              await db
+                .update(productResearchJobs)
+                .set(kind === '만료' ? { leaseUntil: new Date(0) } : { leaseToken: randomUUID(), attemptCount: 2 })
+                .where(eq(productResearchJobs.id, fixture.id));
+              changed = await research.findById(fixture.id);
+              return response(valid ? draftPayload() : invalidPayload());
+            });
+          await deliver(researchWorker, fixture.payload);
+          expect(transport.create).toHaveBeenCalledTimes(2);
+          expect(await research.findById(fixture.id)).toEqual(changed!);
+          expect(changed!).toMatchObject({
+            status: 'in_progress',
+            result: null,
+            errorCode: null,
+          });
+        }
+      }
+    );
+  });
 
   describe('실제 Brave 키 소비 경계', () => {
     beforeEach(() => {
