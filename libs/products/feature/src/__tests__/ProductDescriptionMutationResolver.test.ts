@@ -3,21 +3,6 @@ import type { ProductDescriptionJobService } from '@darun/products-service';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProductDescriptionMutationResolver } from '../ProductDescription.mutation.resolver';
 
-vi.mock('typedi', () => ({ Service: () => () => {} }));
-vi.mock('@darun/utils-apollo-server', () => ({ AuthRole: { Admin: 'Admin' } }));
-vi.mock('type-graphql', () => {
-  const dummyDecorator = () => () => {};
-  return {
-    Arg: dummyDecorator,
-    Authorized: dummyDecorator,
-    Field: dummyDecorator,
-    ID: 'ID',
-    ObjectType: dummyDecorator,
-    Mutation: dummyDecorator,
-    Resolver: dummyDecorator,
-  };
-});
-
 describe('ProductDescriptionMutationResolver', () => {
   const retryJobMock = vi.fn();
   const resolver = new ProductDescriptionMutationResolver({
