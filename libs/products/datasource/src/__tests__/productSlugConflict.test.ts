@@ -41,7 +41,7 @@ describe.each(['수동 생성', '조사 등록'] as const)('%s의 PostgreSQL slu
         });
   }
 
-  it.each([
+  it.each<[string, () => Error]>([
     ['직접 PG 오류', () => pgConflict()],
     ['실제 Drizzle wrapper', () => wrapped(pgConflict())],
     ['중첩 wrapper', () => wrapped(wrapped(pgConflict()))],
@@ -53,14 +53,14 @@ describe.each(['수동 생성', '조사 등록'] as const)('%s의 PostgreSQL slu
           constraint: 'products_slug_unique',
         }),
     ],
-  ] as const)('%s를 SQL과 parameter 없는 도메인 오류로 반환한다', async (_name, error) => {
+  ])('%s를 SQL과 parameter 없는 도메인 오류로 반환한다', async (_name, error) => {
     const result = await write(error()).catch((caught: unknown) => caught);
     expect(result).toMatchObject({ code: 'product/slug-already-exists' });
     expect(result).toHaveProperty('cause', undefined);
     expect(String(result)).not.toContain('private');
   });
 
-  it.each([
+  it.each<[string, () => unknown]>([
     ['다른 unique 제약', () => Object.assign(pgConflict(), { constraint_name: 'products_pkey' })],
     [
       'wrapper 안 다른 unique 제약',
@@ -84,15 +84,15 @@ describe.each(['수동 생성', '조사 등록'] as const)('%s의 PostgreSQL slu
     [
       '과도하게 깊은 cause',
       () => {
-        let error = pgConflict();
+        let error: Error = pgConflict();
         for (let i = 0; i < 20; i += 1)
           error = Object.assign(new Error('wrapper'), {
             cause: error,
-          }) as typeof error;
+          });
         return error;
       },
     ],
-  ] as const)('%s를 slug 중복으로 바꾸지 않는다', async (_name, createError) => {
+  ])('%s를 slug 중복으로 바꾸지 않는다', async (_name, createError) => {
     const error = createError();
     await expect(write(error)).rejects.toBe(error);
   });

@@ -1,12 +1,12 @@
-import { ProductRepository } from '@darun/products-domain';
 import {
+  type ProductRepository,
   Product,
+  ProductScreenshot,
   ProductRepositoryToken,
   productNotFound,
   productUpdateFailed,
   productSlugAlreadyExists,
 } from '@darun/products-domain';
-import { ProductScreenshot } from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
