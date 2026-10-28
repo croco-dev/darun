@@ -4,6 +4,7 @@ import type { ProductRepository } from '../repositories/ProductRepository';
 export function createMockRepository(): ProductRepository {
   return {
     publishById: vi.fn(),
+    registerCompanyById: vi.fn(),
     updateById: vi.fn(),
     findAllByBeforeIdAndLimit: vi.fn(),
     findAllByAfterIdAndLimit: vi.fn(),

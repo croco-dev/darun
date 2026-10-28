@@ -19,6 +19,8 @@ import {
   CreateProductFeature,
   CreateProduct,
   GetProduct,
+  EditProduct,
+  RegisterProductCompany,
   GetProductTags,
   GetProductFeature,
   ProductDescriptionApplyStoreToken,
@@ -140,6 +142,129 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       .returning();
     return product!;
   }
+  it.each([false, true])(
+    '발행 여부 %s인 회사 연결은 소개 근거를 조회하지 않고 연결과 수정 시각만 저장한다',
+    async published => {
+      const product = published ? await publishedOwner([]) : await seed();
+      await db
+        .update(products)
+        .set({ updatedAt: new Date('2020-01-01') })
+        .where(eq(products.id, product.id));
+      const before = await syncState([product.id]);
+      const queries: string[] = [];
+      const session = drizzle(sql, {
+        logger: { logQuery: query => queries.push(query) },
+      });
+      await new RegisterProductCompany(new PostgresqlProductRepository(session)).execute({
+        productId: product.id,
+        companyId: 'company-722',
+      });
+      const after = await syncState([product.id]);
+      expect(after.products[0]).toEqual({
+        ...before.products[0],
+        ownedCompanyId: 'company-722',
+        updatedAt: after.products[0]!.updatedAt,
+      });
+      expect(after.search).toEqual(before.search);
+      expect(after.translation).toEqual(before.translation);
+      const [stored] = await db.select().from(products).where(eq(products.id, product.id));
+      expect(stored!.updatedAt!.getTime()).toBeGreaterThan(new Date('2020-01-01').getTime());
+      const evidenceReads = queries.filter(query =>
+        /\b(?:from|join) "(?:product_features|product_tags|tags|product_links|product_screenshots|product_flows|product_flow_steps|product_research_jobs|categories)"/i.test(
+          query
+        )
+      );
+      expect(evidenceReads).toEqual([]);
+    }
+  );
+
+  it.each(['company', 'content'] as const)(
+    '회사 연결과 canonical 편집의 %s 선행 경합에서도 두 변경과 동기화를 보존한다',
+    async first => {
+      const product = await publishedOwner([]);
+      const before = await syncState([product.id]);
+      const secondSql = postgres(databaseUrl!, {
+        max: 1,
+        prepare: false,
+        connection: {
+          application_name: `${prefix}-second`,
+          statement_timeout: 10000,
+          lock_timeout: 5000,
+        },
+      });
+      const secondDb = drizzle(secondSql);
+      const write = (kind: 'company' | 'content', session: PostgresJsDatabase) => {
+        const repository = new PostgresqlProductRepository(session);
+        return kind === 'company'
+          ? new RegisterProductCompany(repository).execute({
+              productId: product.id,
+              companyId: 'company-722',
+            })
+          : new EditProduct(repository).execute({
+              id: product.id,
+              name: '새 상품 이름',
+              summary: '새 요약',
+            });
+      };
+      let settled: Promise<PromiseSettledResult<unknown>[]> | undefined;
+      try {
+        await db.transaction(async tx => {
+          await tx.select().from(products).where(eq(products.id, product.id)).for('update');
+          const firstWrite = write(first, writerDb);
+          settled = Promise.allSettled([firstWrite]);
+          await waitForWriterLock();
+          const secondWrite = write(first === 'company' ? 'content' : 'company', secondDb);
+          settled = Promise.allSettled([firstWrite, secondWrite]);
+          const deadline = Date.now() + 3000;
+          while (true) {
+            const waiting = await sql`select 1 from pg_stat_activity
+            where application_name = ${`${prefix}-second`} and wait_event_type = 'Lock'`;
+            if (waiting.length) break;
+            if (Date.now() > deadline) throw new Error('Second writer did not wait for Product lock');
+            await new Promise<void>(resolve => setImmediate(resolve));
+          }
+        });
+        expect((await settled!).map(result => result.status)).toEqual(['fulfilled', 'fulfilled']);
+        const after = await syncState([product.id]);
+        expect(after.products[0]).toMatchObject({
+          ownedCompanyId: 'company-722',
+          name: '새 상품 이름',
+          summary: '새 요약',
+          description: product.description,
+          publishedAt: before.products[0]!.publishedAt,
+          contentRevision: before.products[0]!.contentRevision + BigInt(1),
+        });
+        expect(after.search).toHaveLength(before.search.length + 1);
+        expect(after.translation.intents).toHaveLength(before.translation.intents.length + 1);
+        expect(after.translation.jobs).toHaveLength(before.translation.jobs.length + 1);
+      } finally {
+        await settled;
+        await secondSql.end({ timeout: 5 });
+      }
+    }
+  );
+
+  it('회사 연결의 transaction 실패는 연결·수정 시각을 rollback하고 미존재 상품은 거절한다', async () => {
+    const product = await publishedOwner([]);
+    const before = await syncState([product.id]);
+    await expect(
+      db.transaction(async tx => {
+        await new RegisterProductCompany(new PostgresqlProductRepository(tx as never)).execute({
+          productId: product.id,
+          companyId: 'company-722',
+        });
+        throw new Error('injected company commit failure');
+      })
+    ).rejects.toThrow('injected company commit failure');
+    expect(await syncState([product.id])).toEqual(before);
+    await expect(
+      new RegisterProductCompany(new PostgresqlProductRepository(db)).execute({
+        productId: 'missing-company-product',
+        companyId: 'company-722',
+      })
+    ).rejects.toMatchObject({ code: 'product/not-found' });
+  });
+
   async function screenshotFixture() {
     const product = await seed();
     const screens = await db
