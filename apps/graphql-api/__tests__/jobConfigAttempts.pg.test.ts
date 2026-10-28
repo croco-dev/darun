@@ -889,13 +889,13 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       transport.realBrave = false;
     });
 
-    it('stalled body의 두 실패는 30초·120초 backoff 후 세 번째 attempt에서 failed로 끝난다', async () => {
+    it('성공 뒤 stalled body의 연속 두 실패는 30초·120초 backoff 후 세 번째 attempt에서 failed로 끝난다', async () => {
       const fixture = await create('research');
       const expectedQueries = ProductResearchService.buildQueries('example.test', 'https://example.test/');
       vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
       try {
         for (let attempt = 1; attempt <= 3; attempt++) {
-          const server = await startBodyServer([expectedQueries[0]!, expectedQueries[2]!], SUCCESS_BODY);
+          const server = await startBodyServer([expectedQueries[1]!, expectedQueries[2]!], SUCCESS_BODY);
           isolateBraveTransport(server, () => vi.advanceTimersByTime(10_000));
           try {
             if (attempt > 1)
@@ -905,7 +905,7 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
                 .where(eq(productResearchJobs.id, fixture.id));
             await deliver(researchWorker, fixture.payload);
             const row = await research.findById(fixture.id);
-            // stalled body의 TIMEOUT 두 번은 기존 실패 카운트로 흡수되고 재시도 예약만 남긴다.
+            // 성공 뒤 연속된 TIMEOUT 두 번은 재시도 예약만 남긴다.
             expect(row).toMatchObject({
               attemptCount: attempt,
               status: attempt === 3 ? 'failed' : 'pending',
@@ -936,6 +936,41 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
         vi.useRealTimers();
       }
     }, 30_000);
+
+    it('실패→성공→실패 뒤 나머지 검색을 마치고 부분 실패 경고와 유효 근거를 PostgreSQL에 보존한다', async () => {
+      const fixture = await create('research');
+      const expectedQueries = ProductResearchService.buildQueries('example.test', 'https://example.test/');
+      const server = await startBodyServer([expectedQueries[0]!, expectedQueries[2]!], SUCCESS_BODY);
+      isolateBraveTransport(server, () => vi.advanceTimersByTime(10_000));
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+      try {
+        await deliver(researchWorker, fixture.payload);
+        const completed = await research.findById(fixture.id);
+        expect(completed).toMatchObject({
+          status: 'completed',
+          attemptCount: 1,
+          dispatchStatus: 'COMPLETED',
+          errorCode: null,
+          errorMessage: null,
+          result: {
+            identity: { name: { value: 'Synthetic product' } },
+            sources: [{ url: 'https://example.test/about', snippet: 'Synthetic product provides reviewed notes.' }],
+            warnings: expect.arrayContaining(['PARTIAL_SEARCH_FAILURE']),
+          },
+        });
+        expect(transport.create).toHaveBeenCalledTimes(1);
+        await server.drained();
+        await server.stalledDone();
+        expect(await research.findById(fixture.id)).toEqual(completed);
+        expect(server.queries).toEqual(expectedQueries);
+        expect(server.maxConcurrent).toBe(1);
+        expect(server.closes.filter(kind => kind === 'aborted')).toHaveLength(2);
+        expect(server.closes.filter(kind => kind === 'finished')).toHaveLength(3);
+      } finally {
+        await server.close();
+        vi.useRealTimers();
+      }
+    });
 
     it('부모 중단은 terminal 확정 없이 lease를 남기고, lease 만료 recovery의 다음 attempt가 정상 응답을 저장한다', async () => {
       const fixture = await create('research');
