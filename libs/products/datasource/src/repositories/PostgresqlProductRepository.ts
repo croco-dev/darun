@@ -1,6 +1,12 @@
-import { ProductRepository } from '@darun/products-domain';
-import { Product, ProductRepositoryToken, productNotFound, productUpdateFailed } from '@darun/products-domain';
-import { ProductScreenshot } from '@darun/products-domain';
+import {
+  type ProductRepository,
+  Product,
+  ProductScreenshot,
+  ProductRepositoryToken,
+  productNotFound,
+  productUpdateFailed,
+  productSlugAlreadyExists,
+} from '@darun/products-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
@@ -11,6 +17,7 @@ import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 
 import { beginProductContentWrite } from './productContentSync';
+import { isProductSlugConflict } from './productSlugConflict';
 import { lockCategoryMembership, lockProductSource } from './productSourceMutex';
 
 @Service(ProductRepositoryToken)
@@ -183,15 +190,20 @@ export class PostgresqlProductRepository implements ProductRepository {
   }
 
   async insert(values: Product): Promise<Product | null> {
-    return this.db.transaction(async tx => {
-      await lockCategoryMembership(tx, 'shared');
-      const inserted = await tx
-        .insert(products)
-        .values({ ...values })
-        .returning();
+    try {
+      return await this.db.transaction(async tx => {
+        await lockCategoryMembership(tx, 'shared');
+        const inserted = await tx
+          .insert(products)
+          .values({ ...values })
+          .returning();
 
-      return inserted[0] ? this.mapper(inserted[0]) : null;
-    });
+        return inserted[0] ? this.mapper(inserted[0]) : null;
+      });
+    } catch (error) {
+      if (isProductSlugConflict(error)) throw productSlugAlreadyExists();
+      throw error;
+    }
   }
 
   async countPublishedAll(): Promise<number> {

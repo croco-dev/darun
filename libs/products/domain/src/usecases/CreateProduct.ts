@@ -4,17 +4,6 @@ import { productCreateFailed, productSlugAlreadyExists } from '../errors/product
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
-const PG_UNIQUE_VIOLATION = '23505';
-
-function isUniqueViolationError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code: string }).code === PG_UNIQUE_VIOLATION
-  );
-}
-
 @Service()
 export class CreateProduct {
   constructor(
@@ -48,15 +37,7 @@ export class CreateProduct {
       description,
     });
 
-    let insertedProduct: Product | null;
-    try {
-      insertedProduct = await this.productRepository.insert(newProduct);
-    } catch (error) {
-      if (isUniqueViolationError(error)) {
-        throw productSlugAlreadyExists();
-      }
-      throw error;
-    }
+    const insertedProduct = await this.productRepository.insert(newProduct);
 
     if (!insertedProduct) {
       throw productCreateFailed();
