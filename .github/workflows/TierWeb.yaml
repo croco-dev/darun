@@ -24,8 +24,9 @@ jobs:
           --health-cmd "pg_isready -U sync -d postgres"
           --health-interval 2s --health-timeout 3s --health-retries 30
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      # Build-only runs use CI fixtures; a production request still requires real variables.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || (inputs.deploy == false && 'https://supabase.invalid') || '' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || (inputs.deploy == false && 'sb_publishable_ci_build_only') || '' }}
       NEXT_PUBLIC_SITE_URL: https://tier.darun.io
     steps:
       - uses: actions/checkout@v6

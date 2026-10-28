@@ -71,7 +71,9 @@ pnpm exec turbo run cloudflare:build --filter=tier-web
 PR CI와 TierWeb build는 PostgreSQL 17에 별도 빈 `darun_tier_dedupe` DB를 만들고,
 다음 필수 명령에만 URL을 전달한다. GraphQL fixture DB와 공유하지 않는다.
 TierWeb은 공개 빌드 변수를 확인하기 전에 DB 회귀를 실행하므로 빌드 설정 누락이 DB 검사까지 건너뛰게 하지 않는다.
-빌드 변수의 필수 검사와 배포 차단은 유지한다.
+`deploy=false`의 빌드 전용 실행은 공개 변수가 없을 때 PR CI와 같은 합성 설정을 사용한다.
+`deploy=true`에는 이 기본값을 사용하지 않으며 실제 공개 변수 누락 시 빌드·배포를 차단한다.
+실제 배포 job도 기존처럼 실제 변수와 자격 증명을 확인한 뒤 별도로 빌드한다.
 
 ```bash
 REQUIRED_POSTGRES_GROUP=tier DEDUPE_TEST_DATABASE_URL=<isolated-db-url> pnpm --filter tier-web exec vitest run src/remove-duplicates.pg.test.ts --reporter=default --reporter="$PWD/apps/graphql-api/scripts/required-postgres-reporter.ts"

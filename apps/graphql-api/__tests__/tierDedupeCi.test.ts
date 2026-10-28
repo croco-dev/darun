@@ -19,6 +19,7 @@ interface Workflow {
     string,
     {
       steps: Step[];
+      env?: Record<string, string>;
       needs?: string;
       if?: string;
       services?: Record<string, { image: string; env: Record<string, string>; ports: string[] }>;
@@ -60,12 +61,28 @@ describe('Tier duplicate cleanup CI prerequisites', () => {
     expect(deploy.if).toBe('${{ inputs.deploy == true }}');
   });
 
+  it('limits synthetic public configuration to build-only runs and keeps deployment on real values', () => {
+    const config = workflow('TierWeb.yaml');
+    for (const [name, fallback] of [
+      ['NEXT_PUBLIC_SUPABASE_URL', 'https://supabase.invalid'],
+      ['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_ci_build_only'],
+    ]) {
+      expect(config.jobs.build.env?.[name]).toBe(
+        `\${{ vars.${name} || (inputs.deploy == false && '${fallback}') || '' }}`
+      );
+      const deploymentCheck = config.jobs.deploy.steps.find(step =>
+        step.run?.includes('Missing TIER_CLOUDFLARE_API_TOKEN')
+      );
+      expect(deploymentCheck?.env?.[name]).toBe(`\${{ vars.${name} }}`);
+    }
+  });
+
   it.each([
     [0, true, 0],
     [17, true, 17],
     [0, false, 1],
   ] as const)(
-    'Tier gate exit %i and build environment %s preserve the prerequisite',
+    'Tier gate exit %i and resolved build environment %s preserve the prerequisite',
     (exitCode, configured, expected) => {
       const directory = mkdtempSync(join(tmpdir(), 'darun-tier-ci-'));
       try {
