@@ -1,5 +1,12 @@
 import 'reflect-metadata';
-import type { ProductDescriptionEvidence } from '@darun/products-domain';
+import {
+  ApplyProductDescriptionCandidate,
+  GenerateProductDescriptionCandidate,
+  Product,
+  type ProductDescriptionApplySession,
+  type ProductDescriptionEvidence,
+  type ProductDescriptionJobEntity,
+} from '@darun/products-domain';
 import { LlmClient } from '@darun/utils-llm';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -76,6 +83,63 @@ const validReviewedDoc = {
 };
 
 describe('ProductDescriptionGeneratorImpl', () => {
+  it('검수한 추천 하위 목록을 v3 후보로 생성하고 적용에 같은 HTML을 전달한다', async () => {
+    const llmClient = new FakeLlmClient();
+    const reviewedDoc = {
+      ...validReviewedDoc,
+      recommendedIf: [{ ...validReviewedDoc.recommendedIf[0], bullets: ['PDF로 공유합니다.', '팀별로 분류합니다.'] }],
+    };
+    llmClient.completion
+      .mockResolvedValueOnce({ role: 'assistant', content: JSON.stringify(validWriterDoc), refusal: null })
+      .mockResolvedValueOnce({ role: 'assistant', content: JSON.stringify(reviewedDoc), refusal: null });
+    const snapshot = {
+      evidence: mockEvidence,
+      evidenceHashVersion: 'v2' as const,
+      evidenceHash: 'evidence',
+      legacyEvidenceHash: 'legacy',
+      baseDescriptionHash: 'base',
+    };
+    const generated = await new GenerateProductDescriptionCandidate(
+      { assemble: vi.fn().mockResolvedValue(snapshot) },
+      new ProductDescriptionGeneratorImpl(llmClient)
+    ).execute({ productId: 'prod-1' });
+
+    expect(generated.candidateDocument.recommendedIf[0]?.bullets).toEqual(['PDF로 공유합니다.', '팀별로 분류합니다.']);
+    expect(generated.candidateHtml).toContain(
+      '<li>업무 자동화가 필요한 팀에게 유용합니다.<ul><li>PDF로 공유합니다.</li><li>팀별로 분류합니다.</li></ul></li>'
+    );
+    expect(generated.rendererVersion).toBe('v3');
+
+    const product = new Product({
+      id: 'prod-1',
+      name: 'Flowdesk',
+      slug: 'flowdesk',
+      summary: '협업 도구',
+      logoUrl: 'https://example.com/logo.png',
+      description: '<p>기존 소개</p>',
+    });
+    const job: ProductDescriptionJobEntity = {
+      ...generated,
+      candidateDocument: JSON.stringify(generated.candidateDocument),
+      id: 'job-1',
+      productId: product.id,
+      status: 'completed',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const session: ProductDescriptionApplySession = {
+      findJob: vi.fn().mockResolvedValue(job),
+      findLockedProduct: vi.fn().mockResolvedValue(product),
+      assembleLocked: vi.fn().mockResolvedValue(snapshot),
+      applyLocked: vi.fn().mockResolvedValue(product),
+      markAppliedLocked: vi.fn().mockResolvedValue({ ...job, appliedAt: new Date() }),
+    };
+    await new ApplyProductDescriptionCandidate({ transaction: { run: async work => work(session) } }).execute({
+      jobId: job.id,
+    });
+    expect(session.applyLocked).toHaveBeenCalledWith({ productId: product.id, candidateHtml: generated.candidateHtml });
+  });
+
   it('runs 2-pass writer and reviewer with pinned model and returns validated result', async () => {
     const llmClient = new FakeLlmClient();
 
