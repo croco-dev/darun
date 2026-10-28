@@ -4,6 +4,7 @@ import {
   DEFAULT_LLM_MODEL,
   LlmEndpointKeyError,
   LlmConfigReadFailedError,
+  normalizeLlmEndpointBase,
   resolveLlmEndpointKey,
   type LlmConfig,
   type LlmConfigProvider,
@@ -95,7 +96,7 @@ export class LlmSettingService implements LlmConfigProvider {
       return await this.llmSettingRepository.updateSetting(existing => {
         const current = existing ?? this.defaultSetting();
         const newEndpoint = input.endpoint?.trim() || current.endpoint;
-        const endpointChanged = newEndpoint !== current.endpoint;
+        const endpointChanged = normalizeLlmEndpointBase(newEndpoint) !== normalizeLlmEndpointBase(current.endpoint);
         const newModel = input.model?.trim() || current.model;
         const newThinkingLevel =
           input.thinkingLevel !== undefined
