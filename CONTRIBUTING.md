@@ -526,6 +526,8 @@ PR CI의 전체 패키지 검사는 `pnpm run typecheck:tsrs --concurrency=4 -- 
 
 GraphQL 변경은 Node.js 22에서 `pnpm --filter graphql-api build:lambda`와 `pnpm --filter graphql-api verify:lambda`도 실행합니다. 이 검사는 번들 초기화뿐 아니라 실제 resolver 스키마와 커밋된 `schema.graphql`의 일치 여부를 확인합니다.
 
+GraphQL SDL이나 원본 operation을 변경하면 `pnpm --filter @darun/provider-graphql codegen`으로 클라이언트 문서·타입을 갱신합니다. `pnpm --filter @darun/provider-graphql check:codegen`은 같은 설정으로 임시 디렉터리에 생성해 `libs/__generated__`와 비교하며 저장소 파일을 덮어쓰지 않습니다. 차이가 있으면 파일 경로와 재생성 명령을 안내하고 실패하며, PR CI에서도 실행합니다. 더 이상 생성되지 않는 파일은 별도로 제거합니다.
+
 상품 링크·기능·상품/기능 스크린샷·수동 대안의 저장소는 요청 사이에 조회 결과를 캐시하지 않습니다. 같은 tick의 여러 parent ID는 계속 하나의 SQL로 조회하며, 다른 연결이 commit한 변경은 같은 reader의 다음 조회에서 읽습니다. `productDetailFreshness.pg.test.ts`는 별도 로컬 DB에서 수정·삭제·빈 목록의 추가, rollback과 배치 횟수를 검증합니다.
 
 목록 API의 `productsByCategory`와 `visualApps`는 기본 24개씩 반환합니다. 호출자는 `pageInfo.endCursor`와 `hasNextPage`로 이어 읽으며, 목록 표시를 위해 모든 페이지나 각 앱의 화면 목록을 미리 읽지 않습니다. 앱 카드에는 `coverScreenshot`과 `screenshotCount`를 사용합니다. 상품의 태그·추천 수는 선택된 필드만 배치 조회하며, 변경 가능한 데이터를 읽는 상품 ID loader는 요청 사이에 결과를 보관하지 않습니다.
