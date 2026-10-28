@@ -1,6 +1,9 @@
 import type { Reporter, TestModule } from 'vitest/node';
 
 const groups = {
+  tier: {
+    'src/remove-duplicates.pg.test.ts': 'DEDUPE_TEST_DATABASE_URL',
+  },
   graphql: {
     '__tests__/jobConfigAttempts.pg.test.ts': 'JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL',
     '__tests__/translationIntegrity.pg.test.ts': 'TRANSLATION_TEST_DATABASE_URL',

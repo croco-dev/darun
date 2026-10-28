@@ -66,7 +66,22 @@ pnpm exec turbo run cloudflare:build --filter=tier-web
 `pnpm --filter tier-web exec vitest run src/remove-duplicates.pg.test.ts`를 실행하면 실제 CLI의
 기본 dry-run·데이터 보존·충돌·쓰기 단계별 롤백·재실행을 검증한다. 테스트는 실제 Tier SQL을
 적용하고 fixture 테이블을 삭제하므로 운영 DB나 다른 테스트의 DB를 사용하지 않는다.
-환경변수가 없으면 이 DB suite는 건너뛴다.
+로컬 일반 `pnpm --filter tier-web test`에서는 환경변수가 없으면 이 DB suite를 건너뛴다.
+
+PR CI와 TierWeb build는 PostgreSQL 17에 별도 빈 `darun_tier_dedupe` DB를 만들고,
+다음 필수 명령에만 URL을 전달한다. GraphQL fixture DB와 공유하지 않는다.
+TierWeb은 공개 빌드 변수를 확인하기 전에 DB 회귀를 실행하므로 빌드 설정 누락이 DB 검사까지 건너뛰게 하지 않는다.
+`deploy=false`의 빌드 전용 실행은 공개 변수가 없을 때 PR CI와 같은 합성 설정을 사용한다.
+`deploy=true`에는 이 기본값을 사용하지 않으며 실제 공개 변수 누락 시 빌드·배포를 차단한다.
+실제 배포 job도 기존처럼 실제 변수와 자격 증명을 확인한 뒤 별도로 빌드한다.
+
+```bash
+REQUIRED_POSTGRES_GROUP=tier DEDUPE_TEST_DATABASE_URL=<isolated-db-url> pnpm --filter tier-web exec vitest run src/remove-duplicates.pg.test.ts --reporter=default --reporter="$PWD/apps/graphql-api/scripts/required-postgres-reporter.ts"
+```
+
+저장소 루트에서 실행한다. 필수 reporter는 URL 누락·suite 미수집·0개 실행·skip·실패를
+오류로 처리하고 실제 실행 수와 skipped 수를 로그에 남긴다. TierWeb의 deploy는 build가
+성공해야 시작하므로 이 검증 실패 시 Cloudflare 배포로 진행하지 않는다.
 
 ### 원자적 티어 변경 전제
 
