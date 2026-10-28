@@ -51,7 +51,7 @@ async function main() {
 
   function spawnNew() {
     if (state !== 'running') return;
-    const server = spawn('node', ['--enable-source-maps', '.build/local.cjs'], {
+    const server = spawn(process.execPath, ['--enable-source-maps', '.build/local.cjs'], {
       stdio: 'inherit',
       env: process.env,
     });

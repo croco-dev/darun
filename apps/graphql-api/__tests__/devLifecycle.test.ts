@@ -21,9 +21,9 @@ async function flush() {
 async function fixture(options: { pendingWatch?: boolean; pendingDispose?: boolean } = {}) {
   const watcher = deferred();
   const disposal = deferred();
-  const process = Object.assign(new EventEmitter(), { env: {}, exit: vi.fn() });
+  const process = Object.assign(new EventEmitter(), { env: {}, execPath: '/trusted/runtime/node', exit: vi.fn() });
   const children: Array<EventEmitter & { kill: ReturnType<typeof vi.fn> }> = [];
-  const spawn = vi.fn(() => {
+  const spawn = vi.fn((..._args: unknown[]) => {
     const child = Object.assign(new EventEmitter(), { kill: vi.fn(() => true) });
     children.push(child);
     return child;
@@ -76,6 +76,15 @@ afterEach(() => {
 });
 
 describe('개발 서버 프로세스 수명', () => {
+  it('현재 Node의 절대 경로로 자식을 실행해 PATH 검색에 의존하지 않는다', async () => {
+    const f = await fixture();
+    await f.build();
+    expect(f.spawn.mock.calls[0][0]).toBe('/trusted/runtime/node');
+    f.process.emit('SIGTERM');
+    f.children[0].emit('exit', 0);
+    await flush();
+  });
+
   it.each(['SIGINT', 'SIGTERM'])('재시작 대기 중 %s 이후에는 새 자식을 만들지 않는다', async signal => {
     const f = await fixture({ pendingDispose: true });
     await f.build();

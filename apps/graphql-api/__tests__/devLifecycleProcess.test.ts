@@ -60,7 +60,7 @@ it('실제 자식을 최신 번들로 재시작하고 종료 중 재빌드에는
         require(${JSON.stringify(devScript)});
       `,
     ],
-    { cwd: directory, env: { PATH: process.env.PATH }, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] }
+    { cwd: directory, env: { PATH: '' }, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] }
   );
   interface Message {
     event: string;
