@@ -280,14 +280,9 @@ export class ProductQueryResolver {
 
   @FieldResolver(() => [Tag])
   public async tags(@Root() product: ProductWithLocale): Promise<Tag[]> {
-    const productTag = await this.getProductTagsUseCase
-      .execute({
-        productId: product.id,
-      })
-      .catch(error => {
-        console.error('Product tags lookup failed', product.id, error);
-        return null;
-      });
+    const productTag = await this.getProductTagsUseCase.execute({
+      productId: product.id,
+    });
 
     return productTag?.tags ?? [];
   }

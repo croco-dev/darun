@@ -578,13 +578,16 @@ describe('ProductQueryResolver', () => {
         return healthy;
       });
       const resolver = createProductQueryResolver({ getProductTagsUseCase: tags });
-      const result = await Promise.all([
+      const result = await Promise.allSettled([
         resolver.tags({ ...createProductRoot('ko'), id: 'broken' }),
         resolver.tags({ ...createProductRoot('ko'), id: 'healthy' }),
       ]);
-      expect(result).toEqual([[], healthy.tags]);
+      expect(result).toEqual([
+        { status: 'rejected', reason: new Error('one item failed') },
+        { status: 'fulfilled', value: healthy.tags },
+      ]);
     });
-    it('일부 보조 배치가 실패해도 product node는 생존한다', async () => {
+    it('태그 조회는 선택될 때만 실행하며 실패를 전달한다', async () => {
       const recentProductsUseCase = new GetRecentProducts(
         createProductRepository({
           findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([
@@ -613,11 +616,10 @@ describe('ProductQueryResolver', () => {
       expect(result[0].id).toBe('p1');
       expect(rejectingTagsUseCase.execute).not.toHaveBeenCalled();
 
-      const tags = await resolver.tags(result[0]);
-      expect(tags).toEqual([]);
+      await expect(resolver.tags(result[0])).rejects.toThrow('Tags batch failed');
     });
 
-    it('모든 보조 배치가 실패해도 product node는 생존한다', async () => {
+    it('태그 오류를 전달하면서 다른 보조 필드의 기존 오류 대체 동작은 유지한다', async () => {
       const recentProductsUseCase = new GetRecentProducts(
         createProductRepository({
           findTopNSortByPublishedAtDesc: vi.fn().mockResolvedValue([
@@ -661,8 +663,7 @@ describe('ProductQueryResolver', () => {
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('p1');
 
-      const tags = await resolver.tags(result[0]);
-      expect(tags).toEqual([]);
+      await expect(resolver.tags(result[0])).rejects.toThrow('Tags batch failed');
 
       const voteCount = await resolver.voteCount(result[0]);
       expect(voteCount).toBe(0);
