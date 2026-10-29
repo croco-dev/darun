@@ -1,8 +1,29 @@
-import { Editor } from '@tiptap/core';
+import { Editor, generateJSON } from '@tiptap/core';
 import { describe, expect, it } from 'vitest';
 import { createAdminEditorExtensions } from '../Editor/extensions';
 
 describe('설명 편집기의 기존 표 보존', () => {
+  it.each(['td', 'th'])('%s의 거대한 열 병합 값은 브라우저가 지원하는 범위로 읽는다', tag => {
+    for (const colspan of ['999999999', '9'.repeat(309)]) {
+      // Parse only: rendering the unbounded pre-fix value would exhaust the test process.
+      const document = generateJSON(
+        `<table><tr><${tag} colspan="${colspan}">내용</${tag}></tr></table>`,
+        createAdminEditorExtensions()
+      );
+      expect(document.content?.[0].content?.[0].content?.[0].attrs?.colspan).toBe(1000);
+    }
+  });
+
+  it.each(['td', 'th'])('%s의 거대한 행 병합은 실제 HTML 행 그룹을 넘지 않는다', tag => {
+    for (const rowspan of ['999999999', '9'.repeat(309)]) {
+      const document = generateJSON(
+        `<table><thead><tr><${tag} rowspan="${rowspan}">제목</${tag}></tr></thead><tbody><tr><td>본문</td></tr></tbody></table>`,
+        createAdminEditorExtensions()
+      );
+      expect(document.content?.[0].content?.[0].content?.[0].attrs?.rowspan).toBe(1);
+    }
+  });
+
   it.each([
     {
       name: '두 열 가격표',
@@ -33,6 +54,17 @@ describe('설명 편집기의 기존 표 보존', () => {
         ['TH:플랜:1:1', 'TH:월간:1:1', 'TH:연간:1:1'],
         ['TD:Basic:2:1', 'TD:무료 체험 후 결제:1:2'],
         ['TD:1000원:1:1', 'TD:11000원:1:1'],
+      ],
+    },
+    {
+      name: '행 그룹 끝까지 병합하는 가격표',
+      table:
+        '<table><thead><tr><th>플랜</th><th>가격</th></tr></thead><tbody><tr><td rowspan="0">Basic</td><td>월 1000원</td></tr><tr><td>연 11000원</td></tr></tbody><tbody><tr><td>Pro</td><td>월 2500원</td></tr></tbody></table>',
+      rows: [
+        ['TH:플랜:1:1', 'TH:가격:1:1'],
+        ['TD:Basic:2:1', 'TD:월 1000원:1:1'],
+        ['TD:연 11000원:1:1'],
+        ['TD:Pro:1:1', 'TD:월 2500원:1:1'],
       ],
     },
   ])('$name 바깥의 문장을 수정한 뒤 다시 열어도 셀 대응이 유지된다', ({ table, rows }) => {
