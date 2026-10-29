@@ -6,6 +6,7 @@ const MAX_TABLE_COLUMNS = 1000;
 const MAX_TABLE_ROWS = 1000;
 const MAX_TABLE_GRID_CELLS = 100_000;
 const TABLE_SIZE_ERROR = '표의 크기가 편집 가능한 범위를 넘었습니다. 원문은 변경하지 않았습니다.';
+const EMPTY_TABLE_PASTE_ERROR = '빈 표는 붙여넣을 수 없습니다. 원문은 변경하지 않았습니다.';
 
 type CellSpan = { colspan: number; rowspan: number };
 type TableSize = { width: number; height: number };
@@ -67,7 +68,7 @@ export function getEditorTableError(html: string) {
     td: ['table', 'tbody', 'tr'],
     th: ['table', 'tbody', 'tr'],
   };
-  const wrap = firstTag && wrappers[firstTag];
+  const wrap = firstTag && Object.hasOwn(wrappers, firstTag) ? wrappers[firstTag] : undefined;
   if (wrap)
     html =
       wrap.map(tag => `<${tag}>`).join('') +
@@ -145,6 +146,7 @@ export function getEditorTablePasteError(state: EditorState, slice: Slice) {
     openEnd--;
     content = content.firstChild!.content;
   }
+  if (!content.childCount) return EMPTY_TABLE_PASTE_ERROR;
   const role = content.firstChild?.type.spec.tableRole;
   const rows: CellSpan[][] = [];
   if (role === 'row') content.forEach(row => rows.push(nodeCells(row)));
@@ -155,6 +157,7 @@ export function getEditorTablePasteError(state: EditorState, slice: Slice) {
   } else return null;
   const incoming = tableSize(rows);
   if (!incoming) return TABLE_SIZE_ERROR;
+  if (!incoming.width) return EMPTY_TABLE_PASTE_ERROR;
   if (!isInTable(state) || state.selection instanceof CellSelection) return null;
   const rect = selectedRect(state);
   return documentTableError(state.doc, {

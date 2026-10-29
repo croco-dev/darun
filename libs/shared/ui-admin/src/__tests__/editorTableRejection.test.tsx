@@ -12,6 +12,29 @@ afterEach(cleanup);
 const oversized = '<table><tr><td colspan="600">A</td><td colspan="401">B</td></tr></table>';
 
 describe('큰 표 거절과 원문 보존', () => {
+  it('빈 표를 선택 셀에 붙여넣어도 native 처리 전에 거절하고 초안을 보존한다', async () => {
+    const change = vi.fn();
+    const view = render(<Editor value="<table><tr><td>남길 초안</td></tr></table>" onChange={change} />);
+    await waitFor(() => expect(view.container.querySelector('.ProseMirror')).not.toBeNull());
+    const element = view.container.querySelector('.ProseMirror') as HTMLElement & { editor: CoreEditor };
+    const core = element.editor;
+    core.commands.setCellSelection({ anchorCell: 2 });
+    const nativePlugin = core.state.plugins.find(plugin => plugin.spec.key === tableEditingKey)!;
+    const nativePaste = vi.spyOn(nativePlugin.props, 'handlePaste').mockImplementation(() => true);
+    const before = core.getHTML();
+    try {
+      fireEvent.paste(element, {
+        clipboardData: { getData: (type: string) => (type === 'text/html' ? '<table><tr></tr></table>' : '') },
+      });
+      expect(nativePaste).not.toHaveBeenCalled();
+      expect(screen.getByRole('alert').textContent).toContain('표');
+      expect(core.getHTML()).toBe(before);
+      expect(change).not.toHaveBeenCalled();
+    } finally {
+      nativePaste.mockRestore();
+    }
+  });
+
   it.each([
     '<table><tr><td colspan="1000">가격</td></tr></table>',
     `<p data-pm-slice='1 1 ["table",null,"tableRow",null,"tableCell",{"colspan":999999999,"rowspan":1}]'>가격</p>`,

@@ -9,6 +9,10 @@ function table(rows: number, columns: number) {
 }
 
 describe('표 파싱 전 전체 격자 크기 검사', () => {
+  it('HTML 태그 이름이 객체의 상속 키여도 검사 예외를 내지 않는다', () => {
+    expect(getEditorTableError('<constructor>남길 초안</constructor>')).toBeNull();
+  });
+
   it('좁은 표도 1000행까지만 허용해 rowspan 탐색량을 제한한다', () => {
     const rows = (count: number) =>
       '<table><tr><td rowspan="2">가격</td></tr><tr></tr>' + '<tr><td>가격</td></tr>'.repeat(count - 2) + '</table>';
