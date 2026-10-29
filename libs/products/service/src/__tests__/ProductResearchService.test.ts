@@ -4,6 +4,7 @@ import {
   normalizeResearchSources,
   type NormalizedResearchSource,
 } from '@darun/products-domain';
+import { LlmCompletionError, RetryableError } from '@darun/utils-llm';
 import { describe, expect, it, vi } from 'vitest';
 import { ProductResearchService } from '../ProductResearchService';
 
@@ -826,16 +827,34 @@ describe('ProductResearchService.executeResearch', () => {
     expect(deps.jobRepository.completeJob).toHaveBeenCalledTimes(1);
   });
 
+  it.each([400, 401])('래핑된 %s 입력 오류도 다음 attempt를 예약하지 않는다', async status => {
+    const deps = executeDeps(stableFixture(), {
+      complete: vi.fn().mockRejectedValue(new RetryableError('private-provider-error', status)),
+    });
+    // @ts-expect-error focused dependency shape
+    await new ProductResearchService().executeResearch('job-1', deps, 'lease-1');
+    expect(deps.jobRepository.failJob).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        jobId: 'job-1',
+        leaseToken: 'lease-1',
+        errorCode: status === 401 ? 'LLM_AUTHENTICATION_FAILED' : 'LLM_INVALID_REQUEST',
+      })
+    );
+    expect(deps.jobRepository.retryJobLease).not.toHaveBeenCalled();
+    expect(deps.jobRepository.completeJob).not.toHaveBeenCalled();
+    expect(deps.llm.complete).toHaveBeenCalledTimes(1);
+  });
+
   it('ends with a typed failure for structured-output refusal', async () => {
     const fixture = stableFixture();
     const deps = executeDeps(fixture, {
-      complete: vi.fn().mockRejectedValue(new Error('LLM structured completion was refused for model: x')),
+      complete: vi.fn().mockRejectedValue(new LlmCompletionError('LLM_RESPONSE_REFUSED')),
     });
     const service = new ProductResearchService();
     // @ts-expect-error focused dependency shape
     await service.executeResearch('job-1', deps, 'lease-1');
     expect(deps.jobRepository.failJob).toHaveBeenCalledWith(
-      expect.objectContaining({ jobId: 'job-1', errorCode: 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED' })
+      expect.objectContaining({ jobId: 'job-1', errorCode: 'LLM_RESPONSE_REFUSED' })
     );
   });
 

@@ -20,6 +20,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import type * as GraphQL from 'graphql';
+import { APIConnectionError, APIError } from 'openai/error';
 import postgres, { type Sql } from 'postgres';
 import { buildSchemaSync } from 'type-graphql';
 import { Container } from 'typedi';
@@ -441,6 +442,168 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
         }
       }
     );
+  });
+
+  describe('조사 LLM 실패의 실제 worker·저장 전이', () => {
+    const createdJobs: string[] = [];
+    async function createResearch() {
+      const fixture = await create('research');
+      createdJobs.push(fixture.id);
+      return fixture;
+    }
+    beforeEach(() => {
+      Container.set(LlmClient, new LlmClient(Container.get(LlmSettingService)));
+    });
+    afterEach(async () => {
+      Container.set(LlmClient, client);
+      for (const id of createdJobs) await db.delete(productResearchJobs).where(eq(productResearchJobs.id, id));
+      createdJobs.length = 0;
+    });
+    const privateText = 'provider-private-body synthetic-provider-key';
+    function failure(kind: string) {
+      if (kind === 'connection') return new APIConnectionError({ message: privateText });
+      const status = kind === 'unsupported' ? 400 : Number(kind);
+      return new APIError(
+        status,
+        kind === 'unsupported'
+          ? {
+              message: privateText,
+              code: 'unsupported_parameter',
+              param: 'response_format',
+            }
+          : { message: privateText },
+        privateText,
+        new Headers()
+      );
+    }
+    function respond(kind: string) {
+      if (kind === 'length' || kind === 'refusal' || kind === 'content_filter') {
+        return {
+          choices: [
+            {
+              finish_reason: kind === 'refusal' ? 'stop' : kind,
+              message: {
+                content: '{"name":"partial"}',
+                refusal: kind === 'refusal' ? privateText : null,
+              },
+            },
+          ],
+        };
+      }
+      throw failure(kind);
+    }
+
+    it.each([
+      ['400', 'LLM_INVALID_REQUEST'],
+      ['401', 'LLM_AUTHENTICATION_FAILED'],
+      ['403', 'LLM_AUTHENTICATION_FAILED'],
+      ['422', 'LLM_INVALID_REQUEST'],
+      ['unsupported', 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED'],
+      ['length', 'LLM_RESPONSE_INCOMPLETE'],
+      ['content_filter', 'LLM_RESPONSE_INCOMPLETE'],
+      ['refusal', 'LLM_RESPONSE_REFUSED'],
+    ])('%s는 한 attempt로 종료하고 공급자 원문과 부분 결과를 저장하지 않는다', async (kind, code) => {
+      const fixture = await createResearch();
+      transport.create.mockImplementation(async () => respond(kind));
+      await deliver(researchWorker, fixture.payload);
+      const row = await research.findById(fixture.id);
+      expect(row).toMatchObject({
+        status: 'failed',
+        attemptCount: 1,
+        errorCode: code,
+        result: null,
+      });
+      expect(row!.errorMessage).toBeTruthy();
+      expect(JSON.stringify(row)).not.toContain(privateText);
+      expect(JSON.stringify(row)).not.toContain('synthetic-provider-key');
+      expect(transport.create).toHaveBeenCalledTimes(1);
+      expect(transport.search).toHaveBeenCalledTimes(5);
+      await deliver(researchWorker, fixture.payload);
+      expect(await research.findById(fixture.id)).toEqual(row);
+      expect(transport.create).toHaveBeenCalledTimes(1);
+      expect(transport.search).toHaveBeenCalledTimes(5);
+    });
+
+    it.each(['429', '503', 'connection'])(
+      '%s는 전송 재시도 뒤 30초·120초 대기하고 세 번째 attempt에서 종료한다',
+      async kind => {
+        const fixture = await createResearch();
+        transport.create.mockImplementation(async () => respond(kind));
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          if (attempt > 1)
+            await db
+              .update(productResearchJobs)
+              .set({ runNotBefore: new Date(0), nextDispatchAt: new Date(0) })
+              .where(eq(productResearchJobs.id, fixture.id));
+          await deliver(researchWorker, fixture.payload);
+          const row = await research.findById(fixture.id);
+          expect(row).toMatchObject({
+            status: attempt === 3 ? 'failed' : 'pending',
+            attemptCount: attempt,
+            errorCode: 'LLM_UNAVAILABLE',
+            result: null,
+            leaseToken: null,
+            leaseUntil: null,
+          });
+          if (attempt < 3) {
+            expect(row!.runNotBefore!.getTime() - row!.updatedAt.getTime()).toBe(attempt === 1 ? 30_000 : 120_000);
+            expect(row!.nextDispatchAt).toEqual(row!.runNotBefore);
+          }
+          expect(JSON.stringify(row)).not.toContain(privateText);
+          expect(transport.create).toHaveBeenCalledTimes(attempt * 2);
+          await deliver(researchWorker, fixture.payload);
+          expect(await research.findById(fixture.id)).toEqual(row);
+          expect(transport.create).toHaveBeenCalledTimes(attempt * 2);
+        }
+      },
+      15_000
+    );
+
+    it.each(['expired', 'replaced'])(
+      '%s lease에는 늦은 영구 오류와 일시 오류 모두 저장하지 않는다',
+      async kind => {
+        for (const status of ['401', '503', 'length', 'refusal']) {
+          const fixture = await createResearch();
+          let protectedRow: Awaited<ReturnType<typeof research.findById>>;
+          transport.create.mockReset().mockImplementation(async () => {
+            await db
+              .update(productResearchJobs)
+              .set(kind === 'expired' ? { leaseUntil: new Date(0) } : { leaseToken: randomUUID(), attemptCount: 2 })
+              .where(eq(productResearchJobs.id, fixture.id));
+            protectedRow = await research.findById(fixture.id);
+            return respond(status);
+          });
+          await deliver(researchWorker, fixture.payload);
+          expect(await research.findById(fixture.id)).toEqual(protectedRow!);
+          expect(protectedRow!).toMatchObject({
+            status: 'in_progress',
+            result: null,
+            errorCode: null,
+          });
+        }
+      },
+      15_000
+    );
+
+    it('호출자 deadline으로 취소되면 실패나 재예약을 저장하지 않는다', async () => {
+      const fixture = await createResearch();
+      transport.create.mockImplementation(
+        async (_body, options) =>
+          new Promise((_resolve, reject) => {
+            options.signal.addEventListener('abort', () => reject(failure('401')), { once: true });
+          })
+      );
+      await deliver(researchWorker, fixture.payload, 46_000);
+      const row = await research.findById(fixture.id);
+      expect(row).toMatchObject({
+        status: 'in_progress',
+        attemptCount: 1,
+        result: null,
+        errorCode: null,
+      });
+      expect(row!.leaseToken).toBeTruthy();
+      expect(transport.create).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('실제 Brave 키 소비 경계', () => {
