@@ -428,6 +428,31 @@ describe('candidate reopen authority through the shared component and real Apoll
     }
   );
 
+  it.each(['database/read-unavailable', 'database/read-schema-invalid'])(
+    'keeps %s distinct from missing and recovers without generating another job',
+    async code => {
+      const fixture = setup();
+      await flush(() => fixture.take('GetProductDescriptionJob', 'A').graphQLError('작업 조회 실패', code));
+      expect(input().value).toBe('A');
+      expect(notices()).toContainEqual(
+        expect.objectContaining({
+          title: '후보 다시 열기 실패',
+          message: '작업 조회 실패',
+        })
+      );
+      expect(notices()).not.toContainEqual(
+        expect.objectContaining({
+          message: '해당 ID의 후보 작업을 찾지 못했습니다.',
+        })
+      );
+      await submitId('A');
+      await flush(() => fixture.take('GetProductDescriptionJob', 'A').resolve(lookup('A')));
+      expect(screen.getByRole('heading', { name: 'A 저장된 소개' })).toBeTruthy();
+      expect(fixture.count('GenerateProductDescription')).toBe(0);
+      expect(fixture.count('ApplyProductDescriptionCandidate')).toBe(0);
+    }
+  );
+
   it('preserves the entered ID after a query error and recovers through the existing form', async () => {
     const fixture = setup();
     await flush(() => fixture.take('GetProductDescriptionJob', 'A').reject('합성 조회 오류'));

@@ -226,6 +226,39 @@ describe('list retry authority through real Apollo hooks and default cache', () 
     return fixture;
   }
 
+  it.each(['GetTranslationJobsOnAdmin', 'GetProductDescriptionJobsOnAdmin'])(
+    'shows %s failure beside the other successful list and recovers by query only',
+    async failingName => {
+      const fixture = setup();
+      const translation = await fixture.take('GetTranslationJobsOnAdmin');
+      const descriptionRequest = await fixture.take('GetProductDescriptionJobsOnAdmin');
+      await flush(() => {
+        if (failingName === translation.name) {
+          translation.graphql();
+          descriptionRequest.resolve({
+            productDescriptionJobs: [description()],
+          });
+        } else {
+          descriptionRequest.graphql();
+          translation.resolve({ translationJobs: [translationRow(7)] });
+        }
+      });
+      await waitFor(() => expect(screen.getByText('일부 작업 목록을 조회하지 못했습니다.')).toBeTruthy());
+      expect(screen.queryByText('등록된 LLM 작업이 없습니다.')).toBeNull();
+      expect(screen.getAllByRole('row')).toHaveLength(2);
+      await flush(() => fireEvent.click(screen.getByRole('button', { name: '다시 시도' })));
+      const translationRefresh = await fixture.take('GetTranslationJobsOnAdmin');
+      const descriptionRefresh = await fixture.take('GetProductDescriptionJobsOnAdmin');
+      await flush(() => {
+        translationRefresh.resolve({ translationJobs: [translationRow(7)] });
+        descriptionRefresh.resolve({ productDescriptionJobs: [description()] });
+      });
+      await waitFor(() => expect(screen.queryByText('일부 작업 목록을 조회하지 못했습니다.')).toBeNull());
+      expect(screen.getAllByRole('row')).toHaveLength(3);
+      expect(fixture.log.every(request => request.name.startsWith('Get'))).toBe(true);
+    }
+  );
+
   it('loads translations beyond 100 with a bounded next-page request', async () => {
     const fixture = await firstTranslationPage();
     await flush(() =>

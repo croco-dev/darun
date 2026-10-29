@@ -1,4 +1,4 @@
-import { Drizzle, DrizzleToken } from '@darun/provider-database';
+import { databaseReadFailed, Drizzle, DrizzleToken } from '@darun/provider-database';
 import {
   type TranslationJobEntity,
   type TranslationJobRepository,
@@ -138,8 +138,7 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
 
       return this.toEntity(row);
     } catch (error) {
-      console.warn('[PostgresqlTranslationJobRepository] Failed to find job (table may not exist yet):', error);
-      return null;
+      throw databaseReadFailed(error);
     }
   }
 
@@ -341,8 +340,7 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
 
       return rows.map(row => this.toEntity(row));
     } catch (error) {
-      console.warn('[PostgresqlTranslationJobRepository] Failed to find jobs:', error);
-      return [];
+      throw databaseReadFailed(error);
     }
   }
 }

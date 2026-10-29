@@ -136,15 +136,13 @@ describe('PostgresqlProductDescriptionJobRepository', () => {
     expect(whereMock).toHaveBeenCalled();
   });
 
-  it('findJobs returns empty array if error is thrown', async () => {
+  it('findJobs propagates a safe error when the database fails', async () => {
     mockDb.select.mockImplementation(() => {
       throw new Error('Database connection failed');
     });
 
     const repo = new PostgresqlProductDescriptionJobRepository(mockDb as never);
-    const results = await repo.findJobs();
-
-    expect(results).toEqual([]);
+    await expect(repo.findJobs()).rejects.toMatchObject({ code: 'database/read-failed' });
   });
 
   it('completeJobLease returns null when the attempt does not match', async () => {

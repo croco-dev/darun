@@ -1992,6 +1992,9 @@ importers:
 
   libs/shared/provider-database:
     dependencies:
+      '@darun/utils-error':
+        specifier: workspace:*
+        version: link:../utils-error
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(postgres@3.4.8)

@@ -520,6 +520,18 @@ export function LlmJobListSection() {
         </div>
       </div>
 
+      {queryError && jobs.length > 0 && (
+        <AdminErrorState
+          title="일부 작업 목록을 조회하지 못했습니다."
+          error={queryError}
+          action={
+            <Button type="button" onClick={() => void refetchAll()} variant="contained" color="primary">
+              <span className="whitespace-nowrap">다시 시도</span>
+            </Button>
+          }
+        />
+      )}
+
       {/* Jobs table */}
       {jobs.length === 0 ? (
         <AdminPanel className="p-12">
