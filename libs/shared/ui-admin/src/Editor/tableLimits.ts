@@ -68,7 +68,7 @@ export function getEditorTableError(html: string) {
     td: ['table', 'tbody', 'tr'],
     th: ['table', 'tbody', 'tr'],
   };
-  const wrap = firstTag && Object.hasOwn(wrappers, firstTag) ? wrappers[firstTag] : undefined;
+  const wrap = firstTag && Object.prototype.hasOwnProperty.call(wrappers, firstTag) ? wrappers[firstTag] : undefined;
   if (wrap)
     html =
       wrap.map(tag => `<${tag}>`).join('') +
