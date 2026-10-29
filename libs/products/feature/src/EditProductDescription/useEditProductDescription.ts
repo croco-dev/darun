@@ -9,7 +9,7 @@ import {
 } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 gql`
   query TempProductBySlugOnEditProductDescription($slug: String!) {
@@ -45,17 +45,39 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
     variables: { slug },
   });
   const description = data?.tempProductBySlug?.description ?? '';
+  const sourceRef = useRef({ slug, description });
+  const lastObservedSourceRef = useRef({ slug, description });
+  const productSessionRef = useRef({ slug });
+  const [hasServerChange, setHasServerChange] = useState(false);
 
   const form = useForm<FormValues>({
-    mode: 'uncontrolled',
+    mode: 'controlled',
     initialValues: { description },
   });
-  const { setInitialValues, setValues } = form;
+  const { setInitialValues, setValues, resetDirty, getValues } = form;
 
-  useEffect(() => {
+  const acceptLatestDescription = useCallback(() => {
+    sourceRef.current = { slug, description };
     setInitialValues({ description });
     setValues({ description });
-  }, [slug, description, setInitialValues, setValues]);
+    resetDirty({ description });
+    setHasServerChange(false);
+    setSaveError(null);
+  }, [slug, description, setInitialValues, setValues, resetDirty]);
+
+  useEffect(() => {
+    const lastObserved = lastObservedSourceRef.current;
+    if (lastObserved.slug === slug && lastObserved.description === description) return;
+    lastObservedSourceRef.current = { slug, description };
+    if (productSessionRef.current.slug !== slug) {
+      productSessionRef.current = { slug };
+      acceptLatestDescription();
+    } else if (getValues().description === sourceRef.current.description) {
+      acceptLatestDescription();
+    } else {
+      setHasServerChange(description !== sourceRef.current.description);
+    }
+  }, [slug, description, getValues, acceptLatestDescription]);
 
   const [editDescription, { loading }] = useMutation(EditProductOnEditProductDescriptionDocument, {
     refetchQueries: [
@@ -69,18 +91,9 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
       },
     ],
     awaitRefetchQueries: true,
-    onCompleted: ({ editProduct }) => {
-      if (editProduct?.product?.id) {
-        notifications.show({ message: '수정되었습니다!', color: 'teal' });
-        const description = editProduct.product.description ?? '';
-        form.setInitialValues({ description });
-        form.setValues({ description });
-        onSubmit?.();
-      }
-    },
   });
 
-  const submit = async (values: FormValues) => {
+  const save = async (values: FormValues) => {
     if (loading) {
       return;
     }
@@ -103,15 +116,34 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
     }
 
     setSaveError(null);
+    const productSession = productSessionRef.current;
     try {
-      await editDescription({
+      const result = await editDescription({
         variables: { slug, input: { description: values.description || '' } },
       });
+      if (productSessionRef.current !== productSession) return;
+      const product = result.data?.editProduct?.product;
+      if (product?.id) {
+        const description = product.description ?? '';
+        sourceRef.current = { slug, description };
+        setInitialValues({ description });
+        setValues({ description });
+        resetDirty({ description });
+        setHasServerChange(false);
+        notifications.show({ message: '수정되었습니다!', color: 'teal' });
+        onSubmit?.();
+      }
     } catch (error) {
+      if (productSessionRef.current !== productSession) return;
       const message = error instanceof Error ? error.message : '설명 저장에 실패했습니다.';
       setSaveError(message);
       notifications.show({ message, color: 'red' });
     }
+  };
+
+  const submit = async (values: FormValues) => {
+    if (hasServerChange) return;
+    await save(values);
   };
 
   return {
@@ -119,7 +151,9 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
     form,
     submit,
     onCancel,
-    defaultValue: description,
+    hasServerChange,
+    acceptLatestDescription,
+    overwriteWithDraft: () => save(getValues()),
     loading,
   };
 }
