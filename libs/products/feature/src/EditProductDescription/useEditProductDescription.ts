@@ -7,6 +7,7 @@ import {
   TempProductBySlugOnEditProductDescriptionDocument,
   TempProductBySlugOnProductDescriptionDocument,
 } from '@darun/provider-graphql';
+import { getEditorTableError } from '@darun/ui-admin';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -95,6 +96,11 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
 
   const save = async (values: FormValues) => {
     if (loading) {
+      return;
+    }
+    const tableError = getEditorTableError(values.description ?? '');
+    if (tableError) {
+      setSaveError(tableError);
       return;
     }
     const hasContent = (() => {

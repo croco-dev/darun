@@ -19,6 +19,7 @@ import {
   AdminPanel,
   AdminSectionBody,
   Editor,
+  getEditorTableError,
 } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { useRef, useState } from 'react';
@@ -79,6 +80,11 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
 
   const save = async () => {
     if (pending.current || imageUploadPending.current) return;
+    const tableError = getEditorTableError(values.content);
+    if (tableError) {
+      setError(tableError);
+      return;
+    }
     if (!values.title.trim()) {
       setError('글 제목을 입력해주세요.');
       return;

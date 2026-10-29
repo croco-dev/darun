@@ -1,0 +1,128 @@
+import { Editor } from '@tiptap/core';
+import { DOMParser as ProseMirrorDOMParser, Slice } from '@tiptap/pm/model';
+import { describe, expect, it, vi } from 'vitest';
+import { createAdminEditorExtensions } from '../Editor/extensions';
+import { getEditorTableError, getEditorTablePasteError } from '../Editor/tableLimits';
+
+function table(rows: number, columns: number) {
+  return `<table>${`<tr><td colspan="${columns}">가격</td></tr>`.repeat(rows)}</table>`;
+}
+
+describe('표 파싱 전 전체 격자 크기 검사', () => {
+  it('HTML 태그 이름이 객체의 상속 키여도 검사 예외를 내지 않는다', () => {
+    expect(getEditorTableError('<constructor>남길 초안</constructor>')).toBeNull();
+  });
+
+  it('좁은 표도 1000행까지만 허용해 rowspan 탐색량을 제한한다', () => {
+    const rows = (count: number) =>
+      '<table><tr><td rowspan="2">가격</td></tr><tr></tr>' + '<tr><td>가격</td></tr>'.repeat(count - 2) + '</table>';
+    expect(getEditorTableError(rows(1000))).toBeNull();
+    expect(getEditorTableError(rows(1001))).toBeTruthy();
+  });
+
+  it.each(['tr', 'td', 'tbody'] as const)('독립 %s clipboard 조각의 표 구조도 검사한다', tag => {
+    const cells = '<td colspan="600">A</td><td colspan="401">B</td>';
+    const html = tag === 'td' ? cells : tag === 'tr' ? `<tr>${cells}</tr>` : `<tbody><tr>${cells}</tr></tbody>`;
+    expect(getEditorTableError(html)).toBeTruthy();
+    expect(getEditorTableError('<meta charset="utf-8">' + html)).toBeTruthy();
+  });
+
+  it.each([100, 101])('도착 표 %i행과 붙여넣기 너비를 곱한 경계를 확인한다', count => {
+    const editor = new Editor({ extensions: createAdminEditorExtensions(), content: table(count, 1) });
+    try {
+      editor.commands.setTextSelection(4);
+      const document = new DOMParser().parseFromString(table(1, 1000), 'text/html');
+      const parsed = ProseMirrorDOMParser.fromSchema(editor.schema).parseSlice(document.body);
+      const slice = new Slice(parsed.content, 0, 0);
+      expect(Boolean(getEditorTablePasteError(editor.state, slice))).toBe(count === 101);
+    } finally {
+      editor.destroy();
+    }
+  });
+
+  it('도착 표의 확장이 다른 표와 합쳐 문서 한도를 넘는 경우도 거절한다', () => {
+    const editor = new Editor({ extensions: createAdminEditorExtensions(), content: table(50, 1) + table(50, 1000) });
+    try {
+      editor.commands.setTextSelection(4);
+      const document = new DOMParser().parseFromString(table(51, 1000), 'text/html');
+      const parsed = ProseMirrorDOMParser.fromSchema(editor.schema).parseSlice(document.body);
+      const slice = new Slice(parsed.content, 0, 0);
+      expect(getEditorTablePasteError(editor.state, slice)).toBeTruthy();
+    } finally {
+      editor.destroy();
+    }
+  });
+
+  it('정확히 1000열·100000칸은 허용하고 그 다음 행은 거절한다', () => {
+    expect(getEditorTableError(table(100, 1000))).toBeNull();
+    expect(getEditorTableError(table(101, 1000))).toBeTruthy();
+  });
+
+  it('각 셀이 정상 범위여도 한 행의 합산 열 수를 제한한다', () => {
+    expect(getEditorTableError('<table><tr><td colspan="600">A</td><td colspan="400">B</td></tr></table>')).toBeNull();
+    expect(
+      getEditorTableError('<table><tr><td colspan="600">A</td><td colspan="401">B</td></tr></table>')
+    ).toBeTruthy();
+  });
+
+  it('여러 표의 총 격자 크기도 제한한다', () => {
+    expect(getEditorTableError(table(50, 1000) + table(50, 1000))).toBeNull();
+    expect(getEditorTableError(table(50, 1000) + table(51, 1000))).toBeTruthy();
+  });
+
+  it('작은 HTML의 병합 셀이 만드는 거대한 격자는 편집기에 넘기지 않는다', () => {
+    const html =
+      `<table><tr>${'<td colspan="1000" rowspan="1000">x</td>'.repeat(80)}</tr>` + '<tr></tr>'.repeat(999) + '</table>';
+    expect(getEditorTableError(html)).toBeTruthy();
+  });
+
+  it('전체 행을 병합한 표의 빈 행도 그대로 읽는다', () => {
+    const editor = new Editor({
+      extensions: createAdminEditorExtensions(),
+      content: '<table><tr><td colspan="2" rowspan="2">공통 가격</td></tr><tr></tr></table>',
+    });
+    try {
+      expect(getEditorTableError(editor.getHTML())).toBeNull();
+      const document = new DOMParser().parseFromString(editor.getHTML(), 'text/html');
+      expect(document.querySelectorAll('tr')).toHaveLength(2);
+      expect(document.querySelectorAll('td')).toHaveLength(1);
+      expect(document.querySelector('td')?.rowSpan).toBe(2);
+    } finally {
+      editor.destroy();
+    }
+  });
+
+  it('직접 setContent도 렌더링 전에 거절하고 기존 초안을 유지한다', () => {
+    const rejected = vi.fn();
+    const editor = new Editor({
+      extensions: createAdminEditorExtensions(rejected),
+      content: '<p>기존 초안</p>',
+    });
+    try {
+      editor.commands.setContent('<table><tr><td colspan="600">A</td><td colspan="401">B</td></tr></table>');
+      expect(editor.getHTML()).toBe('<p>기존 초안</p>');
+      expect(rejected).toHaveBeenCalledOnce();
+    } finally {
+      editor.destroy();
+    }
+  });
+
+  it('개별로 허용되는 표를 추가해도 문서 전체 한도를 넘기면 기존 초안을 유지한다', () => {
+    const rejected = vi.fn();
+    const changed = vi.fn();
+    const editor = new Editor({
+      extensions: createAdminEditorExtensions(rejected),
+      content: table(50, 1000),
+      onUpdate: changed,
+    });
+    try {
+      const previous = editor.getJSON();
+      editor.commands.insertContentAt(editor.state.doc.content.size, table(51, 1000));
+      expect(editor.getJSON()).toEqual(previous);
+      expect(rejected).toHaveBeenCalledOnce();
+      expect(changed).not.toHaveBeenCalled();
+    } finally {
+      editor.destroy();
+    }
+  });
+});
