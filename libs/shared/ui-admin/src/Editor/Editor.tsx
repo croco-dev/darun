@@ -72,7 +72,7 @@ export function Editor({
       <MenuBar editor={editor} disabled={!isEditable} onImageUploadingChange={onImageUploadingChange} />
       <EditorContent
         editor={editor}
-        className="min-h-72 rounded-card border border-dark-200 bg-white p-4 [&_.ProseMirror]:min-h-60 [&_.ProseMirror]:outline-none"
+        className="min-h-72 min-w-0 overflow-x-auto rounded-card border border-dark-200 bg-white p-4 [&_.ProseMirror]:min-h-60 [&_.ProseMirror]:outline-none [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-dark-200 [&_th]:bg-surface-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_td]:border [&_td]:border-dark-200 [&_td]:px-3 [&_td]:py-2"
       />
     </div>
   );
