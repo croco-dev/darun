@@ -3,7 +3,7 @@ import { ProductFeatureScreenshotRepositoryToken } from '@darun/products-domain'
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
-import { inArray } from 'drizzle-orm';
+import { asc, desc, inArray } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { productFeatureScreenshots } from '../entities/ProductFeatureScreenshotsSchema';
@@ -17,7 +17,9 @@ export class PostgresqlProductFeatureScreenshotRepository implements ProductFeat
         const docs = await this.db
           .select()
           .from(productFeatureScreenshots)
-          .where(inArray(productFeatureScreenshots.featureId, [...featureIds]));
+          .where(inArray(productFeatureScreenshots.featureId, [...featureIds]))
+          // Match product screenshots: highest priority first, then stable ID order.
+          .orderBy(desc(productFeatureScreenshots.priority), asc(productFeatureScreenshots.id));
 
         const groupByDocs = groupBy(docs, doc => doc.featureId);
         return featureIds.map(featureId => groupByDocs[featureId] || []);

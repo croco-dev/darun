@@ -167,4 +167,49 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       expect((await read('parent-b')).map(valueOf)).toEqual(['before-b']);
     });
   });
+
+  describe.each(cases.filter(spec => spec.table.includes('screenshots')))('$table 우선순위', spec => {
+    it('삽입 순서와 무관하게 priority DESC·id ASC로 정렬하고 여러 부모를 한 번에 조회한다', async () => {
+      await writer`delete from ${writer(spec.table)}`;
+      for (const [id, parent, priority] of [
+        ['a-low', 'parent-a', -1],
+        ['b-high', 'parent-b', 9],
+        ['a-tie-z', 'parent-a', 5],
+        ['b-low', 'parent-b', 0],
+        ['a-high', 'parent-a', 10],
+        ['a-tie-a', 'parent-a', 5],
+      ] as const) {
+        const row = {
+          ...spec.fields,
+          id,
+          [spec.parent]: parent,
+          [spec.value]: id,
+          priority,
+          created_at: '2026-01-01T00:00:00Z',
+        };
+        await writer`insert into ${writer(spec.table)} ${writer(row)}`;
+      }
+
+      const read = spec.reader(db);
+      const ids = (rows: { id: string }[]) => rows.map(row => row.id);
+      const first = await Promise.all(['parent-b', 'missing', 'parent-a', 'parent-b'].map(read));
+      expect(first.map(ids)).toEqual([
+        ['b-high', 'b-low'],
+        [],
+        ['a-high', 'a-tie-a', 'a-tie-z', 'a-low'],
+        ['b-high', 'b-low'],
+      ]);
+      expect(selectCount).toBe(1);
+
+      // A physical row update and reversed batch keys must not change equal-priority ordering.
+      await writer`update ${writer(spec.table)} set image_alt = 'edited' where id = 'a-tie-a'`;
+      const second = await Promise.all(['parent-a', 'parent-b'].map(read));
+      expect(second.map(ids)).toEqual([ids(first[2]), ids(first[0])]);
+      expect(selectCount).toBe(2);
+
+      await writer`update ${writer(spec.table)} set priority = 11 where id = 'a-low'`;
+      expect(ids(await read('parent-a'))).toEqual(['a-low', 'a-high', 'a-tie-a', 'a-tie-z']);
+      expect(selectCount).toBe(3);
+    });
+  });
 });

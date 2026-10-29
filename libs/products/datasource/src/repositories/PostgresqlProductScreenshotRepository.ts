@@ -10,7 +10,7 @@ import {
 import { ProductScreenshotRepositoryToken, productScreenshotInsertFailed } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
-import { and, count, eq, inArray, isNotNull, lt, or, sql, type SQLWrapper } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNotNull, lt, or, sql, type SQLWrapper } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { productFlowSteps } from '../entities/ProductFlowsSchema';
@@ -132,7 +132,9 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
         const docs = await this.db
           .select()
           .from(productScreenshots)
-          .where(inArray(productScreenshots.productId, [...productIds]));
+          .where(inArray(productScreenshots.productId, [...productIds]))
+          // Match feature screenshots: highest priority first, then stable ID order.
+          .orderBy(desc(productScreenshots.priority), asc(productScreenshots.id));
 
         const groupByDocs = groupBy(docs, doc => doc.productId);
         return productIds.map(productId => groupByDocs[productId] || []);
