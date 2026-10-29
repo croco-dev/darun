@@ -4,6 +4,23 @@ import { ProductResearchReviewService } from '../ProductResearchReviewService';
 describe('ProductResearchReviewService.validateReviewedInput', () => {
   const service = new ProductResearchReviewService();
 
+  it('기능 설명의 공백을 정리한 뒤 255자 경계를 검사한다', () => {
+    const summary = `${'가'.repeat(126)} ${'나'.repeat(128)}`;
+    const input = {
+      researchJobId: 'job-1',
+      name: 'Linear',
+      slug: 'linear',
+      summary: '이슈 트래킹 도구',
+      logoUrl: 'https://linear.app/logo.png',
+      officialUrl: 'https://linear.app/',
+      officialUrlConfirmed: false,
+      categoryIds: [],
+      features: [{ name: '이슈 관리', summary: `  ${'가'.repeat(126)}\n  ${'나'.repeat(128)}  `, emoji: '✨' }],
+      tags: [],
+    };
+    expect(service.validateReviewedInput(input).features[0].summary).toBe(summary);
+  });
+
   it('accepts editor-reviewed input within limits', () => {
     const validated = service.validateReviewedInput({
       researchJobId: 'job-1',
