@@ -2,7 +2,7 @@ import type { Node } from '@tiptap/pm/model';
 
 const MAX_TABLE_COLUMNS = 1000;
 const MAX_TABLE_GRID_CELLS = 100_000;
-const TABLE_SIZE_ERROR = '문서의 표가 너무 큽니다. 표를 나누거나 행·열 수를 줄여주세요. 원문은 변경하지 않았습니다.';
+const TABLE_SIZE_ERROR = '표의 크기가 편집 가능한 범위를 넘었습니다. 원문은 변경하지 않았습니다.';
 
 type CellSpan = { colspan: number; rowspan: number };
 

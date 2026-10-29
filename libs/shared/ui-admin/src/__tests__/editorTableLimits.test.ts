@@ -61,12 +61,18 @@ describe('표 파싱 전 전체 격자 크기 검사', () => {
 
   it('개별로 허용되는 표를 추가해도 문서 전체 한도를 넘기면 기존 초안을 유지한다', () => {
     const rejected = vi.fn();
-    const editor = new Editor({ extensions: createAdminEditorExtensions(rejected), content: table(50, 1000) });
+    const changed = vi.fn();
+    const editor = new Editor({
+      extensions: createAdminEditorExtensions(rejected),
+      content: table(50, 1000),
+      onUpdate: changed,
+    });
     try {
       const previous = editor.getJSON();
       editor.commands.insertContentAt(editor.state.doc.content.size, table(51, 1000));
       expect(editor.getJSON()).toEqual(previous);
       expect(rejected).toHaveBeenCalledOnce();
+      expect(changed).not.toHaveBeenCalled();
     } finally {
       editor.destroy();
     }

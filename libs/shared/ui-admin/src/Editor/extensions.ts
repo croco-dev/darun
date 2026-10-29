@@ -33,6 +33,7 @@ export function createAdminEditorExtensions(onTableRejected?: (message: string) 
               if (!transaction.docChanged) return true;
               const error = getEditorDocumentTableError(transaction.doc);
               if (!error) return true;
+              transaction.setMeta('preventUpdate', true);
               onTableRejected?.(error);
               return false;
             },
