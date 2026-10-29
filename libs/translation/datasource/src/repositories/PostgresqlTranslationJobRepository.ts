@@ -4,6 +4,8 @@ import {
   type TranslationJobRepository,
   TranslationJobRepositoryToken,
   type TranslationJobStatus,
+  type TranslationEntityType,
+  TRANSLATION_FIELDS,
   translationFields,
   translationJobListArgs,
 } from '@darun/translation-domain';
@@ -224,26 +226,56 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
     return row ? this.toEntity(row) : null;
   }
 
-  async findActiveJob(input: {
-    entityType: string;
+  async findOrCreateActiveJob(input: {
+    entityType: TranslationEntityType;
     entityId: string;
     locale?: string;
-  }): Promise<TranslationJobEntity | null> {
-    const rows = await this.db
-      .select()
-      .from(translationJobs)
-      .where(
-        and(
-          eq(translationJobs.entityType, input.entityType),
-          eq(translationJobs.entityId, input.entityId),
-          eq(translationJobs.locale, input.locale ?? 'en'),
-          inArray(translationJobs.status, ['pending', 'in_progress'] as const)
+    fields: string[];
+  }): Promise<TranslationJobEntity> {
+    const fields = translationFields(input);
+    const locale = input.locale ?? 'en';
+    const lockKey = JSON.stringify([
+      'manual-translation',
+      input.entityType,
+      input.entityId,
+      locale,
+      [...fields].sort(),
+    ]);
+    const fieldSet = sql`ARRAY[${sql.join(
+      fields.map(field => sql`${field}`),
+      sql`, `
+    )}]::text[]`;
+    return this.db.transaction(async tx => {
+      // Lock an absent scope too. This transaction never acquires a Product source lock.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+      const [active] = await tx
+        .select()
+        .from(translationJobs)
+        .where(
+          and(
+            eq(translationJobs.entityType, input.entityType),
+            eq(translationJobs.entityId, input.entityId),
+            eq(translationJobs.locale, locale),
+            inArray(translationJobs.status, ['pending', 'in_progress']),
+            or(
+              and(sql`${translationJobs.fields} @> ${fieldSet}`, sql`${translationJobs.fields} <@ ${fieldSet}`),
+              input.entityType === 'Product' && fields.length === TRANSLATION_FIELDS.Product.length
+                ? isNull(translationJobs.fields)
+                : undefined
+            )
+          )
         )
-      )
-      .orderBy(desc(translationJobs.createdAt))
-      .limit(1);
-    const row = rows[0];
-    return row ? this.toEntity(row) : null;
+        .orderBy(desc(translationJobs.createdAt), desc(translationJobs.id))
+        .limit(1)
+        .for('update');
+      if (active) return this.toEntity(active);
+      return new PostgresqlTranslationJobRepository(tx).createJob({
+        ...input,
+        locale,
+        fields,
+        message: '번역 작업이 대기열에 등록되었습니다.',
+      });
+    });
   }
 
   async retryJobLease(jobId: string, leaseToken: string, error: string): Promise<TranslationJobEntity | null> {

@@ -86,7 +86,7 @@ describe('Source complete translation orchestration', () => {
       const fields = entityType === 'Magazine' ? ['title', 'summary'] : ['name', 'summary'];
       const job = await fixture.service.requestTranslationJob(entityType, 'source-1', fields);
       expect(job.status).toBe('pending');
-      expect(fixture.repository.createJob).toHaveBeenCalledWith(
+      expect(fixture.repository.findOrCreateActiveJob).toHaveBeenCalledWith(
         expect.objectContaining({ entityType, fields, entityId: 'source-1' })
       );
       expect(fixture.queue.sendJob).toHaveBeenCalledWith({ jobId: job.id, entityType, entityId: 'source-1' });
@@ -99,7 +99,7 @@ describe('Source complete translation orchestration', () => {
     await expect(fixture.service.requestTranslationJob('Magazine', 'm1', ['title'])).rejects.toThrow(
       'source unavailable'
     );
-    expect(fixture.repository.createJob).not.toHaveBeenCalled();
+    expect(fixture.repository.findOrCreateActiveJob).not.toHaveBeenCalled();
   });
   it('하나의 field 실패는 모든 row를 버리고 실패 상태만 fencing한다', async () => {
     const fixture = translationJobFixture();

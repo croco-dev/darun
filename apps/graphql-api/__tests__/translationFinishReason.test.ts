@@ -74,6 +74,7 @@ describe('translation job completion reasons', () => {
       });
       const productRepository = { findOneById: vi.fn() } as unknown as ProductRepository;
       const repository: TranslationJobRepository = {
+        findOrCreateActiveJob: vi.fn(),
         createJob: vi.fn(),
         findJobById: vi.fn().mockResolvedValue(job),
         claimJobLease: vi.fn().mockResolvedValue({ ...job, status: 'in_progress' }),
