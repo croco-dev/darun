@@ -543,9 +543,10 @@ describe('admin research workspace flow', () => {
         </ApolloProvider>
       );
     mount();
-    const field = (await screen.findByRole('textbox', {
+    await screen.findByDisplayValue(summary);
+    const field = screen.getByRole('textbox', {
       name: '기능 1 설명',
-    })) as HTMLTextAreaElement;
+    }) as HTMLTextAreaElement;
     expect(field.value).toBe(summary);
     expect(field.getAttribute('aria-invalid')).toBe('true');
     const errorId = field
@@ -567,9 +568,10 @@ describe('admin research workspace flow', () => {
     );
     cleanup();
     mount();
-    const restored = (await screen.findByRole('textbox', {
+    await screen.findByDisplayValue(summary);
+    const restored = screen.getByRole('textbox', {
       name: '기능 1 설명',
-    })) as HTMLTextAreaElement;
+    }) as HTMLTextAreaElement;
     expect(restored.value).toBe(summary);
     expect(restored.getAttribute('aria-invalid')).toBe('true');
     fireEvent.change(restored, { target: { value: '가'.repeat(255) } });
