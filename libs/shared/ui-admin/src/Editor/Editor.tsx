@@ -4,7 +4,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import { useEffect, useState } from 'react';
 import { createAdminEditorExtensions } from './extensions';
 import { MenuBar } from './MenuBar';
-import { getEditorTableError } from './tableLimits';
+import { getEditorTableError, getEditorTablePasteError } from './tableLimits';
 
 type EditorProps = {
   value?: string;
@@ -24,7 +24,10 @@ export function Editor({
   disabled = false,
 }: EditorProps) {
   const initialContent = value !== undefined ? value : (defaultValue ?? '');
-  const [rejectedTable, setRejectedTable] = useState<{ content: string; error: string | null }>({
+  const [rejectedTable, setRejectedTable] = useState<{
+    content: string;
+    error: string | null;
+  }>({
     content: initialContent,
     error: null,
   });
@@ -42,6 +45,12 @@ export function Editor({
     content: contentError ? '' : initialContent,
     editable: isEditable,
     editorProps: {
+      handlePaste: (view, _event, slice) => {
+        const error = getEditorTablePasteError(view.state, slice);
+        if (!error) return false;
+        reportTableError(error);
+        return true;
+      },
       handleDOMEvents: {
         paste: (_view, event) => {
           const error = getEditorTableError(event.clipboardData?.getData('text/html') ?? '');
