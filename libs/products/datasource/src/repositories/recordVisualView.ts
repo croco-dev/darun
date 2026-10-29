@@ -2,7 +2,7 @@ import type { Drizzle } from '@darun/provider-database';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import { visualViewEvents } from '../entities/VisualPopularitySchema';
 
-export async function recordVisualView(
+export function recordVisualView(
   db: Drizzle,
   params: { screenshotId?: string; flowId?: string; viewerHash: string }
 ): Promise<boolean> {
