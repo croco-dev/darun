@@ -548,6 +548,8 @@ GraphQL SDL이나 원본 operation을 변경하면 `pnpm --filter @darun/provide
 관리자 목록의 번역 더보기와 이미 읽은 목록의 갱신은 100건씩 `offset`으로 조회합니다. 더보기 실패 시 기존 행을 유지하고 같은 위치에서 재시도하며, 필터 변경 전 요청의 늦은 응답은 현재 목록에 합치지 않습니다.
 번역 작업은 `createdAt DESC, id DESC`로 정렬해 생성 시각이 같아도 페이지 경계의 순서를 고정합니다.
 
+번역·소개 작업의 단건/목록 조회는 SELECT가 성공한 경우에만 `null`/빈 목록을 반환합니다. 접속·시간 초과는 `database/read-unavailable`, 테이블·컬럼 등 스키마 불일치는 `database/read-schema-invalid`, 나머지 조회 실패는 `database/read-failed`로 전달하며 SQL·parameter·원시 cause를 포함하지 않습니다. 관리자 목록은 일부 조회가 실패해도 이미 읽은 행과 오류 안내를 함께 표시합니다. 목록의 다시 시도와 후보 ID 다시 열기는 조회만 반복하며 작업 생성·큐 전송을 자동 실행하지 않습니다.
+
 Next.js 버전은 workspace catalog와 override를 함께 갱신하며 모든 웹 앱은 catalog를 사용합니다. OpenTelemetry API는 웹과 서버 SDK의 공통 호환 범위인 `1.9.1`로 통합합니다. 서로 다른 peer 버전으로 Drizzle 타입이 중복 생성되는 것을 방지하며, Lambda의 Sentry·profiling SDK `10.38.0`과 기존 서버 계측 설정은 유지합니다. 의존성 취약점은 감사 기준을 낮추거나 제외하지 않고 수정 버전과 잠금 파일을 함께 갱신합니다.
 
 HTML/Markdown 의미 전환의 공통 원문과 영어 기대값은 `libs/translation/datasource/src/__tests__/descriptionMeaningTransitions.fixture.ts`에서 관리합니다. 단위 검사와 DB 통합 검사는 같은 입력만 공유하며, 영어 기대값은 생산 비교 함수나 번역 응답으로 계산하지 않는 명시적 리터럴을 유지합니다. 자격 증명 거절 사례는 `apps/graphql-api/__tests__/llmSettingCredential.fixture.ts`에서 실행 시 생성하며, HTTP와 SDK 검사 각각의 URI 인코딩 차이는 해당 검사에 남깁니다.

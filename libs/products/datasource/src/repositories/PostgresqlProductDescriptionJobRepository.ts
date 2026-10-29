@@ -5,7 +5,7 @@ import {
   type ProductDescriptionJobStatus,
   type UpdateProductDescriptionJobOptions,
 } from '@darun/products-domain';
-import { Drizzle, DrizzleToken } from '@darun/provider-database';
+import { databaseReadFailed, Drizzle, DrizzleToken } from '@darun/provider-database';
 import {
   JOB_COMMIT_MARGIN_MS,
   JOB_DISPATCH_RESERVATION_MS,
@@ -102,8 +102,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
 
       return this.toEntity(row);
     } catch (error) {
-      console.warn('[PostgresqlProductDescriptionJobRepository] Failed to find job (table may not exist yet):', error);
-      return null;
+      throw databaseReadFailed(error);
     }
   }
 
@@ -275,8 +274,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
 
       return rows.map(row => this.toEntity(row));
     } catch (error) {
-      console.warn('[PostgresqlProductDescriptionJobRepository] Failed to find jobs (table may not exist yet):', error);
-      return [];
+      throw databaseReadFailed(error);
     }
   }
 }
