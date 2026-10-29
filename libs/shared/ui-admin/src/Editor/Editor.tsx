@@ -91,20 +91,20 @@ export function Editor({
     editor.commands.setContent(nextValue, false);
   }, [value, defaultValue, editor, contentError]);
 
-  if (contentError) {
-    return (
-      <p role="alert" className="text-sm text-cherry-700">
-        {contentError}
-      </p>
-    );
-  }
-
   if (!editor) {
     return (
       <div className="flex flex-col gap-3">
         <div className="h-9 w-64 animate-pulse rounded-lg bg-surface-100" />
         <div className="min-h-72 rounded-card border border-dark-200 bg-surface-100/40 p-4" />
       </div>
+    );
+  }
+
+  if (contentError) {
+    return (
+      <p role="alert" className="text-sm text-cherry-700">
+        {contentError}
+      </p>
     );
   }
 
