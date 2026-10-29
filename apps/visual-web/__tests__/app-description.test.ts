@@ -64,6 +64,13 @@ describe('AppDescription', () => {
     expect(container.textContent).toBe('소개문서');
   });
 
+  it('알 수 없는 태그 뒤의 HTML도 구조적으로 렌더한다', () => {
+    const container = renderDom('<widget>앞말</widget><h2>소개</h2>');
+    expect(container.querySelector('h2')?.textContent).toBe('소개');
+    expect(container.querySelector('widget')).toBeNull();
+    expect(container.textContent).toBe('앞말소개');
+  });
+
   it.each(['<script>alert(1)</script>', '<style>body{display:none}</style>'])(
     '금지 태그만 있는 HTML도 제거한다: %s',
     description => {
