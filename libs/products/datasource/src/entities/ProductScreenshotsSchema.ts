@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, varchar, timestamp, integer, check } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, timestamp, integer, check } from 'drizzle-orm/pg-core';
 import { ulid } from 'ulid';
 
 export const productScreenshots = pgTable(
@@ -7,7 +7,8 @@ export const productScreenshots = pgTable(
   {
     id: varchar('id', { length: 26 }).primaryKey().$default(ulid),
     productId: varchar('product_id', { length: 26 }).notNull(),
-    imageUrl: varchar('image_url', { length: 255 }).notNull(),
+    // Preserve the full provider URL; valid upload folders and public IDs can exceed 255 characters.
+    imageUrl: text('image_url').notNull(),
     imageAlt: varchar('image_alt', { length: 100 }).notNull(),
     title: varchar('title', { length: 100 }),
     platform: varchar('platform', { length: 16 }),
