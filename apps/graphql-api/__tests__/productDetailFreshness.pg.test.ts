@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import {
   PostgresqlProductFeatureRepository,
   PostgresqlProductFeatureScreenshotRepository,
+  PostgresqlProductFlowRepository,
   PostgresqlProductLinkRepository,
   PostgresqlProductScreenshotRepository,
 } from '@darun/products-datasource';
@@ -10,7 +11,8 @@ import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-da
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres, { type Sql } from 'postgres';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 
 const url = process.env.PRODUCT_DETAIL_TEST_DATABASE_URL;
@@ -210,6 +212,213 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       await writer`update ${writer(spec.table)} set priority = 11 where id = 'a-low'`;
       expect(ids(await read('parent-a'))).toEqual(['a-low', 'a-high', 'a-tie-a', 'a-tie-z']);
       expect(selectCount).toBe(3);
+    });
+  });
+
+  describe('Visual 조회의 rolling 24시간 중복 제외', () => {
+    let first: Sql;
+    let second: Sql;
+    const applicationName = `visual-view-${randomUUID()}`;
+    const viewerHash = 'a'.repeat(64);
+    const targetId = '01K00000000000000000000479';
+    const otherTargetId = '01K00000000000000000000480';
+    const initialTime = Date.parse('2030-01-01T23:59:00.000Z');
+
+    beforeAll(async () => {
+      const options = {
+        max: 1,
+        prepare: false,
+        connection: {
+          application_name: applicationName,
+          statement_timeout: 5000,
+          lock_timeout: 4000,
+        },
+      };
+      first = postgres(url!, options);
+      second = postgres(url!, options);
+      await writer`insert into products (id, name, slug, summary, logo_url)
+        values (${targetId}, 'Visual fixture', ${applicationName}, 'summary', 'https://example.com/logo.png')`;
+      for (const id of [targetId, otherTargetId]) {
+        await writer`insert into product_screenshots (id, product_id, image_url, image_alt)
+          values (${id}, ${targetId}, 'https://example.com/screen.png', 'screen')`;
+        await writer`insert into product_flows (id, product_id, title, platform, flow_type)
+          values (${id}, ${targetId}, 'flow', 'WEB', 'OTHER')`;
+      }
+    });
+    afterAll(async () => {
+      vi.restoreAllMocks();
+      await first?.end({ timeout: 5 });
+      await second?.end({ timeout: 5 });
+      await writer`delete from products where id = ${targetId}`;
+      await writer`delete from product_screenshots where id in (${targetId}, ${otherTargetId})`;
+    });
+
+    const targets = [
+      {
+        kind: 'screenshot',
+        record: (connection: Sql, id = targetId, hash = viewerHash) =>
+          new PostgresqlProductScreenshotRepository(drizzle(connection)).insertVisualViewEvent({
+            screenshotId: id,
+            viewerHash: hash,
+          }),
+      },
+      {
+        kind: 'flow',
+        record: (connection: Sql, id = targetId, hash = viewerHash) =>
+          new PostgresqlProductFlowRepository(drizzle(connection)).insertVisualViewEvent({
+            flowId: id,
+            viewerHash: hash,
+          }),
+      },
+    ];
+
+    async function waitForBlockedRequests(count: number) {
+      await vi.waitFor(
+        async () => {
+          const [row] = await reader`select count(*)::int as count from pg_stat_activity
+            where application_name = ${applicationName} and wait_event = 'advisory'`;
+          expect(row.count).toBe(count);
+        },
+        { timeout: 2000, interval: 10 }
+      );
+    }
+
+    describe.each(targets)('$kind', target => {
+      beforeEach(async () => {
+        await writer`delete from visual_view_events`;
+        vi.spyOn(Date, 'now').mockReturnValue(initialTime);
+      });
+
+      it('별도 연결의 동시 최초 요청은 한 건만 기록한다', async () => {
+        // Hold both INSERTs after their duplicate SELECTs on the unfixed code.
+        // On the fixed code the second request instead waits on the viewer/target lock.
+        await writer`create or replace function visual_view_test_gate() returns trigger language plpgsql as $$
+          begin perform pg_advisory_xact_lock(479, 1); return new; end $$`;
+        await writer`create trigger visual_view_test_gate before insert on visual_view_events
+          for each row execute function visual_view_test_gate()`;
+        await writer`select pg_advisory_lock(479, 1)`;
+        const requests = [target.record(first), target.record(second)];
+        // Attach a rejection handler immediately, including on assertion failure.
+        const settled = Promise.allSettled(requests);
+        try {
+          await waitForBlockedRequests(2);
+        } finally {
+          await writer`select pg_advisory_unlock(479, 1)`;
+          await settled;
+          await writer`drop trigger visual_view_test_gate on visual_view_events`;
+          await writer`drop function visual_view_test_gate()`;
+        }
+        expect(await Promise.all(requests)).toEqual(expect.arrayContaining([true, false]));
+        const events = await writer`select viewer_hash, screenshot_id, flow_id from visual_view_events`;
+        expect(events).toEqual([
+          {
+            viewer_hash: viewerHash,
+            screenshot_id: target.kind === 'screenshot' ? targetId : null,
+            flow_id: target.kind === 'flow' ? targetId : null,
+          },
+        ]);
+      });
+
+      it('날짜가 바뀌어도 24시간 직전과 정확한 경계는 제외하고 경계 이후 기록한다', async () => {
+        expect(await target.record(first)).toBe(true);
+        for (const elapsed of [2 * 60_000, 86_399_999, 86_400_000]) {
+          vi.mocked(Date.now).mockReturnValue(initialTime + elapsed);
+          expect(await target.record(second)).toBe(false);
+        }
+        vi.mocked(Date.now).mockReturnValue(initialTime + 86_400_001);
+        expect(await target.record(second)).toBe(true);
+        const rows = await writer`select to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MS') as time
+          from visual_view_events order by created_at`;
+        expect(rows.map(row => row.time)).toEqual(['2030-01-01T23:59:00.000', '2030-01-02T23:59:00.001']);
+      });
+
+      it('잠금 대기 중 24시간을 지나면 잠금을 얻은 시각으로 다시 판단한다', async () => {
+        await writer`create or replace function visual_view_test_gate() returns trigger language plpgsql as $$
+          begin perform pg_advisory_xact_lock(479, 1); return new; end $$`;
+        await writer`create trigger visual_view_test_gate before insert on visual_view_events
+          for each row execute function visual_view_test_gate()`;
+        await writer`select pg_advisory_lock(479, 1)`;
+        const requests = [target.record(first)];
+        let settled = Promise.allSettled(requests);
+        try {
+          await waitForBlockedRequests(1);
+          requests.push(target.record(second));
+          settled = Promise.allSettled(requests);
+          await waitForBlockedRequests(2);
+          vi.mocked(Date.now).mockReturnValue(initialTime + 86_400_001);
+        } finally {
+          await writer`select pg_advisory_unlock(479, 1)`;
+          await settled;
+          await writer`drop trigger visual_view_test_gate on visual_view_events`;
+          await writer`drop function visual_view_test_gate()`;
+        }
+        expect(await Promise.all(requests)).toEqual([true, true]);
+        const rows = await writer`select to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MS') as time
+          from visual_view_events order by created_at`;
+        expect(rows.map(row => row.time)).toEqual(['2030-01-01T23:59:00.000', '2030-01-02T23:59:00.001']);
+      });
+
+      it('다른 viewer와 대상은 첫 기록의 commit을 기다리지 않고 독립적으로 기록한다', async () => {
+        await writer`create or replace function visual_view_test_gate() returns trigger language plpgsql as $$
+          begin
+            if new.viewer_hash = repeat('a', 64)
+              and coalesce(new.screenshot_id, new.flow_id) = '01K00000000000000000000479' then
+              perform pg_advisory_xact_lock(479, 1);
+            end if;
+            return new;
+          end $$`;
+        await writer`create trigger visual_view_test_gate before insert on visual_view_events
+          for each row execute function visual_view_test_gate()`;
+        await writer`select pg_advisory_lock(479, 1)`;
+        const pending = target.record(first);
+        const settled = Promise.allSettled([pending]);
+        try {
+          await waitForBlockedRequests(1);
+          expect(await target.record(second, targetId, 'b'.repeat(64))).toBe(true);
+          expect(await target.record(second, otherTargetId)).toBe(true);
+        } finally {
+          await writer`select pg_advisory_unlock(479, 1)`;
+          await settled;
+          await writer`drop trigger visual_view_test_gate on visual_view_events`;
+          await writer`drop function visual_view_test_gate()`;
+        }
+        expect(await pending).toBe(true);
+        const [row] = await writer`select count(*)::int as count from visual_view_events`;
+        expect(row.count).toBe(3);
+      });
+
+      it('INSERT 실패를 전파하고 transaction과 잠금을 정리해 재시도할 수 있다', async () => {
+        await writer`create or replace function visual_view_test_failure() returns trigger language plpgsql as $$
+          begin raise exception 'synthetic view insert failure'; end $$`;
+        await writer`create trigger visual_view_test_failure before insert on visual_view_events
+          for each row execute function visual_view_test_failure()`;
+        try {
+          await expect(target.record(first)).rejects.toMatchObject({
+            cause: { message: 'synthetic view insert failure' },
+          });
+        } finally {
+          await writer`drop trigger visual_view_test_failure on visual_view_events`;
+          await writer`drop function visual_view_test_failure()`;
+        }
+        expect(await target.record(second)).toBe(true);
+        const [row] = await writer`select count(*)::int as count from visual_view_events`;
+        expect(row.count).toBe(1);
+      });
+    });
+
+    it('같은 ID의 화면과 플로는 별도 대상이며 두 저장소의 플로 기록은 같은 정책을 사용한다', async () => {
+      await writer`delete from visual_view_events`;
+      vi.spyOn(Date, 'now').mockReturnValue(initialTime);
+      expect(await targets[0].record(first)).toBe(true);
+      expect(await targets[1].record(second)).toBe(true);
+      expect(
+        await new PostgresqlProductScreenshotRepository(drizzle(first)).insertVisualViewEvent({
+          flowId: targetId,
+          viewerHash,
+        })
+      ).toBe(false);
+      const [row] = await writer`select count(*)::int as count from visual_view_events`;
+      expect(row.count).toBe(2);
     });
   });
 });

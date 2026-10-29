@@ -18,8 +18,9 @@ import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 import { productScreenshotUiElements } from '../entities/ProductScreenshotUiElementsSchema';
 import { screenshotCleanupIntents } from '../entities/ScreenshotCleanupIntentSchema';
-import { visualSaves, visualViewEvents } from '../entities/VisualPopularitySchema';
+import { visualSaves } from '../entities/VisualPopularitySchema';
 import { beginProductContentWrite } from './productContentSync';
+import { recordVisualView } from './recordVisualView';
 
 type ScreenshotRow = typeof productScreenshots.$inferSelect;
 
@@ -376,31 +377,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
     flowId?: string;
     viewerHash: string;
   }): Promise<boolean> {
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const conditions = [
-      eq(visualViewEvents.viewerHash, params.viewerHash),
-      sql`${visualViewEvents.createdAt} >= ${since}`,
-    ];
-    if (params.screenshotId) {
-      conditions.push(eq(visualViewEvents.screenshotId, params.screenshotId));
-    }
-    if (params.flowId) {
-      conditions.push(eq(visualViewEvents.flowId, params.flowId));
-    }
-    const existing = await this.db
-      .select({ id: visualViewEvents.id })
-      .from(visualViewEvents)
-      .where(and(...conditions))
-      .limit(1);
-    if (existing.length > 0) {
-      return false;
-    }
-    await this.db.insert(visualViewEvents).values({
-      screenshotId: params.screenshotId ?? null,
-      flowId: params.flowId ?? null,
-      viewerHash: params.viewerHash,
-    });
-    return true;
+    return recordVisualView(this.db, params);
   }
 
   async toggleVisualSave(params: {
