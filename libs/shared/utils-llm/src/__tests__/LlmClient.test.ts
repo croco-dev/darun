@@ -279,7 +279,9 @@ describe('structured completions', () => {
           },
         ],
       });
-      await expect(new LlmClient().completion('test-model', [], { responseFormat })).rejects.toThrow('did not finish');
+      await expect(new LlmClient().completion('test-model', [], { responseFormat })).rejects.toMatchObject({
+        code: 'LLM_RESPONSE_INCOMPLETE',
+      });
     }
   );
 
@@ -292,7 +294,9 @@ describe('structured completions', () => {
         },
       ],
     });
-    await expect(new LlmClient().completion('test-model', [], { responseFormat })).rejects.toThrow('was refused');
+    await expect(new LlmClient().completion('test-model', [], { responseFormat })).rejects.toMatchObject({
+      code: 'LLM_RESPONSE_REFUSED',
+    });
   });
 });
 

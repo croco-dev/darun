@@ -24,6 +24,7 @@ import {
   JOB_LEASE_MS,
   JOB_COMMIT_MARGIN_MS,
   RetryableError,
+  LlmCompletionError,
   isAbortError,
   withAbortableStage,
   withRetry,
@@ -211,9 +212,55 @@ function isUniqueViolation(error: unknown): boolean {
   return false;
 }
 
-function isStructuredOutputUnsupported(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error ?? '');
-  return /structured completion was refused|structured completion did not finish|구조화 응답/i.test(message);
+function classifyLlmFailure(error: unknown): {
+  errorCode: ProductResearchFailureCode;
+  errorMessage: string;
+  retryable: boolean;
+} {
+  if (error instanceof LlmCompletionError) {
+    return {
+      errorCode: error.code,
+      errorMessage:
+        error.code === 'LLM_RESPONSE_REFUSED'
+          ? 'LLM이 조사 응답 생성을 거절했습니다. 입력과 모델 설정을 확인해 주세요.'
+          : 'LLM 응답이 끝까지 생성되지 않았습니다. 출력 한도와 모델 설정을 확인해 주세요.',
+      retryable: false,
+    };
+  }
+  const status =
+    error instanceof RetryableError
+      ? error.statusCode
+      : typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number'
+        ? error.status
+        : undefined;
+  if (status !== undefined && status >= 400 && status < 500 && status !== 429) {
+    const unsupported =
+      (status === 400 || status === 422) &&
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'unsupported_parameter' &&
+      'param' in error &&
+      error.param === 'response_format';
+    return {
+      errorCode: unsupported
+        ? 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED'
+        : status === 401 || status === 403
+          ? 'LLM_AUTHENTICATION_FAILED'
+          : 'LLM_INVALID_REQUEST',
+      errorMessage: unsupported
+        ? '현재 LLM 모델은 구조화 응답을 지원하지 않습니다. 구조화 응답 지원 모델을 선택해 주세요.'
+        : status === 401 || status === 403
+          ? 'LLM 공급자의 인증 또는 접근 권한을 확인해 주세요.'
+          : 'LLM 공급자가 조사 요청을 거절했습니다. 입력과 모델 설정을 확인해 주세요.',
+      retryable: false,
+    };
+  }
+  return {
+    errorCode: 'LLM_UNAVAILABLE',
+    errorMessage: 'LLM 호출 중 일시적인 장애가 발생했습니다.',
+    retryable: true,
+  };
 }
 
 function toFailureCode(code: string): ProductResearchFailureCode {
@@ -920,20 +967,9 @@ export class ProductResearchService {
           );
         } catch (error) {
           if (isAbortError(error) || !canSettle()) return job;
-          if (isStructuredOutputUnsupported(error)) {
-            return deps.jobRepository.failJob({
-              jobId,
-              leaseToken,
-              errorCode: 'LLM_STRUCTURED_OUTPUT_UNSUPPORTED',
-              errorMessage: error instanceof Error ? error.message : '구조화 응답 미지원 모델입니다.',
-            });
-          }
-          return deps.jobRepository.retryJobLease({
-            jobId,
-            leaseToken,
-            errorCode: 'LLM_UNAVAILABLE',
-            errorMessage: error instanceof Error ? error.message : 'LLM 호출에 실패했습니다.',
-          });
+          const { retryable, ...failure } = classifyLlmFailure(error);
+          const input = { jobId, leaseToken, ...failure };
+          return retryable ? deps.jobRepository.retryJobLease(input) : deps.jobRepository.failJob(input);
         }
         if (!canSettle()) return job;
         try {

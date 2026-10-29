@@ -15,6 +15,13 @@ export type LlmChatMessage = {
   content: string;
 };
 
+export class LlmCompletionError extends Error {
+  constructor(public readonly code: 'LLM_RESPONSE_REFUSED' | 'LLM_RESPONSE_INCOMPLETE') {
+    super(code === 'LLM_RESPONSE_REFUSED' ? 'LLM completion was refused' : 'LLM completion did not finish');
+    this.name = 'LlmCompletionError';
+  }
+}
+
 export class LlmClient {
   private readonly clientCache = new Map<string, OpenAI>();
   private readonly attemptConfig = new AsyncLocalStorage<{
@@ -158,14 +165,11 @@ export class LlmClient {
       throw new Error(`LLM completion is empty for model: ${model}`);
     }
 
-    const structured = options?.responseFormat?.type === 'json_schema';
     if (message.refusal) {
-      throw new Error(`LLM ${structured ? 'structured ' : ''}completion was refused for model: ${model}`);
+      throw new LlmCompletionError('LLM_RESPONSE_REFUSED');
     }
     if (choice?.finish_reason !== 'stop') {
-      throw new Error(
-        `LLM ${structured ? 'structured ' : ''}completion did not finish for model: ${model} (${choice?.finish_reason})`
-      );
+      throw new LlmCompletionError('LLM_RESPONSE_INCOMPLETE');
     }
 
     return message;

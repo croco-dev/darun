@@ -1,4 +1,4 @@
-export { LlmClient } from './libs/LlmClient';
+export { LlmClient, LlmCompletionError } from './libs/LlmClient';
 export type { LlmChatMessage } from './libs/LlmClient';
 export type { LlmModel } from './libs/LlmModel';
 export { DEFAULT_LLM_MODEL, DEFAULT_LLM_ENDPOINT } from './libs/LlmModel';
