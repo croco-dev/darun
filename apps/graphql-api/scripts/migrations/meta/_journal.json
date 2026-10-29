@@ -141,6 +141,13 @@
       "when": 1792922508871,
       "tag": "0019_aspiring_wild_child",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793255278375,
+      "tag": "0020_absurd_nova",
+      "breakpoints": true
     }
   ]
 }
