@@ -239,13 +239,13 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
       input.entityType,
       input.entityId,
       locale,
-      [...fields].sort(),
+      [...fields].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
     ]);
     const fieldSet = sql`ARRAY[${sql.join(
       fields.map(field => sql`${field}`),
       sql`, `
     )}]::text[]`;
-    return this.db.transaction(async tx => {
+    return await this.db.transaction(async tx => {
       // Lock an absent scope too. This transaction never acquires a Product source lock.
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
       const [active] = await tx
