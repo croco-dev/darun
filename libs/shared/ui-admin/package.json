@@ -28,6 +28,7 @@
     "@tiptap/extension-table-header": "2.27.2",
     "@tiptap/extension-table-row": "2.27.2",
     "@tiptap/extension-typography": "^2.7.4",
+    "@tiptap/pm": "2.27.2",
     "@tiptap/react": "^2.7.4",
     "@tiptap/starter-kit": "^2.7.4"
   },

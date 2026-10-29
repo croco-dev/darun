@@ -90,6 +90,16 @@ describe('description form synchronization', () => {
 });
 
 describe('description validation', () => {
+  it('너무 큰 표는 직접 submit에서도 전송하지 않고 원문을 유지한다', async () => {
+    const { result } = renderHook(() => useEditProductDescription({ slug: 'product-1' }));
+    const html = '<table><tr><td colspan="600">A</td><td colspan="401">B</td></tr></table>';
+    act(() => result.current.form.getInputProps('description').onChange(html));
+    await act(async () => result.current.submit({ description: html }));
+    expect(mutate).not.toHaveBeenCalled();
+    expect(result.current.saveError).toBeTruthy();
+    expect(result.current.form.getValues().description).toBe(html);
+  });
+
   it.each(['', '<p>   <br>  </p>'])('rejects an empty description: %s', async value => {
     const { result } = renderHook(() => useEditProductDescription({ slug: 'product-1' }));
     await act(async () => {

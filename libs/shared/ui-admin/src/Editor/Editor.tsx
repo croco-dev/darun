@@ -1,9 +1,10 @@
 'use client';
 
 import { EditorContent, useEditor } from '@tiptap/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createAdminEditorExtensions } from './extensions';
 import { MenuBar } from './MenuBar';
+import { getEditorTableError } from './tableLimits';
 
 type EditorProps = {
   value?: string;
@@ -22,13 +23,45 @@ export function Editor({
   editable = true,
   disabled = false,
 }: EditorProps) {
-  const isEditable = editable && !disabled;
   const initialContent = value !== undefined ? value : (defaultValue ?? '');
-  const editor = useEditor({
-    extensions: createAdminEditorExtensions(),
+  const [rejectedTable, setRejectedTable] = useState<{ content: string; error: string | null }>({
     content: initialContent,
+    error: null,
+  });
+  if (rejectedTable.content !== initialContent) {
+    setRejectedTable({ content: initialContent, error: null });
+  }
+  const reportTableError = (error: string | null) => {
+    setRejectedTable(current => (current.error === error ? current : { ...current, error }));
+  };
+  const rejectedTableError = rejectedTable.error;
+  const contentError = getEditorTableError(initialContent);
+  const isEditable = editable && !disabled && !contentError;
+  const editor = useEditor({
+    extensions: createAdminEditorExtensions(reportTableError),
+    content: contentError ? '' : initialContent,
     editable: isEditable,
+    editorProps: {
+      handleDOMEvents: {
+        paste: (_view, event) => {
+          const error = getEditorTableError(event.clipboardData?.getData('text/html') ?? '');
+          if (!error) return false;
+          event.preventDefault();
+          reportTableError(error);
+          return true;
+        },
+        drop: (_view, event) => {
+          const error = getEditorTableError(event.dataTransfer?.getData('text/html') ?? '');
+          if (!error) return false;
+          event.preventDefault();
+          reportTableError(error);
+          return true;
+        },
+      },
+    },
     onUpdate: ({ editor: currentEditor }) => {
+      if (contentError) return;
+      reportTableError(null);
       onChange?.(currentEditor.getHTML());
     },
     immediatelyRender: false,
@@ -40,12 +73,12 @@ export function Editor({
     }
 
     if (editor.isEditable !== isEditable) {
-      editor.setEditable(isEditable);
+      editor.setEditable(isEditable, false);
     }
   }, [editor, isEditable]);
 
   useEffect(() => {
-    if (!editor) {
+    if (!editor || contentError) {
       return;
     }
 
@@ -56,7 +89,15 @@ export function Editor({
     }
 
     editor.commands.setContent(nextValue, false);
-  }, [value, defaultValue, editor]);
+  }, [value, defaultValue, editor, contentError]);
+
+  if (contentError) {
+    return (
+      <p role="alert" className="text-sm text-cherry-700">
+        {contentError}
+      </p>
+    );
+  }
 
   if (!editor) {
     return (
@@ -69,6 +110,11 @@ export function Editor({
 
   return (
     <div className="flex flex-col gap-3">
+      {rejectedTableError && (
+        <p role="alert" className="text-sm text-cherry-700">
+          {rejectedTableError}
+        </p>
+      )}
       <MenuBar editor={editor} disabled={!isEditable} onImageUploadingChange={onImageUploadingChange} />
       <EditorContent
         editor={editor}

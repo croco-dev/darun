@@ -82,6 +82,25 @@ const flush = async (fn: () => void) => {
 };
 
 describe('magazine draft editor with real Apollo operations', () => {
+  it('큰 표의 저장을 거절한 뒤 원문을 유지하고 정상 본문으로 복구한다', async () => {
+    const fixture = setup();
+    const query = await fixture.take('MagazineOnAdminEditor');
+    await flush(() => query.resolve({ tempMagazineBySlug: draft }));
+    const html = '<table><tr><td colspan="600">A</td><td colspan="401">B</td></tr></table>';
+    fireEvent.change(screen.getByRole('textbox', { name: '본문' }), { target: { value: html } });
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('표');
+    expect(fixture.requests).toHaveLength(0);
+    expect((screen.getByRole('textbox', { name: '본문' }) as HTMLTextAreaElement).value).toBe(html);
+
+    fireEvent.change(screen.getByRole('textbox', { name: '본문' }), { target: { value: '<p>복구한 초안</p>' } });
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    const save = await fixture.take('EditMagazineOnAdminEditor');
+    expect(save.variables.input).toMatchObject({ content: '<p>복구한 초안</p>' });
+    await flush(() => save.resolve({ editMagazine: { magazine: { ...draft, content: '<p>복구한 초안</p>' } } }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('saves the complete draft, reads it after reopening, and publishes only on explicit action', async () => {
     const fixture = setup();
     await flush(() => {});

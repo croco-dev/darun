@@ -2,6 +2,7 @@
 /// <reference path="./styles.d.ts" />
 
 export { Editor } from './Editor';
+export { getEditorTableError } from './Editor/tableLimits';
 export { GoogleButton } from './GoogleButton';
 export { Logo } from './Logo';
 export { PageShell } from './PageShell';

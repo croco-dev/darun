@@ -5,7 +5,10 @@ import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import TableRow from '@tiptap/extension-table-row';
 import Typography from '@tiptap/extension-typography';
+import { Plugin } from '@tiptap/pm/state';
+import { Extension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { getEditorDocumentTableError, readTableRowSpan } from './tableLimits';
 
 // Read native DOM spans so HTML bounds apply before ProseMirror allocates its grid.
 const tableSpanAttributes = {
@@ -15,19 +18,28 @@ const tableSpanAttributes = {
   },
   rowspan: {
     default: 1,
-    parseHTML: (element: HTMLElement) => {
-      const cell = element as HTMLTableCellElement;
-      const row = cell.closest('tr');
-      const section = row?.parentElement as HTMLTableSectionElement | null;
-      const remainingRows = row && section?.rows ? section.rows.length - row.sectionRowIndex : 1;
-      // A zero span reaches the end of its row group, never the next group.
-      return Math.min(cell.rowSpan || remainingRows, remainingRows);
-    },
+    parseHTML: (element: HTMLElement) => readTableRowSpan(element as HTMLTableCellElement),
   },
 };
 
-export function createAdminEditorExtensions() {
+export function createAdminEditorExtensions(onTableRejected?: (message: string) => void) {
   return [
+    Extension.create({
+      name: 'tableGridLimit',
+      addProseMirrorPlugins() {
+        return [
+          new Plugin({
+            filterTransaction(transaction) {
+              if (!transaction.docChanged) return true;
+              const error = getEditorDocumentTableError(transaction.doc);
+              if (!error) return true;
+              onTableRejected?.(error);
+              return false;
+            },
+          }),
+        ];
+      },
+    }),
     StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
     Image,
     Typography,
