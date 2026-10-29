@@ -14,10 +14,11 @@ import {
   TranslationJobRepositoryToken,
   TranslationSourceStoreToken,
   type UpsertTranslationParams,
+  type TranslationSourceStore,
 } from '@darun/translation-domain';
 import { TranslationJobService } from '@darun/translation-service';
 import type { LlmClient } from '@darun/utils-llm';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres, { type Sql } from 'postgres';
@@ -29,14 +30,20 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { setImmediate as yieldImmediate } from 'node:timers/promises';
 import { magazines } from '../../../libs/magazines/datasource/src/entities/MagazineSchema';
+import { productContentSyncIntents } from '../../../libs/products/datasource/src/entities/ProductContentSyncIntentSchema';
 import { productFeatures } from '../../../libs/products/datasource/src/entities/ProductFeaturesSchema';
 import { products } from '../../../libs/products/datasource/src/entities/ProductSchema';
+import {
+  beginProductContentWrite,
+  ProductContentSyncRegistrarToken,
+} from '../../../libs/products/datasource/src/repositories/productContentSync';
 import { lockProductSource } from '../../../libs/products/datasource/src/repositories/productSourceMutex';
 import { assertDocumentStructure } from '../../../libs/translation/datasource/src/codecs/htmlPlaceholderCodec';
 import { translationJobs } from '../../../libs/translation/datasource/src/entities/TranslationJobSchema';
 import { translations } from '../../../libs/translation/datasource/src/entities/TranslationSchema';
 import { TranslationQueryResolver } from '../../../libs/translation/feature/src/Translation.query.resolver';
 import { TranslationQueueService } from '../../../libs/translation/service/src/TranslationQueueService';
+import { registerProductContentSync } from '../src/adapters/PostgresqlProductContentSync';
 import { PostgresqlTranslationSourceStore } from '../src/adapters/PostgresqlTranslationSourceStore';
 
 const databaseUrl = process.env['TRANSLATION_TEST_DATABASE_URL'];
@@ -71,6 +78,7 @@ suite('Translation integrity in isolated PostgreSQL', () => {
     Container.set(DrizzleToken, db);
     Container.set(TranslationSourceStoreToken, store);
     Container.set(TranslationJobRepositoryToken, jobs);
+    Container.set(ProductContentSyncRegistrarToken, { register: registerProductContentSync });
   }, 20_000);
   afterAll(async () => {
     Container.reset();
@@ -188,6 +196,261 @@ suite('Translation integrity in isolated PostgreSQL', () => {
       leaseToken: 'current',
     };
   }
+
+  it.each(['product', 'generic', 'mixed'] as const)(
+    '%s 동시 수동 요청은 두 연결에서 같은 활성 번역 작업을 반환한다',
+    async entry => {
+      const { product } = await seedProduct();
+      const bothRead = Promise.withResolvers<void>();
+      let reads = 0;
+      const queue = { sendJob: vi.fn().mockResolvedValue(true) };
+      const services = [db, writerDb].map(database => {
+        const source = new PostgresqlTranslationSourceStore(database as never);
+        const fencedSource: TranslationSourceStore = {
+          read: async request => {
+            const snapshot = await source.read(request);
+            if (++reads === 2) bothRead.resolve();
+            await bothRead.promise;
+            return snapshot;
+          },
+          commit: input => source.commit(input),
+          createRetryJob: id => source.createRetryJob(id),
+        };
+        return new TranslationJobService(
+          { execute: async () => product } as unknown as GetProduct,
+          {} as never,
+          new PostgresqlTranslationJobRepository(database as never),
+          fencedSource,
+          queue as unknown as TranslationQueueService
+        );
+      });
+      const results = await Promise.all(
+        services.map((service, index) =>
+          entry === 'product' || (entry === 'mixed' && index === 0)
+            ? service.requestProductTranslationJob(product.id)
+            : service.requestTranslationJob('Product', product.id, [
+                'features',
+                'description',
+                'summary',
+                'name',
+                'name',
+              ])
+        )
+      );
+      expect(results[0]!.id).toBe(results[1]!.id);
+      expect(results.map(job => job.status)).toEqual(['pending', 'pending']);
+      expect(await db.select().from(translationJobs).where(eq(translationJobs.entityId, product.id))).toHaveLength(1);
+      expect(queue.sendJob.mock.calls.map(([payload]) => payload.jobId)).toEqual([results[0]!.id, results[0]!.id]);
+    }
+  );
+
+  it('필드 순서·중복은 같은 범위이고 대상·언어·필드 집합이 다르면 별도 작업이다', async () => {
+    const request = {
+      entityType: 'ProductFeature' as const,
+      entityId: randomUUID(),
+      fields: ['summary', 'name'],
+    };
+    const first = await jobs.findOrCreateActiveJob(request);
+    const second = await new PostgresqlTranslationJobRepository(writerDb as never).findOrCreateActiveJob({
+      ...request,
+      fields: ['name', 'summary', 'name'],
+    });
+    expect(second.id).toBe(first.id);
+    const differentScopes = await Promise.all([
+      jobs.findOrCreateActiveJob({ ...request, fields: ['summary'] }),
+      jobs.findOrCreateActiveJob({ ...request, locale: 'fr' }),
+      jobs.findOrCreateActiveJob({ ...request, entityType: 'Product' }),
+      jobs.findOrCreateActiveJob({ ...request, entityId: randomUUID() }),
+    ]);
+    expect(new Set([first, ...differentScopes].map(job => job.id)).size).toBe(5);
+    for (const status of ['completed', 'failed', 'superseded'] as const) {
+      await db.update(translationJobs).set({ status }).where(eq(translationJobs.id, second.id));
+      const replacement = await jobs.findOrCreateActiveJob(request);
+      expect(replacement.id).not.toBe(second.id);
+      expect(replacement.status).toBe('pending');
+      second.id = replacement.id;
+    }
+  });
+
+  it('더 최근의 다른 범위 작업이 있어도 기존 legacy Product bundle을 재사용한다', async () => {
+    const entityId = randomUUID();
+    const [legacy] = await db.insert(translationJobs).values({ entityType: 'Product', entityId }).returning();
+    const narrow = await jobs.createJob({
+      entityType: 'Product',
+      entityId,
+      fields: ['summary'],
+    });
+    const bundle = await jobs.findOrCreateActiveJob({
+      entityType: 'Product',
+      entityId,
+      fields: ['features', 'name', 'description', 'summary'],
+    });
+    expect(bundle.id).toBe(legacy!.id);
+    expect(bundle.fields).toBeNull();
+    expect(
+      (
+        await jobs.findOrCreateActiveJob({
+          entityType: 'Product',
+          entityId,
+          fields: ['summary'],
+        })
+      ).id
+    ).toBe(narrow.id);
+  });
+
+  it.each(['Magazine', 'ProductFeature'] as const)('%s 범용 요청도 기존 활성 작업을 재사용한다', async entityType => {
+    const { feature } = await seedProduct();
+    const [magazine] = await db
+      .insert(magazines)
+      .values({
+        title: '제목',
+        summary: '요약',
+        content: '본문',
+        slug: randomUUID(),
+        backgroundImageUrl: 'https://example.com/background.png',
+        authorId: 'synthetic',
+      })
+      .returning();
+    const entityId = entityType === 'Magazine' ? magazine!.id : feature.id;
+    const fields = entityType === 'Magazine' ? ['title', 'summary'] : ['name', 'summary'];
+    const queue = { sendJob: vi.fn().mockResolvedValue(true) };
+    const service = new TranslationJobService(
+      {} as never,
+      {} as never,
+      jobs,
+      store,
+      queue as unknown as TranslationQueueService
+    );
+    const first = await service.requestTranslationJob(entityType, entityId, fields);
+    const second = await service.requestTranslationJob(entityType, entityId, [...fields].reverse());
+    expect(first.id).toBe(second.id);
+    expect(queue.sendJob).toHaveBeenCalledTimes(2);
+    expect(await db.select().from(translationJobs).where(eq(translationJobs.entityId, entityId))).toHaveLength(1);
+  });
+
+  it('같은 작업의 중복 큐 전달은 한 attempt만 실행하고 실행 중 요청은 다시 전송하지 않는다', async () => {
+    const { feature } = await seedProduct();
+    const entered = Promise.withResolvers<void>();
+    const finish = Promise.withResolvers<void>();
+    const provider = {
+      translateSingle: vi.fn(async () => {
+        entered.resolve();
+        await finish.promise;
+        return {
+          translatedText: 'Feature name',
+          sourceHash: 'untrusted',
+          model: 'fixture-model',
+          promptVersion: 'v2',
+        };
+      }),
+      translateProductBundle: vi.fn(),
+    };
+    const queue = { sendJob: vi.fn().mockResolvedValue(true) };
+    const services = [db, writerDb].map(
+      database =>
+        new TranslationJobService(
+          {} as never,
+          provider,
+          new PostgresqlTranslationJobRepository(database as never),
+          new PostgresqlTranslationSourceStore(database as never),
+          queue as unknown as TranslationQueueService
+        )
+    );
+    const requested = await services[0]!.requestTranslationJob('ProductFeature', feature.id, ['name']);
+    expect((await services[1]!.requestTranslationJob('ProductFeature', feature.id, ['name'])).id).toBe(requested.id);
+    expect(queue.sendJob).toHaveBeenCalledTimes(2);
+    const identity = { entityType: 'ProductFeature', entityId: feature.id };
+    const running = services[0]!.executeTranslationJob(requested.id, identity, {
+      leaseToken: 'first-delivery',
+    });
+    try {
+      await entered.promise;
+      await services[1]!.executeTranslationJob(requested.id, identity, {
+        leaseToken: 'duplicate-delivery',
+      });
+      const active = await services[1]!.requestTranslationJob('ProductFeature', feature.id, ['name']);
+      expect(active).toMatchObject({
+        id: requested.id,
+        status: 'in_progress',
+        attemptCount: 1,
+        queued: true,
+      });
+      expect(queue.sendJob).toHaveBeenCalledTimes(2);
+      expect(provider.translateSingle).toHaveBeenCalledTimes(1);
+    } finally {
+      finish.resolve();
+      await running;
+    }
+    expect(await jobs.findJobById(requested.id)).toMatchObject({
+      status: 'completed',
+      attemptCount: 1,
+    });
+    expect(await repository.findByEntity({ ...identity, locale: 'en' })).toMatchObject([
+      { field: 'name', value: 'Feature name' },
+    ]);
+  });
+
+  it('수동 활성 작업이 있어도 새 canonical revision의 자동 번역 등록과 supersede를 유지한다', async () => {
+    const { product } = await seedProduct();
+    const fields = ['name', 'summary', 'description', 'features'];
+    const manual = await jobs.findOrCreateActiveJob({
+      entityType: 'Product',
+      entityId: product.id,
+      fields,
+    });
+    const write = (changes: Partial<typeof products.$inferInsert>) =>
+      writerDb.transaction(async tx => {
+        await lockProductSource(tx as never, product.id);
+        const finish = await beginProductContentWrite(tx as never, product.id);
+        await tx.update(products).set(changes).where(eq(products.id, product.id));
+        await finish();
+      });
+    await write({ publishedAt: new Date() });
+    const [first] = await db
+      .select()
+      .from(productContentSyncIntents)
+      .where(
+        and(eq(productContentSyncIntents.productId, product.id), eq(productContentSyncIntents.kind, 'translation'))
+      );
+    expect(first!.translationJobId).not.toBe(manual.id);
+    expect(first!.sourceRevision).toBe(1n);
+    expect(
+      (
+        await jobs.findOrCreateActiveJob({
+          entityType: 'Product',
+          entityId: product.id,
+          fields,
+        })
+      ).id
+    ).toBe(first!.translationJobId);
+    await write({ summary: '새 revision의 요약' });
+    const intents = await db
+      .select()
+      .from(productContentSyncIntents)
+      .where(
+        and(eq(productContentSyncIntents.productId, product.id), eq(productContentSyncIntents.kind, 'translation'))
+      );
+    const latest = intents.find(intent => intent.sourceRevision === 2n)!;
+    expect(latest.translationJobId).not.toBe(first!.translationJobId);
+    expect(await jobs.findJobById(first!.translationJobId!)).toMatchObject({
+      status: 'superseded',
+    });
+    expect(await jobs.findJobById(latest.translationJobId!)).toMatchObject({
+      status: 'pending',
+    });
+    expect(await jobs.findJobById(manual.id)).toMatchObject({
+      status: 'pending',
+    });
+    expect(
+      (
+        await jobs.findOrCreateActiveJob({
+          entityType: 'Product',
+          entityId: product.id,
+          fields,
+        })
+      ).id
+    ).toBe(latest.translationJobId);
+  });
 
   it.each([
     ['Product', 'description'],

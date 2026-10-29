@@ -976,6 +976,7 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
         nextDispatchAt: row!.nextDispatchAt.toISOString(),
         retryOfJobId,
       });
+      return row!.id;
     }
     const desc = await description.createJob({ productId: product.id });
     const trans = await translation.createJob({
@@ -1022,6 +1023,7 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
     });
     await db.update(productDescriptionJobs).set({ status: 'failed' }).where(eq(productDescriptionJobs.id, desc.id));
     await db.update(translationJobs).set({ status: 'failed' }).where(eq(translationJobs.id, trans.id));
+    let translationRetryId: string | undefined;
     for (const [mutation, id] of [
       ['retryProductDescriptionJob', desc.id],
       ['retryTranslationJob', trans.id],
@@ -1032,12 +1034,13 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       });
       expect(result.errors).toBeUndefined();
       const response = result.data?.[mutation];
-      await assertPendingResponse(
+      const retryId = await assertPendingResponse(
         response,
         mutation === 'retryProductDescriptionJob' ? productDescriptionJobs : translationJobs,
         id!
       );
-      expect(response && typeof response === 'object' && 'id' in response && response.id).not.toBe(id);
+      expect(retryId).not.toBe(id);
+      if (mutation === 'retryTranslationJob') translationRetryId = retryId;
     }
     const requested = await graphql({
       schema,
@@ -1045,8 +1048,18 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       id ${schedulingFields} } requestProductTranslation(productId: "${product.id}") { id ${schedulingFields} } }`,
     });
     expect(requested.errors).toBeUndefined();
-    await assertPendingResponse(requested.data?.requestTranslation, translationJobs, null);
-    await assertPendingResponse(requested.data?.requestProductTranslation, translationJobs, null);
+    const requestedTranslationId = await assertPendingResponse(
+      requested.data?.requestTranslation,
+      translationJobs,
+      trans.id
+    );
+    expect(requestedTranslationId).toBe(translationRetryId);
+    const requestedBundleId = await assertPendingResponse(
+      requested.data?.requestProductTranslation,
+      translationJobs,
+      null
+    );
+    expect(requestedBundleId).not.toBe(translationRetryId);
     const generated = await graphql({
       schema,
       source: `mutation { generateProductDescription(input: { slug: "${product.slug}" }) {

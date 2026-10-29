@@ -37,15 +37,13 @@ export class TranslationJobService {
     const normalizedFields = translationFields({ entityType, entityId, fields });
     // Read failures and invalid fields cannot register work that pretends to be valid.
     await this.sourceStore.read({ entityType, entityId, fields: normalizedFields });
-    const job = await this.repository.createJob({
+    const job = await this.repository.findOrCreateActiveJob({
       entityType,
       entityId,
       locale: 'en',
       fields: normalizedFields,
-      status: 'pending',
-      message: '번역 작업이 대기열에 등록되었습니다.',
     });
-    const queued = await this.sendToQueue({ jobId: job.id, entityType, entityId });
+    const queued = job.status === 'in_progress' || (await this.sendToQueue({ jobId: job.id, entityType, entityId }));
     return { ...job, queued };
   }
 
@@ -55,18 +53,6 @@ export class TranslationJobService {
     );
     if (!product) throw new Error('Product가 존재하지 않습니다.');
     const fields = ['name', 'summary', 'description', 'features'];
-    const active = await this.repository.findActiveJob?.({ entityType: 'Product', entityId: product.id, locale: 'en' });
-    if (
-      active &&
-      JSON.stringify(
-        translationFields({ entityType: 'Product', entityId: product.id, fields: active.fields ?? null })
-      ) === JSON.stringify(fields)
-    ) {
-      const queued =
-        active.status === 'in_progress' ||
-        (await this.sendToQueue({ jobId: active.id, entityType: 'Product', entityId: product.id }));
-      return { ...active, queued };
-    }
     return this.requestTranslationJob('Product', product.id, fields);
   }
 

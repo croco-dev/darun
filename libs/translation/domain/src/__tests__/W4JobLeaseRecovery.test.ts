@@ -46,6 +46,6 @@ describe('Translation persisted retry and recovery', () => {
     fixture.queue.sendJob.mockRejectedValueOnce(new Error('queue unavailable'));
     expect((await fixture.service.requestTranslationJob('Magazine', 'm1', ['title'])).queued).toBe(false);
     expect(await fixture.service.recoverInterruptedJobs()).toEqual({ recovered: 1, queued: 1 });
-    expect(fixture.repository.createJob).toHaveBeenCalledTimes(1);
+    expect(fixture.repository.findOrCreateActiveJob).toHaveBeenCalledTimes(1);
   });
 });

@@ -51,7 +51,9 @@ export function translationJobFixture(overrides: Partial<TranslationJobEntity> =
     retryJobLease: vi.fn().mockResolvedValue({ ...job, status: 'pending' }),
     claimJobLease: vi.fn().mockResolvedValue({ ...job, status: 'in_progress' }),
     completeJobLease: vi.fn().mockResolvedValue({ ...job, status: 'failed' }),
-    findActiveJob: vi.fn().mockResolvedValue(null),
+    findOrCreateActiveJob: vi
+      .fn()
+      .mockImplementation(async input => ({ ...job, ...input, id: 'job-new', status: 'pending' })),
     findRecoverableJobs: vi.fn().mockResolvedValue([job]),
   };
   const provider = {
