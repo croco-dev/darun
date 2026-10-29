@@ -289,6 +289,9 @@ importers:
       '@darun/magazines-feature':
         specifier: workspace:*
         version: link:../../libs/magazines/feature
+      '@darun/products-domain':
+        specifier: workspace:*
+        version: link:../../libs/products/domain
       '@darun/products-feature':
         specifier: workspace:*
         version: link:../../libs/products/feature

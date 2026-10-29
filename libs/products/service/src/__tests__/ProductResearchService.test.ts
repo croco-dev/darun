@@ -6,6 +6,7 @@ import {
 } from '@darun/products-domain';
 import { LlmCompletionError, RetryableError } from '@darun/utils-llm';
 import { describe, expect, it, vi } from 'vitest';
+import { ProductResearchReviewService } from '../ProductResearchReviewService';
 import { ProductResearchService } from '../ProductResearchService';
 
 function source(overrides: Partial<NormalizedResearchSource> = {}): NormalizedResearchSource {
@@ -45,6 +46,49 @@ function llmPayload() {
 }
 
 describe('ProductResearchService.buildDraftValidator', () => {
+  it('생성 schema는 저장 가능한 기능 요약 255자를 한도로 제공한다', () => {
+    const schema = ProductResearchService.researchResponseFormat().json_schema.schema;
+    expect(schema.properties.features.items.properties.summary.maxLength).toBe(255);
+  });
+
+  it.each([255, 256, 300])('기능 요약 %i자의 생성과 검토 등록 경계가 일치한다', length => {
+    const summary = '가'.repeat(length);
+    const raw = {
+      ...llmPayload(),
+      features: [{ ...llmPayload().features[0], summary }],
+    };
+    const build = () =>
+      ProductResearchService.buildDraftValidator({
+        raw,
+        originalUrl: 'https://linear.app/',
+        sources: [source()],
+        categories: [],
+        model: 'test',
+        promptVersion: 'research-v1',
+      });
+    const review = new ProductResearchReviewService();
+    const input = {
+      researchJobId: 'job-1',
+      name: 'Linear',
+      slug: 'linear',
+      summary: '이슈 트래킹 도구',
+      logoUrl: 'https://linear.app/logo.png',
+      officialUrl: 'https://linear.app/',
+      officialUrlConfirmed: false,
+      categoryIds: [],
+      features: raw.features,
+      tags: [],
+    };
+    if (length === 255) {
+      const draft = build();
+      expect(draft.features[0].summary).toBe(summary);
+      expect(review.validateReviewedInput({ ...input, features: draft.features }).features[0].summary).toBe(summary);
+    } else {
+      expect(build).toThrow(/features\[0\].*(summary|요약)/);
+      expect(() => review.validateReviewedInput(input)).toThrow(/기능 1.*255.*초과/);
+    }
+  });
+
   it('accepts a valid anchored payload', () => {
     const sources = [source()];
     const draft = ProductResearchService.buildDraftValidator({

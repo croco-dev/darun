@@ -16,6 +16,7 @@
     "@croco/utils-next-font-pretendard": "0.0.2",
     "@darun/companies-feature": "workspace:*",
     "@darun/magazines-feature": "workspace:*",
+    "@darun/products-domain": "workspace:*",
     "@darun/products-feature": "workspace:*",
     "@darun/provider-auth/client": "workspace:*",
     "@darun/provider-auth/server": "workspace:*",

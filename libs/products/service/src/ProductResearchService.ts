@@ -18,6 +18,7 @@ import {
   type ProductResearchWarning,
 } from '@darun/products-domain';
 import type { ProductResearchDispatchStatus } from '@darun/products-domain';
+import { PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH } from '@darun/products-domain/research';
 import type { WebSearchResult } from '@darun/utils-llm';
 import {
   JOB_MAX_ATTEMPTS,
@@ -126,7 +127,7 @@ export function createProductResearchResponseFormat() {
               type: 'object',
               properties: {
                 name: { type: 'string', maxLength: 80 },
-                summary: { type: 'string', maxLength: 300 },
+                summary: { type: 'string', maxLength: PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH },
                 emoji: { type: ['string', 'null'], maxLength: 30 },
                 anchors: { type: 'array', items: researchAnchorSchema, minItems: 1, maxItems: 5 },
               },
@@ -483,8 +484,13 @@ export class ProductResearchService {
       ) {
         throw new Error(`features[${index}].emoji가 유효하지 않습니다.`);
       }
-      if (!featureName || featureName.length > 80 || !featureSummary || featureSummary.length > 300) {
+      if (!featureName || featureName.length > 80 || !featureSummary) {
         throw new Error(`features[${index}]의 이름/요약이 유효하지 않습니다.`);
+      }
+      if (featureSummary.length > PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH) {
+        throw new Error(
+          `features[${index}].summary는 ${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내여야 합니다.`
+        );
       }
       const anchors = ProductResearchService.validateAnchors(feature.anchors, sourceById, `features[${index}].anchors`);
       if (anchors.length === 0) {

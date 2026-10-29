@@ -2,6 +2,10 @@
 
 import { gql } from '@apollo/client';
 import { useLazyQuery, useMutation, useQuery } from '@apollo/client/react';
+import {
+  PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH,
+  normalizeResearchFeatureSummary,
+} from '@darun/products-domain/research';
 import { Button } from '@darun/ui';
 import {
   AdminActions,
@@ -288,6 +292,12 @@ export const ProductResearchSection = () => {
   const jobMissing = jobLookup.job === null;
   const jobLoading = jobLookup.loading;
   const result = job?.result ?? null;
+  const featureSummaryErrors = review.features.map(feature => {
+    const length = normalizeResearchFeatureSummary(feature.summary).length;
+    return length > PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH
+      ? `현재 ${length}자, ${length - PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 초과입니다. ${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 줄여 주세요.`
+      : null;
+  });
   const categories = useMemo(() => categoryData?.categories ?? [], [categoryData]);
   const mutationError = actionError ?? jobLookup.error ?? null;
 
@@ -704,6 +714,10 @@ export const ProductResearchSection = () => {
 
   const handleMaterialize = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (featureSummaryErrors.some(Boolean)) {
+      notifications.show({ message: '기능 설명의 초과 길이를 확인해 주세요.', color: 'red' });
+      return;
+    }
     if (!jobId || job?.id !== jobId || job?.status !== 'completed' || !result) {
       notifications.show({ message: '완료된 조사 결과에서만 서비스를 생성할 수 있습니다.', color: 'red' });
       return;
@@ -953,7 +967,11 @@ export const ProductResearchSection = () => {
                       }}
                     />
                   </AdminField>
-                  <AdminField label={`기능 ${index + 1} 설명`}>
+                  <AdminField
+                    label={`기능 ${index + 1} 설명`}
+                    help={`${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 입력해 주세요.`}
+                    error={featureSummaryErrors[index]}
+                  >
                     <AdminTextarea
                       rows={3}
                       value={feature.summary}
@@ -1050,7 +1068,12 @@ export const ProductResearchSection = () => {
                   type="submit"
                   variant="contained"
                   color="primary"
-                  disabled={isMaterializing || isUploadingLogo || job?.status !== 'completed'}
+                  disabled={
+                    isMaterializing ||
+                    isUploadingLogo ||
+                    job?.status !== 'completed' ||
+                    featureSummaryErrors.some(Boolean)
+                  }
                 >
                   {isMaterializing || isUploadingLogo ? '생성 중...' : '검토 내용으로 미발행 생성'}
                 </Button>

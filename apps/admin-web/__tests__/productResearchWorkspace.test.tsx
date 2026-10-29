@@ -523,6 +523,67 @@ function formInputs(): Array<Record<string, FormDataEntryValue>> {
 }
 
 describe('admin research workspace flow', () => {
+  it.each([256, 300])('기존 %i자 기능 설명을 보존하고 필드 오류를 고친 뒤에만 등록한다', async length => {
+    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+    const summary = '가'.repeat(length);
+    const scenario = newScenario();
+    scenario.jobResponses = [
+      {
+        ...completedJob,
+        result: {
+          ...completedJob.result,
+          features: [{ ...completedJob.result.features[0], summary }],
+        },
+      },
+    ];
+    const mount = () =>
+      render(
+        <ApolloProvider client={makeClient(scenario)}>
+          <ProductResearchSection />
+        </ApolloProvider>
+      );
+    mount();
+    const field = (await screen.findByRole('textbox', {
+      name: '기능 1 설명',
+    })) as HTMLTextAreaElement;
+    expect(field.value).toBe(summary);
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    const errorId = field
+      .getAttribute('aria-describedby')
+      ?.split(' ')
+      .find(id => id.endsWith('-error'));
+    expect(document.getElementById(errorId ?? '')?.textContent).toContain(`${length - 255}자 초과`);
+    expect(document.getElementById(errorId ?? '')?.textContent).toContain(`${length}자`);
+    fireEvent.change(document.querySelector('input[name="review-logo-file"]')!, {
+      target: {
+        files: [new File(['logo'], 'logo.png', { type: 'image/png' })],
+      },
+    });
+    fireEvent.submit(field.closest('form')!);
+    expect(scenario.signInputs).toHaveLength(0);
+    expect(scenario.materializeVars).toHaveLength(0);
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.features[0].summary).toBe(summary)
+    );
+    cleanup();
+    mount();
+    const restored = (await screen.findByRole('textbox', {
+      name: '기능 1 설명',
+    })) as HTMLTextAreaElement;
+    expect(restored.value).toBe(summary);
+    expect(restored.getAttribute('aria-invalid')).toBe('true');
+    fireEvent.change(restored, { target: { value: '가'.repeat(255) } });
+    expect(restored.getAttribute('aria-invalid')).not.toBe('true');
+    fireEvent.change(document.querySelector('input[name="review-logo-url"]')!, {
+      target: { value: 'https://linear.app/logo.png' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
+    await waitFor(() => expect(scenario.materializeVars).toHaveLength(1));
+    expect(scenario.materializeVars[0]).toMatchObject({
+      input: { features: [{ summary: '가'.repeat(255) }] },
+    });
+  });
+
   it('태그 순차 입력은 쉼표와 공백을 보존하고 blur 전 제출에서 두 태그를 전달한다', async () => {
     testGlobal().researchSearchParams = { researchJobId: 'job-1' };
     const scenario = newScenario();
