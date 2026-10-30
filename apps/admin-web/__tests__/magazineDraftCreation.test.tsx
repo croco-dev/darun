@@ -96,3 +96,31 @@ it('preserves a failed creation for retry and prevents another write after succe
   expect(calls).toBe(2);
   client.stop();
 });
+
+it.each([
+  { title: '유효한 제목', slug: '.' },
+  { title: '유효한 제목', slug: ' .. ' },
+  { title: '.', slug: '' },
+  { title: '..', slug: ' ' },
+])('rejects an unreachable final slug before either submission path: %j', async values => {
+  const request = vi.fn();
+  const client = new ApolloClient({ cache: new InMemoryCache(), link: new ApolloLink(request) });
+  const { result } = renderHook(() => useWriteMagazine(), {
+    wrapper: ({ children }) => <ApolloProvider client={client}>{children}</ApolloProvider>,
+  });
+  await act(async () => {
+    result.current.form.setValues({ ...values, summary: '보존할 요약' });
+  });
+  await act(async () => {
+    result.current.form.onSubmit(result.current.handleSubmit)();
+  });
+  expect(result.current.form.errors.slug).toBeTruthy();
+  expect(request).not.toHaveBeenCalled();
+  await act(async () => {
+    await result.current.handleSubmit({ ...values, summary: '보존할 요약' });
+  });
+  expect(request).not.toHaveBeenCalled();
+  expect(result.current.form.values).toMatchObject({ ...values, summary: '보존할 요약' });
+  expect(navigate).not.toHaveBeenCalled();
+  client.stop();
+});
