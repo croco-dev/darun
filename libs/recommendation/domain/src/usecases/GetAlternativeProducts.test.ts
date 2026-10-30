@@ -21,9 +21,21 @@ describe('GetAlternativeProducts', () => {
 
   it('keeps manual alternatives first and fills missing slots from categories', async () => {
     const manual = [
-      new AlternativeProduct({ id: 'alt-1', productId: 'prod-1', alternativeProductId: 'manual-1' }),
-      new AlternativeProduct({ id: 'legacy-self', productId: 'prod-1', alternativeProductId: 'prod-1' }),
-      new AlternativeProduct({ id: 'alt-2', productId: 'prod-1', alternativeProductId: 'manual-2' }),
+      new AlternativeProduct({
+        id: 'alt-1',
+        productId: 'prod-1',
+        alternativeProductId: 'manual-1',
+      }),
+      new AlternativeProduct({
+        id: 'legacy-self',
+        productId: 'prod-1',
+        alternativeProductId: 'prod-1',
+      }),
+      new AlternativeProduct({
+        id: 'alt-2',
+        productId: 'prod-1',
+        alternativeProductId: 'manual-2',
+      }),
     ];
     const alternativeRepository = {
       replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
@@ -53,6 +65,9 @@ describe('GetAlternativeProducts', () => {
 
     const result = await new GetAlternativeProducts(
       alternativeRepository,
+      {
+        findPublishedByIds: vi.fn().mockImplementation(async (ids: string[]) => ids.map(id => createProduct(id))),
+      },
       new AutoRecommender(productRepository, tagRepository)
     ).execute({ productId: 'prod-1' });
 
@@ -83,7 +98,9 @@ describe('GetAlternativeProducts', () => {
       createMany: vi.fn(),
     };
 
-    const result = await new GetAlternativeProducts(repository).execute({
+    const result = await new GetAlternativeProducts(repository, {
+      findPublishedByIds: vi.fn().mockImplementation(async (ids: string[]) => ids.map(id => createProduct(id))),
+    }).execute({
       productId: 'source',
     });
     expect(result.map(alternative => alternative.alternativeProductId)).toEqual(ids);
@@ -110,17 +127,47 @@ describe('GetAlternativeProducts', () => {
     const tagRepository = {
       findOneByProductId: vi.fn().mockImplementation(async productId => {
         const tagsByProductId = new Map([
-          ['prod-1', new ProductTag({ productId: 'prod-1', tags: [createTag('ai'), createTag('crm')] })],
-          ['category-1', new ProductTag({ productId: 'category-1', tags: [createTag('ai')] })],
-          ['tag-only', new ProductTag({ productId: 'tag-only', tags: [createTag('ai'), createTag('crm')] })],
+          [
+            'prod-1',
+            new ProductTag({
+              productId: 'prod-1',
+              tags: [createTag('ai'), createTag('crm')],
+            }),
+          ],
+          [
+            'category-1',
+            new ProductTag({
+              productId: 'category-1',
+              tags: [createTag('ai')],
+            }),
+          ],
+          [
+            'tag-only',
+            new ProductTag({
+              productId: 'tag-only',
+              tags: [createTag('ai'), createTag('crm')],
+            }),
+          ],
         ]);
 
         return tagsByProductId.get(productId) ?? null;
       }),
       findByProductIds: vi.fn().mockImplementation(async (ids: readonly string[]) => {
         const tagsByProductId = new Map([
-          ['category-1', new ProductTag({ productId: 'category-1', tags: [createTag('ai')] })],
-          ['tag-only', new ProductTag({ productId: 'tag-only', tags: [createTag('ai'), createTag('crm')] })],
+          [
+            'category-1',
+            new ProductTag({
+              productId: 'category-1',
+              tags: [createTag('ai')],
+            }),
+          ],
+          [
+            'tag-only',
+            new ProductTag({
+              productId: 'tag-only',
+              tags: [createTag('ai'), createTag('crm')],
+            }),
+          ],
         ]);
 
         return ids.map(id => tagsByProductId.get(id)).filter(Boolean) as ProductTag[];
@@ -129,6 +176,9 @@ describe('GetAlternativeProducts', () => {
 
     const result = await new GetAlternativeProducts(
       alternativeRepository,
+      {
+        findPublishedByIds: vi.fn().mockImplementation(async (ids: string[]) => ids.map(id => createProduct(id))),
+      },
       new AutoRecommender(productRepository, tagRepository)
     ).execute({ productId: 'prod-1' });
 
@@ -163,6 +213,9 @@ describe('GetAlternativeProducts', () => {
 
     await new GetAlternativeProducts(
       alternativeRepository,
+      {
+        findPublishedByIds: vi.fn().mockImplementation(async (ids: string[]) => ids.map(id => createProduct(id))),
+      },
       new AutoRecommender(productRepository, tagRepository)
     ).execute({ productId: 'prod-1' });
 
@@ -195,6 +248,9 @@ describe('GetAlternativeProducts', () => {
 
     const result = await new GetAlternativeProducts(
       alternativeRepository,
+      {
+        findPublishedByIds: vi.fn().mockImplementation(async (ids: string[]) => ids.map(id => createProduct(id))),
+      },
       new AutoRecommender(productRepository, tagRepository)
     ).execute({ productId: 'prod-1' });
 
@@ -222,6 +278,9 @@ describe('GetAlternativeProducts', () => {
 
     await new GetAlternativeProducts(
       alternativeRepository,
+      {
+        findPublishedByIds: vi.fn().mockImplementation(async (ids: string[]) => ids.map(id => createProduct(id))),
+      },
       new AutoRecommender(productRepository, tagRepository)
     ).execute({ productId: 'prod-1' });
 
@@ -254,9 +313,65 @@ describe('GetAlternativeProducts', () => {
 
     const result = await new GetAlternativeProducts(
       alternativeRepository,
+      {
+        findPublishedByIds: vi.fn().mockImplementation(async (ids: string[]) => ids.map(id => createProduct(id))),
+      },
       new AutoRecommender(productRepository, tagRepository)
     ).execute({ productId: 'prod-1' });
 
     expect(result.map(a => a.alternativeProductId)).toEqual(['cat-match-new', 'cat-match-old']);
+  });
+
+  it('수동 대상을 한 번에 확인하고 중복·미발행 항목을 정원에서 제외한다', async () => {
+    const repository: AlternativeProductRepository = {
+      replaceByProductId: vi.fn(),
+      findManyByProductId: vi.fn().mockResolvedValue(
+        ['hidden', 'manual-2', 'source', 'manual-2', 'manual-1'].map(
+          alternativeProductId =>
+            new AlternativeProduct({
+              productId: 'source',
+              alternativeProductId,
+            })
+        )
+      ),
+      create: vi.fn(),
+      deleteMany: vi.fn(),
+      createMany: vi.fn(),
+    };
+    const productReader = {
+      findPublishedByIds: vi.fn().mockResolvedValue([null, createProduct('manual-2'), createProduct('manual-1')]),
+    };
+    const result = await new GetAlternativeProducts(repository, productReader).execute({ productId: 'source' });
+    expect(result.map(row => row.alternativeProductId)).toEqual(['manual-2', 'manual-1']);
+    expect(productReader.findPublishedByIds).toHaveBeenCalledExactlyOnceWith([
+      'hidden',
+      'manual-2',
+      'manual-2',
+      'manual-1',
+    ]);
+  });
+
+  it('공개 대상 확인 실패를 정상 빈 목록으로 숨기지 않는다', async () => {
+    const repository: AlternativeProductRepository = {
+      replaceByProductId: vi.fn(),
+      findManyByProductId: vi.fn().mockResolvedValue([
+        new AlternativeProduct({
+          productId: 'source',
+          alternativeProductId: 'manual',
+        }),
+      ]),
+      create: vi.fn(),
+      deleteMany: vi.fn(),
+      createMany: vi.fn(),
+    };
+    const failure = new Error('synthetic publication lookup failure');
+    const productReader = {
+      findPublishedByIds: vi.fn().mockRejectedValue(failure),
+    };
+    await expect(
+      new GetAlternativeProducts(repository, productReader).execute({
+        productId: 'source',
+      })
+    ).rejects.toBe(failure);
   });
 });

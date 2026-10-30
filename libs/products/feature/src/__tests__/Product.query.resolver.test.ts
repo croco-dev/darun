@@ -266,7 +266,8 @@ const createProductQueryResolver = (overrides: ResolverOverrides = {}) => {
     overrides.getProductFeaturesUseCase ?? new GetProductFeatures(createProductFeatureRepository()),
     new GetCompany(createCompanyRepository()),
     new SearchProduct(createSearchableProductRepository()),
-    overrides.getAlternativeProductsUseCase ?? new GetAlternativeProducts(createAlternativeProductRepository()),
+    overrides.getAlternativeProductsUseCase ??
+      new GetAlternativeProducts(createAlternativeProductRepository(), productRepository),
     overrides.getVoteCountUseCase ?? new GetVoteCount(voteRepository),
     new GetProductsByCategory(productRepository, overrides.categoryRepository ?? createCategoryRepository()),
     overrides.translationService ?? createTranslationService(),
@@ -495,7 +496,20 @@ describe('ProductQueryResolver', () => {
                 })
             )
           ),
-        })
+        }),
+        {
+          findPublishedByIds: async ids =>
+            ids.map(
+              id =>
+                new DomainProduct({
+                  id,
+                  slug: id,
+                  name: id,
+                  summary: '',
+                  logoUrl: '',
+                })
+            ),
+        }
       );
       const productRepository = createProductRepository({
         findPublishedOneById: vi.fn().mockImplementation(
@@ -539,7 +553,20 @@ describe('ProductQueryResolver', () => {
               alternativeProductId: 'alt-3',
             }),
           ]),
-        })
+        }),
+        {
+          findPublishedByIds: async ids =>
+            ids.map(
+              id =>
+                new DomainProduct({
+                  id,
+                  slug: id,
+                  name: id,
+                  summary: '',
+                  logoUrl: '',
+                })
+            ),
+        }
       );
 
       const publishedProductRepository = createProductRepository({
