@@ -43,6 +43,9 @@ describe('GetRankedProducts', () => {
     return {
       voteRepository: {
         findTopNByVoteCount: vi.fn<RankedProductVoteRepository['findTopNByVoteCount']>().mockResolvedValue(votes),
+        findByTargetIds: vi
+          .fn()
+          .mockImplementation(async (ids: readonly string[]) => votes.filter(vote => ids.includes(vote.targetId))),
       },
       productRepository: {
         ...createMockRepository(),
@@ -57,8 +60,14 @@ describe('GetRankedProducts', () => {
   };
 
   it('applies time decay so a recent product ranks higher', async () => {
-    const older = createProduct({ id: 'older', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
-    const recent = createProduct({ id: 'recent', publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR) });
+    const older = createProduct({
+      id: 'older',
+      publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR),
+    });
+    const recent = createProduct({
+      id: 'recent',
+      publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR),
+    });
     const { voteRepository, productRepository } = createRepository({
       votes: [
         { targetId: older.id, count: 40 },
@@ -102,7 +111,9 @@ describe('GetRankedProducts', () => {
   });
 
   it('returns an empty array when there are no ranked votes', async () => {
-    const { voteRepository, productRepository } = createRepository({ votes: [] });
+    const { voteRepository, productRepository } = createRepository({
+      votes: [],
+    });
 
     const result = await new GetRankedProducts(
       voteRepository,
@@ -112,11 +123,18 @@ describe('GetRankedProducts', () => {
 
     expect(result).toEqual([]);
     expect(productRepository.findPublishedByIds).not.toHaveBeenCalled();
+    expect(voteRepository.findByTargetIds).not.toHaveBeenCalled();
   });
 
   it('boosts products published within 24 hours', async () => {
-    const newProduct = createProduct({ id: 'new', publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR) });
-    const oldProduct = createProduct({ id: 'old', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
+    const newProduct = createProduct({
+      id: 'new',
+      publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR),
+    });
+    const oldProduct = createProduct({
+      id: 'old',
+      publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR),
+    });
     const { voteRepository, productRepository } = createRepository({
       votes: [
         { targetId: oldProduct.id, count: 20 },
@@ -135,7 +153,10 @@ describe('GetRankedProducts', () => {
   });
 
   it('keeps existing vote counts compatible with the new ranking formula', async () => {
-    const product = createProduct({ id: 'p1', publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR) });
+    const product = createProduct({
+      id: 'p1',
+      publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR),
+    });
     const { voteRepository, productRepository } = createRepository({
       votes: [{ targetId: product.id, count: 10 }],
       products: [product],
@@ -162,8 +183,11 @@ describe('GetRankedProducts', () => {
     ];
 
     const voteRepository = {
+      findByTargetIds: vi
+        .fn()
+        .mockImplementation(async (ids: readonly string[]) => allVotes.filter(vote => ids.includes(vote.targetId))),
       findTopNByVoteCount: vi.fn().mockImplementation(async (n: number) => allVotes.slice(0, n)),
-    } satisfies Pick<RankedProductVoteRepository, 'findTopNByVoteCount'>;
+    } satisfies RankedProductVoteRepository;
 
     const allProducts = new Map<string, Product | null>([
       ['unpublished-1', null],
@@ -196,7 +220,10 @@ describe('GetRankedProducts', () => {
   });
 
   it('stops at hard cap when not enough published products exist', async () => {
-    const allVotes = Array.from({ length: 29 }, (_, i) => ({ targetId: `unpublished-${i}`, count: 100 - i }));
+    const allVotes = Array.from({ length: 29 }, (_, i) => ({
+      targetId: `unpublished-${i}`,
+      count: 100 - i,
+    }));
     const published = createProduct({
       id: 'published-1',
       publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR),
@@ -205,8 +232,11 @@ describe('GetRankedProducts', () => {
     allVotes.sort((a, b) => b.count - a.count);
 
     const voteRepository = {
+      findByTargetIds: vi
+        .fn()
+        .mockImplementation(async (ids: readonly string[]) => allVotes.filter(vote => ids.includes(vote.targetId))),
       findTopNByVoteCount: vi.fn().mockImplementation(async (n: number) => allVotes.slice(0, n)),
-    } satisfies Pick<RankedProductVoteRepository, 'findTopNByVoteCount'>;
+    } satisfies RankedProductVoteRepository;
 
     const allProducts = new Map<string, Product | null>(
       allVotes.map(v => [v.targetId, v.targetId === published.id ? published : null])
@@ -237,8 +267,14 @@ describe('GetRankedProducts', () => {
   });
 
   it('breaks ties deterministically by publishedAt desc then id asc', async () => {
-    const older = createProduct({ id: 'b-older', publishedAt: new Date(now.getTime() - 2 * MILLISECONDS_PER_HOUR) });
-    const newer = createProduct({ id: 'a-newer', publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR) });
+    const older = createProduct({
+      id: 'b-older',
+      publishedAt: new Date(now.getTime() - 2 * MILLISECONDS_PER_HOUR),
+    });
+    const newer = createProduct({
+      id: 'a-newer',
+      publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR),
+    });
 
     const { voteRepository, productRepository } = createRepository({
       votes: [
@@ -279,9 +315,18 @@ describe('GetRankedProducts', () => {
   });
 
   it('includes recent low-vote products from the latest-published buffer', async () => {
-    const p1 = createProduct({ id: 'p1', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
-    const p2 = createProduct({ id: 'p2', publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR) });
-    const p3 = createProduct({ id: 'p3', publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR) });
+    const p1 = createProduct({
+      id: 'p1',
+      publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR),
+    });
+    const p2 = createProduct({
+      id: 'p2',
+      publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR),
+    });
+    const p3 = createProduct({
+      id: 'p3',
+      publishedAt: new Date(now.getTime() - 1 * MILLISECONDS_PER_HOUR),
+    });
 
     const { voteRepository, productRepository } = createRepository({
       votes: [
@@ -304,9 +349,85 @@ describe('GetRankedProducts', () => {
     expect(productRepository.findTopNSortByPublishedAtDesc).toHaveBeenCalledWith(expect.any(Number));
   });
 
+  it('최신 후보의 실제 투표 수를 한 번에 읽어 오래된 고득표 상품보다 앞에 배치한다', async () => {
+    const older = createProduct({
+      id: 'older',
+      publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR),
+    });
+    const recent = createProduct({
+      id: 'recent',
+      publishedAt: new Date(now.getTime() - 2 * MILLISECONDS_PER_HOUR),
+    });
+    const zero = createProduct({ id: 'zero' });
+    const { voteRepository, productRepository } = createRepository({
+      votes: [{ targetId: older.id, count: 100 }],
+      products: [older],
+    });
+    productRepository.findTopNSortByPublishedAtDesc.mockResolvedValue([zero, recent, older, recent]);
+    voteRepository.findByTargetIds.mockResolvedValue([
+      { targetId: recent.id, count: 5 },
+      { targetId: older.id, count: 100 },
+    ]);
+
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 2 });
+
+    expect(result.map(product => product.id)).toEqual(['recent', 'older']);
+    expect(voteRepository.findByTargetIds).toHaveBeenCalledExactlyOnceWith(['older', 'zero', 'recent']);
+    expect(productRepository.findTopNSortByPublishedAtDesc).toHaveBeenCalledWith(4);
+  });
+
+  it('투표 상위 후보도 최종 batch의 최신 투표 수로 평가하고 없는 행은 0표로 처리한다', async () => {
+    const first = createProduct({ id: 'first' });
+    const second = createProduct({ id: 'second' });
+    const { voteRepository, productRepository } = createRepository({
+      votes: [
+        { targetId: first.id, count: 100 },
+        { targetId: second.id, count: 1 },
+      ],
+      products: [first, second],
+    });
+    voteRepository.findByTargetIds.mockResolvedValue([{ targetId: second.id, count: 2 }]);
+
+    const result = await new GetRankedProducts(
+      voteRepository,
+      productRepository,
+      clockAt(() => now)
+    ).execute({ limit: 2 });
+
+    expect(result.map(product => product.id)).toEqual(['second', 'first']);
+  });
+
+  it('후보의 투표 조회 실패를 0표인 정상 랭킹으로 처리하지 않는다', async () => {
+    const product = createProduct({ id: 'product' });
+    const { voteRepository, productRepository } = createRepository({
+      votes: [{ targetId: product.id, count: 3 }],
+      products: [product],
+    });
+    const error = new Error('vote read unavailable');
+    voteRepository.findByTargetIds.mockRejectedValue(error);
+
+    await expect(
+      new GetRankedProducts(
+        voteRepository,
+        productRepository,
+        clockAt(() => now)
+      ).execute({ limit: 1 })
+    ).rejects.toBe(error);
+  });
+
   it('deduplicates products present in both vote and latest-published sources', async () => {
-    const p1 = createProduct({ id: 'p1', publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR) });
-    const p2 = createProduct({ id: 'p2', publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR) });
+    const p1 = createProduct({
+      id: 'p1',
+      publishedAt: new Date(now.getTime() - 72 * MILLISECONDS_PER_HOUR),
+    });
+    const p2 = createProduct({
+      id: 'p2',
+      publishedAt: new Date(now.getTime() - 48 * MILLISECONDS_PER_HOUR),
+    });
 
     const { voteRepository, productRepository } = createRepository({
       votes: [
@@ -390,13 +511,14 @@ describe('GetRankedProducts', () => {
     });
 
     const voteRepository = {
+      findByTargetIds: vi.fn().mockResolvedValue([{ targetId: publishedLowVote.id, count: 2 }]),
       findTopNByVoteCount: vi.fn().mockImplementation(async (n: number) =>
         [
           { targetId: unpublishedHighVoteId, count: 1000 },
           { targetId: publishedLowVote.id, count: 2 },
         ].slice(0, n)
       ),
-    } satisfies Pick<RankedProductVoteRepository, 'findTopNByVoteCount'>;
+    } satisfies RankedProductVoteRepository;
 
     const productRepository = {
       ...createMockRepository(),
@@ -431,8 +553,11 @@ describe('GetRankedProducts', () => {
       const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
 
       const voteRepository = {
+        findByTargetIds: vi
+          .fn()
+          .mockImplementation(async (ids: readonly string[]) => allVotes.filter(vote => ids.includes(vote.targetId))),
         findTopNByVoteCount: vi.fn().mockImplementation(async (n: number) => allVotes.slice(0, n)),
-      } satisfies Pick<RankedProductVoteRepository, 'findTopNByVoteCount'>;
+      } satisfies RankedProductVoteRepository;
 
       const allProducts = new Map<string, Product | null>([
         ['unpublished-1', null],

@@ -13,6 +13,7 @@ describe('repository aliases', () => {
   it('resolves the products ranking port through the voting repository token', () => {
     const voteRepository = {
       findByTargetId: () => Promise.resolve(null),
+      findByTargetIds: () => Promise.resolve([]),
       upsertByTargetId: () => Promise.reject(new Error('not implemented')),
       findTopNByVoteCount: () => Promise.resolve([]),
     };

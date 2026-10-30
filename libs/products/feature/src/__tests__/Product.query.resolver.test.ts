@@ -205,6 +205,7 @@ const createAlternativeProductRepository = (
 const createVoteRepository = (): VoteRepository => ({
   upsertByTargetId: vi.fn<VoteRepository['upsertByTargetId']>(),
   findByTargetId: vi.fn<VoteRepository['findByTargetId']>().mockResolvedValue(null),
+  findByTargetIds: vi.fn<VoteRepository['findByTargetIds']>().mockResolvedValue([]),
   findTopNByVoteCount: vi.fn<VoteRepository['findTopNByVoteCount']>().mockResolvedValue([]),
 });
 
@@ -304,7 +305,10 @@ describe('ProductQueryResolver', () => {
         labelEn: 'Tools',
       })
     );
-    const resolver = createProductQueryResolver({ productRepository: repository, categoryRepository: categories });
+    const resolver = createProductQueryResolver({
+      productRepository: repository,
+      categoryRepository: categories,
+    });
     const first = await resolver.productsByCategory('tools', 'ko', 2);
     expect(first.edges.map(edge => edge.node.id)).toEqual(['p3', 'p2']);
     expect(await first.totalCount).toBe(3);
@@ -318,7 +322,9 @@ describe('ProductQueryResolver', () => {
     const repository = createProductRepository({
       findVisualApps: vi.fn().mockResolvedValue({ products: [], total: 9000 }),
     });
-    const resolver = createProductQueryResolver({ productRepository: repository });
+    const resolver = createProductQueryResolver({
+      productRepository: repository,
+    });
     const result = await resolver.visualApps(24, undefined, 'App', 'app');
     expect(repository.findVisualApps).toHaveBeenCalledWith({
       limit: 25,
@@ -611,12 +617,17 @@ describe('ProductQueryResolver', () => {
     });
     it('does not erase a healthy selected field when a peer product lookup fails', async () => {
       const tags = new GetProductTags(createProductTagRepository());
-      const healthy = new ProductTag({ productId: 'healthy', tags: [new Tag({ id: 'tag', name: 'Healthy' })] });
+      const healthy = new ProductTag({
+        productId: 'healthy',
+        tags: [new Tag({ id: 'tag', name: 'Healthy' })],
+      });
       vi.spyOn(tags, 'execute').mockImplementation(async ({ productId }) => {
         if (productId === 'broken') throw new Error('one item failed');
         return healthy;
       });
-      const resolver = createProductQueryResolver({ getProductTagsUseCase: tags });
+      const resolver = createProductQueryResolver({
+        getProductTagsUseCase: tags,
+      });
       const result = await Promise.allSettled([
         resolver.tags({ ...createProductRoot('ko'), id: 'broken' }),
         resolver.tags({ ...createProductRoot('ko'), id: 'healthy' }),

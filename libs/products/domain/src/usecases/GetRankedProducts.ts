@@ -35,7 +35,6 @@ export class GetRankedProducts {
     if (!Number.isInteger(limit) || limit < 1 || limit > MAX_RANKED_PRODUCTS_LIMIT) {
       throw productInvalidArgs('limit must be an integer between 1 and 100.');
     }
-    const voteCountByProductId = new Map<string, number>();
     const seenProductIds = new Set<string>();
     const publishedProducts: Product[] = [];
 
@@ -47,10 +46,6 @@ export class GetRankedProducts {
       const votes = await this.voteRepository.findTopNByVoteCount(fetchSize);
       if (votes.length === 0) {
         break;
-      }
-
-      for (const vote of votes) {
-        voteCountByProductId.set(vote.targetId, vote.count);
       }
 
       const newIds = votes.map(vote => vote.targetId).filter(id => !seenProductIds.has(id));
@@ -135,6 +130,9 @@ export class GetRankedProducts {
     if (publishedProducts.length === 0) {
       return [];
     }
+
+    const candidateVotes = await this.voteRepository.findByTargetIds(publishedProducts.map(product => product.id));
+    const voteCountByProductId = new Map(candidateVotes.map(vote => [vote.targetId, vote.count]));
 
     return publishedProducts
       .sort((a, b) => {

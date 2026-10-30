@@ -7,6 +7,7 @@ function createMockRepository(): VoteRepository {
   return {
     upsertByTargetId: vi.fn(),
     findByTargetId: vi.fn(),
+    findByTargetIds: vi.fn(),
     findTopNByVoteCount: vi.fn(),
   };
 }
