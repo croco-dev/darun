@@ -2,6 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
+import { isValidMagazineSlug } from '@darun/magazines-domain/src/slug/isValidMagazineSlug';
 import { CreateMagazineOnWriteMagazineDocument } from '@darun/provider-graphql';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
@@ -29,6 +30,17 @@ type FormValues = {
   backgroundImageUrl?: string;
 };
 
+function validateSlug(value: string, title: string) {
+  const finalSlug = value.trim() || title.trim().toLowerCase().replace(/ /g, '-');
+  if (!isValidMagazineSlug(finalSlug)) {
+    return '상세 주소로 사용할 수 없는 슬러그입니다. 제목이나 슬러그를 변경해주세요.';
+  }
+  if (/\s/.test(value.trim())) {
+    return '슬러그에는 공백(띄어쓰기)을 포함할 수 없습니다.';
+  }
+  return null;
+}
+
 export function useWriteMagazine() {
   const navigate = useNavigate();
   const submitted = useRef(false);
@@ -47,12 +59,7 @@ export function useWriteMagazine() {
     },
     validate: {
       title: value => (!value?.trim() ? '글 제목을 입력해주세요.' : null),
-      slug: value => {
-        if (value && /\s/.test(value.trim())) {
-          return '슬러그에는 공백(띄어쓰기)을 포함할 수 없습니다.';
-        }
-        return null;
-      },
+      slug: (value, values) => validateSlug(value, values.title),
     },
   });
   const { upload } = useImageUpload();
@@ -71,6 +78,11 @@ export function useWriteMagazine() {
   const handleSubmit = async (values: FormValues) => {
     if (submitted.current || isCreating || isUploading) return;
     if (!values.title?.trim()) {
+      return;
+    }
+    const slugError = validateSlug(values.slug, values.title);
+    if (slugError) {
+      form.setFieldError('slug', slugError);
       return;
     }
 

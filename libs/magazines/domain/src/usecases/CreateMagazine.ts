@@ -1,8 +1,9 @@
 import { Inject, Service } from 'typedi';
 import { Magazine } from '../entities/Magazine';
-import { magazineCreateFailed } from '../errors/magazineError';
+import { magazineCreateFailed, magazineInvalidArgs } from '../errors/magazineError';
 import type { MagazineRepository } from '../repositories/MagazineRepository';
 import { MagazineRepositoryToken } from '../repositories/MagazineRepository';
+import { isValidMagazineSlug } from '../slug/isValidMagazineSlug';
 
 @Service()
 export class CreateMagazine {
@@ -37,6 +38,10 @@ export class CreateMagazine {
       logoImageUrl,
       authorId,
     });
+
+    if (!isValidMagazineSlug(magazine.slug)) {
+      throw magazineInvalidArgs('상세 주소로 사용할 수 없는 슬러그입니다.');
+    }
 
     const inserted = await this.magazineRepository.insert(magazine);
 

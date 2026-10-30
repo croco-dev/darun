@@ -26,7 +26,15 @@ vi.mock('type-graphql', () => {
   };
 });
 
-import { Magazine } from '@darun/magazines-domain';
+import {
+  CreateMagazine,
+  EditMagazine,
+  GetMagazine,
+  Magazine,
+  MagazineError,
+  PublishMagazine,
+} from '@darun/magazines-domain';
+import type { MagazineRepository } from '@darun/magazines-domain';
 import { describe, expect, it, vi } from 'vitest';
 import { MagazineMutationResolver } from '../Magazine.mutation.resolver';
 
@@ -57,6 +65,36 @@ function createResolver() {
 }
 
 describe('MagazineMutationResolver', () => {
+  it.each(['', '.', '..', null])('실제 쓰기 usecase가 mutation의 잘못된 slug %j를 거절한다', async slug => {
+    const saved = createTestMagazine({ slug: '기존-주소', content: '기존 본문' });
+    const insert = vi.fn(async (value: Magazine) => value);
+    const updateById = vi.fn(async (_id: string, modifier: (value: Magazine) => Magazine) => modifier(saved));
+    const repository = {
+      insert,
+      updateById,
+      findOneBySlug: vi.fn(async () => saved),
+    } as unknown as MagazineRepository;
+    const resolver = new MagazineMutationResolver(
+      new CreateMagazine(repository),
+      new GetMagazine(repository),
+      new PublishMagazine(repository),
+      new EditMagazine(repository)
+    );
+    const context = { getUserIdOrThrow: async () => 'author-1' };
+    if (slug !== null) {
+      await expect(
+        resolver.createMagazine({ title: '새 글', slug, backgroundImageUrl: '' }, context as never)
+      ).rejects.toMatchObject({ code: MagazineError.InvalidArgs });
+    }
+    // GraphQL nullable 입력도 최종 주소가 될 수 없으면 입력 오류로 처리한다.
+    await expect(resolver.editMagazine(saved.slug, { slug, content: '새 본문' } as never)).rejects.toMatchObject({
+      code: MagazineError.InvalidArgs,
+    });
+    expect(insert).not.toHaveBeenCalled();
+    expect(updateById).not.toHaveBeenCalled();
+    expect(saved).toMatchObject({ slug: '기존-주소', content: '기존 본문' });
+  });
+
   describe('createMagazine', () => {
     it('매거진을 생성하고 반환한다', async () => {
       const { resolver, createMagazine } = createResolver();
