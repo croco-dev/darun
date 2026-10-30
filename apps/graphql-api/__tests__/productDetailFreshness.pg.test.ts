@@ -2,13 +2,15 @@ import 'reflect-metadata';
 import {
   PostgresqlProductFeatureRepository,
   PostgresqlProductFeatureScreenshotRepository,
+  PostgresqlProductDescriptionJobRepository,
   PostgresqlProductFlowRepository,
   PostgresqlProductLinkRepository,
   PostgresqlProductRepository,
   PostgresqlProductScreenshotRepository,
 } from '@darun/products-datasource';
-import { GetPublishedProductsForSitemap, GetRankedProducts } from '@darun/products-domain';
+import { GetProduct, GetPublishedProductsForSitemap, GetRankedProducts } from '@darun/products-domain';
 import { ProductQueryResolver } from '@darun/products-feature/server';
+import { ProductDescriptionJobService } from '@darun/products-service';
 import type { Drizzle } from '@darun/provider-database';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
 import { SearchableProduct, SearchProduct } from '@darun/search-domain';
@@ -23,10 +25,12 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+import { GetProductDescriptionJobsOnAdminDocument } from '../../../libs/__generated__/graphql';
+import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/src/ProductDescription.query.resolver';
 import { SearchRanker } from '../../../libs/search/domain/src/services/SearchRanker';
 import { SynonymExpander } from '../../../libs/search/domain/src/services/SynonymExpander';
 
-const { graphql } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
+const { execute, graphql } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
 
 const url = process.env.PRODUCT_DETAIL_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
@@ -225,6 +229,160 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       await writer`update ${writer(spec.table)} set priority = 11 where id = 'a-low'`;
       expect(ids(await read('parent-a'))).toEqual(['a-low', 'a-high', 'a-tie-a', 'a-tie-z']);
       expect(selectCount).toBe(3);
+    });
+  });
+
+  describe('소개 작업의 현재 상품 주소 배치 조회', () => {
+    const productRows = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        id: `job-product-${index}`,
+        name: `Product ${index}`,
+        slug: `current-product-${index}`,
+        summary: 'summary',
+        logo_url: '',
+      }));
+
+    beforeEach(async () => {
+      await writer`delete from product_description_jobs`;
+      await writer`delete from products where id like 'job-product-%'`;
+    });
+    afterAll(async () => {
+      await writer`delete from product_description_jobs`;
+      await writer`delete from products where id like 'job-product-%'`;
+    });
+
+    async function fixture(count: number, shared = false) {
+      const rows = productRows(shared ? 1 : count);
+      await writer`insert into products ${writer(rows)}`;
+      const jobs = Array.from({ length: count }, (_, index) => ({
+        id: `slug-job-${String(index).padStart(3, '0')}`,
+        product_id: rows[shared ? 0 : count - index - 1].id,
+        status: 'completed',
+        created_at: new Date(Date.parse('2026-10-01T00:00:00Z') + index * 1000).toISOString(),
+      }));
+      await writer`insert into product_description_jobs ${writer(jobs)}`;
+      const getProduct = new GetProduct(new PostgresqlProductRepository(db));
+      const service = new ProductDescriptionJobService(
+        getProduct,
+        {} as never,
+        new PostgresqlProductDescriptionJobRepository(db),
+        {} as never
+      );
+      const resolver = new ProductDescriptionQueryResolver(service, {} as never, getProduct);
+      const schema = buildSchemaSync({
+        resolvers: [ProductDescriptionQueryResolver],
+        container: { get: () => resolver },
+        authChecker: ({ context }) => context.admin === true,
+      });
+      const read = () =>
+        execute({
+          schema,
+          document: GetProductDescriptionJobsOnAdminDocument,
+          variableValues: { limit: count },
+          contextValue: { admin: true },
+        });
+      return { schema, read, jobs, rows };
+    }
+
+    it.each([
+      [100, true, 1],
+      [100, false, 1],
+    ] as const)('%i건의 작업(shared=%s)은 상품 SQL %i회로 주소와 순서를 보존한다', async (count, shared, batches) => {
+      const { read, jobs, rows } = await fixture(count, shared);
+      const result = await read();
+      expect(result.errors).toBeUndefined();
+      const byId = new Map(rows.map(row => [row.id, row.slug]));
+      expect(result.data?.productDescriptionJobs).toEqual(
+        [...jobs].reverse().map(job =>
+          expect.objectContaining({
+            id: job.id,
+            productId: job.product_id,
+            productSlug: byId.get(job.product_id),
+          })
+        )
+      );
+      // One job-list SELECT plus bounded product batches, including repeated IDs.
+      expect(selectCount).toBe(1 + batches);
+    });
+
+    it('201개 ID는 최대 100개씩 나누어 읽고 중복·부재 ID의 위치를 보존한다', async () => {
+      const rows = productRows(199);
+      await writer`insert into products ${writer(rows)}`;
+      const ids = [...rows.map(row => row.id).reverse(), 'missing-product', rows[0].id];
+      const repository = new PostgresqlProductRepository(db);
+      const result = await Promise.all(ids.map(id => repository.findOneById(id)));
+      const byId = new Map(rows.map(row => [row.id, row.slug]));
+      expect(result.map(product => product?.slug ?? null)).toEqual(ids.map(id => byId.get(id) ?? null));
+      expect(selectCount).toBe(3);
+    });
+
+    it('같은 warm reader의 다음 요청은 별도 writer의 commit·rollback·삭제·재생성을 반영한다', async () => {
+      const { schema, read, rows } = await fixture(1);
+      expect((await read()).data?.productDescriptionJobs).toEqual([
+        expect.objectContaining({ productSlug: 'current-product-0' }),
+      ]);
+      await writer`update products set slug = 'renamed-product' where id = ${rows[0].id}`;
+      expect((await read()).data?.productDescriptionJobs).toEqual([
+        expect.objectContaining({ productSlug: 'renamed-product' }),
+      ]);
+      await expect(
+        writer.begin(async tx => {
+          await tx`update products set slug = 'rolled-back' where id = ${rows[0].id}`;
+          throw new Error('synthetic rollback');
+        })
+      ).rejects.toThrow('synthetic rollback');
+      expect((await read()).data?.productDescriptionJobs).toEqual([
+        expect.objectContaining({ productSlug: 'renamed-product' }),
+      ]);
+      await writer`delete from products where id = ${rows[0].id}`;
+      const missing = await read();
+      expect(missing.errors).toHaveLength(1);
+      expect(missing.errors![0].message).toBe('소개 후보에 연결된 제품을 찾지 못했습니다.');
+      expect(missing.errors![0].path).toEqual(['productDescriptionJobs', 0, 'productSlug']);
+      expect(missing.data).toBeNull();
+      await writer`insert into products ${writer({ ...rows[0], slug: 'restored-product' })}`;
+      const restored = await read();
+      expect(restored.errors).toBeUndefined();
+      expect(restored.data?.productDescriptionJobs).toEqual([
+        expect.objectContaining({ productSlug: 'restored-product' }),
+      ]);
+      const single = await graphql({
+        schema,
+        source: '{ productDescriptionJob(id: "slug-job-000") { productSlug } }',
+        contextValue: { admin: true },
+      });
+      expect(single.errors).toBeUndefined();
+      expect(single.data?.productDescriptionJob).toEqual({
+        productSlug: 'restored-product',
+      });
+      expect(selectCount).toBe(12);
+    });
+
+    it.each(['id', 'id productSlug @skip(if: true)', 'id productSlug @include(if: false)'])(
+      '주소를 선택하지 않은 목록(%s)은 상품을 읽지 않는다',
+      async fields => {
+        const { schema } = await fixture(2);
+        const result = await graphql({
+          schema,
+          source: `{ productDescriptionJobs { ${fields} } }`,
+          contextValue: { admin: true },
+        });
+        expect(result.errors).toBeUndefined();
+        expect(result.data?.productDescriptionJobs).toEqual([{ id: 'slug-job-001' }, { id: 'slug-job-000' }]);
+        expect(selectCount).toBe(1);
+      }
+    );
+
+    it('관리자가 아닌 요청은 작업과 상품 SQL 전에 거절한다', async () => {
+      const { schema } = await fixture(1);
+      const result = await execute({
+        schema,
+        document: GetProductDescriptionJobsOnAdminDocument,
+        contextValue: { admin: false },
+      });
+      expect(result.errors).toHaveLength(1);
+      expect(result.data).toBeNull();
+      expect(selectCount).toBe(0);
     });
   });
 

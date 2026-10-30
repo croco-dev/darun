@@ -123,6 +123,7 @@ export class PostgresqlProductRepository implements ProductRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.idLoader = new DataLoader(async (ids: readonly string[]) => this.findByIdsInternal(ids), {
       cache: false,
+      maxBatchSize: 100,
     });
   }
 
