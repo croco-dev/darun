@@ -28,6 +28,7 @@ vi.mock('type-graphql', () => {
     FieldResolver: methodDecorator,
     GraphQLISODateTime: class GraphQLISODateTime {},
     ID: class ID {},
+    Info: () => () => {},
     InputType: () => () => {},
     Int: class Int {},
     Mutation: methodDecorator,

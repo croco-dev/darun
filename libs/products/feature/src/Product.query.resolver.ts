@@ -23,7 +23,9 @@ import { TranslationService } from '@darun/translation-domain';
 import { ConnectionArgs } from '@darun/utils-apollo-server';
 import { AuthRole, Connection, Cursor } from '@darun/utils-apollo-server';
 import { GetVoteCount } from '@darun/voting-domain';
-import { Arg, Args, Authorized, FieldResolver, ID, Int, Query, Resolver, Root } from 'type-graphql';
+import { getDirectiveValues, GraphQLIncludeDirective, GraphQLSkipDirective, Kind } from 'graphql';
+import type { GraphQLResolveInfo, SelectionSetNode } from 'graphql';
+import { Arg, Args, Authorized, FieldResolver, ID, Info, Int, Query, Resolver, Root } from 'type-graphql';
 import { Inject, Service } from 'typedi';
 import { Feature } from './graphs/Feature';
 import { Link } from './graphs/Link';
@@ -48,6 +50,33 @@ function validateListLimit(first: number, max: number): number {
     throw new Error('pagination/invalid-connection-args');
   }
   return limit;
+}
+
+function selectsProductDescription(info: GraphQLResolveInfo): boolean {
+  const visitedFragments = new Set<string>();
+  const selectsDescription = (selectionSet?: SelectionSetNode): boolean =>
+    selectionSet?.selections.some(selection => {
+      if (
+        getDirectiveValues(GraphQLSkipDirective, selection, info.variableValues)?.if === true ||
+        getDirectiveValues(GraphQLIncludeDirective, selection, info.variableValues)?.if === false
+      ) {
+        return false;
+      }
+      if (selection.kind === Kind.FIELD) {
+        return selection.name.value === 'description';
+      }
+      if (selection.kind === Kind.INLINE_FRAGMENT) {
+        return selectsDescription(selection.selectionSet);
+      }
+      const name = selection.name.value;
+      if (visitedFragments.has(name)) {
+        return false;
+      }
+      visitedFragments.add(name);
+      return selectsDescription(info.fragments[name]?.selectionSet);
+    }) ?? false;
+
+  return info.fieldNodes.some(node => selectsDescription(node.selectionSet));
 }
 
 @Resolver(() => Product)
@@ -85,7 +114,11 @@ export class ProductQueryResolver {
     return translatedProduct;
   }
 
-  private async translateProducts(products: PublishedProduct[], locale: string): Promise<ProductWithLocale[]> {
+  private async translateProducts(
+    products: PublishedProduct[],
+    locale: string,
+    includeDescription = true
+  ): Promise<ProductWithLocale[]> {
     const normalizedLocale = this.normalizeLocale(locale);
 
     if (products.length === 0) {
@@ -122,7 +155,7 @@ export class ProductQueryResolver {
             });
           }
 
-          if (typeof product.description === 'string') {
+          if (includeDescription && typeof product.description === 'string') {
             entries.push({
               entityId: product.id,
               field: 'description',
@@ -155,24 +188,26 @@ export class ProductQueryResolver {
   @Query(() => [Product])
   public async recentProducts(
     @Arg('first', () => Int) first: number,
-    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
+    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string,
+    @Info() info?: GraphQLResolveInfo
   ) {
     const products = await this.getRecentProductsUseCase.execute({
       limit: validateListLimit(first, MAX_LIST_LIMIT),
     });
-    const translated = await this.translateProducts(products, locale);
+    const translated = await this.translateProducts(products, locale, info ? selectsProductDescription(info) : true);
     return translated;
   }
 
   @Query(() => [Product])
   public async rankedProducts(
     @Arg('first', () => Int) first: number,
-    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string
+    @Arg('locale', () => String, { defaultValue: 'ko' }) locale: string,
+    @Info() info?: GraphQLResolveInfo
   ) {
     const products = await this.getRankedProductsUseCase.execute({
       limit: validateListLimit(first, MAX_LIST_LIMIT),
     });
-    const translated = await this.translateProducts(products, locale);
+    const translated = await this.translateProducts(products, locale, info ? selectsProductDescription(info) : true);
     return translated;
   }
 
