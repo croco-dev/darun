@@ -1,5 +1,9 @@
 import { Token } from 'typedi';
-import type { ProductDescriptionJobEntity, ProductDescriptionJobStatus } from '../entities/ProductDescriptionJobEntity';
+import type {
+  ProductDescriptionJobEntity,
+  ProductDescriptionJobSummary,
+  ProductDescriptionJobStatus,
+} from '../entities/ProductDescriptionJobEntity';
 
 export const ProductDescriptionJobRepositoryToken = new Token<ProductDescriptionJobRepository>(
   'ProductDescriptionJobRepository'
@@ -34,6 +38,9 @@ export interface ProductDescriptionJobRepository {
 
   findJobById(id: string): Promise<ProductDescriptionJobEntity | null>;
 
+  /** Load only HTML, batching concurrent field reads without caching across requests. */
+  findCandidateHtmlByJobId(id: string): Promise<string | null>;
+
   /** Atomically claim a due pending or expired attempt, or fail an exhausted logical job. */
   claimJobLease(input: {
     jobId: string;
@@ -58,5 +65,5 @@ export interface ProductDescriptionJobRepository {
     status?: ProductDescriptionJobStatus;
     limit?: number;
     offset?: number;
-  }): Promise<ProductDescriptionJobEntity[]>;
+  }): Promise<ProductDescriptionJobSummary[]>;
 }

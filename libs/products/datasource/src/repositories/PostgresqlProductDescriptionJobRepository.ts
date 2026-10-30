@@ -1,5 +1,6 @@
 import {
   type ProductDescriptionJobEntity,
+  type ProductDescriptionJobSummary,
   type ProductDescriptionJobRepository,
   ProductDescriptionJobRepositoryToken,
   type ProductDescriptionJobStatus,
@@ -13,7 +14,8 @@ import {
   jobDispatchStatus,
   jobRetryDelay,
 } from '@darun/utils-llm';
-import { and, asc, desc, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
+import DataLoader from 'dataloader';
+import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { type ProductDescriptionJobRow, productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
 
@@ -23,7 +25,37 @@ type JobDbTx = Parameters<Parameters<Drizzle['transaction']>[0]>[0];
 export class PostgresqlProductDescriptionJobRepository implements ProductDescriptionJobRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
+  private readonly candidateHtmlLoader = new DataLoader<string, string | null>(
+    async ids => {
+      try {
+        const rows = await this.db
+          .select({ id: productDescriptionJobs.id, candidateHtml: productDescriptionJobs.candidateHtml })
+          .from(productDescriptionJobs)
+          .where(inArray(productDescriptionJobs.id, [...ids]));
+        const byId = new Map(rows.map(row => [row.id, row.candidateHtml]));
+        return ids.map(id => byId.get(id) ?? null);
+      } catch (error) {
+        throw databaseReadFailed(error);
+      }
+    },
+    { cache: false, maxBatchSize: 100 }
+  );
+
+  async findCandidateHtmlByJobId(id: string): Promise<string | null> {
+    return this.candidateHtmlLoader.load(id);
+  }
+
   private toEntity(row: ProductDescriptionJobRow): ProductDescriptionJobEntity {
+    return {
+      ...this.toSummary(row),
+      candidateDocument: row.candidateDocument,
+      candidateHtml: row.candidateHtml,
+    };
+  }
+
+  private toSummary(
+    row: Omit<ProductDescriptionJobRow, 'candidateDocument' | 'candidateHtml'>
+  ): ProductDescriptionJobSummary {
     return {
       id: row.id,
       productId: row.productId,
@@ -33,8 +65,6 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       evidenceHash: row.evidenceHash,
       evidenceHashVersion: row.evidenceHashVersion,
       baseDescriptionHash: row.baseDescriptionHash,
-      candidateDocument: row.candidateDocument,
-      candidateHtml: row.candidateHtml,
       writerModel: row.writerModel,
       reviewerModel: row.reviewerModel,
       writerPromptVersion: row.writerPromptVersion,
@@ -257,12 +287,37 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
     status?: ProductDescriptionJobStatus;
     limit?: number;
     offset?: number;
-  }): Promise<ProductDescriptionJobEntity[]> {
+  }): Promise<ProductDescriptionJobSummary[]> {
     try {
       const limit = Math.min(options?.limit ?? 50, 100);
       const offset = Math.max(options?.offset ?? 0, 0);
 
-      const baseQuery = this.db.select().from(productDescriptionJobs);
+      const baseQuery = this.db
+        .select({
+          id: productDescriptionJobs.id,
+          productId: productDescriptionJobs.productId,
+          status: productDescriptionJobs.status,
+          message: productDescriptionJobs.message,
+          error: productDescriptionJobs.error,
+          evidenceHash: productDescriptionJobs.evidenceHash,
+          evidenceHashVersion: productDescriptionJobs.evidenceHashVersion,
+          baseDescriptionHash: productDescriptionJobs.baseDescriptionHash,
+          writerModel: productDescriptionJobs.writerModel,
+          reviewerModel: productDescriptionJobs.reviewerModel,
+          writerPromptVersion: productDescriptionJobs.writerPromptVersion,
+          reviewerPromptVersion: productDescriptionJobs.reviewerPromptVersion,
+          rendererVersion: productDescriptionJobs.rendererVersion,
+          leaseToken: productDescriptionJobs.leaseToken,
+          leaseUntil: productDescriptionJobs.leaseUntil,
+          attemptCount: productDescriptionJobs.attemptCount,
+          runNotBefore: productDescriptionJobs.runNotBefore,
+          nextDispatchAt: productDescriptionJobs.nextDispatchAt,
+          retryOfJobId: productDescriptionJobs.retryOfJobId,
+          appliedAt: productDescriptionJobs.appliedAt,
+          createdAt: productDescriptionJobs.createdAt,
+          updatedAt: productDescriptionJobs.updatedAt,
+        })
+        .from(productDescriptionJobs);
 
       const rows = options?.status
         ? await baseQuery
@@ -272,7 +327,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
             .offset(offset)
         : await baseQuery.orderBy(desc(productDescriptionJobs.createdAt)).limit(limit).offset(offset);
 
-      return rows.map(row => this.toEntity(row));
+      return rows.map(row => this.toSummary(row));
     } catch (error) {
       throw databaseReadFailed(error);
     }

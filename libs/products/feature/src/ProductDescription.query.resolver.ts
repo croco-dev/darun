@@ -37,6 +37,13 @@ export class ProductDescriptionQueryResolver {
   }
 
   @Authorized([AuthRole.Admin])
+  @FieldResolver(() => String, { nullable: true })
+  async candidateHtml(@Root() job: ProductDescriptionJob): Promise<string | null> {
+    if (Object.hasOwn(job, 'candidateHtml')) return job.candidateHtml ?? null;
+    return this.productDescriptionJobService.getCandidateHtml(job.id);
+  }
+
+  @Authorized([AuthRole.Admin])
   @Query(() => ProductDescriptionJob, { nullable: true })
   async productDescriptionJob(@Arg('id') id: string): Promise<ProductDescriptionJob | null> {
     const job = await this.productDescriptionJobService.getJob(id);
@@ -90,7 +97,6 @@ export class ProductDescriptionQueryResolver {
       error: job.error ?? undefined,
       evidenceHash: job.evidenceHash ?? undefined,
       baseDescriptionHash: job.baseDescriptionHash ?? undefined,
-      candidateHtml: job.candidateHtml ?? undefined,
       writerModel: job.writerModel ?? undefined,
       reviewerModel: job.reviewerModel ?? undefined,
       appliedAt: job.appliedAt ?? undefined,

@@ -3,6 +3,7 @@ import {
   GetProduct,
   type Product,
   type ProductDescriptionJobEntity,
+  type ProductDescriptionJobSummary,
   type ProductDescriptionJobRepository,
   ProductDescriptionJobRepositoryToken,
   type ProductDescriptionJobStatus,
@@ -64,11 +65,15 @@ export class ProductDescriptionJobService {
     return this.productDescriptionJobRepository.findJobById(id);
   }
 
+  async getCandidateHtml(id: string): Promise<string | null> {
+    return this.productDescriptionJobRepository.findCandidateHtmlByJobId(id);
+  }
+
   async getJobs(options?: {
     status?: ProductDescriptionJobStatus;
     limit?: number;
     offset?: number;
-  }): Promise<ProductDescriptionJobEntity[]> {
+  }): Promise<ProductDescriptionJobSummary[]> {
     return this.productDescriptionJobRepository.findJobs(options);
   }
 

@@ -29,9 +29,11 @@ vi.mock('type-graphql', () => {
 describe('ProductDescriptionQueryResolver', () => {
   const getJobMock = vi.fn();
   const getProductMock = vi.fn();
+  const getCandidateHtmlMock = vi.fn();
   const resolver = new ProductDescriptionQueryResolver(
     {
       getJob: getJobMock,
+      getCandidateHtml: getCandidateHtmlMock,
     } as unknown as ProductDescriptionJobService,
     { requestSearch: vi.fn(), status: vi.fn(), latestStatus: vi.fn(), retry: vi.fn() },
     { execute: getProductMock } as never
@@ -39,7 +41,20 @@ describe('ProductDescriptionQueryResolver', () => {
 
   beforeEach(() => {
     getJobMock.mockReset();
+    getCandidateHtmlMock.mockReset();
     getProductMock.mockReset();
+  });
+
+  it('재조회 없이 상세·mutation의 후보 HTML과 명시적 빈 값을 보존하고 목록 후보만 읽는다', async () => {
+    for (const candidateHtml of ['<p>candidate</p>', '', undefined]) {
+      await expect(resolver.candidateHtml({ id: 'loaded', candidateHtml } as never)).resolves.toBe(
+        candidateHtml ?? null
+      );
+    }
+    expect(getCandidateHtmlMock).not.toHaveBeenCalled();
+    getCandidateHtmlMock.mockResolvedValueOnce('<p>lazy</p>');
+    await expect(resolver.candidateHtml({ id: 'summary' } as never)).resolves.toBe('<p>lazy</p>');
+    expect(getCandidateHtmlMock).toHaveBeenCalledExactlyOnceWith('summary');
   });
 
   it('reads the current Product slug and preserves the missing-product error', async () => {

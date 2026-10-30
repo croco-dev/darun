@@ -27,3 +27,5 @@ export type ProductDescriptionJobEntity = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type ProductDescriptionJobSummary = Omit<ProductDescriptionJobEntity, 'candidateDocument' | 'candidateHtml'>;
