@@ -51,6 +51,31 @@ const PRODUCT_QUERY = graphql(`
   }
 `);
 
+const PRODUCT_ALTERNATIVES_QUERY = graphql(`
+  query ProductAlternativesOnMarkdown($slug: String!, $locale: String!) {
+    productBySlug(slug: $slug, locale: $locale) {
+      name
+      slug
+      alternatives {
+        name
+        slug
+        summary
+      }
+    }
+  }
+`);
+
+const COMPARE_PRODUCT_QUERY = graphql(`
+  query CompareProductOnMarkdown($slug: String!, $locale: String!) {
+    productBySlug(slug: $slug, locale: $locale) {
+      name
+      slug
+      summary
+      description
+    }
+  }
+`);
+
 const CATEGORIES_QUERY = graphql(`
   query CategoriesOnMarkdown($first: Int!, $locale: String!) {
     categories(first: $first, locale: $locale) {
@@ -270,18 +295,16 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
       const slug = safeDecode(subPath[1] ?? '');
       if (!slug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
-      const result = await client.query({
-        query: PRODUCT_QUERY,
-        variables: { slug, locale },
-      });
-
-      const product = result.data?.productBySlug;
-      if (!product) {
-        return createResponse(buildNotFoundMarkdown({ locale }), 404);
-      }
-
       // 4a. /products/:slug/alternatives
       if (subPath.length === 3 && subPath[2] === 'alternatives') {
+        const result = await client.query({
+          query: PRODUCT_ALTERNATIVES_QUERY,
+          variables: { slug, locale },
+        });
+        const product = result.data?.productBySlug;
+        if (!product) {
+          return createResponse(buildNotFoundMarkdown({ locale }), 404);
+        }
         const body = buildProductAlternativesMarkdown({
           locale,
           product: { name: product.name, slug: product.slug },
@@ -289,6 +312,15 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
         });
         const noindex = (product.alternatives ?? []).length === 0;
         return createResponse(body, 200, { noindex });
+      }
+
+      const result = await client.query({
+        query: PRODUCT_QUERY,
+        variables: { slug, locale },
+      });
+      const product = result.data?.productBySlug;
+      if (!product) {
+        return createResponse(buildNotFoundMarkdown({ locale }), 404);
       }
 
       // 4b. /products/:slug
@@ -356,11 +388,11 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
 
       const [prod1Result, prod2Result] = await Promise.all([
         client.query({
-          query: PRODUCT_QUERY,
+          query: COMPARE_PRODUCT_QUERY,
           variables: { slug: slug1, locale },
         }),
         client.query({
-          query: PRODUCT_QUERY,
+          query: COMPARE_PRODUCT_QUERY,
           variables: { slug: slug2, locale },
         }),
       ]);
