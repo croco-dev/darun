@@ -18,7 +18,7 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import type * as GraphQL from 'graphql';
 import postgres, { type Sql } from 'postgres';
 import { buildSchemaSync } from 'type-graphql';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -633,6 +633,10 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         })
       );
       queries.length = 0;
+    });
+
+    afterEach(async () => {
+      await writer`truncate alternative_products, products, product_tags, tags cascade`;
     });
 
     it('실제 PublishedProductsForSitemap의 100개 Boolean을 한 SQL로 계산하고 본문을 읽지 않는다', async () => {
