@@ -188,6 +188,35 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
     expect(await editorValue()).toBe('');
   });
 
+  it('commits the documented manual SQL batch without introducing a database journal', async () => {
+    await sql`alter table public.memos drop constraint memos_app_id_unique`;
+    await sql`insert into public.memos (app_id, content) values (${appId}, 'Preserve manual memo')`;
+    const before = await sql`select * from public.memos`;
+    const migration = await readFile(new URL('../../../drizzle/0003_atomic_memos.sql', import.meta.url), 'utf8');
+    const unfinished = postgres(databaseUrl!, { max: 1, onnotice: () => {} });
+    try {
+      await unfinished.unsafe(migration);
+    } finally {
+      await unfinished.end();
+    }
+    expect(
+      await sql`select conname from pg_constraint where conrelid = 'public.memos'::regclass
+      and conname = 'memos_app_id_unique'`
+    ).toHaveLength(0);
+    const manual = postgres(databaseUrl!, { max: 1, onnotice: () => {} });
+    try {
+      await manual.unsafe(`${migration}\nCOMMIT;`);
+    } finally {
+      await manual.end();
+    }
+    expect(
+      await sql`select conname from pg_constraint where conrelid = 'public.memos'::regclass
+      and conname = 'memos_app_id_unique'`
+    ).toHaveLength(1);
+    expect(await sql`select * from public.memos`).toEqual(before);
+    expect((await sql`select to_regclass('drizzle.__drizzle_migrations') as name`)[0].name).toBeNull();
+  });
+
   it.each([false, true])('rolls back a failed journal write and retries (fresh database: %s)', async fresh => {
     await sql`alter table public.memos drop constraint memos_app_id_unique`;
     if (fresh) await sql`drop table public.memos, public.tiers, public.apps, public.users cascade`;

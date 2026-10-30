@@ -1,5 +1,5 @@
 -- Historical migrations can commit the batch; keep this migration and its journal write together.
--- The Drizzle migrator owns the final commit.
+-- Drizzle owns the final commit. Manual SQL callers append COMMIT as documented in README.md.
 BEGIN;
 LOCK TABLE "public"."memos" IN SHARE ROW EXCLUSIVE MODE;
 DO $$ BEGIN

@@ -486,7 +486,7 @@ VISUAL_FLOW_WRITES_ENABLED=false INFRA_ENV=prod RUNNING_ENV=prod pnpm --filter g
 ### Tier 메모 저장과 migration
 
 Tier 웹을 배포하기 전에 `apps/tier-web/drizzle/0003_atomic_memos.sql`까지 적용합니다.
-Tier DB를 가리키는 `DATABASE_URL`을 준비한 뒤 `pnpm --filter tier-web exec drizzle-kit migrate --config drizzle.config.ts`로 등록된 migration을 적용합니다.
+기존 수동 적용 DB는 [Tier DB 적용 절차](apps/tier-web/README.md#원자적-메모-저장-전제)에 따라 새 SQL만 적용합니다. DB의 Drizzle 이력을 이미 관리하는 환경에서만 `DATABASE_URL`을 준비한 뒤 `pnpm --filter tier-web exec drizzle-kit migrate --config drizzle.config.ts`를 사용합니다. 수동 적용 DB에 이 명령으로 초기 DDL을 다시 실행하거나 자동 baseline하지 않습니다.
 `memos.app_id`의 유일 제약과 app ID 기준 upsert로 병렬 최초 저장도 한 행으로 수렴합니다.
 관리자 목록은 단일 객체인 메모 응답을 읽으며, PostgREST schema cache 갱신 전의 배열 응답도 보존해서 표시합니다.
 같은 앱의 다른 내용은 DB가 쓰기를 처리한 순서대로 반영하며, 빈 내용은 해당 앱의 메모를 삭제합니다.

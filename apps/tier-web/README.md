@@ -46,17 +46,18 @@ pnpm exec turbo run cloudflare:build --filter=tier-web
 ### 수동 스키마 복구
 
 `pnpm --filter tier-web exec tsx scripts/enforce-schema-manual.ts`는 `DATABASE_URL`의
-`public.memos` 테이블과 누락된 메모 외래 키·앱스토어 ID 유일 제약을 복구한다.
+`public.memos` 테이블과 누락된 메모 외래 키·메모 app ID 및 앱스토어 ID 유일 제약을 복구한다.
 운영 DB 실행은 별도 승인 범위에서 수행한다. 전체 migration을 대신하는 도구는 아니다.
 
 성공은 메모의 `app_id → public.apps.id` 외래 키가 검증된 `ON DELETE CASCADE /
 ON UPDATE NO ACTION` 제약이고, `public.apps.apps_app_store_id_unique`가 실제
-`app_store_id` 유일 제약임을 확인한 뒤 transaction이 commit됐다는 뜻이다.
+`app_store_id` 유일 제약이고, `public.memos.memos_app_id_unique`가 실제 `app_id`
+유일 제약임을 확인한 뒤 transaction이 commit됐다는 뜻이다.
 정상 스키마의 재실행은 기존 행과 제약을 그대로 보존한다.
 
 기존 외래 키의 대상·삭제 규칙 등이 다르거나 검증되지 않은 제약이면 실패한다.
 기존 `NO ACTION` 제약은 현재 전방 migration `0002_atomic_tiers.sql`의 적용 여부를
-확인하고 별도 검토한다. 고아 메모·중복 앱스토어 ID도 자동 삭제하지 않는다.
+확인하고 별도 검토한다. 고아 메모·중복 메모 app ID·중복 앱스토어 ID도 자동 삭제하지 않는다.
 누락된 객체 생성부터 사후 검증까지 한 transaction에서 수행하므로 중간 실패 시
 이번 실행의 DDL 전체를 rollback한다. 오류를 해결한 뒤 같은 명령으로 재실행한다.
 복구 중 앱·메모 쓰기는 잠금이 풀릴 때까지 대기하므로 유지보수 시간에 실행한다.
@@ -122,6 +123,26 @@ REQUIRED_POSTGRES_GROUP=tier DEDUPE_TEST_DATABASE_URL=<isolated-db-url> pnpm --f
 - 티어 없음 목록은 PostgREST의 별칭 임베드 anti-join을 사용한다. 격리 PostgREST에서 명시적 0과 미할당 앱이 이름·ID 순서로 섞여 24개씩 반환되는지 확인한다. 정렬은 DB 기준이며 클라이언트에서 다시 정렬하지 않는다. 조회 중 데이터 자체가 변경되는 경우 offset 페이지의 스냅샷 일관성을 보장하지는 않는다.
 
 Drizzle journal/snapshot은 스키마와 이 전방 SQL에 맞춰 생성·검토한 뒤 함께 배포한다. 운영 DB 마이그레이션과 배포는 별도 승인 대상이다.
+
+### 원자적 메모 저장 전제
+
+`0003_atomic_memos.sql`은 기존 `0000`~`0002` 적용 후 메모의 `app_id` 유일 제약을 추가한다.
+기존 migration은 다시 실행하지 않으며, 운영 적용과 Tier 웹 배포는 별도 승인된 유지보수 시간에 이어서 진행한다.
+구버전 관리 화면은 새 PostgREST 관계 형식을 읽지 못하므로 전환 중 메모 편집을 중단한다.
+
+기존 Supabase SQL Editor 등 수동 적용 DB는 이 경로를 그대로 사용한다. **`0003` 파일 전체 내용의
+마지막에 `COMMIT;`을 덧붙여 한 번의 실행으로 보낸다.** 파일의 `BEGIN`부터 이 마지막 commit까지
+같은 연결·transaction을 유지해야 하며, 문장별로 분할하거나 파일만 실행한 뒤 연결을 닫으면 안 된다.
+파일 자체에는 Drizzle의 이력 기록을 먼저 commit하지 않도록 최종 `COMMIT`을 넣지 않는다.
+이미 DB Drizzle journal로 관리하는 환경에서 migrator를 사용할 때는 수동 `COMMIT`을 덧붙이지 않는다.
+저장소의 snapshot/journal 파일이 있다는 이유만으로 수동 적용 DB에 DB journal이 있다고 가정하거나,
+`drizzle-kit migrate`로 초기 DDL부터 재실행·자동 baseline하지 않는다.
+
+중복 메모가 있으면 `Duplicate app memos` 오류로 중단하며 본문을 삭제·병합하지 않는다.
+SQL 도구가 실패한 연결을 유지하면 `ROLLBACK;`으로 transaction을 종료한 뒤, 담당자가 내용을
+보존·대조해 충돌을 명시적으로 해결하고 다시 적용한다. 성공한 SQL은 반복 적용하지 않는다.
+이후 관리자 목록은 새 단일 객체/null 응답과 schema cache 갱신 전의 기존 배열 응답을 모두 읽는다.
+기존 관리자에게 메모 INSERT/UPDATE/DELETE 권한이 필요하며 RLS 정책은 바꾸지 않는다.
 
 ## Cloudflare 빌드·배포
 
