@@ -85,10 +85,8 @@ describe.each(['tags', 'alternatives'] as const)('%s 편집 초기 조회', kind
     await act(async () => fixture.reads.shift()!.resolve(fixture.product));
     await waitFor(() => expect(fixture.save().disabled).toBe(false));
     if (kind === 'tags') {
-      expect(screen.getByRole<HTMLInputElement>('textbox').value).toBe('핀테크');
-      fireEvent.change(screen.getByRole('textbox'), {
-        target: { value: '' },
-      });
+      expect(screen.getByRole<HTMLInputElement>('textbox', { name: '태그 1' }).value).toBe('핀테크');
+      fireEvent.click(screen.getByRole('button', { name: '핀테크 제거' }));
     } else {
       const select = screen.getByRole<HTMLSelectElement>('listbox');
       expect([...select.selectedOptions].map(option => option.value)).toEqual(['alt-b']);
