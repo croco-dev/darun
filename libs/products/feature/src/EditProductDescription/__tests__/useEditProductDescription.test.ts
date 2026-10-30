@@ -212,6 +212,47 @@ describe('description form synchronization', () => {
 });
 
 describe('description validation', () => {
+  it('업로드 시작과 같은 이벤트의 submit과 덮어쓰기도 막고 완료 후 저장한다', async () => {
+    const draft = '<p>저장할 초안</p>';
+    description = draft;
+    const { result } = renderHook(() => useEditProductDescription({ slug: 'product-1' }));
+    await act(async () => {
+      result.current.onImageUploadingChange(true);
+      await result.current.submit({ description: draft });
+      await result.current.overwriteWithDraft();
+    });
+    expect(mutate).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.onImageUploadingChange(false);
+      await result.current.submit({ description: draft });
+    });
+    expect(mutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('상품 폼이 종료된 뒤 이전 저장 성공으로 완료 알림을 보내지 않는다', async () => {
+    let complete!: (value: unknown) => void;
+    mutate.mockReturnValueOnce(new Promise(resolve => (complete = resolve)));
+    const onSubmit = vi.fn();
+    const { result, unmount } = renderHook(() => useEditProductDescription({ slug: 'product-1', onSubmit }));
+    let saving!: Promise<void>;
+    act(() => {
+      saving = result.current.submit({ description: '<p>기존 상품</p>' });
+    });
+    unmount();
+    await act(async () => {
+      complete({
+        data: {
+          editProduct: {
+            product: { id: 'product-1', description: '<p>기존 상품</p>' },
+          },
+        },
+      });
+      await saving;
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(notifications.show).not.toHaveBeenCalled();
+  });
+
   it('너무 큰 표는 직접 submit에서도 전송하지 않고 원문을 유지한다', async () => {
     const { result } = renderHook(() => useEditProductDescription({ slug: 'product-1' }));
     const html = '<table><tr><td colspan="600">A</td><td colspan="401">B</td></tr></table>';
