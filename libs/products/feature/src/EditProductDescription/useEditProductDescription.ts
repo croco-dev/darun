@@ -42,6 +42,12 @@ export type UseEditProductDescriptionProps = {
 
 export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditProductDescriptionProps) {
   const [saveError, setSaveError] = useState<string | null>(null);
+  const imageUploadPending = useRef(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const onImageUploadingChange = useCallback((uploading: boolean) => {
+    imageUploadPending.current = uploading;
+    setImageUploading(uploading);
+  }, []);
   const { data } = useQuery(TempProductBySlugOnEditProductDescriptionDocument, {
     variables: { slug },
   });
@@ -50,6 +56,13 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
   const lastObservedSourceRef = useRef({ slug, description });
   const productSessionRef = useRef({ slug });
   const [hasServerChange, setHasServerChange] = useState(false);
+
+  useEffect(
+    () => () => {
+      productSessionRef.current = { slug };
+    },
+    [slug]
+  );
 
   const form = useForm<FormValues>({
     mode: 'controlled',
@@ -95,7 +108,7 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
   });
 
   const save = async (values: FormValues) => {
-    if (loading) {
+    if (loading || imageUploadPending.current) {
       return;
     }
     const tableError = getEditorTableError(values.description ?? '');
@@ -161,5 +174,7 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
     acceptLatestDescription,
     overwriteWithDraft: () => save(getValues()),
     loading,
+    imageUploading,
+    onImageUploadingChange,
   };
 }

@@ -4,7 +4,7 @@ import { cn } from '@darun/ui';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { notifications } from '@mantine/notifications';
 import { Editor } from '@tiptap/react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MenuItem, menuItemVariants } from './MenuItem';
 
 type MenuBarProps = {
@@ -17,9 +17,21 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { upload } = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
+  const activeUpload = useRef<{
+    onImageUploadingChange?: (uploading: boolean) => void;
+  } | null>(null);
+
+  useEffect(
+    () => () => {
+      const pending = activeUpload.current;
+      activeUpload.current = null;
+      pending?.onImageUploadingChange?.(false);
+    },
+    [editor]
+  );
 
   const handleSelectImage = useCallback(async () => {
-    if (disabled || isUploading) {
+    if (disabled || activeUpload.current) {
       return;
     }
 
@@ -47,10 +59,14 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
       return;
     }
 
+    const pending = { onImageUploadingChange };
+    activeUpload.current = pending;
     try {
       setIsUploading(true);
       onImageUploadingChange?.(true);
       const imageUrl = await upload('images/editor', file, file.name);
+
+      if (activeUpload.current !== pending || editor.isDestroyed) return;
 
       if (!imageUrl) {
         notifications.show({
@@ -66,19 +82,23 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
         color: 'teal',
       });
     } catch (error) {
+      if (activeUpload.current !== pending || editor.isDestroyed) return;
       console.error('image upload failed:', error);
       notifications.show({
         message: '이미지 업로드에 실패했습니다.',
         color: 'red',
       });
     } finally {
-      setIsUploading(false);
-      onImageUploadingChange?.(false);
-      if (inputRef.current) {
-        inputRef.current.value = '';
+      if (activeUpload.current === pending) {
+        activeUpload.current = null;
+        setIsUploading(false);
+        onImageUploadingChange?.(false);
+        if (inputRef.current) {
+          inputRef.current.value = '';
+        }
       }
     }
-  }, [disabled, editor, isUploading, onImageUploadingChange, upload]);
+  }, [disabled, editor, onImageUploadingChange, upload]);
 
   const menuItems = useMemo(
     () => [
