@@ -99,6 +99,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   let writer: Sql;
   let db: Drizzle;
   let selectCount = 0;
+  let selectQueries: string[] = [];
   beforeAll(async () => {
     const target = new URL(url!);
     if (!['localhost', '127.0.0.1'].includes(target.hostname) || target.pathname !== '/darun_detail_freshness') {
@@ -112,13 +113,17 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     db = drizzle(reader, {
       logger: {
         logQuery: query => {
-          if (/^select /i.test(query)) selectCount++;
+          if (/^select /i.test(query)) {
+            selectCount++;
+            selectQueries.push(query);
+          }
         },
       },
     });
   }, 30000);
   beforeEach(() => {
     selectCount = 0;
+    selectQueries = [];
   });
   afterAll(async () => {
     if (reader) await reader.end({ timeout: 5 });
@@ -303,6 +308,154 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       );
       // One job-list SELECT plus bounded product batches, including repeated IDs.
       expect(selectCount).toBe(1 + batches);
+    });
+
+    it('대형 후보 100건의 관리자 목록은 본문을 읽지 않고 표시값·필터·페이지를 유지한다', async () => {
+      const { read, jobs } = await fixture(100);
+      await writer`update product_description_jobs set
+        candidate_document = repeat('document-' || id, 1000),
+        candidate_html = repeat('<p>' || id || '</p>', 1000),
+        message = 'done-' || id, writer_model = 'writer', reviewer_model = 'reviewer'`;
+      const result = await read();
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.productDescriptionJobs).toEqual(
+        [...jobs].reverse().map(job =>
+          expect.objectContaining({
+            id: job.id,
+            status: 'completed',
+            message: `done-${job.id}`,
+            error: null,
+            writerModel: 'writer',
+            reviewerModel: 'reviewer',
+            createdAt: job.created_at,
+          })
+        )
+      );
+      const listQuery = selectQueries.find(query => query.includes('from "product_description_jobs"'))!;
+      expect(listQuery).not.toContain('"candidate_document"');
+      expect(listQuery).not.toContain('"candidate_html"');
+      expect(selectCount).toBe(2);
+      const repository = new PostgresqlProductDescriptionJobRepository(db);
+      const summaries = await repository.findJobs({ limit: 100 });
+      const summaryBytes = Buffer.byteLength(JSON.stringify(summaries));
+      const [stored] =
+        await writer`select sum(octet_length(candidate_document) + octet_length(candidate_html))::int as bytes from product_description_jobs`;
+      expect(stored.bytes).toBe(4000000);
+      expect(summaryBytes).toBeLessThan(100000);
+      console.info({ storedCandidateBytes: stored.bytes, summaryBytes });
+      const page = await repository.findJobs({ status: 'completed', limit: 3, offset: 2 });
+      expect(page.map(job => job.id)).toEqual(['slug-job-097', 'slug-job-096', 'slug-job-095']);
+      expect(page.every(job => !('candidateDocument' in job) && !('candidateHtml' in job))).toBe(true);
+      expect(JSON.stringify(page).length).toBeLessThan(5000);
+      expect(await repository.findJobs({ status: 'failed', limit: 3 })).toEqual([]);
+    });
+
+    it('선택한 후보 HTML은 alias·fragment에서도 100건을 한 SQL로 읽고 다음 요청의 변경을 반영한다', async () => {
+      const { schema, jobs } = await fixture(100);
+      await writer`update product_description_jobs set
+        candidate_document = repeat('document-' || id, 1000),
+        candidate_html = repeat('<p>' || id || '</p>', 1000)`;
+      const read = (include = true) =>
+        graphql({
+          schema,
+          source: `query($include: Boolean!) {
+          productDescriptionJobs(limit: 100) { id ...Candidate }
+        } fragment Candidate on ProductDescriptionJob { html: candidateHtml @include(if: $include) }`,
+          variableValues: { include },
+          contextValue: { admin: true },
+        });
+      const skipped = await read(false);
+      expect(skipped.errors).toBeUndefined();
+      expect(selectCount).toBe(1);
+      expect(selectQueries.every(query => !query.includes('"candidate_html"'))).toBe(true);
+      selectQueries = [];
+      selectCount = 0;
+      const selected = await read();
+      expect(selected.errors).toBeUndefined();
+      expect(selected.data?.productDescriptionJobs).toEqual(
+        [...jobs].reverse().map(job => ({
+          id: job.id,
+          html: `<p>${job.id}</p>`.repeat(1000),
+        }))
+      );
+      expect(selectCount).toBe(2);
+      expect(selectQueries[1]).toMatch(/^select "id", "candidate_html"/);
+      expect(selectQueries.every(query => !query.includes('"candidate_document"'))).toBe(true);
+      await writer`update product_description_jobs set candidate_html = null where id = 'slug-job-099'`;
+      const current = await read();
+      expect(current.errors).toBeUndefined();
+      expect((current.data?.productDescriptionJobs as { html: string | null }[])[0].html).toBeNull();
+      expect(selectCount).toBe(4);
+    });
+
+    it('단건 후보·적용용 reader는 HTML과 문서를 온전히 보존하고 field를 다시 읽지 않는다', async () => {
+      const { schema } = await fixture(1);
+      const html = '<p>후보 &amp; 본문</p>'.repeat(1000);
+      const document = JSON.stringify({ intro: '근거'.repeat(1000), sections: ['first', 'last'] });
+      await writer`update product_description_jobs set candidate_html = ${html}, candidate_document = ${document}`;
+      const result = await graphql({
+        schema,
+        source: '{ productDescriptionJob(id: "slug-job-000") { id candidateHtml } }',
+        contextValue: { admin: true },
+      });
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.productDescriptionJob).toEqual({ id: 'slug-job-000', candidateHtml: html });
+      expect(selectCount).toBe(1);
+      expect(await new PostgresqlProductDescriptionJobRepository(db).findJobById('slug-job-000')).toMatchObject({
+        candidateHtml: html,
+        candidateDocument: document,
+      });
+    });
+
+    it('후보 배치는 중복·부재와 100개 상한을 보존하고 삭제·재생성을 새로 읽는다', async () => {
+      await fixture(1);
+      await writer`update product_description_jobs set candidate_html = '<p>first</p>'`;
+      const repository = new PostgresqlProductDescriptionJobRepository(db);
+      const ids = ['slug-job-000', ...Array.from({ length: 199 }, (_, index) => `missing-${index}`), 'slug-job-000'];
+      expect(await Promise.all(ids.map(id => repository.findCandidateHtmlByJobId(id)))).toEqual([
+        '<p>first</p>',
+        ...Array.from({ length: 199 }, () => null),
+        '<p>first</p>',
+      ]);
+      expect(selectCount).toBe(3);
+      await writer`delete from product_description_jobs where id = 'slug-job-000'`;
+      expect(await repository.findCandidateHtmlByJobId('slug-job-000')).toBeNull();
+      await writer`insert into product_description_jobs (id, product_id, candidate_html) values ('slug-job-000', 'job-product-0', '<p>new</p>')`;
+      expect(await repository.findCandidateHtmlByJobId('slug-job-000')).toBe('<p>new</p>');
+      expect(selectCount).toBe(5);
+    });
+
+    it('후보 field의 DB 오류를 null 성공으로 숨기지 않고 복구 후 다시 읽는다', async () => {
+      const { schema } = await fixture(2);
+      const read = () =>
+        graphql({
+          schema,
+          source: '{ productDescriptionJobs { id candidateHtml } }',
+          contextValue: { admin: true },
+        });
+      await writer`alter table product_description_jobs rename column candidate_html to unavailable_candidate_html`;
+      try {
+        const result = await read();
+        expect(result.errors).toHaveLength(2);
+        expect(result.errors!.map(error => (error.originalError as { code?: string })?.code)).toEqual([
+          'database/read-schema-invalid',
+          'database/read-schema-invalid',
+        ]);
+        expect(JSON.stringify(result.errors)).not.toContain('unavailable_candidate_html');
+        expect(selectCount).toBe(2);
+      } finally {
+        await writer`alter table product_description_jobs rename column unavailable_candidate_html to candidate_html`;
+      }
+      await writer`update product_description_jobs set candidate_html = '<p>recovered</p>'`;
+      expect((await read()).errors).toBeUndefined();
+      expect(selectCount).toBe(4);
+      const denied = await graphql({
+        schema,
+        source: '{ productDescriptionJobs { candidateHtml } }',
+        contextValue: { admin: false },
+      });
+      expect(denied.errors).toHaveLength(1);
+      expect(selectCount).toBe(4);
     });
 
     it('201개 ID는 최대 100개씩 나누어 읽고 중복·부재 ID의 위치를 보존한다', async () => {

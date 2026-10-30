@@ -20,6 +20,7 @@ function fixture(status: ProductDescriptionJobEntity['status'] = 'pending') {
       .fn()
       .mockResolvedValue({ ...job, id: 'new-job', status: 'pending', candidateHtml: null, appliedAt: null }),
     findJobById: vi.fn().mockResolvedValue(job),
+    findCandidateHtmlByJobId: vi.fn().mockResolvedValue(job.candidateHtml),
     findJobs: vi.fn().mockResolvedValue([job]),
     claimJobLease: vi.fn().mockResolvedValue({ ...job, status: 'in_progress', leaseToken: 'attempt' }),
     completeJobLease: vi.fn().mockResolvedValue(null),

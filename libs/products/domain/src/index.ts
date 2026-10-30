@@ -86,7 +86,11 @@ export type {
   VisualFlowSummary,
 } from './repositories/ProductFlowRepository';
 export { ProductFlowRepositoryToken } from './repositories/ProductFlowRepository';
-export type { ProductDescriptionJobEntity, ProductDescriptionJobStatus } from './entities/ProductDescriptionJobEntity';
+export type {
+  ProductDescriptionJobEntity,
+  ProductDescriptionJobSummary,
+  ProductDescriptionJobStatus,
+} from './entities/ProductDescriptionJobEntity';
 export type {
   ProductResearchJobEntity,
   ProductResearchJobStatus,

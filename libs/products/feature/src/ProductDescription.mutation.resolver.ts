@@ -24,6 +24,7 @@ export class ProductDescriptionMutationResolver {
       retryOfJobId: job.retryOfJobId ?? undefined,
       message: job.message ?? undefined,
       error: job.error ?? undefined,
+      candidateHtml: job.candidateHtml ?? undefined,
       writerModel: job.writerModel ?? undefined,
       reviewerModel: job.reviewerModel ?? undefined,
       createdAt: job.createdAt,

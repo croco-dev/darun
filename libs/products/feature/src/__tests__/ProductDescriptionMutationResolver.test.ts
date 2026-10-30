@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import type { ProductDescriptionJobService } from '@darun/products-service';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProductDescriptionMutationResolver } from '../ProductDescription.mutation.resolver';
+import { ProductDescriptionQueryResolver } from '../ProductDescription.query.resolver';
 
 describe('ProductDescriptionMutationResolver', () => {
   const retryJobMock = vi.fn();
@@ -27,6 +28,10 @@ describe('ProductDescriptionMutationResolver', () => {
 
     const result = await resolver.retryProductDescriptionJob('job-1');
 
+    const load = vi.fn().mockRejectedValue(new Error('Unexpected candidate read'));
+    const fields = new ProductDescriptionQueryResolver({ getCandidateHtml: load } as never, {} as never, {} as never);
+    expect(await fields.candidateHtml(result)).toBeNull();
+    expect(load).not.toHaveBeenCalled();
     expect(retryJobMock).toHaveBeenCalledWith('job-1');
     expect(result).toEqual({
       id: 'job-1',
