@@ -45,7 +45,7 @@ describe('ProductDescriptionQueryResolver', () => {
   it('reads the current Product slug and preserves the missing-product error', async () => {
     getProductMock.mockResolvedValueOnce({ slug: 'renamed-product' });
     await expect(resolver.productSlug({ productId: 'product-1' } as never)).resolves.toBe('renamed-product');
-    expect(getProductMock).toHaveBeenCalledWith({ id: 'product-1', fresh: true });
+    expect(getProductMock).toHaveBeenCalledWith({ id: 'product-1' });
     getProductMock.mockResolvedValueOnce(null);
     await expect(resolver.productSlug({ productId: 'missing' } as never)).rejects.toThrow(
       '소개 후보에 연결된 제품을 찾지 못했습니다.'

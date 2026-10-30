@@ -30,8 +30,8 @@ export class ProductDescriptionQueryResolver {
     description: '후보가 소속된 Product의 현재 slug. 관리자 목록에서 descriptionJobId deep-link를 만드는 데 사용한다.',
   })
   async productSlug(@Root() job: ProductDescriptionJob): Promise<string> {
-    // 요청 간 DataLoader cache를 우회해 현재 commit된 slug를 반환한다(별도 writer의 canonical 수정 반영).
-    const product = await this.getProduct.execute({ id: job.productId, fresh: true });
+    // cache 없는 ID loader로 같은 tick을 묶고 다음 요청에서는 현재 commit된 slug를 읽는다.
+    const product = await this.getProduct.execute({ id: job.productId });
     if (!product) throw new Error('소개 후보에 연결된 제품을 찾지 못했습니다.');
     return product.slug;
   }
