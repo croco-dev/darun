@@ -312,7 +312,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .then(rows => rows.map(row => this.mapper(row)));
   }
 
-  async hasPublishedAlternatives(productId: string): Promise<boolean> {
+  hasPublishedAlternatives(productId: string): Promise<boolean> {
     return this.alternativesExistenceLoader.load(productId);
   }
 
