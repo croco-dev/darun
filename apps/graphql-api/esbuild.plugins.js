@@ -48,8 +48,8 @@ const esbuildDecoratorsEsm = (options = {}) => ({
     const force = options.force === true;
     const tsconfig = options.tsconfig || build.initialOptions?.tsconfig || path.join(cwd, 'tsconfig.json');
     const tsConfig = parseTsConfig(tsconfig, cwd);
-    if (tsConfig?.options?.sourcemap) {
-      tsConfig.options.sourcemap = false;
+    if (tsConfig.options.sourceMap) {
+      tsConfig.options.sourceMap = false;
       tsConfig.options.inlineSources = true;
       tsConfig.options.inlineSourceMap = true;
     }
@@ -67,6 +67,7 @@ const esbuildDecoratorsEsm = (options = {}) => ({
         return;
       }
       const program = ts.transpileModule(tsContent, {
+        fileName: args.path,
         compilerOptions: tsConfig.options,
       });
       return {
