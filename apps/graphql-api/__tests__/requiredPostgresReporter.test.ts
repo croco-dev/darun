@@ -44,7 +44,9 @@ function runFixture(group: Group, bodies: Record<string, string> = {}, omit: str
   try {
     writeFileSync(
       join(directory, 'vitest.config.mjs'),
-      "export default {test: {include: ['**/*.test.ts'], passWithNoTests: true}};"
+      // These synthetic files have no shared state. Reuse one worker within each
+      // disposable CLI run; the real PostgreSQL suites keep their normal isolation.
+      "export default {test: {include: ['**/*.test.ts'], passWithNoTests: true, isolate: false}};"
     );
     for (const file of groups[group]) {
       if (omit.includes(file)) continue;

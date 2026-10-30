@@ -1,6 +1,8 @@
 import { Inject, Service } from 'typedi';
 import type { SearchableProductRepository } from '../repositories/SearchableProductRepository';
 import { SearchableProductRepositoryToken } from '../repositories/SearchableProductRepository';
+import type { SearchProductVoteRepository } from '../repositories/SearchProductVoteRepository';
+import { SearchProductVoteRepositoryToken } from '../repositories/SearchProductVoteRepository';
 import { SearchRanker } from '../services/SearchRanker';
 import { SEARCH_CANDIDATE_MULTIPLIER, MAX_SEARCH_CANDIDATES } from '../services/SearchRankingPolicy';
 import { SynonymExpander } from '../services/SynonymExpander';
@@ -10,6 +12,8 @@ export class SearchProduct {
   constructor(
     @Inject(SearchableProductRepositoryToken)
     private readonly searchableProductRepository: SearchableProductRepository,
+    @Inject(SearchProductVoteRepositoryToken)
+    private readonly voteRepository: SearchProductVoteRepository,
     private readonly synonymExpander: SynonymExpander = new SynonymExpander(),
     private readonly searchRanker: SearchRanker = new SearchRanker()
   ) {}
@@ -33,8 +37,17 @@ export class SearchProduct {
     const candidateLimit =
       limit !== undefined ? Math.min(limit * SEARCH_CANDIDATE_MULTIPLIER, MAX_SEARCH_CANDIDATES) : undefined;
     const products = await this.searchableProductRepository.searchProduct(expandedQuery, limit, candidateLimit);
+    if (products.length === 0) {
+      return [];
+    }
+    const votes = await this.voteRepository.findByTargetIds([...new Set(products.map(product => product.id))]);
+    const counts = new Map(votes.map(vote => [vote.targetId, vote.count]));
+    const currentProducts = products.map(product => ({
+      ...product,
+      votes: counts.get(product.id) ?? 0,
+    }));
 
-    const ranked = this.searchRanker.rank(products);
+    const ranked = this.searchRanker.rank(currentProducts);
     return limit !== undefined ? ranked.slice(0, limit) : ranked;
   }
 }
