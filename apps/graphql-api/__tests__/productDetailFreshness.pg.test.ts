@@ -4,10 +4,13 @@ import {
   PostgresqlProductFeatureScreenshotRepository,
   PostgresqlProductFlowRepository,
   PostgresqlProductLinkRepository,
+  PostgresqlProductRepository,
   PostgresqlProductScreenshotRepository,
 } from '@darun/products-datasource';
+import { GetRankedProducts } from '@darun/products-domain';
 import type { Drizzle } from '@darun/provider-database';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
+import { PostgresqlVoteRepository } from '@darun/voting-datasource';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres, { type Sql } from 'postgres';
@@ -212,6 +215,64 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       await writer`update ${writer(spec.table)} set priority = 11 where id = 'a-low'`;
       expect(ids(await read('parent-a'))).toEqual(['a-low', 'a-high', 'a-tie-a', 'a-tie-z']);
       expect(selectCount).toBe(3);
+    });
+  });
+
+  describe('랭킹 후보의 실제 투표 수', () => {
+    it('요청한 ID만 한 번에 읽고 별도 연결이 수정·삭제한 투표도 다음 조회에 반영한다', async () => {
+      await writer`delete from votes`;
+      await writer`insert into votes (id, target_id, count) values
+        ('ranking-vote-a', 'ranking-a', 7), ('ranking-vote-b', 'ranking-b', 23),
+        ('ranking-vote-outside', 'outside', 999)`;
+      const repository = new PostgresqlVoteRepository(db);
+      const ids = ['ranking-b', 'missing', 'ranking-a', 'ranking-b'];
+      const counts = async () => (await repository.findByTargetIds(ids)).map(row => [row.targetId, row.count]).sort();
+      expect(await counts()).toEqual([
+        ['ranking-a', 7],
+        ['ranking-b', 23],
+      ]);
+      expect(selectCount).toBe(1);
+      await writer`update votes set count = 41 where target_id = 'ranking-a'`;
+      await writer`delete from votes where target_id = 'ranking-b'`;
+      expect(await counts()).toEqual([['ranking-a', 41]]);
+      expect(selectCount).toBe(2);
+      expect(await repository.findByTargetIds([])).toEqual([]);
+      expect(selectCount).toBe(2);
+    });
+
+    it('실제 상품·투표 저장소에서 최신 저득표 상품을 평가하고 새 투표를 캐시 점수에 반영한다', async () => {
+      await writer`delete from votes`;
+      await writer`insert into products (id, name, slug, summary, logo_url, published_at) values
+        ('ranking-old', 'Older', 'ranking-old', 'summary', '', '2026-01-01T00:00:00'),
+        ('ranking-recent', 'Recent', 'ranking-recent', 'summary', '', '2026-01-03T22:00:00'),
+        ('ranking-zero', 'Zero', 'ranking-zero', 'summary', '', '2026-01-03T23:00:00'),
+        ('ranking-hidden', 'Hidden', 'ranking-hidden', 'summary', '', null)`;
+      try {
+        await writer`insert into votes (id, target_id, count) values
+          ('ranking-vote-old', 'ranking-old', 100), ('ranking-vote-recent', 'ranking-recent', 5),
+          ('ranking-vote-hidden', 'ranking-hidden', 1000)`;
+        const voteRepository = new PostgresqlVoteRepository(db);
+        const batch = vi.spyOn(voteRepository, 'findByTargetIds');
+        const now = new Date('2026-01-04T00:00:00Z');
+        const ranking = new GetRankedProducts(voteRepository, new PostgresqlProductRepository(db), {
+          now: () => now,
+          nowMilliseconds: () => now.getTime(),
+        });
+        expect((await ranking.execute({ limit: 2 })).map(product => product.id)).toEqual([
+          'ranking-recent',
+          'ranking-old',
+        ]);
+        expect(batch).toHaveBeenCalledExactlyOnceWith(['ranking-old', 'ranking-recent', 'ranking-zero']);
+        await writer`update votes set count = 0 where target_id = 'ranking-recent'`;
+        expect((await ranking.execute({ limit: 2 })).map(product => product.id)).toEqual([
+          'ranking-old',
+          'ranking-zero',
+        ]);
+        expect(batch).toHaveBeenCalledTimes(2);
+      } finally {
+        await writer`delete from products where id in ('ranking-old', 'ranking-recent', 'ranking-zero', 'ranking-hidden')`;
+        await writer`delete from votes`;
+      }
     });
   });
 

@@ -26,6 +26,17 @@ export class PostgresqlVoteRepository implements VoteRepository {
     return this.countLoader.load(productId);
   }
 
+  async findByTargetIds(ids: readonly string[]): Promise<Vote[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const rows = await this.db
+      .select()
+      .from(votes)
+      .where(inArray(votes.targetId, [...ids]));
+    return rows.map(row => new Vote(row));
+  }
+
   upsertByTargetId(id: string, modifier: (vote: Vote) => Vote): Promise<Vote> {
     return this.db.transaction(async tx => {
       const prevVote = await tx
