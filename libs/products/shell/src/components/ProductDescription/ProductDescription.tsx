@@ -37,68 +37,45 @@ const REGRET_KEYWORDS = [
   'Things to consider',
 ];
 
-function classifySection(headingText: string): Section['type'] {
-  const trimmed = headingText.trim().toLowerCase();
+function classifySection(heading: Element): Section['type'] {
+  const textHeading = heading.cloneNode(true) as Element;
+  textHeading.querySelectorAll('br').forEach(br => br.replaceWith(' '));
+  const trimmed = (textHeading.textContent ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
   if (RECOMMEND_KEYWORDS.some(kw => trimmed.startsWith(kw.toLowerCase()))) return 'recommend';
   if (REGRET_KEYWORDS.some(kw => trimmed.startsWith(kw.toLowerCase()))) return 'regret';
   return 'default';
 }
 
-const HEADING_RE = /^<(?:h[23])[^>]*>.*<\/(?:h[23])>$/i;
-
-function splitIntoSections(html: string): Section[] {
-  const fragments = html.split(/(<(?:h[23])[^>]*>.*?<\/(?:h[23])>)/i);
-  if (fragments.length <= 1) return [{ type: 'default', html }];
-
+function splitIntoSections(content: DocumentFragment): Section[] {
   const sections: Section[] = [];
   let currentType: Section['type'] = 'default';
-  let currentHtml = '';
+  const currentContent = content.ownerDocument.createElement('div');
+  const flushSection = () => {
+    if (currentContent.innerHTML.trim()) {
+      sections.push({ type: currentType, html: currentContent.innerHTML });
+    }
+    currentContent.replaceChildren();
+    currentType = 'default';
+  };
 
-  for (const fragment of fragments) {
-    if (!fragment) continue;
+  for (const node of Array.from(content.childNodes)) {
+    const element = node.nodeType === 1 ? (node as Element) : null;
+    if (element?.matches('h2, h3')) {
+      flushSection();
+      currentType = classifySection(element);
+    } else if (currentType !== 'default' && element?.matches('hr')) {
+      flushSection();
+    }
 
-    if (HEADING_RE.test(fragment)) {
-      if (currentHtml.trim()) {
-        sections.push({ type: currentType, html: currentHtml });
-      }
-      currentType = classifySection(fragment.replace(/<[^>]+>/g, ''));
-      currentHtml = fragment;
-    } else if (currentType === 'recommend' || currentType === 'regret') {
-      const listEndMatch = fragment.match(/<\/(?:ul|ol)>/i);
-      if (listEndMatch && listEndMatch.index !== undefined) {
-        const listEndIndex = listEndMatch.index + listEndMatch[0].length;
-        const insideContent = fragment.slice(0, listEndIndex);
-        const outsideContent = fragment.slice(listEndIndex);
+    currentContent.appendChild(node);
 
-        currentHtml += insideContent;
-        sections.push({ type: currentType, html: currentHtml });
-        currentType = 'default';
-        currentHtml = outsideContent;
-      } else {
-        const breakMatch = fragment.match(/<hr\b/i);
-        if (breakMatch && breakMatch.index !== undefined) {
-          const insideContent = fragment.slice(0, breakMatch.index);
-          const outsideContent = fragment.slice(breakMatch.index);
-
-          currentHtml += insideContent;
-          if (currentHtml.trim()) {
-            sections.push({ type: currentType, html: currentHtml });
-          }
-          currentType = 'default';
-          currentHtml = outsideContent;
-        } else {
-          currentHtml += fragment;
-        }
-      }
-    } else {
-      currentHtml += fragment;
+    // Close after the whole owning block, including any nested lists or headings.
+    if (currentType !== 'default' && (element?.matches('ul, ol') || element?.querySelector('ul, ol'))) {
+      flushSection();
     }
   }
 
-  if (currentHtml.trim()) {
-    sections.push({ type: currentType, html: currentHtml });
-  }
-
+  flushSection();
   return sections;
 }
 
@@ -118,7 +95,9 @@ export const ProductDescription = bind(useProductDescription, ({ description }) 
     );
   }
 
-  const sanitizedDescription = DOMPurify.sanitize(description);
+  const sanitizedDescription = DOMPurify.sanitize(description, {
+    RETURN_DOM_FRAGMENT: true,
+  });
   const sections = splitIntoSections(sanitizedDescription);
 
   const cardStyles: Record<Section['type'], string> = {
