@@ -38,8 +38,8 @@ type ProductTagsFormProps = {
 };
 
 export function useProductTagsForm({ slug }: ProductTagsFormProps) {
-  const [draft, setDraft] = useState<{ slug: string; value: string } | null>(null);
-  const setInputValue = (value: string) => setDraft({ slug, value });
+  const [draft, setDraft] = useState<{ slug: string; value: string[] } | null>(null);
+  const setTags = (value: string[]) => setDraft({ slug, value });
 
   const {
     data,
@@ -53,12 +53,7 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
   const isNotFound = !isLoading && !error && !data?.tempProductBySlug;
 
   const fetchedTags = data?.tempProductBySlug?.tags?.map(tag => tag.name) ?? [];
-  const currentInputValue = draft?.slug === slug ? draft.value : fetchedTags.join(', ');
-
-  const currentTags = currentInputValue
-    .split(',')
-    .map(t => t.trim())
-    .filter(Boolean);
+  const currentTags = draft?.slug === slug ? draft.value : fetchedTags;
 
   const [updateProductTags, { loading: isSaving }] = useMutation(UpdateProductTagsOnProductTagFormDocument, {
     refetchQueries: [TempProductBySlugOnProductTagsFormDocument],
@@ -73,20 +68,24 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
           color: 'teal',
         });
         const updated = data.updateProductTags.product.tags?.map(t => t.name) ?? [];
-        setInputValue(updated.join(', '));
+        setTags(updated);
       }
     },
   });
 
-  const handleInputChange = (value: string) => {
+  const changeTag = (index: number, value: string) => {
     if (isSaving || !isReady) return;
-    setInputValue(value);
+    setTags(currentTags.map((tag, tagIndex) => (tagIndex === index ? value : tag)));
   };
 
-  const removeTag = (tagToRemove: string) => {
+  const addTag = () => {
     if (isSaving || !isReady) return;
-    const nextTags = currentTags.filter(t => t !== tagToRemove);
-    setInputValue(nextTags.join(', '));
+    setTags([...currentTags, '']);
+  };
+
+  const removeTag = (index: number) => {
+    if (isSaving || !isReady) return;
+    setTags(currentTags.filter((_, tagIndex) => tagIndex !== index));
   };
 
   const applyTags = async () => {
@@ -96,7 +95,7 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
         variables: {
           slug,
           input: {
-            tagNames: Array.from(new Set(currentTags)),
+            tagNames: Array.from(new Set(currentTags.map(tag => tag.trim()).filter(Boolean))),
           },
         },
       });
@@ -106,9 +105,9 @@ export function useProductTagsForm({ slug }: ProductTagsFormProps) {
   };
 
   return {
-    inputValue: currentInputValue,
     tags: currentTags,
-    handleInputChange,
+    changeTag,
+    addTag,
     removeTag,
     applyTags,
     isSaving,

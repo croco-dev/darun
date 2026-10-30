@@ -3,24 +3,14 @@
 import { Button, Tag, X } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminInput, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
+import { useId } from 'react';
 import { useProductTagsForm } from './useProductTagsForm';
 
 export const ProductTagsForm = bind(
   useProductTagsForm,
-  ({
-    inputValue,
-    tags,
-    handleInputChange,
-    removeTag,
-    applyTags,
-    isSaving,
-    isLoading,
-    isReady,
-    isNotFound,
-    error,
-    retry,
-  }) => {
+  ({ tags, changeTag, addTag, removeTag, applyTags, isSaving, isLoading, isReady, isNotFound, error, retry }) => {
     const isBusy = isSaving || !isReady;
+    const hintId = useId();
 
     return (
       <form
@@ -44,16 +34,40 @@ export const ProductTagsForm = bind(
         ) : isNotFound ? (
           <AdminEmptyState title="상품을 찾을 수 없습니다." />
         ) : null}
-        <div className="flex flex-row gap-2">
-          <div className="relative flex-1">
+        <div className="flex items-center gap-1 text-xs text-dark-500 font-medium">
+          <Tag size={13} className="text-dark-400 shrink-0" aria-hidden="true" />
+          태그
+        </div>
+        <p id={hintId} className="text-xs text-dark-500">
+          태그를 하나씩 입력하세요. 쉼표도 이름에 포함됩니다.
+        </p>
+        {tags.map((tag, index) => (
+          <div key={index} className="flex items-center gap-2">
             <AdminInput
-              className="w-full"
-              value={inputValue}
+              className="w-full min-w-0 flex-1"
+              aria-label={`태그 ${index + 1}`}
+              aria-describedby={hintId}
+              value={tag}
               disabled={isBusy}
-              onChange={event => handleInputChange(event.target.value)}
-              placeholder="태그를 쉼표(,)로 구분하여 입력하세요. (예: 핀테크, 결제, 금융)"
+              onChange={event => changeTag(index, event.target.value)}
+              placeholder="태그 이름"
             />
+            <button
+              type="button"
+              onClick={() => removeTag(index)}
+              disabled={isBusy}
+              className="text-dark-400 hover:text-dark-700 rounded-md p-2 min-w-[44px] min-h-[44px] inline-flex items-center justify-center transition-colors active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-dark-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={`${tag || `태그 ${index + 1}`} 제거`}
+              aria-label={`${tag || `태그 ${index + 1}`} 제거`}
+            >
+              <X size={16} className="shrink-0" aria-hidden="true" />
+            </button>
           </div>
+        ))}
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" onClick={addTag} disabled={isBusy}>
+            태그 추가
+          </Button>
           <Button
             type="submit"
             variant="contained"
@@ -64,33 +78,6 @@ export const ProductTagsForm = bind(
             {isSaving ? '저장 중...' : '저장'}
           </Button>
         </div>
-
-        {tags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            <span className="inline-flex items-center gap-1 text-xs text-dark-500 font-medium mr-1">
-              <Tag size={13} className="text-dark-400 shrink-0" aria-hidden="true" />
-              적용될 태그 (<span className="tabular-nums">{tags.length}</span>):
-            </span>
-            {tags.map(tag => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs bg-dark-100 text-dark-800 border border-dark-200 select-none"
-              >
-                #{tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  disabled={isBusy}
-                  className="text-dark-400 hover:text-dark-700 ml-0.5 rounded-full p-0.5 min-w-[20px] min-h-[20px] inline-flex items-center justify-center transition-colors active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-dark-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={`${tag} 태그 제거`}
-                  aria-label={`${tag} 태그 제거`}
-                >
-                  <X size={12} className="shrink-0" aria-hidden="true" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
       </form>
     );
   }

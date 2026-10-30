@@ -23,7 +23,10 @@ describe('useProductTagsForm', () => {
   const defaultSlug = 'test-slug';
   type MockMutationOptions = MutationHookOptions<unknown, Record<string, unknown>, unknown, ApolloCache>;
   let mutateFn: ReturnType<typeof vi.fn>;
-  let mutationOptions: { onCompleted?: (data: unknown) => void; onError?: (e: Error) => void };
+  let mutationOptions: {
+    onCompleted?: (data: unknown) => void;
+    onError?: (e: Error) => void;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -44,64 +47,50 @@ describe('useProductTagsForm', () => {
     } as unknown as ReturnType<typeof useQuery>);
 
     vi.mocked(useMutation).mockImplementation(((_document?: DocumentNode, options?: MockMutationOptions) => {
-      mutationOptions = (options as { onCompleted?: (data: unknown) => void; onError?: (e: Error) => void }) || {};
+      mutationOptions =
+        (options as {
+          onCompleted?: (data: unknown) => void;
+          onError?: (e: Error) => void;
+        }) || {};
       return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
     }) as typeof useMutation);
   });
 
-  it('initializes inputValue from fetched tags and preserves comma typing', () => {
+  it('keeps each fetched or edited name as one array entry', () => {
     const { result } = renderHook(() => useProductTagsForm({ slug: defaultSlug }));
-
-    expect(result.current.inputValue).toBe('핀테크, 결제');
     expect(result.current.tags).toEqual(['핀테크', '결제']);
-
-    // Simulate typing comma and space
-    act(() => {
-      result.current.handleInputChange('핀테크, 결제, ');
-    });
-
-    expect(result.current.inputValue).toBe('핀테크, 결제, ');
-    expect(result.current.tags).toEqual(['핀테크', '결제']);
-
-    // Continue typing new tag
-    act(() => {
-      result.current.handleInputChange('핀테크, 결제, 송금');
-    });
-
-    expect(result.current.inputValue).toBe('핀테크, 결제, 송금');
-    expect(result.current.tags).toEqual(['핀테크', '결제', '송금']);
+    act(() => result.current.changeTag(0, 'Research, Development'));
+    act(() => result.current.addTag());
+    act(() => result.current.changeTag(2, 'C++ (도구)'));
+    expect(result.current.tags).toEqual(['Research, Development', '결제', 'C++ (도구)']);
+    act(() => result.current.removeTag(1));
+    expect(result.current.tags).toEqual(['Research, Development', 'C++ (도구)']);
   });
 
-  it('allows removing an individual tag via removeTag', () => {
+  it('trims names and removes empty and duplicate entries without splitting commas', async () => {
     const { result } = renderHook(() => useProductTagsForm({ slug: defaultSlug }));
-
-    act(() => {
-      result.current.removeTag('핀테크');
-    });
-
-    expect(result.current.tags).toEqual(['결제']);
-    expect(result.current.inputValue).toBe('결제');
-  });
-
-  it('submits parsed tag names via applyTags', async () => {
-    const { result } = renderHook(() => useProductTagsForm({ slug: defaultSlug }));
-
-    act(() => {
-      result.current.handleInputChange(' 금융,  대출 , 은행 ');
-    });
-
-    await act(async () => {
-      await result.current.applyTags();
-    });
-
+    act(() => result.current.changeTag(0, ' Research, Development '));
+    act(() => result.current.changeTag(1, 'Research, Development'));
+    act(() => result.current.addTag());
+    await act(async () => result.current.applyTags());
     expect(mutateFn).toHaveBeenCalledWith({
       variables: {
         slug: defaultSlug,
-        input: {
-          tagNames: ['금융', '대출', '은행'],
-        },
+        input: { tagNames: ['Research, Development'] },
       },
     });
+  });
+
+  it('keeps a draft on failure and switches to the other product values on navigation', async () => {
+    mutateFn.mockRejectedValueOnce(new Error('save failed'));
+    const { result, rerender } = renderHook(({ slug }) => useProductTagsForm({ slug }), {
+      initialProps: { slug: defaultSlug },
+    });
+    act(() => result.current.changeTag(0, '미저장, 초안'));
+    await act(async () => result.current.applyTags());
+    expect(result.current.tags).toEqual(['미저장, 초안', '결제']);
+    rerender({ slug: 'other-product' });
+    expect(result.current.tags).toEqual(['핀테크', '결제']);
   });
 
   it('shows success notification on completed', () => {
@@ -156,7 +145,7 @@ describe('useProductTagsForm', () => {
     expect(mutateFn).not.toHaveBeenCalled();
 
     act(() => {
-      result.current.removeTag('핀테크');
+      result.current.removeTag(0);
     });
     expect(result.current.tags).toEqual(['핀테크', '결제']);
   });
