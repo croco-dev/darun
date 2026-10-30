@@ -265,7 +265,7 @@ const createProductQueryResolver = (overrides: ResolverOverrides = {}) => {
     new GetProductsCount(productRepository),
     overrides.getProductFeaturesUseCase ?? new GetProductFeatures(createProductFeatureRepository()),
     new GetCompany(createCompanyRepository()),
-    new SearchProduct(createSearchableProductRepository()),
+    new SearchProduct(createSearchableProductRepository(), voteRepository),
     overrides.getAlternativeProductsUseCase ??
       new GetAlternativeProducts(createAlternativeProductRepository(), productRepository),
     overrides.getVoteCountUseCase ?? new GetVoteCount(voteRepository),

@@ -1,4 +1,5 @@
 import { RankedProductVoteRepositoryToken } from '@darun/products-domain';
+import { SearchProductVoteRepositoryToken } from '@darun/search-domain';
 import { VoteRepositoryToken } from '@darun/voting-domain';
 import { Container } from 'typedi';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -7,6 +8,7 @@ import { registerRepositoryAliases } from '../src/config/repositoryAliases';
 describe('repository aliases', () => {
   afterEach(() => {
     Container.remove(RankedProductVoteRepositoryToken);
+    Container.remove(SearchProductVoteRepositoryToken);
     Container.remove(VoteRepositoryToken);
   });
 
@@ -22,5 +24,6 @@ describe('repository aliases', () => {
     registerRepositoryAliases();
 
     expect(Container.get(RankedProductVoteRepositoryToken)).toBe(voteRepository);
+    expect(Container.get(SearchProductVoteRepositoryToken)).toBe(voteRepository);
   });
 });

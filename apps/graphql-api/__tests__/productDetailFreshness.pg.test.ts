@@ -10,6 +10,7 @@ import {
 import { GetRankedProducts } from '@darun/products-domain';
 import type { Drizzle } from '@darun/provider-database';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
+import { SearchableProduct, SearchProduct } from '@darun/search-domain';
 import { PostgresqlVoteRepository } from '@darun/voting-datasource';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -17,6 +18,8 @@ import postgres, { type Sql } from 'postgres';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
+import { SearchRanker } from '../../../libs/search/domain/src/services/SearchRanker';
+import { SynonymExpander } from '../../../libs/search/domain/src/services/SynonymExpander';
 
 const url = process.env.PRODUCT_DETAIL_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
@@ -219,6 +222,63 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   });
 
   describe('랭킹 후보의 실제 투표 수', () => {
+    it('검색 색인을 바꾸지 않아도 다음 재정렬은 별도 연결의 투표 변경·삭제를 한 SQL로 읽는다', async () => {
+      await writer`delete from votes`;
+      await writer`insert into votes (id, target_id, count) values
+        ('search-vote-a', 'search-a', 40), ('search-vote-b', 'search-b', 11),
+        ('search-vote-outside', 'outside', 99999)`;
+      const now = new Date('2026-01-04T00:00:00Z');
+      const candidates = ['a', 'b', 'missing'].map(
+        (id, index) =>
+          new SearchableProduct({
+            id: `search-${id}`,
+            slug: `search-${id}`,
+            name: id,
+            summary: id,
+            searchScore: 5,
+            votes: [900, 0, 9999][index],
+            publishedAt: now,
+            sourceRevision: '7',
+          })
+      );
+      const search = {
+        index: vi.fn(),
+        searchProduct: vi.fn().mockResolvedValue(candidates),
+      };
+      const useCase = new SearchProduct(
+        search,
+        new PostgresqlVoteRepository(db),
+        new SynonymExpander(),
+        new SearchRanker({
+          now: () => now,
+          nowMilliseconds: () => now.getTime(),
+        })
+      );
+      try {
+        expect((await useCase.execute({ query: 'fixture', limit: 2 })).map(p => [p.id, p.votes])).toEqual([
+          ['search-a', 40],
+          ['search-b', 11],
+        ]);
+        expect(selectCount).toBe(1);
+        await writer`update votes set count = 71 where target_id = 'search-b'`;
+        await writer`delete from votes where target_id = 'search-a'`;
+        expect((await useCase.execute({ query: 'fixture', limit: 3 })).map(p => [p.id, p.votes])).toEqual([
+          ['search-b', 71],
+          ['search-a', 0],
+          ['search-missing', 0],
+        ]);
+        expect(selectCount).toBe(2);
+        expect(search.index).not.toHaveBeenCalled();
+        expect(candidates.map(p => [p.votes, p.searchScore, p.sourceRevision])).toEqual([
+          [900, 5, '7'],
+          [0, 5, '7'],
+          [9999, 5, '7'],
+        ]);
+      } finally {
+        await writer`delete from votes`;
+      }
+    });
+
     it('요청한 ID만 한 번에 읽고 별도 연결이 수정·삭제한 투표도 다음 조회에 반영한다', async () => {
       await writer`delete from votes`;
       await writer`insert into votes (id, target_id, count) values

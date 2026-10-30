@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SearchableProduct } from '../entities/SearchableProduct';
 import type { SearchableProductRepository } from '../repositories/SearchableProductRepository';
+import type { SearchProductVoteRepository } from '../repositories/SearchProductVoteRepository';
 import { SearchRanker } from '../services/SearchRanker';
 import { SynonymExpander } from '../services/SynonymExpander';
 import { SearchProduct } from '../usecases/SearchProduct';
@@ -19,10 +20,79 @@ describe('SearchProduct', () => {
       name: `Product ${id}`,
       summary: `Summary of ${id}`,
       searchScore,
+      votes: 0,
     });
 
-  const createUseCase = (repository: SearchableProductRepository) =>
-    new SearchProduct(repository, new SynonymExpander(), new SearchRanker(clockAt(() => NOW)));
+  it('색인 값을 바꾸지 않아도 다음 검색은 현재 투표로 순위를 다시 정한다', async () => {
+    const a = new SearchableProduct({
+      ...createProduct('a', 5),
+      votes: 900,
+      createdAt: NOW,
+    });
+    const b = new SearchableProduct({
+      ...createProduct('b', 5),
+      votes: 0,
+      createdAt: NOW,
+    });
+    const candidates = [a, b];
+    const repository = createRepository(candidates);
+    const findByTargetIds = vi.fn().mockResolvedValue([{ targetId: 'b', count: 12 }]);
+    const useCase = createUseCase(repository, { findByTargetIds });
+
+    expect((await useCase.execute({ query: 'product', limit: 2 })).map(p => p.id)).toEqual(['b', 'a']);
+    expect(findByTargetIds).toHaveBeenCalledExactlyOnceWith(['a', 'b']);
+    findByTargetIds.mockResolvedValue([{ targetId: 'a', count: 31 }]);
+    expect((await useCase.execute({ query: 'product', limit: 2 })).map(p => p.id)).toEqual(['a', 'b']);
+    expect(findByTargetIds).toHaveBeenCalledTimes(2);
+    expect(candidates.map(p => p.votes)).toEqual([900, 0]);
+  });
+
+  it('전체 후보를 한 batch로 읽은 뒤 limit을 적용하고 누락된 투표를 0으로 본다', async () => {
+    const products = Array.from(
+      { length: 100 },
+      (_, index) =>
+        new SearchableProduct({
+          ...createProduct(`p${index}`, 5),
+          votes: 999,
+          publishedAt: NOW,
+        })
+    );
+    const repository = createRepository(products);
+    const findByTargetIds = vi.fn().mockResolvedValue([{ targetId: 'p99', count: 7 }]);
+    const useCase = createUseCase(repository, { findByTargetIds });
+
+    const result = await useCase.execute({ query: 'product', limit: 1 });
+
+    expect(result.map(p => [p.id, p.votes])).toEqual([['p99', 7]]);
+    expect(findByTargetIds).toHaveBeenCalledExactlyOnceWith(products.map(p => p.id));
+  });
+
+  it('빈 검색어와 빈 후보는 투표를 읽지 않는다', async () => {
+    const repository = createRepository([]);
+    const findByTargetIds = vi.fn();
+    const useCase = createUseCase(repository, { findByTargetIds });
+
+    expect(await useCase.execute({ query: '  ' })).toEqual([]);
+    expect(await useCase.execute({ query: 'missing' })).toEqual([]);
+    expect(findByTargetIds).not.toHaveBeenCalled();
+  });
+
+  it('투표 조회 실패는 색인의 오래된 투표나 정상 빈 검색으로 숨기지 않는다', async () => {
+    const repository = createRepository([new SearchableProduct({ ...createProduct('a', 5), votes: 999 })]);
+    const error = new Error('votes unavailable');
+    const findByTargetIds = vi.fn().mockRejectedValue(error);
+
+    await expect(
+      createUseCase(repository, { findByTargetIds }).execute({
+        query: 'product',
+      })
+    ).rejects.toBe(error);
+  });
+
+  const createUseCase = (
+    repository: SearchableProductRepository & SearchProductVoteRepository,
+    votes: SearchProductVoteRepository = repository
+  ) => new SearchProduct(repository, votes, new SynonymExpander(), new SearchRanker(clockAt(() => NOW)));
 
   it('searches with the normalized query when limit is omitted', async () => {
     const products = [createProduct('p1')];
@@ -69,7 +139,10 @@ describe('SearchProduct', () => {
     const repository = createRepository([]);
     const useCase = createUseCase(repository);
 
-    await useCase.execute({ query: '  Wireless 포인팅\t 디바이스 USB  ', limit: 4 });
+    await useCase.execute({
+      query: '  Wireless 포인팅\t 디바이스 USB  ',
+      limit: 4,
+    });
 
     expect(repository.searchProduct).toHaveBeenCalledExactlyOnceWith(
       'wireless 포인팅 디바이스 마우스 mouse usb',
@@ -847,8 +920,16 @@ describe('SearchProduct', () => {
     });
   });
 
-  const createRepository = (products: SearchableProduct[]): SearchableProductRepository => ({
+  const createRepository = (
+    products: SearchableProduct[]
+  ): SearchableProductRepository & SearchProductVoteRepository => ({
     index: vi.fn<SearchableProductRepository['index']>().mockResolvedValue(true),
     searchProduct: vi.fn<SearchableProductRepository['searchProduct']>().mockResolvedValue(products),
+    findByTargetIds: vi.fn().mockResolvedValue(
+      products.map(product => ({
+        targetId: product.id,
+        count: product.votes ?? 0,
+      }))
+    ),
   });
 });
