@@ -66,7 +66,7 @@ async function enforceSchema() {
         `);
       }
 
-      async function readMemoUniqueConstraint() {
+      function readMemoUniqueConstraint() {
         return transaction.unsafe<{ valid: boolean }[]>(`
           SELECT contype = 'u' AND convalidated AND NOT condeferrable
             AND conkey = ARRAY[(SELECT attnum FROM pg_attribute

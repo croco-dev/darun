@@ -58,7 +58,8 @@ describe.skipIf(!databaseUrl)('manual schema recovery CLI with isolated PostgreS
       '0002_atomic_tiers.sql',
       '0003_atomic_memos.sql',
     ]) {
-      await sql.unsafe(await readFile(new URL(`../drizzle/${file}`, import.meta.url), 'utf8'));
+      const migration = await readFile(new URL(`../drizzle/${file}`, import.meta.url), 'utf8');
+      await sql.begin(transaction => transaction.unsafe(migration));
     }
     await sql`insert into public.apps (id, app_store_id, name) values (${appId}, 'id740', 'Recovery app')`;
     await sql`insert into public.memos (app_id, content) values (${appId}, 'Preserved memo')`;

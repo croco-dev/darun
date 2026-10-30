@@ -1,3 +1,5 @@
+-- Historical migrations can commit the batch; keep this migration and its journal write together.
+-- The Drizzle migrator owns the final commit.
 BEGIN;
 LOCK TABLE "public"."memos" IN SHARE ROW EXCLUSIVE MODE;
 DO $$ BEGIN
@@ -6,4 +8,3 @@ DO $$ BEGIN
   END IF;
 END $$;
 ALTER TABLE "public"."memos" ADD CONSTRAINT "memos_app_id_unique" UNIQUE("app_id");
-COMMIT;

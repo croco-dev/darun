@@ -1,5 +1,8 @@
 import { MemoCard } from '@/components/MemoCard';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { readMigrationFiles } from 'drizzle-orm/migrator';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate as migrateDrizzle } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,6 +40,7 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
   });
   const appId = '00000000-0000-0000-0000-000000000463';
   let ownsTables = false;
+  let ownsJournalSchema = false;
   let synchronizeReads = false;
   let releaseReads: (() => void) | undefined;
   let reads = 0;
@@ -45,7 +49,8 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
   async function migrate() {
     const journal = JSON.parse(await readFile(new URL('../../../drizzle/meta/_journal.json', import.meta.url), 'utf8'));
     for (const { tag } of journal.entries) {
-      await sql.unsafe(await readFile(new URL(`../../../drizzle/${tag}.sql`, import.meta.url), 'utf8'));
+      const migration = await readFile(new URL(`../../../drizzle/${tag}.sql`, import.meta.url), 'utf8');
+      await sql.begin(transaction => transaction.unsafe(migration));
     }
   }
 
@@ -91,6 +96,10 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
   });
 
   beforeEach(async () => {
+    if (ownsJournalSchema) {
+      await sql`drop schema memo_test_migrations cascade`;
+      ownsJournalSchema = false;
+    }
     synchronizeReads = false;
     reads = 0;
     readBarrier = new Promise(resolve => {
@@ -103,6 +112,7 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
   afterAll(async () => {
     releaseReads?.();
     try {
+      if (ownsJournalSchema) await sql`drop schema memo_test_migrations cascade`;
       if (ownsTables) await sql`drop table public.memos, public.tiers, public.apps, public.users cascade`;
     } finally {
       await sql.end();
@@ -139,21 +149,63 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
     await sql`insert into public.memos (app_id, content) values (${appId}, 'Keep A'), (${appId}, 'Keep B')`;
     const before = await sql`select * from public.memos order by id`;
     const migration = await readFile(new URL('../../../drizzle/0003_atomic_memos.sql', import.meta.url), 'utf8');
-    const connection = await sql.reserve();
-    try {
-      await expect(connection.unsafe(migration)).rejects.toMatchObject({
-        message: expect.stringContaining('Duplicate app memos'),
-      });
-    } finally {
-      await connection`rollback`;
-      connection.release();
-    }
+    await expect(sql.begin(transaction => transaction.unsafe(migration))).rejects.toMatchObject({
+      message: expect.stringContaining('Duplicate app memos'),
+    });
     expect(await sql`select * from public.memos order by id`).toEqual(before);
     await sql`delete from public.memos where id = ${before[1].id}`;
-    await sql.unsafe(migration);
+    await sql.begin(transaction => transaction.unsafe(migration));
     expect(await sql`select * from public.memos`).toEqual([before[0]]);
     await expect(sql`insert into public.memos (app_id, content) values (${appId}, 'Duplicate')`).rejects.toMatchObject({
       code: '23505',
     });
+  });
+
+  it.each([false, true])('rolls back a failed journal write and retries (fresh database: %s)', async fresh => {
+    await sql`alter table public.memos drop constraint memos_app_id_unique`;
+    if (fresh) await sql`drop table public.memos, public.tiers, public.apps, public.users cascade`;
+    const [schema] = await sql`select to_regnamespace('memo_test_migrations') as name`;
+    if (schema.name !== null) throw new Error('Memo migration journal fixture already exists');
+    await sql`create schema memo_test_migrations`;
+    ownsJournalSchema = true;
+    await sql`create table memo_test_migrations.__drizzle_migrations
+      (id serial primary key, hash text not null, created_at bigint)`;
+    const migrationsFolder = new URL('../../../drizzle/', import.meta.url).pathname;
+    const migrations = readMigrationFiles({ migrationsFolder });
+    for (const migration of fresh ? [] : migrations.slice(0, -1)) {
+      await sql`insert into memo_test_migrations.__drizzle_migrations (hash, created_at)
+        values (${migration.hash}, ${migration.folderMillis})`;
+    }
+    const before = await sql`select * from memo_test_migrations.__drizzle_migrations order by id`;
+    await sql.unsafe(`create function memo_test_migrations.reject_journal() returns trigger language plpgsql as $$
+      begin if new.created_at = ${migrations.at(-1)!.folderMillis} then
+        raise exception 'injected journal write failure'; end if; return new; end $$`);
+    await sql`create trigger reject_journal before insert on memo_test_migrations.__drizzle_migrations
+      for each row execute function memo_test_migrations.reject_journal()`;
+    const apply = () => migrateDrizzle(drizzle(sql), { migrationsFolder, migrationsSchema: 'memo_test_migrations' });
+    await expect(apply()).rejects.toThrow();
+    const prefix = migrations
+      .slice(0, -1)
+      .map(({ hash, folderMillis }) => ({ hash, created_at: String(folderMillis) }));
+    expect(await sql`select hash, created_at from memo_test_migrations.__drizzle_migrations order by id`).toEqual(
+      prefix
+    );
+    if (!fresh) expect(await sql`select * from memo_test_migrations.__drizzle_migrations order by id`).toEqual(before);
+    expect(
+      await sql`select conname from pg_constraint where conrelid = 'public.memos'::regclass
+      and conname = 'memos_app_id_unique'`
+    ).toHaveLength(0);
+    await sql`drop trigger reject_journal on memo_test_migrations.__drizzle_migrations`;
+    await apply();
+    expect(
+      await sql`select conname from pg_constraint where conrelid = 'public.memos'::regclass
+      and conname = 'memos_app_id_unique'`
+    ).toHaveLength(1);
+    expect(await sql`select hash, created_at from memo_test_migrations.__drizzle_migrations order by id`).toEqual([
+      ...prefix,
+      { hash: migrations.at(-1)!.hash, created_at: String(migrations.at(-1)!.folderMillis) },
+    ]);
+    await apply();
+    expect(await sql`select * from memo_test_migrations.__drizzle_migrations`).toHaveLength(migrations.length);
   });
 });
