@@ -203,6 +203,7 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
           retryOfJobId: job.retryOfJobId ?? undefined,
           message: job.message ?? undefined,
           error: job.error ?? undefined,
+          candidateHtml: job.candidateHtml ?? undefined,
         },
       };
     }

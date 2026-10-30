@@ -41,7 +41,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
     { cache: false, maxBatchSize: 100 }
   );
 
-  async findCandidateHtmlByJobId(id: string): Promise<string | null> {
+  findCandidateHtmlByJobId(id: string): Promise<string | null> {
     return this.candidateHtmlLoader.load(id);
   }
 

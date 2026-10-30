@@ -47,9 +47,7 @@ describe('ProductDescriptionQueryResolver', () => {
 
   it('재조회 없이 상세·mutation의 후보 HTML과 명시적 빈 값을 보존하고 목록 후보만 읽는다', async () => {
     for (const candidateHtml of ['<p>candidate</p>', '', undefined]) {
-      await expect(resolver.candidateHtml({ id: 'loaded', candidateHtml } as never)).resolves.toBe(
-        candidateHtml ?? null
-      );
+      expect(await resolver.candidateHtml({ id: 'loaded', candidateHtml } as never)).toBe(candidateHtml ?? null);
     }
     expect(getCandidateHtmlMock).not.toHaveBeenCalled();
     getCandidateHtmlMock.mockResolvedValueOnce('<p>lazy</p>');

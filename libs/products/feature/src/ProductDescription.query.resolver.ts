@@ -38,8 +38,8 @@ export class ProductDescriptionQueryResolver {
 
   @Authorized([AuthRole.Admin])
   @FieldResolver(() => String, { nullable: true })
-  async candidateHtml(@Root() job: ProductDescriptionJob): Promise<string | null> {
-    if (Object.hasOwn(job, 'candidateHtml')) return job.candidateHtml ?? null;
+  candidateHtml(@Root() job: ProductDescriptionJob): string | null | Promise<string | null> {
+    if (Object.prototype.hasOwnProperty.call(job, 'candidateHtml')) return job.candidateHtml ?? null;
     return this.productDescriptionJobService.getCandidateHtml(job.id);
   }
 

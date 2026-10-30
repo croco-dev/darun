@@ -65,7 +65,7 @@ export class ProductDescriptionJobService {
     return this.productDescriptionJobRepository.findJobById(id);
   }
 
-  async getCandidateHtml(id: string): Promise<string | null> {
+  getCandidateHtml(id: string): Promise<string | null> {
     return this.productDescriptionJobRepository.findCandidateHtmlByJobId(id);
   }
 

@@ -39,6 +39,7 @@ vi.mock('type-graphql', () => {
 import { Product as DomainProduct } from '@darun/products-domain';
 import { describe, expect, it, vi } from 'vitest';
 import { VisualUiElementGraph } from '../graphs/VisualUiElement';
+import { ProductDescriptionQueryResolver } from '../ProductDescription.query.resolver';
 import { ProductMediaMutationResolver } from '../ProductMediaMutationResolver';
 
 const createMockUseCase = () => ({ execute: vi.fn() });
@@ -307,6 +308,10 @@ describe('ProductMediaMutationResolver', () => {
       );
 
       const result = await resolver.generateProductDescription({ slug: 'test' });
+      const load = vi.fn().mockRejectedValue(new Error('Unexpected candidate read'));
+      const fields = new ProductDescriptionQueryResolver({ getCandidateHtml: load } as never, {} as never, {} as never);
+      expect(await fields.candidateHtml(result.job!)).toBeNull();
+      expect(load).not.toHaveBeenCalled();
       expect(mockJobService.requestProductDescriptionJob).toHaveBeenCalledWith({ slug: 'test' });
       expect(result.job).toEqual({
         id: 'job-1',
