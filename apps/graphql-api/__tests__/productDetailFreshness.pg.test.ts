@@ -7,19 +7,26 @@ import {
   PostgresqlProductRepository,
   PostgresqlProductScreenshotRepository,
 } from '@darun/products-datasource';
-import { GetRankedProducts } from '@darun/products-domain';
+import { GetPublishedProductsForSitemap, GetRankedProducts } from '@darun/products-domain';
+import { ProductQueryResolver } from '@darun/products-feature/server';
 import type { Drizzle } from '@darun/provider-database';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
 import { SearchableProduct, SearchProduct } from '@darun/search-domain';
 import { PostgresqlVoteRepository } from '@darun/voting-datasource';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import type * as GraphQL from 'graphql';
 import postgres, { type Sql } from 'postgres';
+import { buildSchemaSync } from 'type-graphql';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { SearchRanker } from '../../../libs/search/domain/src/services/SearchRanker';
 import { SynonymExpander } from '../../../libs/search/domain/src/services/SynonymExpander';
+
+const { graphql } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
 
 const url = process.env.PRODUCT_DETAIL_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
@@ -540,6 +547,170 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       ).toBe(false);
       const [row] = await writer`select count(*)::int as count from visual_view_events`;
       expect(row.count).toBe(2);
+    });
+  });
+  describe('사이트맵 대안 존재 여부의 선택적 batch 조회', () => {
+    const sources = Array.from({ length: 100 }, (_, index) => ({
+      id: `z-source-${String(index).padStart(3, '0')}`,
+      kind: index % 6,
+      expected: [true, false, true, true, true, false][index % 6],
+    })).reverse();
+    let productRepository: PostgresqlProductRepository;
+    const queries: string[] = [];
+    const existenceQueries = () => queries.filter(query => query.includes('alternative_products'));
+    const sitemapSource = readFileSync(resolve(__dirname, '../../service-web/app/sitemap-data.ts'), 'utf8');
+    const operation = /gql`(\s*query PublishedProductsForSitemap[\s\S]*?)`/.exec(sitemapSource)![1];
+    const execute = (source = operation, variableValues = { first: 100 }) => {
+      const resolver = Object.assign(Object.create(ProductQueryResolver.prototype) as ProductQueryResolver, {
+        getPublishedProductsForSitemapUseCase: new GetPublishedProductsForSitemap(productRepository),
+        productRepository,
+      });
+      const schema = buildSchemaSync({
+        resolvers: [ProductQueryResolver],
+        authChecker: () => true,
+        container: { get: () => resolver },
+      });
+      return graphql({ schema, source, variableValues });
+    };
+
+    beforeEach(async () => {
+      await writer`truncate alternative_products, products, product_tags, tags cascade`;
+      const candidates = ['manual-0', 'manual-1', 'manual-2', 'manual-3', 'manual-4', 'manual-5', 'category', 'tag'];
+      const productRows = [...candidates, 'draft', ...sources.map(source => source.id)].map(id => {
+        const source = sources.find(source => source.id === id);
+        return {
+          id,
+          slug: id,
+          name: id,
+          summary: '',
+          logo_url: '',
+          published_at: id === 'draft' ? null : source ? '2025-01-01' : '2026-01-01',
+          category_ids: id === 'category' || source?.kind === 3 ? '["shared"]' : '[]',
+        };
+      });
+      const alternativeRows = sources.flatMap(source => {
+        const ids =
+          source.kind === 0
+            ? ['manual-0']
+            : source.kind === 1
+              ? ['draft']
+              : source.kind === 2
+                ? candidates.slice(0, 6)
+                : [];
+        return ids.map((id, index) => ({
+          id: `${source.id}-${index}`,
+          product_id: source.id,
+          alternative_product_id: id,
+        }));
+      });
+      const taggedSources = sources.filter(source => source.kind === 4);
+      const tags = taggedSources.map(source => ({
+        id: source.id,
+        name: source.id,
+        type: 'feature',
+      }));
+      const tagRows = taggedSources.flatMap(source => [
+        {
+          id: `${source.id}-source`,
+          product_id: source.id,
+          tag_id: source.id,
+        },
+        {
+          id: `${source.id}-candidate`,
+          product_id: 'tag',
+          tag_id: source.id,
+        },
+      ]);
+      await writer.begin(async tx => {
+        await tx`insert into products ${tx(productRows)}`;
+        await tx`insert into tags ${tx(tags)}`;
+        await tx`insert into alternative_products ${tx(alternativeRows)}`;
+        await tx`insert into product_tags ${tx(tagRows)}`;
+      });
+      productRepository = new PostgresqlProductRepository(
+        drizzle(reader, {
+          logger: { logQuery: query => queries.push(query) },
+        })
+      );
+      queries.length = 0;
+    });
+
+    it('실제 PublishedProductsForSitemap의 100개 Boolean을 한 SQL로 계산하고 본문을 읽지 않는다', async () => {
+      const result = await execute();
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.publishedProductsForSitemap).toEqual(
+        sources.map(source =>
+          expect.objectContaining({
+            id: source.id,
+            hasAlternatives: source.expected,
+          })
+        )
+      );
+      expect(existenceQueries()).toHaveLength(1);
+      expect(existenceQueries()[0]).not.toMatch(/description|summary|logo_url/);
+      expect(queries).toHaveLength(2); // Product page and the optional existence batch.
+    });
+
+    it.each([
+      'query($first: Int!) { publishedProductsForSitemap(first: $first) { id } }',
+      'query($first: Int!) { publishedProductsForSitemap(first: $first) { id hasAlternatives @skip(if: true) } }',
+      'query($first: Int!) { publishedProductsForSitemap(first: $first) { id hasAlternatives @include(if: false) } }',
+    ])('필드를 선택하지 않으면 존재 계산 SQL을 실행하지 않는다: %s', async source => {
+      const result = await execute(source);
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.publishedProductsForSitemap).toHaveLength(100);
+      expect(existenceQueries()).toHaveLength(0);
+      expect(queries).toHaveLength(1);
+    });
+
+    it('중복·부재 ID의 순서를 보존하며 100개를 넘는 호출을 bounded batch로 나눈다', async () => {
+      const ids = [...sources.map(source => source.id), ...sources.map(source => source.id), 'absent'];
+      const result = await Promise.all(ids.map(id => productRepository.hasPublishedAlternatives(id)));
+      expect(result).toEqual([
+        ...sources.map(source => source.expected),
+        ...sources.map(source => source.expected),
+        false,
+      ]);
+      expect(existenceQueries()).toHaveLength(3);
+    });
+
+    it('같은 reader의 다음 요청은 공개·태그·관계 변경을 읽고 미존재·미발행·자기 참조를 구분한다', async () => {
+      const read = (...ids: string[]) => Promise.all(ids.map(id => productRepository.hasPublishedAlternatives(id)));
+      expect(await read('z-source-000', 'z-source-001', 'z-source-004', 'absent')).toEqual([true, false, true, false]);
+      await writer`update products set published_at = null where id = 'manual-0'`;
+      await writer`update products set published_at = '2026-01-01' where id = 'draft'`;
+      await writer`delete from product_tags where product_id = 'tag'`;
+      expect(await read('z-source-000', 'z-source-001', 'z-source-004', 'absent')).toEqual([false, true, false, false]);
+      await writer`insert into alternative_products (id, product_id, alternative_product_id)
+        values ('self', 'z-source-005', 'z-source-005'), ('missing-target', 'z-source-005', 'absent')`;
+      expect(await read('z-source-005')).toEqual([false]);
+      await writer`update products set published_at = null where id in ('z-source-000', 'z-source-003', 'z-source-004')`;
+      await writer`insert into alternative_products (id, product_id, alternative_product_id)
+        values ('draft-source', 'z-source-000', 'draft')`;
+      expect(await read('z-source-000', 'z-source-003', 'z-source-004')).toEqual([true, false, false]);
+    });
+
+    it('최신 50개 밖의 태그 전용 후보는 기존처럼 존재 판정에서 제외한다', async () => {
+      await writer`update products set published_at = '2020-01-01' where id = 'tag'`;
+      expect(await productRepository.hasPublishedAlternatives('z-source-004')).toBe(false);
+    });
+
+    it('SQL 실패를 false로 숨기지 않고 다음 요청에서 다시 조회한다', async () => {
+      let fail = true;
+      const failingRepository = new PostgresqlProductRepository(
+        drizzle(reader, {
+          logger: {
+            logQuery: () => {
+              if (fail) throw new Error('synthetic read failure');
+            },
+          },
+        })
+      );
+      await expect(failingRepository.hasPublishedAlternatives('z-source-000')).rejects.toThrow(
+        'synthetic read failure'
+      );
+      fail = false;
+      expect(await failingRepository.hasPublishedAlternatives('z-source-000')).toBe(true);
     });
   });
 });

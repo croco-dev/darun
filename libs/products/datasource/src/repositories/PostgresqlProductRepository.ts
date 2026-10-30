@@ -93,6 +93,33 @@ export class PostgresqlProductRepository implements ProductRepository {
     { cache: false }
   );
 
+  private readonly alternativesExistenceLoader = new DataLoader<string, boolean>(
+    async ids => {
+      const rows = await this.db
+        .select({
+          id: products.id,
+          value: sql<boolean>`(
+            exists (select 1 from alternative_products a join products p on p.id = a.alternative_product_id
+              where a.product_id = ${products}.id and p.id <> a.product_id and p.published_at is not null)
+            or (${products}.published_at is not null and (
+              exists (select 1 from products p
+                where p.published_at is not null and p.id <> ${products}.id
+                  and p.category_ids::jsonb ?| array(select jsonb_array_elements_text(${products}.category_ids::jsonb)))
+              or exists (select 1 from (select id from products where published_at is not null order by published_at desc limit 50) p
+                join product_tags candidate on candidate.product_id = p.id
+                join product_tags source on source.tag_id = candidate.tag_id
+                where source.product_id = ${products}.id and p.id <> ${products}.id)
+            ))
+          )`,
+        })
+        .from(products)
+        .where(inArray(products.id, [...ids]));
+      const byId = new Map(rows.map(row => [row.id, row.value]));
+      return ids.map(id => byId.get(id) ?? false);
+    },
+    { cache: false, maxBatchSize: 100 }
+  );
+
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.idLoader = new DataLoader(async (ids: readonly string[]) => this.findByIdsInternal(ids), {
       cache: false,
@@ -286,26 +313,7 @@ export class PostgresqlProductRepository implements ProductRepository {
   }
 
   async hasPublishedAlternatives(productId: string): Promise<boolean> {
-    const rows = await this.db
-      .select({
-        value: sql<boolean>`(
-      exists (select 1 from alternative_products a join products p on p.id = a.alternative_product_id
-        where a.product_id = ${productId} and p.id <> a.product_id and p.published_at is not null)
-      or (${products.publishedAt} is not null and (
-      exists (select 1 from products p join products source on source.id = ${productId}
-        where p.published_at is not null and p.id <> source.id
-          and p.category_ids::jsonb ?| array(select jsonb_array_elements_text(source.category_ids::jsonb)))
-      or exists (select 1 from (select id from products where published_at is not null order by published_at desc limit 50) p
-        join product_tags candidate on candidate.product_id = p.id
-        join product_tags source on source.tag_id = candidate.tag_id
-        where source.product_id = ${productId} and p.id <> ${productId})
-      ))
-    )`,
-      })
-      .from(products)
-      .where(eq(products.id, productId))
-      .limit(1);
-    return rows[0]?.value ?? false;
+    return this.alternativesExistenceLoader.load(productId);
   }
 
   async countPublishedByCategoryId(categoryId: string): Promise<number> {
