@@ -221,6 +221,7 @@ function makeRaceClient(handlers: {
   lookups: string[];
   materializations?: RaceMaterializeCall[];
   lookupCalls?: RaceLookupCall[];
+  categories?: Array<{ id: string; slug: string; labelKo: string; labelEn: string }>;
 }) {
   const link = new ApolloLink((operation: Operation) => {
     return new Observable(observer => {
@@ -303,7 +304,7 @@ function makeRaceClient(handlers: {
         return;
       }
       if (name === 'CategoriesOnResearchWorkspace') {
-        respond({ categories: [] });
+        respond({ categories: handlers.categories ?? [] });
         return;
       }
       throw new Error(`unexpected operation ${name}`);
@@ -484,6 +485,57 @@ function finishStaleRequest(call: RaceActionCall<ResearchRequestVariables>, outc
   else call.fail(new Error('이전 요청 network 실패'));
 }
 
+async function renderSubmissionReview() {
+  const stored = seedResearchWorkspace();
+  stored.review.officialUrl = 'https://linear.app/reviewed';
+  const review = {
+    ...stored.review,
+    categoryIds: ['cat-reviewed'],
+    features: [{ name: '검토한 기능', summary: '검토한 기능 설명', emoji: '🔎' }],
+    tags: ['검토한 태그'],
+  };
+  window.localStorage.setItem(RESEARCH_WORKSPACE_STORAGE_KEY, JSON.stringify({ ...stored, review }));
+  const materializations: RaceMaterializeCall[] = [];
+  const client = makeRaceClient({
+    requestJobs: {},
+    retryJobs: {},
+    jobs: { 'job-1': completedJob },
+    requests: [],
+    retries: [],
+    lookups: [],
+    materializations,
+    categories: [
+      {
+        id: 'cat-reviewed',
+        slug: 'reviewed',
+        labelKo: '검토한 분류',
+        labelEn: 'Reviewed',
+      },
+    ],
+  });
+  render(
+    <ApolloProvider client={client}>
+      <ProductResearchSection />
+    </ApolloProvider>
+  );
+  await screen.findByRole('textbox', { name: '기능 1 이름' });
+  fireEvent.click(
+    screen.getByRole('checkbox', {
+      name: '변경한 URL이 공식 사이트인지 직접 확인했습니다.',
+    })
+  );
+  const form = screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }).closest('form')!;
+  return { review, materializations, form };
+}
+
+function expectReviewDisabled(form: HTMLFormElement, disabled: boolean) {
+  const controls = Array.from(form.querySelectorAll('input, textarea, button'));
+  expect(controls.length).toBeGreaterThan(0);
+  for (const control of controls) {
+    expect(control.matches(':disabled'), control.getAttribute('name') ?? control.outerHTML).toBe(disabled);
+  }
+}
+
 beforeEach(() => {
   navigated().length = 0;
   vi.mocked(notifications.show).mockClear();
@@ -523,6 +575,108 @@ function formInputs(): Array<Record<string, FormDataEntryValue>> {
 }
 
 describe('admin research workspace flow', () => {
+  it('로고 업로드부터 등록 응답까지 모든 검토 입력을 잠그고 실패 뒤 같은 업로드와 초안으로 재시도한다', async () => {
+    const upload = Promise.withResolvers<Response>();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => upload.promise)
+    );
+    const { review, materializations, form } = await renderSubmissionReview();
+    fireEvent.change(document.querySelector('[name="review-logo-file"]')!, {
+      target: {
+        files: [new File(['review-logo'], 'review-logo.png', { type: 'image/png' })],
+      },
+    });
+    fireEvent.submit(form);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expectReviewDisabled(form, true);
+    expect(materializations).toHaveLength(0);
+    expect(navigated()).toEqual([]);
+    // disabled 버튼을 거치지 않는 중복 submit도 두 번째 업로드를 시작하지 않는다.
+    fireEvent.submit(form);
+    const uploadedUrl = 'https://res.cloudinary.com/demo/image/upload/v1/reviewed.png';
+    await act(async () => upload.resolve(new Response(JSON.stringify({ secure_url: uploadedUrl }))));
+    await waitFor(() => expect(materializations).toHaveLength(1));
+    expectReviewDisabled(form, true);
+    expect(materializations[0].variables.input).toMatchObject({
+      ...review,
+      researchJobId: 'job-1',
+      logoUrl: uploadedUrl,
+      officialUrlConfirmed: true,
+    });
+    materializations[0].fail(new GraphQLError('합성 등록 실패'));
+    await screen.findByRole('alert');
+    expectReviewDisabled(form, false);
+    expect(navigated()).toEqual([]);
+    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual({
+      ...review,
+      logoUrl: uploadedUrl,
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: '서비스 이름' }), {
+      target: { value: '재검토한 이름' },
+    });
+    fireEvent.submit(form);
+    await waitFor(() => expect(materializations).toHaveLength(2));
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(materializations[1].variables.input).toMatchObject({
+      ...review,
+      name: '재검토한 이름',
+      logoUrl: uploadedUrl,
+      officialUrlConfirmed: true,
+    });
+    materializations[1].respond({
+      id: 'reviewed-product',
+      slug: 'human-slug',
+      name: '재검토한 이름',
+    });
+    await waitFor(() => expect(navigated()).toEqual(['/products/human-slug']));
+  });
+
+  it('로고 업로드 실패 뒤 모든 검토 입력과 제출을 복구하고 수정한 초안으로 재시도한다', async () => {
+    const upload = Promise.withResolvers<Response>();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => upload.promise)
+    );
+    const { review, materializations, form } = await renderSubmissionReview();
+    fireEvent.change(document.querySelector('[name="review-logo-file"]')!, {
+      target: {
+        files: [new File(['logo'], 'logo.png', { type: 'image/png' })],
+      },
+    });
+    fireEvent.submit(form);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expectReviewDisabled(form, true);
+    await act(async () => upload.reject(new Error('합성 업로드 실패')));
+    await waitFor(() => expectReviewDisabled(form, false));
+    expect(materializations).toHaveLength(0);
+    expect(navigated()).toEqual([]);
+    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual(review);
+    fireEvent.change(screen.getByRole('textbox', { name: '요약' }), {
+      target: { value: '재검토한 요약' },
+    });
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ secure_url: 'https://fixture.invalid/logo.png' }))
+    );
+    fireEvent.submit(form);
+    await waitFor(() => expect(materializations).toHaveLength(1));
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(materializations[0].variables.input).toMatchObject({
+      summary: '재검토한 요약',
+    });
+  });
+
+  it('URL 로고로 등록할 때도 첫 await 전부터 잠그고 같은 render의 연속 제출을 한 번만 보낸다', async () => {
+    const { form, materializations } = await renderSubmissionReview();
+    act(() => {
+      fireEvent.submit(form);
+      fireEvent.submit(form);
+    });
+    await waitFor(() => expect(materializations).toHaveLength(1));
+    expectReviewDisabled(form, true);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it.each([256, 300])('기존 %i자 기능 설명을 보존하고 필드 오류를 고친 뒤에만 등록한다', async length => {
     testGlobal().researchSearchParams = { researchJobId: 'job-1' };
     const summary = '가'.repeat(length);

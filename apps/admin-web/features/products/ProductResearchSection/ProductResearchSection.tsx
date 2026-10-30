@@ -245,8 +245,8 @@ export const ProductResearchSection = () => {
   const [tagsInput, setTagsInput] = useState<string | null>(null);
   const [logoSelection, setLogoSelection] = useState<WorkspaceImageSelection | null>(null);
   const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string | null>(null);
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isMaterializing, setIsMaterializing] = useState(false);
+  const materializePendingRef = useRef(false);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [logoInputKey, setLogoInputKey] = useState(0);
   const [isPolling, setIsPolling] = useState(false);
@@ -382,7 +382,7 @@ export const ProductResearchSection = () => {
     stopPolling();
     requestSeqRef.current += 1;
     setActionError(null);
-    setIsUploadingLogo(false);
+    materializePendingRef.current = false;
     setIsMaterializing(false);
     pendingRequestRef.current = null;
     const stored = readStoredWorkspace(researchJobIdParam);
@@ -541,7 +541,7 @@ export const ProductResearchSection = () => {
     const submittedSeq = requestSeqRef.current + 1;
     requestSeqRef.current = submittedSeq;
     setActionError(null);
-    setIsUploadingLogo(false);
+    materializePendingRef.current = false;
     setIsMaterializing(false);
     try {
       const response = await requestResearch({
@@ -597,7 +597,7 @@ export const ProductResearchSection = () => {
     const submittedSeq = requestSeqRef.current + 1;
     requestSeqRef.current = submittedSeq;
     setActionError(null);
-    setIsUploadingLogo(false);
+    materializePendingRef.current = false;
     setIsMaterializing(false);
     // 재조사가 대체한 request의 키는 응답 순서·성공 여부와 무관하게 여기서 수명을 끝낸다.
     pendingRequestRef.current = null;
@@ -649,6 +649,7 @@ export const ProductResearchSection = () => {
   }, [loadJob, jobId, pollJob]);
 
   const updateFeature = (index: number, patch: Partial<ResearchWorkspaceFeatureDraft>) => {
+    if (materializePendingRef.current) return;
     setReview(previous => ({
       ...previous,
       features: previous.features.map((feature, featureIndex) =>
@@ -658,6 +659,7 @@ export const ProductResearchSection = () => {
   };
 
   const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (materializePendingRef.current) return;
     const file = event.currentTarget.files?.[0];
     if (!file) {
       return;
@@ -687,7 +689,6 @@ export const ProductResearchSection = () => {
           return uploadedLogoUrl;
         }
         const slugSeed = review.slug.trim() || 'research-logo';
-        setIsUploadingLogo(true);
         try {
           const url = await upload('images/logos', logoSelection.file, slugSeed);
           if (!isCurrent()) return null;
@@ -700,8 +701,6 @@ export const ProductResearchSection = () => {
             notifications.show({ message: '로고 업로드에 실패했습니다. 다시 시도해주세요.', color: 'red' });
           }
           return null;
-        } finally {
-          if (isCurrent()) setIsUploadingLogo(false);
         }
       }
       if (logoSelection?.kind === 'url') {
@@ -714,6 +713,7 @@ export const ProductResearchSection = () => {
 
   const handleMaterialize = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (materializePendingRef.current) return;
     if (featureSummaryErrors.some(Boolean)) {
       notifications.show({ message: '기능 설명의 초과 길이를 확인해 주세요.', color: 'red' });
       return;
@@ -731,14 +731,15 @@ export const ProductResearchSection = () => {
     const submittedJobId = jobId;
     const isCurrent = () => requestSeqRef.current === submittedSeq && jobIdRef.current === submittedJobId;
     setActionError(null);
-    const logoUrl = await ensureUploadedLogo(isCurrent);
-    if (!isCurrent()) return;
-    if (!logoUrl) {
-      notifications.show({ message: '로고 파일을 올리거나 로고 URL을 직접 입력해주세요.', color: 'red' });
-      return;
-    }
+    materializePendingRef.current = true;
     setIsMaterializing(true);
     try {
+      const logoUrl = await ensureUploadedLogo(isCurrent);
+      if (!isCurrent()) return;
+      if (!logoUrl) {
+        notifications.show({ message: '로고 파일을 올리거나 로고 URL을 직접 입력해주세요.', color: 'red' });
+        return;
+      }
       const response = await materialize({
         variables: {
           input: {
@@ -778,11 +779,15 @@ export const ProductResearchSection = () => {
         });
       }
     } finally {
-      if (isCurrent()) setIsMaterializing(false);
+      if (isCurrent()) {
+        materializePendingRef.current = false;
+        setIsMaterializing(false);
+      }
     }
   };
 
   const toggleCategory = (categoryId: string) => {
+    if (materializePendingRef.current) return;
     setReview(previous => ({
       ...previous,
       categoryIds: previous.categoryIds.includes(categoryId)
@@ -879,208 +884,205 @@ export const ProductResearchSection = () => {
               )}
             </div>
 
-            <form onSubmit={handleMaterialize} className="flex flex-col gap-3">
-              <AdminField label="서비스 이름">
-                <AdminInput
-                  name="review-name"
-                  value={review.name}
-                  onChange={event => {
-                    const nextValue = event.currentTarget.value;
-                    setReview(previous => ({ ...previous, name: nextValue }));
-                  }}
-                />
-              </AdminField>
-              <AdminField label="slug">
-                <AdminInput
-                  name="review-slug"
-                  value={review.slug}
-                  onChange={event => {
-                    const nextValue = event.currentTarget.value;
-                    setReview(previous => ({ ...previous, slug: nextValue }));
-                  }}
-                />
-              </AdminField>
-              <AdminField label="요약">
-                <AdminTextarea
-                  name="review-summary"
-                  rows={4}
-                  value={review.summary}
-                  onChange={event => {
-                    const nextValue = event.currentTarget.value;
-                    setReview(previous => ({ ...previous, summary: nextValue }));
-                  }}
-                />
-              </AdminField>
-              <AdminField label="공식 URL">
-                <AdminInput
-                  name="review-official-url"
-                  value={review.officialUrl}
-                  onChange={event => {
-                    const nextValue = event.currentTarget.value;
-                    setOfficialUrlConfirmation(null);
-                    setReview(previous => ({ ...previous, officialUrl: nextValue }));
-                  }}
-                />
-              </AdminField>
-              {review.officialUrl.trim() !== result.originalUrl && (
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={isOfficialUrlConfirmed}
-                    onChange={event =>
-                      setOfficialUrlConfirmation(
-                        event.currentTarget.checked && jobId ? { jobId, url: review.officialUrl.trim() } : null
-                      )
-                    }
-                  />
-                  변경한 URL이 공식 사이트인지 직접 확인했습니다.
-                </label>
-              )}
-
-              <AdminField label="카테고리 (선택, 비워둘 수 있음)">
-                <div className="flex flex-wrap gap-2">
-                  {categories.map(category => (
-                    <label key={category.id} className="flex items-center gap-1 text-xs text-dark-700">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4"
-                        checked={review.categoryIds.includes(category.id)}
-                        onChange={() => toggleCategory(category.id)}
-                      />
-                      {category.labelKo}
-                    </label>
-                  ))}
-                  {categories.length === 0 && (
-                    <span className="text-xs text-dark-500">카테고리를 불러오는 중이거나 비어 있습니다.</span>
-                  )}
-                </div>
-              </AdminField>
-
-              {review.features.map((feature, index) => (
-                <div key={`feature-${index}`} className="flex flex-col gap-2 rounded-lg bg-black/[0.02] p-2">
-                  <AdminField label={`기능 ${index + 1} 이름`}>
-                    <AdminInput
-                      value={feature.name}
-                      onChange={event => {
-                        const nextValue = event.currentTarget.value;
-                        updateFeature(index, { name: nextValue });
-                      }}
-                    />
-                  </AdminField>
-                  <AdminField
-                    label={`기능 ${index + 1} 설명`}
-                    help={`${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 입력해 주세요.`}
-                    error={featureSummaryErrors[index]}
-                  >
-                    <AdminTextarea
-                      rows={3}
-                      value={feature.summary}
-                      onChange={event => {
-                        const nextValue = event.currentTarget.value;
-                        updateFeature(index, { summary: nextValue });
-                      }}
-                    />
-                  </AdminField>
-                  <AdminField label={`기능 ${index + 1} 이모지`}>
-                    <AdminInput
-                      value={feature.emoji}
-                      maxLength={30}
-                      onChange={event => {
-                        const nextValue = event.currentTarget.value;
-                        updateFeature(index, { emoji: nextValue });
-                      }}
-                    />
-                  </AdminField>
-                </div>
-              ))}
-
-              <AdminField label="태그 (쉼표 구분)">
-                <AdminInput
-                  name="review-tags"
-                  value={tagsInput ?? review.tags.join(', ')}
-                  onChange={event => {
-                    const nextValue = event.currentTarget.value;
-                    setTagsInput(nextValue);
-                    setReview(previous => ({ ...previous, tags: parseTagsInput(nextValue) }));
-                  }}
-                  placeholder="ex) 협업, 생산성"
-                />
-              </AdminField>
-
-              <AdminField label="로고 파일 (Cloudinary 고유 public_id로 업로드)">
-                <div className="flex flex-col gap-2">
+            <form onSubmit={handleMaterialize} aria-busy={isMaterializing}>
+              <fieldset disabled={isMaterializing} className="flex min-w-0 flex-col gap-3">
+                <AdminField label="서비스 이름">
                   <AdminInput
-                    key={logoInputKey}
-                    name="review-logo-file"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    disabled={isUploadingLogo || isMaterializing}
-                    onChange={handleLogoFileChange}
+                    name="review-name"
+                    value={review.name}
+                    onChange={event => {
+                      const nextValue = event.currentTarget.value;
+                      setReview(previous => ({ ...previous, name: nextValue }));
+                    }}
                   />
-                  {logoPreviewUrl && (
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={logoPreviewUrl}
-                        alt="조사 로고 미리보기"
-                        className="h-12 w-12 rounded-lg border border-dark-200 bg-white object-contain p-1"
-                      />
-                      <span className="text-xs text-dark-500">
-                        {logoSelection?.kind === 'file' ? logoSelection.fileName : '선택된 로고 미리보기'}
-                      </span>
-                    </div>
-                  )}
-                  {uploadedLogoUrl && <span className="text-xs text-dark-500">업로드 완료: {uploadedLogoUrl}</span>}
-                </div>
-              </AdminField>
-              <AdminField label="또는 로고 URL 직접 입력">
-                <AdminInput
-                  name="review-logo-url"
-                  value={review.logoUrl}
-                  disabled={isUploadingLogo || isMaterializing}
-                  placeholder="https://..."
-                  onChange={event => {
-                    const nextUrl = event.currentTarget.value;
-                    setReview(previous => ({ ...previous, logoUrl: nextUrl }));
-                    setLogoSelection(nextUrl.trim() ? { kind: 'url', logoUrl: nextUrl } : null);
-                  }}
-                />
-              </AdminField>
+                </AdminField>
+                <AdminField label="slug">
+                  <AdminInput
+                    name="review-slug"
+                    value={review.slug}
+                    onChange={event => {
+                      const nextValue = event.currentTarget.value;
+                      setReview(previous => ({ ...previous, slug: nextValue }));
+                    }}
+                  />
+                </AdminField>
+                <AdminField label="요약">
+                  <AdminTextarea
+                    name="review-summary"
+                    rows={4}
+                    value={review.summary}
+                    onChange={event => {
+                      const nextValue = event.currentTarget.value;
+                      setReview(previous => ({ ...previous, summary: nextValue }));
+                    }}
+                  />
+                </AdminField>
+                <AdminField label="공식 URL">
+                  <AdminInput
+                    name="review-official-url"
+                    value={review.officialUrl}
+                    onChange={event => {
+                      const nextValue = event.currentTarget.value;
+                      setOfficialUrlConfirmation(null);
+                      setReview(previous => ({ ...previous, officialUrl: nextValue }));
+                    }}
+                  />
+                </AdminField>
+                {review.officialUrl.trim() !== result.originalUrl && (
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={isOfficialUrlConfirmed}
+                      onChange={event =>
+                        setOfficialUrlConfirmation(
+                          event.currentTarget.checked && jobId ? { jobId, url: review.officialUrl.trim() } : null
+                        )
+                      }
+                    />
+                    변경한 URL이 공식 사이트인지 직접 확인했습니다.
+                  </label>
+                )}
 
-              <AdminActions>
-                <Button
-                  type="button"
-                  variant="contained"
-                  color="secondary"
-                  disabled={isUploadingLogo || isMaterializing}
-                  onClick={() => {
-                    setLogoSelection(null);
-                    setUploadedLogoUrl(null);
-                    if (logoPreviewUrl) {
-                      URL.revokeObjectURL(logoPreviewUrl);
-                      setLogoPreviewUrl(null);
-                    }
-                    setLogoInputKey(key => key + 1);
-                  }}
-                >
-                  로고 선택 취소
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  disabled={
-                    isMaterializing ||
-                    isUploadingLogo ||
-                    job?.status !== 'completed' ||
-                    featureSummaryErrors.some(Boolean)
-                  }
-                >
-                  {isMaterializing || isUploadingLogo ? '생성 중...' : '검토 내용으로 미발행 생성'}
-                </Button>
-              </AdminActions>
-              <p className="text-xs text-dark-500">
-                생성된 서비스는 미발행 상태이며 자동 발행·색인·번역·Description이 실행되지 않습니다.
-              </p>
+                <AdminField label="카테고리 (선택, 비워둘 수 있음)">
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map(category => (
+                      <label key={category.id} className="flex items-center gap-1 text-xs text-dark-700">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={review.categoryIds.includes(category.id)}
+                          onChange={() => toggleCategory(category.id)}
+                        />
+                        {category.labelKo}
+                      </label>
+                    ))}
+                    {categories.length === 0 && (
+                      <span className="text-xs text-dark-500">카테고리를 불러오는 중이거나 비어 있습니다.</span>
+                    )}
+                  </div>
+                </AdminField>
+
+                {review.features.map((feature, index) => (
+                  <div key={`feature-${index}`} className="flex flex-col gap-2 rounded-lg bg-black/[0.02] p-2">
+                    <AdminField label={`기능 ${index + 1} 이름`}>
+                      <AdminInput
+                        value={feature.name}
+                        onChange={event => {
+                          const nextValue = event.currentTarget.value;
+                          updateFeature(index, { name: nextValue });
+                        }}
+                      />
+                    </AdminField>
+                    <AdminField
+                      label={`기능 ${index + 1} 설명`}
+                      help={`${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 입력해 주세요.`}
+                      error={featureSummaryErrors[index]}
+                    >
+                      <AdminTextarea
+                        rows={3}
+                        value={feature.summary}
+                        onChange={event => {
+                          const nextValue = event.currentTarget.value;
+                          updateFeature(index, { summary: nextValue });
+                        }}
+                      />
+                    </AdminField>
+                    <AdminField label={`기능 ${index + 1} 이모지`}>
+                      <AdminInput
+                        value={feature.emoji}
+                        maxLength={30}
+                        onChange={event => {
+                          const nextValue = event.currentTarget.value;
+                          updateFeature(index, { emoji: nextValue });
+                        }}
+                      />
+                    </AdminField>
+                  </div>
+                ))}
+
+                <AdminField label="태그 (쉼표 구분)">
+                  <AdminInput
+                    name="review-tags"
+                    value={tagsInput ?? review.tags.join(', ')}
+                    onChange={event => {
+                      const nextValue = event.currentTarget.value;
+                      setTagsInput(nextValue);
+                      setReview(previous => ({ ...previous, tags: parseTagsInput(nextValue) }));
+                    }}
+                    placeholder="ex) 협업, 생산성"
+                  />
+                </AdminField>
+
+                <AdminField label="로고 파일 (Cloudinary 고유 public_id로 업로드)">
+                  <div className="flex flex-col gap-2">
+                    <AdminInput
+                      key={logoInputKey}
+                      name="review-logo-file"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      disabled={isMaterializing}
+                      onChange={handleLogoFileChange}
+                    />
+                    {logoPreviewUrl && (
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={logoPreviewUrl}
+                          alt="조사 로고 미리보기"
+                          className="h-12 w-12 rounded-lg border border-dark-200 bg-white object-contain p-1"
+                        />
+                        <span className="text-xs text-dark-500">
+                          {logoSelection?.kind === 'file' ? logoSelection.fileName : '선택된 로고 미리보기'}
+                        </span>
+                      </div>
+                    )}
+                    {uploadedLogoUrl && <span className="text-xs text-dark-500">업로드 완료: {uploadedLogoUrl}</span>}
+                  </div>
+                </AdminField>
+                <AdminField label="또는 로고 URL 직접 입력">
+                  <AdminInput
+                    name="review-logo-url"
+                    value={review.logoUrl}
+                    disabled={isMaterializing}
+                    placeholder="https://..."
+                    onChange={event => {
+                      const nextUrl = event.currentTarget.value;
+                      setReview(previous => ({ ...previous, logoUrl: nextUrl }));
+                      setLogoSelection(nextUrl.trim() ? { kind: 'url', logoUrl: nextUrl } : null);
+                    }}
+                  />
+                </AdminField>
+
+                <AdminActions>
+                  <Button
+                    type="button"
+                    variant="contained"
+                    color="secondary"
+                    disabled={isMaterializing}
+                    onClick={() => {
+                      setLogoSelection(null);
+                      setUploadedLogoUrl(null);
+                      if (logoPreviewUrl) {
+                        URL.revokeObjectURL(logoPreviewUrl);
+                        setLogoPreviewUrl(null);
+                      }
+                      setLogoInputKey(key => key + 1);
+                    }}
+                  >
+                    로고 선택 취소
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={isMaterializing || job?.status !== 'completed' || featureSummaryErrors.some(Boolean)}
+                  >
+                    {isMaterializing ? '생성 중...' : '검토 내용으로 미발행 생성'}
+                  </Button>
+                </AdminActions>
+                <p className="text-xs text-dark-500">
+                  생성된 서비스는 미발행 상태이며 자동 발행·색인·번역·Description이 실행되지 않습니다.
+                </p>
+              </fieldset>
             </form>
 
             <div className="flex flex-col gap-2">
