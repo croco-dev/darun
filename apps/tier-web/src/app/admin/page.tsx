@@ -153,9 +153,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                       </form>
                     </td>
                     <td className="min-w-[240px] px-4 py-4 align-top">
-                      <form>
-                        <MemoEditor appId={app.id} initialContent={app.memo} />
-                      </form>
+                      <MemoEditor appId={app.id} initialContent={app.memo} />
                     </td>
                     <td className="px-4 py-4 align-top">
                       <DeleteAppButton appId={app.id} appName={app.name} />

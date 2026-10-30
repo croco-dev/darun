@@ -46,7 +46,13 @@ export function MemoEditor({ appId, initialContent }: MemoEditorProps) {
         className="min-h-[80px] text-sm resize-y"
       />
       <div className="flex justify-end">
-        <Button size="sm" onClick={handleSave} disabled={isSaving || content === initialContent} variant="glass">
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleSave}
+          disabled={isSaving || content === initialContent}
+          variant="glass"
+        >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           <span className="ml-2">저장</span>
         </Button>
