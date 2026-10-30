@@ -15,10 +15,8 @@ export function useCompanyListRefreshButton() {
     try {
       await apolloClient.refetchQueries({
         include: [AllCompaniesOnAllCompanyListTableDocument],
-        onQueryUpdated: () => {
-          notifications.show({ message: '기업 목록을 새로 불러왔어요.', color: 'teal' });
-        },
       });
+      notifications.show({ message: '기업 목록을 새로 불러왔어요.', color: 'teal' });
     } catch (error) {
       notifications.show({
         title: '새로고침 실패',
