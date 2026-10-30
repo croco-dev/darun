@@ -1,4 +1,7 @@
 import 'reflect-metadata';
+import { PostgresqlProductRepository, PostgresqlProductTagRepository } from '@darun/products-datasource';
+import { GetPublishedProduct, Product } from '@darun/products-domain';
+import { ProductQueryResolver } from '@darun/products-feature/server';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
 import { GetAlternativeProducts, UpdateAlternativeProduct } from '@darun/recommendation-domain';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -6,6 +9,7 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres, { type Sql } from 'postgres';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { resolve } from 'node:path';
+import { AutoRecommender } from '../../../libs/recommendation/domain/src/services/AutoRecommender';
 
 const url = process.env.ALTERNATIVE_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
@@ -14,7 +18,10 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
   let client: Sql;
   let repository: PostgresqlAlternativeProductRepository;
   const update = (ids: string[], productId = 'source') =>
-    new UpdateAlternativeProduct(repository).execute({ productId, alternativeProductIds: ids });
+    new UpdateAlternativeProduct(repository).execute({
+      productId,
+      alternativeProductIds: ids,
+    });
   const rows = () =>
     client`select id, alternative_product_id from alternative_products where product_id = 'source' order by alternative_product_id`;
 
@@ -24,7 +31,9 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
       throw new Error('Requires isolated local darun_alternative_integrity database');
     }
     client = postgres(url!, { max: 12, connect_timeout: 5 });
-    await migrate(drizzle(client), { migrationsFolder: resolve(__dirname, '../scripts/migrations') });
+    await migrate(drizzle(client), {
+      migrationsFolder: resolve(__dirname, '../scripts/migrations'),
+    });
     await client`create or replace function reject_alternative_write() returns trigger language plpgsql as $$
       begin
         if current_setting('darun.reject_all', true) = 'true' or
@@ -48,6 +57,91 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
       await client`drop function if exists reject_alternative_write()`;
       await client.end({ timeout: 5 });
     }
+  });
+
+  describe('공개 대안 정원', () => {
+    let productRepository: PostgresqlProductRepository;
+    let resolver: ProductQueryResolver;
+    const manualIds = ['manual-3', 'manual-1', 'missing', 'manual-2', 'manual-4'];
+    const autoIds = ['auto-1', 'auto-2', 'auto-3', 'auto-4', 'auto-5', 'auto-6'];
+    const publicIds = async () =>
+      (
+        await resolver.alternatives({
+          id: 'source',
+          name: 'source',
+          slug: 'source',
+          summary: '',
+          logoUrl: '',
+        })
+      ).map(product => product.id);
+
+    beforeEach(async () => {
+      await client`truncate alternative_products, products, product_tags cascade`;
+      for (const id of ['source', ...manualIds.filter(id => id !== 'missing'), ...autoIds]) {
+        const publishedAt = id.startsWith('manual')
+          ? null
+          : new Date(Date.UTC(2026, 0, 10 - Math.max(0, autoIds.indexOf(id)))).toISOString();
+        const categoryIds = id.startsWith('manual') ? '[]' : '["shared"]';
+        await client`insert into products (id, slug, name, summary, logo_url, published_at, category_ids)
+          values (${id}, ${id}, ${id}, '', '', ${publishedAt}, ${categoryIds}::json)`;
+      }
+      for (const id of manualIds) {
+        await client`insert into alternative_products (id, product_id, alternative_product_id) values (${`row-${id}`}, 'source', ${id})`;
+      }
+      productRepository = new PostgresqlProductRepository(drizzle(client));
+      const getAlternativeProductsUseCase = new GetAlternativeProducts(
+        repository,
+        productRepository,
+        new AutoRecommender(productRepository, new PostgresqlProductTagRepository(drizzle(client)))
+      );
+      // Only the dependencies used by this field are supplied; Lambda verification covers full DI initialization.
+      resolver = Object.assign(Object.create(ProductQueryResolver.prototype) as ProductQueryResolver, {
+        getAlternativeProductsUseCase,
+        getPublishedProductUseCase: new GetPublishedProduct(productRepository),
+      });
+    });
+
+    it('미발행·부재 수동 5개 대신 공개 자동 후보 5개를 반환하고 존재 여부도 일치한다', async () => {
+      const before = await repository.findManyByProductId('source');
+      expect(await publicIds()).toEqual(autoIds.slice(0, 5));
+      expect(await productRepository.hasPublishedAlternatives('source')).toBe(true);
+      expect(await repository.findManyByProductId('source')).toEqual(before);
+    });
+
+    it('공개 수동 항목을 먼저 두고 부족한 세 자리만 자동으로 보충한다', async () => {
+      await client`update products set published_at = '2026-01-01' where id in ('manual-3', 'manual-1')`;
+      expect(await publicIds()).toEqual(['manual-3', 'manual-1', ...autoIds.slice(0, 3)]);
+    });
+
+    it('공개 수동 5개가 있으면 원래 순서를 유지하며 자동 후보를 넣지 않는다', async () => {
+      await client`insert into products (id, slug, name, summary, logo_url, published_at)
+        values ('missing', 'missing', 'missing', '', '', '2026-01-01')`;
+      await client`update products set published_at = '2026-01-01' where id like 'manual-%'`;
+      expect(await publicIds()).toEqual(manualIds);
+    });
+
+    it('자기 관계가 정원을 차지하지 않으며 공개 수동 항목은 자동 후보와 중복되지 않는다', async () => {
+      await client`truncate alternative_products`;
+      for (const id of ['source', 'auto-2', 'manual-3', 'auto-1']) {
+        await client`insert into alternative_products (id, product_id, alternative_product_id) values (${`row-${id}`}, 'source', ${id})`;
+      }
+      expect(await publicIds()).toEqual(['auto-2', 'auto-1', 'auto-3', 'auto-4', 'auto-5']);
+    });
+
+    it('공개 수동 항목이 5개를 넘어도 최대 5개를 반환한다', async () => {
+      await client`truncate alternative_products`;
+      for (const id of autoIds) {
+        await client`insert into alternative_products (id, product_id, alternative_product_id) values (${`row-${id}`}, 'source', ${id})`;
+      }
+      expect(await publicIds()).toEqual(autoIds.slice(0, 5));
+    });
+
+    it('공개 후보가 없으면 빈 목록이며 자기 관계만으로 존재한다고 표시하지 않는다', async () => {
+      await client`update products set published_at = null where id <> 'source'`;
+      await client`insert into alternative_products (id, product_id, alternative_product_id) values ('row-self', 'source', 'source')`;
+      expect(await publicIds()).toEqual([]);
+      expect(await productRepository.hasPublishedAlternatives('source')).toBe(false);
+    });
   });
 
   it('추가 실패 시 삭제를 롤백하고 기존 행 ID와 캐시를 보존한다', async () => {
@@ -83,7 +177,20 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
     await client`insert into alternative_products (id, product_id, alternative_product_id) values ('legacy-self', 'source', 'source')`;
     const before = await rows();
 
-    const result = await new GetAlternativeProducts(repository).execute({
+    const result = await new GetAlternativeProducts(repository, {
+      findPublishedByIds: async ids =>
+        ids.map(
+          id =>
+            new Product({
+              id,
+              slug: id,
+              name: id,
+              summary: '',
+              logoUrl: '',
+              publishedAt: new Date(),
+            })
+        ),
+    }).execute({
       productId: 'source',
     });
 
@@ -109,7 +216,10 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
   it('변경 없는 교체는 행을 다시 쓰지 않는다', async () => {
     const before = await rows();
     // A real DB trigger rejects every write, including delete-and-reinsert implementations.
-    const guardedClient = postgres(url!, { max: 1, connection: { 'darun.reject_all': 'true' } });
+    const guardedClient = postgres(url!, {
+      max: 1,
+      connection: { 'darun.reject_all': 'true' },
+    });
     try {
       const guardedRepository = new PostgresqlAlternativeProductRepository(drizzle(guardedClient));
       await new UpdateAlternativeProduct(guardedRepository).execute({
@@ -139,7 +249,10 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
     const results = await Promise.allSettled(
       requests.map(ids => {
         const writer = new PostgresqlAlternativeProductRepository(drizzle(client));
-        return new UpdateAlternativeProduct(writer).execute({ productId: 'source', alternativeProductIds: ids });
+        return new UpdateAlternativeProduct(writer).execute({
+          productId: 'source',
+          alternativeProductIds: ids,
+        });
       })
     );
     expect(results.map(result => result.status)).toEqual(Array(12).fill('fulfilled'));

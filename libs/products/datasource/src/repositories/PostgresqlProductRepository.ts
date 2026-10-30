@@ -290,9 +290,8 @@ export class PostgresqlProductRepository implements ProductRepository {
       .select({
         value: sql<boolean>`(
       exists (select 1 from alternative_products a join products p on p.id = a.alternative_product_id
-        where a.product_id = ${productId} and p.published_at is not null)
-      or ((select count(*) from (select 1 from alternative_products where product_id = ${productId} limit 5) manual) < 5
-        and ${products.publishedAt} is not null and (
+        where a.product_id = ${productId} and p.id <> a.product_id and p.published_at is not null)
+      or (${products.publishedAt} is not null and (
       exists (select 1 from products p join products source on source.id = ${productId}
         where p.published_at is not null and p.id <> source.id
           and p.category_ids::jsonb ?| array(select jsonb_array_elements_text(source.category_ids::jsonb)))
