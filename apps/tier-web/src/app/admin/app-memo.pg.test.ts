@@ -173,7 +173,12 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
       return markup.match(/<textarea\b[^>]*>([\s\S]*?)<\/textarea>/)?.[1];
     };
     await updateAppMemo(appId, 'Existing memo\nSecond line');
-    const { data, error } = await client.from('apps').select('id,memos(content)').eq('id', appId).single();
+    const { data, error } = await client
+      .from('apps')
+      .select('id,memos(content)')
+      .eq('id', appId)
+      .single()
+      .overrideTypes<{ memos: unknown }, { merge: false }>();
     expect(error).toBeNull();
     expect(data?.memos).toEqual({ content: 'Existing memo\nSecond line' });
     expect(await editorValue()).toBe('Existing memo\nSecond line');
