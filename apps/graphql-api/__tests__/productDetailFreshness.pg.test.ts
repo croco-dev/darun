@@ -8,7 +8,13 @@ import {
   PostgresqlProductRepository,
   PostgresqlProductScreenshotRepository,
 } from '@darun/products-datasource';
-import { GetProduct, GetPublishedProductsForSitemap, GetRankedProducts } from '@darun/products-domain';
+import {
+  GetProduct,
+  GetProductLinks,
+  GetPublishedProduct,
+  GetPublishedProductsForSitemap,
+  GetRankedProducts,
+} from '@darun/products-domain';
 import { ProductQueryResolver } from '@darun/products-feature/server';
 import { ProductDescriptionJobService } from '@darun/products-service';
 import type { Drizzle } from '@darun/provider-database';
@@ -383,6 +389,88 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       expect(result.errors).toHaveLength(1);
       expect(result.data).toBeNull();
       expect(selectCount).toBe(0);
+    });
+  });
+
+  describe('상품 대표 링크의 전체 순서', () => {
+    beforeEach(async () => {
+      await writer`delete from product_links`;
+      await writer`insert into products (id, name, slug, summary, logo_url) values
+        ('link-parent-a', 'Link A', 'link-parent-a', '', ''),
+        ('link-parent-b', 'Link B', 'link-parent-b', '', '')`;
+      for (const [id, parent, createdAt] of [
+        ['a-new', 'link-parent-a', '2026-01-03'],
+        ['b-tie-z', 'link-parent-b', '2026-01-01'],
+        ['a-tie-z', 'link-parent-a', '2026-01-01'],
+        ['b-new', 'link-parent-b', '2026-01-02'],
+        ['a-tie-a', 'link-parent-a', '2026-01-01'],
+        ['b-tie-a', 'link-parent-b', '2026-01-01'],
+      ]) {
+        await writer`insert into product_links (id, product_id, title, link, display_link, icon_url, created_at)
+          values (${id}, ${parent}, ${id}, ${`https://example.com/${id}`}, ${id}, '', ${createdAt})`;
+      }
+      selectCount = 0;
+    });
+
+    afterEach(async () => {
+      await writer`delete from product_links`;
+      await writer`delete from products where id in ('link-parent-a', 'link-parent-b')`;
+    });
+
+    it('삽입·배치 순서와 제목·URL 수정에 관계없이 createdAt ASC·id ASC 순서를 유지한다', async () => {
+      const repository = new PostgresqlProductLinkRepository(db);
+      const read = (ids: string[]) => Promise.all(ids.map(id => repository.findManyByProductId(id)));
+      const idsOf = (rows: { id: string }[]) => rows.map(row => row.id);
+      const first = await read(['link-parent-b', 'missing', 'link-parent-a', 'link-parent-b']);
+      expect(first.map(idsOf)).toEqual([
+        ['b-tie-a', 'b-tie-z', 'b-new'],
+        [],
+        ['a-tie-a', 'a-tie-z', 'a-new'],
+        ['b-tie-a', 'b-tie-z', 'b-new'],
+      ]);
+      expect(selectCount).toBe(1);
+
+      await repository.updateById('a-tie-a', 'link-parent-a', link => {
+        link.update({ title: 'Edited primary', link: 'https://example.com/edited' });
+        return link;
+      });
+      await writer`update product_links set title = 'Edited secondary' where id = 'b-tie-z'`;
+      selectCount = 0;
+      const second = await read(['link-parent-a', 'link-parent-b']);
+      expect(second.map(idsOf)).toEqual([idsOf(first[2]), idsOf(first[0])]);
+      expect(second[0][0]).toMatchObject({ title: 'Edited primary', link: 'https://example.com/edited' });
+      expect(selectCount).toBe(1);
+    });
+
+    it('관리자와 공개 GraphQL 조회가 같은 첫 링크만 대표로 반환한다', async () => {
+      await writer`update products set published_at = '2026-01-01' where id in ('link-parent-a', 'link-parent-b')`;
+      const productRepository = new PostgresqlProductRepository(db);
+      const resolver = Object.assign(Object.create(ProductQueryResolver.prototype) as ProductQueryResolver, {
+        getProductUseCase: new GetProduct(productRepository),
+        getPublishedProductUseCase: new GetPublishedProduct(productRepository),
+        getProductLinksUseCase: new GetProductLinks(new PostgresqlProductLinkRepository(db)),
+      });
+      const schema = buildSchemaSync({
+        resolvers: [ProductQueryResolver],
+        authChecker: () => true,
+        container: { get: () => resolver },
+      });
+      const result = await graphql({
+        schema,
+        source: `{
+          admin: tempProductBySlug(slug: "link-parent-a") { links { id isPrimary } }
+          public: productBySlug(slug: "link-parent-a", locale: "ko") { links { id isPrimary } }
+        }`,
+      });
+      expect(result.errors).toBeUndefined();
+      const expected = {
+        links: [
+          { id: 'a-tie-a', isPrimary: true },
+          { id: 'a-tie-z', isPrimary: false },
+          { id: 'a-new', isPrimary: false },
+        ],
+      };
+      expect(result.data).toEqual({ admin: expected, public: expected });
     });
   });
 

@@ -10,7 +10,7 @@ import {
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { productLinks } from '../entities/ProductLinksSchema';
@@ -25,7 +25,8 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
         const docs = await this.db
           .select()
           .from(productLinks)
-          .where(inArray(productLinks.productId, [...productIds]));
+          .where(inArray(productLinks.productId, [...productIds]))
+          .orderBy(asc(productLinks.createdAt), asc(productLinks.id));
 
         const groupByDocs = groupBy(
           docs.map(doc => this.mapper(doc)),
