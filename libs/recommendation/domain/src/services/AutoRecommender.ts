@@ -88,9 +88,19 @@ export class AutoRecommender {
       }
     }
 
-    const tagCandidateCount = await this.addTagCandidates({ product, candidates, excludedIds, order });
+    const tagCandidateCount = await this.addTagCandidates({
+      product,
+      candidates,
+      excludedIds,
+      order,
+    });
 
-    this.logObservability({ categoryCandidateCount, tagCandidateCount, candidates, startTime });
+    this.logObservability({
+      categoryCandidateCount,
+      tagCandidateCount,
+      candidates,
+      startTime,
+    });
 
     return [...candidates.values()].sort((a, b) => {
       const scoreDiff = b.categoryMatches * 10 + b.tagMatches - (a.categoryMatches * 10 + a.tagMatches);
@@ -119,9 +129,18 @@ export class AutoRecommender {
     }
 
     const products = await this.productRepository.findTopNSortByPublishedAtDesc(50);
-    const candidateIds = products
-      .filter(candidateProduct => !excludedIds.has(candidateProduct.id))
-      .map(candidateProduct => candidateProduct.id);
+    const candidateProducts = new Map<string, Pick<Product, 'id' | 'publishedAt'>>(
+      [...candidates.values()].map(candidate => [
+        candidate.productId,
+        { id: candidate.productId, publishedAt: candidate.publishedAt },
+      ])
+    );
+    for (const candidateProduct of products) {
+      if (!excludedIds.has(candidateProduct.id)) {
+        candidateProducts.set(candidateProduct.id, candidateProduct);
+      }
+    }
+    const candidateIds = [...candidateProducts.keys()];
 
     const productTags = await this.productTagRepository.findByProductIds(candidateIds);
     console.info({
@@ -132,11 +151,7 @@ export class AutoRecommender {
     const tagsByProductId = new Map(productTags.map(pt => [pt.productId, pt.tags]));
     let tagCandidateCount = 0;
 
-    for (const candidateProduct of products) {
-      if (excludedIds.has(candidateProduct.id)) {
-        continue;
-      }
-
+    for (const candidateProduct of candidateProducts.values()) {
       const tags = tagsByProductId.get(candidateProduct.id) ?? [];
       const tagMatches = tags.filter(tag => targetTagNames.has(tag.name)).length;
       if (!tagMatches) {
@@ -148,7 +163,7 @@ export class AutoRecommender {
       candidates.set(candidateProduct.id, {
         productId: candidateProduct.id,
         categoryMatches: prev?.categoryMatches ?? 0,
-        tagMatches: (prev?.tagMatches ?? 0) + tagMatches,
+        tagMatches,
         publishedAt: candidateProduct.publishedAt ?? new Date(0),
         order: prev?.order ?? order++,
         source: 'tag',

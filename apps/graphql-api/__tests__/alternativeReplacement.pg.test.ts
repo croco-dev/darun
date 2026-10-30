@@ -113,6 +113,30 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
       expect(await publicIds()).toEqual(['manual-3', 'manual-1', ...autoIds.slice(0, 3)]);
     });
 
+    it('최신 50개 밖의 카테고리 후보도 태그 점수를 반영하고 수동 대안 뒤에 둔다', async () => {
+      await client`update products set published_at = '2029-01-01' where id = 'manual-3'`;
+      await client`update products set published_at = '2028-01-01' where id = 'source'`;
+      await client`update products set published_at = '2027-01-01' where id = 'auto-1'`;
+      await client`update products set published_at = '2020-01-01' where id = 'auto-6'`;
+      await client`insert into products (id, slug, name, summary, logo_url, published_at, category_ids)
+        select 'noise-' || n, 'noise-' || n, 'noise-' || n, '', '', '2026-06-01'::timestamp, '[]'::json
+        from generate_series(1, 50) n`;
+      await client`insert into tags (id, name, type) values
+        ('score-ai', 'score-ai', 'Featured'), ('score-crm', 'score-crm', 'Featured')
+        on conflict (name) do nothing`;
+      await client`insert into product_tags (id, product_id, tag_id)
+        select product_id || '-' || tag_id, product_id, tag_id from (values
+          ('source', 'score-ai'), ('source', 'score-crm'),
+          ('auto-6', 'score-ai'), ('auto-6', 'score-crm'), ('auto-1', 'score-ai')
+        ) fixture(product_id, tag_id)`;
+
+      const recent = await productRepository.findTopNSortByPublishedAtDesc(50);
+      expect(recent).toHaveLength(50);
+      expect(recent.some(product => product.id === 'auto-6')).toBe(false);
+      expect(recent.some(product => product.id === 'auto-1')).toBe(true);
+      expect(await publicIds()).toEqual(['manual-3', 'auto-6', 'auto-1', 'auto-2', 'auto-3']);
+    });
+
     it('공개 수동 5개가 있으면 원래 순서를 유지하며 자동 후보를 넣지 않는다', async () => {
       await client`insert into products (id, slug, name, summary, logo_url, published_at)
         values ('missing', 'missing', 'missing', '', '', '2026-01-01')`;
