@@ -61,7 +61,7 @@ async function openThirdPage(fixture: ReturnType<typeof setup>) {
 }
 
 describe('useCompanyListRefreshButton with the active Apollo list', () => {
-  it('awaits one current-page request, prevents another click while pending, then exposes the new rows and one success', async () => {
+  it.each([false, true])('refreshes the current page with delayed completion (fail first: %s)', async failFirst => {
     const fixture = setup();
     await openThirdPage(fixture);
 
@@ -79,53 +79,34 @@ describe('useCompanyListRefreshButton with the active Apollo list', () => {
     });
     expect(fixture.pages).toEqual([1, 3, 3]);
 
+    if (failFirst) {
+      await act(async () => {
+        fixture.pending.shift()!.fail();
+        await refresh;
+      });
+      expect(fixture.result.current.refresh.isRefreshing).toBe(false);
+      expect(fixture.result.current.list.page).toBe(3);
+      expect(notifications.show).toHaveBeenCalledExactlyOnceWith({
+        title: '새로고침 실패',
+        message: 'Network error',
+        color: 'red',
+      });
+      vi.mocked(notifications.show).mockClear();
+
+      act(() => {
+        refresh = fixture.result.current.refresh.refresh();
+      });
+      await waitFor(() => expect(fixture.pages).toEqual([1, 3, 3, 3]));
+      expect(fixture.result.current.refresh.isRefreshing).toBe(true);
+      expect(notifications.show).not.toHaveBeenCalled();
+    }
+
+    const name = failFirst ? '재시도 후 기업' : '갱신된 기업';
     await act(async () => {
-      fixture.pending.shift()!.succeed('갱신된 기업');
+      fixture.pending.shift()!.succeed(name);
       await refresh;
     });
-    await waitFor(() => expect(fixture.result.current.list.companies?.[0]?.name).toBe('갱신된 기업'));
-    expect(fixture.result.current.list.page).toBe(3);
-    expect(fixture.result.current.refresh.isRefreshing).toBe(false);
-    expect(notifications.show).toHaveBeenCalledExactlyOnceWith({
-      message: '기업 목록을 새로 불러왔어요.',
-      color: 'teal',
-    });
-  });
-
-  it('reports a failed request without success and can retry the same page', async () => {
-    const fixture = setup();
-    await openThirdPage(fixture);
-
-    let refresh!: Promise<void>;
-    act(() => {
-      refresh = fixture.result.current.refresh.refresh();
-    });
-    await waitFor(() => expect(fixture.pages).toEqual([1, 3, 3]));
-    expect(notifications.show).not.toHaveBeenCalled();
-    await act(async () => {
-      fixture.pending.shift()!.fail();
-      await refresh;
-    });
-    expect(fixture.result.current.refresh.isRefreshing).toBe(false);
-    expect(fixture.result.current.list.page).toBe(3);
-    expect(notifications.show).toHaveBeenCalledExactlyOnceWith({
-      title: '새로고침 실패',
-      message: 'Network error',
-      color: 'red',
-    });
-    vi.mocked(notifications.show).mockClear();
-
-    act(() => {
-      refresh = fixture.result.current.refresh.refresh();
-    });
-    await waitFor(() => expect(fixture.pages).toEqual([1, 3, 3, 3]));
-    expect(fixture.result.current.refresh.isRefreshing).toBe(true);
-    expect(notifications.show).not.toHaveBeenCalled();
-    await act(async () => {
-      fixture.pending.shift()!.succeed('재시도 후 기업');
-      await refresh;
-    });
-    await waitFor(() => expect(fixture.result.current.list.companies?.[0]?.name).toBe('재시도 후 기업'));
+    await waitFor(() => expect(fixture.result.current.list.companies?.[0]?.name).toBe(name));
     expect(fixture.result.current.list.page).toBe(3);
     expect(fixture.result.current.refresh.isRefreshing).toBe(false);
     expect(notifications.show).toHaveBeenCalledExactlyOnceWith({
