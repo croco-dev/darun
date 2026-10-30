@@ -150,49 +150,19 @@ export async function updateAppMemo(appId: string, content: string) {
   const supabase = await createClient();
   const trimmedContent = content.trim();
 
-  // Check if memo exists
-  const { data: existingMemo, error: existingMemoError } = await supabase
-    .from('memos')
-    .select('id')
-    .eq('app_id', appId)
-    .maybeSingle();
-
-  if (existingMemoError) {
-    throw new Error(existingMemoError.message);
-  }
-
-  if (existingMemo) {
-    if (!trimmedContent) {
-      // If content is empty, delete the memo
-      const { error } = await supabase.from('memos').delete().eq('id', existingMemo.id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-    } else {
-      // Update existing memo
-      const { error } = await supabase
-        .from('memos')
-        .update({
+  const { error } = trimmedContent
+    ? await supabase.from('memos').upsert(
+        {
+          app_id: appId,
           content: trimmedContent,
           updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingMemo.id);
+        },
+        { onConflict: 'app_id' }
+      )
+    : await supabase.from('memos').delete().eq('app_id', appId);
 
-      if (error) {
-        throw new Error(error.message);
-      }
-    }
-  } else if (trimmedContent) {
-    // Insert new memo
-    const { error } = await supabase.from('memos').insert({
-      app_id: appId,
-      content: trimmedContent,
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
+  if (error) {
+    throw new Error(error.message);
   }
 
   revalidatePath('/apps/[id]', 'page');

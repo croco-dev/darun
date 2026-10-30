@@ -52,8 +52,14 @@ describe.skipIf(!databaseUrl)('manual schema recovery CLI with isolated PostgreS
 
   beforeEach(async () => {
     await sql`drop table if exists public.memos, public.tiers, public.apps, public.users cascade`;
-    for (const file of ['0000_careless_leech.sql', '0001_orange_queen_noir.sql', '0002_atomic_tiers.sql']) {
-      await sql.unsafe(await readFile(new URL(`../drizzle/${file}`, import.meta.url), 'utf8'));
+    for (const file of [
+      '0000_careless_leech.sql',
+      '0001_orange_queen_noir.sql',
+      '0002_atomic_tiers.sql',
+      '0003_atomic_memos.sql',
+    ]) {
+      const migration = await readFile(new URL(`../drizzle/${file}`, import.meta.url), 'utf8');
+      await sql.begin(transaction => transaction.unsafe(migration));
     }
     await sql`insert into public.apps (id, app_store_id, name) values (${appId}, 'id740', 'Recovery app')`;
     await sql`insert into public.memos (app_id, content) values (${appId}, 'Preserved memo')`;
@@ -72,6 +78,9 @@ describe.skipIf(!databaseUrl)('manual schema recovery CLI with isolated PostgreS
     await sql`drop table public.memos`;
     await run();
     await sql`insert into public.memos (app_id, content) values (${appId}, 'New memo')`;
+    await expect(sql`insert into public.memos (app_id, content) values (${appId}, 'Duplicate')`).rejects.toMatchObject({
+      code: '23505',
+    });
     await sql`delete from public.apps where id = ${appId}`;
     expect(await sql`select * from public.memos`).toHaveLength(0);
     await expect(sql`insert into public.memos (app_id, content) values (${appId}, 'Orphan')`).rejects.toMatchObject({
@@ -91,6 +100,32 @@ describe.skipIf(!databaseUrl)('manual schema recovery CLI with isolated PostgreS
     });
     await sql`delete from public.apps where id = ${appId}`;
     expect(await sql`select * from public.memos`).toHaveLength(0);
+  });
+
+  it('누락된 메모 unique를 복구하고 중복 삽입을 거절한다', async () => {
+    await sql`alter table public.memos drop constraint memos_app_id_unique`;
+    const before = await snapshot();
+    await run();
+    expect((await snapshot()).memos).toEqual(before.memos);
+    await expect(sql`insert into public.memos (app_id, content) values (${appId}, 'Duplicate')`).rejects.toMatchObject({
+      code: '23505',
+    });
+  });
+
+  it('기존 중복 메모를 자동 삭제하지 않고 복구를 거절한다', async () => {
+    await sql`alter table public.memos drop constraint memos_app_id_unique`;
+    await sql`insert into public.memos (app_id, content) values (${appId}, 'Keep another memo')`;
+    const before = await snapshot();
+    await expect(run()).rejects.toMatchObject({ code: 1, stderr: expect.stringContaining('duplicate app_id') });
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it('다른 컬럼의 동명 메모 unique를 정상으로 인정하지 않는다', async () => {
+    await sql`alter table public.memos drop constraint memos_app_id_unique`;
+    await sql`alter table public.memos add constraint memos_app_id_unique unique (content)`;
+    const before = await snapshot();
+    await expect(run()).rejects.toMatchObject({ code: 1 });
+    expect(await snapshot()).toEqual(before);
   });
 
   it('정상 스키마를 반복 실행해도 행과 제약의 identity를 바꾸지 않는다', async () => {

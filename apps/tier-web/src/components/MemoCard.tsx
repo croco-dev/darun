@@ -8,9 +8,9 @@ interface MemoCardProps {
 export async function MemoCard({ appId }: MemoCardProps) {
   const supabase = await createClient();
 
-  const { data: memo } = await supabase.from('memos').select('content').eq('app_id', appId).single();
+  const { data: memo, error } = await supabase.from('memos').select('content').eq('app_id', appId).maybeSingle();
 
-  if (!memo?.content) {
+  if (!error && !memo?.content) {
     return null;
   }
 
@@ -20,7 +20,13 @@ export async function MemoCard({ appId }: MemoCardProps) {
         <CardTitle className="flex items-center gap-2 text-base text-foreground">티어 메모</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{memo.content}</p>
+        {error ? (
+          <p role="alert" className="text-sm text-destructive">
+            메모를 불러오지 못했습니다.
+          </p>
+        ) : (
+          <p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{memo?.content}</p>
+        )}
       </CardContent>
     </Card>
   );

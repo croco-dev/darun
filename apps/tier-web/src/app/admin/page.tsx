@@ -18,15 +18,18 @@ import { AdminSearchInput } from './AdminSearchInput';
 import { AppStoreScrapeForm } from './AppStoreScrapeForm';
 import { TierSelect } from './TierSelect';
 
+interface AdminMemoRecord {
+  content: string | null;
+}
+
 interface AdminAppRecord {
   id: string;
   name: string;
   tiers: {
     tier: number | null;
   } | null;
-  memos: Array<{
-    content: string | null;
-  }> | null;
+  // The schema cache can retain the previous to-many shape until it reloads.
+  memos: AdminMemoRecord | AdminMemoRecord[] | null;
 }
 
 interface AdminPageProps {
@@ -83,7 +86,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       id: app.id,
       name: app.name,
       tier: app.tiers?.tier ?? 0,
-      memo: app.memos?.[0]?.content || '',
+      memo: (Array.isArray(app.memos) ? app.memos[0]?.content : app.memos?.content) ?? '',
     })) || [];
 
   const previousPageHref = buildAdminPageHref({

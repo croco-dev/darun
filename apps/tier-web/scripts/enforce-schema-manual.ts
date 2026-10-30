@@ -66,6 +66,34 @@ async function enforceSchema() {
         `);
       }
 
+      function readMemoUniqueConstraint() {
+        return transaction.unsafe<{ valid: boolean }[]>(`
+          SELECT contype = 'u' AND convalidated AND NOT condeferrable
+            AND conkey = ARRAY[(SELECT attnum FROM pg_attribute
+              WHERE attrelid = 'public.memos'::regclass AND attname = 'app_id' AND NOT attisdropped)] AS valid
+          FROM pg_constraint
+          WHERE conrelid = 'public.memos'::regclass AND conname = 'memos_app_id_unique'
+        `);
+      }
+
+      const memoUniqueConstraints = await readMemoUniqueConstraint();
+      if (memoUniqueConstraints.some(constraint => constraint.valid !== true)) {
+        throw new SchemaRecoveryError(
+          'public.memos.memos_app_id_unique has an incompatible definition. Review it before recovery.'
+        );
+      }
+      if (memoUniqueConstraints.length === 0) {
+        const [duplicates] = await transaction.unsafe(`
+          SELECT EXISTS (SELECT 1 FROM public.memos GROUP BY app_id HAVING count(*) > 1) AS found
+        `);
+        if (duplicates.found) {
+          throw new SchemaRecoveryError(
+            'public.memos contains duplicate app_id values. Preserve and reconcile contents explicitly before recovery; no data was deleted.'
+          );
+        }
+        await transaction.unsafe(`ALTER TABLE public.memos ADD CONSTRAINT memos_app_id_unique UNIQUE (app_id)`);
+      }
+
       async function readAppConstraint() {
         return transaction.unsafe<{ valid: boolean }[]>(`
           SELECT contype = 'u' AND convalidated AND NOT condeferrable
@@ -98,10 +126,13 @@ async function enforceSchema() {
       }
 
       const verifiedMemos = await readMemoConstraints();
+      const verifiedMemoUnique = await readMemoUniqueConstraint();
       const verifiedApps = await readAppConstraint();
       if (
         verifiedMemos.length === 0 ||
         verifiedMemos.some(constraint => constraint.valid !== true) ||
+        verifiedMemoUnique.length !== 1 ||
+        verifiedMemoUnique[0].valid !== true ||
         verifiedApps.length !== 1 ||
         verifiedApps[0].valid !== true
       ) {
@@ -112,7 +143,7 @@ async function enforceSchema() {
     await sql.end();
   }
   console.log(
-    'Schema enforcement completed: memos CASCADE foreign key and apps.app_store_id unique constraint verified.'
+    'Schema enforcement completed: memos CASCADE foreign key, memos.app_id and apps.app_store_id unique constraints verified.'
   );
 }
 
