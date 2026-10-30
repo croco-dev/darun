@@ -488,6 +488,7 @@ VISUAL_FLOW_WRITES_ENABLED=false INFRA_ENV=prod RUNNING_ENV=prod pnpm --filter g
 Tier 웹을 배포하기 전에 `apps/tier-web/drizzle/0003_atomic_memos.sql`까지 적용합니다.
 Tier DB를 가리키는 `DATABASE_URL`을 준비한 뒤 `pnpm --filter tier-web exec drizzle-kit migrate --config drizzle.config.ts`로 등록된 migration을 적용합니다.
 `memos.app_id`의 유일 제약과 app ID 기준 upsert로 병렬 최초 저장도 한 행으로 수렴합니다.
+관리자 목록은 단일 객체인 메모 응답을 읽으며, PostgREST schema cache 갱신 전의 배열 응답도 보존해서 표시합니다.
 같은 앱의 다른 내용은 DB가 쓰기를 처리한 순서대로 반영하며, 빈 내용은 해당 앱의 메모를 삭제합니다.
 기존 중복 메모가 있으면 migration은 자료를 보존한 채 `Duplicate app memos` 오류로 중단합니다.
 중복 본문을 보존·대조해 명시적으로 정리한 뒤 다시 적용하며 자동 삭제나 병합은 하지 않습니다.

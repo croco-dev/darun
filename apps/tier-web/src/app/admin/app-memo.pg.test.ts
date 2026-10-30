@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { updateAppMemo } from './actions';
+import AdminPage from './page';
 
 const databaseUrl = process.env.MEMO_TEST_DATABASE_URL;
 const restUrl = process.env.MEMO_TEST_POSTGREST_URL;
@@ -17,6 +18,10 @@ vi.mock('@/utils/supabase/server', () => ({
   createClient: () => fixture.client,
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/components/admin/DeleteAppButton', () => ({ DeleteAppButton: () => null }));
+vi.mock('./AdminSearchInput', () => ({ AdminSearchInput: () => null }));
+vi.mock('./AppStoreScrapeForm', () => ({ AppStoreScrapeForm: () => null }));
+vi.mock('./TierSelect', () => ({ TierSelect: () => null }));
 
 if (databaseUrl || restUrl) {
   if (!databaseUrl || !restUrl) throw new Error('Memo tests require both database and PostgREST URLs');
@@ -159,6 +164,23 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
     await expect(sql`insert into public.memos (app_id, content) values (${appId}, 'Duplicate')`).rejects.toMatchObject({
       code: '23505',
     });
+  });
+
+  it('carries the actual apps memo embed into the editor after reload, edit and deletion', async () => {
+    const client = fixture.client as ReturnType<typeof createSupabaseClient>;
+    const editorValue = async () => {
+      const markup = renderToStaticMarkup(await AdminPage({ searchParams: Promise.resolve({}) }));
+      return markup.match(/<textarea\b[^>]*>([\s\S]*?)<\/textarea>/)?.[1];
+    };
+    await updateAppMemo(appId, 'Existing memo\nSecond line');
+    const { data, error } = await client.from('apps').select('id,memos(content)').eq('id', appId).single();
+    expect(error).toBeNull();
+    expect(data?.memos).toEqual({ content: 'Existing memo\nSecond line' });
+    expect(await editorValue()).toBe('Existing memo\nSecond line');
+    await updateAppMemo(appId, 'Edited memo');
+    expect(await editorValue()).toBe('Edited memo');
+    await updateAppMemo(appId, '');
+    expect(await editorValue()).toBe('');
   });
 
   it.each([false, true])('rolls back a failed journal write and retries (fresh database: %s)', async fresh => {
