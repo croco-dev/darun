@@ -15,7 +15,6 @@ import { AdminErrorState, AdminSelect } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useMemo, useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query GetProductScreenshotsOnFlowEditor($slug: String!) {
     tempProductBySlug(slug: $slug) {
@@ -183,6 +182,7 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
   const [updateFlow] = useMutation(UpdateProductFlowOnEditorDocument);
 
   const moveStep = (index: number, direction: -1 | 1) => {
+    if (saving) return;
     setSteps(current => {
       const next = [...current];
       const target = index + direction;
@@ -195,10 +195,12 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
   };
 
   const removeStep = (index: number) => {
+    if (saving) return;
     setSteps(current => current.filter((_, i) => i !== index));
   };
 
   const addStep = (screenshotId: string) => {
+    if (saving) return;
     setSteps(current =>
       current.some(step => step.screenshotId === screenshotId) || current.length >= MAX_STEPS
         ? current
@@ -293,7 +295,7 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <fieldset disabled={saving} aria-busy={saving} className="flex min-w-0 flex-col gap-6">
       <div className="flex flex-col gap-4 rounded-lg border border-dark-200 bg-surface-100/30 p-4">
         <label className="flex flex-col gap-1.5 text-sm font-medium text-dark-900">
           제목
@@ -485,6 +487,6 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
           {isEdit ? '플로 수정' : '플로 등록'}
         </Button>
       </div>
-    </div>
+    </fieldset>
   );
 };
