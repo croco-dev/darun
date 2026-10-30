@@ -92,20 +92,21 @@ it.each([
       />
     </ApolloProvider>
   );
-  await screen.findByRole('textbox', { name: '제목' });
+  await screen.findByLabelText('제목');
+  const addStepButton = screen.getByRole('button', { name: '단계 추가' });
   if (mode === 'create') {
-    await waitFor(() => expect(screen.getByRole('button', { name: '단계 추가' }).matches(':disabled')).toBe(false));
+    await waitFor(() => expect(addStepButton.matches(':disabled')).toBe(false));
     for (const name of ['첫 화면', '둘째 화면']) {
-      fireEvent.click(screen.getByRole('button', { name: '단계 추가' }));
+      fireEvent.click(addStepButton);
       fireEvent.click(screen.getByRole('button', { name: new RegExp(name) }));
     }
   }
-  fireEvent.change(screen.getByRole('textbox', { name: '제목' }), { target: { value: '저장할 제목' } });
-  fireEvent.change(screen.getByRole('textbox', { name: '설명' }), { target: { value: '저장할 설명' } });
-  fireEvent.change(screen.getByRole('textbox', { name: '단계 1 설명' }), { target: { value: '첫 안내' } });
-  fireEvent.change(screen.getByRole('textbox', { name: '단계 2 설명' }), { target: { value: '둘째 안내' } });
-  fireEvent.click(screen.getByRole('button', { name: '단계 2 위로 이동' }));
-  fireEvent.click(screen.getByRole('button', { name: '단계 추가' }));
+  fireEvent.change(screen.getByLabelText('제목'), { target: { value: '저장할 제목' } });
+  fireEvent.change(screen.getByLabelText('설명'), { target: { value: '저장할 설명' } });
+  fireEvent.change(screen.getByLabelText('단계 1 설명'), { target: { value: '첫 안내' } });
+  fireEvent.change(screen.getByLabelText('단계 2 설명'), { target: { value: '둘째 안내' } });
+  fireEvent.click(screen.getByLabelText('단계 2 위로 이동'));
+  fireEvent.click(addStepButton);
   const save = screen.getByRole('button', { name: mode === 'create' ? '플로 등록' : '플로 수정' });
   fireEvent.click(save);
   await waitFor(() => expect(writes).toHaveLength(1));
@@ -118,11 +119,12 @@ it.each([
   expect(onCancel).not.toHaveBeenCalled();
   fireEvent.click(save);
   // Synthetic events also exercise the step handlers' pending guards.
-  for (const name of ['단계 1 아래로 이동', '단계 2 위로 이동', '단계 1 제거', '단계 2 제거', '추가 화면']) {
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(name) }));
+  for (const name of ['단계 1 아래로 이동', '단계 2 위로 이동', '단계 1 제거', '단계 2 제거']) {
+    fireEvent.click(screen.getByLabelText(name));
   }
-  expect(screen.getByRole<HTMLInputElement>('textbox', { name: '단계 1 설명' }).value).toBe('둘째 안내');
-  expect(screen.getByRole<HTMLInputElement>('textbox', { name: '단계 2 설명' }).value).toBe('첫 안내');
+  fireEvent.click(screen.getByRole('button', { name: /추가 화면/ }));
+  expect(screen.getByLabelText<HTMLInputElement>('단계 1 설명').value).toBe('둘째 안내');
+  expect(screen.getByLabelText<HTMLInputElement>('단계 2 설명').value).toBe('첫 안내');
   expect(writes).toEqual([
     {
       input: {
@@ -142,12 +144,12 @@ it.each([
   if (outcome === 'failure') {
     expect(onSaved).not.toHaveBeenCalled();
     expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: '저장 실패', color: 'red' }));
-    expect(screen.getByRole<HTMLInputElement>('textbox', { name: '제목' }).value).toBe('저장할 제목');
-    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: '설명' }).value).toBe('저장할 설명');
-    expect(screen.getByRole<HTMLInputElement>('textbox', { name: '단계 1 설명' }).value).toBe('둘째 안내');
-    expect(screen.getByRole<HTMLInputElement>('textbox', { name: '단계 2 설명' }).value).toBe('첫 안내');
+    expect(screen.getByLabelText<HTMLInputElement>('제목').value).toBe('저장할 제목');
+    expect(screen.getByLabelText<HTMLTextAreaElement>('설명').value).toBe('저장할 설명');
+    expect(screen.getByLabelText<HTMLInputElement>('단계 1 설명').value).toBe('둘째 안내');
+    expect(screen.getByLabelText<HTMLInputElement>('단계 2 설명').value).toBe('첫 안내');
     expect(save.matches(':disabled')).toBe(false);
-    fireEvent.change(screen.getByRole('textbox', { name: '제목' }), { target: { value: '재시도 제목' } });
+    fireEvent.change(screen.getByLabelText('제목'), { target: { value: '재시도 제목' } });
     fireEvent.click(save);
     await waitFor(() => expect(writes).toHaveLength(2));
     expect(writes[1]).toEqual({ input: { ...(writes[0].input as object), title: '재시도 제목' } });
