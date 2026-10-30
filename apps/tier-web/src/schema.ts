@@ -49,6 +49,7 @@ export const memos = pgTable('memos', {
   id: uuid('id').primaryKey().defaultRandom(),
   appId: uuid('app_id')
     .notNull()
+    .unique()
     .references(() => apps.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   createdAt: timestamp('created_at').defaultNow(),

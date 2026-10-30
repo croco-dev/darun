@@ -483,6 +483,22 @@ VISUAL_FLOW_WRITES_ENABLED=false INFRA_ENV=prod RUNNING_ENV=prod pnpm --filter g
 
 ## 코드 품질
 
+### Tier 메모 저장과 migration
+
+Tier 웹을 배포하기 전에 `apps/tier-web/drizzle/0003_atomic_memos.sql`까지 적용합니다.
+Tier DB를 가리키는 `DATABASE_URL`을 준비한 뒤 `pnpm --filter tier-web exec drizzle-kit migrate --config drizzle.config.ts`로 등록된 migration을 적용합니다.
+`memos.app_id`의 유일 제약과 app ID 기준 upsert로 병렬 최초 저장도 한 행으로 수렴합니다.
+같은 앱의 다른 내용은 DB가 쓰기를 처리한 순서대로 반영하며, 빈 내용은 해당 앱의 메모를 삭제합니다.
+기존 중복 메모가 있으면 migration은 자료를 보존한 채 `Duplicate app memos` 오류로 중단합니다.
+중복 본문을 보존·대조해 명시적으로 정리한 뒤 다시 적용하며 자동 삭제나 병합은 하지 않습니다.
+수동 스키마 복구도 같은 유일 제약을 확인하고 중복 자료를 임의로 지우지 않습니다.
+
+격리 로컬 `darun_memo_integrity` PostgreSQL과 그 DB를 연결한 PostgREST를 준비하고
+`MEMO_TEST_DATABASE_URL`·`MEMO_TEST_POSTGREST_URL`을 지정해
+`pnpm --filter tier-web exec vitest run src/app/admin/app-memo.pg.test.ts`로 검증합니다.
+검사는 빈 DB만 허용하며 migration·실제 Supabase 요청·동시 저장·조회·수정·삭제와 중복 자료 보존을 확인합니다.
+인증과 Next.js 캐시 무효화는 합성이며 운영 DB를 사용하지 않습니다. 두 URL이 없으면 이 통합 검사는 건너뜁니다.
+
 ### PostgreSQL 무결성 검사
 
 PR CI는 임시 PostgreSQL 17 서비스에 suite별 전용 DB를 생성하고 실제 migration을 적용합니다.
