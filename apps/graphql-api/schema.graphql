@@ -486,7 +486,7 @@ type Query {
   publishedProductsForSitemap(after: String, first: Int! = 100): [Product!]!
   rankedProducts(first: Int!, locale: String! = "ko"): [Product!]!
   recentProducts(first: Int!, locale: String! = "ko"): [Product!]!
-  searchCompanies(query: String!): [Company!]!
+  searchCompanies(first: Int, query: String!): [Company!]!
   searchProducts(locale: String! = "ko", query: String!): [Product!]!
   tempAllMagazines(page: Int!): MagazinePagination!
   tempMagazineBySlug(slug: String!): Magazine
