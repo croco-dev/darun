@@ -3,7 +3,9 @@ import { PostgresqlProductRepository, PostgresqlProductTagRepository } from '@da
 import { GetPublishedProduct, Product } from '@darun/products-domain';
 import { ProductQueryResolver } from '@darun/products-feature/server';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
-import { GetAlternativeProducts, UpdateAlternativeProduct } from '@darun/recommendation-domain';
+import { AlternativeProduct, GetAlternativeProducts, UpdateAlternativeProduct } from '@darun/recommendation-domain';
+import { PostgresqlTranslationRepository } from '@darun/translation-datasource';
+import { TranslationService, computeSourceHash } from '@darun/translation-domain';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres, { type Sql } from 'postgres';
@@ -62,6 +64,7 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
   describe('공개 대안 정원', () => {
     let productRepository: PostgresqlProductRepository;
     let resolver: ProductQueryResolver;
+    let productQueries: string[];
     const manualIds = ['manual-3', 'manual-1', 'missing', 'manual-2', 'manual-4'];
     const autoIds = ['auto-1', 'auto-2', 'auto-3', 'auto-4', 'auto-5', 'auto-6'];
     const publicIds = async () =>
@@ -88,7 +91,16 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
       for (const id of manualIds) {
         await client`insert into alternative_products (id, product_id, alternative_product_id) values (${`row-${id}`}, 'source', ${id})`;
       }
-      productRepository = new PostgresqlProductRepository(drizzle(client));
+      productQueries = [];
+      productRepository = new PostgresqlProductRepository(
+        drizzle(client, {
+          logger: {
+            logQuery: query => {
+              if (/^select .* from "products" /.test(query)) productQueries.push(query);
+            },
+          },
+        })
+      );
       const getAlternativeProductsUseCase = new GetAlternativeProducts(
         repository,
         productRepository,
@@ -142,6 +154,8 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
         values ('missing', 'missing', 'missing', '', '', '2026-01-01')`;
       await client`update products set published_at = '2026-01-01' where id like 'manual-%'`;
       expect(await publicIds()).toEqual(manualIds);
+      // One selection/publication check plus one batch of selected product bodies, independent of five results.
+      expect(productQueries).toHaveLength(2);
     });
 
     it('자기 관계가 정원을 차지하지 않으며 공개 수동 항목은 자동 후보와 중복되지 않는다', async () => {
@@ -165,6 +179,166 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
       await client`insert into alternative_products (id, product_id, alternative_product_id) values ('row-self', 'source', 'source')`;
       expect(await publicIds()).toEqual([]);
       expect(await productRepository.hasPublishedAlternatives('source')).toBe(false);
+    });
+  });
+
+  describe('선정된 공개 대안 본문 일괄 조회', () => {
+    const selectedIds = Array.from({ length: 20 }, (_, index) => `batch-${String(20 - index).padStart(2, '0')}`);
+    const root = {
+      id: 'source',
+      slug: 'source',
+      name: '원본',
+      summary: '',
+      logoUrl: '',
+    };
+    let queries: string[];
+    let productRepository: PostgresqlProductRepository;
+    let translationService: TranslationService;
+    const createResolver = (ids: string[], reader = productRepository) =>
+      Object.assign(Object.create(ProductQueryResolver.prototype) as ProductQueryResolver, {
+        // Selection is a separate policy with a five-item cap. Exercise hydration at 1/5/20 independently.
+        getAlternativeProductsUseCase: {
+          execute: async () =>
+            ids.map(
+              alternativeProductId =>
+                new AlternativeProduct({
+                  productId: 'source',
+                  alternativeProductId,
+                })
+            ),
+        },
+        getPublishedProductUseCase: new GetPublishedProduct(reader),
+        translationService,
+      });
+    const productSelects = () => queries.filter(query => /^select .* from "products" /.test(query));
+
+    beforeEach(async () => {
+      await client`truncate products, translations cascade`;
+      await client`insert into products (id, slug, name, summary, description, logo_url, published_at)
+        select 'batch-' || lpad(n::text, 2, '0'), 'batch-' || n, '상품 ' || n,
+          '요약 ' || n, '본문 ' || n, '', '2026-01-01'::timestamp from generate_series(1, 20) n`;
+      await client`insert into products (id, slug, name, summary, logo_url)
+        values ('unpublished', 'unpublished', '미발행', '', '')`;
+      queries = [];
+      const db = drizzle(client, {
+        logger: { logQuery: query => queries.push(query) },
+      });
+      productRepository = new PostgresqlProductRepository(db);
+      translationService = new TranslationService(new PostgresqlTranslationRepository(db));
+    });
+
+    it.each([1, 5, 20])('대안 %i개의 본문을 SELECT 한 번으로 읽고 입력 순서를 유지한다', async count => {
+      const ids = selectedIds.slice(0, count);
+      const result = await createResolver(ids).alternatives(root);
+      expect(result.map(product => product.id)).toEqual(ids);
+      expect(productSelects()).toHaveLength(1);
+    });
+
+    it('없는 상품과 미발행 상품만 제외하고 빈 선정 결과에서는 SQL을 실행하지 않는다', async () => {
+      const result = await createResolver(['batch-09', 'missing', 'unpublished', 'batch-02']).alternatives(root);
+      expect(result.map(product => product.id)).toEqual(['batch-09', 'batch-02']);
+      expect(productSelects()).toHaveLength(1);
+      queries.length = 0;
+      expect(await createResolver([]).alternatives(root)).toEqual([]);
+      expect(queries).toEqual([]);
+    });
+
+    it('한영 번역과 필드별 fallback을 유지하고 다음 조회에서 변경·삭제를 바로 읽는다', async () => {
+      const translations = new PostgresqlTranslationRepository(drizzle(client));
+      await translations.upsertMany([
+        {
+          entityType: 'Product',
+          entityId: 'batch-09',
+          locale: 'en',
+          field: 'name',
+          value: 'Product Nine',
+          sourceHash: computeSourceHash('상품 9'),
+          model: 'fixture',
+          promptVersion: 'fixture',
+        },
+        {
+          entityType: 'Product',
+          entityId: 'batch-09',
+          locale: 'en',
+          field: 'description',
+          value: 'Body Nine',
+          sourceHash: computeSourceHash('본문 9', 'description'),
+          model: 'fixture',
+          promptVersion: 'fixture',
+        },
+        {
+          entityType: 'Product',
+          entityId: 'batch-02',
+          locale: 'en',
+          field: 'summary',
+          value: 'Stale summary',
+          sourceHash: computeSourceHash('이전 요약'),
+          model: 'fixture',
+          promptVersion: 'fixture',
+        },
+      ]);
+      const resolver = createResolver(['batch-09', 'batch-02']);
+      const ko = await resolver.alternatives({ ...root, locale: 'ko' });
+      expect(
+        ko.map(({ name, summary, description, locale }) => ({
+          name,
+          summary,
+          description,
+          locale,
+        }))
+      ).toEqual([
+        {
+          name: '상품 9',
+          summary: '요약 9',
+          description: '본문 9',
+          locale: 'ko',
+        },
+        {
+          name: '상품 2',
+          summary: '요약 2',
+          description: '본문 2',
+          locale: 'ko',
+        },
+      ]);
+      queries.length = 0;
+      const en = await resolver.alternatives({ ...root, locale: 'en' });
+      expect(
+        en.map(({ name, summary, description, locale }) => ({
+          name,
+          summary,
+          description,
+          locale,
+        }))
+      ).toEqual([
+        {
+          name: 'Product Nine',
+          summary: '요약 9',
+          description: 'Body Nine',
+          locale: 'en',
+        },
+        {
+          name: '상품 2',
+          summary: '요약 2',
+          description: '본문 2',
+          locale: 'en',
+        },
+      ]);
+      expect(productSelects()).toHaveLength(1);
+      expect(queries.filter(query => /^select .* from "translations" /.test(query))).toHaveLength(1);
+      await client`update products set name = '바뀐 상품' where id = 'batch-09'`;
+      await client`delete from products where id = 'batch-02'`;
+      const fresh = await resolver.alternatives({ ...root, locale: 'en' });
+      expect(fresh.map(({ id, name }) => ({ id, name }))).toEqual([{ id: 'batch-09', name: '바뀐 상품' }]);
+    });
+
+    it('실제 연결 종료 오류를 정상 빈 목록으로 반환하지 않는다', async () => {
+      const closedClient = postgres(url!, { max: 1, connect_timeout: 5 });
+      await closedClient`select 1`;
+      await closedClient.end({ timeout: 5 });
+      const resolver = createResolver(['batch-09'], new PostgresqlProductRepository(drizzle(closedClient)));
+      await expect(resolver.alternatives(root)).rejects.toMatchObject({
+        cause: { code: 'CONNECTION_ENDED' },
+      });
     });
   });
 

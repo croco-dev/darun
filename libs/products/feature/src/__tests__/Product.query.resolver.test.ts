@@ -485,11 +485,11 @@ describe('ProductQueryResolver', () => {
   });
 
   describe('alternatives', () => {
-    it('발행된 자기 상품의 기존 관계를 제외하고 다른 대안의 순서를 유지한다', async () => {
-      const getAlternativeProducts = new GetAlternativeProducts(
+    const selectedAlternatives = () =>
+      new GetAlternativeProducts(
         createAlternativeProductRepository({
           findManyByProductId: vi.fn().mockResolvedValue(
-            ['alt-2', 'p1', 'alt-1'].map(
+            ['alt-2', 'p1', 'alt-1', 'gone'].map(
               alternativeProductId =>
                 new AlternativeProduct({
                   productId: 'p1',
@@ -512,102 +512,47 @@ describe('ProductQueryResolver', () => {
             ),
         }
       );
+
+    it('자기 관계와 부재 상품을 제외하고 대안을 한 번에 읽어 원래 순서를 유지한다', async () => {
       const productRepository = createProductRepository({
-        findPublishedOneById: vi.fn().mockImplementation(
-          async (id: string) =>
-            new DomainProduct({
-              id,
-              name: id,
-              slug: id,
-              summary: id,
-              logoUrl: 'https://example.com/logo.png',
-              publishedAt: new Date('2026-01-01T00:00:00Z'),
-            })
+        findPublishedByIds: vi.fn<ProductRepository['findPublishedByIds']>(async ids =>
+          ids.map(id =>
+            id === 'gone'
+              ? null
+              : new DomainProduct({
+                  id,
+                  name: id,
+                  slug: id,
+                  summary: id,
+                  logoUrl: '',
+                })
+          )
         ),
       });
       const resolver = createProductQueryResolver({
-        getAlternativeProductsUseCase: getAlternativeProducts,
+        getAlternativeProductsUseCase: selectedAlternatives(),
         getPublishedProductUseCase: new GetPublishedProduct(productRepository),
       });
 
       const result = await resolver.alternatives(createProductRoot('ko'));
 
       expect(result.map(product => product.id)).toEqual(['alt-2', 'alt-1']);
-      expect(productRepository.findPublishedOneById).not.toHaveBeenCalledWith('p1');
+      expect(productRepository.findPublishedByIds).toHaveBeenCalledExactlyOnceWith(['alt-2', 'alt-1', 'gone']);
+      expect(productRepository.findPublishedOneById).not.toHaveBeenCalled();
     });
 
-    it('should return alternatives even when some lookups fail', async () => {
-      const mockGetAlternativeProducts = new GetAlternativeProducts(
-        createAlternativeProductRepository({
-          replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
-          findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([
-            new AlternativeProduct({
-              productId: 'p1',
-              alternativeProductId: 'alt-1',
-            }),
-            new AlternativeProduct({
-              productId: 'p1',
-              alternativeProductId: 'alt-2',
-            }),
-            new AlternativeProduct({
-              productId: 'p1',
-              alternativeProductId: 'alt-3',
-            }),
-          ]),
-        }),
-        {
-          findPublishedByIds: async ids =>
-            ids.map(
-              id =>
-                new DomainProduct({
-                  id,
-                  slug: id,
-                  name: id,
-                  summary: '',
-                  logoUrl: '',
-                })
-            ),
-        }
-      );
-
-      const publishedProductRepository = createProductRepository({
-        findPublishedOneById: vi
-          .fn<ProductRepository['findPublishedOneById']>()
-          .mockResolvedValueOnce(
-            new DomainProduct({
-              id: 'alt-1',
-              name: 'Product 1',
-              slug: 'product-1',
-              summary: 'Summary 1',
-              logoUrl: 'https://example.com/logo1.png',
-            })
-          )
-          .mockRejectedValueOnce(new Error('Database connection lost'))
-          .mockResolvedValueOnce(
-            new DomainProduct({
-              id: 'alt-3',
-              name: 'Product 3',
-              slug: 'product-3',
-              summary: 'Summary 3',
-              logoUrl: 'https://example.com/logo3.png',
-            })
-          ),
+    it('공통 상품 조회 장애를 빈 대안 목록으로 숨기지 않는다', async () => {
+      const failure = new Error('Database connection lost');
+      const repository = createProductRepository({
+        findPublishedByIds: vi.fn().mockRejectedValue(failure),
+        findPublishedOneById: vi.fn().mockRejectedValue(failure),
       });
-      const mockGetPublishedProduct = new GetPublishedProduct(publishedProductRepository);
-      const mockTranslationService = createTranslationService();
-
       const resolver = createProductQueryResolver({
-        getPublishedProductUseCase: mockGetPublishedProduct,
-        getAlternativeProductsUseCase: mockGetAlternativeProducts,
-        translationService: mockTranslationService,
+        getAlternativeProductsUseCase: selectedAlternatives(),
+        getPublishedProductUseCase: new GetPublishedProduct(repository),
       });
 
-      const result = await resolver.alternatives(createProductRoot('en'));
-
-      expect(result).toHaveLength(2);
-      expect(result[0].name).toBe('Product 1');
-      expect(result[1].name).toBe('Product 3');
-      expect(publishedProductRepository.findPublishedOneById).toHaveBeenCalledTimes(3);
+      await expect(resolver.alternatives(createProductRoot('en'))).rejects.toBe(failure);
     });
   });
 
