@@ -27,7 +27,13 @@ describe('매거진의 상세 주소', () => {
       create.execute({ title: '새 글', slug, backgroundImageUrl: '', authorId: 'author' })
     ).rejects.toMatchObject({ code: MagazineError.InvalidArgs });
     await expect(
-      edit.execute({ id: saved.id, slug, title: '바뀌면 안 되는 제목', content: '바뀌면 안 되는 본문' })
+      edit.execute({
+        expectedRevision: 0,
+        id: saved.id,
+        slug,
+        title: '바뀌면 안 되는 제목',
+        content: '바뀌면 안 되는 본문',
+      })
     ).rejects.toMatchObject({ code: MagazineError.InvalidArgs });
     expect(insert).not.toHaveBeenCalled();
     expect(updateById).not.toHaveBeenCalled();
@@ -54,7 +60,7 @@ describe('매거진의 상세 주소', () => {
       const { create, edit } = fixture();
       const result = await create.execute({ title: '새 글', slug, backgroundImageUrl: '', authorId: 'author' });
       expect(result.slug).toBe(slug);
-      const edited = await edit.execute({ id: 'mag-1', slug, content: '새 본문' });
+      const edited = await edit.execute({ expectedRevision: 0, id: 'mag-1', slug, content: '새 본문' });
       expect(edited).toMatchObject({ slug, content: '새 본문' });
       const href = `/ko/magazines/${encodeURIComponent(result.slug)}`;
       expect(decodeURIComponent(new URL(href, 'https://darun.io').pathname)).toBe(`/ko/magazines/${slug}`);
@@ -65,11 +71,15 @@ describe('매거진의 상세 주소', () => {
     const { saved, edit } = fixture();
     saved.slug = slug;
     expect(new Magazine({ ...saved }).slug).toBe(slug);
-    await expect(edit.execute({ id: saved.id, content: '바뀌면 안 되는 본문' })).rejects.toMatchObject({
+    await expect(
+      edit.execute({ expectedRevision: 0, id: saved.id, content: '바뀌면 안 되는 본문' })
+    ).rejects.toMatchObject({
       code: MagazineError.InvalidArgs,
     });
     expect(saved).toMatchObject({ slug, content: '기존 본문' });
-    expect(await edit.execute({ id: saved.id, slug: '고친-주소', content: '새 본문' })).toMatchObject({
+    expect(
+      await edit.execute({ expectedRevision: 0, id: saved.id, slug: '고친-주소', content: '새 본문' })
+    ).toMatchObject({
       slug: '고친-주소',
       content: '새 본문',
     });
@@ -77,7 +87,7 @@ describe('매거진의 상세 주소', () => {
 
   it('정상 주소는 생략한 수정에서도 유지한다', async () => {
     const { saved, edit } = fixture();
-    expect(await edit.execute({ id: saved.id, content: '본문만 수정' })).toMatchObject({
+    expect(await edit.execute({ expectedRevision: 0, id: saved.id, content: '본문만 수정' })).toMatchObject({
       slug: '기존-주소',
       content: '본문만 수정',
     });

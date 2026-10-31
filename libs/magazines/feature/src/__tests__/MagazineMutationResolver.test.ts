@@ -61,12 +61,21 @@ function createResolver() {
     editMagazine as never
   );
 
-  return { resolver, createMagazine, getMagazine, publishMagazine, editMagazine };
+  return {
+    resolver,
+    createMagazine,
+    getMagazine,
+    publishMagazine,
+    editMagazine,
+  };
 }
 
 describe('MagazineMutationResolver', () => {
   it.each(['', '.', '..', null])('실제 쓰기 usecase가 mutation의 잘못된 slug %j를 거절한다', async slug => {
-    const saved = createTestMagazine({ slug: '기존-주소', content: '기존 본문' });
+    const saved = createTestMagazine({
+      slug: '기존-주소',
+      content: '기존 본문',
+    });
     const insert = vi.fn(async (value: Magazine) => value);
     const updateById = vi.fn(async (_id: string, modifier: (value: Magazine) => Magazine) => modifier(saved));
     const repository = {
@@ -87,7 +96,12 @@ describe('MagazineMutationResolver', () => {
       ).rejects.toMatchObject({ code: MagazineError.InvalidArgs });
     }
     // GraphQL nullable 입력도 최종 주소가 될 수 없으면 입력 오류로 처리한다.
-    await expect(resolver.editMagazine(saved.slug, { slug, content: '새 본문' } as never)).rejects.toMatchObject({
+    await expect(
+      resolver.editMagazine(saved.slug, {
+        slug,
+        content: '새 본문',
+      } as never)
+    ).rejects.toMatchObject({
       code: MagazineError.InvalidArgs,
     });
     expect(insert).not.toHaveBeenCalled();
@@ -103,7 +117,10 @@ describe('MagazineMutationResolver', () => {
 
       const context = { getUserIdOrThrow: vi.fn().mockResolvedValue('user-1') };
       const result = await resolver.createMagazine(
-        { title: '테스트', backgroundImageUrl: 'https://example.com/bg.png' } as never,
+        {
+          title: '테스트',
+          backgroundImageUrl: 'https://example.com/bg.png',
+        } as never,
         context as never
       );
 
@@ -118,7 +135,7 @@ describe('MagazineMutationResolver', () => {
       const { resolver, getMagazine } = createResolver();
       getMagazine.execute.mockResolvedValue(null);
 
-      await expect(resolver.publishMagazine({ slug: 'test' })).rejects.toThrow();
+      await expect(resolver.publishMagazine({ slug: 'test', expectedRevision: 0 })).rejects.toThrow();
     });
 
     it('매거진을 발행하고 반환한다', async () => {
@@ -128,9 +145,15 @@ describe('MagazineMutationResolver', () => {
       getMagazine.execute.mockResolvedValue(magazine);
       publishMagazine.execute.mockResolvedValue(publishedMagazine);
 
-      const result = await resolver.publishMagazine({ slug: 'test' });
+      const result = await resolver.publishMagazine({
+        slug: 'test',
+        expectedRevision: 0,
+      });
 
-      expect(publishMagazine.execute).toHaveBeenCalledWith({ id: 'mag-1' });
+      expect(publishMagazine.execute).toHaveBeenCalledWith({
+        id: 'mag-1',
+        expectedRevision: 0,
+      });
       expect(result).toEqual({ magazine: publishedMagazine });
     });
   });
@@ -150,7 +173,9 @@ describe('MagazineMutationResolver', () => {
       getMagazine.execute.mockResolvedValue(magazine);
       editMagazine.execute.mockResolvedValue(updated);
 
-      const result = await resolver.editMagazine('test', { title: '수정된 제목' } as never);
+      const result = await resolver.editMagazine('test', {
+        title: '수정된 제목',
+      } as never);
 
       expect(editMagazine.execute).toHaveBeenCalledWith(expect.objectContaining({ id: 'mag-1', title: '수정된 제목' }));
       expect(result).toEqual({ magazine: updated });

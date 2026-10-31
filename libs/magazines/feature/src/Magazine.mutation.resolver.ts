@@ -54,6 +54,7 @@ export class MagazineMutationResolver {
 
     const updated = await this.publishMagazineUseCase.execute({
       id: magazine.id,
+      expectedRevision: input.expectedRevision,
     });
 
     return {

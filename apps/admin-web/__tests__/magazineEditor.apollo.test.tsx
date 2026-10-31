@@ -20,6 +20,7 @@ interface Request {
   variables: Record<string, unknown>;
   resolve: (data: Record<string, unknown>) => void;
   fail: () => void;
+  conflict: () => void;
 }
 const clients: ApolloClient[] = [];
 afterEach(() => {
@@ -29,6 +30,7 @@ afterEach(() => {
 const draft = {
   __typename: 'Magazine',
   id: 'draft-a',
+  revision: 0,
   slug: 'draft-a',
   title: '기존 제목',
   summary: '기존 요약',
@@ -47,6 +49,17 @@ function setup() {
             variables: operation.variables,
             resolve(data) {
               observer.next({ data });
+              observer.complete();
+            },
+            conflict() {
+              observer.next({
+                errors: [
+                  {
+                    message: 'changed',
+                    extensions: { code: 'magazine/revision-conflict' },
+                  },
+                ],
+              });
               observer.complete();
             },
             fail() {
@@ -87,17 +100,27 @@ describe('magazine draft editor with real Apollo operations', () => {
     const query = await fixture.take('MagazineOnAdminEditor');
     await flush(() => query.resolve({ tempMagazineBySlug: draft }));
     const html = '<table><tr><td colspan="600">A</td><td colspan="401">B</td></tr></table>';
-    fireEvent.change(screen.getByRole('textbox', { name: '본문' }), { target: { value: html } });
+    fireEvent.change(screen.getByRole('textbox', { name: '본문' }), {
+      target: { value: html },
+    });
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     expect((await screen.findByRole('alert')).textContent).toContain('표');
     expect(fixture.requests).toHaveLength(0);
     expect((screen.getByRole('textbox', { name: '본문' }) as HTMLTextAreaElement).value).toBe(html);
 
-    fireEvent.change(screen.getByRole('textbox', { name: '본문' }), { target: { value: '<p>복구한 초안</p>' } });
+    fireEvent.change(screen.getByRole('textbox', { name: '본문' }), {
+      target: { value: '<p>복구한 초안</p>' },
+    });
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     const save = await fixture.take('EditMagazineOnAdminEditor');
-    expect(save.variables.input).toMatchObject({ content: '<p>복구한 초안</p>' });
-    await flush(() => save.resolve({ editMagazine: { magazine: { ...draft, content: '<p>복구한 초안</p>' } } }));
+    expect(save.variables.input).toMatchObject({
+      content: '<p>복구한 초안</p>',
+    });
+    await flush(() =>
+      save.resolve({
+        editMagazine: { magazine: { ...draft, content: '<p>복구한 초안</p>' } },
+      })
+    );
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
@@ -121,12 +144,17 @@ describe('magazine draft editor with real Apollo operations', () => {
     expect(save.variables).toEqual({
       slug: 'draft-a',
       input: {
+        expectedRevision: 0,
         title: '새 제목',
         summary: '',
         content: '<h2>새 본문</h2><p>내용</p>',
       },
     });
-    const saved = { ...draft, ...(save.variables.input as object) };
+    const saved = {
+      ...draft,
+      ...(save.variables.input as object),
+      revision: 1,
+    };
     expect(screen.getByLabelText<HTMLInputElement>('글 제목').disabled).toBe(true);
     await flush(() => save.resolve({ editMagazine: { magazine: saved } }));
     expect(screen.getByRole('status').textContent).toContain('저장했습니다');
@@ -145,7 +173,9 @@ describe('magazine draft editor with real Apollo operations', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: '발행' }));
     const publish = await fixture.take('PublishMagazineOnAdminEditor');
-    expect(publish.variables).toEqual({ input: { slug: 'draft-a' } });
+    expect(publish.variables).toEqual({
+      input: { slug: 'draft-a', expectedRevision: 1 },
+    });
     await flush(() =>
       publish.resolve({
         publishMagazine: {
@@ -223,3 +253,63 @@ describe('magazine draft editor with real Apollo operations', () => {
     expect(screen.queryByRole('textbox')).toBeNull();
   });
 });
+
+it.each(['save', 'publish'] as const)(
+  '오래된 %s의 입력을 유지하고 최신본 확인 후 명시적으로 복구한다',
+  async action => {
+    const fixture = setup();
+    const query = await fixture.take('MagazineOnAdminEditor');
+    await flush(() => query.resolve({ tempMagazineBySlug: draft }));
+    if (action === 'save')
+      fireEvent.change(screen.getByLabelText('글 제목'), {
+        target: { value: 'B의 초안' },
+      });
+    fireEvent.click(screen.getByRole('button', { name: action === 'save' ? '저장' : '발행' }));
+    const attempt = await fixture.take(
+      action === 'save' ? 'EditMagazineOnAdminEditor' : 'PublishMagazineOnAdminEditor'
+    );
+    expect(attempt.variables.input).toMatchObject({ expectedRevision: 0 });
+    await flush(() => attempt.conflict());
+    expect(screen.getByRole('alert').textContent).toContain('최신 저장본');
+    expect(screen.getByLabelText<HTMLInputElement>('글 제목').value).toBe(action === 'save' ? 'B의 초안' : '기존 제목');
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: '저장' }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: '발행' }).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: '최신 저장본 확인' }));
+    const readFailure = await fixture.take('MagazineOnAdminEditor');
+    await flush(() => readFailure.fail());
+    expect(screen.getByLabelText<HTMLInputElement>('글 제목').value).toBe(action === 'save' ? 'B의 초안' : '기존 제목');
+    fireEvent.click(screen.getByRole('button', { name: '최신 저장본 확인' }));
+    const read = await fixture.take('MagazineOnAdminEditor');
+    const latest = {
+      ...draft,
+      title: 'A의 최신 제목',
+      content: '<p>A의 최신 본문</p>',
+      revision: 4,
+    };
+    await flush(() => read.resolve({ tempMagazineBySlug: latest }));
+    expect(screen.getByText('제목: A의 최신 제목')).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: '저장' }).disabled).toBe(true);
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: action === 'save' ? '최신 버전을 기준으로 내 초안 유지' : '내 입력을 최신 저장본으로 바꾸기',
+      })
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByLabelText<HTMLInputElement>('글 제목').value).toBe(
+      action === 'save' ? 'B의 초안' : 'A의 최신 제목'
+    );
+    fireEvent.click(screen.getByRole('button', { name: action === 'save' ? '저장' : '발행' }));
+    const retry = await fixture.take(action === 'save' ? 'EditMagazineOnAdminEditor' : 'PublishMagazineOnAdminEditor');
+    expect(retry.variables.input).toMatchObject({ expectedRevision: 4 });
+    if (action === 'save')
+      expect(retry.variables.input).toMatchObject({
+        title: 'B의 초안',
+        content: draft.content,
+      });
+    else
+      expect(retry.variables.input).toEqual({
+        slug: 'draft-a',
+        expectedRevision: 4,
+      });
+  }
+);

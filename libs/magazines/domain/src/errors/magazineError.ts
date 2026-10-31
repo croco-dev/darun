@@ -6,6 +6,7 @@ export enum MagazineError {
   SlugAlreadyExists = 'magazine/slug-already-exists',
   UpdateFailed = 'magazine/update-failed',
   InvalidArgs = 'magazine/invalid-args',
+  RevisionConflict = 'magazine/revision-conflict',
 }
 
 export const magazineNotFound = () => createDomainError(MagazineError.NotFound);
@@ -13,3 +14,5 @@ export const magazineCreateFailed = () => createDomainError(MagazineError.Create
 export const magazineSlugAlreadyExists = () => createDomainError(MagazineError.SlugAlreadyExists);
 export const magazineUpdateFailed = () => createDomainError(MagazineError.UpdateFailed);
 export const magazineInvalidArgs = (message?: string) => createDomainError(MagazineError.InvalidArgs, message);
+
+export const magazineRevisionConflict = () => createDomainError(MagazineError.RevisionConflict);

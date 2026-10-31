@@ -7,7 +7,9 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { MagazineEditSection } from '../features/magazines/MagazineEditSection/MagazineEditSection';
 
 const { upload } = vi.hoisted(() => ({ upload: vi.fn() }));
-vi.mock('@darun/utils-image-upload', () => ({ useImageUpload: () => ({ upload }) }));
+vi.mock('@darun/utils-image-upload', () => ({
+  useImageUpload: () => ({ upload }),
+}));
 vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }));
 vi.mock('@darun/utils-router', () => ({
   Link: ({ children, ...props }: React.ComponentProps<'a'>) => <a {...props}>{children}</a>,
@@ -35,6 +37,7 @@ it.each(['success', 'reject', 'empty'] as const)(
     const magazine = {
       __typename: 'Magazine',
       id: 'image-draft',
+      revision: 0,
       slug: 'image-draft',
       title: '이미지 초안',
       summary: '',
@@ -50,7 +53,13 @@ it.each(['success', 'reject', 'empty'] as const)(
               observer.next({ data: { tempMagazineBySlug: magazine } });
             else {
               writes.push(operation.variables);
-              observer.next({ data: { editMagazine: { magazine: { ...magazine, ...operation.variables.input } } } });
+              observer.next({
+                data: {
+                  editMagazine: {
+                    magazine: { ...magazine, ...operation.variables.input },
+                  },
+                },
+              });
             }
             observer.complete();
           })
@@ -65,7 +74,9 @@ it.each(['success', 'reject', 'empty'] as const)(
     await screen.findByDisplayValue('이미지 초안');
     await waitFor(() => expect(view.container.querySelector('.ProseMirror')).toBeTruthy());
     fireEvent.change(view.container.querySelector('input[type=file]')!, {
-      target: { files: [new File(['synthetic'], 'figure.png', { type: 'image/png' })] },
+      target: {
+        files: [new File(['synthetic'], 'figure.png', { type: 'image/png' })],
+      },
     });
     await waitFor(() => expect(upload).toHaveBeenCalledTimes(1));
     expect(screen.getByRole<HTMLButtonElement>('button', { name: '저장' }).disabled).toBe(true);
@@ -89,6 +100,7 @@ it.each(['success', 'reject', 'empty'] as const)(
     expect(writes[0]).toEqual({
       slug: 'image-draft',
       input: {
+        expectedRevision: 0,
         title: '이미지 초안',
         summary: '',
         content:

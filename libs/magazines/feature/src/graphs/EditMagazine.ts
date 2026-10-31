@@ -1,4 +1,4 @@
-import { Field, InputType, ObjectType } from 'type-graphql';
+import { Field, Int, InputType, ObjectType } from 'type-graphql';
 import { Magazine } from './Magazine';
 
 @ObjectType('EditMagazinePayload')
@@ -9,6 +9,9 @@ export class EditMagazinePayload {
 
 @InputType('EditMagazineInput')
 export class EditMagazineInput {
+  @Field(() => Int)
+  expectedRevision: number;
+
   @Field({ nullable: true })
   slug?: string;
 

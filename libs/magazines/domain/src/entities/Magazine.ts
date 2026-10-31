@@ -1,5 +1,6 @@
 export class Magazine {
   public id: string;
+  public revision: number;
   public slug: string;
   public title: string;
   public summary?: string;
@@ -12,6 +13,7 @@ export class Magazine {
 
   constructor({
     id,
+    revision = 0,
     slug,
     title,
     summary,
@@ -23,6 +25,7 @@ export class Magazine {
     authorId,
   }: {
     id?: string;
+    revision?: number;
     slug?: string;
     title: string;
     summary?: string;
@@ -33,6 +36,7 @@ export class Magazine {
     updatedAt?: Date;
     authorId: string;
   }) {
+    this.revision = revision;
     this.slug = slug ?? title.toLowerCase().replace(/ /g, '-');
     this.title = title;
     this.summary = summary;

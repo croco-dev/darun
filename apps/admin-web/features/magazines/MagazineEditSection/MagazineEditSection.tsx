@@ -1,7 +1,8 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 import {
   MagazineOnAdminEditorDocument,
   EditMagazineOnAdminEditorDocument,
@@ -28,6 +29,7 @@ gql`
   query MagazineOnAdminEditor($slug: String!) {
     tempMagazineBySlug(slug: $slug) {
       id
+      revision
       slug
       title
       summary
@@ -39,6 +41,7 @@ gql`
     editMagazine(slug: $slug, input: $input) {
       magazine {
         id
+        revision
         slug
         title
         summary
@@ -51,12 +54,19 @@ gql`
     publishMagazine(input: $input) {
       magazine {
         id
+        revision
         slug
         publishedAt
       }
     }
   }
 `;
+
+function isRevisionConflict(error: unknown) {
+  return (
+    CombinedGraphQLErrors.is(error) && error.errors.some(item => item.extensions?.code === 'magazine/revision-conflict')
+  );
+}
 
 type Magazine = NonNullable<MagazineOnAdminEditorQuery['tempMagazineBySlug']>;
 
@@ -66,9 +76,13 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
     summary: magazine.summary ?? '',
     content: magazine.content ?? '',
   });
+  const client = useApolloClient();
+  const [revision, setRevision] = useState(magazine.revision);
+  const [conflict, setConflict] = useState(false);
+  const [latest, setLatest] = useState<Magazine | null>(null);
   const [saved, setSaved] = useState(values);
   const [publishedAt, setPublishedAt] = useState(magazine.publishedAt);
-  const [busy, setBusy] = useState<'save' | 'publish' | null>(null);
+  const [busy, setBusy] = useState<'save' | 'publish' | 'reload' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const pending = useRef(false);
@@ -79,7 +93,7 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
   const [publish] = useMutation(PublishMagazineOnAdminEditorDocument);
 
   const save = async () => {
-    if (pending.current || imageUploadPending.current) return;
+    if (pending.current || imageUploadPending.current || conflict) return;
     const tableError = getEditorTableError(values.content);
     if (tableError) {
       setError(tableError);
@@ -97,7 +111,11 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
       const { data } = await edit({
         variables: {
           slug: magazine.slug,
-          input: { ...values, title: values.title.trim() },
+          input: {
+            ...values,
+            title: values.title.trim(),
+            expectedRevision: revision,
+          },
         },
         update(cache) {
           cache.evict({ id: 'ROOT_QUERY', fieldName: 'tempAllMagazines' });
@@ -110,11 +128,17 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
         summary: result.summary ?? '',
         content: result.content ?? '',
       };
+      setRevision(result.revision);
+      setPublishedAt(result.publishedAt);
       setValues(next);
       setSaved(next);
       setMessage('매거진을 저장했습니다.');
-    } catch {
-      setError('저장하지 못했습니다. 입력한 내용은 유지됩니다. 다시 시도해주세요.');
+    } catch (cause) {
+      if (isRevisionConflict(cause)) {
+        setConflict(true);
+        setLatest(null);
+        setError('다른 곳에서 글이 변경되었습니다. 입력한 내용은 유지됩니다. 최신 저장본을 확인해주세요.');
+      } else setError('저장하지 못했습니다. 입력한 내용은 유지됩니다. 다시 시도해주세요.');
     } finally {
       pending.current = false;
       setBusy(null);
@@ -122,14 +146,16 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
   };
 
   const publishMagazine = async () => {
-    if (pending.current || imageUploadPending.current || dirty || publishedAt) return;
+    if (pending.current || imageUploadPending.current || dirty || publishedAt || conflict) return;
     pending.current = true;
     setBusy('publish');
     setError(null);
     setMessage(null);
     try {
       const { data } = await publish({
-        variables: { input: { slug: magazine.slug } },
+        variables: {
+          input: { slug: magazine.slug, expectedRevision: revision },
+        },
         update(cache) {
           cache.evict({ id: 'ROOT_QUERY', fieldName: 'tempAllMagazines' });
         },
@@ -138,12 +164,61 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
       if (!result?.publishedAt) throw new Error('Missing publication');
       setPublishedAt(result.publishedAt);
       setMessage('매거진을 발행했습니다.');
-    } catch {
-      setError('발행하지 못했습니다. 저장된 초안은 유지됩니다. 다시 시도해주세요.');
+    } catch (cause) {
+      if (isRevisionConflict(cause)) {
+        setConflict(true);
+        setLatest(null);
+        setError('검토한 뒤 글이 변경되어 발행하지 않았습니다. 최신 저장본을 확인해주세요.');
+      } else setError('발행하지 못했습니다. 저장된 초안은 유지됩니다. 다시 시도해주세요.');
     } finally {
       pending.current = false;
       setBusy(null);
     }
+  };
+
+  const readLatest = async () => {
+    if (pending.current || imageUploadPending.current) return;
+    pending.current = true;
+    setBusy('reload');
+    setLatest(null);
+    setError(null);
+    try {
+      const { data } = await client.query({
+        query: MagazineOnAdminEditorDocument,
+        variables: { slug: magazine.slug },
+        fetchPolicy: 'no-cache',
+      });
+      if (!data?.tempMagazineBySlug || data.tempMagazineBySlug.id !== magazine.id) {
+        throw new Error('Missing current magazine');
+      }
+      setLatest(data.tempMagazineBySlug);
+    } catch {
+      setError('최신 저장본을 불러오지 못했습니다. 입력한 내용은 유지됩니다. 다시 확인해주세요.');
+    } finally {
+      pending.current = false;
+      setBusy(null);
+    }
+  };
+
+  const acceptLatest = (keepDraft: boolean) => {
+    if (!latest || pending.current || imageUploadPending.current) return;
+    const next = {
+      title: latest.title,
+      summary: latest.summary ?? '',
+      content: latest.content ?? '',
+    };
+    setRevision(latest.revision);
+    setSaved(next);
+    setPublishedAt(latest.publishedAt);
+    if (!keepDraft) setValues(next);
+    setLatest(null);
+    setConflict(false);
+    setError(null);
+    setMessage(
+      keepDraft
+        ? '내 초안을 유지했습니다. 최신 저장본을 바꾸려면 저장해주세요.'
+        : '최신 저장본을 편집기에 반영했습니다. 내용을 확인한 뒤 발행해주세요.'
+    );
   };
 
   return (
@@ -210,11 +285,34 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
           {message}
         </p>
       )}
+      {conflict && (
+        <section aria-label="저장 충돌 확인" className="flex min-w-0 flex-col gap-3 rounded border border-dark-200 p-4">
+          <p className="text-sm">다른 곳에서 저장한 내용과 내 초안을 확인한 뒤 기준을 선택해주세요.</p>
+          <Button type="button" disabled={!!busy || imageUploading} onClick={() => void readLatest()}>
+            {busy === 'reload' ? '확인 중...' : '최신 저장본 확인'}
+          </Button>
+          {latest && (
+            <section aria-label="최신 저장본" className="flex min-w-0 flex-col gap-3">
+              <h2 className="font-medium">최신 저장본</h2>
+              <p className="break-words">제목: {latest.title}</p>
+              <p className="break-words">요약: {latest.summary || '없음'}</p>
+              <Editor value={latest.content ?? ''} onChange={() => {}} disabled editable={false} />
+              <p className="text-sm">내 초안을 유지해 저장하면 최신 저장본의 제목·요약·본문이 내 입력으로 바뀝니다.</p>
+              <Button type="button" disabled={!!busy || imageUploading} onClick={() => acceptLatest(true)}>
+                최신 버전을 기준으로 내 초안 유지
+              </Button>
+              <Button type="button" disabled={!!busy || imageUploading} onClick={() => acceptLatest(false)}>
+                내 입력을 최신 저장본으로 바꾸기
+              </Button>
+            </section>
+          )}
+        </section>
+      )}
       <AdminActions>
         <Button as={Link} href="/magazines" variant="contained" color="secondary" disabled={!!busy}>
           목록
         </Button>
-        <Button type="submit" variant="contained" color="primary" disabled={!!busy || imageUploading}>
+        <Button type="submit" variant="contained" color="primary" disabled={!!busy || imageUploading || conflict}>
           {busy === 'save' ? '저장 중...' : '저장'}
         </Button>
         {!publishedAt && (
@@ -222,7 +320,7 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
             type="button"
             variant="contained"
             color="primary"
-            disabled={!!busy || imageUploading || dirty}
+            disabled={!!busy || imageUploading || dirty || conflict}
             onClick={() => void publishMagazine()}
           >
             {busy === 'publish' ? '발행 중...' : '발행'}

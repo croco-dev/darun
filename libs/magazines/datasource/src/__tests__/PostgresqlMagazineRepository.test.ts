@@ -33,7 +33,11 @@ describe('PostgresqlMagazineRepository', () => {
 
       const repository = new PostgresqlMagazineRepository(mockDb);
       const result = await repository.insert(
-        new Magazine({ title: '테스트 매거진', backgroundImageUrl: 'https://example.com/bg.png', authorId: 'author-1' })
+        new Magazine({
+          title: '테스트 매거진',
+          backgroundImageUrl: 'https://example.com/bg.png',
+          authorId: 'author-1',
+        })
       );
 
       expect(result).toBeInstanceOf(Magazine);
@@ -77,5 +81,65 @@ describe('PostgresqlMagazineRepository', () => {
 
       expect(result).toBeNull();
     });
+  });
+});
+
+describe('매거진 편집 revision', () => {
+  function fixture() {
+    const row = makeSchema({ revision: 4 });
+    const returning = vi.fn(async () => [row]);
+    const set = vi.fn((values: object) => {
+      Object.assign(row, values);
+      return { where: () => ({ returning }) };
+    });
+    const query = {
+      limit: async () => [row],
+      then: (resolve: (rows: object[]) => unknown) => Promise.resolve([row]).then(resolve),
+    };
+    const tx = {
+      select: () => ({ from: () => ({ where: () => ({ for: () => query }) }) }),
+      update: () => ({ set }),
+    };
+    const db = {
+      transaction: async (fn: (tx: unknown) => unknown) => fn(tx),
+    } as unknown as Drizzle;
+    return { repository: new PostgresqlMagazineRepository(db), row, set };
+  }
+
+  it.each([undefined, null, -1, 1.5, 2_147_483_648, NaN])(
+    '잘못된 기준 버전 %j로는 저장·발행하지 않는다',
+    async revision => {
+      const { repository, set } = fixture();
+      const expected = revision as number;
+      const modifier = vi.fn((magazine: Magazine) => magazine);
+      await expect(repository.updateById('mag-1', modifier, expected)).rejects.toMatchObject({
+        code: 'magazine/invalid-args',
+      });
+      await expect(repository.publishById('mag-1', expected)).rejects.toMatchObject({ code: 'magazine/invalid-args' });
+      expect(modifier).not.toHaveBeenCalled();
+      expect(set).not.toHaveBeenCalled();
+    }
+  );
+
+  it('오래된 편집은 modifier와 쓰기를 실행하지 않는다', async () => {
+    const { repository, row, set } = fixture();
+    const modifier = vi.fn((magazine: Magazine) => {
+      magazine.title = '오래된 제목';
+      return magazine;
+    });
+    await expect(repository.updateById('mag-1', modifier, 3)).rejects.toMatchObject({
+      code: 'magazine/revision-conflict',
+    });
+    expect(modifier).not.toHaveBeenCalled();
+    expect(set).not.toHaveBeenCalled();
+    expect(row.title).toBe('테스트 매거진');
+  });
+
+  it('검토 이후 바뀐 글의 발행은 쓰지 않는다', async () => {
+    const { repository, set } = fixture();
+    await expect(repository.publishById('mag-1', 3)).rejects.toMatchObject({
+      code: 'magazine/revision-conflict',
+    });
+    expect(set).not.toHaveBeenCalled();
   });
 });
