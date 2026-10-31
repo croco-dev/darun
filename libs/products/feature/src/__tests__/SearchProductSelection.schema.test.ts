@@ -114,6 +114,7 @@ function fixture() {
   return {
     getFeatures,
     findOne,
+    findMany,
     search,
     getPublishedProduct,
     run: (document: GraphQL.DocumentNode, variableValues: Record<string, string>) => {
@@ -125,7 +126,7 @@ function fixture() {
 
 describe('검색 카드의 기능 selection', () => {
   it.each(['ko', 'en'])('%s 검색은 카드 데이터만 반환하고 기능 읽기·번역을 실행하지 않는다', async locale => {
-    const { run, getFeatures, findOne, search, getPublishedProduct } = fixture();
+    const { run, getFeatures, findOne, findMany, search, getPublishedProduct } = fixture();
     const result = await run(SearchProductsOnSearchProductListDocument, {
       query: '기능 검색',
       locale,
@@ -134,6 +135,7 @@ describe('검색 카드의 기능 selection', () => {
     expect(result.errors).toBeUndefined();
     expect(getFeatures).not.toHaveBeenCalled();
     expect(findOne).not.toHaveBeenCalled();
+    expect(findMany.mock.calls.filter(([params]) => params.entityType === 'ProductFeature')).toEqual([]);
     expect(search).toHaveBeenCalledExactlyOnceWith({ query: '기능 검색' });
     expect(getPublishedProduct).toHaveBeenCalledExactlyOnceWith({
       ids: Array.from({ length: 12 }, (_, index) => `p${index}`),
@@ -151,13 +153,23 @@ describe('검색 카드의 기능 selection', () => {
   });
 
   it.each(['ko', 'en'])('%s 상세는 독립 기능 문서로 기능과 번역을 계속 조회한다', async locale => {
-    const { run, getFeatures, findOne, search } = fixture();
+    const { run, getFeatures, findOne, findMany, search } = fixture();
     const result = await run(ProductWithFeaturesOnProductFeatureListDocument, { slug: 'product-7', locale });
 
     expect(result.errors).toBeUndefined();
     expect(search).not.toHaveBeenCalled();
     expect(getFeatures).toHaveBeenCalledExactlyOnceWith({ productId: 'p7' });
-    expect(findOne).toHaveBeenCalledTimes(locale === 'ko' ? 0 : 40);
+    expect(findOne).not.toHaveBeenCalled();
+    const featureReads = findMany.mock.calls.filter(([params]) => params.entityType === 'ProductFeature');
+    expect(featureReads).toHaveLength(locale === 'ko' ? 0 : 1);
+    if (locale === 'en') {
+      expect(featureReads[0][0].entities).toEqual(
+        Array.from({ length: 20 }, (_, index) => [
+          { entityId: `p7-f${index}`, field: 'name' },
+          { entityId: `p7-f${index}`, field: 'summary' },
+        ]).flat()
+      );
+    }
     expect(result.data?.productBySlug).toEqual({
       id: 'p7',
       features: Array.from({ length: 20 }, (_, index) => ({

@@ -339,148 +339,61 @@ describe('ProductQueryResolver', () => {
     expect(result.totalCount).toBe(9000);
   });
   describe('features', () => {
-    it('should return all features even when some translations fail', async () => {
-      const features = [
-        new DomainProductFeature({
-          id: 'f1',
-          name: 'Feature 1',
-          summary: 'Summary 1',
-          emoji: '🚀',
-          productId: 'p1',
-        }),
-        new DomainProductFeature({
-          id: 'f2',
-          name: 'Feature 2',
-          summary: 'Summary 2',
-          emoji: '🔥',
-          productId: 'p1',
-        }),
-        new DomainProductFeature({
-          id: 'f3',
-          name: 'Feature 3',
-          summary: 'Summary 3',
-          emoji: '💡',
-          productId: 'p1',
-        }),
-      ];
-
-      const mockGetProductFeatures = new GetProductFeatures(
-        createProductFeatureRepository({
-          findManyByProductId: vi.fn<ProductFeatureRepository['findManyByProductId']>().mockResolvedValue(features),
-        })
-      );
-
-      const featureSourceValues: Record<string, string> = {
-        'f1:name': 'Feature 1',
-        'f1:summary': 'Summary 1',
-        'f2:name': 'Feature 2',
-        'f2:summary': 'Summary 2',
-        'f3:name': 'Feature 3',
-        'f3:summary': 'Summary 3',
-      };
-
-      let callCount = 0;
-      const mockTranslationService = createTranslationService(
-        createTranslationRepository({
-          findOne: vi.fn<TranslationRepository['findOne']>().mockImplementation(params => {
-            callCount++;
-            if (callCount === 3) {
-              return Promise.reject(new Error('Translation service unavailable'));
-            }
-            const sourceText = featureSourceValues[`${params.entityId}:${params.field}`];
-            return Promise.resolve(
-              createTranslationRow(`translated-${callCount}`, sourceText ? computeSourceHash(sourceText) : undefined)
-            );
-          }),
-        })
-      );
-      vi.spyOn(mockTranslationService, 'getTranslation');
-
-      const resolver = createProductQueryResolver({
-        getProductFeaturesUseCase: mockGetProductFeatures,
-        translationService: mockTranslationService,
+    const features = [
+      new DomainProductFeature({ id: 'f1', name: '이름 1', summary: '요약 1', emoji: '🚀', productId: 'p1' }),
+      new DomainProductFeature({ id: 'f2', name: '이름 2', summary: '', emoji: '🔥', productId: 'p1' }),
+      new DomainProductFeature({ id: 'f3', name: '이름 3', emoji: '💡', productId: 'p1' }),
+    ];
+    const createFeatureResolver = (translationService: TranslationService) =>
+      createProductQueryResolver({
+        getProductFeaturesUseCase: new GetProductFeatures(
+          createProductFeatureRepository({
+            findManyByProductId: vi.fn().mockResolvedValue(features),
+          })
+        ),
+        translationService,
       });
 
-      const result = await resolver.features(createProductRoot('en'));
-
-      expect(result).toHaveLength(3);
-      expect(result[0].name).toBe('translated-1');
-      expect(result[0].summary).toBe('translated-2');
-      expect(result[1].name).toBe('Feature 2');
-      expect(result[1].summary).toBe('translated-4');
-      expect(result[2].name).toBe('translated-5');
-      expect(result[2].summary).toBe('translated-6');
-      expect(mockTranslationService.getTranslation).toHaveBeenCalledTimes(6);
+    it('존재하는 name·summary를 한 번에 번역하고 없는 필드와 순서를 유지한다', async () => {
+      const findMany = vi.fn<TranslationRepository['findMany']>().mockResolvedValue([
+        {
+          ...createTranslationRow('Summary one', computeSourceHash('요약 1', 'summary')),
+          entityId: 'f1',
+          field: 'summary',
+        },
+        { ...createTranslationRow('Name one', computeSourceHash('이름 1', 'name')), entityId: 'f1' },
+        { ...createTranslationRow('Stale name', computeSourceHash('이전 이름', 'name')), entityId: 'f2' },
+      ]);
+      const repository = createTranslationRepository({ findMany });
+      const resolver = createFeatureResolver(createTranslationService(repository));
+      expect(await resolver.features(createProductRoot('en'))).toEqual([
+        { ...features[0], name: 'Name one', summary: 'Summary one' },
+        features[1],
+        features[2],
+      ]);
+      expect(findMany).toHaveBeenCalledExactlyOnceWith({
+        entityType: 'ProductFeature',
+        locale: 'en',
+        entities: [
+          { entityId: 'f1', field: 'name' },
+          { entityId: 'f1', field: 'summary' },
+          { entityId: 'f2', field: 'name' },
+          { entityId: 'f2', field: 'summary' },
+          { entityId: 'f3', field: 'name' },
+        ],
+      });
+      expect(repository.findOne).not.toHaveBeenCalled();
     });
 
-    it('should return other features when one feature processing fails entirely', async () => {
-      const features = [
-        new DomainProductFeature({
-          id: 'f1',
-          name: 'Feature 1',
-          summary: 'Summary 1',
-          emoji: '🚀',
-          productId: 'p1',
-        }),
-        new DomainProductFeature({
-          id: 'f2',
-          name: 'Feature 2',
-          summary: 'Summary 2',
-          emoji: '🔥',
-          productId: 'p1',
-        }),
-        new DomainProductFeature({
-          id: 'f3',
-          name: 'Feature 3',
-          summary: 'Summary 3',
-          emoji: '💡',
-          productId: 'p1',
-        }),
-      ];
-
-      const mockGetProductFeatures = new GetProductFeatures(
-        createProductFeatureRepository({
-          findManyByProductId: vi.fn<ProductFeatureRepository['findManyByProductId']>().mockResolvedValue(features),
-        })
-      );
-
-      const featureSourceValues: Record<string, string> = {
-        'f1:name': 'Feature 1',
-        'f1:summary': 'Summary 1',
-        'f2:name': 'Feature 2',
-        'f2:summary': 'Summary 2',
-        'f3:name': 'Feature 3',
-        'f3:summary': 'Summary 3',
-      };
-
-      let callCount = 0;
-      const mockTranslationService = createTranslationService(
-        createTranslationRepository({
-          findOne: vi.fn<TranslationRepository['findOne']>().mockImplementation(params => {
-            callCount++;
-            if (callCount === 3) {
-              return Promise.reject(new Error('Network error'));
-            }
-            const sourceText = featureSourceValues[`${params.entityId}:${params.field}`];
-            return Promise.resolve(
-              createTranslationRow(`translated-${callCount}`, sourceText ? computeSourceHash(sourceText) : undefined)
-            );
-          }),
-        })
-      );
-      vi.spyOn(mockTranslationService, 'getTranslation');
-
-      const resolver = createProductQueryResolver({
-        getProductFeaturesUseCase: mockGetProductFeatures,
-        translationService: mockTranslationService,
-      });
-
-      const result = await resolver.features(createProductRoot('en'));
-
-      expect(result).toHaveLength(3);
-      expect(result[0].name).toBe('translated-1');
-      expect(result[1].name).toBe('Feature 2');
-      expect(result[2].name).toBe('translated-5');
+    it('번역 호출 자체가 실패해도 모든 기능의 원문을 반환한다', async () => {
+      const service = createTranslationService();
+      vi.spyOn(service, 'getTranslations').mockRejectedValue(new Error('translation unavailable'));
+      const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        expect(await createFeatureResolver(service).features(createProductRoot('en'))).toEqual(features);
+      } finally {
+        log.mockRestore();
+      }
     });
   });
 

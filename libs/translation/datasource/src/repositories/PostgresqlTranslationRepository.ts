@@ -5,12 +5,43 @@ import {
   type UpsertTranslationParams,
   TranslationRepositoryToken,
 } from '@darun/translation-domain';
+import DataLoader from 'dataloader';
 import { and, eq, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { translations } from '../entities/TranslationSchema';
 
+type TranslationKey = Parameters<TranslationRepository['findOne']>[0];
+
+const translationKey = ({ entityType, entityId, locale, field }: TranslationKey) =>
+  JSON.stringify([entityType, entityId, locale, field]);
+
 @Service(TranslationRepositoryToken)
 export class PostgresqlTranslationRepository implements TranslationRepository {
+  private readonly translationLoader = new DataLoader<TranslationKey, TranslationRow | null>(
+    async keys => {
+      const uniqueKeys = [...new Map(keys.map(key => [translationKey(key), key])).values()];
+      const rows = await this.db
+        .select()
+        .from(translations)
+        .where(
+          or(
+            ...uniqueKeys.map(({ entityType, entityId, locale, field }) =>
+              and(
+                eq(translations.entityType, entityType),
+                eq(translations.entityId, entityId),
+                eq(translations.locale, locale),
+                eq(translations.field, field)
+              )
+            )
+          )
+        );
+      const byKey = new Map(rows.map(row => [translationKey(row), row]));
+      return keys.map(key => byKey.get(translationKey(key)) ?? null);
+    },
+    // Instances outlive GraphQL requests: batch reads without retaining translation values.
+    { cache: false, maxBatchSize: 100 }
+  );
+
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
   async findOne(params: {
@@ -50,24 +81,13 @@ export class PostgresqlTranslationRepository implements TranslationRepository {
       return [];
     }
 
-    const uniquePairs = Array.from(
-      new Map(entities.map(entity => [`${entity.entityId}:${entity.field}`, entity])).values()
+    const uniquePairs = [
+      ...new Map(entities.map(entity => [JSON.stringify([entity.entityId, entity.field]), entity])).values(),
+    ];
+    const rows = await Promise.all(
+      uniquePairs.map(({ entityId, field }) => this.translationLoader.load({ entityType, entityId, locale, field }))
     );
-
-    return this.db
-      .select()
-      .from(translations)
-      .where(
-        and(
-          eq(translations.entityType, entityType),
-          eq(translations.locale, locale),
-          or(
-            ...uniquePairs.map(({ entityId, field }) =>
-              and(eq(translations.entityId, entityId), eq(translations.field, field))
-            )
-          )
-        )
-      );
+    return rows.filter((row): row is TranslationRow => row !== null);
   }
 
   async upsert(params: UpsertTranslationParams): Promise<TranslationRow> {
