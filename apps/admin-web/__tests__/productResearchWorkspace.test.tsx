@@ -627,11 +627,15 @@ it('다른 탭의 같은 필드 변경을 덮어쓰지 않고 선택한 편집�
   const mount = () => {
     const scenario = newScenario();
     scenario.jobResponses = [completedJob];
-    return render(
-      <ApolloProvider client={makeClient(scenario)}>
-        <ProductResearchSection />
-      </ApolloProvider>
-    );
+    const client = makeClient(scenario);
+    return {
+      ...render(
+        <ApolloProvider client={client}>
+          <ProductResearchSection />
+        </ApolloProvider>
+      ),
+      client,
+    };
   };
   const a = mount();
   const b = mount();
@@ -669,6 +673,23 @@ it('다른 탭의 같은 필드 변경을 덮어쓰지 않고 선택한 편집�
     ])
   );
   expect((b.container.querySelector('[name="review-summary"]') as HTMLTextAreaElement).value).toBe('사람 요약');
+  // 선택 복원 뒤 고친 값을 job 이동 후에도 오래된 선택 snapshot으로 되돌리지 않는다.
+  testGlobal().researchSearchParams = { researchJobId: 'job-2' };
+  a.rerender(
+    <ApolloProvider client={a.client}>
+      <ProductResearchSection />
+    </ApolloProvider>
+  );
+  await waitFor(() => expect(readWorkspaceDraft(localStorage, sessionStorage)?.jobId).toBe('job-2'));
+  testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+  a.rerender(
+    <ApolloProvider client={a.client}>
+      <ProductResearchSection />
+    </ApolloProvider>
+  );
+  await waitFor(() =>
+    expect((a.container.querySelector('[name="review-summary"]') as HTMLTextAreaElement)?.value).toBe('복원 후 수정')
+  );
 });
 
 it('초안 저장 실패를 알리고 입력을 유지한 채 같은 화면에서 다시 저장한다', async () => {

@@ -241,6 +241,7 @@ export const ProductResearchSection = () => {
   const { upload } = useImageUpload();
   const [hydrated, setHydrated] = useState(false);
   const [restoreRequest, setRestoreRequest] = useState<ResearchWorkspaceDraft | null>(null);
+  const appliedRestoreRequestRef = useRef<ResearchWorkspaceDraft | null>(null);
   const [activeDraft, setActiveDraft] = useState<{
     id: string;
     routeJobId: string | null;
@@ -396,9 +397,11 @@ export const ProductResearchSection = () => {
     materializePendingRef.current = false;
     setIsMaterializing(false);
     pendingRequestRef.current = null;
+    const requestedDraft = restoreRequest !== appliedRestoreRequestRef.current ? restoreRequest : null;
+    appliedRestoreRequestRef.current = restoreRequest;
     const stored =
-      restoreRequest && restoreRequest.workspace.jobId === (researchJobIdParam ?? jobIdRef.current)
-        ? restoreRequest.workspace
+      requestedDraft && requestedDraft.workspace.jobId === (researchJobIdParam ?? jobIdRef.current)
+        ? requestedDraft.workspace
         : readStoredWorkspace(researchJobIdParam);
     // 새 mount·복원마다 별도 writer를 쓴다. 복제 탭의 sessionStorage도 공유 writer를 만들지 않는다.
     setActiveDraft({
