@@ -18,12 +18,6 @@ const SEARCH_PRODUCTS_QUERY = gql`
         id
         name
       }
-      features {
-        emoji
-        id
-        name
-        summary
-      }
     }
   }
 `;
