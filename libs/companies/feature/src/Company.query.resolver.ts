@@ -28,7 +28,10 @@ export class CompanyQueryResolver {
 
   @Authorized([AuthRole.Admin])
   @Query(() => [Company])
-  public async searchCompanies(@Arg('query', () => String) query: string): Promise<Company[]> {
-    return this.searchCompany.execute({ query });
+  public async searchCompanies(
+    @Arg('query', () => String) query: string,
+    @Arg('first', () => Int, { nullable: true }) first?: number | null
+  ): Promise<Company[]> {
+    return this.searchCompany.execute({ query, first });
   }
 }

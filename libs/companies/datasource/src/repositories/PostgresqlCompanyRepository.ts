@@ -1,9 +1,9 @@
 import { CompanyRepository } from '@darun/companies-domain';
-import { Company, CompanyRepositoryToken } from '@darun/companies-domain';
+import { Company, CompanyRepositoryToken, companySearchArgs } from '@darun/companies-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
-import { count, ilike, inArray } from 'drizzle-orm';
+import { asc, count, desc, ilike, inArray, sql } from 'drizzle-orm';
 import { keyBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { companies } from '../entities/CompanySchema';
@@ -44,11 +44,16 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
     return this.companyIdLoader.load(id);
   }
 
-  async findByName(name: string): Promise<Company[]> {
+  async findByName(name: string, first?: number | null): Promise<Company[]> {
+    const { query, first: limit } = companySearchArgs({ query: name, first });
+    if (!query) return [];
+    const pattern = `%${query.replace(/[\\%_]/g, '\\$&')}%`;
     return this.db
       .select()
       .from(companies)
-      .where(ilike(companies.name, `%${name}%`))
+      .where(ilike(companies.name, pattern))
+      .orderBy(desc(sql`lower(${companies.name}) = lower(${query})`), asc(companies.name), asc(companies.id))
+      .limit(limit)
       .then(res => res.map(this.mapper));
   }
 
