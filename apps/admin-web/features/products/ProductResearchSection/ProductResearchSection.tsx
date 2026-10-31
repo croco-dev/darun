@@ -21,11 +21,15 @@ import { useNavigate, useSearchParams } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  RESEARCH_WORKSPACE_STORAGE_KEY,
+  listWorkspaceDrafts,
+  readWorkspaceDraft,
+  saveWorkspaceDraft,
+  type ResearchWorkspaceDraft,
+} from './researchWorkspaceDrafts';
+import {
   createInitialWorkspaceReview,
   newRequestId,
   parseTagsInput,
-  parseWorkspaceState,
   prefillReviewFromResult,
   resolveLogoUrlForMaterialize,
   shouldStopResearchPolling,
@@ -225,9 +229,7 @@ function readStoredWorkspace(targetJobId?: string | null): ResearchWorkspacePers
     return null;
   }
   try {
-    const latest = parseWorkspaceState(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY));
-    if (!targetJobId || latest?.jobId === targetJobId) return latest;
-    return parseWorkspaceState(window.localStorage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:${targetJobId}`));
+    return readWorkspaceDraft(window.localStorage, window.sessionStorage, targetJobId);
   } catch {
     return null;
   }
@@ -238,6 +240,15 @@ export const ProductResearchSection = () => {
   const researchJobIdParam = useSearchParams().get('researchJobId');
   const { upload } = useImageUpload();
   const [hydrated, setHydrated] = useState(false);
+  const [restoreRequest, setRestoreRequest] = useState<ResearchWorkspaceDraft | null>(null);
+  const [activeDraft, setActiveDraft] = useState<{
+    id: string;
+    routeJobId: string | null;
+    restoreRequest: ResearchWorkspaceDraft | null;
+  } | null>(null);
+  const [otherDrafts, setOtherDrafts] = useState<ResearchWorkspaceDraft[]>([]);
+  const [draftStorageError, setDraftStorageError] = useState(false);
+  const [saveAttempt, setSaveAttempt] = useState(0);
   const [requestId, setRequestId] = useState(() => newRequestId());
   const [officialUrl, setOfficialUrl] = useState('');
   const [jobId, setJobId] = useState<string | null>(null);
@@ -385,15 +396,16 @@ export const ProductResearchSection = () => {
     materializePendingRef.current = false;
     setIsMaterializing(false);
     pendingRequestRef.current = null;
-    const stored = readStoredWorkspace(researchJobIdParam);
-    const latest = readStoredWorkspace();
-    if (latest?.jobId) {
-      try {
-        window.localStorage.setItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:${latest.jobId}`, JSON.stringify(latest));
-      } catch {
-        /* Storage failure must not prevent resuming a job. */
-      }
-    }
+    const stored =
+      restoreRequest && restoreRequest.workspace.jobId === (researchJobIdParam ?? jobIdRef.current)
+        ? restoreRequest.workspace
+        : readStoredWorkspace(researchJobIdParam);
+    // 새 mount·복원마다 별도 writer를 쓴다. 복제 탭의 sessionStorage도 공유 writer를 만들지 않는다.
+    setActiveDraft({
+      id: newRequestId(),
+      routeJobId: researchJobIdParam,
+      restoreRequest,
+    });
 
     setRequestId(stored?.requestId ?? newRequestId());
     setOfficialUrl(stored?.officialUrl ?? '');
@@ -411,7 +423,7 @@ export const ProductResearchSection = () => {
     setActiveJobId(selectedJobId);
     restoredJobIdRef.current = stored?.materializedSlug ? null : selectedJobId;
     setHydrated(true);
-  }, [researchJobIdParam, setActiveJobId, stopPolling]);
+  }, [researchJobIdParam, restoreRequest, setActiveJobId, stopPolling]);
 
   useEffect(() => {
     const restoredJobId = restoredJobIdRef.current;
@@ -423,10 +435,16 @@ export const ProductResearchSection = () => {
     void loadJob(restoredJobId).then(payloadJob => {
       if (payloadJob && !shouldStopResearchPolling(payloadJob.status)) pollJob(restoredJobId);
     });
-  }, [hydrated, jobId, researchJobIdParam, loadJob, pollJob]);
+  }, [hydrated, activeDraft, jobId, researchJobIdParam, loadJob, pollJob]);
 
   useEffect(() => {
-    if (!hydrated || typeof window === 'undefined') {
+    if (
+      !hydrated ||
+      !activeDraft ||
+      activeDraft.routeJobId !== researchJobIdParam ||
+      activeDraft.restoreRequest !== restoreRequest ||
+      typeof window === 'undefined'
+    ) {
       return;
     }
     const payload = {
@@ -441,12 +459,43 @@ export const ProductResearchSection = () => {
       materializedSlug,
     };
     try {
-      window.localStorage.setItem(RESEARCH_WORKSPACE_STORAGE_KEY, JSON.stringify(payload));
-      if (jobId) window.localStorage.setItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:${jobId}`, JSON.stringify(payload));
+      saveWorkspaceDraft(window.localStorage, window.sessionStorage, activeDraft.id, payload);
+      setDraftStorageError(false);
     } catch {
-      // 저장 실패는 작업 흐름을 막지 않는다.
+      setDraftStorageError(true);
     }
-  }, [hydrated, requestId, officialUrl, jobId, review, logoSelection, uploadedLogoUrl, materializedSlug]);
+  }, [
+    hydrated,
+    activeDraft,
+    researchJobIdParam,
+    restoreRequest,
+    requestId,
+    officialUrl,
+    jobId,
+    review,
+    logoSelection,
+    uploadedLogoUrl,
+    materializedSlug,
+    saveAttempt,
+  ]);
+
+  useEffect(() => {
+    if (!activeDraft) return;
+    const refreshDrafts = () => {
+      try {
+        setOtherDrafts(listWorkspaceDrafts(window.localStorage, jobId).filter(draft => draft.id !== activeDraft.id));
+      } catch {
+        setDraftStorageError(true);
+      }
+    };
+    refreshDrafts();
+    window.addEventListener('storage', refreshDrafts);
+    window.addEventListener('focus', refreshDrafts);
+    return () => {
+      window.removeEventListener('storage', refreshDrafts);
+      window.removeEventListener('focus', refreshDrafts);
+    };
+  }, [activeDraft, jobId]);
 
   useEffect(() => {
     return () => {
@@ -819,6 +868,50 @@ export const ProductResearchSection = () => {
     <AdminPanel>
       <AdminSectionHeader title="URL로 서비스 조사" />
       <AdminSectionBody>
+        {draftStorageError && (
+          <div role="alert" className="flex flex-col gap-2 text-sm text-cherry-700">
+            <p>이 브라우저에 초안을 저장하지 못했습니다. 현재 입력은 유지되지만 새로고침하면 사라질 수 있습니다.</p>
+            <Button type="button" variant="contained" color="secondary" onClick={() => setSaveAttempt(n => n + 1)}>
+              초안 저장 다시 시도
+            </Button>
+          </div>
+        )}
+        {otherDrafts.length > 0 && (
+          <details className="min-w-0 rounded-lg border border-dark-200 p-3">
+            <summary className="cursor-pointer text-sm font-semibold">
+              저장된 다른 편집본 ({otherDrafts.length}개)
+            </summary>
+            <p className="mt-2 text-xs text-dark-500" role="status">
+              다른 탭의 변경은 현재 입력에 덮어쓰지 않습니다. 복원하면 현재 초안도 별도로 남습니다.
+            </p>
+            <ul className="mt-3 flex max-h-64 flex-col gap-3 overflow-auto">
+              {otherDrafts.map(draft => (
+                <li key={draft.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1 break-words text-sm">
+                    <p>{draft.workspace.review.name || '이름 없는 초안'}</p>
+                    <p className="text-xs text-dark-500">{draft.workspace.review.summary}</p>
+                    <p className="text-xs text-dark-500">
+                      {new Date(draft.updatedAt).toLocaleString('ko-KR', {
+                        timeZone: 'Asia/Seoul',
+                      })}{' '}
+                      · {draft.id.slice(0, 8)}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="contained"
+                    color="secondary"
+                    disabled={isRequesting || isRetrying || isMaterializing}
+                    aria-label={`${draft.workspace.review.name || '이름 없는 초안'} 편집본 복원`}
+                    onClick={() => setRestoreRequest({ ...draft })}
+                  >
+                    이 편집본 복원
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
         <form onSubmit={handleRequest} className="flex flex-col gap-3">
           <AdminField label="공식 사이트 URL" error={mutationError?.message}>
             <AdminInput

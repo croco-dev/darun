@@ -38,7 +38,19 @@ vi.mock('@mantine/notifications', () => ({
 }));
 
 import { ProductResearchSection } from '../features/products/ProductResearchSection/ProductResearchSection';
+import {
+  listWorkspaceDrafts,
+  readWorkspaceDraft,
+} from '../features/products/ProductResearchSection/researchWorkspaceDrafts';
 import { RESEARCH_WORKSPACE_STORAGE_KEY } from '../features/products/ProductResearchSection/researchWorkspaceState';
+
+function readSavedWorkspace(key: string): string | null {
+  const jobId = key.startsWith(`${RESEARCH_WORKSPACE_STORAGE_KEY}:`)
+    ? key.slice(RESEARCH_WORKSPACE_STORAGE_KEY.length + 1)
+    : undefined;
+  const workspace = readWorkspaceDraft(window.localStorage, window.sessionStorage, jobId);
+  return workspace ? JSON.stringify(workspace) : null;
+}
 
 function navigated(): string[] {
   const store = testGlobal();
@@ -450,7 +462,7 @@ async function renderMaterializedReentry() {
   race.jobs['job-1'] = { ...completedJob, materializedProductId: 'prod-existing' };
   race.materializations[0].fail(new Error('등록 응답 유실'));
   expect((await screen.findByRole('alert')).textContent).toContain('등록 응답 유실');
-  expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBeNull();
+  expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBeNull();
   race.view.unmount();
   testGlobal().researchSearchParams = { researchJobId: 'job-1' };
   const view = render(
@@ -462,7 +474,7 @@ async function renderMaterializedReentry() {
   await waitFor(() => expect(race.lookups).toEqual(['job-1', 'job-1']));
   expect((document.querySelector('[name="review-name"]') as HTMLInputElement).value).toBe(race.stored.review.name);
   expect((document.querySelector('[name="review-slug"]') as HTMLInputElement).value).toBe(race.stored.review.slug);
-  expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual(race.stored.review);
+  expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual(race.stored.review);
   expect(screen.queryByRole('alert')).toBeNull();
   expect(race.materializations).toHaveLength(1);
   expect(race.requests).toHaveLength(0);
@@ -540,6 +552,7 @@ beforeEach(() => {
   navigated().length = 0;
   vi.mocked(notifications.show).mockClear();
   window.localStorage.clear();
+  window.sessionStorage.clear();
   process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME = 'demo-cloud';
   process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY = 'demo-key';
   testGlobal().researchUploadForms = [];
@@ -573,6 +586,117 @@ afterEach(() => {
 function formInputs(): Array<Record<string, FormDataEntryValue>> {
   return testGlobal().researchUploadForms ?? [];
 }
+
+it('두 편집 화면의 다른 필드 변경을 각각 복구할 수 있게 보관한다', async () => {
+  seedResearchWorkspace();
+  testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+  const mountWorkspace = () => {
+    const scenario = newScenario();
+    scenario.jobResponses = [completedJob];
+    return render(
+      <ApolloProvider client={makeClient(scenario)}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+  };
+  const a = mountWorkspace();
+  const b = mountWorkspace();
+  await waitFor(() => expect(a.container.querySelector('[name="review-name"]')).not.toBeNull());
+  await waitFor(() => expect(b.container.querySelector('[name="review-summary"]')).not.toBeNull());
+  fireEvent.change(a.container.querySelector('[name="review-name"]')!, {
+    target: { value: 'A에서 고친 이름' },
+  });
+  fireEvent.change(b.container.querySelector('[name="review-summary"]')!, {
+    target: { value: 'B에서 고친 요약' },
+  });
+  const reviews = Object.values(localStorage).flatMap(raw => {
+    try {
+      const parsed = JSON.parse(raw);
+      return [parsed.workspace?.review ?? parsed.review].filter(Boolean);
+    } catch {
+      return [];
+    }
+  });
+  expect(reviews).toContainEqual(expect.objectContaining({ name: 'A에서 고친 이름', summary: '사람 요약' }));
+  expect(reviews).toContainEqual(expect.objectContaining({ name: '사람 이름', summary: 'B에서 고친 요약' }));
+});
+
+it('다른 탭의 같은 필드 변경을 덮어쓰지 않고 선택한 편집본의 사본으로 복원한다', async () => {
+  seedResearchWorkspace();
+  testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+  const mount = () => {
+    const scenario = newScenario();
+    scenario.jobResponses = [completedJob];
+    return render(
+      <ApolloProvider client={makeClient(scenario)}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+  };
+  const a = mount();
+  const b = mount();
+  await waitFor(() => expect(a.container.querySelector('[name="review-name"]')).not.toBeNull());
+  await waitFor(() => expect(b.container.querySelector('[name="review-name"]')).not.toBeNull());
+  fireEvent.change(a.container.querySelector('[name="review-name"]')!, {
+    target: { value: 'A 편집' },
+  });
+  fireEvent.change(b.container.querySelector('[name="review-name"]')!, {
+    target: { value: 'B 편집' },
+  });
+  fireEvent(
+    window,
+    new StorageEvent('storage', {
+      key: 'other-tab',
+      storageArea: localStorage,
+    })
+  );
+  expect((a.container.querySelector('[name="review-name"]') as HTMLInputElement).value).toBe('A 편집');
+  fireEvent.click(within(a.container).getByText(/저장된 다른 편집본/));
+  fireEvent.click(within(a.container).getByRole('button', { name: 'B 편집 편집본 복원' }));
+  await waitFor(() =>
+    expect((a.container.querySelector('[name="review-name"]') as HTMLInputElement).value).toBe('B 편집')
+  );
+  fireEvent.change(a.container.querySelector('[name="review-summary"]')!, {
+    target: { value: '복원 후 수정' },
+  });
+  const drafts = listWorkspaceDrafts(localStorage, 'job-1');
+  expect(drafts).toHaveLength(3);
+  expect(drafts.map(draft => draft.workspace.review)).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ name: 'A 편집', summary: '사람 요약' }),
+      expect.objectContaining({ name: 'B 편집', summary: '사람 요약' }),
+      expect.objectContaining({ name: 'B 편집', summary: '복원 후 수정' }),
+    ])
+  );
+  expect((b.container.querySelector('[name="review-summary"]') as HTMLTextAreaElement).value).toBe('사람 요약');
+});
+
+it('초안 저장 실패를 알리고 입력을 유지한 채 같은 화면에서 다시 저장한다', async () => {
+  seedResearchWorkspace();
+  testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+  const setItem = Storage.prototype.setItem;
+  const storageFailure = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+    this: Storage,
+    key,
+    value
+  ) {
+    if (key.includes('product-research-drafts:v2:')) throw new DOMException('quota', 'QuotaExceededError');
+    setItem.call(this, key, value);
+  });
+  const scenario = newScenario();
+  scenario.jobResponses = [completedJob];
+  render(
+    <ApolloProvider client={makeClient(scenario)}>
+      <ProductResearchSection />
+    </ApolloProvider>
+  );
+  await screen.findByRole('alert');
+  fireEvent.change(await screen.findByRole('textbox', { name: '서비스 이름' }), { target: { value: '저장할 입력' } });
+  storageFailure.mockRestore();
+  fireEvent.click(screen.getByRole('button', { name: '초안 저장 다시 시도' }));
+  await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+  expect(readWorkspaceDraft(localStorage, sessionStorage, 'job-1')?.review.name).toBe('저장할 입력');
+});
 
 describe('admin research workspace flow', () => {
   it('로고 업로드부터 등록 응답까지 모든 검토 입력을 잠그고 실패 뒤 같은 업로드와 초안으로 재시도한다', async () => {
@@ -608,7 +732,7 @@ describe('admin research workspace flow', () => {
     await screen.findByRole('alert');
     expectReviewDisabled(form, false);
     expect(navigated()).toEqual([]);
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual({
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual({
       ...review,
       logoUrl: uploadedUrl,
     });
@@ -651,7 +775,7 @@ describe('admin research workspace flow', () => {
     await waitFor(() => expectReviewDisabled(form, false));
     expect(materializations).toHaveLength(0);
     expect(navigated()).toEqual([]);
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual(review);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual(review);
     fireEvent.change(screen.getByRole('textbox', { name: '요약' }), {
       target: { value: '재검토한 요약' },
     });
@@ -718,7 +842,7 @@ describe('admin research workspace flow', () => {
     expect(scenario.signInputs).toHaveLength(0);
     expect(scenario.materializeVars).toHaveLength(0);
     await waitFor(() =>
-      expect(JSON.parse(localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.features[0].summary).toBe(summary)
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.features[0].summary).toBe(summary)
     );
     cleanup();
     mount();
@@ -785,10 +909,7 @@ describe('admin research workspace flow', () => {
     race.materializations[0].fail(new Error('태그 등록 합성 실패'));
     await screen.findByRole('alert');
     expect(tags.value).toBe('협업, 생산성, ');
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.tags).toEqual([
-      '협업',
-      '생산성',
-    ]);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.tags).toEqual(['협업', '생산성']);
 
     race.jobs['job-2'] = { ...completedJob, id: 'job-2', result: { ...completedJob.result, tags: ['자동화'] } };
     testGlobal().researchSearchParams = { researchJobId: 'job-2' };
@@ -902,9 +1023,7 @@ describe('admin research workspace flow', () => {
       });
       expect(scenario.jobQueries).toEqual(['job-1']);
       expect(scenario.requestInputs).toEqual([]);
-      expect(JSON.parse(window.localStorage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!).review).toEqual(
-        stored.review
-      );
+      expect(JSON.parse(readSavedWorkspace(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!).review).toEqual(stored.review);
       fireEvent.click(screen.getByRole('button', { name: '결과 새로고침' }));
       expect(await screen.findByDisplayValue('사람 이름')).toBeTruthy();
       expect(screen.getByDisplayValue('사람 요약')).toBeTruthy();
@@ -945,9 +1064,7 @@ describe('admin research workspace flow', () => {
     });
     expect(scenario.jobQueries).toEqual(['job-1', 'job-1']);
     expect(screen.getByDisplayValue('https://human.example/')).toBeTruthy();
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).officialUrl).toBe(
-      'https://human.example/'
-    );
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).officialUrl).toBe('https://human.example/');
   });
 
   it.each(['pending', 'in_progress'])(
@@ -1000,9 +1117,7 @@ describe('admin research workspace flow', () => {
       await screen.findByText(failure.message);
       expect(screen.queryByText(/조사 작업을 찾을 수 없습니다/)).toBeNull();
       expect(screen.getByDisplayValue('사람 편집 유지')).toBeTruthy();
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.name).toBe(
-        '사람 편집 유지'
-      );
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.name).toBe('사람 편집 유지');
       expect((screen.getByRole('button', { name: '결과 새로고침' }) as HTMLButtonElement).disabled).toBe(false);
     }
   );
@@ -1145,16 +1260,14 @@ describe('admin research workspace flow', () => {
     await waitFor(() => expect(screen.queryByText(/제안 slug/)?.textContent).toContain('linear'), { timeout: 8000 });
     expect(screen.getByText('근거 출처')).toBeTruthy();
 
-    const stored = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY) ?? '{}');
+    const stored = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY) ?? '{}');
     expect(stored.jobId).toBe('job-1');
     expect(stored.officialUrl).toBe('https://linear.app/');
 
     // Review 편집 후 새로고침 시뮬레이션: 동일 localStorage로 다시 마운트하면 복구된다.
     fireEvent.change(await screen.findByDisplayValue('Linear'), { target: { value: 'Linear 편집' } });
     await waitFor(() =>
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY) ?? '{}').review.name).toBe(
-        'Linear 편집'
-      )
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY) ?? '{}').review.name).toBe('Linear 편집')
     );
 
     cleanup();
@@ -1214,11 +1327,9 @@ describe('admin research workspace flow', () => {
     // 폴링이 결과를 가져와 제안이 표시된다.
     await waitFor(() => expect(screen.queryByText(/제안 slug/)?.textContent).toContain('linear'), { timeout: 8000 });
 
-    const stored = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY) ?? '{}');
+    const stored = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY) ?? '{}');
     expect(stored.jobId).toBe('job-2');
-    expect(JSON.parse(window.localStorage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!).review.name).toBe(
-      'Linear 편집'
-    );
+    expect(JSON.parse(readSavedWorkspace(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!).review.name).toBe('Linear 편집');
     cleanup();
     testGlobal().researchSearchParams = { researchJobId: 'job-1' };
     const revisit = newScenario();
@@ -1249,7 +1360,7 @@ describe('admin research workspace flow', () => {
       timeout: 8000,
     });
     await waitFor(() => expect(screen.queryByText(/제안 slug/)?.textContent).toContain('linear'), { timeout: 8000 });
-    const stored = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY) ?? '{}');
+    const stored = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY) ?? '{}');
     expect(stored.jobId).toBe('job-9');
   });
 
@@ -1691,7 +1802,7 @@ describe('admin research workspace flow', () => {
     await waitFor(() => expect(screen.queryByText(/제안 slug/)?.textContent).toContain('linear'), { timeout: 8000 });
     expect(screen.queryByDisplayValue('First')).toBeNull();
     expect(((await screen.findByDisplayValue('Linear')) as HTMLInputElement).value).toBe('Linear');
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY) ?? '{}').jobId).toBe('job-second');
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY) ?? '{}').jobId).toBe('job-second');
   });
 
   it('재조사 응답이 새 조사 요청보다 먼저 도착해도 최신 요청의 입력·저장 workspace·이동을 차지하지 않는다', async () => {
@@ -1715,7 +1826,7 @@ describe('admin research workspace flow', () => {
     expect(urlInput.value).toBe('https://notion.so/');
     expect(screen.queryByText(/작업 ID: job-retry/)).toBeNull();
     expect(screen.queryByText(/작업 ID: job-1/)).toBeTruthy();
-    const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     expect(workspace.requestId).toBe(requests[0].variables.requestId);
     expect(workspace.requestId).not.toBe(retries[0].variables.input?.requestId);
     expect(workspace.officialUrl).toBe('https://notion.so/');
@@ -1723,7 +1834,7 @@ describe('admin research workspace flow', () => {
     expect(workspace.review.name).toBe('사람 이름');
     expect(workspace.review.logoUrl).toBe('https://linear.app/logo.png');
     expect(workspace.uploadedLogoUrl).toBe('https://res.cloudinary.com/demo/image/upload/v1/human-logo.png');
-    const jobWorkspace = JSON.parse(window.localStorage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!);
+    const jobWorkspace = JSON.parse(readSavedWorkspace(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!);
     expect(jobWorkspace.review.name).toBe('사람 이름');
 
     // 최신 응답만 자기 새 작업으로 이동한다.
@@ -1754,7 +1865,7 @@ describe('admin research workspace flow', () => {
     const urlInput = screen.getAllByPlaceholderText('ex) https://linear.app')[0] as HTMLInputElement;
     expect(urlInput.value).toBe('https://notion.so/');
     expect(screen.queryByText(/작업 ID: job-retry/)).toBeNull();
-    const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     expect(workspace.requestId).toBe(latestRequestId);
     expect(workspace.jobId).toBe('job-new');
     expect(lookups).not.toContain('job-retry');
@@ -1816,7 +1927,7 @@ describe('admin research workspace flow', () => {
     });
     expect(navigated()).toEqual(['/products/new?researchJobId=job-retry']);
     expect(screen.queryByText(/작업 ID: job-new/)).toBeNull();
-    const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     expect(workspace.jobId).toBe('job-retry');
     expect(workspace.requestId).toBe(retries[0].variables.input?.requestId);
   });
@@ -1843,7 +1954,7 @@ describe('admin research workspace flow', () => {
     expect(navigated()).toEqual([]);
     expect(screen.queryByText(/작업 ID: job-retry/)).toBeNull();
     expect(screen.queryByText(/작업 ID: job-1/)).toBeTruthy();
-    const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     expect(workspace.requestId).toBe('stored-request');
     expect(workspace.jobId).toBe('job-1');
     expect(workspace.review.name).toBe('사람 이름');
@@ -1883,7 +1994,7 @@ describe('admin research workspace flow', () => {
       await screen.findByDisplayValue('Linear');
       expect(screen.queryByRole('alert')).toBeNull();
       expect(screen.queryByText(/현재 재조사 .* 실패/)).toBeNull();
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(workspace.jobId).toBe('job-new');
       expect(workspace.officialUrl).toBe('https://notion.so/');
     }
@@ -1919,7 +2030,7 @@ describe('admin research workspace flow', () => {
         'https://notion.so/'
       );
       expect((screen.getByRole('button', { name: '조사 요청' }) as HTMLButtonElement).disabled).toBe(false);
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(workspace.jobId).toBe('job-new');
       expect(workspace.officialUrl).toBe('https://notion.so/');
     }
@@ -1948,7 +2059,7 @@ describe('admin research workspace flow', () => {
       expect((screen.getAllByPlaceholderText('ex) https://linear.app')[0] as HTMLInputElement).value).toBe(
         'https://notion.so/'
       );
-      const waiting = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const waiting = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(waiting.requestId).toBe(requests[0].variables.requestId);
       expect(waiting.jobId).toBe('job-1');
       expect(waiting.review.name).toBe('사람 이름');
@@ -1994,7 +2105,7 @@ describe('admin research workspace flow', () => {
       expect((screen.getAllByPlaceholderText('ex) https://linear.app')[0] as HTMLInputElement).value).toBe(
         'https://notion.so/'
       );
-      const failedWorkspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const failedWorkspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(failedWorkspace.review.name).toBe('사람 이름');
       expect(failedWorkspace.uploadedLogoUrl).toBe('https://res.cloudinary.com/demo/image/upload/v1/human-logo.png');
 
@@ -2044,7 +2155,7 @@ describe('admin research workspace flow', () => {
       expect(((await screen.findByRole('button', { name: '실패 작업 재조사' })) as HTMLButtonElement).disabled).toBe(
         false
       );
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(workspace.requestId).toBe('stored-request');
       expect(workspace.jobId).toBe('job-1');
       expect(workspace.review.name).toBe('사람 이름');
@@ -2088,7 +2199,7 @@ describe('admin research workspace flow', () => {
       await screen.findByDisplayValue('Linear');
       expect(screen.queryByRole('alert')).toBeNull();
       expect(screen.queryByText(/현재 요청 .* 실패/)).toBeNull();
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(workspace.jobId).toBe('job-new');
       expect(workspace.officialUrl).toBe('https://notion.so/');
     }
@@ -2141,7 +2252,7 @@ describe('admin research workspace flow', () => {
       const form = document.querySelector('[name="officialUrl"]')!.closest('form')!;
       const urlInput = document.querySelector('[name="officialUrl"]') as HTMLInputElement;
       expect(urlInput.value).toBe('https://notion.so/');
-      const beforeLatest = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const beforeLatest = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(beforeLatest.review).toEqual(stored.review);
       expect(beforeLatest.uploadedLogoUrl).toBe(stored.uploadedLogoUrl);
       expect(beforeLatest.jobId).toBe('job-1');
@@ -2157,7 +2268,7 @@ describe('admin research workspace flow', () => {
       fireEvent.submit(form);
       await waitFor(() => expect(requests).toHaveLength(3));
       expect(requests[2].variables).toEqual({ requestId: latestRequestId, officialUrl: 'https://notion.so/' });
-      const latestWorkspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const latestWorkspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(latestWorkspace.requestId).toBe(latestRequestId);
       expect(latestWorkspace.review).toEqual(stored.review);
       expect(latestWorkspace.uploadedLogoUrl).toBe(stored.uploadedLogoUrl);
@@ -2226,7 +2337,7 @@ describe('admin research workspace flow', () => {
       expect(requests[2].variables.requestId).toBe(latestRequestId);
       expect(navigated()).toEqual([]);
       expect(lookups).toEqual(['job-1']);
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(workspace.requestId).toBe(latestRequestId);
       expect(workspace.officialUrl).toBe('https://notion.so/');
       expect(workspace.jobId).toBe('job-1');
@@ -2267,7 +2378,7 @@ describe('research registration action ownership with real Apollo', () => {
       };
       const expectWorkspaceLogo = (expectedUrl: string, uploaded: string | null) => {
         for (const key of [RESEARCH_WORKSPACE_STORAGE_KEY, `${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`]) {
-          expect(JSON.parse(window.localStorage.getItem(key)!)).toMatchObject({
+          expect(JSON.parse(readSavedWorkspace(key)!)).toMatchObject({
             version: 1,
             jobId: 'job-1',
             review: { logoUrl: expectedUrl },
@@ -2361,7 +2472,7 @@ describe('research registration action ownership with real Apollo', () => {
         target: { value: 'https://notion.so/current-logo.png' },
       });
     }
-    const workspaceBefore = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const workspaceBefore = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     const routesBefore = [...navigated()];
     await act(async () => {
       finishStaleMaterialization(materializations[0], outcome);
@@ -2370,7 +2481,7 @@ describe('research registration action ownership with real Apollo', () => {
     expect(navigated()).toEqual(routesBefore);
     expect(screen.queryByRole('alert')).toBeNull();
     expect(notifications.show).not.toHaveBeenCalled();
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspaceBefore);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspaceBefore);
     expect(workspaceBefore.materializedSlug).toBeNull();
     if (!requestFirst) {
       expect((document.querySelector('[name="officialUrl"]') as HTMLInputElement).value).toBe('https://notion.so/');
@@ -2384,7 +2495,7 @@ describe('research registration action ownership with real Apollo', () => {
       await screen.findByText(/작업 ID: job-new · 상태: pending/);
     }
     expect(navigated()).toEqual(['/products/new?researchJobId=job-new']);
-    const latest = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const latest = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     expect(latest.jobId).toBe('job-new');
     expect(latest.review.name).toBe('');
     expect(latest.review.logoUrl).toBe('');
@@ -2413,7 +2524,7 @@ describe('research registration action ownership with real Apollo', () => {
     await waitFor(() => expect(requests).toHaveLength(1));
     requests[0].fail(new GraphQLError('현재 B 요청 실패'));
     expect((await screen.findByRole('alert')).textContent).toContain('현재 B 요청 실패');
-    const latest = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const latest = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     await act(async () => {
       finishStaleMaterialization(materializations[0], outcome);
       await nextTurn();
@@ -2423,7 +2534,7 @@ describe('research registration action ownership with real Apollo', () => {
     expect(notifications.show).not.toHaveBeenCalled();
     expect(navigated()).toEqual([]);
     expect(lookups).toEqual(['job-1']);
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(latest);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(latest);
     expect(latest.review).toEqual(stored.review);
     expect(latest.uploadedLogoUrl).toBe(stored.uploadedLogoUrl);
     expect(latest.materializedSlug).toBeNull();
@@ -2455,7 +2566,7 @@ describe('research registration action ownership with real Apollo', () => {
       expect(screen.queryByRole('alert')).toBeNull();
       expect(notifications.show).not.toHaveBeenCalled();
       expect(navigated()).toEqual([]);
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBeNull();
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBeNull();
 
       materializations[1].fail(
         outcome === 'GraphQL'
@@ -2467,7 +2578,7 @@ describe('research registration action ownership with real Apollo', () => {
       expect((document.querySelector('[name="review-logo-url"]') as HTMLInputElement).value).toBe(
         stored.review.logoUrl
       );
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual(stored.review);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual(stored.review);
       // 현재 등록 실패 뒤 입력을 바꾸지 않은 재제출은 서버가 돌려준 기존 Product로 복구한다.
       fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
       await waitFor(() => expect(materializations).toHaveLength(3));
@@ -2475,9 +2586,7 @@ describe('research registration action ownership with real Apollo', () => {
       expect(materializations[2].variables).toEqual(materializations[1].variables);
       materializations[2].respond({ id: 'prod-existing', slug: 'existing-product', name: '기존 Product' });
       await waitFor(() => expect(navigated()).toEqual(['/products/existing-product']));
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
-        'existing-product'
-      );
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe('existing-product');
       expect(notifications.show).toHaveBeenCalledTimes(1);
       expect(notifications.show).toHaveBeenCalledWith({ message: '미발행 서비스가 생성되었습니다.', color: 'teal' });
     }
@@ -2490,7 +2599,7 @@ describe('research registration action ownership with real Apollo', () => {
     fireEvent.click(screen.getByRole('button', { name: '결과 새로고침' }));
     fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
     await waitFor(() => expect(retries).toHaveLength(1));
-    const latest = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const latest = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     await act(async () => {
       finishStaleMaterialization(materializations[0], outcome);
       await nextTurn();
@@ -2499,7 +2608,7 @@ describe('research registration action ownership with real Apollo', () => {
     expect(screen.queryByRole('alert')).toBeNull();
     expect(notifications.show).not.toHaveBeenCalled();
     expect(lookups).toEqual(['job-1', 'job-1']);
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(latest);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(latest);
     expect(latest.review).toEqual(stored.review);
     expect(latest.uploadedLogoUrl).toBe(stored.uploadedLogoUrl);
     expect(latest.materializedSlug).toBeNull();
@@ -2526,7 +2635,7 @@ describe('research registration action ownership with real Apollo', () => {
     fireEvent.change(document.querySelector('[name="review-logo-url"]')!, {
       target: { value: 'https://notion.so/latest.png' },
     });
-    const latest = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const latest = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     await act(async () => {
       if (outcome === 'success') {
         upload.resolve({
@@ -2548,7 +2657,7 @@ describe('research registration action ownership with real Apollo', () => {
       'https://notion.so/latest.png'
     );
     expect(screen.getByAltText('조사 로고 미리보기')).toBeTruthy();
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(latest);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(latest);
     expect(latest.materializedSlug).toBeNull();
     expect(latest.uploadedLogoUrl).toBeNull();
   });
@@ -2575,7 +2684,7 @@ describe('research registration action ownership with real Apollo', () => {
       });
       fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
       await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
-      const latest = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const latest = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       await act(async () => {
         if (outcome === 'success') {
           oldUpload.resolve({
@@ -2593,7 +2702,7 @@ describe('research registration action ownership with real Apollo', () => {
       expect((screen.getByRole('button', { name: '생성 중...' }) as HTMLButtonElement).disabled).toBe(true);
       expect((document.querySelector('[name="review-logo-file"]') as HTMLInputElement).disabled).toBe(true);
       expect(screen.getByText('current-logo.png')).toBeTruthy();
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(latest);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(latest);
       expect(latest.logoFileName).toBe('current-logo.png');
       expect(latest.materializedSlug).toBeNull();
       currentUpload.resolve({
@@ -2605,11 +2714,9 @@ describe('research registration action ownership with real Apollo', () => {
       materializations[0].respond({ id: 'prod-current', slug: 'current', name: '현재 Product' });
       await waitFor(() => {
         expect(navigated()).toEqual(['/products/current']);
-        expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
-          'current'
-        );
+        expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe('current');
       });
-      const completed = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const completed = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(completed.uploadedLogoUrl).toBe('https://res.cloudinary.com/demo/current-logo.png');
       expect(completed.materializedSlug).toBe('current');
     }
@@ -2637,7 +2744,7 @@ describe('research registration action ownership with real Apollo', () => {
     expect(materializations).toHaveLength(1);
     expect(notifications.show).not.toHaveBeenCalled();
     expect(navigated()).toEqual([]);
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBeNull();
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBeNull();
   });
 
   it.each(['success', 'network', 'GraphQL'])(
@@ -2663,9 +2770,9 @@ describe('research registration action ownership with real Apollo', () => {
       );
       await screen.findByDisplayValue('Notion');
       await waitFor(() =>
-        expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.name).toBe('Notion')
+        expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.name).toBe('Notion')
       );
-      const latest = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const latest = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       await act(async () => {
         finishStaleMaterialization(materializations[0], outcome);
         await nextTurn();
@@ -2674,7 +2781,7 @@ describe('research registration action ownership with real Apollo', () => {
       expect(notifications.show).not.toHaveBeenCalled();
       expect(screen.queryByRole('alert')).toBeNull();
       expect(screen.getByDisplayValue('Notion')).toBeTruthy();
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(latest);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(latest);
       expect(latest.jobId).toBe('job-new');
       expect(latest.materializedSlug).toBeNull();
     }
@@ -2696,7 +2803,7 @@ describe('materialized research explicit reentry recovery with real Apollo', () 
       name: '사람이 고친 기존 제품',
     });
     await waitFor(() => expect(navigated()).toEqual(['/products/renamed-current-product']));
-    const workspace = JSON.parse(window.localStorage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!);
+    const workspace = JSON.parse(readSavedWorkspace(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!);
     expect(workspace.review).toEqual(stored.review);
     expect(workspace.materializedSlug).toBe('renamed-current-product');
     expect(requests).toHaveLength(0);
@@ -2718,7 +2825,7 @@ describe('materialized research explicit reentry recovery with real Apollo', () 
       stored.review.summary
     );
     expect((document.querySelector('[name="review-logo-url"]') as HTMLInputElement).value).toBe(stored.review.logoUrl);
-    const failedWorkspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const failedWorkspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     expect(failedWorkspace.review).toEqual(stored.review);
     expect(failedWorkspace.uploadedLogoUrl).toBe(stored.uploadedLogoUrl);
     expect(failedWorkspace.materializedSlug).toBeNull();
@@ -2749,14 +2856,14 @@ describe('materialized research explicit reentry recovery with real Apollo', () 
       fireEvent.change(document.querySelector('[name="review-name"]')!, { target: { value: '최신 action의 편집' } });
       requests[0].fail(new GraphQLError('현재 새 조사 실패'));
       expect((await screen.findByRole('alert')).textContent).toContain('현재 새 조사 실패');
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       await act(async () => {
         finishStaleMaterialization(materializations[1], outcome);
         await nextTurn();
       });
       expect(screen.getByRole('alert').textContent).toContain('현재 새 조사 실패');
       expect((document.querySelector('[name="review-name"]') as HTMLInputElement).value).toBe('최신 action의 편집');
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
       expect(lookups).toEqual(['job-1', 'job-1']);
       expect(navigated()).toEqual([]);
       expect(notifications.show).not.toHaveBeenCalled();
@@ -2781,14 +2888,14 @@ describe('materialized research explicit reentry recovery with real Apollo', () 
       await screen.findByText(/작업 ID: job-1 · 상태: completed/);
       fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
       await waitFor(() => expect(materializations).toHaveLength(3));
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       await act(async () => {
         finishStaleMaterialization(materializations[1], outcome);
         await nextTurn();
       });
       expect((screen.getByRole('button', { name: '생성 중...' }) as HTMLButtonElement).disabled).toBe(true);
       expect(screen.queryByRole('alert')).toBeNull();
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
       expect(workspace.review).toEqual(stored.review);
       expect(workspace.materializedSlug).toBeNull();
       expect(navigated()).toEqual([]);
@@ -2808,14 +2915,14 @@ describe('materialized research explicit reentry recovery with real Apollo', () 
     fireEvent.click(screen.getByRole('button', { name: '결과 새로고침' }));
     fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
     await waitFor(() => expect(retries).toHaveLength(1));
-    const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     await act(async () => {
       finishStaleMaterialization(materializations[1], outcome);
       await nextTurn();
     });
     expect((screen.getByRole('button', { name: '재조사 요청 중...' }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
     expect(workspace.review).toEqual(stored.review);
     expect(workspace.materializedSlug).toBeNull();
     expect(navigated()).toEqual([]);
@@ -2844,7 +2951,7 @@ describe('review registration supersedes pending research with real Apollo', () 
     fireEvent.click(submit);
     await waitFor(() => expect(materializations).toHaveLength(1));
     expect(materializations[0].variables.input).toMatchObject({ researchJobId: 'job-1', ...stored.review });
-    const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     if (requestFirst) {
       await act(async () => {
         finishStaleRequest(requests[0], outcome);
@@ -2854,16 +2961,14 @@ describe('review registration supersedes pending research with real Apollo', () 
       expect(screen.queryByRole('alert')).toBeNull();
       expect(notifications.show).not.toHaveBeenCalled();
       expect(navigated()).toEqual([]);
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
     }
     materializations[0].respond({ id: 'prod-a', slug: 'actual-a-product', name: '서버 Product A' });
     await waitFor(() => expect(navigated()).toEqual(['/products/actual-a-product']));
     await waitFor(() =>
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
-        'actual-a-product'
-      )
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe('actual-a-product')
     );
-    const completed = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const completed = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     if (!requestFirst) {
       await act(async () => {
         finishStaleRequest(requests[0], outcome);
@@ -2882,9 +2987,9 @@ describe('review registration supersedes pending research with real Apollo', () 
     expect(completed.uploadedLogoUrl).toBe(stored.uploadedLogoUrl);
     expect(completed.jobId).toBe('job-1');
     expect(completed.materializedSlug).toBe('actual-a-product');
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(completed);
-    expect(JSON.parse(window.localStorage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!)).toEqual(completed);
-    expect(window.localStorage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-new`)).toBeNull();
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(completed);
+    expect(JSON.parse(readSavedWorkspace(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!)).toEqual(completed);
+    expect(readSavedWorkspace(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-new`)).toBeNull();
     expect(navigated()).toEqual(['/products/actual-a-product']);
     expect(screen.queryByRole('alert')).toBeNull();
     expect(notifications.show).toHaveBeenCalledTimes(1);
@@ -2908,7 +3013,7 @@ describe('review registration supersedes pending research with real Apollo', () 
       fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
       await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
       expect(materializations).toHaveLength(0);
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       await act(async () => {
         finishStaleRequest(requests[0], outcome);
         await nextTurn();
@@ -2920,7 +3025,7 @@ describe('review registration supersedes pending research with real Apollo', () 
       expect((screen.getByRole('button', { name: '생성 중...' }) as HTMLButtonElement).disabled).toBe(true);
       expect((document.querySelector('[name="review-logo-file"]') as HTMLInputElement).disabled).toBe(true);
       expect(screen.getByText('current-a.png')).toBeTruthy();
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
       upload.resolve({ ok: true, json: async () => ({ secure_url: 'https://res.cloudinary.com/demo/current-a.png' }) });
       await waitFor(() => expect(materializations).toHaveLength(1));
       expect(materializations[0].variables.input).toMatchObject({
@@ -2932,11 +3037,11 @@ describe('review registration supersedes pending research with real Apollo', () 
       materializations[0].respond({ id: 'prod-a', slug: 'uploaded-a-product', name: '현재 A' });
       await waitFor(() => expect(navigated()).toEqual(['/products/uploaded-a-product']));
       await waitFor(() =>
-        expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
+        expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
           'uploaded-a-product'
         )
       );
-      const completed = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const completed = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(completed.review).toEqual({ ...stored.review, logoUrl: 'https://res.cloudinary.com/demo/current-a.png' });
       expect(completed.uploadedLogoUrl).toBe('https://res.cloudinary.com/demo/current-a.png');
       expect(completed.logoFileName).toBe('current-a.png');
@@ -2959,13 +3064,13 @@ describe('review registration supersedes pending research with real Apollo', () 
         outcome === 'GraphQL' ? new GraphQLError('현재 A GraphQL 실패') : new Error('현재 A network 실패')
       );
       expect((await screen.findByRole('alert')).textContent).toContain(`현재 A ${outcome} 실패`);
-      const failed = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const failed = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       await act(async () => {
         requests[0].respond();
         await nextTurn();
       });
       expect(screen.getByRole('alert').textContent).toContain(`현재 A ${outcome} 실패`);
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(failed);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(failed);
       expect(failed.review).toEqual(stored.review);
       expect(failed.uploadedLogoUrl).toBe(stored.uploadedLogoUrl);
       expect(failed.materializedSlug).toBeNull();
@@ -2983,7 +3088,7 @@ describe('review registration supersedes pending research with real Apollo', () 
       await waitFor(() => expect(navigated()).toEqual(['/products/renamed-existing-a']));
       expect(lookups).toEqual(['job-1']);
       expect(requests).toHaveLength(1);
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
         'renamed-existing-a'
       );
       expect(fetch).not.toHaveBeenCalled();
@@ -3006,7 +3111,7 @@ describe('review registration supersedes pending research with real Apollo', () 
       const currentId = requests[1].variables.requestId;
       expect(currentId).not.toBe(requests[0].variables.requestId);
       expect(currentId).toMatch(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       await act(async () => {
         finishStaleRequest(requests[0], outcome);
         await nextTurn();
@@ -3016,7 +3121,7 @@ describe('review registration supersedes pending research with real Apollo', () 
       expect(notifications.show).not.toHaveBeenCalled();
       expect(navigated()).toEqual([]);
       expect(lookups).toEqual(['job-1']);
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
       expect(workspace.review).toEqual(stored.review);
       expect(workspace.uploadedLogoUrl).toBe(stored.uploadedLogoUrl);
       fireEvent.submit(form);
@@ -3031,7 +3136,7 @@ describe('review registration supersedes pending research with real Apollo', () 
         await nextTurn();
       });
       expect(lookups).toEqual(['job-1', latestJob.id]);
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).jobId).toBe(latestJob.id);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).jobId).toBe(latestJob.id);
       expect(navigated()).toEqual([`/products/new?researchJobId=request%3A${currentId}`]);
     }
   );
@@ -3056,7 +3161,7 @@ describe('review registration supersedes pending research with real Apollo', () 
     expect(screen.queryByRole('alert')).toBeNull();
     expect(navigated()).toEqual([]);
     expect(notifications.show).not.toHaveBeenCalled();
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual(stored.review);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual(stored.review);
     materializations[0].respond({ id: 'prod-a', slug: 'a-after-stale-lookup', name: '현재 A' });
     await waitFor(() => expect(navigated()).toEqual(['/products/a-after-stale-lookup']));
     expect(lookups).toEqual(['job-1', 'job-1']);
@@ -3098,7 +3203,7 @@ describe('review registration releases superseded lookup busy with real Apollo',
       // 성공 이동이 아니라 등록 시작 자체가 대체한 조회의 busy를 종료해야 한다.
       expect((screen.getByRole('button', { name: '결과 새로고침' }) as HTMLButtonElement).disabled).toBe(false);
       await waitFor(() => expect(materializations).toHaveLength(1));
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       if (lookupFirst) {
         await act(async () => {
           finishLookup(lookupCalls[1], outcome);
@@ -3127,8 +3232,8 @@ describe('review registration releases superseded lookup busy with real Apollo',
         stored.review.logoUrl
       );
       expect((document.querySelector('[name="officialUrl"]') as HTMLInputElement).value).toBe(stored.officialUrl);
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
-      expect(JSON.parse(window.localStorage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!)).toEqual(workspace);
       expect(navigated()).toEqual([]);
       expect(notifications.show).not.toHaveBeenCalled();
       const refresh = screen.getByRole('button', { name: '결과 새로고침' }) as HTMLButtonElement;
@@ -3142,7 +3247,7 @@ describe('review registration releases superseded lookup busy with real Apollo',
       );
       // 조회는 현재 등록 실패를 지우지 않는다. 명시 재제출만 새 action을 획득한다.
       expect(screen.getByRole('alert').textContent).toContain(failure.message);
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
       fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
       await waitFor(() => expect(materializations).toHaveLength(2));
       expect(materializations[1].variables).toEqual(materializations[0].variables);
@@ -3152,9 +3257,7 @@ describe('review registration releases superseded lookup busy with real Apollo',
         await nextTurn();
       });
       await waitFor(() => expect(navigated()).toEqual(['/products/server-current-a']));
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
-        'server-current-a'
-      );
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe('server-current-a');
       expect(notifications.show).toHaveBeenCalledTimes(1);
       expect(lookups).toEqual(['job-1', 'job-1', 'job-1']);
       expect(requests).toHaveLength(0);
@@ -3172,7 +3275,7 @@ describe('review registration releases superseded lookup busy with real Apollo',
     await waitFor(() => expect(materializations).toHaveLength(1));
     materializations[0].fail(new Error('현재 등록 실패 후 재조회'));
     await screen.findByRole('alert');
-    const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     await act(async () => {
       // HTTP 응답은 완료해 Apollo 기본 dedupe를 끝내고, 이전 loadJob promise가
       // 재개되기 전에 다음 수동 조회를 시작한다. hook이나 fence는 대체하지 않는다.
@@ -3185,13 +3288,13 @@ describe('review registration releases superseded lookup busy with real Apollo',
     expect(screen.getByRole('alert').textContent).toContain('현재 등록 실패 후 재조회');
     expect(screen.queryByText(/조사 작업을 찾을 수 없습니다/)).toBeNull();
     expect(screen.getByText(/작업 ID: job-1 · 상태: completed/)).toBeTruthy();
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
     expect(navigated()).toEqual([]);
     expect(notifications.show).not.toHaveBeenCalled();
     lookupCalls[2].respond(null);
     await screen.findByText(/조사 작업을 찾을 수 없습니다/);
     expect((screen.getByRole('button', { name: '결과 새로고침' }) as HTMLButtonElement).disabled).toBe(false);
-    expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
     fireEvent.click(screen.getByRole('button', { name: '결과 새로고침' }));
     await waitFor(() => expect(lookupCalls).toHaveLength(4));
     lookupCalls[3].respond(completedJob);
@@ -3223,7 +3326,7 @@ describe('review registration releases superseded lookup busy with real Apollo',
       }
       fireEvent.click(screen.getByRole('button', { name: '결과 새로고침' }));
       await waitFor(() => expect(lookupCalls).toHaveLength(2));
-      const workspace = JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+      const workspace = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
       expect((screen.getByRole('button', { name: '결과 새로고침' }) as HTMLButtonElement).disabled).toBe(false);
       if (logoOutcome === 'upload failure') {
@@ -3261,8 +3364,8 @@ describe('review registration releases superseded lookup busy with real Apollo',
       expect(screen.queryByRole('alert')).toBeNull();
       expect(screen.queryByText(/조사 작업을 찾을 수 없습니다/)).toBeNull();
       expect((document.querySelector('[name="review-name"]') as HTMLInputElement).value).toBe(stored.review.name);
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
-      expect(JSON.parse(window.localStorage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!)).toEqual(workspace);
       expect(materializations).toHaveLength(0);
       expect(navigated()).toEqual([]);
       const notificationCount = vi.mocked(notifications.show).mock.calls.length;
@@ -3273,7 +3376,7 @@ describe('review registration releases superseded lookup busy with real Apollo',
       await waitFor(() =>
         expect((screen.getByRole('button', { name: '결과 새로고침' }) as HTMLButtonElement).disabled).toBe(false)
       );
-      expect(JSON.parse(window.localStorage.getItem(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
+      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
       expect(notifications.show).toHaveBeenCalledTimes(notificationCount);
       expect(lookups).toEqual(['job-1', 'job-1', 'job-1']);
     }
