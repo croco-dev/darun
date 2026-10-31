@@ -13,6 +13,7 @@
   "dependencies": {
     "@darun/translation-domain": "workspace:*",
     "@darun/utils-llm": "workspace:*",
+    "dataloader": "2.2.2",
     "drizzle-orm": "catalog:",
     "parse5": "8.0.0",
     "remark-parse": "11.0.0",

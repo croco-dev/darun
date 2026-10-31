@@ -10,6 +10,7 @@ import {
 } from '@darun/products-datasource';
 import {
   GetProduct,
+  GetProductFeatures,
   GetProductLinks,
   GetPublishedProduct,
   GetPublishedProductsForSitemap,
@@ -20,6 +21,8 @@ import { ProductDescriptionJobService } from '@darun/products-service';
 import type { Drizzle } from '@darun/provider-database';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
 import { SearchableProduct, SearchProduct } from '@darun/search-domain';
+import { PostgresqlTranslationRepository } from '@darun/translation-datasource';
+import { TranslationService, computeSourceHash } from '@darun/translation-domain';
 import { PostgresqlVoteRepository } from '@darun/voting-datasource';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -240,6 +243,228 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       await writer`update ${writer(spec.table)} set priority = 11 where id = 'a-low'`;
       expect(ids(await read('parent-a'))).toEqual(['a-low', 'a-high', 'a-tie-a', 'a-tie-z']);
       expect(selectCount).toBe(3);
+    });
+  });
+
+  describe('영어 기능 번역의 일괄 조회', () => {
+    let resolver: ProductQueryResolver;
+    let featureTranslationQueries: number[];
+    let failTranslation: boolean;
+    let run: (locale: string) => Promise<GraphQL.ExecutionResult>;
+    const products = ['batch-a', 'batch-b', 'batch-c'].map((id, index) => ({
+      id,
+      name: `상품 ${index}`,
+      slug: id,
+      logoUrl: '',
+      locale: 'en',
+    }));
+    const expectedFeatures = (productId: string, locale = 'en') =>
+      Array.from({ length: 20 }, (_, index) => ({
+        id: `${productId}-${String(index).padStart(2, '0')}`,
+        name: locale === 'ko' || index === 2 || index === 19 ? `기능 ${index}` : `Name ${index}`,
+        summary:
+          index === 0
+            ? null
+            : index === 1
+              ? ''
+              : locale === 'ko' || index === 3 || index === 4
+                ? `요약 ${index}`
+                : `Summary ${index}`,
+        emoji: 'x',
+      }));
+
+    beforeEach(async () => {
+      await writer`delete from product_features`;
+      await writer`delete from translations`;
+      const featureRows = [];
+      const translationRows = [];
+      for (const product of products) {
+        for (let index = 0; index < 20; index++) {
+          const id = `${product.id}-${String(index).padStart(2, '0')}`;
+          const summary = index === 0 ? null : index === 1 ? '' : `요약 ${index}`;
+          featureRows.push({ id, product_id: product.id, name: `기능 ${index}`, summary, emoji: 'x' });
+          for (const field of ['name', 'summary']) {
+            if ((field === 'name' && index === 19) || (field === 'summary' && (index === 0 || index === 3))) continue;
+            const koreanValue = field === 'name' ? `기능 ${index}` : summary!;
+            const sourceHash = computeSourceHash(field === 'name' && index === 2 ? '이전 원문' : koreanValue, field);
+            const value =
+              field === 'summary' && index === 4
+                ? ''
+                : field === 'name'
+                  ? `Name ${index}`
+                  : index === 1
+                    ? ''
+                    : `Summary ${index}`;
+            translationRows.push({
+              id: `${id}:${field}`,
+              entity_type: 'ProductFeature',
+              entity_id: id,
+              locale: 'en',
+              field,
+              value,
+              source_hash: sourceHash,
+            });
+          }
+        }
+      }
+      await writer`insert into product_features ${writer(featureRows)}`;
+      await writer`insert into translations ${writer(translationRows)}`;
+      featureTranslationQueries = [];
+      failTranslation = false;
+      const observedDb = drizzle(reader, {
+        logger: {
+          logQuery: (query, params) => {
+            if (query.includes('from "translations"') && params.includes('ProductFeature')) {
+              featureTranslationQueries.push(params.length);
+              if (failTranslation) throw new Error('synthetic translation read failure');
+            }
+          },
+        },
+      });
+      const unused = undefined!;
+      resolver = new ProductQueryResolver(
+        { execute: async () => products } as never,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        new GetProductFeatures(new PostgresqlProductFeatureRepository(observedDb)),
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        new TranslationService(new PostgresqlTranslationRepository(observedDb)),
+        unused,
+        unused
+      );
+      const schema = buildSchemaSync({
+        resolvers: [ProductQueryResolver],
+        authChecker: () => true,
+        container: { get: () => resolver },
+      });
+      run = async locale => {
+        const result = await graphql({
+          schema,
+          source: `{
+          recentProducts(first: 3, locale: "${locale}") { id features { id name summary emoji } }
+        }`,
+        });
+        if (result.data) {
+          const rows = result.data.recentProducts as Array<{ features: Array<{ id: string }> }>;
+          rows.forEach(row => row.features.sort((a, b) => a.id.localeCompare(b.id)));
+        }
+        return result;
+      };
+    });
+
+    it('20개 기능은 번역 SQL 1회로 읽고 최신·누락·오래된 hash·빈 요약을 보존한다', async () => {
+      const features = await resolver.features(products[0]);
+      expect(
+        features
+          .map(({ id, name, summary, emoji }) => ({ id, name, summary: summary ?? null, emoji }))
+          .sort((a, b) => a.id.localeCompare(b.id))
+      ).toEqual(expectedFeatures('batch-a'));
+      expect(featureTranslationQueries).toHaveLength(1);
+    });
+
+    it('실제 GraphQL operation의 여러 상품은 기능 필드를 100개 이하 SQL batch로 합친다', async () => {
+      const result = await run('en');
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.recentProducts).toEqual(
+        products.map(product => ({
+          id: product.id,
+          features: expectedFeatures(product.id),
+        }))
+      );
+      expect(featureTranslationQueries).toHaveLength(2);
+      expect(featureTranslationQueries.every(parameterCount => parameterCount <= 400)).toBe(true);
+    });
+
+    it('한국어와 빈 기능 목록은 번역 SQL을 실행하지 않는다', async () => {
+      const result = await run('ko');
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.recentProducts).toEqual(
+        products.map(product => ({
+          id: product.id,
+          features: expectedFeatures(product.id, 'ko'),
+        }))
+      );
+      expect(await resolver.features({ ...products[0], id: 'absent' })).toEqual([]);
+      expect(featureTranslationQueries).toHaveLength(0);
+    });
+
+    it('같은 인스턴스의 다음 요청은 번역 수정·삭제·원문 변경을 다시 읽는다', async () => {
+      expect((await resolver.features(products[0])).find(feature => feature.id === 'batch-a-05')?.name).toBe('Name 5');
+      await writer`update translations set value = 'Updated name' where entity_id = 'batch-a-05' and field = 'name'`;
+      await writer`delete from translations where entity_id = 'batch-a-06' and field = 'name'`;
+      await writer`update product_features set name = '바뀐 원문' where id = 'batch-a-07'`;
+      const features = await resolver.features(products[0]);
+      expect(features.find(feature => feature.id === 'batch-a-05')?.name).toBe('Updated name');
+      expect(features.find(feature => feature.id === 'batch-a-06')?.name).toBe('기능 6');
+      expect(features.find(feature => feature.id === 'batch-a-07')?.name).toBe('바뀐 원문');
+      expect(featureTranslationQueries).toHaveLength(2);
+    });
+
+    it('번역 SQL 장애는 전체 항목의 원문으로 fallback하고 다음 요청에서 복구한다', async () => {
+      const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        failTranslation = true;
+        const failed = await run('en');
+        expect(failed.errors).toBeUndefined();
+        expect(failed.data?.recentProducts).toEqual(
+          products.map(product => ({
+            id: product.id,
+            features: expectedFeatures(product.id, 'ko'),
+          }))
+        );
+        failTranslation = false;
+        const recovered = await run('en');
+        expect(recovered.errors).toBeUndefined();
+        expect(recovered.data?.recentProducts).toEqual(
+          products.map(product => ({
+            id: product.id,
+            features: expectedFeatures(product.id),
+          }))
+        );
+        expect(log).toHaveBeenCalled();
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it('같은 tick의 타입·언어·필드를 구분하고 중복 키와 없는 번역을 올바르게 반환한다', async () => {
+      await writer`insert into translations (id, entity_type, entity_id, locale, field, value) values
+        ('other-type', 'Product', 'batch-a-05', 'en', 'name', 'Product name'),
+        ('other-locale', 'ProductFeature', 'batch-a-05', 'fr', 'name', 'Nom')`;
+      const repository = new PostgresqlTranslationRepository(db);
+      const requests = [
+        {
+          entityType: 'ProductFeature',
+          locale: 'en',
+          entities: [
+            { entityId: 'batch-a-05', field: 'name' },
+            { entityId: 'batch-a-05', field: 'summary' },
+            { entityId: 'batch-a-05', field: 'name' },
+            { entityId: 'absent', field: 'name' },
+          ],
+        },
+        { entityType: 'Product', locale: 'en', entities: [{ entityId: 'batch-a-05', field: 'name' }] },
+        { entityType: 'ProductFeature', locale: 'fr', entities: [{ entityId: 'batch-a-05', field: 'name' }] },
+      ];
+      const results = await Promise.all(requests.map(request => repository.findMany(request)));
+      expect(results.map(rows => rows.map(row => row.value))).toEqual([
+        ['Name 5', 'Summary 5'],
+        ['Product name'],
+        ['Nom'],
+      ]);
+      expect(selectCount).toBe(1);
+      expect(await repository.findMany({ ...requests[0], entities: [] })).toEqual([]);
+      expect(selectCount).toBe(1);
     });
   });
 

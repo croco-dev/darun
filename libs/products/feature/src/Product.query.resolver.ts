@@ -344,40 +344,30 @@ export class ProductQueryResolver {
       return features;
     }
 
-    const settledFeaturesResults = await Promise.allSettled(
-      features.map(async feature => {
-        const [nameResult, summaryResult] = await Promise.allSettled([
-          this.translationService.getTranslation({
-            entityType: 'ProductFeature',
-            entityId: feature.id,
-            locale,
-            field: 'name',
-            koreanValue: feature.name,
-          }),
+    try {
+      const translatedFields = await this.translationService.getTranslations({
+        entityType: 'ProductFeature',
+        locale,
+        entries: features.flatMap(feature => [
+          { entityId: feature.id, field: 'name', koreanValue: feature.name },
+          ...(typeof feature.summary === 'string'
+            ? [{ entityId: feature.id, field: 'summary', koreanValue: feature.summary }]
+            : []),
+        ]),
+      });
+
+      return features.map(feature => ({
+        ...feature,
+        name: translatedFields.get(`${feature.id}:name`) ?? feature.name,
+        summary:
           typeof feature.summary === 'string'
-            ? this.translationService.getTranslation({
-                entityType: 'ProductFeature',
-                entityId: feature.id,
-                locale,
-                field: 'summary',
-                koreanValue: feature.summary,
-              })
-            : Promise.resolve(undefined),
-        ]);
-
-        const translatedFeature = {
-          ...feature,
-          name: nameResult.status === 'fulfilled' ? nameResult.value : feature.name,
-          summary: summaryResult.status === 'fulfilled' ? summaryResult.value : feature.summary,
-        } as (typeof features)[number];
-
-        return translatedFeature;
-      })
-    );
-
-    return settledFeaturesResults
-      .filter((r): r is PromiseFulfilledResult<(typeof features)[number]> => r.status === 'fulfilled')
-      .map(r => r.value);
+            ? (translatedFields.get(`${feature.id}:summary`) ?? feature.summary)
+            : feature.summary,
+      }));
+    } catch (error) {
+      console.error('Product feature translations lookup failed', product.id, error);
+      return features;
+    }
   }
 
   @FieldResolver(() => Company, { nullable: true })
