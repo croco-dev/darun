@@ -873,7 +873,10 @@ export const ProductResearchSection = () => {
       <AdminSectionBody>
         {draftStorageError && (
           <div role="alert" className="flex flex-col gap-2 text-sm text-cherry-700">
-            <p>이 브라우저에 초안을 저장하지 못했습니다. 현재 입력은 유지되지만 새로고침하면 사라질 수 있습니다.</p>
+            <p>
+              이 브라우저에 초안을 저장하지 못했습니다. 현재 입력은 유지되지만 새로고침하면 사라질 수 있습니다. 저장에
+              성공한 뒤 다른 편집본을 복원할 수 있습니다.
+            </p>
             <Button type="button" variant="contained" color="secondary" onClick={() => setSaveAttempt(n => n + 1)}>
               초안 저장 다시 시도
             </Button>
@@ -904,7 +907,7 @@ export const ProductResearchSection = () => {
                     type="button"
                     variant="contained"
                     color="secondary"
-                    disabled={isRequesting || isRetrying || isMaterializing}
+                    disabled={draftStorageError || isRequesting || isRetrying || isMaterializing}
                     aria-label={`${draft.workspace.review.name || '이름 없는 초안'} 편집본 복원`}
                     onClick={() => setRestoreRequest({ ...draft })}
                   >

@@ -693,7 +693,16 @@ it('다른 탭의 같은 필드 변경을 덮어쓰지 않고 선택한 편집�
 });
 
 it('초안 저장 실패를 알리고 입력을 유지한 채 같은 화면에서 다시 저장한다', async () => {
-  seedResearchWorkspace();
+  const original = seedResearchWorkspace();
+  localStorage.setItem(
+    'darun:admin:product-research-drafts:v2:job:job-1:other-draft',
+    JSON.stringify({
+      version: 2,
+      id: 'other-draft',
+      updatedAt: '2026-10-31T00:00:00.000Z',
+      workspace: { ...original, review: { ...original.review, name: '다른 탭 초안' } },
+    })
+  );
   testGlobal().researchSearchParams = { researchJobId: 'job-1' };
   const setItem = Storage.prototype.setItem;
   const storageFailure = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
@@ -713,10 +722,23 @@ it('초안 저장 실패를 알리고 입력을 유지한 채 같은 화면에�
   );
   await screen.findByRole('alert');
   fireEvent.change(await screen.findByRole('textbox', { name: '서비스 이름' }), { target: { value: '저장할 입력' } });
+  fireEvent.click(screen.getByText(/저장된 다른 편집본/));
+  const restore = screen.getByRole('button', { name: '다른 탭 초안 편집본 복원' });
+  expect(restore.matches(':disabled')).toBe(true);
+  fireEvent.click(restore);
+  expect((screen.getByRole('textbox', { name: '서비스 이름' }) as HTMLInputElement).value).toBe('저장할 입력');
   storageFailure.mockRestore();
   fireEvent.click(screen.getByRole('button', { name: '초안 저장 다시 시도' }));
   await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   expect(readWorkspaceDraft(localStorage, sessionStorage, 'job-1')?.review.name).toBe('저장할 입력');
+  expect(restore.matches(':disabled')).toBe(false);
+  fireEvent.click(restore);
+  await waitFor(() =>
+    expect((screen.getByRole('textbox', { name: '서비스 이름' }) as HTMLInputElement).value).toBe('다른 탭 초안')
+  );
+  expect(listWorkspaceDrafts(localStorage, 'job-1').some(draft => draft.workspace.review.name === '저장할 입력')).toBe(
+    true
+  );
 });
 
 describe('admin research workspace flow', () => {
