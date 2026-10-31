@@ -1,5 +1,12 @@
 import { MagazineRepository } from '@darun/magazines-domain';
-import { Magazine, MagazineRepositoryToken, magazineNotFound, magazineUpdateFailed } from '@darun/magazines-domain';
+import {
+  Magazine,
+  MagazineRepositoryToken,
+  magazineNotFound,
+  magazineUpdateFailed,
+  magazineRevisionConflict,
+  magazineInvalidArgs,
+} from '@darun/magazines-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import { and, count, desc, eq, isNotNull } from 'drizzle-orm';
@@ -10,10 +17,11 @@ import { magazines } from '../entities/MagazineSchema';
 export class PostgresqlMagazineRepository implements MagazineRepository {
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {}
 
-  publishById(id: string): Promise<Magazine> {
+  publishById(id: string, expectedRevision: number): Promise<Magazine> {
     return this.db.transaction(async tx => {
       const [row] = await tx.select().from(magazines).where(eq(magazines.id, id)).for('update');
       if (!row) throw magazineNotFound();
+      this.checkRevision(row.revision, expectedRevision);
       if (row.publishedAt) return this.mapper(row);
 
       const magazine = this.mapper(row);
@@ -28,7 +36,11 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
     });
   }
 
-  async updateById(id: string, modifier: (magazine: Magazine) => Magazine): Promise<Magazine> {
+  async updateById(
+    id: string,
+    modifier: (magazine: Magazine) => Magazine,
+    expectedRevision: number
+  ): Promise<Magazine> {
     return this.db.transaction(async tx => {
       const prev = await tx
         .select()
@@ -42,9 +54,14 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
         throw magazineNotFound();
       }
 
+      this.checkRevision(prev.revision, expectedRevision);
       const updated = await tx
         .update(magazines)
-        .set({ ...modifier(prev), updatedAt: new Date() })
+        .set({
+          ...modifier(prev),
+          revision: prev.revision + 1,
+          updatedAt: new Date(),
+        })
         .where(eq(magazines.id, id))
         .returning();
       if (!updated[0]) {
@@ -126,6 +143,13 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
 
       return inserted[0] ? this.mapper(inserted[0]) : null;
     });
+  }
+
+  private checkRevision(actual: number, expected: number) {
+    if (!Number.isInteger(expected) || expected < 0 || expected > 2_147_483_647) {
+      throw magazineInvalidArgs('편집 기준 버전이 필요합니다.');
+    }
+    if (actual !== expected) throw magazineRevisionConflict();
   }
 
   private mapper<MagazineType extends typeof magazines.$inferSelect | typeof magazines.$inferInsert>(

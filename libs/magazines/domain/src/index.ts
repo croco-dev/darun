@@ -6,6 +6,7 @@ export {
   MagazineError,
   magazineCreateFailed,
   magazineInvalidArgs,
+  magazineRevisionConflict,
   magazineNotFound,
   magazineSlugAlreadyExists,
   magazineUpdateFailed,

@@ -3909,7 +3909,7 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
       const id = await seed();
       const firstOperation =
         kind === 'product' ? new PublishProduct(stores[0].product) : new PublishMagazine(stores[0].magazine);
-      const result = await firstOperation.execute({ id });
+      const result = await firstOperation.execute({ id, expectedRevision: 0 });
       expect(result.publishedAt).toBeInstanceOf(Date);
       const first = await snapshot(id);
       expect(first.rows[0].updated_at_ms).not.toBe(new Date('2020-01-02T03:04:05Z').getTime());
@@ -3919,7 +3919,7 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
       const before = await snapshot(id);
       const retryOperation =
         kind === 'product' ? new PublishProduct(stores[1].product) : new PublishMagazine(stores[1].magazine);
-      const retry = await retryOperation.execute({ id });
+      const retry = await retryOperation.execute({ id, expectedRevision: 0 });
       expect(retry.publishedAt).toEqual(original);
       expect(retry.updatedAt).toEqual(original);
       expect(await snapshot(id)).toEqual(before);
@@ -3941,7 +3941,7 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
           for (const store of stores) {
             const operation =
               kind === 'product' ? new PublishProduct(store.product) : new PublishMagazine(store.magazine);
-            const request = operation.execute({ id });
+            const request = operation.execute({ id, expectedRevision: 0 });
             // Observe early failures without leaving unhandled promises while the holder runs.
             void request.catch(() => undefined);
             pending.push(request);
@@ -3977,11 +3977,112 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
     it(`${kind}: 존재하지 않는 대상은 기존 not-found 오류를 반환한다`, async () => {
       const operation =
         kind === 'product' ? new PublishProduct(stores[0].product) : new PublishMagazine(stores[0].magazine);
-      await expect(operation.execute({ id: 'missing-publish-once' })).rejects.toMatchObject({
+      await expect(operation.execute({ id: 'missing-publish-once', expectedRevision: 0 })).rejects.toMatchObject({
         code: `${kind}/not-found`,
       });
     });
   }
+
+  it.each(['save', 'publish'] as const)(
+    'magazine: 먼저 저장한 뒤 대기 중인 오래된 %s는 충돌한다',
+    async action => {
+      const id = randomUUID().replaceAll('-', '').slice(0, 26);
+      await control`insert into magazines (id, slug, title, summary, content, background_image_url, author_id)
+      values (${id}, ${`conflict-${id}`}, '원래 제목', '원래 요약', '검토한 본문', '', 'author')`;
+      const pids = await Promise.all(writers.map(writer => writer`select pg_backend_pid() as pid`));
+      const pending: Array<Promise<Magazine>> = [];
+      try {
+        await control.begin(async tx => {
+          await tx`select id from magazines where id = ${id} for update`;
+          for (const [index, store] of stores.entries()) {
+            const request =
+              index === 0 || action === 'save'
+                ? store.magazine.updateById(
+                    id,
+                    value => {
+                      value.update(
+                        index === 0
+                          ? {
+                              title: 'A의 최신 제목',
+                              content: 'A가 바꾼 본문',
+                            }
+                          : { title: '원래 제목', summary: 'B의 요약' }
+                      );
+                      return value;
+                    },
+                    0
+                  )
+                : new PublishMagazine(store.magazine).execute({
+                    id,
+                    expectedRevision: 0,
+                  });
+            void request.catch(() => undefined);
+            pending.push(request);
+            const deadline = Date.now() + 5000;
+            for (;;) {
+              await tx`select pg_stat_clear_snapshot()`;
+              const [waiting] =
+                await tx`select wait_event_type from pg_stat_activity where pid = ${pids[index][0].pid}`;
+              if (waiting?.wait_event_type === 'Lock') break;
+              if (Date.now() > deadline) throw new Error('Magazine writer must wait on the held row');
+              await new Promise<void>(resolve => setImmediate(resolve));
+            }
+          }
+        });
+        const [first, second] = await Promise.allSettled(pending);
+        expect(first.status).toBe('fulfilled');
+        expect(second).toMatchObject({
+          status: 'rejected',
+          reason: { code: 'magazine/revision-conflict' },
+        });
+        const saved = await stores[0].magazine.findOneById(id);
+        expect(saved).toMatchObject({
+          title: 'A의 최신 제목',
+          summary: '원래 요약',
+          content: 'A가 바꾼 본문',
+          revision: 1,
+        });
+        expect(saved?.publishedAt).toBeUndefined();
+        // A user who has read the new revision can deliberately save and then publish it.
+        const reviewed = await stores[1].magazine.updateById(
+          id,
+          value => {
+            value.update({ summary: '검토 후 요약' });
+            return value;
+          },
+          1
+        );
+        expect(reviewed.revision).toBe(2);
+        const published = await new PublishMagazine(stores[1].magazine).execute({ id, expectedRevision: 2 });
+        const retry = await new PublishMagazine(stores[0].magazine).execute({
+          id,
+          expectedRevision: 2,
+        });
+        expect(retry).toEqual(published);
+        await expect(
+          stores[0].magazine.updateById(
+            id,
+            () => {
+              throw new Error('rollback');
+            },
+            2
+          )
+        ).rejects.toThrow('rollback');
+        expect(await stores[0].magazine.findOneById(id)).toEqual(published);
+        await expect(
+          new PublishMagazine(stores[0].magazine).execute({
+            id,
+            expectedRevision: 1,
+          })
+        ).rejects.toMatchObject({ code: 'magazine/revision-conflict' });
+        expect(await stores[0].magazine.findOneById(id)).toEqual(published);
+      } finally {
+        await Promise.allSettled(pending);
+        await control`delete from magazines where id = ${id}`;
+      }
+    },
+    15000
+  );
 
   it('product: 동기화 등록 실패는 발행일·수정일·revision과 함께 rollback된다', async () => {
     const [row] = await drizzle(control)

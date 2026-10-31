@@ -2,7 +2,7 @@ import { Token } from 'typedi';
 import { Magazine } from '../entities/Magazine';
 
 export interface MagazineRepository {
-  publishById(id: string): Promise<Magazine>;
+  publishById(id: string, expectedRevision: number): Promise<Magazine>;
   findPublishedOneBySlug(slug: string): Promise<Magazine | null>;
   findPublishedOneById(id: string): Promise<Magazine | null>;
   findOneById(id: string): Promise<Magazine | null>;
@@ -10,7 +10,7 @@ export interface MagazineRepository {
   findAllWithPagination(page: number, limit: number): Promise<{ data: Magazine[]; total: number }>;
   findAllPublished(): Promise<Magazine[]>;
   insert(values: Magazine): Promise<Magazine | null>;
-  updateById(id: string, modifier: (magazine: Magazine) => Magazine): Promise<Magazine>;
+  updateById(id: string, modifier: (magazine: Magazine) => Magazine, expectedRevision: number): Promise<Magazine>;
 }
 
 export const MagazineRepositoryToken = new Token<MagazineRepository>('MagazineRepository');

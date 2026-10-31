@@ -10,7 +10,7 @@ export class PublishMagazine {
     private readonly magazineRepository: MagazineRepository
   ) {}
 
-  async execute({ id }: { id: string }): Promise<Magazine> {
-    return this.magazineRepository.publishById(id);
+  async execute({ id, expectedRevision }: { id: string; expectedRevision: number }): Promise<Magazine> {
+    return this.magazineRepository.publishById(id, expectedRevision);
   }
 }
