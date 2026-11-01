@@ -145,8 +145,8 @@ export class PostgresqlProductRepository implements ProductRepository {
         .where(eq(products.id, id))
         .returning();
       if (!updated) throw productUpdateFailed();
-      await finishContentWrite();
-      return this.mapper(updated);
+      const checkpoint = await finishContentWrite();
+      return this.mapper({ ...updated, ...checkpoint });
     });
   }
 
@@ -186,8 +186,8 @@ export class PostgresqlProductRepository implements ProductRepository {
         throw productUpdateFailed();
       }
 
-      await finishContentWrite();
-      return this.mapper(updated[0]);
+      const checkpoint = await finishContentWrite();
+      return this.mapper({ ...updated[0], ...checkpoint });
     });
   }
 

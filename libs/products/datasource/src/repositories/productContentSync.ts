@@ -83,14 +83,10 @@ export async function beginProductContentWrite(tx: ProductSourceTransaction, pro
       .update(products)
       .set({
         contentRevision: sql`${products.contentRevision} + 1`,
-        // Product writers already set their response timestamp; child writers need the same checkpoint.
-        updatedAt:
-          after.product.updatedAt?.getTime() === before.product.updatedAt?.getTime()
-            ? new Date()
-            : after.product.updatedAt,
+        updatedAt: new Date(),
       })
       .where(eq(products.id, productId))
-      .returning({ contentRevision: products.contentRevision });
+      .returning({ contentRevision: products.contentRevision, updatedAt: products.updatedAt });
     if (!row) throw new Error('Product content revision write failed');
     if (after.product.publishedAt)
       await Container.get(ProductContentSyncRegistrarToken).register(tx, {
@@ -98,5 +94,6 @@ export async function beginProductContentWrite(tx: ProductSourceTransaction, pro
         after,
         sourceRevision: row.contentRevision,
       });
+    return row;
   };
 }
