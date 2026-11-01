@@ -1078,6 +1078,34 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
     }
   }
 
+  it.each(['apply', 'materialize'] as const)('returns the committed content timestamp for %s', async kind => {
+    const product = kind === 'apply' ? await seed() : undefined;
+    const job = product ? await candidate(product.id) : await research();
+    const committedAt = new Date('2032-04-05T06:07:08Z');
+    const session = drizzle(sql, {
+      logger: {
+        logQuery(query) {
+          // Advance only Date between the original Product write and its content checkpoint.
+          if (/^(?:update "products" set "description"|insert into "products")/.test(query))
+            vi.setSystemTime(committedAt);
+        },
+      },
+    });
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2031-02-03T04:05:06Z'));
+    try {
+      const result =
+        kind === 'apply'
+          ? await apply(session).execute({ jobId: job.id })
+          : await new PostgresqlProductResearchMaterializationRepository(session as never).materialize(review(job.id));
+      const [stored] = await db.select().from(products).where(eq(products.id, result.product.id));
+      expect(stored!.updatedAt).toEqual(committedAt);
+      expect(result.product.updatedAt).toEqual(committedAt);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('serializes concurrent requests sharing the same singleton store and returns historical application', async () => {
     const product = await seed();
     const job = await candidate(product.id);

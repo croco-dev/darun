@@ -178,14 +178,14 @@ export class PostgresqlProductResearchMaterializationRepository implements Produ
           throw productInvalidArgs('조사 작업 적용 상태가 변경되었습니다.');
         }
 
-        await finishContentWrite();
+        const checkpoint = await finishContentWrite();
         return {
           product: new Product({
             ...inserted,
             ownedCompanyId: inserted.ownedCompanyId ?? undefined,
             description: inserted.description ?? undefined,
             publishedAt: inserted.publishedAt ?? undefined,
-            updatedAt: inserted.updatedAt ?? undefined,
+            updatedAt: checkpoint?.updatedAt ?? inserted.updatedAt ?? undefined,
             categoryIds: inserted.categoryIds ?? [],
           }),
           alreadyCreated: false,
