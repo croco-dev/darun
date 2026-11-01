@@ -428,12 +428,18 @@ importers:
       '@darun/images-domain':
         specifier: workspace:*
         version: link:../../libs/images/domain
+      '@darun/images-feature':
+        specifier: workspace:*
+        version: link:../../libs/images/feature
       '@darun/magazines-datasource':
         specifier: workspace:*
         version: link:../../libs/magazines/datasource
       '@darun/magazines-domain':
         specifier: workspace:*
         version: link:../../libs/magazines/domain
+      '@darun/magazines-feature':
+        specifier: workspace:*
+        version: link:../../libs/magazines/feature
       '@darun/products-datasource':
         specifier: workspace:*
         version: link:../../libs/products/datasource
@@ -561,6 +567,9 @@ importers:
       '@croco/utils-next-font-pretendard':
         specifier: 0.0.2
         version: 0.0.2(next@16.4.1(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(@types/node@25.5.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))
+      '@darun/analytics-client':
+        specifier: workspace:*
+        version: link:../../libs/shared/analytics/client
       '@darun/magazines-shell':
         specifier: workspace:*
         version: link:../../libs/magazines/shell
@@ -579,6 +588,9 @@ importers:
       '@darun/provider-auth/server':
         specifier: workspace:*
         version: link:../../libs/shared/provider-auth/server
+      '@darun/sanitize':
+        specifier: workspace:*
+        version: link:../../libs/shared/sanitize
       '@darun/search-shell':
         specifier: workspace:*
         version: link:../../libs/search/shell
@@ -597,6 +609,9 @@ importers:
       '@darun/utils-auth-service-firebase':
         specifier: workspace:*
         version: link:../../libs/shared/utils-auth-service/firebase
+      '@darun/utils-router':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-router
       '@darun/utils-structure-react':
         specifier: workspace:*
         version: link:../../libs/shared/utils-structure-react
