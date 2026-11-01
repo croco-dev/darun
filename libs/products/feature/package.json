@@ -25,6 +25,7 @@
   "dependencies": {
     "@apollo/client": "catalog:",
     "@darun/companies-feature": "workspace:*",
+    "@darun/products-domain": "workspace:*",
     "@darun/products-service": "workspace:*",
     "@darun/translation-service": "workspace:*",
     "@darun/ui": "workspace:*",

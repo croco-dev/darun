@@ -1,5 +1,7 @@
 import { Inject, Service } from 'typedi';
 import { ProductLink } from '../entities/ProductLink';
+import { productInvalidArgs } from '../errors/productError';
+import { isProductLinkUrl } from '../link/ProductLinkUrl';
 import type { ProductLinkRepository } from '../repositories/ProductLinkRepository';
 import { ProductLinkRepositoryToken } from '../repositories/ProductLinkRepository';
 
@@ -25,6 +27,7 @@ export class UpdateProductLink {
     displayLink?: string;
     iconUrl?: string;
   }): Promise<ProductLink> {
+    if (link !== undefined && !isProductLinkUrl(link)) throw productInvalidArgs('완전한 HTTP(S) URL을 입력해주세요.');
     return this.productLinkRepository.updateById(linkId, productId, productLink => {
       productLink.update({ title, link, displayLink, iconUrl });
       return productLink;
