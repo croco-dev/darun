@@ -64,6 +64,7 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
       this.db
         .select()
         .from(companies)
+        .orderBy(desc(companies.createdAt), desc(companies.id))
         .limit(limit)
         .offset(offset)
         .then(res => res.map(this.mapper)),
