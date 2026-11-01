@@ -81,7 +81,14 @@ export async function beginProductContentWrite(tx: ProductSourceTransaction, pro
     if (canonical(before) === canonical(after)) return;
     const [row] = await tx
       .update(products)
-      .set({ contentRevision: sql`${products.contentRevision} + 1` })
+      .set({
+        contentRevision: sql`${products.contentRevision} + 1`,
+        // Product writers already set their response timestamp; child writers need the same checkpoint.
+        updatedAt:
+          after.product.updatedAt?.getTime() === before.product.updatedAt?.getTime()
+            ? new Date()
+            : after.product.updatedAt,
+      })
       .where(eq(products.id, productId))
       .returning({ contentRevision: products.contentRevision });
     if (!row) throw new Error('Product content revision write failed');
