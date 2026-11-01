@@ -10,11 +10,12 @@ const config = {
   model: 'synthetic-model',
 };
 
-function setup(thinkingLevel: string | null = 'low', hasRow = true) {
+function setup(thinkingLevel: string | null = 'low', hasRow = true, endpoint = config.endpoint) {
   let setting: LlmSetting | null = hasRow
     ? {
         id: 'default',
         ...config,
+        endpoint,
         thinkingLevel,
         braveApiKey: null,
         createdAt: new Date('2026-10-29T00:00:00Z'),
@@ -80,7 +81,8 @@ describe('저장한 추론 강도와 실제 completion 요청', () => {
       expect(body).not.toHaveProperty('reasoning_effort');
     } else {
       expect(body.reasoning).toEqual({ effort: level });
-      if (level !== 'none') expect(body.reasoning_effort).toBe(level);
+      if (['low', 'medium', 'high'].includes(level)) expect(body.reasoning_effort).toBe(level);
+      else expect(body).not.toHaveProperty('reasoning_effort');
     }
   }
 
@@ -107,15 +109,37 @@ describe('저장한 추론 강도와 실제 completion 요청', () => {
     expectRequestLevel(null);
   });
 
-  it.each(['low', 'medium', 'high', 'none'])('명시한 강도는 저장과 전송에서 유지한다: %s', async thinkingLevel => {
-    const { service, client } = setup(null);
+  it.each(['low', 'medium', 'high', 'none', 'minimal', 'xhigh', 'max'])(
+    '명시한 강도는 저장과 전송에서 유지한다: %s',
+    async thinkingLevel => {
+      const { service, client } = setup(null);
 
-    await service.updateSetting({ thinkingLevel: ` ${thinkingLevel} ` });
-    expect((await service.getSetting()).thinkingLevel).toBe(thinkingLevel);
-    await client.completion(messages);
+      await service.updateSetting({ thinkingLevel: ` ${thinkingLevel} ` });
+      expect((await service.getSetting()).thinkingLevel).toBe(thinkingLevel);
+      await client.completion(messages);
 
-    expectRequestLevel(thinkingLevel);
-  });
+      expectRequestLevel(thinkingLevel);
+    }
+  );
+
+  it.each(['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'])(
+    '표준 엔드포인트에 저장한 강도를 reasoning_effort로 전송한다: %s',
+    async thinkingLevel => {
+      const { service, client } = setup(null, true, 'https://api.openai.com/v1');
+
+      await service.updateSetting({ thinkingLevel: ` ${thinkingLevel} ` });
+      expect((await service.getSetting()).thinkingLevel).toBe(thinkingLevel);
+      await client.completion(messages);
+
+      expect(transport).toHaveBeenCalledTimes(1);
+      const [url, init] = transport.mock.calls[0]!;
+      expect(String(url)).toBe('https://api.openai.com/v1/chat/completions');
+      const body = JSON.parse(String(init?.body));
+      expect(body.reasoning_effort).toBe(thinkingLevel);
+      expect(body).not.toHaveProperty('reasoning');
+      expect(new Headers(init?.headers).get('authorization')).toBe('Bearer synthetic-stored-key');
+    }
+  );
 
   it.each(['high', undefined])('설정 행이 없으면 환경 기본 구성을 사용한다: %s', async envLevel => {
     vi.stubEnv('OPEN_ROUTER_THINKING_LEVEL', envLevel);

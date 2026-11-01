@@ -123,6 +123,7 @@ export class LlmClient {
     const client = this.getClient(config.endpoint, config.apiKey);
 
     const thinkingLevel = options?.thinkingLevel !== undefined ? options.thinkingLevel : config.thinkingLevel;
+    const isOpenRouter = new URL(config.endpoint).hostname === 'openrouter.ai';
 
     const requestBody: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
       model,
@@ -131,19 +132,27 @@ export class LlmClient {
 
     if (options?.responseFormat) {
       requestBody.response_format = options.responseFormat;
-      if (options.responseFormat.type === 'json_schema' && new URL(config.endpoint).hostname === 'openrouter.ai') {
+      if (options.responseFormat.type === 'json_schema' && isOpenRouter) {
         Object.assign(requestBody, { provider: { require_parameters: true } });
       }
     }
 
     if (thinkingLevel && thinkingLevel.trim() !== '') {
       const level = thinkingLevel.trim();
-      if (['low', 'medium', 'high'].includes(level)) {
-        requestBody.reasoning_effort = level as 'low' | 'medium' | 'high';
+      if (!['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'].includes(level)) {
+        throw new Error(
+          '지원하지 않는 추론 강도입니다. none, minimal, low, medium, high, xhigh, max 중에서 선택해 주세요.'
+        );
       }
-      (requestBody as unknown as Record<string, unknown>)['reasoning'] = {
-        effort: level,
-      };
+      if (isOpenRouter) {
+        if (level === 'low' || level === 'medium' || level === 'high') {
+          requestBody.reasoning_effort = level;
+        }
+        Object.assign(requestBody, { reasoning: { effort: level } });
+      } else {
+        // The installed SDK predates none/xhigh/max; it still serializes these API-supported values.
+        Object.assign(requestBody, { reasoning_effort: level });
+      }
     }
 
     if (options?.signal?.aborted) {
