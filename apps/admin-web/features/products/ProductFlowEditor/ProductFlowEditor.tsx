@@ -325,10 +325,21 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
             <AdminSelect
               value={platform}
               onChange={e => {
-                setPlatform(e.target.value as VisualPlatform);
-                setSteps(current =>
-                  current.filter(step => screenshotById.get(step.screenshotId)?.platform === e.target.value)
+                const nextPlatform = e.target.value as VisualPlatform;
+                const remainingSteps = steps.filter(
+                  step => screenshotById.get(step.screenshotId)?.platform === nextPlatform
                 );
+                const removedCount = steps.length - remainingSteps.length;
+                if (
+                  removedCount > 0 &&
+                  !window.confirm(
+                    `${PLATFORM_OPTIONS.find(option => option.value === nextPlatform)?.label} 플랫폼으로 변경하면 맞지 않는 ${removedCount}개 단계와 입력한 단계 설명이 제거됩니다. 변경하시겠습니까?`
+                  )
+                ) {
+                  return;
+                }
+                setPlatform(nextPlatform);
+                setSteps(remainingSteps);
               }}
             >
               {PLATFORM_OPTIONS.map(option => (
