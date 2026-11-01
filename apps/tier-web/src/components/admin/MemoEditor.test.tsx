@@ -57,19 +57,23 @@ describe('메모의 서버 기준값과 초안', () => {
 
   it('편집 중 서버 변경은 초안을 보존하고 알리며 자동 저장하지 않는다', async () => {
     await render('Original memo');
+    const statusRegion = container.querySelector('[role="status"]');
+    expect(statusRegion).not.toBeNull();
+    expect(statusRegion?.textContent).toBe('');
     await edit('My unfinished draft');
     await render('Other editor memo');
 
     expect(input().value).toBe('My unfinished draft');
+    expect(container.querySelector('[role="status"]')).toBe(statusRegion);
     expect(container.querySelector('[role="status"]')?.textContent).toContain('변경');
     expect(save().disabled).toBe(false);
     expect(updateAppMemo).not.toHaveBeenCalled();
 
     await edit('Other editor memo');
     expect(save().disabled).toBe(true);
-    expect(container.querySelector('[role="status"]')).toBeNull();
+    expect(container.querySelector('[role="status"]')?.textContent).toBe('');
     await edit('New draft after accepting the server memo');
-    expect(container.querySelector('[role="status"]')).toBeNull();
+    expect(container.querySelector('[role="status"]')?.textContent).toBe('');
     await edit('Other editor memo');
     await render('Third server memo');
     expect(input().value).toBe('Third server memo');
@@ -92,7 +96,7 @@ describe('메모의 서버 기준값과 초안', () => {
     await render(saved);
     expect(input().value).toBe(saved);
     expect(save().disabled).toBe(true);
-    expect(container.querySelector('[role="status"]')).toBeNull();
+    expect(container.querySelector('[role="status"]')?.textContent).toBe('');
   });
 
   it('저장 중 재조회가 와도 중복 입력을 막고 성공한 값으로 기준을 확정한다', async () => {
@@ -109,7 +113,7 @@ describe('메모의 서버 기준값과 초안', () => {
     expect(input().value).toBe('My saved memo');
     expect(input().disabled).toBe(false);
     expect(save().disabled).toBe(true);
-    expect(container.querySelector('[role="status"]')).toBeNull();
+    expect(container.querySelector('[role="status"]')?.textContent).toBe('');
   });
 
   it('저장 실패는 초안과 변경 경고를 보존하고 같은 내용으로 재시도한다', async () => {
@@ -131,6 +135,6 @@ describe('메모의 서버 기준값과 초안', () => {
     ]);
     expect(input().value).toBe('My draft');
     expect(save().disabled).toBe(true);
-    expect(container.querySelector('[role="status"]')).toBeNull();
+    expect(container.querySelector('[role="status"]')?.textContent).toBe('');
   });
 });

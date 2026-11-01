@@ -78,11 +78,10 @@ export function MemoEditor({ appId, initialContent }: MemoEditorProps) {
         placeholder="메모를 입력하세요..."
         className="min-h-[80px] text-sm resize-y"
       />
-      {showServerChange && (
-        <p role="status" className="text-sm text-muted-foreground">
-          다른 곳에서 메모가 변경되었습니다. 작성 중인 내용은 유지됩니다. 저장하면 현재 입력으로 덮어씁니다.
-        </p>
-      )}
+      <p role="status" aria-atomic="true" className={showServerChange ? 'text-sm text-muted-foreground' : 'sr-only'}>
+        {showServerChange &&
+          '다른 곳에서 메모가 변경되었습니다. 작성 중인 내용은 유지됩니다. 저장하면 현재 입력으로 덮어씁니다.'}
+      </p>
       <div className="flex justify-end">
         <Button type="button" size="sm" onClick={handleSave} disabled={isSaving || !isDirty} variant="glass">
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
