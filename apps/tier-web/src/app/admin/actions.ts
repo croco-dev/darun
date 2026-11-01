@@ -168,6 +168,7 @@ export async function updateAppMemo(appId: string, content: string) {
   revalidatePath('/apps/[id]', 'page');
   revalidatePath('/admin');
   revalidatePath('/admin/tiers');
+  return trimmedContent;
 }
 
 export async function deleteApp(appId: string) {

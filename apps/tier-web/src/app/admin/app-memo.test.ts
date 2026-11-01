@@ -26,7 +26,7 @@ describe('app memo action transport', () => {
   });
 
   it('saves trimmed content with the app identity as conflict target in one request', async () => {
-    await updateAppMemo('app-463', '  Updated memo  ');
+    expect(await updateAppMemo('app-463', '  Updated memo  ')).toBe('Updated memo');
     expect(fixture.fetch).toHaveBeenCalledTimes(1);
     const [input, init] = fixture.fetch.mock.calls[0];
     expect(new URL(input).searchParams.get('on_conflict')).toBe('app_id');
@@ -42,7 +42,7 @@ describe('app memo action transport', () => {
   });
 
   it('deletes by app identity without first reading a memo row', async () => {
-    await updateAppMemo('app-463', ' \n ');
+    expect(await updateAppMemo('app-463', ' \n ')).toBe('');
     expect(fixture.fetch).toHaveBeenCalledTimes(1);
     const [input, init] = fixture.fetch.mock.calls[0];
     expect(init.method).toBe('DELETE');
