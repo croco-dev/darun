@@ -39,6 +39,7 @@ let root: Root;
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.clearAllMocks();
+  updateAppMemo.mockImplementation(async (_appId: string, content: string) => content.trim());
   window.history.replaceState(null, '', '/admin?query=app&page=2');
   container = document.createElement('div');
   document.body.append(container);
@@ -77,7 +78,7 @@ describe('admin memo save navigation', () => {
   });
 
   it.each(['success', 'failure'] as const)('keeps every draft and the URL through a delayed %s', async outcome => {
-    const request = Promise.withResolvers<void>();
+    const request = Promise.withResolvers<string>();
     updateAppMemo.mockReturnValueOnce(request.promise);
     const submit = vi.fn((event: Event) => event.preventDefault());
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -99,11 +100,11 @@ describe('admin memo save navigation', () => {
     expect(window.location.pathname + window.location.search).toBe('/admin?query=app&page=2');
 
     await act(async () => {
-      if (outcome === 'success') request.resolve();
+      if (outcome === 'success') request.resolve('First unsaved draft');
       else request.reject(new Error('Fixture save failure'));
     });
 
-    expect(save.disabled).toBe(false);
+    expect(save.disabled).toBe(outcome === 'success');
     expect(first.value).toBe('First unsaved draft');
     expect(second.value).toBe('Second unsaved draft');
     expect(window.location.pathname + window.location.search).toBe('/admin?query=app&page=2');
