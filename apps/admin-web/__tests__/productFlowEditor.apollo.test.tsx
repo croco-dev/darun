@@ -47,6 +47,7 @@ it.each([
                 adminProductFlow: {
                   __typename: 'ProductFlow',
                   id: 'flow',
+                  product: { __typename: 'Product', id: 'product', slug: 'fixture-product' },
                   title: '기존 제목',
                   description: '기존 설명',
                   platform: 'WEB',

@@ -14,6 +14,7 @@ export function EditProductFlowPanel({ slug, flowId }: EditProductFlowPanelProps
 
   return (
     <ProductFlowEditor
+      key={`${slug}:${flowId}`}
       slug={slug}
       flowId={flowId}
       onSaved={() => {
