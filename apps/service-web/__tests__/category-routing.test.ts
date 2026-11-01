@@ -1,6 +1,7 @@
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
 import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
-import middleware from '../middleware';
+import middleware, { config } from '../middleware';
 
 vi.mock('next-intl/middleware', async () => {
   const { NextResponse } = await import('next/server');
@@ -10,6 +11,17 @@ vi.mock('next-intl/middleware', async () => {
 });
 
 describe('카테고리 HTML의 내부 route hint', () => {
+  it.each(['/ko/categories/missing.foo', '/en/categories/missing.foo', '/ko/categories/category.101'])(
+    '%s에도 실제 Next matcher가 사전 조회를 적용한다',
+    url => {
+      expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
+    }
+  );
+
+  it.each(['/images/logo.svg', '/_next/static/chunk.js', '/api/graphql'])('%s는 기존 matcher 제외를 유지한다', url => {
+    expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
+  });
+
   it.each(['ko', 'en'])('%s 상세 요청의 slug로 외부 header를 덮어쓴다', locale => {
     const response = middleware(
       new NextRequest(`http://localhost/${locale}/categories/category-101`, {
