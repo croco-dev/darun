@@ -36,6 +36,7 @@ const mockHandleCancel = vi.fn();
 
 const defaultHookReturn = {
   form: mockForm,
+  isReady: true,
   handleSubmit: vi.fn(),
   handleCancel: mockHandleCancel,
   companies: [] as { label: string; value: string }[],

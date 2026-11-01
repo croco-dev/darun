@@ -30,7 +30,9 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.resetAllMocks();
   vi.mocked(useQuery).mockReturnValue({
-    data: { tempProductBySlug: { ownedCompany: currentCompany } },
+    data: {
+      tempProductBySlug: { id: 'product-a', ownedCompany: currentCompany },
+    },
   } as ReturnType<typeof useQuery>);
   vi.mocked(useLazyQuery).mockReturnValue([search, {}] as unknown as ReturnType<typeof useLazyQuery>);
   vi.mocked(useMutation).mockReturnValue([save, { loading: false }] as unknown as ReturnType<typeof useMutation>);
