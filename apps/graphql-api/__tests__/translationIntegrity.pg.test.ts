@@ -174,6 +174,89 @@ suite('Translation integrity in isolated PostgreSQL', () => {
       .returning();
     return { product: product!, feature: feature! };
   }
+  it.each([
+    [20, 1],
+    [65, 2],
+  ])(
+    '%i개 기능의 freshness는 제한된 SQL로 조회하고 다음 요청에서 최신 번역을 읽는다',
+    async (featureCount, queryCount) => {
+      const { product, feature } = await seedProduct();
+      await db.insert(productFeatures).values(
+        Array.from({ length: featureCount - 1 }, (_, index) => ({
+          productId: product.id,
+          name: `추가 기능 ${index}`,
+          summary: `설명 ${index}`,
+          emoji: '🔎',
+        }))
+      );
+      const fields = ['name', 'summary', 'description', 'features'];
+      const snapshot = await store.read({
+        entityType: 'Product',
+        entityId: product.id,
+        fields,
+      });
+      expect(snapshot.values).toHaveLength(3 + featureCount * 2);
+      await db.insert(translations).values(
+        snapshot.values.map(source => ({
+          entityType: source.entityType,
+          entityId: source.entityId,
+          field: source.field,
+          locale: 'en',
+          value: `English ${source.field}`,
+          sourceHash: computeSourceHash(source.value, source.field),
+        }))
+      );
+      const queries: string[] = [];
+      const countedDb = drizzle(connection, {
+        logger: { logQuery: query => queries.push(query) },
+      });
+      const countedRepository = new PostgresqlTranslationRepository(countedDb as never);
+      const resolver = new TranslationQueryResolver({} as never, countedRepository, store);
+      const expected = snapshot.values.map(source => ({
+        entityType: source.entityType,
+        entityId: source.entityId,
+        field: source.field,
+        status: 'current',
+      }));
+
+      expect(await resolver.translationFreshness('Product', product.id, fields)).toEqual(expected);
+      expect(queries).toHaveLength(queryCount);
+
+      await writerDb
+        .update(translations)
+        .set({ sourceHash: 'outdated' })
+        .where(
+          and(
+            eq(translations.entityType, 'ProductFeature'),
+            eq(translations.entityId, feature.id),
+            eq(translations.field, 'summary')
+          )
+        );
+      await writerDb
+        .delete(translations)
+        .where(
+          and(
+            eq(translations.entityType, 'Product'),
+            eq(translations.entityId, product.id),
+            eq(translations.field, 'name')
+          )
+        );
+      queries.length = 0;
+      expect(await resolver.translationFreshness('Product', product.id, fields)).toEqual(
+        expected.map(source => ({
+          ...source,
+          status:
+            source.entityType === 'Product' && source.field === 'name'
+              ? 'missing'
+              : source.entityType === 'ProductFeature' && source.entityId === feature.id && source.field === 'summary'
+                ? 'stale'
+                : 'current',
+        }))
+      );
+      expect(queries).toHaveLength(queryCount);
+    }
+  );
+
   async function attempt(entityType: 'Product' | 'Magazine' | 'ProductFeature', entityId: string, fields: string[]) {
     const job = await jobs.createJob({ entityType, entityId, fields });
     await jobs.claimJobLease({ jobId: job.id, leaseToken: 'current', leaseUntil: new Date(Date.now() + 60_000) });

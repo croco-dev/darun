@@ -14,6 +14,9 @@ import { Inject, Service } from 'typedi';
 import { TranslationFreshness } from './graphs/TranslationFreshness';
 import { TranslationJob } from './graphs/TranslationJob';
 
+const translationKey = (source: { entityType: string; entityId: string; field: string }) =>
+  JSON.stringify([source.entityType, source.entityId, source.field]);
+
 @Resolver()
 @Service()
 export class TranslationQueryResolver {
@@ -36,28 +39,32 @@ export class TranslationQueryResolver {
     if (entityType !== 'Product' && entityType !== 'ProductFeature' && entityType !== 'Magazine')
       throw new Error('지원하지 않는 번역 entityType입니다.');
     const snapshot = await this.sources.read({ entityType: entityType as TranslationEntityType, entityId, fields });
-    return Promise.all(
-      snapshot.values.map(async source => {
-        if (!source.value.trim() && source.field !== 'name' && source.field !== 'title')
-          return { entityType: source.entityType, entityId: source.entityId, field: source.field, status: 'current' };
-        const row = await this.translations.findOne({
-          entityType: source.entityType,
-          entityId: source.entityId,
-          field: source.field,
-          locale: 'en',
-        });
-        return {
-          entityType: source.entityType,
-          entityId: source.entityId,
-          field: source.field,
-          status: !row
-            ? 'missing'
-            : row.sourceHash === computeSourceHash(source.value, source.field)
-              ? 'current'
-              : 'stale',
-        };
-      })
+    const groups = new Map<string, Array<{ entityId: string; field: string }>>();
+    for (const source of snapshot.values) {
+      if (!source.value.trim() && source.field !== 'name' && source.field !== 'title') continue;
+      const entities = groups.get(source.entityType) ?? [];
+      entities.push({ entityId: source.entityId, field: source.field });
+      groups.set(source.entityType, entities);
+    }
+    const batches = await Promise.all(
+      [...groups].map(([entityType, entities]) => this.translations.findMany({ entityType, locale: 'en', entities }))
     );
+    const byKey = new Map(batches.flat().map(row => [translationKey(row), row]));
+    return snapshot.values.map(source => {
+      if (!source.value.trim() && source.field !== 'name' && source.field !== 'title')
+        return { entityType: source.entityType, entityId: source.entityId, field: source.field, status: 'current' };
+      const row = byKey.get(translationKey(source));
+      return {
+        entityType: source.entityType,
+        entityId: source.entityId,
+        field: source.field,
+        status: !row
+          ? 'missing'
+          : row.sourceHash === computeSourceHash(source.value, source.field)
+            ? 'current'
+            : 'stale',
+      };
+    });
   }
 
   @Authorized([AuthRole.Admin])

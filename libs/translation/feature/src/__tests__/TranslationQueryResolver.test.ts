@@ -115,17 +115,34 @@ describe('TranslationQueryResolver', () => {
   });
   it('distinguishes missing, null provenance, changed source, current and absent optional sources', async () => {
     const values = [
-      { entityType: 'Magazine', entityId: 'm', field: 'title', value: '새 제목' },
-      { entityType: 'Magazine', entityId: 'm', field: 'summary', value: '원문 요약' },
-      { entityType: 'Magazine', entityId: 'm', field: 'content', value: '<p>본문</p>' },
+      {
+        entityType: 'Magazine',
+        entityId: 'm',
+        field: 'title',
+        value: '새 제목',
+      },
+      {
+        entityType: 'Magazine',
+        entityId: 'm',
+        field: 'summary',
+        value: '원문 요약',
+      },
+      {
+        entityType: 'Magazine',
+        entityId: 'm',
+        field: 'content',
+        value: '<p>본문</p>',
+      },
     ];
-    const findOne = vi
-      .fn()
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ sourceHash: null })
-      .mockResolvedValueOnce({ sourceHash: createHash('sha256').update('<p>옛 본문</p>').digest('hex') });
+    const findMany = vi.fn().mockResolvedValueOnce([
+      { ...values[1], sourceHash: null },
+      {
+        ...values[2],
+        sourceHash: createHash('sha256').update('<p>옛 본문</p>').digest('hex'),
+      },
+    ]);
     const read = vi.fn().mockResolvedValue({ values });
-    const query = new TranslationQueryResolver({} as never, { findOne } as never, { read } as never);
+    const query = new TranslationQueryResolver({} as never, { findMany } as never, { read } as never);
     expect(
       (await query.translationFreshness('Magazine', 'm', ['title', 'summary', 'content'])).map(row => row.status)
     ).toEqual(['missing', 'stale', 'stale']);
@@ -135,11 +152,140 @@ describe('TranslationQueryResolver', () => {
         { ...values[1], value: '' },
       ],
     });
-    findOne.mockResolvedValue({ sourceHash: createHash('sha256').update('현재 제목').digest('hex') });
+    findMany.mockResolvedValue([
+      {
+        ...values[0],
+        sourceHash: createHash('sha256').update('현재 제목').digest('hex'),
+      },
+    ]);
     expect((await query.translationFreshness('Magazine', 'm', ['title', 'summary'])).map(row => row.status)).toEqual([
       'current',
       'current',
     ]);
     await expect(query.translationFreshness('Unsupported', 'm', ['title'])).rejects.toThrow();
+  });
+
+  it('종류·ID·필드로 번역을 구분하고 원문 순서와 빈 필수 이름의 missing 판정을 유지한다', async () => {
+    const values = [
+      {
+        entityType: 'ProductFeature',
+        entityId: 'shared',
+        field: 'summary',
+        value: '기능 요약',
+      },
+      {
+        entityType: 'Product',
+        entityId: 'shared',
+        field: 'name',
+        value: '상품명',
+      },
+      {
+        entityType: 'ProductFeature',
+        entityId: 'shared',
+        field: 'name',
+        value: '기능명',
+      },
+      {
+        entityType: 'ProductFeature',
+        entityId: 'other',
+        field: 'name',
+        value: '다른 기능',
+      },
+      {
+        entityType: 'Product',
+        entityId: 'shared',
+        field: 'summary',
+        value: ' \n ',
+      },
+      {
+        entityType: 'ProductFeature',
+        entityId: 'empty',
+        field: 'name',
+        value: '',
+      },
+    ];
+    const findMany = vi.fn(async ({ entityType }: { entityType: string }) =>
+      entityType === 'Product'
+        ? [
+            {
+              ...values[1],
+              sourceHash: createHash('sha256').update('상품명').digest('hex'),
+            },
+          ]
+        : [
+            { ...values[2], sourceHash: null },
+            {
+              ...values[0],
+              sourceHash: createHash('sha256').update('기능 요약').digest('hex'),
+            },
+          ]
+    );
+    const read = vi.fn().mockResolvedValue({ values });
+    const query = new TranslationQueryResolver({} as never, { findMany } as never, { read } as never);
+
+    expect(await query.translationFreshness('Product', 'shared', ['name', 'summary', 'features'])).toEqual(
+      ['current', 'current', 'stale', 'missing', 'current', 'missing'].map((status, index) => ({
+        entityType: values[index]!.entityType,
+        entityId: values[index]!.entityId,
+        field: values[index]!.field,
+        status,
+      }))
+    );
+    expect(findMany).toHaveBeenCalledTimes(2);
+    expect(findMany).toHaveBeenCalledWith({
+      entityType: 'Product',
+      locale: 'en',
+      entities: [{ entityId: 'shared', field: 'name' }],
+    });
+    expect(findMany).toHaveBeenCalledWith({
+      entityType: 'ProductFeature',
+      locale: 'en',
+      entities: [
+        { entityId: 'shared', field: 'summary' },
+        { entityId: 'shared', field: 'name' },
+        { entityId: 'other', field: 'name' },
+        { entityId: 'empty', field: 'name' },
+      ],
+    });
+  });
+
+  it('빈 snapshot과 빈 선택 필드만 있는 요청은 번역을 조회하지 않는다', async () => {
+    const findMany = vi.fn();
+    const read = vi
+      .fn()
+      .mockResolvedValueOnce({ values: [] })
+      .mockResolvedValueOnce({
+        values: [
+          {
+            entityType: 'Product',
+            entityId: 'p',
+            field: 'description',
+            value: ' \n ',
+          },
+        ],
+      });
+    const query = new TranslationQueryResolver({} as never, { findMany } as never, { read } as never);
+    expect(await query.translationFreshness('Product', 'p', [])).toEqual([]);
+    expect(await query.translationFreshness('Product', 'p', ['description'])).toEqual([
+      {
+        entityType: 'Product',
+        entityId: 'p',
+        field: 'description',
+        status: 'current',
+      },
+    ]);
+    expect(findMany).not.toHaveBeenCalled();
+  });
+
+  it('원문 또는 일괄 번역 조회 장애를 상태로 숨기지 않고 전파한다', async () => {
+    const failure = new Error('database unavailable');
+    const findMany = vi.fn().mockRejectedValue(failure);
+    const read = vi.fn().mockResolvedValue({
+      values: [{ entityType: 'Product', entityId: 'p', field: 'name', value: '상품' }],
+    });
+    const query = new TranslationQueryResolver({} as never, { findMany } as never, { read } as never);
+    await expect(query.translationFreshness('Product', 'p', ['name'])).rejects.toBe(failure);
+    read.mockRejectedValue(failure);
+    await expect(query.translationFreshness('Product', 'p', ['name'])).rejects.toBe(failure);
   });
 });
