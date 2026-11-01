@@ -2036,6 +2036,12 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       } finally {
         vi.useRealTimers();
         Container.set(ProductContentSyncRegistrarToken, registrar);
+        await db.delete(productContentSyncIntents).where(eq(productContentSyncIntents.productId, product.id));
+        await db.delete(translationJobs).where(eq(translationJobs.entityId, product.id));
+        await db.delete(productFeatures).where(eq(productFeatures.productId, product.id));
+        await db.delete(productLinks).where(eq(productLinks.productId, product.id));
+        await db.delete(productScreenshots).where(eq(productScreenshots.productId, product.id));
+        await db.delete(products).where(eq(products.id, product.id));
       }
     }
   );
