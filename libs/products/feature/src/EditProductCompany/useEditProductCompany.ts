@@ -44,9 +44,16 @@ export type UseEditProductCompanyProps = {
 
 export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProductCompanyProps) {
   const navigate = useNavigate();
-  const { data: currentProductData } = useQuery(TempProductBySlugOnProductCompanyInfoDocument, {
+  const {
+    data: currentProductData,
+    loading: isLoading,
+    error,
+    refetch,
+  } = useQuery(TempProductBySlugOnProductCompanyInfoDocument, {
     variables: { slug },
   });
+  const isReady = !isLoading && !error && Boolean(currentProductData?.tempProductBySlug?.id);
+  const isNotFound = !isLoading && !error && currentProductData?.tempProductBySlug === null;
 
   const [registerProductCompany, { loading }] = useMutation(RegisterProductCompanyOnEditProductCompanyDocument, {
     refetchQueries: [
@@ -121,6 +128,7 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
   const [, startTransition] = useTransition();
 
   const handleSearchChange = (value: string) => {
+    if (loading || !isReady || !form.initialized) return;
     setSearchValue(value);
     startTransition(() => {
       searchCompany(value);
@@ -132,7 +140,7 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     initialValues: {
-      companyId: currentCompany?.id ?? '',
+      companyId: '',
     },
     onValuesChange: ({ companyId }) => {
       setSelectedCompany(previous => {
@@ -150,18 +158,15 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
   });
 
   useEffect(() => {
-    if (currentCompany?.id) {
-      form.setInitialValues({ companyId: currentCompany.id });
-      form.setValues({ companyId: currentCompany.id });
-    }
+    if (!isReady) return;
+    form.initialize({ companyId: currentCompany?.id ?? '' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentCompany?.id]);
+  }, [isReady, currentCompany?.id]);
 
   const handleSubmit = (values: FormValues) => {
-    if (loading || !values.companyId) {
-      if (!values.companyId) {
-        notifications.show({ message: '회사를 선택해주세요.', color: 'red' });
-      }
+    if (loading || !isReady || !form.initialized) return;
+    if (!values.companyId) {
+      notifications.show({ message: '회사를 선택해주세요.', color: 'red' });
       return;
     }
     registerProductCompany({
@@ -200,5 +205,10 @@ export function useEditProductCompany({ slug, onSubmit, onCancel }: UseEditProdu
     searchValue,
     handleSearchChange,
     loading,
+    isLoading,
+    isReady: isReady && form.initialized,
+    isNotFound,
+    error,
+    retry: () => void refetch().catch(() => {}),
   };
 }

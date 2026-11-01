@@ -10,11 +10,16 @@ vi.mock('@apollo/client/react', async importOriginal => {
     ...(actual as Record<string, unknown>),
     useMutation: vi.fn(),
     useLazyQuery: vi.fn(),
-    useQuery: vi.fn(() => ({ data: undefined, loading: false })),
+    useQuery: vi.fn(() => ({
+      data: { tempProductBySlug: { id: 'product-a', ownedCompany: null } },
+      loading: false,
+    })),
   };
 });
 
 const mockForm = {
+  initialized: true,
+  initialize: vi.fn(),
   reset: vi.fn(),
   getInputProps: vi.fn(() => ({ key: 'test-form-key', defaultValue: '' })),
   onSubmit: vi.fn((handler: (values: Record<string, string>) => void) => handler),
