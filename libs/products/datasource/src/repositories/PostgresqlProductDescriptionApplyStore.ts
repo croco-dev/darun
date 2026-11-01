@@ -65,8 +65,8 @@ export class PostgresqlProductDescriptionApplyStore implements ProductDescriptio
           .where(eq(products.id, input.productId))
           .returning();
         if (!row) throw productNotFound();
-        await finishContentWrite();
-        return toProduct(row);
+        const checkpoint = await finishContentWrite();
+        return toProduct({ ...row, ...checkpoint });
       },
       markAppliedLocked: async (jobId, appliedAt) => {
         const [row] = await tx

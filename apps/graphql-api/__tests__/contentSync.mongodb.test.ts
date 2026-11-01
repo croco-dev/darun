@@ -6,6 +6,7 @@ import {
   PostgresqlProductRepository,
   PostgresqlProductTagRepository,
   PostgresqlProductFeatureRepository,
+  PostgresqlProductLinkRepository,
   PostgresqlProductDescriptionApplyStore,
   PostgresqlProductDescriptionEvidenceAssembler,
 } from '@darun/products-datasource';
@@ -55,6 +56,7 @@ import { productContentSyncIntents } from '../../../libs/products/datasource/src
 import { productDescriptionJobs } from '../../../libs/products/datasource/src/entities/ProductDescriptionJobSchema';
 import { productFeatures } from '../../../libs/products/datasource/src/entities/ProductFeaturesSchema';
 import { productFlows, productFlowSteps } from '../../../libs/products/datasource/src/entities/ProductFlowsSchema';
+import { productLinks } from '../../../libs/products/datasource/src/entities/ProductLinksSchema';
 import { products } from '../../../libs/products/datasource/src/entities/ProductSchema';
 import { productScreenshots } from '../../../libs/products/datasource/src/entities/ProductScreenshotsSchema';
 import { productScreenshotUiElements } from '../../../libs/products/datasource/src/entities/ProductScreenshotUiElementsSchema';
@@ -1931,6 +1933,118 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       expect(modelCalls()).toBe(0);
     });
   }, 20_000);
+
+  it.each(['feature', 'link', 'screenshot'] as const)(
+    'canonical lastmod: %s 변경·동일 저장·등록 실패가 수정일과 revision에 함께 반영된다',
+    async kind => {
+      const product = await seed();
+      const original = new Date('2020-02-01T00:00:00Z');
+      const changedAt = new Date('2032-04-05T06:07:08Z');
+      await db.update(products).set({ updatedAt: original }).where(eq(products.id, product.id));
+      const [feature] = await db
+        .insert(productFeatures)
+        .values({
+          productId: product.id,
+          name: '기능',
+          summary: '기존 요약',
+          emoji: '📝',
+        })
+        .returning();
+      const [link] = await db
+        .insert(productLinks)
+        .values({
+          productId: product.id,
+          title: '홈',
+          link: 'https://fixture.invalid/old',
+          displayLink: 'fixture.invalid',
+          iconUrl: 'https://fixture.invalid/icon.png',
+        })
+        .returning();
+      const [screenshot] = await db
+        .insert(productScreenshots)
+        .values({
+          productId: product.id,
+          imageUrl: 'https://fixture.invalid/screen.png',
+          imageAlt: '기존 화면',
+        })
+        .returning();
+      const write = async (value: string) => {
+        if (kind === 'feature')
+          return new PostgresqlProductFeatureRepository(db as never).updateById(feature!.id, row => {
+            row.summary = value;
+            return row;
+          });
+        if (kind === 'link')
+          return new PostgresqlProductLinkRepository(db as never).updateById(link!.id, product.id, row => {
+            row.update({ link: `https://fixture.invalid/${value}` });
+            return row;
+          });
+        return new PostgresqlProductScreenshotRepository(db as never).updateById(screenshot!.id, row => {
+          row.imageAlt = value;
+          return row;
+        });
+      };
+      const snapshot = async () => ({
+        product: (await db.select().from(products).where(eq(products.id, product.id)))[0],
+        features: await db.select().from(productFeatures).where(eq(productFeatures.productId, product.id)),
+        links: await db.select().from(productLinks).where(eq(productLinks.productId, product.id)),
+        screenshots: await db.select().from(productScreenshots).where(eq(productScreenshots.productId, product.id)),
+        intents: await intents(product.id),
+        jobs: await db.select().from(translationJobs).where(eq(translationJobs.entityId, product.id)),
+      });
+      const registrar = Container.get(ProductContentSyncRegistrarToken);
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(changedAt);
+      try {
+        await write('changed');
+        const changed = await snapshot();
+        expect(changed.product).toMatchObject({
+          updatedAt: changedAt,
+          contentRevision: 1n,
+          publishedAt: product.publishedAt,
+        });
+        expect(changed.intents.filter(row => row.kind === 'search')).toHaveLength(1);
+        expect(changed.intents.every(row => row.sourceRevision === 1n)).toBe(true);
+        expect(changed.jobs).toHaveLength(kind === 'feature' ? 1 : 0);
+        const response = await mutate(
+          'query { publishedProductsForSitemap(first: 100) { id slug updatedAt publishedAt } }',
+          {}
+        );
+        expect(response.errors).toBeUndefined();
+        expect(
+          response.data.publishedProductsForSitemap.find((row: { id: string }) => row.id === product.id)
+        ).toMatchObject({
+          slug: product.slug,
+          updatedAt: changedAt.toISOString(),
+        });
+
+        vi.setSystemTime(new Date('2033-05-06T07:08:09Z'));
+        await write('changed');
+        expect(await snapshot()).toEqual(changed);
+
+        Container.set(ProductContentSyncRegistrarToken, {
+          register: async (
+            tx: Parameters<typeof registerProductContentSync>[0],
+            input: Parameters<typeof registerProductContentSync>[1]
+          ) => {
+            await registerProductContentSync(tx, input);
+            throw new Error('lastmod registrar rollback');
+          },
+        });
+        await expect(write('rejected')).rejects.toThrow('lastmod registrar rollback');
+        expect(await snapshot()).toEqual(changed);
+      } finally {
+        vi.useRealTimers();
+        Container.set(ProductContentSyncRegistrarToken, registrar);
+        await db.delete(productContentSyncIntents).where(eq(productContentSyncIntents.productId, product.id));
+        await db.delete(translationJobs).where(eq(translationJobs.entityId, product.id));
+        await db.delete(productFeatures).where(eq(productFeatures.productId, product.id));
+        await db.delete(productLinks).where(eq(productLinks.productId, product.id));
+        await db.delete(productScreenshots).where(eq(productScreenshots.productId, product.id));
+        await db.delete(products).where(eq(products.id, product.id));
+      }
+    }
+  );
 
   it('publish와 Category 실제 변경만 revision을 증가시키고 category bookkeeping은 무시한다', async () => {
     const product = await seed();

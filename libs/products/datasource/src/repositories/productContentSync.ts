@@ -81,9 +81,12 @@ export async function beginProductContentWrite(tx: ProductSourceTransaction, pro
     if (canonical(before) === canonical(after)) return;
     const [row] = await tx
       .update(products)
-      .set({ contentRevision: sql`${products.contentRevision} + 1` })
+      .set({
+        contentRevision: sql`${products.contentRevision} + 1`,
+        updatedAt: new Date(),
+      })
       .where(eq(products.id, productId))
-      .returning({ contentRevision: products.contentRevision });
+      .returning({ contentRevision: products.contentRevision, updatedAt: products.updatedAt });
     if (!row) throw new Error('Product content revision write failed');
     if (after.product.publishedAt)
       await Container.get(ProductContentSyncRegistrarToken).register(tx, {
@@ -91,5 +94,6 @@ export async function beginProductContentWrite(tx: ProductSourceTransaction, pro
         after,
         sourceRevision: row.contentRevision,
       });
+    return row;
   };
 }

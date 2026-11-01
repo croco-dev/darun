@@ -61,7 +61,7 @@ export class PostgresqlCategoryRepository implements CategoryRepository {
         .from(products)
         .where(sql`${products.categoryIds}::jsonb @> ${JSON.stringify([id])}::jsonb`)
         .orderBy(asc(products.id));
-      const finishWrites: Array<() => Promise<void>> = [];
+      const finishWrites: Array<Awaited<ReturnType<typeof beginProductContentWrite>>> = [];
       for (const owner of owners) finishWrites.push(await beginProductContentWrite(tx, owner.id));
       const prevCategory = await tx
         .select()
