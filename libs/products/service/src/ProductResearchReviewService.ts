@@ -8,7 +8,9 @@ import {
 } from '@darun/products-domain';
 import {
   PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH,
+  PRODUCT_RESEARCH_MAX_TAGS,
   normalizeResearchFeatureSummary,
+  normalizeResearchTags,
 } from '@darun/products-domain/research';
 import { Inject, Service } from 'typedi';
 
@@ -36,7 +38,6 @@ const MAX_FEATURE_NAME_CHARS = 100;
 const MAX_FEATURE_EMOJI_CHARS = 30;
 const MAX_TAG_NAME_CHARS = 100;
 const MAX_FEATURES = 8;
-const MAX_TAGS = 10;
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function clean(value: string): string {
@@ -118,22 +119,15 @@ export class ProductResearchReviewService {
       }
       return { name: featureName, summary: featureSummary, emoji };
     });
-    const seenTags = new Set<string>();
-    const tags: string[] = [];
     for (const tag of input.tags) {
       const normalized = clean(tag);
       if (!normalized || normalized.length > MAX_TAG_NAME_CHARS) {
         throw productInvalidArgs('태그를 확인해 주세요.');
       }
-      const key = normalized.toLowerCase();
-      if (seenTags.has(key)) {
-        continue;
-      }
-      seenTags.add(key);
-      tags.push(normalized);
-      if (tags.length >= MAX_TAGS) {
-        break;
-      }
+    }
+    const tags = normalizeResearchTags(input.tags);
+    if (tags.length > PRODUCT_RESEARCH_MAX_TAGS) {
+      throw productInvalidArgs(`태그는 최대 ${PRODUCT_RESEARCH_MAX_TAGS}개까지 입력할 수 있습니다.`);
     }
     return {
       researchJobId: input.researchJobId,

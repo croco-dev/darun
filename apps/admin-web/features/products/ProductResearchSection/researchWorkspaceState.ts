@@ -1,3 +1,5 @@
+import { normalizeResearchTags } from '@darun/products-domain/research';
+
 export type ResearchWorkspaceFeatureDraft = {
   name: string;
   summary: string;
@@ -165,21 +167,7 @@ export function newRequestId(): string {
 }
 
 export function parseTagsInput(value: string): string[] {
-  const seen = new Set<string>();
-  const tags: string[] = [];
-  for (const part of value.split(',')) {
-    const normalized = part.trim().replace(/\s+/g, ' ');
-    if (!normalized) {
-      continue;
-    }
-    const key = normalized.toLowerCase();
-    if (seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-    tags.push(normalized);
-  }
-  return tags;
+  return normalizeResearchTags(value.split(','));
 }
 
 export type WorkspaceImageSelection = { kind: 'file'; file: File; fileName: string } | { kind: 'url'; logoUrl: string };
