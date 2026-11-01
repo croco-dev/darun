@@ -3,6 +3,7 @@ import '../globals.css';
 import { notFound } from '@darun/utils-router';
 import { Metadata } from 'next';
 import localFont from 'next/font/local';
+import { headers } from 'next/headers';
 import { CookiesProvider } from 'next-client-cookies/server';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
@@ -11,6 +12,7 @@ import { routing } from '../../i18n/routing';
 import { buildRootLayoutMetadata } from '../../lib/seo/metadata';
 import { normalizeLocale } from '../../lib/seo/url';
 import { ClientRootProvider } from '../client';
+import { requireCategory } from '../getCategory';
 import { ServerRootProvider } from '../server';
 
 const pretendardFont = localFont({
@@ -39,6 +41,17 @@ export default async function RootLayout({ children, params }: LayoutProps) {
 
   if (!hasLocale(routing.locales, locale)) {
     notFound();
+  }
+
+  const categorySlug = (await headers()).get('x-darun-category-slug');
+  if (categorySlug) {
+    let slug: string;
+    try {
+      slug = decodeURIComponent(categorySlug);
+    } catch {
+      notFound();
+    }
+    await requireCategory(slug);
   }
 
   setRequestLocale(locale);

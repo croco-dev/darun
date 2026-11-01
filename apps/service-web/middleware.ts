@@ -70,7 +70,15 @@ export default function middleware(request: NextRequest) {
   }
 
   // 4. Default HTML handling via intlMiddleware
-  const response = intlMiddleware(request);
+  const requestHeaders = new Headers(request.headers);
+  // The layout checks existence before loading boundaries start streaming a 200 response.
+  // Overwrite the internal route hint so a caller cannot select another category to check.
+  requestHeaders.delete('x-darun-category-slug');
+  const categoryPath = /^\/(?:ko|en)\/categories\/([^/]+)\/?$/.exec(pathname);
+  if (isHeadOrGet && categoryPath) {
+    requestHeaders.set('x-darun-category-slug', categoryPath[1]);
+  }
+  const response = intlMiddleware(new NextRequest(request, { headers: requestHeaders }));
   if (isHeadOrGet && response) {
     response.headers.set('Vary', appendVary(response.headers.get('Vary'), 'Accept'));
   }
@@ -78,5 +86,5 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|.*\\.(?!md$)[^.]+$).*)'],
+  matcher: ['/((?!api|_next|.*\\.(?!md$)[^.]+$).*)', '/ko/categories/:slug', '/en/categories/:slug'],
 };
