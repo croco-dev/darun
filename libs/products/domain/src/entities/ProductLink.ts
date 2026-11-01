@@ -1,3 +1,6 @@
+import { productInvalidArgs } from '../errors/productError';
+import { isProductLinkUrl } from '../link/ProductLinkUrl';
+
 export class ProductLink {
   public id: string;
   public title: string;
@@ -43,6 +46,7 @@ export class ProductLink {
     displayLink?: string;
     iconUrl?: string;
   }) {
+    if (link !== undefined && !isProductLinkUrl(link)) throw productInvalidArgs('완전한 HTTP(S) URL을 입력해주세요.');
     if (title !== undefined) {
       this.title = title;
     }

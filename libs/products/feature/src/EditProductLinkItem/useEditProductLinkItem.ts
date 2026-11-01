@@ -2,6 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
+import { isProductLinkUrl } from '@darun/products-domain/link';
 import {
   EditProductLinkItemFragment,
   TempProductBySlugOnProductLinkTableDocument,
@@ -59,7 +60,7 @@ export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditP
     },
     validate: {
       link: value => {
-        if (value?.trim() && !/^https?:\/\//i.test(value.trim())) {
+        if (value?.trim() && !isProductLinkUrl(value.trim())) {
           return '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.';
         }
         return null;
@@ -98,7 +99,7 @@ export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditP
       return;
     }
 
-    if (linkUrl && !/^https?:\/\//i.test(linkUrl)) {
+    if (linkUrl && !isProductLinkUrl(linkUrl)) {
       notifications.show({
         message: '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.',
         color: 'red',

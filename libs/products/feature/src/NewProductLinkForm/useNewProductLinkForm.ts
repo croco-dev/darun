@@ -2,6 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useApolloClient, useMutation } from '@apollo/client/react';
+import { isProductLinkUrl } from '@darun/products-domain/link';
 import {
   AddProductLinkOnNewProductLinkFormDocument,
   TempProductBySlugOnProductLinkTableDocument,
@@ -57,16 +58,7 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
       displayLink: value => (!value?.trim() ? '표시 링크를 입력해주세요.' : null),
       link: value => {
         if (!value?.trim()) return '링크를 입력해주세요.';
-        if (!/^https?:\/\//i.test(value.trim())) return '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.';
-        try {
-          const parsed = new URL(value.trim());
-          if (!parsed.hostname) {
-            return '올바른 URL 형식을 입력해주세요.';
-          }
-        } catch {
-          return '올바른 URL 형식을 입력해주세요.';
-        }
-        return null;
+        return isProductLinkUrl(value.trim()) ? null : '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.';
       },
       title: value => (!value?.trim() ? '이름을 입력해주세요.' : null),
       iconUrl: value => (!value ? '아이콘을 선택해주세요.' : null),
@@ -93,7 +85,7 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
     const title = values.title?.trim();
     const iconUrl = values.iconUrl?.trim();
     if (loading || isSubmittingRef.current || !displayLink || !link || !title || !iconUrl) return;
-    if (!/^https?:\/\//i.test(link)) {
+    if (!isProductLinkUrl(link)) {
       notifications.show({
         message: '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.',
         color: 'red',

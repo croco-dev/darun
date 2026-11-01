@@ -6,6 +6,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./link": "./src/link/ProductLinkUrl.ts",
     "./research": "./src/research/ProductResearchLimits.ts"
   },
   "scripts": {

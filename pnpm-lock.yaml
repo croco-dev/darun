@@ -1518,6 +1518,9 @@ importers:
       '@darun/companies-feature':
         specifier: workspace:*
         version: link:../../companies/feature
+      '@darun/products-domain':
+        specifier: workspace:*
+        version: link:../domain
       '@darun/products-service':
         specifier: workspace:*
         version: link:../service
