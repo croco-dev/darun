@@ -11,7 +11,7 @@ import {
   type VisualPlatform,
 } from '@darun/provider-graphql';
 import { ArrowDown, ArrowUp, Button, Check, ImageOff, Loader2, Plus, X } from '@darun/ui';
-import { AdminErrorState, AdminSelect } from '@darun/ui-admin';
+import { AdminEmptyState, AdminErrorState, AdminSelect } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -32,6 +32,10 @@ gql`
   query GetProductFlowOnEditor($id: String!) {
     adminProductFlow(id: $id) {
       id
+      product {
+        id
+        slug
+      }
       title
       description
       platform
@@ -162,8 +166,9 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
 
   // 편집 대상 플로를 한 번만 반영한다. 이후 서버 재조회가 로컬 편집 내용을 덮어쓰지 않는다.
   const serverFlow = flowResult.data?.adminProductFlow;
+  const matchesProduct = serverFlow?.product.slug === slug;
   useEffect(() => {
-    if (isEdit && !hydratedFromServer && serverFlow) {
+    if (isEdit && !hydratedFromServer && serverFlow && matchesProduct) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- 서버 플로 데이터 초기 동기화에 필요
       setHydratedFromServer(true);
       setTitle(serverFlow.title ?? '');
@@ -172,11 +177,18 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
       setFlowType((serverFlow.flowType as VisualFlowType) ?? 'ONBOARDING');
       setSteps(
         (serverFlow.steps ?? []).flatMap(step =>
-          step?.screenshot?.id ? [{ screenshotId: step.screenshot.id, caption: step.caption ?? '' }] : []
+          step?.screenshot?.id
+            ? [
+                {
+                  screenshotId: step.screenshot.id,
+                  caption: step.caption ?? '',
+                },
+              ]
+            : []
         )
       );
     }
-  }, [isEdit, hydratedFromServer, serverFlow]);
+  }, [isEdit, hydratedFromServer, serverFlow, matchesProduct]);
 
   const [createFlow] = useMutation(CreateProductFlowOnEditorDocument);
   const [updateFlow] = useMutation(UpdateProductFlowOnEditorDocument);
@@ -218,7 +230,12 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
   const selectableScreenshots = usableScreenshots.filter(shot => !pickedIds.has(shot.id));
 
   const canSave =
-    hydratedFromServer && !saving && title.trim().length > 0 && steps.length >= MIN_STEPS && steps.length <= MAX_STEPS;
+    (!isEdit || matchesProduct) &&
+    hydratedFromServer &&
+    !saving &&
+    title.trim().length > 0 &&
+    steps.length >= MIN_STEPS &&
+    steps.length <= MAX_STEPS;
 
   const handleSave = async () => {
     if (!canSave) {
@@ -288,6 +305,29 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
             onClick={() => flowResult.refetch()}
           >
             다시 시도
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (isEdit && !serverFlow) {
+    return <AdminEmptyState title="플로를 찾을 수 없습니다." description="삭제되었거나 존재하지 않는 플로입니다." />;
+  }
+
+  if (isEdit && serverFlow && !matchesProduct) {
+    return (
+      <AdminEmptyState
+        title="다른 상품에 속한 플로입니다."
+        description="이 플로가 속한 상품의 편집 화면에서 수정해 주세요."
+        action={
+          <Button
+            as="a"
+            href={`/products/${encodeURIComponent(serverFlow.product.slug)}/flows/${encodeURIComponent(serverFlow.id)}/edit`}
+            variant="contained"
+            color="primary"
+          >
+            소속 상품에서 플로 수정
           </Button>
         }
       />
