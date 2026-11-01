@@ -1,4 +1,4 @@
-import { GetCategories } from '@darun/products-domain';
+import { GetCategories, GetCategoryBySlug } from '@darun/products-domain';
 import { Arg, Int, Query, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { Category } from './graphs/Category';
@@ -6,7 +6,15 @@ import { Category } from './graphs/Category';
 @Resolver(() => Category)
 @Service()
 export class CategoryQueryResolver {
-  constructor(private readonly getCategoriesUseCase: GetCategories) {}
+  constructor(
+    private readonly getCategoriesUseCase: GetCategories,
+    private readonly getCategoryBySlugUseCase: GetCategoryBySlug
+  ) {}
+
+  @Query(() => Category, { nullable: true })
+  public categoryBySlug(@Arg('slug', () => String) slug: string) {
+    return this.getCategoryBySlugUseCase.execute(slug);
+  }
 
   @Query(() => [Category])
   public categories(

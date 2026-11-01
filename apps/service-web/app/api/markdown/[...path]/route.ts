@@ -106,6 +106,17 @@ const PRODUCTS_BY_CATEGORY_QUERY = graphql(`
   }
 `);
 
+const CATEGORY_QUERY = graphql(`
+  query CategoryBySlugOnMarkdown($slug: String!) {
+    categoryBySlug(slug: $slug) {
+      id
+      slug
+      labelKo
+      labelEn
+    }
+  }
+`);
+
 const RANKED_PRODUCTS_QUERY = graphql(`
   query RankedProductsOnMarkdown($first: Int!, $locale: String!) {
     rankedProducts(first: $first, locale: $locale) {
@@ -339,10 +350,10 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
       const slug = safeDecode(subPath[1] ?? '');
       if (!slug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
-      const [catListResult, products] = await Promise.all([
+      const [categoryResult, products] = await Promise.all([
         client.query({
-          query: CATEGORIES_QUERY,
-          variables: { first: 100, locale },
+          query: CATEGORY_QUERY,
+          variables: { slug },
         }),
         (async () => {
           type Item = { name: string; slug: string; summary?: string | null };
@@ -364,7 +375,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
         })(),
       ]);
 
-      const category = (catListResult.data?.categories ?? []).find(c => c.slug === slug);
+      const category = categoryResult.data?.categoryBySlug;
       if (!category) {
         return createResponse(buildNotFoundMarkdown({ locale }), 404);
       }

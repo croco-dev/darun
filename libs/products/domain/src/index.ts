@@ -203,6 +203,7 @@ export {
   type GenerateProductDescriptionCandidateResult,
 } from './usecases/GenerateProductDescription';
 export { GetCategories } from './usecases/GetCategories';
+export { GetCategoryBySlug } from './usecases/GetCategoryBySlug';
 export { GetAllProducts } from './usecases/GetAllProducts';
 export { GetProduct } from './usecases/GetProduct';
 export { GetProductFeature } from './usecases/GetProductFeature';

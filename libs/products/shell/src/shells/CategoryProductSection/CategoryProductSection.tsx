@@ -32,7 +32,7 @@ const PRODUCTS_BY_CATEGORY_QUERY = gql`
         }
       }
     }
-    categories(first: 100, locale: $locale) {
+    categoryBySlug(slug: $slug) {
       id
       slug
       labelKo
@@ -67,7 +67,7 @@ type ProductsByCategoryQueryData = {
     edges: Array<{ node: Product }>;
     pageInfo: { hasNextPage: boolean; endCursor?: string | null };
   };
-  categories?: Category[] | null;
+  categoryBySlug?: Category | null;
 };
 
 export function CategoryProductSection({ slug }: { slug: string }) {
@@ -106,7 +106,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
       setLoadingMore(false);
     }
   };
-  const category = (data?.categories ?? []).find(c => c.slug === slug);
+  const category = data.categoryBySlug;
   const categoryLabel = category ? (locale === 'ko' ? category.labelKo : category.labelEn) : '';
   const emptyLabel = t('empty');
   const categoryIcon = getCategoryIcon(slug);
