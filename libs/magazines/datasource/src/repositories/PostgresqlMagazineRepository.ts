@@ -112,7 +112,12 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
     const offset = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      this.db.select().from(magazines).limit(limit).offset(offset),
+      this.db
+        .select()
+        .from(magazines)
+        .orderBy(desc(magazines.createdAt), desc(magazines.id))
+        .limit(limit)
+        .offset(offset),
       this.db
         .select({ count: count() })
         .from(magazines)

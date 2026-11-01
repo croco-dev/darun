@@ -1,5 +1,6 @@
 export enum CompanyError {
   CreateFailed = 'company/create-failed',
+  InvalidListArgs = 'company/invalid-list-args',
   InvalidSearchArgs = 'company/invalid-search-args',
 }
 
