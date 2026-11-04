@@ -5,6 +5,17 @@ import { appendVary, negotiateRepresentation } from './lib/seo/accept';
 
 const intlMiddleware = createMiddleware(routing);
 
+function preserveMagazinePath(pathname: string, response: NextResponse): NextResponse {
+  // The route already includes its locale. Let Next match the original slug
+  // segment instead of the encoding normalized by the next-intl rewrite.
+  if (!/^\/(?:ko|en)\/magazines\/[^/]+\/?$/.test(pathname) || !response.headers.has('x-middleware-rewrite')) {
+    return response;
+  }
+
+  response.headers.delete('x-middleware-rewrite');
+  return NextResponse.next({ headers: response.headers });
+}
+
 export default function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const isHeadOrGet = request.method === 'GET' || request.method === 'HEAD';
@@ -78,15 +89,10 @@ export default function middleware(request: NextRequest) {
   if (isHeadOrGet && categoryPath) {
     requestHeaders.set('x-darun-category-slug', categoryPath[1]);
   }
-  let response = intlMiddleware(new NextRequest(request, { headers: requestHeaders }));
+  const response = intlMiddleware(new NextRequest(request, { headers: requestHeaders }));
   if (isHeadOrGet && response) {
-    // These magazine paths already include their route locale. Keep the original
-    // slug segment if next-intl rewrites its encoding before Next matches the route.
-    if (/^\/(?:ko|en)\/magazines\/[^/]+\/?$/.test(pathname) && response.headers.has('x-middleware-rewrite')) {
-      response.headers.delete('x-middleware-rewrite');
-      response = NextResponse.next({ headers: response.headers });
-    }
     response.headers.set('Vary', appendVary(response.headers.get('Vary'), 'Accept'));
+    return preserveMagazinePath(pathname, response);
   }
   return response;
 }
