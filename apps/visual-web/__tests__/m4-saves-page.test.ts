@@ -538,7 +538,11 @@ describe('browser collection write boundaries', () => {
       window.dispatchEvent(new Event('focus'));
     });
     expect(localStorage.getItem(RECORD_KEY)).toBeNull();
-    localStorage.removeItem(KEY);
+    await act(async () => {
+      localStorage.removeItem(KEY);
+      window.dispatchEvent(new Event('focus'));
+    });
+    expect(host.textContent).not.toContain('Screen');
     await act(async () => release.resolve());
 
     expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections).toEqual([legacy]);

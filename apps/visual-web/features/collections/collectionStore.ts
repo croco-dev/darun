@@ -332,6 +332,8 @@ async function reconcileStorage(observations: readonly string[] = []): Promise<S
     } catch {
       return { ...current, storageError: WRITE_FAILED };
     }
+    // This committed snapshot supersedes reads that finished while we waited.
+    setSnapshot(current);
   }
   return current;
 }
