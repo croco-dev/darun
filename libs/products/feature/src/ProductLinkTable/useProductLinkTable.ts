@@ -6,7 +6,6 @@ import {
   TempProductBySlugOnProductLinkTableDocument,
   useFragment,
 } from '@darun/provider-graphql';
-import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -24,31 +23,41 @@ type ProductLinkTableProps = {
 };
 
 export function useProductLinkTable({ slug }: ProductLinkTableProps) {
-  const { data, loading, error, refetch } = useQuery(TempProductBySlugOnProductLinkTableDocument, {
+  const { data, loading, error, observable, refetch } = useQuery(TempProductBySlugOnProductLinkTableDocument, {
     variables: { slug },
   });
   const product = useFragment(ProductLinkTableFragmentDoc, data?.tempProductBySlug ?? null);
 
-  const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
-  const [link, setLink] = useState<EditProductLinkItemFragment | null>(null);
+  const [edit, setEdit] = useState<{
+    slug: string;
+    link: EditProductLinkItemFragment;
+  } | null>(null);
+  if (edit && edit.slug !== slug) setEdit(null);
 
   const editLink = useCallback(
     (selectedLink: EditProductLinkItemFragment) => {
-      setLink(selectedLink);
-      openEditModal();
+      setEdit({ slug, link: selectedLink });
     },
-    [openEditModal]
+    [slug]
   );
+  const closeEditModal = useCallback(() => {
+    setEdit(current => (current === edit ? null : current));
+  }, [edit]);
+  const refreshLinks = useCallback(() => {
+    if (observable.variables.slug !== slug) return;
+    void refetch().catch(() => {
+      // The query exposes the failure and the list offers a read-only retry.
+    });
+  }, [observable, refetch, slug]);
 
   return {
     links: product?.links,
     loading,
     error,
-    refetch,
+    refreshLinks,
     editLink,
-    isEditModalOpened,
     closeEditModal,
-    link,
+    link: edit?.slug === slug ? edit.link : null,
     slug,
   };
 }

@@ -3,11 +3,7 @@
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { isProductLinkUrl } from '@darun/products-domain/link';
-import {
-  EditProductLinkItemFragment,
-  TempProductBySlugOnProductLinkTableDocument,
-  UpdateProductLinkOnEditProductLinkItemDocument,
-} from '@darun/provider-graphql';
+import { EditProductLinkItemFragment, UpdateProductLinkOnEditProductLinkItemDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useRef } from 'react';
@@ -39,8 +35,6 @@ type FormValues = {
 
 export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditProductLinkItemProps) {
   const [updateLink, { loading }] = useMutation(UpdateProductLinkOnEditProductLinkItemDocument, {
-    refetchQueries: [TempProductBySlugOnProductLinkTableDocument],
-    awaitRefetchQueries: true,
     onCompleted: () => {
       notifications.show({ message: '수정되었습니다.', color: 'teal' });
       onSubmit?.();
