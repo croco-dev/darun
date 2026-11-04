@@ -22,6 +22,7 @@ import { stepSearch } from './stepSearch';
 import { FlowDetailState, useFlowDetail } from './useFlowDetail';
 
 const STEP_QUERY_KEY = 'step';
+const FLOW_ZOOM_HEADING_ID = 'flow-zoom-heading';
 
 function StepImage({ src, alt }: { src: string; alt: string }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
@@ -83,13 +84,19 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
     [detail?.id, searchParams, stepCount]
   );
 
-  // 왼쪽·오른쪽 화살표로 단계를 이동한다. 입력 요소에 포커스가 있을 때는 가로지르지 않는다.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
         return;
       }
-      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey
+      ) {
         return;
       }
       const target = event.target;
@@ -100,6 +107,10 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
         return;
       }
       if (stepCount < 2) {
+        return;
+      }
+      // 플로 확대 외의 모달이 열려 있으면 배경 단계와 공유 주소를 유지한다.
+      if (document.querySelector(`dialog:modal:not([aria-labelledby="${FLOW_ZOOM_HEADING_ID}"])`)) {
         return;
       }
       if (event.key === 'ArrowLeft' && activeStepNumber > 1) {
@@ -473,12 +484,12 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
       <Dialog
         open={zoomedFlowId === detail.id}
         onClose={() => setZoomedFlowId(null)}
-        labelledBy="flow-zoom-heading"
+        labelledBy={FLOW_ZOOM_HEADING_ID}
         className="h-[calc(100dvh-2rem)] w-full"
       >
         <div className="flex h-full flex-col gap-3 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2 text-white">
-            <h2 id="flow-zoom-heading" className="min-w-0 break-words text-sm font-semibold">
+            <h2 id={FLOW_ZOOM_HEADING_ID} className="min-w-0 break-words text-sm font-semibold">
               {detail.title} · {activeStepNumber} / {stepCount}
             </h2>
             <Button
