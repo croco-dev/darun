@@ -4,7 +4,9 @@ import { gql } from '@apollo/client';
 import { useLazyQuery, useMutation, useQuery } from '@apollo/client/react';
 import {
   PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH,
+  PRODUCT_RESEARCH_MAX_TAGS,
   normalizeResearchFeatureSummary,
+  normalizeResearchTags,
 } from '@darun/products-domain/research';
 import { Button } from '@darun/ui';
 import {
@@ -304,6 +306,11 @@ export const ProductResearchSection = () => {
   const jobMissing = jobLookup.job === null;
   const jobLoading = jobLookup.loading;
   const result = job?.result ?? null;
+  const tagCount = normalizeResearchTags(review.tags).length;
+  const tagsError =
+    tagCount > PRODUCT_RESEARCH_MAX_TAGS
+      ? `현재 ${tagCount}개입니다. 태그를 ${PRODUCT_RESEARCH_MAX_TAGS}개 이내로 줄여 주세요.`
+      : null;
   const featureSummaryErrors = review.features.map(feature => {
     const length = normalizeResearchFeatureSummary(feature.summary).length;
     return length > PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH
@@ -766,6 +773,10 @@ export const ProductResearchSection = () => {
   const handleMaterialize = async (event: React.FormEvent) => {
     event.preventDefault();
     if (materializePendingRef.current) return;
+    if (tagsError) {
+      notifications.show({ message: tagsError, color: 'red' });
+      return;
+    }
     if (featureSummaryErrors.some(Boolean)) {
       notifications.show({ message: '기능 설명의 초과 길이를 확인해 주세요.', color: 'red' });
       return;
@@ -1099,7 +1110,11 @@ export const ProductResearchSection = () => {
                   </div>
                 ))}
 
-                <AdminField label="태그 (쉼표 구분)">
+                <AdminField
+                  label="태그 (쉼표 구분)"
+                  help={`최대 ${PRODUCT_RESEARCH_MAX_TAGS}개. 대소문자와 공백을 정리한 뒤 중복은 한 개로 셉니다.`}
+                  error={tagsError}
+                >
                   <AdminInput
                     name="review-tags"
                     value={tagsInput ?? review.tags.join(', ')}

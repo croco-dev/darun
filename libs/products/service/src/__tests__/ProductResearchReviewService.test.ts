@@ -4,6 +4,29 @@ import { ProductResearchReviewService } from '../ProductResearchReviewService';
 describe('ProductResearchReviewService.validateReviewedInput', () => {
   const service = new ProductResearchReviewService();
 
+  it.each([9, 10, 11, 12])('정규화한 고유 태그 %i개를 누락 없이 등록하거나 명시적으로 거절한다', count => {
+    const tags = Array.from({ length: count }, (_, index) => `Tag ${index}`);
+    const input = {
+      researchJobId: 'job-tags',
+      name: 'Linear',
+      slug: 'linear',
+      summary: '이슈 트래킹 도구',
+      logoUrl: 'https://linear.app/logo.png',
+      officialUrl: 'https://linear.app/',
+      officialUrlConfirmed: false,
+      categoryIds: [],
+      features: [],
+      tags: ['  tag   0  ', ...tags, 'TAG 0'],
+    };
+    const original = structuredClone(input);
+    if (count > 10) {
+      expect(() => service.validateReviewedInput(input)).toThrow(/태그.*10개/);
+    } else {
+      expect(service.validateReviewedInput(input).tags).toEqual(['tag 0', ...tags.slice(1)]);
+    }
+    expect(input).toEqual(original);
+  });
+
   it('기능 설명의 공백을 정리한 뒤 255자 경계를 검사한다', () => {
     const summary = `${'가'.repeat(126)} ${'나'.repeat(128)}`;
     const input = {
@@ -15,7 +38,13 @@ describe('ProductResearchReviewService.validateReviewedInput', () => {
       officialUrl: 'https://linear.app/',
       officialUrlConfirmed: false,
       categoryIds: [],
-      features: [{ name: '이슈 관리', summary: `  ${'가'.repeat(126)}\n  ${'나'.repeat(128)}  `, emoji: '✨' }],
+      features: [
+        {
+          name: '이슈 관리',
+          summary: `  ${'가'.repeat(126)}\n  ${'나'.repeat(128)}  `,
+          emoji: '✨',
+        },
+      ],
       tags: [],
     };
     expect(service.validateReviewedInput(input).features[0].summary).toBe(summary);

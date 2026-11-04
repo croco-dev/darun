@@ -907,6 +907,44 @@ describe('admin research workspace flow', () => {
     });
   });
 
+  it('11개 태그의 원문과 초안을 보존하고 10개로 고친 뒤에만 업로드·등록한다', async () => {
+    const { form, materializations, review } = await renderSubmissionReview();
+    const tags = screen.getByRole('textbox', {
+      name: '태그 (쉼표 구분)',
+    }) as HTMLInputElement;
+    const names = Array.from({ length: 11 }, (_, index) => `Tag ${index}`);
+    const raw = `  tag   0, ${names.join(', ')}, TAG 0, `;
+    fireEvent.change(tags, { target: { value: raw } });
+    expect(tags.value).toBe(raw);
+    expect(tags.getAttribute('aria-invalid')).toBe('true');
+    const errorId = tags
+      .getAttribute('aria-describedby')
+      ?.split(' ')
+      .find(id => id.endsWith('-error'));
+    expect(document.getElementById(errorId ?? '')?.textContent).toContain('11개');
+    fireEvent.change(document.querySelector('[name="review-logo-file"]')!, {
+      target: {
+        files: [new File(['logo'], 'logo.png', { type: 'image/png' })],
+      },
+    });
+    fireEvent.submit(form);
+    expect(materializations).toHaveLength(0);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(tags.value).toBe(raw);
+    expect((screen.getByRole('textbox', { name: '요약' }) as HTMLTextAreaElement).value).toBe(review.summary);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review.tags).toHaveLength(11);
+    fireEvent.change(tags, {
+      target: { value: `  tag   0, ${names.slice(0, 10).join(', ')}, TAG 0, ` },
+    });
+    expect(tags.getAttribute('aria-invalid')).not.toBe('true');
+    fireEvent.change(document.querySelector('[name="review-logo-url"]')!, {
+      target: { value: 'https://linear.app/logo.png' },
+    });
+    fireEvent.submit(form);
+    await waitFor(() => expect(materializations).toHaveLength(1));
+    expect(materializations[0].variables.input.tags).toEqual(['tag 0', ...names.slice(1, 10)]);
+  });
+
   it('태그 순차 입력은 쉼표와 공백을 보존하고 blur 전 제출에서 두 태그를 전달한다', async () => {
     testGlobal().researchSearchParams = { researchJobId: 'job-1' };
     const scenario = newScenario();
