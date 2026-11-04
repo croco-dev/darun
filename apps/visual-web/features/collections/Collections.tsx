@@ -33,6 +33,17 @@ function SavedCard({
     productName: string;
   };
 }) {
+  const [removing, setRemoving] = useState(false);
+  const remove = async () => {
+    if (removing) return;
+    setRemoving(true);
+    try {
+      if (await removeFromCollection(collectionId, item.kind, item.id))
+        onRemoved(`${item.title} 항목을 컬렉션에서 제거했습니다.`);
+    } finally {
+      setRemoving(false);
+    }
+  };
   return (
     <li className="min-w-0">
       <Link
@@ -52,10 +63,8 @@ function SavedCard({
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={() => {
-            if (removeFromCollection(collectionId, item.kind, item.id))
-              onRemoved(`${item.title} 항목을 컬렉션에서 제거했습니다.`);
-          }}
+          aria-disabled={removing}
+          onClick={() => void remove()}
           aria-label={`${item.title} 항목을 컬렉션에서 제거`}
           className="min-h-11 rounded-lg px-2.5 text-xs font-semibold text-dark-600 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
         >
@@ -74,8 +83,15 @@ function CollectionSection({
   onRemoved: (message: string) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
-  const remove = () => {
-    if (deleteCollection(collection.id)) onRemoved(`${collection.name} 컬렉션을 삭제했습니다.`);
+  const [removing, setRemoving] = useState(false);
+  const remove = async () => {
+    if (removing) return;
+    setRemoving(true);
+    try {
+      if (await deleteCollection(collection.id)) onRemoved(`${collection.name} 컬렉션을 삭제했습니다.`);
+    } finally {
+      setRemoving(false);
+    }
   };
   return (
     <section aria-labelledby={`collection-${collection.id}`} className="flex flex-col gap-3">
@@ -92,13 +108,15 @@ function CollectionSection({
             </span>
             <button
               type="button"
-              onClick={remove}
+              aria-disabled={removing}
+              onClick={() => void remove()}
               className="min-h-11 rounded-lg bg-dark-900 px-3 text-xs font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
             >
               삭제 확인
             </button>
             <button
               type="button"
+              disabled={removing}
               onClick={() => setConfirming(false)}
               className="min-h-11 rounded-lg px-3 text-xs font-semibold text-dark-600 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
             >
@@ -108,8 +126,9 @@ function CollectionSection({
         ) : (
           <button
             type="button"
+            aria-disabled={removing}
             onClick={() => {
-              if (collection.items.length === 0) remove();
+              if (collection.items.length === 0) void remove();
               else setConfirming(true);
             }}
             className="min-h-11 rounded-lg px-2.5 text-xs font-semibold text-dark-600 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
@@ -134,6 +153,7 @@ function CollectionSection({
 export function Collections() {
   const { collections, storageError } = useCollections();
   const [draft, setDraft] = useState('');
+  const [creating, setCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [announcement, setAnnouncement] = useState('');
   const onRemoved = (message: string) => {
@@ -142,9 +162,14 @@ export function Collections() {
   };
   const total = collections.reduce((n, c) => n + c.items.length, 0);
 
-  const create = () => {
-    if (draft.trim() === '') return;
-    if (createCollection(draft)) setDraft('');
+  const create = async () => {
+    if (creating || draft.trim() === '') return;
+    setCreating(true);
+    try {
+      if (await createCollection(draft)) setDraft('');
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -162,13 +187,14 @@ export function Collections() {
         <form
           onSubmit={event => {
             event.preventDefault();
-            create();
+            void create();
           }}
           className="flex w-full gap-2 sm:items-center lg:w-auto"
         >
           <input
             ref={inputRef}
             value={draft}
+            readOnly={creating}
             onChange={e => setDraft(e.target.value)}
             onKeyDown={event => {
               if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) {
@@ -183,7 +209,7 @@ export function Collections() {
           <button
             type="submit"
             aria-label="컬렉션 만들기"
-            disabled={draft.trim() === ''}
+            disabled={creating || draft.trim() === ''}
             className="min-h-11 shrink-0 rounded-lg bg-dark-900 px-4 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             만들기

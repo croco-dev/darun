@@ -21,11 +21,35 @@ function installWindow(
     seed?: string;
     setItem?: (key: string, value: string) => void;
     blockAccess?: boolean;
+    locksUnavailable?: boolean;
+    rejectLock?: boolean;
+    beforeWrite?: () => void;
   } = {}
 ): Record<string, string> {
   const backing: Record<string, string> = {};
   if (opts.seed !== undefined) backing[KEY] = opts.seed;
-  const win: Record<string, unknown> = { addEventListener: () => {} };
+  const lockTails = new Map<string, Promise<void>>();
+  const win: Record<string, unknown> = {
+    addEventListener: () => {},
+    navigator: {
+      locks: opts.locksUnavailable
+        ? undefined
+        : {
+            request<T>(name: string, write: () => T): Promise<T> {
+              if (opts.rejectLock) return Promise.reject(new Error('lock unavailable'));
+              const result = (lockTails.get(name) ?? Promise.resolve()).then(write);
+              lockTails.set(
+                name,
+                result.then(
+                  () => {},
+                  () => {}
+                )
+              );
+              return result;
+            },
+          },
+    },
+  };
   if (opts.blockAccess) {
     Object.defineProperty(win, 'localStorage', {
       get(): never {
@@ -35,7 +59,11 @@ function installWindow(
   } else {
     win.localStorage = {
       getItem: (k: string) => backing[k] ?? null,
-      setItem: (k: string, v: string) => (opts.setItem ? opts.setItem(k, v) : void (backing[k] = v)),
+      setItem: (k: string, v: string) => {
+        opts.beforeWrite?.();
+        if (opts.setItem) opts.setItem(k, v);
+        else backing[k] = v;
+      },
       removeItem: (k: string) => void delete backing[k],
       clear: () => void Object.keys(backing).forEach(k => delete backing[k]),
       key: () => null,
@@ -59,24 +87,26 @@ afterEach(() => {
 });
 
 describe('collections persistence', () => {
-  it('같은 kind+id를 두 번 토글하면 항목이 제거된다', async () => {
+  it('같은 kind+id를 두 번 추가해도 하나만 저장되고 제거할 수 있다', async () => {
     installWindow();
     const s = await freshStore();
-    const c = s.createCollection('A');
+    const c = await s.createCollection('A');
     expect(c).not.toBeNull();
-    s.toggleInCollection(c!.id, shot());
+    await s.addToCollection(c!.id, shot());
     expect(s.savedIn('screenshot', 's1').map(x => x.id)).toEqual([c!.id]);
-    s.toggleInCollection(c!.id, shot());
+    await s.addToCollection(c!.id, shot());
+    expect(s.savedIn('screenshot', 's1')[0].items).toEqual([shot()]);
+    await s.removeFromCollection(c!.id, 'screenshot', 's1');
     expect(s.savedIn('screenshot', 's1')).toEqual([]);
   });
 
   it('같은 id라도 kind가 다르면 별개 항목이다', async () => {
     installWindow();
     const s = await freshStore();
-    const c = s.createCollection('A');
-    s.toggleInCollection(c!.id, shot({ kind: 'screenshot' }));
-    s.toggleInCollection(c!.id, shot({ kind: 'flow', href: '/flows/s1' }));
-    s.removeFromCollection(c!.id, 'screenshot', 's1');
+    const c = await s.createCollection('A');
+    await s.addToCollection(c!.id, shot({ kind: 'screenshot' }));
+    await s.addToCollection(c!.id, shot({ kind: 'flow', href: '/flows/s1' }));
+    await s.removeFromCollection(c!.id, 'screenshot', 's1');
     expect(s.savedIn('screenshot', 's1')).toEqual([]);
     expect(s.savedIn('flow', 's1').map(x => x.id)).toEqual([c!.id]);
   });
@@ -84,14 +114,14 @@ describe('collections persistence', () => {
   it('저장 후 리로드해도 이름과 항목이 유지되고 삭제도 반영된다', async () => {
     const backing = installWindow();
     const s = await freshStore();
-    const c = s.createCollection('Mine');
-    s.toggleInCollection(c!.id, shot());
+    const c = await s.createCollection('Mine');
+    await s.addToCollection(c!.id, shot());
     expect(backing[KEY]).toContain('Mine');
 
     const r = await freshStore();
     const found = r.savedIn('screenshot', 's1');
     expect(found.map(x => x.name)).toEqual(['Mine']);
-    r.removeFromCollection(found[0].id, 'screenshot', 's1');
+    await r.removeFromCollection(found[0].id, 'screenshot', 's1');
     expect(r.savedIn('screenshot', 's1')).toEqual([]);
     expect((await freshStore()).savedIn('screenshot', 's1')).toEqual([]);
   });
@@ -99,8 +129,7 @@ describe('collections persistence', () => {
   it('읽기 차단된 저장소에서도 죽지 않고 create는 null을 반환한다', async () => {
     installWindow({ blockAccess: true });
     const s = await freshStore();
-    expect(() => s.createCollection('A')).not.toThrow();
-    expect(s.createCollection('A')).toBeNull();
+    await expect(s.createCollection('A')).resolves.toBeNull();
   });
 
   it('쓰기 실패는 성공한 것처럼 주장하지 않는다', async () => {
@@ -111,8 +140,8 @@ describe('collections persistence', () => {
       },
     });
     const s = await freshStore();
-    expect(s.createCollection('New')).toBeNull();
-    s.toggleInCollection('c1', shot());
+    await expect(s.createCollection('New')).resolves.toBeNull();
+    await s.addToCollection('c1', shot());
     expect(s.savedIn('screenshot', 's1')).toEqual([]);
   });
 
@@ -127,20 +156,20 @@ describe('collections persistence', () => {
       },
     });
     const s = await freshStore();
-    const first = s.createCollection('First');
-    const second = s.createCollection('Second');
+    const first = await s.createCollection('First');
+    const second = await s.createCollection('Second');
     expect(first).not.toBeNull();
     expect(second).not.toBeNull();
     expect(first!.id).toMatch(/^c-[0-9a-f]{32}$/);
     expect(second!.id).toMatch(/^c-[0-9a-f]{32}$/);
     expect(first!.id).not.toBe(second!.id);
-    s.toggleInCollection(first!.id, shot());
-    s.toggleInCollection(second!.id, shot({ id: 's2', href: '/screenshots/s2' }));
+    await s.addToCollection(first!.id, shot());
+    await s.addToCollection(second!.id, shot({ id: 's2', href: '/screenshots/s2' }));
 
     const reloaded = await freshStore();
     expect(reloaded.savedIn('screenshot', 's1').map(c => c.id)).toEqual([first!.id]);
     expect(reloaded.savedIn('screenshot', 's2').map(c => c.id)).toEqual([second!.id]);
-    reloaded.deleteCollection(first!.id);
+    await reloaded.deleteCollection(first!.id);
     const after = await freshStore();
     expect(after.savedIn('screenshot', 's1')).toEqual([]);
     expect(after.savedIn('screenshot', 's2').map(c => c.id)).toEqual([second!.id]);
@@ -152,7 +181,7 @@ describe('collections persistence', () => {
     const backing = installWindow({ seed });
     vi.stubGlobal('crypto', undefined);
     const s = await freshStore();
-    expect(s.createCollection('New')).toBeNull();
+    await expect(s.createCollection('New')).resolves.toBeNull();
     expect(backing[KEY]).toBe(seed);
     expect((await freshStore()).savedIn('screenshot', 's1')).toEqual([]);
     expect(JSON.parse(backing[KEY])).toEqual([{ id: 'c1', name: 'Seed', createdAt: 1, items: [] }]);
@@ -173,4 +202,65 @@ describe('collections persistence', () => {
     expect(s.savedIn('screenshot', 'good').map(c => c.id)).toEqual(['c1']);
     expect(s.savedIn('screenshot', 'evil')).toEqual([]);
   });
+});
+
+describe('overlapping collection edits without storage events', () => {
+  it.each(['add', 'remove'] as const)(
+    'keeps the first %s when another tab starts an add before it commits',
+    async edit => {
+      const first = shot();
+      const second = shot({ id: 's2', href: '/screenshots/s2' });
+      let overlappingWrite: Promise<boolean> | undefined;
+      let startSecondWrite: (() => void) | undefined;
+      installWindow({
+        seed: JSON.stringify([
+          {
+            id: 'c1',
+            name: 'Seed',
+            createdAt: 1,
+            items: edit === 'remove' ? [first] : [],
+          },
+        ]),
+        beforeWrite: () => {
+          const start = startSecondWrite;
+          startSecondWrite = undefined;
+          start?.();
+        },
+      });
+      const tabA = await freshStore();
+      const tabB = await freshStore();
+      tabB.savedIn('screenshot', 's1');
+      startSecondWrite = () => {
+        overlappingWrite = tabB.addToCollection('c1', second);
+      };
+
+      if (edit === 'add') await tabA.addToCollection('c1', first);
+      else await tabA.removeFromCollection('c1', 'screenshot', 's1');
+      expect(await overlappingWrite).toBe(true);
+
+      const reloaded = await freshStore();
+      expect(reloaded.savedIn('screenshot', 's1').map(c => c.id)).toEqual(edit === 'add' ? ['c1'] : []);
+      expect(reloaded.savedIn('screenshot', 's2').map(c => c.id)).toEqual(['c1']);
+    }
+  );
+});
+
+it.each(['missing', 'rejected'] as const)('preserves readable v1 data when the lock is %s', async lock => {
+  const seed = JSON.stringify({
+    collections: [{ id: 'c1', name: 'Seed', createdAt: 1, items: [shot()] }],
+  });
+  const backing = installWindow({
+    seed,
+    locksUnavailable: lock === 'missing',
+    rejectLock: lock === 'rejected',
+  });
+  const store = await freshStore();
+
+  expect(store.savedIn('screenshot', 's1').map(c => c.id)).toEqual(['c1']);
+  await expect(store.createCollection('New')).resolves.toBeNull();
+  await expect(store.deleteCollection('c1')).resolves.toBe(false);
+  await expect(store.addToCollection('c1', shot({ id: 's2' }))).resolves.toBe(false);
+  await expect(store.removeFromCollection('c1', 'screenshot', 's1')).resolves.toBe(false);
+  expect(backing[KEY]).toBe(seed);
+  expect(store.savedIn('screenshot', 's1').map(c => c.id)).toEqual(['c1']);
 });

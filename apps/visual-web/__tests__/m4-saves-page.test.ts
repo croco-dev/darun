@@ -3,7 +3,7 @@ import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/cli
 import { MyVisualSavedFlowsDocument, MyVisualSavedScreenshotsDocument } from '@darun/provider-graphql';
 import { act, createElement, useRef, useSyncExternalStore } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collections } from '../features/collections/Collections';
 import * as store from '../features/collections/collectionStore';
 import { ProductSearchSuggest } from '../features/product-search/ProductSearchSuggest';
@@ -85,7 +85,15 @@ function connection(kind: 'screenshots' | 'flows', hasNextPage = false) {
     },
   };
 }
+beforeEach(() => {
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: { request: async (_name: string, write: () => unknown) => write() },
+  });
+});
+
 afterEach(async () => {
+  Reflect.deleteProperty(navigator, 'locks');
   await act(async () => root?.unmount());
   root = undefined;
   document.body.replaceChildren();
@@ -317,7 +325,7 @@ describe('suggestion request timing', () => {
   });
 });
 
-it('preserves partially readable collections rather than persisting a filtered subset', () => {
+it('preserves partially readable collections rather than persisting a filtered subset', async () => {
   const raw = JSON.stringify([
     {
       id: 'c',
@@ -337,9 +345,9 @@ it('preserves partially readable collections rather than persisting a filtered s
     },
   ]);
   localStorage.setItem('darun-visual-collections-v1', raw);
-  expect(store.createCollection('New')).toBeNull();
+  expect(await store.createCollection('New')).toBeNull();
   expect(store.savedIn('screenshot', 's')).toHaveLength(1);
-  store.toggleInCollection('c', {
+  await store.addToCollection('c', {
     kind: 'screenshot',
     id: 's',
     title: 'Valid',
@@ -347,7 +355,7 @@ it('preserves partially readable collections rather than persisting a filtered s
     href: '/screenshots/s',
     productName: 'App',
   });
-  expect(store.deleteCollection('c')).toBe(false);
+  expect(await store.deleteCollection('c')).toBe(false);
   expect(localStorage.getItem('darun-visual-collections-v1')).toBe(raw);
 });
 
@@ -363,31 +371,31 @@ const item: store.SavedItem = {
 describe('browser collection write boundaries', () => {
   it.each(['{broken', '', '{"version":99,"collections":[]}', '[{"id":"broken"}]'])(
     'preserves raw corrupt value across all mutations: %s',
-    raw => {
+    async raw => {
       localStorage.setItem(KEY, raw);
-      expect(store.createCollection('New')).toBeNull();
-      expect(store.deleteCollection('c')).toBe(false);
-      store.toggleInCollection('c', item);
-      expect(store.removeFromCollection('c', 'screenshot', 's')).toBe(false);
+      expect(await store.createCollection('New')).toBeNull();
+      expect(await store.deleteCollection('c')).toBe(false);
+      await store.addToCollection('c', item);
+      expect(await store.removeFromCollection('c', 'screenshot', 's')).toBe(false);
       expect(localStorage.getItem(KEY)).toBe(raw);
     }
   );
-  it('allows valid storage edits and keeps the persisted value when writing fails', () => {
+  it('allows valid storage edits and keeps the persisted value when writing fails', async () => {
     localStorage.removeItem(KEY);
-    const collection = store.createCollection('Valid');
+    const collection = await store.createCollection('Valid');
     expect(collection).not.toBeNull();
-    store.toggleInCollection(collection!.id, item);
+    await store.addToCollection(collection!.id, item);
     const raw = localStorage.getItem(KEY);
     const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota');
     });
-    expect(store.deleteCollection(collection!.id)).toBe(false);
+    expect(await store.deleteCollection(collection!.id)).toBe(false);
     expect(localStorage.getItem(KEY)).toBe(raw);
     set.mockRestore();
   });
   it('restores focus and announces successful collection deletion', async () => {
     localStorage.removeItem(KEY);
-    store.createCollection('Delete me');
+    await store.createCollection('Delete me');
     host = document.createElement('div');
     document.body.append(host);
     root = createRoot(host);
@@ -400,7 +408,7 @@ describe('browser collection write boundaries', () => {
   });
   it('does not announce deletion or move focus on a failed write', async () => {
     localStorage.removeItem(KEY);
-    store.createCollection('Keep me');
+    await store.createCollection('Keep me');
     host = document.createElement('div');
     document.body.append(host);
     root = createRoot(host);

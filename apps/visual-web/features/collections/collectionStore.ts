@@ -26,14 +26,15 @@ interface StoreSnapshot {
 }
 
 const STORAGE_KEY = 'darun-visual-collections-v1';
+const LOCK_UNAVAILABLE =
+  '이 브라우저에서는 컬렉션을 안전하게 변경할 수 없습니다. 최신 브라우저의 HTTPS 페이지에서 다시 시도해 주세요.';
+const WRITE_FAILED = '브라우저 저장소에 저장하지 못했습니다. 저장 차단 설정을 확인해 주세요.';
 
 const EMPTY_SNAPSHOT: StoreSnapshot = { collections: [], storageError: null };
 
 let snapshot: StoreSnapshot = EMPTY_SNAPSHOT;
 let initialized = false;
 const listeners = new Set<() => void>();
-let storageAvailable: boolean | null = null;
-let storageCorrupt = false;
 
 function isSavedItem(value: unknown): value is SavedItem {
   if (typeof value !== 'object' || value === null) return false;
@@ -94,17 +95,10 @@ function isSafeItem(item: SavedItem): boolean {
   return hrefOk && imageOk;
 }
 
-function readStorage(): {
-  collections: NamedCollection[];
-  storageError: string | null;
-} {
+function readStorage(): StoreSnapshot {
   try {
-    storageCorrupt = false;
-    if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
-      return { collections: [], storageError: null };
-    }
+    if (typeof window === 'undefined') return EMPTY_SNAPSHOT;
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    storageAvailable = true;
     if (raw === null) return { collections: [], storageError: null };
     const parsed: unknown = JSON.parse(raw);
     const list: unknown[] | null = Array.isArray(parsed)
@@ -140,7 +134,6 @@ function readStorage(): {
       collections.push({ ...entry, items });
     }
     if (dropped) {
-      storageCorrupt = true;
       return {
         collections,
         storageError:
@@ -149,19 +142,16 @@ function readStorage(): {
     }
     return { collections, storageError: null };
   } catch {
-    storageCorrupt = true;
     if (typeof window !== 'undefined') {
       try {
         void window.localStorage;
       } catch {
-        storageAvailable = false;
         return {
           collections: [],
           storageError: '브라우저 저장소를 사용할 수 없어 컬렉션을 불러오지 못했습니다. 저장 기능이 동작하지 않습니다.',
         };
       }
     }
-    if (storageAvailable !== false) storageAvailable = true;
     return {
       collections: [],
       storageError:
@@ -179,35 +169,51 @@ function setSnapshot(next: StoreSnapshot) {
   emit();
 }
 
-function persist(collections: NamedCollection[]): boolean {
+function collectionLocks() {
+  return typeof window === 'undefined' ? undefined : window.navigator.locks;
+}
+
+function readSnapshot(): StoreSnapshot {
   const current = readStorage();
-  if (storageCorrupt || storageAvailable === false) {
-    setSnapshot(current);
-    return false;
-  }
+  return collectionLocks() || current.storageError ? current : { ...current, storageError: LOCK_UNAVAILABLE };
+}
+
+async function withCollectionWrite<T>(failure: T, edit: (current: StoreSnapshot) => T): Promise<T> {
+  ensureInit();
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
-    storageAvailable = true;
-    setSnapshot({ collections, storageError: null });
-    return true;
-  } catch {
-    storageAvailable = false;
-    setSnapshot({
-      collections: snapshot.collections,
-      storageError: '브라우저 저장소에 저장하지 못했습니다. 저장 차단 설정을 확인해 주세요.',
+    const locks = collectionLocks();
+    if (!locks) {
+      setSnapshot(readSnapshot());
+      return failure;
+    }
+    return await locks.request(STORAGE_KEY, () => {
+      const current = readStorage();
+      if (current.storageError) {
+        setSnapshot(current);
+        return failure;
+      }
+      return edit(current);
     });
-    return false;
+  } catch {
+    setSnapshot({ ...readStorage(), storageError: WRITE_FAILED });
+    return failure;
   }
+}
+
+// Called only inside the lock, with collections derived from its fresh read.
+function persist(collections: NamedCollection[]) {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
+  setSnapshot({ collections, storageError: null });
 }
 
 function ensureInit() {
   if (initialized) return;
   initialized = true;
-  snapshot = readStorage();
+  snapshot = readSnapshot();
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', event => {
       if (event.key !== null && event.key !== STORAGE_KEY) return;
-      snapshot = readStorage();
+      snapshot = readSnapshot();
       emit();
     });
   }
@@ -247,98 +253,77 @@ function newId(): string | null {
   return null;
 }
 
-export function useCollections(): StoreSnapshot & {
-  createCollection: (name: string) => NamedCollection | null;
-  deleteCollection: (id: string) => boolean;
-  toggleInCollection: (collectionId: string, item: SavedItem) => void;
-  removeFromCollection: (collectionId: string, kind: SavedItemKind, id: string) => boolean;
-  savedIn: (kind: SavedItemKind, id: string) => NamedCollection[];
-  isStorageBlocked: () => boolean;
-} {
-  const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  return {
-    ...state,
-    createCollection,
-    deleteCollection,
-    toggleInCollection,
-    removeFromCollection,
-    savedIn,
-    isStorageBlocked,
-  };
+export function useCollections(): StoreSnapshot {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-export function createCollection(name: string): NamedCollection | null {
-  ensureInit();
-  snapshot = readStorage();
+export async function createCollection(name: string): Promise<NamedCollection | null> {
   const trimmed = name.trim();
   if (trimmed === '') return null;
-  if (storageAvailable === false || storageCorrupt) {
-    setSnapshot({
-      ...snapshot,
-      storageError: snapshot.storageError ?? '브라우저 저장소가 차단되어 컬렉션을 만들 수 없습니다.',
-    });
-    return null;
-  }
-  const id = newId();
-  if (id === null) {
-    setSnapshot({
-      ...snapshot,
-      storageError: '안전한 식별자를 만들 수 없어 컬렉션을 만들 수 없습니다.',
-    });
-    return null;
-  }
-  const collection: NamedCollection = {
-    id,
-    name: trimmed.slice(0, 60),
-    createdAt: Date.now(),
-    items: [],
-  };
-  const ok = persist([...snapshot.collections, collection]);
-  return ok ? collection : null;
+  return withCollectionWrite<NamedCollection | null>(null, current => {
+    const id = newId();
+    if (id === null) {
+      setSnapshot({
+        ...current,
+        storageError: '안전한 식별자를 만들 수 없어 컬렉션을 만들 수 없습니다.',
+      });
+      return null;
+    }
+    const collection: NamedCollection = {
+      id,
+      name: trimmed.slice(0, 60),
+      createdAt: Date.now(),
+      items: [],
+    };
+    persist([...current.collections, collection]);
+    return collection;
+  });
 }
 
 export function deleteCollection(id: string) {
-  ensureInit();
-  snapshot = readStorage();
-  return persist(snapshot.collections.filter(c => c.id !== id));
+  return withCollectionWrite(false, current => {
+    persist(current.collections.filter(c => c.id !== id));
+    return true;
+  });
 }
 
-export function toggleInCollection(collectionId: string, item: SavedItem) {
-  ensureInit();
-  snapshot = readStorage();
-  if (!isSavedItem(item) || !isSafeItem(item)) return;
-  persist(
-    snapshot.collections.map(c => {
-      if (c.id !== collectionId) return c;
-      const exists = c.items.some(i => i.kind === item.kind && i.id === item.id);
-      return {
-        ...c,
-        items: exists ? c.items.filter(i => !(i.kind === item.kind && i.id === item.id)) : [...c.items, item],
-      };
-    })
-  );
+export async function addToCollection(collectionId: string, item: SavedItem): Promise<boolean> {
+  if (!isSavedItem(item) || !isSafeItem(item)) return false;
+  return withCollectionWrite(false, current => {
+    const collection = current.collections.find(c => c.id === collectionId);
+    if (!collection) {
+      setSnapshot({
+        ...current,
+        storageError: '컬렉션이 삭제되어 항목을 저장하지 못했습니다.',
+      });
+      return false;
+    }
+    if (collection.items.some(i => i.kind === item.kind && i.id === item.id)) {
+      setSnapshot(current);
+      return true;
+    }
+    persist(current.collections.map(c => (c === collection ? { ...c, items: [...c.items, item] } : c)));
+    return true;
+  });
 }
 
 export function removeFromCollection(collectionId: string, kind: SavedItemKind, id: string) {
-  ensureInit();
-  snapshot = readStorage();
-  return persist(
-    snapshot.collections.map(c =>
-      c.id !== collectionId
-        ? c
-        : {
-            ...c,
-            items: c.items.filter(i => !(i.kind === kind && i.id === id)),
-          }
-    )
-  );
+  return withCollectionWrite(false, current => {
+    persist(
+      current.collections.map(c =>
+        c.id !== collectionId
+          ? c
+          : {
+              ...c,
+              items: c.items.filter(i => !(i.kind === kind && i.id === id)),
+            }
+      )
+    );
+    return true;
+  });
 }
 
 export function savedIn(kind: SavedItemKind, id: string): NamedCollection[] {
   ensureInit();
   return snapshot.collections.filter(c => c.items.some(i => i.kind === kind && i.id === id));
-}
-
-export function isStorageBlocked() {
-  return storageAvailable === false || storageCorrupt;
 }

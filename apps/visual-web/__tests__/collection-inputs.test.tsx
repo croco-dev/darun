@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collections } from '../features/collections/Collections';
 import { savedIn, type NamedCollection } from '../features/collections/collectionStore';
@@ -25,6 +25,11 @@ function pressEnter(input: HTMLInputElement, init: Record<string, unknown>) {
 }
 
 beforeEach(() => {
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: { request: async (_name: string, write: () => unknown) => write() },
+  });
+
   localStorage.clear();
   window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
   // jsdom does not implement the native dialog methods. Keep the real Dialog's
@@ -48,6 +53,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  Reflect.deleteProperty(navigator, 'locks');
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
   vi.restoreAllMocks();
@@ -74,7 +80,7 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
     it.each([
       { boundary: 'isComposing', isComposing: true, keyCode: 13 },
       { boundary: 'keyCode 229', isComposing: false, keyCode: 229 },
-    ])('$boundary 조합 확정 Enter는 draft와 저장소를 보존하고 별도 Enter만 생성한다', boundary => {
+    ])('$boundary 조합 확정 Enter는 draft와 저장소를 보존하고 별도 Enter만 생성한다', async boundary => {
       const input = openInput();
       const writes = vi.spyOn(Storage.prototype, 'setItem');
       fireEvent.compositionStart(input);
@@ -91,7 +97,7 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
       fireEvent.compositionEnd(input, { data: '고' });
       expect(input.value).toBe('  결제 참고  ');
       expect(writes).not.toHaveBeenCalled();
-      pressEnter(input, { key: 'Enter', keyCode: 13, isComposing: false });
+      await act(async () => pressEnter(input, { key: 'Enter', keyCode: 13, isComposing: false }));
       expectCreated('결제 참고');
       expect(input.value).toBe('');
       expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
@@ -100,7 +106,7 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
       expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
     });
 
-    it.each(['Enter', 'button'] as const)('%s는 일반 입력을 한 번 생성하고 빈 입력은 무시한다', submit => {
+    it.each(['Enter', 'button'] as const)('%s는 일반 입력을 한 번 생성하고 빈 입력은 무시한다', async submit => {
       const input = openInput();
       const button = screen.getByRole('button', { name: surface === 'Collections' ? '컬렉션 만들기' : '만들기' });
       const writes = vi.spyOn(Storage.prototype, 'setItem');
@@ -111,20 +117,22 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
       expect(writes).not.toHaveBeenCalled();
       expect(input.maxLength).toBe(60);
       fireEvent.change(input, { target: { value: '  일반 참고  ' } });
-      if (submit === 'Enter') pressEnter(input, { key: 'Enter', keyCode: 13 });
-      else fireEvent.click(button);
+      await act(async () => {
+        if (submit === 'Enter') pressEnter(input, { key: 'Enter', keyCode: 13 });
+        else fireEvent.click(button);
+      });
       expectCreated('일반 참고');
       expect(input.value).toBe('');
       expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
     });
 
-    it('저장 실패를 표시하고 입력을 지우지 않는다', () => {
+    it('저장 실패를 표시하고 입력을 지우지 않는다', async () => {
       const input = openInput();
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         throw new Error('synthetic quota');
       });
       fireEvent.change(input, { target: { value: '다시 저장' } });
-      pressEnter(input, { key: 'Enter', keyCode: 13 });
+      await act(async () => pressEnter(input, { key: 'Enter', keyCode: 13 }));
       expect(screen.getByRole('alert').textContent).toContain('저장하지 못했습니다');
       expect(input.value).toBe('다시 저장');
       expect(persisted()).toEqual([]);
