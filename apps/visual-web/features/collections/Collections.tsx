@@ -84,11 +84,13 @@ function CollectionSection({
 }) {
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const remove = async () => {
+  const remove = async (onlyIfEmpty: boolean) => {
     if (removing) return;
     setRemoving(true);
     try {
-      if (await deleteCollection(collection.id)) onRemoved(`${collection.name} 컬렉션을 삭제했습니다.`);
+      const result = await deleteCollection(collection.id, { onlyIfEmpty });
+      if (result === 'confirmation-required') setConfirming(true);
+      if (result === 'deleted') onRemoved(`${collection.name} 컬렉션을 삭제했습니다.`);
     } finally {
       setRemoving(false);
     }
@@ -109,7 +111,7 @@ function CollectionSection({
             <button
               type="button"
               aria-disabled={removing}
-              onClick={() => void remove()}
+              onClick={() => void remove(false)}
               className="min-h-11 rounded-lg bg-dark-900 px-3 text-xs font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
             >
               삭제 확인
@@ -128,7 +130,7 @@ function CollectionSection({
             type="button"
             aria-disabled={removing}
             onClick={() => {
-              if (collection.items.length === 0) void remove();
+              if (collection.items.length === 0) void remove(true);
               else setConfirming(true);
             }}
             className="min-h-11 rounded-lg px-2.5 text-xs font-semibold text-dark-600 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"

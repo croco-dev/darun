@@ -355,7 +355,7 @@ it('preserves partially readable collections rather than persisting a filtered s
     href: '/screenshots/s',
     productName: 'App',
   });
-  expect(await store.deleteCollection('c')).toBe(false);
+  expect(await store.deleteCollection('c')).toBe('failed');
   expect(localStorage.getItem('darun-visual-collections-v1')).toBe(raw);
 });
 
@@ -374,7 +374,7 @@ describe('browser collection write boundaries', () => {
     async raw => {
       localStorage.setItem(KEY, raw);
       expect(await store.createCollection('New')).toBeNull();
-      expect(await store.deleteCollection('c')).toBe(false);
+      expect(await store.deleteCollection('c')).toBe('failed');
       await store.addToCollection('c', item);
       expect(await store.removeFromCollection('c', 'screenshot', 's')).toBe(false);
       expect(localStorage.getItem(KEY)).toBe(raw);
@@ -389,7 +389,7 @@ describe('browser collection write boundaries', () => {
     const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota');
     });
-    expect(await store.deleteCollection(collection!.id)).toBe(false);
+    expect(await store.deleteCollection(collection!.id)).toBe('failed');
     expect(localStorage.getItem(KEY)).toBe(raw);
     set.mockRestore();
   });
@@ -406,6 +406,40 @@ describe('browser collection write boundaries', () => {
     expect(document.activeElement?.getAttribute('aria-label')).toBe('새 컬렉션 이름');
     expect(host.querySelector('[role=status]')?.textContent).toContain('Delete me 컬렉션을 삭제했습니다.');
   });
+  it('asks for confirmation when a collection gains an item while empty deletion waits for the lock', async () => {
+    const raw = [{ id: 'c', name: 'Initially empty', createdAt: 1, items: [] }];
+    localStorage.setItem(KEY, JSON.stringify(raw));
+    const release = deferred<void>();
+    Object.defineProperty(navigator, 'locks', {
+      configurable: true,
+      value: {
+        request: async (_name: string, write: () => unknown) => {
+          await release.promise;
+          return write();
+        },
+      },
+    });
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    const button = [...host.querySelectorAll('button')].find(button => button.textContent === '컬렉션 삭제')!;
+    await act(async () => button.click());
+
+    // Another tab finishes its write before this one gets the lock.
+    const populated = JSON.stringify([{ ...raw[0], items: [item] }]);
+    localStorage.setItem(KEY, populated);
+    await act(async () => release.resolve());
+
+    expect(localStorage.getItem(KEY)).toBe(populated);
+    expect(host.querySelector('[role=status]')?.textContent).toBe('');
+    expect(host.textContent).toContain('1개 항목도 함께 삭제됩니다.');
+    const confirm = [...host.querySelectorAll('button')].find(button => button.textContent === '삭제 확인')!;
+    await act(async () => confirm.click());
+    expect(localStorage.getItem(KEY)).toBe('[]');
+    expect(host.querySelector('[role=status]')?.textContent).toContain('Initially empty 컬렉션을 삭제했습니다.');
+  });
+
   it('does not announce deletion or move focus on a failed write', async () => {
     localStorage.removeItem(KEY);
     await store.createCollection('Keep me');

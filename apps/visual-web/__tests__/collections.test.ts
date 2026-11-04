@@ -258,7 +258,7 @@ it.each(['missing', 'rejected'] as const)('preserves readable v1 data when the l
 
   expect(store.savedIn('screenshot', 's1').map(c => c.id)).toEqual(['c1']);
   await expect(store.createCollection('New')).resolves.toBeNull();
-  await expect(store.deleteCollection('c1')).resolves.toBe(false);
+  await expect(store.deleteCollection('c1')).resolves.toBe('failed');
   await expect(store.addToCollection('c1', shot({ id: 's2' }))).resolves.toBe(false);
   await expect(store.removeFromCollection('c1', 'screenshot', 's1')).resolves.toBe(false);
   expect(backing[KEY]).toBe(seed);

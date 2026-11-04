@@ -280,10 +280,14 @@ export async function createCollection(name: string): Promise<NamedCollection | 
   });
 }
 
-export function deleteCollection(id: string) {
-  return withCollectionWrite(false, current => {
+export function deleteCollection(id: string, { onlyIfEmpty = false } = {}) {
+  return withCollectionWrite<'deleted' | 'confirmation-required' | 'failed'>('failed', current => {
+    if (onlyIfEmpty && current.collections.some(c => c.id === id && c.items.length > 0)) {
+      setSnapshot(current);
+      return 'confirmation-required';
+    }
     persist(current.collections.filter(c => c.id !== id));
-    return true;
+    return 'deleted';
   });
 }
 
