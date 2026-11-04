@@ -1,5 +1,6 @@
 'use client';
 
+import { CombinedGraphQLErrors, ServerError, ServerParseError } from '@apollo/client/errors';
 import { cn } from '@darun/ui';
 import { type ReactNode, useState } from 'react';
 
@@ -65,14 +66,20 @@ export function parseErrorInfo(error: unknown): ParsedErrorInfo {
   }
 
   const err = error as Record<string, unknown>;
-  const graphQLErrors = Array.isArray(err['graphQLErrors']) ? (err['graphQLErrors'] as Record<string, unknown>[]) : [];
+  const combinedGraphQLError = CombinedGraphQLErrors.is(error) ? error : undefined;
+  const graphQLErrors =
+    combinedGraphQLError?.errors ??
+    (Array.isArray(err['graphQLErrors']) ? (err['graphQLErrors'] as Record<string, unknown>[]) : []);
+  const httpError = ServerError.is(error) || ServerParseError.is(error) ? error : undefined;
   const networkError = err['networkError'] as Record<string, unknown> | undefined;
 
   let statusCode: number | undefined;
   let serverResult: unknown;
   let summary = '';
 
-  if (networkError) {
+  if (httpError) {
+    statusCode = httpError.statusCode;
+  } else if (networkError) {
     if (typeof networkError['statusCode'] === 'number') {
       statusCode = networkError['statusCode'];
     }
@@ -80,15 +87,19 @@ export function parseErrorInfo(error: unknown): ParsedErrorInfo {
   }
 
   // Prioritize GraphQL business errors when transport didn't fail
-  if (graphQLErrors.length > 0 && !networkError) {
+  if (ServerParseError.is(httpError)) {
+    summary = `서버 응답을 읽을 수 없습니다 (HTTP ${httpError.statusCode}).`;
+  } else if (combinedGraphQLError) {
+    summary = combinedGraphQLError.message;
+  } else if (graphQLErrors.length > 0 && !networkError && !httpError) {
     summary = graphQLErrors.map(e => (typeof e['message'] === 'string' ? e['message'] : 'GraphQL Error')).join('\n');
-  } else if (isTimeoutError(error)) {
+  } else if (!httpError && isTimeoutError(error)) {
     summary = '요청 시간이 초과되었습니다. 네트워크 연결 또는 서버 상태를 확인해 주세요.';
-  } else if (isAbortError(error)) {
+  } else if (!httpError && isAbortError(error)) {
     summary = '요청이 중단되었습니다.';
   }
 
-  if (!summary && networkError) {
+  if (!summary && (httpError || networkError)) {
     if (serverResult && typeof serverResult === 'object') {
       const res = serverResult as Record<string, unknown>;
       if (typeof res['message'] === 'string' && res['message']) {
@@ -116,12 +127,12 @@ export function parseErrorInfo(error: unknown): ParsedErrorInfo {
       } else {
         summary = `서버 응답 오류 (HTTP ${statusCode})`;
       }
-    } else if (!summary && typeof networkError['message'] === 'string') {
+    } else if (!summary && typeof networkError?.['message'] === 'string') {
       summary = networkError['message'];
     }
   }
 
-  if (!summary && graphQLErrors.length > 0) {
+  if (!summary && !combinedGraphQLError && graphQLErrors.length > 0) {
     summary = graphQLErrors.map(e => (typeof e['message'] === 'string' ? e['message'] : 'GraphQL Error')).join('\n');
   }
 
@@ -138,6 +149,7 @@ export function parseErrorInfo(error: unknown): ParsedErrorInfo {
   if (err['message']) detailsObj['message'] = err['message'];
   if (statusCode !== undefined) detailsObj['statusCode'] = statusCode;
   if (serverResult !== undefined) detailsObj['serverResult'] = serverResult;
+  if (httpError) detailsObj['bodyText'] = httpError.bodyText;
   if (graphQLErrors.length > 0) detailsObj['graphQLErrors'] = graphQLErrors;
   if (networkError) {
     detailsObj['networkError'] = {

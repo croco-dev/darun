@@ -18,6 +18,7 @@
     "typecheck:tsrs": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
+    "@apollo/client": "catalog:",
     "@darun/ui": "workspace:*",
     "@darun/utils-image-upload": "workspace:*",
     "@mantine/notifications": "catalog:",

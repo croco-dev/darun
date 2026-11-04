@@ -2112,6 +2112,9 @@ importers:
 
   libs/shared/ui-admin:
     dependencies:
+      '@apollo/client':
+        specifier: 'catalog:'
+        version: 4.2.0(graphql-ws@6.0.4(graphql@16.12.0)(ws@8.22.0))(graphql@16.12.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(rxjs@7.8.2)
       '@darun/ui':
         specifier: workspace:*
         version: link:../ui
