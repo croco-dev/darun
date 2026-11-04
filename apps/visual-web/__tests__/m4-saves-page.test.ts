@@ -13,6 +13,8 @@ import { useVisualSaveButton } from '../features/saves/useVisualSaveButton';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+vi.mock('../features/collections/collectionPersistence', () => import('./fixtures/collectionPersistence'));
+
 const mocks = vi.hoisted(() => ({
   query: vi.fn(),
   search: vi.fn(),
@@ -346,7 +348,7 @@ it('preserves partially readable collections rather than persisting a filtered s
   ]);
   localStorage.setItem('darun-visual-collections-v1', raw);
   expect(await store.createCollection('New')).toBeNull();
-  expect(store.savedIn('screenshot', 's')).toHaveLength(1);
+  expect(await store.savedIn('screenshot', 's')).toHaveLength(1);
   await store.addToCollection('c', {
     kind: 'screenshot',
     id: 's',
@@ -368,6 +370,20 @@ const item: store.SavedItem = {
   href: '/screenshots/s',
   productName: 'App',
 };
+function deferCollectionWrites() {
+  const release = deferred<void>();
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: {
+      request: async (_name: string, write: () => unknown) => {
+        await release.promise;
+        return write();
+      },
+    },
+  });
+  return release;
+}
+
 describe('browser collection write boundaries', () => {
   it.each(['{broken', '', '{"version":99,"collections":[]}', '[{"id":"broken"}]'])(
     'preserves raw corrupt value across all mutations: %s',
@@ -410,21 +426,13 @@ describe('browser collection write boundaries', () => {
     const raw = [{ id: 'c', name: 'Initially empty', createdAt: 1, items: [] }];
     localStorage.setItem(KEY, JSON.stringify(raw));
     window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
-    const release = deferred<void>();
-    Object.defineProperty(navigator, 'locks', {
-      configurable: true,
-      value: {
-        request: async (_name: string, write: () => unknown) => {
-          await release.promise;
-          return write();
-        },
-      },
-    });
+    const release = deferCollectionWrites();
     host = document.createElement('div');
     document.body.append(host);
     root = createRoot(host);
     await act(async () => root!.render(createElement(Collections)));
     const button = [...host.querySelectorAll('button')].find(button => button.textContent === '컬렉션 삭제')!;
+    button.focus();
     await act(async () => button.click());
 
     // Another tab finishes its write before this one gets the lock.
@@ -435,10 +443,33 @@ describe('browser collection write boundaries', () => {
     expect(localStorage.getItem(KEY)).toBe(populated);
     expect(host.querySelector('[role=status]')?.textContent).toBe('');
     expect(host.textContent).toContain('1개 항목도 함께 삭제됩니다.');
+    expect(document.activeElement?.textContent).toBe('취소');
     const confirm = [...host.querySelectorAll('button')].find(button => button.textContent === '삭제 확인')!;
     await act(async () => confirm.click());
     expect(localStorage.getItem(KEY)).toBe('[]');
     expect(host.querySelector('[role=status]')?.textContent).toContain('Initially empty 컬렉션을 삭제했습니다.');
+  });
+
+  it('keeps the focus that the user moved while an item removal waits', async () => {
+    const retained = { ...item, id: 'b', title: 'Retained', href: '/screenshots/b' };
+    localStorage.setItem(KEY, JSON.stringify([{ id: 'c', name: 'Collection', createdAt: 1, items: [item, retained] }]));
+    window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
+    const release = deferCollectionWrites();
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    const remove = host.querySelector<HTMLButtonElement>('button[aria-label="Screen 항목을 컬렉션에서 제거"]')!;
+    const next = host.querySelector<HTMLAnchorElement>('a[href="/screenshots/b"]')!;
+
+    remove.focus();
+    await act(async () => remove.click());
+    next.focus();
+    await act(async () => release.resolve());
+
+    expect(remove.isConnected).toBe(false);
+    expect(document.activeElement).toBe(next);
+    expect(host.querySelector('[role=status]')?.textContent).toContain('Screen 항목을 컬렉션에서 제거했습니다.');
   });
 
   it('does not announce deletion or move focus on a failed write', async () => {

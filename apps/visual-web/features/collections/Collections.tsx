@@ -23,7 +23,7 @@ function SavedCard({
   onRemoved,
 }: {
   collectionId: string;
-  onRemoved: (message: string) => void;
+  onRemoved: (message: string, trigger: HTMLButtonElement) => void;
   item: {
     kind: SavedItemKind;
     id: string;
@@ -34,12 +34,12 @@ function SavedCard({
   };
 }) {
   const [removing, setRemoving] = useState(false);
-  const remove = async () => {
+  const remove = async (trigger: HTMLButtonElement) => {
     if (removing) return;
     setRemoving(true);
     try {
       if (await removeFromCollection(collectionId, item.kind, item.id))
-        onRemoved(`${item.title} 항목을 컬렉션에서 제거했습니다.`);
+        onRemoved(`${item.title} 항목을 컬렉션에서 제거했습니다.`, trigger);
     } finally {
       setRemoving(false);
     }
@@ -64,7 +64,7 @@ function SavedCard({
         <button
           type="button"
           aria-disabled={removing}
-          onClick={() => void remove()}
+          onClick={event => void remove(event.currentTarget)}
           aria-label={`${item.title} 항목을 컬렉션에서 제거`}
           className="min-h-11 rounded-lg px-2.5 text-xs font-semibold text-dark-600 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
         >
@@ -80,17 +80,21 @@ function CollectionSection({
   onRemoved,
 }: {
   collection: NamedCollection;
-  onRemoved: (message: string) => void;
+  onRemoved: (message: string, trigger: HTMLButtonElement) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const remove = async (onlyIfEmpty: boolean) => {
+  const focusConfirmation = useRef(false);
+  const remove = async (trigger: HTMLButtonElement, onlyIfEmpty: boolean) => {
     if (removing) return;
     setRemoving(true);
     try {
       const result = await deleteCollection(collection.id, { onlyIfEmpty });
-      if (result === 'confirmation-required') setConfirming(true);
-      if (result === 'deleted') onRemoved(`${collection.name} 컬렉션을 삭제했습니다.`);
+      if (result === 'confirmation-required') {
+        focusConfirmation.current = document.activeElement === trigger;
+        setConfirming(true);
+      }
+      if (result === 'deleted') onRemoved(`${collection.name} 컬렉션을 삭제했습니다.`, trigger);
     } finally {
       setRemoving(false);
     }
@@ -111,7 +115,7 @@ function CollectionSection({
             <button
               type="button"
               aria-disabled={removing}
-              onClick={() => void remove(false)}
+              onClick={event => void remove(event.currentTarget, false)}
               className="min-h-11 rounded-lg bg-dark-900 px-3 text-xs font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
             >
               삭제 확인
@@ -119,6 +123,12 @@ function CollectionSection({
             <button
               type="button"
               disabled={removing}
+              ref={button => {
+                if (button && focusConfirmation.current) {
+                  focusConfirmation.current = false;
+                  button.focus();
+                }
+              }}
               onClick={() => setConfirming(false)}
               className="min-h-11 rounded-lg px-3 text-xs font-semibold text-dark-600 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
             >
@@ -129,8 +139,8 @@ function CollectionSection({
           <button
             type="button"
             aria-disabled={removing}
-            onClick={() => {
-              if (collection.items.length === 0) void remove(true);
+            onClick={event => {
+              if (collection.items.length === 0) void remove(event.currentTarget, true);
               else setConfirming(true);
             }}
             className="min-h-11 rounded-lg px-2.5 text-xs font-semibold text-dark-600 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
@@ -153,19 +163,19 @@ function CollectionSection({
 }
 
 export function Collections() {
-  const { collections, storageError } = useCollections();
+  const { collections, storageError, loading } = useCollections();
   const [draft, setDraft] = useState('');
   const [creating, setCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [announcement, setAnnouncement] = useState('');
-  const onRemoved = (message: string) => {
-    inputRef.current?.focus();
+  const onRemoved = (message: string, trigger: HTMLButtonElement) => {
+    if (document.activeElement === trigger || document.activeElement === document.body) inputRef.current?.focus();
     setAnnouncement(message);
   };
   const total = collections.reduce((n, c) => n + c.items.length, 0);
 
   const create = async () => {
-    if (creating || draft.trim() === '') return;
+    if (loading || creating || draft.trim() === '') return;
     setCreating(true);
     try {
       if (await createCollection(draft)) setDraft('');
@@ -211,7 +221,7 @@ export function Collections() {
           <button
             type="submit"
             aria-label="컬렉션 만들기"
-            disabled={creating || draft.trim() === ''}
+            disabled={loading || creating || draft.trim() === ''}
             className="min-h-11 shrink-0 rounded-lg bg-dark-900 px-4 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             만들기
@@ -223,7 +233,11 @@ export function Collections() {
           {storageError}
         </p>
       ) : null}
-      {collections.length === 0 && !storageError ? (
+      {loading ? (
+        <p role="status" className="text-sm text-dark-600">
+          컬렉션을 불러오는 중입니다.
+        </p>
+      ) : collections.length === 0 && !storageError ? (
         <div className="flex flex-col items-center gap-2 rounded-xl bg-surface-100 px-6 py-16 text-center">
           <p className="text-base font-semibold text-dark-900">저장한 컬렉션이 없습니다.</p>
           <p className="text-sm text-dark-600">마음에 드는 화면에서 저장을 눌러 모아보세요.</p>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { hasCollectionDatabase, readCollectionRecord, writeCollectionRecord } from './collectionPersistence';
 
 export type SavedItemKind = 'screenshot' | 'flow' | 'app';
 
@@ -20,9 +21,13 @@ export interface NamedCollection {
   items: SavedItem[];
 }
 
-interface StoreSnapshot {
+interface CollectionData {
   collections: NamedCollection[];
   storageError: string | null;
+}
+
+interface StoreSnapshot extends CollectionData {
+  loading: boolean;
 }
 
 const STORAGE_KEY = 'darun-visual-collections-v1';
@@ -30,10 +35,12 @@ const LOCK_UNAVAILABLE =
   '이 브라우저에서는 컬렉션을 안전하게 변경할 수 없습니다. 최신 브라우저의 HTTPS 페이지에서 다시 시도해 주세요.';
 const WRITE_FAILED = '브라우저 저장소에 저장하지 못했습니다. 저장 차단 설정을 확인해 주세요.';
 
-const EMPTY_SNAPSHOT: StoreSnapshot = { collections: [], storageError: null };
+const EMPTY_SNAPSHOT: StoreSnapshot = { collections: [], storageError: null, loading: true };
 
 let snapshot: StoreSnapshot = EMPTY_SNAPSHOT;
 let initialized = false;
+let snapshotRevision = 0;
+let changes: BroadcastChannel | undefined;
 const listeners = new Set<() => void>();
 
 function isSavedItem(value: unknown): value is SavedItem {
@@ -95,22 +102,25 @@ function isSafeItem(item: SavedItem): boolean {
   return hrefOk && imageOk;
 }
 
-function readStorage(): StoreSnapshot {
+function decodeCollectionList(raw: unknown): unknown[] {
+  if (typeof raw !== 'string') throw new Error('bad shape');
+  const parsed: unknown = JSON.parse(raw);
+  if (Array.isArray(parsed)) return parsed;
+  if (
+    parsed !== null &&
+    typeof parsed === 'object' &&
+    Object.keys(parsed).every(key => key === 'collections') &&
+    'collections' in parsed &&
+    Array.isArray(parsed.collections)
+  ) {
+    return parsed.collections;
+  }
+  throw new Error('bad shape');
+}
+
+function decodeCollections(raw: unknown): CollectionData {
   try {
-    if (typeof window === 'undefined') return EMPTY_SNAPSHOT;
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw === null) return { collections: [], storageError: null };
-    const parsed: unknown = JSON.parse(raw);
-    const list: unknown[] | null = Array.isArray(parsed)
-      ? parsed
-      : parsed !== null &&
-          typeof parsed === 'object' &&
-          Object.keys(parsed).every(key => key === 'collections') &&
-          'collections' in parsed &&
-          Array.isArray(parsed.collections)
-        ? parsed.collections
-        : null;
-    if (list === null) throw new Error('bad shape');
+    const list = decodeCollectionList(raw);
     const seenIds = new Set<string>();
     const collections: NamedCollection[] = [];
     let dropped = false;
@@ -142,16 +152,6 @@ function readStorage(): StoreSnapshot {
     }
     return { collections, storageError: null };
   } catch {
-    if (typeof window !== 'undefined') {
-      try {
-        void window.localStorage;
-      } catch {
-        return {
-          collections: [],
-          storageError: '브라우저 저장소를 사용할 수 없어 컬렉션을 불러오지 못했습니다. 저장 기능이 동작하지 않습니다.',
-        };
-      }
-    }
     return {
       collections: [],
       storageError:
@@ -160,63 +160,96 @@ function readStorage(): StoreSnapshot {
   }
 }
 
-function emit() {
+async function readStorage(): Promise<CollectionData> {
+  if (typeof window === 'undefined') return EMPTY_SNAPSHOT;
+  try {
+    const stored = await readCollectionRecord();
+    if (stored !== undefined) return decodeCollections(stored);
+
+    // Migrate on the first successful write. Keep the legacy raw data as a backup.
+    const legacy = window.localStorage.getItem(STORAGE_KEY);
+    return legacy === null ? { collections: [], storageError: null } : decodeCollections(legacy);
+  } catch {
+    return {
+      collections: [],
+      storageError: '브라우저 저장소를 사용할 수 없어 컬렉션을 불러오지 못했습니다. 저장 기능이 동작하지 않습니다.',
+    };
+  }
+}
+
+function setSnapshot(current: CollectionData) {
+  snapshotRevision += 1;
+  snapshot = { ...current, loading: false };
   for (const listener of listeners) listener();
 }
 
-function setSnapshot(next: StoreSnapshot) {
-  snapshot = next;
-  emit();
-}
-
 function collectionLocks() {
-  return typeof window === 'undefined' ? undefined : window.navigator.locks;
+  return hasCollectionDatabase() ? window.navigator.locks : undefined;
 }
 
-function readSnapshot(): StoreSnapshot {
-  const current = readStorage();
-  return collectionLocks() || current.storageError ? current : { ...current, storageError: LOCK_UNAVAILABLE };
+async function refreshSnapshot() {
+  const revision = ++snapshotRevision;
+  const current = await readStorage();
+  if (snapshotRevision !== revision) return;
+  setSnapshot(collectionLocks() || current.storageError ? current : { ...current, storageError: LOCK_UNAVAILABLE });
 }
 
-async function withCollectionWrite<T>(failure: T, edit: (current: StoreSnapshot) => T): Promise<T> {
+async function withCollectionWrite<T>(failure: T, edit: (current: CollectionData) => T | Promise<T>): Promise<T> {
   ensureInit();
   try {
     const locks = collectionLocks();
     if (!locks) {
-      setSnapshot(readSnapshot());
+      await refreshSnapshot();
       return failure;
     }
-    return await locks.request(STORAGE_KEY, () => {
-      const current = readStorage();
+    return await locks.request(STORAGE_KEY, async () => {
+      const current = await readStorage();
       if (current.storageError) {
         setSnapshot(current);
         return failure;
       }
-      return edit(current);
+      try {
+        return await edit(current);
+      } catch {
+        setSnapshot({ ...current, storageError: WRITE_FAILED });
+        return failure;
+      }
     });
   } catch {
-    setSnapshot({ ...readStorage(), storageError: WRITE_FAILED });
+    const current = await readStorage();
+    setSnapshot({ ...current, storageError: current.storageError ?? LOCK_UNAVAILABLE });
     return failure;
   }
 }
 
-// Called only inside the lock, with collections derived from its fresh read.
-function persist(collections: NamedCollection[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
+// Called inside the lock. The next writer reads the committed IndexedDB record.
+async function persist(collections: NamedCollection[]) {
+  await writeCollectionRecord(JSON.stringify(collections));
   setSnapshot({ collections, storageError: null });
+  try {
+    changes?.postMessage(null);
+  } catch {
+    // The commit is durable even if a tab cannot notify other readers.
+  }
 }
 
 function ensureInit() {
-  if (initialized) return;
+  if (initialized || typeof window === 'undefined') return;
   initialized = true;
-  snapshot = readSnapshot();
-  if (typeof window !== 'undefined') {
-    window.addEventListener('storage', event => {
-      if (event.key !== null && event.key !== STORAGE_KEY) return;
-      snapshot = readSnapshot();
-      emit();
-    });
+  void refreshSnapshot();
+  if (typeof window.BroadcastChannel === 'function') {
+    try {
+      changes = new window.BroadcastChannel(STORAGE_KEY);
+      changes.addEventListener('message', () => void refreshSnapshot());
+    } catch {
+      // Returning to the tab refreshes the list even without notifications.
+    }
   }
+  window.addEventListener('storage', event => {
+    if (event.key === null || event.key === STORAGE_KEY) void refreshSnapshot();
+  });
+  window.addEventListener('focus', () => void refreshSnapshot());
+  window.addEventListener('pageshow', () => void refreshSnapshot());
 }
 
 function subscribe(listener: () => void) {
@@ -260,7 +293,7 @@ export function useCollections(): StoreSnapshot {
 export async function createCollection(name: string): Promise<NamedCollection | null> {
   const trimmed = name.trim();
   if (trimmed === '') return null;
-  return withCollectionWrite<NamedCollection | null>(null, current => {
+  return withCollectionWrite<NamedCollection | null>(null, async current => {
     const id = newId();
     if (id === null) {
       setSnapshot({
@@ -275,25 +308,25 @@ export async function createCollection(name: string): Promise<NamedCollection | 
       createdAt: Date.now(),
       items: [],
     };
-    persist([...current.collections, collection]);
+    await persist([...current.collections, collection]);
     return collection;
   });
 }
 
 export function deleteCollection(id: string, { onlyIfEmpty = false } = {}) {
-  return withCollectionWrite<'deleted' | 'confirmation-required' | 'failed'>('failed', current => {
+  return withCollectionWrite<'deleted' | 'confirmation-required' | 'failed'>('failed', async current => {
     if (onlyIfEmpty && current.collections.some(c => c.id === id && c.items.length > 0)) {
       setSnapshot(current);
       return 'confirmation-required';
     }
-    persist(current.collections.filter(c => c.id !== id));
+    await persist(current.collections.filter(c => c.id !== id));
     return 'deleted';
   });
 }
 
 export async function addToCollection(collectionId: string, item: SavedItem): Promise<boolean> {
   if (!isSavedItem(item) || !isSafeItem(item)) return false;
-  return withCollectionWrite(false, current => {
+  return withCollectionWrite(false, async current => {
     const collection = current.collections.find(c => c.id === collectionId);
     if (!collection) {
       setSnapshot({
@@ -306,14 +339,14 @@ export async function addToCollection(collectionId: string, item: SavedItem): Pr
       setSnapshot(current);
       return true;
     }
-    persist(current.collections.map(c => (c === collection ? { ...c, items: [...c.items, item] } : c)));
+    await persist(current.collections.map(c => (c === collection ? { ...c, items: [...c.items, item] } : c)));
     return true;
   });
 }
 
 export function removeFromCollection(collectionId: string, kind: SavedItemKind, id: string) {
-  return withCollectionWrite(false, current => {
-    persist(
+  return withCollectionWrite(false, async current => {
+    await persist(
       current.collections.map(c =>
         c.id !== collectionId
           ? c
@@ -327,7 +360,7 @@ export function removeFromCollection(collectionId: string, kind: SavedItemKind, 
   });
 }
 
-export function savedIn(kind: SavedItemKind, id: string): NamedCollection[] {
-  ensureInit();
-  return snapshot.collections.filter(c => c.items.some(i => i.kind === kind && i.id === id));
+export async function savedIn(kind: SavedItemKind, id: string): Promise<NamedCollection[]> {
+  const { collections } = await readStorage();
+  return collections.filter(c => c.items.some(i => i.kind === kind && i.id === id));
 }

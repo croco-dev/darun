@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SavedItem } from '../features/collections/collectionStore';
 import type * as StoreModule from '../features/collections/collectionStore';
 
+vi.mock('../features/collections/collectionPersistence', () => import('./fixtures/collectionPersistence'));
+
 const KEY = 'darun-visual-collections-v1';
 
 function shot(overrides: Partial<SavedItem> = {}): SavedItem {
@@ -93,11 +95,11 @@ describe('collections persistence', () => {
     const c = await s.createCollection('A');
     expect(c).not.toBeNull();
     await s.addToCollection(c!.id, shot());
-    expect(s.savedIn('screenshot', 's1').map(x => x.id)).toEqual([c!.id]);
+    expect((await s.savedIn('screenshot', 's1')).map(x => x.id)).toEqual([c!.id]);
     await s.addToCollection(c!.id, shot());
-    expect(s.savedIn('screenshot', 's1')[0].items).toEqual([shot()]);
+    expect((await s.savedIn('screenshot', 's1'))[0].items).toEqual([shot()]);
     await s.removeFromCollection(c!.id, 'screenshot', 's1');
-    expect(s.savedIn('screenshot', 's1')).toEqual([]);
+    expect(await s.savedIn('screenshot', 's1')).toEqual([]);
   });
 
   it('같은 id라도 kind가 다르면 별개 항목이다', async () => {
@@ -107,8 +109,8 @@ describe('collections persistence', () => {
     await s.addToCollection(c!.id, shot({ kind: 'screenshot' }));
     await s.addToCollection(c!.id, shot({ kind: 'flow', href: '/flows/s1' }));
     await s.removeFromCollection(c!.id, 'screenshot', 's1');
-    expect(s.savedIn('screenshot', 's1')).toEqual([]);
-    expect(s.savedIn('flow', 's1').map(x => x.id)).toEqual([c!.id]);
+    expect(await s.savedIn('screenshot', 's1')).toEqual([]);
+    expect((await s.savedIn('flow', 's1')).map(x => x.id)).toEqual([c!.id]);
   });
 
   it('저장 후 리로드해도 이름과 항목이 유지되고 삭제도 반영된다', async () => {
@@ -119,11 +121,11 @@ describe('collections persistence', () => {
     expect(backing[KEY]).toContain('Mine');
 
     const r = await freshStore();
-    const found = r.savedIn('screenshot', 's1');
+    const found = await r.savedIn('screenshot', 's1');
     expect(found.map(x => x.name)).toEqual(['Mine']);
     await r.removeFromCollection(found[0].id, 'screenshot', 's1');
-    expect(r.savedIn('screenshot', 's1')).toEqual([]);
-    expect((await freshStore()).savedIn('screenshot', 's1')).toEqual([]);
+    expect(await r.savedIn('screenshot', 's1')).toEqual([]);
+    expect(await (await freshStore()).savedIn('screenshot', 's1')).toEqual([]);
   });
 
   it('읽기 차단된 저장소에서도 죽지 않고 create는 null을 반환한다', async () => {
@@ -142,7 +144,7 @@ describe('collections persistence', () => {
     const s = await freshStore();
     await expect(s.createCollection('New')).resolves.toBeNull();
     await s.addToCollection('c1', shot());
-    expect(s.savedIn('screenshot', 's1')).toEqual([]);
+    expect(await s.savedIn('screenshot', 's1')).toEqual([]);
   });
 
   it('randomUUID 없이 getRandomValues만 있어도 서로 다른 컬렉션이 유지된다', async () => {
@@ -167,12 +169,12 @@ describe('collections persistence', () => {
     await s.addToCollection(second!.id, shot({ id: 's2', href: '/screenshots/s2' }));
 
     const reloaded = await freshStore();
-    expect(reloaded.savedIn('screenshot', 's1').map(c => c.id)).toEqual([first!.id]);
-    expect(reloaded.savedIn('screenshot', 's2').map(c => c.id)).toEqual([second!.id]);
+    expect((await reloaded.savedIn('screenshot', 's1')).map(c => c.id)).toEqual([first!.id]);
+    expect((await reloaded.savedIn('screenshot', 's2')).map(c => c.id)).toEqual([second!.id]);
     await reloaded.deleteCollection(first!.id);
     const after = await freshStore();
-    expect(after.savedIn('screenshot', 's1')).toEqual([]);
-    expect(after.savedIn('screenshot', 's2').map(c => c.id)).toEqual([second!.id]);
+    expect(await after.savedIn('screenshot', 's1')).toEqual([]);
+    expect((await after.savedIn('screenshot', 's2')).map(c => c.id)).toEqual([second!.id]);
     expect(JSON.parse(backing[KEY]).map((c: { id: string }) => c.id)).toEqual([second!.id]);
   });
 
@@ -183,7 +185,7 @@ describe('collections persistence', () => {
     const s = await freshStore();
     await expect(s.createCollection('New')).resolves.toBeNull();
     expect(backing[KEY]).toBe(seed);
-    expect((await freshStore()).savedIn('screenshot', 's1')).toEqual([]);
+    expect(await (await freshStore()).savedIn('screenshot', 's1')).toEqual([]);
     expect(JSON.parse(backing[KEY])).toEqual([{ id: 'c1', name: 'Seed', createdAt: 1, items: [] }]);
   });
 
@@ -199,8 +201,8 @@ describe('collections persistence', () => {
       ]),
     });
     const s = await freshStore();
-    expect(s.savedIn('screenshot', 'good').map(c => c.id)).toEqual(['c1']);
-    expect(s.savedIn('screenshot', 'evil')).toEqual([]);
+    expect((await s.savedIn('screenshot', 'good')).map(c => c.id)).toEqual(['c1']);
+    expect(await s.savedIn('screenshot', 'evil')).toEqual([]);
   });
 });
 
@@ -229,7 +231,7 @@ describe('overlapping collection edits without storage events', () => {
       });
       const tabA = await freshStore();
       const tabB = await freshStore();
-      tabB.savedIn('screenshot', 's1');
+      await tabB.savedIn('screenshot', 's1');
       startSecondWrite = () => {
         overlappingWrite = tabB.addToCollection('c1', second);
       };
@@ -239,8 +241,8 @@ describe('overlapping collection edits without storage events', () => {
       expect(await overlappingWrite).toBe(true);
 
       const reloaded = await freshStore();
-      expect(reloaded.savedIn('screenshot', 's1').map(c => c.id)).toEqual(edit === 'add' ? ['c1'] : []);
-      expect(reloaded.savedIn('screenshot', 's2').map(c => c.id)).toEqual(['c1']);
+      expect((await reloaded.savedIn('screenshot', 's1')).map(c => c.id)).toEqual(edit === 'add' ? ['c1'] : []);
+      expect((await reloaded.savedIn('screenshot', 's2')).map(c => c.id)).toEqual(['c1']);
     }
   );
 });
@@ -256,11 +258,11 @@ it.each(['missing', 'rejected'] as const)('preserves readable v1 data when the l
   });
   const store = await freshStore();
 
-  expect(store.savedIn('screenshot', 's1').map(c => c.id)).toEqual(['c1']);
+  expect((await store.savedIn('screenshot', 's1')).map(c => c.id)).toEqual(['c1']);
   await expect(store.createCollection('New')).resolves.toBeNull();
   await expect(store.deleteCollection('c1')).resolves.toBe('failed');
   await expect(store.addToCollection('c1', shot({ id: 's2' }))).resolves.toBe(false);
   await expect(store.removeFromCollection('c1', 'screenshot', 's1')).resolves.toBe(false);
   expect(backing[KEY]).toBe(seed);
-  expect(store.savedIn('screenshot', 's1').map(c => c.id)).toEqual(['c1']);
+  expect((await store.savedIn('screenshot', 's1')).map(c => c.id)).toEqual(['c1']);
 });

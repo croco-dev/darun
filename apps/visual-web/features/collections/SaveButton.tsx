@@ -15,7 +15,7 @@ export interface SaveItemInput {
 }
 
 export function SaveButton({ item, className }: { item: SaveItemInput; className?: string }) {
-  const { collections, storageError } = useCollections();
+  const { collections, storageError, loading } = useCollections();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [writing, setWriting] = useState(false);
@@ -26,7 +26,7 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
   const isSaved = savedCount > 0;
 
   const create = async () => {
-    if (writing || draft.trim() === '') return;
+    if (loading || writing || draft.trim() === '') return;
     setWriting(true);
     try {
       const created = await createCollection(draft);
@@ -82,7 +82,11 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
               {storageError}
             </p>
           ) : null}
-          {collections.length === 0 ? (
+          {loading ? (
+            <p role="status" className="px-1 py-2 text-xs text-dark-600">
+              컬렉션을 불러오는 중입니다.
+            </p>
+          ) : collections.length === 0 ? (
             <p className="px-1 py-2 text-xs text-dark-600">아직 컬렉션이 없습니다. 아래에서 새로 만드세요.</p>
           ) : (
             <ul className="max-h-56 space-y-1 overflow-y-auto py-1">
@@ -129,7 +133,7 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
             />
             <button
               type="submit"
-              disabled={writing || draft.trim() === ''}
+              disabled={loading || writing || draft.trim() === ''}
               className="min-h-11 shrink-0 rounded-lg bg-dark-900 px-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               만들기
