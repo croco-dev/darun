@@ -415,60 +415,44 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
     id: string,
     { publishedOnly }: { publishedOnly: boolean }
   ): Promise<VisualFlowDetail | null> {
-    const flowRows = await this.db
+    const rows = await this.db
       .select({
-        id: productFlows.id,
-        productId: productFlows.productId,
-        title: productFlows.title,
-        description: productFlows.description,
-        platform: productFlows.platform,
-        flowType: productFlows.flowType,
-        productName: products.name,
-        productSlug: products.slug,
+        flow: {
+          id: productFlows.id,
+          productId: productFlows.productId,
+          title: productFlows.title,
+          description: productFlows.description,
+          platform: productFlows.platform,
+          flowType: productFlows.flowType,
+          productName: products.name,
+          productSlug: products.slug,
+        },
+        step: {
+          position: productFlowSteps.position,
+          caption: productFlowSteps.caption,
+        },
+        screenshot: {
+          id: productScreenshots.id,
+          imageUrl: productScreenshots.imageUrl,
+          imageAlt: productScreenshots.imageAlt,
+          title: productScreenshots.title,
+        },
       })
       .from(productFlows)
       .innerJoin(products, eq(products.id, productFlows.productId))
+      .leftJoin(productFlowSteps, eq(productFlowSteps.flowId, productFlows.id))
+      .leftJoin(productScreenshots, eq(productScreenshots.id, productFlowSteps.screenshotId))
       .where(publishedOnly ? and(isNotNull(products.publishedAt), eq(productFlows.id, id)) : eq(productFlows.id, id))
-      .limit(1);
+      .orderBy(asc(productFlowSteps.position));
 
-    const flow = flowRows[0];
-    if (!flow) {
+    const first = rows[0];
+    if (!first) {
       return null;
     }
 
-    const steps = await this.db
-      .select({
-        position: productFlowSteps.position,
-        caption: productFlowSteps.caption,
-        screenshotId: productScreenshots.id,
-        imageUrl: productScreenshots.imageUrl,
-        imageAlt: productScreenshots.imageAlt,
-        screenshotTitle: productScreenshots.title,
-      })
-      .from(productFlowSteps)
-      .innerJoin(productScreenshots, eq(productScreenshots.id, productFlowSteps.screenshotId))
-      .where(eq(productFlowSteps.flowId, id))
-      .orderBy(asc(productFlowSteps.position));
-
     return {
-      id: flow.id,
-      productId: flow.productId,
-      title: flow.title,
-      description: flow.description,
-      platform: flow.platform,
-      flowType: flow.flowType,
-      productName: flow.productName,
-      productSlug: flow.productSlug,
-      steps: steps.map(step => ({
-        position: step.position,
-        caption: step.caption,
-        screenshot: {
-          id: step.screenshotId,
-          imageUrl: step.imageUrl,
-          imageAlt: step.imageAlt,
-          title: step.screenshotTitle,
-        },
-      })),
+      ...first.flow,
+      steps: rows.flatMap(({ step, screenshot }) => (step && screenshot ? [{ ...step, screenshot }] : [])),
     };
   }
 
