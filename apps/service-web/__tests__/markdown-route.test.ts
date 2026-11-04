@@ -2,6 +2,7 @@ import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { SchemaLink } from '@apollo/client/link/schema';
 import { getRouteMatcher } from 'next/dist/shared/lib/router/utils/route-matcher';
 import { getRouteRegex } from 'next/dist/shared/lib/router/utils/route-regex';
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -11,13 +12,14 @@ const { getClient, intlMiddleware } = vi.hoisted(() => ({ getClient: vi.fn(), in
 vi.mock('../app/getServerClient', () => ({ getClient }));
 vi.mock('next-intl/middleware', () => ({ default: () => intlMiddleware }));
 import { GET, HEAD } from '../app/api/markdown/[...path]/route';
-import middleware from '../middleware';
+import middleware, { config } from '../middleware';
 
 const { buildSchema } = createRequire(import.meta.url)('graphql') as typeof import('graphql');
 const schema = buildSchema(readFileSync(new URL('../../graphql-api/schema.graphql', import.meta.url), 'utf8'));
 const matchMarkdownRoute = getRouteMatcher(getRouteRegex('/api/markdown/[...path]'));
 const magazineSlugs = [
   ['design', 'design'],
+  ['v1.2', 'v1.2'],
   ['한글', '%ED%95%9C%EA%B8%80'],
   ['c%2B%2B', 'c%252B%252B'],
   ['design#tools', 'design%23tools'],
@@ -64,6 +66,9 @@ function magazineRequest(locale: string, segment: string, method: 'GET' | 'HEAD'
     method,
     headers: { Accept: sibling ? '*/*' : 'text/markdown' },
   });
+  if (!unstable_doesMiddlewareMatch({ config, url: request.url })) {
+    throw new Error(`No middleware match for ${request.url}`);
+  }
   const rewrite = middleware(request);
   const pathname = new URL(rewrite.headers.get('x-middleware-rewrite')!).pathname;
   const params = matchMarkdownRoute(pathname);
