@@ -12,6 +12,7 @@ import { useSavesPage } from '../features/saves/useSavesPage';
 import { useVisualSaveButton } from '../features/saves/useVisualSaveButton';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+import { RECORD_KEY } from './fixtures/collectionPersistence';
 
 vi.mock('../features/collections/collectionPersistence', () => import('./fixtures/collectionPersistence'));
 
@@ -401,12 +402,12 @@ describe('browser collection write boundaries', () => {
     const collection = await store.createCollection('Valid');
     expect(collection).not.toBeNull();
     await store.addToCollection(collection!.id, item);
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(RECORD_KEY);
     const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota');
     });
     expect(await store.deleteCollection(collection!.id)).toBe('failed');
-    expect(localStorage.getItem(KEY)).toBe(raw);
+    expect(localStorage.getItem(RECORD_KEY)).toBe(raw);
     set.mockRestore();
   });
   it('restores focus and announces successful collection deletion', async () => {
@@ -446,7 +447,7 @@ describe('browser collection write boundaries', () => {
     expect(document.activeElement?.textContent).toBe('취소');
     const confirm = [...host.querySelectorAll('button')].find(button => button.textContent === '삭제 확인')!;
     await act(async () => confirm.click());
-    expect(localStorage.getItem(KEY)).toBe('[]');
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections).toEqual([]);
     expect(host.querySelector('[role=status]')?.textContent).toContain('Initially empty 컬렉션을 삭제했습니다.');
   });
 
@@ -470,6 +471,30 @@ describe('browser collection write boundaries', () => {
     expect(remove.isConnected).toBe(false);
     expect(document.activeElement).toBe(next);
     expect(host.querySelector('[role=status]')?.textContent).toContain('Screen 항목을 컬렉션에서 제거했습니다.');
+  });
+
+  it('commits a late legacy save even when a newer legacy snapshot no longer contains it', async () => {
+    const legacy = { id: 'c', name: 'Collection', createdAt: 1, items: [item] };
+    const original = JSON.stringify([legacy]);
+    const modern = { ...item, id: 'modern', title: 'Modern', href: '/screenshots/modern' };
+    const late = { ...item, id: 'late', title: 'Late', href: '/screenshots/late' };
+    localStorage.setItem(KEY, original);
+    await store.addToCollection(legacy.id, modern);
+    await store.removeFromCollection(legacy.id, item.kind, item.id);
+
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    await act(async () => {
+      const earlierWrite = JSON.stringify([{ ...legacy, items: [item, late] }]);
+      window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue: earlierWrite }));
+    });
+
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections[0].items).toEqual([modern, late]);
+    expect(localStorage.getItem(KEY)).toBe(original);
+    expect(host.textContent).toContain('Late');
+    expect(host.textContent).not.toContain('Screen');
   });
 
   it('does not announce deletion or move focus on a failed write', async () => {

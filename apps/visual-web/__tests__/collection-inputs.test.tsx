@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collections } from '../features/collections/Collections';
 import { savedIn, type NamedCollection } from '../features/collections/collectionStore';
 import { SaveButton } from '../features/collections/SaveButton';
+import { RECORD_KEY } from './fixtures/collectionPersistence';
 
 vi.mock('../features/collections/collectionPersistence', () => import('./fixtures/collectionPersistence'));
 
@@ -18,7 +19,7 @@ const item = {
 };
 
 function persisted(): NamedCollection[] {
-  return JSON.parse(localStorage.getItem(KEY) ?? '[]');
+  return JSON.parse(localStorage.getItem(RECORD_KEY) ?? '{}').collections ?? [];
 }
 
 function pressEnter(input: HTMLInputElement, init: Record<string, unknown>) {
@@ -92,7 +93,7 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
       pressEnter(input, { key: 'Enter', ...boundary });
       expect(input.value).toBe('  결제 참고  ');
       expect(writes).not.toHaveBeenCalled();
-      expect(localStorage.getItem(KEY)).toBeNull();
+      expect(localStorage.getItem(RECORD_KEY)).toBeNull();
       expect(persisted()).toEqual([]);
       expect(await savedIn('flow', 'checkout-42')).toEqual([]);
       expect(screen.queryByRole('heading', { level: 2 })).toBeNull();

@@ -28,11 +28,12 @@ async function collectionRequest<T>(
   }
 }
 
-export async function readCollectionRecord(): Promise<unknown> {
+export async function readCollectionRecord(): Promise<{ value: unknown } | undefined> {
   if (!hasCollectionDatabase()) return undefined;
-  return collectionRequest('readonly', store => store.get(RECORD));
+  const record = await collectionRequest('readonly', store => store.openCursor(RECORD));
+  return record ? { value: record.value } : undefined;
 }
 
-export async function writeCollectionRecord(raw: string): Promise<void> {
-  await collectionRequest('readwrite', store => store.put(raw, RECORD));
+export async function writeCollectionRecord(record: unknown): Promise<void> {
+  await collectionRequest('readwrite', store => store.put(record, RECORD));
 }

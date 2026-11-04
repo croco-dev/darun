@@ -26,6 +26,17 @@ interface CollectionData {
   storageError: string | null;
 }
 
+interface StoredCollections {
+  version: 1;
+  collections: NamedCollection[];
+  legacyKeys: string[];
+}
+
+interface StorageRead extends CollectionData {
+  legacyKeys: string[];
+  needsImport: boolean;
+}
+
 interface StoreSnapshot extends CollectionData {
   loading: boolean;
 }
@@ -118,9 +129,8 @@ function decodeCollectionList(raw: unknown): unknown[] {
   throw new Error('bad shape');
 }
 
-function decodeCollections(raw: unknown): CollectionData {
+function decodeCollections(list: unknown[]): CollectionData {
   try {
-    const list = decodeCollectionList(raw);
     const seenIds = new Set<string>();
     const collections: NamedCollection[] = [];
     let dropped = false;
@@ -152,34 +162,97 @@ function decodeCollections(raw: unknown): CollectionData {
     }
     return { collections, storageError: null };
   } catch {
-    return {
-      collections: [],
-      storageError:
-        '저장된 컬렉션 형식을 읽을 수 없어 변경을 막았습니다. 브라우저 저장소의 원문을 백업하고 복구한 뒤 다시 시도해 주세요.',
-    };
+    return { collections: [], storageError: INVALID_STORAGE };
   }
 }
 
-async function readStorage(): Promise<CollectionData> {
-  if (typeof window === 'undefined') return EMPTY_SNAPSHOT;
+const INVALID_STORAGE =
+  '저장된 컬렉션 형식을 읽을 수 없어 변경을 막았습니다. 브라우저 저장소의 원문을 백업하고 복구한 뒤 다시 시도해 주세요.';
+
+function readLegacy(raw: string | null): CollectionData {
+  try {
+    return raw === null ? { collections: [], storageError: null } : decodeCollections(decodeCollectionList(raw));
+  } catch {
+    return { collections: [], storageError: INVALID_STORAGE };
+  }
+}
+
+function legacyBackup(): CollectionData {
+  try {
+    return readLegacy(window.localStorage.getItem(STORAGE_KEY));
+  } catch {
+    return { collections: [], storageError: '브라우저 저장소에서 기존 컬렉션을 불러오지 못했습니다.' };
+  }
+}
+
+function importLegacy(current: StorageRead, legacy: CollectionData): StorageRead {
+  if (legacy.storageError) return current;
+  const known = new Set(current.legacyKeys);
+  const collections = new Map(current.collections.map(collection => [collection.id, collection]));
+  // The old writer only publishes whole snapshots. Missing entries can be stale, so
+  // only import new keys and remember them even after the new writer deletes them.
+  for (const collection of legacy.collections) {
+    const collectionKey = JSON.stringify([collection.id]);
+    const additions = collection.items.filter(item => !known.has(JSON.stringify([collection.id, item.kind, item.id])));
+    const existing = collections.get(collection.id);
+    if (additions.length > 0 || !known.has(collectionKey)) {
+      known.add(collectionKey);
+      for (const item of additions) known.add(JSON.stringify([collection.id, item.kind, item.id]));
+      const items = existing?.items ?? [];
+      const newItems = additions.filter(item => !items.some(saved => saved.kind === item.kind && saved.id === item.id));
+      collections.set(collection.id, { ...(existing ?? collection), items: [...items, ...newItems] });
+    }
+  }
+  return {
+    ...current,
+    collections: [...collections.values()],
+    legacyKeys: [...known],
+    needsImport: current.needsImport || known.size !== current.legacyKeys.length,
+  };
+}
+
+function decodeRecord(raw: unknown): StorageRead {
+  if (
+    !raw ||
+    typeof raw !== 'object' ||
+    !('version' in raw && raw.version === 1) ||
+    !('collections' in raw && Array.isArray(raw.collections)) ||
+    !('legacyKeys' in raw && Array.isArray(raw.legacyKeys) && raw.legacyKeys.every(key => typeof key === 'string'))
+  ) {
+    return { collections: [], storageError: INVALID_STORAGE, legacyKeys: [], needsImport: false };
+  }
+  return { ...decodeCollections(raw.collections), legacyKeys: raw.legacyKeys, needsImport: false };
+}
+
+async function readStorage(legacyEvent?: string): Promise<StorageRead> {
+  const initial = { collections: [], storageError: null, legacyKeys: [], needsImport: false };
+  if (typeof window === 'undefined') return initial;
   try {
     const stored = await readCollectionRecord();
-    if (stored !== undefined) return decodeCollections(stored);
-
-    // Migrate on the first successful write. Keep the legacy raw data as a backup.
-    const legacy = window.localStorage.getItem(STORAGE_KEY);
-    return legacy === null ? { collections: [], storageError: null } : decodeCollections(legacy);
+    const legacy = legacyBackup();
+    if (!stored) {
+      if (legacy.storageError) return { ...initial, ...legacy };
+      const seeded = importLegacy(initial, legacy);
+      // The existing v1 data can be read without making a migration write.
+      seeded.needsImport = false;
+      return legacyEvent === undefined ? seeded : importLegacy(seeded, readLegacy(legacyEvent));
+    }
+    const current = decodeRecord(stored.value);
+    if (current.storageError) return current;
+    const latest = importLegacy(current, legacy);
+    return legacyEvent === undefined ? latest : importLegacy(latest, readLegacy(legacyEvent));
   } catch {
     return {
-      collections: [],
-      storageError: '브라우저 저장소를 사용할 수 없어 컬렉션을 불러오지 못했습니다. 저장 기능이 동작하지 않습니다.',
+      ...initial,
+      collections: legacyBackup().collections,
+      storageError: '브라우저 저장소를 확인하지 못했습니다. 남아 있는 이전 컬렉션만 읽을 수 있습니다.',
     };
   }
 }
 
 function setSnapshot(current: CollectionData) {
   snapshotRevision += 1;
-  snapshot = { ...current, loading: false };
+  snapshot = { collections: current.collections, storageError: current.storageError, loading: false };
   for (const listener of listeners) listener();
 }
 
@@ -187,14 +260,22 @@ function collectionLocks() {
   return hasCollectionDatabase() ? window.navigator.locks : undefined;
 }
 
-async function refreshSnapshot() {
+async function refreshSnapshot(legacyEvent?: string) {
   const revision = ++snapshotRevision;
-  const current = await readStorage();
+  let current = await readStorage(legacyEvent);
+  const locks = collectionLocks();
+  if (locks && current.needsImport) {
+    try {
+      current = await locks.request(STORAGE_KEY, () => reconcileStorage(legacyEvent));
+    } catch {
+      current = { ...current, storageError: LOCK_UNAVAILABLE };
+    }
+  }
   if (snapshotRevision !== revision) return;
-  setSnapshot(collectionLocks() || current.storageError ? current : { ...current, storageError: LOCK_UNAVAILABLE });
+  setSnapshot(locks || current.storageError ? current : { ...current, storageError: LOCK_UNAVAILABLE });
 }
 
-async function withCollectionWrite<T>(failure: T, edit: (current: CollectionData) => T | Promise<T>): Promise<T> {
+async function withCollectionWrite<T>(failure: T, edit: (current: StorageRead) => T | Promise<T>): Promise<T> {
   ensureInit();
   try {
     const locks = collectionLocks();
@@ -203,7 +284,7 @@ async function withCollectionWrite<T>(failure: T, edit: (current: CollectionData
       return failure;
     }
     return await locks.request(STORAGE_KEY, async () => {
-      const current = await readStorage();
+      const current = await reconcileStorage();
       if (current.storageError) {
         setSnapshot(current);
         return failure;
@@ -222,15 +303,32 @@ async function withCollectionWrite<T>(failure: T, edit: (current: CollectionData
   }
 }
 
-// Called inside the lock. The next writer reads the committed IndexedDB record.
-async function persist(collections: NamedCollection[]) {
-  await writeCollectionRecord(JSON.stringify(collections));
-  setSnapshot({ collections, storageError: null });
+// Called inside the lock. Keep the imported keys and collections in one transaction.
+async function commitCollections(collections: NamedCollection[], legacyKeys: string[]) {
+  const record: StoredCollections = { version: 1, collections, legacyKeys };
+  await writeCollectionRecord(record);
   try {
     changes?.postMessage(null);
   } catch {
     // The commit is durable even if a tab cannot notify other readers.
   }
+}
+
+async function reconcileStorage(legacyEvent?: string): Promise<StorageRead> {
+  const current = await readStorage(legacyEvent);
+  if (current.needsImport) {
+    try {
+      await commitCollections(current.collections, current.legacyKeys);
+    } catch {
+      return { ...current, storageError: WRITE_FAILED };
+    }
+  }
+  return current;
+}
+
+async function persist(current: StorageRead, collections: NamedCollection[]) {
+  await commitCollections(collections, current.legacyKeys);
+  setSnapshot({ collections, storageError: null });
 }
 
 function ensureInit() {
@@ -246,7 +344,7 @@ function ensureInit() {
     }
   }
   window.addEventListener('storage', event => {
-    if (event.key === null || event.key === STORAGE_KEY) void refreshSnapshot();
+    if (event.key === null || event.key === STORAGE_KEY) void refreshSnapshot(event.newValue ?? undefined);
   });
   window.addEventListener('focus', () => void refreshSnapshot());
   window.addEventListener('pageshow', () => void refreshSnapshot());
@@ -308,7 +406,7 @@ export async function createCollection(name: string): Promise<NamedCollection | 
       createdAt: Date.now(),
       items: [],
     };
-    await persist([...current.collections, collection]);
+    await persist(current, [...current.collections, collection]);
     return collection;
   });
 }
@@ -319,7 +417,10 @@ export function deleteCollection(id: string, { onlyIfEmpty = false } = {}) {
       setSnapshot(current);
       return 'confirmation-required';
     }
-    await persist(current.collections.filter(c => c.id !== id));
+    await persist(
+      current,
+      current.collections.filter(c => c.id !== id)
+    );
     return 'deleted';
   });
 }
@@ -339,7 +440,10 @@ export async function addToCollection(collectionId: string, item: SavedItem): Pr
       setSnapshot(current);
       return true;
     }
-    await persist(current.collections.map(c => (c === collection ? { ...c, items: [...c.items, item] } : c)));
+    await persist(
+      current,
+      current.collections.map(c => (c === collection ? { ...c, items: [...c.items, item] } : c))
+    );
     return true;
   });
 }
@@ -347,6 +451,7 @@ export async function addToCollection(collectionId: string, item: SavedItem): Pr
 export function removeFromCollection(collectionId: string, kind: SavedItemKind, id: string) {
   return withCollectionWrite(false, async current => {
     await persist(
+      current,
       current.collections.map(c =>
         c.id !== collectionId
           ? c

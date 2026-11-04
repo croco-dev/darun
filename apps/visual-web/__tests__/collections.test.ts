@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SavedItem } from '../features/collections/collectionStore';
 import type * as StoreModule from '../features/collections/collectionStore';
+import { RECORD_KEY } from './fixtures/collectionPersistence';
 
 vi.mock('../features/collections/collectionPersistence', () => import('./fixtures/collectionPersistence'));
 
@@ -118,7 +119,7 @@ describe('collections persistence', () => {
     const s = await freshStore();
     const c = await s.createCollection('Mine');
     await s.addToCollection(c!.id, shot());
-    expect(backing[KEY]).toContain('Mine');
+    expect(backing[RECORD_KEY]).toContain('Mine');
 
     const r = await freshStore();
     const found = await r.savedIn('screenshot', 's1');
@@ -175,7 +176,7 @@ describe('collections persistence', () => {
     const after = await freshStore();
     expect(await after.savedIn('screenshot', 's1')).toEqual([]);
     expect((await after.savedIn('screenshot', 's2')).map(c => c.id)).toEqual([second!.id]);
-    expect(JSON.parse(backing[KEY]).map((c: { id: string }) => c.id)).toEqual([second!.id]);
+    expect(JSON.parse(backing[RECORD_KEY]).collections.map((c: { id: string }) => c.id)).toEqual([second!.id]);
   });
 
   it('사용 가능한 crypto가 없으면 생성하지 않고 기존 저장을 건드리지 않는다', async () => {
@@ -265,4 +266,46 @@ it.each(['missing', 'rejected'] as const)('preserves readable v1 data when the l
   await expect(store.removeFromCollection('c1', 'screenshot', 's1')).resolves.toBe(false);
   expect(backing[KEY]).toBe(seed);
   expect((await store.savedIn('screenshot', 's1')).map(c => c.id)).toEqual(['c1']);
+});
+
+describe('legacy tabs during migration', () => {
+  const original = { id: 'c1', name: 'Legacy', createdAt: 1, items: [shot()] };
+  const modern = shot({ id: 'modern' });
+  const late = shot({ id: 'late' });
+
+  it('imports an old tab save made after migration, without replaying a removed item', async () => {
+    const backing = installWindow({ seed: JSON.stringify([original]) });
+    const tab = await freshStore();
+    await expect(tab.addToCollection('c1', modern)).resolves.toBe(true);
+    await tab.removeFromCollection('c1', 'screenshot', 's1');
+    const oldWrite = JSON.stringify([{ ...original, items: [...original.items, late] }]);
+    backing[KEY] = oldWrite;
+
+    const reloaded = await freshStore();
+    expect((await reloaded.savedIn('screenshot', 'late'))[0]?.items).toEqual([modern, late]);
+    expect(await reloaded.savedIn('screenshot', 's1')).toEqual([]);
+    expect(backing[KEY]).toBe(oldWrite);
+
+    await reloaded.removeFromCollection('c1', 'screenshot', 'late');
+    expect(await (await freshStore()).savedIn('screenshot', 'late')).toEqual([]);
+  });
+
+  it('recovers only new saves to a collection that the new tab deleted', async () => {
+    const backing = installWindow({ seed: JSON.stringify([original]) });
+    const tab = await freshStore();
+    await tab.deleteCollection('c1');
+    expect(await tab.savedIn('screenshot', 's1')).toEqual([]);
+    backing[KEY] = JSON.stringify([{ ...original, items: [...original.items, late] }]);
+
+    const recovered = await (await freshStore()).savedIn('screenshot', 'late');
+    expect(recovered).toEqual([{ ...original, items: [late] }]);
+  });
+
+  it('does not replace an existing malformed record with a legacy backup', async () => {
+    const backing = installWindow({ seed: JSON.stringify([original]) });
+    backing[RECORD_KEY] = 'null';
+    const tab = await freshStore();
+    await expect(tab.createCollection('New')).resolves.toBeNull();
+    expect(backing[RECORD_KEY]).toBe('null');
+  });
 });
