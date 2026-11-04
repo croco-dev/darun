@@ -3,7 +3,7 @@
 import { gql } from '@apollo/client';
 import { EditProductLinkItemFragment, EditProductLinkItemFragmentDoc, useFragment } from '@darun/provider-graphql';
 import { Button, cn, Globe, Link2, Pencil } from '@darun/ui';
-import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal } from '@darun/ui-admin';
+import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
@@ -152,74 +152,76 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
   );
 }
 
-export const ProductLinkTable = bind(
-  useProductLinkTable,
-  ({ links, loading, error, refetch, editLink, isEditModalOpened, closeEditModal, link, slug }) => {
-    if (loading) {
-      return <AdminLoadingState />;
-    }
+function ProductLinkRows({
+  links,
+  loading,
+  error,
+  refreshLinks,
+  editLink,
+}: Pick<ReturnType<typeof useProductLinkTable>, 'links' | 'loading' | 'error' | 'refreshLinks' | 'editLink'>) {
+  if (loading) {
+    return <AdminLoadingState />;
+  }
 
-    if (error) {
-      return (
-        <AdminErrorState
-          error={error}
-          action={
-            <Button
-              type="button"
-              onClick={() => refetch()}
-              variant="contained"
-              color="primary"
-              className="active:scale-[0.98] motion-reduce:transform-none"
-            >
-              다시 시도
-            </Button>
-          }
-        />
-      );
-    }
-
-    if (!links || links.length === 0) {
-      return <AdminEmptyState title="등록된 링크가 없습니다." description="우측 상단 버튼으로 등록해보세요." />;
-    }
-
+  if (error) {
     return (
-      <>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse table-fixed" aria-label="링크 목록">
-            <thead className="bg-surface-100 text-left text-dark-900">
-              <tr>
-                <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[80px]">
-                  아이콘
-                </th>
-                <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 w-[150px]">
-                  이름
-                </th>
-                <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900">링크</th>
-                <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[120px]">
-                  주 링크 여부
-                </th>
-                <th className="border-b border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 last:border-r-0 w-[120px]">
-                  <span className="sr-only">수정</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white">
-              {links.map(linkRef => (
-                <ProductLinkRow key={linkRef.id} linkRef={linkRef as ProductLinkTableLinkRef} onEdit={editLink} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="링크 정보 수정">
-          {link ? (
-            <EditProductLinkItem slug={slug} link={link} onSubmit={closeEditModal} onCancel={closeEditModal} />
-          ) : (
-            <div className="py-4 text-center text-sm text-dark-500 break-words [word-break:keep-all]">
-              오류가 발생했습니다. 새로고침 후 다시 시도해 주세요.
-            </div>
-          )}
-        </AdminModal>
-      </>
+      <AdminErrorState
+        error={error}
+        action={
+          <Button
+            type="button"
+            onClick={refreshLinks}
+            variant="contained"
+            color="primary"
+            className="active:scale-[0.98] motion-reduce:transform-none"
+          >
+            다시 시도
+          </Button>
+        }
+      />
     );
   }
+
+  if (!links || links.length === 0) {
+    return <AdminEmptyState title="등록된 링크가 없습니다." description="우측 상단 버튼으로 등록해보세요." />;
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse table-fixed" aria-label="링크 목록">
+        <thead className="bg-surface-100 text-left text-dark-900">
+          <tr>
+            <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[80px]">
+              아이콘
+            </th>
+            <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 w-[150px]">
+              이름
+            </th>
+            <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900">링크</th>
+            <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[120px]">
+              주 링크 여부
+            </th>
+            <th className="border-b border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 last:border-r-0 w-[120px]">
+              <span className="sr-only">수정</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white">
+          {links.map(linkRef => (
+            <ProductLinkRow key={linkRef.id} linkRef={linkRef as ProductLinkTableLinkRef} onEdit={editLink} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export const ProductLinkTable = bind(
+  useProductLinkTable,
+  ({ links, loading, error, refreshLinks, editLink, closeEditModal, finishEdit, link, slug }) => (
+    <>
+      <ProductLinkRows links={links} loading={loading} error={error} refreshLinks={refreshLinks} editLink={editLink} />
+      {link && <EditProductLinkItem slug={slug} link={link} onSubmit={finishEdit} onCancel={closeEditModal} />}
+    </>
+  )
 );

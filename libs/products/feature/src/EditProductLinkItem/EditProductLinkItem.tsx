@@ -2,9 +2,8 @@
 
 import { gql } from '@apollo/client';
 import { Button } from '@darun/ui';
-import { AdminField, AdminInput, AdminSelect, AdminActions } from '@darun/ui-admin';
-import { bind } from '@darun/utils-structure-react';
-import { useEditProductLinkItem } from './useEditProductLinkItem';
+import { AdminField, AdminInput, AdminSelect, AdminActions, AdminModal } from '@darun/ui-admin';
+import { useEditProductLinkItem, type EditProductLinkItemProps } from './useEditProductLinkItem';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -17,74 +16,75 @@ gql`
   }
 `;
 
-export const EditProductLinkItem = bind(useEditProductLinkItem, ({ form, submit, onCancel, loading }) => {
+export function EditProductLinkItem(props: EditProductLinkItemProps & { onCancel: () => void }) {
+  const { form, submit, cancel, loading } = useEditProductLinkItem(props);
   return (
-    <form onSubmit={form.onSubmit(submit)}>
-      <div className="flex flex-col gap-2">
-        <AdminField label="표시 링크" error={form.errors.displayLink}>
-          <AdminInput
-            type="text"
-            placeholder="ex) toss.im"
-            disabled={loading}
-            key={form.key('displayLink')}
-            {...form.getInputProps('displayLink')}
-          />
-        </AdminField>
-        <AdminField label="링크" error={form.errors.link}>
-          <AdminInput
-            type="text"
-            placeholder="ex) https://toss.im/"
-            disabled={loading}
-            key={form.key('link')}
-            {...form.getInputProps('link')}
-          />
-        </AdminField>
-        <AdminField label="이름" error={form.errors.title}>
-          <AdminInput
-            type="text"
-            placeholder="ex) 공식 홈페이지"
-            disabled={loading}
-            key={form.key('title')}
-            {...form.getInputProps('title')}
-          />
-        </AdminField>
-        <AdminField label="아이콘" error={form.errors.iconUrl}>
-          <AdminSelect disabled={loading} key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
-            <option value="">아이콘을 선택해 주세요</option>
-            {iconData.map(icon => (
-              <option key={icon.value} value={icon.value}>
-                {icon.label}
-              </option>
-            ))}
-          </AdminSelect>
-        </AdminField>
-        <AdminActions>
-          {onCancel && (
+    <AdminModal opened onClose={cancel} title="링크 정보 수정">
+      <form aria-busy={loading} onSubmit={form.onSubmit(submit)}>
+        <div className="flex flex-col gap-2">
+          <AdminField label="표시 링크" error={form.errors.displayLink}>
+            <AdminInput
+              type="text"
+              placeholder="ex) toss.im"
+              disabled={loading}
+              key={form.key('displayLink')}
+              {...form.getInputProps('displayLink')}
+            />
+          </AdminField>
+          <AdminField label="링크" error={form.errors.link}>
+            <AdminInput
+              type="text"
+              placeholder="ex) https://toss.im/"
+              disabled={loading}
+              key={form.key('link')}
+              {...form.getInputProps('link')}
+            />
+          </AdminField>
+          <AdminField label="이름" error={form.errors.title}>
+            <AdminInput
+              type="text"
+              placeholder="ex) 공식 홈페이지"
+              disabled={loading}
+              key={form.key('title')}
+              {...form.getInputProps('title')}
+            />
+          </AdminField>
+          <AdminField label="아이콘" error={form.errors.iconUrl}>
+            <AdminSelect disabled={loading} key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
+              <option value="">아이콘을 선택해 주세요</option>
+              {iconData.map(icon => (
+                <option key={icon.value} value={icon.value}>
+                  {icon.label}
+                </option>
+              ))}
+            </AdminSelect>
+          </AdminField>
+          <AdminActions>
             <Button
               type="button"
               variant="contained"
               color="secondary"
               className="active:scale-[0.98] motion-reduce:transform-none"
-              onClick={onCancel}
+              onClick={cancel}
               disabled={loading}
             >
               취소
             </Button>
-          )}
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            className="active:scale-[0.98] motion-reduce:transform-none"
-            disabled={loading}
-          >
-            {loading ? '저장 중...' : '저장'}
-          </Button>
-        </AdminActions>
-      </div>
-    </form>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              className="active:scale-[0.98] motion-reduce:transform-none"
+              disabled={loading}
+            >
+              {loading ? '저장 중...' : '저장'}
+            </Button>
+          </AdminActions>
+        </div>
+      </form>
+    </AdminModal>
   );
-});
+}
 
 const iconData = [
   {
