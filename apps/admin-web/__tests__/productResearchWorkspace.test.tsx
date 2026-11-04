@@ -491,6 +491,13 @@ function finishStaleMaterialization(call: RaceMaterializeCall, outcome: string) 
   else call.fail(new Error('이전 등록 network 실패'));
 }
 
+function completeMaterialization(call: RaceMaterializeCall, product: Parameters<RaceMaterializeCall['respond']>[0]) {
+  // Navigation is recorded before React runs the draft persistence effect.
+  return act(async () => {
+    call.respond(product);
+  });
+}
+
 function finishStaleRequest(call: RaceActionCall<ResearchRequestVariables>, outcome: string) {
   if (outcome === 'success') call.respond();
   else if (outcome === 'GraphQL') call.fail(new GraphQLError('이전 요청 GraphQL 실패'));
@@ -2665,8 +2672,12 @@ describe('research registration action ownership with real Apollo', () => {
       await waitFor(() => expect(materializations).toHaveLength(3));
       expect(screen.queryByRole('alert')).toBeNull();
       expect(materializations[2].variables).toEqual(materializations[1].variables);
-      materializations[2].respond({ id: 'prod-existing', slug: 'existing-product', name: '기존 Product' });
-      await waitFor(() => expect(navigated()).toEqual(['/products/existing-product']));
+      await completeMaterialization(materializations[2], {
+        id: 'prod-existing',
+        slug: 'existing-product',
+        name: '기존 Product',
+      });
+      expect(navigated()).toEqual(['/products/existing-product']);
       expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe('existing-product');
       expect(notifications.show).toHaveBeenCalledTimes(1);
       expect(notifications.show).toHaveBeenCalledWith({ message: '미발행 서비스가 생성되었습니다.', color: 'teal' });
@@ -2878,12 +2889,12 @@ describe('materialized research explicit reentry recovery with real Apollo', () 
     await waitFor(() => expect(materializations).toHaveLength(2));
     expect(materializations[1].variables).toEqual(materializations[0].variables);
     expect((screen.getByRole('button', { name: '생성 중...' }) as HTMLButtonElement).disabled).toBe(true);
-    materializations[1].respond({
+    await completeMaterialization(materializations[1], {
       id: 'prod-existing',
       slug: 'renamed-current-product',
       name: '사람이 고친 기존 제품',
     });
-    await waitFor(() => expect(navigated()).toEqual(['/products/renamed-current-product']));
+    expect(navigated()).toEqual(['/products/renamed-current-product']);
     const workspace = JSON.parse(readSavedWorkspace(`${RESEARCH_WORKSPACE_STORAGE_KEY}:job-1`)!);
     expect(workspace.review).toEqual(stored.review);
     expect(workspace.materializedSlug).toBe('renamed-current-product');
@@ -3044,11 +3055,12 @@ describe('review registration supersedes pending research with real Apollo', () 
       expect(navigated()).toEqual([]);
       expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(workspace);
     }
-    materializations[0].respond({ id: 'prod-a', slug: 'actual-a-product', name: '서버 Product A' });
-    await waitFor(() => expect(navigated()).toEqual(['/products/actual-a-product']));
-    await waitFor(() =>
-      expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe('actual-a-product')
-    );
+    await completeMaterialization(materializations[0], {
+      id: 'prod-a',
+      slug: 'actual-a-product',
+      name: '서버 Product A',
+    });
+    expect(navigated()).toEqual(['/products/actual-a-product']);
     const completed = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
     if (!requestFirst) {
       await act(async () => {
@@ -3115,13 +3127,12 @@ describe('review registration supersedes pending research with real Apollo', () 
         slug: stored.review.slug,
         logoUrl: 'https://res.cloudinary.com/demo/current-a.png',
       });
-      materializations[0].respond({ id: 'prod-a', slug: 'uploaded-a-product', name: '현재 A' });
-      await waitFor(() => expect(navigated()).toEqual(['/products/uploaded-a-product']));
-      await waitFor(() =>
-        expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
-          'uploaded-a-product'
-        )
-      );
+      await completeMaterialization(materializations[0], {
+        id: 'prod-a',
+        slug: 'uploaded-a-product',
+        name: '현재 A',
+      });
+      expect(navigated()).toEqual(['/products/uploaded-a-product']);
       const completed = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
       expect(completed.review).toEqual({ ...stored.review, logoUrl: 'https://res.cloudinary.com/demo/current-a.png' });
       expect(completed.uploadedLogoUrl).toBe('https://res.cloudinary.com/demo/current-a.png');
@@ -3165,8 +3176,12 @@ describe('review registration supersedes pending research with real Apollo', () 
       await waitFor(() => expect(materializations).toHaveLength(2));
       expect(screen.queryByRole('alert')).toBeNull();
       expect(materializations[1].variables).toEqual(materializations[0].variables);
-      materializations[1].respond({ id: 'prod-existing-a', slug: 'renamed-existing-a', name: '기존 A 제품' });
-      await waitFor(() => expect(navigated()).toEqual(['/products/renamed-existing-a']));
+      await completeMaterialization(materializations[1], {
+        id: 'prod-existing-a',
+        slug: 'renamed-existing-a',
+        name: '기존 A 제품',
+      });
+      expect(navigated()).toEqual(['/products/renamed-existing-a']);
       expect(lookups).toEqual(['job-1']);
       expect(requests).toHaveLength(1);
       expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).materializedSlug).toBe(
