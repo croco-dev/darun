@@ -103,14 +103,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 async function MagazineContentPageWithJsonLd({ params }: Props) {
-  const resolvedParams = await params;
-  const currentLocale = normalizeLocale(resolvedParams.locale);
+  const { locale, slug: encodedSlug } = await params;
+  const currentLocale = normalizeLocale(locale);
+  // Next encodes page component params, while generateMetadata receives the matched slug.
+  const slug = decodeURIComponent(encodedSlug);
 
-  const data = await getMagazine(resolvedParams.slug, currentLocale);
+  const data = await getMagazine(slug, currentLocale);
   const magazine = data?.magazineBySlug;
   if (!magazine) return notFound();
 
-  const canonicalUrl = magazineCanonicalUrl(resolvedParams.slug);
+  const canonicalUrl = magazineCanonicalUrl(slug);
 
   const articleJsonLd = magazine
     ? {
@@ -156,7 +158,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
     <>
       {articleJsonLd && <JsonLd data={articleJsonLd} />}
       {breadcrumbList && <JsonLd data={breadcrumbList} />}
-      <MagazineContentPage params={resolvedParams} title={magazine?.title} />
+      <MagazineContentPage params={{ locale, slug }} title={magazine?.title} />
     </>
   );
 }

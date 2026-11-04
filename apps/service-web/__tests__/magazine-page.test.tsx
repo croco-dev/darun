@@ -9,7 +9,9 @@ import { createRequire } from 'node:module';
 const { getClient } = vi.hoisted(() => ({ getClient: vi.fn() }));
 vi.mock('../app/getServerClient', () => ({ getClient }));
 vi.mock('@darun/pages-shell', () => ({
-  MagazineContentPage: ({ title }: { title: string }) => <main>{title}</main>,
+  MagazineContentPage: ({ params, title }: { params: { slug: string }; title: string }) => (
+    <main data-slug={params.slug}>{title}</main>
+  ),
 }));
 vi.mock('@darun/utils-router', () => ({
   notFound: () => {
@@ -20,6 +22,7 @@ import Page, { generateMetadata } from '../app/[locale]/magazines/[slug]/page';
 
 const { buildSchema } = createRequire(import.meta.url)('graphql') as typeof import('graphql');
 const schema = buildSchema(readFileSync(new URL('../../graphql-api/schema.graphql', import.meta.url), 'utf8'));
+const storedSlugs = ['stored', 'c%2B%2B', '한글', 'design/tools'];
 const magazine = {
   title: 'An established title',
   summary: 'The original summary',
@@ -42,7 +45,7 @@ beforeEach(() => {
         rootValue: {
           magazineBySlug: ({ slug }: { slug: string }) => {
             if (slug === 'outage') throw new Error('fixture query unavailable');
-            return slug === 'missing' ? null : magazine;
+            return storedSlugs.includes(slug) ? magazine : null;
           },
         },
       }),
@@ -74,6 +77,20 @@ describe('magazine route and metadata', () => {
       expect(html).toContain('"name":"Ada"');
     }
   );
+
+  it.each([
+    ['c%2B%2B', 'c%252B%252B'],
+    ['한글', '%ED%95%9C%EA%B8%80'],
+    ['design/tools', 'design%2Ftools'],
+  ])('uses stored slug %s for the HTML body and metadata', async (slug, segment) => {
+    const metadata = await generateMetadata(props(slug, 'en'));
+    const canonical = `https://www.darun.io/ko/magazines/${segment}`;
+    expect(metadata.alternates?.canonical).toBe(canonical);
+
+    const html = renderToStaticMarkup(await Page(props(segment, 'en')));
+    expect(html).toContain(`data-slug="${slug}"`);
+    expect(html).toContain(`"mainEntityOfPage":"${canonical}"`);
+  });
 
   it('routes a missing magazine to not-found rather than the empty-body page', async () => {
     await expect(Page(props('missing'))).rejects.toThrow('NEXT_NOT_FOUND');
