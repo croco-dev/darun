@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { gql } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
+import { describe, expect, it, vi } from 'vitest';
 import { container, createAuthService, shouldRetryOperation } from '../app/container';
 
 describe('admin-web container', () => {
@@ -14,6 +16,33 @@ describe('admin-web container', () => {
 
     expect(first).not.toBe(second);
     expect(first).not.toBe(container.authService);
+  });
+
+  it('preserves the GraphQL error through the admin link chain when an entry is null', async () => {
+    const errors = [null, { message: 'Session timeout', path: ['health'], extensions: { code: 'SESSION' } }];
+    const fetch = vi.fn(async () => Response.json({ errors }));
+    vi.stubGlobal('fetch', fetch);
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const error = await container.apolloClient
+        .query({
+          query: gql`
+            query AdminErrorFixture {
+              health
+            }
+          `,
+          fetchPolicy: 'no-cache',
+        })
+        .catch((error: unknown) => error);
+
+      expect(fetch).toHaveBeenCalledOnce();
+      expect(CombinedGraphQLErrors.is(error)).toBe(true);
+      expect(error).toMatchObject({ message: 'Session timeout', errors });
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('[code: SESSION] Session timeout'));
+    } finally {
+      log.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it('apolloClient RetryLink does not retry mutation operations', () => {

@@ -8,13 +8,15 @@ import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 
 const httpErrorLink = new ErrorLink(({ error }) => {
   if (CombinedGraphQLErrors.is(error)) {
-    error.errors.forEach(({ message, locations, path, extensions }) => {
+    for (const entry of error.errors) {
+      if (!entry) continue;
+      const { message, locations, path, extensions } = entry;
       const locationText = locations?.map(location => `${location.line}:${location.column}`).join(', ') ?? '-';
       const pathText = path?.join('.') ?? '-';
       const code = extensions?.['code'] ? ` [code: ${extensions['code']}]` : '';
 
       console.error(`[GraphQL error]${code} ${message} | location=${locationText} | path=${pathText}`);
-    });
+    }
 
     return;
   }

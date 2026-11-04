@@ -1,7 +1,121 @@
+import { ApolloClient, gql, HttpLink, InMemoryCache } from '@apollo/client';
+import { CombinedGraphQLErrors, ServerError, ServerParseError } from '@apollo/client/errors';
 import { describe, expect, it } from 'vitest';
 import { parseErrorInfo } from '../AdminState';
 
 describe('parseErrorInfo', () => {
+  it.each([
+    [401, '인증 오류', '{"message":"Session timeout"}'],
+    [403, '권한 오류', '{"errors":[{"message":"Permission check aborted"}]}'],
+    [502, '서버 응답 오류', '<html>Bad gateway</html>'],
+  ])('preserves HTTP %i from a real Apollo ServerError', (status, summary, bodyText) => {
+    const error = new ServerError('Gateway timeout: request aborted', {
+      response: new Response(bodyText, { status }),
+      bodyText,
+    });
+    const result = parseErrorInfo(error);
+    expect(result.statusCode).toBe(status);
+    expect(result.summary).toContain(`${summary} (HTTP ${status})`);
+    expect(JSON.parse(result.technicalDetails ?? '{}')).toMatchObject({
+      statusCode: status,
+      bodyText,
+    });
+  });
+
+  it('preserves status and malformed body from a real ServerParseError', () => {
+    const bodyText = '<html>not JSON</html>';
+    const error = new ServerParseError(new SyntaxError('Unexpected token'), {
+      response: new Response(bodyText, { status: 200 }),
+      bodyText,
+    });
+    const result = parseErrorInfo(error);
+    expect(result.statusCode).toBe(200);
+    expect(result.summary).toBe('서버 응답을 읽을 수 없습니다 (HTTP 200).');
+    expect(JSON.parse(result.technicalDetails ?? '{}')).toMatchObject({
+      bodyText,
+    });
+  });
+
+  it.each(['Session timeout: please re-authenticate', 'Business operation aborted'])(
+    'keeps the GraphQL business error %s and its path/code',
+    message => {
+      const errors = [
+        {
+          message,
+          path: ['product', 'name'],
+          extensions: { code: 'BUSINESS_RULE' },
+        },
+      ];
+      const result = parseErrorInfo(new CombinedGraphQLErrors({ errors }));
+      expect(result.summary).toBe(message);
+      expect(JSON.parse(result.technicalDetails ?? '{}')).toMatchObject({
+        graphQLErrors: errors,
+      });
+    }
+  );
+
+  it.each([
+    {
+      status: 502,
+      body: '<html>Bad gateway</html>',
+      kind: ServerError,
+      summary: 'HTTP 502',
+    },
+    {
+      status: 200,
+      body: 'not JSON',
+      kind: ServerParseError,
+      summary: 'HTTP 200',
+    },
+    {
+      status: 200,
+      body: JSON.stringify({
+        errors: [
+          null,
+          {
+            message: 'Session timeout',
+            path: ['health'],
+            extensions: { code: 'SESSION' },
+          },
+        ],
+      }),
+      kind: CombinedGraphQLErrors,
+      summary: 'Session timeout',
+    },
+  ])('normalizes the real HttpLink error for $status / $summary', async ({ status, body, kind, summary }) => {
+    const client = new ApolloClient({
+      cache: new InMemoryCache(),
+      link: new HttpLink({
+        uri: 'http://fixture.invalid/graphql',
+        fetch: async () =>
+          new Response(body, {
+            status,
+            headers: { 'content-type': 'application/json' },
+          }),
+      }),
+    });
+    try {
+      const error = await client
+        .query({
+          query: gql`
+            query ErrorFixture {
+              health
+            }
+          `,
+        })
+        .catch((error: unknown) => error);
+      expect(kind.is(error)).toBe(true);
+      expect(parseErrorInfo(error).summary).toContain(summary);
+    } finally {
+      client.stop();
+    }
+  });
+
+  it('recognizes actual timeout and abort exceptions', () => {
+    expect(parseErrorInfo(new DOMException('Deadline reached', 'TimeoutError')).summary).toContain('시간이 초과');
+    expect(parseErrorInfo(new DOMException('Cancelled', 'AbortError')).summary).toBe('요청이 중단되었습니다.');
+  });
+
   it('returns default fallback message when error is null or undefined', () => {
     expect(parseErrorInfo(null).summary).toBe('일시적인 오류가 발생했습니다. 다시 시도해 주세요.');
     expect(parseErrorInfo(undefined).summary).toBe('일시적인 오류가 발생했습니다. 다시 시도해 주세요.');
