@@ -486,9 +486,18 @@ describe('browser collection write boundaries', () => {
     document.body.append(host);
     root = createRoot(host);
     await act(async () => root!.render(createElement(Collections)));
+    const earlierWrite = JSON.stringify([{ ...legacy, items: [item, late] }]);
     await act(async () => {
-      const earlierWrite = JSON.stringify([{ ...legacy, items: [item, late] }]);
-      window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue: earlierWrite }));
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: KEY, newValue: earlierWrite, storageArea: sessionStorage })
+      );
+    });
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections[0].items).toEqual([modern]);
+
+    await act(async () => {
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: KEY, newValue: earlierWrite, storageArea: localStorage })
+      );
     });
 
     expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections[0].items).toEqual([modern, late]);

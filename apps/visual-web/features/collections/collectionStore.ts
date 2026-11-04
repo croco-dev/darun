@@ -344,7 +344,14 @@ function ensureInit() {
     }
   }
   window.addEventListener('storage', event => {
-    if (event.key === null || event.key === STORAGE_KEY) void refreshSnapshot(event.newValue ?? undefined);
+    if (event.key !== null && event.key !== STORAGE_KEY) return;
+    let legacyEvent: string | undefined;
+    try {
+      if (event.storageArea === window.localStorage) legacyEvent = event.newValue ?? undefined;
+    } catch {
+      // A blocked legacy store can still leave the IndexedDB collection readable.
+    }
+    void refreshSnapshot(legacyEvent);
   });
   window.addEventListener('focus', () => void refreshSnapshot());
   window.addEventListener('pageshow', () => void refreshSnapshot());
