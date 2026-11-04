@@ -30,10 +30,11 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function setup({ failSave = false } = {}) {
+function setup({ failSave = false, delaySave = false } = {}) {
   let saved = initialLink;
   const reads: Array<(error?: Error) => void> = [];
   const writes: Operation[] = [];
+  const pendingSaves: Array<() => void> = [];
   const product = () => ({
     __typename: 'Product',
     id: 'product-a',
@@ -59,18 +60,22 @@ function setup({ failSave = false } = {}) {
               observer.error(new Error('fixture save failed'));
               return;
             }
-            const { title, link, displayLink, iconUrl } = operation.variables.input;
-            saved = {
-              ...saved,
-              title: title ?? saved.title,
-              link: link ?? saved.link,
-              displayLink: displayLink ?? saved.displayLink,
-              iconUrl: iconUrl ?? saved.iconUrl,
+            const complete = () => {
+              const { title, link, displayLink, iconUrl } = operation.variables.input;
+              saved = {
+                ...saved,
+                title: title ?? saved.title,
+                link: link ?? saved.link,
+                displayLink: displayLink ?? saved.displayLink,
+                iconUrl: iconUrl ?? saved.iconUrl,
+              };
+              observer.next({
+                data: { updateProductLink: { product: product() } },
+              });
+              observer.complete();
             };
-            observer.next({
-              data: { updateProductLink: { product: product() } },
-            });
-            observer.complete();
+            if (delaySave) pendingSaves.push(complete);
+            else complete();
           } else {
             observer.error(new Error(`Unexpected operation: ${operation.operationName}`));
           }
@@ -86,6 +91,10 @@ function setup({ failSave = false } = {}) {
   render(view());
   return {
     writes,
+    resolveSave: async () => {
+      await waitFor(() => expect(pendingSaves).toHaveLength(1));
+      await act(async () => pendingSaves.shift()!());
+    },
     refresh: () => client.refetchQueries({ include: 'active' }),
     waitForRead: () => waitFor(() => expect(reads).toHaveLength(1)),
     resolveRead: async (error?: Error) => {
@@ -97,14 +106,14 @@ function setup({ failSave = false } = {}) {
 
 function edit(title: string) {
   const row = screen.getByText(title).closest('tr')!;
-  fireEvent.click(within(row).getByRole('button', { name: '정보 수정' }));
+  fireEvent.click(within(row).getByText('정보 수정'));
 }
 
 const titleInput = () => screen.getByPlaceholderText<HTMLInputElement>('ex) 공식 홈페이지');
 const dialog = () => screen.queryByRole('dialog', { name: '링크 정보 수정' });
 
 function save() {
-  fireEvent.click(screen.getByRole('button', { name: '저장' }));
+  fireEvent.click(screen.getByText('저장', { selector: 'button' }));
 }
 
 describe('상품 링크 재편집', () => {
@@ -138,6 +147,28 @@ describe('상품 링크 재편집', () => {
     ]);
   });
 
+  it('저장 응답을 기다리는 동안 같은 링크를 이전 값으로 다시 열 수 없다', async () => {
+    const fixture = setup({ delaySave: true });
+    await fixture.resolveRead();
+
+    edit('Original title');
+    fireEvent.change(titleInput(), { target: { value: 'Updated title' } });
+    save();
+    await screen.findByText('저장 중...', { selector: 'button' });
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(dialog()).toBeTruthy();
+    fireEvent.click(within(dialog()!).getByRole('button', { name: '닫기' }));
+    expect(dialog()).toBeTruthy();
+    expect(titleInput().value).toBe('Updated title');
+
+    await fixture.resolveSave();
+    await fixture.resolveRead();
+    edit('Updated title');
+    expect(titleInput().value).toBe('Updated title');
+    expect(fixture.writes).toHaveLength(1);
+  });
+
   it('목록이 다시 조회되는 동안 초안을 유지하고 같은 링크를 새로 열 때는 저장값으로 시작한다', async () => {
     const fixture = setup();
     await fixture.resolveRead();
@@ -151,10 +182,10 @@ describe('상품 링크 재편집', () => {
     expect(titleInput().value).toBe('Discarded draft');
     await fixture.resolveRead();
     expect(titleInput().value).toBe('Discarded draft');
-    fireEvent.click(screen.getByRole('button', { name: '취소' }));
+    fireEvent.click(screen.getByText('취소', { selector: 'button' }));
     edit('Original title');
     expect(titleInput().value).toBe('Original title');
-    fireEvent.click(screen.getByRole('button', { name: '취소' }));
+    fireEvent.click(screen.getByText('취소', { selector: 'button' }));
     edit('Other link');
     expect(titleInput().value).toBe('Other link');
   });
@@ -184,7 +215,7 @@ describe('상품 링크 재편집', () => {
     fireEvent.change(titleInput(), { target: { value: 'Updated title' } });
     save();
     await fixture.resolveRead(new Error('fixture read failed'));
-    expect(await screen.findByRole('button', { name: '다시 시도' })).toBeTruthy();
+    expect(await screen.findByText('다시 시도', { selector: 'button' })).toBeTruthy();
     expect(notifications.show).toHaveBeenCalledWith({
       message: '수정되었습니다.',
       color: 'teal',
@@ -195,7 +226,7 @@ describe('상품 링크 재편집', () => {
     });
     expect(dialog()).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    fireEvent.click(screen.getByText('다시 시도', { selector: 'button' }));
     await fixture.resolveRead();
     edit('Updated title');
     expect(titleInput().value).toBe('Updated title');

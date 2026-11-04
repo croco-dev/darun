@@ -3,7 +3,7 @@
 import { gql } from '@apollo/client';
 import { EditProductLinkItemFragment, EditProductLinkItemFragmentDoc, useFragment } from '@darun/provider-graphql';
 import { Button, cn, Globe, Link2, Pencil } from '@darun/ui';
-import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal } from '@darun/ui-admin';
+import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
@@ -221,19 +221,17 @@ export const ProductLinkTable = bind(
   ({ links, loading, error, refreshLinks, editLink, closeEditModal, link, slug }) => (
     <>
       <ProductLinkRows links={links} loading={loading} error={error} refreshLinks={refreshLinks} editLink={editLink} />
-      <AdminModal opened={link !== null} onClose={closeEditModal} title="링크 정보 수정">
-        {link && (
-          <EditProductLinkItem
-            slug={slug}
-            link={link}
-            onSubmit={() => {
-              closeEditModal();
-              refreshLinks();
-            }}
-            onCancel={closeEditModal}
-          />
-        )}
-      </AdminModal>
+      {link && (
+        <EditProductLinkItem
+          slug={slug}
+          link={link}
+          onSubmit={() => {
+            closeEditModal();
+            refreshLinks();
+          }}
+          onCancel={closeEditModal}
+        />
+      )}
     </>
   )
 );

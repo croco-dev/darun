@@ -6,7 +6,7 @@ import { isProductLinkUrl } from '@darun/products-domain/link';
 import { EditProductLinkItemFragment, UpdateProductLinkOnEditProductLinkItemDocument } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 gql`
   mutation UpdateProductLinkOnEditProductLinkItem($slug: String!, $id: String!, $input: UpdateProductLinkInput!) {
@@ -34,6 +34,10 @@ type FormValues = {
 };
 
 export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditProductLinkItemProps) {
+  const saving = useRef(false);
+  const cancel = useCallback(() => {
+    if (!saving.current) onCancel?.();
+  }, [onCancel]);
   const [updateLink, { loading }] = useMutation(UpdateProductLinkOnEditProductLinkItemDocument, {
     onCompleted: () => {
       notifications.show({ message: '수정되었습니다.', color: 'teal' });
@@ -79,7 +83,7 @@ export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditP
   }, [slug, link.id, link.title, link.link, link.displayLink, link.iconUrl, setInitialValues, setValues]);
 
   const submit = async (values: FormValues) => {
-    if (loading) return;
+    if (saving.current) return;
     const title = values.title?.trim();
     const linkUrl = values.link?.trim();
     const displayLink = values.displayLink?.trim();
@@ -101,6 +105,7 @@ export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditP
       return;
     }
 
+    saving.current = true;
     try {
       await updateLink({
         variables: {
@@ -116,8 +121,10 @@ export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditP
       });
     } catch {
       // Handled by onError callback
+    } finally {
+      saving.current = false;
     }
   };
 
-  return { form, submit, onCancel, loading };
+  return { form, submit, cancel, loading };
 }
