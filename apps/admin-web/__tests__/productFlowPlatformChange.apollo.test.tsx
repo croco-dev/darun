@@ -52,6 +52,7 @@ function renderEditor(mode: 'create' | 'update') {
                 adminProductFlow: {
                   __typename: 'ProductFlow',
                   id: 'flow',
+                  product: { __typename: 'Product', id: 'product', slug: 'fixture-product' },
                   title: '가입 흐름',
                   description: '입력 보존 확인',
                   platform: 'WEB',
