@@ -6,7 +6,7 @@ import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
 import { JsonLd } from '../../../../lib/seo/json-ld';
 import { getSiteName } from '../../../../lib/seo/metadata';
-import { absolutePublicUrl, normalizeLocale } from '../../../../lib/seo/url';
+import { absolutePublicUrl, magazineCanonicalUrl, normalizeLocale } from '../../../../lib/seo/url';
 import { getClient } from '../../../getServerClient';
 
 const magazineQuery = gql`
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description =
     summary ||
     (isEn ? 'Comparison and analysis magazine of various services.' : '다양한 서비스의 비교와 분석 매거진입니다.');
-  const canonicalUrl = absolutePublicUrl('ko', `/magazines/${encodeURIComponent(resolvedParams.slug)}`);
+  const canonicalUrl = magazineCanonicalUrl(resolvedParams.slug);
 
   return {
     title: isEn ? `${title} - Darun: Service comparison in one place` : `${title} - 다른: 서비스 비교를 한 곳에서`,
@@ -103,14 +103,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 async function MagazineContentPageWithJsonLd({ params }: Props) {
-  const resolvedParams = await params;
-  const currentLocale = normalizeLocale(resolvedParams.locale);
+  const { locale, slug: encodedSlug } = await params;
+  const currentLocale = normalizeLocale(locale);
+  // Next encodes page component params, while generateMetadata receives the matched slug.
+  const slug = decodeURIComponent(encodedSlug);
 
-  const data = await getMagazine(resolvedParams.slug, currentLocale);
+  const data = await getMagazine(slug, currentLocale);
   const magazine = data?.magazineBySlug;
   if (!magazine) return notFound();
 
-  const canonicalUrl = absolutePublicUrl('ko', `/magazines/${encodeURIComponent(resolvedParams.slug)}`);
+  const canonicalUrl = magazineCanonicalUrl(slug);
 
   const articleJsonLd = magazine
     ? {
@@ -156,7 +158,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
     <>
       {articleJsonLd && <JsonLd data={articleJsonLd} />}
       {breadcrumbList && <JsonLd data={breadcrumbList} />}
-      <MagazineContentPage params={resolvedParams} title={magazine?.title} />
+      <MagazineContentPage params={{ locale, slug }} title={magazine?.title} />
     </>
   );
 }

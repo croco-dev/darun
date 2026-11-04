@@ -5,6 +5,17 @@ import { appendVary, negotiateRepresentation } from './lib/seo/accept';
 
 const intlMiddleware = createMiddleware(routing);
 
+function preserveMagazinePath(pathname: string, response: NextResponse): NextResponse {
+  // The route already includes its locale. Let Next match the original slug
+  // segment instead of the encoding normalized by the next-intl rewrite.
+  if (!/^\/(?:ko|en)\/magazines\/[^/]+\/?$/.test(pathname) || !response.headers.has('x-middleware-rewrite')) {
+    return response;
+  }
+
+  response.headers.delete('x-middleware-rewrite');
+  return NextResponse.next({ headers: response.headers });
+}
+
 export default function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const isHeadOrGet = request.method === 'GET' || request.method === 'HEAD';
@@ -81,10 +92,17 @@ export default function middleware(request: NextRequest) {
   const response = intlMiddleware(new NextRequest(request, { headers: requestHeaders }));
   if (isHeadOrGet && response) {
     response.headers.set('Vary', appendVary(response.headers.get('Vary'), 'Accept'));
+    return preserveMagazinePath(pathname, response);
   }
   return response;
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|.*\\.(?!md$)[^.]+$).*)', '/ko/categories/:slug', '/en/categories/:slug'],
+  matcher: [
+    '/((?!api|_next|.*\\.(?!md$)[^.]+$).*)',
+    '/ko/categories/:slug',
+    '/en/categories/:slug',
+    '/ko/magazines/:slug',
+    '/en/magazines/:slug',
+  ],
 };

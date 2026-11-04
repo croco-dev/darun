@@ -1,4 +1,4 @@
-import { absolutePublicUrl, PublicLocale } from './url';
+import { absolutePublicUrl, magazineCanonicalUrl, PublicLocale } from './url';
 
 export function escapeMarkdown(text: string): string {
   return text
@@ -343,7 +343,6 @@ export function buildCompareMarkdown(params: {
 }
 
 export function buildMagazineMarkdown(params: {
-  locale: PublicLocale;
   magazine: {
     title: string;
     slug: string;
@@ -352,8 +351,8 @@ export function buildMagazineMarkdown(params: {
     authorName?: string | null;
   };
 }): string {
-  const { locale, magazine } = params;
-  const canonicalUrl = absolutePublicUrl(locale, `/magazines/${magazine.slug}`);
+  const { magazine } = params;
+  const canonicalUrl = magazineCanonicalUrl(magazine.slug);
 
   const lines: string[] = [`# ${escapeMarkdown(magazine.title)}`, '', `Canonical URL: ${canonicalUrl}`];
 

@@ -12,7 +12,13 @@ import {
   buildProductMarkdown,
   buildRankingMarkdown,
 } from '../../../../lib/seo/markdown-builder';
-import { absolutePublicUrl, isPublicLocale, normalizeLocale, PublicLocale } from '../../../../lib/seo/url';
+import {
+  absolutePublicUrl,
+  isPublicLocale,
+  magazineCanonicalUrl,
+  normalizeLocale,
+  PublicLocale,
+} from '../../../../lib/seo/url';
 
 export const revalidate = 3600; // 1 hour
 
@@ -210,11 +216,13 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
   const rawLocale = path[0];
   const locale: PublicLocale = isPublicLocale(rawLocale ?? '') ? normalizeLocale(rawLocale) : 'ko';
   const subPath = isPublicLocale(rawLocale ?? '') ? path.slice(1) : path;
+  const magazineSlug = subPath[0] === 'magazines' && subPath.length === 2 ? subPath[1] : undefined;
 
   const isSiblingMd = req.headers.get('x-darun-sibling-md') === '1';
   const canonicalPathname = isPublicLocale(rawLocale ?? '') ? `/${subPath.join('/')}` : `/${path.join('/')}`;
 
-  const canonicalUrl = absolutePublicUrl(locale, canonicalPathname);
+  const canonicalUrl =
+    magazineSlug === undefined ? absolutePublicUrl(locale, canonicalPathname) : magazineCanonicalUrl(magazineSlug);
 
   const client = getClient({ static: true });
 
@@ -425,13 +433,12 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
     }
 
     // 7. Magazine: /magazines/:slug
-    if (subPath[0] === 'magazines' && subPath.length === 2) {
-      const slug = safeDecode(subPath[1] ?? '');
-      if (!slug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
+    if (magazineSlug !== undefined) {
+      if (!magazineSlug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
 
       const result = await client.query({
         query: MAGAZINE_QUERY,
-        variables: { slug },
+        variables: { slug: magazineSlug },
       });
 
       const mag = result.data?.magazineBySlug;
@@ -440,7 +447,6 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
       }
 
       const body = buildMagazineMarkdown({
-        locale,
         magazine: {
           title: mag.title,
           slug: mag.slug,

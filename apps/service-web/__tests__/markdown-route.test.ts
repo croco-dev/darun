@@ -1,16 +1,31 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { SchemaLink } from '@apollo/client/link/schema';
-import { NextRequest } from 'next/server';
+import { getRouteMatcher } from 'next/dist/shared/lib/router/utils/route-matcher';
+import { getRouteRegex } from 'next/dist/shared/lib/router/utils/route-regex';
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
-const { getClient } = vi.hoisted(() => ({ getClient: vi.fn() }));
+const { getClient, intlMiddleware } = vi.hoisted(() => ({ getClient: vi.fn(), intlMiddleware: vi.fn() }));
 vi.mock('../app/getServerClient', () => ({ getClient }));
+vi.mock('next-intl/middleware', () => ({ default: () => intlMiddleware }));
 import { GET, HEAD } from '../app/api/markdown/[...path]/route';
+import middleware, { config } from '../middleware';
 
 const { buildSchema } = createRequire(import.meta.url)('graphql') as typeof import('graphql');
 const schema = buildSchema(readFileSync(new URL('../../graphql-api/schema.graphql', import.meta.url), 'utf8'));
+const matchMarkdownRoute = getRouteMatcher(getRouteRegex('/api/markdown/[...path]'));
+const magazineSlugs = [
+  ['design', 'design'],
+  ['v1.2', 'v1.2'],
+  ['한글', '%ED%95%9C%EA%B8%80'],
+  ['c%2B%2B', 'c%252B%252B'],
+  ['design#tools', 'design%23tools'],
+  ['design?tools', 'design%3Ftools'],
+  ['design/tools', 'design%2Ftools'],
+] as const;
 let failRelations = false;
 const fieldReads: string[] = [];
 function readField<T>(slug: string, field: string, value: T): T {
@@ -46,6 +61,43 @@ function request(path: string[], sibling = false) {
   ] as const;
 }
 
+function magazineRequest(locale: string, segment: string, method: 'GET' | 'HEAD', sibling: boolean) {
+  const request = new NextRequest(`http://localhost/${locale}/magazines/${segment}${sibling ? '.md' : ''}`, {
+    method,
+    headers: { Accept: sibling ? '*/*' : 'text/markdown' },
+  });
+  if (!unstable_doesMiddlewareMatch({ config, url: request.url })) {
+    throw new Error(`No middleware match for ${request.url}`);
+  }
+  const rewrite = middleware(request);
+  const pathname = new URL(rewrite.headers.get('x-middleware-rewrite')!).pathname;
+  const params = matchMarkdownRoute(pathname);
+  if (!params || !Array.isArray(params.path)) throw new Error(`No Markdown route for ${pathname}`);
+  if (rewrite.headers.get('x-middleware-request-x-darun-sibling-md') === '1') {
+    request.headers.set('x-darun-sibling-md', '1');
+  }
+  return {
+    request,
+    context: { params: Promise.resolve({ path: params.path }) },
+  };
+}
+
+it('매거진 HTML은 locale 응답을 유지하며 저장 slug의 퍼센트 인코딩을 보존한다', () => {
+  const request = new NextRequest('http://localhost/en/magazines/c%252B%252B?source=magazine');
+  const intlResponse = NextResponse.rewrite('http://localhost/en/magazines/c%2B%2B?source=magazine', {
+    request: { headers: new Headers({ 'x-next-intl-locale': 'en' }) },
+  });
+  intlResponse.cookies.set('NEXT_LOCALE', 'en');
+  intlMiddleware.mockReturnValueOnce(intlResponse);
+
+  const response = middleware(request);
+  expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+  expect(response.headers.get('x-middleware-next')).toBe('1');
+  expect(response.headers.get('x-middleware-request-x-next-intl-locale')).toBe('en');
+  expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('en');
+  expect(response.headers.get('Vary')).toBe('Accept');
+});
+
 describe('공개 Markdown route의 실행 스키마 계약', () => {
   beforeEach(() => {
     failRelations = false;
@@ -63,12 +115,59 @@ describe('공개 Markdown route의 실행 스키마 계약', () => {
               if (slug === 'outage') throw new Error('fixture query failure');
               return slug === 'missing' ? null : product(slug);
             },
+            magazineBySlug: ({ slug }: { slug: string }) => {
+              if (slug === 'outage') throw new Error('fixture magazine query failure');
+              if (!magazineSlugs.some(([storedSlug]) => storedSlug === slug)) return null;
+              return {
+                id: slug,
+                slug,
+                title: '공개 매거진',
+                content: `<p>본문: ${slug}</p>`,
+              };
+            },
           },
         }),
       })
     );
   });
   afterEach(() => vi.restoreAllMocks());
+
+  describe.each(['ko', 'en'])('%s 매거진 Markdown', locale => {
+    it.each(magazineSlugs)('저장 slug %s의 원문과 한국어 canonical을 제공한다', async (slug, segment) => {
+      const canonical = `https://www.darun.io/ko/magazines/${segment}`;
+      const sibling = magazineRequest(locale, segment, 'GET', true);
+      const accept = magazineRequest(locale, segment, 'GET', false);
+      const siblingResponse = await GET(sibling.request, sibling.context);
+      const acceptResponse = await GET(accept.request, accept.context);
+
+      expect(siblingResponse.status).toBe(200);
+      expect(acceptResponse.status).toBe(200);
+      const body = await siblingResponse.text();
+      expect(body).toContain(`Canonical URL: ${canonical}\n`);
+      expect(body).toContain(`본문: ${slug}`);
+      expect(await acceptResponse.text()).toBe(body);
+      expect(siblingResponse.headers.get('Link')).toBe(`<${canonical}>; rel="canonical"`);
+      expect(siblingResponse.headers.get('X-Robots-Tag')).toBe('noindex, follow');
+      expect(acceptResponse.headers.get('X-Robots-Tag')).toBe(locale === 'en' ? 'noindex, follow' : null);
+    });
+
+    it.each([
+      ['design%23tools', 200],
+      ['missing', 404],
+      ['outage', 500],
+    ])('%s GET과 HEAD의 상태 %i 및 헤더가 일치한다', async (segment, status) => {
+      for (const sibling of [false, true]) {
+        const get = magazineRequest(locale, segment, 'GET', sibling);
+        const head = magazineRequest(locale, segment, 'HEAD', sibling);
+        const getResponse = await GET(get.request, get.context);
+        const headResponse = await HEAD(head.request, head.context);
+        expect(getResponse.status).toBe(status);
+        expect(headResponse.status).toBe(status);
+        expect([...headResponse.headers]).toEqual([...getResponse.headers]);
+        expect(await headResponse.text()).toBe('');
+      }
+    });
+  });
 
   it.each(['ko', 'en'])('상품 상세는 %s 원문과 회사·실제 링크를 제공한다', async locale => {
     const response = await GET(...request([locale, 'products', 'alpha'], true));
