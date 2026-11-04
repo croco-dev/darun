@@ -409,6 +409,7 @@ describe('browser collection write boundaries', () => {
   it('asks for confirmation when a collection gains an item while empty deletion waits for the lock', async () => {
     const raw = [{ id: 'c', name: 'Initially empty', createdAt: 1, items: [] }];
     localStorage.setItem(KEY, JSON.stringify(raw));
+    window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
     const release = deferred<void>();
     Object.defineProperty(navigator, 'locks', {
       configurable: true,
