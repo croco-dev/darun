@@ -35,7 +35,8 @@ interface StoredCollections {
 interface StorageRead extends CollectionData {
   legacyKeys: string[];
   needsImport: boolean;
-  legacyRaw?: string;
+  observations?: CollectionData;
+  durableCollections?: NamedCollection[];
 }
 
 interface StoreSnapshot extends CollectionData {
@@ -46,6 +47,9 @@ const STORAGE_KEY = 'darun-visual-collections-v1';
 const LOCK_UNAVAILABLE =
   '이 브라우저에서는 컬렉션을 안전하게 변경할 수 없습니다. 최신 브라우저의 HTTPS 페이지에서 다시 시도해 주세요.';
 const WRITE_FAILED = '브라우저 저장소에 저장하지 못했습니다. 저장 차단 설정을 확인해 주세요.';
+
+const EMPTY_OBSERVATIONS: StorageRead = { collections: [], storageError: null, legacyKeys: [], needsImport: false };
+let pendingLegacy = EMPTY_OBSERVATIONS;
 
 const EMPTY_SNAPSHOT: StoreSnapshot = { collections: [], storageError: null, loading: true };
 
@@ -210,12 +214,8 @@ function importLegacy(current: StorageRead, legacy: CollectionData): StorageRead
       collections.set(collection.id, { ...(existing ?? collection), items: [...items, ...newItems] });
     }
   }
-  return {
-    ...current,
-    collections: [...collections.values()],
-    legacyKeys: [...known],
-    needsImport: current.needsImport || known.size !== current.legacyKeys.length,
-  };
+  if (known.size === current.legacyKeys.length) return current;
+  return { ...current, collections: [...collections.values()], legacyKeys: [...known], needsImport: true };
 }
 
 function decodeRecord(raw: unknown): StorageRead {
@@ -231,29 +231,39 @@ function decodeRecord(raw: unknown): StorageRead {
   return { ...decodeCollections(raw.collections), legacyKeys: raw.legacyKeys, needsImport: false };
 }
 
-async function readStorage(observations: readonly string[] = []): Promise<StorageRead> {
-  const initial = { collections: [], storageError: null, legacyKeys: [], needsImport: false };
-  if (typeof window === 'undefined') return initial;
+async function readStorage(): Promise<StorageRead> {
+  if (typeof window === 'undefined') return EMPTY_OBSERVATIONS;
+  const legacy = legacyBackup(legacyRaw());
+  pendingLegacy = importLegacy(pendingLegacy, legacy);
+  const observations = pendingLegacy;
+
   try {
     const stored = await readCollectionRecord();
-    const raw = legacyRaw();
-    const legacy = legacyBackup(raw);
-    if (!stored && legacy.storageError) return { ...initial, ...legacy };
+    if (!stored && legacy.storageError) return { ...EMPTY_OBSERVATIONS, ...legacy };
 
-    let current = stored ? decodeRecord(stored.value) : initial;
+    const current = stored ? decodeRecord(stored.value) : EMPTY_OBSERVATIONS;
     if (current.storageError) return current;
-    current = importLegacy(current, legacy);
-    for (const observed of observations) {
-      if (observed !== raw) current = importLegacy(current, readLegacy(observed));
-    }
-    return { ...current, legacyRaw: raw ?? undefined };
+    return {
+      ...importLegacy(current, observations),
+      observations,
+      durableCollections: stored ? current.collections : legacy.collections,
+    };
   } catch {
     return {
-      ...initial,
-      collections: legacyBackup(legacyRaw()).collections,
+      ...EMPTY_OBSERVATIONS,
+      collections: legacy.collections,
       storageError: '브라우저 저장소를 확인하지 못했습니다. 남아 있는 이전 컬렉션만 읽을 수 있습니다.',
     };
   }
+}
+
+function clearCommittedObservations(current: StorageRead) {
+  // Keep observations received while the transaction was running.
+  if (current.observations === pendingLegacy) pendingLegacy = EMPTY_OBSERVATIONS;
+}
+
+function unavailable(current: StorageRead, storageError: string): StorageRead {
+  return { ...current, collections: current.durableCollections ?? current.collections, storageError };
 }
 
 function setSnapshot(current: CollectionData) {
@@ -268,21 +278,20 @@ function collectionLocks() {
 
 async function refreshSnapshot(legacyEvent?: string) {
   const revision = ++snapshotRevision;
-  const observations = legacyEvent === undefined ? [] : [legacyEvent];
-  let current = await readStorage(observations);
+  if (legacyEvent !== undefined) pendingLegacy = importLegacy(pendingLegacy, readLegacy(legacyEvent));
+  let current = await readStorage();
   const locks = collectionLocks();
   if (locks && current.needsImport) {
     try {
-      // An old tab may overwrite the raw value while this request waits.
-      const raw = current.legacyRaw;
-      if (raw !== undefined && raw !== legacyEvent) observations.push(raw);
-      current = await locks.request(STORAGE_KEY, () => reconcileStorage(observations));
+      current = await locks.request(STORAGE_KEY, () => reconcileStorage());
     } catch {
-      current = { ...current, storageError: LOCK_UNAVAILABLE };
+      current = unavailable(await readStorage(), LOCK_UNAVAILABLE);
     }
+  } else if (!current.storageError && !current.needsImport) {
+    clearCommittedObservations(current);
   }
   if (snapshotRevision !== revision) return;
-  setSnapshot(locks || current.storageError ? current : { ...current, storageError: LOCK_UNAVAILABLE });
+  setSnapshot(locks || current.storageError ? current : unavailable(current, LOCK_UNAVAILABLE));
 }
 
 async function withCollectionWrite<T>(failure: T, edit: (current: StorageRead) => T | Promise<T>): Promise<T> {
@@ -308,7 +317,7 @@ async function withCollectionWrite<T>(failure: T, edit: (current: StorageRead) =
     });
   } catch {
     const current = await readStorage();
-    setSnapshot({ ...current, storageError: current.storageError ?? LOCK_UNAVAILABLE });
+    setSnapshot(unavailable(current, current.storageError ?? LOCK_UNAVAILABLE));
     return failure;
   }
 }
@@ -324,17 +333,19 @@ async function commitCollections(collections: NamedCollection[], legacyKeys: str
   }
 }
 
-async function reconcileStorage(observations: readonly string[] = []): Promise<StorageRead> {
-  const current = await readStorage(observations);
+async function reconcileStorage(): Promise<StorageRead> {
+  const current = await readStorage();
+  if (current.storageError) return current;
   if (current.needsImport) {
     try {
       await commitCollections(current.collections, current.legacyKeys);
     } catch {
-      return { ...current, storageError: WRITE_FAILED };
+      return unavailable(current, WRITE_FAILED);
     }
     // This committed snapshot supersedes reads that finished while we waited.
     setSnapshot(current);
   }
+  clearCommittedObservations(current);
   return current;
 }
 

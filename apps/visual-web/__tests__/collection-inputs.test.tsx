@@ -157,3 +157,28 @@ it('저장 dialog는 이름 입력에 포커스하고 닫기 후 trigger로 돌�
   expect(document.querySelector('dialog')?.open).toBe(false);
   expect(document.activeElement).toBe(trigger);
 });
+
+it('keeps one new collection available for retry if saving its first item fails', async () => {
+  await act(async () => {
+    render(<SaveButton item={item} />);
+  });
+  fireEvent.click(screen.getByRole('button', { name: '컬렉션에 저장' }));
+  const input = screen.getByRole('textbox', { name: '새 컬렉션 이름' });
+  const setItem = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, 'setItem')
+    .mockImplementationOnce(function (this: Storage, key: string, value: string) {
+      setItem.call(this, key, value);
+    })
+    .mockImplementationOnce(() => {
+      throw new Error('second transaction failed');
+    });
+
+  fireEvent.change(input, { target: { value: '참고' } });
+  await act(async () => pressEnter(input as HTMLInputElement, { key: 'Enter' }));
+  expect(input).toHaveProperty('value', '');
+  expect(screen.getByRole('alert').textContent).toContain('저장하지 못했습니다');
+  expect(persisted()).toMatchObject([{ name: '참고', items: [] }]);
+
+  await act(async () => fireEvent.click(screen.getByRole('checkbox')));
+  expect(persisted()).toMatchObject([{ name: '참고', items: [item] }]);
+});

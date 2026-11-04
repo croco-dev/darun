@@ -88,11 +88,12 @@ function connection(kind: 'screenshots' | 'flows', hasNextPage = false) {
     },
   };
 }
-beforeEach(() => {
+beforeEach(async () => {
   Object.defineProperty(navigator, 'locks', {
     configurable: true,
     value: { request: async (_name: string, write: () => unknown) => write() },
   });
+  await act(async () => window.dispatchEvent(new StorageEvent('storage')));
 });
 
 afterEach(async () => {
@@ -105,6 +106,7 @@ afterEach(async () => {
   mocks.observers.clear();
   mocks.routerListeners.clear();
   activeClient = client;
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   vi.useRealTimers();
 });
@@ -546,6 +548,36 @@ describe('browser collection write boundaries', () => {
     await act(async () => release.resolve());
 
     expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections).toEqual([legacy]);
+    expect(host.textContent).toContain('Screen');
+  });
+
+  it('keeps a failed legacy import pending without showing it as saved, then retries it', async () => {
+    await store.createCollection('Modern');
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    const record = localStorage.getItem(RECORD_KEY);
+    const release = deferCollectionWrites();
+    const raw = JSON.stringify([{ id: 'c', name: 'Legacy', createdAt: 1, items: [item] }]);
+
+    await act(async () => {
+      localStorage.setItem(KEY, raw);
+      window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue: raw, storageArea: localStorage }));
+    });
+    localStorage.removeItem(KEY);
+    const writes = vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
+      throw new Error('temporary transaction failure');
+    });
+    await act(async () => release.resolve());
+    expect(localStorage.getItem(RECORD_KEY)).toBe(record);
+    expect(host.querySelector('[role=alert]')?.textContent).toContain('저장하지 못했습니다');
+    expect(host.textContent).not.toContain('Screen');
+    writes.mockRestore();
+
+    await act(async () => window.dispatchEvent(new Event('focus')));
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections[1].items).toEqual([item]);
+    expect(host.querySelector('[role=alert]')).toBeNull();
     expect(host.textContent).toContain('Screen');
   });
 

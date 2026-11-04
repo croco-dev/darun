@@ -30,7 +30,10 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
     setWriting(true);
     try {
       const created = await createCollection(draft);
-      if (created && (await addToCollection(created.id, saved))) setDraft('');
+      if (created) {
+        setDraft('');
+        await addToCollection(created.id, saved);
+      }
     } finally {
       setWriting(false);
     }
