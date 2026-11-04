@@ -2,14 +2,14 @@ import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { SchemaLink } from '@apollo/client/link/schema';
 import { getRouteMatcher } from 'next/dist/shared/lib/router/utils/route-matcher';
 import { getRouteRegex } from 'next/dist/shared/lib/router/utils/route-regex';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
-const { getClient } = vi.hoisted(() => ({ getClient: vi.fn() }));
+const { getClient, intlMiddleware } = vi.hoisted(() => ({ getClient: vi.fn(), intlMiddleware: vi.fn() }));
 vi.mock('../app/getServerClient', () => ({ getClient }));
-vi.mock('next-intl/middleware', () => ({ default: () => vi.fn() }));
+vi.mock('next-intl/middleware', () => ({ default: () => intlMiddleware }));
 import { GET, HEAD } from '../app/api/markdown/[...path]/route';
 import middleware from '../middleware';
 
@@ -76,6 +76,22 @@ function magazineRequest(locale: string, segment: string, method: 'GET' | 'HEAD'
     context: { params: Promise.resolve({ path: params.path }) },
   };
 }
+
+it('매거진 HTML은 locale 응답을 유지하며 저장 slug의 퍼센트 인코딩을 보존한다', () => {
+  const request = new NextRequest('http://localhost/en/magazines/c%252B%252B?source=magazine');
+  const intlResponse = NextResponse.rewrite('http://localhost/en/magazines/c%2B%2B?source=magazine', {
+    request: { headers: new Headers({ 'x-next-intl-locale': 'en' }) },
+  });
+  intlResponse.cookies.set('NEXT_LOCALE', 'en');
+  intlMiddleware.mockReturnValueOnce(intlResponse);
+
+  const response = middleware(request);
+  expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+  expect(response.headers.get('x-middleware-next')).toBe('1');
+  expect(response.headers.get('x-middleware-request-x-next-intl-locale')).toBe('en');
+  expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('en');
+  expect(response.headers.get('Vary')).toBe('Accept');
+});
 
 describe('공개 Markdown route의 실행 스키마 계약', () => {
   beforeEach(() => {

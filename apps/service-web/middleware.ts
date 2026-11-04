@@ -78,8 +78,14 @@ export default function middleware(request: NextRequest) {
   if (isHeadOrGet && categoryPath) {
     requestHeaders.set('x-darun-category-slug', categoryPath[1]);
   }
-  const response = intlMiddleware(new NextRequest(request, { headers: requestHeaders }));
+  let response = intlMiddleware(new NextRequest(request, { headers: requestHeaders }));
   if (isHeadOrGet && response) {
+    // These magazine paths already include their route locale. Keep the original
+    // slug segment if next-intl rewrites its encoding before Next matches the route.
+    if (/^\/(?:ko|en)\/magazines\/[^/]+\/?$/.test(pathname) && response.headers.has('x-middleware-rewrite')) {
+      response.headers.delete('x-middleware-rewrite');
+      response = NextResponse.next({ headers: response.headers });
+    }
     response.headers.set('Vary', appendVary(response.headers.get('Vary'), 'Accept'));
   }
   return response;
