@@ -167,7 +167,6 @@ describe('buildCompareMarkdown', () => {
 describe('buildMagazineMarkdown', () => {
   it('매거진 글 마크다운을 생성한다', () => {
     const md = buildMagazineMarkdown({
-      locale: 'ko',
       magazine: {
         title: '2026 AI 트렌드',
         slug: 'ai-trends-2026',

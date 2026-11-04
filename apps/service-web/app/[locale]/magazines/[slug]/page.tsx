@@ -6,7 +6,7 @@ import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../lib/seo/indexability';
 import { JsonLd } from '../../../../lib/seo/json-ld';
 import { getSiteName } from '../../../../lib/seo/metadata';
-import { absolutePublicUrl, normalizeLocale } from '../../../../lib/seo/url';
+import { absolutePublicUrl, magazineCanonicalUrl, normalizeLocale } from '../../../../lib/seo/url';
 import { getClient } from '../../../getServerClient';
 
 const magazineQuery = gql`
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description =
     summary ||
     (isEn ? 'Comparison and analysis magazine of various services.' : '다양한 서비스의 비교와 분석 매거진입니다.');
-  const canonicalUrl = absolutePublicUrl('ko', `/magazines/${encodeURIComponent(resolvedParams.slug)}`);
+  const canonicalUrl = magazineCanonicalUrl(resolvedParams.slug);
 
   return {
     title: isEn ? `${title} - Darun: Service comparison in one place` : `${title} - 다른: 서비스 비교를 한 곳에서`,
@@ -110,7 +110,7 @@ async function MagazineContentPageWithJsonLd({ params }: Props) {
   const magazine = data?.magazineBySlug;
   if (!magazine) return notFound();
 
-  const canonicalUrl = absolutePublicUrl('ko', `/magazines/${encodeURIComponent(resolvedParams.slug)}`);
+  const canonicalUrl = magazineCanonicalUrl(resolvedParams.slug);
 
   const articleJsonLd = magazine
     ? {
