@@ -59,7 +59,6 @@ suite('플로 상세의 PostgreSQL 스냅샷', () => {
         name: 'Flow product',
         summary: '',
         logoUrl: '',
-        publishedAt: new Date('2026-01-01T00:00:00Z'),
       });
       await tx.insert(productScreenshots).values([
         { ...oldShot, productId },
@@ -85,6 +84,10 @@ suite('플로 상세의 PostgreSQL 스냅샷', () => {
 
   beforeEach(async () => {
     await db.transaction(async tx => {
+      await tx
+        .update(products)
+        .set({ publishedAt: new Date('2026-01-01T00:00:00Z') })
+        .where(eq(products.id, productId));
       await tx.delete(productFlows).where(eq(productFlows.id, flowId));
       await tx.insert(productFlows).values({
         id: flowId,
