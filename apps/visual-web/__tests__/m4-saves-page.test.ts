@@ -427,11 +427,11 @@ describe('browser collection write boundaries', () => {
     const raw = [{ id: 'c', name: 'Initially empty', createdAt: 1, items: [] }];
     localStorage.setItem(KEY, JSON.stringify(raw));
     window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
-    const release = deferCollectionWrites();
     host = document.createElement('div');
     document.body.append(host);
     root = createRoot(host);
     await act(async () => root!.render(createElement(Collections)));
+    const release = deferCollectionWrites();
     const button = [...host.querySelectorAll('button')].find(button => button.textContent === '컬렉션 삭제')!;
     button.focus();
     await act(async () => button.click());
@@ -455,11 +455,11 @@ describe('browser collection write boundaries', () => {
     const retained = { ...item, id: 'b', title: 'Retained', href: '/screenshots/b' };
     localStorage.setItem(KEY, JSON.stringify([{ id: 'c', name: 'Collection', createdAt: 1, items: [item, retained] }]));
     window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
-    const release = deferCollectionWrites();
     host = document.createElement('div');
     document.body.append(host);
     root = createRoot(host);
     await act(async () => root!.render(createElement(Collections)));
+    const release = deferCollectionWrites();
     const remove = host.querySelector<HTMLButtonElement>('button[aria-label="Screen 항목을 컬렉션에서 제거"]')!;
     const next = host.querySelector<HTMLAnchorElement>('a[href="/screenshots/b"]')!;
 
@@ -504,6 +504,45 @@ describe('browser collection write boundaries', () => {
     expect(localStorage.getItem(KEY)).toBe(original);
     expect(host.textContent).toContain('Late');
     expect(host.textContent).not.toContain('Screen');
+  });
+
+  it('commits the first legacy save observed by an upgraded tab that has never edited', async () => {
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    expect(localStorage.getItem(RECORD_KEY)).toBeNull();
+
+    const legacy = { id: 'c', name: 'Collection', createdAt: 1, items: [item] };
+    const raw = JSON.stringify([legacy]);
+    await act(async () => {
+      localStorage.setItem(KEY, raw);
+      window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue: raw, storageArea: localStorage }));
+    });
+
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections).toEqual([legacy]);
+    localStorage.removeItem(KEY);
+    expect(await store.savedIn(item.kind, item.id)).toEqual([legacy]);
+  });
+
+  it('keeps a legacy value read before waiting for the import lock', async () => {
+    const legacy = { id: 'c', name: 'Collection', createdAt: 1, items: [item] };
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    const release = deferCollectionWrites();
+
+    await act(async () => {
+      localStorage.setItem(KEY, JSON.stringify([legacy]));
+      window.dispatchEvent(new Event('focus'));
+    });
+    expect(localStorage.getItem(RECORD_KEY)).toBeNull();
+    localStorage.removeItem(KEY);
+    await act(async () => release.resolve());
+
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections).toEqual([legacy]);
+    expect(host.textContent).toContain('Screen');
   });
 
   it('does not announce deletion or move focus on a failed write', async () => {

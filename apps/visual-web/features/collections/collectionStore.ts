@@ -35,6 +35,7 @@ interface StoredCollections {
 interface StorageRead extends CollectionData {
   legacyKeys: string[];
   needsImport: boolean;
+  legacyRaw?: string;
 }
 
 interface StoreSnapshot extends CollectionData {
@@ -177,12 +178,18 @@ function readLegacy(raw: string | null): CollectionData {
   }
 }
 
-function legacyBackup(): CollectionData {
+function legacyRaw(): string | null | undefined {
   try {
-    return readLegacy(window.localStorage.getItem(STORAGE_KEY));
+    return window.localStorage.getItem(STORAGE_KEY);
   } catch {
-    return { collections: [], storageError: '브라우저 저장소에서 기존 컬렉션을 불러오지 못했습니다.' };
+    return undefined;
   }
+}
+
+function legacyBackup(raw: string | null | undefined): CollectionData {
+  return raw === undefined
+    ? { collections: [], storageError: '브라우저 저장소에서 기존 컬렉션을 불러오지 못했습니다.' }
+    : readLegacy(raw);
 }
 
 function importLegacy(current: StorageRead, legacy: CollectionData): StorageRead {
@@ -224,27 +231,26 @@ function decodeRecord(raw: unknown): StorageRead {
   return { ...decodeCollections(raw.collections), legacyKeys: raw.legacyKeys, needsImport: false };
 }
 
-async function readStorage(legacyEvent?: string): Promise<StorageRead> {
+async function readStorage(observations: readonly string[] = []): Promise<StorageRead> {
   const initial = { collections: [], storageError: null, legacyKeys: [], needsImport: false };
   if (typeof window === 'undefined') return initial;
   try {
     const stored = await readCollectionRecord();
-    const legacy = legacyBackup();
-    if (!stored) {
-      if (legacy.storageError) return { ...initial, ...legacy };
-      const seeded = importLegacy(initial, legacy);
-      // The existing v1 data can be read without making a migration write.
-      seeded.needsImport = false;
-      return legacyEvent === undefined ? seeded : importLegacy(seeded, readLegacy(legacyEvent));
-    }
-    const current = decodeRecord(stored.value);
+    const raw = legacyRaw();
+    const legacy = legacyBackup(raw);
+    if (!stored && legacy.storageError) return { ...initial, ...legacy };
+
+    let current = stored ? decodeRecord(stored.value) : initial;
     if (current.storageError) return current;
-    const latest = importLegacy(current, legacy);
-    return legacyEvent === undefined ? latest : importLegacy(latest, readLegacy(legacyEvent));
+    current = importLegacy(current, legacy);
+    for (const observed of observations) {
+      if (observed !== raw) current = importLegacy(current, readLegacy(observed));
+    }
+    return { ...current, legacyRaw: raw ?? undefined };
   } catch {
     return {
       ...initial,
-      collections: legacyBackup().collections,
+      collections: legacyBackup(legacyRaw()).collections,
       storageError: '브라우저 저장소를 확인하지 못했습니다. 남아 있는 이전 컬렉션만 읽을 수 있습니다.',
     };
   }
@@ -262,11 +268,15 @@ function collectionLocks() {
 
 async function refreshSnapshot(legacyEvent?: string) {
   const revision = ++snapshotRevision;
-  let current = await readStorage(legacyEvent);
+  const observations = legacyEvent === undefined ? [] : [legacyEvent];
+  let current = await readStorage(observations);
   const locks = collectionLocks();
   if (locks && current.needsImport) {
     try {
-      current = await locks.request(STORAGE_KEY, () => reconcileStorage(legacyEvent));
+      // An old tab may overwrite the raw value while this request waits.
+      const raw = current.legacyRaw;
+      if (raw !== undefined && raw !== legacyEvent) observations.push(raw);
+      current = await locks.request(STORAGE_KEY, () => reconcileStorage(observations));
     } catch {
       current = { ...current, storageError: LOCK_UNAVAILABLE };
     }
@@ -314,8 +324,8 @@ async function commitCollections(collections: NamedCollection[], legacyKeys: str
   }
 }
 
-async function reconcileStorage(legacyEvent?: string): Promise<StorageRead> {
-  const current = await readStorage(legacyEvent);
+async function reconcileStorage(observations: readonly string[] = []): Promise<StorageRead> {
+  const current = await readStorage(observations);
   if (current.needsImport) {
     try {
       await commitCollections(current.collections, current.legacyKeys);
