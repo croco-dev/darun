@@ -50,10 +50,10 @@ export function ProductSearchSuggest({
   }, [onSelect, onClose]);
 
   // Reset activeIndex when suggestions list changes
-  const prevSuggestionsRef = useRef(suggestions);
+  const suggestionsRef = useRef(suggestions);
   useEffect(() => {
-    if (prevSuggestionsRef.current !== suggestions) {
-      prevSuggestionsRef.current = suggestions;
+    if (suggestionsRef.current !== suggestions) {
+      suggestionsRef.current = suggestions;
       activeIndexRef.current = -1;
       setActiveIndex(-1);
     }
@@ -74,13 +74,60 @@ export function ProductSearchSuggest({
     activeIndexRef.current = activeIndex;
   }, [activeIndex]);
 
-  // Keyboard navigation attached to the input element
+  // Track the confirmation key even when focus moves within the form.
   useEffect(() => {
     const input = inputRef.current;
     if (!input) return;
+    const form = input.form;
+    const keyboardTarget: HTMLElement = form ?? input;
+    const ownerDocument = input.ownerDocument;
+    let confirmingComposition = false;
+
+    function isEnterKey(event: KeyboardEvent) {
+      return event.key === 'Enter' || event.code === 'Enter' || event.code === 'NumpadEnter';
+    }
+
+    function handleKeyUp(event: KeyboardEvent) {
+      if (isEnterKey(event)) confirmingComposition = false;
+    }
+
+    function guardImplicitClick(event: MouseEvent) {
+      if (
+        !confirmingComposition ||
+        ownerDocument.activeElement !== input ||
+        event.detail !== 0 ||
+        !(event.target instanceof Element) ||
+        !event.target.closest('button[type="submit"]')
+      ) {
+        return;
+      }
+      // Stop implicit activation before it reaches the outside-click listener.
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    function guardSubmit(event: SubmitEvent) {
+      if (!confirmingComposition || event.submitter) return;
+      event.preventDefault();
+      event.stopPropagation();
+    }
 
     function handleKeyDown(event: KeyboardEvent) {
+      const fromSearchInput = event.target === input;
+      // Some browsers report the confirmation key after compositionend, with keyCode 229.
+      const isImeKey = event.isComposing || event.keyCode === 229;
+      if (isEnterKey(event)) {
+        confirmingComposition = (fromSearchInput && isImeKey) || (event.repeat && confirmingComposition);
+        if (confirmingComposition) {
+          // Leave composition to the IME, but a held Enter must not activate form controls.
+          if (!fromSearchInput || !isImeKey) event.preventDefault();
+          return;
+        }
+      }
+      if (!fromSearchInput || isImeKey) return;
+
       const items = callbacksRef.current;
+      const suggestions = suggestionsRef.current;
 
       if (event.key === 'ArrowDown') {
         if (suggestions.length === 0) return;
@@ -106,9 +153,18 @@ export function ProductSearchSuggest({
       }
     }
 
-    input.addEventListener('keydown', handleKeyDown);
-    return () => input.removeEventListener('keydown', handleKeyDown);
-  }, [inputRef, suggestions]);
+    // Guard implicit submission without canceling the IME's keydown default action.
+    keyboardTarget.addEventListener('keydown', handleKeyDown);
+    ownerDocument.addEventListener('keyup', handleKeyUp, true);
+    form?.addEventListener('click', guardImplicitClick, true);
+    form?.addEventListener('submit', guardSubmit, true);
+    return () => {
+      keyboardTarget.removeEventListener('keydown', handleKeyDown);
+      ownerDocument.removeEventListener('keyup', handleKeyUp, true);
+      form?.removeEventListener('click', guardImplicitClick, true);
+      form?.removeEventListener('submit', guardSubmit, true);
+    };
+  }, [inputRef]);
 
   const hasResults = suggestions.length > 0;
   const showLoading = !hasResults && inputValue.trim().length > 0 && isSearching;
