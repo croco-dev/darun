@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collections } from '../features/collections/Collections';
 import { savedIn, type NamedCollection } from '../features/collections/collectionStore';
 import { SaveButton } from '../features/collections/SaveButton';
+import { RECORD_KEY } from './fixtures/collectionPersistence';
+
+vi.mock('../features/collections/collectionPersistence', () => import('./fixtures/collectionPersistence'));
 
 const KEY = 'darun-visual-collections-v1';
 const item = {
@@ -16,7 +19,7 @@ const item = {
 };
 
 function persisted(): NamedCollection[] {
-  return JSON.parse(localStorage.getItem(KEY) ?? '[]');
+  return JSON.parse(localStorage.getItem(RECORD_KEY) ?? '{}').collections ?? [];
 }
 
 function pressEnter(input: HTMLInputElement, init: Record<string, unknown>) {
@@ -25,6 +28,11 @@ function pressEnter(input: HTMLInputElement, init: Record<string, unknown>) {
 }
 
 beforeEach(() => {
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: { request: async (_name: string, write: () => unknown) => write() },
+  });
+
   localStorage.clear();
   window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
   // jsdom does not implement the native dialog methods. Keep the real Dialog's
@@ -48,6 +56,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  Reflect.deleteProperty(navigator, 'locks');
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
   vi.restoreAllMocks();
@@ -55,53 +64,55 @@ afterEach(() => {
 
 for (const surface of ['Collections', 'SaveButton'] as const) {
   describe(`${surface} 이름 입력`, () => {
-    function openInput(): HTMLInputElement {
-      render(surface === 'Collections' ? <Collections /> : <SaveButton item={item} />);
+    async function openInput(): Promise<HTMLInputElement> {
+      await act(async () => {
+        render(surface === 'Collections' ? <Collections /> : <SaveButton item={item} />);
+      });
       if (surface === 'SaveButton') fireEvent.click(screen.getByRole('button', { name: '컬렉션에 저장' }));
       return screen.getByRole('textbox', { name: '새 컬렉션 이름' });
     }
 
-    function expectCreated(name: string) {
+    async function expectCreated(name: string) {
       const collections = persisted();
       expect(collections).toHaveLength(1);
       expect(collections[0]).toMatchObject({ name, items: surface === 'SaveButton' ? [item] : [] });
-      expect(savedIn('flow', 'checkout-42').map(collection => collection.name)).toEqual(
+      expect((await savedIn('flow', 'checkout-42')).map(collection => collection.name)).toEqual(
         surface === 'SaveButton' ? [name] : []
       );
-      expect(savedIn('screenshot', 'checkout-42')).toEqual([]);
+      expect(await savedIn('screenshot', 'checkout-42')).toEqual([]);
     }
 
     it.each([
       { boundary: 'isComposing', isComposing: true, keyCode: 13 },
       { boundary: 'keyCode 229', isComposing: false, keyCode: 229 },
-    ])('$boundary 조합 확정 Enter는 draft와 저장소를 보존하고 별도 Enter만 생성한다', boundary => {
-      const input = openInput();
+    ])('$boundary 조합 확정 Enter는 draft와 저장소를 보존하고 별도 Enter만 생성한다', async boundary => {
+      const input = await openInput();
       const writes = vi.spyOn(Storage.prototype, 'setItem');
       fireEvent.compositionStart(input);
       fireEvent.change(input, { target: { value: '  결제 참고  ' } });
       pressEnter(input, { key: 'Enter', ...boundary });
       expect(input.value).toBe('  결제 참고  ');
       expect(writes).not.toHaveBeenCalled();
-      expect(localStorage.getItem(KEY)).toBeNull();
+      expect(localStorage.getItem(RECORD_KEY)).toBeNull();
       expect(persisted()).toEqual([]);
-      expect(savedIn('flow', 'checkout-42')).toEqual([]);
+      expect(await savedIn('flow', 'checkout-42')).toEqual([]);
       expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
       expect(screen.queryByRole('checkbox')).toBeNull();
 
       fireEvent.compositionEnd(input, { data: '고' });
       expect(input.value).toBe('  결제 참고  ');
       expect(writes).not.toHaveBeenCalled();
-      pressEnter(input, { key: 'Enter', keyCode: 13, isComposing: false });
-      expectCreated('결제 참고');
+      await act(async () => pressEnter(input, { key: 'Enter', keyCode: 13, isComposing: false }));
+      await expectCreated('결제 참고');
       expect(input.value).toBe('');
       expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
       pressEnter(input, { key: 'Enter', keyCode: 13 });
-      expectCreated('결제 참고');
+      await expectCreated('결제 참고');
       expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
     });
 
-    it.each(['Enter', 'button'] as const)('%s는 일반 입력을 한 번 생성하고 빈 입력은 무시한다', submit => {
-      const input = openInput();
+    it.each(['Enter', 'button'] as const)('%s는 일반 입력을 한 번 생성하고 빈 입력은 무시한다', async submit => {
+      const input = await openInput();
       const button = screen.getByRole('button', { name: surface === 'Collections' ? '컬렉션 만들기' : '만들기' });
       const writes = vi.spyOn(Storage.prototype, 'setItem');
       fireEvent.change(input, { target: { value: '   ' } });
@@ -111,20 +122,22 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
       expect(writes).not.toHaveBeenCalled();
       expect(input.maxLength).toBe(60);
       fireEvent.change(input, { target: { value: '  일반 참고  ' } });
-      if (submit === 'Enter') pressEnter(input, { key: 'Enter', keyCode: 13 });
-      else fireEvent.click(button);
-      expectCreated('일반 참고');
+      await act(async () => {
+        if (submit === 'Enter') pressEnter(input, { key: 'Enter', keyCode: 13 });
+        else fireEvent.click(button);
+      });
+      await expectCreated('일반 참고');
       expect(input.value).toBe('');
       expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
     });
 
-    it('저장 실패를 표시하고 입력을 지우지 않는다', () => {
-      const input = openInput();
+    it('저장 실패를 표시하고 입력을 지우지 않는다', async () => {
+      const input = await openInput();
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         throw new Error('synthetic quota');
       });
       fireEvent.change(input, { target: { value: '다시 저장' } });
-      pressEnter(input, { key: 'Enter', keyCode: 13 });
+      await act(async () => pressEnter(input, { key: 'Enter', keyCode: 13 }));
       expect(screen.getByRole('alert').textContent).toContain('저장하지 못했습니다');
       expect(input.value).toBe('다시 저장');
       expect(persisted()).toEqual([]);
@@ -132,8 +145,10 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
   });
 }
 
-it('저장 dialog는 이름 입력에 포커스하고 닫기 후 trigger로 돌려준다', () => {
-  render(<SaveButton item={item} />);
+it('저장 dialog는 이름 입력에 포커스하고 닫기 후 trigger로 돌려준다', async () => {
+  await act(async () => {
+    render(<SaveButton item={item} />);
+  });
   const trigger = screen.getByRole('button', { name: '컬렉션에 저장' });
   trigger.focus();
   fireEvent.click(trigger);
@@ -141,4 +156,29 @@ it('저장 dialog는 이름 입력에 포커스하고 닫기 후 trigger로 돌�
   fireEvent.click(screen.getByRole('button', { name: '닫기 (Esc)' }));
   expect(document.querySelector('dialog')?.open).toBe(false);
   expect(document.activeElement).toBe(trigger);
+});
+
+it('keeps one new collection available for retry if saving its first item fails', async () => {
+  await act(async () => {
+    render(<SaveButton item={item} />);
+  });
+  fireEvent.click(screen.getByRole('button', { name: '컬렉션에 저장' }));
+  const input = screen.getByRole('textbox', { name: '새 컬렉션 이름' });
+  const setItem = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, 'setItem')
+    .mockImplementationOnce(function (this: Storage, key: string, value: string) {
+      setItem.call(this, key, value);
+    })
+    .mockImplementationOnce(() => {
+      throw new Error('second transaction failed');
+    });
+
+  fireEvent.change(input, { target: { value: '참고' } });
+  await act(async () => pressEnter(input as HTMLInputElement, { key: 'Enter' }));
+  expect(input).toHaveProperty('value', '');
+  expect(screen.getByRole('alert').textContent).toContain('저장하지 못했습니다');
+  expect(persisted()).toMatchObject([{ name: '참고', items: [] }]);
+
+  await act(async () => fireEvent.click(screen.getByRole('checkbox')));
+  expect(persisted()).toMatchObject([{ name: '참고', items: [item] }]);
 });

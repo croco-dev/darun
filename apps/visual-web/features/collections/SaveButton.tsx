@@ -3,7 +3,7 @@
 import { Check, Dialog, Plus } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useId, useState } from 'react';
-import { SavedItem, createCollection, toggleInCollection, useCollections } from './collectionStore';
+import { SavedItem, addToCollection, createCollection, removeFromCollection, useCollections } from './collectionStore';
 
 export interface SaveItemInput {
   kind: 'screenshot' | 'flow' | 'app';
@@ -15,20 +15,38 @@ export interface SaveItemInput {
 }
 
 export function SaveButton({ item, className }: { item: SaveItemInput; className?: string }) {
-  const { collections, storageError } = useCollections();
+  const { collections, storageError, loading } = useCollections();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
+  const [writing, setWriting] = useState(false);
   const titleId = useId();
   const saved: SavedItem = item;
 
   const savedCount = collections.filter(c => c.items.some(i => i.kind === saved.kind && i.id === saved.id)).length;
   const isSaved = savedCount > 0;
 
-  const create = () => {
-    const created = createCollection(draft);
-    if (created) {
-      toggleInCollection(created.id, saved);
-      setDraft('');
+  const create = async () => {
+    if (loading || writing || draft.trim() === '') return;
+    setWriting(true);
+    try {
+      const created = await createCollection(draft);
+      if (created) {
+        setDraft('');
+        await addToCollection(created.id, saved);
+      }
+    } finally {
+      setWriting(false);
+    }
+  };
+
+  const changeSaved = async (collectionId: string, checked: boolean) => {
+    if (writing) return;
+    setWriting(true);
+    try {
+      if (checked) await addToCollection(collectionId, saved);
+      else await removeFromCollection(collectionId, saved.kind, saved.id);
+    } finally {
+      setWriting(false);
     }
   };
 
@@ -67,7 +85,11 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
               {storageError}
             </p>
           ) : null}
-          {collections.length === 0 ? (
+          {loading ? (
+            <p role="status" className="px-1 py-2 text-xs text-dark-600">
+              컬렉션을 불러오는 중입니다.
+            </p>
+          ) : collections.length === 0 ? (
             <p className="px-1 py-2 text-xs text-dark-600">아직 컬렉션이 없습니다. 아래에서 새로 만드세요.</p>
           ) : (
             <ul className="max-h-56 space-y-1 overflow-y-auto py-1">
@@ -79,7 +101,8 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
                       <input
                         type="checkbox"
                         checked={checked}
-                        onChange={() => toggleInCollection(c.id, saved)}
+                        aria-disabled={writing}
+                        onChange={event => void changeSaved(c.id, event.currentTarget.checked)}
                         className="h-4 w-4 accent-dark-900"
                       />
                       <span className="min-w-0 flex-1 truncate font-medium">{c.name}</span>
@@ -93,12 +116,13 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
           <form
             onSubmit={event => {
               event.preventDefault();
-              if (draft.trim() !== '') create();
+              void create();
             }}
             className="mt-3 flex gap-2 border-t border-dark-100 pt-4"
           >
             <input
               value={draft}
+              readOnly={writing}
               onChange={e => setDraft(e.target.value)}
               onKeyDown={event => {
                 if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) {
@@ -112,7 +136,7 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
             />
             <button
               type="submit"
-              disabled={draft.trim() === ''}
+              disabled={loading || writing || draft.trim() === ''}
               className="min-h-11 shrink-0 rounded-lg bg-dark-900 px-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
             >
               만들기

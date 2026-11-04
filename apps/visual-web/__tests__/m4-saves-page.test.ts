@@ -3,7 +3,7 @@ import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/cli
 import { MyVisualSavedFlowsDocument, MyVisualSavedScreenshotsDocument } from '@darun/provider-graphql';
 import { act, createElement, useRef, useSyncExternalStore } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collections } from '../features/collections/Collections';
 import * as store from '../features/collections/collectionStore';
 import { ProductSearchSuggest } from '../features/product-search/ProductSearchSuggest';
@@ -12,6 +12,9 @@ import { useSavesPage } from '../features/saves/useSavesPage';
 import { useVisualSaveButton } from '../features/saves/useVisualSaveButton';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+import { RECORD_KEY } from './fixtures/collectionPersistence';
+
+vi.mock('../features/collections/collectionPersistence', () => import('./fixtures/collectionPersistence'));
 
 const mocks = vi.hoisted(() => ({
   query: vi.fn(),
@@ -85,7 +88,16 @@ function connection(kind: 'screenshots' | 'flows', hasNextPage = false) {
     },
   };
 }
+beforeEach(async () => {
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: { request: async (_name: string, write: () => unknown) => write() },
+  });
+  await act(async () => window.dispatchEvent(new StorageEvent('storage')));
+});
+
 afterEach(async () => {
+  Reflect.deleteProperty(navigator, 'locks');
   await act(async () => root?.unmount());
   root = undefined;
   document.body.replaceChildren();
@@ -94,6 +106,7 @@ afterEach(async () => {
   mocks.observers.clear();
   mocks.routerListeners.clear();
   activeClient = client;
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   vi.useRealTimers();
 });
@@ -317,7 +330,7 @@ describe('suggestion request timing', () => {
   });
 });
 
-it('preserves partially readable collections rather than persisting a filtered subset', () => {
+it('preserves partially readable collections rather than persisting a filtered subset', async () => {
   const raw = JSON.stringify([
     {
       id: 'c',
@@ -337,9 +350,9 @@ it('preserves partially readable collections rather than persisting a filtered s
     },
   ]);
   localStorage.setItem('darun-visual-collections-v1', raw);
-  expect(store.createCollection('New')).toBeNull();
-  expect(store.savedIn('screenshot', 's')).toHaveLength(1);
-  store.toggleInCollection('c', {
+  expect(await store.createCollection('New')).toBeNull();
+  expect(await store.savedIn('screenshot', 's')).toHaveLength(1);
+  await store.addToCollection('c', {
     kind: 'screenshot',
     id: 's',
     title: 'Valid',
@@ -347,7 +360,7 @@ it('preserves partially readable collections rather than persisting a filtered s
     href: '/screenshots/s',
     productName: 'App',
   });
-  expect(store.deleteCollection('c')).toBe(false);
+  expect(await store.deleteCollection('c')).toBe('failed');
   expect(localStorage.getItem('darun-visual-collections-v1')).toBe(raw);
 });
 
@@ -360,34 +373,48 @@ const item: store.SavedItem = {
   href: '/screenshots/s',
   productName: 'App',
 };
+function deferCollectionWrites() {
+  const release = deferred<void>();
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: {
+      request: async (_name: string, write: () => unknown) => {
+        await release.promise;
+        return write();
+      },
+    },
+  });
+  return release;
+}
+
 describe('browser collection write boundaries', () => {
   it.each(['{broken', '', '{"version":99,"collections":[]}', '[{"id":"broken"}]'])(
     'preserves raw corrupt value across all mutations: %s',
-    raw => {
+    async raw => {
       localStorage.setItem(KEY, raw);
-      expect(store.createCollection('New')).toBeNull();
-      expect(store.deleteCollection('c')).toBe(false);
-      store.toggleInCollection('c', item);
-      expect(store.removeFromCollection('c', 'screenshot', 's')).toBe(false);
+      expect(await store.createCollection('New')).toBeNull();
+      expect(await store.deleteCollection('c')).toBe('failed');
+      await store.addToCollection('c', item);
+      expect(await store.removeFromCollection('c', 'screenshot', 's')).toBe(false);
       expect(localStorage.getItem(KEY)).toBe(raw);
     }
   );
-  it('allows valid storage edits and keeps the persisted value when writing fails', () => {
+  it('allows valid storage edits and keeps the persisted value when writing fails', async () => {
     localStorage.removeItem(KEY);
-    const collection = store.createCollection('Valid');
+    const collection = await store.createCollection('Valid');
     expect(collection).not.toBeNull();
-    store.toggleInCollection(collection!.id, item);
-    const raw = localStorage.getItem(KEY);
+    await store.addToCollection(collection!.id, item);
+    const raw = localStorage.getItem(RECORD_KEY);
     const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota');
     });
-    expect(store.deleteCollection(collection!.id)).toBe(false);
-    expect(localStorage.getItem(KEY)).toBe(raw);
+    expect(await store.deleteCollection(collection!.id)).toBe('failed');
+    expect(localStorage.getItem(RECORD_KEY)).toBe(raw);
     set.mockRestore();
   });
   it('restores focus and announces successful collection deletion', async () => {
     localStorage.removeItem(KEY);
-    store.createCollection('Delete me');
+    await store.createCollection('Delete me');
     host = document.createElement('div');
     document.body.append(host);
     root = createRoot(host);
@@ -398,9 +425,165 @@ describe('browser collection write boundaries', () => {
     expect(document.activeElement?.getAttribute('aria-label')).toBe('새 컬렉션 이름');
     expect(host.querySelector('[role=status]')?.textContent).toContain('Delete me 컬렉션을 삭제했습니다.');
   });
+  it('asks for confirmation when a collection gains an item while empty deletion waits for the lock', async () => {
+    const raw = [{ id: 'c', name: 'Initially empty', createdAt: 1, items: [] }];
+    localStorage.setItem(KEY, JSON.stringify(raw));
+    window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    const release = deferCollectionWrites();
+    const button = [...host.querySelectorAll('button')].find(button => button.textContent === '컬렉션 삭제')!;
+    button.focus();
+    await act(async () => button.click());
+
+    // Another tab finishes its write before this one gets the lock.
+    const populated = JSON.stringify([{ ...raw[0], items: [item] }]);
+    localStorage.setItem(KEY, populated);
+    await act(async () => release.resolve());
+
+    expect(localStorage.getItem(KEY)).toBe(populated);
+    expect(host.querySelector('[role=status]')?.textContent).toBe('');
+    expect(host.textContent).toContain('1개 항목도 함께 삭제됩니다.');
+    expect(document.activeElement?.textContent).toBe('취소');
+    const confirm = [...host.querySelectorAll('button')].find(button => button.textContent === '삭제 확인')!;
+    await act(async () => confirm.click());
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections).toEqual([]);
+    expect(host.querySelector('[role=status]')?.textContent).toContain('Initially empty 컬렉션을 삭제했습니다.');
+  });
+
+  it('keeps the focus that the user moved while an item removal waits', async () => {
+    const retained = { ...item, id: 'b', title: 'Retained', href: '/screenshots/b' };
+    localStorage.setItem(KEY, JSON.stringify([{ id: 'c', name: 'Collection', createdAt: 1, items: [item, retained] }]));
+    window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    const release = deferCollectionWrites();
+    const remove = host.querySelector<HTMLButtonElement>('button[aria-label="Screen 항목을 컬렉션에서 제거"]')!;
+    const next = host.querySelector<HTMLAnchorElement>('a[href="/screenshots/b"]')!;
+
+    remove.focus();
+    await act(async () => remove.click());
+    next.focus();
+    await act(async () => release.resolve());
+
+    expect(remove.isConnected).toBe(false);
+    expect(document.activeElement).toBe(next);
+    expect(host.querySelector('[role=status]')?.textContent).toContain('Screen 항목을 컬렉션에서 제거했습니다.');
+  });
+
+  it('commits a late legacy save even when a newer legacy snapshot no longer contains it', async () => {
+    const legacy = { id: 'c', name: 'Collection', createdAt: 1, items: [item] };
+    const original = JSON.stringify([legacy]);
+    const modern = { ...item, id: 'modern', title: 'Modern', href: '/screenshots/modern' };
+    const late = { ...item, id: 'late', title: 'Late', href: '/screenshots/late' };
+    localStorage.setItem(KEY, original);
+    await store.addToCollection(legacy.id, modern);
+    await store.removeFromCollection(legacy.id, item.kind, item.id);
+
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    const earlierWrite = JSON.stringify([{ ...legacy, items: [item, late] }]);
+    await act(async () => {
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: KEY, newValue: earlierWrite, storageArea: sessionStorage })
+      );
+    });
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections[0].items).toEqual([modern]);
+
+    await act(async () => {
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: KEY, newValue: earlierWrite, storageArea: localStorage })
+      );
+    });
+
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections[0].items).toEqual([modern, late]);
+    expect(localStorage.getItem(KEY)).toBe(original);
+    expect(host.textContent).toContain('Late');
+    expect(host.textContent).not.toContain('Screen');
+  });
+
+  it('commits the first legacy save observed by an upgraded tab that has never edited', async () => {
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    expect(localStorage.getItem(RECORD_KEY)).toBeNull();
+
+    const legacy = { id: 'c', name: 'Collection', createdAt: 1, items: [item] };
+    const raw = JSON.stringify([legacy]);
+    await act(async () => {
+      localStorage.setItem(KEY, raw);
+      window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue: raw, storageArea: localStorage }));
+    });
+
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections).toEqual([legacy]);
+    localStorage.removeItem(KEY);
+    expect(await store.savedIn(item.kind, item.id)).toEqual([legacy]);
+  });
+
+  it('keeps a legacy value read before waiting for the import lock', async () => {
+    const legacy = { id: 'c', name: 'Collection', createdAt: 1, items: [item] };
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    const release = deferCollectionWrites();
+
+    await act(async () => {
+      localStorage.setItem(KEY, JSON.stringify([legacy]));
+      window.dispatchEvent(new Event('focus'));
+    });
+    expect(localStorage.getItem(RECORD_KEY)).toBeNull();
+    await act(async () => {
+      localStorage.removeItem(KEY);
+      window.dispatchEvent(new Event('focus'));
+    });
+    expect(host.textContent).not.toContain('Screen');
+    await act(async () => release.resolve());
+
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections).toEqual([legacy]);
+    expect(host.textContent).toContain('Screen');
+  });
+
+  it('keeps a failed legacy import pending without showing it as saved, then retries it', async () => {
+    await store.createCollection('Modern');
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+    const record = localStorage.getItem(RECORD_KEY);
+    const release = deferCollectionWrites();
+    const raw = JSON.stringify([{ id: 'c', name: 'Legacy', createdAt: 1, items: [item] }]);
+
+    await act(async () => {
+      localStorage.setItem(KEY, raw);
+      window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue: raw, storageArea: localStorage }));
+    });
+    localStorage.removeItem(KEY);
+    const writes = vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
+      throw new Error('temporary transaction failure');
+    });
+    await act(async () => release.resolve());
+    expect(localStorage.getItem(RECORD_KEY)).toBe(record);
+    expect(host.querySelector('[role=alert]')?.textContent).toContain('저장하지 못했습니다');
+    expect(host.textContent).not.toContain('Screen');
+    writes.mockRestore();
+
+    await act(async () => window.dispatchEvent(new Event('focus')));
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!).collections[1].items).toEqual([item]);
+    expect(host.querySelector('[role=alert]')).toBeNull();
+    expect(host.textContent).toContain('Screen');
+  });
+
   it('does not announce deletion or move focus on a failed write', async () => {
     localStorage.removeItem(KEY);
-    store.createCollection('Keep me');
+    await store.createCollection('Keep me');
     host = document.createElement('div');
     document.body.append(host);
     root = createRoot(host);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { hasCollectionDatabase, readCollectionRecord, writeCollectionRecord } from './collectionPersistence';
 
 export type SavedItemKind = 'screenshot' | 'flow' | 'app';
 
@@ -20,20 +21,43 @@ export interface NamedCollection {
   items: SavedItem[];
 }
 
-interface StoreSnapshot {
+interface CollectionData {
   collections: NamedCollection[];
   storageError: string | null;
 }
 
-const STORAGE_KEY = 'darun-visual-collections-v1';
+interface StoredCollections {
+  version: 1;
+  collections: NamedCollection[];
+  legacyKeys: string[];
+}
 
-const EMPTY_SNAPSHOT: StoreSnapshot = { collections: [], storageError: null };
+interface StorageRead extends CollectionData {
+  legacyKeys: string[];
+  needsImport: boolean;
+  observations?: CollectionData;
+  durableCollections?: NamedCollection[];
+}
+
+interface StoreSnapshot extends CollectionData {
+  loading: boolean;
+}
+
+const STORAGE_KEY = 'darun-visual-collections-v1';
+const LOCK_UNAVAILABLE =
+  '이 브라우저에서는 컬렉션을 안전하게 변경할 수 없습니다. 최신 브라우저의 HTTPS 페이지에서 다시 시도해 주세요.';
+const WRITE_FAILED = '브라우저 저장소에 저장하지 못했습니다. 저장 차단 설정을 확인해 주세요.';
+
+const EMPTY_OBSERVATIONS: StorageRead = { collections: [], storageError: null, legacyKeys: [], needsImport: false };
+let pendingLegacy = EMPTY_OBSERVATIONS;
+
+const EMPTY_SNAPSHOT: StoreSnapshot = { collections: [], storageError: null, loading: true };
 
 let snapshot: StoreSnapshot = EMPTY_SNAPSHOT;
 let initialized = false;
+let snapshotRevision = 0;
+let changes: BroadcastChannel | undefined;
 const listeners = new Set<() => void>();
-let storageAvailable: boolean | null = null;
-let storageCorrupt = false;
 
 function isSavedItem(value: unknown): value is SavedItem {
   if (typeof value !== 'object' || value === null) return false;
@@ -94,29 +118,24 @@ function isSafeItem(item: SavedItem): boolean {
   return hrefOk && imageOk;
 }
 
-function readStorage(): {
-  collections: NamedCollection[];
-  storageError: string | null;
-} {
+function decodeCollectionList(raw: unknown): unknown[] {
+  if (typeof raw !== 'string') throw new Error('bad shape');
+  const parsed: unknown = JSON.parse(raw);
+  if (Array.isArray(parsed)) return parsed;
+  if (
+    parsed !== null &&
+    typeof parsed === 'object' &&
+    Object.keys(parsed).every(key => key === 'collections') &&
+    'collections' in parsed &&
+    Array.isArray(parsed.collections)
+  ) {
+    return parsed.collections;
+  }
+  throw new Error('bad shape');
+}
+
+function decodeCollections(list: unknown[]): CollectionData {
   try {
-    storageCorrupt = false;
-    if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
-      return { collections: [], storageError: null };
-    }
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    storageAvailable = true;
-    if (raw === null) return { collections: [], storageError: null };
-    const parsed: unknown = JSON.parse(raw);
-    const list: unknown[] | null = Array.isArray(parsed)
-      ? parsed
-      : parsed !== null &&
-          typeof parsed === 'object' &&
-          Object.keys(parsed).every(key => key === 'collections') &&
-          'collections' in parsed &&
-          Array.isArray(parsed.collections)
-        ? parsed.collections
-        : null;
-    if (list === null) throw new Error('bad shape');
     const seenIds = new Set<string>();
     const collections: NamedCollection[] = [];
     let dropped = false;
@@ -140,7 +159,6 @@ function readStorage(): {
       collections.push({ ...entry, items });
     }
     if (dropped) {
-      storageCorrupt = true;
       return {
         collections,
         storageError:
@@ -149,68 +167,217 @@ function readStorage(): {
     }
     return { collections, storageError: null };
   } catch {
-    storageCorrupt = true;
-    if (typeof window !== 'undefined') {
-      try {
-        void window.localStorage;
-      } catch {
-        storageAvailable = false;
-        return {
-          collections: [],
-          storageError: '브라우저 저장소를 사용할 수 없어 컬렉션을 불러오지 못했습니다. 저장 기능이 동작하지 않습니다.',
-        };
-      }
+    return { collections: [], storageError: INVALID_STORAGE };
+  }
+}
+
+const INVALID_STORAGE =
+  '저장된 컬렉션 형식을 읽을 수 없어 변경을 막았습니다. 브라우저 저장소의 원문을 백업하고 복구한 뒤 다시 시도해 주세요.';
+
+function readLegacy(raw: string | null): CollectionData {
+  try {
+    return raw === null ? { collections: [], storageError: null } : decodeCollections(decodeCollectionList(raw));
+  } catch {
+    return { collections: [], storageError: INVALID_STORAGE };
+  }
+}
+
+function legacyRaw(): string | null | undefined {
+  try {
+    return window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return undefined;
+  }
+}
+
+function legacyBackup(raw: string | null | undefined): CollectionData {
+  return raw === undefined
+    ? { collections: [], storageError: '브라우저 저장소에서 기존 컬렉션을 불러오지 못했습니다.' }
+    : readLegacy(raw);
+}
+
+function importLegacy(current: StorageRead, legacy: CollectionData): StorageRead {
+  if (legacy.storageError) return current;
+  const known = new Set(current.legacyKeys);
+  const collections = new Map(current.collections.map(collection => [collection.id, collection]));
+  // The old writer only publishes whole snapshots. Missing entries can be stale, so
+  // only import new keys and remember them even after the new writer deletes them.
+  for (const collection of legacy.collections) {
+    const collectionKey = JSON.stringify([collection.id]);
+    const additions = collection.items.filter(item => !known.has(JSON.stringify([collection.id, item.kind, item.id])));
+    const existing = collections.get(collection.id);
+    if (additions.length > 0 || !known.has(collectionKey)) {
+      known.add(collectionKey);
+      for (const item of additions) known.add(JSON.stringify([collection.id, item.kind, item.id]));
+      const items = existing?.items ?? [];
+      const newItems = additions.filter(item => !items.some(saved => saved.kind === item.kind && saved.id === item.id));
+      collections.set(collection.id, { ...(existing ?? collection), items: [...items, ...newItems] });
     }
-    if (storageAvailable !== false) storageAvailable = true;
+  }
+  if (known.size === current.legacyKeys.length) return current;
+  return { ...current, collections: [...collections.values()], legacyKeys: [...known], needsImport: true };
+}
+
+function decodeRecord(raw: unknown): StorageRead {
+  if (
+    !raw ||
+    typeof raw !== 'object' ||
+    !('version' in raw && raw.version === 1) ||
+    !('collections' in raw && Array.isArray(raw.collections)) ||
+    !('legacyKeys' in raw && Array.isArray(raw.legacyKeys) && raw.legacyKeys.every(key => typeof key === 'string'))
+  ) {
+    return { collections: [], storageError: INVALID_STORAGE, legacyKeys: [], needsImport: false };
+  }
+  return { ...decodeCollections(raw.collections), legacyKeys: raw.legacyKeys, needsImport: false };
+}
+
+async function readStorage(): Promise<StorageRead> {
+  if (typeof window === 'undefined') return EMPTY_OBSERVATIONS;
+  const legacy = legacyBackup(legacyRaw());
+  pendingLegacy = importLegacy(pendingLegacy, legacy);
+  const observations = pendingLegacy;
+
+  try {
+    const stored = await readCollectionRecord();
+    if (!stored && legacy.storageError) return { ...EMPTY_OBSERVATIONS, ...legacy };
+
+    const current = stored ? decodeRecord(stored.value) : EMPTY_OBSERVATIONS;
+    if (current.storageError) return current;
     return {
-      collections: [],
-      storageError:
-        '저장된 컬렉션 형식을 읽을 수 없어 변경을 막았습니다. 브라우저 저장소의 원문을 백업하고 복구한 뒤 다시 시도해 주세요.',
+      ...importLegacy(current, observations),
+      observations,
+      durableCollections: stored ? current.collections : legacy.collections,
+    };
+  } catch {
+    return {
+      ...EMPTY_OBSERVATIONS,
+      collections: legacy.collections,
+      storageError: '브라우저 저장소를 확인하지 못했습니다. 남아 있는 이전 컬렉션만 읽을 수 있습니다.',
     };
   }
 }
 
-function emit() {
+function clearCommittedObservations(current: StorageRead) {
+  // Keep observations received while the transaction was running.
+  if (current.observations === pendingLegacy) pendingLegacy = EMPTY_OBSERVATIONS;
+}
+
+function unavailable(current: StorageRead, storageError: string): StorageRead {
+  return { ...current, collections: current.durableCollections ?? current.collections, storageError };
+}
+
+function setSnapshot(current: CollectionData) {
+  snapshotRevision += 1;
+  snapshot = { collections: current.collections, storageError: current.storageError, loading: false };
   for (const listener of listeners) listener();
 }
 
-function setSnapshot(next: StoreSnapshot) {
-  snapshot = next;
-  emit();
+function collectionLocks() {
+  return hasCollectionDatabase() ? window.navigator.locks : undefined;
 }
 
-function persist(collections: NamedCollection[]): boolean {
-  const current = readStorage();
-  if (storageCorrupt || storageAvailable === false) {
-    setSnapshot(current);
-    return false;
+async function refreshSnapshot(legacyEvent?: string) {
+  const revision = ++snapshotRevision;
+  if (legacyEvent !== undefined) pendingLegacy = importLegacy(pendingLegacy, readLegacy(legacyEvent));
+  let current = await readStorage();
+  const locks = collectionLocks();
+  if (locks && current.needsImport) {
+    try {
+      current = await locks.request(STORAGE_KEY, () => reconcileStorage());
+    } catch {
+      current = unavailable(await readStorage(), LOCK_UNAVAILABLE);
+    }
+  } else if (!current.storageError && !current.needsImport) {
+    clearCommittedObservations(current);
   }
+  if (snapshotRevision !== revision) return;
+  setSnapshot(locks || current.storageError ? current : unavailable(current, LOCK_UNAVAILABLE));
+}
+
+async function withCollectionWrite<T>(failure: T, edit: (current: StorageRead) => T | Promise<T>): Promise<T> {
+  ensureInit();
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
-    storageAvailable = true;
-    setSnapshot({ collections, storageError: null });
-    return true;
-  } catch {
-    storageAvailable = false;
-    setSnapshot({
-      collections: snapshot.collections,
-      storageError: '브라우저 저장소에 저장하지 못했습니다. 저장 차단 설정을 확인해 주세요.',
+    const locks = collectionLocks();
+    if (!locks) {
+      await refreshSnapshot();
+      return failure;
+    }
+    return await locks.request(STORAGE_KEY, async () => {
+      const current = await reconcileStorage();
+      if (current.storageError) {
+        setSnapshot(current);
+        return failure;
+      }
+      try {
+        return await edit(current);
+      } catch {
+        setSnapshot({ ...current, storageError: WRITE_FAILED });
+        return failure;
+      }
     });
-    return false;
+  } catch {
+    const current = await readStorage();
+    setSnapshot(unavailable(current, current.storageError ?? LOCK_UNAVAILABLE));
+    return failure;
   }
+}
+
+// Called inside the lock. Keep the imported keys and collections in one transaction.
+async function commitCollections(collections: NamedCollection[], legacyKeys: string[]) {
+  const record: StoredCollections = { version: 1, collections, legacyKeys };
+  await writeCollectionRecord(record);
+  try {
+    changes?.postMessage(null);
+  } catch {
+    // The commit is durable even if a tab cannot notify other readers.
+  }
+}
+
+async function reconcileStorage(): Promise<StorageRead> {
+  const current = await readStorage();
+  if (current.storageError) return current;
+  if (current.needsImport) {
+    try {
+      await commitCollections(current.collections, current.legacyKeys);
+    } catch {
+      return unavailable(current, WRITE_FAILED);
+    }
+    // This committed snapshot supersedes reads that finished while we waited.
+    setSnapshot(current);
+  }
+  clearCommittedObservations(current);
+  return current;
+}
+
+async function persist(current: StorageRead, collections: NamedCollection[]) {
+  await commitCollections(collections, current.legacyKeys);
+  setSnapshot({ collections, storageError: null });
 }
 
 function ensureInit() {
-  if (initialized) return;
+  if (initialized || typeof window === 'undefined') return;
   initialized = true;
-  snapshot = readStorage();
-  if (typeof window !== 'undefined') {
-    window.addEventListener('storage', event => {
-      if (event.key !== null && event.key !== STORAGE_KEY) return;
-      snapshot = readStorage();
-      emit();
-    });
+  void refreshSnapshot();
+  if (typeof window.BroadcastChannel === 'function') {
+    try {
+      changes = new window.BroadcastChannel(STORAGE_KEY);
+      changes.addEventListener('message', () => void refreshSnapshot());
+    } catch {
+      // Returning to the tab refreshes the list even without notifications.
+    }
   }
+  window.addEventListener('storage', event => {
+    if (event.key !== null && event.key !== STORAGE_KEY) return;
+    let legacyEvent: string | undefined;
+    try {
+      if (event.storageArea === window.localStorage) legacyEvent = event.newValue ?? undefined;
+    } catch {
+      // A blocked legacy store can still leave the IndexedDB collection readable.
+    }
+    void refreshSnapshot(legacyEvent);
+  });
+  window.addEventListener('focus', () => void refreshSnapshot());
+  window.addEventListener('pageshow', () => void refreshSnapshot());
 }
 
 function subscribe(listener: () => void) {
@@ -247,98 +414,88 @@ function newId(): string | null {
   return null;
 }
 
-export function useCollections(): StoreSnapshot & {
-  createCollection: (name: string) => NamedCollection | null;
-  deleteCollection: (id: string) => boolean;
-  toggleInCollection: (collectionId: string, item: SavedItem) => void;
-  removeFromCollection: (collectionId: string, kind: SavedItemKind, id: string) => boolean;
-  savedIn: (kind: SavedItemKind, id: string) => NamedCollection[];
-  isStorageBlocked: () => boolean;
-} {
-  const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  return {
-    ...state,
-    createCollection,
-    deleteCollection,
-    toggleInCollection,
-    removeFromCollection,
-    savedIn,
-    isStorageBlocked,
-  };
+export function useCollections(): StoreSnapshot {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-export function createCollection(name: string): NamedCollection | null {
-  ensureInit();
-  snapshot = readStorage();
+export async function createCollection(name: string): Promise<NamedCollection | null> {
   const trimmed = name.trim();
   if (trimmed === '') return null;
-  if (storageAvailable === false || storageCorrupt) {
-    setSnapshot({
-      ...snapshot,
-      storageError: snapshot.storageError ?? '브라우저 저장소가 차단되어 컬렉션을 만들 수 없습니다.',
-    });
-    return null;
-  }
-  const id = newId();
-  if (id === null) {
-    setSnapshot({
-      ...snapshot,
-      storageError: '안전한 식별자를 만들 수 없어 컬렉션을 만들 수 없습니다.',
-    });
-    return null;
-  }
-  const collection: NamedCollection = {
-    id,
-    name: trimmed.slice(0, 60),
-    createdAt: Date.now(),
-    items: [],
-  };
-  const ok = persist([...snapshot.collections, collection]);
-  return ok ? collection : null;
+  return withCollectionWrite<NamedCollection | null>(null, async current => {
+    const id = newId();
+    if (id === null) {
+      setSnapshot({
+        ...current,
+        storageError: '안전한 식별자를 만들 수 없어 컬렉션을 만들 수 없습니다.',
+      });
+      return null;
+    }
+    const collection: NamedCollection = {
+      id,
+      name: trimmed.slice(0, 60),
+      createdAt: Date.now(),
+      items: [],
+    };
+    await persist(current, [...current.collections, collection]);
+    return collection;
+  });
 }
 
-export function deleteCollection(id: string) {
-  ensureInit();
-  snapshot = readStorage();
-  return persist(snapshot.collections.filter(c => c.id !== id));
+export function deleteCollection(id: string, { onlyIfEmpty = false } = {}) {
+  return withCollectionWrite<'deleted' | 'confirmation-required' | 'failed'>('failed', async current => {
+    if (onlyIfEmpty && current.collections.some(c => c.id === id && c.items.length > 0)) {
+      setSnapshot(current);
+      return 'confirmation-required';
+    }
+    await persist(
+      current,
+      current.collections.filter(c => c.id !== id)
+    );
+    return 'deleted';
+  });
 }
 
-export function toggleInCollection(collectionId: string, item: SavedItem) {
-  ensureInit();
-  snapshot = readStorage();
-  if (!isSavedItem(item) || !isSafeItem(item)) return;
-  persist(
-    snapshot.collections.map(c => {
-      if (c.id !== collectionId) return c;
-      const exists = c.items.some(i => i.kind === item.kind && i.id === item.id);
-      return {
-        ...c,
-        items: exists ? c.items.filter(i => !(i.kind === item.kind && i.id === item.id)) : [...c.items, item],
-      };
-    })
-  );
+export async function addToCollection(collectionId: string, item: SavedItem): Promise<boolean> {
+  if (!isSavedItem(item) || !isSafeItem(item)) return false;
+  return withCollectionWrite(false, async current => {
+    const collection = current.collections.find(c => c.id === collectionId);
+    if (!collection) {
+      setSnapshot({
+        ...current,
+        storageError: '컬렉션이 삭제되어 항목을 저장하지 못했습니다.',
+      });
+      return false;
+    }
+    if (collection.items.some(i => i.kind === item.kind && i.id === item.id)) {
+      setSnapshot(current);
+      return true;
+    }
+    await persist(
+      current,
+      current.collections.map(c => (c === collection ? { ...c, items: [...c.items, item] } : c))
+    );
+    return true;
+  });
 }
 
 export function removeFromCollection(collectionId: string, kind: SavedItemKind, id: string) {
-  ensureInit();
-  snapshot = readStorage();
-  return persist(
-    snapshot.collections.map(c =>
-      c.id !== collectionId
-        ? c
-        : {
-            ...c,
-            items: c.items.filter(i => !(i.kind === kind && i.id === id)),
-          }
-    )
-  );
+  return withCollectionWrite(false, async current => {
+    await persist(
+      current,
+      current.collections.map(c =>
+        c.id !== collectionId
+          ? c
+          : {
+              ...c,
+              items: c.items.filter(i => !(i.kind === kind && i.id === id)),
+            }
+      )
+    );
+    return true;
+  });
 }
 
-export function savedIn(kind: SavedItemKind, id: string): NamedCollection[] {
-  ensureInit();
-  return snapshot.collections.filter(c => c.items.some(i => i.kind === kind && i.id === id));
-}
-
-export function isStorageBlocked() {
-  return storageAvailable === false || storageCorrupt;
+export async function savedIn(kind: SavedItemKind, id: string): Promise<NamedCollection[]> {
+  const { collections } = await readStorage();
+  return collections.filter(c => c.items.some(i => i.kind === kind && i.id === id));
 }
