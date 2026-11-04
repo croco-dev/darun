@@ -218,20 +218,10 @@ function ProductLinkRows({
 
 export const ProductLinkTable = bind(
   useProductLinkTable,
-  ({ links, loading, error, refreshLinks, editLink, closeEditModal, link, slug }) => (
+  ({ links, loading, error, refreshLinks, editLink, closeEditModal, finishEdit, link, slug }) => (
     <>
       <ProductLinkRows links={links} loading={loading} error={error} refreshLinks={refreshLinks} editLink={editLink} />
-      {link && (
-        <EditProductLinkItem
-          slug={slug}
-          link={link}
-          onSubmit={() => {
-            closeEditModal();
-            refreshLinks();
-          }}
-          onCancel={closeEditModal}
-        />
-      )}
+      {link && <EditProductLinkItem slug={slug} link={link} onSubmit={finishEdit} onCancel={closeEditModal} />}
     </>
   )
 );

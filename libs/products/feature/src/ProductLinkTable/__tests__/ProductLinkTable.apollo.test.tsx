@@ -46,12 +46,13 @@ function setup({ failSave = false, delaySave = false } = {}) {
       operation =>
         new Observable(observer => {
           if (operation.operationName === 'TempProductBySlugOnProductLinkTable') {
+            const readProduct = product();
             reads.push(error => {
               if (error) {
                 observer.error(error);
                 return;
               }
-              observer.next({ data: { tempProductBySlug: product() } });
+              observer.next({ data: { tempProductBySlug: readProduct } });
               observer.complete();
             });
           } else if (operation.operationName === 'UpdateProductLinkOnEditProductLinkItem') {
@@ -167,6 +168,34 @@ describe('상품 링크 재편집', () => {
     edit('Updated title');
     expect(titleInput().value).toBe('Updated title');
     expect(fixture.writes).toHaveLength(1);
+  });
+
+  it('저장 전 값을 읽은 요청이 끝난 뒤 새로 조회한 값으로 편집한다', async () => {
+    const fixture = setup({ delaySave: true });
+    await fixture.resolveRead();
+
+    edit('Original title');
+    fireEvent.change(titleInput(), { target: { value: 'Updated title' } });
+    save();
+    await screen.findByText('저장 중...', { selector: 'button' });
+    act(() => {
+      void fixture.refresh();
+    });
+    await fixture.waitForRead();
+    await fixture.resolveSave();
+    expect(dialog()).toBeNull();
+
+    await fixture.resolveRead();
+    expect(screen.queryByText('Original title')).toBeNull();
+    await fixture.resolveRead();
+
+    edit('Updated title');
+    expect(titleInput().value).toBe('Updated title');
+    fireEvent.change(screen.getByPlaceholderText('ex) toss.im'), { target: { value: 'New display' } });
+    save();
+    await fixture.resolveSave();
+    expect(fixture.writes[1]?.variables.input).toMatchObject({ title: 'Updated title', displayLink: 'New display' });
+    await fixture.resolveRead();
   });
 
   it('목록이 다시 조회되는 동안 초안을 유지하고 같은 링크를 새로 열 때는 저장값으로 시작한다', async () => {
