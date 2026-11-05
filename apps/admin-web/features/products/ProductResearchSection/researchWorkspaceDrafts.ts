@@ -74,7 +74,12 @@ export function readWorkspaceDraft(
     !targetJobId || latest?.jobId === targetJobId
       ? latest
       : parseWorkspaceState(storage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:${targetJobId}`));
-  return drafts[0]?.workspace ?? legacy;
+  const fallback = drafts[0]?.workspace ?? legacy;
+  if (!fallback) return null;
+  // 편집값은 다른 탭에서도 복원할 수 있지만 재전송 키는 현재 세션의 활성 편집본에서만 복원한다.
+  const workspace = { ...fallback };
+  delete workspace.pendingResearch;
+  return workspace;
 }
 
 export function saveWorkspaceDraft(

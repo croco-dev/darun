@@ -5,8 +5,8 @@ import { useLazyQuery, useMutation, useQuery } from '@apollo/client/react';
 import {
   PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH,
   PRODUCT_RESEARCH_MAX_TAGS,
-  normalizeOfficialUrl,
   normalizeResearchFeatureSummary,
+  normalizeResearchRequestUrl,
   normalizeResearchTags,
 } from '@darun/products-domain/research';
 import { Button } from '@darun/ui';
@@ -310,7 +310,7 @@ export const ProductResearchSection = () => {
   const jobMissing = jobLookup.job === null;
   const jobLoading = jobLookup.loading;
   const result = job?.result ?? null;
-  const normalizedOfficialUrl = normalizeOfficialUrl(officialUrl);
+  const normalizedOfficialUrl = normalizeResearchRequestUrl(officialUrl);
   const tagCount = normalizeResearchTags(review.tags).length;
   const tagsError =
     tagCount > PRODUCT_RESEARCH_MAX_TAGS

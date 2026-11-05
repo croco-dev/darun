@@ -2261,7 +2261,7 @@ describe('admin research workspace flow', () => {
       const expectedJob = kind === 'request' ? requestedRaceJob : retryRaceJob;
       const created = new Map<string, RaceJobIdentity>();
 
-      async function submit(attempt: number, url = 'https://notion.so/') {
+      async function submit(attempt: number, url = 'https://notion.so/product//') {
         if (kind === 'request') {
           submitResearchRequest(url);
           await waitFor(() => expect(requests).toHaveLength(attempt));
@@ -2290,7 +2290,7 @@ describe('admin research workspace flow', () => {
         </ApolloProvider>
       );
       await screen.findByText(/작업 ID: job-1/);
-      const { id, call } = await submit(3, 'https://notion.so');
+      const { id, call } = await submit(3, 'https://notion.so/product/');
       if (!created.has(id)) created.set(id, { ...expectedJob, id: `duplicate-${created.size}` });
       expect(created.size).toBe(1);
       call.respond(created.get(id));

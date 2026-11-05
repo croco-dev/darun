@@ -73,6 +73,23 @@ describe('research workspace draft persistence', () => {
     expect(listWorkspaceDrafts(localStorage, null).map(draft => draft.workspace.jobId)).toEqual([null]);
   });
 
+  it('새 작업 공간은 저장된 편집값을 읽되 다른 세션의 재조사 키를 이어받지 않는다', () => {
+    const activeSession = sessionStore();
+    const otherSession = sessionStore();
+    const pendingResearch = {
+      kind: 'retry' as const,
+      requestId: '3eb21f99-1766-43ba-8c75-6b6b7e0bb557',
+      officialUrl: 'https://linear.app/',
+      jobId: 'job-1',
+    };
+    saveWorkspaceDraft(localStorage, activeSession, 'active-draft', {
+      ...workspace('job-1', '저장된 입력'),
+      pendingResearch,
+    });
+    expect(readWorkspaceDraft(localStorage, activeSession, 'job-1')?.pendingResearch).toEqual(pendingResearch);
+    expect(readWorkspaceDraft(localStorage, otherSession, 'job-1')).toEqual(workspace('job-1', '저장된 입력'));
+  });
+
   it('기존 전역·job별 v1을 읽고 원본은 쓰거나 지우지 않는다', () => {
     const legacy = JSON.stringify(workspace('job-old', '이전 이름'));
     const otherLegacy = JSON.stringify(workspace('job-other', '다른 기존 작업'));
