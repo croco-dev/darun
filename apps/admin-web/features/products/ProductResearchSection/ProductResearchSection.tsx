@@ -6,6 +6,7 @@ import {
   PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH,
   PRODUCT_RESEARCH_MAX_TAGS,
   normalizeResearchFeatureSummary,
+  normalizeResearchRequestUrl,
   normalizeResearchTags,
 } from '@darun/products-domain/research';
 import { Button } from '@darun/ui';
@@ -23,6 +24,7 @@ import { useNavigate, useSearchParams } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  clearWorkspacePendingResearch,
   listWorkspaceDrafts,
   readWorkspaceDraft,
   saveWorkspaceDraft,
@@ -35,6 +37,7 @@ import {
   prefillReviewFromResult,
   resolveLogoUrlForMaterialize,
   shouldStopResearchPolling,
+  type PendingResearchRequest,
   type ResearchWorkspaceFeatureDraft,
   type ResearchWorkspaceReviewDraft,
   type ResearchWorkspacePersistedState,
@@ -280,7 +283,8 @@ export const ProductResearchSection = () => {
   const jobIdRef = useRef<string | null>(null);
   // request/retry/등록/route가 함께 사용하는 단조 증가 action 세대다. 후착 응답은 이 세대가 최신일 때만 화면을 바꾼다.
   const requestSeqRef = useRef(0);
-  const pendingRequestRef = useRef<{ id: string; url: string } | null>(null);
+  const pendingResearchRef = useRef<PendingResearchRequest | undefined>(undefined);
+  const [pendingResearch, setPendingResearch] = useState<PendingResearchRequest>();
   const prefilledJobRef = useRef<string | null>(null);
 
   const setActiveJobId = useCallback((nextJobId: string | null) => {
@@ -306,6 +310,7 @@ export const ProductResearchSection = () => {
   const jobMissing = jobLookup.job === null;
   const jobLoading = jobLookup.loading;
   const result = job?.result ?? null;
+  const normalizedOfficialUrl = normalizeResearchRequestUrl(officialUrl);
   const tagCount = normalizeResearchTags(review.tags).length;
   const tagsError =
     tagCount > PRODUCT_RESEARCH_MAX_TAGS
@@ -403,7 +408,6 @@ export const ProductResearchSection = () => {
     setActionError(null);
     materializePendingRef.current = false;
     setIsMaterializing(false);
-    pendingRequestRef.current = null;
     const requestedDraft = restoreRequest !== appliedRestoreRequestRef.current ? restoreRequest : null;
     appliedRestoreRequestRef.current = restoreRequest;
     const stored =
@@ -417,6 +421,10 @@ export const ProductResearchSection = () => {
       restoreRequest,
     });
 
+    const selectedJobId = researchJobIdParam ?? stored?.jobId ?? null;
+    const pending = !requestedDraft && stored?.jobId === selectedJobId ? stored.pendingResearch : undefined;
+    pendingResearchRef.current = pending;
+    setPendingResearch(pending);
     setRequestId(stored?.requestId ?? newRequestId());
     setOfficialUrl(stored?.officialUrl ?? '');
     setReview(stored?.review ?? createInitialWorkspaceReview());
@@ -427,7 +435,6 @@ export const ProductResearchSection = () => {
     setLogoInputKey(key => key + 1);
     setOfficialUrlConfirmation(null);
     setMaterializedSlug(stored?.materializedSlug ?? null);
-    const selectedJobId = researchJobIdParam ?? stored?.jobId ?? null;
     prefilledJobRef.current =
       stored?.prefilledJobId === selectedJobId || stored?.review.name || stored?.review.slug ? selectedJobId : null;
     setActiveJobId(selectedJobId);
@@ -447,47 +454,54 @@ export const ProductResearchSection = () => {
     });
   }, [hydrated, activeDraft, jobId, researchJobIdParam, loadJob, pollJob]);
 
-  useEffect(() => {
-    if (
-      !hydrated ||
-      !activeDraft ||
-      activeDraft.routeJobId !== researchJobIdParam ||
-      activeDraft.restoreRequest !== restoreRequest ||
-      typeof window === 'undefined'
-    ) {
-      return;
-    }
-    const payload = {
-      version: 1 as const,
+  const saveDraft = useCallback(
+    (pending: PendingResearchRequest | undefined, latestRequestId = requestId) => {
+      if (
+        !hydrated ||
+        !activeDraft ||
+        activeDraft.routeJobId !== researchJobIdParam ||
+        activeDraft.restoreRequest !== restoreRequest
+      ) {
+        return false;
+      }
+      try {
+        saveWorkspaceDraft(window.localStorage, window.sessionStorage, activeDraft.id, {
+          version: 1,
+          requestId: latestRequestId,
+          pendingResearch: pending,
+          officialUrl,
+          jobId,
+          review,
+          prefilledJobId: prefilledJobRef.current,
+          logoFileName: logoSelection?.kind === 'file' ? logoSelection.fileName : null,
+          uploadedLogoUrl,
+          materializedSlug,
+        });
+        setDraftStorageError(false);
+        return true;
+      } catch {
+        setDraftStorageError(true);
+        return false;
+      }
+    },
+    [
+      hydrated,
+      activeDraft,
+      researchJobIdParam,
+      restoreRequest,
       requestId,
       officialUrl,
       jobId,
       review,
-      prefilledJobId: prefilledJobRef.current,
-      logoFileName: logoSelection?.kind === 'file' ? logoSelection.fileName : null,
+      logoSelection,
       uploadedLogoUrl,
       materializedSlug,
-    };
-    try {
-      saveWorkspaceDraft(window.localStorage, window.sessionStorage, activeDraft.id, payload);
-      setDraftStorageError(false);
-    } catch {
-      setDraftStorageError(true);
-    }
-  }, [
-    hydrated,
-    activeDraft,
-    researchJobIdParam,
-    restoreRequest,
-    requestId,
-    officialUrl,
-    jobId,
-    review,
-    logoSelection,
-    uploadedLogoUrl,
-    materializedSlug,
-    saveAttempt,
-  ]);
+    ]
+  );
+
+  useEffect(() => {
+    saveDraft(pendingResearchRef.current);
+  }, [saveDraft, saveAttempt]);
 
   useEffect(() => {
     if (!activeDraft) return;
@@ -558,11 +572,33 @@ export const ProductResearchSection = () => {
     });
   }, [result, job, jobId, officialUrl, materializedSlug]);
 
-  const startNewRequestId = useCallback(() => {
-    const next = newRequestId();
-    setRequestId(next);
-    return next;
-  }, []);
+  function beginResearch(kind: PendingResearchRequest['kind'], url: string, startFresh = false) {
+    const previous = pendingResearchRef.current;
+    const pending =
+      !startFresh && previous?.kind === kind && previous.officialUrl === url && previous.jobId === jobId
+        ? previous
+        : { kind, requestId: newRequestId(), officialUrl: url, jobId };
+    // 응답 전에 새로고침해도 같은 키로 다시 보낼 수 있게 전송 전에 편집본에 기록한다.
+    if (!saveDraft(pending, kind === 'request' ? pending.requestId : requestId)) return;
+    pendingResearchRef.current = pending;
+    setPendingResearch(pending);
+    if (kind === 'request') setRequestId(pending.requestId);
+    return pending.requestId;
+  }
+
+  function clearPendingResearch() {
+    const pending = pendingResearchRef.current;
+    if (!pending) return;
+    pendingResearchRef.current = undefined;
+    setPendingResearch(undefined);
+    if (!activeDraft) return;
+    try {
+      // 전송 중 바뀐 편집값은 그대로 두고 이전 작업의 재전송 키만 지운다.
+      clearWorkspacePendingResearch(window.localStorage, activeDraft.id, pending.jobId, pending.requestId);
+    } catch {
+      setDraftStorageError(true);
+    }
+  }
 
   const resetWorkspaceForJob = useCallback(
     (nextJobId: string, nextOfficialUrl: string) => {
@@ -585,16 +621,13 @@ export const ProductResearchSection = () => {
     [logoPreviewUrl, setActiveJobId, stopPolling]
   );
 
-  const handleRequest = async (event: React.FormEvent) => {
+  const handleRequest = async (event: React.SyntheticEvent, startFresh = false) => {
     event.preventDefault();
     const trimmedUrl = officialUrl.trim();
     if (!trimmedUrl) {
       notifications.show({ message: '공식 사이트 URL을 입력해주세요.', color: 'red' });
       return;
     }
-    const pendingRequest = pendingRequestRef.current;
-    const activeRequestId = pendingRequest?.url === trimmedUrl ? pendingRequest.id : startNewRequestId();
-    pendingRequestRef.current = { id: activeRequestId, url: trimmedUrl };
     // 연속 제출 경합에서 최신 제출만 Job·Review·poll 입력을 차지한다.
     // jobId state/closure는 제출 사이 렌더 이전에 갱신되지 않을 수 있어 제출 순서 판정에 쓸 수 없다.
     const submittedSeq = requestSeqRef.current + 1;
@@ -602,6 +635,12 @@ export const ProductResearchSection = () => {
     setActionError(null);
     materializePendingRef.current = false;
     setIsMaterializing(false);
+    if (!normalizedOfficialUrl.ok) {
+      setActionError({ message: normalizedOfficialUrl.reason });
+      return;
+    }
+    const activeRequestId = beginResearch('request', normalizedOfficialUrl.url, startFresh);
+    if (!activeRequestId) return;
     try {
       const response = await requestResearch({
         variables: { input: { requestId: activeRequestId, officialUrl: trimmedUrl } },
@@ -613,7 +652,7 @@ export const ProductResearchSection = () => {
       if (requestSeqRef.current !== submittedSeq) {
         return;
       }
-      pendingRequestRef.current = null;
+      clearPendingResearch();
       const requestedJobId = jobId;
       const switchedJob = nextJobId !== requestedJobId;
       if (switchedJob) {
@@ -648,18 +687,17 @@ export const ProductResearchSection = () => {
 
   const handleRetry = async () => {
     const retriedJobId = jobId;
-    if (!retriedJobId) {
+    if (!retriedJobId || !job?.officialUrl) {
       return;
     }
-    const retryRequestId = newRequestId();
+    const retryRequestId = beginResearch('retry', job.officialUrl);
+    if (!retryRequestId) return;
     // 재조사도 request와 같은 action 세대를 사용한다. 새 action/route가 시작되면 이전 retry 응답은 화면을 바꾸지 못한다.
     const submittedSeq = requestSeqRef.current + 1;
     requestSeqRef.current = submittedSeq;
     setActionError(null);
     materializePendingRef.current = false;
     setIsMaterializing(false);
-    // 재조사가 대체한 request의 키는 응답 순서·성공 여부와 무관하게 여기서 수명을 끝낸다.
-    pendingRequestRef.current = null;
     try {
       const response = await retryResearch({
         variables: { jobId: retriedJobId, input: { requestId: retryRequestId } },
@@ -669,6 +707,7 @@ export const ProductResearchSection = () => {
       if (!nextJobId || requestSeqRef.current !== submittedSeq || jobIdRef.current !== retriedJobId) {
         return;
       }
+      clearPendingResearch();
       if (nextJobId !== retriedJobId) {
         setRequestId(retryRequestId);
         resetWorkspaceForJob(nextJobId, job?.officialUrl ?? officialUrl);
@@ -788,7 +827,7 @@ export const ProductResearchSection = () => {
     // 등록도 첫 로고 await 전에 이전 request/retry·조회의 화면 권한과 중복 전송 키 수명을 끝낸다.
     const submittedSeq = requestSeqRef.current + 1;
     requestSeqRef.current = submittedSeq;
-    pendingRequestRef.current = null;
+    clearPendingResearch();
     // 대체된 조회의 응답 권한뿐 아니라 대기도 종료하되 현재 job·근거·편집값은 유지한다.
     setJobLookup(previous => ({ ...previous, loading: false }));
     const submittedJobId = jobId;
@@ -886,7 +925,7 @@ export const ProductResearchSection = () => {
           <div role="alert" className="flex flex-col gap-2 text-sm text-cherry-700">
             <p>
               이 브라우저에 초안을 저장하지 못했습니다. 현재 입력은 유지되지만 새로고침하면 사라질 수 있습니다. 저장에
-              성공한 뒤 다른 편집본을 복원할 수 있습니다.
+              성공한 뒤 조사를 요청하거나 다른 편집본을 복원할 수 있습니다.
             </p>
             <Button type="button" variant="contained" color="secondary" onClick={() => setSaveAttempt(n => n + 1)}>
               초안 저장 다시 시도
@@ -943,6 +982,19 @@ export const ProductResearchSection = () => {
             <Button type="submit" variant="contained" color="primary" disabled={isRequesting || !officialUrl.trim()}>
               {isRequesting ? '조사 요청 중...' : '조사 요청'}
             </Button>
+            {pendingResearch?.kind === 'request' &&
+              normalizedOfficialUrl.ok &&
+              pendingResearch.officialUrl === normalizedOfficialUrl.url && (
+                <Button
+                  type="button"
+                  variant="contained"
+                  color="secondary"
+                  disabled={isRequesting || isRetrying || isMaterializing}
+                  onClick={event => void handleRequest(event, true)}
+                >
+                  이전 요청과 별개로 새 조사
+                </Button>
+              )}
             {jobId && (
               <Button
                 type="button"

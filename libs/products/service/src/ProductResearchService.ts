@@ -18,7 +18,10 @@ import {
   type ProductResearchWarning,
 } from '@darun/products-domain';
 import type { ProductResearchDispatchStatus } from '@darun/products-domain';
-import { PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH } from '@darun/products-domain/research';
+import {
+  PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH,
+  normalizeResearchRequestUrl,
+} from '@darun/products-domain/research';
 import type { WebSearchResult } from '@darun/utils-llm';
 import {
   JOB_MAX_ATTEMPTS,
@@ -703,7 +706,7 @@ export class ProductResearchService {
     if (typeof input.requestId !== 'string' || !isRequestId(input.requestId)) {
       throw productInvalidArgs('요청 ID 형식이 유효하지 않습니다.');
     }
-    const normalized = normalizeOfficialUrl(input.officialUrl);
+    const normalized = normalizeResearchRequestUrl(input.officialUrl);
     if (!normalized.ok) {
       throw productInvalidArgs(normalized.reason);
     }

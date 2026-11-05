@@ -232,11 +232,11 @@ describe('ProductResearchService.requestResearch', () => {
     };
   }
 
-  it('returns the same job for the same requestId', async () => {
+  it('returns the same job for the same requestId and the URL stored by the research mutation', async () => {
     const existing = {
       id: 'job-1',
       requestKey: 'request:e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
-      officialUrl: 'https://linear.app/',
+      officialUrl: 'https://linear.app/features',
     };
     const deps = {
       jobRepository: requestDeps(existing, null),
@@ -245,7 +245,7 @@ describe('ProductResearchService.requestResearch', () => {
     };
     const service = new ProductResearchService();
     const first = await service.requestResearch(
-      { requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c', officialUrl: 'https://linear.app/' },
+      { requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c', officialUrl: 'https://linear.app/features//' },
       // @ts-expect-error focused dependency shape
       deps
     );
@@ -484,10 +484,10 @@ describe('ProductResearchService.requestResearch', () => {
     const service = new ProductResearchService();
     const requestId = 'a2f7c964-582e-4971-932e-9ae7e8c4b107';
     // @ts-expect-error focused dependency shape
-    await service.requestResearch({ requestId, officialUrl: 'https://example.com:8443/tool' }, deps);
+    await service.requestResearch({ requestId, officialUrl: 'https://example.com:8443/tool///' }, deps);
     expect(deps.jobRepository.createPendingJob).toHaveBeenCalledWith({
       requestKey: `request:${requestId}`,
-      officialUrl: 'https://example.com:8443/tool',
+      officialUrl: 'https://example.com:8443/tool/',
     });
     // @ts-expect-error intentionally missing required requestId
     await expect(service.requestResearch({ officialUrl: 'https://example.com/tool' }, deps)).rejects.toMatchObject({

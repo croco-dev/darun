@@ -74,7 +74,12 @@ export function readWorkspaceDraft(
     !targetJobId || latest?.jobId === targetJobId
       ? latest
       : parseWorkspaceState(storage.getItem(`${RESEARCH_WORKSPACE_STORAGE_KEY}:${targetJobId}`));
-  return drafts[0]?.workspace ?? legacy;
+  const fallback = drafts[0]?.workspace ?? legacy;
+  if (!fallback) return null;
+  // 편집값은 다른 탭에서도 복원할 수 있지만 재전송 키는 현재 세션의 활성 편집본에서만 복원한다.
+  const workspace = { ...fallback };
+  delete workspace.pendingResearch;
+  return workspace;
 }
 
 export function saveWorkspaceDraft(
@@ -92,4 +97,14 @@ export function saveWorkspaceDraft(
   storage.setItem(draftKey(workspace.jobId, id), JSON.stringify(draft));
   session.setItem(`${ACTIVE_PREFIX}${scope(workspace.jobId)}`, id);
   session.setItem(LAST_ACTIVE_KEY, draftKey(workspace.jobId, id));
+}
+
+export function clearWorkspacePendingResearch(storage: Storage, id: string, jobId: string | null, requestId: string) {
+  const key = draftKey(jobId, id);
+  const raw = storage.getItem(key);
+  if (!raw) return;
+  const draft = JSON.parse(raw) as ResearchWorkspaceDraft;
+  if (draft.workspace.pendingResearch?.requestId !== requestId) return;
+  delete draft.workspace.pendingResearch;
+  storage.setItem(key, JSON.stringify(draft));
 }

@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import type { ProductResearchJobEntity } from '@darun/products-domain';
+import { ProductResearchService } from '@darun/products-service';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as ProductResearchGraphs from '../graphs/ProductResearch';
 import { ProductResearchMutationResolver, ProductResearchQueryResolver } from '../ProductResearch.resolver';
@@ -73,12 +74,18 @@ describe('ProductResearchMutationResolver', () => {
   const sendJob = vi.fn();
   const findById = vi.fn();
 
-  function createResolver() {
+  function createResolver(
+    researchService: Pick<ProductResearchService, 'requestResearch' | 'retryFailedResearch' | 'executeResearch'> = {
+      requestResearch,
+      retryFailedResearch,
+      executeResearch,
+    }
+  ) {
     return new ProductResearchMutationResolver(
       { findById } as never,
       {} as never,
       {} as never,
-      { requestResearch, retryFailedResearch, executeResearch } as never,
+      researchService as never,
       { materializeReviewedProduct } as never,
       { sendJob } as never,
       {} as never,
@@ -111,6 +118,24 @@ describe('ProductResearchMutationResolver', () => {
     );
     expect(sendJob).toHaveBeenCalledWith({ jobId: 'job-1' });
     expect(executeResearch).not.toHaveBeenCalled();
+  });
+
+  it('keeps the existing stored URL when the resolver and service handle a request together', async () => {
+    const resolver = createResolver(new ProductResearchService());
+    const jobRepository = {
+      findByRequestKey: vi.fn().mockResolvedValue(null),
+      createPendingJob: vi.fn(async (input: { officialUrl: string }) =>
+        jobEntity({ status: 'pending', officialUrl: input.officialUrl })
+      ),
+    };
+    vi.spyOn(resolver as unknown as { buildDeps: () => Promise<unknown> }, 'buildDeps').mockResolvedValueOnce({
+      jobRepository,
+    });
+    const result = await resolver.requestProductResearch({
+      requestId: 'e7f8a1b2c3d4412a9b0c1d2e3f4a5b6c',
+      officialUrl: 'https://linear.app/features///',
+    });
+    expect(result.officialUrl).toBe('https://linear.app/features/');
   });
 
   it('returns the job id even when SQS dispatch fails', async () => {

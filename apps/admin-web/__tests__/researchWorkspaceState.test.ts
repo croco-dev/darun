@@ -76,6 +76,22 @@ describe('researchWorkspaceState', () => {
     expect(parseWorkspaceState(JSON.stringify({ version: 1 }))).toBeNull();
   });
 
+  it('이전 조사 요청의 키는 같은 작업의 편집본에서만 복원한다', () => {
+    const state = { ...createInitialWorkspaceState('req-12345678'), jobId: 'job-1' };
+    const pendingResearch = {
+      kind: 'retry',
+      requestId: '3eb21f99-1766-43ba-8c75-6b6b7e0bb557',
+      officialUrl: 'https://linear.app/',
+      jobId: 'job-1',
+    };
+    expect(parseWorkspaceState(JSON.stringify({ ...state, pendingResearch }))?.pendingResearch).toEqual(
+      pendingResearch
+    );
+    expect(
+      parseWorkspaceState(JSON.stringify({ ...state, pendingResearch: { ...pendingResearch, jobId: 'other-job' } }))
+    ).toEqual(state);
+  });
+
   it('이미 편집된 값은 조사 결과로 덮어쓰지 않는다', () => {
     const prefilled = prefillReviewFromResult(
       {

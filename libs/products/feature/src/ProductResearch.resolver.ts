@@ -105,10 +105,7 @@ export class ProductResearchMutationResolver {
     const deps = await this.buildDeps();
     // Manual re-research (new requestId) creates a new logical job;
     // same request-id retransmit returns the single existing job (deduped).
-    const { job, queued } = await this.researchService.requestResearch(
-      { requestId: input.requestId, officialUrl: normalized.url },
-      deps
-    );
+    const { job, queued } = await this.researchService.requestResearch(input, deps);
     if (queued || this.isResendable(job)) {
       await this.dispatchJob(job.id);
     }

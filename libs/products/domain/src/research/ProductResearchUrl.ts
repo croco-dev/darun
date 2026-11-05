@@ -96,6 +96,12 @@ export function normalizeOfficialUrl(input: string): NormalizeOfficialUrlResult 
   return { ok: true, url: normalized, hostname };
 }
 
+// Preserve the URL stored by the research mutation, which historically normalized at both server boundaries.
+export function normalizeResearchRequestUrl(input: string): NormalizeOfficialUrlResult {
+  const normalized = normalizeOfficialUrl(input);
+  return normalized.ok ? normalizeOfficialUrl(normalized.url) : normalized;
+}
+
 export function suggestSlug(name: string, hostname: string): string {
   const fromName = name
     .toLowerCase()

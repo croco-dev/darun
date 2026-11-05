@@ -17,9 +17,17 @@ export type ResearchWorkspaceReviewDraft = {
   tags: string[];
 };
 
+export type PendingResearchRequest = {
+  kind: 'request' | 'retry';
+  requestId: string;
+  officialUrl: string;
+  jobId: string | null;
+};
+
 export type ResearchWorkspacePersistedState = {
   version: 1;
   requestId: string;
+  pendingResearch?: PendingResearchRequest;
   officialUrl: string;
   jobId: string | null;
   review: ResearchWorkspaceReviewDraft;
@@ -114,6 +122,21 @@ function isReviewDraft(value: unknown): value is ResearchWorkspaceReviewDraft {
   );
 }
 
+function parsePendingResearch(value: unknown, jobId: string | null): PendingResearchRequest | undefined {
+  if (typeof value !== 'object' || value === null) return;
+  const candidate = value as Partial<PendingResearchRequest>;
+  if (
+    (candidate.kind === 'request' || (candidate.kind === 'retry' && jobId !== null)) &&
+    typeof candidate.requestId === 'string' &&
+    /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(candidate.requestId) &&
+    typeof candidate.officialUrl === 'string' &&
+    candidate.officialUrl.length > 0 &&
+    candidate.jobId === jobId
+  ) {
+    return { kind: candidate.kind, requestId: candidate.requestId, officialUrl: candidate.officialUrl, jobId };
+  }
+}
+
 export function parseWorkspaceState(raw: string | null): ResearchWorkspacePersistedState | null {
   if (!raw) {
     return null;
@@ -126,11 +149,14 @@ export function parseWorkspaceState(raw: string | null): ResearchWorkspacePersis
     if (!isReviewDraft(parsed.review)) {
       return null;
     }
+    const jobId = typeof parsed.jobId === 'string' ? parsed.jobId : null;
+    const pendingResearch = parsePendingResearch(parsed.pendingResearch, jobId);
     return {
       version: 1,
       requestId: parsed.requestId,
+      ...(pendingResearch ? { pendingResearch } : {}),
       officialUrl: typeof parsed.officialUrl === 'string' ? parsed.officialUrl : '',
-      jobId: typeof parsed.jobId === 'string' ? parsed.jobId : null,
+      jobId,
       prefilledJobId: typeof parsed.prefilledJobId === 'string' ? parsed.prefilledJobId : null,
       review: {
         name: parsed.review.name,

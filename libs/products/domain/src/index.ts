@@ -116,8 +116,8 @@ export {
   isAnchorExcerptPresent,
   isSameHostOrSubdomain,
 } from './services/ProductResearchSource';
-export { normalizeOfficialUrl, suggestSlug, isSafeSlug } from './services/ProductResearchUrl';
-export type { NormalizeOfficialUrlResult } from './services/ProductResearchUrl';
+export { normalizeOfficialUrl, suggestSlug, isSafeSlug } from './research/ProductResearchUrl';
+export type { NormalizeOfficialUrlResult } from './research/ProductResearchUrl';
 export type {
   ProductResearchJobRepository,
   ClaimProductResearchJobResult,
