@@ -118,6 +118,7 @@ describe('SearchProductList', () => {
 
     vi.mocked(useSearchProductList).mockReturnValue({
       products: mockProducts,
+      query: 'notion',
     });
 
     act(() => {
@@ -132,6 +133,7 @@ describe('SearchProductList', () => {
   it('renders popular queries and categories in empty search state', () => {
     vi.mocked(useSearchProductList).mockReturnValue({
       products: [],
+      query: 'notion',
     });
 
     act(() => {
