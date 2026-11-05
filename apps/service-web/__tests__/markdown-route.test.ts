@@ -98,6 +98,57 @@ it('매거진 HTML은 locale 응답을 유지하며 저장 slug의 퍼센트 인
   expect(response.headers.get('Vary')).toBe('Accept');
 });
 
+describe('상품 문서 미들웨어', () => {
+  it.each([
+    ['GET', '/ko/products/linear.app', '/api/markdown/ko/products/linear.app', 'text/markdown'],
+    ['HEAD', '/en/products/linear.app', '/api/markdown/en/products/linear.app', 'text/markdown'],
+    [
+      'GET',
+      '/en/products/linear.app/alternatives',
+      '/api/markdown/en/products/linear.app/alternatives',
+      'text/markdown',
+    ],
+    ['GET', '/en/products/linear.app.md', '/api/markdown/en/products/linear.app', 'text/html'],
+    ['GET', '/ko/products/alpha', '/api/markdown/ko/products/alpha', 'text/markdown'],
+  ])('%s %s에서 상품 Markdown을 선택한다', (method, path, destination, accept) => {
+    const request = new NextRequest(`http://localhost${path}?source=product`, { method, headers: { Accept: accept } });
+
+    expect(unstable_doesMiddlewareMatch({ config, url: request.url })).toBe(true);
+    const response = middleware(request);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(`http://localhost${destination}?source=product`);
+    if (path.endsWith('.md')) {
+      expect(response.headers.get('x-middleware-request-x-darun-sibling-md')).toBe('1');
+    } else {
+      expect(response.headers.get('Vary')).toBe('Accept');
+    }
+  });
+
+  it.each(['/products/linear.app', '/products/linear.app/alternatives'])(
+    '%s에 언어 접두사를 붙이고 원래 주소와 쿼리를 보존한다',
+    path => {
+      const request = new NextRequest(`http://localhost${path}?source=product`, {
+        headers: { Accept: 'text/html' },
+      });
+
+      expect(unstable_doesMiddlewareMatch({ config, url: request.url })).toBe(true);
+      const response = middleware(request);
+      expect(response.status).toBe(301);
+      expect(response.headers.get('Location')).toBe(`http://localhost/ko${path}?source=product`);
+    }
+  );
+
+  it.each([
+    '/favicon.ico',
+    '/images/default-product-icon.svg',
+    '/fonts/example.woff2',
+    '/api/markdown/ko/products/linear.app',
+    '/_next/static/chunks/example.js',
+    '/ko/products/linear.app/image.png',
+  ])('%s에는 문서 미들웨어를 적용하지 않는다', url => {
+    expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
+  });
+});
+
 describe('공개 Markdown route의 실행 스키마 계약', () => {
   beforeEach(() => {
     failRelations = false;

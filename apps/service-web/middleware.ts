@@ -100,6 +100,7 @@ export default function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/((?!api|_next|.*\\.(?!md$)[^.]+$).*)',
+    '/:locale(ko|en)?/products/:slug{/alternatives}?',
     '/ko/categories/:slug',
     '/en/categories/:slug',
     '/ko/magazines/:slug',
