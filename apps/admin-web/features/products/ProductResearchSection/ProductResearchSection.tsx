@@ -628,12 +628,6 @@ export const ProductResearchSection = () => {
       notifications.show({ message: '공식 사이트 URL을 입력해주세요.', color: 'red' });
       return;
     }
-    if (!normalizedOfficialUrl.ok) {
-      setActionError({ message: normalizedOfficialUrl.reason });
-      return;
-    }
-    const activeRequestId = beginResearch('request', normalizedOfficialUrl.url, startFresh);
-    if (!activeRequestId) return;
     // 연속 제출 경합에서 최신 제출만 Job·Review·poll 입력을 차지한다.
     // jobId state/closure는 제출 사이 렌더 이전에 갱신되지 않을 수 있어 제출 순서 판정에 쓸 수 없다.
     const submittedSeq = requestSeqRef.current + 1;
@@ -641,6 +635,12 @@ export const ProductResearchSection = () => {
     setActionError(null);
     materializePendingRef.current = false;
     setIsMaterializing(false);
+    if (!normalizedOfficialUrl.ok) {
+      setActionError({ message: normalizedOfficialUrl.reason });
+      return;
+    }
+    const activeRequestId = beginResearch('request', normalizedOfficialUrl.url, startFresh);
+    if (!activeRequestId) return;
     try {
       const response = await requestResearch({
         variables: { input: { requestId: activeRequestId, officialUrl: trimmedUrl } },

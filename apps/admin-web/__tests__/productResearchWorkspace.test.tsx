@@ -2317,6 +2317,26 @@ describe('admin research workspace flow', () => {
     await screen.findByText(/작업 ID: job-new/);
   });
 
+  it('유효하지 않은 새 URL을 제출한 뒤 도착한 재조사 응답은 입력과 오류를 바꾸지 않는다', async () => {
+    const { requests, retries } = renderResearchRace();
+    await startFailedResearchRetry(retries);
+    submitResearchRequest('ftp://example.com/');
+    expect((await screen.findByRole('alert')).textContent).toContain('http 또는 https URL만 사용할 수 있습니다.');
+    expect(requests).toHaveLength(0);
+
+    await act(async () => {
+      retries[0].respond();
+      await nextTurn();
+    });
+
+    expect(navigated()).toEqual([]);
+    expect(screen.getByText(/작업 ID: job-1/)).toBeTruthy();
+    expect((screen.getAllByPlaceholderText('ex) https://linear.app')[0] as HTMLInputElement).value).toBe(
+      'ftp://example.com/'
+    );
+    expect(screen.getByRole('alert').textContent).toContain('http 또는 https URL만 사용할 수 있습니다.');
+  });
+
   it.each([{ kind: 'network' }, { kind: 'GraphQL' }])(
     '최신 요청의 실제 $kind 실패는 표시하고 같은 URL 재시도는 같은 키로 성공해 오류를 해제한다',
     async ({ kind }) => {
