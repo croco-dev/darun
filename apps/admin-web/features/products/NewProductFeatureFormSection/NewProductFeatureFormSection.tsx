@@ -32,11 +32,23 @@ export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureF
       {({ form, pickEmoji, loading }) => (
         <div className="flex flex-col gap-3">
           <AdminField label="이름" error={form.errors.name}>
-            <AdminInput name="name" disabled={loading} placeholder={'ex) 검색'} {...form.getInputProps('name')} />
+            <AdminInput
+              key={form.key('name')}
+              name="name"
+              disabled={loading}
+              placeholder={'ex) 검색'}
+              {...form.getInputProps('name')}
+            />
           </AdminField>
           <AdminField label="이모지" error={form.errors.emoji}>
             <div className="relative">
-              <AdminInput name="emoji" disabled={loading} className="pr-28" {...form.getInputProps('emoji')} />
+              <AdminInput
+                key={form.key('emoji')}
+                name="emoji"
+                disabled={loading}
+                className="pr-28"
+                {...form.getInputProps('emoji')}
+              />
               <details
                 ref={detailsRef}
                 className={`absolute right-2 top-1/2 -translate-y-1/2 ${loading ? 'pointer-events-none opacity-50' : ''}`}
@@ -64,6 +76,7 @@ export const NewProductFeatureFormSection = ({ productSlug }: NewProductFeatureF
           </AdminField>
           <AdminField label="짧은 설명" error={form.errors.summary}>
             <AdminTextarea
+              key={form.key('summary')}
               name="summary"
               disabled={loading}
               placeholder={'ex) 이러이러해서 이러이러한 기능'}
