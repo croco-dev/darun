@@ -26,7 +26,7 @@ describe('Button', () => {
   });
 
   it.each([
-    { name: 'anchor', as: 'a' },
+    { name: 'anchor', as: 'a' as const },
     { name: 'Next Link', as: Link },
   ])('disables $name until the action is available again', ({ as }) => {
     const onClick = vi.fn();

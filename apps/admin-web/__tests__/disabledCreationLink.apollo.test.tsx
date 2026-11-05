@@ -57,7 +57,7 @@ it('blocks cancellation during a company write and restores the link after failu
 
   for (const outcome of ['failure', 'success']) {
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
-    await waitFor(() => expect(requests.length).toBe(outcome === 'failure' ? 1 : 2));
+    await waitFor(() => expect(requests).toHaveLength(outcome === 'failure' ? 1 : 2));
     const cancel = screen.getByRole('button', {
       name: '취소',
     }) as HTMLButtonElement;
