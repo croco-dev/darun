@@ -274,13 +274,13 @@ function makeRaceClient(handlers: {
         const variables = operation.variables as ResearchRetryVariables;
         handlers.retries.push({
           variables,
-          respond: () =>
+          respond: job =>
             respond({
               retryProductResearch: {
                 status: 'pending',
                 errorCode: null,
                 errorMessage: null,
-                ...handlers.retryJobs[variables.jobId],
+                ...(job ?? handlers.retryJobs[variables.jobId]),
               },
             }),
           fail,
@@ -728,6 +728,8 @@ it('초안 저장 실패를 알리고 입력을 유지한 채 같은 화면에�
     </ApolloProvider>
   );
   await screen.findByRole('alert');
+  submitResearchRequest('https://notion.so/');
+  expect(scenario.requestInputs).toHaveLength(0);
   fireEvent.change(await screen.findByRole('textbox', { name: '서비스 이름' }), { target: { value: '저장할 입력' } });
   fireEvent.click(screen.getByText(/저장된 다른 편집본/));
   const restore = screen.getByRole('button', { name: '다른 탭 초안 편집본 복원' });
@@ -2197,10 +2199,10 @@ describe('admin research workspace flow', () => {
       expect(failedWorkspace.review.name).toBe('사람 이름');
       expect(failedWorkspace.uploadedLogoUrl).toBe('https://res.cloudinary.com/demo/image/upload/v1/human-logo.png');
 
-      // 실패 뒤 재시도한 재조사가 성공하면 오류가 해제되고 새 logical 재조사로 이동한다.
+      // 실패 뒤 같은 재조사가 성공하면 오류가 해제되고 반환된 작업으로 이동한다.
       fireEvent.click(screen.getByRole('button', { name: '실패 작업 재조사' }));
       await waitFor(() => expect(retries).toHaveLength(2));
-      expect(retries[1].variables.input?.requestId).not.toBe(retries[0].variables.input?.requestId);
+      expect(retries[1].variables.input?.requestId).toBe(retries[0].variables.input?.requestId);
       expect(screen.queryByRole('alert')).toBeNull();
       retries[1].respond();
       await waitFor(() => expect(navigated()).toEqual(['/products/new?researchJobId=job-retry']));
@@ -2251,6 +2253,69 @@ describe('admin research workspace flow', () => {
       expect(workspace.uploadedLogoUrl).toBe('https://res.cloudinary.com/demo/image/upload/v1/human-logo.png');
     }
   );
+
+  it.each(['request', 'retry'] as const)(
+    '%s 작업 저장 후 응답이 유실되면 같은 화면과 새로고침 뒤에도 작업을 하나만 만든다',
+    async kind => {
+      const { client, requests, retries, view } = renderResearchRace();
+      const expectedJob = kind === 'request' ? requestedRaceJob : retryRaceJob;
+      const created = new Map<string, RaceJobIdentity>();
+
+      async function submit(attempt: number, url = 'https://notion.so/') {
+        if (kind === 'request') {
+          submitResearchRequest(url);
+          await waitFor(() => expect(requests).toHaveLength(attempt));
+          const call = requests[attempt - 1]!;
+          return { id: call.variables.requestId, call };
+        }
+        fireEvent.click(await screen.findByRole('button', { name: '실패 작업 재조사' }));
+        await waitFor(() => expect(retries).toHaveLength(attempt));
+        const call = retries[attempt - 1]!;
+        expect(call.variables.jobId).toBe('job-1');
+        return { id: call.variables.input!.requestId!, call };
+      }
+
+      for (const attempt of [1, 2]) {
+        const { id, call } = await submit(attempt);
+        if (!created.has(id))
+          created.set(id, { ...expectedJob, id: created.size ? `duplicate-${created.size}` : expectedJob.id });
+        call.fail(new Error('작업 저장 후 연결이 끊겼습니다.'));
+        expect((await screen.findByRole('alert')).textContent).toContain('작업 저장 후 연결이 끊겼습니다.');
+      }
+
+      view.unmount();
+      render(
+        <ApolloProvider client={client}>
+          <ProductResearchSection />
+        </ApolloProvider>
+      );
+      await screen.findByText(/작업 ID: job-1/);
+      const { id, call } = await submit(3, 'https://notion.so');
+      if (!created.has(id)) created.set(id, { ...expectedJob, id: `duplicate-${created.size}` });
+      expect(created.size).toBe(1);
+      call.respond(created.get(id));
+      await waitFor(() => expect(navigated()).toEqual([`/products/new?researchJobId=${expectedJob.id}`]));
+      const previous = readWorkspaceDraft(localStorage, sessionStorage, 'job-1');
+      expect(previous?.pendingResearch).toBeUndefined();
+      expect(previous?.review.name).toBe('사람 이름');
+    }
+  );
+
+  it('같은 URL이어도 이전 요청과 별개로 새 조사를 선택하면 새 키로 보낸다', async () => {
+    const { requests } = renderResearchRace();
+    await screen.findByRole('button', { name: '실패 작업 재조사' });
+    submitResearchRequest('https://notion.so/');
+    await waitFor(() => expect(requests).toHaveLength(1));
+    requests[0].fail(new Error('연결이 끊겼습니다.'));
+    await screen.findByRole('alert');
+
+    fireEvent.click(screen.getByRole('button', { name: '이전 요청과 별개로 새 조사' }));
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests[1].variables.officialUrl).toBe(requests[0].variables.officialUrl);
+    expect(requests[1].variables.requestId).not.toBe(requests[0].variables.requestId);
+    requests[1].respond();
+    await screen.findByText(/작업 ID: job-new/);
+  });
 
   it.each([{ kind: 'network' }, { kind: 'GraphQL' }])(
     '최신 요청의 실제 $kind 실패는 표시하고 같은 URL 재시도는 같은 키로 성공해 오류를 해제한다',

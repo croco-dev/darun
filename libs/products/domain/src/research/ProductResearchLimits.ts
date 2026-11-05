@@ -1,3 +1,5 @@
+export { normalizeOfficialUrl } from './ProductResearchUrl';
+
 export const PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH = 255;
 export const PRODUCT_RESEARCH_MAX_TAGS = 10;
 

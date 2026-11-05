@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isSafeSlug, normalizeOfficialUrl, suggestSlug } from '../services/ProductResearchUrl';
+import { isSafeSlug, normalizeOfficialUrl, suggestSlug } from '../research/ProductResearchUrl';
 
 describe('normalizeOfficialUrl', () => {
   it('adds https, strips query/hash, and preserves path', () => {

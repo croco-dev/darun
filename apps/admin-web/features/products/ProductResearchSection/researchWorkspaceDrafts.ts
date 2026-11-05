@@ -93,3 +93,13 @@ export function saveWorkspaceDraft(
   session.setItem(`${ACTIVE_PREFIX}${scope(workspace.jobId)}`, id);
   session.setItem(LAST_ACTIVE_KEY, draftKey(workspace.jobId, id));
 }
+
+export function clearWorkspacePendingResearch(storage: Storage, id: string, jobId: string | null, requestId: string) {
+  const key = draftKey(jobId, id);
+  const raw = storage.getItem(key);
+  if (!raw) return;
+  const draft = JSON.parse(raw) as ResearchWorkspaceDraft;
+  if (draft.workspace.pendingResearch?.requestId !== requestId) return;
+  delete draft.workspace.pendingResearch;
+  storage.setItem(key, JSON.stringify(draft));
+}
