@@ -212,6 +212,23 @@ Compose는 `INFRA_ENV=local` API에만 로컬 커서 키 기본값을 제공합�
 - 컨테이너 로그 확인: `pnpm local:logs`
 - 컨테이너 종료 및 삭제: `pnpm local:down`
 
+### 로컬 Firebase Auth 계정 보존과 초기화
+
+`pnpm local:down`으로 정상 종료하면 Firebase Auth 에뮬레이터가 계정을 `firebase-data` 볼륨에
+저장합니다. 다음 `pnpm local:up`에서 같은 Compose 프로젝트를 사용하면 기존 UID로 로그인할 수
+있습니다. 새 볼륨은 계정 없이 시작합니다. 강제 종료나 호스트 장애로 저장이 끝나지 않으면
+마지막 변경 사항을 복원하지 못할 수 있습니다. 저장 여부가 의심되면 컨테이너를 삭제하기 전에
+`pnpm local stop firebase-auth`로 종료하고 `pnpm local logs firebase-auth`에서 export 결과를 확인합니다.
+
+로컬 인증 데이터만 지우려면 `pnpm local config` 출력의 `volumes.firebase-data.name`에서 실제
+볼륨 이름을 확인합니다. `pnpm local stop firebase-auth`, `pnpm local rm -f firebase-auth` 순서로
+컨테이너를 제거한 뒤 `docker volume rm <확인한-볼륨-이름>`으로 해당 볼륨만 삭제합니다.
+다음 `pnpm local:up`에서 빈 인증 데이터로 시작합니다. PostgreSQL과 MongoDB 볼륨은 그대로 둡니다.
+
+`node --test scripts/firebase-auth-persistence.test.mjs`로 빈 볼륨에서 계정을 만든 뒤 컨테이너를
+두 번 교체해도 같은 UID로 로그인하는지 확인할 수 있습니다. 이 검사는 Docker Compose 2.24.4
+이상이 필요하며, 임시 Compose 프로젝트와 로컬 임시 포트만 사용합니다.
+
 ## 프로덕션 배포
 
 기능 개발이나 버그 수정을 완료하면 다음 흐름을 거쳐 프로덕션 환경에 배포합니다.
