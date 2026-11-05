@@ -9,10 +9,9 @@ import {
   CompactTrendingPreviewForSearchProductListDocument,
 } from '@darun/provider-graphql';
 import { Search } from '@darun/ui';
-import { Link, useSearchParams } from '@darun/utils-router';
+import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect } from 'react';
 import { SearchProduct, useSearchProductList } from './useSearchProductList';
 
 const POPULAR_QUERIES: Record<string, string[]> = {
@@ -50,21 +49,12 @@ const TRENDING_PREVIEW_QUERY = gql`
 
 type SearchProductListViewProps = {
   products: SearchProduct[];
+  query: string;
 };
 
-export const SearchProductList = bind(useSearchProductList, ({ products }: SearchProductListViewProps) => {
+export const SearchProductList = bind(useSearchProductList, ({ products, query }: SearchProductListViewProps) => {
   const t = useTranslations('Search');
   const locale = useLocale();
-  const searchParams = useSearchParams();
-  const query = searchParams.get('query')?.trim() ?? '';
-
-  useEffect(() => {
-    if (!query || products.length === 0) return;
-    track(AnalyticsEvents.SEARCH_PERFORMED, {
-      query,
-      resultCount: products.length,
-    });
-  }, [query, products]);
 
   if (products.length === 0) return <EmptySearchResults query={query} />;
   return (
