@@ -180,9 +180,14 @@ export function Button({
   isActive,
   kind,
   type,
+  disabled,
+  href,
+  target,
+  rel,
   ...props
 }: ButtonProps) {
-  const Component = as ?? 'button';
+  const isDisabledLink = disabled && href !== undefined && as !== 'button';
+  const Component = isDisabledLink ? 'button' : (as ?? 'button');
   const resolvedVariant = resolveButtonVariant(variant, kind);
   const resolvedColor = resolveButtonColor(resolvedVariant, color, kind);
   const resolvedActive = resolveButtonActive(active, isActive, kind);
@@ -191,6 +196,10 @@ export function Button({
   return (
     <Component
       type={resolvedType}
+      disabled={disabled}
+      href={isDisabledLink ? undefined : href}
+      target={isDisabledLink ? undefined : target}
+      rel={isDisabledLink ? undefined : rel}
       className={cn(
         buttonVariants({
           variant: resolvedVariant,
