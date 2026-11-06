@@ -639,6 +639,9 @@ importers:
       normalize.css:
         specifier: 8.0.1
         version: 8.0.1
+      parse5:
+        specifier: 8.0.0
+        version: 8.0.0
       react:
         specifier: 'catalog:'
         version: 19.2.6
@@ -652,6 +655,9 @@ importers:
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.59.1
+      '@types/markdown-it':
+        specifier: 14.1.2
+        version: 14.1.2
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
@@ -664,6 +670,9 @@ importers:
       graphql-tag-swc-plugin:
         specifier: 'catalog:'
         version: 1.1.0
+      markdown-it:
+        specifier: 14.1.1
+        version: 14.1.1
       typescript-eslint:
         specifier: 'catalog:'
         version: 8.66.0(eslint@10.8.0(jiti@2.7.0))(typescript@6.0.3)

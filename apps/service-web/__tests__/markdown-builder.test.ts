@@ -1,3 +1,4 @@
+import MarkdownIt from 'markdown-it';
 import { describe, expect, it } from 'vitest';
 import {
   buildCategoryMarkdown,
@@ -12,6 +13,7 @@ import {
   htmlToMarkdown,
   safeUrl,
 } from '../lib/seo/markdown-builder';
+import { contentHtml, contentMarkdown } from './markdown-content.fixture';
 
 describe('markdown-builder helpers', () => {
   describe('escapeMarkdown', () => {
@@ -34,6 +36,61 @@ describe('markdown-builder helpers', () => {
   });
 
   describe('htmlToMarkdown', () => {
+    it('링크·이미지·시작 번호와 중첩 목록을 보존한다', () => {
+      expect(htmlToMarkdown(contentHtml)).toBe(contentMarkdown);
+    });
+
+    it('독립 Markdown 파서가 링크·이미지와 실제 중첩 목록으로 읽는다', () => {
+      const rendered = new MarkdownIt({ html: true }).render(htmlToMarkdown(contentHtml));
+      expect(rendered).toContain('<a href="https://example.com/docs?a=1&amp;b=2"><strong>설명서</strong></a>');
+      expect(rendered).toContain('<img src="https://example.com/screen.png" alt="검색 결과 화면">');
+      expect(rendered).toContain('<ol start="3">\n<li>');
+      expect(rendered).toContain('<ul>\n<li>환경 확인</li>\n</ul>\n</li>\n<li>');
+    });
+
+    it('HTML 줄바꿈과 코드 안의 HTML은 각각 줄바꿈과 코드로 읽힌다', () => {
+      const markdown = htmlToMarkdown('<p>앞<br>뒤</p><pre><code>&lt;img src=x onerror=alert(1)&gt;</code></pre>');
+      const rendered = new MarkdownIt({ html: true }).render(markdown);
+      expect(rendered).toContain('앞<br>\n뒤');
+      expect(rendered).toContain('<pre><code>&lt;img src=x onerror=alert(1)&gt;\n</code></pre>');
+      expect(rendered).not.toContain('<img');
+    });
+
+    it('여러 문단의 인용과 코드 안의 공백·백틱을 보존한다', () => {
+      const html =
+        '<blockquote><p>첫 문단</p><p>다음 <code>a`b</code></p></blockquote><pre><code>one\n\n\n  ```two```\n</code></pre>';
+      expect(htmlToMarkdown(html)).toBe('> 첫 문단\n>\n> 다음 ``a`b``\n\n````\none\n\n\n  ```two```\n````');
+    });
+
+    it('지원하지 않는 블록과 잘못 닫은 목록의 읽을 수 있는 내용을 유지한다', () => {
+      expect(
+        htmlToMarkdown(
+          '<section><div>앞</div><div>뒤 &copy; &#x1f680;</div></section><ol start="9"><li>아홉<li>열</ol>'
+        )
+      ).toBe('앞\n\n뒤 © 🚀\n\n9. 아홉\n10. 열');
+    });
+
+    it('비허용 URL과 raw HTML·본문의 Markdown 주입을 출력하지 않는다', () => {
+      const html =
+        '<script>secret()</script><style>hidden</style><!--comment--><p><a href="jav&#x61;script:alert(1)">위험</a><img src="data:text/html,evil" alt="설명"></p><p>&lt;img src=x onerror=alert(1)&gt; [외부](javascript:alert(2))</p>';
+      const markdown = htmlToMarkdown(html);
+      expect(markdown).toContain('위험설명');
+      expect(markdown).toContain('&lt;img src=x onerror=alert\\(1\\)&gt;');
+      expect(markdown).toContain('\\[외부\\]\\(javascript:alert\\(2\\)\\)');
+      expect(markdown).not.toMatch(/<|secret|hidden|comment|data:text|\]\(javascript/);
+      const rendered = new MarkdownIt({ html: true }).render(markdown);
+      expect(rendered).not.toMatch(/<(?:a|img|script|style)\b/);
+      expect(rendered).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    });
+
+    it('URL의 Markdown 구분자와 이미지 대체 텍스트를 이스케이프한다', () => {
+      expect(
+        htmlToMarkdown(
+          '<a href="https://example.com/a(b)">[문서]</a><img src="https://example.com/p(x).png" alt="[화면] *원본*">'
+        )
+      ).toBe('[\\[문서\\]](https://example.com/a%28b%29)![\\[화면\\] \\*원본\\*](https://example.com/p%28x%29.png)');
+    });
+
     it('HTML 태그를 적절한 마크다운 문법으로 변환한다', () => {
       const html = `
         <script>alert('xss')</script>
@@ -68,7 +125,10 @@ describe('buildProductMarkdown', () => {
         description: '<p>노션은 문서 작성을 돕습니다.</p>',
         publishedAt: new Date('2026-01-01T00:00:00Z'),
         features: [{ name: '위키 기능', emoji: '📚', summary: '팀 문서를 관리합니다.' }],
-        company: { name: 'Notion Labs, Inc.', websiteUrl: 'https://www.notion.so' },
+        company: {
+          name: 'Notion Labs, Inc.',
+          websiteUrl: 'https://www.notion.so',
+        },
         links: [{ title: '공식 웹사이트', url: 'https://www.notion.so' }],
       },
       alternatives: [{ name: '옵시디언', slug: 'obsidian', summary: '로컬 기반 지식 관리' }],
