@@ -39,11 +39,12 @@ type HtmlParent = DefaultTreeAdapterTypes.ParentNode;
 type HtmlElement = DefaultTreeAdapterTypes.Element;
 
 function markdownText(text: string): string {
-  return escapeMarkdown(text.replace(/[\t\n\f\r \u00a0]+/g, ' '))
+  return text
+    .replace(/[\t\n\f\r \u00a0]+/g, ' ')
+    .replace(/[\\[\]()`*_#!{}|~+-]/g, '\\$&')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/[!{}|~+-]/g, '\\$&')
     .replace(/^(\s*\d+)\./g, '$1\\.');
 }
 

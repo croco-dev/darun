@@ -100,6 +100,12 @@ describe('markdown-builder helpers', () => {
       expect(rendered).toContain('src="https://example.com/?q=&amp;quot;"');
     });
 
+    it('백슬래시 뒤의 Markdown 문법도 링크가 아닌 원문으로 읽힌다', () => {
+      const text = String.raw`C:\docs\[note](https://example.com/)`;
+      const markdown = htmlToMarkdown(`<p>${text}</p>`);
+      expect(new MarkdownIt({ html: true }).render(markdown)).toBe(`<p>${text}</p>\n`);
+    });
+
     it('HTML 태그를 적절한 마크다운 문법으로 변환한다', () => {
       const html = `
         <script>alert('xss')</script>
