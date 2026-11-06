@@ -15,10 +15,8 @@ export function useProductListRefreshButton() {
     try {
       await apolloClient.refetchQueries({
         include: [AllProductsOnProductListTableDocument],
-        onQueryUpdated: () => {
-          notifications.show({ message: '서비스 목록을 새로 불러왔어요.', color: 'teal' });
-        },
       });
+      notifications.show({ message: '서비스 목록을 새로 불러왔어요.', color: 'teal' });
     } catch (error) {
       notifications.show({
         title: '새로고침 실패',
