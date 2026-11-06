@@ -124,6 +124,7 @@ export async function searchAndAddApps(
 
     const added = data?.length ?? 0;
     if (added > 0) {
+      revalidatePath('/sitemap.xml');
       revalidatePath('/admin');
       revalidatePath('/apps');
       revalidatePath('/');
@@ -181,6 +182,7 @@ export async function deleteApp(appId: string) {
     throw new Error(error.message);
   }
 
+  revalidatePath('/sitemap.xml');
   revalidatePath('/admin');
   revalidatePath('/admin/tiers');
   revalidatePath('/');
