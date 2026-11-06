@@ -32,8 +32,8 @@ export function toGraphVisualFlow(flow: VisualFlowSummary): VisualFlow {
       id: flow.productId,
       name: flow.productName,
       slug: flow.productSlug,
-      logoUrl: '',
-      summary: '',
+      logoUrl: flow.productLogoUrl,
+      summary: flow.productSummary,
     },
     coverScreenshot: {
       id: flow.coverScreenshot.id,
@@ -76,8 +76,8 @@ export class VisualFlowQueryResolver {
         id: flow.productId,
         name: flow.productName,
         slug: flow.productSlug,
-        logoUrl: '',
-        summary: '',
+        logoUrl: flow.productLogoUrl,
+        summary: flow.productSummary,
       },
       coverScreenshot: {
         id: cover.id,
@@ -200,8 +200,8 @@ export class VisualFlowQueryResolver {
         id: flow.productId,
         name: flow.productName,
         slug: flow.productSlug,
-        logoUrl: '',
-        summary: '',
+        logoUrl: flow.productLogoUrl,
+        summary: flow.productSummary,
       },
       coverScreenshot: {
         id: flow.steps[0]?.screenshot.id ?? '',

@@ -132,6 +132,8 @@ function toVisualSummary(row: {
   productId: string;
   productName: string | null;
   productSlug: string | null;
+  productLogoUrl: string;
+  productSummary: string;
 }): VisualFlowSummary | null {
   if (!row.coverId || !row.coverImageUrl || !row.coverImageAlt || !row.productName || !row.productSlug) {
     return null;
@@ -147,6 +149,8 @@ function toVisualSummary(row: {
     productId: row.productId,
     productName: row.productName,
     productSlug: row.productSlug,
+    productLogoUrl: row.productLogoUrl,
+    productSummary: row.productSummary,
   };
 }
 
@@ -356,6 +360,8 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
         productId: productFlows.productId,
         productName: products.name,
         productSlug: products.slug,
+        productLogoUrl: products.logoUrl,
+        productSummary: products.summary,
       })
       .from(productFlows)
       .innerJoin(products, eq(products.id, productFlows.productId))
@@ -389,6 +395,8 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
         productId: productFlows.productId,
         productName: products.name,
         productSlug: products.slug,
+        productLogoUrl: products.logoUrl,
+        productSummary: products.summary,
       })
       .from(productFlows)
       .innerJoin(products, eq(products.id, productFlows.productId))
@@ -426,6 +434,8 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
           flowType: productFlows.flowType,
           productName: products.name,
           productSlug: products.slug,
+          productLogoUrl: products.logoUrl,
+          productSummary: products.summary,
         },
         step: {
           position: productFlowSteps.position,
@@ -481,6 +491,8 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
         productId: productFlows.productId,
         productName: products.name,
         productSlug: products.slug,
+        productLogoUrl: products.logoUrl,
+        productSummary: products.summary,
       })
       .from(productFlowSteps)
       .innerJoin(productFlows, eq(productFlows.id, productFlowSteps.flowId))
@@ -550,6 +562,8 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
           productId: productFlows.productId,
           productName: products.name,
           productSlug: products.slug,
+          productLogoUrl: products.logoUrl,
+          productSummary: products.summary,
         })
         .from(visualSaves)
         .innerJoin(productFlows, eq(productFlows.id, visualSaves.flowId))

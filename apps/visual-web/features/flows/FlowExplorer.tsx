@@ -39,6 +39,18 @@ function FlowCardGrid({ cards }: { cards: FlowCard[] }) {
                 {card.title}
               </span>
               <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-dark-600">
+                {card.product.logoUrl && (
+                  <img
+                    key={card.product.logoUrl}
+                    src={card.product.logoUrl}
+                    alt={`${card.product.name} 로고`}
+                    loading="lazy"
+                    onError={event => {
+                      event.currentTarget.style.display = 'none';
+                    }}
+                    className="h-5 w-5 shrink-0 rounded border border-dark-150 bg-white object-contain"
+                  />
+                )}
                 <span className="truncate">{card.product.name}</span>
                 <span aria-hidden="true" className="text-dark-300">
                   ·

@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { drizzle, PostgresJsPreparedQuery } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
@@ -8,12 +8,16 @@ import { resolve } from 'node:path';
 import { productFlows, productFlowSteps } from '../entities/ProductFlowsSchema';
 import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
+import { visualSaves } from '../entities/VisualPopularitySchema';
 import { PostgresqlProductFlowRepository } from '../repositories/PostgresqlProductFlowRepository';
 
 const url = process.env.FLOW_DETAIL_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
 const productId = 'flow-detail-product';
 const flowId = 'flow-detail';
+const secondFlowId = 'flow-second';
+const productLogoUrl = 'https://example.com/flow-product-logo.png';
+const productSummary = '저장된 상품 요약';
 const oldShot = {
   id: 'flow-old-shot',
   imageUrl: 'https://example.com/old.png',
@@ -33,6 +37,7 @@ suite('플로 상세의 PostgreSQL 스냅샷', () => {
   let db: ReturnType<typeof drizzle>;
   let repo: PostgresqlProductFlowRepository;
   let fixturesInserted = false;
+  const queries: string[] = [];
 
   beforeAll(async () => {
     const target = new URL(url!);
@@ -48,7 +53,7 @@ suite('플로 상세의 PostgreSQL 스냅샷', () => {
     reader = postgres(url!, { max: 1, connect_timeout: 5 });
     writer = postgres(url!, { max: 1, connect_timeout: 5 });
     db = drizzle(writer);
-    repo = new PostgresqlProductFlowRepository(drizzle(reader));
+    repo = new PostgresqlProductFlowRepository(drizzle(reader, { logger: { logQuery: query => queries.push(query) } }));
     await migrate(db, {
       migrationsFolder: resolve(__dirname, '../../../../../apps/graphql-api/scripts/migrations'),
     });
@@ -72,7 +77,7 @@ suite('플로 상세의 PostgreSQL 스냅샷', () => {
     try {
       if (fixturesInserted) {
         await db.transaction(async tx => {
-          await tx.delete(productFlows).where(eq(productFlows.id, flowId));
+          await tx.delete(productFlows).where(inArray(productFlows.id, [flowId, secondFlowId]));
           await tx.delete(productScreenshots).where(eq(productScreenshots.productId, productId));
           await tx.delete(products).where(eq(products.id, productId));
         });
@@ -86,9 +91,13 @@ suite('플로 상세의 PostgreSQL 스냅샷', () => {
     await db.transaction(async tx => {
       await tx
         .update(products)
-        .set({ publishedAt: new Date('2026-01-01T00:00:00Z') })
+        .set({
+          publishedAt: new Date('2026-01-01T00:00:00Z'),
+          logoUrl: productLogoUrl,
+          summary: productSummary,
+        })
         .where(eq(products.id, productId));
-      await tx.delete(productFlows).where(eq(productFlows.id, flowId));
+      await tx.delete(productFlows).where(inArray(productFlows.id, [flowId, secondFlowId]));
       await tx.insert(productFlows).values({
         id: flowId,
         productId,
@@ -188,6 +197,67 @@ suite('플로 상세의 PostgreSQL 스냅샷', () => {
 
       expect(detail).toMatchObject(oldDetail);
       expect(await read()).toBeNull();
+    });
+  });
+
+  describe.each([
+    ['공개 상세', () => repo.findVisualPublishedById(flowId).then(flow => [flow]), 1],
+    ['관리자 상세', () => repo.findAdminFlowDetailById(flowId).then(flow => [flow]), 1],
+    ['최신 목록', () => repo.findManyVisualPublishedByFilterAndAfterIdAndLimit({ query: '' }, 24), 1],
+    ['인기 목록', () => repo.findManyVisualPublishedByFilterAndPageAndLimit({ query: '' }, 1, 24), 1],
+    ['화면의 연관 플로', () => repo.findManyVisualPublishedByScreenshotId(oldShot.id), 1],
+    [
+      '저장 목록',
+      () =>
+        repo
+          .findManyVisualSavedFlowsByUser({
+            userId: 'flow-product-test',
+            limit: 24,
+            offset: 0,
+          })
+          .then(result => result.flows),
+      2,
+    ],
+  ] as const)('%s 상품 정보', (_name, read, queryCount) => {
+    it('JOIN으로 실제 로고·요약을 읽고 다른 연결의 수정과 빈 값도 반영한다', async () => {
+      await db.insert(productFlows).values({
+        id: secondFlowId,
+        productId,
+        title: 'Second flow',
+        description: '',
+        platform: 'WEB',
+        flowType: 'SEARCH',
+      });
+      await db.insert(productFlowSteps).values({
+        flowId: secondFlowId,
+        screenshotId: oldShot.id,
+        position: 0,
+        caption: '',
+      });
+      await db.insert(visualSaves).values([
+        { userId: 'flow-product-test', flowId },
+        { userId: 'flow-product-test', flowId: secondFlowId },
+      ]);
+      queries.length = 0;
+      const flows = await read();
+      expect(queries).toHaveLength(queryCount);
+      expect(flows).toHaveLength(_name.includes('상세') ? 1 : 2);
+      for (const flow of flows) expect(flow).toMatchObject({ productLogoUrl, productSummary });
+
+      await db
+        .update(products)
+        .set({
+          logoUrl: 'https://example.com/replaced.png',
+          summary: '바뀐 요약',
+        })
+        .where(eq(products.id, productId));
+      for (const flow of await read())
+        expect(flow).toMatchObject({
+          productLogoUrl: 'https://example.com/replaced.png',
+          productSummary: '바뀐 요약',
+        });
+      await db.update(products).set({ logoUrl: '', summary: '' }).where(eq(products.id, productId));
+      for (const flow of await read()) expect(flow).toMatchObject({ productLogoUrl: '', productSummary: '' });
     });
   });
 

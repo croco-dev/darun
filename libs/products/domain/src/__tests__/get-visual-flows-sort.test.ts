@@ -13,6 +13,8 @@ const createFlow = (overrides: Partial<VisualFlowSummary> = {}): VisualFlowSumma
   productId: 'product-1',
   productName: '다런',
   productSlug: 'darun',
+  productLogoUrl: 'https://example.com/darun.png',
+  productSummary: '다른 서비스',
   ...overrides,
 });
 
