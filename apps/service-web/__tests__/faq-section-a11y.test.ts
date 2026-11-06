@@ -84,15 +84,6 @@ describe('FAQSection Accessibility & Motion', () => {
     });
   });
 
-  describe('transition 클래스', () => {
-    it('transition-[max-height,opacity] 클래스가 패널에 존재한다', () => {
-      renderFAQ();
-      const panel = container.querySelector('section[aria-labelledby]');
-      expect(panel).not.toBeNull();
-      expect(panel!.className).toContain('transition-[max-height,opacity]');
-    });
-  });
-
   describe('ARIA 속성', () => {
     it('초기 상태에서 ARIA 속성이 올바르게 설정된다', () => {
       renderFAQ();
@@ -116,18 +107,21 @@ describe('FAQSection Accessibility & Motion', () => {
 
       expect(button.getAttribute('aria-expanded')).toBe('false');
       expect(panel.getAttribute('aria-hidden')).toBe('true');
+      expect(panel.hasAttribute('inert')).toBe(true);
 
       act(() => {
         button.click();
       });
       expect(button.getAttribute('aria-expanded')).toBe('true');
       expect(panel.getAttribute('aria-hidden')).toBe('false');
+      expect(panel.hasAttribute('inert')).toBe(false);
 
       act(() => {
         button.click();
       });
       expect(button.getAttribute('aria-expanded')).toBe('false');
       expect(panel.getAttribute('aria-hidden')).toBe('true');
+      expect(panel.hasAttribute('inert')).toBe(true);
     });
   });
 
@@ -150,40 +144,6 @@ describe('FAQSection Accessibility & Motion', () => {
         expect(button.getAttribute('aria-controls')).toBe(panelId);
         expect(panel.getAttribute('aria-labelledby')).toBe(buttonId);
       });
-    });
-  });
-
-  describe('scrollHeight 기반 동적 높이', () => {
-    it('useEffect가 열림 상태에서 scrollHeight를 maxHeight로 설정한다', () => {
-      renderFAQ();
-      const panel = container.querySelector<HTMLElement>('section[aria-labelledby]')!;
-      const button = container.querySelector('button')!;
-
-      // useEffect로 scrollHeight를 읽는 내부 div의 scrollHeight를 모의
-      const innerDiv = panel.querySelector('div');
-      expect(innerDiv).not.toBeNull();
-      Object.defineProperty(innerDiv!, 'scrollHeight', {
-        value: 100,
-        configurable: true,
-      });
-
-      expect(panel.style.maxHeight).toBe('0px');
-      expect(panel.style.opacity).toBe('0');
-
-      act(() => {
-        button.click();
-      });
-
-      const maxHeight = panel.style.maxHeight;
-      expect(maxHeight).toBe('100px');
-      expect(panel.style.opacity).toBe('1');
-
-      act(() => {
-        button.click();
-      });
-
-      expect(panel.style.maxHeight).toBe('0px');
-      expect(panel.style.opacity).toBe('0');
     });
   });
 });

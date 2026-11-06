@@ -2,7 +2,7 @@
 
 import { ChevronDown, SectionHeader } from '@darun/ui';
 import { useTranslations } from 'next-intl';
-import { useId, useState, useRef, useEffect } from 'react';
+import { useId, useState } from 'react';
 
 export interface FAQItem {
   question: string;
@@ -32,17 +32,9 @@ export function FAQSection({ items }: FAQSectionProps) {
 
 function FAQAccordionItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [scrollHeight, setScrollHeight] = useState(0);
   const id = useId();
   const buttonId = `faq-button-${id}`;
   const panelId = `faq-panel-${id}`;
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (panelRef.current) {
-      setScrollHeight(panelRef.current.scrollHeight);
-    }
-  }, [isOpen, answer]);
 
   return (
     <div
@@ -79,15 +71,17 @@ function FAQAccordionItem({ question, answer }: { question: string; answer: stri
         aria-hidden={!isOpen}
         inert={!isOpen ? true : undefined}
         style={{
-          maxHeight: isOpen ? `${scrollHeight}px` : '0px',
+          gridTemplateRows: isOpen ? '1fr' : '0fr',
           opacity: isOpen ? 1 : 0,
         }}
-        className="overflow-hidden transition-[max-height,opacity] duration-300 ease-out motion-reduce:transition-none"
+        className="grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none"
       >
-        <div ref={panelRef} className="border-t border-dark-150/70 bg-white px-5 pb-5 pt-4 text-dark-700">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed break-words [word-break:keep-all] sm:text-base">
-            {answer}
-          </p>
+        <div className="min-h-0 overflow-hidden">
+          <div className="border-t border-dark-150/70 bg-white px-5 pb-5 pt-4 text-dark-700">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed break-words [word-break:keep-all] sm:text-base">
+              {answer}
+            </p>
+          </div>
         </div>
       </section>
     </div>
