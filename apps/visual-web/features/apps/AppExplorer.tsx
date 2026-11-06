@@ -187,13 +187,22 @@ const View = (props: AppExplorerState) => {
             </div>
           </div>
           <p id="app-search-status" className={query !== null ? 'text-xs text-dark-600' : 'sr-only'} aria-live="polite">
-            {query !== null && !loading && !networkError ? `‘${query}’ 검색 결과 ${totalCount}개` : ''}
+            {query !== null && !queryLengthError && !loading && !networkError
+              ? `‘${query}’ 검색 결과 ${totalCount}개`
+              : ''}
           </p>
         </form>
       }
       skeleton={<AppCardSkeletons />}
       grid={<AppCardGrid cards={cards} />}
-      children={<CatalogPagination {...props.pagination} />}
+      children={
+        <CatalogPagination
+          {...props.pagination}
+          loading={loading}
+          networkError={networkError}
+          queryLengthError={queryLengthError}
+        />
+      }
       resourceName="앱"
       unitName="개의 앱"
     />

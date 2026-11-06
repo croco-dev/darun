@@ -15,6 +15,7 @@ import {
   GetRecentProducts,
   GetProductsByCategory,
   Product as DomainProduct,
+  normalizeVisualQuery,
 } from '@darun/products-domain';
 import { ProductRepositoryToken } from '@darun/products-domain';
 import { GetAlternativeProducts } from '@darun/recommendation-domain';
@@ -424,12 +425,13 @@ export class ProductQueryResolver {
     @Arg('query', () => String, { nullable: true }) query?: string,
     @Arg('productSlug', () => String, { nullable: true }) productSlug?: string
   ) {
+    const normalizedQuery = normalizeVisualQuery(query);
     const limit = validateListLimit(first, MAX_LIST_LIMIT);
     const afterId = after ? Cursor.decode(after, ['id'] as const).id : undefined;
     const { products, total } = await this.productRepository.findVisualApps({
       limit: limit + 1,
       afterId,
-      query,
+      query: normalizedQuery,
       productSlug,
     });
     return this.productConnection(products, total, limit, after);

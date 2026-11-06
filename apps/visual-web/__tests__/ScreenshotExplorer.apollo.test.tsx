@@ -8,8 +8,12 @@ import { useMemo, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
+import { AppExplorer } from '../features/apps/AppExplorer';
+import { useAppExplorer } from '../features/apps/useAppExplorer';
 import { FlowExplorer } from '../features/flows/FlowExplorer';
+import { useFlowExplorer } from '../features/flows/useFlowExplorer';
 import { ScreenshotExplorer } from '../features/screenshots/ScreenshotExplorer';
+import { useScreenshotExplorer } from '../features/screenshots/useScreenshotExplorer';
 
 // Supply the actual Next contexts instead of mocking the explorer, its hooks,
 // the router adapter or Apollo. popstate rerenders the route boundary.
@@ -59,7 +63,7 @@ afterEach(() => {
   clients.splice(0).forEach(client => client.stop());
 });
 
-function mount(route = '/', flow = false) {
+function mount(route = '/', consumer: 'screenshots' | 'flows' | 'apps' = 'screenshots', controls?: ReactNode) {
   window.history.replaceState(null, '', route);
   const requests: Array<{ operation: string | undefined; variables: Record<string, unknown> }> = [];
   const client = new ApolloClient({
@@ -105,7 +109,10 @@ function mount(route = '/', flow = false) {
   clients.push(client);
   render(
     <RouteFixture>
-      <ApolloProvider client={client}>{flow ? <FlowExplorer /> : <ScreenshotExplorer />}</ApolloProvider>
+      <ApolloProvider client={client}>
+        {consumer === 'apps' ? <AppExplorer /> : consumer === 'flows' ? <FlowExplorer /> : <ScreenshotExplorer />}
+        {controls}
+      </ApolloProvider>
     </RouteFixture>
   );
   return requests;
@@ -223,7 +230,7 @@ it.each(['/', '/?platform=IOS'])('service suggestion selection clears the draft 
 });
 
 it('the actual flow consumer keeps its own draft, explicit submit and reset behavior', async () => {
-  const requests = mount('/flows?q=기존플로우', true);
+  const requests = mount('/flows?q=기존플로우', 'flows');
   await screen.findByText('검색 결과가 없습니다.');
   const flowInput = screen.getByRole<HTMLInputElement>('combobox', { name: '플로 검색' });
   expect(flowInput.value).toBe('기존플로우');
@@ -236,4 +243,109 @@ it('the actual flow consumer keeps its own draft, explicit submit and reset beha
   fireEvent.click(screen.getByRole('button', { name: '필터 초기화' }));
   expect(flowInput.value).toBe('');
   expect(window.location.pathname + window.location.search).toBe('/flows');
+});
+
+const searchConsumers = [
+  {
+    consumer: 'screenshots',
+    path: '/',
+    label: '스크린샷 검색',
+    filters: '&platform=IOS&screenType=SIGN_IN&element=BUTTON&product=fixture-app',
+    operation: 'VisualScreenshotsOnExplorer',
+    expected: { platform: 'IOS', screenType: 'SIGN_IN', uiElements: ['BUTTON'], productSlug: 'fixture-app' },
+  },
+  {
+    consumer: 'flows',
+    path: '/flows',
+    label: '플로 검색',
+    filters: '&platform=WEB&flowType=ONBOARDING&product=fixture-app',
+    operation: 'VisualFlowsOnExplorer',
+    expected: { platform: 'WEB', flowType: 'ONBOARDING', productSlug: 'fixture-app' },
+  },
+  {
+    consumer: 'apps',
+    path: '/apps',
+    label: '앱 검색',
+    filters: '&product=fixture-app',
+    operation: 'VisualAppsOnCatalog',
+    expected: { productSlug: 'fixture-app' },
+  },
+] as const;
+
+it.each(searchConsumers)(
+  '$consumer: a direct overlong URL makes no list request and recovers at 100 characters',
+  async ({ consumer, path, label, filters, operation, expected }) => {
+    const overlong = '가'.repeat(101);
+    const valid = '나'.repeat(100);
+    const requests = mount(`${path}?q=${overlong}${filters}&after=old-cursor`, consumer);
+    await screen.findByText('검색어는 100자 이하로 입력해 주세요.');
+    // Drain the actual hook effects; invalid input must not be replaced by an unfiltered request.
+    await act(async () => {});
+    expect(requests).toEqual([]);
+    expect(screen.queryByText('검색 결과가 없습니다.')).toBeNull();
+    expect(screen.queryByText(/검색 결과 0개/)).toBeNull();
+    expect(screen.queryByRole('navigation', { name: '결과 페이지' })).toBeNull();
+    const search = screen.getByLabelText<HTMLInputElement>(label);
+    expect(search.value).toBe(overlong);
+    fireEvent.change(search, { target: { value: `  ${valid}  ` } });
+    fireEvent.submit(screen.getByRole('search'));
+    await screen.findByText('검색 결과가 없습니다.');
+    expect(requests).toEqual([
+      { operation, variables: expect.objectContaining({ ...expected, query: valid, first: 24, after: null }) },
+    ]);
+    expect(new URLSearchParams(window.location.search).get('q')?.trim()).toBe(valid);
+    expect(new URLSearchParams(window.location.search).has('after')).toBe(false);
+  }
+);
+
+it.each(searchConsumers)(
+  '$consumer: submitting 101 characters never issues a list request or shows prior success',
+  async ({ consumer, path, label, filters, operation }) => {
+    const requests = mount(`${path}?q=기존검색${filters}`, consumer);
+    await screen.findByText('검색 결과가 없습니다.');
+    expect(requests.filter(request => request.operation === operation)).toHaveLength(1);
+    requests.splice(0);
+    fireEvent.change(screen.getByLabelText(label), { target: { value: '다'.repeat(101) } });
+    fireEvent.submit(screen.getByRole('search'));
+    await screen.findByText('검색어는 100자 이하로 입력해 주세요.');
+    await act(async () => {});
+    expect(requests).toEqual([]);
+    expect(screen.queryByText('검색 결과가 없습니다.')).toBeNull();
+    expect(screen.queryByText(/검색 결과 0개/)).toBeNull();
+  }
+);
+
+function RequestControls({ retry, onLoadMore }: { retry: () => void; onLoadMore?: () => void }) {
+  return (
+    <>
+      <button onClick={retry}>fixture retry</button>
+      <button onClick={onLoadMore}>fixture load more</button>
+    </>
+  );
+}
+function AppRequestControls() {
+  return <RequestControls {...useAppExplorer()} />;
+}
+function ScreenshotRequestControls() {
+  return <RequestControls {...useScreenshotExplorer()} />;
+}
+function FlowRequestControls() {
+  return <RequestControls {...useFlowExplorer()} />;
+}
+
+it.each(searchConsumers)('$consumer: retry and pagination cannot run a rejected query', async ({ consumer, path }) => {
+  const controls =
+    consumer === 'apps' ? (
+      <AppRequestControls />
+    ) : consumer === 'flows' ? (
+      <FlowRequestControls />
+    ) : (
+      <ScreenshotRequestControls />
+    );
+  const requests = mount(`${path}?q=${'가'.repeat(101)}`, consumer, controls);
+  await screen.findByText('검색어는 100자 이하로 입력해 주세요.');
+  fireEvent.click(screen.getByRole('button', { name: 'fixture retry' }));
+  fireEvent.click(screen.getByRole('button', { name: 'fixture load more' }));
+  await act(async () => {});
+  expect(requests).toEqual([]);
 });

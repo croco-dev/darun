@@ -74,7 +74,7 @@ type CatalogPage = {
   pageInfo: VisualAppsOnCatalogQuery['visualApps']['pageInfo'];
 };
 
-export function useScreenshotCatalog(query: string | null = null, productSlug: string | null = null) {
+export function useScreenshotCatalog(query: string | null = null, productSlug: string | null = null, enabled = true) {
   const client = useApolloClient();
   const searchParams = useSearchParams();
   const after = searchParams.get('after');
@@ -87,6 +87,7 @@ export function useScreenshotCatalog(query: string | null = null, productSlug: s
   });
 
   useEffect(() => {
+    if (!enabled) return;
     let active = true;
     loadScreenshotCatalog(client, after, query, productSlug).then(
       page => {
@@ -99,10 +100,10 @@ export function useScreenshotCatalog(query: string | null = null, productSlug: s
     return () => {
       active = false;
     };
-  }, [client, after, query, productSlug, key]);
+  }, [client, after, query, productSlug, key, enabled]);
 
   const current = state.key === key;
-  const page = current ? state.page : null;
+  const page = enabled && current ? state.page : null;
   return {
     cards: page?.cards ?? [],
     apps: page?.apps ?? [],
@@ -110,8 +111,10 @@ export function useScreenshotCatalog(query: string | null = null, productSlug: s
     hasNextPage: page?.pageInfo.hasNextPage ?? false,
     endCursor: page?.pageInfo.endCursor ?? null,
     isFirstPage: after === null,
-    loading: !current,
-    networkError: current && state.networkError,
-    retry: () => setRequestKey(value => value + 1),
+    loading: enabled && !current,
+    networkError: enabled && current && state.networkError,
+    retry: () => {
+      if (enabled) setRequestKey(value => value + 1);
+    },
   };
 }

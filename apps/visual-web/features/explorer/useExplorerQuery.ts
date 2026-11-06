@@ -188,28 +188,31 @@ export function useExplorerQuery<TNode, TCard>(
 
   const observable = useMemo(
     () =>
-      apolloClient.watchQuery({
-        query: options.document,
-        variables: {
-          ...options.buildVariables({
-            query: queryLengthError ? null : query,
-            platform,
-            secondary,
-            product,
-            element,
+      queryLengthError
+        ? null
+        : apolloClient.watchQuery({
+            query: options.document,
+            variables: {
+              ...options.buildVariables({
+                query,
+                platform,
+                secondary,
+                product,
+                element,
+              }),
+              first: options.pageSize,
+              after,
+            },
+            notifyOnNetworkStatusChange: true,
+            fetchPolicy: options.boundedPagination ? 'no-cache' : 'cache-first',
           }),
-          first: options.pageSize,
-          after,
-        },
-        notifyOnNetworkStatusChange: true,
-        fetchPolicy: options.boundedPagination ? 'no-cache' : 'cache-first',
-      }),
     [apolloClient, options, query, platform, secondary, product, element, queryLengthError, after]
   );
 
-  const [snapshot, setSnapshot] = useState(() => ({ observable, result: observable.getCurrentResult() }));
-  const result = snapshot.observable === observable ? snapshot.result : observable.getCurrentResult();
+  const [snapshot, setSnapshot] = useState(() => ({ observable, result: observable?.getCurrentResult() }));
+  const result = snapshot.observable === observable ? snapshot.result : observable?.getCurrentResult();
   useEffect(() => {
+    if (!observable) return;
     const subscription = observable.subscribe(nextResult => {
       setSnapshot({ observable, result: { ...nextResult } });
     });
@@ -219,7 +222,7 @@ export function useExplorerQuery<TNode, TCard>(
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(false);
 
-  const data = result.data as unknown;
+  const data = result?.data as unknown;
   const rawEdges = (options.getEdges(data) ?? []) as EdgeLike<TNode>[];
   const cards = rawEdges.flatMap(edge => {
     const node = edge?.node;
@@ -233,12 +236,12 @@ export function useExplorerQuery<TNode, TCard>(
   const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;
   const endCursor = connection?.pageInfo?.endCursor ?? null;
 
-  const queryError = result.error;
+  const queryError = result?.error;
   const graphQLErrorCodes =
     queryError && CombinedGraphQLErrors.is(queryError) ? queryError.errors.map(error => error.extensions?.code) : [];
   const hasQueryLengthError = graphQLErrorCodes.includes('product/invalid-args');
   const showQueryLengthError = queryLengthError || hasQueryLengthError;
-  const networkError = result.error !== undefined && !hasQueryLengthError;
+  const networkError = queryError !== undefined && !hasQueryLengthError;
 
   const buildUrl = (next: BuildUrlNext) =>
     buildExplorerUrl(options.basePath, filters, options.secondaryParamKey, next, elementParamKey);
@@ -246,6 +249,7 @@ export function useExplorerQuery<TNode, TCard>(
   const navigateTo = (next: BuildUrlNext) => navigate(buildUrl(next));
 
   const onLoadMore = () => {
+    if (!observable) return;
     if (options.boundedPagination) {
       if (hasNextPage && endCursor !== null) {
         const params = new URLSearchParams(searchParams);
@@ -340,16 +344,17 @@ export function useExplorerQuery<TNode, TCard>(
   };
 
   const retry = () => {
+    if (!observable) return;
     observable.refetch().catch((e: unknown) => {
       console.error(options.refetchLabel, e);
     });
   };
 
-  const loading = result.loading && cards.length === 0;
+  const loading = (result?.loading ?? false) && cards.length === 0;
 
   return {
     loading,
-    error: result.error,
+    error: queryError,
     queryLengthError: showQueryLengthError,
     networkError,
     cards,

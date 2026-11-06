@@ -50,15 +50,14 @@ export function useAppExplorer(): AppExplorerState {
 
   const query = readExplorerQueryParam(searchParams);
   const product = readExplorerProductParam(searchParams);
-  const catalog = useScreenshotCatalog(query, product);
+  const queryLengthError = isOverlongExplorerQuery(query);
+  const catalog = useScreenshotCatalog(query, product, !queryLengthError);
   const { loading, networkError, retry } = catalog;
   const [searchInput, setSearchInput] = useState(query ?? '');
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 검색 파라미터 동기화에 필요
     setSearchInput(query ?? '');
   }, [query]);
-
-  const queryLengthError = isOverlongExplorerQuery(query);
 
   const { suggestions, isSearching, clearSuggestions, suggest } = useProductSearchSuggest();
 
