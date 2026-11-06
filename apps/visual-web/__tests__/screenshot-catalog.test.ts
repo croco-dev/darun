@@ -1,5 +1,7 @@
-import type { ApolloClient } from '@apollo/client';
+import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
+import { buildSchema, execute } from 'graphql';
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { loadScreenshotCatalog } from '../features/screenshots/useScreenshotCatalog';
 
 function page(hasNextPage = true, endCursor: string | null = 'app-24') {
@@ -24,14 +26,6 @@ function page(hasNextPage = true, endCursor: string | null = 'app-24') {
                 platform: null,
                 screenType: null,
               })),
-              coverScreenshot: {
-                id: 'cover-a',
-                imageUrl: '/a.png',
-                imageAlt: 'A',
-                title: null,
-                platform: null,
-                screenType: null,
-              },
             },
           },
         ],
@@ -72,5 +66,121 @@ describe('bounded app catalog', () => {
     await expect(loadScreenshotCatalog({ query } as unknown as ApolloClient, 'same')).rejects.toThrow(
       'App catalog cursor did not advance'
     );
+  });
+});
+
+// Execute the generated catalog operation against the stored server schema.
+// Resolvers at the repository boundary count only fields GraphQL actually selects.
+function catalogServer(failure?: 'cover' | 'preview') {
+  const cover = vi.fn(() => {
+    if (failure === 'cover') throw new Error('Cover unavailable');
+    return null;
+  });
+  const previews = vi.fn((count: number, appId: string) => {
+    if (failure === 'preview') throw new Error('Previews unavailable');
+    return Array.from({ length: count }, (_, index) => ({
+      id: `${appId}-${index}`,
+      imageUrl: `/${appId}-${index}.png`,
+      imageAlt: `${appId} preview ${index}`,
+      title: null,
+      platform: null,
+      screenType: null,
+    }));
+  });
+  const visualApps = vi.fn(({ after }: { after?: string }) => ({
+    totalCount: 4,
+    edges: (after ? [1] : [0, 1, 3]).map((count, index) => {
+      const id = after ? 'last-app' : `app-${index}`;
+      return {
+        node: {
+          id,
+          name: id,
+          slug: id,
+          summary: 'summary',
+          logoUrl: '/logo.png',
+          screenshotCount: count + 10,
+          previewScreenshots: () => previews(count, id),
+          coverScreenshot: cover,
+        },
+      };
+    }),
+    pageInfo: { hasNextPage: !after, endCursor: after ? 'last' : 'next' },
+  }));
+  const schema = buildSchema(readFileSync(new URL('../../graphql-api/schema.graphql', import.meta.url), 'utf8'));
+  const client = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new ApolloLink(
+      operation =>
+        new Observable(observer => {
+          Promise.resolve(
+            execute({
+              schema,
+              document: operation.query,
+              variableValues: operation.variables,
+              rootValue: { visualApps },
+            })
+          ).then(
+            result => {
+              observer.next(result);
+              observer.complete();
+            },
+            error => observer.error(error)
+          );
+        })
+    ),
+  });
+  return { client, cover, previews, visualApps };
+}
+
+describe('catalog operation and Apollo integration', () => {
+  it('0/1/3장 preview와 앱 순서·건수·다음 페이지를 보존하며 cover resolver를 호출하지 않는다', async () => {
+    const server = catalogServer();
+    try {
+      const first = await loadScreenshotCatalog(server.client, null, '검색', 'selected');
+      expect(first.apps.map(app => app.id)).toEqual(['app-0', 'app-1', 'app-2']);
+      expect(first.cards.map(card => card.id)).toEqual(['app-1-0', 'app-2-0', 'app-2-1', 'app-2-2']);
+      expect(first.apps.map(app => app.screenshotCount)).toEqual([10, 11, 13]);
+      expect(first.totalCount).toBe(4);
+      expect(first.pageInfo).toMatchObject({
+        hasNextPage: true,
+        endCursor: 'next',
+      });
+      const second = await loadScreenshotCatalog(server.client, first.pageInfo.endCursor, '검색', 'selected');
+      expect(second.apps.map(app => app.id)).toEqual(['last-app']);
+      expect(second.cards.map(card => card.id)).toEqual(['last-app-0']);
+      expect(second.pageInfo).toMatchObject({
+        hasNextPage: false,
+        endCursor: 'last',
+      });
+      expect(server.visualApps.mock.calls.map(([args]) => args)).toEqual([
+        { first: 24, after: null, query: '검색', productSlug: 'selected' },
+        { first: 24, after: 'next', query: '검색', productSlug: 'selected' },
+      ]);
+      expect(server.previews).toHaveBeenCalledTimes(4);
+      expect(server.cover).not.toHaveBeenCalled();
+    } finally {
+      server.client.stop();
+    }
+  });
+
+  it('미사용 cover의 장애가 정상 preview 목록을 실패시키지 않는다', async () => {
+    const server = catalogServer('cover');
+    try {
+      const result = await loadScreenshotCatalog(server.client);
+      expect(result.apps).toHaveLength(3);
+      expect(result.cards).toHaveLength(4);
+      expect(server.cover).not.toHaveBeenCalled();
+    } finally {
+      server.client.stop();
+    }
+  });
+
+  it('실제 preview 조회 오류는 정상 빈 목록으로 바꾸지 않고 전파한다', async () => {
+    const server = catalogServer('preview');
+    try {
+      await expect(loadScreenshotCatalog(server.client)).rejects.toThrow('Previews unavailable');
+    } finally {
+      server.client.stop();
+    }
   });
 });

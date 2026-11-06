@@ -23,14 +23,6 @@ gql`
             platform
             screenType
           }
-          coverScreenshot {
-            id
-            imageUrl
-            imageAlt
-            title
-            platform
-            screenType
-          }
         }
       }
       pageInfo {
