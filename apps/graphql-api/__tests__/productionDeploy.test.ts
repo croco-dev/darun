@@ -136,6 +136,24 @@ afterEach(() => {
 });
 
 describe('production deployment entrypoints', () => {
+  it('CI validates and deploys prod even when the old runtime secret contains a different environment', () => {
+    const workflow = parse(readFileSync(resolve(directory, '../../.github/workflows/Deploy.yaml'), 'utf8'));
+    const legacySecrets: Record<string, string> = { RUNNING_ENV: 'local' };
+    for (const name of ['Verify production prerequisites and apply migrations', 'Deploy']) {
+      const step = workflow.jobs.deploy.steps.find(item => item.name === name)!;
+      const env = Object.fromEntries(
+        ['INFRA_ENV', 'RUNNING_ENV'].map(key => [
+          key,
+          step.env![key].replace(/\$\{\{ secrets\.([A-Z_]+) \}\}/g, (_, secret: string) => legacySecrets[secret]),
+        ])
+      );
+      const result = runDeployment({ entry: 'predeploy:prod', env });
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.calls).toEqual(['pnpm run migrate']);
+      expect(env).toEqual({ INFRA_ENV: 'prod', RUNNING_ENV: 'prod' });
+    }
+  });
+
   it('keeps the environment choice through consecutive CI deployments and an explicit disable', async () => {
     const workflow = parse(readFileSync(resolve(directory, '../../.github/workflows/Deploy.yaml'), 'utf8'));
     expect(workflow.jobs.deploy.environment.name).toBe('prod-graphql');

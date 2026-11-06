@@ -97,7 +97,7 @@ jobs:
         run: pnpm --filter graphql-api run predeploy:prod
         env:
           INFRA_ENV: prod
-          RUNNING_ENV: ${{ secrets.RUNNING_ENV }}
+          RUNNING_ENV: prod
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - name: Deploy
         if: steps.revision.outputs.deploy == 'true'
@@ -105,7 +105,7 @@ jobs:
         env:
           AWS_PROFILE: darun
           INFRA_ENV: prod
-          RUNNING_ENV: ${{ secrets.RUNNING_ENV }}
+          RUNNING_ENV: prod
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
