@@ -1,7 +1,8 @@
 export const contentHtml = `<p>출처 <a href="https://example.com/docs?a=1&amp;b=2"><strong>설명서</strong></a></p>
 <p><img src="https://example.com/screen.png" alt="검색 결과 화면"></p>
 <ol start="3"><li><p>설치</p><ul><li>환경 확인</li></ul></li><li>실행</li></ol>
-<p><code>a</code><code>\`&lt;img src=x onerror=alert(1)&gt;</code></p>`;
+<p><code>a</code><code>\`&lt;img src=x onerror=alert(1)&gt;</code></p>
+<h1><div><pre><code>&lt;script&gt;alert(3)&lt;/script&gt;</code></pre></div></h1>`;
 
 // Deliberately literal: the oracle must not use the production converter.
 export const contentMarkdown = `출처 [**설명서**](https://example.com/docs?a=1&amp;b=2)
@@ -13,4 +14,6 @@ export const contentMarkdown = `출처 [**설명서**](https://example.com/docs?
    * 환경 확인
 4. 실행
 
-\`\`a\`<img src=x onerror=alert(1)>\`\``;
+\`\`a\`<img src=x onerror=alert(1)>\`\`
+
+### \`<script>alert(3)</script>\``;

@@ -202,6 +202,8 @@ describe('공개 Markdown route의 실행 스키마 계약', () => {
     const rendered = new MarkdownIt({ html: true }).render(body);
     expect(rendered).toContain('<code>a`&lt;img src=x onerror=alert(1)&gt;</code>');
     expect(rendered).not.toContain('<img src=x');
+    expect(rendered).toContain('<h3><code>&lt;script&gt;alert(3)&lt;/script&gt;</code></h3>');
+    expect(rendered).not.toContain('<script>');
   });
 
   describe.each(['ko', 'en'])('%s 매거진 Markdown', locale => {

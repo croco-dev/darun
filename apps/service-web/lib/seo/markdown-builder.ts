@@ -38,6 +38,22 @@ type HtmlNode = DefaultTreeAdapterTypes.ChildNode;
 type HtmlParent = DefaultTreeAdapterTypes.ParentNode;
 type HtmlElement = DefaultTreeAdapterTypes.Element;
 type MarkdownPart = string | { inlineCode: string };
+type MarkdownContext = 'block' | 'inline';
+
+const htmlBlockTags = new Set([
+  'p',
+  'div',
+  'section',
+  'article',
+  'header',
+  'footer',
+  'figure',
+  'figcaption',
+  'dl',
+  'dt',
+  'dd',
+  'tr',
+]);
 
 function markdownText(text: string): string {
   return text
@@ -66,8 +82,8 @@ function trimMarkdownBlock(content: string): string {
   return content.replace(/(?:\\\n[ \t]*)+$/, '').trim();
 }
 
-function renderMarkdownChildren(parent: HtmlParent): string {
-  const parts = parent.childNodes.flatMap<MarkdownPart>(renderMarkdownNode);
+function renderMarkdownChildren(parent: HtmlParent, context: MarkdownContext = 'block'): string {
+  const parts = parent.childNodes.flatMap<MarkdownPart>(child => renderMarkdownNode(child, context));
   let result = '';
   let inlineCode: string | undefined;
   for (let part of parts) {
@@ -133,10 +149,18 @@ function renderMarkdownList(element: HtmlElement): string {
 // Supported authoring formats: headings (normalized to h3), paragraphs, breaks,
 // emphasis, links/images, nested lists, blockquotes and inline/fenced code.
 // Unknown elements keep their text; no source element or attribute is serialized.
-function renderMarkdownNode(node: HtmlNode): MarkdownPart | MarkdownPart[] {
+function renderMarkdownNode(node: HtmlNode, context: MarkdownContext): MarkdownPart | MarkdownPart[] {
   if (defaultTreeAdapter.isTextNode(node)) return markdownText(node.value);
   if (!defaultTreeAdapter.isElementNode(node)) return '';
   const tag = node.tagName;
+  // Markdown headings, emphasis and link labels cannot contain fenced blocks.
+  // Keep code protected as an inline span even when stored HTML is misnested.
+  if (context === 'inline') {
+    if (tag === 'pre') return { inlineCode: codeText(node) };
+    if (htmlBlockTags.has(tag) || /^h[1-6]$/.test(tag) || ['ol', 'ul', 'li', 'blockquote'].includes(tag)) {
+      return [' ', ...node.childNodes.flatMap<MarkdownPart>(child => renderMarkdownNode(child, context)), ' '];
+    }
+  }
   switch (tag) {
     case 'script':
     case 'style':
@@ -155,8 +179,8 @@ function renderMarkdownNode(node: HtmlNode): MarkdownPart | MarkdownPart[] {
     case 'a': {
       const destination = markdownDestination(attribute(node, 'href'));
       return destination
-        ? `[${renderMarkdownChildren(node)}](${destination})`
-        : node.childNodes.flatMap<MarkdownPart>(renderMarkdownNode);
+        ? `[${renderMarkdownChildren(node, 'inline')}](${destination})`
+        : node.childNodes.flatMap<MarkdownPart>(child => renderMarkdownNode(child, context));
     }
     case 'img': {
       const alt = markdownText(attribute(node, 'alt') ?? '');
@@ -172,23 +196,19 @@ function renderMarkdownNode(node: HtmlNode): MarkdownPart | MarkdownPart[] {
         .join('\n')}\n\n`;
     case 'strong':
     case 'b':
-      return `**${renderMarkdownChildren(node)}**`;
+      return `**${renderMarkdownChildren(node, 'inline')}**`;
     case 'em':
     case 'i':
-      return `*${renderMarkdownChildren(node)}*`;
+      return `*${renderMarkdownChildren(node, 'inline')}*`;
     case 'td':
     case 'th':
-      return `${renderMarkdownChildren(node)} `;
+      return `${renderMarkdownChildren(node, context)} `;
     default:
-      if (/^h[1-6]$/.test(tag)) return `\n\n### ${trimMarkdownBlock(renderMarkdownChildren(node))}\n\n`;
-      if (
-        ['p', 'div', 'section', 'article', 'header', 'footer', 'figure', 'figcaption', 'dl', 'dt', 'dd', 'tr'].includes(
-          tag
-        )
-      ) {
+      if (/^h[1-6]$/.test(tag)) return `\n\n### ${trimMarkdownBlock(renderMarkdownChildren(node, 'inline'))}\n\n`;
+      if (htmlBlockTags.has(tag)) {
         return `\n\n${trimMarkdownBlock(renderMarkdownChildren(node))}\n\n`;
       }
-      return node.childNodes.flatMap<MarkdownPart>(renderMarkdownNode);
+      return node.childNodes.flatMap<MarkdownPart>(child => renderMarkdownNode(child, context));
   }
 }
 

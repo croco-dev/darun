@@ -134,6 +134,23 @@ describe('markdown-builder helpers', () => {
       expect(rendered).toBe('<p>앞<br>\n<br>\n<br>\n뒤</p>\n');
     });
 
+    it.each([
+      '<h1><pre><code>&lt;img src=x onerror=alert(1)&gt;</code></pre></h1>',
+      '<h2><div><pre><code>&lt;img src=x onerror=alert(1)&gt;</code></pre></div></h2>',
+      '<h4><span><div><pre><code>&lt;img src=x onerror=alert(1)&gt;</code></pre></div></span></h4>',
+    ])('제목 안에 잘못 중첩된 블록 코드도 HTML을 드러내지 않는다: %s', html => {
+      const rendered = new MarkdownIt({ html: true }).render(htmlToMarkdown(html));
+      expect(rendered).toBe('<h3><code>&lt;img src=x onerror=alert(1)&gt;</code></h3>\n');
+    });
+
+    it('인라인 부모 안의 블록 코드를 코드와 원래 링크 목적지로 보존한다', () => {
+      const html =
+        '<h6><a href="https://example.com"><strong><pre><code>&lt;script&gt;alert(1)&lt;/script&gt;</code></pre></strong></a></h6>';
+      expect(new MarkdownIt({ html: true }).render(htmlToMarkdown(html))).toBe(
+        '<h3><a href="https://example.com/"><strong><code>&lt;script&gt;alert(1)&lt;/script&gt;</code></strong></a></h3>\n'
+      );
+    });
+
     it('HTML 태그를 적절한 마크다운 문법으로 변환한다', () => {
       const html = `
         <script>alert('xss')</script>
