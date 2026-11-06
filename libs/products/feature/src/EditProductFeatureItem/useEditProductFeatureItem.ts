@@ -10,7 +10,7 @@ import {
 } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 gql`
   query FeatureOnEditProductFeatureItem($id: ID!) {
@@ -45,6 +45,14 @@ type FormValues = {
 
 export function useEditProductFeatureItem({ featureId, onSubmit, onCancel }: EditProductFeatureItemProps) {
   const apolloClient = useApolloClient();
+  const isMounted = useRef(false);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const { data, loading: queryLoading } = useQuery(FeatureOnEditProductFeatureItemDocument, {
     variables: { id: featureId },
@@ -55,11 +63,13 @@ export function useEditProductFeatureItem({ featureId, onSubmit, onCancel }: Edi
       refetchQueries: [TempProductBySlugOnProductFeatureTableDocument],
       awaitRefetchQueries: true,
       onCompleted: () => {
-        notifications.show({ message: '수정되었습니다.', color: 'teal' });
         apolloClient.cache.evict({ fieldName: 'feature' });
+        if (!isMounted.current) return;
+        notifications.show({ message: '수정되었습니다.', color: 'teal' });
         onSubmit?.();
       },
       onError: error => {
+        if (!isMounted.current) return;
         notifications.show({ message: error.message, color: 'red' });
       },
     }

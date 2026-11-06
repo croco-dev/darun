@@ -53,7 +53,7 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
         </AdminSectionBody>
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="기능 정보 수정">
-        {featureId ? (
+        {isEditModalOpened && featureId ? (
           <EditProductFeatureItem featureId={featureId} onSubmit={closeEditModal} onCancel={closeEditModal} />
         ) : (
           <p className="text-sm text-dark-500 py-4 text-center break-words [word-break:keep-all]">
