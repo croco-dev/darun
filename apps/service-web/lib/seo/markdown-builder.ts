@@ -52,7 +52,11 @@ function attribute(element: HtmlElement, name: string): string | undefined {
 }
 
 function markdownDestination(raw: string | undefined): string | null {
-  return safeUrl(raw)?.replace(/[()<>\\]/g, char => `%${char.charCodeAt(0).toString(16).toUpperCase()}`) ?? null;
+  return (
+    safeUrl(raw)
+      ?.replace(/[()<>\\]/g, char => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
+      .replace(/&/g, '&amp;') ?? null
+  );
 }
 
 function renderMarkdownChildren(parent: HtmlParent): string {
@@ -75,7 +79,7 @@ function codeText(node: HtmlNode): string {
 
 function codeDelimiter(text: string, minimum: number): string {
   const runs = text.match(/`+/g) ?? [];
-  return '`'.repeat(Math.max(minimum, ...runs.map(run => run.length + 1)));
+  return '`'.repeat(runs.reduce((length, run) => Math.max(length, run.length + 1), minimum));
 }
 
 function renderMarkdownList(element: HtmlElement): string {

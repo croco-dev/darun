@@ -91,6 +91,15 @@ describe('markdown-builder helpers', () => {
       ).toBe('[\\[문서\\]](https://example.com/a%28b%29)![\\[화면\\] \\*원본\\*](https://example.com/p%28x%29.png)');
     });
 
+    it('목적지의 entity 모양 문자열도 원래 링크와 이미지 주소를 유지한다', () => {
+      const markdown = htmlToMarkdown(
+        '<a href="https://example.com/?q=&amp;copy;">문서</a><img src="https://example.com/?q=&amp;quot;" alt="화면">'
+      );
+      const rendered = new MarkdownIt({ html: true }).render(markdown);
+      expect(rendered).toContain('href="https://example.com/?q=&amp;copy;"');
+      expect(rendered).toContain('src="https://example.com/?q=&amp;quot;"');
+    });
+
     it('HTML 태그를 적절한 마크다운 문법으로 변환한다', () => {
       const html = `
         <script>alert('xss')</script>
