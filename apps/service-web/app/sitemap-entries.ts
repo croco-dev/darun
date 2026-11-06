@@ -114,25 +114,35 @@ export async function buildSitemapEntries(deps: SitemapDeps): Promise<MetadataRo
   return entries;
 }
 
-export function partitionSitemapEntries(entries: MetadataRoute.Sitemap): MetadataRoute.Sitemap[] {
-  const partitions: MetadataRoute.Sitemap[] = [[]];
-  let bytes = 1024; // XML declaration and urlset namespaces.
-  for (const entry of entries) {
+export class SitemapPartition {
+  readonly entries: MetadataRoute.Sitemap = [];
+  private bytes = 1024; // XML declaration and urlset namespaces.
+
+  tryAppend(entry: MetadataRoute.Sitemap[number]): boolean {
     // JSON overestimates our fixed metadata fields; six bytes per URL character
     // bounds XML entity escaping, including non-ASCII UTF-8.
     const entryBytes = new TextEncoder().encode(JSON.stringify(entry)).length * 6 + 512;
     if (entryBytes + 1024 > 50 * 1024 * 1024) throw new Error('Sitemap entry exceeds XML size limit');
-    let partition = partitions[partitions.length - 1];
-    if (partition.length === 50_000 || bytes + entryBytes > 50 * 1024 * 1024) {
-      partition = [];
-      partitions.push(partition);
-      bytes = 1024;
+    if (this.entries.length === 50_000 || this.bytes + entryBytes > 50 * 1024 * 1024) {
+      return false;
     }
-    partition.push(entry);
-    bytes += entryBytes;
+    this.entries.push(entry);
+    this.bytes += entryBytes;
+    return true;
   }
-  if (partitions.length > 50_000) throw new Error('Sitemap index exceeds URL limit');
-  return partitions;
+}
+
+export function partitionSitemapEntries(entries: MetadataRoute.Sitemap): MetadataRoute.Sitemap[] {
+  const partitions = [new SitemapPartition()];
+  for (const entry of entries) {
+    if (!partitions[partitions.length - 1].tryAppend(entry)) {
+      if (partitions.length === 50_000) throw new Error('Sitemap index exceeds URL limit');
+      const partition = new SitemapPartition();
+      partition.tryAppend(entry);
+      partitions.push(partition);
+    }
+  }
+  return partitions.map(partition => partition.entries);
 }
 
 export function serializeSitemap(entries: MetadataRoute.Sitemap): string {

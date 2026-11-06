@@ -1173,6 +1173,49 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       expect(row.count).toBe(2);
     });
   });
+  describe('사이트맵의 고정 ID 구간 조회', () => {
+    beforeEach(async () => {
+      await writer`truncate products cascade`;
+      await writer`insert into products (id, slug, name, summary, logo_url, published_at) values
+        ('range-90', 'range-90', 'High', '', '', now()),
+        ('range-80', 'range-80', 'Upper', '', '', now()),
+        ('range-70', 'range-70', 'Draft', '', '', null),
+        ('range-60', 'range-60', 'Middle', '', '', now()),
+        ('range-40', 'range-40', 'Lower', '', '', now()),
+        ('range-20', 'range-20', 'Low', '', '', now())`;
+    });
+    afterEach(async () => {
+      await writer`truncate products cascade`;
+    });
+
+    it('실제 GraphQL이 양끝을 포함해 읽고 발행·경계 삭제 후에도 커서로 전진한다', async () => {
+      const repository = new PostgresqlProductRepository(db);
+      const resolver = Object.assign(Object.create(ProductQueryResolver.prototype) as ProductQueryResolver, {
+        getPublishedProductsForSitemapUseCase: new GetPublishedProductsForSitemap(repository),
+      });
+      const schema = buildSchemaSync({
+        resolvers: [ProductQueryResolver],
+        authChecker: () => true,
+        container: { get: () => resolver },
+      });
+      const source = `query($after: String) {
+        publishedProductsForSitemap(first: 2, after: $after, upperBoundId: "range-80", lowerBoundId: "range-40") { id }
+      }`;
+      const page = (after?: string) => graphql({ schema, source, variableValues: { after } });
+      const first = await page();
+      expect(first.errors).toBeUndefined();
+      expect(first.data?.publishedProductsForSitemap).toEqual([{ id: 'range-80' }, { id: 'range-60' }]);
+      await writer`update products set published_at = now() where id = 'range-70'`;
+      const refreshed = await page();
+      expect(refreshed.data?.publishedProductsForSitemap).toEqual([{ id: 'range-80' }, { id: 'range-70' }]);
+      await writer`delete from products where id in ('range-80', 'range-70')`;
+      const next = await page('range-70');
+      expect(next.errors).toBeUndefined();
+      expect(next.data?.publishedProductsForSitemap).toEqual([{ id: 'range-60' }, { id: 'range-40' }]);
+      expect((await page('range-40')).data?.publishedProductsForSitemap).toEqual([]);
+    });
+  });
+
   describe('사이트맵 대안 존재 여부의 선택적 batch 조회', () => {
     const sources = Array.from({ length: 100 }, (_, index) => ({
       id: `z-source-${String(index).padStart(3, '0')}`,

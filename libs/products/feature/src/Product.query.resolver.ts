@@ -292,11 +292,17 @@ export class ProductQueryResolver {
   @Query(() => [Product])
   public async publishedProductsForSitemap(
     @Arg('first', () => Int, { defaultValue: 100 }) first: number,
-    @Arg('after', () => String, { nullable: true }) after?: string
+    @Arg('after', () => String, { nullable: true }) after?: string,
+    @Arg('lowerBoundId', () => String, { nullable: true })
+    lowerBoundId?: string,
+    @Arg('upperBoundId', () => String, { nullable: true })
+    upperBoundId?: string
   ) {
     const { products } = await this.getPublishedProductsForSitemapUseCase.execute({
       limit: validateListLimit(first, MAX_SITEMAP_LIMIT),
       cursor: after,
+      lowerBoundId: lowerBoundId ?? undefined,
+      upperBoundId: upperBoundId ?? undefined,
     });
     return products;
   }

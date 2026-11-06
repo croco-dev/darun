@@ -484,7 +484,7 @@ type Query {
   productsByCategory(after: String, first: Int! = 24, locale: String! = "ko", slug: String!): ProductConnection!
   productsCount: Int!
   publishedMagazines: [Magazine!]!
-  publishedProductsForSitemap(after: String, first: Int! = 100): [Product!]!
+  publishedProductsForSitemap(after: String, first: Int! = 100, lowerBoundId: String, upperBoundId: String): [Product!]!
   rankedProducts(first: Int!, locale: String! = "ko"): [Product!]!
   recentProducts(first: Int!, locale: String! = "ko"): [Product!]!
   searchCompanies(first: Int, query: String!): [Company!]!
