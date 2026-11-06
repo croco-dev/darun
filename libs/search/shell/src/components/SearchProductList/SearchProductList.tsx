@@ -130,7 +130,7 @@ function EmptySearchResults({ query }: { query: string }) {
           <div
             data-testid="search-empty-popular-queries"
             tabIndex={0}
-            className="flex gap-2 overflow-x-auto px-1 py-1.5 scrollbar-hide scroll-smooth scroll-pl-1 touch-pan-x rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+            className="flex gap-2 overflow-x-auto px-1 py-1.5 scrollbar-hide scroll-smooth scroll-pl-1 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
             role="group"
             aria-label={t('list.empty.popularQueries')}
           >
