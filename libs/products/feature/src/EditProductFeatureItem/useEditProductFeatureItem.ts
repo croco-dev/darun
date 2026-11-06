@@ -12,7 +12,6 @@ import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useEffect } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query FeatureOnEditProductFeatureItem($id: ID!) {
     feature(id: $id) {
@@ -76,7 +75,6 @@ export function useEditProductFeatureItem({ featureId, onSubmit, onCancel }: Edi
     validate: {
       emoji: value => (!value?.trim() ? '이모지를 입력해주세요.' : null),
       name: value => (!value?.trim() ? '기능 이름을 입력해주세요.' : null),
-      summary: value => (!value?.trim() ? '요약을 입력해주세요.' : null),
     },
   });
 
@@ -94,7 +92,7 @@ export function useEditProductFeatureItem({ featureId, onSubmit, onCancel }: Edi
 
   const submit = async (values: FormValues) => {
     if (mutationLoading) return;
-    if (!values.emoji?.trim() || !values.name?.trim() || !values.summary?.trim()) {
+    if (!values.emoji?.trim() || !values.name?.trim()) {
       notifications.show({ message: '기능 정보를 모두 입력해주세요.', color: 'red' });
       return;
     }
@@ -106,7 +104,7 @@ export function useEditProductFeatureItem({ featureId, onSubmit, onCancel }: Edi
           input: {
             emoji: values.emoji.trim(),
             name: values.name.trim(),
-            summary: values.summary.trim(),
+            summary: values.summary?.trim() || null,
           },
         },
       });
