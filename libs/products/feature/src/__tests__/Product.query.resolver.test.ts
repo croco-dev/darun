@@ -338,6 +338,32 @@ describe('ProductQueryResolver', () => {
     expect(repository.countVisualAppScreenshots).not.toHaveBeenCalled();
     expect(result.totalCount).toBe(9000);
   });
+  it('rejects overlong visual app queries before the repository reads', async () => {
+    const repository = createProductRepository();
+    const resolver = createProductQueryResolver({ productRepository: repository });
+    await expect(resolver.visualApps(24, undefined, '가'.repeat(101))).rejects.toMatchObject({
+      code: 'product/invalid-args',
+    });
+    expect(repository.findVisualApps).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['  ' + '나'.repeat(100) + '  ', '나'.repeat(100)],
+    ['  Notion  ', 'Notion'],
+    ['', ''],
+    ['   ', ''],
+    [undefined, ''],
+  ])('normalizes a supported visual app query before reading: %s', async (query, normalized) => {
+    const repository = createProductRepository();
+    const resolver = createProductQueryResolver({ productRepository: repository });
+    await resolver.visualApps(24, undefined, query, 'fixture-app');
+    expect(repository.findVisualApps).toHaveBeenCalledExactlyOnceWith({
+      limit: 25,
+      afterId: undefined,
+      query: normalized,
+      productSlug: 'fixture-app',
+    });
+  });
   describe('features', () => {
     const features = [
       new DomainProductFeature({ id: 'f1', name: '이름 1', summary: '요약 1', emoji: '🚀', productId: 'p1' }),

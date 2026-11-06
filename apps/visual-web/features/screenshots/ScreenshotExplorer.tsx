@@ -236,7 +236,16 @@ function View(props: ScreenshotExplorerState & { catalogMode?: boolean }) {
           </ul>
         )
       }
-      children={props.pagination ? <CatalogPagination {...props.pagination} /> : undefined}
+      children={
+        props.pagination ? (
+          <CatalogPagination
+            {...props.pagination}
+            loading={props.loading}
+            networkError={props.networkError}
+            queryLengthError={props.queryLengthError}
+          />
+        ) : undefined
+      }
       resourceName={catalogMode ? '앱' : '스크린샷'}
       unitName={catalogMode ? '개의 앱' : '개의 화면'}
     />
