@@ -18,7 +18,10 @@ function makeProduct(id: string, name: string): Product {
 async function runWithProducts(ids: string[], params: { limit: number; cursor?: string }) {
   const mockProducts = ids.map(id => makeProduct(id, `Product ${id}`));
   const findPublishedByAfterIdAndLimit = vi.fn().mockResolvedValue(mockProducts);
-  const repository = { ...createMockRepository(), findPublishedByAfterIdAndLimit };
+  const repository = {
+    ...createMockRepository(),
+    findPublishedByAfterIdAndLimit,
+  };
   const useCase = new GetPublishedProductsForSitemap(repository);
   const result = await useCase.execute(params);
   return { result, findPublishedByAfterIdAndLimit };
@@ -32,7 +35,10 @@ describe('GetPublishedProductsForSitemap', () => {
     });
 
     // Over-fetches by one to detect whether another page exists.
-    expect(findPublishedByAfterIdAndLimit).toHaveBeenCalledWith(3, 'p3');
+    expect(findPublishedByAfterIdAndLimit).toHaveBeenCalledWith(3, 'p3', {
+      lowerBoundId: undefined,
+      upperBoundId: undefined,
+    });
     expect(result.products).toHaveLength(2);
     expect(result.nextCursor).toBe('p2');
   });
@@ -49,5 +55,31 @@ describe('GetPublishedProductsForSitemap', () => {
 
     expect(result.products).toHaveLength(1);
     expect(result.nextCursor).toBeUndefined();
+  });
+  it('passes inclusive bounds alongside the exclusive page cursor', async () => {
+    const repository = createMockRepository();
+    const read = vi.spyOn(repository, 'findPublishedByAfterIdAndLimit').mockResolvedValue([]);
+    await new GetPublishedProductsForSitemap(repository).execute({
+      limit: 100,
+      cursor: 'p5',
+      lowerBoundId: 'p2',
+      upperBoundId: 'p8',
+    });
+    expect(read).toHaveBeenCalledWith(101, 'p5', {
+      lowerBoundId: 'p2',
+      upperBoundId: 'p8',
+    });
+  });
+
+  it.each([
+    { lowerBoundId: '' },
+    { upperBoundId: '<tag>' },
+    { lowerBoundId: 'a'.repeat(27) },
+    { lowerBoundId: 'p9', upperBoundId: 'p2' },
+  ])('rejects invalid bounds before reading: %j', async bounds => {
+    const repository = createMockRepository();
+    const read = vi.spyOn(repository, 'findPublishedByAfterIdAndLimit');
+    await expect(new GetPublishedProductsForSitemap(repository).execute(bounds)).rejects.toThrow();
+    expect(read).not.toHaveBeenCalled();
   });
 });

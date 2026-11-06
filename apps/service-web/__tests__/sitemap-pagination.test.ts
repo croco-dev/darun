@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as getPartition } from '../app/sitemap/[id]/route';
-import { discoverSitemapPartitions } from '../app/sitemap-data';
+import { discoverSitemapPartitions, getSitemapPartition } from '../app/sitemap-data';
 import type { SitemapProduct } from '../app/sitemap-entries';
 import { partitionSitemapEntries, serializeSitemap } from '../app/sitemap-entries';
 import { GET } from '../app/sitemap.xml/route';
@@ -18,8 +18,17 @@ beforeEach(() => {
   query.mockReset();
   query.mockImplementation(async ({ variables }) => {
     if (variables?.first === 100) {
-      const start = variables.after ? products.findIndex(p => p.id === variables.after) + 1 : 0;
-      return { data: { publishedProductsForSitemap: products.slice(start, start + 100) } };
+      const matches = products.filter(
+        p =>
+          (!variables.after || p.id < variables.after) &&
+          (!variables.upperBoundId || p.id <= variables.upperBoundId) &&
+          (!variables.lowerBoundId || p.id >= variables.lowerBoundId)
+      );
+      return {
+        data: {
+          publishedProductsForSitemap: matches.slice(0, variables.first),
+        },
+      };
     }
     if (variables?.locale) return { data: { categories: [] } };
     return { data: { publishedMagazines: [] } };
@@ -27,6 +36,43 @@ beforeEach(() => {
 });
 
 describe('sitemap cursor partitions', () => {
+  it.each([1, 5])('keeps every existing URL after %i newer products are published', async count => {
+    products = products.slice(0, 200);
+    const original = [...products];
+    const ids = (await discoverSitemapPartitions()).filter(({ id }) => !id.startsWith('static'));
+    products.unshift(
+      ...Array.from({ length: count }, (_, i) => ({
+        id: `Z${i}`,
+        slug: `new-${i}`,
+      })).reverse()
+    );
+    const entries = (await Promise.all(ids.map(({ id }) => getSitemapPartition(id)))).flat();
+    for (const product of original) {
+      for (const locale of ['ko', 'en']) {
+        expect(entries.some(entry => entry.url === `https://www.darun.io/${locale}/products/${product.slug}`)).toBe(
+          true
+        );
+      }
+    }
+    const refreshed = (await discoverSitemapPartitions()).filter(({ id }) => !id.startsWith('static'));
+    const newEntries = (await Promise.all(refreshed.map(({ id }) => getSitemapPartition(id)))).flat();
+    expect(newEntries.some(entry => entry.url.endsWith('/products/new-0'))).toBe(true);
+  });
+
+  it('reads through an interior publication without losing the fixed lower boundary', async () => {
+    products = products.slice(0, 201);
+    const [interior] = products.splice(40, 1);
+    const boundary = products[99];
+    const ids = (await discoverSitemapPartitions()).filter(({ id }) => !id.startsWith('static'));
+    products.splice(40, 0, { ...interior, slug: 'new-interior' });
+    query.mockClear();
+    const entries = await getSitemapPartition(ids[0].id);
+    expect(entries.some(entry => entry.url.endsWith(`/products/${boundary.slug}`))).toBe(true);
+    expect(entries.some(entry => entry.url.endsWith('/products/new-interior'))).toBe(true);
+    expect(query.mock.calls.every(([args]) => args.variables.first === 100)).toBe(true);
+    expect(query).toHaveBeenCalledTimes(2);
+  });
+
   it('discovers product 5001 and fetches only its bounded page when served', async () => {
     const ids = await discoverSitemapPartitions();
     const last = ids[ids.length - 1].id;
@@ -41,17 +87,77 @@ describe('sitemap cursor partitions', () => {
     expect(query.mock.calls[0][0].variables.first).toBe(100);
   });
 
+  it('finishes a fixed range even when both boundary rows have been deleted', async () => {
+    products = products.slice(0, 200);
+    const original = [...products];
+    const ids = (await discoverSitemapPartitions()).filter(({ id }) => !id.startsWith('static'));
+    products = products.filter(p => p !== original[0] && p !== original[99]);
+    const entries = await getSitemapPartition(ids[0].id);
+    expect(entries).toHaveLength(196);
+    expect(entries[0].url).toContain(original[1].slug);
+    expect(entries[entries.length - 1].url).toContain(original[98].slug);
+    products = [];
+    expect(await getSitemapPartition(ids[0].id)).toEqual([]);
+  });
+
+  it('still serves cursor URLs referenced by cached legacy indexes', async () => {
+    const first = await getSitemapPartition('start~0');
+    const second = await getSitemapPartition(`${products[99].id}~0`);
+    expect(first[0].url).toContain('product-1');
+    expect(second[0].url).toContain('product-101');
+  });
+
+  it('fails the whole range on a later page error', async () => {
+    products = products.slice(0, 201);
+    const [interior] = products.splice(40, 1);
+    const ids = (await discoverSitemapPartitions()).filter(({ id }) => !id.startsWith('static'));
+    products.splice(40, 0, interior);
+    const implementation = query.getMockImplementation()!;
+    query.mockImplementation(async args => {
+      if (args.variables?.after) throw new Error('upstream unavailable');
+      return implementation(args);
+    });
+    await expect(getSitemapPartition(ids[0].id)).rejects.toThrow('upstream unavailable');
+  });
+
+  it('rejects a growing range that no longer fits one XML file instead of returning a partial file', async () => {
+    products = products.slice(0, 100);
+    const ids = (await discoverSitemapPartitions()).filter(({ id }) => !id.startsWith('static'));
+    products = products.map((p, i) => ({
+      ...p,
+      slug: `${i}-${'a'.repeat(50000)}`,
+    }));
+    await expect(getSitemapPartition(ids[0].id)).rejects.toThrow('exceeds XML limits');
+  });
+
+  it('rejects upstream rows outside the fixed range and non-advancing range pages', async () => {
+    const high = products[0].id;
+    const low = products[199].id;
+    query.mockResolvedValue({
+      data: { publishedProductsForSitemap: [products[200]] },
+    });
+    await expect(getSitemapPartition(`v2~${high}~${low}`)).rejects.toThrow('outside requested range');
+    query.mockResolvedValue({
+      data: { publishedProductsForSitemap: Array(100).fill(products[0]) },
+    });
+    await expect(getSitemapPartition(`v2~${high}~${low}`)).rejects.toThrow('did not advance');
+  });
+
   it('keeps the root URL as a real XML index', async () => {
     const xml = await (await GET()).text();
     expect(xml).toContain('<sitemapindex');
     expect(xml).toContain('/sitemap/static~0.xml');
-    expect(xml).toContain(`/sitemap/${products[4999].id}~0.xml`);
+    expect(xml).toContain(`/sitemap/v2~${products[5000].id}~${products[5000].id}.xml`);
   });
 
   it('rejects repeated or backwards cursors rather than looping', async () => {
     query.mockImplementation(async ({ variables }) =>
       variables?.first === 100
-        ? { data: { publishedProductsForSitemap: Array.from({ length: 100 }, () => products[0]) } }
+        ? {
+            data: {
+              publishedProductsForSitemap: Array.from({ length: 100 }, () => products[0]),
+            },
+          }
         : { data: { categories: [], publishedMagazines: [] } }
     );
     await expect(discoverSitemapPartitions()).rejects.toThrow('did not advance');
@@ -67,11 +173,15 @@ describe('sitemap cursor partitions', () => {
   });
 
   it('bounds both URL count and conservative escaped XML size without dropping entries', () => {
-    const entries = Array.from({ length: 50001 }, (_, i) => ({ url: `https://www.darun.io/ko/products/${i}` }));
+    const entries = Array.from({ length: 50001 }, (_, i) => ({
+      url: `https://www.darun.io/ko/products/${i}`,
+    }));
     const partitions = partitionSitemapEntries(entries);
     expect(partitions.flat()).toEqual(entries);
     expect(partitions.every(p => p.length <= 50000)).toBe(true);
-    const large = Array.from({ length: 100 }, () => ({ url: `https://www.darun.io/${'&'.repeat(100000)}` }));
+    const large = Array.from({ length: 100 }, () => ({
+      url: `https://www.darun.io/${'&'.repeat(100000)}`,
+    }));
     expect(partitionSitemapEntries(large).length).toBeGreaterThan(1);
     expect(partitionSitemapEntries(large).flat()).toEqual(large);
   });

@@ -10,7 +10,22 @@ import {
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
-import { and, asc, count, desc, eq, gt, ilike, inArray, isNotNull, lt, lte, getTableColumns, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  lt,
+  lte,
+  getTableColumns,
+  sql,
+} from 'drizzle-orm';
 import { keyBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
 import { products } from '../entities/ProductSchema';
@@ -213,11 +228,22 @@ export class PostgresqlProductRepository implements ProductRepository {
       .then(rows => rows.map(row => this.mapper(row)));
   }
 
-  async findPublishedByAfterIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+  async findPublishedByAfterIdAndLimit(
+    limit: number,
+    id?: string,
+    range?: { lowerBoundId?: string; upperBoundId?: string }
+  ): Promise<Product[]> {
     return this.db
       .select()
       .from(products)
-      .where(and(isNotNull(products.publishedAt), id ? lt(products.id, id) : undefined))
+      .where(
+        and(
+          isNotNull(products.publishedAt),
+          id ? lt(products.id, id) : undefined,
+          range?.lowerBoundId ? gte(products.id, range.lowerBoundId) : undefined,
+          range?.upperBoundId ? lte(products.id, range.upperBoundId) : undefined
+        )
+      )
       .limit(limit)
       .orderBy(desc(products.id))
       .then(rows => rows.map(row => this.mapper(row)));
