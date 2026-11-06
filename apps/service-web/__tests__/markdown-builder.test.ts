@@ -106,6 +106,34 @@ describe('markdown-builder helpers', () => {
       expect(new MarkdownIt({ html: true }).render(markdown)).toBe(`<p>${text}</p>\n`);
     });
 
+    it.each([
+      ['<code></code><code>&lt;img src=x onerror=alert(1)&gt;</code>', '&lt;img src=x onerror=alert(1)&gt;'],
+      ['<code>&lt;img src=x onerror=alert(1)&gt;</code><code></code>', '&lt;img src=x onerror=alert(1)&gt;'],
+      ['<code>a</code><code>`&lt;img src=x onerror=alert(1)&gt;</code>', 'a`&lt;img src=x onerror=alert(1)&gt;'],
+      ['<code>`&lt;img src=x onerror=alert(1)&gt;</code><code>a</code>', '`&lt;img src=x onerror=alert(1)&gt;a'],
+      [
+        '<span><code>a</code></span><span><code>`&lt;img src=x onerror=alert(1)&gt;</code></span>',
+        'a`&lt;img src=x onerror=alert(1)&gt;',
+      ],
+      [
+        '<code>a</code><!-- omitted --><script>ignored()</script><code>`&lt;img src=x onerror=alert(1)&gt;</code>',
+        'a`&lt;img src=x onerror=alert(1)&gt;',
+      ],
+      [
+        '<code>a</code><a href="javascript:alert(2)"><code>`&lt;img src=x onerror=alert(1)&gt;</code></a>',
+        'a`&lt;img src=x onerror=alert(1)&gt;',
+      ],
+    ])('인접 코드의 경계가 합쳐져도 HTML을 실행 문법으로 내보내지 않는다: %s', (html, expected) => {
+      const rendered = new MarkdownIt({ html: true }).render(htmlToMarkdown(`<p>${html}</p>`));
+      expect(rendered).toBe(`<p><code>${expected}</code></p>\n`);
+      expect(rendered).not.toContain('<img');
+    });
+
+    it('연속된 명시적 줄바꿈을 모두 보존한다', () => {
+      const rendered = new MarkdownIt({ html: true }).render(htmlToMarkdown('<p>앞<br><br><br>뒤</p>'));
+      expect(rendered).toBe('<p>앞<br>\n<br>\n<br>\n뒤</p>\n');
+    });
+
     it('HTML 태그를 적절한 마크다운 문법으로 변환한다', () => {
       const html = `
         <script>alert('xss')</script>

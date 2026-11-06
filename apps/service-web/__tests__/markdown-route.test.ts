@@ -1,5 +1,6 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { SchemaLink } from '@apollo/client/link/schema';
+import MarkdownIt from 'markdown-it';
 import { getRouteMatcher } from 'next/dist/shared/lib/router/utils/route-matcher';
 import { getRouteRegex } from 'next/dist/shared/lib/router/utils/route-regex';
 import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
@@ -198,6 +199,9 @@ describe('공개 Markdown route의 실행 스키마 계약', () => {
     const body = await response.text();
     expect(body).toContain(contentMarkdown);
     if (path[1] === 'compare') expect(body.split(contentMarkdown)).toHaveLength(3);
+    const rendered = new MarkdownIt({ html: true }).render(body);
+    expect(rendered).toContain('<code>a`&lt;img src=x onerror=alert(1)&gt;</code>');
+    expect(rendered).not.toContain('<img src=x');
   });
 
   describe.each(['ko', 'en'])('%s 매거진 Markdown', locale => {

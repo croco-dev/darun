@@ -31,12 +31,13 @@ export function safeUrl(rawUrl: string | null | undefined): string | null {
 
 export function htmlToMarkdown(html: string): string {
   if (!html) return '';
-  return renderMarkdownChildren(parseFragment(html)).trim();
+  return trimMarkdownBlock(renderMarkdownChildren(parseFragment(html)));
 }
 
 type HtmlNode = DefaultTreeAdapterTypes.ChildNode;
 type HtmlParent = DefaultTreeAdapterTypes.ParentNode;
 type HtmlElement = DefaultTreeAdapterTypes.Element;
+type MarkdownPart = string | { inlineCode: string };
 
 function markdownText(text: string): string {
   return text
@@ -60,16 +61,33 @@ function markdownDestination(raw: string | undefined): string | null {
   );
 }
 
+function trimMarkdownBlock(content: string): string {
+  // A hard break at the end of a Markdown block cannot form a line break.
+  return content.replace(/(?:\\\n[ \t]*)+$/, '').trim();
+}
+
 function renderMarkdownChildren(parent: HtmlParent): string {
+  const parts = parent.childNodes.flatMap<MarkdownPart>(renderMarkdownNode);
   let result = '';
-  for (const child of parent.childNodes) {
-    let part = renderMarkdownNode(child);
-    if (!part || (result.endsWith('\n') && !part.trim())) continue;
+  let inlineCode: string | undefined;
+  for (let part of parts) {
+    if (typeof part !== 'string') {
+      // Adjacent code, including through transparent elements, is one visible run.
+      // Choose its delimiters once so closing/opening backticks cannot coalesce.
+      inlineCode = (inlineCode ?? '') + part.inlineCode;
+      continue;
+    }
+    if (!part) continue;
+    if (inlineCode !== undefined) {
+      result += renderInlineCode(inlineCode);
+      inlineCode = undefined;
+    }
+    if (part === ' ' && result.endsWith('\n')) continue;
     if (part.startsWith('\n\n')) result = result.trimEnd();
     if (result.endsWith('\n\n')) part = part.trimStart();
     result += part;
   }
-  return result;
+  return result + (inlineCode === undefined ? '' : renderInlineCode(inlineCode));
 }
 
 function codeText(node: HtmlNode): string {
@@ -83,6 +101,14 @@ function codeDelimiter(text: string, minimum: number): string {
   return '`'.repeat(runs.reduce((length, run) => Math.max(length, run.length + 1), minimum));
 }
 
+function renderInlineCode(value: string): string {
+  if (!value) return '';
+  const text = value.replace(/\s/g, ' ');
+  const delimiter = codeDelimiter(text, 1);
+  const pad = text.startsWith('`') || text.endsWith('`') || (/^ .* $/.test(text) && text.trim()) ? ' ' : '';
+  return `${delimiter}${pad}${text}${pad}${delimiter}`;
+}
+
 function renderMarkdownList(element: HtmlElement): string {
   const ordered = element.tagName === 'ol';
   const rawStart = attribute(element, 'start') ?? '1';
@@ -91,7 +117,7 @@ function renderMarkdownList(element: HtmlElement): string {
   for (const child of element.childNodes) {
     if (!defaultTreeAdapter.isElementNode(child) || child.tagName !== 'li') continue;
     const marker = ordered ? `${number++}. ` : '* ';
-    const body = renderMarkdownChildren(child).trim();
+    const body = trimMarkdownBlock(renderMarkdownChildren(child));
     const continuation = ' '.repeat(marker.length);
     items.push(
       marker +
@@ -107,51 +133,63 @@ function renderMarkdownList(element: HtmlElement): string {
 // Supported authoring formats: headings (normalized to h3), paragraphs, breaks,
 // emphasis, links/images, nested lists, blockquotes and inline/fenced code.
 // Unknown elements keep their text; no source element or attribute is serialized.
-function renderMarkdownNode(node: HtmlNode): string {
+function renderMarkdownNode(node: HtmlNode): MarkdownPart | MarkdownPart[] {
   if (defaultTreeAdapter.isTextNode(node)) return markdownText(node.value);
   if (!defaultTreeAdapter.isElementNode(node)) return '';
   const tag = node.tagName;
-  if (['script', 'style', 'template'].includes(tag)) return '';
-  if (tag === 'ol' || tag === 'ul') return renderMarkdownList(node);
-  if (tag === 'pre') {
-    const text = codeText(node).replace(/\n$/, '');
-    const fence = codeDelimiter(text, 3);
-    return `\n\n${fence}\n${text}\n${fence}\n\n`;
+  switch (tag) {
+    case 'script':
+    case 'style':
+    case 'template':
+      return '';
+    case 'ol':
+    case 'ul':
+      return renderMarkdownList(node);
+    case 'pre': {
+      const text = codeText(node).replace(/\n$/, '');
+      const fence = codeDelimiter(text, 3);
+      return `\n\n${fence}\n${text}\n${fence}\n\n`;
+    }
+    case 'code':
+      return { inlineCode: codeText(node) };
+    case 'a': {
+      const destination = markdownDestination(attribute(node, 'href'));
+      return destination
+        ? `[${renderMarkdownChildren(node)}](${destination})`
+        : node.childNodes.flatMap<MarkdownPart>(renderMarkdownNode);
+    }
+    case 'img': {
+      const alt = markdownText(attribute(node, 'alt') ?? '');
+      const destination = markdownDestination(attribute(node, 'src'));
+      return destination ? `![${alt}](${destination})` : alt;
+    }
+    case 'br':
+      return '\\\n';
+    case 'blockquote':
+      return `\n\n${trimMarkdownBlock(renderMarkdownChildren(node))
+        .split('\n')
+        .map(line => (line ? `> ${line}` : '>'))
+        .join('\n')}\n\n`;
+    case 'strong':
+    case 'b':
+      return `**${renderMarkdownChildren(node)}**`;
+    case 'em':
+    case 'i':
+      return `*${renderMarkdownChildren(node)}*`;
+    case 'td':
+    case 'th':
+      return `${renderMarkdownChildren(node)} `;
+    default:
+      if (/^h[1-6]$/.test(tag)) return `\n\n### ${trimMarkdownBlock(renderMarkdownChildren(node))}\n\n`;
+      if (
+        ['p', 'div', 'section', 'article', 'header', 'footer', 'figure', 'figcaption', 'dl', 'dt', 'dd', 'tr'].includes(
+          tag
+        )
+      ) {
+        return `\n\n${trimMarkdownBlock(renderMarkdownChildren(node))}\n\n`;
+      }
+      return node.childNodes.flatMap<MarkdownPart>(renderMarkdownNode);
   }
-  if (tag === 'code') {
-    const text = codeText(node).replace(/\s/g, ' ');
-    const delimiter = codeDelimiter(text, 1);
-    const pad = text.startsWith('`') || text.endsWith('`') || (/^ .* $/.test(text) && text.trim()) ? ' ' : '';
-    return `${delimiter}${pad}${text}${pad}${delimiter}`;
-  }
-  const content = renderMarkdownChildren(node);
-  if (tag === 'a') {
-    const destination = markdownDestination(attribute(node, 'href'));
-    return destination ? `[${content}](${destination})` : content;
-  }
-  if (tag === 'img') {
-    const alt = markdownText(attribute(node, 'alt') ?? '');
-    const destination = markdownDestination(attribute(node, 'src'));
-    return destination ? `![${alt}](${destination})` : alt;
-  }
-  if (tag === 'br') return '  \n';
-  if (/^h[1-6]$/.test(tag)) return `\n\n### ${content.trim()}\n\n`;
-  if (tag === 'blockquote') {
-    return `\n\n${content
-      .trim()
-      .split('\n')
-      .map(line => (line ? `> ${line}` : '>'))
-      .join('\n')}\n\n`;
-  }
-  if (tag === 'strong' || tag === 'b') return `**${content}**`;
-  if (tag === 'em' || tag === 'i') return `*${content}*`;
-  if (
-    ['p', 'div', 'section', 'article', 'header', 'footer', 'figure', 'figcaption', 'dl', 'dt', 'dd', 'tr'].includes(tag)
-  ) {
-    return `\n\n${content.trim()}\n\n`;
-  }
-  if (tag === 'td' || tag === 'th') return `${content} `;
-  return content;
 }
 
 export function buildHomeMarkdown(params: {
