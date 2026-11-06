@@ -47,7 +47,7 @@ export async function loadScreenshotCatalog(
   }
   const apps = connection.edges.flatMap(edge => (edge?.node ? [edge.node] : []));
   const cards: ScreenshotCard[] = apps.flatMap(app =>
-    (app.previewScreenshots ?? (app.coverScreenshot ? [app.coverScreenshot] : [])).map(preview => ({
+    app.previewScreenshots.map(preview => ({
       id: preview.id,
       imageUrl: preview.imageUrl,
       imageAlt: preview.imageAlt ?? '',
