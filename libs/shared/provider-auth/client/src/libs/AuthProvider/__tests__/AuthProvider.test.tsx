@@ -1,6 +1,6 @@
 import { ApolloClient, ApolloLink, gql, InMemoryCache, Observable } from '@apollo/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { User } from 'firebase/auth';
 import type { Cookies } from 'next-client-cookies';
 import React from 'react';
@@ -11,14 +11,18 @@ import { useAuthState } from '../../AuthStateProvider';
 import { AuthProvider } from '../AuthProvider';
 
 const navigation = vi.hoisted(() => ({ navigate: vi.fn() }));
-vi.mock('@darun/utils-router', () => ({ useNavigate: () => navigation.navigate }));
+vi.mock('@darun/utils-router', () => ({
+  useNavigate: () => navigation.navigate,
+}));
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>(yes => {
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((yes, no) => {
     resolve = yes;
+    reject = no;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 function authEvent(id: string) {
   const result = deferred<{ token: string; claims: { roles: string[] } }>();
@@ -30,6 +34,7 @@ function authEvent(id: string) {
   } as unknown as User;
   return {
     user,
+    reject: result.reject,
     resolve: () => result.resolve({ token: `token-${id}`, claims: { roles: [] } }),
   };
 }
@@ -38,8 +43,17 @@ function emit(user: User | null) {
   return Promise.all([...sdk.listeners].map(listener => listener(user)));
 }
 function Status() {
-  const { isLoggedIn, isLoading } = useAuthState();
-  return <output aria-label="인증 상태">{isLoading ? 'loading' : isLoggedIn ? 'signed-in' : 'signed-out'}</output>;
+  const { isLoggedIn, isLoading, isError, retry } = useAuthState();
+  return (
+    <>
+      <output aria-label="인증 상태">
+        {isLoading ? 'loading' : isError ? 'error' : isLoggedIn ? 'signed-in' : 'signed-out'}
+      </output>
+      <button type="button" disabled={isLoading} onClick={retry}>
+        인증 다시 시도
+      </button>
+    </>
+  );
 }
 function setup() {
   const values = new Map<string, string>();
@@ -181,4 +195,74 @@ describe('실제 인증 adapter와 provider·쿠키·Apollo 연결', () => {
     });
     expect(await next.request()).toBe('Bearer token-reentered');
   });
+});
+
+it('초기 실패에서 로딩을 끝내고 중복 구독 없이 재시도해 복귀 이동한다', async () => {
+  const { values, request, view } = setup();
+  values.set('redirectUrl', '/saved?from=retry');
+  const first = authEvent('first');
+  const pending = emit(first.user);
+  await act(async () => {
+    first.reject(new Error('token unavailable'));
+    await expect(pending).resolves.toBeDefined();
+  });
+  expect(screen.getByLabelText('인증 상태').textContent).toBe('error');
+  expect(navigation.navigate).not.toHaveBeenCalled();
+  expect(values.get('redirectUrl')).toBe('/saved?from=retry');
+  expect(await request()).toBeUndefined();
+  const retried = authEvent('first');
+  first.user.getIdTokenResult = () => retried.user.getIdTokenResult();
+  fireEvent.click(screen.getByRole('button', { name: '인증 다시 시도' }));
+  fireEvent.click(screen.getByRole('button', { name: '인증 다시 시도' }));
+  expect(screen.getByLabelText('인증 상태').textContent).toBe('loading');
+  expect(sdk.listeners.size).toBe(1);
+  await act(async () => {
+    retried.resolve();
+  });
+  expect(screen.getByLabelText('인증 상태').textContent).toBe('signed-in');
+  expect(await request()).toBe('Bearer token-first');
+  expect(navigation.navigate.mock.calls).toEqual([['/saved?from=retry']]);
+  view.unmount();
+  expect(sdk.listeners.size).toBe(0);
+});
+
+it('재시도 실패 뒤에도 다시 시도할 수 있고 비로그인은 오류가 아니다', async () => {
+  const { values } = setup();
+  const first = authEvent('first');
+  const initial = emit(first.user);
+  await act(async () => {
+    first.reject(new Error('initial failure'));
+    await initial;
+  });
+  const retry = authEvent('first');
+  const read = vi.spyOn(first.user, 'getIdTokenResult').mockImplementation(() => retry.user.getIdTokenResult());
+  fireEvent.click(screen.getByRole('button', { name: '인증 다시 시도' }));
+  fireEvent.click(screen.getByRole('button', { name: '인증 다시 시도' }));
+  expect(read).toHaveBeenCalledTimes(1);
+  await act(async () => retry.reject(new Error('retry failure')));
+  expect(screen.getByLabelText('인증 상태').textContent).toBe('error');
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: '인증 다시 시도' }).disabled).toBe(false);
+  await act(async () => emit(null));
+  expect(screen.getByLabelText('인증 상태').textContent).toBe('signed-out');
+  expect(values.get('idToken')).toBeUndefined();
+});
+
+it('재시도 중 unmount하면 늦은 실패가 쿠키나 이동을 바꾸지 않는다', async () => {
+  const { values, view } = setup();
+  values.set('redirectUrl', '/keep');
+  const first = authEvent('first');
+  const initial = emit(first.user);
+  await act(async () => {
+    first.reject(new Error('initial failure'));
+    await initial;
+  });
+  const retry = authEvent('first');
+  vi.spyOn(first.user, 'getIdTokenResult').mockImplementation(() => retry.user.getIdTokenResult());
+  fireEvent.click(screen.getByRole('button', { name: '인증 다시 시도' }));
+  view.unmount();
+  await act(async () => retry.reject(new Error('late failure')));
+  expect(sdk.listeners.size).toBe(0);
+  expect(values.get('idToken')).toBeUndefined();
+  expect(values.get('redirectUrl')).toBe('/keep');
+  expect(navigation.navigate).not.toHaveBeenCalled();
 });

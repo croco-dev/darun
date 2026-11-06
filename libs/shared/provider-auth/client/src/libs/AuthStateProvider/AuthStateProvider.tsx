@@ -2,29 +2,36 @@
 
 import { AuthUser } from '@darun/utils-auth-service-core';
 import { useNavigate } from '@darun/utils-router';
-import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthService } from '../AuthServiceProvider';
 
 export type AuthStateProviderProps = {
   children: ReactNode;
 };
 
-type AuthState = 'Uninitialized' | 'Pending' | 'Authorized' | 'UnAuthorized';
+type AuthState = 'Uninitialized' | 'Pending' | 'Authorized' | 'UnAuthorized' | 'Error';
 
 const AuthStateContext = createContext<{
   isLoggedIn: boolean;
   authState: AuthState;
   isLoading: boolean;
+  isError: boolean;
+  retry: () => void;
 }>({
   isLoggedIn: false,
   authState: 'Uninitialized',
   isLoading: true,
+  isError: false,
+  retry: () => {},
 });
 
 export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
   const authService = useAuthService();
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const retryRef = useRef<() => void>(() => {});
+  const retry = useCallback(() => retryRef.current(), []);
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
 
@@ -33,6 +40,7 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
   }, [navigate]);
 
   const authState: AuthState = useMemo(() => {
+    if (isError) return 'Error';
     if (authUser) {
       return 'Authorized';
     }
@@ -41,10 +49,29 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
     }
 
     return 'Uninitialized';
-  }, [authUser, isLoading]);
+  }, [authUser, isLoading, isError]);
 
   useEffect(() => {
+    let active = true;
+    let pending = true;
+    const onError = () => {
+      if (!active) return;
+      pending = false;
+      setAuthUser(null);
+      setIsError(true);
+      setIsLoading(false);
+    };
+    retryRef.current = () => {
+      if (!active || pending) return;
+      pending = true;
+      setIsError(false);
+      setIsLoading(true);
+      void authService.retryAuthState().catch(onError);
+    };
     const unsubscribe = authService.onIdTokenChanged(user => {
+      if (!active) return;
+      pending = false;
+      setIsError(false);
       setAuthUser(prev => {
         if (!prev && !user) return prev;
         if (prev && user && prev.id === user.id && prev.email === user.email && prev.isAdmin === user.isAdmin) {
@@ -66,9 +93,12 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
 
       authService.clearRedirectUrl();
       navigateRef.current(redirectUrl);
-    });
+    }, onError);
 
-    return () => unsubscribe();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [authService]);
 
   return (
@@ -77,6 +107,8 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
         isLoggedIn: authState === 'Authorized',
         authState,
         isLoading,
+        isError,
+        retry,
       }}
     >
       {children}
