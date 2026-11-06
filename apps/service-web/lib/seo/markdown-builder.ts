@@ -1,3 +1,4 @@
+import { defaultTreeAdapter, DefaultTreeAdapterTypes, parseFragment } from 'parse5';
 import { absolutePublicUrl, magazineCanonicalUrl, PublicLocale } from './url';
 
 export function escapeMarkdown(text: string): string {
@@ -30,53 +31,185 @@ export function safeUrl(rawUrl: string | null | undefined): string | null {
 
 export function htmlToMarkdown(html: string): string {
   if (!html) return '';
+  return trimMarkdownBlock(renderMarkdownChildren(parseFragment(html)));
+}
 
-  let md = html;
+type HtmlNode = DefaultTreeAdapterTypes.ChildNode;
+type HtmlParent = DefaultTreeAdapterTypes.ParentNode;
+type HtmlElement = DefaultTreeAdapterTypes.Element;
+type MarkdownPart = string | { inlineCode: string };
+type MarkdownContext = 'block' | 'inline';
 
-  // Replace script and style tags completely
-  md = md.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  md = md.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+const htmlBlockTags = new Set([
+  'p',
+  'div',
+  'section',
+  'article',
+  'header',
+  'footer',
+  'figure',
+  'figcaption',
+  'dl',
+  'dt',
+  'dd',
+  'tr',
+]);
 
-  // Convert headings (h1, h2, h3, h4) into H3 for description hierarchy
-  md = md.replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, (_match, text) => `\n\n### ${text.trim()}\n\n`);
+function markdownText(text: string): string {
+  return text
+    .replace(/[\t\n\f\r \u00a0]+/g, ' ')
+    .replace(/[\\[\]()`*_#!{}|~+-]/g, '\\$&')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/^(\s*\d+)\./g, '$1\\.');
+}
 
-  // Blockquotes
-  md = md.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_match, text) => `\n\n> ${text.trim()}\n\n`);
+function attribute(element: HtmlElement, name: string): string | undefined {
+  return element.attrs.find(attr => attr.name === name)?.value;
+}
 
-  // Unordered list items
-  md = md.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_match, text) => `\n* ${text.trim()}`);
+function markdownDestination(raw: string | undefined): string | null {
+  return (
+    safeUrl(raw)
+      ?.replace(/[()<>\\]/g, char => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
+      .replace(/&/g, '&amp;') ?? null
+  );
+}
 
-  // Paragraphs
-  md = md.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (_match, text) => `\n\n${text.trim()}\n\n`);
+function trimMarkdownBlock(content: string): string {
+  // A hard break at the end of a Markdown block cannot form a line break.
+  return content.replace(/(?:\\\n[ \t]*)+$/, '').trim();
+}
 
-  // Line breaks
-  md = md.replace(/<br\s*\/?>/gi, '\n');
+function renderMarkdownChildren(parent: HtmlParent, context: MarkdownContext = 'block'): string {
+  const parts = parent.childNodes.flatMap<MarkdownPart>(child => renderMarkdownNode(child, context));
+  let result = '';
+  let inlineCode: string | undefined;
+  for (let part of parts) {
+    if (typeof part !== 'string') {
+      // Adjacent code, including through transparent elements, is one visible run.
+      // Choose its delimiters once so closing/opening backticks cannot coalesce.
+      inlineCode = (inlineCode ?? '') + part.inlineCode;
+      continue;
+    }
+    if (!part) continue;
+    if (inlineCode !== undefined) {
+      result += renderInlineCode(inlineCode);
+      inlineCode = undefined;
+    }
+    if (part === ' ' && result.endsWith('\n')) continue;
+    if (part.startsWith('\n\n')) result = result.trimEnd();
+    if (result.endsWith('\n\n')) part = part.trimStart();
+    result += part;
+  }
+  return result + (inlineCode === undefined ? '' : renderInlineCode(inlineCode));
+}
 
-  // Bold & Italics
-  md = md.replace(/<(?:strong|b)[^>]*>([\s\S]*?)<\/(?:strong|b)>/gi, '**$1**');
-  md = md.replace(/<(?:em|i)[^>]*>([\s\S]*?)<\/(?:em|i)>/gi, '*$1*');
+function codeText(node: HtmlNode): string {
+  if (defaultTreeAdapter.isTextNode(node)) return node.value;
+  if (!defaultTreeAdapter.isElementNode(node) || ['script', 'style'].includes(node.tagName)) return '';
+  return node.childNodes.map(codeText).join('');
+}
 
-  // Strip all other HTML tags
-  md = md.replace(/<[^>]+>/g, '');
+function codeDelimiter(text: string, minimum: number): string {
+  const runs = text.match(/`+/g) ?? [];
+  return '`'.repeat(runs.reduce((length, run) => Math.max(length, run.length + 1), minimum));
+}
 
-  // Decode common HTML entities
-  md = md
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ');
+function renderInlineCode(value: string): string {
+  if (!value) return '';
+  const text = value.replace(/\s/g, ' ');
+  const delimiter = codeDelimiter(text, 1);
+  const pad = text.startsWith('`') || text.endsWith('`') || (/^ .* $/.test(text) && text.trim()) ? ' ' : '';
+  return `${delimiter}${pad}${text}${pad}${delimiter}`;
+}
 
-  // Decoding can materialize tags from encoded input (e.g. &lt;script&gt; -> <script>).
-  // Encode any remaining '<' so no raw HTML can survive in the markdown output.
-  md = md.replace(/</g, '&lt;');
+function renderMarkdownList(element: HtmlElement): string {
+  const ordered = element.tagName === 'ol';
+  const rawStart = attribute(element, 'start') ?? '1';
+  let number = /^-?\d+$/.test(rawStart) && Number.isSafeInteger(Number(rawStart)) ? Number(rawStart) : 1;
+  const items: string[] = [];
+  for (const child of element.childNodes) {
+    if (!defaultTreeAdapter.isElementNode(child) || child.tagName !== 'li') continue;
+    const marker = ordered ? `${number++}. ` : '* ';
+    const body = trimMarkdownBlock(renderMarkdownChildren(child));
+    const continuation = ' '.repeat(marker.length);
+    items.push(
+      marker +
+        body
+          .split('\n')
+          .map((line, index) => (index && line ? continuation + line : line))
+          .join('\n')
+    );
+  }
+  return `\n\n${items.join('\n')}\n\n`;
+}
 
-  // Normalize line endings and collapse multiple blank lines
-  md = md.replace(/\r\n?/g, '\n');
-  md = md.replace(/\n{3,}/g, '\n\n').trim();
-
-  return md;
+// Supported authoring formats: headings (normalized to h3), paragraphs, breaks,
+// emphasis, links/images, nested lists, blockquotes and inline/fenced code.
+// Unknown elements keep their text; no source element or attribute is serialized.
+function renderMarkdownNode(node: HtmlNode, context: MarkdownContext): MarkdownPart | MarkdownPart[] {
+  if (defaultTreeAdapter.isTextNode(node)) return markdownText(node.value);
+  if (!defaultTreeAdapter.isElementNode(node)) return '';
+  const tag = node.tagName;
+  // Markdown headings, emphasis and link labels cannot contain fenced blocks.
+  // Keep code protected as an inline span even when stored HTML is misnested.
+  if (context === 'inline') {
+    if (tag === 'pre') return { inlineCode: codeText(node) };
+    if (htmlBlockTags.has(tag) || /^h[1-6]$/.test(tag) || ['ol', 'ul', 'li', 'blockquote'].includes(tag)) {
+      return [' ', ...node.childNodes.flatMap<MarkdownPart>(child => renderMarkdownNode(child, context)), ' '];
+    }
+  }
+  switch (tag) {
+    case 'script':
+    case 'style':
+    case 'template':
+      return '';
+    case 'ol':
+    case 'ul':
+      return renderMarkdownList(node);
+    case 'pre': {
+      const text = codeText(node).replace(/\n$/, '');
+      const fence = codeDelimiter(text, 3);
+      return `\n\n${fence}\n${text}\n${fence}\n\n`;
+    }
+    case 'code':
+      return { inlineCode: codeText(node) };
+    case 'a': {
+      const destination = markdownDestination(attribute(node, 'href'));
+      return destination
+        ? `[${renderMarkdownChildren(node, 'inline')}](${destination})`
+        : node.childNodes.flatMap<MarkdownPart>(child => renderMarkdownNode(child, context));
+    }
+    case 'img': {
+      const alt = markdownText(attribute(node, 'alt') ?? '');
+      const destination = markdownDestination(attribute(node, 'src'));
+      return destination ? `![${alt}](${destination})` : alt;
+    }
+    case 'br':
+      return '\\\n';
+    case 'blockquote':
+      return `\n\n${trimMarkdownBlock(renderMarkdownChildren(node))
+        .split('\n')
+        .map(line => (line ? `> ${line}` : '>'))
+        .join('\n')}\n\n`;
+    case 'strong':
+    case 'b':
+      return `**${renderMarkdownChildren(node, 'inline')}**`;
+    case 'em':
+    case 'i':
+      return `*${renderMarkdownChildren(node, 'inline')}*`;
+    case 'td':
+    case 'th':
+      return `${renderMarkdownChildren(node, context)} `;
+    default:
+      if (/^h[1-6]$/.test(tag)) return `\n\n### ${trimMarkdownBlock(renderMarkdownChildren(node, 'inline'))}\n\n`;
+      if (htmlBlockTags.has(tag)) {
+        return `\n\n${trimMarkdownBlock(renderMarkdownChildren(node))}\n\n`;
+      }
+      return node.childNodes.flatMap<MarkdownPart>(child => renderMarkdownNode(child, context));
+  }
 }
 
 export function buildHomeMarkdown(params: {

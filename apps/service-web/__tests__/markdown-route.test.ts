@@ -1,5 +1,6 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { SchemaLink } from '@apollo/client/link/schema';
+import MarkdownIt from 'markdown-it';
 import { getRouteMatcher } from 'next/dist/shared/lib/router/utils/route-matcher';
 import { getRouteRegex } from 'next/dist/shared/lib/router/utils/route-regex';
 import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
@@ -13,6 +14,7 @@ vi.mock('../app/getServerClient', () => ({ getClient }));
 vi.mock('next-intl/middleware', () => ({ default: () => intlMiddleware }));
 import { GET, HEAD } from '../app/api/markdown/[...path]/route';
 import middleware, { config } from '../middleware';
+import { contentHtml, contentMarkdown } from './markdown-content.fixture';
 
 const { buildSchema } = createRequire(import.meta.url)('graphql') as typeof import('graphql');
 const schema = buildSchema(readFileSync(new URL('../../graphql-api/schema.graphql', import.meta.url), 'utf8'));
@@ -39,7 +41,7 @@ const product = (slug: string) => ({
   slug,
   name: slug === 'alpha' ? 'Alpha 도구' : 'Beta 도구',
   summary: `${slug} 공개 요약`,
-  description: `<p>${slug} 공개 본문</p>`,
+  description: `<p>${slug} 공개 본문</p>${contentHtml}`,
   updatedAt: '2026-10-01T00:00:00.000Z',
   publishedAt: '2026-09-01T00:00:00.000Z',
   tags: () => readField(slug, 'tags', [{ name: '태그' }]),
@@ -173,7 +175,7 @@ describe('공개 Markdown route의 실행 스키마 계약', () => {
                 id: slug,
                 slug,
                 title: '공개 매거진',
-                content: `<p>본문: ${slug}</p>`,
+                content: `<p>본문: ${slug}</p>${contentHtml}`,
               };
             },
           },
@@ -182,6 +184,27 @@ describe('공개 Markdown route의 실행 스키마 계약', () => {
     );
   });
   afterEach(() => vi.restoreAllMocks());
+
+  it.each([
+    ['ko', 'products', 'alpha'],
+    ['en', 'products', 'alpha'],
+    ['ko', 'compare', 'alpha', 'beta'],
+    ['en', 'compare', 'alpha', 'beta'],
+    ['ko', 'magazines', 'design'],
+    ['en', 'magazines', 'design'],
+  ])('%j의 실제 Markdown 응답에서 동일한 본문 의미를 보존한다', async (...path) => {
+    const response = await GET(...request(path, true));
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('text/markdown; charset=utf-8');
+    const body = await response.text();
+    expect(body).toContain(contentMarkdown);
+    if (path[1] === 'compare') expect(body.split(contentMarkdown)).toHaveLength(3);
+    const rendered = new MarkdownIt({ html: true }).render(body);
+    expect(rendered).toContain('<code>a`&lt;img src=x onerror=alert(1)&gt;</code>');
+    expect(rendered).not.toContain('<img src=x');
+    expect(rendered).toContain('<h3><code>&lt;script&gt;alert(3)&lt;/script&gt;</code></h3>');
+    expect(rendered).not.toContain('<script>');
+  });
 
   describe.each(['ko', 'en'])('%s 매거진 Markdown', locale => {
     it.each(magazineSlugs)('저장 slug %s의 원문과 한국어 canonical을 제공한다', async (slug, segment) => {
@@ -195,7 +218,7 @@ describe('공개 Markdown route의 실행 스키마 계약', () => {
       expect(acceptResponse.status).toBe(200);
       const body = await siblingResponse.text();
       expect(body).toContain(`Canonical URL: ${canonical}\n`);
-      expect(body).toContain(`본문: ${slug}`);
+      expect(body).toContain(`본문: ${slug.replace('#', '\\#')}`);
       expect(await acceptResponse.text()).toBe(body);
       expect(siblingResponse.headers.get('Link')).toBe(`<${canonical}>; rel="canonical"`);
       expect(siblingResponse.headers.get('X-Robots-Tag')).toBe('noindex, follow');
