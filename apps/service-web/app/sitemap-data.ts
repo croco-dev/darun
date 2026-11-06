@@ -7,6 +7,7 @@ import {
   SitemapCategory,
   SitemapMagazine,
   SitemapProduct,
+  SitemapPartition,
 } from './sitemap-entries';
 
 const publishedProductsQuery = gql`
@@ -107,15 +108,17 @@ async function getStaticPartitions() {
   );
 }
 
+async function getProductEntries(products: SitemapProduct[]) {
+  return buildSitemapEntries({
+    fetchProducts: async () => products,
+    fetchCategories: async () => [],
+    fetchMagazines: async () => [],
+    includeFixedRoutes: false,
+  });
+}
+
 async function getProductPartitions(products: SitemapProduct[]) {
-  return partitionSitemapEntries(
-    await buildSitemapEntries({
-      fetchProducts: async () => products,
-      fetchCategories: async () => [],
-      fetchMagazines: async () => [],
-      includeFixedRoutes: false,
-    })
-  );
+  return partitionSitemapEntries(await getProductEntries(products));
 }
 
 export async function discoverSitemapPartitions() {
@@ -126,7 +129,9 @@ export async function discoverSitemapPartitions() {
   while (true) {
     const products = await fetchProductPage(cursor);
     if (products.length === 0) break;
-    await getProductRangeEntries(products);
+    // A fixed range cannot be split again after publication: a cached index
+    // would not list any newly created subpartition.
+    if ((await getProductPartitions(products)).length !== 1) throw new Error('Sitemap range exceeds XML limits');
     ids.push({
       id: `v2~${products[0].id}~${products[products.length - 1].id}`,
     });
@@ -135,17 +140,6 @@ export async function discoverSitemapPartitions() {
     cursor = products[products.length - 1].id;
   }
   return ids;
-}
-
-async function getProductRangeEntries(products: SitemapProduct[]): Promise<MetadataRoute.Sitemap> {
-  // Each product needs at least its Korean and English URLs. Bound reads even
-  // if malformed source rows have no usable slug.
-  if (products.length > 25_000) throw new Error('Sitemap range exceeds XML limits');
-  const partitions = await getProductPartitions(products);
-  // A fixed range is indivisible: slicing it again after a publication could
-  // move a URL to a subpartition that the cached index never listed.
-  if (partitions.length !== 1) throw new Error('Sitemap range exceeds XML limits');
-  return partitions[0];
 }
 
 export function isSitemapPartition(value: string): boolean {
@@ -157,21 +151,28 @@ export async function getSitemapPartition(value: string): Promise<MetadataRoute.
   if (rangeMatch) {
     const [, upperBoundId, lowerBoundId] = rangeMatch;
     if (lowerBoundId > upperBoundId) throw new Error('Invalid sitemap range');
-    const products: SitemapProduct[] = [];
-    let entries: MetadataRoute.Sitemap = [];
+    const partition = new SitemapPartition();
+    const seenUrls = new Set<string>();
+    let productCount = 0;
     let cursor: string | undefined;
     while (true) {
       const page = await fetchProductPage(cursor, {
         lowerBoundId,
         upperBoundId,
       });
-      products.push(...page);
-      // Enforce protocol limits while accumulating, before requesting more.
-      entries = await getProductRangeEntries(products);
+      productCount += page.length;
+      // Each product needs two locale URLs; also bound reads for malformed
+      // source rows whose missing slugs would otherwise produce no entries.
+      if (productCount > 25_000) throw new Error('Sitemap range exceeds XML limits');
+      for (const entry of await getProductEntries(page)) {
+        if (seenUrls.has(entry.url)) continue;
+        if (!partition.tryAppend(entry)) throw new Error('Sitemap range exceeds XML limits');
+        seenUrls.add(entry.url);
+      }
       if (page.length < 100 || page[page.length - 1].id === lowerBoundId) break;
       cursor = page[page.length - 1].id;
     }
-    return entries;
+    return partition.entries;
   }
   // Cached indexes still reference the original cursor/subpartition URLs.
   const match = /^(static|start|[0-9a-z-]+)~(0|[1-9]\d*)$/i.exec(value);

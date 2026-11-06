@@ -36,6 +36,49 @@ beforeEach(() => {
 });
 
 describe('sitemap cursor partitions', () => {
+  it('processes each product a bounded number of times in a broad public range', async () => {
+    let slugReads = 0;
+    products = products.slice(0, 1000).map(product => ({
+      ...product,
+      get slug() {
+        slugReads++;
+        return product.slug;
+      },
+    }));
+    const entries = await getSitemapPartition(`v2~${products[0].id}~${products[999].id}`);
+    expect(entries).toHaveLength(2000);
+    expect(slugReads).toBeLessThanOrEqual(4000);
+  });
+
+  it('preserves URL deduplication across range pages', async () => {
+    products = products.slice(0, 200);
+    products[100] = { ...products[100], slug: products[0].slug };
+    const entries = await getSitemapPartition(`v2~${products[0].id}~${products[199].id}`);
+    expect(entries).toHaveLength(398);
+    expect(entries.filter(entry => entry.url.endsWith(`/products/${products[0].slug}`))).toHaveLength(2);
+    expect(entries.some(entry => entry.url.endsWith(`/products/${products[199].slug}`))).toBe(true);
+  });
+
+  it('enforces the accumulated XML byte limit across bounded pages', async () => {
+    products = products.slice(0, 300).map((product, index) => ({
+      ...product,
+      slug: `${index}-${'a'.repeat(20000)}`,
+    }));
+    await expect(getSitemapPartition(`v2~${products[0].id}~${products[299].id}`)).rejects.toThrow('exceeds XML limits');
+    expect(query).toHaveBeenCalledTimes(3);
+  });
+
+  it('bounds range reads even when source rows have no usable slugs', async () => {
+    products = Array.from({ length: 25001 }, (_, index) => ({
+      id: String(30000 - index).padStart(26, '0'),
+      slug: '',
+    }));
+    await expect(getSitemapPartition(`v2~${products[0].id}~${products[25000].id}`)).rejects.toThrow(
+      'exceeds XML limits'
+    );
+    expect(query).toHaveBeenCalledTimes(251);
+  });
+
   it.each([1, 5])('keeps every existing URL after %i newer products are published', async count => {
     products = products.slice(0, 200);
     const original = [...products];
