@@ -369,6 +369,38 @@ revision과 검색 동기화 intent를 함께 저장하므로 재실행은 추�
 `pnpm --filter graphql-api exec vitest run __tests__/seedCategories.pg.test.ts`로
 실제 시드 명령의 보존·반복 실행·intent 실패 rollback을 검증할 수 있습니다.
 
+## 기존 검색 문서에 카테고리 이름 반영하기
+
+검색 worker는 연결된 모든 카테고리의 `labelKo`·`labelEn`·`slug`를 MongoDB의
+`categoryText` 배열로 저장합니다. 기존 `category`의 첫 카테고리 ID는 유지합니다.
+카테고리 이름 변경은 기존 Product-first transaction이 만든 새 revision의 검색 intent로
+반영되며, 새 배열로 교체하므로 이전 이름을 남기지 않습니다.
+
+기존 문서는 배포만으로 자동 재색인하지 않습니다. 새 API와 검색 worker를 배포하고,
+`searchable_products_index`가 `categoryText` 문자열 배열을 검색할 수 있는지 확인한 뒤
+관리자가 대상 상품 상세의 **검색 인덱싱**을 실행합니다. 동적 mapping을 사용하는
+검증 환경에서는 별도 필드 설정이 필요 없지만, 정적 mapping 환경에는 해당 필드를
+먼저 포함해야 합니다. 운영 index 변경이나 전체 재색인은 자동 실행하지 않습니다.
+
+현재 revision에 `categoryText`가 없는 구형 문서는 같은 revision의 명시적 요청으로
+해당 필드와 `categoryTextRevision`을 채웁니다. 구버전 worker가 원문 revision만 올려
+두 revision이 달라진 경우도 같은 방법으로 복구합니다. 기존 내용과 투표 수는 유지하며,
+카테고리 텍스트의 revision까지 일치하는 중복 요청과 이전 revision은 덮어쓰지 않습니다.
+검색 동기화의 `completed`는 MongoDB 쓰기
+완료이므로 검색 반영까지 확인하려면 상품 이름·요약에 없는 카테고리 한영 이름으로 조회합니다.
+실패하면 상세의 오류와 intent revision을 확인하고 기존 검색 동기화 재시도를 사용합니다.
+이전 버전으로 rollback하면 새 revision의 카테고리 텍스트를 갱신하지 못하므로,
+재배포 후 해당 상품을 다시 확인해야 합니다.
+
+`categorySearch.mongodb.test.ts`는 별도 로컬 `darun_category_search` PostgreSQL과
+MongoDB Search에서 실제 worker·저장 문서·검색 후보·카테고리 rename을 검증합니다.
+일반 MongoDB만으로는 `$search`를 검증할 수 없습니다. 두 환경변수가 없으면 skip하며,
+PR CI는 격리 smoke 인프라의 Atlas Local에서 두 검사를 실행합니다.
+
+```bash
+CATEGORY_SEARCH_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55777/darun_category_search CATEGORY_SEARCH_TEST_MONGODB_URI='mongodb://127.0.0.1:27777/darun_category_search?directConnection=true' pnpm --filter graphql-api exec vitest run __tests__/categorySearch.mongodb.test.ts
+```
+
 ## 번역 작업의 완전성과 출처
 
 `requestTranslation(entityType, entityId, fields)`의 공개 이름과 인자는 유지합니다. 응답은 실제 `pending` job이며 LLM을 기다리지 않습니다. 요청 `fields`는 migration `0014_superb_maverick`의 nullable `text[]`에 저장하고 Product/Magazine/ProductFeature worker와 retry가 같은 목록을 사용합니다. 기존 Product의 NULL fields만 전체 Product/Feature bundle로 읽습니다. 다른 엔티티의 NULL 또는 빈/알 수 없는 fields는 명시적으로 거절합니다. 전송 실패는 pending을 보존하며 기존 recovery tick이 다시 전송합니다.

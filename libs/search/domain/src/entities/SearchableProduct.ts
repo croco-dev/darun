@@ -6,6 +6,7 @@ export class SearchableProduct {
   public description?: string;
   public tags: string[] = [];
   public category: string = '';
+  public categoryText: string[] = [];
   public searchScore?: number;
   public votes?: number;
   public createdAt?: Date;
@@ -20,6 +21,7 @@ export class SearchableProduct {
     description,
     tags = [],
     category = '',
+    categoryText = [],
     searchScore,
     votes,
     createdAt,
@@ -33,6 +35,7 @@ export class SearchableProduct {
     description?: string;
     tags?: string[];
     category?: string;
+    categoryText?: string[];
     searchScore?: number;
     votes?: number;
     createdAt?: Date;
@@ -45,6 +48,7 @@ export class SearchableProduct {
     this.description = description;
     this.tags = tags;
     this.category = category;
+    this.categoryText = categoryText;
     this.searchScore = searchScore;
     this.votes = votes;
     this.createdAt = createdAt;

@@ -16,6 +16,7 @@ import { and, asc, desc, eq, gt, inArray, isNull, lt, lte, or, sql } from 'drizz
 import { GraphQLError } from 'graphql';
 import { Inject, Service } from 'typedi';
 import { randomUUID } from 'node:crypto';
+import { categories } from '../../../../libs/products/datasource/src/entities/CategorySchema';
 import { productContentSyncIntents } from '../../../../libs/products/datasource/src/entities/ProductContentSyncIntentSchema';
 import { products } from '../../../../libs/products/datasource/src/entities/ProductSchema';
 import { productTags } from '../../../../libs/products/datasource/src/entities/ProductTagsSchema';
@@ -475,16 +476,22 @@ export class PostgresqlProductContentSync implements ProductContentSync {
           updatedAt: new Date(),
         })
         .where(eq(productContentSyncIntents.id, intent.id));
-      // Search uses category IDs from Product, not the description evidence graph.
-      // Read tags under the same Product mutex and revision as the indexed fields.
+      // Read search text under the same Product mutex and revision as the indexed fields.
       const tagRows = await tx
         .select({ name: tags.name })
         .from(productTags)
         .innerJoin(tags, eq(productTags.tagId, tags.id))
         .where(eq(productTags.productId, product.id));
+      const categoryRows = product.categoryIds.length
+        ? await tx
+            .select({ labelKo: categories.labelKo, labelEn: categories.labelEn, slug: categories.slug })
+            .from(categories)
+            .where(inArray(categories.id, product.categoryIds))
+        : [];
       return {
         product: { ...product, description: product.description ?? '' },
         tags: tagRows.map(tag => tag.name),
+        categoryText: categoryRows.flatMap(category => [category.labelKo, category.labelEn, category.slug]),
       };
     });
     if (!claimed) return;
@@ -500,6 +507,7 @@ export class PostgresqlProductContentSync implements ProductContentSync {
           description: product.description,
           tags: claimed.tags,
           category: product.categoryIds[0] ?? '',
+          categoryText: claimed.categoryText,
           createdAt: product.createdAt,
           publishedAt: product.publishedAt ?? undefined,
           sourceRevision: product.contentRevision.toString(),

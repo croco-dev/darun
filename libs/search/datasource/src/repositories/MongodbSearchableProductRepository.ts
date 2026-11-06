@@ -109,7 +109,7 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
               {
                 text: {
                   query,
-                  path: ['tags', 'category'],
+                  path: ['tags', 'category', 'categoryText'],
                   fuzzy: {
                     maxEdits: 2,
                     maxExpansions: 256,
@@ -141,6 +141,8 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
       description: product.description ?? '',
       tags: product.tags,
       category: product.category,
+      categoryText: product.categoryText,
+      categoryTextRevision: revision,
       createdAt: product.createdAt,
       publishedAt: product.publishedAt,
       sourceRevision: revision,
@@ -171,7 +173,37 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
                     },
                   ],
                 },
-                '$$ROOT',
+                {
+                  $cond: [
+                    {
+                      $and: [
+                        { $eq: ['$sourceRevision', { $literal: revision }] },
+                        {
+                          $or: [
+                            { $eq: [{ $type: '$categoryText' }, 'missing'] },
+                            {
+                              $ne: [{ $ifNull: ['$categoryTextRevision', null] }, { $literal: revision }],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    // Explicit reindexing can fill the new field without changing
+                    // the same revision's existing content or live vote count.
+                    {
+                      $mergeObjects: [
+                        '$$ROOT',
+                        {
+                          $literal: {
+                            categoryText: product.categoryText,
+                            categoryTextRevision: revision,
+                          },
+                        },
+                      ],
+                    },
+                    '$$ROOT',
+                  ],
+                },
               ],
             },
             { $convert: { input: 'SEARCH_REVISION_INVALID', to: 'long' } },
@@ -188,7 +220,7 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
       // Concurrent inserts share the unique identity. Never delete or replace the winner.
       const winner = await collection.findOne({ productId: id }, { promoteLongs: false });
       if (!winner) throw error;
-      if (storedSearchRevision(winner) >= BigInt(revision.toString())) return true;
+      if (storedSearchRevision(winner) > BigInt(revision.toString())) return true;
       const result = await collection.updateOne({ productId: id }, pipeline);
       return result.acknowledged;
     }

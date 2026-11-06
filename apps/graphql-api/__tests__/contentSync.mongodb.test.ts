@@ -2226,7 +2226,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
   );
 
   it.each(['<p>검색 본문</p>', null])(
-    '검색 snapshot: 필요한 상품과 태그만 읽고 본문 %s와 revision을 보존한다',
+    '검색 snapshot: 필요한 상품·태그·카테고리만 읽고 본문 %s와 revision을 보존한다',
     async description => {
       const product = await seed();
       await db
@@ -2265,7 +2265,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       );
       expect(
         queries.filter(query =>
-          /(?:from|join) "(?:categories|product_features|product_links|product_screenshots|product_flows|product_flow_steps|product_research_jobs)"/.test(
+          /(?:from|join) "(?:product_features|product_links|product_screenshots|product_flows|product_flow_steps|product_research_jobs)"/.test(
             query
           )
         )
