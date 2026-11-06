@@ -16,6 +16,9 @@
         "CI"
       ]
     },
+    "test": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/visual-web/vercel.json"]
+    },
     "dev": {
       "env": [
         "GRAPHQL_INTERNAL_URL",
