@@ -4,7 +4,7 @@ import { Button, ChevronLeft, ChevronRight } from '@darun/ui';
 import { AdminPanel, AdminEmptyState } from '@darun/ui-admin';
 import { useReactTable, getCoreRowModel, createColumnHelper, flexRender } from '@tanstack/react-table';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useProductListTable } from './useProductListTable';
 
 type Product = {
@@ -93,8 +93,9 @@ export function ProductListTable() {
     loadPreviousPage,
   } = useProductListTable();
 
+  const rows = useMemo(() => products.map(product => product.node), [products]);
   const table = useReactTable({
-    data: products.map(product => product.node),
+    data: rows,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
