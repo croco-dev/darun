@@ -3,7 +3,7 @@ import { useSearchParams } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 
 export function useLoginButton() {
-  const { isLoading } = useAuthState();
+  const { isLoading, isError, retry } = useAuthState();
   const authService = useAuthService();
   const searchParams = useSearchParams();
 
@@ -35,5 +35,7 @@ export function useLoginButton() {
   return {
     login,
     isLoading,
+    isError,
+    retry,
   };
 }

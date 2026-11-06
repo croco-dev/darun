@@ -1,6 +1,7 @@
 import { AuthService, AuthStorage, AuthUser } from '@darun/utils-auth-service-core';
 import { getApps, initializeApp } from 'firebase/app';
 import { GoogleAuthProvider, getAuth, onIdTokenChanged, signInWithPopup, connectAuthEmulator } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { getFirebaseAuth } from 'next-firebase-auth-edge';
 
 let isEmulatorConnected = false;
@@ -17,11 +18,14 @@ export class FirebaseAuthService implements AuthService {
   private authMethods: ReturnType<typeof getFirebaseAuth>;
   private authStorage?: AuthStorage;
   private apiKey: string;
-  private authHandlers = new Set<(user?: AuthUser) => void>();
+  private authHandlers = new Set<{
+    onChange: (user?: AuthUser) => void;
+    onError?: () => void;
+  }>();
   private unsubscribeAuth?: () => void;
   private authRevision = 0;
   private signOutsInFlight = 0;
-  private latestAuthResult?: { user?: AuthUser };
+  private latestAuthResult?: { status: 'ready'; user?: AuthUser } | { status: 'error' };
 
   constructor({ projectId, privateKey, clientEmail, authDomain, apiKey }: FirebaseAuthConfig) {
     const normalizedPrivateKey = privateKey.replace(/\\n/g, '\n');
@@ -104,57 +108,20 @@ export class FirebaseAuthService implements AuthService {
     };
   }
 
-  public onIdTokenChanged(handler: (user?: AuthUser) => void) {
-    // One SDK listener gives all consumers the same event order and token result.
-    // Each subscription owns its wrapper, even if two consumers pass the same handler.
-    const notify = (user?: AuthUser) => handler(user);
-    this.authHandlers.add(notify);
+  public onIdTokenChanged(handler: (user?: AuthUser) => void, onError?: () => void) {
+    const subscriber = { onChange: handler, onError };
+    this.authHandlers.add(subscriber);
 
     if (!this.unsubscribeAuth) {
-      const auth = getAuth();
-      this.unsubscribeAuth = onIdTokenChanged(auth, async user => {
-        const revision = ++this.authRevision;
-        this.latestAuthResult = undefined;
-        const isCurrent = () =>
-          revision === this.authRevision && this.authHandlers.size > 0 && auth.currentUser === user;
-
-        let authUser: AuthUser | undefined;
-        if (user) {
-          if (this.signOutsInFlight > 0) return;
-          const idToken = await user.getIdTokenResult(false);
-          if (!isCurrent() || this.signOutsInFlight > 0) return;
-
-          const roles = (idToken.claims.roles ?? []) as string[];
-          authUser = {
-            id: user.uid,
-            email: user.email ?? '',
-            isAdmin: roles.includes('admin') || process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local',
-          };
-          this.authStorage?.set({
-            idToken: idToken.token,
-            refreshToken: user.refreshToken,
-          });
-        } else {
-          if (!isCurrent()) return;
-          this.authStorage?.set({
-            idToken: undefined,
-            refreshToken: undefined,
-          });
-        }
-
-        if (!isCurrent()) return;
-        this.latestAuthResult = { user: authUser };
-        for (const subscriber of [...this.authHandlers]) {
-          if (!isCurrent()) break;
-          if (this.authHandlers.has(subscriber)) subscriber(authUser);
-        }
-      });
+      this.unsubscribeAuth = onIdTokenChanged(getAuth(), user => this.readAuthState(user));
+    } else if (this.latestAuthResult?.status === 'error') {
+      onError?.();
     } else if (this.latestAuthResult) {
-      notify(this.latestAuthResult.user);
+      handler(this.latestAuthResult.user);
     }
 
     return () => {
-      this.authHandlers.delete(notify);
+      this.authHandlers.delete(subscriber);
       if (this.authHandlers.size === 0) {
         this.authRevision++;
         this.latestAuthResult = undefined;
@@ -162,6 +129,57 @@ export class FirebaseAuthService implements AuthService {
         this.unsubscribeAuth = undefined;
       }
     };
+  }
+
+  public retryAuthState() {
+    return this.readAuthState(getAuth().currentUser);
+  }
+
+  private async readAuthState(user: User | null) {
+    const revision = ++this.authRevision;
+    this.latestAuthResult = undefined;
+    const isCurrent = () =>
+      revision === this.authRevision && this.authHandlers.size > 0 && getAuth().currentUser === user;
+
+    let authUser: AuthUser | undefined;
+    if (user) {
+      if (this.signOutsInFlight > 0) return;
+      let idToken: Awaited<ReturnType<User['getIdTokenResult']>>;
+      try {
+        idToken = await user.getIdTokenResult(false);
+      } catch {
+        if (!isCurrent() || this.signOutsInFlight > 0) return;
+        // A failed read is not a signed-out event. Preserve the pending return URL.
+        this.authStorage?.set({ idToken: undefined, refreshToken: undefined });
+        this.latestAuthResult = { status: 'error' };
+        for (const subscriber of [...this.authHandlers]) {
+          if (!isCurrent()) break;
+          if (this.authHandlers.has(subscriber)) subscriber.onError?.();
+        }
+        return;
+      }
+      if (!isCurrent() || this.signOutsInFlight > 0) return;
+      const roles = (idToken.claims.roles ?? []) as string[];
+      authUser = {
+        id: user.uid,
+        email: user.email ?? '',
+        isAdmin: roles.includes('admin') || process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local',
+      };
+      this.authStorage?.set({
+        idToken: idToken.token,
+        refreshToken: user.refreshToken,
+      });
+    } else {
+      if (!isCurrent()) return;
+      this.authStorage?.set({ idToken: undefined, refreshToken: undefined });
+    }
+
+    if (!isCurrent()) return;
+    this.latestAuthResult = { status: 'ready', user: authUser };
+    for (const subscriber of [...this.authHandlers]) {
+      if (!isCurrent()) break;
+      if (this.authHandlers.has(subscriber)) subscriber.onChange(authUser);
+    }
   }
 
   public signInWithGoogle() {

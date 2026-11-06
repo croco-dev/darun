@@ -10,6 +10,8 @@
       "browse": "Browse",
       "submit": "Submit",
       "login": "Login",
+      "authError": "Could not check your sign-in status.",
+      "authRetry": "Try again",
       "logout": "Logout",
       "searchPlaceholder": "Find the service you’re currently using!",
       "searchAriaLabel": "Search query",

@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   search: vi.fn(),
   mutate: vi.fn(),
   observers: new Set<(user: { id: string } | null) => void>(),
+  authErrors: new Set<() => void>(),
   params: new URLSearchParams(),
   routerListeners: new Set<() => void>(),
 }));
@@ -31,9 +32,13 @@ vi.mock('@apollo/client/react', () => ({
 const client = { query: mocks.query, mutate: mocks.mutate };
 let activeClient: ApolloClient | typeof client = client;
 const authService = {
-  onIdTokenChanged: (callback: (user: { id: string } | null) => void) => {
+  onIdTokenChanged: (callback: (user: { id: string } | null) => void, onError?: () => void) => {
     mocks.observers.add(callback);
-    return () => mocks.observers.delete(callback);
+    if (onError) mocks.authErrors.add(onError);
+    return () => {
+      mocks.observers.delete(callback);
+      if (onError) mocks.authErrors.delete(onError);
+    };
   },
 };
 vi.mock('@darun/provider-auth/client', () => ({ useAuthService: () => authService }));
@@ -104,6 +109,7 @@ afterEach(async () => {
   localStorage.clear();
   mocks.params = new URLSearchParams();
   mocks.observers.clear();
+  mocks.authErrors.clear();
   mocks.routerListeners.clear();
   activeClient = client;
   vi.restoreAllMocks();
@@ -112,6 +118,14 @@ afterEach(async () => {
 });
 
 describe('saved account state', () => {
+  it('ends account loading after a token failure so the login recovery control can render', async () => {
+    const current = await mount(() => useSavesPage());
+    expect(current().status).toBe('loading');
+    await act(async () => mocks.authErrors.forEach(onError => onError()));
+    expect(current().status).toBe('login-required');
+    expect(mocks.query).not.toHaveBeenCalled();
+  });
+
   it('reacts to login/logout and isolates initial tab failures and pending pages', async () => {
     const shots = deferred<ReturnType<typeof connection>>();
     mocks.query.mockImplementation(({ query, variables }) => {

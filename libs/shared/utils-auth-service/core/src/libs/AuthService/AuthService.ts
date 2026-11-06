@@ -3,7 +3,8 @@ import { AuthUser } from '../AuthUser';
 
 export interface AuthService {
   setAuthStorage(storage: AuthStorage): void;
-  onIdTokenChanged(handler: (user?: AuthUser) => void): () => void;
+  onIdTokenChanged(handler: (user?: AuthUser) => void, onError?: () => void): () => void;
+  retryAuthState(): Promise<void>;
   signInWithGoogle(): Promise<unknown>;
   getUser(): Promise<AuthUser | null>;
   signOut(): Promise<void>;

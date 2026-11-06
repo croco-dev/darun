@@ -2,7 +2,7 @@ import { useAuthService, useAuthState } from '@darun/provider-auth/client';
 
 export function useHeaderLoginButton() {
   const authService = useAuthService();
-  const { isLoggedIn, isLoading } = useAuthState();
+  const { isLoggedIn, isLoading, isError, retry } = useAuthState();
   const login = async () => {
     try {
       await authService.signInWithGoogle();
@@ -24,6 +24,8 @@ export function useHeaderLoginButton() {
   };
 
   return {
+    isError,
+    retry,
     isLoggedIn,
     isLoading,
     login,

@@ -195,3 +195,67 @@ describe('FirebaseAuthService의 인증 결과 순서', () => {
     expect(values.get('idToken')).toBe('recovered');
   });
 });
+
+describe('초기 토큰 조회 오류와 복구', () => {
+  it('현재 토큰 조회 실패를 전달하고 토큰과 복귀 URL을 구분해 보존한다', async () => {
+    const { service, values, handler } = setup();
+    const onError = vi.fn();
+    service.onIdTokenChanged(vi.fn(), onError);
+    values.set('idToken', 'stale');
+    values.set('refreshToken', 'stale-refresh');
+    values.set('redirectUrl', '/saved');
+    const result = deferred<ReturnType<typeof token>>();
+    const pending = emit(user('a', result));
+    result.reject(new Error('token unavailable'));
+    await expect(pending).resolves.toBeDefined();
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(handler).not.toHaveBeenCalled();
+    expect(values.get('idToken')).toBeUndefined();
+    expect(values.get('refreshToken')).toBeUndefined();
+    expect(values.get('redirectUrl')).toBe('/saved');
+    const replayError = vi.fn();
+    service.onIdTokenChanged(vi.fn(), replayError);
+    expect(replayError).toHaveBeenCalledTimes(1);
+  });
+
+  it('재시도는 SDK 구독을 늘리지 않고 같은 사용자의 토큰을 다시 조회한다', async () => {
+    const { service, values, handler } = setup();
+    const result = deferred<ReturnType<typeof token>>();
+    const current = user('a', result);
+    const pending = emit(current);
+    result.reject(new Error('first failed'));
+    await expect(pending).resolves.toBeDefined();
+    vi.mocked(current.getIdTokenResult).mockResolvedValueOnce(token('recovered'));
+    await service.retryAuthState();
+    expect(sdk.listeners.size).toBe(1);
+    expect(values.get('idToken')).toBe('recovered');
+    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }));
+  });
+
+  it.each(['signed-out', 'new-account', 'unmounted'])('오래된 조회의 실패도 무시한다: %s', async mode => {
+    const { service, handler, unsubscribe, values } = setup();
+    const onError = vi.fn();
+    const stop = service.onIdTokenChanged(vi.fn(), onError);
+    const result = deferred<ReturnType<typeof token>>();
+    const old = emit(user('old', result));
+    if (mode === 'signed-out') {
+      await service.signOut();
+      await emit(null);
+    } else if (mode === 'new-account') {
+      const next = deferred<ReturnType<typeof token>>();
+      const pending = emit(user('new', next));
+      next.resolve(token('new-token'));
+      await pending;
+    } else {
+      unsubscribe();
+      stop();
+    }
+    result.reject(new Error('late failure'));
+    await expect(old).resolves.toBeDefined();
+    expect(onError).not.toHaveBeenCalled();
+    expect(values.get('idToken')).toBe(mode === 'new-account' ? 'new-token' : undefined);
+    expect(handler.mock.calls.map(([value]) => value?.id)).toEqual(
+      mode === 'new-account' ? ['new'] : mode === 'signed-out' ? [undefined] : []
+    );
+  });
+});
