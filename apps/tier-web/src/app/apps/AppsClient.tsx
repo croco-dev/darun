@@ -77,6 +77,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
   const [queryError, setQueryError] = useState<string | null>(null);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [requestedTerm, setRequestedTerm] = useState('');
+  const [searchRetry, setSearchRetry] = useState(0);
   const [initialSnapshot, setInitialSnapshot] = useState({
     apps: initialApps,
     totalCount: initialTotalCount,
@@ -153,6 +154,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
         setTotalCount(nextPage.totalCount);
         setCurrentPage(1);
         setHasNextPage(nextPage.hasNextPage);
+        setQueryError(null);
       })
       .catch((error: unknown) => {
         if (!isActive || requestId !== activeRequestIdRef.current) {
@@ -176,7 +178,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
     return () => {
       isActive = false;
     };
-  }, [requestedTerm, initialSnapshot]);
+  }, [requestedTerm, initialSnapshot, searchRetry]);
 
   const loadMore = useCallback(async () => {
     if (isLoadingMoreRef.current || isRefreshing || !hasNextPage || queryError) {
@@ -279,15 +281,30 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
               tier={app.tier}
             />
           ))}
-          {!isRefreshing && apps.length === 0 && (
+          {(queryError || (!isRefreshing && apps.length === 0)) && (
             <Card variant="default" className="col-span-full p-8 text-center">
               <p className="text-sm text-muted-foreground">{queryError ?? '검색 결과가 없습니다.'}</p>
+              {queryError && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isRefreshing || normalizeAppsSearchTerm(searchTerm) !== requestedTerm}
+                  onClick={() => {
+                    if (isRefreshing || !requestedTerm || normalizeAppsSearchTerm(searchTerm) !== requestedTerm) return;
+                    setIsRefreshing(true);
+                    setSearchRetry(value => value + 1);
+                  }}
+                >
+                  다시 시도
+                </Button>
+              )}
             </Card>
           )}
         </div>
 
         {isRefreshing && (
-          <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+          <div role="status" className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
             <LoaderCircle className="size-4 animate-spin" />
             <span>검색 결과를 불러오는 중입니다.</span>
           </div>
