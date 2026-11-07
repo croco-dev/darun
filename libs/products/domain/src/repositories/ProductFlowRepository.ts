@@ -20,6 +20,8 @@ export type VisualFlowSummary = {
   productId: string;
   productName: string;
   productSlug: string;
+  productLogoUrl: string;
+  productSummary: string;
 };
 
 export type VisualFlowDetailStep = {
@@ -38,6 +40,8 @@ export type VisualFlowDetail = {
   steps: VisualFlowDetailStep[];
   productName: string;
   productSlug: string;
+  productLogoUrl: string;
+  productSummary: string;
 };
 
 export interface ProductFlowRepository {
