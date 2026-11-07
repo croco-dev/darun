@@ -108,10 +108,12 @@ describe.skipIf(!databaseUrl)('app search through the PostgREST parser and Postg
 
   it('uses the same literal filter for the exact count and both 24-item pages', async () => {
     await sql`delete from apps`;
-    for (let index = 0; index < 26; index++) {
-      await sql`insert into apps (app_store_id, name, description)
-        values (${String(index)}, ${`App ${String(index).padStart(2, '0')}`}, 'Hello, world (beta)')`;
-    }
+    const apps = Array.from({ length: 26 }, (_, index) => ({
+      app_store_id: String(index),
+      name: `App ${String(index).padStart(2, '0')}`,
+      description: 'Hello, world (beta)',
+    }));
+    await sql`insert into apps ${sql(apps, 'app_store_id', 'name', 'description')}`;
     await sql`insert into apps (app_store_id, name, description) values ('decoy', 'Unrelated', 'Hello world beta')`;
     const first = await search('Hello, world (beta)');
     const second = await search('Hello, world (beta)', 2);
