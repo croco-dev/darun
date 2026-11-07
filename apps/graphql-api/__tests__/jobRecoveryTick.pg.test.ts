@@ -315,6 +315,8 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
     };
     const target = new URL(databaseUrl!);
     let encrypted = false;
+    let blockResponses = false;
+    let droppedResponses = 0;
     const server = createServer(raw => {
       track(raw);
       raw.once('data', data => {
@@ -330,7 +332,10 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
           encrypted = true;
         });
         tls.pipe(upstream);
-        upstream.pipe(tls);
+        upstream.on('data', data => {
+          if (blockResponses) droppedResponses++;
+          else tls.write(data);
+        });
         tls.once('close', () => upstream.destroy());
         upstream.once('close', () => tls.destroy());
       });
@@ -346,18 +351,29 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
     vi.stubEnv('RECOVERY_TEST_DATABASE_URL', proxied.toString());
     try {
       let started = false;
+      let abortedDuringWait = false;
       const result = await runRecoveryLane(Date.now() + 3_000, async scope => {
         await scope.db.execute(sql`select 1`);
         started = true;
-        await scope.db.execute(sql`select pg_sleep(10)`);
+        // Even the server's statement-timeout response is withheld. Only the lane deadline can settle this query.
+        blockResponses = true;
+        try {
+          await scope.db.execute(sql`select pg_sleep(10)`);
+        } catch (error) {
+          abortedDuringWait = scope.signal.aborted;
+          throw error;
+        }
         throw new Error('The sleeping query must never finish');
       });
       expect(encrypted).toBe(true);
       expect(started).toBe(true);
+      expect(droppedResponses).toBeGreaterThan(0);
+      expect(abortedDuringWait).toBe(true);
       expect(result).toMatchObject({ queued: 0, timedOut: 1 });
       await expect.poll(() => sockets.size, { timeout: 1_000 }).toBe(0);
       await expectNoRecoveryConnections();
       // Preserve the driver's certificate policy: verify-full rejects the untrusted fixture.
+      blockResponses = false;
       proxied.searchParams.set('sslmode', 'verify-full');
       vi.stubEnv('RECOVERY_TEST_DATABASE_URL', proxied.toString());
       let queried = false;
