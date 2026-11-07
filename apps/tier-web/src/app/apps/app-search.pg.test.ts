@@ -1,3 +1,4 @@
+import { assertLocalPostgrestFixture } from '@/test-utils/postgrest-fixture';
 import { createClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -13,19 +14,7 @@ import {
 const databaseUrl = process.env.APP_SEARCH_TEST_DATABASE_URL;
 const restUrl = process.env.APP_SEARCH_TEST_POSTGREST_URL;
 
-if (databaseUrl || restUrl) {
-  if (!databaseUrl || !restUrl) throw new Error('App search tests require both PostgreSQL and PostgREST URLs');
-  const db = new URL(databaseUrl);
-  const rest = new URL(restUrl);
-  if (
-    !['localhost', '127.0.0.1'].includes(db.hostname) ||
-    db.pathname !== '/darun_app_search' ||
-    !['localhost', '127.0.0.1'].includes(rest.hostname) ||
-    rest.protocol !== 'http:'
-  ) {
-    throw new Error('App search tests require dedicated local PostgreSQL and PostgREST fixtures');
-  }
-}
+assertLocalPostgrestFixture(databaseUrl, restUrl, 'darun_app_search');
 
 describe.skipIf(!databaseUrl)('app search through the PostgREST parser and PostgreSQL', () => {
   const sql = postgres(databaseUrl!, {

@@ -1,4 +1,5 @@
 import { MemoCard } from '@/components/MemoCard';
+import { assertLocalPostgrestFixture } from '@/test-utils/postgrest-fixture';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -23,19 +24,7 @@ vi.mock('./AdminSearchInput', () => ({ AdminSearchInput: () => null }));
 vi.mock('./AppStoreScrapeForm', () => ({ AppStoreScrapeForm: () => null }));
 vi.mock('./TierSelect', () => ({ TierSelect: () => null }));
 
-if (databaseUrl || restUrl) {
-  if (!databaseUrl || !restUrl) throw new Error('Memo tests require both database and PostgREST URLs');
-  const db = new URL(databaseUrl);
-  const rest = new URL(restUrl);
-  if (
-    !['localhost', '127.0.0.1'].includes(db.hostname) ||
-    db.pathname !== '/darun_memo_integrity' ||
-    !['localhost', '127.0.0.1'].includes(rest.hostname) ||
-    rest.protocol !== 'http:'
-  ) {
-    throw new Error('Memo tests require dedicated local PostgreSQL and PostgREST fixtures');
-  }
-}
+assertLocalPostgrestFixture(databaseUrl, restUrl, 'darun_memo_integrity');
 
 describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', () => {
   const sql = postgres(databaseUrl!, {

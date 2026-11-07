@@ -52,13 +52,16 @@ export function normalizeAppsSearchTerm(value: string) {
 }
 
 export function escapeAppsSearchQuery(value: string) {
-  return value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+  return value
+    .replaceAll('\\', String.raw`\\`)
+    .replaceAll('%', String.raw`\%`)
+    .replaceAll('_', String.raw`\_`);
 }
 
 export function buildAppsSearchFilter(searchTerm: string) {
   // Escape LIKE literals first, then quote the whole pattern for PostgREST's OR grammar.
   const pattern = `%${escapeAppsSearchQuery(searchTerm)}%`;
-  const quotedPattern = `"${pattern.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+  const quotedPattern = `"${pattern.replaceAll('\\', String.raw`\\`).replaceAll('"', String.raw`\"`)}"`;
 
   return `name.ilike.${quotedPattern},description.ilike.${quotedPattern}`;
 }
