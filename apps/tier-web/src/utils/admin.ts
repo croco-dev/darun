@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { isAuthSessionMissingError } from '@supabase/supabase-js';
-import { redirect } from 'next/navigation';
+import { redirect, unstable_rethrow } from 'next/navigation';
 
 export class AdminAccessError extends Error {
   constructor() {
@@ -25,7 +25,8 @@ async function getAdminUser() {
     const { data, error } = await supabase.from('users').select('id,is_admin').eq('email', user.email).maybeSingle();
     if (error) throw error;
     return data?.is_admin === true ? data : null;
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     throw new AdminAccessError();
   }
 }

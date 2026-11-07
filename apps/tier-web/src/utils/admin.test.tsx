@@ -2,11 +2,13 @@ import { searchAndAddApps, updateAppMemo, updateTier, deleteApp } from '@/app/ad
 import AdminLayout from '@/app/admin/layout';
 import { Header } from '@/components/Header';
 import { AuthSessionMissingError } from '@supabase/supabase-js';
+import { DynamicServerError } from 'next/dist/client/components/hooks-server-context';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { checkIsAdmin, requireAdmin } from './admin';
 
 const fixture = vi.hoisted(() => ({
+  createClient: vi.fn(),
   getUser: vi.fn(),
   profile: vi.fn(),
   write: vi.fn(),
@@ -16,7 +18,8 @@ const fixture = vi.hoisted(() => ({
     throw new Error(`REDIRECT:${path}`);
   }),
 }));
-vi.mock('next/navigation', () => ({
+vi.mock('next/navigation', async importOriginal => ({
+  ...(await importOriginal<typeof import('next/navigation')>()),
   redirect: fixture.redirect,
   useRouter: () => ({ refresh: vi.fn() }),
 }));
@@ -46,7 +49,7 @@ vi.mock('@/utils/supabase/server', () => {
       };
     },
   };
-  return { createClient: () => client, createAdminClient: () => client };
+  return { createClient: fixture.createClient.mockReturnValue(client), createAdminClient: () => client };
 });
 
 beforeEach(() => {
@@ -65,6 +68,19 @@ beforeEach(() => {
 const providerFailure = { message: 'private SQL/token fixture', status: 503 };
 
 describe('관리자 권한 조회와 장애 복구', () => {
+  it.each(['guard', 'header', 'layout'] as const)(
+    '%s는 cookies의 Next.js 렌더링 제어 예외를 그대로 전달한다',
+    async target => {
+      const signal = new DynamicServerError('cookies');
+      fixture.createClient.mockRejectedValueOnce(signal);
+      const request =
+        target === 'guard' ? checkIsAdmin() : target === 'header' ? Header() : AdminLayout({ children: null });
+      await expect(request).rejects.toBe(signal);
+      expect(fixture.write).not.toHaveBeenCalled();
+      expect(fixture.redirect).not.toHaveBeenCalled();
+    }
+  );
+
   it('정상 관리자만 허용하고 비관리자와 없는 프로필은 차단한다', async () => {
     expect(await checkIsAdmin()).toBe(true);
     await expect(requireAdmin()).resolves.toBeDefined();

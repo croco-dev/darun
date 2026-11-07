@@ -2,6 +2,7 @@ import { checkIsAdmin } from '@/utils/admin';
 import { createClient } from '@/utils/supabase/server';
 import { isAuthSessionMissingError, type User } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { unstable_rethrow } from 'next/navigation';
 import { AdminAccessRetry } from './AdminAccessRetry';
 import { HeaderNav } from './HeaderNav';
 import { UserMenu } from './UserMenu';
@@ -16,7 +17,8 @@ export async function Header() {
     if (error && !isAuthSessionMissingError(error)) throw error;
     user = data.user;
     isAdmin = await checkIsAdmin();
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     accessFailed = true;
   }
 
