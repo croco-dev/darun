@@ -3,7 +3,7 @@
 import { requireAdmin } from '@/utils/admin';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { type AppStoreApp, parseAppleSearchResponse, parseAppStoreKeyword } from './app-store-search';
+import { type AppStoreApp, fetchAppStoreApps, parseAppStoreKeyword } from './app-store-search';
 
 export async function updateTier(appId: string, tier: number) {
   if (!Number.isInteger(tier) || tier < 0 || tier > 3) {
@@ -69,17 +69,9 @@ export async function searchAndAddApps(
     };
   }
 
-  const url = new URL('https://itunes.apple.com/search');
-  url.searchParams.set('term', keyword);
-  url.searchParams.set('country', 'kr');
-  url.searchParams.set('entity', 'software');
-  url.searchParams.set('limit', '25');
-
   let apps: AppStoreApp[] | null;
   try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Apple Search API request failed');
-    apps = parseAppleSearchResponse(await response.json());
+    apps = await fetchAppStoreApps(keyword);
   } catch {
     return {
       status: 'error',
