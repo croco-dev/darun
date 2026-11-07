@@ -43,7 +43,6 @@ import { ProductDescriptionGeneratorImpl } from '../../../libs/products/datasour
 import { ProductMutationResolver } from '../../../libs/products/feature/src/Product.mutation.resolver';
 import { ProductDescriptionMutationResolver } from '../../../libs/products/feature/src/ProductDescription.mutation.resolver';
 import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/src/ProductDescription.query.resolver';
-import { ProductPublishMutationResolver } from '../../../libs/products/feature/src/ProductPublishMutationResolver';
 import { ProductResearchQueryResolver } from '../../../libs/products/feature/src/ProductResearch.resolver';
 import { translationJobs } from '../../../libs/translation/datasource/src/entities/TranslationJobSchema';
 import { translations } from '../../../libs/translation/datasource/src/entities/TranslationSchema';
@@ -164,13 +163,17 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
     Container.set(TranslationQueryResolver, new TranslationQueryResolver(translationService, {} as never, sourceStore));
     Container.set(TranslationMutationResolver, new TranslationMutationResolver(translationService));
     Container.set(
-      ProductPublishMutationResolver,
-      new ProductPublishMutationResolver(
+      ProductMutationResolver,
+      new ProductMutationResolver(
         undefined as never,
         undefined as never,
         undefined as never,
         undefined as never,
         getProduct,
+        undefined as never,
+        undefined as never,
+        undefined as never,
+        undefined as never,
         undefined as never,
         undefined as never,
         undefined as never,
@@ -951,32 +954,6 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
   });
 
   it('description request IDs survive response loss and reject different targets through production GraphQL', async () => {
-    const getProduct = new GetProduct(new PostgresqlProductRepository(db as never));
-    Container.set(
-      ProductMutationResolver,
-      new ProductMutationResolver(
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        getProduct,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        undefined as never,
-        descriptionService
-      )
-    );
     let authorized = true;
     const server = createApolloServer({
       options: {
@@ -1108,7 +1085,7 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       resolvers: [
         ProductDescriptionQueryResolver,
         ProductDescriptionMutationResolver,
-        ProductPublishMutationResolver,
+        ProductMutationResolver,
         TranslationQueryResolver,
         TranslationMutationResolver,
       ],

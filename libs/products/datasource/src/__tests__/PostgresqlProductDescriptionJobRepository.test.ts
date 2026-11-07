@@ -28,7 +28,8 @@ describe('PostgresqlProductDescriptionJobRepository', () => {
     };
 
     const returningMock = vi.fn().mockResolvedValue([fakeRow]);
-    const valuesMock = vi.fn().mockReturnValue({ returning: returningMock });
+    const onConflictDoNothing = vi.fn().mockReturnValue({ returning: returningMock });
+    const valuesMock = vi.fn().mockReturnValue({ onConflictDoNothing });
     mockDb.insert.mockReturnValue({ values: valuesMock });
 
     const repo = new PostgresqlProductDescriptionJobRepository(mockDb as never);
