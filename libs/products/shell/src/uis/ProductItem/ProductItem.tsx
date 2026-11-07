@@ -177,7 +177,7 @@ export const ProductItem = ({
         {((tags && tags.length > 0) || (specialTags && specialTags.length > 0) || footerRight) && (
           <div className="flex items-center justify-between gap-2 pt-1 mt-auto w-full">
             {(tags && tags.length > 0) || (specialTags && specialTags.length > 0) ? (
-              <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide touch-pan-x py-0.5">
+              <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide py-0.5">
                 {tags &&
                   tags.length > 0 &&
                   (maxTagItems && tags.length > maxTagItems ? (

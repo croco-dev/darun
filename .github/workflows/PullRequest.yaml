@@ -203,6 +203,8 @@ jobs:
         run: |
           docker compose -p darun-smoke -f docker-compose.smoke.yml exec -T postgres psql -U darun -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE darun_category_search'
           pnpm --filter graphql-api exec vitest run __tests__/categorySearch.mongodb.test.ts
+      - name: Verify native touch scrolling with isolated read fixtures
+        run: pnpm --filter service-web exec playwright test --config playwright.touch.config.ts
       - name: Collect disposable service logs
         if: always()
         run: |

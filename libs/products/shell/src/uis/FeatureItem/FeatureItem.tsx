@@ -41,7 +41,7 @@ export const FeatureItem = ({ emoji, name, description, screenshots }: FeatureIt
           role="region"
           aria-label={`${name} screenshots`}
           tabIndex={0}
-          className="flex w-full gap-3 overflow-x-auto px-0.5 pt-1 pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 touch-pan-x rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+          className="flex w-full gap-3 overflow-x-auto px-0.5 pt-1 pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth scroll-pl-1 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
         >
           {screenshots.map(screenshot => (
             <div key={screenshot.id} className="shrink-0 snap-start">
