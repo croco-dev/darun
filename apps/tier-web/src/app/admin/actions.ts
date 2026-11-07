@@ -1,6 +1,6 @@
 'use server';
 
-import { requireAdmin } from '@/utils/admin';
+import { AdminAccessError, requireAdmin } from '@/utils/admin';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { type AppStoreApp, fetchAppStoreApps, parseAppStoreKeyword } from './app-store-search';
@@ -9,22 +9,13 @@ export async function updateTier(appId: string, tier: number) {
   if (!Number.isInteger(tier) || tier < 0 || tier > 3) {
     throw new Error('티어는 0부터 3까지의 정수여야 합니다.');
   }
-  await requireAdmin();
+  const admin = await requireAdmin();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error('Unauthorized');
-
-  const dbUser = await supabase.from('users').select('id,is_admin').eq('email', user.email).single();
-
-  if (!dbUser?.data?.is_admin) throw new Error('Unauthorized');
 
   const { error } = await supabase.from('tiers').upsert(
     {
       app_id: appId,
-      assigned_by: dbUser.data.id,
+      assigned_by: admin.id,
       tier,
       assigned_at: new Date().toISOString(),
     },
@@ -59,7 +50,12 @@ export async function searchAndAddApps(
   _previousState: AppStoreSearchState,
   formData: FormData
 ): Promise<AppStoreSearchState> {
-  await requireAdmin();
+  try {
+    await requireAdmin();
+  } catch (error) {
+    if (!(error instanceof AdminAccessError)) throw error;
+    return { status: 'error', message: error.message };
+  }
 
   const keyword = parseAppStoreKeyword(formData.get('keyword'));
   if (!keyword) {
