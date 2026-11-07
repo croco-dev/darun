@@ -15,6 +15,7 @@ export const WriteMagazine = bind(
     handleFileDrop,
     file,
     previewUrl,
+    retryFile,
     handleFileRemove,
     handleUploadCancel,
     isSubmitting,
@@ -62,6 +63,21 @@ export const WriteMagazine = bind(
           </AdminField>
 
           <AdminField label="뒷 배경 이미지">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/bmp,image/avif"
+              aria-label="배경 이미지 선택"
+              className="hidden"
+              onChange={e => {
+                const target = e.target;
+                if (target.files && target.files[0]) {
+                  handleFileDrop([target.files[0]]);
+                }
+                target.value = '';
+              }}
+            />
+
             {!file ? (
               <button
                 id="magazine-background-image"
@@ -82,19 +98,6 @@ export const WriteMagazine = bind(
                 }}
                 className="flex min-h-56 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-dark-200 bg-white transition hover:border-dark-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/bmp,image/avif"
-                  className="hidden"
-                  onChange={e => {
-                    const target = e.target;
-                    if (target.files && target.files[0]) {
-                      handleFileDrop([target.files[0]]);
-                    }
-                    target.value = '';
-                  }}
-                />
                 <div className="flex flex-col items-center gap-4 p-8">
                   <svg
                     className="h-12 w-12 text-dark-400"
@@ -148,17 +151,33 @@ export const WriteMagazine = bind(
                 >
                   {isUploading ? '업로드 취소' : '이미지 삭제'}
                 </Button>
-                {!isUploading && file && (
+                {!isUploading && (
                   <Button
                     type="button"
                     variant="contained"
                     color="secondary"
                     disabled={isSubmitting}
-                    onClick={() => handleFileDrop([file])}
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    이미지 다시 업로드
+                    이미지 교체
                   </Button>
                 )}
+              </div>
+            )}
+            {!isUploading && retryFile && (
+              <div className="mt-2 flex flex-col items-start gap-2">
+                <p role="status" className="text-sm text-dark-600">
+                  새 이미지가 적용되지 않았습니다. 다시 업로드하거나 다른 이미지를 선택해주세요.
+                </p>
+                <Button
+                  type="button"
+                  variant="contained"
+                  color="secondary"
+                  disabled={isSubmitting}
+                  onClick={() => handleFileDrop([retryFile])}
+                >
+                  이미지 다시 업로드
+                </Button>
               </div>
             )}
           </AdminField>
