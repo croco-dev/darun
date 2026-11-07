@@ -196,6 +196,13 @@ jobs:
           pnpm --filter graphql-api exec tsx scripts/prepare-smoke-search.ts
       - name: Playwright Smoke Tests
         run: pnpm --filter service-web exec playwright test --grep '@smoke'
+      - name: Verify category text with real MongoDB Search
+        env:
+          CATEGORY_SEARCH_TEST_DATABASE_URL: postgresql://darun:darun@127.0.0.1:55438/darun_category_search
+          CATEGORY_SEARCH_TEST_MONGODB_URI: mongodb://127.0.0.1:27038/darun_category_search?directConnection=true
+        run: |
+          docker compose -p darun-smoke -f docker-compose.smoke.yml exec -T postgres psql -U darun -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE darun_category_search'
+          pnpm --filter graphql-api exec vitest run __tests__/categorySearch.mongodb.test.ts
       - name: Collect disposable service logs
         if: always()
         run: |

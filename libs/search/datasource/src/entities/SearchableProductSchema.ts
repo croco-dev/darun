@@ -32,6 +32,9 @@ export class SearchableProductSchema {
   @prop({ type: () => String, default: '' })
   public category: string;
 
+  @prop({ type: () => [String], default: [] })
+  public categoryText: string[];
+
   @prop({ type: () => Number, default: 0 })
   public votes: number;
 
