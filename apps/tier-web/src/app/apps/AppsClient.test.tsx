@@ -18,6 +18,105 @@ vi.mock('@/utils/supabase/client', () => ({
   },
 }));
 
+test.each(['success', 'failure'] as const)(
+  '최초 교차 뒤 재교차 없이 다음 페이지를 한 번씩 열고 %s를 처리한다',
+  async outcome => {
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+    range.mockReset();
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        private callback: IntersectionObserverCallback;
+        constructor(callback: IntersectionObserverCallback) {
+          this.callback = callback;
+        }
+        observe() {
+          this.callback(
+            [{ isIntersecting: true } as IntersectionObserverEntry],
+            this as unknown as IntersectionObserver
+          );
+        }
+        disconnect() {}
+      }
+    );
+    const first = Promise.withResolvers<{
+      data: unknown[];
+      count: number;
+      error: { message: string } | null;
+    }>();
+    const page = (start: number, end: number, count: number) => ({
+      data: Array.from({ length: end - start + 1 }, (_, index) => ({
+        id: `app-${start + index}`,
+        name: `App ${start + index}`,
+        description: null,
+        icon_url: null,
+        tiers: null,
+      })),
+      count,
+      error: null,
+    });
+    range.mockReturnValueOnce({ overrideTypes: () => first.promise });
+    const initialApps = Array.from({ length: 24 }, (_, index) => ({
+      id: `app-${index + 1}`,
+      name: `App ${index + 1}`,
+      description: null,
+      iconUrl: null,
+      tier: 0,
+    }));
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    const moreButton = () => [...container.querySelectorAll('button')].find(node => node.textContent === '앱 더 보기');
+    try {
+      await act(async () =>
+        root.render(<AppsClient initialApps={initialApps} initialTotalCount={49} initialHasNextPage />)
+      );
+      expect(range).not.toHaveBeenCalled();
+      await act(async () => window.dispatchEvent(new Event('scroll')));
+      expect(range).not.toHaveBeenCalled();
+      expect(moreButton()).toBeDefined();
+      await act(async () => {
+        moreButton()!.click();
+        moreButton()?.click();
+      });
+      expect(range.mock.calls).toEqual([[24, 47]]);
+      expect(container.querySelector('button')?.disabled).toBe(true);
+      await act(async () => window.dispatchEvent(new Event('scroll')));
+      await act(async () =>
+        first.resolve(
+          outcome === 'failure' ? { data: [], count: 0, error: { message: 'next page failed' } } : page(25, 48, 49)
+        )
+      );
+      expect(range).toHaveBeenCalledOnce();
+      if (outcome === 'failure') {
+        expect(container.querySelectorAll('h3')).toHaveLength(24);
+        expect(container.textContent).toContain('next page failed');
+        range.mockReturnValueOnce({ overrideTypes: () => Promise.resolve(page(25, 48, 49)) });
+        await act(async () => container.querySelector('button')!.click());
+        expect(range.mock.calls).toEqual([
+          [24, 47],
+          [24, 47],
+        ]);
+        expect(container.textContent).not.toContain('next page failed');
+      }
+      expect(container.querySelectorAll('h3')).toHaveLength(48);
+      expect(container.textContent).toContain('App 25');
+      expect(moreButton()).toBeDefined();
+      range.mockReturnValueOnce({ overrideTypes: () => Promise.resolve(page(49, 49, 49)) });
+      await act(async () => moreButton()!.click());
+      expect(range).toHaveBeenLastCalledWith(48, 71);
+      expect(container.querySelectorAll('h3')).toHaveLength(49);
+      expect(moreButton()).toBeUndefined();
+      expect(container.textContent).toContain('모든 앱을 불러왔습니다.');
+    } finally {
+      await act(async () => root.unmount());
+      container.remove();
+      vi.unstubAllGlobals();
+      vi.clearAllMocks();
+    }
+  }
+);
+
 test('clearing a pending search restores the catalog and ignores its late response', async () => {
   vi.useFakeTimers();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
@@ -210,7 +309,9 @@ test.each(['resolve', 'reject'] as const)(
           intersect = () =>
             callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
         }
-        observe() {}
+        observe() {
+          intersect();
+        }
         disconnect() {
           intersect = () => {};
         }
@@ -324,7 +425,9 @@ test.each(['clear', 'props'] as const)('%s 뒤 새 목록의 더보기 오류를
         intersect = () =>
           callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
       }
-      observe() {}
+      observe() {
+        intersect();
+      }
       disconnect() {
         intersect = () => {};
       }
