@@ -114,7 +114,7 @@ describe('bounded App Store collection', () => {
     expect(body.locked).toBe(false);
   });
 
-  it('accepts exactly 2 MiB, counts UTF-8 bytes, and preserves duplicate skipping at 25 apps', async () => {
+  it('accepts exactly 2 MiB and preserves duplicate skipping at 25 apps', async () => {
     const payload = JSON.stringify(results(25));
     const json = payload + ' '.repeat(2_097_152 - new TextEncoder().encode(payload).byteLength);
     fixture.apple.mockResolvedValue(new Response(json));
@@ -129,6 +129,18 @@ describe('bounded App Store collection', () => {
     const appleUrl = new URL(String(fixture.apple.mock.calls[0][0]));
     expect(appleUrl.searchParams.get('term')).toBe(keyword);
     expect(appleUrl.searchParams.get('limit')).toBe('25');
+  });
+
+  it('rejects valid UTF-8 JSON one byte above 2 MiB even when its character count is below the limit', async () => {
+    const payload = JSON.stringify({
+      results: [{ trackId: 123, trackName: '앱', description: '한'.repeat(699_000) }],
+    });
+    const json = payload + ' '.repeat(2_097_153 - new TextEncoder().encode(payload).byteLength);
+    expect(json.length).toBeLessThan(2_097_152);
+    expect(new TextEncoder().encode(json).byteLength).toBe(2_097_153);
+    expect(JSON.parse(json).results).toHaveLength(1);
+    fixture.apple.mockResolvedValue(new Response(json));
+    expectRetryableError(await search());
   });
 
   it('rejects 26 results before writing even if some rows are invalid', async () => {
