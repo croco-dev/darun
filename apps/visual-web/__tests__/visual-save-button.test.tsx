@@ -25,6 +25,7 @@ type Request = {
   variables: Record<string, unknown>;
   respond: (saved: boolean | null) => void;
   fail: () => void;
+  reject: (code: string, message: string) => void;
 };
 let client: ApolloClient;
 let root: Root;
@@ -55,6 +56,10 @@ beforeEach(() => {
               observer.complete();
             },
             fail: () => observer.error(new Error('status unavailable')),
+            reject: (code, message) => {
+              observer.next({ errors: [{ message, extensions: { code } }] });
+              observer.complete();
+            },
           });
         })
     ),
@@ -168,4 +173,89 @@ describe.each(['screenshot', 'flow'] as const)('%s save readiness', kind => {
     await signIn(null);
     expect(host.textContent).toContain('로그인');
   });
+});
+
+describe.each(['screenshot', 'flow'] as const)('%s session recovery', kind => {
+  it.each(['status', 'mutation'] as const)('offers login after an Apollo authentication error in %s', async phase => {
+    props.kind = kind;
+    await render();
+    await signIn('account-A');
+    if (phase === 'mutation') {
+      await act(async () => requests[0].respond(false));
+      await act(async () => button().click());
+    }
+    await act(async () => requests.at(-1)!.reject('UNAUTHENTICATED', '세션을 다시 확인해 주세요.'));
+    expect(button().textContent).toContain('Google로 로그인');
+    expect(host.querySelector('[role=alert]')).toBeNull();
+    const requestCount = requests.length;
+    // Firebase can refresh the token without changing the account ID or route.
+    await signIn('account-A');
+    expect(requests).toHaveLength(requestCount + 1);
+    expect(requests.at(-1)!.operation).toBe(
+      kind === 'screenshot' ? 'VisualScreenshotSaveStatus' : 'VisualFlowSaveStatus'
+    );
+    expect(requests.at(-1)!.variables).toEqual({ id: props.id });
+    await act(async () => requests.at(-1)!.respond(true));
+    expect(button().getAttribute('aria-pressed')).toBe('true');
+    expect(button().textContent).toContain('계정에 저장됨');
+  });
+
+  it('keeps signed-out token events in the login state without querying', async () => {
+    props.kind = kind;
+    await render();
+    await signIn(null);
+    await signIn(null);
+    expect(button().textContent).toContain('Google로 로그인');
+    expect(requests).toHaveLength(0);
+  });
+
+  it.each(['network', 'graphql'] as const)(
+    'offers ordinary status recovery after reauthentication and a %s error',
+    async failure => {
+      props.kind = kind;
+      await render();
+      await signIn('account-A');
+      await act(async () => requests[0].reject('UNAUTHENTICATED', 'Session expired'));
+      await signIn('account-A');
+      await act(async () => {
+        if (failure === 'network') requests[1].fail();
+        else requests[1].reject('INTERNAL_SERVER_ERROR', 'Status unavailable');
+      });
+      expect(host.textContent).not.toContain('Google로 로그인');
+      expect(host.querySelector('[role=alert]')?.textContent).toContain('저장 상태를 확인하지 못했어요');
+      const retry = [...host.querySelectorAll('button')].find(item => item.textContent === '다시 확인')!;
+      await act(async () => retry.click());
+      expect(requests).toHaveLength(3);
+      expect(requests[2].variables).toEqual({ id: props.id });
+      await act(async () => requests[2].respond(false));
+      expect(button().getAttribute('aria-pressed')).toBe('false');
+    }
+  );
+
+  it.each(['status', 'mutation'] as const)(
+    'keeps non-authentication GraphQL errors in the %s retry path',
+    async phase => {
+      props.kind = kind;
+      await render();
+      await signIn('account-A');
+      if (phase === 'mutation') {
+        await act(async () => requests[0].respond(false));
+        await act(async () => button().click());
+      }
+      await act(async () => requests.at(-1)!.reject('INTERNAL_SERVER_ERROR', 'UNAUTHENTICATED'));
+      expect(host.textContent).not.toContain('Google로 로그인');
+      expect(host.querySelector('[role=alert]')?.textContent).toContain(
+        phase === 'status' ? '저장 상태를 확인하지 못했어요' : '저장에 실패했어요'
+      );
+      const retry = [...host.querySelectorAll('button')].find(
+        item => item.textContent === (phase === 'status' ? '다시 확인' : '다시 시도')
+      )!;
+      await act(async () => retry.click());
+      expect(requests.at(-1)!.variables).toEqual(
+        phase === 'status' ? { id: props.id } : { input: { id: props.id, saved: true } }
+      );
+      await act(async () => requests.at(-1)!.respond(true));
+      expect(button().getAttribute('aria-pressed')).toBe('true');
+    }
+  );
 });

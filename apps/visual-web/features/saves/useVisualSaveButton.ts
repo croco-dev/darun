@@ -1,5 +1,6 @@
 'use client';
 
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useApolloClient } from '@apollo/client/react';
 import {
   SetVisualFlowSaveDocument,
@@ -22,11 +23,7 @@ export type VisualSaveButtonState = {
 };
 
 function isUnauthorized(error: unknown): boolean {
-  if (error === null || typeof error !== 'object') {
-    return false;
-  }
-  const errors = (error as { graphQLErrors?: Array<{ extensions?: { code?: string } }> }).graphQLErrors;
-  return errors?.some(e => e.extensions?.code === 'UNAUTHENTICATED') ?? false;
+  return CombinedGraphQLErrors.is(error) && error.errors.some(error => error.extensions?.code === 'UNAUTHENTICATED');
 }
 
 /**
@@ -40,7 +37,6 @@ export function useVisualSaveButton(params: {
 }): VisualSaveButtonState {
   const { kind, id, enabled } = params;
   const apolloClient = useApolloClient();
-  const account = useVisualAccount();
   const generation = useRef(0);
   const toggling = useRef(false);
   const desiredSaved = useRef<boolean | null>(null);
@@ -51,6 +47,13 @@ export function useVisualSaveButton(params: {
   const [isToggling, setIsToggling] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [toggleError, setToggleError] = useState(false);
+  const account = useVisualAccount(() => {
+    if (needsLogin) {
+      setNeedsLogin(false);
+      setStatus('loading');
+      setStatusAttempt(attempt => attempt + 1);
+    }
+  });
   const [owner, setOwner] = useState({ account, kind, id, enabled });
   if (owner.account !== account || owner.kind !== kind || owner.id !== id || owner.enabled !== enabled) {
     setOwner({ account, kind, id, enabled });
