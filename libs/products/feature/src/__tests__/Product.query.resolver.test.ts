@@ -629,7 +629,7 @@ describe('ProductQueryResolver', () => {
       await expect(resolver.tags(result[0])).rejects.toThrow('Tags batch failed');
 
       const voteCount = await resolver.voteCount(result[0]);
-      expect(voteCount).toBe(0);
+      expect(voteCount).toBeNull();
 
       const links = await resolver.links(result[0]);
       expect(links).toEqual([]);

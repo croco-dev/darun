@@ -5,11 +5,23 @@ import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { CompareButton } from '../CompareButton';
+import { VoteCountRetry } from '../ProductVoteCount';
 import { useProductUserAction } from './useProductUserAction';
 
 export const ProductUserAction = bind(
   useProductUserAction,
-  ({ voteCount, upvoteProduct, voted, loading, error, slug, success }) => {
+  ({
+    voteCount,
+    voteCountUnavailable,
+    voteCountLoading,
+    retryVoteCount,
+    upvoteProduct,
+    voted,
+    loading,
+    error,
+    slug,
+    success,
+  }) => {
     const { addToast } = useToast();
     const locale = useLocale();
     const t = useTranslations('ProductDetail.action');
@@ -95,10 +107,11 @@ export const ProductUserAction = bind(
             <span
               className={`select-none whitespace-nowrap text-sm font-semibold tabular-nums transition-colors duration-150 ${voted ? 'text-white' : 'text-dark-700 group-hover:text-dark-900'}`}
             >
-              {voteCount.toLocaleString(locale)}
+              {voteCount === null ? '—' : voteCount.toLocaleString(locale)}
             </span>
           </div>
         </Button>
+        {voteCountUnavailable && <VoteCountRetry loading={voteCountLoading} retry={retryVoteCount} />}
         <CompareButton slug={slug} source="direct" />
         <Button
           variant="shadow"

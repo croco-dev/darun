@@ -32,7 +32,7 @@ type TrendingProduct = {
   slug: string;
   logoUrl?: string | null;
   summary?: string | null;
-  voteCount: number;
+  voteCount: number | null;
   tags: Array<{
     id: string;
     name: string;

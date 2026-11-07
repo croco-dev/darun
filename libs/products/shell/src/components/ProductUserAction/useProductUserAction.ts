@@ -6,6 +6,7 @@ import {
 } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 import { useRef, useState, useSyncExternalStore } from 'react';
+import { useProductVoteCount } from '../ProductVoteCount/useProductVoteCount';
 
 void gql`
   query ProductBySlugOnProductUserAction($slug: String!, $locale: String!) {
@@ -71,12 +72,14 @@ type ProductUserActionProps = {
 
 export function useProductUserAction({ slug }: ProductUserActionProps) {
   const locale = useLocale();
-  const { data } = useQuery(ProductBySlugOnProductUserActionDocument, {
+  const { data, error: countError } = useQuery(ProductBySlugOnProductUserActionDocument, {
     variables: {
       slug,
       locale,
     },
   });
+
+  const countRead = useProductVoteCount(slug, countError ? null : data?.productBySlug?.voteCount);
 
   const votedRaw = useSyncExternalStore(subscribeVoted, getVotedSnapshot, getServerVotedSnapshot);
   const isPersistedVoted = votedRaw.includes(`"${slug}"`);
@@ -141,7 +144,10 @@ export function useProductUserAction({ slug }: ProductUserActionProps) {
 
   return {
     upvoteProduct,
-    voteCount: data?.productBySlug?.voteCount ?? 0,
+    voteCount: countRead.count ?? null,
+    voteCountUnavailable: countRead.unavailable,
+    voteCountLoading: countRead.loading,
+    retryVoteCount: countRead.retry,
     voted,
     loading: current.loading,
     error: current.error,

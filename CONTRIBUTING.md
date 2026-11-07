@@ -618,6 +618,12 @@ GraphQL SDL이나 원본 operation을 변경하면 `pnpm --filter @darun/provide
 
 목록 API의 `productsByCategory`와 `visualApps`는 기본 24개씩 반환합니다. 호출자는 `pageInfo.endCursor`와 `hasNextPage`로 이어 읽으며, 목록 표시를 위해 모든 페이지나 각 앱의 화면 목록을 미리 읽지 않습니다. 앱 카드에는 `coverScreenshot`과 `screenshotCount`를 사용합니다. 상품의 태그·추천 수는 선택된 필드만 배치 조회하며, 변경 가능한 데이터를 읽는 상품 ID loader는 요청 사이에 결과를 보관하지 않습니다.
 
+상품의 `voteCount`는 조회 실패 시 `null`, 실제 추천이 없으면 `0`을 반환합니다.
+상세·랭킹·카테고리·대안·비교 화면은 마지막으로 읽은 수치를 유지하면서 실패를 안내하고,
+‘추천 수 다시 조회’는 해당 상품의 읽기 query만 실행합니다. 투표 mutation을 다시 실행하지 않습니다.
+nullable 응답을 처리하는 웹을 먼저 배포한 뒤 API를 배포할 수 있습니다. 새 웹의 재조회는
+기존 `productBySlug`를 사용하므로 새 API 필드를 먼저 제공할 필요가 없습니다.
+
 계정에 화면·플로를 저장할 때는 `setVisualScreenshotSave(input: { id, saved })`와 `setVisualFlowSave(input: { id, saved })`를 사용합니다. `saved`는 원하는 최종 상태이며, 응답을 받지 못해도 같은 목표로 재시도합니다. 같은 목표의 중복 요청은 기존 저장 시각을 바꾸지 않습니다. 기존 `toggleVisual*Save`는 호환성을 위해 유지하지만 재시도마다 의도가 반전되므로 신규 소비자는 사용하지 않습니다. 두 API는 계정·대상별 같은 transaction 잠금을 사용합니다. 새 클라이언트를 배포하기 전에 두 set mutation을 제공하는 GraphQL API를 먼저 배포해야 합니다.
 
 `VISUAL_SAVE_TEST_DATABASE_URL`을 격리 로컬 `darun_visual_save` DB로 지정하고 `pnpm --filter @darun/products-datasource exec vitest run src/__tests__/VisualSave.pg.test.ts`를 실행하면 병렬 목표 저장·해제, 기존 토글 직렬화, 저장 시각·목록·개수와 계정·대상별 독립성을 검증합니다. PR CI는 전용 DB와 필수 PostgreSQL reporter로 skip 없이 실행합니다.
