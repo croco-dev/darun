@@ -79,7 +79,10 @@ export function useProductUserAction({ slug }: ProductUserActionProps) {
     },
   });
 
-  const countRead = useProductVoteCount(slug, countError ? null : data?.productBySlug?.voteCount);
+  const countRead = useProductVoteCount(
+    slug,
+    countError || data?.productBySlug === null ? null : data?.productBySlug?.voteCount
+  );
 
   const votedRaw = useSyncExternalStore(subscribeVoted, getVotedSnapshot, getServerVotedSnapshot);
   const isPersistedVoted = votedRaw.includes(`"${slug}"`);

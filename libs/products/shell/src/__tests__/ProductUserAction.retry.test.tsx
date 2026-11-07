@@ -11,12 +11,18 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 it('투표 저장 뒤 추천 수 읽기 실패는 투표 완료를 유지하고 조회만 재시도한다', async () => {
   localStorage.clear();
   const operations: string[] = [];
+  let countReads = 0;
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: new ApolloLink(
       operation =>
         new Observable(observer => {
           operations.push(operation.operationName ?? '');
+          if (operation.operationName === 'ProductVoteCount' && ++countReads === 1) {
+            observer.next({ data: { productBySlug: null } });
+            observer.complete();
+            return;
+          }
           const product = { __typename: 'Product', id: 'p1', name: 'Notion', voteCount: 42 };
           observer.next({
             data:
@@ -66,12 +72,16 @@ it('투표 저장 뒤 추천 수 읽기 실패는 투표 완료를 유지하고 
     expect(element.textContent).toContain('vote saved');
     expect(operations.filter(name => name.startsWith('Upvote'))).toHaveLength(1);
     await act(async () => element.querySelectorAll<HTMLButtonElement>('button')[1].click());
+    expect(vote.textContent).toBe('42');
+    expect(element.textContent).toContain('Retry count');
+    await act(async () => element.querySelectorAll<HTMLButtonElement>('button')[1].click());
     expect(vote.textContent).toBe('43');
     expect(vote.disabled).toBe(true);
     expect(element.textContent).toContain('vote saved');
     expect(operations).toEqual([
       'ProductBySlugOnProductUserAction',
       'UpvoteProductOnProductUserAction',
+      'ProductVoteCount',
       'ProductVoteCount',
     ]);
   } finally {

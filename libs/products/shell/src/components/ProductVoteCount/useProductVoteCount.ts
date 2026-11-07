@@ -20,7 +20,7 @@ export function useProductVoteCount(slug: string, count: number | null | undefin
     variables: { slug, locale },
     fetchPolicy: 'cache-only',
   });
-  const cachedCount = cached?.productBySlug?.voteCount;
+  const cachedCount = cached?.productBySlug === null ? null : cached?.productBySlug?.voteCount;
   const identity = `${locale}:${slug}`;
   const [read, setRead] = useState({
     identity: { key: identity },
@@ -53,7 +53,7 @@ export function useProductVoteCount(slug: string, count: number | null | undefin
       ...read,
       receivedCache: cachedCount,
       count: cachedCount ?? read.count,
-      unavailable: cachedCount === null,
+      unavailable: cachedCount === undefined ? read.unavailable : cachedCount === null,
     });
   }
   const current = read.identity.key === identity ? read : { count, unavailable: count === null, loading: false };

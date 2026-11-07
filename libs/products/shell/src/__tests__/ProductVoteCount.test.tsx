@@ -28,6 +28,7 @@ function fixture(locale = 'ko') {
     slug: string;
     finish: (count: number | null) => void;
     fail: () => void;
+    finishMissing: () => void;
   }> = [];
   const cache = new InMemoryCache();
   client = new ApolloClient({
@@ -54,6 +55,10 @@ function fixture(locale = 'ko') {
               observer.complete();
             },
             fail: () => observer.error(new Error('network unavailable')),
+            finishMissing: () => {
+              observer.next({ data: { productBySlug: null } });
+              observer.complete();
+            },
           });
         })
     ),
@@ -157,6 +162,22 @@ it('비교표와 카드의 같은 상품 추천 수를 캐시 갱신으로 함�
   expect(container.querySelectorAll('button')).toHaveLength(2);
   await retry();
   await act(async () => requests[0].finish(43));
+  expect(container.querySelectorAll('[aria-label="추천 43"]')).toHaveLength(2);
+  expect(container.querySelectorAll('button')).toHaveLength(0);
+});
+
+it('공유한 상품 조회가 null이어도 두 영역의 마지막 수치와 재조회 안내를 유지한다', async () => {
+  const { container, requests, render, retry } = fixture();
+  await render(42, 'notion', false, true);
+  await render(null, 'notion', false, true);
+  await retry();
+  await act(async () => requests[0].finish(null));
+  await retry();
+  await act(async () => requests[1].finishMissing());
+  expect(container.querySelectorAll('[aria-label="추천 42"]')).toHaveLength(2);
+  expect(container.querySelectorAll('button')).toHaveLength(2);
+  await retry();
+  await act(async () => requests[2].finish(43));
   expect(container.querySelectorAll('[aria-label="추천 43"]')).toHaveLength(2);
   expect(container.querySelectorAll('button')).toHaveLength(0);
 });
