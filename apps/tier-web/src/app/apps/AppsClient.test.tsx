@@ -87,6 +87,115 @@ test('clearing a pending search restores the catalog and ignores its late respon
   }
 });
 
+test.each([
+  'success',
+  'empty',
+  'failure',
+  'change-success',
+  'change-failure',
+  'clear-success',
+  'clear-failure',
+] as const)('첫 검색 실패 후 같은 검색어를 재시도한다: %s', async outcome => {
+  vi.useFakeTimers();
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  range.mockReset();
+  const page = (id: string) => ({
+    data: [{ id, name: id, description: null, icon_url: null, tiers: null }],
+    count: 1,
+    error: null,
+  });
+  const retry = Promise.withResolvers<ReturnType<typeof page>>();
+  range
+    .mockReturnValueOnce({
+      overrideTypes: () =>
+        Promise.resolve({
+          data: [],
+          count: 0,
+          error: { message: 'first failure' },
+        }),
+    })
+    .mockReturnValueOnce({ overrideTypes: () => retry.promise })
+    .mockReturnValueOnce({
+      overrideTypes: () => Promise.resolve(page('new result')),
+    });
+  const initialApps = [
+    {
+      id: 'catalog',
+      name: 'Catalog app',
+      description: null,
+      iconUrl: null,
+      tier: 0,
+    },
+  ];
+  const container = document.createElement('div');
+  document.body.append(container);
+  const root = createRoot(container);
+  try {
+    await act(async () =>
+      root.render(<AppsClient initialApps={initialApps} initialTotalCount={1} initialHasNextPage={false} />)
+    );
+    const input = container.querySelector('input')!;
+    const search = async (value: string) => {
+      await act(async () => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      await act(async () => vi.advanceTimersByTimeAsync(250));
+    };
+    await search('  retry  ');
+    expect(container.textContent).toContain('first failure');
+    expect(container.textContent).not.toContain('검색 결과가 없습니다.');
+    const button = [...container.querySelectorAll('button')].find(node => node.textContent === '다시 시도');
+    expect(button).toBeDefined();
+    await act(async () => {
+      button!.click();
+      button!.click();
+    });
+    expect(button!.disabled).toBe(true);
+    expect(input.value).toBe('  retry  ');
+    expect(range.mock.calls).toEqual([
+      [0, 23],
+      [0, 23],
+    ]);
+    expect(container.textContent).toContain('검색 결과를 불러오는 중입니다.');
+    await act(async () => button!.click());
+    expect(range).toHaveBeenCalledTimes(2);
+
+    if (outcome.startsWith('change')) await search('new');
+    if (outcome.startsWith('clear')) await search('');
+    await act(async () => {
+      if (outcome.endsWith('failure')) retry.reject(new Error('retry failure'));
+      else if (outcome === 'empty') retry.resolve({ data: [], count: 0, error: null });
+      else retry.resolve(page('retry result'));
+    });
+
+    if (outcome.startsWith('change') || outcome.startsWith('clear')) {
+      expect(container.querySelector('h3')?.textContent).toBe(
+        outcome.startsWith('change') ? 'new result' : 'Catalog app'
+      );
+      expect(container.textContent).not.toContain('retry result');
+      expect(container.textContent).not.toContain('retry failure');
+    } else if (outcome === 'failure') {
+      expect(container.textContent).toContain('retry failure');
+      expect(container.querySelector('button')?.disabled).toBe(false);
+    } else if (outcome === 'empty') {
+      expect(container.textContent).toContain('검색 결과가 없습니다.');
+      expect(container.querySelector('button')).toBeNull();
+    } else {
+      expect(container.querySelector('h3')?.textContent).toBe('retry result');
+      expect(container.textContent).not.toContain('first failure');
+      expect(container.querySelector('button')).toBeNull();
+    }
+    expect(container.textContent).not.toContain('검색 결과를 불러오는 중입니다.');
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  }
+});
+
 test.each(['resolve', 'reject'] as const)(
   '새 검색의 더보기가 이전 요청보다 먼저 시작되고 이전 %s가 현재 요청을 해제하지 않는다',
   async outcome => {
