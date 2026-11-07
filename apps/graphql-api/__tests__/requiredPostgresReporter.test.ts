@@ -21,6 +21,7 @@ const urls = {
   VISUAL_SAVE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_visual_save',
   FLOW_DETAIL_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_flow_detail',
   MIGRATION_BASELINE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_migration_baseline',
+  RECOVERY_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_recovery',
 };
 const groups = {
   llm: ['__tests__/llmSettingConcurrency.pg.test.ts'],
@@ -39,6 +40,7 @@ const groups = {
   ],
   baseline: ['__tests__/migrationBaseline.pg.test.ts'],
   tier: ['src/remove-duplicates.pg.test.ts'],
+  recovery: ['__tests__/jobRecoveryTick.pg.test.ts'],
 };
 type Group = keyof typeof groups;
 const passing = "it('passes', () => expect(2 + 3).toBe(5));";
@@ -102,6 +104,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
     ['products', 'VISUAL_SAVE_TEST_DATABASE_URL'],
     ['baseline', 'MIGRATION_BASELINE_TEST_DATABASE_URL'],
     ['tier', 'DEDUPE_TEST_DATABASE_URL'],
+    ['recovery', 'RECOVERY_TEST_DATABASE_URL'],
   ] as const)('fails before running when %s lacks %s', (group, name) => {
     expectFailure(runFixture(group, {}, [], name), `Required PostgreSQL test URL is missing: ${name}`);
   });

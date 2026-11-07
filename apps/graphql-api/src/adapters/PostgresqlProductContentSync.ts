@@ -330,7 +330,10 @@ export class PostgresqlProductContentSync implements ProductContentSync {
     });
   }
 
-  async dispatch(limit = 50): Promise<{ recovered: number; queued: number }> {
+  async dispatch(
+    limit = 50,
+    send = (intentId: string) => this.queue.sendIntent(intentId)
+  ): Promise<{ recovered: number; queued: number }> {
     const now = new Date();
     const exhausted = await this.db
       .update(productContentSyncIntents)
@@ -393,7 +396,7 @@ export class PostgresqlProductContentSync implements ProductContentSync {
         .returning({ id: productContentSyncIntents.id });
       if (!reserved) continue;
       try {
-        if (await this.queue.sendIntent(intent.id)) queued++;
+        if (await send(intent.id)) queued++;
       } catch (error) {
         await this.db
           .update(productContentSyncIntents)

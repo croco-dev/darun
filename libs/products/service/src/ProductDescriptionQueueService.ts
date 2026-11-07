@@ -1,5 +1,6 @@
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { Service } from 'typedi';
+import { RecoverySqsClient } from './RecoverySqsClient';
 
 export type ProductDescriptionQueuePayload = {
   jobId: string;
@@ -9,6 +10,7 @@ export type ProductDescriptionQueuePayload = {
 @Service()
 export class ProductDescriptionQueueService {
   private sqsClient: SQSClient | null = null;
+  private readonly recoveryClient = new RecoverySqsClient();
 
   private getClient(): SQSClient {
     if (!this.sqsClient) {
@@ -19,7 +21,7 @@ export class ProductDescriptionQueueService {
     return this.sqsClient;
   }
 
-  async sendJob(payload: ProductDescriptionQueuePayload): Promise<boolean> {
+  async sendJob(payload: ProductDescriptionQueuePayload, signal?: AbortSignal): Promise<boolean> {
     const queueUrl = process.env['PRODUCT_DESCRIPTION_QUEUE_URL'];
 
     if (!queueUrl) {
@@ -28,12 +30,13 @@ export class ProductDescriptionQueueService {
     }
 
     try {
-      const client = this.getClient();
+      const client = signal ? this.recoveryClient.get(process.env['AWS_REGION'] || 'ap-northeast-2') : this.getClient();
       await client.send(
         new SendMessageCommand({
           QueueUrl: queueUrl,
           MessageBody: JSON.stringify(payload),
-        })
+        }),
+        { abortSignal: signal }
       );
       return true;
     } catch (error) {

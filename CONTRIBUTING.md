@@ -610,6 +610,8 @@ PR CI의 전체 패키지 검사는 `pnpm run typecheck:tsrs --concurrency=4 -- 
 
 GraphQL 변경은 Node.js 22에서 `pnpm --filter graphql-api build:lambda`와 `pnpm --filter graphql-api verify:lambda`도 실행합니다. 이 검사는 번들 초기화뿐 아니라 실제 resolver 스키마와 커밋된 `schema.graphql`의 일치 여부를 확인합니다.
 
+작업 복구 tick은 검색 동기화·조사·소개·번역·스크린샷 정리를 종류별로 병렬 실행합니다. 각 종류는 DB 연결 하나와 최대 10초를 사용하며 Lambda 잔여 시간의 마지막 2초는 정리에 남깁니다. DB statement는 최대 1초, SQS 전송은 최대 2초로 제한합니다. 복구 전송은 SDK 내부의 중단할 수 없는 재시도 대기를 피하려고 한 번만 시도하며, 실패한 전송은 다음 tick에 맡깁니다. 일반 호출의 SDK 재시도 설정은 유지합니다. 기한이 되면 SQS를 중단하고 DB driver를 종료한 뒤 소켓이 닫힐 때까지 기다립니다. 종료 시 미완료 transaction은 rollback되고, 이미 commit된 dispatch 예약은 기존 만료 규칙에 따라 다음 tick이 재발견합니다. SQS 수락 뒤 응답만 유실된 경우에는 기존 worker claim으로 중복 업무 실행을 막습니다. 종류별 `attempted`·`queued`·`timedOut`·`failed`를 로그에 남기며 전송 시도를 업무 완료로 기록하지 않습니다. 격리 로컬 `darun_recovery` DB의 `RECOVERY_TEST_DATABASE_URL`을 지정하고 `pnpm --filter graphql-api exec vitest run __tests__/jobRecoveryTick.pg.test.ts`로 큐 지연 격리·중첩 tick·예약 rollback·TLS 소켓 종료를 검증합니다. PR CI는 필수 PostgreSQL reporter로 이 검사를 skip 없이 실행합니다. `recoveryQueueSignal.test.ts`는 합성 자격 증명과 loopback SQS HTTP fixture에서 다섯 큐의 실제 전송 취소와 Retry-After 응답 후 재시도 대기 생략을 확인합니다.
+
 GraphQL SDL이나 원본 operation을 변경하면 `pnpm --filter @darun/provider-graphql codegen`으로 클라이언트 문서·타입을 갱신합니다. `pnpm --filter @darun/provider-graphql check:codegen`은 같은 설정으로 임시 디렉터리에 생성해 `libs/__generated__`와 비교하며 저장소 파일을 덮어쓰지 않습니다. 차이가 있으면 파일 경로와 재생성 명령을 안내하고 실패하며, PR CI에서도 실행합니다. 더 이상 생성되지 않는 파일은 별도로 제거합니다.
 
 상품 링크·기능·상품/기능 스크린샷·수동 대안의 저장소는 요청 사이에 조회 결과를 캐시하지 않습니다. 같은 tick의 여러 parent ID는 계속 하나의 SQL로 조회하며, 다른 연결이 commit한 변경은 같은 reader의 다음 조회에서 읽습니다. `productDetailFreshness.pg.test.ts`는 별도 로컬 DB에서 수정·삭제·빈 목록의 추가, rollback과 배치 횟수를 검증합니다.
