@@ -158,6 +158,10 @@ it('keeps no accepted selection after the first failure and can retry the select
 });
 
 it('restores the accepted preview on cancellation and ignores a late result after a new upload', async () => {
+  vi.mocked(URL.createObjectURL)
+    .mockReturnValueOnce('blob:accepted-A')
+    .mockReturnValueOnce('blob:cancelled-B')
+    .mockReturnValueOnce('blob:accepted-B');
   const { result, unmount } = setup();
   upload.mockResolvedValueOnce(firstUrl);
   await act(async () => {
@@ -174,7 +178,9 @@ it('restores the accepted preview on cancellation and ignores a late result afte
     task = result.current.handleFileDrop([replacement]);
   });
   act(() => result.current.handleUploadCancel());
-  expect(result.current.previewUrl).toBe('blob:first.png');
+  expect(result.current.previewUrl).toBe('blob:accepted-A');
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:cancelled-B');
+  expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:accepted-A');
   expect(result.current.file).toBe(first);
   upload.mockResolvedValueOnce(replacementUrl);
   await act(async () => {
@@ -186,6 +192,10 @@ it('restores the accepted preview on cancellation and ignores a late result afte
   });
   expect(result.current.form.getValues().backgroundImageUrl).toBe(replacementUrl);
   expect(result.current.file).toBe(replacement);
+  expect(result.current.previewUrl).toBe('blob:accepted-B');
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:accepted-A');
+  expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:accepted-B');
   unmount();
-  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:replacement.png');
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:accepted-B');
+  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(3);
 });

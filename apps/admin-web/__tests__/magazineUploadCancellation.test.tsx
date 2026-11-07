@@ -61,10 +61,13 @@ it('ignores a successful upload arriving after the magazine form unmounts', asyn
   });
   expect(result.current.isUploading).toBe(true);
   unmount();
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:replacement');
+  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
   await act(async () => {
     pending.resolve('https://images.example.test/late.png');
     await task;
   });
+  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
   expect(notifications.show).not.toHaveBeenCalled();
   expect(write).not.toHaveBeenCalled();
   expect(navigate).not.toHaveBeenCalled();
