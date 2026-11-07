@@ -1,10 +1,9 @@
 import { gql } from '@apollo/client';
 import { ProductCard, VoteCountBadge, getLocalizedTag } from '@darun/products-shell';
-import { Breadcrumb, Chip, ContentArea, PageHeading } from '@darun/ui';
+import { Breadcrumb, Chip, ContentArea, LogoImage, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { notFound } from '@darun/utils-router';
 import { Metadata } from 'next';
-import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
 import { NO_INDEX_ROBOTS } from '../../../../../lib/seo/indexability';
@@ -195,8 +194,9 @@ export default async function ComparePage({ params }: Props) {
             <div className="sticky top-[61px] z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
               <div className="flex min-w-0 items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
                 {product1.logoUrl ? (
-                  <Image
+                  <LogoImage
                     src={product1.logoUrl}
+                    fallbackSrc="/images/default-product-icon.svg"
                     alt=""
                     aria-hidden="true"
                     width={32}
@@ -215,8 +215,9 @@ export default async function ComparePage({ params }: Props) {
               </div>
               <div className="flex min-w-0 items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
                 {product2.logoUrl ? (
-                  <Image
+                  <LogoImage
                     src={product2.logoUrl}
+                    fallbackSrc="/images/default-product-icon.svg"
                     alt=""
                     aria-hidden="true"
                     width={32}
