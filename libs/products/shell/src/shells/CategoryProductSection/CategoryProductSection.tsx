@@ -5,7 +5,7 @@ import { useSuspenseQuery } from '@apollo/client/react';
 import { Breadcrumb, Button, SectionWrapper } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ProductCard } from '../../components';
 import { getCategoryIcon } from '../CategoryNavigationSection/CategoryNavigationSection';
 
@@ -72,10 +72,21 @@ type ProductsByCategoryQueryData = {
 
 export function CategoryProductSection({ slug }: { slug: string }) {
   const locale = useLocale();
+  return <CategoryProducts key={`${locale}:${slug}`} slug={slug} locale={locale} />;
+}
+
+function CategoryProducts({ slug, locale }: { slug: string; locale: string }) {
   const t = useTranslations('category');
   const [loadingMore, setLoadingMore] = useState(false);
   const [pageError, setPageError] = useState(false);
-  const { data, fetchMore } = useSuspenseQuery<ProductsByCategoryQueryData>(PRODUCTS_BY_CATEGORY_QUERY, {
+  const pendingRequest = useRef<symbol | null>(null);
+  useEffect(
+    () => () => {
+      pendingRequest.current = null;
+    },
+    []
+  );
+  const { data, client } = useSuspenseQuery<ProductsByCategoryQueryData>(PRODUCTS_BY_CATEGORY_QUERY, {
     variables: {
       slug,
       locale,
@@ -85,25 +96,48 @@ export function CategoryProductSection({ slug }: { slug: string }) {
   const products = data.productsByCategory.edges.map(edge => edge.node);
   const totalCount = data.productsByCategory.totalCount;
   const loadMore = async () => {
-    if (loadingMore || !data.productsByCategory.pageInfo.hasNextPage || !data.productsByCategory.pageInfo.endCursor)
-      return;
+    const after = data.productsByCategory.pageInfo.endCursor;
+    if (pendingRequest.current || !data.productsByCategory.pageInfo.hasNextPage || !after) return;
+    const request = Symbol();
+    pendingRequest.current = request;
     setLoadingMore(true);
     setPageError(false);
     try {
-      await fetchMore({
-        variables: { after: data.productsByCategory.pageInfo.endCursor },
-        updateQuery: (previous, { fetchMoreResult }) => ({
-          ...fetchMoreResult,
-          productsByCategory: {
-            ...fetchMoreResult.productsByCategory,
-            edges: [...previous.productsByCategory.edges, ...fetchMoreResult.productsByCategory.edges],
-          },
-        }),
+      const { data: nextPage } = await client.query<ProductsByCategoryQueryData>({
+        query: PRODUCTS_BY_CATEGORY_QUERY,
+        variables: { slug, locale, after },
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'none',
       });
+      if (pendingRequest.current !== request) return;
+      if (!nextPage) throw new Error('Missing category page');
+      client.cache.updateQuery<ProductsByCategoryQueryData>(
+        {
+          query: PRODUCTS_BY_CATEGORY_QUERY,
+          variables: { slug, locale },
+        },
+        previous => {
+          if (!previous || previous.productsByCategory.pageInfo.endCursor !== after) return previous;
+          const existingIds = new Set(previous.productsByCategory.edges.map(edge => edge.node.id));
+          return {
+            ...nextPage,
+            productsByCategory: {
+              ...nextPage.productsByCategory,
+              edges: [
+                ...previous.productsByCategory.edges,
+                ...nextPage.productsByCategory.edges.filter(edge => !existingIds.has(edge.node.id)),
+              ],
+            },
+          };
+        }
+      );
     } catch {
-      setPageError(true);
+      if (pendingRequest.current === request) setPageError(true);
     } finally {
-      setLoadingMore(false);
+      if (pendingRequest.current === request) {
+        pendingRequest.current = null;
+        setLoadingMore(false);
+      }
     }
   };
   const category = data.categoryBySlug;
@@ -212,7 +246,7 @@ export function CategoryProductSection({ slug }: { slug: string }) {
           <button
             type="button"
             onClick={loadMore}
-            disabled={loadingMore}
+            aria-disabled={loadingMore}
             aria-busy={loadingMore}
             className="self-center rounded-xl border border-dark-200 px-5 py-3 focus-visible:outline focus-visible:outline-2"
           >
