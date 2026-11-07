@@ -18,7 +18,7 @@ pnpm exec turbo run cloudflare:build --filter=tier-web
 
 - 티어 목록/검색/페이지네이션(`/`, `/apps`, `/new`, `/apps/[id]`)
 - 관리자(`/admin`): 앱 검색/페이지네이션, 티어 할당, 메모 편집/삭제, App Store 키워드 수집
-- 인증(`/auth/signup`, `/auth/signin`): 이메일/비밀번호 가입·로그인, `/auth/callback`에서 세션 교환 후 `/` 이동(실패 시 `/auth/auth-code-error`)
+- 인증(`/auth/signup`, `/auth/signin`): 이메일/비밀번호 가입·로그인. `/auth/callback`에서 세션을 교환하며, 인증 실패는 `/auth/auth-code-error`, 앱 사용자 정보 저장 실패는 `/auth/profile-sync`에서 안내한다.
 - 설정(`/settings`): 로그인 사용자 비밀번호 변경
 - 조회 실패는 빈 목록과 구분해 재시도를 제공한다. 유효하지 않은 `tier` 값은 서버와 탭에서 모두 1티어로 해석한다.
 - 앱 카드 전체는 접근 가능한 이름을 가진 링크이며 작은 아이콘은 지연 로딩한다. JSON-LD는 실제 script 삽입 지점에서 `<`를 이스케이프한다.
@@ -42,6 +42,25 @@ pnpm exec turbo run cloudflare:build --filter=tier-web
 - `drizzle/` SQL은 최초 1회 Supabase SQL Editor 등에서 수동 적용한다.
 - `scripts/remove-duplicates.ts`, `scripts/enforce-schema-manual.ts`는 수동 실행 전용이며 `DATABASE_URL`만 사용한다.
 - 관리자 여부는 DB `users.is_admin`으로 판단한다.
+
+### 인증 후 사용자 정보 연결
+
+가입·로그인·인증 callback은 인증 공급자가 반환한 UID로 `public.users`의 누락 행만 생성한다.
+UID 충돌은 기존 행을 유지하며 이메일·관리자 권한을 덮어쓰지 않는다. 다른 UID가 이미 사용하는
+이메일 충돌은 성공으로 처리하거나 기존 계정에 병합하지 않는다. 스키마와 RLS는 변경하지 않는다.
+서버 전용 service-role client는 브라우저 세션 쿠키를 사용하지 않는다.
+
+인증 뒤 저장이 실패하면 `/auth/profile-sync`에서 부분 실패를 안내한다. 로그인 세션이 있으면
+**사용자 정보 연결 다시 시도**로 현재 UID의 저장만 재시도한다. 이메일 인증을 기다리는 가입은
+받은 편지의 인증 링크를 연 뒤 같은 계정으로 로그인한다. 계정을 다시 생성하지 않는다.
+기존 계정의 누락 행도 다음 로그인이나 callback에서 같은 경로로 복구한다.
+
+`pnpm --filter tier-web exec vitest run src/app/login/actions.profile.test.ts`는 실제 Supabase SDK의
+합성 Auth/REST 응답으로 부분 실패와 세션 기반 재시도를 검사한다. 실제 DB 검증은 빈 로컬 전용
+`darun_profile_integrity` DB와 그 DB를 공개하는 PostgREST를 각각 `PROFILE_TEST_DATABASE_URL`,
+`PROFILE_TEST_POSTGREST_URL`에 지정하고
+`pnpm --filter tier-web exec vitest run src/utils/ensure-user-profile.pg.test.ts`로 실행한다.
+이 검사는 최초 DDL로 만든 테스트 테이블을 생성·삭제하므로 다른 데이터가 있는 DB를 사용하지 않는다.
 
 ### 수동 스키마 복구
 
