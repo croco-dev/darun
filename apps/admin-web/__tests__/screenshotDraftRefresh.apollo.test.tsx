@@ -133,7 +133,7 @@ it.each([false, true])('preserves draft A while deletion B refreshes, including 
   }
   expect(screen.queryByText('Saved alt B', { selector: 'span[title]' })).toBeNull();
   expectDraft();
-  fireEvent.click(screen.getByRole('button', { name: '저장', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: /^저장$/ }));
   await waitFor(() =>
     expect(writes).toEqual([
       {
