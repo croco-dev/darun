@@ -1,7 +1,7 @@
 import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
 import { productInvalidArgs } from '../errors/productError';
-import { getProductInfoLengthError } from '../ProductInfo';
+import { getProductInfoLengthError } from '../info/ProductInfo';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
