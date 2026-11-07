@@ -17,6 +17,30 @@ const senders = {
   screenshotCleanup: (signal: AbortSignal) => new ScreenshotCleanupQueueService().sendIntent('cleanup', signal),
 };
 
+async function configureQueueFixture(server: ReturnType<typeof createServer>): Promise<void> {
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('Missing SQS fixture address');
+  const queueUrl = `http://127.0.0.1:${address.port}/123456789012/recovery`;
+  for (const name of [
+    'PRODUCT_RESEARCH_QUEUE_URL',
+    'PRODUCT_DESCRIPTION_QUEUE_URL',
+    'TRANSLATION_QUEUE_URL',
+    'PRODUCT_CONTENT_SYNC_QUEUE_URL',
+    'SCREENSHOT_CLEANUP_QUEUE_URL',
+  ])
+    vi.stubEnv(name, queueUrl);
+  vi.stubEnv('AWS_ACCESS_KEY_ID', 'recovery-fixture');
+  vi.stubEnv('AWS_SECRET_ACCESS_KEY', 'recovery-fixture-secret');
+  vi.stubEnv('AWS_PROFILE', undefined);
+  vi.stubEnv('AWS_DEFAULT_PROFILE', undefined);
+  vi.stubEnv('AWS_SESSION_TOKEN', undefined);
+  vi.stubEnv('AWS_CONFIG_FILE', '/dev/null');
+  vi.stubEnv('AWS_SHARED_CREDENTIALS_FILE', '/dev/null');
+  vi.stubEnv('AWS_EC2_METADATA_DISABLED', 'true');
+  vi.stubEnv('AWS_REGION', 'ap-northeast-2');
+}
+
 afterEach(() => vi.unstubAllEnvs());
 describe('recovery queue cancellation through the real SQS HTTP transport', () => {
   it.each(Object.entries(senders))(
@@ -27,31 +51,19 @@ describe('recovery queue cancellation through the real SQS HTTP transport', () =
         request.resume();
         request.once('end', () => {
           requests++;
-          response.writeHead(503, { 'content-type': 'application/x-amz-json-1.0', 'retry-after': '1' });
-          response.end(JSON.stringify({ __type: 'ServiceUnavailable', message: 'loopback retry fixture' }));
+          response.writeHead(503, {
+            'content-type': 'application/x-amz-json-1.0',
+            'retry-after': '1',
+          });
+          response.end(
+            JSON.stringify({
+              __type: 'ServiceUnavailable',
+              message: 'loopback retry fixture',
+            })
+          );
         });
       });
-      await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
-      const address = server.address();
-      if (!address || typeof address === 'string') throw new Error('Missing SQS fixture address');
-      const queueUrl = `http://127.0.0.1:${address.port}/123456789012/recovery`;
-      for (const name of [
-        'PRODUCT_RESEARCH_QUEUE_URL',
-        'PRODUCT_DESCRIPTION_QUEUE_URL',
-        'TRANSLATION_QUEUE_URL',
-        'PRODUCT_CONTENT_SYNC_QUEUE_URL',
-        'SCREENSHOT_CLEANUP_QUEUE_URL',
-      ])
-        vi.stubEnv(name, queueUrl);
-      vi.stubEnv('AWS_ACCESS_KEY_ID', 'recovery-fixture');
-      vi.stubEnv('AWS_SECRET_ACCESS_KEY', 'recovery-fixture-secret');
-      vi.stubEnv('AWS_PROFILE', undefined);
-      vi.stubEnv('AWS_DEFAULT_PROFILE', undefined);
-      vi.stubEnv('AWS_SESSION_TOKEN', undefined);
-      vi.stubEnv('AWS_CONFIG_FILE', '/dev/null');
-      vi.stubEnv('AWS_SHARED_CREDENTIALS_FILE', '/dev/null');
-      vi.stubEnv('AWS_EC2_METADATA_DISABLED', 'true');
-      vi.stubEnv('AWS_REGION', 'ap-northeast-2');
+      await configureQueueFixture(server);
       const controller = new AbortController();
       let failure: unknown;
       try {
@@ -61,7 +73,9 @@ describe('recovery queue cancellation through the real SQS HTTP transport', () =
           failure = error;
         }
         expect(requests).toBe(1);
-        expect(failure).toMatchObject({ $metadata: { attempts: 1, totalRetryDelay: 0 } });
+        expect(failure).toMatchObject({
+          $metadata: { attempts: 1, totalRetryDelay: 0 },
+        });
       } finally {
         controller.abort();
         await new Promise<void>((resolve, reject) => server.close(error => (error ? reject(error) : resolve())));
@@ -86,27 +100,7 @@ describe('recovery queue cancellation through the real SQS HTTP transport', () =
         sockets.add(socket);
         socket.once('close', () => sockets.delete(socket));
       });
-      await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
-      const address = server.address();
-      if (!address || typeof address === 'string') throw new Error('Missing SQS fixture address');
-      const queueUrl = `http://127.0.0.1:${address.port}/123456789012/recovery`;
-      for (const name of [
-        'PRODUCT_RESEARCH_QUEUE_URL',
-        'PRODUCT_DESCRIPTION_QUEUE_URL',
-        'TRANSLATION_QUEUE_URL',
-        'PRODUCT_CONTENT_SYNC_QUEUE_URL',
-        'SCREENSHOT_CLEANUP_QUEUE_URL',
-      ])
-        vi.stubEnv(name, queueUrl);
-      vi.stubEnv('AWS_ACCESS_KEY_ID', 'recovery-fixture');
-      vi.stubEnv('AWS_SECRET_ACCESS_KEY', 'recovery-fixture-secret');
-      vi.stubEnv('AWS_PROFILE', undefined);
-      vi.stubEnv('AWS_DEFAULT_PROFILE', undefined);
-      vi.stubEnv('AWS_SESSION_TOKEN', undefined);
-      vi.stubEnv('AWS_CONFIG_FILE', '/dev/null');
-      vi.stubEnv('AWS_SHARED_CREDENTIALS_FILE', '/dev/null');
-      vi.stubEnv('AWS_EC2_METADATA_DISABLED', 'true');
-      vi.stubEnv('AWS_REGION', 'ap-northeast-2');
+      await configureQueueFixture(server);
       const controller = new AbortController();
       const fallback = setTimeout(() => controller.abort(), 2_000);
       const result = send(controller.signal).then(

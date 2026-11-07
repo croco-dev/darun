@@ -1,5 +1,6 @@
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { Service } from 'typedi';
+import { RecoverySqsClient } from './RecoverySqsClient';
 
 export type ProductResearchQueuePayload = {
   jobId: string;
@@ -8,17 +9,9 @@ export type ProductResearchQueuePayload = {
 @Service()
 export class ProductResearchQueueService {
   private sqsClient: SQSClient | null = null;
-  private recoveryClient: SQSClient | null = null;
+  private readonly recoveryClient = new RecoverySqsClient();
 
-  private getClient(signal?: AbortSignal): SQSClient {
-    if (signal) {
-      // SDK retry backoff ignores AbortSignal; the recovery tick owns retransmission.
-      this.recoveryClient ??= new SQSClient({
-        region: process.env['AWS_REGION'] || 'ap-northeast-2',
-        maxAttempts: 1,
-      });
-      return this.recoveryClient;
-    }
+  private getClient(): SQSClient {
     if (!this.sqsClient) {
       this.sqsClient = new SQSClient({
         region: process.env['AWS_REGION'] || 'ap-northeast-2',
@@ -33,7 +26,7 @@ export class ProductResearchQueueService {
       return false;
     }
     try {
-      const client = this.getClient(signal);
+      const client = signal ? this.recoveryClient.get(process.env['AWS_REGION'] || 'ap-northeast-2') : this.getClient();
       await client.send(
         new SendMessageCommand({
           QueueUrl: queueUrl,
