@@ -29,11 +29,7 @@ export function SaveButton({ item, className }: { item: SaveItemInput; className
     if (loading || writing || draft.trim() === '') return;
     setWriting(true);
     try {
-      const created = await createCollection(draft);
-      if (created) {
-        setDraft('');
-        await addToCollection(created.id, saved);
-      }
+      if (await createCollection(draft, saved)) setDraft('');
     } finally {
       setWriting(false);
     }

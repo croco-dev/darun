@@ -105,10 +105,10 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
       await act(async () => pressEnter(input, { key: 'Enter', keyCode: 13, isComposing: false }));
       await expectCreated('결제 참고');
       expect(input.value).toBe('');
-      expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
+      expect(writes).toHaveBeenCalledTimes(1);
       pressEnter(input, { key: 'Enter', keyCode: 13 });
       await expectCreated('결제 참고');
-      expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
+      expect(writes).toHaveBeenCalledTimes(1);
     });
 
     it.each(['Enter', 'button'] as const)('%s는 일반 입력을 한 번 생성하고 빈 입력은 무시한다', async submit => {
@@ -128,7 +128,7 @@ for (const surface of ['Collections', 'SaveButton'] as const) {
       });
       await expectCreated('일반 참고');
       expect(input.value).toBe('');
-      expect(writes).toHaveBeenCalledTimes(surface === 'SaveButton' ? 2 : 1);
+      expect(writes).toHaveBeenCalledTimes(1);
     });
 
     it('저장 실패를 표시하고 입력을 지우지 않는다', async () => {
@@ -158,14 +158,15 @@ it('저장 dialog는 이름 입력에 포커스하고 닫기 후 trigger로 돌�
   expect(document.activeElement).toBe(trigger);
 });
 
-it('keeps one new collection available for retry if saving its first item fails', async () => {
+it('컬렉션과 첫 항목을 한 번에 확정해 두 번째 쓰기가 필요하지 않다', async () => {
   await act(async () => {
     render(<SaveButton item={item} />);
   });
   fireEvent.click(screen.getByRole('button', { name: '컬렉션에 저장' }));
   const input = screen.getByRole('textbox', { name: '새 컬렉션 이름' });
   const setItem = Storage.prototype.setItem;
-  vi.spyOn(Storage.prototype, 'setItem')
+  const writes = vi
+    .spyOn(Storage.prototype, 'setItem')
     .mockImplementationOnce(function (this: Storage, key: string, value: string) {
       setItem.call(this, key, value);
     })
@@ -176,9 +177,51 @@ it('keeps one new collection available for retry if saving its first item fails'
   fireEvent.change(input, { target: { value: '참고' } });
   await act(async () => pressEnter(input as HTMLInputElement, { key: 'Enter' }));
   expect(input).toHaveProperty('value', '');
-  expect(screen.getByRole('alert').textContent).toContain('저장하지 못했습니다');
-  expect(persisted()).toMatchObject([{ name: '참고', items: [] }]);
-
-  await act(async () => fireEvent.click(screen.getByRole('checkbox')));
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(writes).toHaveBeenCalledTimes(1);
   expect(persisted()).toMatchObject([{ name: '참고', items: [item] }]);
+  expect(screen.getByRole('checkbox')).toHaveProperty('checked', true);
+  expect(
+    screen.getByRole('button', { name: '저장됨 (1개 컬렉션), 컬렉션 선택 열기' }).getAttribute('aria-pressed')
+  ).toBe('true');
+});
+
+it('쓰기 차단 시 기존 원문과 이름을 보존하고 재시도하면 첫 항목과 함께 한 번만 생성한다', async () => {
+  const original = JSON.stringify({
+    version: 1,
+    collections: [
+      {
+        id: 'existing',
+        name: '기존 참고',
+        createdAt: 1,
+        items: [{ ...item, id: 'other' }],
+      },
+    ],
+    legacyKeys: [],
+  });
+  localStorage.setItem(RECORD_KEY, original);
+  await act(async () => {
+    render(<SaveButton item={item} />);
+  });
+  fireEvent.click(screen.getByRole('button', { name: '컬렉션에 저장' }));
+  const input = screen.getByRole('textbox', { name: '새 컬렉션 이름' });
+  const writes = vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
+    throw new DOMException('synthetic quota', 'QuotaExceededError');
+  });
+  fireEvent.change(input, { target: { value: '새 참고' } });
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '만들기' })));
+  expect(screen.getByRole('alert').textContent).toContain('저장하지 못했습니다');
+  expect(input).toHaveProperty('value', '새 참고');
+  expect(localStorage.getItem(RECORD_KEY)).toBe(original);
+  expect(await savedIn(item.kind, item.id)).toEqual([]);
+
+  writes.mockRestore();
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '만들기' })));
+  expect(input).toHaveProperty('value', '');
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(persisted()).toMatchObject([
+    { id: 'existing', name: '기존 참고', items: [{ ...item, id: 'other' }] },
+    { name: '새 참고', items: [item] },
+  ]);
+  expect((await savedIn(item.kind, item.id)).map(collection => collection.name)).toEqual(['새 참고']);
 });

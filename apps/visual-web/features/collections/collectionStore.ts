@@ -418,9 +418,10 @@ export function useCollections(): StoreSnapshot {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-export async function createCollection(name: string): Promise<NamedCollection | null> {
+export async function createCollection(name: string, initialItem?: SavedItem): Promise<NamedCollection | null> {
   const trimmed = name.trim();
   if (trimmed === '') return null;
+  if (initialItem !== undefined && (!isSavedItem(initialItem) || !isSafeItem(initialItem))) return null;
   return withCollectionWrite<NamedCollection | null>(null, async current => {
     const id = newId();
     if (id === null) {
@@ -434,7 +435,7 @@ export async function createCollection(name: string): Promise<NamedCollection | 
       id,
       name: trimmed.slice(0, 60),
       createdAt: Date.now(),
-      items: [],
+      items: initialItem === undefined ? [] : [initialItem],
     };
     await persist(current, [...current.collections, collection]);
     return collection;
