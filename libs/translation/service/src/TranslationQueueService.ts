@@ -10,8 +10,17 @@ export type TranslationQueuePayload = {
 @Service()
 export class TranslationQueueService {
   private sqsClient: SQSClient | null = null;
+  private recoveryClient: SQSClient | null = null;
 
-  private getClient(): SQSClient {
+  private getClient(signal?: AbortSignal): SQSClient {
+    if (signal) {
+      // SDK retry backoff ignores AbortSignal; the recovery tick owns retransmission.
+      this.recoveryClient ??= new SQSClient({
+        region: process.env['AWS_REGION'] || 'ap-northeast-2',
+        maxAttempts: 1,
+      });
+      return this.recoveryClient;
+    }
     if (!this.sqsClient) {
       this.sqsClient = new SQSClient({
         region: process.env['AWS_REGION'] || 'ap-northeast-2',
@@ -29,7 +38,7 @@ export class TranslationQueueService {
     }
 
     try {
-      const client = this.getClient();
+      const client = this.getClient(signal);
       await client.send(
         new SendMessageCommand({
           QueueUrl: queueUrl,

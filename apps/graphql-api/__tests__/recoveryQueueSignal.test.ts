@@ -20,6 +20,56 @@ const senders = {
 afterEach(() => vi.unstubAllEnvs());
 describe('recovery queue cancellation through the real SQS HTTP transport', () => {
   it.each(Object.entries(senders))(
+    '%s의 Retry-After는 복구 기한 밖 SDK 재시도 대기를 만들지 않는다',
+    async (_kind, send) => {
+      let requests = 0;
+      const server = createServer((request, response) => {
+        request.resume();
+        request.once('end', () => {
+          requests++;
+          response.writeHead(503, { 'content-type': 'application/x-amz-json-1.0', 'retry-after': '1' });
+          response.end(JSON.stringify({ __type: 'ServiceUnavailable', message: 'loopback retry fixture' }));
+        });
+      });
+      await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('Missing SQS fixture address');
+      const queueUrl = `http://127.0.0.1:${address.port}/123456789012/recovery`;
+      for (const name of [
+        'PRODUCT_RESEARCH_QUEUE_URL',
+        'PRODUCT_DESCRIPTION_QUEUE_URL',
+        'TRANSLATION_QUEUE_URL',
+        'PRODUCT_CONTENT_SYNC_QUEUE_URL',
+        'SCREENSHOT_CLEANUP_QUEUE_URL',
+      ])
+        vi.stubEnv(name, queueUrl);
+      vi.stubEnv('AWS_ACCESS_KEY_ID', 'recovery-fixture');
+      vi.stubEnv('AWS_SECRET_ACCESS_KEY', 'recovery-fixture-secret');
+      vi.stubEnv('AWS_PROFILE', undefined);
+      vi.stubEnv('AWS_DEFAULT_PROFILE', undefined);
+      vi.stubEnv('AWS_SESSION_TOKEN', undefined);
+      vi.stubEnv('AWS_CONFIG_FILE', '/dev/null');
+      vi.stubEnv('AWS_SHARED_CREDENTIALS_FILE', '/dev/null');
+      vi.stubEnv('AWS_EC2_METADATA_DISABLED', 'true');
+      vi.stubEnv('AWS_REGION', 'ap-northeast-2');
+      const controller = new AbortController();
+      let failure: unknown;
+      try {
+        try {
+          await send(controller.signal);
+        } catch (error) {
+          failure = error;
+        }
+        expect(requests).toBe(1);
+        expect(failure).toMatchObject({ $metadata: { attempts: 1, totalRetryDelay: 0 } });
+      } finally {
+        controller.abort();
+        await new Promise<void>((resolve, reject) => server.close(error => (error ? reject(error) : resolve())));
+      }
+    }
+  );
+
+  it.each(Object.entries(senders))(
     '%s의 응답 없는 SQS 요청은 AbortSignal로 실제 연결을 닫는다',
     async (_kind, send) => {
       let received!: () => void;

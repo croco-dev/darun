@@ -12,13 +12,18 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 import { Container } from 'typedi';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { connect, createServer, type Socket } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createSecureContext, TLSSocket } from 'node:tls';
+import { productContentSyncIntents } from '../../../libs/products/datasource/src/entities/ProductContentSyncIntentSchema';
+import { products } from '../../../libs/products/datasource/src/entities/ProductSchema';
+import { screenshotCleanupIntents } from '../../../libs/products/datasource/src/entities/ScreenshotCleanupIntentSchema';
+import { ProductContentSyncQueueService } from '../../../libs/products/service/src/ProductContentSyncQueueService';
+import { ScreenshotCleanupQueueService } from '../../../libs/products/service/src/ScreenshotCleanupQueueService';
 import { runRecoveryLane } from '../src/functions/recoveryDeadline';
 
 const databaseUrl = process.env['RECOVERY_TEST_DATABASE_URL'];
@@ -38,6 +43,8 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
   const researchQueue = new ProductResearchQueueService();
   const descriptionQueue = new ProductDescriptionQueueService();
   const translationQueue = new TranslationQueueService();
+  const contentQueue = new ProductContentSyncQueueService();
+  const cleanupQueue = new ScreenshotCleanupQueueService();
   let tick: Handler;
   const context = { getRemainingTimeInMillis: () => 5_000 } as never;
 
@@ -52,14 +59,27 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
     Container.set(ProductResearchQueueService, researchQueue);
     Container.set(ProductDescriptionQueueService, descriptionQueue);
     Container.set(TranslationQueueService, translationQueue);
+    Container.set(ProductContentSyncQueueService, contentQueue);
+    Container.set(ScreenshotCleanupQueueService, cleanupQueue);
     Container.set(SearchableProductRepositoryToken, {} as never);
     Container.set(ImageDeleterToken, {} as never);
     tick = (await import('../src/functions/job-recovery-tick')).handler;
   }, 30_000);
   beforeEach(async () => {
-    await db.delete(productResearchJobs);
-    await db.delete(productDescriptionJobs);
-    await db.delete(translationJobs);
+    // This integration owns only PostgreSQL; real SDK transport is exercised by its loopback suite.
+    vi.spyOn(researchQueue, 'sendJob').mockResolvedValue(false);
+    vi.spyOn(descriptionQueue, 'sendJob').mockResolvedValue(false);
+    vi.spyOn(translationQueue, 'sendJob').mockResolvedValue(false);
+    vi.spyOn(contentQueue, 'sendIntent').mockResolvedValue(false);
+    vi.spyOn(cleanupQueue, 'sendIntent').mockResolvedValue(false);
+    await db.delete(productContentSyncIntents);
+    await Promise.all([
+      db.delete(screenshotCleanupIntents),
+      db.delete(products),
+      db.delete(productResearchJobs),
+      db.delete(productDescriptionJobs),
+      db.delete(translationJobs),
+    ]);
   });
   afterEach(() => vi.restoreAllMocks());
   afterAll(async () => {
@@ -68,17 +88,13 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
   });
 
   async function seedJobs() {
-    await db.insert(productResearchJobs).values({
-      id: 'research',
-      requestKey: 'recovery',
-      officialUrl: 'https://example.invalid',
-    });
-    await db.insert(productDescriptionJobs).values({ id: 'description', productId: 'product' });
-    await db.insert(translationJobs).values({
-      id: 'translation',
-      entityType: 'Product',
-      entityId: 'product',
-    });
+    await Promise.all([
+      db
+        .insert(productResearchJobs)
+        .values({ id: 'research', requestKey: 'recovery', officialUrl: 'https://example.invalid' }),
+      db.insert(productDescriptionJobs).values({ id: 'description', productId: 'product' }),
+      db.insert(translationJobs).values({ id: 'translation', entityType: 'Product', entityId: 'product' }),
+    ]);
   }
 
   async function expectNoRecoveryConnections() {
@@ -100,12 +116,30 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
     const blocked = new Promise<boolean>(resolve => {
       release = () => resolve(true);
     });
+    onTestFinished(release);
     vi.spyOn(researchQueue, 'sendJob').mockReturnValue(blocked);
-    const description = vi.spyOn(descriptionQueue, 'sendJob').mockResolvedValue(true);
-    const translation = vi.spyOn(translationQueue, 'sendJob').mockResolvedValue(true);
+    let descriptionStarted!: () => void;
+    let translationStarted!: () => void;
+    const independentStarts = Promise.all([
+      new Promise<void>(resolve => {
+        descriptionStarted = resolve;
+      }),
+      new Promise<void>(resolve => {
+        translationStarted = resolve;
+      }),
+    ]);
+    const description = vi.spyOn(descriptionQueue, 'sendJob').mockImplementation(async () => {
+      descriptionStarted();
+      return true;
+    });
+    const translation = vi.spyOn(translationQueue, 'sendJob').mockImplementation(async () => {
+      translationStarted();
+      return true;
+    });
     const execution = tick({}, context, () => {});
     try {
-      await expect.poll(() => description.mock.calls.length, { timeout: 500 }).toBe(1);
+      await independentStarts;
+      expect(description).toHaveBeenCalledOnce();
       expect(translation).toHaveBeenCalledOnce();
     } finally {
       release();
@@ -114,7 +148,7 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
     await expectNoRecoveryConnections();
   });
 
-  it('응답 없는 전송은 중단하고 예약 만료 뒤 같은 pending 작업을 다시 전송한다', async () => {
+  it('응답 없는 전송을 중단하고 미전송 작업의 pending 상태와 예약을 유지한다', async () => {
     await seedJobs();
     let aborted = false;
     const research = vi.spyOn(researchQueue, 'sendJob').mockImplementation(
@@ -132,7 +166,7 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
     );
     vi.spyOn(descriptionQueue, 'sendJob').mockResolvedValue(true);
     vi.spyOn(translationQueue, 'sendJob').mockResolvedValue(true);
-    const result = await tick({}, { getRemainingTimeInMillis: () => 2_500 } as never, () => {});
+    const result = await tick({}, context, () => {});
     expect(aborted).toBe(true);
     expect(result).toMatchObject({
       queued: 2,
@@ -150,12 +184,23 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
     });
     expect(pending!.nextDispatchAt.getTime()).toBeGreaterThan(Date.now());
     await expectNoRecoveryConnections();
-    research.mockResolvedValue(true);
-    expect(await tick({}, context, () => {})).toMatchObject({ queued: 0 });
     expect(research).toHaveBeenCalledOnce();
+  });
+
+  it('pending 작업의 전송 예약이 남아 있으면 다음 tick도 전송하지 않는다', async () => {
+    await seedJobs();
+    await db.update(productResearchJobs).set({ nextDispatchAt: new Date(Date.now() + 60_000) });
+    const research = vi.spyOn(researchQueue, 'sendJob').mockResolvedValue(true);
+    expect(await tick({}, context, () => {})).toMatchObject({ queued: 0 });
+    expect(research).not.toHaveBeenCalled();
+  });
+
+  it('pending 작업의 전송 예약이 만료된 다음 tick은 같은 ID를 다시 전송한다', async () => {
+    await seedJobs();
     await db.update(productResearchJobs).set({ nextDispatchAt: new Date(0) });
+    const research = vi.spyOn(researchQueue, 'sendJob').mockResolvedValue(true);
     expect(await tick({}, context, () => {})).toMatchObject({ queued: 1 });
-    expect(research).toHaveBeenCalledTimes(2);
+    expect(research).toHaveBeenCalledOnce();
     expect((await db.select().from(productResearchJobs))[0]).toMatchObject({
       id: 'research',
       status: 'pending',
@@ -172,7 +217,11 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
     await lock`begin`;
     await lock`lock table product_research_jobs in access exclusive mode`;
     try {
-      const result = await tick({}, { getRemainingTimeInMillis: () => 2_500 } as never, () => {});
+      // The lock stays held while healthy siblings finish; the DB's 1s statement timeout
+      // must end research without depending on their connection setup fitting into 500ms.
+      const result = await tick({}, { getRemainingTimeInMillis: () => 12_000 } as never, () => {});
+      expect(descriptionQueue.sendJob).toHaveBeenCalledOnce();
+      expect(translationQueue.sendJob).toHaveBeenCalledOnce();
       expect(result).toMatchObject({
         queued: 2,
         queues: { research: { attempted: 0, queued: 0, timedOut: 1 } },
@@ -193,14 +242,17 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
 
   it('기한 도중의 예약 transaction을 rollback하고 늦은 완료 쓰기를 실행하지 않는다', async () => {
     await seedJobs();
-    const result = await runRecoveryLane(Date.now() + 300, async scope => {
+    let reserved = false;
+    const result = await runRecoveryLane(Date.now() + 3_000, async scope => {
       await scope.db.transaction(async tx => {
         await tx.update(productResearchJobs).set({ nextDispatchAt: new Date(Date.now() + 60_000) });
+        reserved = true;
         await tx.execute(sql`select pg_sleep(10)`);
         await tx.update(productResearchJobs).set({ status: 'completed' });
       });
       return { recovered: 1, queued: 1 };
     });
+    expect(reserved).toBe(true);
     expect(result).toMatchObject({ queued: 0, timedOut: 1 });
     await expectNoRecoveryConnections();
     const [pending] = await db.select().from(productResearchJobs);
@@ -294,7 +346,7 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
     vi.stubEnv('RECOVERY_TEST_DATABASE_URL', proxied.toString());
     try {
       let started = false;
-      const result = await runRecoveryLane(Date.now() + 500, async scope => {
+      const result = await runRecoveryLane(Date.now() + 3_000, async scope => {
         await scope.db.execute(sql`select 1`);
         started = true;
         await scope.db.execute(sql`select pg_sleep(10)`);
@@ -309,7 +361,7 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
       proxied.searchParams.set('sslmode', 'verify-full');
       vi.stubEnv('RECOVERY_TEST_DATABASE_URL', proxied.toString());
       let queried = false;
-      const rejected = await runRecoveryLane(Date.now() + 500, async scope => {
+      const rejected = await runRecoveryLane(Date.now() + 3_000, async scope => {
         await scope.db.execute(sql`select 1`);
         queried = true;
         return { recovered: 0, queued: 0 };
@@ -402,5 +454,78 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
     });
     expect(result).toMatchObject({ recovered: 0, queued: 0, timedOut: 1, failed: 0 });
     await expectNoRecoveryConnections();
+  });
+
+  async function seedContentAndCleanup() {
+    await db.insert(products).values({
+      id: 'recovery-product',
+      name: 'Recovery',
+      slug: 'recovery',
+      summary: 'fixture',
+      logoUrl: 'https://example.invalid/logo',
+    });
+    await Promise.all([
+      db
+        .insert(productContentSyncIntents)
+        .values({ id: 'sync', productId: 'recovery-product', sourceRevision: 0n, kind: 'search' }),
+      db
+        .insert(screenshotCleanupIntents)
+        .values({ id: 'cleanup', screenshotId: 'deleted', imageUrl: 'https://example.invalid/image' }),
+    ]);
+  }
+
+  describe('검색 동기화와 이미지 정리의 복구 예약', () => {
+    beforeEach(seedContentAndCleanup);
+
+    it('검색 동기화와 이미지 정리도 중단 시 완료하지 않고 예약을 유지한다', async () => {
+      await Promise.all([
+        db.insert(productDescriptionJobs).values({ id: 'description', productId: 'product' }),
+        db.insert(translationJobs).values({ id: 'translation', entityType: 'Product', entityId: 'product' }),
+      ]);
+      vi.spyOn(descriptionQueue, 'sendJob').mockResolvedValue(true);
+      vi.spyOn(translationQueue, 'sendJob').mockResolvedValue(true);
+      const blocked = (_id: string, signal?: AbortSignal) =>
+        new Promise<boolean>((_resolve, reject) => {
+          signal!.addEventListener('abort', () => reject(signal!.reason), { once: true });
+        });
+      const syncSend = vi.spyOn(contentQueue, 'sendIntent').mockImplementation(blocked);
+      const cleanupSend = vi.spyOn(cleanupQueue, 'sendIntent').mockImplementation(blocked);
+      expect(await tick({}, context, () => {})).toMatchObject({
+        queued: 2,
+        queues: {
+          contentSync: { attempted: 1, queued: 0, timedOut: 1 },
+          screenshotCleanup: { attempted: 1, queued: 0, timedOut: 1 },
+        },
+      });
+      for (const row of [
+        ...(await db.select().from(productContentSyncIntents)),
+        ...(await db.select().from(screenshotCleanupIntents)),
+      ]) {
+        expect(row).toMatchObject({ status: 'pending', attemptCount: 0, leaseToken: null });
+        expect(row.dispatchAfter.getTime()).toBeGreaterThan(Date.now());
+      }
+      await expectNoRecoveryConnections();
+      expect(syncSend).toHaveBeenCalledOnce();
+      expect(cleanupSend).toHaveBeenCalledOnce();
+    });
+
+    it('검색 동기화와 정리는 미완료 예약이 만료된 뒤 같은 의도를 다시 전송한다', async () => {
+      await Promise.all([
+        db.update(productContentSyncIntents).set({ dispatchAfter: new Date(Date.now() + 60_000) }),
+        db.update(screenshotCleanupIntents).set({ dispatchAfter: new Date(Date.now() + 60_000) }),
+      ]);
+      const syncSend = vi.spyOn(contentQueue, 'sendIntent').mockResolvedValue(true);
+      const cleanupSend = vi.spyOn(cleanupQueue, 'sendIntent').mockResolvedValue(true);
+      expect(await tick({}, context, () => {})).toMatchObject({ queued: 0 });
+      expect(syncSend).not.toHaveBeenCalled();
+      expect(cleanupSend).not.toHaveBeenCalled();
+      await db.update(productContentSyncIntents).set({ dispatchAfter: new Date(0) });
+      await db.update(screenshotCleanupIntents).set({ dispatchAfter: new Date(0) });
+      expect(await tick({}, context, () => {})).toMatchObject({ queued: 2 });
+      expect(syncSend).toHaveBeenCalledOnce();
+      expect(cleanupSend).toHaveBeenCalledOnce();
+      expect((await db.select().from(productContentSyncIntents))[0]!.status).toBe('pending');
+      expect((await db.select().from(screenshotCleanupIntents))[0]!.status).toBe('pending');
+    });
   });
 });
