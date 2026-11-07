@@ -2,8 +2,8 @@
 
 import { useApolloClient } from '@apollo/client/react';
 import {
-  ToggleVisualFlowSaveDocument,
-  ToggleVisualScreenshotSaveDocument,
+  SetVisualFlowSaveDocument,
+  SetVisualScreenshotSaveDocument,
   VisualFlowSaveStatusDocument,
   VisualScreenshotSaveStatusDocument,
 } from '@darun/provider-graphql';
@@ -41,6 +41,8 @@ export function useVisualSaveButton(params: {
   const account = useVisualAccount();
   const generation = useRef(0);
   const toggling = useRef(false);
+  const desiredSaved = useRef<boolean | null>(null);
+  const saveRevision = useRef(0);
   const [saved, setSaved] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -57,6 +59,8 @@ export function useVisualSaveButton(params: {
   useEffect(() => {
     const requestGeneration = ++generation.current;
     toggling.current = false;
+    desiredSaved.current = null;
+    const statusRevision = saveRevision.current;
     if (!account) return;
     if (!enabled) {
       return;
@@ -78,7 +82,7 @@ export function useVisualSaveButton(params: {
           });
     request
       .then(result => {
-        if (!active || generation.current !== requestGeneration) return;
+        if (!active || generation.current !== requestGeneration || saveRevision.current !== statusRevision) return;
         const status =
           kind === 'screenshot'
             ? (result.data as { visualScreenshotSaveStatus?: { saved: boolean } } | undefined)
@@ -88,7 +92,7 @@ export function useVisualSaveButton(params: {
         setNeedsLogin(false);
       })
       .catch((e: unknown) => {
-        if (!active || generation.current !== requestGeneration) return;
+        if (!active || generation.current !== requestGeneration || saveRevision.current !== statusRevision) return;
         if (isUnauthorized(e)) {
           setNeedsLogin(true);
           return;
@@ -101,51 +105,65 @@ export function useVisualSaveButton(params: {
     };
   }, [apolloClient, kind, id, enabled, account]);
 
+  const submit = useCallback(
+    (savedGoal: boolean) => {
+      if (toggling.current || !enabled || !account) {
+        return;
+      }
+      const requestGeneration = generation.current;
+      saveRevision.current += 1;
+      desiredSaved.current = savedGoal;
+      toggling.current = true;
+      setIsToggling(true);
+      setToggleError(false);
+      const request =
+        kind === 'screenshot'
+          ? apolloClient.mutate({
+              mutation: SetVisualScreenshotSaveDocument,
+              variables: { input: { id, saved: savedGoal } },
+            })
+          : apolloClient.mutate({
+              mutation: SetVisualFlowSaveDocument,
+              variables: { input: { id, saved: savedGoal } },
+            });
+      request
+        .then(result => {
+          if (generation.current !== requestGeneration) return;
+          const payload =
+            kind === 'screenshot'
+              ? (result.data as { setVisualScreenshotSave?: { saved: boolean } } | undefined)?.setVisualScreenshotSave
+              : (result.data as { setVisualFlowSave?: { saved: boolean } } | undefined)?.setVisualFlowSave;
+          if (payload !== null && payload !== undefined) {
+            desiredSaved.current = null;
+            setSaved(payload.saved);
+            setNeedsLogin(false);
+          }
+        })
+        .catch((e: unknown) => {
+          if (generation.current !== requestGeneration) return;
+          if (isUnauthorized(e)) {
+            setNeedsLogin(true);
+            return;
+          }
+          console.error('Failed to toggle visual save', e);
+          setToggleError(true);
+        })
+        .finally(() => {
+          if (generation.current !== requestGeneration) return;
+          toggling.current = false;
+          setIsToggling(false);
+        });
+    },
+    [apolloClient, kind, id, enabled, account]
+  );
+
   const toggle = useCallback(() => {
-    if (toggling.current || !enabled || !account) {
-      return;
-    }
-    const requestGeneration = generation.current;
-    toggling.current = true;
-    setIsToggling(true);
-    setToggleError(false);
-    const request =
-      kind === 'screenshot'
-        ? apolloClient.mutate({ mutation: ToggleVisualScreenshotSaveDocument, variables: { id } })
-        : apolloClient.mutate({ mutation: ToggleVisualFlowSaveDocument, variables: { id } });
-    request
-      .then(result => {
-        if (generation.current !== requestGeneration) return;
-        const payload =
-          kind === 'screenshot'
-            ? (result.data as { toggleVisualScreenshotSave?: { saved: boolean } } | undefined)
-                ?.toggleVisualScreenshotSave
-            : (result.data as { toggleVisualFlowSave?: { saved: boolean } } | undefined)?.toggleVisualFlowSave;
-        if (payload !== null && payload !== undefined) {
-          setSaved(payload.saved);
-          setNeedsLogin(false);
-        }
-      })
-      .catch((e: unknown) => {
-        if (generation.current !== requestGeneration) return;
-        if (isUnauthorized(e)) {
-          setNeedsLogin(true);
-          return;
-        }
-        console.error('Failed to toggle visual save', e);
-        setToggleError(true);
-      })
-      .finally(() => {
-        if (generation.current !== requestGeneration) return;
-        toggling.current = false;
-        setIsToggling(false);
-      });
-  }, [apolloClient, kind, id, enabled, account]);
+    submit(desiredSaved.current ?? !saved);
+  }, [submit, saved]);
 
   const retry = useCallback(() => {
-    setToggleError(false);
-    toggle();
-  }, [toggle]);
+    if (desiredSaved.current !== null) submit(desiredSaved.current);
+  }, [submit]);
 
   return { saved, isToggling, needsLogin, toggleError, toggle, retry };
 }

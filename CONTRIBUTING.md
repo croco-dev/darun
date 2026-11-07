@@ -616,6 +616,10 @@ GraphQL SDL이나 원본 operation을 변경하면 `pnpm --filter @darun/provide
 
 목록 API의 `productsByCategory`와 `visualApps`는 기본 24개씩 반환합니다. 호출자는 `pageInfo.endCursor`와 `hasNextPage`로 이어 읽으며, 목록 표시를 위해 모든 페이지나 각 앱의 화면 목록을 미리 읽지 않습니다. 앱 카드에는 `coverScreenshot`과 `screenshotCount`를 사용합니다. 상품의 태그·추천 수는 선택된 필드만 배치 조회하며, 변경 가능한 데이터를 읽는 상품 ID loader는 요청 사이에 결과를 보관하지 않습니다.
 
+계정에 화면·플로를 저장할 때는 `setVisualScreenshotSave(input: { id, saved })`와 `setVisualFlowSave(input: { id, saved })`를 사용합니다. `saved`는 원하는 최종 상태이며, 응답을 받지 못해도 같은 목표로 재시도합니다. 같은 목표의 중복 요청은 기존 저장 시각을 바꾸지 않습니다. 기존 `toggleVisual*Save`는 호환성을 위해 유지하지만 재시도마다 의도가 반전되므로 신규 소비자는 사용하지 않습니다. 두 API는 계정·대상별 같은 transaction 잠금을 사용합니다. 새 클라이언트를 배포하기 전에 두 set mutation을 제공하는 GraphQL API를 먼저 배포해야 합니다.
+
+`VISUAL_SAVE_TEST_DATABASE_URL`을 격리 로컬 `darun_visual_save` DB로 지정하고 `pnpm --filter @darun/products-datasource exec vitest run src/__tests__/VisualSave.pg.test.ts`를 실행하면 병렬 목표 저장·해제, 기존 토글 직렬화, 저장 시각·목록·개수와 계정·대상별 독립성을 검증합니다. PR CI는 전용 DB와 필수 PostgreSQL reporter로 skip 없이 실행합니다.
+
 관리자 `translationJobs`는 기본 50건, `limit` 1~100 정수와 `offset` 0 이상의 안전한 정수를 허용합니다. `status`는 `pending`, `in_progress`, `completed`, `failed`, `superseded`만 허용하며 생략 또는 `null`이면 전체 상태를 조회합니다. 잘못된 입력은 서비스와 SQL 실행 전에 `translation/invalid-job-list-args`로 거절하며 저장소 직접 호출에도 같은 검증을 적용합니다. 입력 오류를 정상 빈 목록으로 처리하거나 한도 안으로 자동 보정하지 않습니다.
 관리자 목록의 번역 더보기와 이미 읽은 목록의 갱신은 100건씩 `offset`으로 조회합니다. 더보기 실패 시 기존 행을 유지하고 같은 위치에서 재시도하며, 필터 변경 전 요청의 늦은 응답은 현재 목록에 합치지 않습니다.
 번역 작업은 `createdAt DESC, id DESC`로 정렬해 생성 시각이 같아도 페이지 경계의 순서를 고정합니다.

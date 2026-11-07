@@ -65,6 +65,8 @@ type Documents = {
     "\n  query SearchProductsOnVisualExplorer($query: String!) {\n    searchProducts(query: $query) {\n      id\n      name\n      slug\n      logoUrl\n    }\n  }\n": typeof types.SearchProductsOnVisualExplorerDocument,
     "\n  mutation ToggleVisualScreenshotSave($id: String!) {\n    toggleVisualScreenshotSave(id: $id) {\n      saved\n    }\n  }\n": typeof types.ToggleVisualScreenshotSaveDocument,
     "\n  mutation ToggleVisualFlowSave($id: String!) {\n    toggleVisualFlowSave(id: $id) {\n      saved\n    }\n  }\n": typeof types.ToggleVisualFlowSaveDocument,
+    "\n  mutation SetVisualScreenshotSave($input: SetVisualSaveInput!) {\n    setVisualScreenshotSave(input: $input) {\n      saved\n    }\n  }\n": typeof types.SetVisualScreenshotSaveDocument,
+    "\n  mutation SetVisualFlowSave($input: SetVisualSaveInput!) {\n    setVisualFlowSave(input: $input) {\n      saved\n    }\n  }\n": typeof types.SetVisualFlowSaveDocument,
     "\n  query VisualScreenshotSaveStatus($id: String!) {\n    visualScreenshotSaveStatus(id: $id) {\n      saved\n    }\n  }\n": typeof types.VisualScreenshotSaveStatusDocument,
     "\n  query VisualFlowSaveStatus($id: String!) {\n    visualFlowSaveStatus(id: $id) {\n      saved\n    }\n  }\n": typeof types.VisualFlowSaveStatusDocument,
     "\n  query MyVisualScreenshotSaves($first: Int, $page: Int) {\n    myVisualScreenshotSaves(first: $first, page: $page)\n  }\n": typeof types.MyVisualScreenshotSavesDocument,
@@ -177,6 +179,8 @@ const documents: Documents = {
     "\n  query SearchProductsOnVisualExplorer($query: String!) {\n    searchProducts(query: $query) {\n      id\n      name\n      slug\n      logoUrl\n    }\n  }\n": types.SearchProductsOnVisualExplorerDocument,
     "\n  mutation ToggleVisualScreenshotSave($id: String!) {\n    toggleVisualScreenshotSave(id: $id) {\n      saved\n    }\n  }\n": types.ToggleVisualScreenshotSaveDocument,
     "\n  mutation ToggleVisualFlowSave($id: String!) {\n    toggleVisualFlowSave(id: $id) {\n      saved\n    }\n  }\n": types.ToggleVisualFlowSaveDocument,
+    "\n  mutation SetVisualScreenshotSave($input: SetVisualSaveInput!) {\n    setVisualScreenshotSave(input: $input) {\n      saved\n    }\n  }\n": types.SetVisualScreenshotSaveDocument,
+    "\n  mutation SetVisualFlowSave($input: SetVisualSaveInput!) {\n    setVisualFlowSave(input: $input) {\n      saved\n    }\n  }\n": types.SetVisualFlowSaveDocument,
     "\n  query VisualScreenshotSaveStatus($id: String!) {\n    visualScreenshotSaveStatus(id: $id) {\n      saved\n    }\n  }\n": types.VisualScreenshotSaveStatusDocument,
     "\n  query VisualFlowSaveStatus($id: String!) {\n    visualFlowSaveStatus(id: $id) {\n      saved\n    }\n  }\n": types.VisualFlowSaveStatusDocument,
     "\n  query MyVisualScreenshotSaves($first: Int, $page: Int) {\n    myVisualScreenshotSaves(first: $first, page: $page)\n  }\n": types.MyVisualScreenshotSavesDocument,
@@ -456,6 +460,14 @@ export function graphql(source: "\n  mutation ToggleVisualScreenshotSave($id: St
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation ToggleVisualFlowSave($id: String!) {\n    toggleVisualFlowSave(id: $id) {\n      saved\n    }\n  }\n"): (typeof documents)["\n  mutation ToggleVisualFlowSave($id: String!) {\n    toggleVisualFlowSave(id: $id) {\n      saved\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation SetVisualScreenshotSave($input: SetVisualSaveInput!) {\n    setVisualScreenshotSave(input: $input) {\n      saved\n    }\n  }\n"): (typeof documents)["\n  mutation SetVisualScreenshotSave($input: SetVisualSaveInput!) {\n    setVisualScreenshotSave(input: $input) {\n      saved\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation SetVisualFlowSave($input: SetVisualSaveInput!) {\n    setVisualFlowSave(input: $input) {\n      saved\n    }\n  }\n"): (typeof documents)["\n  mutation SetVisualFlowSave($input: SetVisualSaveInput!) {\n    setVisualFlowSave(input: $input) {\n      saved\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

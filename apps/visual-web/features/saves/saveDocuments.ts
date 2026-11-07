@@ -19,6 +19,22 @@ gql`
 `;
 
 gql`
+  mutation SetVisualScreenshotSave($input: SetVisualSaveInput!) {
+    setVisualScreenshotSave(input: $input) {
+      saved
+    }
+  }
+`;
+
+gql`
+  mutation SetVisualFlowSave($input: SetVisualSaveInput!) {
+    setVisualFlowSave(input: $input) {
+      saved
+    }
+  }
+`;
+
+gql`
   query VisualScreenshotSaveStatus($id: String!) {
     visualScreenshotSaveStatus(id: $id) {
       saved

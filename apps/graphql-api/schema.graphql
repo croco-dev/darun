@@ -281,6 +281,8 @@ type Mutation {
   retryProductDescriptionJob(id: String!): ProductDescriptionJob!
   retryProductResearch(input: RetryProductResearchInput, jobId: String!): ProductResearchJob
   retryTranslationJob(id: String!): TranslationJob!
+  setVisualFlowSave(input: SetVisualSaveInput!): SetVisualSavePayload!
+  setVisualScreenshotSave(input: SetVisualSaveInput!): SetVisualSavePayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
   toggleVisualFlowSave(id: String!): ToggleVisualSavePayload!
   toggleVisualScreenshotSave(id: String!): ToggleVisualSavePayload!
@@ -579,6 +581,15 @@ type Screenshot {
   platform: VisualPlatform
   screenType: VisualScreenType
   title: String
+}
+
+input SetVisualSaveInput {
+  id: String!
+  saved: Boolean!
+}
+
+type SetVisualSavePayload {
+  saved: Boolean!
 }
 
 input SignImageUploadInput {

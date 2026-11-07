@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client/core';
 import { MyVisualSavedFlowsDocument, MyVisualSavedScreenshotsDocument } from '@darun/provider-graphql';
-import { act, createElement, useRef, useSyncExternalStore } from 'react';
+import { act, createElement, useRef, useState, useSyncExternalStore } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collections } from '../features/collections/Collections';
@@ -169,7 +169,7 @@ describe('saved account state', () => {
   });
   it('refreshes retained save buttons on login and prevents an old account mutation updating the new account', async () => {
     mocks.query.mockResolvedValue({ data: { visualScreenshotSaveStatus: { saved: false } } });
-    const pending = deferred<{ data: { toggleVisualScreenshotSave: { saved: boolean } } }>();
+    const pending = deferred<{ data: { setVisualScreenshotSave: { saved: boolean } } }>();
     mocks.mutate.mockReturnValue(pending.promise);
     const current = await mount(() => useVisualSaveButton({ kind: 'screenshot', id: 's', enabled: true }));
     await signIn(null);
@@ -182,7 +182,7 @@ describe('saved account state', () => {
     });
     expect(mocks.mutate).toHaveBeenCalledTimes(1);
     await signIn('B');
-    await act(async () => pending.resolve({ data: { toggleVisualScreenshotSave: { saved: true } } }));
+    await act(async () => pending.resolve({ data: { setVisualScreenshotSave: { saved: true } } }));
     expect(current().saved).toBe(false);
     expect(current().isToggling).toBe(false);
   });
@@ -283,6 +283,116 @@ describe('saved account state', () => {
       root = undefined;
       apollo.stop();
     }
+  });
+});
+
+describe.each(['screenshot', 'flow'] as const)('%s 저장 의도', kind => {
+  it.each([false, true])('초기 저장 %s에서 DB commit 뒤 응답 유실을 같은 목표로 재시도한다', async initialSaved => {
+    let persisted = initialSaved;
+    let loseResponse = true;
+    const goals: unknown[] = [];
+    activeClient = new ApolloClient({
+      cache: new InMemoryCache(),
+      link: new ApolloLink(
+        operation =>
+          new Observable(observer => {
+            if (operation.operationName?.includes('SaveStatus')) {
+              observer.next({
+                data: {
+                  [kind === 'screenshot' ? 'visualScreenshotSaveStatus' : 'visualFlowSaveStatus']: { saved: persisted },
+                },
+              });
+              observer.complete();
+              return;
+            }
+            const goal = operation.variables.input?.saved;
+            goals.push(goal);
+            persisted = typeof goal === 'boolean' ? goal : !persisted;
+            if (loseResponse) {
+              loseResponse = false;
+              observer.error(new Error('response lost after commit'));
+              return;
+            }
+            observer.next({
+              data: {
+                [kind === 'screenshot' ? 'setVisualScreenshotSave' : 'setVisualFlowSave']: { saved: persisted },
+              },
+            });
+            observer.complete();
+          })
+      ),
+    });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const current = await mount(() => useVisualSaveButton({ kind, id: 'target', enabled: true }));
+    await signIn('A');
+    await act(async () => current().toggle());
+    expect(persisted).toBe(!initialSaved);
+    expect(current().toggleError).toBe(true);
+    await act(async () => current().retry());
+    expect(persisted).toBe(!initialSaved);
+    expect(goals).toEqual([!initialSaved, !initialSaved]);
+    expect(current()).toMatchObject({
+      saved: !initialSaved,
+      toggleError: false,
+      isToggling: false,
+    });
+    await act(async () => current().toggle());
+    expect(persisted).toBe(initialSaved);
+    expect(goals).toEqual([!initialSaved, !initialSaved, initialSaved]);
+    (activeClient as ApolloClient).stop();
+  });
+
+  it('대상이 바뀌면 실패한 저장 목표를 버리고 새 대상 상태로 조작한다', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.query.mockImplementation(({ variables }) =>
+      Promise.resolve({
+        data: {
+          [kind === 'screenshot' ? 'visualScreenshotSaveStatus' : 'visualFlowSaveStatus']: {
+            saved: variables.id === 'new',
+          },
+        },
+      })
+    );
+    mocks.mutate.mockRejectedValueOnce(new Error('old response lost')).mockResolvedValue({
+      data: { [kind === 'screenshot' ? 'setVisualScreenshotSave' : 'setVisualFlowSave']: { saved: false } },
+    });
+    const current = await mount(() => {
+      const [id, setId] = useState('old');
+      return { ...useVisualSaveButton({ kind, id, enabled: true }), setId };
+    });
+    await signIn('A');
+    await act(async () => current().toggle());
+    expect(current().toggleError).toBe(true);
+    await act(async () => current().setId('new'));
+    expect(current()).toMatchObject({ saved: true, toggleError: false });
+    await act(async () => current().toggle());
+    expect(mocks.mutate.mock.lastCall?.[0].variables).toEqual({ input: { id: 'new', saved: false } });
+    expect(current().saved).toBe(false);
+  });
+
+  it('먼저 시작한 상태 조회가 완료된 저장을 되돌리지 않는다', async () => {
+    const status = deferred<{ data: Record<string, { saved: boolean }> }>();
+    mocks.query.mockReturnValue(status.promise);
+    mocks.mutate.mockImplementation(() =>
+      Promise.resolve({
+        data: {
+          [kind === 'screenshot' ? 'setVisualScreenshotSave' : 'setVisualFlowSave']: { saved: true },
+          [kind === 'screenshot' ? 'toggleVisualScreenshotSave' : 'toggleVisualFlowSave']: { saved: true },
+        },
+      })
+    );
+    const current = await mount(() => useVisualSaveButton({ kind, id: 'target', enabled: true }));
+    await signIn('A');
+    await act(async () => current().toggle());
+    expect(current().saved).toBe(true);
+    await act(async () =>
+      status.resolve({
+        data: {
+          [kind === 'screenshot' ? 'visualScreenshotSaveStatus' : 'visualFlowSaveStatus']: { saved: false },
+        },
+      })
+    );
+    expect(current().saved).toBe(true);
   });
 });
 
