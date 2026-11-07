@@ -117,8 +117,10 @@ export default function HomeAppsClient({
 
       setLoadMoreError('앱 목록을 불러오지 못했습니다. 다시 시도해 주세요.');
     } finally {
-      isLoadingMoreRef.current = false;
-      setIsLoadingMore(false);
+      if (requestId === activeRequestIdRef.current) {
+        isLoadingMoreRef.current = false;
+        setIsLoadingMore(false);
+      }
     }
   }, [currentPage, hasNextPage, tier, readFailed]);
 
