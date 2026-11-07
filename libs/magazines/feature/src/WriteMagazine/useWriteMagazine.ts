@@ -62,7 +62,7 @@ export function useWriteMagazine() {
       slug: (value, values) => validateSlug(value, values.title),
     },
   });
-  const { upload } = useImageUpload();
+  const { upload, configurationError } = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -134,6 +134,11 @@ export function useWriteMagazine() {
         message: '10MB 이하의 이미지 파일만 업로드할 수 있습니다.',
         color: 'red',
       });
+      return;
+    }
+
+    if (configurationError) {
+      notifications.show({ message: configurationError, color: 'red' });
       return;
     }
 
