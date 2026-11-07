@@ -23,7 +23,6 @@ import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query GetProductScreenshotsOnDetailSection($slug: String!) {
     tempProductBySlug(slug: $slug) {
@@ -221,12 +220,13 @@ function ScreenshotMetadataEditor({
         이미지 alt
         <input
           value={draft.imageAlt}
-          onChange={event =>
+          onChange={event => {
+            const value = event.currentTarget.value;
             setDraft(previous => ({
               ...previous,
-              imageAlt: event.currentTarget.value,
-            }))
-          }
+              imageAlt: value,
+            }));
+          }}
           disabled={isSaving}
           maxLength={100}
           className="h-9 rounded-lg border border-dark-200 bg-white px-2.5 text-xs font-normal text-dark-900 focus:outline-none focus:ring-2 focus:ring-dark-900/60"
@@ -236,12 +236,13 @@ function ScreenshotMetadataEditor({
         제목
         <input
           value={draft.title}
-          onChange={event =>
+          onChange={event => {
+            const value = event.currentTarget.value;
             setDraft(previous => ({
               ...previous,
-              title: event.currentTarget.value,
-            }))
-          }
+              title: value,
+            }));
+          }}
           disabled={isSaving}
           maxLength={100}
           placeholder="ex) 회원가입 화면"
@@ -252,12 +253,13 @@ function ScreenshotMetadataEditor({
         플랫폼
         <AdminSelect
           value={draft.platform}
-          onChange={event =>
+          onChange={event => {
+            const value = event.currentTarget.value;
             setDraft(previous => ({
               ...previous,
-              platform: selectOptionValue(PLATFORM_SELECT_OPTIONS, event.currentTarget.value),
-            }))
-          }
+              platform: selectOptionValue(PLATFORM_SELECT_OPTIONS, value),
+            }));
+          }}
           disabled={isSaving}
         >
           {PLATFORM_SELECT_OPTIONS.map(option => (
@@ -271,12 +273,13 @@ function ScreenshotMetadataEditor({
         화면 유형
         <AdminSelect
           value={draft.screenType}
-          onChange={event =>
+          onChange={event => {
+            const value = event.currentTarget.value;
             setDraft(previous => ({
               ...previous,
-              screenType: selectOptionValue(SCREEN_TYPE_SELECT_OPTIONS, event.currentTarget.value),
-            }))
-          }
+              screenType: selectOptionValue(SCREEN_TYPE_SELECT_OPTIONS, value),
+            }));
+          }}
           disabled={isSaving}
         >
           {SCREEN_TYPE_SELECT_OPTIONS.map(option => (
@@ -321,6 +324,11 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
     variables: { slug },
   });
 
+  const refreshScreenshots = () => {
+    // The query displays refresh errors alongside the existing cards.
+    void refetch().catch(() => {});
+  };
+
   const [deleteScreenshot] = useMutation(DeleteProductScreenshotOnDetailSectionDocument, {
     onError: err => {
       notifications.show({
@@ -334,7 +342,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         message: '스크린샷이 삭제되었습니다.',
         color: 'teal',
       });
-      refetch();
+      refreshScreenshots();
     },
   });
 
@@ -348,7 +356,10 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
 
     setDeletingId(id);
     try {
-      await deleteScreenshot({ variables: { id } });
+      const result = await deleteScreenshot({ variables: { id } });
+      if (result.data?.deleteProductScreenshot?.success) {
+        setEditingId(current => (current === id ? null : current));
+      }
     } catch {
       // Handled by onError
     } finally {
@@ -390,15 +401,18 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         }
       />
       <AdminSectionBody>
-        {loading ? (
-          <AdminLoadingState />
-        ) : error ? (
+        {loading && data && (
+          <p role="status" className="mb-4 text-xs text-dark-500">
+            스크린샷을 새로 불러오는 중입니다.
+          </p>
+        )}
+        {error && (
           <AdminErrorState
             error={error}
             action={
               <Button
                 type="button"
-                onClick={() => refetch()}
+                onClick={refreshScreenshots}
                 variant="contained"
                 color="primary"
                 className="active:scale-[0.98] motion-reduce:transform-none"
@@ -407,7 +421,10 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
               </Button>
             }
           />
-        ) : screenshots.length === 0 ? (
+        )}
+        {loading && !data ? (
+          <AdminLoadingState />
+        ) : !data ? null : screenshots.length === 0 ? (
           <AdminEmptyState
             title="등록된 스크린샷이 없습니다."
             description="서비스의 주요 기능 및 화면을 보여주는 스크린샷을 등록해 보세요."
