@@ -187,9 +187,10 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
     @Arg('input') input: GenerateProductDescriptionInput
   ): Promise<GenerateProductDescriptionPayload> {
     if (this.productDescriptionJobService) {
-      const { product, job } = await this.productDescriptionJobService.requestProductDescriptionJob({
-        slug: input.slug,
-      });
+      const { product, job } = await this.productDescriptionJobService.requestProductDescriptionJob(
+        { slug: input.slug },
+        input.requestId
+      );
 
       return {
         product,
@@ -204,6 +205,7 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
           message: job.message ?? undefined,
           error: job.error ?? undefined,
           candidateHtml: job.candidateHtml ?? undefined,
+          appliedAt: job.appliedAt ?? undefined,
         },
       };
     }

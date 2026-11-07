@@ -29,6 +29,7 @@ export type UpdateProductDescriptionJobOptions = {
 export interface ProductDescriptionJobRepository {
   createJob(job: {
     productId: string;
+    requestKey?: string;
     retryOfJobId?: string;
     status?: ProductDescriptionJobStatus;
     message?: string;

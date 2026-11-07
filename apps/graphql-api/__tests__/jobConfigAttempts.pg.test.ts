@@ -13,6 +13,7 @@ import {
   LlmTranslationProvider,
 } from '@darun/translation-datasource';
 import { LlmSettingService, TranslationJobService } from '@darun/translation-service';
+import { createServer as createApolloServer } from '@darun/utils-apollo-server';
 import type * as UtilsLlm from '@darun/utils-llm';
 import { LlmClient, LLM_DEFAULT_KEY_REJECTION_MESSAGE } from '@darun/utils-llm';
 import type { Context, SQSEvent, SQSHandler } from 'aws-lambda';
@@ -39,9 +40,9 @@ import { PostgresqlProductDescriptionJobRepository } from '../../../libs/product
 import { PostgresqlProductRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlProductRepository';
 import { PostgresqlProductResearchJobRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlProductResearchJobRepository';
 import { ProductDescriptionGeneratorImpl } from '../../../libs/products/datasource/src/services/ProductDescriptionGeneratorImpl';
+import { ProductMutationResolver } from '../../../libs/products/feature/src/Product.mutation.resolver';
 import { ProductDescriptionMutationResolver } from '../../../libs/products/feature/src/ProductDescription.mutation.resolver';
 import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/src/ProductDescription.query.resolver';
-import { ProductPublishMutationResolver } from '../../../libs/products/feature/src/ProductPublishMutationResolver';
 import { ProductResearchQueryResolver } from '../../../libs/products/feature/src/ProductResearch.resolver';
 import { translationJobs } from '../../../libs/translation/datasource/src/entities/TranslationJobSchema';
 import { translations } from '../../../libs/translation/datasource/src/entities/TranslationSchema';
@@ -162,13 +163,17 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
     Container.set(TranslationQueryResolver, new TranslationQueryResolver(translationService, {} as never, sourceStore));
     Container.set(TranslationMutationResolver, new TranslationMutationResolver(translationService));
     Container.set(
-      ProductPublishMutationResolver,
-      new ProductPublishMutationResolver(
+      ProductMutationResolver,
+      new ProductMutationResolver(
         undefined as never,
         undefined as never,
         undefined as never,
         undefined as never,
         getProduct,
+        undefined as never,
+        undefined as never,
+        undefined as never,
+        undefined as never,
         undefined as never,
         undefined as never,
         undefined as never,
@@ -948,12 +953,139 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
     });
   });
 
+  it('description request IDs survive response loss and reject different targets through production GraphQL', async () => {
+    let authorized = true;
+    const server = createApolloServer({
+      options: {
+        resolvers: [ProductMutationResolver, ProductDescriptionMutationResolver, ProductDescriptionQueryResolver],
+        container: Container,
+        authChecker: () => authorized,
+      },
+      config: { playground: false },
+    });
+    const generate = `mutation($input: GenerateProductDescriptionInput!) {
+      generateProductDescription(input: $input) { job { id status candidateHtml appliedAt } }
+    }`;
+    const retry = `mutation($id: String!, $requestId: String) {
+      retryProductDescriptionJob(id: $id, requestId: $requestId) { id status candidateHtml appliedAt }
+    }`;
+    const execute = async (query: string, variables: Record<string, unknown>) => {
+      const result = await server.executeOperation({ query, variables });
+      if (result.body.kind !== 'single') throw new Error('Expected single GraphQL result');
+      return result.body.singleResult;
+    };
+    try {
+      const requestId = randomUUID();
+      const variables = { input: { slug: product.slug, requestId } };
+      const first = await execute(generate, variables); // Committed; pretend only this response was lost.
+      expect(first.errors).toBeUndefined();
+      const replay = await execute(generate, variables);
+      expect(replay).toEqual(first);
+      const same = await Promise.all(Array.from({ length: 4 }, () => execute(generate, variables)));
+      expect(same).toEqual(Array(4).fill(first));
+      const rows = await db
+        .select()
+        .from(productDescriptionJobs)
+        .where(eq(productDescriptionJobs.requestKey, `request:${requestId}`));
+      expect(rows).toHaveLength(1);
+      const original = rows[0]!;
+      const nextRequestId = randomUUID();
+      const next = await execute(generate, {
+        input: { slug: product.slug, requestId: nextRequestId },
+      });
+      expect(next.errors).toBeUndefined();
+      expect(next.data).not.toEqual(first.data);
+      const appliedAt = new Date('2026-11-01T03:24:00.000Z');
+      const [applied] = await db
+        .update(productDescriptionJobs)
+        .set({ status: 'completed', candidateHtml: '<p>Applied candidate</p>', appliedAt })
+        .where(eq(productDescriptionJobs.requestKey, `request:${nextRequestId}`))
+        .returning();
+      expect((await execute(generate, { input: { slug: product.slug, requestId: nextRequestId } })).data).toEqual({
+        generateProductDescription: {
+          job: {
+            id: applied!.id,
+            status: 'completed',
+            candidateHtml: '<p>Applied candidate</p>',
+            appliedAt: appliedAt.toISOString(),
+          },
+        },
+      });
+      const retryKey = randomUUID();
+      await db
+        .update(productDescriptionJobs)
+        .set({ status: 'failed', error: 'original history' })
+        .where(eq(productDescriptionJobs.id, original.id));
+      const retried = await execute(retry, {
+        id: original.id,
+        requestId: retryKey,
+      });
+      expect(retried.errors).toBeUndefined();
+      expect(await execute(retry, { id: original.id, requestId: retryKey })).toEqual(retried);
+      const [appliedRetry] = await db
+        .update(productDescriptionJobs)
+        .set({ status: 'completed', candidateHtml: '<p>Applied retry</p>', appliedAt })
+        .where(eq(productDescriptionJobs.requestKey, `request:${retryKey}`))
+        .returning();
+      expect((await execute(retry, { id: original.id, requestId: retryKey })).data).toEqual({
+        retryProductDescriptionJob: {
+          id: appliedRetry!.id,
+          status: 'completed',
+          candidateHtml: '<p>Applied retry</p>',
+          appliedAt: appliedAt.toISOString(),
+        },
+      });
+      const otherParent = await description.createJob({
+        productId: product.id,
+        status: 'failed',
+      });
+      const conflict = await execute(retry, {
+        id: otherParent.id,
+        requestId: retryKey,
+      });
+      expect(conflict.errors?.[0]?.extensions?.code).toBe('IDEMPOTENCY_KEY_CONFLICT');
+      const generationConflict = await execute(retry, {
+        id: original.id,
+        requestId,
+      });
+      expect(generationConflict.errors?.[0]?.extensions?.code).toBe('IDEMPOTENCY_KEY_CONFLICT');
+      const [otherProduct] = await db
+        .insert(products)
+        .values({
+          name: '다른 상품',
+          summary: '별도 대상',
+          description: '<p>별도 소개</p>',
+          slug: randomUUID(),
+          logoUrl: 'https://example.test/other.png',
+          categoryIds: [],
+        })
+        .returning();
+      const differentTarget = await execute(generate, {
+        input: { slug: otherProduct!.slug, requestId },
+      });
+      expect(differentTarget.errors?.[0]?.extensions?.code).toBe('IDEMPOTENCY_KEY_CONFLICT');
+      const invalid = await execute(generate, {
+        input: { slug: product.slug, requestId: 'malformed' },
+      });
+      expect(invalid.errors?.[0]?.extensions?.code).toBe('product/invalid-args');
+      authorized = false;
+      expect((await execute(generate, variables)).errors).toHaveLength(1);
+      expect((await execute(retry, { id: original.id, requestId: retryKey })).errors).toHaveLength(1);
+      expect(await description.findJobById(original.id)).toMatchObject({
+        status: 'failed',
+        error: 'original history',
+      });
+    } finally {
+      await server.stop();
+    }
+  });
+
   it('actual GraphQL job queries and mutations retain scheduling values and new logical retry origins', async () => {
     const schema = buildSchemaSync({
       resolvers: [
         ProductDescriptionQueryResolver,
         ProductDescriptionMutationResolver,
-        ProductPublishMutationResolver,
+        ProductMutationResolver,
         TranslationQueryResolver,
         TranslationMutationResolver,
       ],

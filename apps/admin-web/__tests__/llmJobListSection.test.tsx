@@ -231,7 +231,7 @@ describe('LlmJobListSection', () => {
 
     await waitFor(() => {
       expect(mockRetryDescription).toHaveBeenCalledWith({
-        variables: { id: 'desc-job-failed' },
+        variables: { id: 'desc-job-failed', requestId: expect.any(String) },
       });
       expect(mockRetryTranslation).not.toHaveBeenCalled();
       expect(refetchDesc).toHaveBeenCalled();
@@ -341,7 +341,7 @@ describe('LlmJobListSection', () => {
 
     await waitFor(() => {
       expect(mockRetryDescription).toHaveBeenCalledWith({
-        variables: { id: 'desc-modal-job' },
+        variables: { id: 'desc-modal-job', requestId: expect.any(String) },
       });
     });
   });

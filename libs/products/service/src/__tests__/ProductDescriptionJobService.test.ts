@@ -115,6 +115,43 @@ describe('ProductDescriptionJobService durable attempts', () => {
     expect(f.repository.retryJobLease).not.toHaveBeenCalled();
     expect(f.repository.completeJobLease).not.toHaveBeenCalled();
   });
+  it('passes the same canonical request key for generation and failed retry', async () => {
+    const f = fixture('failed');
+    const requestId = 'E7F8A1B2-C3D4-412A-9B0C-1D2E3F4A5B6C';
+    await f.service.requestProductDescriptionJob({ id: 'product' }, requestId);
+    await f.service.retryProductDescriptionJob('old-job', requestId);
+    expect(f.repository.createJob.mock.calls.map(([input]) => input.requestKey)).toEqual([
+      'request:e7f8a1b2-c3d4-412a-9b0c-1d2e3f4a5b6c',
+      'request:e7f8a1b2-c3d4-412a-9b0c-1d2e3f4a5b6c',
+    ]);
+  });
+  it('rejects malformed request IDs before reads, writes, or dispatch', async () => {
+    const f = fixture('failed');
+    await expect(f.service.requestProductDescriptionJob('product', 'bad key')).rejects.toMatchObject({
+      code: 'product/invalid-args',
+    });
+    await expect(f.service.retryProductDescriptionJob('old-job', 'bad key')).rejects.toMatchObject({
+      code: 'product/invalid-args',
+    });
+    expect(f.product.execute).not.toHaveBeenCalled();
+    expect(f.repository.findJobById).not.toHaveBeenCalled();
+    expect(f.repository.createJob).not.toHaveBeenCalled();
+    expect(f.queue.sendJob).not.toHaveBeenCalled();
+  });
+  it('returns a recovered terminal job and its candidate without dispatching again', async () => {
+    const f = fixture('failed');
+    f.repository.createJob.mockResolvedValue({ ...f.job, status: 'completed' });
+    const requestId = 'e7f8a1b2-c3d4-412a-9b0c-1d2e3f4a5b6c';
+    expect(await f.service.requestProductDescriptionJob('product', requestId)).toMatchObject({
+      job: { status: 'completed', candidateHtml: '<p>Human candidate</p>' },
+      queued: false,
+    });
+    expect(await f.service.retryProductDescriptionJob('old-job', requestId)).toMatchObject({
+      status: 'completed',
+      queued: false,
+    });
+    expect(f.queue.sendJob).not.toHaveBeenCalled();
+  });
   it('미존재 Product 요청은 job을 만들지 않는다', async () => {
     const f = fixture();
     f.product.execute.mockResolvedValueOnce(null);

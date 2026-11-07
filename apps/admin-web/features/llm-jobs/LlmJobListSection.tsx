@@ -2,6 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
+import { getProductDescriptionRequestId, acknowledgeProductDescriptionRequest } from '@darun/products-feature';
 import {
   GetProductDescriptionJobsOnAdminDocument,
   GetTranslationJobsOnAdminDocument,
@@ -69,8 +70,8 @@ gql`
 `;
 
 gql`
-  mutation RetryProductDescriptionJobOnAdmin($id: String!) {
-    retryProductDescriptionJob(id: $id) {
+  mutation RetryProductDescriptionJobOnAdmin($id: String!, $requestId: String) {
+    retryProductDescriptionJob(id: $id, requestId: $requestId) {
       id
       productId
       productSlug
@@ -389,9 +390,15 @@ export function LlmJobListSection() {
         });
         if (retryRequestRef.current !== request) return;
       } else {
-        const response = await retryDescription({ variables: { id: job.id } });
-        if (retryRequestRef.current !== request) return;
+        const requestId = getProductDescriptionRequestId({
+          retryJobId: job.id,
+        });
+        const response = await retryDescription({
+          variables: { id: job.id, requestId },
+        });
         const retry = response.data?.retryProductDescriptionJob;
+        if (retryRequestRef.current !== request) return;
+        if (retry?.id) acknowledgeProductDescriptionRequest({ retryJobId: job.id }, requestId);
         if (!retry) throw new Error('새 소개 작업을 확인하지 못했습니다.');
         router.push(
           `/products/${encodeURIComponent(retry.productSlug)}?descriptionJobId=${encodeURIComponent(retry.id)}`

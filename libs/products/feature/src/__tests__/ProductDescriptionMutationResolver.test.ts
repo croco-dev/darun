@@ -32,7 +32,7 @@ describe('ProductDescriptionMutationResolver', () => {
     const fields = new ProductDescriptionQueryResolver({ getCandidateHtml: load } as never, {} as never, {} as never);
     expect(await fields.candidateHtml(result)).toBeNull();
     expect(load).not.toHaveBeenCalled();
-    expect(retryJobMock).toHaveBeenCalledWith('job-1');
+    expect(retryJobMock).toHaveBeenCalledWith('job-1', undefined);
     expect(result).toEqual({
       id: 'job-1',
       productId: 'prod-1',

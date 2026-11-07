@@ -8,6 +8,7 @@ import {
   ProductDescriptionJobRepositoryToken,
   type ProductDescriptionJobStatus,
   productNotFound,
+  productInvalidArgs,
 } from '@darun/products-domain';
 import {
   JOB_LEASE_MS,
@@ -33,11 +34,23 @@ export class ProductDescriptionJobService {
     private readonly productDescriptionQueueService: ProductDescriptionQueueService
   ) {}
 
-  async requestProductDescriptionJob(identifier: { id?: string; slug?: string } | string): Promise<{
+  private requestKey(requestId?: string | null): string | undefined {
+    if (requestId == null) return undefined; // Existing clients may omit the new field.
+    if (!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(requestId)) {
+      throw productInvalidArgs('요청 ID 형식이 유효하지 않습니다.');
+    }
+    return `request:${requestId.toLowerCase()}`;
+  }
+
+  async requestProductDescriptionJob(
+    identifier: { id?: string; slug?: string } | string,
+    requestId?: string | null
+  ): Promise<{
     product: Product;
     job: ProductDescriptionJobEntity;
     queued: boolean;
   }> {
+    const requestKey = this.requestKey(requestId);
     const query = typeof identifier === 'string' ? { id: identifier } : identifier;
     const product = await this.getProductUseCase.execute(query);
     if (!product) {
@@ -46,13 +59,14 @@ export class ProductDescriptionJobService {
 
     const job = await this.productDescriptionJobRepository.createJob({
       productId: product.id,
+      ...(requestKey ? { requestKey } : {}),
       status: 'pending',
       message: '소개 생성 작업이 대기열에 등록되었습니다.',
     });
 
     // 큐 전송 실패는 pending으로 남겨 recovery tick이 재발견한다.
     // setImmediate 폴백을 제거하고, 전송 성공 여부만 정직하게 보고한다.
-    const queued = await this.sendToQueue({ jobId: job.id, productId: product.id });
+    const queued = job.status === 'pending' && (await this.sendToQueue({ jobId: job.id, productId: product.id }));
 
     return {
       product,
@@ -77,16 +91,25 @@ export class ProductDescriptionJobService {
     return this.productDescriptionJobRepository.findJobs(options);
   }
 
-  async retryProductDescriptionJob(jobId: string): Promise<ProductDescriptionJobEntity & { queued: boolean }> {
+  async retryProductDescriptionJob(
+    jobId: string,
+    requestId?: string | null
+  ): Promise<ProductDescriptionJobEntity & { queued: boolean }> {
+    const requestKey = this.requestKey(requestId);
     const job = await this.productDescriptionJobRepository.findJobById(jobId);
     if (!job) throw new Error(`존재하지 않는 AI 소개 생성 작업입니다: ${jobId}`);
     if (job.status !== 'failed' && job.status !== 'pending')
       throw new Error(`재시도할 수 없는 AI 소개 생성 작업 상태입니다: ${job.status}`);
     const retry =
       job.status === 'failed'
-        ? await this.productDescriptionJobRepository.createJob({ productId: job.productId, retryOfJobId: job.id })
+        ? await this.productDescriptionJobRepository.createJob({
+            productId: job.productId,
+            retryOfJobId: job.id,
+            ...(requestKey ? { requestKey } : {}),
+          })
         : job;
-    const queued = await this.sendToQueue({ jobId: retry.id, productId: retry.productId });
+    const queued =
+      retry.status === 'pending' && (await this.sendToQueue({ jobId: retry.id, productId: retry.productId }));
     return { ...retry, queued };
   }
 

@@ -106,7 +106,7 @@ describe('useGenerateProductDescriptionButton', () => {
 
     expect(generateMutateFn).toHaveBeenCalledWith({
       variables: {
-        input: { slug: defaultSlug },
+        input: { slug: defaultSlug, requestId: expect.any(String) },
       },
       context: {
         timeout: 25000,

@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
 import { productResearchJobs } from '../entities/ProductResearchJobSchema';
@@ -61,6 +62,69 @@ maybeDescribe('W4 job lease recovery (isolated PG)', () => {
         .catch(() => {});
     }
     await sql?.end({ timeout: 5 });
+  });
+
+  it('concurrent generation and failed-retry request keys create one runnable job across connections', async () => {
+    const second = postgres(databaseUrl!, {
+      max: 1,
+      prepare: false,
+      connect_timeout: 5,
+    });
+    const repositories = [
+      new PostgresqlProductDescriptionJobRepository(db as never),
+      new PostgresqlProductDescriptionJobRepository(drizzle(second) as never),
+    ];
+    try {
+      for (const retryOfJobId of [undefined, unique('failed-parent')]) {
+        const requestKey = randomUUID();
+        const input = {
+          productId: unique('product'),
+          requestKey,
+          retryOfJobId,
+        };
+        const results = await Promise.all(repositories.map(repo => repo.createJob(input)));
+        const id = results[0]!.id;
+        createdIds.descJobs.push(id);
+        expect(results.map(job => job.id)).toEqual([id, id]);
+        expect(
+          await db.select().from(productDescriptionJobs).where(eq(productDescriptionJobs.requestKey, requestKey))
+        ).toHaveLength(1);
+        const claims = await Promise.all(
+          repositories.map((repo, index) =>
+            repo.claimJobLease({
+              jobId: id,
+              leaseToken: `lease-${index}`,
+              leaseUntil: new Date(Date.now() + 60_000),
+            })
+          )
+        );
+        expect(claims.filter(Boolean)).toHaveLength(1);
+        const claimed = claims.find(Boolean)!;
+        await repositories[0]!.completeJobLease(id, claimed.leaseToken!, 'completed', {
+          candidateHtml: '<p>saved</p>',
+        });
+        expect(await repositories[1]!.createJob(input)).toMatchObject({
+          id,
+          status: 'completed',
+          candidateHtml: '<p>saved</p>',
+        });
+        await expect(repositories[1]!.createJob({ ...input, productId: unique('other') })).rejects.toMatchObject({
+          code: 'IDEMPOTENCY_KEY_CONFLICT',
+        });
+        await expect(
+          repositories[1]!.createJob({
+            ...input,
+            retryOfJobId: unique('other-parent'),
+          })
+        ).rejects.toMatchObject({ code: 'IDEMPOTENCY_KEY_CONFLICT' });
+      }
+      // Legacy rows without request IDs remain separate and need no backfill.
+      const legacy = await Promise.all(repositories.map(repo => repo.createJob({ productId: 'legacy' })));
+      createdIds.descJobs.push(...legacy.map(job => job.id));
+      expect(legacy[0]!.id).not.toBe(legacy[1]!.id);
+    } finally {
+      await second.end({ timeout: 5 });
+    }
   });
 
   it('W4-A1: late older-attempt writes are rejected by the DB lease condition', async () => {

@@ -12,6 +12,7 @@ import {
 } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useRef, useState } from 'react';
+import { getProductDescriptionRequestId, acknowledgeProductDescriptionRequest } from '../productDescriptionRequests';
 
 gql(`
   mutation GenerateProductDescription($input: GenerateProductDescriptionInput!) {
@@ -356,8 +357,11 @@ export function useGenerateProductDescriptionButton(
         cancelDeadline = () => clearTimeout(deadlineTimer);
       });
 
+      const requestId = getProductDescriptionRequestId({
+        generationSlug: slug,
+      });
       const request = generateDescriptionMutation({
-        variables: { input: { slug } },
+        variables: { input: { slug, requestId } },
         context: { timeout: CLIENT_TIMEOUT_MS },
       });
       request.catch(() => {});
@@ -366,6 +370,8 @@ export function useGenerateProductDescriptionButton(
       cancelDeadline();
 
       const initialJob = result?.data?.generateProductDescription?.job;
+      if (initialJob?.id && generateRequestRef.current === generateRequest)
+        acknowledgeProductDescriptionRequest({ generationSlug: slug }, requestId);
 
       if (!initialJob) {
         if (generateRequestRef.current !== generateRequest) return;

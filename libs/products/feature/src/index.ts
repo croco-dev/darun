@@ -24,3 +24,5 @@ export { ProductDescription } from './ProductDescription';
 export { ProductFeatureTable } from './ProductFeatureTable';
 export { ProductInfo, useProductInfo } from './ProductInfo';
 export { TranslateProductButton } from './TranslateProductButton';
+
+export { getProductDescriptionRequestId, acknowledgeProductDescriptionRequest } from './productDescriptionRequests';
