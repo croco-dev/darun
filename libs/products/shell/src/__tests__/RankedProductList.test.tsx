@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
+import { ApolloProvider } from '@apollo/client/react';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -54,8 +56,24 @@ vi.mock('../uis', () => ({
 }));
 
 const mockProducts = [
-  { id: '1', slug: 'notion', name: 'Notion', logoUrl: '/logo1.png', summary: 'All-in-one', voteCount: 100, tags: [] },
-  { id: '2', slug: 'figma', name: 'Figma', logoUrl: '/logo2.png', summary: 'Design tool', voteCount: 80, tags: [] },
+  {
+    id: '1',
+    slug: 'notion',
+    name: 'Notion',
+    logoUrl: '/logo1.png',
+    summary: 'All-in-one',
+    voteCount: 100,
+    tags: [],
+  },
+  {
+    id: '2',
+    slug: 'figma',
+    name: 'Figma',
+    logoUrl: '/logo2.png',
+    summary: 'Design tool',
+    voteCount: 80,
+    tags: [],
+  },
 ];
 
 describe('RankedProductList', () => {
@@ -66,7 +84,10 @@ describe('RankedProductList', () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
-    vi.mocked(useRankedProductList).mockReturnValue({ products: mockProducts, locale: 'ko' });
+    vi.mocked(useRankedProductList).mockReturnValue({
+      products: mockProducts,
+      locale: 'ko',
+    });
   });
 
   afterEach(() => {
@@ -79,7 +100,11 @@ describe('RankedProductList', () => {
 
   it('상품 목록을 1-based 순위와 함께 렌더링한다', () => {
     act(() => {
-      root?.render(<RankedProductList />);
+      root?.render(
+        <ApolloProvider client={new ApolloClient({ cache: new InMemoryCache(), link: ApolloLink.empty() })}>
+          <RankedProductList />
+        </ApolloProvider>
+      );
     });
 
     const items = container.querySelectorAll('[data-testid="product-item"]');
@@ -90,7 +115,11 @@ describe('RankedProductList', () => {
 
   it('각 상품 링크가 /{locale}/products/{slug}?from=trending 경로를 가진다', () => {
     act(() => {
-      root?.render(<RankedProductList />);
+      root?.render(
+        <ApolloProvider client={new ApolloClient({ cache: new InMemoryCache(), link: ApolloLink.empty() })}>
+          <RankedProductList />
+        </ApolloProvider>
+      );
     });
 
     const links = container.querySelectorAll('a');
@@ -99,10 +128,17 @@ describe('RankedProductList', () => {
   });
 
   it('빈 목록이면 빈 상태 안내 UI를 렌더링한다', () => {
-    vi.mocked(useRankedProductList).mockReturnValue({ products: [], locale: 'ko' });
+    vi.mocked(useRankedProductList).mockReturnValue({
+      products: [],
+      locale: 'ko',
+    });
 
     act(() => {
-      root?.render(<RankedProductList />);
+      root?.render(
+        <ApolloProvider client={new ApolloClient({ cache: new InMemoryCache(), link: ApolloLink.empty() })}>
+          <RankedProductList />
+        </ApolloProvider>
+      );
     });
 
     const items = container.querySelectorAll('[data-testid="product-item"]');

@@ -5,7 +5,8 @@ import { Button, TrendingUp } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
-import { ProductItem, VoteCountBadge } from '../../uis';
+import { ProductItem } from '../../uis';
+import { ProductVoteCount } from '../ProductVoteCount';
 import { useRankedProductList } from './useRankedProductList';
 
 export const RankedProductList = bind(useRankedProductList, ({ products, locale = 'ko' }) => {
@@ -48,47 +49,44 @@ export const RankedProductList = bind(useRankedProductList, ({ products, locale 
         const rank = index + 1;
 
         return (
-          <Link
-            key={product.id}
-            href={`/${locale}/products/${encodeURIComponent(product.slug)}?from=trending`}
-            onClick={() =>
-              track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
-                productSlug: product.slug,
-                source: 'ranking',
-              })
-            }
-            className={`group block rounded-card-lg border p-4 sm:p-5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 ${
-              rank === 1
-                ? 'border-dark-300 bg-white hover:border-dark-900'
-                : rank === 2
-                  ? 'border-dark-200 bg-white hover:border-dark-400'
-                  : rank === 3
-                    ? 'border-dark-200/90 bg-white hover:border-dark-300'
-                    : 'border-dark-150/80 bg-white hover:border-dark-300'
-            }`}
-          >
-            <div
-              className="flex-1"
-              style={{
-                viewTransitionName: `ranking-product-${product.slug}`,
-              }}
+          <div key={product.id} className="flex min-w-0 flex-col gap-2">
+            <Link
+              href={`/${locale}/products/${encodeURIComponent(product.slug)}?from=trending`}
+              onClick={() =>
+                track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
+                  productSlug: product.slug,
+                  source: 'ranking',
+                })
+              }
+              className={`group block rounded-card-lg border p-4 sm:p-5 shadow-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 ${
+                rank === 1
+                  ? 'border-dark-300 bg-white hover:border-dark-900'
+                  : rank === 2
+                    ? 'border-dark-200 bg-white hover:border-dark-400'
+                    : rank === 3
+                      ? 'border-dark-200/90 bg-white hover:border-dark-300'
+                      : 'border-dark-150/80 bg-white hover:border-dark-300'
+              }`}
             >
-              <ProductItem
-                name={product.name}
-                logoUrl={product.logoUrl}
-                logoSize="small"
-                summary={product.summary}
-                tags={product.tags.map(tag => tag.name)}
-                rank={rank}
-                headerRight={
-                  product.voteCount !== undefined && product.voteCount !== null ? (
-                    <VoteCountBadge count={product.voteCount} />
-                  ) : null
-                }
-                isRanked
-              />
-            </div>
-          </Link>
+              <div
+                className="flex-1"
+                style={{
+                  viewTransitionName: `ranking-product-${product.slug}`,
+                }}
+              >
+                <ProductItem
+                  name={product.name}
+                  logoUrl={product.logoUrl}
+                  logoSize="small"
+                  summary={product.summary}
+                  tags={product.tags.map(tag => tag.name)}
+                  rank={rank}
+                  isRanked
+                />
+              </div>
+            </Link>
+            <ProductVoteCount slug={product.slug} count={product.voteCount} />
+          </div>
         );
       })}
     </div>

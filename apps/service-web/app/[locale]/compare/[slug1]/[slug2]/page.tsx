@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { ProductCard, VoteCountBadge, getLocalizedTag } from '@darun/products-shell';
+import { ProductCard, ProductVoteCount, getLocalizedTag } from '@darun/products-shell';
 import { Breadcrumb, Chip, ContentArea, LogoImage, PageHeading } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
 import { notFound } from '@darun/utils-router';
@@ -52,7 +52,7 @@ type ProductData = {
   slug: string;
   summary?: string | null;
   logoUrl?: string | null;
-  voteCount: number;
+  voteCount: number | null;
   tags: { id: string; name: string }[];
   ownedCompany?: { name: string };
 };
@@ -266,8 +266,8 @@ export default async function ComparePage({ params }: Props) {
               label={t('table.voteCount')}
               colLabel1={product1.name}
               colLabel2={product2.name}
-              custom1={<VoteCountBadge count={product1.voteCount} />}
-              custom2={<VoteCountBadge count={product2.voteCount} />}
+              custom1={<ProductVoteCount slug={product1.slug} count={product1.voteCount} />}
+              custom2={<ProductVoteCount slug={product2.slug} count={product2.voteCount} />}
               locale={resolvedParams.locale}
               testid="vote-count"
             />

@@ -59,6 +59,9 @@ describe('ProductUserAction Toast Integration', () => {
     act(() => {
       root?.render(
         <ProductUserAction.ViewComponent
+          voteCountUnavailable={false}
+          voteCountLoading={false}
+          retryVoteCount={vi.fn()}
           voteCount={10}
           upvoteProduct={vi.fn()}
           voted={false}
@@ -77,6 +80,9 @@ describe('ProductUserAction Toast Integration', () => {
     act(() => {
       root?.render(
         <ProductUserAction.ViewComponent
+          voteCountUnavailable={false}
+          voteCountLoading={false}
+          retryVoteCount={vi.fn()}
           voteCount={11}
           upvoteProduct={vi.fn()}
           voted={true}
@@ -95,6 +101,9 @@ describe('ProductUserAction Toast Integration', () => {
     act(() => {
       root?.render(
         <ProductUserAction.ViewComponent
+          voteCountUnavailable={false}
+          voteCountLoading={false}
+          retryVoteCount={vi.fn()}
           voteCount={11}
           upvoteProduct={vi.fn()}
           voted={true}

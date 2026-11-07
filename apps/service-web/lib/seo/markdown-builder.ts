@@ -420,7 +420,7 @@ export function buildCategoryMarkdown(params: {
 
 export function buildRankingMarkdown(params: {
   locale: PublicLocale;
-  products: Array<{ name: string; slug: string; summary?: string | null; voteCount?: number }>;
+  products: Array<{ name: string; slug: string; summary?: string | null; voteCount?: number | null }>;
 }): string {
   const { locale, products } = params;
   const isKo = locale === 'ko';

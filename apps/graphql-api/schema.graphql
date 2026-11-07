@@ -327,7 +327,7 @@ type Product {
   summary: String!
   tags: [Tag!]!
   updatedAt: DateTimeISO
-  voteCount: Int!
+  voteCount: Int
 }
 
 type ProductConnection {

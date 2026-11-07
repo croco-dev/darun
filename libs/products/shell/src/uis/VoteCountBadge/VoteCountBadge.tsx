@@ -3,15 +3,22 @@ import { useLocale } from 'next-intl';
 import type { FC } from 'react';
 
 type VoteCountBadgeProps = {
-  count: number;
+  count: number | null;
   className?: string;
 };
 
 export const VoteCountBadge: FC<VoteCountBadgeProps> = ({ count, className = '' }) => {
   const locale = useLocale();
 
-  const formattedCount = count.toLocaleString(locale);
-  const label = locale === 'en' ? `${formattedCount} ${count === 1 ? 'upvote' : 'upvotes'}` : `추천 ${formattedCount}`;
+  const formattedCount = count === null ? '—' : count.toLocaleString(locale);
+  const label =
+    count === null
+      ? locale === 'en'
+        ? 'Vote count unknown'
+        : '추천 수 알 수 없음'
+      : locale === 'en'
+        ? `${formattedCount} ${count === 1 ? 'upvote' : 'upvotes'}`
+        : `추천 ${formattedCount}`;
 
   return (
     <div

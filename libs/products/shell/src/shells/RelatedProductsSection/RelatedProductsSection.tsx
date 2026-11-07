@@ -33,7 +33,7 @@ type Alternative = {
   slug: string;
   logoUrl: string;
   summary: string;
-  voteCount: number;
+  voteCount: number | null;
   tags: Tag[];
 };
 

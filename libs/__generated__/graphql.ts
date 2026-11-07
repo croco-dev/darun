@@ -469,7 +469,7 @@ export type ProductsForCompareQueryVariables = Exact<{
 }>;
 
 
-export type ProductsForCompareQuery = { product1: { id: string, name: string, slug: string, summary: string, logoUrl: string, voteCount: number, tags: Array<{ id: string, name: string }>, ownedCompany: { name: string } | null } | null, product2: { id: string, name: string, slug: string, summary: string, logoUrl: string, voteCount: number, tags: Array<{ id: string, name: string }>, ownedCompany: { name: string } | null } | null };
+export type ProductsForCompareQuery = { product1: { id: string, name: string, slug: string, summary: string, logoUrl: string, voteCount: number | null, tags: Array<{ id: string, name: string }>, ownedCompany: { name: string } | null } | null, product2: { id: string, name: string, slug: string, summary: string, logoUrl: string, voteCount: number | null, tags: Array<{ id: string, name: string }>, ownedCompany: { name: string } | null } | null };
 
 export type MagazineBySlugOnMagazinePageMetadataQueryVariables = Exact<{
   slug: string;
@@ -553,7 +553,7 @@ export type RankedProductsOnMarkdownQueryVariables = Exact<{
 }>;
 
 
-export type RankedProductsOnMarkdownQuery = { rankedProducts: Array<{ id: string, name: string, slug: string, summary: string, voteCount: number }> };
+export type RankedProductsOnMarkdownQuery = { rankedProducts: Array<{ id: string, name: string, slug: string, summary: string, voteCount: number | null }> };
 
 export type MagazineOnMarkdownQueryVariables = Exact<{
   slug: string;
@@ -1174,14 +1174,22 @@ export type ProductBySlugOnProductUserActionQueryVariables = Exact<{
 }>;
 
 
-export type ProductBySlugOnProductUserActionQuery = { productBySlug: { id: string, name: string, voteCount: number } | null };
+export type ProductBySlugOnProductUserActionQuery = { productBySlug: { id: string, name: string, voteCount: number | null } | null };
 
 export type UpvoteProductOnProductUserActionMutationVariables = Exact<{
   slug: string;
 }>;
 
 
-export type UpvoteProductOnProductUserActionMutation = { upvoteProduct: { product: { id: string, voteCount: number } | null } };
+export type UpvoteProductOnProductUserActionMutation = { upvoteProduct: { product: { id: string, voteCount: number | null } | null } };
+
+export type ProductVoteCountQueryVariables = Exact<{
+  slug: string;
+  locale: string;
+}>;
+
+
+export type ProductVoteCountQuery = { productBySlug: { id: string, voteCount: number | null } | null };
 
 export type ProductsCountOnProductsCountQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1193,7 +1201,7 @@ export type RankedProductsOnRankedProductListQueryVariables = Exact<{
 }>;
 
 
-export type RankedProductsOnRankedProductListQuery = { rankedProducts: Array<{ id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number, tags: Array<{ id: string, name: string }> }> };
+export type RankedProductsOnRankedProductListQuery = { rankedProducts: Array<{ id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number | null, tags: Array<{ id: string, name: string }> }> };
 
 export type RecentProductsOnRecentProductListQueryVariables = Exact<{
   locale: string;
@@ -1217,7 +1225,7 @@ export type ProductsByCategoryOnSectionQueryVariables = Exact<{
 }>;
 
 
-export type ProductsByCategoryOnSectionQuery = { productsByCategory: { totalCount: number, pageInfo: { hasNextPage: boolean, endCursor: string | null }, edges: Array<{ node: { id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number, tags: Array<{ id: string, name: string }> } }> }, categoryBySlug: { id: string, slug: string, labelKo: string, labelEn: string } | null };
+export type ProductsByCategoryOnSectionQuery = { productsByCategory: { totalCount: number, pageInfo: { hasNextPage: boolean, endCursor: string | null }, edges: Array<{ node: { id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number | null, tags: Array<{ id: string, name: string }> } }> }, categoryBySlug: { id: string, slug: string, labelKo: string, labelEn: string } | null };
 
 export type RelatedProductsQueryVariables = Exact<{
   slug: string;
@@ -1225,14 +1233,14 @@ export type RelatedProductsQueryVariables = Exact<{
 }>;
 
 
-export type RelatedProductsQuery = { productBySlug: { alternatives: Array<{ id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number, tags: Array<{ id: string, name: string }> }> } | null };
+export type RelatedProductsQuery = { productBySlug: { alternatives: Array<{ id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number | null, tags: Array<{ id: string, name: string }> }> } | null };
 
 export type TrendingProductsOnTrendingProductSectionQueryVariables = Exact<{
   locale: string;
 }>;
 
 
-export type TrendingProductsOnTrendingProductSectionQuery = { rankedProducts: Array<{ id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number, tags: Array<{ id: string, name: string }> }> };
+export type TrendingProductsOnTrendingProductSectionQuery = { rankedProducts: Array<{ id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number | null, tags: Array<{ id: string, name: string }> }> };
 
 export type CompactCategoriesForSearchProductListQueryVariables = Exact<{
   first: number;
@@ -1248,7 +1256,7 @@ export type CompactTrendingPreviewForSearchProductListQueryVariables = Exact<{
 }>;
 
 
-export type CompactTrendingPreviewForSearchProductListQuery = { rankedProducts: Array<{ id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number, tags: Array<{ id: string, name: string }> }> };
+export type CompactTrendingPreviewForSearchProductListQuery = { rankedProducts: Array<{ id: string, name: string, slug: string, logoUrl: string, summary: string, voteCount: number | null, tags: Array<{ id: string, name: string }> }> };
 
 export type SearchProductsOnSearchProductListQueryVariables = Exact<{
   query: string;
@@ -1392,6 +1400,7 @@ export const ProductOnProductLinksDocument = {"kind":"Document","definitions":[{
 export const GetPhotosOnProductPhotosDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPhotosOnProductPhotos"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"slug"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"locale"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"productBySlug"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"slug"},"value":{"kind":"Variable","name":{"kind":"Name","value":"slug"}}},{"kind":"Argument","name":{"kind":"Name","value":"locale"},"value":{"kind":"Variable","name":{"kind":"Name","value":"locale"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"screenshots"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"imageAlt"}}]}}]}}]}}]} as unknown as DocumentNode<GetPhotosOnProductPhotosQuery, GetPhotosOnProductPhotosQueryVariables>;
 export const ProductBySlugOnProductUserActionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProductBySlugOnProductUserAction"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"slug"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"locale"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"productBySlug"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"slug"},"value":{"kind":"Variable","name":{"kind":"Name","value":"slug"}}},{"kind":"Argument","name":{"kind":"Name","value":"locale"},"value":{"kind":"Variable","name":{"kind":"Name","value":"locale"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"voteCount"}}]}}]}}]} as unknown as DocumentNode<ProductBySlugOnProductUserActionQuery, ProductBySlugOnProductUserActionQueryVariables>;
 export const UpvoteProductOnProductUserActionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpvoteProductOnProductUserAction"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"slug"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"upvoteProduct"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"slug"},"value":{"kind":"Variable","name":{"kind":"Name","value":"slug"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"voteCount"}}]}}]}}]}}]} as unknown as DocumentNode<UpvoteProductOnProductUserActionMutation, UpvoteProductOnProductUserActionMutationVariables>;
+export const ProductVoteCountDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProductVoteCount"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"slug"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"locale"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"productBySlug"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"slug"},"value":{"kind":"Variable","name":{"kind":"Name","value":"slug"}}},{"kind":"Argument","name":{"kind":"Name","value":"locale"},"value":{"kind":"Variable","name":{"kind":"Name","value":"locale"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"voteCount"}}]}}]}}]} as unknown as DocumentNode<ProductVoteCountQuery, ProductVoteCountQueryVariables>;
 export const ProductsCountOnProductsCountDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProductsCountOnProductsCount"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"productsCount"}}]}}]} as unknown as DocumentNode<ProductsCountOnProductsCountQuery, ProductsCountOnProductsCountQueryVariables>;
 export const RankedProductsOnRankedProductListDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RankedProductsOnRankedProductList"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"locale"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rankedProducts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"30"}},{"kind":"Argument","name":{"kind":"Name","value":"locale"},"value":{"kind":"Variable","name":{"kind":"Name","value":"locale"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"logoUrl"}},{"kind":"Field","name":{"kind":"Name","value":"summary"}},{"kind":"Field","name":{"kind":"Name","value":"voteCount"}},{"kind":"Field","name":{"kind":"Name","value":"tags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<RankedProductsOnRankedProductListQuery, RankedProductsOnRankedProductListQueryVariables>;
 export const RecentProductsOnRecentProductListDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RecentProductsOnRecentProductList"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"locale"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"recentProducts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"8"}},{"kind":"Argument","name":{"kind":"Name","value":"locale"},"value":{"kind":"Variable","name":{"kind":"Name","value":"locale"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"logoUrl"}},{"kind":"Field","name":{"kind":"Name","value":"summary"}},{"kind":"Field","name":{"kind":"Name","value":"tags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<RecentProductsOnRecentProductListQuery, RecentProductsOnRecentProductListQueryVariables>;

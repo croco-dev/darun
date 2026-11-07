@@ -14,3 +14,4 @@ export { ProductFeatureList } from './ProductFeatureList';
 export { ProductCompany } from './ProductCompany';
 export { ProductsCount } from './ProductsCount';
 export { FAQSection, type FAQItem } from './FAQSection';
+export { ProductVoteCount } from './ProductVoteCount';

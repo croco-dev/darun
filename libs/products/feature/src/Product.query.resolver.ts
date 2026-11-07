@@ -399,11 +399,11 @@ export class ProductQueryResolver {
     return this.translateProducts(products, product.locale ?? 'ko');
   }
 
-  @FieldResolver(() => Int)
+  @FieldResolver(() => Int, { nullable: true })
   public async voteCount(@Root() product: ProductWithLocale) {
     return this.getVoteCountUseCase.execute({ productId: product.id }).catch(error => {
       console.error('Product vote count lookup failed', product.id, error);
-      return 0;
+      return null;
     });
   }
 

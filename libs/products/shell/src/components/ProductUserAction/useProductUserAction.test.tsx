@@ -7,6 +7,7 @@ import { useProductUserAction } from './useProductUserAction';
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const { mutate } = vi.hoisted(() => ({ mutate: vi.fn() }));
 vi.mock('@apollo/client/react', () => ({
+  useApolloClient: () => ({ query: vi.fn() }),
   useQuery: () => ({ data: { productBySlug: { voteCount: 3 } } }),
   useMutation: () => [mutate],
 }));
