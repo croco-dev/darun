@@ -16,6 +16,8 @@ export type LlmModelItem = {
   };
 };
 
+const EMPTY_MODELS: LlmModelItem[] = [];
+
 function getStructuredOutputSupport(model: LlmModelItem): 'supported' | 'unsupported' | 'unknown' {
   if (!model.supported_parameters) return 'unknown';
   return model.supported_parameters.includes('structured_outputs') &&
@@ -63,24 +65,46 @@ export function ModelSelectModal({
   selectedModel,
   onSelectModel,
 }: ModelSelectModalProps) {
-  const [models, setModels] = useState<LlmModelItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const modelEndpoint = endpoint.trim() || 'https://openrouter.ai/api/v1';
+  const modelApiKey = apiKey?.trim() || undefined;
+  const requestKey = JSON.stringify([modelEndpoint, modelApiKey]);
+  const [modelState, setModelState] = useState<{
+    key: string;
+    models: LlmModelItem[];
+    isLoading: boolean;
+    error: string | null;
+  } | null>(null);
+  const currentState = modelState?.key === requestKey ? modelState : null;
+  const models = currentState?.models ?? EMPTY_MODELS;
+  const isLoading = opened && (!currentState || currentState.isLoading);
+  const error = currentState?.error ?? null;
+  const activeRequestRef = useRef<AbortController | null>(null);
+  const lastFetchedKeyRef = useRef<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const fetchModels = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    activeRequestRef.current?.abort();
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
+    const isCurrentRequest = () => activeRequestRef.current === controller && !controller.signal.aborted;
+    lastFetchedKeyRef.current = null;
+    setModelState({
+      key: requestKey,
+      models: [],
+      isLoading: true,
+      error: null,
+    });
 
     try {
       // Never bypass server authorization or endpoint policy with a direct provider request.
       const proxyRes = await fetch('/api/llm/models', {
         method: 'POST',
+        signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          endpoint: endpoint.trim() || 'https://openrouter.ai/api/v1',
-          apiKey: apiKey?.trim() || undefined,
+          endpoint: modelEndpoint,
+          apiKey: modelApiKey,
         }),
       });
 
@@ -138,34 +162,39 @@ export function ModelSelectModal({
         throw new Error('조회된 모델 목록이 비어 있습니다. 엔드포인트 URL을 확인해주세요.');
       }
 
-      setModels(parsedModels);
+      if (!isCurrentRequest()) return;
+      lastFetchedKeyRef.current = requestKey;
+      setModelState({
+        key: requestKey,
+        models: parsedModels,
+        isLoading: false,
+        error: null,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '모델 목록을 불러오지 못했습니다.');
+      if (!isCurrentRequest()) return;
+      setModelState({
+        key: requestKey,
+        models: [],
+        isLoading: false,
+        error: err instanceof Error ? err.message : '모델 목록을 불러오지 못했습니다.',
+      });
     } finally {
-      setIsLoading(false);
+      if (isCurrentRequest()) activeRequestRef.current = null;
     }
-  }, [endpoint, apiKey]);
-
-  const lastFetchedKeyRef = useRef<string | null>(null);
+  }, [modelEndpoint, modelApiKey, requestKey]);
 
   useEffect(() => {
     if (!opened) return;
-    const currentKey = `${endpoint}::${apiKey ?? ''}`;
-    if (models.length > 0 && lastFetchedKeyRef.current === currentKey) return;
-
-    let ignore = false;
     const timer = setTimeout(() => {
-      if (!ignore) {
-        lastFetchedKeyRef.current = currentKey;
-        void fetchModels();
-      }
+      if (lastFetchedKeyRef.current !== requestKey) void fetchModels();
     }, 0);
 
     return () => {
-      ignore = true;
       clearTimeout(timer);
+      activeRequestRef.current?.abort();
+      activeRequestRef.current = null;
     };
-  }, [opened, models.length, fetchModels, endpoint, apiKey]);
+  }, [opened, fetchModels, requestKey]);
 
   const filteredModels = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -215,7 +244,7 @@ export function ModelSelectModal({
         <div className="p-3 bg-surface-50 rounded-xl border border-dark-100 flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-xs text-dark-600">
             <span className="font-medium truncate">
-              엔드포인트: <span className="font-mono text-dark-900">{endpoint || 'https://openrouter.ai/api/v1'}</span>
+              엔드포인트: <span className="font-mono text-dark-900">{modelEndpoint}</span>
             </span>
             <button
               type="button"
