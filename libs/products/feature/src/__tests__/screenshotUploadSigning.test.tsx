@@ -13,9 +13,9 @@ vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn(), update: vi.fn() },
 }));
 
-function ScreenshotForm() {
+function ScreenshotForm({ slug }: { slug: string }) {
   const { form, submit, loading } = useNewProductScreenshotForm({
-    productSlug: 'example-app',
+    productSlug: slug,
     children: () => null,
   });
   return (
@@ -45,13 +45,14 @@ afterEach(async () => {
 
 describe('스크린샷 파일명과 업로드 서명', () => {
   it.each([
-    'screen..final.png',
-    'screen...draft..final.png',
-    '화면.. 최종.png',
-    'screen final.png',
-    'screen.final.backup.png',
-    `${'a'.repeat(62)}..final.png`,
-  ])('%s를 실제 서명 검증을 거쳐 같은 public_id로 업로드한다', async filename => {
+    ['screen..final.png', 'example-app', 'images/screenshots/example-app'],
+    ['screen...draft..final.png', 'example-app', 'images/screenshots/example-app'],
+    ['화면.. 최종.png', 'example-app', 'images/screenshots/example-app'],
+    ['screen final.png', 'example-app', 'images/screenshots/example-app'],
+    ['screen.final.backup.png', 'example-app', 'images/screenshots/example-app'],
+    [`${'a'.repeat(62)}..final.png`, 'example-app', 'images/screenshots/example-app'],
+    ['legacy.png', 'My_Product', 'images/screenshots-by-product/01ARZ3NDEKTSV4RRFFQ69G5FAV'],
+  ])('%s를 실제 서명 검증을 거쳐 같은 public_id로 업로드한다', async (filename, slug, expectedFolder) => {
     vi.stubEnv('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME', 'fixture-cloud');
     vi.stubEnv('NEXT_PUBLIC_CLOUDINARY_API_KEY', 'fixture-key');
     vi.spyOn(crypto, 'randomUUID')
@@ -59,47 +60,52 @@ describe('스크린샷 파일명과 업로드 서명', () => {
       .mockReturnValueOnce('fedcba98-7654-4321-8012-3456789abcde');
 
     const signatures: { uploadFolder: string; displayName: string }[] = [];
-    const signer = new SignImageUpload({
-      signImageUpload(input) {
-        signatures.push(input);
-        return {
-          signature: `signed-${input.displayName}`,
-          timestamp: 1700000000,
-          folder: input.uploadFolder,
-        };
+    const signer = new SignImageUpload(
+      {
+        signImageUpload(input) {
+          signatures.push(input);
+          return {
+            signature: `signed-${input.displayName}`,
+            timestamp: 1700000000,
+            folder: input.uploadFolder,
+          };
+        },
       },
-    });
+      { findOneBySlug: async requested => (requested === 'My_Product' ? { id: '01ARZ3NDEKTSV4RRFFQ69G5FAV' } : null) }
+    );
     const savedInputs: { imageUrl: string; imageAlt: string }[] = [];
     const client = new ApolloClient({
       cache: new InMemoryCache(),
       link: new ApolloLink(
         operation =>
           new Observable(observer => {
-            try {
-              if (operation.operationName === 'SignImageUpload') {
-                observer.next({
-                  data: {
-                    signImageUpload: signer.execute(operation.variables.input),
-                  },
-                });
-              } else if (operation.operationName === 'AddProductScreenshotOnNewProductScreenshotForm') {
-                savedInputs.push(operation.variables.input);
-                observer.next({
-                  data: {
-                    addProductScreenshot: {
-                      product: { id: 'product-1', screenshots: [] },
+            void (async () => {
+              try {
+                if (operation.operationName === 'SignImageUpload') {
+                  observer.next({
+                    data: {
+                      signImageUpload: await signer.execute(operation.variables.input),
                     },
-                  },
-                });
-              } else if (operation.operationName === 'GetProductScreenshotsOnDetailSection') {
-                observer.next({ data: { tempProductBySlug: null } });
-              } else {
-                throw new Error(`Unexpected operation: ${operation.operationName}`);
+                  });
+                } else if (operation.operationName === 'AddProductScreenshotOnNewProductScreenshotForm') {
+                  savedInputs.push(operation.variables.input);
+                  observer.next({
+                    data: {
+                      addProductScreenshot: {
+                        product: { id: 'product-1', screenshots: [] },
+                      },
+                    },
+                  });
+                } else if (operation.operationName === 'GetProductScreenshotsOnDetailSection') {
+                  observer.next({ data: { tempProductBySlug: null } });
+                } else {
+                  throw new Error(`Unexpected operation: ${operation.operationName}`);
+                }
+                observer.complete();
+              } catch (error) {
+                observer.error(error);
               }
-              observer.complete();
-            } catch (error) {
-              observer.error(error);
-            }
+            })();
           })
       ),
     });
@@ -119,7 +125,7 @@ describe('스크린샷 파일명과 업로드 서명', () => {
     for (let index = 0; index < 2; index++) {
       render(
         <ApolloProvider client={client}>
-          <ScreenshotForm />
+          <ScreenshotForm slug={slug} />
         </ApolloProvider>
       );
       fireEvent.change(screen.getByLabelText('스크린샷'), {
@@ -146,7 +152,7 @@ describe('스크린샷 파일명과 업로드 서명', () => {
       expect(signed.displayName).not.toContain('..');
       expect(body.get('public_id')).toBe(signed.displayName);
       expect(body.get('signature')).toBe(`signed-${signed.displayName}`);
-      expect(body.get('folder')).toBe('images/screenshots/example-app');
+      expect(body.get('folder')).toBe(expectedFolder);
       expect(body.get('timestamp')).toBe('1700000000');
       expect(body.get('file')).toBe(file);
       expect((body.get('file') as File).name).toBe(filename);
@@ -156,6 +162,6 @@ describe('스크린샷 파일명과 업로드 서명', () => {
       });
     }
     expect(file.name).toBe(filename);
-    expect(navigate).toHaveBeenCalledWith('/products/example-app');
+    expect(navigate).toHaveBeenCalledWith(`/products/${encodeURIComponent(slug)}`);
   });
 });

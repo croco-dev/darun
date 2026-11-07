@@ -1,9 +1,18 @@
-import { type RankedProductVoteRepository, RankedProductVoteRepositoryToken } from '@darun/products-domain';
+import { type ScreenshotUploadProductReader, ScreenshotUploadProductReaderToken } from '@darun/images-domain';
+import {
+  ProductRepositoryToken,
+  type RankedProductVoteRepository,
+  RankedProductVoteRepositoryToken,
+} from '@darun/products-domain';
 import { type SearchProductVoteRepository, SearchProductVoteRepositoryToken } from '@darun/search-domain';
 import { VoteRepositoryToken } from '@darun/voting-domain';
 import { Container, ContainerInstance } from 'typedi';
 
 export function registerRepositoryAliases(): void {
+  Container.set({
+    id: ScreenshotUploadProductReaderToken,
+    factory: (container: ContainerInstance): ScreenshotUploadProductReader => container.get(ProductRepositoryToken),
+  });
   Container.set({
     id: RankedProductVoteRepositoryToken,
     factory: (container: ContainerInstance): RankedProductVoteRepository => container.get(VoteRepositoryToken),

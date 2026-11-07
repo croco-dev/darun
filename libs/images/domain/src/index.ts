@@ -5,3 +5,6 @@ export type { ImageDeleter } from './services/ImageDeleter';
 export { ImageDeleterToken } from './services/ImageDeleter';
 
 export { SignImageUpload } from './usecases/SignImageUpload';
+
+export type { ScreenshotUploadProductReader } from './repositories/ScreenshotUploadProductReader';
+export { ScreenshotUploadProductReaderToken } from './repositories/ScreenshotUploadProductReader';

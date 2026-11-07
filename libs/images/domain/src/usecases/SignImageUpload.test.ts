@@ -13,141 +13,124 @@ function createMockRepository(): ImageRepository {
 }
 
 describe('SignImageUpload usecase', () => {
-  it('허용: images/magazines 폴더는 서명 생성에 통과한다', () => {
+  it.each(['images/magazines', 'images/editor', 'images/logos', 'images/screenshots/example-product'])(
+    '허용 폴더 %s는 기존 경로 그대로 서명한다',
+    async folder => {
+      const repo = createMockRepository();
+      const reader = { findOneBySlug: vi.fn().mockResolvedValue(null) };
+      const result = await new SignImageUpload(repo, reader).execute({ folder, displayName: 'test.jpg' });
+      expect(result).toEqual({ signature: 'test-sig', timestamp: 1234567890, folder: 'test-folder' });
+      expect(repo.signImageUpload).toHaveBeenCalledWith({ uploadFolder: folder, displayName: 'test.jpg' });
+      expect(reader.findOneBySlug).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    'images/screenshots/example-product/extra',
+    'images/screenshots/exa.mple',
+    'images/screenshots/../../etc',
+    'images/screenshots/',
+    'images/screenshots/Example-Product',
+    'images/upload',
+  ])('허용되지 않은 폴더 %s와 미등록 상품은 서명하지 않는다', async folder => {
     const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    const result = useCase.execute({ folder: 'images/magazines', displayName: 'test.jpg' });
-    expect(result).toEqual({ signature: 'test-sig', timestamp: 1234567890, folder: 'test-folder' });
-    expect(repo.signImageUpload).toHaveBeenCalledWith({ uploadFolder: 'images/magazines', displayName: 'test.jpg' });
+    const useCase = new SignImageUpload(repo, { findOneBySlug: vi.fn().mockResolvedValue(null) });
+    await expect(useCase.execute({ folder, displayName: 'shot.jpg' })).rejects.toThrow(InvalidFolderError);
+    expect(repo.signImageUpload).not.toHaveBeenCalled();
   });
 
-  it('허용: images/editor 폴더는 서명 생성에 통과한다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    const result = useCase.execute({ folder: 'images/editor', displayName: 'test.jpg' });
-    expect(result).toEqual({ signature: 'test-sig', timestamp: 1234567890, folder: 'test-folder' });
-    expect(repo.signImageUpload).toHaveBeenCalledWith({ uploadFolder: 'images/editor', displayName: 'test.jpg' });
-  });
+  it.each(['', '   ', 'foo..bar.jpg', 'foo/bar.jpg', 'foo\\bar.jpg', 'foo\x00bar.jpg'])(
+    '잘못된 displayName %j는 조회와 서명 전에 거절한다',
+    async displayName => {
+      const repo = createMockRepository();
+      const reader = { findOneBySlug: vi.fn() };
+      await expect(
+        new SignImageUpload(repo, reader).execute({ folder: 'images/magazines', displayName })
+      ).rejects.toThrow(InvalidDisplayNameError);
+      expect(reader.findOneBySlug).not.toHaveBeenCalled();
+      expect(repo.signImageUpload).not.toHaveBeenCalled();
+    }
+  );
 
-  it('허용: images/logos 폴더는 서명 생성에 통과한다', () => {
+  it('공백이 섞인 유효한 displayName은 변환 없이 서명한다', async () => {
     const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    const result = useCase.execute({ folder: 'images/logos', displayName: 'test.jpg' });
+    const useCase = new SignImageUpload(repo, { findOneBySlug: vi.fn().mockResolvedValue(null) });
+    const result = await useCase.execute({ folder: 'images/magazines', displayName: '  hello  ' });
     expect(result).toEqual({ signature: 'test-sig', timestamp: 1234567890, folder: 'test-folder' });
-    expect(repo.signImageUpload).toHaveBeenCalledWith({ uploadFolder: 'images/logos', displayName: 'test.jpg' });
+    expect(repo.signImageUpload).toHaveBeenCalledWith({ uploadFolder: 'images/magazines', displayName: '  hello  ' });
   });
+});
 
-  it('허용: images/screenshots/{slug} 형태의 동적 폴더는 서명 생성에 통과한다', () => {
+describe('기존 상품의 스크린샷 폴더', () => {
+  it.each(['My_Product', '기존 상품', 'old.app', 'old--app'])(
+    '%s를 서버가 확인한 상품 ID 경로로 서명한다',
+    async slug => {
+      const repo = createMockRepository();
+      const reader = { findOneBySlug: vi.fn().mockResolvedValue({ id: '01ARZ3NDEKTSV4RRFFQ69G5FAV' }) };
+      await new SignImageUpload(repo, reader).execute({
+        folder: `images/screenshots/${slug}`,
+        displayName: 'shot.png',
+      });
+      expect(reader.findOneBySlug).toHaveBeenCalledWith(slug);
+      expect(repo.signImageUpload).toHaveBeenCalledWith({
+        uploadFolder: 'images/screenshots-by-product/01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        displayName: 'shot.png',
+      });
+    }
+  );
+
+  it('기존의 안전한 비 ULID 상품 ID도 그대로 경로에 사용한다', async () => {
     const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    const result = useCase.execute({ folder: 'images/screenshots/example-product', displayName: 'shot.jpg' });
-    expect(result).toEqual({ signature: 'test-sig', timestamp: 1234567890, folder: 'test-folder' });
+    await new SignImageUpload(repo, { findOneBySlug: async () => ({ id: 'legacy-product-42' }) }).execute({
+      folder: 'images/screenshots/My_Product',
+      displayName: 'shot.png',
+    });
     expect(repo.signImageUpload).toHaveBeenCalledWith({
-      uploadFolder: 'images/screenshots/example-product',
-      displayName: 'shot.jpg',
+      uploadFolder: 'images/screenshots-by-product/legacy-product-42',
+      displayName: 'shot.png',
     });
   });
 
-  it('거부: 추가 경로 세그먼트가 있는 스크린샷 폴더는 차단된다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() =>
-      useCase.execute({ folder: 'images/screenshots/example-product/extra', displayName: 'shot.jpg' })
-    ).toThrow(InvalidFolderError);
-    expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
+  it.each(['../etc', 'old/app', 'old\\app', 'old\0app', ''])(
+    '경로·제어문자 %j는 조회와 서명 전에 거절한다',
+    async slug => {
+      const repo = createMockRepository();
+      const reader = { findOneBySlug: vi.fn().mockResolvedValue({ id: '01ARZ3NDEKTSV4RRFFQ69G5FAV' }) };
+      await expect(
+        new SignImageUpload(repo, reader).execute({ folder: `images/screenshots/${slug}`, displayName: 'shot.png' })
+      ).rejects.toThrow(InvalidFolderError);
+      expect(reader.findOneBySlug).not.toHaveBeenCalled();
+      expect(repo.signImageUpload).not.toHaveBeenCalled();
+    }
+  );
 
-  it('거부: 점이 포함된 slug 스크린샷 폴더는 차단된다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() => useCase.execute({ folder: 'images/screenshots/exa.mple', displayName: 'shot.jpg' })).toThrow(
-      InvalidFolderError
-    );
-    expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
+  it.each([null, { id: '../arbitrary' }, { id: 'bad\0id' }])(
+    '미존재 또는 안전하지 않은 ID %j는 서명하지 않는다',
+    async product => {
+      const repo = createMockRepository();
+      await expect(
+        new SignImageUpload(repo, { findOneBySlug: async () => product }).execute({
+          folder: 'images/screenshots/My_Product',
+          displayName: 'shot.png',
+        })
+      ).rejects.toThrow(InvalidFolderError);
+      expect(repo.signImageUpload).not.toHaveBeenCalled();
+    }
+  );
 
-  it('거부: ..이 포함된 스크린샷 폴더는 차단된다', () => {
+  it('상품 조회 장애는 서명이나 원래 폴더로 우회하지 않는다', async () => {
     const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() => useCase.execute({ folder: 'images/screenshots/../../etc', displayName: 'shot.jpg' })).toThrow(
-      InvalidFolderError
-    );
+    const error = new Error('read unavailable');
+    await expect(
+      new SignImageUpload(repo, {
+        findOneBySlug: async () => {
+          throw error;
+        },
+      }).execute({
+        folder: 'images/screenshots/My_Product',
+        displayName: 'shot.png',
+      })
+    ).rejects.toBe(error);
     expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
-
-  it('거부: 빈 슬러그 스크린샷 폴더는 차단된다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() => useCase.execute({ folder: 'images/screenshots/', displayName: 'shot.jpg' })).toThrow(
-      InvalidFolderError
-    );
-    expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
-
-  it('거부: 대문자가 포함된 slug 스크린샷 폴더는 차단된다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() => useCase.execute({ folder: 'images/screenshots/Example-Product', displayName: 'shot.jpg' })).toThrow(
-      InvalidFolderError
-    );
-    expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
-
-  it('거부: 관련 없는 접두사를 가진 폴더는 차단된다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() => useCase.execute({ folder: 'images/upload', displayName: 'test.jpg' })).toThrow(InvalidFolderError);
-    expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
-
-  it('거부: displayName이 빈값이면 차단된다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() => useCase.execute({ folder: 'images/magazines', displayName: '' })).toThrow(InvalidDisplayNameError);
-    expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
-
-  it('거부: displayName이 공백이면 차단된다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() => useCase.execute({ folder: 'images/magazines', displayName: '   ' })).toThrow(InvalidDisplayNameError);
-    expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
-
-  it('거부: displayName에 ..이 포함되면 차단된다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() => useCase.execute({ folder: 'images/magazines', displayName: 'foo..bar.jpg' })).toThrow(
-      InvalidDisplayNameError
-    );
-    expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
-
-  it('거부: displayName에 경로 구분자가 포함되면 차단된다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() => useCase.execute({ folder: 'images/magazines', displayName: 'foo/bar.jpg' })).toThrow(
-      InvalidDisplayNameError
-    );
-    expect(() => useCase.execute({ folder: 'images/magazines', displayName: 'foo\\bar.jpg' })).toThrow(
-      InvalidDisplayNameError
-    );
-    expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
-
-  it('거부: displayName에 제어 문자가 포함되면 차단된다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    expect(() => useCase.execute({ folder: 'images/magazines', displayName: 'foo\x00bar.jpg' })).toThrow(
-      InvalidDisplayNameError
-    );
-    expect(repo.signImageUpload).not.toHaveBeenCalled();
-  });
-
-  it('허용: displayName에 공백이 섞여 있어도 전체 문자열이 비어있지만 않으면 통과한다', () => {
-    const repo = createMockRepository();
-    const useCase = new SignImageUpload(repo);
-    const result = useCase.execute({ folder: 'images/magazines', displayName: '  hello  ' });
-    expect(result).toEqual({ signature: 'test-sig', timestamp: 1234567890, folder: 'test-folder' });
   });
 });

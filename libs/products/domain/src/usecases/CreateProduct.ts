@@ -1,7 +1,7 @@
 import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
 import { productCreateFailed, productInvalidArgs, productSlugAlreadyExists } from '../errors/productError';
-import { getProductInfoLengthError } from '../info/ProductInfo';
+import { getProductInfoLengthError, getProductSlugError } from '../info/ProductInfo';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
@@ -25,6 +25,9 @@ export class CreateProduct {
     summary: string;
     description?: string;
   }): Promise<Product> {
+    const slugError = getProductSlugError(slug);
+    if (slugError) throw productInvalidArgs(slugError);
+
     const lengthError = getProductInfoLengthError('name', name) ?? getProductInfoLengthError('summary', summary);
     if (lengthError) throw productInvalidArgs(lengthError);
 
