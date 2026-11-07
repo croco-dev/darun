@@ -9,6 +9,8 @@ import {
   PostgresqlProductScreenshotRepository,
 } from '@darun/products-datasource';
 import {
+  CreateProduct,
+  EditProduct,
   GetProduct,
   GetProductFeatures,
   GetProductLinks,
@@ -16,28 +18,33 @@ import {
   GetPublishedProductsForSitemap,
   GetRankedProducts,
 } from '@darun/products-domain';
-import { ProductQueryResolver } from '@darun/products-feature/server';
+import { ProductMutationResolver, ProductQueryResolver } from '@darun/products-feature/server';
 import { ProductDescriptionJobService } from '@darun/products-service';
 import type { Drizzle } from '@darun/provider-database';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
 import { SearchableProduct, SearchProduct } from '@darun/search-domain';
 import { PostgresqlTranslationRepository } from '@darun/translation-datasource';
 import { TranslationService, computeSourceHash } from '@darun/translation-domain';
+import { createAuthChecker, createServer } from '@darun/utils-apollo-server';
 import { PostgresqlVoteRepository } from '@darun/voting-datasource';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import type * as GraphQL from 'graphql';
 import postgres, { type Sql } from 'postgres';
 import { buildSchemaSync } from 'type-graphql';
+import { Container } from 'typedi';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { GetProductDescriptionJobsOnAdminDocument } from '../../../libs/__generated__/graphql';
+import { ProductContentSyncRegistrarToken } from '../../../libs/products/datasource/src/repositories/productContentSync';
+import { ProductCoreMutationResolver } from '../../../libs/products/feature/src/ProductCoreMutationResolver';
 import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/src/ProductDescription.query.resolver';
 import { SearchRanker } from '../../../libs/search/domain/src/services/SearchRanker';
 import { SynonymExpander } from '../../../libs/search/domain/src/services/SynonymExpander';
+import { registerProductContentSync } from '../src/adapters/PostgresqlProductContentSync';
 
 const { execute, graphql } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
 
@@ -137,6 +144,114 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   afterAll(async () => {
     if (reader) await reader.end({ timeout: 5 });
     if (writer) await writer.end({ timeout: 5 });
+  });
+
+  describe('상품 기본 정보의 문자 수 경계와 공개 GraphQL 오류', () => {
+    const slugs: string[] = [];
+    let server: ReturnType<typeof createServer>;
+    const previousRegistrar = Container.has(ProductContentSyncRegistrarToken)
+      ? Container.get(ProductContentSyncRegistrarToken)
+      : undefined;
+    beforeAll(async () => {
+      Container.set(ProductContentSyncRegistrarToken, { register: registerProductContentSync });
+      const repository = new PostgresqlProductRepository(db);
+      const resolver = new ProductCoreMutationResolver(
+        new CreateProduct(repository),
+        new EditProduct(repository),
+        undefined as never,
+        new GetProduct(repository),
+        undefined as never
+      );
+      server = createServer({
+        options: {
+          resolvers: [ProductMutationResolver, ProductQueryResolver],
+          authChecker: createAuthChecker(),
+          container: { get: () => resolver },
+        },
+        config: { playground: false },
+      });
+      await server.start();
+    });
+    afterEach(async () => {
+      for (const slug of slugs.splice(0)) {
+        await writer`delete from translation_jobs where entity_id in (select id from products where slug = ${slug})`;
+        await writer`delete from product_content_sync_intents where product_id in (select id from products where slug = ${slug})`;
+        await writer`delete from products where slug = ${slug}`;
+      }
+    });
+    afterAll(async () => {
+      if (server) await server.stop();
+      if (previousRegistrar) Container.set(ProductContentSyncRegistrarToken, previousRegistrar);
+      else Container.remove(ProductContentSyncRegistrarToken);
+    });
+    it.each(['a', '한', '😀'])(
+      '255개의 %s 문자를 저장하고 초과 입력은 원문·revision·intent를 보존한다',
+      async character => {
+        const slug = `length-${randomUUID()}`;
+        slugs.push(slug);
+        const name = character.repeat(255);
+        const summary = character.repeat(255);
+        const run = async (query: string, variables: Record<string, unknown>) => {
+          const result = await server.executeOperation(
+            { query, variables },
+            { contextValue: { getRoles: async () => ['admin'] } }
+          );
+          if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+          return result.body.singleResult;
+        };
+        const create =
+          'mutation($input: CreateProductInput!) { createProduct(input: $input) { product { id name summary } } }';
+        const edit =
+          'mutation($slug: String!, $input: EditProductInput!) { editProduct(slug: $slug, input: $input) { product { id name summary } } }';
+        const input = {
+          name,
+          summary,
+          slug,
+          logoUrl: 'https://example.com/logo.png',
+        };
+        const created = await run(create, { input });
+        expect(created.errors).toBeUndefined();
+        expect(created.data?.createProduct).toMatchObject({
+          product: { name, summary },
+        });
+        await writer`update products set published_at = now() where slug = ${slug}`;
+        const before = await writer`select * from products where slug = ${slug}`;
+        const id = before[0].id;
+        const intents = await writer`select * from product_content_sync_intents where product_id = ${id} order by id`;
+        for (const field of ['name', 'summary']) {
+          const oversized = character.repeat(256);
+          for (const result of [
+            await run(create, {
+              input: {
+                ...input,
+                slug: `${slug}-invalid-${field}`,
+                [field]: oversized,
+              },
+            }),
+            await run(edit, { slug, input: { [field]: oversized } }),
+          ]) {
+            expect(result.errors).toHaveLength(1);
+            expect(result.errors?.[0].extensions?.code).toBe('product/invalid-args');
+            expect(result.errors?.[0].message).toContain('255');
+          }
+          expect(await writer`select * from products where slug = ${slug}`).toEqual(before);
+          expect(await writer`select * from product_content_sync_intents where product_id = ${id} order by id`).toEqual(
+            intents
+          );
+          expect(await writer`select id from products where slug = ${`${slug}-invalid-${field}`}`).toEqual([]);
+        }
+        const corrected = await run(edit, {
+          slug,
+          input: { name: `새${character.repeat(254)}`, summary: '' },
+        });
+        expect(corrected.errors).toBeUndefined();
+        expect((await writer`select name, summary, content_revision from products where id = ${id}`)[0]).toMatchObject({
+          name: `새${character.repeat(254)}`,
+          summary: '',
+          content_revision: '1',
+        });
+      }
+    );
   });
 
   describe.each(cases)('$table', spec => {

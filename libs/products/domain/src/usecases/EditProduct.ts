@@ -1,5 +1,7 @@
 import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
+import { productInvalidArgs } from '../errors/productError';
+import { getProductInfoLengthError } from '../info/ProductInfo';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
@@ -23,6 +25,9 @@ export class EditProduct {
     description?: string;
     logoUrl?: string;
   }): Promise<Product> {
+    const lengthError = getProductInfoLengthError('name', name) ?? getProductInfoLengthError('summary', summary);
+    if (lengthError) throw productInvalidArgs(lengthError);
+
     return this.productRepository.updateById(id, product => {
       product.update({
         name,

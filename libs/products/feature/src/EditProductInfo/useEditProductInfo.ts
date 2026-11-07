@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
+import { getProductInfoLengthError } from '@darun/products-domain/info';
 import {
   EditProductOnEditProductInfoDocument,
   TempProductBySlugOnEditProductInfoDocument,
@@ -9,7 +10,6 @@ import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useEffect } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductBySlugOnEditProductInfo($slug: String!) {
     tempProductBySlug(slug: $slug) {
@@ -53,7 +53,8 @@ export function useEditProductInfo({ slug, onSubmit, onCancel }: UseEditProductI
       summary: '',
     },
     validate: {
-      name: value => (!value?.trim() ? '서비스 이름을 입력해주세요.' : null),
+      name: value => (!value?.trim() ? '서비스 이름을 입력해주세요.' : getProductInfoLengthError('name', value.trim())),
+      summary: value => getProductInfoLengthError('summary', value?.trim()),
     },
   });
 
@@ -93,6 +94,12 @@ export function useEditProductInfo({ slug, onSubmit, onCancel }: UseEditProductI
     }
     const name = values.name?.trim();
     const summary = values.summary?.trim();
+    const nameError = getProductInfoLengthError('name', name);
+    const summaryError = getProductInfoLengthError('summary', summary);
+    if (nameError || summaryError) {
+      form.setErrors({ name: nameError, summary: summaryError });
+      return;
+    }
     if (!name) {
       notifications.show({ message: '서비스 이름을 입력해주세요.', color: 'red' });
       return;
