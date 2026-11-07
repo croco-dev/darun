@@ -220,6 +220,9 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 10.8.0(jiti@2.7.0)
+      eslint-import-resolver-typescript:
+        specifier: 3.8.1
+        version: 3.8.1(eslint-plugin-import-x@4.16.1(@typescript-eslint/utils@8.66.0(eslint@10.8.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.9)(eslint@10.8.0(jiti@2.7.0)))(eslint-plugin-import@2.32.0)(eslint@10.8.0(jiti@2.7.0))
       eslint-plugin-boundaries:
         specifier: 6.0.2
         version: 6.0.2(@typescript-eslint/parser@8.66.0(eslint@10.8.0(jiti@2.7.0))(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0))
