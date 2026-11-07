@@ -2,7 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useApolloClient, useMutation } from '@apollo/client/react';
-import { getProductInfoLengthError } from '@darun/products-domain/info';
+import { getProductInfoLengthError, getProductSlugError } from '@darun/products-domain/info';
 import { AllProductsOnProductListTableDocument, CreateProductOnNewProductFormDocument } from '@darun/provider-graphql';
 import { notifySavedWithRefresh } from '@darun/ui-admin';
 import { useImageUpload } from '@darun/utils-image-upload';
@@ -48,11 +48,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     },
     validate: {
       name: value => (!value?.trim() ? '서비스 이름을 입력해주세요.' : getProductInfoLengthError('name', value.trim())),
-      slug: value => {
-        if (!value?.trim()) return '슬러그를 입력해주세요.';
-        if (/\s/.test(value.trim())) return '슬러그에는 공백(띄어쓰기)을 포함할 수 없습니다.';
-        return null;
-      },
+      slug: value => getProductSlugError(value?.trim()),
       summary: value =>
         !value?.trim() ? '짧은 설명을 입력해주세요.' : getProductInfoLengthError('summary', value.trim()),
       file: value => (!value ? '로고 이미지를 첨부해주세요.' : null),
@@ -109,8 +105,9 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     const summary = values.summary?.trim();
     const nameError = getProductInfoLengthError('name', name);
     const summaryError = getProductInfoLengthError('summary', summary);
-    if (nameError || summaryError) {
-      form.setErrors({ name: nameError, summary: summaryError });
+    const slugError = getProductSlugError(slug);
+    if (nameError || summaryError || slugError) {
+      form.setErrors({ name: nameError, summary: summaryError, slug: slugError });
       return;
     }
 

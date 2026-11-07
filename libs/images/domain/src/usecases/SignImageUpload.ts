@@ -1,3 +1,9 @@
+import { Inject, Service } from 'typedi';
+import type { ImageRepository } from '../repositories/ImageRepository';
+import { ImageRepositoryToken } from '../repositories/ImageRepository';
+import type { ScreenshotUploadProductReader } from '../repositories/ScreenshotUploadProductReader';
+import { ScreenshotUploadProductReaderToken } from '../repositories/ScreenshotUploadProductReader';
+
 const ALLOWED_STATIC_FOLDERS = ['images/magazines', 'images/editor', 'images/logos'] as const;
 
 const SCREENSHOT_FOLDER_PREFIX = 'images/screenshots/';
@@ -46,31 +52,37 @@ function isValidDisplayName(displayName: string): boolean {
   return true;
 }
 
-import { Inject, Service } from 'typedi';
-import type { ImageRepository } from '../repositories/ImageRepository';
-import { ImageRepositoryToken } from '../repositories/ImageRepository';
-
 @Service()
 export class SignImageUpload {
   constructor(
     @Inject(ImageRepositoryToken)
-    private readonly imageRepository: ImageRepository
+    private readonly imageRepository: ImageRepository,
+    @Inject(ScreenshotUploadProductReaderToken)
+    private readonly productReader: ScreenshotUploadProductReader
   ) {}
 
-  execute({ folder, displayName }: { folder: string; displayName: string }): {
+  async execute({ folder, displayName }: { folder: string; displayName: string }): Promise<{
     signature: string;
     timestamp: number;
     folder: string;
-  } {
-    if (!isValidFolder(folder)) {
-      throw new InvalidFolderError(folder);
-    }
+  }> {
     if (!isValidDisplayName(displayName)) {
       throw new InvalidDisplayNameError(displayName);
     }
 
+    let uploadFolder = folder;
+    if (!isValidFolder(folder)) {
+      if (!folder.startsWith(SCREENSHOT_FOLDER_PREFIX)) throw new InvalidFolderError(folder);
+      const slug = folder.slice(SCREENSHOT_FOLDER_PREFIX.length);
+      // Never use a legacy slug as a path. Resolve its immutable owner instead.
+      if (!slug || /[\\/\x00-\x1f\x7f]/.test(slug)) throw new InvalidFolderError(folder);
+      const product = await this.productReader.findOneBySlug(slug);
+      if (!product || !/^[a-zA-Z0-9_-]{1,26}$/.test(product.id)) throw new InvalidFolderError(folder);
+      uploadFolder = `images/screenshots-by-product/${product.id}`;
+    }
+
     return this.imageRepository.signImageUpload({
-      uploadFolder: folder,
+      uploadFolder,
       displayName,
     });
   }

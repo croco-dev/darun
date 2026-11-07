@@ -31,6 +31,36 @@ describe('CreateProduct', () => {
       expect(result).toBe(inserted);
     });
 
+    it.each(['', 'My_Product', 'a--b', '-app', 'app-', 'two words', '한글', 'a/b', 'a\\b', 'a\0b', 'a'.repeat(101)])(
+      '신규 slug %j는 저장소 접근 전에 거절한다',
+      async slug => {
+        const repository = createMockRepository();
+        await expect(
+          new CreateProduct(repository).execute({
+            name: '서비스',
+            slug,
+            summary: '요약',
+            logoUrl: 'https://example.com/logo.png',
+          })
+        ).rejects.toMatchObject({ code: 'product/invalid-args' });
+        expect(repository.findOneBySlug).not.toHaveBeenCalled();
+        expect(repository.insert).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each(['app-42', 'a'.repeat(100)])('유효한 slug %s는 변환 없이 저장한다', async slug => {
+      const repository = createMockRepository();
+      vi.mocked(repository.insert).mockImplementation(async product => product);
+      expect(
+        await new CreateProduct(repository).execute({
+          name: '서비스',
+          slug,
+          summary: '요약',
+          logoUrl: 'https://example.com/logo.png',
+        })
+      ).toMatchObject({ slug });
+    });
+
     it('slug가 이미 존재하면 에러를 던진다', async () => {
       const repository = createMockRepository();
       const existing = new Product({

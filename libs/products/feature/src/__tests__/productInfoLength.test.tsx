@@ -122,3 +122,32 @@ describe.each(['name', 'summary'] as const)('%s 길이 검증', field => {
     expect(f.writes[0].input).toMatchObject(fixed);
   });
 });
+
+describe('신규 상품 slug 검증', () => {
+  it.each(['My_Product', 'a--b', 'a'.repeat(101), 'two words'])(
+    '%s는 파일을 보존하고 업로드 전에 거절한다',
+    async slug => {
+      const f = fixture();
+      const { result } = renderHook(() => useNewProductForm({ children: () => null }), { wrapper: f.wrapper });
+      const file = new File(['image'], 'logo.png', { type: 'image/png' });
+      const values = { name: '서비스', summary: '요약', slug, file };
+      act(() => result.current.form.setValues(values));
+      expect(result.current.form.validate().hasErrors).toBe(true);
+      await act(async () => {
+        await result.current.submit(values);
+      });
+      expect(result.current.form.errors.slug).toBeTruthy();
+      expect(result.current.form.getValues()).toMatchObject(values);
+      expect(upload).not.toHaveBeenCalled();
+      expect(f.writes).toEqual([]);
+      const fixed = { ...values, slug: 'a'.repeat(100) };
+      upload.mockResolvedValue('https://example.com/logo.png');
+      act(() => result.current.form.setValues(fixed));
+      await act(async () => {
+        await result.current.form.onSubmit(result.current.submit)();
+      });
+      expect(upload).toHaveBeenCalledOnce();
+      expect(f.writes[0].input).toMatchObject({ slug: fixed.slug });
+    }
+  );
+});
