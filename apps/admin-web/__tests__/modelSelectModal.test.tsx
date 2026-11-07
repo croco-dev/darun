@@ -2,7 +2,45 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ModelSelectModal } from '../features/settings/LlmSettingFormSection/ModelSelectModal';
+import {
+  ModelSelectModal,
+  type ModelSelectModalProps,
+} from '../features/settings/LlmSettingFormSection/ModelSelectModal';
+
+function deferModelRequests() {
+  const requests: {
+    options?: RequestInit;
+    resolve: (response: Response) => void;
+    reject: (error: Error) => void;
+  }[] = [];
+  global.fetch = vi.fn(
+    (_url, options) =>
+      new Promise<Response>((resolve, reject) => {
+        // Deliberately allow responses after abort: cancellation alone cannot prove ownership.
+        requests.push({ options, resolve, reject });
+      })
+  );
+  return requests;
+}
+
+function modelResponse(id: string) {
+  return new Response(JSON.stringify({ data: [{ id }] }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function modal(props: Partial<ModelSelectModalProps> = {}) {
+  return (
+    <ModelSelectModal
+      opened={true}
+      endpoint="https://provider-a.example/v1"
+      selectedModel=""
+      onClose={vi.fn()}
+      onSelectModel={vi.fn()}
+      {...props}
+    />
+  );
+}
 
 describe('ModelSelectModal', () => {
   const originalFetch = global.fetch;
@@ -30,6 +68,117 @@ describe('ModelSelectModal', () => {
     );
 
     expect(container.firstChild).toBeNull();
+  });
+
+  it.each(['success', 'failure'] as const)('ignores provider A late %s after provider B has loaded', async outcome => {
+    const requests = deferModelRequests();
+    const onSelectModel = vi.fn();
+    const { rerender } = render(modal());
+    await act(() => vi.runOnlyPendingTimersAsync());
+    rerender(modal({ opened: false }));
+    rerender(modal({ endpoint: 'https://provider-b.example/v1', onSelectModel }));
+    await act(() => vi.runOnlyPendingTimersAsync());
+    expect(requests).toHaveLength(2);
+    await act(async () => requests[1].resolve(modelResponse('provider-b/current')));
+    expect(screen.getByRole('button', { name: /provider-b\/current/ })).toBeDefined();
+
+    await act(async () => {
+      if (outcome === 'success') requests[0].resolve(modelResponse('provider-a/stale'));
+      else requests[0].reject(new Error('provider A failed late'));
+    });
+    expect(screen.queryByRole('button', { name: /provider-a\/stale/ })).toBeNull();
+    expect(screen.queryByText('provider A failed late')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /provider-b\/current/ }));
+    expect(onSelectModel).toHaveBeenCalledExactlyOnceWith('provider-b/current');
+    expect(requests[0].options?.signal?.aborted).toBe(true);
+  });
+
+  it.each(['success', 'failure'] as const)(
+    'keeps the new request loading when an old request ends with %s',
+    async outcome => {
+      const requests = deferModelRequests();
+      const { rerender } = render(modal());
+      await act(() => vi.runOnlyPendingTimersAsync());
+      rerender(modal({ endpoint: 'https://provider-b.example/v1' }));
+      await act(() => vi.runOnlyPendingTimersAsync());
+      await act(async () => {
+        if (outcome === 'success') requests[0].resolve(modelResponse('provider-a/stale'));
+        else requests[0].reject(new Error('provider A failed late'));
+      });
+      expect(screen.getByText('모델 목록을 불러오는 중...')).toBeDefined();
+      expect(screen.getByRole('button', { name: '새로고침' }).hasAttribute('disabled')).toBe(true);
+      expect(screen.queryByRole('button', { name: /provider-a\/stale/ })).toBeNull();
+      expect(screen.queryByText('provider A failed late')).toBeNull();
+      await act(async () => requests[1].resolve(modelResponse('provider-b/current')));
+      expect(screen.getByRole('button', { name: /provider-b\/current/ })).toBeDefined();
+    }
+  );
+
+  it('reopens an unfinished request with a fresh request and ignores the closed session response', async () => {
+    const requests = deferModelRequests();
+    const { rerender } = render(modal());
+    await act(() => vi.runOnlyPendingTimersAsync());
+    rerender(modal({ opened: false }));
+    await act(async () => requests[0].resolve(modelResponse('closed-session/stale')));
+    rerender(modal());
+    await act(() => vi.runOnlyPendingTimersAsync());
+    expect(requests).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: /closed-session\/stale/ })).toBeNull();
+    await act(async () => requests[1].resolve(modelResponse('reopened/current')));
+    expect(screen.getByRole('button', { name: /reopened\/current/ })).toBeDefined();
+    rerender(modal({ opened: false }));
+    rerender(modal());
+    await act(() => vi.runOnlyPendingTimersAsync());
+    expect(requests).toHaveLength(2);
+    expect(screen.getByRole('button', { name: /reopened\/current/ })).toBeDefined();
+  });
+
+  it('hides the old provider models immediately and retries a failed new provider on reopen', async () => {
+    const requests = deferModelRequests();
+    const { rerender } = render(modal());
+    await act(() => vi.runOnlyPendingTimersAsync());
+    await act(async () => requests[0].resolve(modelResponse('provider-a/loaded')));
+    rerender(modal({ endpoint: 'https://provider-b.example/v1' }));
+    expect(screen.queryByRole('button', { name: /provider-a\/loaded/ })).toBeNull();
+    await act(() => vi.runOnlyPendingTimersAsync());
+    await act(async () => requests[1].reject(new Error('provider B unavailable')));
+    expect(screen.getByText('provider B unavailable')).toBeDefined();
+    rerender(modal({ opened: false, endpoint: 'https://provider-b.example/v1' }));
+    rerender(modal({ endpoint: 'https://provider-b.example/v1' }));
+    await act(() => vi.runOnlyPendingTimersAsync());
+    expect(requests).toHaveLength(3);
+    await act(async () => requests[2].resolve(modelResponse('provider-b/recovered')));
+    expect(screen.getByRole('button', { name: /provider-b\/recovered/ })).toBeDefined();
+  });
+
+  it('treats a changed API key as a new model request at the same endpoint', async () => {
+    const requests = deferModelRequests();
+    const { rerender } = render(modal({ apiKey: 'fixture-key-a' }));
+    await act(() => vi.runOnlyPendingTimersAsync());
+    rerender(modal({ apiKey: 'fixture-key-b' }));
+    await act(() => vi.runOnlyPendingTimersAsync());
+    expect(JSON.parse(String(requests[1].options?.body)).apiKey).toBe('fixture-key-b');
+    await act(async () => requests[1].resolve(modelResponse('new-key/current')));
+    await act(async () => requests[0].resolve(modelResponse('old-key/stale')));
+    expect(screen.getByRole('button', { name: /new-key\/current/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /old-key\/stale/ })).toBeNull();
+  });
+
+  it('keeps the latest manual refresh when two refreshes start before the pending render', async () => {
+    const requests = deferModelRequests();
+    render(modal());
+    await act(() => vi.runOnlyPendingTimersAsync());
+    await act(async () => requests[0].resolve(modelResponse('initial/loaded')));
+    const refresh = screen.getByRole('button', { name: '새로고침' });
+    act(() => {
+      refresh.click();
+      refresh.click();
+    });
+    expect(requests).toHaveLength(3);
+    await act(async () => requests[2].resolve(modelResponse('refresh/current')));
+    await act(async () => requests[1].resolve(modelResponse('refresh/stale')));
+    expect(screen.getByRole('button', { name: /refresh\/current/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /refresh\/stale/ })).toBeNull();
   });
 
   it('fetches models when opened and renders list, then selects on click', async () => {
@@ -98,7 +247,9 @@ describe('ModelSelectModal', () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       status: 400,
-      json: async () => ({ error: '커스텀 엔드포인트에는 기본 환경 키(OPEN_ROUTER_API_KEY)를 사용할 수 없습니다.' }),
+      json: async () => ({
+        error: '커스텀 엔드포인트에는 기본 환경 키(OPEN_ROUTER_API_KEY)를 사용할 수 없습니다.',
+      }),
     });
     global.fetch = fetchMock as unknown as typeof fetch;
 
