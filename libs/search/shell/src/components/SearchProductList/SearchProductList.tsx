@@ -185,16 +185,13 @@ function EmptySearchResults({ query }: { query: string }) {
           </p>
           <div data-testid="search-empty-trending" className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {trendingProducts.map((product, index) => (
-              <div
-                key={product.id}
-                className="h-full min-w-0"
-                onClickCapture={() => trackEmptySearchClick(product.slug)}
-              >
+              <div key={product.id} className="h-full min-w-0">
                 <ProductCard
                   product={product}
                   rank={index + 1}
                   href={`/${locale}/products/${encodeURIComponent(product.slug)}`}
                   source="search-empty"
+                  onClick={() => trackEmptySearchClick(product.slug)}
                 />
               </div>
             ))}

@@ -2,6 +2,7 @@
 
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider, useSuspenseQuery } from '@apollo/client/react';
+import { AnalyticsEvents, track } from '@darun/analytics-client';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,6 +10,13 @@ import { SearchProductList } from './SearchProductList';
 import { useSearchProductList } from './useSearchProductList';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+const { countState } = vi.hoisted(() => ({ countState: { value: 10 as number | null } }));
+
+vi.mock('@darun/analytics-client', async importOriginal => ({
+  ...(await importOriginal<typeof import('@darun/analytics-client')>()),
+  track: vi.fn(),
+}));
 
 const mockPush = vi.fn();
 const mockNavigate = vi.fn();
@@ -78,7 +86,7 @@ vi.mock('@apollo/client/react', async importOriginal => ({
   useSuspenseQuery: vi.fn(() => ({
     data: {
       categories: [{ id: '1', slug: 'collaboration', labelKo: '협업툴', labelEn: 'Collaboration' }],
-      rankedProducts: [{ id: '100', name: 'Product A', slug: 'product-a', voteCount: 10, tags: [] }],
+      rankedProducts: [{ id: '100', name: 'Product A', slug: 'product-a', voteCount: countState.value, tags: [] }],
     },
   })),
 }));
@@ -89,6 +97,8 @@ describe('SearchProductList', () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
+    countState.value = 10;
+    vi.mocked(track).mockClear();
     client = new ApolloClient({ cache: new InMemoryCache(), link: ApolloLink.empty() });
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -157,5 +167,29 @@ describe('SearchProductList', () => {
     expect(container.querySelector('[data-testid="search-empty-popular-queries"]')).not.toBeNull();
     expect(useSuspenseQuery).toHaveBeenCalledTimes(2);
     expect(container.querySelector('[aria-label="추천 10"]')).not.toBeNull();
+  });
+
+  it('retries a recommended product count without recording a product navigation', async () => {
+    countState.value = null;
+    vi.mocked(useSearchProductList).mockReturnValue({ products: [], query: 'notion' });
+    await act(async () =>
+      root?.render(
+        <ApolloProvider client={client}>
+          <SearchProductList query="notion" />
+        </ApolloProvider>
+      )
+    );
+    const retry = Array.from(container.querySelectorAll('button')).find(
+      button => button.textContent === '추천 수 다시 조회'
+    );
+    expect(retry).toBeDefined();
+    await act(async () => retry!.click());
+    expect(track).not.toHaveBeenCalled();
+    const productLink = container.querySelector<HTMLAnchorElement>('[data-source="search-empty"]')!;
+    productLink.addEventListener('click', event => event.preventDefault());
+    act(() => productLink.click());
+    expect(track).toHaveBeenCalledExactlyOnceWith(AnalyticsEvents.EMPTY_SEARCH_STRIPE_CLICKED, {
+      queryText: 'product-a',
+    });
   });
 });
