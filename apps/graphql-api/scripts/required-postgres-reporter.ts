@@ -17,6 +17,7 @@ const groups = {
     'src/__tests__/W3AtomicApplyMaterialize.pg.test.ts': 'ATOMIC_TEST_DATABASE_URL',
     'src/__tests__/descriptionEvidence.postgresql.test.ts': 'DESCRIPTION_EVIDENCE_TEST_DATABASE_URL',
     'src/__tests__/W4JobLeaseRecovery.pg.test.ts': 'W4_DATABASE_URL',
+    'src/__tests__/VisualSave.pg.test.ts': 'VISUAL_SAVE_TEST_DATABASE_URL',
     'src/__tests__/ProductFlowDetail.pg.test.ts': 'FLOW_DETAIL_TEST_DATABASE_URL',
   },
   baseline: {

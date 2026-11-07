@@ -275,3 +275,5 @@ export {
   type ProductContentSyncStatus,
   type ProductContentSyncOverview,
 } from './services/ProductContentSync';
+
+export { SetVisualFlowSave, SetVisualScreenshotSave } from './usecases/SetVisualSave';

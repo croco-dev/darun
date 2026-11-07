@@ -18,6 +18,7 @@ const urls = {
   ATOMIC_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity',
   DESCRIPTION_EVIDENCE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_description_integrity',
   W4_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_lease_integrity',
+  VISUAL_SAVE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_visual_save',
   FLOW_DETAIL_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_flow_detail',
   MIGRATION_BASELINE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_migration_baseline',
 };
@@ -34,6 +35,7 @@ const groups = {
     'src/__tests__/descriptionEvidence.postgresql.test.ts',
     'src/__tests__/W4JobLeaseRecovery.pg.test.ts',
     'src/__tests__/ProductFlowDetail.pg.test.ts',
+    'src/__tests__/VisualSave.pg.test.ts',
   ],
   baseline: ['__tests__/migrationBaseline.pg.test.ts'],
   tier: ['src/remove-duplicates.pg.test.ts'],
@@ -97,6 +99,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
     ['products', 'DESCRIPTION_EVIDENCE_TEST_DATABASE_URL'],
     ['products', 'W4_DATABASE_URL'],
     ['products', 'FLOW_DETAIL_TEST_DATABASE_URL'],
+    ['products', 'VISUAL_SAVE_TEST_DATABASE_URL'],
     ['baseline', 'MIGRATION_BASELINE_TEST_DATABASE_URL'],
     ['tier', 'DEDUPE_TEST_DATABASE_URL'],
   ] as const)('fails before running when %s lacks %s', (group, name) => {
@@ -128,6 +131,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
     ['products', 'src/__tests__/descriptionEvidence.postgresql.test.ts'],
     ['products', 'src/__tests__/W4JobLeaseRecovery.pg.test.ts'],
     ['products', 'src/__tests__/ProductFlowDetail.pg.test.ts'],
+    ['products', 'src/__tests__/VisualSave.pg.test.ts'],
   ] as const)('fails when %s omits %s even though its other suites pass', (group, file) => {
     expectFailure(runFixture(group, {}, [file]), `Required PostgreSQL suite was not collected: ${file}`);
   });

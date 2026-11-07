@@ -11,3 +11,9 @@ export class VisualSaveStatusPayload {
   @Field(() => Boolean)
   saved: boolean;
 }
+
+@ObjectType('SetVisualSavePayload')
+export class SetVisualSavePayload {
+  @Field(() => Boolean)
+  saved: boolean;
+}

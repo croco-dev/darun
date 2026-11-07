@@ -21,6 +21,7 @@ import { screenshotCleanupIntents } from '../entities/ScreenshotCleanupIntentSch
 import { visualSaves } from '../entities/VisualPopularitySchema';
 import { beginProductContentWrite } from './productContentSync';
 import { recordVisualView } from './recordVisualView';
+import { writeVisualSave } from './writeVisualSave';
 
 type ScreenshotRow = typeof productScreenshots.$inferSelect;
 
@@ -385,28 +386,16 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
     flowId?: string;
     userId: string;
   }): Promise<{ saved: boolean }> {
-    const conditions = [eq(visualSaves.userId, params.userId)];
-    if (params.screenshotId) {
-      conditions.push(eq(visualSaves.screenshotId, params.screenshotId));
-    }
-    if (params.flowId) {
-      conditions.push(eq(visualSaves.flowId, params.flowId));
-    }
-    const existing = await this.db
-      .select({ id: visualSaves.id })
-      .from(visualSaves)
-      .where(and(...conditions))
-      .limit(1);
-    if (existing.length > 0) {
-      await this.db.delete(visualSaves).where(eq(visualSaves.id, existing[0].id));
-      return { saved: false };
-    }
-    await this.db.insert(visualSaves).values({
-      userId: params.userId,
-      screenshotId: params.screenshotId ?? null,
-      flowId: params.flowId ?? null,
-    });
-    return { saved: true };
+    return writeVisualSave(this.db, { ...params, saved: 'toggle' });
+  }
+
+  async setVisualSave(params: {
+    screenshotId?: string;
+    flowId?: string;
+    userId: string;
+    saved: boolean;
+  }): Promise<{ saved: boolean }> {
+    return writeVisualSave(this.db, params);
   }
 
   async isVisualSaved(params: { screenshotId?: string; flowId?: string; userId: string }): Promise<boolean> {

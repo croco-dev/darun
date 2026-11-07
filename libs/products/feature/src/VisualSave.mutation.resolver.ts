@@ -3,6 +3,8 @@ import {
   GetMyVisualSavedScreenshots,
   GetMyVisualSaves,
   GetVisualSaveStatus,
+  SetVisualFlowSave,
+  SetVisualScreenshotSave,
   ToggleVisualFlowSave,
   ToggleVisualScreenshotSave,
   VISUAL_SAVES_MAX_FIRST,
@@ -12,8 +14,9 @@ import { Cursor } from '@darun/utils-apollo-server';
 import { Arg, Ctx, Int, Mutation, Query, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 import { VisualFlowConnection } from './graphs/VisualFlowConnection';
-import { ToggleVisualSavePayload, VisualSaveStatusPayload } from './graphs/VisualSave';
+import { SetVisualSavePayload, ToggleVisualSavePayload, VisualSaveStatusPayload } from './graphs/VisualSave';
 import { VisualScreenshotConnection } from './graphs/VisualScreenshotConnection';
+import { SetVisualSaveInput } from './inputs/SetVisualSaveInput';
 import { toGraphVisualFlow } from './VisualFlow.query.resolver';
 import { toGraphVisualScreenshot } from './VisualScreenshot.query.resolver';
 
@@ -31,7 +34,9 @@ export class VisualSaveMutationResolver {
     getVisualSaveStatusUseCase: GetVisualSaveStatus,
     getMyVisualSavesUseCase: GetMyVisualSaves,
     getMyVisualSavedScreenshotsUseCase: GetMyVisualSavedScreenshots,
-    getMyVisualSavedFlowsUseCase: GetMyVisualSavedFlows
+    getMyVisualSavedFlowsUseCase: GetMyVisualSavedFlows,
+    private readonly setVisualScreenshotSaveUseCase: SetVisualScreenshotSave,
+    private readonly setVisualFlowSaveUseCase: SetVisualFlowSave
   ) {
     this.toggleVisualScreenshotSaveUseCase = toggleVisualScreenshotSaveUseCase;
     this.toggleVisualFlowSaveUseCase = toggleVisualFlowSaveUseCase;
@@ -61,6 +66,24 @@ export class VisualSaveMutationResolver {
   async toggleVisualFlowSave(@Arg('id') id: string, @Ctx() ctx: GraphQLContext): Promise<ToggleVisualSavePayload> {
     const userId = await ctx.getUserIdOrThrow();
     return this.toggleVisualFlowSaveUseCase.execute({ id, userId });
+  }
+
+  @Mutation(() => SetVisualSavePayload)
+  async setVisualScreenshotSave(
+    @Arg('input', () => SetVisualSaveInput) input: SetVisualSaveInput,
+    @Ctx() ctx: GraphQLContext
+  ): Promise<SetVisualSavePayload> {
+    const userId = await ctx.getUserIdOrThrow();
+    return this.setVisualScreenshotSaveUseCase.execute({ ...input, userId });
+  }
+
+  @Mutation(() => SetVisualSavePayload)
+  async setVisualFlowSave(
+    @Arg('input', () => SetVisualSaveInput) input: SetVisualSaveInput,
+    @Ctx() ctx: GraphQLContext
+  ): Promise<SetVisualSavePayload> {
+    const userId = await ctx.getUserIdOrThrow();
+    return this.setVisualFlowSaveUseCase.execute({ ...input, userId });
   }
 
   @Query(() => VisualSaveStatusPayload)
@@ -128,7 +151,10 @@ export class VisualSaveMutationResolver {
     });
     const edges = screenshots.map(node => {
       const screenshot = toGraphVisualScreenshot(node);
-      return { node: screenshot, cursor: Cursor.encode(screenshot, ['id'] as const) };
+      return {
+        node: screenshot,
+        cursor: Cursor.encode(screenshot, ['id'] as const),
+      };
     });
     return {
       totalCount,

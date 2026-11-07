@@ -94,6 +94,8 @@ export interface ProductFlowRepository {
    * 이미 저장했으면 삭제하고 saved:false, 아니면 생성하고 saved:true.
    */
   toggleVisualSave(params: { flowId: string; userId: string }): Promise<{ saved: boolean }>;
+  /** 원하는 저장 상태로 수렴한다. 같은 목표의 재전송은 저장 시각도 보존한다. */
+  setVisualSave(params: { flowId: string; userId: string; saved: boolean }): Promise<{ saved: boolean }>;
   /** M3 저장 여부 조회. 로그인 필수. */
   isVisualSaved(params: { flowId: string; userId: string }): Promise<boolean>;
   /**

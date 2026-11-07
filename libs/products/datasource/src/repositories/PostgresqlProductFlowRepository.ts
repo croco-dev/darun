@@ -17,6 +17,7 @@ import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 import { visualSaves } from '../entities/VisualPopularitySchema';
 import { beginProductContentWrite } from './productContentSync';
 import { recordVisualView } from './recordVisualView';
+import { writeVisualSave } from './writeVisualSave';
 
 type FlowRow = typeof productFlows.$inferSelect;
 type StepRow = typeof productFlowSteps.$inferSelect;
@@ -511,17 +512,11 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
   }
 
   async toggleVisualSave(params: { flowId: string; userId: string }): Promise<{ saved: boolean }> {
-    const existing = await this.db
-      .select({ id: visualSaves.id })
-      .from(visualSaves)
-      .where(and(eq(visualSaves.userId, params.userId), eq(visualSaves.flowId, params.flowId)))
-      .limit(1);
-    if (existing.length > 0) {
-      await this.db.delete(visualSaves).where(eq(visualSaves.id, existing[0].id));
-      return { saved: false };
-    }
-    await this.db.insert(visualSaves).values({ userId: params.userId, flowId: params.flowId });
-    return { saved: true };
+    return writeVisualSave(this.db, { ...params, saved: 'toggle' });
+  }
+
+  async setVisualSave(params: { flowId: string; userId: string; saved: boolean }): Promise<{ saved: boolean }> {
+    return writeVisualSave(this.db, params);
   }
 
   async isVisualSaved(params: { flowId: string; userId: string }): Promise<boolean> {
