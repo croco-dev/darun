@@ -12,7 +12,7 @@ import { getTierBadgeColor, getTierLabel } from '@/utils/tier';
 import { ChevronLeft, ExternalLink, HelpCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, unstable_rethrow } from 'next/navigation';
 import { Suspense } from 'react';
 import type { AppListRow } from '../app-list';
 
@@ -26,6 +26,8 @@ interface AppDetail {
 }
 
 async function getAppDetail(id: string): Promise<AppDetail | null> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null;
+
   try {
     const { data, error } = await supabase
       .from('apps')
@@ -42,8 +44,8 @@ async function getAppDetail(id: string): Promise<AppDetail | null> {
       `
       )
       .eq('id', id)
-      .single()
-      .overrideTypes<AppListRow & { app_store_id: string }, { merge: false }>();
+      .maybeSingle()
+      .overrideTypes<(AppListRow & { app_store_id: string }) | null, { merge: false }>();
 
     if (error) throw error;
 
@@ -60,29 +62,12 @@ async function getAppDetail(id: string): Promise<AppDetail | null> {
 
     return null;
   } catch (error) {
-    console.error('Error fetching app detail:', error);
-    return null;
+    unstable_rethrow(error);
+    throw new Error('앱 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
 }
 
 export const revalidate = 3600;
-
-export async function generateStaticParams() {
-  try {
-    const { data, error } = await supabase.from('apps').select('id').limit(100);
-
-    if (error) throw error;
-
-    return (
-      data?.map(app => ({
-        id: app.id,
-      })) || []
-    );
-  } catch (error) {
-    console.error('Error generating static params:', error);
-    return [];
-  }
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -160,7 +145,9 @@ export default async function AppDetailPage({ params }: { params: Promise<{ id: 
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+        }}
       />
       <div className="page-shell py-8 md:py-10">
         <div className="space-y-5">
