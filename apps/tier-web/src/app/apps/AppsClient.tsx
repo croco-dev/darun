@@ -101,6 +101,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
     setRequestedTerm(debouncedSearchTerm);
     setQueryError(null);
     setLoadMoreError(null);
+    setIsLoadingMore(false);
     setIsRefreshing(Boolean(debouncedSearchTerm));
     if (!debouncedSearchTerm) {
       setApps(initialApps);
@@ -134,6 +135,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
 
   useEffect(() => {
     activeRequestIdRef.current += 1;
+    isLoadingMoreRef.current = false;
     if (!requestedTerm) {
       return;
     }
@@ -209,8 +211,10 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
 
       setLoadMoreError(error instanceof Error ? error.message : '다음 앱 목록을 불러오지 못했습니다.');
     } finally {
-      isLoadingMoreRef.current = false;
-      setIsLoadingMore(false);
+      if (requestId === activeRequestIdRef.current) {
+        isLoadingMoreRef.current = false;
+        setIsLoadingMore(false);
+      }
     }
   }, [currentPage, debouncedSearchTerm, hasNextPage, isRefreshing, queryError]);
 
