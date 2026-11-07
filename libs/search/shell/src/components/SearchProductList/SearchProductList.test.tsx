@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
-import { useSuspenseQuery } from '@apollo/client/react';
+import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
+import { ApolloProvider, useSuspenseQuery } from '@apollo/client/react';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -72,7 +73,8 @@ vi.mock('./useSearchProductList', () => ({
   useSearchProductList: vi.fn(),
 }));
 
-vi.mock('@apollo/client/react', () => ({
+vi.mock('@apollo/client/react', async importOriginal => ({
+  ...(await importOriginal<typeof import('@apollo/client/react')>()),
   useSuspenseQuery: vi.fn(() => ({
     data: {
       categories: [{ id: '1', slug: 'collaboration', labelKo: '협업툴', labelEn: 'Collaboration' }],
@@ -83,9 +85,11 @@ vi.mock('@apollo/client/react', () => ({
 
 describe('SearchProductList', () => {
   let root: Root | undefined;
+  let client: ApolloClient;
   let container: HTMLDivElement;
 
   beforeEach(() => {
+    client = new ApolloClient({ cache: new InMemoryCache(), link: ApolloLink.empty() });
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -100,6 +104,7 @@ describe('SearchProductList', () => {
       act(() => root?.unmount());
       root = undefined;
     }
+    client.stop();
     document.body.replaceChildren();
   });
 
@@ -122,7 +127,11 @@ describe('SearchProductList', () => {
     });
 
     act(() => {
-      root?.render(<SearchProductList query="notion" />);
+      root?.render(
+        <ApolloProvider client={client}>
+          <SearchProductList query="notion" />
+        </ApolloProvider>
+      );
     });
 
     const searchCard = container.querySelector('[data-source="search"]');
@@ -137,11 +146,16 @@ describe('SearchProductList', () => {
     });
 
     act(() => {
-      root?.render(<SearchProductList query="notion" />);
+      root?.render(
+        <ApolloProvider client={client}>
+          <SearchProductList query="notion" />
+        </ApolloProvider>
+      );
     });
 
     expect(container.textContent).toContain('검색 결과가 없습니다');
     expect(container.querySelector('[data-testid="search-empty-popular-queries"]')).not.toBeNull();
     expect(useSuspenseQuery).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('[aria-label="추천 10"]')).not.toBeNull();
   });
 });
