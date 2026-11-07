@@ -20,7 +20,7 @@ export class TranslationQueueService {
     return this.sqsClient;
   }
 
-  async sendJob(payload: TranslationQueuePayload): Promise<boolean> {
+  async sendJob(payload: TranslationQueuePayload, signal?: AbortSignal): Promise<boolean> {
     const queueUrl = process.env['TRANSLATION_QUEUE_URL'];
 
     if (!queueUrl) {
@@ -34,7 +34,8 @@ export class TranslationQueueService {
         new SendMessageCommand({
           QueueUrl: queueUrl,
           MessageBody: JSON.stringify(payload),
-        })
+        }),
+        { abortSignal: signal }
       );
       return true;
     } catch (error) {

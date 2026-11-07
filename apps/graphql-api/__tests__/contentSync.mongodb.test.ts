@@ -189,6 +189,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     search = new MongodbSearchableProductRepository(database.createMongodbConnection);
     sync = new PostgresqlProductContentSync(db as never, search, queue);
     Container.set(PostgresqlProductContentSync, sync);
+    Container.set(ProductContentSyncQueueService, queue);
     Container.set(ProductContentSyncToken, sync);
     // Authentication is the only API fixture seam; all canonical writes and sync paths below are real.
     Container.set(GetAccount, {
@@ -279,6 +280,8 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     const images = { delete: vi.fn(async () => {}) };
     const sendIntent = vi.fn().mockResolvedValue(true);
     const previousCleanup = Container.get(PostgresqlScreenshotCleanup);
+    const previousQueue = Container.get(ScreenshotCleanupQueueService);
+    Container.set(ScreenshotCleanupQueueService, { sendIntent } as never);
     Container.set(
       PostgresqlScreenshotCleanup,
       new PostgresqlScreenshotCleanup(db as never, images, {
@@ -286,8 +289,8 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       } as never)
     );
     try {
-      await recoveryTick({}, {} as never, () => {});
-      expect(sendIntent).toHaveBeenCalledWith(job!.id);
+      await recoveryTick({}, context, () => {});
+      expect(sendIntent).toHaveBeenCalledWith(job!.id, expect.any(AbortSignal));
       expect(images.delete).not.toHaveBeenCalled();
       const worker = (await import('../src/functions/screenshot-cleanup-worker')).handler;
       await worker({ Records: [{ body: JSON.stringify({ intentId: job!.id }) }] } as never, {} as never, () => {});
@@ -307,6 +310,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       ).rejects.toThrow('SCREENSHOT_CLEANUP_QUEUE_IDENTITY_INVALID');
     } finally {
       Container.set(PostgresqlScreenshotCleanup, previousCleanup);
+      Container.set(ScreenshotCleanupQueueService, previousQueue);
     }
   });
 
@@ -2176,7 +2180,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
         .set({ dispatchAfter: new Date(0) })
         .where(eq(productContentSyncIntents.id, request.intentId));
       await recoveryTick({}, context, () => {});
-      expect(send).toHaveBeenCalledWith(request.intentId);
+      expect(send).toHaveBeenCalledWith(request.intentId, expect.any(AbortSignal));
       expect(await sync.status(request.intentId)).not.toMatchObject({
         status: 'completed',
       });
@@ -2522,7 +2526,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
         .set({ attemptCount: 1 })
         .where(eq(productContentSyncIntents.id, request.intentId));
       await recoveryTick({}, context, () => {});
-      expect(send).toHaveBeenCalledWith(request.intentId);
+      expect(send).toHaveBeenCalledWith(request.intentId, expect.any(AbortSignal));
 
       // 수동 retry는 상한을 채운 failed intent를 새 시도(시도 0)로 복구한다.
       await db

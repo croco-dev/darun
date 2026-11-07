@@ -25,7 +25,10 @@ export class PostgresqlScreenshotCleanup {
     private readonly queue: ScreenshotCleanupQueueService
   ) {}
 
-  async dispatch(limit = 25): Promise<{ recovered: number; queued: number }> {
+  async dispatch(
+    limit = 25,
+    send = (intentId: string) => this.queue.sendIntent(intentId)
+  ): Promise<{ recovered: number; queued: number }> {
     const now = new Date();
     const candidates = await this.db
       .select({ id: intents.id })
@@ -42,7 +45,7 @@ export class PostgresqlScreenshotCleanup {
         .returning({ id: intents.id });
       if (!reserved) continue;
       try {
-        if (await this.queue.sendIntent(intent.id)) queued++;
+        if (await send(intent.id)) queued++;
       } catch {
         // Reservation expires even when SQS accepted the message but its response was lost.
         console.warn(`[ScreenshotCleanup] Queue delivery failed for ${intent.id}; recovery will retry.`);

@@ -110,6 +110,7 @@ jobs:
             -c 'CREATE DATABASE darun_flow_detail' \
             -c 'CREATE DATABASE darun_visual_save' \
             -c 'CREATE DATABASE darun_description_integrity' \
+            -c 'CREATE DATABASE darun_recovery' \
             -c 'CREATE DATABASE darun_lease_integrity'
       - name: Verify PostgreSQL integrity without skipped tests
         env:
@@ -125,11 +126,13 @@ jobs:
           W4_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_lease_integrity
           W4_PG: "1"
           ATOMIC_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity
+          RECOVERY_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_recovery
         run: |
           REQUIRED_POSTGRES_GROUP=llm pnpm --filter graphql-api exec vitest run __tests__/llmSettingConcurrency.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
           REQUIRED_POSTGRES_GROUP=baseline pnpm --filter graphql-api exec vitest run __tests__/migrationBaseline.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
           REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts __tests__/productDetailFreshness.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
           REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts src/__tests__/ProductFlowDetail.pg.test.ts src/__tests__/VisualSave.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
+          REQUIRED_POSTGRES_GROUP=recovery pnpm --filter graphql-api exec vitest run __tests__/jobRecoveryTick.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
       - name: Verify Tier CI prerequisites
         run: pnpm --filter graphql-api exec vitest run __tests__/requiredPostgresReporter.test.ts __tests__/tierDedupeCi.test.ts
       - name: Verify Tier duplicate cleanup without skipped tests

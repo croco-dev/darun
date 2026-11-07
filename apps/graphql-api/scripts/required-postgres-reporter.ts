@@ -23,6 +23,9 @@ const groups = {
   baseline: {
     '__tests__/migrationBaseline.pg.test.ts': 'MIGRATION_BASELINE_TEST_DATABASE_URL',
   },
+  recovery: {
+    '__tests__/jobRecoveryTick.pg.test.ts': 'RECOVERY_TEST_DATABASE_URL',
+  },
 };
 
 // Used only by the dedicated CI commands; ordinary local tests remain optional.

@@ -7,14 +7,15 @@ export class ScreenshotCleanupQueueService {
     region: process.env['AWS_REGION'] ?? 'ap-northeast-2',
   });
 
-  async sendIntent(intentId: string): Promise<boolean> {
+  async sendIntent(intentId: string, signal?: AbortSignal): Promise<boolean> {
     const queueUrl = process.env['SCREENSHOT_CLEANUP_QUEUE_URL'];
     if (!queueUrl) return false;
     await this.client.send(
       new SendMessageCommand({
         QueueUrl: queueUrl,
         MessageBody: JSON.stringify({ intentId }),
-      })
+      }),
+      { abortSignal: signal }
     );
     return true;
   }

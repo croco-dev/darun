@@ -18,7 +18,7 @@ export class ProductResearchQueueService {
     return this.sqsClient;
   }
 
-  async sendJob(payload: ProductResearchQueuePayload): Promise<boolean> {
+  async sendJob(payload: ProductResearchQueuePayload, signal?: AbortSignal): Promise<boolean> {
     const queueUrl = process.env['PRODUCT_RESEARCH_QUEUE_URL'];
     if (!queueUrl) {
       return false;
@@ -29,7 +29,8 @@ export class ProductResearchQueueService {
         new SendMessageCommand({
           QueueUrl: queueUrl,
           MessageBody: JSON.stringify(payload),
-        })
+        }),
+        { abortSignal: signal }
       );
       return true;
     } catch (error) {
