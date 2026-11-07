@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/lib/supabase';
+import { getAppStoreUrl } from '@/utils/app-store';
 import { getHighResImage } from '@/utils/image';
 import { getTierBadgeColor, getTierLabel } from '@/utils/tier';
 import { ChevronLeft, ExternalLink, HelpCircle } from 'lucide-react';
@@ -132,6 +133,8 @@ export default async function AppDetailPage({ params }: { params: Promise<{ id: 
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tier.darun.io';
 
+  const appStoreUrl = getAppStoreUrl(app.appStoreId);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
@@ -141,7 +144,7 @@ export default async function AppDetailPage({ params }: { params: Promise<{ id: 
     operatingSystem: 'iOS',
     offers: {
       '@type': 'Offer',
-      url: `https://apps.apple.com/app/id${app.appStoreId}`,
+      url: appStoreUrl,
     },
     image: app.iconUrl,
     url: `${siteUrl}/apps/${app.id}`,
@@ -228,7 +231,7 @@ export default async function AppDetailPage({ params }: { params: Promise<{ id: 
 
             <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
               <Button asChild>
-                <a href={`https://apps.apple.com/app/${app.appStoreId}`} target="_blank" rel="noopener noreferrer">
+                <a href={appStoreUrl} target="_blank" rel="noopener noreferrer">
                   App Store에서 보기
                   <ExternalLink className="size-4" />
                 </a>
