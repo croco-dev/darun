@@ -261,6 +261,11 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               {stepCount}단계
             </li>
           </ul>
+          {detail.description.trim().length > 0 && (
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-dark-600 [overflow-wrap:anywhere]">
+              {detail.description}
+            </p>
+          )}
           <div className="flex flex-wrap items-center gap-2">
             <VisualSaveButton kind="flow" id={detail.id} enabled />
             <SaveButton
