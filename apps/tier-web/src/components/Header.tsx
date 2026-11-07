@@ -1,16 +1,26 @@
 import { checkIsAdmin } from '@/utils/admin';
 import { createClient } from '@/utils/supabase/server';
+import { isAuthSessionMissingError, type User } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { unstable_rethrow } from 'next/navigation';
+import { AdminAccessRetry } from './AdminAccessRetry';
 import { HeaderNav } from './HeaderNav';
 import { UserMenu } from './UserMenu';
 
 export async function Header() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const isAdmin = await checkIsAdmin();
+  let user: User | null = null;
+  let isAdmin = false;
+  let accessFailed = false;
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error && !isAuthSessionMissingError(error)) throw error;
+    user = data.user;
+    isAdmin = await checkIsAdmin();
+  } catch (error) {
+    unstable_rethrow(error);
+    accessFailed = true;
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
@@ -23,6 +33,15 @@ export async function Header() {
         </div>
         <UserMenu user={user} isAdmin={isAdmin} />
       </div>
+      {accessFailed && (
+        <div
+          role="status"
+          className="page-shell flex flex-wrap items-center justify-end gap-2 pb-3 text-sm text-muted-foreground"
+        >
+          <p>관리자 권한을 확인하지 못했습니다.</p>
+          <AdminAccessRetry />
+        </div>
+      )}
     </header>
   );
 }
