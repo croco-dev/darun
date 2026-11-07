@@ -297,8 +297,20 @@ describe('candidate reopen authority through the shared component and real Apoll
     await flush(() => fireEvent.click(generating()));
     const replay = fixture.take('GenerateProductDescription');
     expect(replay.variables).toEqual(first.variables);
-    await flush(() => replay.resolve(generation('committed-job', 'completed')));
+    const recovered = generation('committed-job', 'completed');
+    await flush(() =>
+      replay.resolve({
+        ...recovered,
+        generateProductDescription: {
+          ...recovered.generateProductDescription,
+          job: { ...recovered.generateProductDescription.job, appliedAt: '2026-11-01T03:24:00.000Z' },
+        },
+      })
+    );
     expectCandidate('committed-job');
+    expect(
+      screen.getByText('과거에 적용된 후보입니다. 다시 적용해도 이후 사람 편집을 덮어쓰지 않습니다.')
+    ).toBeTruthy();
     await closePreview();
     await flush(() => fireEvent.click(generating()));
     const next = fixture.take('GenerateProductDescription');

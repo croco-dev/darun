@@ -987,10 +987,10 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       config: { playground: false },
     });
     const generate = `mutation($input: GenerateProductDescriptionInput!) {
-      generateProductDescription(input: $input) { job { id status } }
+      generateProductDescription(input: $input) { job { id status candidateHtml appliedAt } }
     }`;
     const retry = `mutation($id: String!, $requestId: String) {
-      retryProductDescriptionJob(id: $id, requestId: $requestId) { id status }
+      retryProductDescriptionJob(id: $id, requestId: $requestId) { id status candidateHtml appliedAt }
     }`;
     const execute = async (query: string, variables: Record<string, unknown>) => {
       const result = await server.executeOperation({ query, variables });
@@ -1012,11 +1012,28 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
         .where(eq(productDescriptionJobs.requestKey, `request:${requestId}`));
       expect(rows).toHaveLength(1);
       const original = rows[0]!;
+      const nextRequestId = randomUUID();
       const next = await execute(generate, {
-        input: { slug: product.slug, requestId: randomUUID() },
+        input: { slug: product.slug, requestId: nextRequestId },
       });
       expect(next.errors).toBeUndefined();
       expect(next.data).not.toEqual(first.data);
+      const appliedAt = new Date('2026-11-01T03:24:00.000Z');
+      const [applied] = await db
+        .update(productDescriptionJobs)
+        .set({ status: 'completed', candidateHtml: '<p>Applied candidate</p>', appliedAt })
+        .where(eq(productDescriptionJobs.requestKey, `request:${nextRequestId}`))
+        .returning();
+      expect((await execute(generate, { input: { slug: product.slug, requestId: nextRequestId } })).data).toEqual({
+        generateProductDescription: {
+          job: {
+            id: applied!.id,
+            status: 'completed',
+            candidateHtml: '<p>Applied candidate</p>',
+            appliedAt: appliedAt.toISOString(),
+          },
+        },
+      });
       const retryKey = randomUUID();
       await db
         .update(productDescriptionJobs)
@@ -1028,6 +1045,19 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       });
       expect(retried.errors).toBeUndefined();
       expect(await execute(retry, { id: original.id, requestId: retryKey })).toEqual(retried);
+      const [appliedRetry] = await db
+        .update(productDescriptionJobs)
+        .set({ status: 'completed', candidateHtml: '<p>Applied retry</p>', appliedAt })
+        .where(eq(productDescriptionJobs.requestKey, `request:${retryKey}`))
+        .returning();
+      expect((await execute(retry, { id: original.id, requestId: retryKey })).data).toEqual({
+        retryProductDescriptionJob: {
+          id: appliedRetry!.id,
+          status: 'completed',
+          candidateHtml: '<p>Applied retry</p>',
+          appliedAt: appliedAt.toISOString(),
+        },
+      });
       const otherParent = await description.createJob({
         productId: product.id,
         status: 'failed',
