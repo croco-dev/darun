@@ -8,7 +8,7 @@ import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { ReactNode, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 
 gql(`
   mutation CreateProductOnNewProductForm($input: CreateProductInput!) {
@@ -28,7 +28,12 @@ type FormValues = {
   file?: File;
 };
 type NewProductFormProps = {
-  children: (props: { form: UseFormReturnType<FormValues>; loading: boolean }) => ReactNode;
+  children: (props: {
+    form: UseFormReturnType<FormValues>;
+    loading: boolean;
+    isUploading: boolean;
+    cancelUpload: () => void;
+  }) => ReactNode;
 };
 
 export function useNewProductForm({ children }: NewProductFormProps) {
@@ -54,11 +59,21 @@ export function useNewProductForm({ children }: NewProductFormProps) {
   const navigate = useNavigate();
   const client = useApolloClient();
   const isSubmittingRef = useRef(false);
+  const mounted = useRef(true);
+  const activeUpload = useRef<AbortController | null>(null);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      activeUpload.current?.abort();
+      activeUpload.current = null;
+    };
+  }, []);
   const { upload } = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
   const [createProduct, { loading: isCreating }] = useMutation(CreateProductOnNewProductFormDocument, {
     onCompleted: ({ createProduct }) => {
-      if (createProduct?.product?.slug) {
+      if (mounted.current && createProduct?.product?.slug) {
         const queries = [...client.getObservableQueries([AllProductsOnProductListTableDocument])];
         notifySavedWithRefresh(() => Promise.all(queries.map(query => query.refetch())));
         form.reset();
@@ -66,6 +81,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       }
     },
     onError: error => {
+      if (!mounted.current) return;
       isSubmittingRef.current = false;
       notifications.show({
         title: '오류 발생',
@@ -75,8 +91,17 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     },
   });
 
+  const cancelUpload = () => {
+    const controller = activeUpload.current;
+    if (!controller) return;
+    activeUpload.current = null;
+    controller.abort();
+    isSubmittingRef.current = false;
+    setIsUploading(false);
+  };
+
   const submit = async (values: FormValues) => {
-    if (isUploading || isCreating || isSubmittingRef.current) return;
+    if (!mounted.current || isUploading || isCreating || isSubmittingRef.current) return;
     const name = values.name?.trim();
     const slug = values.slug?.trim();
     const summary = values.summary?.trim();
@@ -90,12 +115,17 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     }
 
     isSubmittingRef.current = true;
+    const controller = new AbortController();
+    activeUpload.current = controller;
     let url: string | undefined;
     try {
       setIsUploading(true);
-      url = await upload('images/logos', values.file, slug);
+      url = await upload('images/logos', values.file, slug, controller.signal);
     } catch {
+      if (!mounted.current || activeUpload.current !== controller || controller.signal.aborted) return;
+      activeUpload.current = null;
       isSubmittingRef.current = false;
+      setIsUploading(false);
       notifications.show({
         title: '업로드 실패',
         message: '이미지 업로드에 실패했습니다.',
@@ -103,9 +133,13 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       });
       return;
     } finally {
-      setIsUploading(false);
+      if (mounted.current && activeUpload.current === controller) {
+        setIsUploading(false);
+      }
     }
 
+    if (!mounted.current || activeUpload.current !== controller || controller.signal.aborted) return;
+    activeUpload.current = null;
     if (!url) {
       isSubmittingRef.current = false;
       return;
@@ -127,5 +161,12 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     }
   };
 
-  return { form, children, submit, loading: isUploading || isCreating };
+  return {
+    form,
+    children,
+    submit,
+    cancelUpload,
+    isUploading,
+    loading: isUploading || isCreating,
+  };
 }

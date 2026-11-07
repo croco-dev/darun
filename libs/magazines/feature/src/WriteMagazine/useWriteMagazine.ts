@@ -44,6 +44,8 @@ function validateSlug(value: string, title: string) {
 export function useWriteMagazine() {
   const navigate = useNavigate();
   const submitted = useRef(false);
+  const mounted = useRef(true);
+  const activeUpload = useRef<AbortController | null>(null);
   const [createMagazine, { loading: isCreating }] = useMutation(CreateMagazineOnWriteMagazineDocument, {
     update(cache) {
       cache.evict({ id: 'ROOT_QUERY', fieldName: 'tempAllMagazines' });
@@ -68,6 +70,15 @@ export function useWriteMagazine() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      activeUpload.current?.abort();
+      activeUpload.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
@@ -76,7 +87,7 @@ export function useWriteMagazine() {
   }, [previewUrl]);
 
   const handleSubmit = async (values: FormValues) => {
-    if (submitted.current || isCreating || isUploading) return;
+    if (!mounted.current || submitted.current || isCreating || activeUpload.current) return;
     if (!values.title?.trim()) {
       return;
     }
@@ -98,6 +109,7 @@ export function useWriteMagazine() {
           },
         },
       });
+      if (!mounted.current) return;
       const magazine = data?.createMagazine.magazine;
       if (!magazine?.slug) throw new Error('Missing saved draft');
       notifications.show({
@@ -106,6 +118,7 @@ export function useWriteMagazine() {
       });
       navigate(`/magazines/edit?slug=${encodeURIComponent(magazine.slug)}`);
     } catch {
+      if (!mounted.current) return;
       submitted.current = false;
       notifications.show({
         title: '초안 저장 실패',
@@ -116,7 +129,7 @@ export function useWriteMagazine() {
   };
 
   const handleFileDrop = async (files: FileWithPath[]) => {
-    if (isUploading || isCreating) return;
+    if (!mounted.current || activeUpload.current || isCreating) return;
     const droppedFile = files[0];
     if (!droppedFile) return;
 
@@ -142,48 +155,46 @@ export function useWriteMagazine() {
       return;
     }
 
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
     const objectUrl = URL.createObjectURL(droppedFile);
     setPreviewUrl(objectUrl);
     setFile(droppedFile);
 
+    const controller = new AbortController();
+    activeUpload.current = controller;
     setIsUploading(true);
     try {
-      const imageUrl = await upload('images/magazines', droppedFile, droppedFile.name);
-      if (!imageUrl) {
-        URL.revokeObjectURL(objectUrl);
-        setPreviewUrl(null);
-        setFile(null);
-        form.setFieldValue('backgroundImageUrl', '');
-        return;
-      }
+      const imageUrl = await upload('images/magazines', droppedFile, droppedFile.name, controller.signal);
+      if (activeUpload.current !== controller || controller.signal.aborted || !mounted.current) return;
+      if (!imageUrl) return;
       form.setFieldValue('backgroundImageUrl', imageUrl);
       notifications.show({
         message: '이미지가 업로드되었습니다.',
         color: 'teal',
       });
-    } catch (error) {
-      URL.revokeObjectURL(objectUrl);
-      setPreviewUrl(null);
-      setFile(null);
-      form.setFieldValue('backgroundImageUrl', '');
+    } catch {
+      if (activeUpload.current !== controller || controller.signal.aborted || !mounted.current) return;
       notifications.show({
         message: '이미지 업로드에 실패했습니다.',
         color: 'red',
       });
     } finally {
-      setIsUploading(false);
+      if (activeUpload.current === controller) {
+        activeUpload.current = null;
+        setIsUploading(false);
+      }
     }
   };
 
+  const handleUploadCancel = () => {
+    const controller = activeUpload.current;
+    activeUpload.current = null;
+    controller?.abort();
+    setIsUploading(false);
+  };
+
   const handleFileRemove = () => {
-    if (isUploading || isCreating) return;
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
+    if (activeUpload.current || isCreating) return;
+    setPreviewUrl(null);
     setFile(null);
     form.setFieldValue('backgroundImageUrl', '');
   };
@@ -193,6 +204,7 @@ export function useWriteMagazine() {
     handleSubmit,
     handleFileDrop,
     handleFileRemove,
+    handleUploadCancel,
     file,
     previewUrl,
     isUploading,

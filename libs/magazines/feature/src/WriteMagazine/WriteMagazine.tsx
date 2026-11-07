@@ -9,7 +9,17 @@ import { useWriteMagazine } from './useWriteMagazine';
 
 export const WriteMagazine = bind(
   useWriteMagazine,
-  ({ form, handleSubmit, handleFileDrop, file, previewUrl, handleFileRemove, isSubmitting, isUploading }) => {
+  ({
+    form,
+    handleSubmit,
+    handleFileDrop,
+    file,
+    previewUrl,
+    handleFileRemove,
+    handleUploadCancel,
+    isSubmitting,
+    isUploading,
+  }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     return (
       <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -110,7 +120,7 @@ export const WriteMagazine = bind(
                 </div>
               </button>
             ) : (
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <div className="relative">
                   {previewUrl && (
                     <img
@@ -132,12 +142,23 @@ export const WriteMagazine = bind(
                   type="button"
                   variant="contained"
                   color="danger"
-                  disabled={isSubmitting}
-                  onClick={() => handleFileRemove()}
+                  disabled={isSubmitting && !isUploading}
+                  onClick={() => (isUploading ? handleUploadCancel() : handleFileRemove())}
                   className="active:scale-[0.98] motion-reduce:transform-none"
                 >
-                  이미지 삭제
+                  {isUploading ? '업로드 취소' : '이미지 삭제'}
                 </Button>
+                {!isUploading && file && (
+                  <Button
+                    type="button"
+                    variant="contained"
+                    color="secondary"
+                    disabled={isSubmitting}
+                    onClick={() => handleFileDrop([file])}
+                  >
+                    이미지 다시 업로드
+                  </Button>
+                )}
               </div>
             )}
           </AdminField>

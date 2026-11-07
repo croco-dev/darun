@@ -11,7 +11,7 @@ import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 gql`
   mutation AddProductScreenshotOnNewProductScreenshotForm($slug: String!, $input: AddProductScreenshotInput!) {
@@ -52,13 +52,28 @@ type FormValues = {
 };
 type NewProductFormProps = {
   productSlug: string;
-  children: (props: { form: UseFormReturnType<FormValues>; loading: boolean }) => ReactNode;
+  children: (props: {
+    form: UseFormReturnType<FormValues>;
+    loading: boolean;
+    isUploading: boolean;
+    cancelUpload: () => void;
+  }) => ReactNode;
 };
 
 export function useNewProductScreenshotForm({ productSlug, children }: NewProductFormProps) {
   const navigate = useNavigate();
   const client = useApolloClient();
   const isSubmittingRef = useRef(false);
+  const mounted = useRef(true);
+  const activeUpload = useRef<AbortController | null>(null);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      activeUpload.current?.abort();
+      activeUpload.current = null;
+    };
+  }, []);
   const [isUploading, setIsUploading] = useState(false);
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
@@ -83,7 +98,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     AddProductScreenshotOnNewProductScreenshotFormDocument,
     {
       onCompleted: ({ addProductScreenshot }) => {
-        if (addProductScreenshot?.product?.id) {
+        if (mounted.current && addProductScreenshot?.product?.id) {
           notifySavedWithRefresh(() =>
             client.query({
               query: GetProductScreenshotsOnDetailSectionDocument,
@@ -96,14 +111,24 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
         }
       },
       onError: error => {
+        if (!mounted.current) return;
         isSubmittingRef.current = false;
         notifications.show({ message: error.message, color: 'red' });
       },
     }
   );
 
+  const cancelUpload = () => {
+    const controller = activeUpload.current;
+    if (!controller) return;
+    activeUpload.current = null;
+    controller.abort();
+    isSubmittingRef.current = false;
+    setIsUploading(false);
+  };
+
   const submit = async (values: FormValues) => {
-    if (isUploading || isAdding || isSubmittingRef.current) return;
+    if (!mounted.current || isUploading || isAdding || isSubmittingRef.current) return;
     if (!values.file || !values.imageAlt?.trim()) {
       notifications.show({
         message: '이미지와 설명(alt)을 모두 입력해주세요.',
@@ -113,21 +138,30 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     }
 
     isSubmittingRef.current = true;
+    const controller = new AbortController();
+    activeUpload.current = controller;
     let url: string | undefined;
     try {
       setIsUploading(true);
-      url = await upload(`images/screenshots/${productSlug}`, values.file, values.file.name);
+      url = await upload(`images/screenshots/${productSlug}`, values.file, values.file.name, controller.signal);
     } catch {
+      if (!mounted.current || activeUpload.current !== controller || controller.signal.aborted) return;
+      activeUpload.current = null;
       isSubmittingRef.current = false;
+      setIsUploading(false);
       notifications.show({
         message: '이미지 업로드에 실패했어요.',
         color: 'red',
       });
       return;
     } finally {
-      setIsUploading(false);
+      if (mounted.current && activeUpload.current === controller) {
+        setIsUploading(false);
+      }
     }
 
+    if (!mounted.current || activeUpload.current !== controller || controller.signal.aborted) return;
+    activeUpload.current = null;
     if (!url) {
       isSubmittingRef.current = false;
       return;
@@ -151,5 +185,12 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     }
   };
 
-  return { form, children, submit, loading: isUploading || isAdding };
+  return {
+    form,
+    children,
+    submit,
+    cancelUpload,
+    isUploading,
+    loading: isUploading || isAdding,
+  };
 }
