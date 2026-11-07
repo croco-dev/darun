@@ -24,7 +24,7 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
 
   return (
     <NewProductScreenForm productSlug={productSlug}>
-      {({ form, loading }) => (
+      {({ form, loading, isUploading, cancelUpload }) => (
         <div className="flex flex-col gap-3">
           <AdminField label="이미지" error={form.errors.file}>
             <div className="flex flex-col gap-2">
@@ -129,17 +129,23 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
             </AdminSelect>
           </AdminField>
           <AdminActions>
-            <Button
-              as={Link}
-              href={`/products/${productSlug}`}
-              variant="contained"
-              color="secondary"
-              size="md"
-              disabled={loading}
-              className="active:scale-[0.98] motion-reduce:transform-none"
-            >
-              <span className="select-none whitespace-nowrap">취소</span>
-            </Button>
+            {isUploading ? (
+              <Button type="button" variant="contained" color="secondary" size="md" onClick={cancelUpload}>
+                업로드 취소
+              </Button>
+            ) : (
+              <Button
+                as={Link}
+                href={`/products/${productSlug}`}
+                variant="contained"
+                color="secondary"
+                size="md"
+                disabled={loading}
+                className="active:scale-[0.98] motion-reduce:transform-none"
+              >
+                <span className="select-none whitespace-nowrap">취소</span>
+              </Button>
+            )}
             <Button
               type="submit"
               size="md"

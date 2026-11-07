@@ -57,7 +57,10 @@ describe('편집기 이미지 업로드 수명', () => {
       target: { files: [file] },
     });
     expect(uploading).toHaveBeenLastCalledWith(true);
+    const signal = upload.mock.calls[0][3] as AbortSignal;
+    expect(signal.aborted).toBe(false);
     view.unmount();
+    expect(signal.aborted).toBe(true);
     expect(uploading.mock.calls).toEqual([[true], [false]]);
     await act(async () => {
       if (outcome === 'success') complete('https://example.com/stale.png');

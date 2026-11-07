@@ -3,8 +3,11 @@
 import { bind } from '@darun/utils-structure-react';
 import { useNewProductForm } from './useNewProductForm';
 
-export const NewProductForm = bind(useNewProductForm, ({ form, submit, children, loading }) => (
-  <form id="new-product-form" onSubmit={form.onSubmit(submit)}>
-    {children({ form, loading })}
-  </form>
-));
+export const NewProductForm = bind(
+  useNewProductForm,
+  ({ form, submit, children, loading, isUploading, cancelUpload }) => (
+    <form id="new-product-form" onSubmit={form.onSubmit(submit)}>
+      {children({ form, loading, isUploading, cancelUpload })}
+    </form>
+  )
+);

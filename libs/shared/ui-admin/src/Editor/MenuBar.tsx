@@ -18,6 +18,7 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
   const { upload } = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
   const activeUpload = useRef<{
+    controller: AbortController;
     onImageUploadingChange?: (uploading: boolean) => void;
   } | null>(null);
 
@@ -25,6 +26,7 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
     () => () => {
       const pending = activeUpload.current;
       activeUpload.current = null;
+      pending?.controller.abort();
       pending?.onImageUploadingChange?.(false);
     },
     [editor]
@@ -59,12 +61,12 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
       return;
     }
 
-    const pending = { onImageUploadingChange };
+    const pending = { controller: new AbortController(), onImageUploadingChange };
     activeUpload.current = pending;
     try {
       setIsUploading(true);
       onImageUploadingChange?.(true);
-      const imageUrl = await upload('images/editor', file, file.name);
+      const imageUrl = await upload('images/editor', file, file.name, pending.controller.signal);
 
       if (activeUpload.current !== pending || editor.isDestroyed) return;
 

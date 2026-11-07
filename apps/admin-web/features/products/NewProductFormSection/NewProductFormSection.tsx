@@ -28,7 +28,7 @@ export const NewProductFormSection = () => {
 
   return (
     <NewProductForm>
-      {({ form, loading }) => (
+      {({ form, loading, isUploading, cancelUpload }) => (
         <AdminPanel>
           <AdminSectionHeader title="서비스 등록" />
           <AdminSectionBody>
@@ -108,17 +108,23 @@ export const NewProductFormSection = () => {
               </div>
             </AdminField>
             <AdminActions>
-              <Button
-                as={Link}
-                href="/products"
-                variant="contained"
-                color="secondary"
-                size="md"
-                disabled={loading}
-                className="active:scale-[0.98] motion-reduce:transform-none"
-              >
-                <span className="whitespace-nowrap">취소</span>
-              </Button>
+              {isUploading ? (
+                <Button type="button" variant="contained" color="secondary" size="md" onClick={cancelUpload}>
+                  업로드 취소
+                </Button>
+              ) : (
+                <Button
+                  as={Link}
+                  href="/products"
+                  variant="contained"
+                  color="secondary"
+                  size="md"
+                  disabled={loading}
+                  className="active:scale-[0.98] motion-reduce:transform-none"
+                >
+                  <span className="whitespace-nowrap">취소</span>
+                </Button>
+              )}
               <Button
                 type="submit"
                 size="md"
