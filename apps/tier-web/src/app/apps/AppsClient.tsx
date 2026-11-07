@@ -186,6 +186,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
     }
 
     isLoadingMoreRef.current = true;
+    hasUserScrolledRef.current = false;
     setIsLoadingMore(true);
     setLoadMoreError(null);
 
@@ -223,12 +224,17 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
   useEffect(() => {
     const triggerElement = loadMoreTriggerRef.current;
 
-    if (!triggerElement || !hasNextPage || isRefreshing || queryError) {
+    if (!triggerElement || !hasNextPage || isRefreshing || queryError || loadMoreError) {
       return;
     }
 
+    let isInitialObservation = true;
     const observer = new IntersectionObserver(
       entries => {
+        if (isInitialObservation) {
+          isInitialObservation = false;
+          return;
+        }
         if (entries[0]?.isIntersecting && hasUserScrolledRef.current) {
           void loadMore();
         }
@@ -241,7 +247,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
     return () => {
       observer.disconnect();
     };
-  }, [hasNextPage, isRefreshing, loadMore, queryError]);
+  }, [hasNextPage, isRefreshing, loadMore, queryError, loadMoreError]);
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -315,7 +321,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
             <div ref={loadMoreTriggerRef} className="h-1" aria-hidden="true" />
             <div className="flex flex-col items-center gap-3 py-4">
               {isLoadingMore && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
                   <LoaderCircle className="size-4 animate-spin" />
                   <span>다음 앱 목록을 불러오는 중입니다.</span>
                 </div>
@@ -328,6 +334,17 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
                     다시 시도
                   </Button>
                 </div>
+              )}
+
+              {hasNextPage && !loadMoreError && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isLoadingMore || isRefreshing}
+                  onClick={() => void loadMore()}
+                >
+                  {isLoadingMore ? '불러오는 중…' : '앱 더 보기'}
+                </Button>
               )}
 
               {!hasNextPage && !loadMoreError && !isRefreshing && (
