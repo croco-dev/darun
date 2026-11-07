@@ -80,9 +80,31 @@ Node.js 22의 내장 환경 파일 파서로 인용값, 여러 줄 값, 주석�
 | `FIREBASE_CLIENT_EMAIL` | Firebase Admin SDK 클라이언트 이메일 | 필수 |
 | `FIREBASE_PRIVATE_KEY` | Firebase Admin SDK 비공개 키 | 필수 |
 | `NEXT_PUBLIC_GRAPHQL_URL` | 브라우저용 GraphQL API 엔드포인트 URL | 필수 |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | 상품 로고·스크린샷·매거진 이미지를 업로드할 Cloudinary cloud name | 업로드 시 필수 |
+| `NEXT_PUBLIC_CLOUDINARY_API_KEY` | 위 Cloudinary 계정의 공개 API key. GraphQL API의 `CLOUDINARY_API_KEY`와 같은 값 | 업로드 시 필수 |
 | `GRAPHQL_INTERNAL_URL` | SSR/서버 사이드용 내부 컨테이너 GraphQL API URL (Docker Compose 환경에서 사용) | 선택 |
 | `NEXT_PUBLIC_INFRA_ENV` | 인프라 환경 식별자 (`local` 설정 시 Firebase emulator 연동) | 선택 |
 | `FIREBASE_AUTH_EMULATOR_HOST` | Firebase Auth 에뮬레이터 호스트 주소 (`localhost:9099`) | 선택 |
+
+관리자 이미지 업로드를 사용하려면 `apps/admin-web/.env.sample`을 복사한
+`.env.local`에 두 `NEXT_PUBLIC_CLOUDINARY_*` 값을 채웁니다. GraphQL API에는 같은
+계정의 `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`을
+설정합니다. 브라우저는 공개 cloud name·API key와 서버가 발급한 서명으로
+업로드하며, **API secret은 GraphQL API 서버에만 둡니다.** 공개 변수나 관리자
+웹 설정에 secret을 넣지 않습니다.
+
+직접 실행할 때는 설정 후 `pnpm --filter admin-web dev`를 시작하거나 재시작합니다.
+Docker Compose의 관리자 웹도 같은 `.env.local`을 읽습니다. 이미 실행 중이면
+`pnpm local up -d --force-recreate admin-web`으로 컨테이너를 다시 만듭니다.
+배포 시에는 관리자 웹 배포 프로젝트의 대상 환경에 두 공개 변수를 설정한 뒤
+새로 빌드·배포합니다. `NEXT_PUBLIC_*` 값은 Next.js 빌드에 포함되므로 서버의
+런타임 변수만 바꾸어서는 기존 브라우저 번들에 반영되지 않습니다.
+
+둘 중 하나라도 없으면 이미지 업로드 설정 누락 안내를 표시하고 서명·업로드
+요청을 보내지 않습니다. 상품·스크린샷의 작성 값과 선택 파일, 매거진의 작성
+값과 기존 배경은 유지합니다. 설정을 보완한 뒤 개발 서버를 재시작하거나
+다시 배포하고 업로드를 재시도합니다. 페이지를 새로 열기 전에는 저장하지 않은
+글을 별도로 보관합니다.
 
 Cloudinary 이미지 업로드 요청은 서버가 서명한 `folder`, `timestamp`, `public_id`와 동일한 값을 전송해야 합니다. 공유 `useImageUpload`의 `displayName`은 서명 입력과 업로드 요청의 `public_id`에 함께 사용하며, 이를 누락하거나 변경하면 `Invalid Signature` 오류가 발생합니다.
 

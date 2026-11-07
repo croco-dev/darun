@@ -10,7 +10,6 @@ import {
 import { notifications } from '@mantine/notifications';
 import { buildUniqueDisplayName } from './buildUniqueDisplayName';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation SignImageUpload($input: SignImageUploadInput!) {
     signImageUpload(input: $input) {
@@ -45,14 +44,14 @@ export function useImageUpload() {
   const [signImageUpload] = useMutation<SignImageUploadMutation, SignImageUploadMutationVariables>(
     SignImageUploadDocument
   );
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+  const configurationError = !cloudName || !apiKey ? '이미지 업로드 설정이 누락되었습니다.' : null;
 
   async function upload(folder: string, file: File, displayName: string) {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
-
     if (!cloudName || !apiKey) {
       notifications.show({
-        message: '이미지 업로드 설정이 누락되었습니다.',
+        message: configurationError,
         color: 'red',
       });
       return undefined;
@@ -112,5 +111,5 @@ export function useImageUpload() {
     return payload.secure_url;
   }
 
-  return { upload };
+  return { upload, configurationError };
 }
