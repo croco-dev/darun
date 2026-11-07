@@ -273,12 +273,38 @@ describe('candidate reopen authority through the shared component and real Apoll
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
+    sessionStorage.clear();
   });
   afterEach(() => {
     cleanup();
     clients.splice(0).forEach(client => client.stop());
     vi.clearAllTimers();
     vi.useRealTimers();
+  });
+
+  it('replays an uncertain generation after reload, then gives an acknowledged new generation a new ID', async () => {
+    const fixture = setup('/products/sample');
+    await flush(() => fireEvent.click(generating()));
+    const first = fixture.take('GenerateProductDescription');
+    const firstInput = first.variables.input as {
+      slug: string;
+      requestId?: string;
+    };
+    expect(firstInput.requestId).toMatch(/^[a-f0-9-]{36}$/i);
+    await flush(() => first.reject('response lost after commit'));
+    fixture.unmount();
+    fixture.remount('/products/sample');
+    await flush(() => fireEvent.click(generating()));
+    const replay = fixture.take('GenerateProductDescription');
+    expect(replay.variables).toEqual(first.variables);
+    await flush(() => replay.resolve(generation('committed-job', 'completed')));
+    expectCandidate('committed-job');
+    await closePreview();
+    await flush(() => fireEvent.click(generating()));
+    const next = fixture.take('GenerateProductDescription');
+    expect((next.variables.input as { requestId: string }).requestId).not.toBe(firstInput.requestId);
+    await flush(() => next.resolve(generation('intentional-new-job', 'completed')));
+    expectCandidate('intentional-new-job');
   });
 
   it.each(['completed', 'failed'])(

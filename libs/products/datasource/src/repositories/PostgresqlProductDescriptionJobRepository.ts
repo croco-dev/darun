@@ -1,4 +1,5 @@
 import {
+  productIdempotencyKeyConflict,
   type ProductDescriptionJobEntity,
   type ProductDescriptionJobSummary,
   type ProductDescriptionJobRepository,
@@ -54,7 +55,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
   }
 
   private toSummary(
-    row: Omit<ProductDescriptionJobRow, 'candidateDocument' | 'candidateHtml'>
+    row: Omit<ProductDescriptionJobRow, 'candidateDocument' | 'candidateHtml' | 'requestKey'>
   ): ProductDescriptionJobSummary {
     return {
       id: row.id,
@@ -85,6 +86,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
 
   async createJob(job: {
     productId: string;
+    requestKey?: string;
     retryOfJobId?: string;
     status?: ProductDescriptionJobStatus;
     message?: string;
@@ -95,13 +97,29 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       .insert(productDescriptionJobs)
       .values({
         productId: job.productId,
+        requestKey: job.requestKey,
         retryOfJobId: job.retryOfJobId,
         status: job.status ?? 'pending',
         message: job.message ?? '소개 생성 작업이 대기 중입니다.',
         evidenceHash: job.evidenceHash,
         baseDescriptionHash: job.baseDescriptionHash,
       })
+      .onConflictDoNothing({ target: productDescriptionJobs.requestKey })
       .returning();
+
+    if (!rows[0] && job.requestKey) {
+      const [existing] = await this.db
+        .select()
+        .from(productDescriptionJobs)
+        .where(eq(productDescriptionJobs.requestKey, job.requestKey))
+        .limit(1);
+      if (existing) {
+        if (existing.productId !== job.productId || existing.retryOfJobId !== (job.retryOfJobId ?? null)) {
+          throw productIdempotencyKeyConflict('요청 ID에 이미 다른 상품 또는 재시도 작업이 연결되어 있습니다.');
+        }
+        return this.toEntity(existing);
+      }
+    }
 
     const row = rows[0];
     if (!row) {

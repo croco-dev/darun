@@ -622,6 +622,19 @@ GraphQL SDL이나 원본 operation을 변경하면 `pnpm --filter @darun/provide
 
 `VISUAL_SAVE_TEST_DATABASE_URL`을 격리 로컬 `darun_visual_save` DB로 지정하고 `pnpm --filter @darun/products-datasource exec vitest run src/__tests__/VisualSave.pg.test.ts`를 실행하면 병렬 목표 저장·해제, 기존 토글 직렬화, 저장 시각·목록·개수와 계정·대상별 독립성을 검증합니다. PR CI는 전용 DB와 필수 PostgreSQL reporter로 skip 없이 실행합니다.
 
+소개 생성 `generateProductDescription(input: { slug, requestId })`와 실패 작업 재시도
+`retryProductDescriptionJob(id, requestId)`는 UUID v4 요청 ID를 받습니다. 같은 ID의 재전송은
+같은 작업과 저장된 후보를 반환하며, 다른 상품이나 재시도 부모에 재사용하면
+`IDEMPOTENCY_KEY_CONFLICT`로 거절합니다. 관리자는 응답에서 작업 ID를 확인할 때까지
+같은 탭의 `sessionStorage`에 요청 ID를 보존하므로 새로고침 뒤 다시 눌러도 같은 요청을
+복구합니다. 성공 응답을 확인한 뒤 명시적으로 다시 생성하면 새 ID를 사용합니다.
+저장소 접근이 차단되면 복구할 수 없는 요청을 보내지 않고 오류를 알립니다.
+
+배포는 `0022_overrated_cable.sql`의 nullable 요청 키·고유 인덱스를 먼저 적용하고,
+새 GraphQL API를 배포한 뒤 관리자 클라이언트를 배포합니다. 기존 행과 요청 ID를
+생략하는 이전 클라이언트는 그대로 동작하지만 이전 클라이언트의 재전송은 중복 방지를
+보장하지 않습니다. 완료된 작업의 후보·적용 이력과 기존 claim/lease/recovery는 유지합니다.
+
 관리자 `translationJobs`는 기본 50건, `limit` 1~100 정수와 `offset` 0 이상의 안전한 정수를 허용합니다. `status`는 `pending`, `in_progress`, `completed`, `failed`, `superseded`만 허용하며 생략 또는 `null`이면 전체 상태를 조회합니다. 잘못된 입력은 서비스와 SQL 실행 전에 `translation/invalid-job-list-args`로 거절하며 저장소 직접 호출에도 같은 검증을 적용합니다. 입력 오류를 정상 빈 목록으로 처리하거나 한도 안으로 자동 보정하지 않습니다.
 관리자 목록의 번역 더보기와 이미 읽은 목록의 갱신은 100건씩 `offset`으로 조회합니다. 더보기 실패 시 기존 행을 유지하고 같은 위치에서 재시도하며, 필터 변경 전 요청의 늦은 응답은 현재 목록에 합치지 않습니다.
 번역 작업은 `createdAt DESC, id DESC`로 정렬해 생성 시각이 같아도 페이지 경계의 순서를 고정합니다.

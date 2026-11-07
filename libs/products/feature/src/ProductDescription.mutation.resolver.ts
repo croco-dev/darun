@@ -11,8 +11,12 @@ export class ProductDescriptionMutationResolver {
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => ProductDescriptionJob)
-  async retryProductDescriptionJob(@Arg('id') id: string): Promise<ProductDescriptionJob> {
-    const job = await this.productDescriptionJobService.retryProductDescriptionJob(id);
+  async retryProductDescriptionJob(
+    @Arg('id') id: string,
+    @Arg('requestId', () => String, { nullable: true })
+    requestId?: string | null
+  ): Promise<ProductDescriptionJob> {
+    const job = await this.productDescriptionJobService.retryProductDescriptionJob(id, requestId);
 
     return {
       id: job.id,

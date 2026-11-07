@@ -1,4 +1,4 @@
-import { index, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { index, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 export const productDescriptionJobs = pgTable(
   'product_description_jobs',
@@ -7,6 +7,7 @@ export const productDescriptionJobs = pgTable(
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
     productId: text('product_id').notNull(),
+    requestKey: text('request_key'),
     status: text('status').notNull().default('pending'),
     message: text('message'),
     error: text('error'),
@@ -31,6 +32,7 @@ export const productDescriptionJobs = pgTable(
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   table => ({
+    requestKeyIdx: uniqueIndex('product_description_jobs_request_key_idx').on(table.requestKey),
     productIdx: index('product_description_jobs_product_idx').on(table.productId),
     statusIdx: index('product_description_jobs_status_idx').on(table.status),
   })

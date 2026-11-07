@@ -174,6 +174,7 @@ type FeatureScreenshot {
 }
 
 input GenerateProductDescriptionInput {
+  requestId: String
   slug: String!
 }
 
@@ -278,7 +279,7 @@ type Mutation {
   관리자만 호출할 수 있다. 각 kind 최신 failed intent만 재예약하며 실패 번역은 새 logical job으로 연결한다. canonical 원문과 과거 job 이력은 유지하고 완료되지 않은 예약을 성공으로 표시하지 않는다. 실패한 최신 intent가 없으면 CONTENT_SYNC_NOT_RETRYABLE.
   """
   retryProductContentSync(slug: String!): ProductContentSyncOverview!
-  retryProductDescriptionJob(id: String!): ProductDescriptionJob!
+  retryProductDescriptionJob(id: String!, requestId: String): ProductDescriptionJob!
   retryProductResearch(input: RetryProductResearchInput, jobId: String!): ProductResearchJob
   retryTranslationJob(id: String!): TranslationJob!
   setVisualFlowSave(input: SetVisualSaveInput!): SetVisualSavePayload!

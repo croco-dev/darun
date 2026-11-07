@@ -307,12 +307,14 @@ describe('ProductMediaMutationResolver', () => {
         mockJobService as never
       );
 
-      const result = await resolver.generateProductDescription({ slug: 'test' });
+      const result = await resolver.generateProductDescription({
+        slug: 'test',
+      });
       const load = vi.fn().mockRejectedValue(new Error('Unexpected candidate read'));
       const fields = new ProductDescriptionQueryResolver({ getCandidateHtml: load } as never, {} as never, {} as never);
       expect(await fields.candidateHtml(result.job!)).toBeNull();
       expect(load).not.toHaveBeenCalled();
-      expect(mockJobService.requestProductDescriptionJob).toHaveBeenCalledWith({ slug: 'test' });
+      expect(mockJobService.requestProductDescriptionJob).toHaveBeenCalledWith({ slug: 'test' }, undefined);
       expect(result.job).toEqual({
         id: 'job-1',
         productId: 'prod-1',

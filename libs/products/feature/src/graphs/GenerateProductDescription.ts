@@ -6,6 +6,9 @@ import { ProductDescriptionJob } from './ProductDescriptionJob';
 export class GenerateProductDescriptionInput {
   @Field(() => String)
   slug: string;
+
+  @Field(() => String, { nullable: true })
+  requestId?: string | null;
 }
 
 @ObjectType('GenerateProductDescriptionPayload')

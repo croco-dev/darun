@@ -194,6 +194,7 @@ function retryButton(id = 'failed-A') {
 }
 
 beforeEach(() => {
+  sessionStorage.clear();
   vi.clearAllMocks();
   window.history.replaceState(null, '', '/llm-jobs');
   push.mockImplementation((path: string) => {
@@ -370,7 +371,10 @@ describe('list retry authority through real Apollo hooks and default cache', () 
       );
       await flush(() => fireEvent.click(retryButton()));
       const old = await fixture.take('RetryProductDescriptionJobOnAdmin');
-      expect(old.variables).toEqual({ id: 'failed-A' });
+      expect(old.variables).toEqual({
+        id: 'failed-A',
+        requestId: expect.any(String),
+      });
       expect(retryButton().disabled).toBe(true);
       expect(retryButton('failed-B').disabled).toBe(false);
       await navigate('/settings/llm');
@@ -379,6 +383,7 @@ describe('list retry authority through real Apollo hooks and default cache', () 
       await fixture.lists();
       await flush(() => fireEvent.click(retryButton()));
       const current = await fixture.take('RetryProductDescriptionJobOnAdmin');
+      expect(current.variables).toEqual(old.variables);
       const before = fixture.log.length;
       await flush(() => {
         if (ending === 'success') old.resolve(retryResult('old-logical-job', 'old-response-address'));
@@ -461,6 +466,8 @@ describe('list retry authority through real Apollo hooks and default cache', () 
       );
       await flush(() => fireEvent.click(retryButton()));
       const recovery = await fixture.take('RetryProductDescriptionJobOnAdmin');
+      expect(failed.variables.requestId).toMatch(/^[a-f0-9-]{36}$/i);
+      expect(recovery.variables).toEqual(failed.variables);
       await flush(() => recovery.resolve(retryResult()));
       await waitFor(() =>
         expect(push).toHaveBeenCalledWith('/products/renamed-address?descriptionJobId=new-logical-job')

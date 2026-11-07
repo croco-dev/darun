@@ -1,0 +1,2 @@
+ALTER TABLE "product_description_jobs" ADD COLUMN "request_key" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "product_description_jobs_request_key_idx" ON "product_description_jobs" USING btree ("request_key");

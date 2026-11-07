@@ -155,6 +155,13 @@
       "when": 1793432613656,
       "tag": "0021_perpetual_dark_phoenix",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794080807765,
+      "tag": "0022_overrated_cable",
+      "breakpoints": true
     }
   ]
 }
