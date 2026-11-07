@@ -90,6 +90,38 @@ afterEach(() => {
 });
 
 describe('collections persistence', () => {
+  it.each(['screenshot', 'flow', 'app'] as const)(
+    '%s 첫 항목이 컬렉션 이름과 함께 저장되어 다시 읽힌다',
+    async kind => {
+      installWindow();
+      const s = await freshStore();
+      const item = shot({
+        kind,
+        href: kind === 'screenshot' ? '/screenshots/s1' : `/${kind}s/s1`,
+      });
+      const created = await s.createCollection('  참고  ', item);
+      expect(created).toMatchObject({ name: '참고', items: [item] });
+      const reloaded = await freshStore();
+      expect(await reloaded.savedIn(kind, item.id)).toEqual([created]);
+    }
+  );
+
+  it('유효하지 않거나 안전하지 않은 첫 항목으로 빈 컬렉션을 만들지 않는다', async () => {
+    const backing = installWindow();
+    const s = await freshStore();
+    await expect(
+      s.createCollection('Missing title', {
+        ...shot(),
+        title: null,
+      } as unknown as SavedItem)
+    ).resolves.toBeNull();
+    await expect(s.createCollection('Unsafe link', shot({ href: 'javascript:alert(1)' }))).resolves.toBeNull();
+    await expect(
+      s.createCollection('Unsafe image', shot({ imageUrl: '//example.invalid/image.png' }))
+    ).resolves.toBeNull();
+    expect(backing[RECORD_KEY]).toBeUndefined();
+  });
+
   it('같은 kind+id를 두 번 추가해도 하나만 저장되고 제거할 수 있다', async () => {
     installWindow();
     const s = await freshStore();
