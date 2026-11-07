@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client';
 import { useApolloClient, useMutation } from '@apollo/client/react';
+import { getCompanyInfoLengthError } from '@darun/companies-domain/info';
 import {
   AllCompaniesOnAllCompanyListTableDocument,
   CreateCompanyOnNewCompanyFormDocument,
@@ -55,9 +56,9 @@ export function useNewCompanyForm() {
     },
     mode: 'uncontrolled',
     validate: {
-      name: value => (!value?.trim() ? '회사 이름을 입력해주세요.' : null),
-      type: value => (!value?.trim() ? '유형을 입력해주세요.' : null),
-      address: value => (!value?.trim() ? '주소를 입력해주세요.' : null),
+      name: value => (!value?.trim() ? '회사 이름을 입력해주세요.' : getCompanyInfoLengthError('name', value.trim())),
+      type: value => (!value?.trim() ? '유형을 입력해주세요.' : getCompanyInfoLengthError('type', value.trim())),
+      address: value => (!value?.trim() ? '주소를 입력해주세요.' : getCompanyInfoLengthError('address', value.trim())),
     },
   });
   const navigate = useNavigate();
@@ -92,6 +93,15 @@ export function useNewCompanyForm() {
     const type = values.type?.trim();
     const address = values.address?.trim();
     if (loading || isSubmittingRef.current || !name || !type || !address) return;
+    const errors = {
+      name: getCompanyInfoLengthError('name', name),
+      type: getCompanyInfoLengthError('type', type),
+      address: getCompanyInfoLengthError('address', address),
+    };
+    if (errors.name || errors.type || errors.address) {
+      form.setErrors(errors);
+      return;
+    }
     isSubmittingRef.current = true;
 
     const startAt = startAtIsDisabled || values.startAtIsDisabled ? undefined : parseStartAtToIso(values.startAt);
