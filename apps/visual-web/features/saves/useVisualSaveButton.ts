@@ -12,6 +12,8 @@ import { useVisualAccount } from './useVisualAccount';
 
 export type VisualSaveButtonState = {
   saved: boolean;
+  status: 'loading' | 'error' | 'ready';
+  retryStatus: () => void;
   isToggling: boolean;
   needsLogin: boolean;
   toggleError: boolean;
@@ -44,6 +46,8 @@ export function useVisualSaveButton(params: {
   const desiredSaved = useRef<boolean | null>(null);
   const saveRevision = useRef(0);
   const [saved, setSaved] = useState(false);
+  const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [statusAttempt, setStatusAttempt] = useState(0);
   const [isToggling, setIsToggling] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [toggleError, setToggleError] = useState(false);
@@ -51,6 +55,7 @@ export function useVisualSaveButton(params: {
   if (owner.account !== account || owner.kind !== kind || owner.id !== id || owner.enabled !== enabled) {
     setOwner({ account, kind, id, enabled });
     setSaved(false);
+    setStatus('loading');
     setIsToggling(false);
     setToggleError(false);
     setNeedsLogin(account === null);
@@ -88,7 +93,9 @@ export function useVisualSaveButton(params: {
             ? (result.data as { visualScreenshotSaveStatus?: { saved: boolean } } | undefined)
                 ?.visualScreenshotSaveStatus
             : (result.data as { visualFlowSaveStatus?: { saved: boolean } } | undefined)?.visualFlowSaveStatus;
-        setSaved(status?.saved ?? false);
+        if (typeof status?.saved !== 'boolean') throw new Error('Missing visual save status');
+        setSaved(status.saved);
+        setStatus('ready');
         setNeedsLogin(false);
       })
       .catch((e: unknown) => {
@@ -98,16 +105,17 @@ export function useVisualSaveButton(params: {
           return;
         }
         console.error('Failed to load visual save status', e);
+        setStatus('error');
       });
     return () => {
       active = false;
       generation.current += 1;
     };
-  }, [apolloClient, kind, id, enabled, account]);
+  }, [apolloClient, kind, id, enabled, account, statusAttempt]);
 
   const submit = useCallback(
     (savedGoal: boolean) => {
-      if (toggling.current || !enabled || !account) {
+      if (toggling.current || status !== 'ready' || !enabled || !account) {
         return;
       }
       const requestGeneration = generation.current;
@@ -154,7 +162,7 @@ export function useVisualSaveButton(params: {
           setIsToggling(false);
         });
     },
-    [apolloClient, kind, id, enabled, account]
+    [apolloClient, kind, id, enabled, account, status]
   );
 
   const toggle = useCallback(() => {
@@ -165,5 +173,21 @@ export function useVisualSaveButton(params: {
     if (desiredSaved.current !== null) submit(desiredSaved.current);
   }, [submit]);
 
-  return { saved, isToggling, needsLogin, toggleError, toggle, retry };
+  const retryStatus = useCallback(() => {
+    if (status === 'error' && enabled && account) {
+      setStatus('loading');
+      setStatusAttempt(attempt => attempt + 1);
+    }
+  }, [status, enabled, account]);
+
+  return {
+    saved,
+    status,
+    retryStatus,
+    isToggling,
+    needsLogin,
+    toggleError,
+    toggle,
+    retry,
+  };
 }

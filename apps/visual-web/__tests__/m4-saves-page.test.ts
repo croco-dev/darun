@@ -370,21 +370,18 @@ describe.each(['screenshot', 'flow'] as const)('%s 저장 의도', kind => {
     expect(current().saved).toBe(false);
   });
 
-  it('먼저 시작한 상태 조회가 완료된 저장을 되돌리지 않는다', async () => {
+  it('초기 조회 전에는 저장하지 않고 확인한 상태에서 목표를 정한다', async () => {
     const status = deferred<{ data: Record<string, { saved: boolean }> }>();
     mocks.query.mockReturnValue(status.promise);
-    mocks.mutate.mockImplementation(() =>
-      Promise.resolve({
-        data: {
-          [kind === 'screenshot' ? 'setVisualScreenshotSave' : 'setVisualFlowSave']: { saved: true },
-          [kind === 'screenshot' ? 'toggleVisualScreenshotSave' : 'toggleVisualFlowSave']: { saved: true },
-        },
-      })
-    );
+    mocks.mutate.mockResolvedValue({
+      data: {
+        [kind === 'screenshot' ? 'setVisualScreenshotSave' : 'setVisualFlowSave']: { saved: true },
+      },
+    });
     const current = await mount(() => useVisualSaveButton({ kind, id: 'target', enabled: true }));
     await signIn('A');
     await act(async () => current().toggle());
-    expect(current().saved).toBe(true);
+    expect(mocks.mutate).not.toHaveBeenCalled();
     await act(async () =>
       status.resolve({
         data: {
@@ -392,7 +389,9 @@ describe.each(['screenshot', 'flow'] as const)('%s 저장 의도', kind => {
         },
       })
     );
+    await act(async () => current().toggle());
     expect(current().saved).toBe(true);
+    expect(mocks.mutate).toHaveBeenCalledTimes(1);
   });
 });
 
