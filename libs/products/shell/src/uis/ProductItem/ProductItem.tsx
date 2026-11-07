@@ -1,7 +1,6 @@
 'use client';
 
-import { Chip } from '@darun/ui';
-import Image from 'next/image';
+import { Chip, LogoImage } from '@darun/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import React from 'react';
 import { getLocalizedTag } from '../../utils/localization';
@@ -58,15 +57,6 @@ export const ProductItem = ({
   const locale = useLocale();
   const Component = as;
   const NameTag = nameAs;
-  const [hasImageError, setHasImageError] = React.useState(false);
-  const [prevLogoUrl, setPrevLogoUrl] = React.useState(logoUrl);
-
-  if (prevLogoUrl !== logoUrl) {
-    setPrevLogoUrl(logoUrl);
-    setHasImageError(false);
-  }
-
-  const resolvedLogoUrl = hasImageError ? undefined : logoUrl;
   const effectiveLogoSize = isHero ? 'large' : logoSize;
 
   if (isRanked) {
@@ -76,14 +66,13 @@ export const ProductItem = ({
           <div className="flex min-w-0 flex-1 items-center gap-3">
             {rank !== undefined && <RankBadge rank={rank} size="md" />}
             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dark-150/90 bg-white p-1 shadow-2xs ring-1 ring-black/5">
-              <Image
-                src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}
-                unoptimized={!resolvedLogoUrl}
+              <LogoImage
+                src={logoUrl}
+                fallbackSrc="/images/default-product-icon.svg"
                 alt={effectiveT('productItem.logoAlt', { name })}
                 width={44}
                 height={44}
                 className="h-full w-full rounded-lg object-contain"
-                onError={() => setHasImageError(true)}
               />
             </div>
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
@@ -132,14 +121,13 @@ export const ProductItem = ({
               : 'h-16 w-16 rounded-2xl p-2 shadow-xs'
         }`}
       >
-        <Image
-          src={resolvedLogoUrl ?? '/images/default-product-icon.svg'}
-          unoptimized={!resolvedLogoUrl}
+        <LogoImage
+          src={logoUrl}
+          fallbackSrc="/images/default-product-icon.svg"
           alt={effectiveT('productItem.logoAlt', { name })}
           width={logoSizes[effectiveLogoSize].imageSize}
           height={logoSizes[effectiveLogoSize].imageSize}
           className={`h-full w-full object-contain ${isHero ? 'rounded-xl' : 'rounded-lg'}`}
-          onError={() => setHasImageError(true)}
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden w-full">

@@ -212,6 +212,10 @@ jobs:
           pnpm --filter graphql-api exec vitest run __tests__/categorySearch.mongodb.test.ts
       - name: Verify native touch scrolling with isolated read fixtures
         run: pnpm --filter service-web exec playwright test --config playwright.touch.config.ts
+      - name: Verify external product logos with isolated read fixtures
+        run: pnpm --filter service-web exec playwright test --config playwright.logos.config.ts
+        env:
+          LOGO_EVIDENCE_DIR: ${{ runner.temp }}/darun-external-logos
       - name: Collect disposable service logs
         if: always()
         run: |
@@ -226,6 +230,7 @@ jobs:
             apps/service-web/playwright-report/
             apps/service-web/test-results/
             smoke-artifacts/
+            ${{ runner.temp }}/darun-external-logos/
           retention-days: 7
       - name: Remove disposable infrastructure
         if: always()

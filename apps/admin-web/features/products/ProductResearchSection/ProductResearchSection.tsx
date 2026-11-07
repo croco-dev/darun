@@ -9,7 +9,7 @@ import {
   normalizeResearchRequestUrl,
   normalizeResearchTags,
 } from '@darun/products-domain/research';
-import { Button } from '@darun/ui';
+import { Button, LogoImage } from '@darun/ui';
 import {
   AdminActions,
   AdminField,
@@ -1189,10 +1189,13 @@ export const ProductResearchSection = () => {
                       disabled={isMaterializing}
                       onChange={handleLogoFileChange}
                     />
-                    {logoPreviewUrl && (
+                    {(logoPreviewUrl || logoSelection?.kind === 'url') && (
                       <div className="flex items-center gap-3">
-                        <img
-                          src={logoPreviewUrl}
+                        <LogoImage
+                          src={logoSelection?.kind === 'url' ? logoSelection.logoUrl.trim() : logoPreviewUrl}
+                          fallbackSrc="/images/default-product-icon.svg"
+                          width={48}
+                          height={48}
                           alt="조사 로고 미리보기"
                           className="h-12 w-12 rounded-lg border border-dark-200 bg-white object-contain p-1"
                         />

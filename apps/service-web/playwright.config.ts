@@ -5,7 +5,7 @@ const isolatedSmoke = process.env.ISOLATED_SMOKE === '1';
 export default defineConfig({
   globalSetup: isolatedSmoke ? './tests/smoke.global-setup.ts' : undefined,
   testDir: './tests',
-  testIgnore: 'native-touch-scroll.spec.ts',
+  testIgnore: ['native-touch-scroll.spec.ts', 'external-logos.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
