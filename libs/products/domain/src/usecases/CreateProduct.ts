@@ -1,6 +1,7 @@
 import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
-import { productCreateFailed, productSlugAlreadyExists } from '../errors/productError';
+import { productCreateFailed, productInvalidArgs, productSlugAlreadyExists } from '../errors/productError';
+import { getProductInfoLengthError } from '../ProductInfo';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
 
@@ -24,6 +25,9 @@ export class CreateProduct {
     summary: string;
     description?: string;
   }): Promise<Product> {
+    const lengthError = getProductInfoLengthError('name', name) ?? getProductInfoLengthError('summary', summary);
+    if (lengthError) throw productInvalidArgs(lengthError);
+
     const exists = await this.productRepository.findOneBySlug(slug);
     if (exists) {
       throw productSlugAlreadyExists();
