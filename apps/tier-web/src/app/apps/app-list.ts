@@ -52,19 +52,15 @@ export function normalizeAppsSearchTerm(value: string) {
 }
 
 export function escapeAppsSearchQuery(value: string) {
-  return value
-    .replaceAll('\\', '\\\\')
-    .replaceAll('%', '\\%')
-    .replaceAll('_', '\\_')
-    .replaceAll(',', '\\,')
-    .replaceAll('(', '\\(')
-    .replaceAll(')', '\\)');
+  return value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
 }
 
 export function buildAppsSearchFilter(searchTerm: string) {
-  const escapedSearchTerm = escapeAppsSearchQuery(searchTerm);
+  // Escape LIKE literals first, then quote the whole pattern for PostgREST's OR grammar.
+  const pattern = `%${escapeAppsSearchQuery(searchTerm)}%`;
+  const quotedPattern = `"${pattern.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
 
-  return `name.ilike.%${escapedSearchTerm}%,description.ilike.%${escapedSearchTerm}%`;
+  return `name.ilike.${quotedPattern},description.ilike.${quotedPattern}`;
 }
 
 export function getHasNextPage(totalCount: number, to: number) {
