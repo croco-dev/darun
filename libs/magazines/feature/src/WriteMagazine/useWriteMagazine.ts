@@ -22,6 +22,8 @@ gql`
   }
 `;
 
+type BackgroundSelection = { file: File; previewUrl: string };
+
 type FormValues = {
   title: string;
   slug: string;
@@ -45,7 +47,11 @@ export function useWriteMagazine() {
   const navigate = useNavigate();
   const submitted = useRef(false);
   const mounted = useRef(true);
-  const activeUpload = useRef<AbortController | null>(null);
+  const activeUpload = useRef<{
+    controller: AbortController;
+    selection: BackgroundSelection;
+  } | null>(null);
+  const successfulSelection = useRef<BackgroundSelection | null>(null);
   const [createMagazine, { loading: isCreating }] = useMutation(CreateMagazineOnWriteMagazineDocument, {
     update(cache) {
       cache.evict({ id: 'ROOT_QUERY', fieldName: 'tempAllMagazines' });
@@ -66,25 +72,20 @@ export function useWriteMagazine() {
   });
   const { upload, configurationError } = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selection, setSelection] = useState<BackgroundSelection | null>(null);
+  const [retryFile, setRetryFile] = useState<File | null>(null);
 
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
-      activeUpload.current?.abort();
+      activeUpload.current?.controller.abort();
+      if (activeUpload.current) URL.revokeObjectURL(activeUpload.current.selection.previewUrl);
+      if (successfulSelection.current) URL.revokeObjectURL(successfulSelection.current.previewUrl);
       activeUpload.current = null;
+      successfulSelection.current = null;
     };
   }, []);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
 
   const handleSubmit = async (values: FormValues) => {
     if (!mounted.current || submitted.current || isCreating || activeUpload.current) return;
@@ -155,30 +156,41 @@ export function useWriteMagazine() {
       return;
     }
 
-    const objectUrl = URL.createObjectURL(droppedFile);
-    setPreviewUrl(objectUrl);
-    setFile(droppedFile);
+    const nextSelection = {
+      file: droppedFile,
+      previewUrl: URL.createObjectURL(droppedFile),
+    };
+    setSelection(nextSelection);
+    setRetryFile(null);
 
     const controller = new AbortController();
-    activeUpload.current = controller;
+    const request = { controller, selection: nextSelection };
+    activeUpload.current = request;
     setIsUploading(true);
     try {
       const imageUrl = await upload('images/magazines', droppedFile, droppedFile.name, controller.signal);
-      if (activeUpload.current !== controller || controller.signal.aborted || !mounted.current) return;
+      if (activeUpload.current !== request || controller.signal.aborted || !mounted.current) return;
       if (!imageUrl) return;
+      if (successfulSelection.current) URL.revokeObjectURL(successfulSelection.current.previewUrl);
+      successfulSelection.current = nextSelection;
       form.setFieldValue('backgroundImageUrl', imageUrl);
       notifications.show({
         message: '이미지가 업로드되었습니다.',
         color: 'teal',
       });
     } catch {
-      if (activeUpload.current !== controller || controller.signal.aborted || !mounted.current) return;
+      if (activeUpload.current !== request || controller.signal.aborted || !mounted.current) return;
       notifications.show({
         message: '이미지 업로드에 실패했습니다.',
         color: 'red',
       });
     } finally {
-      if (activeUpload.current === controller) {
+      if (activeUpload.current === request) {
+        if (successfulSelection.current !== nextSelection) {
+          URL.revokeObjectURL(nextSelection.previewUrl);
+          setRetryFile(droppedFile);
+        }
+        setSelection(successfulSelection.current);
         activeUpload.current = null;
         setIsUploading(false);
       }
@@ -186,16 +198,22 @@ export function useWriteMagazine() {
   };
 
   const handleUploadCancel = () => {
-    const controller = activeUpload.current;
+    const request = activeUpload.current;
+    if (!request) return;
     activeUpload.current = null;
-    controller?.abort();
+    request.controller.abort();
+    URL.revokeObjectURL(request.selection.previewUrl);
+    setRetryFile(request.selection.file);
+    setSelection(successfulSelection.current);
     setIsUploading(false);
   };
 
   const handleFileRemove = () => {
     if (activeUpload.current || isCreating) return;
-    setPreviewUrl(null);
-    setFile(null);
+    if (successfulSelection.current) URL.revokeObjectURL(successfulSelection.current.previewUrl);
+    successfulSelection.current = null;
+    setSelection(null);
+    setRetryFile(null);
     form.setFieldValue('backgroundImageUrl', '');
   };
 
@@ -205,8 +223,9 @@ export function useWriteMagazine() {
     handleFileDrop,
     handleFileRemove,
     handleUploadCancel,
-    file,
-    previewUrl,
+    file: selection?.file ?? null,
+    previewUrl: selection?.previewUrl ?? null,
+    retryFile,
     isUploading,
     isSubmitting: isCreating || isUploading,
   };

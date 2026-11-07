@@ -61,10 +61,13 @@ it('ignores a successful upload arriving after the magazine form unmounts', asyn
   });
   expect(result.current.isUploading).toBe(true);
   unmount();
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:replacement');
+  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
   await act(async () => {
     pending.resolve('https://images.example.test/late.png');
     await task;
   });
+  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
   expect(notifications.show).not.toHaveBeenCalled();
   expect(write).not.toHaveBeenCalled();
   expect(navigate).not.toHaveBeenCalled();
@@ -82,8 +85,9 @@ it('preserves text, selected file and saved background on timeout for a retry', 
     summary: '보존할 요약',
     backgroundImageUrl: previousUrl,
   });
-  expect(result.current.file).toBe(file);
-  expect(result.current.previewUrl).toBe('blob:replacement');
+  expect(result.current.file).toBeNull();
+  expect(result.current.retryFile).toBe(file);
+  expect(result.current.previewUrl).toBeNull();
   expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'red' }));
   upload.mockResolvedValueOnce('https://images.example.test/retried.png');
   await act(async () => {
@@ -108,7 +112,8 @@ it('cancels an upload and ignores its late completion while a retry is pending',
   });
   expect(firstSignal.aborted).toBe(true);
   expect(result.current.isUploading).toBe(false);
-  expect(result.current.file).toBe(file);
+  expect(result.current.file).toBeNull();
+  expect(result.current.retryFile).toBe(file);
   act(() => {
     second = result.current.handleFileDrop([file]);
   });
