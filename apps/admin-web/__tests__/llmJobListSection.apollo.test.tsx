@@ -143,7 +143,7 @@ function setup(translation = false) {
         1
       )[0]!;
     },
-    async lists() {
+    async lists(rows?: ReturnType<typeof translationRow>[]) {
       const descriptions = await this.take('GetProductDescriptionJobsOnAdmin');
       const translations = await this.take('GetTranslationJobsOnAdmin');
       expect(descriptions.variables).toEqual({ limit: 100, offset: 0 });
@@ -153,23 +153,25 @@ function setup(translation = false) {
           productDescriptionJobs: [description(), description('failed-B', 'other-address')],
         });
         translations.resolve({
-          translationJobs: translation
-            ? [
-                {
-                  __typename: 'TranslationJob',
-                  id: 'translation-A',
-                  entityType: 'Product',
-                  entityId: 'product-2',
-                  locale: 'en',
-                  status: 'failed',
-                  model: 'translator',
-                  message: null,
-                  error: '번역 실패',
-                  createdAt: '2026-10-16T01:00:00Z',
-                  updatedAt: '2026-10-16T01:01:00Z',
-                },
-              ]
-            : [],
+          translationJobs:
+            rows ??
+            (translation
+              ? [
+                  {
+                    __typename: 'TranslationJob',
+                    id: 'translation-A',
+                    entityType: 'Product',
+                    entityId: 'product-2',
+                    locale: 'en',
+                    status: 'failed',
+                    model: 'translator',
+                    message: null,
+                    error: '번역 실패',
+                    createdAt: '2026-10-16T01:00:00Z',
+                    updatedAt: '2026-10-16T01:01:00Z',
+                  },
+                ]
+              : []),
         });
       });
       await waitFor(() => expect(screen.getByRole('link', { name: 'failed-A 소개 후보 열기' })).toBeTruthy());
@@ -423,32 +425,27 @@ describe('list retry authority through real Apollo hooks and default cache', () 
     expect(fixture.log).toHaveLength(before);
   });
 
-  it('does not let a same-ID replacement lose its wait or recover old authority', async () => {
+  it('목록과 오류 모달의 같은 작업 재시도를 중복 전송하지 않는다', async () => {
     const fixture = setup();
     await fixture.lists();
     await flush(() => fireEvent.click(retryButton()));
-    const old = await fixture.take('RetryProductDescriptionJobOnAdmin');
+    const request = await fixture.take('RetryProductDescriptionJobOnAdmin');
     const row = screen.getByRole('link', { name: 'failed-A 소개 후보 열기' }).closest('tr')!;
     await flush(() => fireEvent.click(within(row).getByRole('button', { name: '에러 상세 보기' })));
-    await flush(() => fireEvent.click(screen.getByRole('button', { name: '지금 재시도' })));
-    const current = await fixture.take('RetryProductDescriptionJobOnAdmin');
-    await flush(() => old.resolve(retryResult('obsolete')));
-    expect(push).not.toHaveBeenCalled();
-    expect(notifications.show).not.toHaveBeenCalled();
-    expect(retryButton().disabled).toBe(true);
-    await flush(() => current.graphql());
-    await waitFor(() => expect(retryButton().disabled).toBe(false));
-    expect(notifications.show).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: '재시도 요청 실패',
-        message: '합성 GraphQL 실패',
-      })
-    );
-    await flush(() => fireEvent.click(retryButton()));
+    const modalRetry = screen.getByRole<HTMLButtonElement>('button', {
+      name: '지금 재시도',
+    });
+    expect(modalRetry.disabled).toBe(true);
+    await flush(() => fireEvent.click(modalRetry));
+    expect(fixture.log.filter(r => r.name === 'RetryProductDescriptionJobOnAdmin')).toHaveLength(1);
+    await flush(() => request.graphql());
+    await waitFor(() => expect(modalRetry.disabled).toBe(false));
+    expect(retryButton().disabled).toBe(false);
+    await flush(() => fireEvent.click(modalRetry));
     const recovery = await fixture.take('RetryProductDescriptionJobOnAdmin');
+    expect(recovery.variables).toEqual(request.variables);
     await flush(() => recovery.resolve(retryResult('recovered', 'fresh-slug')));
     await waitFor(() => expect(push).toHaveBeenCalledWith('/products/fresh-slug?descriptionJobId=recovered'));
-    expect(window.location.pathname + window.location.search).toBe('/products/fresh-slug?descriptionJobId=recovered');
   });
 
   it.each(['network', 'graphql'] as const)(
@@ -509,6 +506,117 @@ describe('list retry authority through real Apollo hooks and default cache', () 
       await waitFor(() => expect(retryButton('failed-B').disabled).toBe(false));
     }
   );
+
+  it.each([
+    [1, 'network'],
+    [2, 'graphql'],
+    [1, 'success'],
+    [2, 'success'],
+  ] as const)('번역 %s의 %s 응답이 다른 작업의 진행 상태를 지우지 않는다', async (first, ending) => {
+    const fixture = setup();
+    const rows = [translationRow(1, 'failed'), translationRow(2, 'failed')];
+    await fixture.lists(rows);
+    const button = (id: number) =>
+      within(screen.getByTitle(`Product: entity-${id}`).closest('tr')!).getByRole<HTMLButtonElement>('button', {
+        name: '재시도',
+      });
+    await flush(() => {
+      fireEvent.click(button(1));
+      fireEvent.click(button(1));
+    });
+    const a = await fixture.take('RetryTranslationJobOnAdmin');
+    await flush(() => fireEvent.click(button(2)));
+    const b = await fixture.take('RetryTranslationJobOnAdmin');
+    expect(fixture.log.filter(r => r.name === 'RetryTranslationJobOnAdmin')).toHaveLength(2);
+    expect(button(1).disabled).toBe(true);
+    expect(button(2).disabled).toBe(true);
+    const other = first === 1 ? 2 : 1;
+    const request = first === 1 ? a : b;
+    await flush(() => {
+      if (ending === 'success')
+        request.resolve({
+          retryTranslationJob: translationRow(first, 'pending'),
+        });
+      else request[ending]();
+    });
+    if (ending === 'success') {
+      await fixture.lists(rows);
+    } else {
+      expect(notifications.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: '재시도 요청 실패',
+          message: expect.stringContaining(`translation-${first}`),
+        })
+      );
+    }
+    await waitFor(() => expect(button(first).disabled).toBe(false));
+    expect(button(other).disabled).toBe(true);
+    await flush(() =>
+      (first === 1 ? b : a).resolve({
+        retryTranslationJob: translationRow(other, 'pending'),
+      })
+    );
+    await fixture.lists(rows);
+    await waitFor(() => expect(button(other).disabled).toBe(false));
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('같은 ID의 번역 재시도가 소개 재시도의 상세 이동을 무효화하지 않는다', async () => {
+    const fixture = setup();
+    const descriptions = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    const translations = await fixture.take('GetTranslationJobsOnAdmin');
+    await flush(() => {
+      descriptions.resolve({
+        productDescriptionJobs: [description('translation-1')],
+      });
+      translations.resolve({ translationJobs: [translationRow(1, 'failed')] });
+    });
+    await flush(() => fireEvent.click(retryButton('translation-1')));
+    const descriptionRequest = await fixture.take('RetryProductDescriptionJobOnAdmin');
+    const translationButton = within(
+      screen.getByTitle('Product: entity-1').closest('tr')!
+    ).getByRole<HTMLButtonElement>('button', { name: '재시도' });
+    expect(translationButton.disabled).toBe(false);
+    await flush(() => fireEvent.click(translationButton));
+    const translationRequest = await fixture.take('RetryTranslationJobOnAdmin');
+    expect(retryButton('translation-1').disabled).toBe(true);
+    expect(translationButton.disabled).toBe(true);
+    await flush(() => descriptionRequest.resolve(retryResult()));
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith('/products/renamed-address?descriptionJobId=new-logical-job')
+    );
+    const noticeCount = vi.mocked(notifications.show).mock.calls.length;
+    await flush(() => translationRequest.network());
+    expect(vi.mocked(notifications.show).mock.calls).toHaveLength(noticeCount);
+  });
+
+  it.each(['success', 'network', 'graphql'] as const)('화면 이탈 뒤 번역 두 건의 %s 응답을 무시한다', async ending => {
+    const fixture = setup();
+    await fixture.lists([translationRow(1, 'failed'), translationRow(2, 'failed')]);
+    for (const id of [1, 2]) {
+      await flush(() =>
+        fireEvent.click(
+          within(screen.getByTitle(`Product: entity-${id}`).closest('tr')!).getByRole('button', { name: '재시도' })
+        )
+      );
+    }
+    const a = await fixture.take('RetryTranslationJobOnAdmin');
+    const b = await fixture.take('RetryTranslationJobOnAdmin');
+    await navigate('/settings/llm');
+    const count = fixture.log.length;
+    await flush(() => {
+      for (const [index, request] of [a, b].entries()) {
+        if (ending === 'success')
+          request.resolve({
+            retryTranslationJob: translationRow(index + 1, 'pending'),
+          });
+        else request[ending]();
+      }
+    });
+    expect(notifications.show).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(fixture.log).toHaveLength(count);
+  });
 
   it('preserves current translation retry notification, list variables and refetch without navigation', async () => {
     const fixture = setup(true);
