@@ -1,7 +1,7 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 import {
   CreateProductFlowOnEditorDocument,
   UpdateProductFlowOnEditorDocument,
@@ -128,6 +128,7 @@ function StepImage({ src, alt }: { src: string; alt: string }) {
 
 export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEditorProps) => {
   const isEdit = flowId !== undefined;
+  const client = useApolloClient();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -253,23 +254,30 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
     };
     setSaving(true);
     try {
+      let savedId = flowId;
       if (isEdit && flowId) {
         await updateFlow({ variables: { input: { id: flowId, ...input } } });
-        onSaved(flowId);
       } else {
         const result = await createFlow({
           variables: { input: { productSlug: slug, ...input } },
         });
-        const newId = result.data?.createProductFlow?.flow?.id;
-        if (newId) {
-          onSaved(newId);
-        } else {
-          notifications.show({
-            title: '저장 실패',
-            message: '플로 생성 결과를 확인할 수 없습니다.',
-            color: 'red',
-          });
-        }
+        savedId = result.data?.createProductFlow?.flow?.id;
+      }
+      if (savedId) {
+        // 목록이 unmount된 경우에도 다음 진입에서 저장값을 읽는다. 후속 조회는 저장 성공과 분리한다.
+        client.cache.batch({
+          update(cache) {
+            cache.evict({ id: 'ROOT_QUERY', fieldName: 'adminProductFlows', args: { productSlug: slug } });
+            cache.evict({ id: 'ROOT_QUERY', fieldName: 'adminProductFlow', args: { id: savedId } });
+          },
+        });
+        onSaved(savedId);
+      } else {
+        notifications.show({
+          title: '저장 실패',
+          message: '플로 생성 결과를 확인할 수 없습니다.',
+          color: 'red',
+        });
       }
     } catch {
       // 실패 시 편집 내용을 보존한다. 오류 안내만 표시한다.
