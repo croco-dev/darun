@@ -66,6 +66,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     .overrideTypes<AdminAppRecord[], { merge: false }>();
 
   if (error) {
+    if (error.code === 'PGRST103' && pageState.page > 1) {
+      let countQuery = supabase.from('apps').select('id', { count: 'exact', head: true });
+      if (pageState.query) {
+        countQuery = countQuery.ilike('name', `%${escapeAdminSearchQuery(pageState.query)}%`);
+      }
+      const { count: freshCount, error: countError } = await countQuery;
+      if (countError) throw new Error(countError.message);
+      if (freshCount !== null) {
+        const freshPagination = getAdminPaginationMeta(freshCount, pageState.page, pageState.pageSize);
+        if (pageState.page > freshPagination.totalPages) {
+          redirect(buildAdminPageHref({ query: pageState.query, page: freshPagination.totalPages }));
+        }
+      }
+    }
     throw new Error(error.message);
   }
 
