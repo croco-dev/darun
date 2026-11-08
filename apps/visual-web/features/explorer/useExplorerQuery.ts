@@ -219,8 +219,9 @@ export function useExplorerQuery<TNode, TCard>(
     return () => subscription.unsubscribe();
   }, [observable]);
 
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [paginationState, setPaginationState] = useState({ observable, loading: false, error: false });
+  const loadingMore = paginationState.observable === observable && paginationState.loading;
+  const loadMoreError = paginationState.observable === observable && paginationState.error;
 
   const data = result?.data as unknown;
   const rawEdges = (options.getEdges(data) ?? []) as EdgeLike<TNode>[];
@@ -261,8 +262,7 @@ export function useExplorerQuery<TNode, TCard>(
     if (loadingMore || !hasNextPage || endCursor === null) {
       return;
     }
-    setLoadingMore(true);
-    setLoadMoreError(false);
+    setPaginationState({ observable, loading: true, error: false });
     (observable as ObservableQuery)
       .fetchMore({
         variables: { after: endCursor },
@@ -297,10 +297,10 @@ export function useExplorerQuery<TNode, TCard>(
       })
       .catch((e: unknown) => {
         console.error(options.loadMoreLabel, e);
-        setLoadMoreError(true);
+        setPaginationState(current => (current.observable === observable ? { ...current, error: true } : current));
       })
       .finally(() => {
-        setLoadingMore(false);
+        setPaginationState(current => (current.observable === observable ? { ...current, loading: false } : current));
       });
   };
 
