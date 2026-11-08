@@ -9,7 +9,8 @@ import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { getReusableCreationUploadUrl, type CompletedCreationUpload } from '../creationUpload';
 
 gql(`
   mutation CreateProductOnNewProductForm($input: CreateProductInput!) {
@@ -38,8 +39,17 @@ type NewProductFormProps = {
 };
 
 export function useNewProductForm({ children }: NewProductFormProps) {
+  const completedUpload = useRef<CompletedCreationUpload | null>(null);
+  const selectedFile = useRef<File | undefined>(undefined);
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
+    onValuesChange: values => {
+      if (values.file !== selectedFile.current) {
+        selectedFile.current = values.file;
+        completedUpload.current = null;
+        cancelUpload();
+      }
+    },
     initialValues: {
       name: '',
       slug: '',
@@ -74,6 +84,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       if (mounted.current && createProduct?.product?.slug) {
         const queries = [...client.getObservableQueries([AllProductsOnProductListTableDocument])];
         notifySavedWithRefresh(() => Promise.all(queries.map(query => query.refetch())));
+        completedUpload.current = null;
         form.reset();
         navigate(`/products/${encodeURIComponent(createProduct.product.slug)}`);
       }
@@ -89,14 +100,14 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     },
   });
 
-  const cancelUpload = () => {
+  const cancelUpload = useCallback(() => {
     const controller = activeUpload.current;
     if (!controller) return;
     activeUpload.current = null;
     controller.abort();
     isSubmittingRef.current = false;
     setIsUploading(false);
-  };
+  }, [setIsUploading]);
 
   const submit = async (values: FormValues) => {
     if (!mounted.current || isUploading || isCreating || isSubmittingRef.current) return;
@@ -122,10 +133,13 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     isSubmittingRef.current = true;
     const controller = new AbortController();
     activeUpload.current = controller;
-    let url: string | undefined;
+    const folder = 'images/logos';
+    let url = getReusableCreationUploadUrl(completedUpload.current, values.file, folder);
     try {
-      setIsUploading(true);
-      url = await upload('images/logos', values.file, slug, controller.signal);
+      if (!url) {
+        setIsUploading(true);
+        url = await upload(folder, values.file, slug, controller.signal);
+      }
     } catch {
       if (!mounted.current || activeUpload.current !== controller || controller.signal.aborted) return;
       activeUpload.current = null;
@@ -149,6 +163,8 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       isSubmittingRef.current = false;
       return;
     }
+
+    completedUpload.current = { file: values.file, folder, url };
 
     try {
       await createProduct({
