@@ -1,10 +1,5 @@
-import {
-  assertLocalPostgrestFixture,
-  migrateTierPostgrestFixture,
-  postgrestFixtureFetch,
-} from '@/test-utils/postgrest-fixture';
+import { createTierPostgrestFixture } from '@/test-utils/postgrest-fixture';
 import { createClient } from '@supabase/supabase-js';
-import postgres from 'postgres';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import AdminPage from './page';
@@ -161,35 +156,23 @@ describe('admin page range recovery through the Supabase client', () => {
 const databaseUrl = process.env.ADMIN_PAGINATION_TEST_DATABASE_URL;
 const restUrl = process.env.ADMIN_PAGINATION_TEST_POSTGREST_URL;
 
-assertLocalPostgrestFixture(databaseUrl, restUrl, 'darun_admin_pagination');
-
 describe.skipIf(!databaseUrl)('admin pagination with PostgreSQL and PostgREST', () => {
-  const sql = postgres(databaseUrl!, {
-    max: 1,
-    onnotice: () => {},
-    connection: { statement_timeout: 5000 },
-  });
-  let ownsTables = false;
-  const client = createClient(restUrl ?? 'http://127.0.0.1', 'pagination-fixture-only', {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: postgrestFixtureFetch },
-  });
-
+  const database = createTierPostgrestFixture(databaseUrl, restUrl, 'darun_admin_pagination');
+  const { sql, client } = database;
   beforeAll(async () => {
-    const [existing] = await sql`select count(*)::integer as count from information_schema.tables
-      where table_schema = 'public'`;
-    if (existing.count !== 0) throw new Error('Pagination tests require an empty dedicated database');
-    ownsTables = true;
-    await migrateTierPostgrestFixture(sql, restUrl!);
-    fixture.client = client;
+    await database.prepare();
+    fixture.client = database.client;
   });
+  afterAll(database.close);
 
-  afterAll(async () => {
+  it('preserves existing tables when another fixture refuses to prepare the occupied database', async () => {
+    const occupied = createTierPostgrestFixture(databaseUrl, restUrl, 'darun_admin_pagination');
     try {
-      if (ownsTables) await sql`drop table if exists memos, tiers, apps, users cascade`;
+      await expect(occupied.prepare()).rejects.toThrow('PostgREST tests require an empty dedicated database');
     } finally {
-      await sql.end();
+      await occupied.close();
     }
+    expect((await sql`select count(*)::integer as count from apps`)[0].count).toBe(0);
   });
 
   it('distinguishes equal and excessive offsets and recovers only invalid pages', async () => {

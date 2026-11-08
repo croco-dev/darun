@@ -1,10 +1,5 @@
 import { MemoCard } from '@/components/MemoCard';
-import {
-  assertLocalPostgrestFixture,
-  migrateTierPostgrestFixture,
-  postgrestFixtureFetch,
-} from '@/test-utils/postgrest-fixture';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createTierPostgrestFixture } from '@/test-utils/postgrest-fixture';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate as migrateDrizzle } from 'drizzle-orm/postgres-js/migrator';
@@ -28,41 +23,24 @@ vi.mock('./AdminSearchInput', () => ({ AdminSearchInput: () => null }));
 vi.mock('./AppStoreScrapeForm', () => ({ AppStoreScrapeForm: () => null }));
 vi.mock('./TierSelect', () => ({ TierSelect: () => null }));
 
-assertLocalPostgrestFixture(databaseUrl, restUrl, 'darun_memo_integrity');
-
 describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', () => {
-  const sql = postgres(databaseUrl!, {
-    max: 1,
-    onnotice: () => {},
-    connection: { statement_timeout: 5000 },
-  });
   const appId = '00000000-0000-0000-0000-000000000463';
-  let ownsTables = false;
   let ownsJournalSchema = false;
   let synchronizeReads = false;
   let releaseReads: (() => void) | undefined;
   let reads = 0;
   let readBarrier: Promise<void>;
 
+  const database = createTierPostgrestFixture(databaseUrl, restUrl, 'darun_memo_integrity', async method => {
+    if (synchronizeReads && method === 'GET') {
+      if (++reads === 2) releaseReads?.();
+      await readBarrier;
+    }
+  });
+  const { sql } = database;
   beforeAll(async () => {
-    const [existing] = await sql`select count(*)::integer as count from information_schema.tables
-      where table_schema = 'public'`;
-    if (existing.count !== 0) throw new Error('Memo tests require an empty dedicated database');
-    ownsTables = true;
-    await migrateTierPostgrestFixture(sql, restUrl!);
-    fixture.client = createSupabaseClient(restUrl!, 'memo-fixture-only', {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: {
-        fetch: async (input, init) => {
-          const response = await postgrestFixtureFetch(input, init);
-          if (synchronizeReads && (init?.method ?? 'GET') === 'GET') {
-            if (++reads === 2) releaseReads?.();
-            await readBarrier;
-          }
-          return response;
-        },
-      },
-    });
+    await database.prepare();
+    fixture.client = database.client;
   });
 
   beforeEach(async () => {
@@ -83,9 +61,8 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
     releaseReads?.();
     try {
       if (ownsJournalSchema) await sql`drop schema memo_test_migrations cascade`;
-      if (ownsTables) await sql`drop table public.memos, public.tiers, public.apps, public.users cascade`;
     } finally {
-      await sql.end();
+      await database.close();
     }
   });
 

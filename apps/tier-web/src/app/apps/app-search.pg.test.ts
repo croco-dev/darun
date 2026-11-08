@@ -1,10 +1,4 @@
-import {
-  assertLocalPostgrestFixture,
-  migrateTierPostgrestFixture,
-  postgrestFixtureFetch,
-} from '@/test-utils/postgrest-fixture';
-import { createClient } from '@supabase/supabase-js';
-import postgres from 'postgres';
+import { createTierPostgrestFixture } from '@/test-utils/postgrest-fixture';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   APPS_SELECT,
@@ -17,35 +11,11 @@ import {
 const databaseUrl = process.env.APP_SEARCH_TEST_DATABASE_URL;
 const restUrl = process.env.APP_SEARCH_TEST_POSTGREST_URL;
 
-assertLocalPostgrestFixture(databaseUrl, restUrl, 'darun_app_search');
-
 describe.skipIf(!databaseUrl)('app search through the PostgREST parser and PostgreSQL', () => {
-  const sql = postgres(databaseUrl!, {
-    max: 1,
-    onnotice: () => {},
-    connection: { statement_timeout: 5000 },
-  });
-  let ownsTables = false;
-  const client = createClient(restUrl ?? 'http://127.0.0.1', 'app-search-fixture-only', {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: postgrestFixtureFetch },
-  });
-
-  beforeAll(async () => {
-    const [existing] = await sql`select count(*)::integer as count from information_schema.tables
-      where table_schema = 'public'`;
-    if (existing.count !== 0) throw new Error('App search tests require an empty dedicated database');
-    ownsTables = true;
-    await migrateTierPostgrestFixture(sql, restUrl!);
-  });
-
-  afterAll(async () => {
-    try {
-      if (ownsTables) await sql`drop table if exists memos, tiers, apps, users cascade`;
-    } finally {
-      await sql.end();
-    }
-  });
+  const database = createTierPostgrestFixture(databaseUrl, restUrl, 'darun_app_search');
+  const { sql, client } = database;
+  beforeAll(database.prepare);
+  afterAll(database.close);
 
   function search(term: string, page = 1) {
     const { from, to } = getAppsPageRange(page);
