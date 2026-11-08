@@ -132,7 +132,7 @@ describe.each(cases)('$name upload lifetime', c => {
       .mockResolvedValueOnce('https://fixture.invalid/first.png')
       .mockResolvedValueOnce('https://fixture.invalid/new.png');
     const f = fixture(false, 1);
-    const { result } = renderHook(c.useForm, { wrapper: f.wrapper });
+    const { result, unmount } = renderHook(c.useForm, { wrapper: f.wrapper });
     act(() => result.current.fill());
     await act(async () => {
       await result.current.submit(c.values);
@@ -144,9 +144,15 @@ describe.each(cases)('$name upload lifetime', c => {
     });
     expect(upload).toHaveBeenCalledOnce();
     expect(f.writeUrls).toEqual(['https://fixture.invalid/first.png', 'https://fixture.invalid/first.png']);
-    act(() => result.current.fill());
     await act(async () => {
       await result.current.submit(c.values);
+    });
+    expect(f.writeUrls).toHaveLength(2);
+    unmount();
+    const next = renderHook(c.useForm, { wrapper: f.wrapper });
+    act(() => next.result.current.fill());
+    await act(async () => {
+      await next.result.current.submit(c.values);
     });
     expect(upload).toHaveBeenCalledTimes(2);
     expect(f.writeUrls[2]).toBe('https://fixture.invalid/new.png');

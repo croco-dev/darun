@@ -92,7 +92,6 @@ export function useNewProductForm({ children }: NewProductFormProps) {
         const queries = [...client.getObservableQueries([AllProductsOnProductListTableDocument])];
         notifySavedWithRefresh(() => Promise.all(queries.map(query => query.refetch())));
         completedUpload.current = null;
-        isSubmittingRef.current = false;
         form.reset();
         navigate(`/products/${encodeURIComponent(createProduct.product.slug)}`);
       }

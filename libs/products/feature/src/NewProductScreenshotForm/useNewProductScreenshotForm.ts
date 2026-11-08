@@ -133,7 +133,6 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
             })
           );
           completedUpload.current = null;
-          isSubmittingRef.current = false;
           form.reset();
           navigate(`/products/${encodeURIComponent(productSlug)}`);
         }
