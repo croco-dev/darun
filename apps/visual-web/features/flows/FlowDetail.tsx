@@ -1,57 +1,19 @@
 'use client';
 
-import {
-  Button,
-  ChevronLeft,
-  ChevronRight,
-  Dialog,
-  ExternalLink,
-  ImageOff,
-  Link2,
-  Maximize2,
-  RefreshCw,
-} from '@darun/ui';
+import { Button, ChevronLeft, ChevronRight, Dialog, ExternalLink, Link2, RefreshCw } from '@darun/ui';
 import { Link, notFound, useSearchParams } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
-import { VISUAL_CARD_IMAGE_LOADING, VISUAL_DETAIL_IMAGE_FETCH_PRIORITY } from '../perf/imageLoading';
+import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { VisualSaveButton } from '../saves/VisualSaveButton';
+import { ScreenshotImage } from '../screenshots/ScreenshotImage';
 import { VISUAL_PLATFORM_LABELS, VISUAL_FLOW_TYPE_LABELS } from './flowClassifications';
 import { stepSearch } from './stepSearch';
 import { FlowDetailState, useFlowDetail } from './useFlowDetail';
 
 const STEP_QUERY_KEY = 'step';
 const FLOW_ZOOM_HEADING_ID = 'flow-zoom-heading';
-
-function StepImage({ src, alt }: { src: string; alt: string }) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null);
-
-  if (failedSrc === src) {
-    return (
-      <div
-        role="img"
-        aria-label="이미지를 불러올 수 없음"
-        className="flex min-h-72 w-full flex-col items-center justify-center gap-2 rounded-xl bg-surface-100 text-dark-400"
-      >
-        <ImageOff size={32} className="shrink-0" aria-hidden="true" />
-        <span className="text-sm text-dark-600 break-words [word-break:keep-all]">
-          이미지를 불러올 수 없어요. 다른 단계로 이동해 보세요.
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      fetchPriority={VISUAL_DETAIL_IMAGE_FETCH_PRIORITY}
-      onError={() => setFailedSrc(src)}
-      className="mx-auto max-h-[calc(100dvh-16rem)] w-auto max-w-full rounded-xl bg-surface-100 object-contain"
-    />
-  );
-}
 
 const View = ({ status, detail, retry }: FlowDetailState) => {
   const searchParams = useSearchParams();
@@ -309,19 +271,12 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
               <div className="flex min-w-0 flex-col gap-3">
                 {activeStep && (
                   <figure className="relative flex min-w-0 flex-col gap-2">
-                    <StepImage src={activeStep.screenshot.imageUrl} alt={activeStep.screenshot.imageAlt} />
-                    <Button
-                      type="button"
-                      variant="shadow"
-                      color="secondary"
-                      size="sm"
-                      onClick={() => setZoomedFlowId(detail.id)}
-                      aria-haspopup="dialog"
-                      className="absolute right-2 bottom-2 min-h-[44px]"
-                    >
-                      <Maximize2 size={16} aria-hidden="true" />
-                      <span className="whitespace-nowrap">확대</span>
-                    </Button>
+                    <ScreenshotImage
+                      src={activeStep.screenshot.imageUrl}
+                      alt={activeStep.screenshot.imageAlt}
+                      variant="step"
+                      onZoom={() => setZoomedFlowId(detail.id)}
+                    />
                   </figure>
                 )}
                 <nav aria-label="단계 썸네일" className="min-w-0">

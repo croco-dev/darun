@@ -32,13 +32,12 @@ function ScreenshotPreview({ card, showIdentity = false }: { card: ScreenshotCar
   return (
     <div className="min-w-0">
       <div className="min-w-0">
-        <Link
+        <ScreenshotImage
+          src={card.imageUrl}
+          alt={card.imageAlt || title}
           href={`/screenshots/${encodeURIComponent(card.id)}`}
-          aria-label={`${title} 화면 보기`}
-          className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900"
-        >
-          <ScreenshotImage src={card.imageUrl} alt={card.imageAlt || title} />
-        </Link>
+          linkLabel={`${title} 화면 보기`}
+        />
         <div className="flex justify-end pt-1">
           <SaveButton
             item={{
