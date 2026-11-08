@@ -60,6 +60,11 @@ type NewProductFormProps = {
   }) => ReactNode;
 };
 
+function validateImageAlt(value: string | undefined) {
+  const length = value?.trim().length ?? 0;
+  return length < 1 || length > 100 ? '이미지 대체 텍스트(alt)는 1자 이상 100자 이하로 입력해주세요.' : null;
+}
+
 export function useNewProductScreenshotForm({ productSlug, children }: NewProductFormProps) {
   const navigate = useNavigate();
   const client = useApolloClient();
@@ -86,7 +91,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     },
     validate: {
       file: value => (!value ? '이미지를 선택해주세요.' : null),
-      imageAlt: value => (!value?.trim() ? '이미지 대체 텍스트(alt)를 입력해주세요.' : null),
+      imageAlt: validateImageAlt,
       title: value => (value && value.trim().length > 100 ? '제목은 100자 이하로 입력해주세요.' : null),
       platform: value => (value && !PLATFORM_OPTIONS.includes(value) ? '지원하지 않는 플랫폼 값입니다.' : null),
       screenType: value => (value && !SCREEN_TYPE_OPTIONS.includes(value) ? '지원하지 않는 화면 유형 값입니다.' : null),
@@ -129,6 +134,11 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
 
   const submit = async (values: FormValues) => {
     if (!mounted.current || isUploading || isAdding || isSubmittingRef.current) return;
+    const imageAltError = validateImageAlt(values.imageAlt);
+    if (imageAltError) {
+      form.setFieldError('imageAlt', imageAltError);
+      return;
+    }
     if (!values.file || !values.imageAlt?.trim()) {
       notifications.show({
         message: '이미지와 설명(alt)을 모두 입력해주세요.',
