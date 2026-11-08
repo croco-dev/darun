@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@apollo/client/react';
 import {
   IndexProductOnIndexProductButtonDocument,
   ProductContentSyncStatusOnIndexProductButtonDocument,
+  type ProductContentSyncStatusOnIndexProductButtonQuery,
   RetryProductContentSyncOnIndexProductButtonDocument,
 } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
@@ -64,11 +65,13 @@ export function useIndexProductButton({ slug }: { slug: string }) {
   }>();
   if (request && request.slug !== slug) setRequest(undefined);
   const [observation, setObservation] = useState<{
-    generation: number;
-    productId?: string;
-    status?: NonNullable<typeof data>['productContentSyncStatus']['searchIntent'];
+    // A carried display snapshot cannot acknowledge a new reservation without a fresh lookup.
+    generation?: number;
+    slug: string;
+    syncStatus?: ProductContentSyncStatusOnIndexProductButtonQuery['productContentSyncStatus'];
     error?: string;
   }>();
+  if (observation && observation.slug !== slug) setObservation(undefined);
   const generation = useRef(0);
   const activeSlug = useRef(slug);
   useEffect(() => {
@@ -87,7 +90,9 @@ export function useIndexProductButton({ slug }: { slug: string }) {
     // A new reservation must not share a lookup started by an older request.
     context: { queryDeduplication: false },
   });
-  const syncStatus = data?.productContentSyncStatus;
+  const observedSyncStatus = observation?.slug === slug ? observation.syncStatus : undefined;
+  const syncStatus = observedSyncStatus ?? data?.productContentSyncStatus;
+  const observedSearchIntent = observedSyncStatus?.searchIntent;
   const syncProductId = syncStatus?.productId;
   const activeProductId = useRef(syncProductId);
   useEffect(() => {
@@ -96,22 +101,24 @@ export function useIndexProductButton({ slug }: { slug: string }) {
   const current =
     intentId &&
     observation &&
+    !observation.error &&
     observation.generation === request?.generation &&
-    observation.productId === request?.productId &&
-    observation.status?.intentId === intentId &&
-    observation.status.productId === request?.productId &&
-    observation.status.sourceRevision === request?.sourceRevision
-      ? observation.status
+    observedSyncStatus?.productId === request?.productId &&
+    observedSearchIntent?.intentId === intentId &&
+    observedSearchIntent.productId === request?.productId &&
+    observedSearchIntent.sourceRevision === request?.sourceRevision
+      ? observedSearchIntent
       : undefined;
   const superseded = Boolean(
     intentId &&
     request &&
+    !observation?.error &&
     observation?.generation === request.generation &&
-    observation.productId === request.productId &&
-    observation.status &&
-    observation.status.productId === request.productId &&
-    observation.status.intentId !== intentId &&
-    BigInt(observation.status.sourceRevision) > BigInt(request.sourceRevision)
+    observedSyncStatus?.productId === request.productId &&
+    observedSearchIntent &&
+    observedSearchIntent.productId === request.productId &&
+    observedSearchIntent.intentId !== intentId &&
+    BigInt(observedSearchIntent.sourceRevision) > BigInt(request.sourceRevision)
   );
   const lookupError = intentId
     ? observation && observation.generation === request?.generation
@@ -122,7 +129,8 @@ export function useIndexProductButton({ slug }: { slug: string }) {
   const activeIntentStatuses = ['pending', 'in_progress'];
   const searchIntentActive = activeIntentStatuses.includes(syncStatus?.searchIntent?.status ?? '');
   const translationIntentActive = activeIntentStatuses.includes(syncStatus?.translationIntent?.status ?? '');
-  const observingSyncStatus = Boolean(intentId) || searchIntentActive || translationIntentActive;
+  const observingSearch = !terminal && !superseded && (Boolean(intentId) || searchIntentActive);
+  const observingSyncStatus = observingSearch || translationIntentActive;
   useEffect(() => {
     if ((!terminal && !superseded) || !request || notified.current === request.generation) return;
     notified.current = request.generation;
@@ -142,7 +150,7 @@ export function useIndexProductButton({ slug }: { slug: string }) {
     );
   }, [current, request, superseded, terminal]);
   useEffect(() => {
-    if (terminal || superseded || !observingSyncStatus) return;
+    if (!observingSyncStatus) return;
     let cancelled = false;
     let timer: number;
     const poll = async () => {
@@ -153,19 +161,26 @@ export function useIndexProductButton({ slug }: { slug: string }) {
           !cancelled &&
           generation.current === lookupGeneration &&
           activeSlug.current === slug &&
-          request?.generation === lookupGeneration
+          (!request || request.generation === lookupGeneration)
         )
           setObservation({
-            generation: lookupGeneration,
-            productId: result.data?.productContentSyncStatus.productId,
-            status: result.data?.productContentSyncStatus.searchIntent,
+            generation: request?.generation,
+            slug,
+            syncStatus: result.data?.productContentSyncStatus,
           });
       } catch (failure) {
-        if (!cancelled && generation.current === lookupGeneration && request?.generation === lookupGeneration)
-          setObservation({
+        if (
+          !cancelled &&
+          generation.current === lookupGeneration &&
+          activeSlug.current === slug &&
+          (!request || request.generation === lookupGeneration)
+        )
+          setObservation(previous => ({
             generation: lookupGeneration,
+            slug,
+            syncStatus: previous?.slug === slug ? previous.syncStatus : undefined,
             error: failure instanceof Error ? failure.message : '검색 동기화를 조회하지 못했습니다.',
-          });
+          }));
       }
       if (!cancelled) timer = window.setTimeout(() => void poll(), 1000);
     };
@@ -174,10 +189,11 @@ export function useIndexProductButton({ slug }: { slug: string }) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [refetch, request, slug, superseded, terminal, observingSyncStatus]);
+  }, [refetch, request, slug, observingSyncStatus]);
   const indexProduct = async () => {
     if (registering) return;
     const requestGeneration = ++generation.current;
+    setObservation({ slug, syncStatus });
     try {
       const result = await indexProductMutation({
         variables: { input: { slug } },
@@ -196,13 +212,15 @@ export function useIndexProductButton({ slug }: { slug: string }) {
         if (activeSlug.current === slug && generation.current === requestGeneration)
           setObservation({
             generation: requestGeneration,
-            productId: fresh.data?.productContentSyncStatus.productId,
-            status: fresh.data?.productContentSyncStatus.searchIntent,
+            slug,
+            syncStatus: fresh.data?.productContentSyncStatus,
           });
       } catch (lookupFailure) {
         if (activeSlug.current === slug && generation.current === requestGeneration) {
           setObservation({
             generation: requestGeneration,
+            slug,
+            syncStatus,
             error: lookupFailure instanceof Error ? lookupFailure.message : '검색 동기화를 조회하지 못했습니다.',
           });
           notifications.show({
@@ -217,17 +235,20 @@ export function useIndexProductButton({ slug }: { slug: string }) {
         color: 'blue',
       });
     } catch (failure) {
-      if (activeSlug.current === slug && generation.current === requestGeneration)
+      if (activeSlug.current === slug && generation.current === requestGeneration) {
+        setRequest(undefined);
         notifications.show({
           message: failure instanceof Error ? failure.message : '검색 동기화를 예약하지 못했습니다.',
           color: 'red',
         });
+      }
     }
   };
   const retrySync = async () => {
     const productId = syncStatus?.productId;
     if (!productId || activeSlug.current !== slug || activeProductId.current !== productId) return;
     const requestGeneration = ++generation.current;
+    setObservation({ slug, syncStatus });
     const retryIntent = superseded ? syncStatus?.searchIntent : undefined;
     const retryRequest =
       request?.slug === slug && request.productId === productId
@@ -244,15 +265,14 @@ export function useIndexProductButton({ slug }: { slug: string }) {
       if (!isCurrentRequest()) return;
       const result = await retrySyncMutation({ variables: { slug } });
       if (!isCurrentRequest() || result.data?.retryProductContentSync.productId !== productId) return;
-      setObservation(undefined);
       if (retryRequest) setRequest(retryRequest);
       if (!isCurrentRequest()) return;
       const fresh = await refetch({ slug });
       if (!isCurrentRequest() || fresh.data?.productContentSyncStatus.productId !== productId) return;
       setObservation({
         generation: requestGeneration,
-        productId: fresh.data.productContentSyncStatus.productId,
-        status: fresh.data.productContentSyncStatus.searchIntent,
+        slug,
+        syncStatus: fresh.data.productContentSyncStatus,
       });
       notifications.show({
         message: '실패한 최신 동기화 의도를 다시 예약했습니다. 번역 등록은 번역 완료가 아닙니다.',
@@ -263,6 +283,8 @@ export function useIndexProductButton({ slug }: { slug: string }) {
       if (retryRequest) setRequest(retryRequest);
       setObservation({
         generation: requestGeneration,
+        slug,
+        syncStatus,
         error: failure instanceof Error ? failure.message : '동기화 재시도 실패',
       });
       notifications.show({

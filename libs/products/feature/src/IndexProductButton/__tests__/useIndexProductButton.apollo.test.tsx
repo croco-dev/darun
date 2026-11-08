@@ -64,10 +64,16 @@ function setup() {
     failGraphql: () => void;
   }[] = [];
   let nextIdentity = identity;
+  let failNextIndex = false;
   const link = new ApolloLink(
     operation =>
       new Observable(observer => {
         if (operation.operationName === 'IndexProductOnIndexProductButton') {
+          if (failNextIndex) {
+            failNextIndex = false;
+            observer.error(new Error('index network failed'));
+            return;
+          }
           observer.next({
             data: { indexProduct: { ...nextIdentity, status: 'pending' } },
           });
@@ -109,6 +115,9 @@ function setup() {
     retries,
     querySlugs: () => Array.from(client.getObservableQueries(), query => query.variables.slug),
     client,
+    failNextIndex: () => {
+      failNextIndex = true;
+    },
     setIdentity: (value: typeof identity) => {
       nextIdentity = value;
     },
@@ -888,5 +897,96 @@ describe('index completion through real Apollo default cache', () => {
     expect(fixture.result.current.syncStatus?.searchIntent?.intentId).toBe('B');
     expect(notifications.show).not.toHaveBeenCalled();
     expect(fixture.result.current.loading).toBe(false);
+  });
+
+  it.each(['completed', 'failed', 'superseded'])(
+    'keeps observing translation after the owned search becomes %s, then stops at translation completion',
+    async status => {
+      const fixture = await setupWaiting();
+      await tick();
+      await flush(() => fixture.lookups.shift()!.resolve(response(status, undefined, { status: 'pending' })));
+      expect(fixture.result.current.loading).toBe(false);
+      const notices = vi.mocked(notifications.show).mock.calls.length;
+      for (const translationStatus of ['in_progress', 'completed']) {
+        await tick();
+        expect(fixture.lookups).toHaveLength(1);
+        await flush(() => fixture.lookups.shift()!.resolve(response(status, undefined, { status: translationStatus })));
+        expect(fixture.result.current.syncStatus?.translationIntent?.status).toBe(translationStatus);
+        expect(fixture.result.current.loading).toBe(false);
+      }
+      await tick(5000);
+      expect(fixture.lookups).toHaveLength(0);
+      expect(notifications.show).toHaveBeenCalledTimes(notices);
+      expect(successes()).toHaveLength(status === 'completed' ? 1 : 0);
+    }
+  );
+
+  it('observes translation failure after a newer search intent supersedes the owned reservation', async () => {
+    const fixture = await setupWaiting();
+    await tick();
+    await flush(() =>
+      fixture.lookups.shift()!.resolve(response('completed', newerIdentity, { status: 'in_progress' }))
+    );
+    expect(fixture.result.current.loading).toBe(false);
+    expect(supersessions()).toHaveLength(1);
+    await tick();
+    expect(fixture.lookups).toHaveLength(1);
+    await flush(() => fixture.lookups.shift()!.resolve(response('completed', newerIdentity, { status: 'failed' })));
+    expect(fixture.result.current.syncStatus?.translationIntent?.status).toBe('failed');
+    await tick(5000);
+    expect(fixture.lookups).toHaveLength(0);
+    expect(supersessions()).toHaveLength(1);
+    expect(successes()).toHaveLength(0);
+  });
+
+  it.each(['route', 'index', 'retry', 'unmount'])(
+    'rejects a late translation observation after %s invalidates the completed search action',
+    async transition => {
+      const fixture = await setupWaiting();
+      await tick();
+      await flush(() => fixture.lookups.shift()!.resolve(response('completed', undefined, { status: 'pending' })));
+      await tick();
+      const stale = fixture.lookups.shift()!;
+      if (transition === 'route') {
+        fixture.rerender({ slug: 'other' });
+        await flush(() =>
+          fixture.lookups.shift()!.resolve(response('completed', { productId: 'product-B', intentId: 'B' }))
+        );
+      } else if (transition === 'unmount') {
+        fixture.unmount();
+      } else {
+        fixture.setIdentity(newerIdentity);
+        const action = transition === 'index' ? await reserve(fixture.result) : await retry(fixture.result);
+        if (transition === 'retry') await flush(() => fixture.retries.shift()!.resolve(response('pending')));
+        await flush(() => fixture.lookups.shift()!.resolve(response('pending', newerIdentity)));
+        await act(async () => {
+          await action.pending;
+        });
+      }
+      const currentStatus = fixture.result.current.syncStatus;
+      vi.mocked(notifications.show).mockClear();
+      await flush(() => stale.resolve(response('completed', undefined, { status: 'failed' })));
+      if (transition !== 'unmount') expect(fixture.result.current.syncStatus).toEqual(currentStatus);
+      expect(notifications.show).not.toHaveBeenCalled();
+    }
+  );
+
+  it('keeps translation observation recoverable when a new index reservation fails after search completion', async () => {
+    const fixture = await setupWaiting();
+    await tick();
+    await flush(() => fixture.lookups.shift()!.resolve(response('completed', undefined, { status: 'pending' })));
+    fixture.failNextIndex();
+    const action = await reserve(fixture.result);
+    await act(async () => {
+      await action.pending;
+    });
+    expect(fixture.result.current.loading).toBe(false);
+    expect(notifications.show).toHaveBeenLastCalledWith({ message: 'index network failed', color: 'red' });
+    await tick();
+    await flush(() => fixture.lookups.shift()!.resolve(response('completed', undefined, { status: 'completed' })));
+    expect(fixture.result.current.syncStatus?.translationIntent?.status).toBe('completed');
+    await tick(3000);
+    expect(fixture.lookups).toHaveLength(0);
+    expect(successes()).toHaveLength(1);
   });
 });
