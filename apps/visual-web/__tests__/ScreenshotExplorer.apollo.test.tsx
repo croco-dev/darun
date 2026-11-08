@@ -57,10 +57,136 @@ function RouteFixture({ children }: { children: ReactNode }) {
 }
 
 const clients: ApolloClient[] = [];
-afterEach(() => {
+afterEach(async () => {
   vi.useRealTimers();
   cleanup();
-  clients.splice(0).forEach(client => client.stop());
+  await act(async () => clients.splice(0).forEach(client => client.stop()));
+  vi.restoreAllMocks();
+});
+
+function mountFlowPagination() {
+  window.history.replaceState(null, '', '/flows?q=A');
+  const pending: Array<{
+    query: string;
+    succeed: () => void;
+    fail: () => void;
+  }> = [];
+  const client = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new ApolloLink(
+      operation =>
+        new Observable(observer => {
+          const query = String(operation.variables.query);
+          const more = operation.variables.after != null;
+          const id = `${query}-${more ? '2' : '1'}`;
+          const succeed = () => {
+            observer.next({
+              data: {
+                visualFlows: {
+                  totalCount: 2,
+                  edges: [
+                    {
+                      cursor: id,
+                      node: {
+                        __typename: 'ProductFlow',
+                        id,
+                        title: `플로 ${id}`,
+                        description: '',
+                        platform: 'WEB',
+                        flowType: 'SIGN_UP',
+                        stepCount: 1,
+                        coverScreenshot: {
+                          __typename: 'ProductScreenshot',
+                          id: `cover-${id}`,
+                          imageUrl: '/fixture.svg',
+                          imageAlt: '합성 화면',
+                        },
+                        product: {
+                          __typename: 'Product',
+                          id: `product-${query}`,
+                          name: `서비스 ${query}`,
+                          slug: query,
+                          logoUrl: '',
+                        },
+                      },
+                    },
+                  ],
+                  pageInfo: { hasNextPage: !more, endCursor: id },
+                },
+              },
+            });
+            observer.complete();
+          };
+          if (more)
+            pending.push({
+              query,
+              succeed,
+              fail: () => observer.error(new Error(`합성 ${query} 더보기 실패`)),
+            });
+          else succeed();
+        })
+    ),
+  });
+  clients.push(client);
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  render(
+    <RouteFixture>
+      <ApolloProvider client={client}>
+        <FlowExplorer />
+      </ApolloProvider>
+    </RouteFixture>
+  );
+  return pending;
+}
+
+async function switchFlowSearch(query: string) {
+  act(() => navigate(`/flows?q=${query}`));
+  await screen.findByText(`플로 ${query}-1`);
+}
+
+it('이전 조건의 더보기 실패가 새 조건의 버튼과 오류를 바꾸지 않는다', async () => {
+  const pending = mountFlowPagination();
+  await screen.findByText('플로 A-1');
+  fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: '불러오는 중...' }).disabled).toBe(true);
+  await switchFlowSearch('B');
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: '더 보기' }).disabled).toBe(false);
+  await act(async () => pending[0].fail());
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: '더 보기' }).disabled).toBe(false);
+  expect(screen.queryByText('플로 A-1')).toBeNull();
+});
+
+it.each(['succeed', 'fail'] as const)('이전 조건의 %s 완료가 현재 더보기의 로딩을 끝내지 않는다', async outcome => {
+  const pending = mountFlowPagination();
+  await screen.findByText('플로 A-1');
+  fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
+  await switchFlowSearch('B');
+  fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
+  expect(pending.map(request => request.query)).toEqual(['A', 'B']);
+  await act(async () => pending[0][outcome]());
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: '불러오는 중...' }).disabled).toBe(true);
+  expect(screen.queryByRole('alert')).toBeNull();
+  await act(async () => pending[1].succeed());
+  await screen.findByText('플로 B-2');
+  expect(screen.getByText('플로 B-1')).toBeTruthy();
+  expect(screen.queryByText('플로 A-2')).toBeNull();
+  expect(screen.queryByRole('button', { name: '더 보기' })).toBeNull();
+});
+
+it('현재 조건의 오류는 표시하고 같은 커서로 재시도해 누적 결과를 보존한다', async () => {
+  const pending = mountFlowPagination();
+  await screen.findByText('플로 A-1');
+  fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
+  await act(async () => pending[0].fail());
+  expect(screen.getByRole('alert').textContent).toContain('더 불러오지 못했어요');
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: '더 보기' }).disabled).toBe(false);
+  fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
+  expect(screen.queryByRole('alert')).toBeNull();
+  await act(async () => pending[1].succeed());
+  await screen.findByText('플로 A-2');
+  expect(screen.getByText('플로 A-1')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '더 보기' })).toBeNull();
 });
 
 function mount(route = '/', consumer: 'screenshots' | 'flows' | 'apps' = 'screenshots', controls?: ReactNode) {
