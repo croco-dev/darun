@@ -1,9 +1,7 @@
 import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
-dayjs.extend(timezone);
 
 // Backend ISO strings may lack an explicit zone; treat zone-less strings as UTC
 // so the same instant renders identically regardless of server/browser locale.
@@ -22,10 +20,10 @@ export function formatAsKst(value: string | Date | null | undefined, format: str
   if (!value) return null;
   const d = parseAsUtc(value);
   if (!d) return null;
-  // Day.js can infer the host's DST offset during tz conversion; keep Seoul's
-  // wall-clock fields while explicitly fixing its year-round +09:00 offset.
-  return d
-    .tz('Asia/Seoul')
-    .utcOffset(9 * 60, true)
-    .format(format);
+  // Format shifted UTC fields so host DST gaps cannot normalize KST wall time.
+  // Offset tokens describe KST; bracketed Day.js literals remain untouched.
+  const kstFormat = format.replace(/\[[^\]]*]|ZZ?/g, token =>
+    token === 'Z' ? '[+09:00]' : token === 'ZZ' ? '[+0900]' : token
+  );
+  return d.utc().add(9, 'hour').format(kstFormat);
 }

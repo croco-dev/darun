@@ -27,10 +27,13 @@ describe.each(['UTC', 'Asia/Seoul', 'America/Los_Angeles'])('관리자 시각 �
               dates: inputs.map(value => formatAsKst(value, 'YYYY-MM-DD HH:mm:ss')),
               short: formatAsKst(inputs[0], 'YY-MM-DD HH:mm:ss'),
               offset: formatAsKst(inputs[0], 'YYYY-MM-DDTHH:mm:ssZ'),
+              offsetLiterals: formatAsKst(inputs[0], '[Z ZZ] Z ZZ'),
               boundaries: [
                 '2026-12-31T14:59:59Z', '2026-12-31T15:00:00Z',
                 '2026-03-08T09:59:59Z', '2026-03-08T10:00:00Z',
                 '2026-11-01T08:59:59Z', '2026-11-01T09:00:00Z',
+                '2026-03-07T17:30:00Z', '2026-03-07T18:30:00Z',
+                '2026-10-31T16:30:00Z',
               ].map(value => formatAsKst(value, 'YYYY-MM-DD HH:mm:ss')),
               fallbacks: [null, undefined, '', 'not-a-date', new Date(NaN)]
                 .map(value => formatAsKst(value, 'YYYY-MM-DD HH:mm:ss')),
@@ -48,6 +51,7 @@ describe.each(['UTC', 'Asia/Seoul', 'America/Los_Angeles'])('관리자 시각 �
       dates: Array(5).fill('2026-10-23 21:34:56'),
       short: '26-10-23 21:34:56',
       offset: '2026-10-23T21:34:56+09:00',
+      offsetLiterals: 'Z ZZ +09:00 +0900',
       boundaries: [
         '2026-12-31 23:59:59',
         '2027-01-01 00:00:00',
@@ -55,6 +59,9 @@ describe.each(['UTC', 'Asia/Seoul', 'America/Los_Angeles'])('관리자 시각 �
         '2026-03-08 19:00:00',
         '2026-11-01 17:59:59',
         '2026-11-01 18:00:00',
+        '2026-03-08 02:30:00',
+        '2026-03-08 03:30:00',
+        '2026-11-01 01:30:00',
       ],
       fallbacks: [null, null, null, null, null],
       duration: 90,
