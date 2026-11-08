@@ -827,7 +827,10 @@ describe('admin research workspace flow', () => {
     await waitFor(() => expectReviewDisabled(form, false));
     expect(materializations).toHaveLength(0);
     expect(navigated()).toEqual([]);
-    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual(review);
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!).review).toEqual({
+      ...review,
+      logoUrl: '',
+    });
     fireEvent.change(screen.getByRole('textbox', { name: '요약' }), {
       target: { value: '재검토한 요약' },
     });
@@ -2529,6 +2532,93 @@ describe('admin research workspace flow', () => {
   );
 });
 
+describe('research logo selection persistence with real Apollo', () => {
+  async function reenter(client: ApolloClient, view: { unmount: () => void }) {
+    view.unmount();
+    const next = render(
+      <ApolloProvider client={client}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+    await screen.findByText(/작업 ID: job-1 · 상태: completed/);
+    return next;
+  }
+
+  it('취소한 URL 로고는 재진입해도 복원하거나 등록에 전송하지 않는다', async () => {
+    const { client, view, materializations } = await renderCompletedResearch();
+    fireEvent.click(screen.getByRole('button', { name: '로고 선택 취소' }));
+    await reenter(client, view);
+    expect((document.querySelector('[name="review-logo-url"]') as HTMLInputElement).value).toBe('');
+    expect(screen.queryByAltText('조사 로고 미리보기')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
+    await waitFor(() =>
+      expect(notifications.show).toHaveBeenCalledWith({
+        message: '로고 파일을 올리거나 로고 URL을 직접 입력해주세요.',
+        color: 'red',
+      })
+    );
+    expect(materializations).toHaveLength(0);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('업로드 A 뒤 선택한 미업로드 B는 재진입 뒤 재선택을 안내하고 A를 전송하지 않는다', async () => {
+    const { client, view, materializations } = await renderCompletedResearch(
+      new File(['a'], 'uploaded-a.png', { type: 'image/png' })
+    );
+    fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
+    await waitFor(() => expect(materializations).toHaveLength(1));
+    materializations[0].fail(new Error('등록 실패'));
+    await screen.findByRole('alert');
+    fireEvent.change(document.querySelector('[name="review-logo-file"]')!, {
+      target: {
+        files: [new File(['b'], 'pending-b.png', { type: 'image/png' })],
+      },
+    });
+    const next = await reenter(client, view);
+    expect((document.querySelector('[name="review-logo-url"]') as HTMLInputElement).value).toBe('');
+    expect(screen.getByText(/선택했던 파일/).textContent).toContain('pending-b.png');
+    expect(screen.queryByAltText('조사 로고 미리보기')).toBeNull();
+    // 안내를 본 뒤 다시 나가도 아직 선택하지 않은 파일 이름을 잃지 않는다.
+    await reenter(client, next);
+    expect(screen.getByText(/선택했던 파일/).textContent).toContain('pending-b.png');
+    fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
+    await waitFor(() =>
+      expect(notifications.show).toHaveBeenCalledWith({
+        message: '로고 파일을 올리거나 로고 URL을 직접 입력해주세요.',
+        color: 'red',
+      })
+    );
+    expect(materializations).toHaveLength(1);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    fireEvent.change(document.querySelector('[name="review-logo-file"]')!, {
+      target: {
+        files: [new File(['b'], 'pending-b.png', { type: 'image/png' })],
+      },
+    });
+    expect(screen.queryByText(/선택했던 파일/)).toBeNull();
+  });
+
+  it.each(['URL', 'uploaded'])('취소하지 않은 %s 로고는 재진입 뒤 같은 URL로 등록한다', async kind => {
+    const { client, view, stored, materializations } = await renderCompletedResearch(
+      kind === 'uploaded' ? new File(['a'], 'uploaded-a.png', { type: 'image/png' }) : undefined
+    );
+    const expectedUrl =
+      kind === 'uploaded' ? 'https://res.cloudinary.com/demo/image/upload/v1/logo.png' : stored.review.logoUrl;
+    if (kind === 'uploaded') {
+      fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
+      await waitFor(() => expect(materializations).toHaveLength(1));
+      materializations[0].fail(new Error('등록 실패'));
+      await screen.findByRole('alert');
+    }
+    await reenter(client, view);
+    expect((document.querySelector('[name="review-logo-url"]') as HTMLInputElement).value).toBe(expectedUrl);
+    fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
+    await waitFor(() => expect(materializations).toHaveLength(kind === 'uploaded' ? 2 : 1));
+    expect(materializations.at(-1)!.variables.input.logoUrl).toBe(expectedUrl);
+    expect(fetch).toHaveBeenCalledTimes(kind === 'uploaded' ? 1 : 0);
+  });
+});
+
 describe('research registration action ownership with real Apollo', () => {
   it.each(['success', 'upload', 'network', 'GraphQL'])(
     '같은 job 로고 pending은 URL·파일·취소를 잠그고 %s 이후 입력과 명시 제출을 보존한다',
@@ -2540,7 +2630,7 @@ describe('research registration action ownership with real Apollo', () => {
         'fetch',
         vi.fn(() => upload.promise)
       );
-      const { stored, materializations } = await renderCompletedResearch(
+      const { materializations } = await renderCompletedResearch(
         new File(['logo-a'], 'logo-a.png', { type: 'image/png' })
       );
       const url = document.querySelector<HTMLInputElement>('[name="review-logo-url"]')!;
@@ -2563,8 +2653,8 @@ describe('research registration action ownership with real Apollo', () => {
       fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
       await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
       expectLogoDisabled(true);
-      expect(url.value).toBe(stored.review.logoUrl);
-      expectWorkspaceLogo(stored.review.logoUrl, null);
+      expect(url.value).toBe('');
+      expectWorkspaceLogo('', null);
       expect(materializations).toHaveLength(0);
       expect((document.querySelector('[name="review-name"]') as HTMLInputElement).disabled).toBe(false);
       expect((screen.getByRole('button', { name: '조사 요청' }) as HTMLButtonElement).disabled).toBe(false);
@@ -2573,8 +2663,8 @@ describe('research registration action ownership with real Apollo', () => {
         await act(async () => upload.reject(new Error('합성 A 업로드 실패')));
         await waitFor(() => expectLogoDisabled(false));
         expect(materializations).toHaveLength(0);
-        expect(url.value).toBe(stored.review.logoUrl);
-        expectWorkspaceLogo(stored.review.logoUrl, null);
+        expect(url.value).toBe('');
+        expectWorkspaceLogo('', null);
         expect(notifications.show).toHaveBeenCalledWith({
           message: '로고 업로드에 실패했습니다. 다시 시도해주세요.',
           color: 'red',
