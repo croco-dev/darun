@@ -53,6 +53,8 @@ vi.mock('next-intl', () => ({
         limit: '두 서비스까지 비교할 수 있습니다',
         viewCompare: '선택한 서비스 비교',
         storageError: '저장 실패',
+        clear: '비교 선택 모두 해제',
+        cleared: '비교 선택을 모두 해제했습니다. 새 서비스를 선택해주세요.',
       })
     ).get(key) ?? key,
 }));
@@ -194,6 +196,84 @@ describe('CompareButton', () => {
       source: 'search',
       compareCount: 1,
     });
+  });
+
+  it('clears unavailable selections and starts a new comparison without replacing them automatically', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(['removed-a', 'removed-b']));
+    act(() => root?.render(<CompareButton slug="new-a" />));
+    const add = container.querySelector('[data-testid="compare-button"]') as HTMLButtonElement;
+    act(() => add.click());
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(['removed-a', 'removed-b']));
+    const clear = Array.from(container.querySelectorAll('button')).find(button =>
+      button.textContent?.includes('비교 선택 모두 해제')
+    );
+    expect(clear).toBeDefined();
+    act(() => clear?.click());
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('[]');
+    expect(container.querySelector('[role="status"]')?.textContent).toContain('모두 해제했습니다');
+    expect(document.activeElement).toBe(add);
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockTrack).not.toHaveBeenCalled();
+
+    act(() => add.click());
+    act(() => root?.render(<CompareButton slug="new-b" />));
+    act(() => (container.querySelector('[data-testid="compare-button"]') as HTMLButtonElement).click());
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(['new-a', 'new-b']));
+    expect(mockPush).toHaveBeenCalledExactlyOnceWith('/ko/compare/new-a/new-b');
+  });
+
+  it('keeps selections and the clear action after a failed clear, then retries successfully', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(['removed-a', 'removed-b']));
+    act(() => root?.render(<CompareButton slug="new-a" />));
+    act(() => (container.querySelector('[data-testid="compare-button"]') as HTMLButtonElement).click());
+    const clear = Array.from(container.querySelectorAll('button')).find(button =>
+      button.textContent?.includes('비교 선택 모두 해제')
+    );
+    expect(clear).toBeDefined();
+    const write = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    const changed = vi.fn();
+    window.addEventListener('compare-updated', changed);
+    try {
+      act(() => clear?.click());
+      expect(localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(['removed-a', 'removed-b']));
+      expect(container.querySelector('[role="status"]')?.textContent).toContain('저장 실패');
+      expect(container.textContent).not.toContain('모두 해제했습니다');
+      expect(clear?.isConnected).toBe(true);
+      expect(changed).not.toHaveBeenCalled();
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockTrack).not.toHaveBeenCalled();
+      write.mockRestore();
+      act(() => clear?.click());
+      expect(localStorage.getItem(STORAGE_KEY)).toBe('[]');
+      expect(changed).toHaveBeenCalledOnce();
+    } finally {
+      write.mockRestore();
+      window.removeEventListener('compare-updated', changed);
+    }
+  });
+
+  it('updates other mounted compare buttons after clearing the shared selection', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(['product-a', 'removed-b']));
+    act(() =>
+      root?.render(
+        <>
+          <CompareButton slug="new-a" />
+          <CompareButton slug="product-a" />
+        </>
+      )
+    );
+    const buttons = container.querySelectorAll<HTMLButtonElement>('[data-testid="compare-button"]');
+    expect(buttons[1].getAttribute('aria-pressed')).toBe('true');
+    act(() => buttons[0].click());
+    const clear = Array.from(container.querySelectorAll('button')).find(button =>
+      button.textContent?.includes('비교 선택 모두 해제')
+    );
+    expect(clear).toBeDefined();
+    act(() => clear?.click());
+    expect(buttons[1].getAttribute('aria-pressed')).toBe('false');
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('[]');
   });
 
   it('emits remove event when product is removed from compare list', () => {
