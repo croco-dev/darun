@@ -128,6 +128,8 @@
     "compareButton": {
       "add": "Add to compare",
       "remove": "Remove from compare",
+      "clear": "Clear comparison selection",
+      "cleared": "Comparison selection cleared. You can choose new services.",
       "limit": "You can compare two services at a time. Remove an existing selection first.",
       "storageError": "Could not save your comparison. Check your browser storage settings and try again.",
       "viewCompare": "Compare selected services"

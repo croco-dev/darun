@@ -4,7 +4,7 @@ import { AnalyticsEvents, track, type ProductAttributionSource } from '@darun/an
 import { Button, Check, Plus } from '@darun/ui';
 import { Link, useRouter } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, useSyncExternalStore } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 
 const STORAGE_KEY = 'compare-products';
 const MAX_COMPARE_ITEMS = 2;
@@ -54,9 +54,22 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
   const locale = useLocale();
   const t = useTranslations('ProductDetail.compareButton');
   const compareList = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const [notice, setNotice] = useState<'limit' | 'storage' | null>(null);
+  const [notice, setNotice] = useState<'limit' | 'storage' | 'cleared' | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const isAdded = compareList.includes(slug);
+
+  const handleClear = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    } catch {
+      setNotice('storage');
+      return;
+    }
+    setNotice('cleared');
+    window.dispatchEvent(new Event('compare-updated'));
+    containerRef.current?.querySelector('button')?.focus();
+  };
 
   const handleClick = () => {
     let newList = [...compareList];
@@ -115,7 +128,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
   const buttonLabel = isAdded ? t('remove') : t('add');
 
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div ref={containerRef} className="flex flex-col items-start gap-2">
       <Button
         variant="shadow"
         color={isAdded ? 'primary' : 'secondary'}
@@ -146,7 +159,7 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
       </Button>
       {notice && (
         <p role="status" className="max-w-xs text-sm text-dark-700">
-          {t(notice === 'limit' ? 'limit' : 'storageError')}{' '}
+          {t(notice === 'storage' ? 'storageError' : notice)}{' '}
           {notice === 'limit' && compareList.length === 2 && (
             <Link
               className="underline"
@@ -156,6 +169,11 @@ export const CompareButton = ({ slug, source }: CompareButtonProps) => {
             </Link>
           )}
         </p>
+      )}
+      {notice && compareList.length > 0 && (
+        <Button variant="text" size="sm" onClick={handleClear}>
+          {t('clear')}
+        </Button>
       )}
     </div>
   );
