@@ -1478,9 +1478,9 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     [
       'Markdown shortcut 참조 이미지 정의 목적지 변경',
       '소개 ![Cover]\n\n[Cover]: <https://example.com/old.png>',
-      'Introduction ![Cover]\n\n[Cover]: <https://example.com/old.png>',
+      'Introduction ![Cover][Cover]\n\n[Cover]: <https://example.com/old.png>',
       '소개 ![Cover]\n\n[Cover]: <https://example.com/new.png>',
-      'Introduction ![Cover]\n\n[Cover]: <https://example.com/new.png>',
+      'Introduction ![Cover][Cover]\n\n[Cover]: <https://example.com/new.png>',
     ],
     [
       'Markdown shortcut·collapsed·full 공유 참조 목적지 변경',
@@ -1730,7 +1730,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       '같은 Markdown shortcut 참조 이미지 앞 soft newline',
       '소개\n![Cover]\n\n[Cover]: <https://example.com/a.png>',
       '소개 ![Cover]\n\n[Cover]: <https://example.com/a.png>',
-      'Introduction\n![Cover]\n\n[Cover]: <https://example.com/a.png>',
+      'Introduction\n![Cover][Cover]\n\n[Cover]: <https://example.com/a.png>',
     ],
     [
       '같은 목적지의 collapsed·shortcut·full 참조 서식',
