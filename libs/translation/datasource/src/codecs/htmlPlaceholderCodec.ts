@@ -97,7 +97,7 @@ function editableSpans(source: string): EditableSpan[] {
         const raw = fragment.slice(attribute.startOffset, attribute.endOffset);
         const equals = raw.indexOf('=');
         if (equals !== -1) {
-          const valueStart = equals + 1 + (raw.slice(equals + 1).match(/^\s*/)?.[0].length ?? 0);
+          const valueStart = equals + 1 + (raw.slice(equals + 1).match(/^[\t\n\f\r ]*/)?.[0].length ?? 0);
           const quoted = raw[valueStart] === '"' || raw[valueStart] === "'";
           const start = offset + attribute.startOffset + valueStart + (quoted ? 1 : 0);
           const end = offset + attribute.endOffset - (quoted ? 1 : 0);

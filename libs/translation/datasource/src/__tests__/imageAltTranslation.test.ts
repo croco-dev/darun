@@ -58,6 +58,25 @@ describe('Image alternative text translation', () => {
     expect(() => assertDocumentStructure(source, translated)).not.toThrow();
   });
 
+  it.each([
+    [' ', ''],
+    ['\t', ''],
+    ['\n', ''],
+    ['\u00a0', '\u00a0'],
+    ['\u2003', '\u2003'],
+  ])('unquoted alt의 ASCII 공백과 값에 속하는 Unicode 공백을 구분한다: %j', (prefix, retained) => {
+    const source = `<img src="a.png" alt=${prefix}화면>`;
+    const encoded = encodeHtml(source);
+    const english = decodeHtml(encoded.encodedText.replace('화면', 'Editor screen'), encoded);
+    expect(parseFragment(english).childNodes[0]).toMatchObject({
+      attrs: [
+        { name: 'src', value: 'a.png' },
+        { name: 'alt', value: `${retained}Editor screen` },
+      ],
+    });
+    expect(() => assertDocumentStructure(source, english)).not.toThrow();
+  });
+
   it('Markdown alt의 새 괄호·entity·줄바꿈을 텍스트로 복원하고 URL 주입을 막는다', () => {
     const source = '![화면](https://example.com/original.png)';
     const encoded = encodeHtml(source);
