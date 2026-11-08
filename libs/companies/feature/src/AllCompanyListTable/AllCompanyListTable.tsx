@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, ChevronLeft, ChevronRight, formatDate } from '@darun/ui';
+import { Button, ChevronLeft, ChevronRight, formatCalendarDate } from '@darun/ui';
 import { AdminPanel, AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import React from 'react';
@@ -158,6 +158,6 @@ const dataTableColumns: Array<{
   {
     accessor: 'startAt',
     title: '설립일',
-    render: ({ startAt }) => <span className="tabular-nums whitespace-nowrap">{formatDate(startAt)}</span>,
+    render: ({ startAt }) => <span className="tabular-nums whitespace-nowrap">{formatCalendarDate(startAt)}</span>,
   },
 ];
