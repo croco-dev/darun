@@ -8,7 +8,7 @@ export default defineConfig({
   esbuild: { jsx: 'automatic' },
   test: {
     environment: 'node',
-    include: ['__tests__/**/*.test.{ts,tsx}'],
+    include: ['__tests__/**/*.test.{ts,tsx}', '../../scripts/vitest/sentry-initialization.test.mjs'],
   },
 
   resolve: {

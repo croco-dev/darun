@@ -13,6 +13,7 @@ const env = {
   GRAPHQL_INTERNAL_URL: 'http://127.0.0.1:16480/graphql',
   NEXT_PUBLIC_GRAPHQL_URL: 'http://127.0.0.1:16480/graphql',
   NEXT_PUBLIC_BASE_URL: 'http://localhost:16481',
+  _SENTRY_TUNNEL_DESTINATION_OVERRIDE: 'http://127.0.0.1:16480/monitoring',
   NEXT_TELEMETRY_DISABLED: '1',
   NODE_OPTIONS: `--import ${resolve(__dirname, 'tests/helpers/loopback-only.mjs')}`,
 };
