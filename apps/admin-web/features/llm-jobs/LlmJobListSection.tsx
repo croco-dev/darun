@@ -183,16 +183,21 @@ export function LlmJobListSection() {
   const router = useRouter();
   const pathname = usePathname();
   const retryRequestRef = useRef(0);
-  useEffect(
-    () => () => {
-      retryRequestRef.current += 1;
-    },
-    [pathname]
-  );
+  const descriptionRetryRequestRef = useRef(0);
+  const activeRetries = useRef(new Set<string>());
   const [jobTypeFilter, setJobTypeFilter] = useState<'all' | 'translation' | 'description'>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedErrorJob, setSelectedErrorJob] = useState<UnifiedLlmJob | null>(null);
-  const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [retryingKeys, setRetryingKeys] = useState<ReadonlySet<string>>(new Set());
+  useEffect(() => {
+    const retries = activeRetries.current;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 경로가 바뀌면 이전 화면의 재시도 표시를 초기화한다.
+    setRetryingKeys(new Set());
+    return () => {
+      retryRequestRef.current += 1;
+      retries.clear();
+    };
+  }, [pathname]);
   // Description history still uses its existing growing-limit contract.
   const [visibleLimit, setVisibleLimit] = useState(100);
   const translationRequest = useRef(0);
@@ -381,14 +386,21 @@ export function LlmJobListSection() {
   }, [hasActiveJobs, jobTypeFilter, refetchAll]);
 
   const handleRetry = async (job: UnifiedLlmJob) => {
-    const request = ++retryRequestRef.current;
+    const key = `${job.jobType}:${job.id}`;
+    if (activeRetries.current.has(key)) return;
+    const request = retryRequestRef.current;
+    const descriptionRequest = job.jobType === 'description' ? ++descriptionRetryRequestRef.current : undefined;
+    const isCurrent = () =>
+      retryRequestRef.current === request &&
+      (descriptionRequest === undefined || descriptionRetryRequestRef.current === descriptionRequest);
+    activeRetries.current.add(key);
+    setRetryingKeys(new Set(activeRetries.current));
     try {
-      setRetryingId(job.id);
       if (job.jobType === 'translation') {
         await retryTranslation({
           variables: { id: job.id },
         });
-        if (retryRequestRef.current !== request) return;
+        if (!isCurrent()) return;
       } else {
         const requestId = getProductDescriptionRequestId({
           retryJobId: job.id,
@@ -397,7 +409,7 @@ export function LlmJobListSection() {
           variables: { id: job.id, requestId },
         });
         const retry = response.data?.retryProductDescriptionJob;
-        if (retryRequestRef.current !== request) return;
+        if (!isCurrent()) return;
         if (retry?.id) acknowledgeProductDescriptionRequest({ retryJobId: job.id }, requestId);
         if (!retry) throw new Error('새 소개 작업을 확인하지 못했습니다.');
         router.push(
@@ -406,20 +418,23 @@ export function LlmJobListSection() {
       }
       notifications.show({
         title: '재시도 요청 성공',
-        message: '작업이 대기열에 다시 등록되었습니다.',
+        message: `${job.jobTypeLabel} (${job.id}) 작업이 대기열에 다시 등록되었습니다.`,
         color: 'teal',
       });
       await refetchAll();
-      if (retryRequestRef.current !== request) return;
+      if (!isCurrent()) return;
     } catch (err) {
-      if (retryRequestRef.current !== request) return;
+      if (!isCurrent()) return;
       notifications.show({
         title: '재시도 요청 실패',
-        message: err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.',
+        message: `${job.jobTypeLabel} (${job.id}): ${err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.'}`,
         color: 'red',
       });
     } finally {
-      if (retryRequestRef.current === request) setRetryingId(null);
+      if (retryRequestRef.current === request) {
+        activeRetries.current.delete(key);
+        setRetryingKeys(new Set(activeRetries.current));
+      }
     }
   };
 
@@ -615,7 +630,7 @@ export function LlmJobListSection() {
               </thead>
               <tbody>
                 {jobs.map((job, index) => {
-                  const isRetrying = retryingId === job.id;
+                  const isRetrying = retryingKeys.has(`${job.jobType}:${job.id}`);
                   const hasError = Boolean(job.error);
 
                   return (
@@ -862,6 +877,7 @@ export function LlmJobListSection() {
                     variant="contained"
                     color="primary"
                     size="sm"
+                    disabled={retryingKeys.has(`${selectedErrorJob.jobType}:${selectedErrorJob.id}`)}
                     onClick={() => {
                       const job = selectedErrorJob;
                       setSelectedErrorJob(null);
