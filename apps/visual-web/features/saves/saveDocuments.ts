@@ -63,8 +63,8 @@ gql`
 `;
 
 gql`
-  query MyVisualSavedScreenshots($first: Int, $page: Int) {
-    myVisualSavedScreenshots(first: $first, page: $page) {
+  query MyVisualSavedScreenshots($first: Int, $page: Int, $after: String) {
+    myVisualSavedScreenshots(first: $first, page: $page, after: $after) {
       totalCount
       edges {
         cursor
@@ -93,8 +93,8 @@ gql`
 `;
 
 gql`
-  query MyVisualSavedFlows($first: Int, $page: Int) {
-    myVisualSavedFlows(first: $first, page: $page) {
+  query MyVisualSavedFlows($first: Int, $page: Int, $after: String) {
+    myVisualSavedFlows(first: $first, page: $page, after: $after) {
       totalCount
       edges {
         cursor

@@ -88,7 +88,10 @@ function connection(kind: 'screenshots' | 'flows', hasNextPage = false) {
       [kind === 'screenshots' ? 'myVisualSavedScreenshots' : 'myVisualSavedFlows']: {
         edges: [],
         totalCount: 0,
-        pageInfo: { hasNextPage },
+        pageInfo: {
+          hasNextPage,
+          endCursor: hasNextPage ? `${kind}-boundary` : null,
+        },
       },
     },
   };
@@ -129,7 +132,7 @@ describe('saved account state', () => {
   it('reacts to login/logout and isolates initial tab failures and pending pages', async () => {
     const shots = deferred<ReturnType<typeof connection>>();
     mocks.query.mockImplementation(({ query, variables }) => {
-      if (variables.page > 0) return Promise.reject(new Error('page failed'));
+      if (variables.after != null) return Promise.reject(new Error('page failed'));
       return query === MyVisualSavedScreenshotsDocument ? shots.promise : Promise.resolve(connection('flows', true));
     });
     const current = await mount(() => useSavesPage());
@@ -189,7 +192,7 @@ describe('saved account state', () => {
   it('keeps load-more loading and failure on their originating tab', async () => {
     const more = deferred<ReturnType<typeof connection>>();
     mocks.query.mockImplementation(({ query, variables }) =>
-      variables.page > 0
+      variables.after != null
         ? more.promise
         : Promise.resolve(connection(query === MyVisualSavedFlowsDocument ? 'flows' : 'screenshots', true))
     );
@@ -206,6 +209,77 @@ describe('saved account state', () => {
     await act(async () => current().onTabChange('screenshots'));
     expect(current()).toMatchObject({ loadingMore: false, loadMoreError: true });
   });
+  it.each(['screenshots', 'flows'] as const)(
+    '%s는 실패 재시도에도 같은 경계를 보내고 중복 카드를 합치지 않는다',
+    async kind => {
+      const card = (id: string) => ({
+        id,
+        imageUrl: '/fixture.svg',
+        imageAlt: id,
+        title: id,
+        platform: 'WEB',
+        flowType: 'SEARCH',
+        stepCount: 1,
+        coverScreenshot: { id, imageUrl: '/fixture.svg', imageAlt: id },
+        product: {
+          id: 'product',
+          name: 'Product',
+          slug: 'product',
+          logoUrl: '',
+          summary: '',
+        },
+      });
+      const field = kind === 'screenshots' ? 'myVisualSavedScreenshots' : 'myVisualSavedFlows';
+      let attempts = 0;
+      mocks.query.mockImplementation(({ query, variables }) => {
+        const target = query === MyVisualSavedScreenshotsDocument ? 'screenshots' : 'flows';
+        if (target !== kind) return Promise.resolve(connection(target));
+        if (variables.after) {
+          expect(variables.after).toBe('stable-boundary');
+          if (++attempts === 1) return Promise.reject(new Error('synthetic failure'));
+          return Promise.resolve({
+            data: {
+              [field]: {
+                totalCount: 26,
+                edges: [{ node: card('s23') }, { node: card('s24') }],
+                pageInfo: { hasNextPage: false, endCursor: 'last' },
+              },
+            },
+          });
+        }
+        return Promise.resolve({
+          data: {
+            [field]: {
+              totalCount: 25,
+              edges: Array.from({ length: 24 }, (_, i) => ({
+                node: card(`s${i}`),
+              })),
+              pageInfo: { hasNextPage: true, endCursor: 'stable-boundary' },
+            },
+          },
+        });
+      });
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const current = await mount(() => useSavesPage(kind));
+      await signIn('A');
+      const load = () => {
+        const state = current();
+        if (state.status !== 'loaded') throw new Error('loaded');
+        return state;
+      };
+      await act(async () => load().onLoadMore());
+      expect(load().loadMoreError).toBe(true);
+      await act(async () => load().retryLoadMore());
+      expect(load().loadMoreError).toBe(false);
+      expect((kind === 'screenshots' ? load().screenshotCards : load().flowCards).map(card => card.id)).toEqual(
+        Array.from({ length: 25 }, (_, i) => `s${i}`)
+      );
+      expect(load().hasNextPage).toBe(false);
+      await signIn('B');
+      expect(mocks.query.mock.calls.at(-1)?.[0].variables.after).toBeUndefined();
+    }
+  );
+
   it('uses separate real Apollo requests across account switches, including status and pagination', async () => {
     let account = 'A';
     const requests: Array<{ account: string; operation: string; page: number; respond: () => void }> = [];
@@ -220,7 +294,7 @@ describe('saved account state', () => {
             requests.push({
               account: owner,
               operation: name,
-              page: operation.variables.page ?? 0,
+              page: operation.variables.after ? 1 : 0,
               respond: () => {
                 const field =
                   name === 'VisualScreenshotSaveStatus'
@@ -237,7 +311,10 @@ describe('saved account state', () => {
                       : {
                           totalCount: owner === 'A' ? 9 : 2,
                           edges: [],
-                          pageInfo: { hasNextPage: true, endCursor: null },
+                          pageInfo: {
+                            hasNextPage: true,
+                            endCursor: `${owner}-${name}-boundary`,
+                          },
                         },
                   },
                 });

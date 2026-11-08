@@ -626,6 +626,8 @@ nullable 응답을 처리하는 웹을 먼저 배포한 뒤 API를 배포할 수
 
 계정에 화면·플로를 저장할 때는 `setVisualScreenshotSave(input: { id, saved })`와 `setVisualFlowSave(input: { id, saved })`를 사용합니다. `saved`는 원하는 최종 상태이며, 응답을 받지 못해도 같은 목표로 재시도합니다. 같은 목표의 중복 요청은 기존 저장 시각을 바꾸지 않습니다. 기존 `toggleVisual*Save`는 호환성을 위해 유지하지만 재시도마다 의도가 반전되므로 신규 소비자는 사용하지 않습니다. 두 API는 계정·대상별 같은 transaction 잠금을 사용합니다. 새 클라이언트를 배포하기 전에 두 set mutation을 제공하는 GraphQL API를 먼저 배포해야 합니다.
 
+저장함의 `myVisualSavedScreenshots`·`myVisualSavedFlows`는 `pageInfo.endCursor`를 `after`로 전달해 이어 읽습니다. 커서는 계정·종류와 저장 행의 `(created_at, id)`를 서명하며 시각의 마이크로초를 보존합니다. 앞 항목이나 경계 행을 삭제해도 경계 뒤의 살아 있는 저장이 밀리지 않으며 새 선두 저장은 처음부터 다시 조회할 때 나타납니다. 더보기 실패는 같은 커서로 재시도하고 카드 ID 중복을 방어합니다. 기존 `page` 호출은 유지하지만 `after`가 있으면 offset을 사용하지 않습니다. 새 웹보다 `after`를 제공하는 API를 먼저 배포해야 합니다. 기존 ID 전용 목록은 그대로 유지합니다.
+
 `VISUAL_SAVE_TEST_DATABASE_URL`을 격리 로컬 `darun_visual_save` DB로 지정하고 `pnpm --filter @darun/products-datasource exec vitest run src/__tests__/VisualSave.pg.test.ts`를 실행하면 병렬 목표 저장·해제, 기존 토글 직렬화, 저장 시각·목록·개수와 계정·대상별 독립성을 검증합니다. PR CI는 전용 DB와 필수 PostgreSQL reporter로 skip 없이 실행합니다.
 
 소개 생성 `generateProductDescription(input: { slug, requestId })`와 실패 작업 재시도

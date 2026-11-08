@@ -8,6 +8,7 @@ import {
   ToggleVisualFlowSave,
   ToggleVisualScreenshotSave,
   VISUAL_SAVES_MAX_FIRST,
+  type VisualSaveCursor,
 } from '@darun/products-domain';
 import type { GraphQLContext } from '@darun/utils-apollo-server';
 import { Cursor } from '@darun/utils-apollo-server';
@@ -19,6 +20,28 @@ import { VisualScreenshotConnection } from './graphs/VisualScreenshotConnection'
 import { SetVisualSaveInput } from './inputs/SetVisualSaveInput';
 import { toGraphVisualFlow } from './VisualFlow.query.resolver';
 import { toGraphVisualScreenshot } from './VisualScreenshot.query.resolver';
+
+function decodeSaveCursor(
+  after: string | null | undefined,
+  userId: string,
+  kind: string
+): VisualSaveCursor | undefined {
+  if (after == null) return undefined;
+  const decoded = Cursor.decode(after, ['userId', 'kind', 'savedAt', 'saveId'] as const);
+  if (
+    decoded.userId !== userId ||
+    decoded.kind !== kind ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}$/.test(decoded.savedAt ?? '') ||
+    !/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/.test(decoded.saveId ?? '')
+  ) {
+    throw new Error('pagination/invalid-cursor');
+  }
+  const date = new Date(decoded.savedAt.slice(0, 23) + 'Z');
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 23) !== decoded.savedAt.slice(0, 23)) {
+    throw new Error('pagination/invalid-cursor');
+  }
+  return { savedAt: decoded.savedAt, saveId: decoded.saveId };
+}
 
 /**
  * M3 저장 토글·조회. AUTH_POLICY 패턴 4(Public + optional auth가 아니라
@@ -135,25 +158,32 @@ export class VisualSaveMutationResolver {
 
   /**
    * M4 내 저장 화면 카드 목록. 로그인 필수, 저장 시각 내림차순.
-   * first 상한(VISUAL_SAVES_MAX_FIRST), page 0-based 오프셋, 디폴트 LATEST 유지.
+   * first 상한(VISUAL_SAVES_MAX_FIRST), after 저장 경계 또는 기존 page 오프셋.
    */
   @Query(() => VisualScreenshotConnection)
   async myVisualSavedScreenshots(
     @Arg('first', () => Int, { nullable: true }) first: number | null,
     @Arg('page', () => Int, { nullable: true }) page: number | null,
-    @Ctx() ctx: GraphQLContext
+    @Ctx() ctx: GraphQLContext,
+    @Arg('after', () => String, { nullable: true }) after?: string | null
   ): Promise<VisualScreenshotConnection> {
     const userId = await ctx.getUserIdOrThrow();
     const { screenshots, totalCount, hasNextPage } = await this.getMyVisualSavedScreenshotsUseCase.execute({
       userId,
       first: first ?? VISUAL_SAVES_MAX_FIRST,
       page: page ?? 0,
+      after: decodeSaveCursor(after, userId, 'screenshot'),
     });
     const edges = screenshots.map(node => {
       const screenshot = toGraphVisualScreenshot(node);
       return {
         node: screenshot,
-        cursor: Cursor.encode(screenshot, ['id'] as const),
+        cursor: Cursor.encode({ ...node.saveCursor, userId, kind: 'screenshot' }, [
+          'savedAt',
+          'saveId',
+          'userId',
+          'kind',
+        ]),
       };
     });
     return {
@@ -161,7 +191,7 @@ export class VisualSaveMutationResolver {
       edges,
       pageInfo: {
         hasNextPage,
-        hasPreviousPage: (page ?? 0) > 0,
+        hasPreviousPage: after != null || (page ?? 0) > 0,
         startCursor: edges[0]?.cursor,
         endCursor: edges[edges.length - 1]?.cursor,
       },
@@ -175,24 +205,29 @@ export class VisualSaveMutationResolver {
   async myVisualSavedFlows(
     @Arg('first', () => Int, { nullable: true }) first: number | null,
     @Arg('page', () => Int, { nullable: true }) page: number | null,
-    @Ctx() ctx: GraphQLContext
+    @Ctx() ctx: GraphQLContext,
+    @Arg('after', () => String, { nullable: true }) after?: string | null
   ): Promise<VisualFlowConnection> {
     const userId = await ctx.getUserIdOrThrow();
     const { flows, totalCount, hasNextPage } = await this.getMyVisualSavedFlowsUseCase.execute({
       userId,
       first: first ?? VISUAL_SAVES_MAX_FIRST,
       page: page ?? 0,
+      after: decodeSaveCursor(after, userId, 'flow'),
     });
     const edges = flows.map(node => {
       const flow = toGraphVisualFlow(node);
-      return { node: flow, cursor: Cursor.encode(flow, ['id'] as const) };
+      return {
+        node: flow,
+        cursor: Cursor.encode({ ...node.saveCursor, userId, kind: 'flow' }, ['savedAt', 'saveId', 'userId', 'kind']),
+      };
     });
     return {
       totalCount,
       edges,
       pageInfo: {
         hasNextPage,
-        hasPreviousPage: (page ?? 0) > 0,
+        hasPreviousPage: after != null || (page ?? 0) > 0,
         startCursor: edges[0]?.cursor,
         endCursor: edges[edges.length - 1]?.cursor,
       },
