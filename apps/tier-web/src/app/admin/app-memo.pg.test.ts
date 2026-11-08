@@ -1,6 +1,5 @@
 import { MemoCard } from '@/components/MemoCard';
-import { assertLocalPostgrestFixture } from '@/test-utils/postgrest-fixture';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createTierPostgrestFixture } from '@/test-utils/postgrest-fixture';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate as migrateDrizzle } from 'drizzle-orm/postgres-js/migrator';
@@ -24,69 +23,24 @@ vi.mock('./AdminSearchInput', () => ({ AdminSearchInput: () => null }));
 vi.mock('./AppStoreScrapeForm', () => ({ AppStoreScrapeForm: () => null }));
 vi.mock('./TierSelect', () => ({ TierSelect: () => null }));
 
-assertLocalPostgrestFixture(databaseUrl, restUrl, 'darun_memo_integrity');
-
 describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', () => {
-  const sql = postgres(databaseUrl!, {
-    max: 1,
-    onnotice: () => {},
-    connection: { statement_timeout: 5000 },
-  });
   const appId = '00000000-0000-0000-0000-000000000463';
-  let ownsTables = false;
   let ownsJournalSchema = false;
   let synchronizeReads = false;
   let releaseReads: (() => void) | undefined;
   let reads = 0;
   let readBarrier: Promise<void>;
 
-  async function migrate() {
-    const journal = JSON.parse(await readFile(new URL('../../../drizzle/meta/_journal.json', import.meta.url), 'utf8'));
-    for (const { tag } of journal.entries) {
-      const migration = await readFile(new URL(`../../../drizzle/${tag}.sql`, import.meta.url), 'utf8');
-      await sql.begin(transaction => transaction.unsafe(migration));
+  const database = createTierPostgrestFixture(databaseUrl, restUrl, 'darun_memo_integrity', async method => {
+    if (synchronizeReads && method === 'GET') {
+      if (++reads === 2) releaseReads?.();
+      await readBarrier;
     }
-  }
-
+  });
+  const { sql } = database;
   beforeAll(async () => {
-    const [existing] = await sql`select count(*)::integer as count from information_schema.tables
-      where table_schema = 'public'`;
-    if (existing.count !== 0) throw new Error('Memo tests require an empty dedicated database');
-    ownsTables = true;
-    await migrate();
-    await sql`notify pgrst, 'reload schema'`;
-    const deadline = Date.now() + 5000;
-    while (true) {
-      const response = await fetch(`${restUrl}/memos?select=id`, {
-        signal: AbortSignal.timeout(1000),
-      });
-      if (response.ok) break;
-      if (Date.now() >= deadline) throw new Error(`PostgREST fixture not ready: ${response.status}`);
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-    fixture.client = createSupabaseClient(restUrl!, 'memo-fixture-only', {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: {
-        fetch: async (input, init) => {
-          // The disposable PostgREST fixture has no Supabase gateway or authentication.
-          const url = new URL(String(input));
-          url.pathname = url.pathname.replace(/^\/rest\/v1/, '');
-          const headers = new Headers(init?.headers);
-          headers.delete('authorization');
-          headers.delete('apikey');
-          const response = await fetch(url, {
-            ...init,
-            headers,
-            signal: AbortSignal.timeout(5000),
-          });
-          if (synchronizeReads && (init?.method ?? 'GET') === 'GET') {
-            if (++reads === 2) releaseReads?.();
-            await readBarrier;
-          }
-          return response;
-        },
-      },
-    });
+    await database.prepare();
+    fixture.client = database.client;
   });
 
   beforeEach(async () => {
@@ -107,9 +61,8 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
     releaseReads?.();
     try {
       if (ownsJournalSchema) await sql`drop schema memo_test_migrations cascade`;
-      if (ownsTables) await sql`drop table public.memos, public.tiers, public.apps, public.users cascade`;
     } finally {
-      await sql.end();
+      await database.close();
     }
   });
 
@@ -156,7 +109,7 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
   });
 
   it('carries the actual apps memo embed into the editor after reload, edit and deletion', async () => {
-    const client = fixture.client as ReturnType<typeof createSupabaseClient>;
+    const client = database.client;
     const editorValue = async () => {
       const markup = renderToStaticMarkup(await AdminPage({ searchParams: Promise.resolve({}) }));
       return markup.match(/<textarea\b[^>]*>([\s\S]*?)<\/textarea>/)?.[1];

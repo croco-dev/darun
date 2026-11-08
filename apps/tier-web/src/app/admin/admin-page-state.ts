@@ -35,7 +35,7 @@ export function normalizeAdminPageState(searchParams: AdminPageSearchParams): Ad
 
   return {
     query: normalizedQuery,
-    page: Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1,
+    page: parsedPage > 0 ? Math.min(parsedPage, Math.floor(Number.MAX_SAFE_INTEGER / ADMIN_PAGE_SIZE)) : 1,
     pageSize: ADMIN_PAGE_SIZE,
   };
 }

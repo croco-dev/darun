@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
   type AdminPageSearchParams,
+  type AdminPageState,
   buildAdminPageHref,
   escapeAdminSearchQuery,
   getAdminPageRange,
@@ -34,6 +35,21 @@ interface AdminAppRecord {
 
 interface AdminPageProps {
   searchParams: Promise<AdminPageSearchParams>;
+}
+
+async function redirectIfPageOutOfRange(supabase: Awaited<ReturnType<typeof createClient>>, pageState: AdminPageState) {
+  let query = supabase.from('apps').select('id', { count: 'exact', head: true });
+  if (pageState.query) {
+    query = query.ilike('name', `%${escapeAdminSearchQuery(pageState.query)}%`);
+  }
+  const { count, error } = await query;
+  if (error) throw new Error(error.message);
+  if (count === null) return;
+
+  const pagination = getAdminPaginationMeta(count, pageState.page, pageState.pageSize);
+  if (pageState.page > pagination.totalPages) {
+    redirect(buildAdminPageHref({ query: pageState.query, page: pagination.totalPages }));
+  }
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
@@ -66,6 +82,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     .overrideTypes<AdminAppRecord[], { merge: false }>();
 
   if (error) {
+    if (error.code === 'PGRST103' && pageState.page > 1) {
+      await redirectIfPageOutOfRange(supabase, pageState);
+    }
     throw new Error(error.message);
   }
 
