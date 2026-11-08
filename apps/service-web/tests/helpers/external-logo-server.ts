@@ -60,6 +60,11 @@ const job = {
   },
 };
 createServer(async (request, response) => {
+  if (request.url?.split('?')[0] === '/monitoring') {
+    request.resume();
+    response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
+    return;
+  }
   const origin = request.headers.origin;
   if (origin === 'http://localhost:16481' || origin === 'http://localhost:16482') {
     response.setHeader('Access-Control-Allow-Origin', origin);

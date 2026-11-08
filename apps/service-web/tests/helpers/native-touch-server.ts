@@ -42,6 +42,11 @@ const nativeTouchProduct = {
 
 // Both SSR and browser reads use this loopback-only fixture. No database or external API is involved.
 createServer((request, response) => {
+  if (request.url?.split('?')[0] === '/monitoring') {
+    request.resume();
+    response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
+    return;
+  }
   response.setHeader('Access-Control-Allow-Origin', 'http://localhost:16471');
   response.setHeader('Access-Control-Allow-Headers', 'content-type');
   if (request.method === 'OPTIONS') {

@@ -1,4 +1,4 @@
-// This file configures the initialization of Sentry on the client.
+// Next.js runs this file before client hydration, including Turbopack builds.
 // The config you add here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
@@ -11,7 +11,7 @@ Sentry.init({
   integrations: [Sentry.replayIntegration()],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 0.1, // 운영 비용 절감을 위해 10%로 조정
+  tracesSampleRate: 1,
 
   // Define how likely Replay events are sampled.
   // This sets the sample rate to be 10%. You may want this to be 100% while

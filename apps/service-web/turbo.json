@@ -17,7 +17,11 @@
       ]
     },
     "test": {
-      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/visual-web/vercel.json"]
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/visual-web/vercel.json",
+        "$TURBO_ROOT$/scripts/vitest/sentry-initialization.test.mjs"
+      ]
     },
     "dev": {
       "env": [

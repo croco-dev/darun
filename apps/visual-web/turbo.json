@@ -12,6 +12,9 @@
         "CI"
       ]
     },
+    "test": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/scripts/vitest/sentry-initialization.test.mjs"]
+    },
     "dev": {
       "env": ["GRAPHQL_INTERNAL_URL", "ENABLE_EXPERIMENTAL_REACT_COMPILER"],
       "passThroughEnv": [
