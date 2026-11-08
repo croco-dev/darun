@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 
 const initialState = {
   error: '',
@@ -14,6 +14,7 @@ const initialState = {
 };
 
 export default function SignUpPage() {
+  const [email, setEmail] = useState('');
   const [state, formAction, isPending] = useActionState(signup, initialState);
 
   return (
@@ -36,7 +37,15 @@ export default function SignUpPage() {
             <form action={formAction} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">이메일</Label>
-                <Input id="email" name="email" type="email" autoComplete="email" required />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={event => setEmail(event.target.value)}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">비밀번호</Label>
