@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, Calendar, Compass, ShieldCheck, formatDate } from '@darun/ui';
+import { Building2, Calendar, Compass, ShieldCheck, formatCalendarDate } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedCompanyAddress, getLocalizedCompanyType } from '../../utils/localization';
@@ -72,7 +72,7 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
               </div>
               <dd className="min-w-0 flex-1 text-right text-sm font-bold text-dark-900 break-words [word-break:keep-all]">
                 <time dateTime={new Date(company.startAt).toISOString()} className="tabular-nums">
-                  {formatDate(company.startAt, '-', locale)}
+                  {formatCalendarDate(company.startAt, '-', locale)}
                 </time>
               </dd>
             </div>
