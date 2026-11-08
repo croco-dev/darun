@@ -90,7 +90,7 @@ describe('Image alternative text translation', () => {
   it.each([
     [
       '<img src="a.png" alt="편집 &quot;화면&quot;\n다음 &amp; 단계">',
-      '<img src="a.png" alt="Editor &quot;screen&quot;\nNext &amp; step">',
+      '<img src="a.png" alt="Editor &quot;screen&quot;&#10;Next &amp; step">',
     ],
     ['![편집 \\[화면\\] &amp; 단계](a.png)', '![Editor \\[screen\\] &amp; step](a.png)'],
   ])('원문의 entity·escape·줄바꿈을 유지하며 alt 본문을 번역한다: %s', (source, expected) => {
@@ -114,6 +114,57 @@ describe('Image alternative text translation', () => {
       expect(() => decodeHtml(encoded.encodedText.replace('화면', ''), encoded)).toThrow(/omitted image/);
     }
   );
+
+  it.each(['<img src="a.png" alt="화면">', '<img src="a.png" alt=화면>', '![화면](a.png)'])(
+    '공백으로만 대체한 alt도 거절한다: %s',
+    source => {
+      const encoded = encodeHtml(source);
+      expect(() => decodeHtml(encoded.encodedText.replace('화면', ' \n\t'), encoded)).toThrow(/omitted image/);
+    }
+  );
+
+  it.each([
+    ['&copy 한국어', '© Korean'],
+    ['&#169 한국어', '© Korean'],
+    ['&#xA9 한국어', '© Korean'],
+    ['&#54620 한국어', 'Hangul Korean'],
+    ['&amp;copy 한국어', '&copy Korean'],
+  ])('세미콜론 없는 HTML entity와 literal entity의 의미를 보존한다: %s', (alt, expected) => {
+    const source = `<img src="a.png" alt="${alt}">`;
+    const encoded = encodeHtml(source);
+    const english = decodeHtml(encoded.encodedText.replace('한국어', 'Korean').replace('한', 'Hangul'), encoded);
+    expect(parseFragment(english).childNodes[0]).toMatchObject({
+      attrs: [
+        { name: 'src', value: 'a.png' },
+        { name: 'alt', value: expected },
+      ],
+    });
+    expect(() => assertDocumentStructure(source, english)).not.toThrow();
+  });
+
+  it('기존 img·URL 토큰을 새 태그로 조합해도 공개 HTML 해석에서 이미지를 주입하지 못한다', () => {
+    const source = '![화면 img https://attacker.example/pixel](https://example.com/original.png)';
+    const encoded = encodeHtml(source);
+    const img = [...encoded.placeholders].find(([, value]) => value === 'img')![0];
+    const url = [...encoded.placeholders].find(([, value]) => value === 'https://attacker.example/pixel')![0];
+    const candidate = encoded.encodedText.replace('화면 ', '<').replace(`${img} ${url}`, `${img} src=${url}>`);
+    const english = decodeHtml(candidate, encoded);
+    expect(() => assertDocumentStructure(source, english)).not.toThrow();
+    expect(parseFragment(english).childNodes.every(node => node.nodeName === '#text')).toBe(true);
+    expect(unified().use(remarkParse).parse(english)).toMatchObject({
+      children: [
+        {
+          children: [
+            {
+              type: 'image',
+              url: 'https://example.com/original.png',
+              alt: '<img src=https://attacker.example/pixel>',
+            },
+          ],
+        },
+      ],
+    });
+  });
 
   it.each([
     ['<img src="a.png" alt="화면">', '<img src="b.png" alt="Screen">'],

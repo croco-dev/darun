@@ -16,7 +16,7 @@ interface MarkdownNode {
   [key: string]: unknown;
 }
 type Span = { start: number; end: number };
-type EditableSpan = Span & { format?: 'html' | 'markdown'; unquoted?: boolean };
+type EditableSpan = Span & { format?: 'html' | 'markdown'; unquoted?: boolean; text?: string };
 const markdown = unified().use(remarkParse);
 
 function protectedHtmlRanges(source: string, document: MarkdownNode): Span[] {
@@ -101,7 +101,8 @@ function editableSpans(source: string): EditableSpan[] {
           const quoted = raw[valueStart] === '"' || raw[valueStart] === "'";
           const start = offset + attribute.startOffset + valueStart + (quoted ? 1 : 0);
           const end = offset + attribute.endOffset - (quoted ? 1 : 0);
-          if (source.slice(start, end).trim()) spans.push({ start, end, format: 'html', unquoted: !quoted });
+          const text = 'attrs' in node ? node.attrs.find(attr => attr.name === 'alt')?.value : undefined;
+          if (text?.trim()) spans.push({ start, end, format: 'html', unquoted: !quoted, text });
         }
       }
       if ('childNodes' in node) for (const child of node.childNodes) walk(child, protectedNode);
@@ -126,7 +127,8 @@ function editableSpans(source: string): EditableSpan[] {
         if (source[index] === '\\') index++;
         else if (source[index] === '[') depth++;
         else if (source[index] === ']' && --depth === 0) {
-          if (source.slice(start + 2, index).trim()) spans.push({ start: start + 2, end: index, format: 'markdown' });
+          if (typeof node['alt'] === 'string' && node['alt'].trim())
+            spans.push({ start: start + 2, end: index, format: 'markdown', text: node['alt'] });
           break;
         }
       }
@@ -165,7 +167,7 @@ export function encodeHtml(source: string): HtmlCodecResult {
     encodedText += protect(source.slice(cursor, span.start));
     const start = span.format ? protect(span.unquoted ? '"' : '', true) : '';
     encodedText += start;
-    encodedText += source.slice(span.start, span.end).replace(immutable, value => protect(value));
+    encodedText += (span.text ?? source.slice(span.start, span.end)).replace(immutable, value => protect(value));
     if (span.format) {
       const end = protect(span.unquoted ? '"' : '', true);
       encodedText += end;
@@ -177,19 +179,13 @@ export function encodeHtml(source: string): HtmlCodecResult {
   return { encodedText, placeholders, tokenOrder, altSlots };
 }
 
-function escapeAlternativeText(text: string, format: 'html' | 'markdown' | null): string {
-  if (!format) return text;
-  text = text.replace(/&/g, '&amp;');
+function escapeAlternativeText(text: string, format: 'html' | 'markdown'): string {
+  // Both document forms ultimately reach an HTML renderer. Markdown backslashes alone do not protect tags there.
+  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   if (format === 'html')
-    return text
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\r/g, '&#13;')
-      .replace(/\n/g, '&#10;');
+    return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\r/g, '&#13;').replace(/\n/g, '&#10;');
   return text
-    .replace(/[\\`*_[\]{}()#+.!<>-]/g, '\\$&')
+    .replace(/[\\`*_[\]{}()#+.!-]/g, '\\$&')
     .replace(/\r/g, '&#13;')
     .replace(/\n/g, '&#10;');
 }
@@ -213,22 +209,27 @@ export function decodeHtml(encodedText: string, encoded: HtmlCodecResult): strin
     boundaries.set(slot.end, null);
   }
   let format: 'html' | 'markdown' | null = null;
-  let altStart = 0;
+  let alternativeText = '';
   let cursor = 0;
   let decoded = '';
   for (const match of encodedText.matchAll(new RegExp(`⟦HTML_${nonce}_[^⟧]*⟧`, 'g'))) {
-    decoded += escapeAlternativeText(encodedText.slice(cursor, match.index), format);
+    const text = encodedText.slice(cursor, match.index);
+    if (format) alternativeText += text;
+    else decoded += text;
     const token = match[0];
-    // Immutable source bytes (including entities/escapes) bypass escaping; only model text is escaped.
     if (boundaries.has(token)) {
-      if (format && !decoded.slice(altStart).trim()) throw new Error('Translation omitted image alternative text');
+      if (format) {
+        if (!alternativeText.trim()) throw new Error('Translation omitted image alternative text');
+        decoded += escapeAlternativeText(alternativeText, format);
+        alternativeText = '';
+      }
       format = boundaries.get(token)!;
-      altStart = decoded.length + placeholders.get(token)!.length;
-    }
-    decoded += placeholders.get(token)!;
+      decoded += placeholders.get(token)!;
+    } else if (format) alternativeText += placeholders.get(token)!;
+    else decoded += placeholders.get(token)!;
     cursor = match.index! + token.length;
   }
-  return decoded + escapeAlternativeText(encodedText.slice(cursor), format);
+  return decoded + encodedText.slice(cursor);
 }
 
 /** Compare parser structure, not translated words, so newly introduced Markdown cannot alter lists/quotes/links. */
@@ -261,10 +262,20 @@ export function assertDocumentStructure(source: string, translated: string): voi
       ...(children ? { children: children.map(structure) } : {}),
     };
   };
-  if (
-    JSON.stringify(structure(markdown.parse(explicitLinkReferences(source)) as MarkdownNode)) !==
-    JSON.stringify(structure(markdown.parse(explicitLinkReferences(translated)) as MarkdownNode))
-  ) {
+  const documentStructure = (document: string) => {
+    document = explicitLinkReferences(document);
+    // Physical newlines in an HTML attribute can change CommonMark block classification.
+    // Compare both documents with only editable alt values masked, preserving all other syntax.
+    let cursor = 0;
+    let masked = '';
+    for (const span of editableSpans(document)) {
+      if (span.format !== 'html') continue;
+      masked += document.slice(cursor, span.start) + (span.unquoted ? '"alt"' : 'alt');
+      cursor = span.end;
+    }
+    return structure(markdown.parse(masked + document.slice(cursor)) as MarkdownNode);
+  };
+  if (JSON.stringify(documentStructure(source)) !== JSON.stringify(documentStructure(translated))) {
     throw new Error('Translation changed Markdown structure');
   }
 }
