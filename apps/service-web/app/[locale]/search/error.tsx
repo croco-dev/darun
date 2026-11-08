@@ -1,14 +1,47 @@
 'use client';
 
+import { useApolloClient } from '@apollo/client/react';
+import { normalizeSearchQuery } from '@darun/pages-shell';
 import { AlertCircle, Button, Search } from '@darun/ui';
 import * as Sentry from '@sentry/nextjs';
-import { useParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from '../../../i18n/navigation';
 
-export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function ErrorPage({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const client = useApolloClient();
+  const inFlight = useRef(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const isKo = params?.locale === 'ko';
+  const locale = isKo ? 'ko' : 'en';
+  const query = normalizeSearchQuery(searchParams?.getAll('query'));
+
+  const retrySearch = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setIsRetrying(true);
+    // Resetting the boundary alone reuses Apollo's rejected suspense promise.
+    const failedQueries = [...client.getObservableQueries('all')].filter(observable => {
+      if (
+        ![
+          'SearchProductsOnSearchProductList',
+          'CompactCategoriesForSearchProductList',
+          'CompactTrendingPreviewForSearchProductList',
+        ].includes(observable.queryName ?? '')
+      )
+        return false;
+      if (observable.variables.locale !== locale) return false;
+      if ('query' in observable.variables && observable.variables.query !== query) return false;
+      return !!observable.getCurrentResult().error;
+    });
+    await Promise.allSettled(failedQueries.map(observable => observable.refetch()));
+    inFlight.current = false;
+    setIsRetrying(false);
+    // Next also re-fetches server components; a failed read returns to this fallback.
+    retry();
+  };
 
   useEffect(() => {
     Sentry.captureException(error);
@@ -42,7 +75,9 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
           <Button
-            onClick={() => reset()}
+            onClick={retrySearch}
+            disabled={isRetrying}
+            aria-busy={isRetrying}
             variant="shadow"
             color="primary"
             size="md"
