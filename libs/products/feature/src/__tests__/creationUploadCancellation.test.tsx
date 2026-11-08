@@ -37,9 +37,10 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function fixture(holdWrites = false) {
+function fixture(holdWrites = false, failures = 0) {
   const operations: string[] = [];
   const savedScreenshotInputs: Record<string, unknown>[] = [];
+  const writeUrls: string[] = [];
   const completeWrites: (() => void)[] = [];
   const client = new ApolloClient({
     cache: new InMemoryCache(),
@@ -48,6 +49,13 @@ function fixture(holdWrites = false) {
         new Observable(observer => {
           operations.push(operation.operationName ?? '');
           const complete = () => {
+            if (operation.operationName !== 'GetProductScreenshotsOnDetailSection') {
+              writeUrls.push(operation.variables.input.logoUrl ?? operation.variables.input.imageUrl);
+              if (failures-- > 0) {
+                observer.error(new Error('생성 실패 fixture'));
+                return;
+              }
+            }
             if (operation.operationName === 'AddProductScreenshotOnNewProductScreenshotForm') {
               normalizeScreenshotImageAlt(operation.variables.input.imageAlt);
               savedScreenshotInputs.push(operation.variables.input);
@@ -80,6 +88,7 @@ function fixture(holdWrites = false) {
   return {
     operations,
     savedScreenshotInputs,
+    writeUrls,
     completeWrites,
     wrapper: ({ children }: { children: React.ReactNode }) => (
       <ApolloProvider client={client}>{children}</ApolloProvider>
@@ -89,7 +98,12 @@ function fixture(holdWrites = false) {
 
 const file = new File(['image'], 'upload.png', { type: 'image/png' });
 const props = { productSlug: 'parent-app', children: () => null };
-const productValues = { name: '앱 A', slug: 'app-a', summary: '작성한 요약', file };
+const productValues = {
+  name: '앱 A',
+  slug: 'app-a',
+  summary: '작성한 요약',
+  file,
+};
 const screenshotValues = { imageAlt: '검색 화면', file };
 const cases = [
   {
@@ -113,6 +127,92 @@ const cases = [
 ];
 
 describe.each(cases)('$name upload lifetime', c => {
+  it('생성 실패 뒤 같은 파일을 재전송하지 않고 성공 뒤에는 완료 URL을 초기화한다', async () => {
+    upload
+      .mockResolvedValueOnce('https://fixture.invalid/first.png')
+      .mockResolvedValueOnce('https://fixture.invalid/new.png');
+    const f = fixture(false, 1);
+    const { result } = renderHook(c.useForm, { wrapper: f.wrapper });
+    act(() => result.current.fill());
+    await act(async () => {
+      await result.current.submit(c.values);
+    });
+    expect(result.current.form.getValues()).toMatchObject(c.values);
+    expect(result.current.loading).toBe(false);
+    await act(async () => {
+      await result.current.submit(c.values);
+    });
+    expect(upload).toHaveBeenCalledOnce();
+    expect(f.writeUrls).toEqual(['https://fixture.invalid/first.png', 'https://fixture.invalid/first.png']);
+    act(() => result.current.fill());
+    await act(async () => {
+      await result.current.submit(c.values);
+    });
+    expect(upload).toHaveBeenCalledTimes(2);
+    expect(f.writeUrls[2]).toBe('https://fixture.invalid/new.png');
+  });
+
+  it('URL 없는 업로드 실패 뒤에는 입력을 유지하고 다시 업로드한다', async () => {
+    upload.mockResolvedValueOnce(undefined).mockResolvedValueOnce('https://fixture.invalid/retry.png');
+    const f = fixture();
+    const { result } = renderHook(c.useForm, { wrapper: f.wrapper });
+    act(() => result.current.fill());
+    await act(async () => {
+      await result.current.submit(c.values);
+    });
+    expect(f.writeUrls).toEqual([]);
+    expect(result.current.loading).toBe(false);
+    expect(result.current.form.getValues()).toMatchObject(c.values);
+    await act(async () => {
+      await result.current.submit(c.values);
+    });
+    expect(upload).toHaveBeenCalledTimes(2);
+    expect(f.writeUrls).toEqual(['https://fixture.invalid/retry.png']);
+  });
+
+  it('파일을 바꿨다가 같은 파일로 돌아와도 이전 완료 URL을 재사용하지 않는다', async () => {
+    upload
+      .mockResolvedValueOnce('https://fixture.invalid/first.png')
+      .mockResolvedValueOnce('https://fixture.invalid/second.png');
+    const f = fixture(false, 1);
+    const { result } = renderHook(c.useForm, { wrapper: f.wrapper });
+    act(() => result.current.fill());
+    await act(async () => {
+      await result.current.submit(c.values);
+    });
+    act(() => result.current.form.setFieldValue('file', new File(['other'], 'other.png')));
+    act(() => result.current.fill());
+    await act(async () => {
+      await result.current.submit(c.values);
+    });
+    expect(upload).toHaveBeenCalledTimes(2);
+    expect(f.writeUrls).toEqual(['https://fixture.invalid/first.png', 'https://fixture.invalid/second.png']);
+  });
+
+  it('업로드 중 파일을 바꾸면 늦은 완료 URL로 생성하지 않고 새 파일을 전송한다', async () => {
+    const pending = deferred<string>();
+    upload.mockReturnValueOnce(pending.promise).mockResolvedValueOnce('https://fixture.invalid/second.png');
+    const f = fixture();
+    const { result } = renderHook(c.useForm, { wrapper: f.wrapper });
+    act(() => result.current.fill());
+    let submitted: Promise<void>;
+    act(() => {
+      submitted = result.current.submit(c.values);
+    });
+    const other = new File(['other'], 'other.png');
+    act(() => result.current.form.setFieldValue('file', other));
+    await act(async () => {
+      pending.resolve('https://fixture.invalid/stale.png');
+      await submitted;
+    });
+    expect(f.writeUrls).toEqual([]);
+    await act(async () => {
+      await result.current.submit({ ...c.values, file: other });
+    });
+    expect(upload.mock.calls[1][1]).toBe(other);
+    expect(f.writeUrls).toEqual(['https://fixture.invalid/second.png']);
+  });
+
   it('does not save or navigate when an upload completes after unmount', async () => {
     const pending = deferred<string>();
     upload.mockReturnValue(pending.promise);
@@ -312,4 +412,51 @@ it('alt가 유효해도 제목과 분류의 기존 필드 검증을 유지한다
   expect(result.current.form.errors.platform).toBeTruthy();
   expect(result.current.form.errors.screenType).toBeTruthy();
   expect(saved).toEqual([]);
+});
+
+it('스크린샷 대상 폴더가 바뀌면 완료 업로드를 재사용하지 않는다', async () => {
+  upload
+    .mockResolvedValueOnce('https://fixture.invalid/old-folder.png')
+    .mockResolvedValueOnce('https://fixture.invalid/new-folder.png');
+  const f = fixture(false, 1);
+  const { result, rerender } = renderHook(({ productSlug }) => useNewProductScreenshotForm({ ...props, productSlug }), {
+    initialProps: { productSlug: 'first' },
+    wrapper: f.wrapper,
+  });
+  act(() => result.current.form.setValues(screenshotValues));
+  await act(async () => {
+    await result.current.submit(screenshotValues);
+  });
+  rerender({ productSlug: 'second' });
+  await act(async () => {
+    await result.current.submit(screenshotValues);
+  });
+  expect(upload.mock.calls.map(call => call[0])).toEqual(['images/screenshots/first', 'images/screenshots/second']);
+  expect(f.writeUrls).toEqual(['https://fixture.invalid/old-folder.png', 'https://fixture.invalid/new-folder.png']);
+});
+
+it('스크린샷 대상 변경 전의 지연 업로드는 생성하거나 재사용하지 않는다', async () => {
+  const pending = deferred<string>();
+  upload.mockReturnValueOnce(pending.promise).mockResolvedValueOnce('https://fixture.invalid/current.png');
+  const f = fixture();
+  const { result, rerender } = renderHook(({ productSlug }) => useNewProductScreenshotForm({ ...props, productSlug }), {
+    initialProps: { productSlug: 'first' },
+    wrapper: f.wrapper,
+  });
+  act(() => result.current.form.setValues(screenshotValues));
+  let submitted: Promise<void>;
+  act(() => {
+    submitted = result.current.submit(screenshotValues);
+  });
+  rerender({ productSlug: 'second' });
+  await act(async () => {
+    pending.resolve('https://fixture.invalid/stale.png');
+    await submitted;
+  });
+  expect(f.writeUrls).toEqual([]);
+  await act(async () => {
+    await result.current.submit(screenshotValues);
+  });
+  expect(upload.mock.calls[1][0]).toBe('images/screenshots/second');
+  expect(f.writeUrls).toEqual(['https://fixture.invalid/current.png']);
 });

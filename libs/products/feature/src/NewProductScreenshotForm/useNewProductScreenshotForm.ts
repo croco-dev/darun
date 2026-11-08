@@ -11,7 +11,7 @@ import { useImageUpload } from '@darun/utils-image-upload';
 import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
 gql`
   mutation AddProductScreenshotOnNewProductScreenshotForm($slug: String!, $input: AddProductScreenshotInput!) {
@@ -66,11 +66,26 @@ function validateImageAlt(value: string | undefined) {
 }
 
 export function useNewProductScreenshotForm({ productSlug, children }: NewProductFormProps) {
-  const navigate = useNavigate();
-  const client = useApolloClient();
   const isSubmittingRef = useRef(false);
   const mounted = useRef(true);
   const activeUpload = useRef<AbortController | null>(null);
+  const completedUpload = useRef<{ file: File; folder: string; url: string } | null>(null);
+  const selectedFile = useRef<File | undefined>(undefined);
+  const [isUploading, setIsUploading] = useState(false);
+  const cancelUpload = useCallback(() => {
+    const controller = activeUpload.current;
+    if (!controller) return;
+    activeUpload.current = null;
+    controller.abort();
+    isSubmittingRef.current = false;
+    setIsUploading(false);
+  }, []);
+  const navigate = useNavigate();
+  const client = useApolloClient();
+  useEffect(() => {
+    completedUpload.current = null;
+    cancelUpload();
+  }, [productSlug, cancelUpload]);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -79,9 +94,15 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
       activeUpload.current = null;
     };
   }, []);
-  const [isUploading, setIsUploading] = useState(false);
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
+    onValuesChange: values => {
+      if (values.file !== selectedFile.current) {
+        selectedFile.current = values.file;
+        completedUpload.current = null;
+        cancelUpload();
+      }
+    },
     initialValues: {
       file: undefined,
       imageAlt: '',
@@ -111,6 +132,8 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
               fetchPolicy: 'network-only',
             })
           );
+          completedUpload.current = null;
+          isSubmittingRef.current = false;
           form.reset();
           navigate(`/products/${encodeURIComponent(productSlug)}`);
         }
@@ -122,15 +145,6 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
       },
     }
   );
-
-  const cancelUpload = () => {
-    const controller = activeUpload.current;
-    if (!controller) return;
-    activeUpload.current = null;
-    controller.abort();
-    isSubmittingRef.current = false;
-    setIsUploading(false);
-  };
 
   const submit = async (values: FormValues) => {
     if (!mounted.current || isUploading || isAdding || isSubmittingRef.current) return;
@@ -150,10 +164,16 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     isSubmittingRef.current = true;
     const controller = new AbortController();
     activeUpload.current = controller;
-    let url: string | undefined;
+    const folder = `images/screenshots/${productSlug}`;
+    let url =
+      completedUpload.current?.file === values.file && completedUpload.current.folder === folder
+        ? completedUpload.current.url
+        : undefined;
     try {
-      setIsUploading(true);
-      url = await upload(`images/screenshots/${productSlug}`, values.file, values.file.name, controller.signal);
+      if (!url) {
+        setIsUploading(true);
+        url = await upload(folder, values.file, values.file.name, controller.signal);
+      }
     } catch {
       if (!mounted.current || activeUpload.current !== controller || controller.signal.aborted) return;
       activeUpload.current = null;
@@ -176,6 +196,8 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
       isSubmittingRef.current = false;
       return;
     }
+
+    completedUpload.current = { file: values.file, folder, url };
 
     try {
       await addProductScreenshot({
