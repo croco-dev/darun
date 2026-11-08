@@ -84,12 +84,19 @@ export function useIndexProductButton({ slug }: { slug: string }) {
   const intentId = request?.slug === slug ? request.intentId : undefined;
   const [indexProductMutation, { loading: registering }] = useMutation(IndexProductOnIndexProductButtonDocument);
   const [retrySyncMutation, { loading: retrying }] = useMutation(RetryProductContentSyncOnIndexProductButtonDocument);
-  const { data, error, refetch } = useQuery(ProductContentSyncStatusOnIndexProductButtonDocument, {
+  const {
+    data,
+    error,
+    refetch,
+    loading: lookingUp,
+  } = useQuery(ProductContentSyncStatusOnIndexProductButtonDocument, {
     variables: { slug },
     fetchPolicy: 'network-only',
     // A new reservation must not share a lookup started by an older request.
     context: { queryDeduplication: false },
   });
+  if (!observation && !lookingUp && !error && data?.productContentSyncStatus)
+    setObservation({ slug, syncStatus: data.productContentSyncStatus });
   const observedSyncStatus = observation?.slug === slug ? observation.syncStatus : undefined;
   const syncStatus = observedSyncStatus ?? data?.productContentSyncStatus;
   const observedSearchIntent = observedSyncStatus?.searchIntent;
@@ -120,11 +127,7 @@ export function useIndexProductButton({ slug }: { slug: string }) {
     observedSearchIntent.intentId !== intentId &&
     BigInt(observedSearchIntent.sourceRevision) > BigInt(request.sourceRevision)
   );
-  const lookupError = intentId
-    ? observation && observation.generation === request?.generation
-      ? observation.error
-      : undefined
-    : error?.message;
+  const lookupError = observation?.slug === slug ? observation.error : error?.message;
   const terminal = current && ['completed', 'failed', 'superseded'].includes(current.status);
   const activeIntentStatuses = ['pending', 'in_progress'];
   const searchIntentActive = activeIntentStatuses.includes(syncStatus?.searchIntent?.status ?? '');

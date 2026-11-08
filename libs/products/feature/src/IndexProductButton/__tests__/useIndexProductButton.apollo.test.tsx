@@ -989,4 +989,40 @@ describe('index completion through real Apollo default cache', () => {
     expect(fixture.lookups).toHaveLength(0);
     expect(successes()).toHaveLength(1);
   });
+
+  it('ignores a late lookup error after a failed new reservation', async () => {
+    const fixture = await setupWaiting();
+    await tick();
+    await flush(() => fixture.lookups.shift()!.resolve(response('completed', undefined, { status: 'pending' })));
+    await tick();
+    const stale = fixture.lookups.shift()!;
+    fixture.failNextIndex();
+    const action = await reserve(fixture.result);
+    await act(async () => {
+      await action.pending;
+    });
+    await tick();
+    await flush(() => fixture.lookups.shift()!.resolve(response('completed', undefined, { status: 'completed' })));
+    expect(fixture.result.current.error).toBeUndefined();
+    vi.mocked(notifications.show).mockClear();
+    await flush(() => stale.reject());
+    expect(fixture.result.current.error).toBeUndefined();
+    expect(fixture.result.current.syncStatus?.translationIntent?.status).toBe('completed');
+    expect(notifications.show).not.toHaveBeenCalled();
+  });
+
+  it('shows and recovers a current translation lookup failure without an owned reservation', async () => {
+    const fixture = setup();
+    await flush(() => fixture.lookups.shift()!.resolve(response('completed', undefined, { status: 'pending' })));
+    await tick();
+    await flush(() => fixture.lookups.shift()!.reject());
+    expect(fixture.result.current.error).toBe('fresh lookup failed');
+    expect(fixture.result.current.syncStatus?.translationIntent?.status).toBe('pending');
+    await tick();
+    await flush(() => fixture.lookups.shift()!.resolve(response('completed', undefined, { status: 'completed' })));
+    expect(fixture.result.current.error).toBeUndefined();
+    await tick(3000);
+    expect(fixture.lookups).toHaveLength(0);
+    expect(notifications.show).not.toHaveBeenCalled();
+  });
 });
