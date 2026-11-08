@@ -1045,6 +1045,66 @@ suite('Translation integrity in isolated PostgreSQL', () => {
       (await repository.findByEntity({ entityType, entityId, locale: 'en' })).map(row => [row.field, row])
     );
 
+  it.each(['single', 'bundle'] as const)(
+    '%s의 이미지 alt를 실제 provider에서 번역하고 원자 저장한 뒤 공개 영어로 조회한다',
+    async path => {
+      const description =
+        '<p>설명<img src="https://example.com/a.png" alt="편집 화면" width="42"></p>\n\n![편집 화면](https://example.com/b.png)';
+      const expected =
+        '<p>Description<img src="https://example.com/a.png" alt="Document editor" width="42"></p>\n\n![Document editor](https://example.com/b.png)';
+      const { product } = await seedProduct();
+      await db.update(products).set({ description }).where(eq(products.id, product.id));
+      const fields = path === 'single' ? ['description'] : ['name', 'summary', 'description', 'features'];
+      const job = await jobs.createJob({
+        entityType: 'Product',
+        entityId: product.id,
+        fields,
+      });
+      const llm = translateTransport('image-alt-model', [
+        ['이름', 'Name'],
+        ['요약', 'Summary'],
+        ['기능', 'Feature'],
+        ['조건', 'Condition'],
+        ['설명', 'Description'],
+        ['편집 화면', 'Document editor'],
+      ]);
+      const service = new TranslationJobService(
+        { execute: vi.fn() } as unknown as GetProduct,
+        new LlmTranslationProvider(llm as unknown as LlmClient),
+        jobs,
+        store,
+        { sendJob: vi.fn() } as unknown as TranslationQueueService
+      );
+      await service.executeProductTranslationJob(job.id, product.id);
+      expect(await jobs.findJobById(job.id)).toMatchObject({
+        status: 'completed',
+        attemptCount: 1,
+      });
+      expect(
+        await repository.findOne({
+          entityType: 'Product',
+          entityId: product.id,
+          locale: 'en',
+          field: 'description',
+        })
+      ).toMatchObject({
+        value: expected,
+        sourceHash: computeSourceHash(description, 'description'),
+        model: 'image-alt-model',
+        promptVersion: 'v2.0.0',
+      });
+      const english = await new TranslationService(repository).getTranslation({
+        entityType: 'Product',
+        entityId: product.id,
+        locale: 'en',
+        field: 'description',
+        koreanValue: description,
+      });
+      expect(english).toBe(expected);
+      expect(() => assertDocumentStructure(description, english)).not.toThrow();
+    }
+  );
+
   it('Product 단건과 ProductFeature·Magazine 일반 텍스트도 placeholder 없이 번역 row로 저장한다', async () => {
     const [product] = await db
       .insert(products)

@@ -66,7 +66,7 @@ export class LlmTranslationProvider implements TranslationProvider {
   }
 
   private decode(source: string, candidate: string, encoded: HtmlCodecResult) {
-    const translated = decodeHtml(candidate, encoded.placeholders, encoded.tokenOrder);
+    const translated = decodeHtml(candidate, encoded);
     assertDocumentStructure(source, translated);
     return translated;
   }
