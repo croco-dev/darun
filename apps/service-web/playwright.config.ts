@@ -27,6 +27,11 @@ export default defineConfig({
     ...(isolatedSmoke
       ? [
           {
+            command: 'pnpm exec tsx tests/helpers/smoke-sentry-server.ts',
+            url: 'http://127.0.0.1:16490/health',
+            reuseExistingServer: false,
+          },
+          {
             command: 'pnpm --filter graphql-api dev > ../../smoke-artifacts/graphql.log 2>&1',
             url: 'http://127.0.0.1:4000/graphql?query=%7B__typename%7D',
             reuseExistingServer: false,
@@ -41,6 +46,7 @@ export default defineConfig({
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
+      env: isolatedSmoke ? { _SENTRY_TUNNEL_DESTINATION_OVERRIDE: 'http://127.0.0.1:16490/monitoring' } : undefined,
     },
   ],
 });
