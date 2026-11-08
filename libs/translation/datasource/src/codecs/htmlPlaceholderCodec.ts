@@ -192,8 +192,11 @@ function escapeAlternativeText(text: string, format: 'html' | 'markdown'): strin
 
 export function decodeHtml(encodedText: string, encoded: HtmlCodecResult): string {
   const { placeholders, tokenOrder, altSlots } = encoded;
-  if (/<\/?[A-Za-z!][^>]*>/.test(encodedText)) throw new Error('Translation introduced HTML structure');
+  const rejectHtml = (text: string) => {
+    if (/<\/?[A-Za-z!][^>]*>/.test(text)) throw new Error('Translation introduced HTML structure');
+  };
   if (!placeholders.size) {
+    rejectHtml(encodedText);
     if (/⟦HTML_[^⟧]*⟧/.test(encodedText)) throw new Error('Translation introduced document placeholder');
     return encodedText;
   }
@@ -212,11 +215,16 @@ export function decodeHtml(encodedText: string, encoded: HtmlCodecResult): strin
   let alternativeText = '';
   let cursor = 0;
   let decoded = '';
+  let outsideAlternativeText = '';
   for (const match of encodedText.matchAll(new RegExp(`⟦HTML_${nonce}_[^⟧]*⟧`, 'g'))) {
     const text = encodedText.slice(cursor, match.index);
     if (format) alternativeText += text;
-    else decoded += text;
+    else {
+      decoded += text;
+      outsideAlternativeText += text;
+    }
     const token = match[0];
+    outsideAlternativeText += token;
     if (boundaries.has(token)) {
       if (format) {
         if (!alternativeText.trim()) throw new Error('Translation omitted image alternative text');
@@ -229,7 +237,9 @@ export function decodeHtml(encodedText: string, encoded: HtmlCodecResult): strin
     else decoded += placeholders.get(token)!;
     cursor = match.index! + token.length;
   }
-  return decoded + encodedText.slice(cursor);
+  const tail = encodedText.slice(cursor);
+  rejectHtml(outsideAlternativeText + tail);
+  return decoded + tail;
 }
 
 /** Compare parser structure, not translated words, so newly introduced Markdown cannot alter lists/quotes/links. */

@@ -161,6 +161,23 @@ describe('Image alternative text translation', () => {
     expect(() => assertDocumentStructure(source, english)).not.toThrow();
   });
 
+  it.each(['<!-- 주석 -->', '<!DOCTYPE html> 주석'])(
+    'entity로 작성한 HTML-looking alt도 실제 구문을 만들지 않고 번역한다: %s',
+    literal => {
+      const escaped = literal.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const source = `<img src="a.png" alt="${escaped}">`;
+      const encoded = encodeHtml(source);
+      const english = decodeHtml(encoded.encodedText.replace('주석', 'comment'), encoded);
+      expect(parseFragment(english).childNodes[0]).toMatchObject({
+        attrs: [
+          { name: 'src', value: 'a.png' },
+          { name: 'alt', value: literal.replace('주석', 'comment') },
+        ],
+      });
+      expect(() => assertDocumentStructure(source, english)).not.toThrow();
+    }
+  );
+
   it('기존 img·URL 토큰을 새 태그로 조합해도 공개 HTML 해석에서 이미지를 주입하지 못한다', () => {
     const source = '![화면 img https://attacker.example/pixel](https://example.com/original.png)';
     const encoded = encodeHtml(source);
