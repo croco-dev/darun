@@ -1,12 +1,13 @@
 'use client';
 
-import { Button, Dialog, ExternalLink, ImageOff, Maximize2, RefreshCw } from '@darun/ui';
+import { Button, Dialog, ExternalLink, RefreshCw } from '@darun/ui';
 import { Link, notFound } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
-import { VISUAL_CARD_IMAGE_LOADING, VISUAL_DETAIL_IMAGE_FETCH_PRIORITY } from '../perf/imageLoading';
+import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { VisualSaveButton } from '../saves/VisualSaveButton';
+import { ScreenshotImage } from './ScreenshotImage';
 import { ScreenshotDetailState, useScreenshotDetail } from './useScreenshotDetail';
 import {
   UNCLASSIFIED_LABEL,
@@ -15,38 +16,6 @@ import {
   isVisualPlatformValue,
   isVisualScreenTypeValue,
 } from './visualClassifications';
-
-function DetailImage({ src, alt, onError }: { src: string; alt: string; onError: () => void }) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null);
-
-  const hasError = failedSrc === src;
-
-  if (hasError) {
-    return (
-      <div
-        role="img"
-        aria-label="이미지를 불러올 수 없음"
-        className="flex min-h-72 w-full flex-col items-center justify-center gap-2 rounded-xl bg-surface-100 text-dark-400"
-      >
-        <ImageOff size={32} className="shrink-0" aria-hidden="true" />
-        <span className="text-sm text-dark-600 break-words [word-break:keep-all]">이미지를 불러올 수 없어요.</span>
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      fetchPriority={VISUAL_DETAIL_IMAGE_FETCH_PRIORITY}
-      onError={() => {
-        setFailedSrc(src);
-        onError();
-      }}
-      className="mx-auto max-h-[78dvh] w-auto max-w-full object-contain"
-    />
-  );
-}
 
 function CopyLinkButton() {
   const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
@@ -85,7 +54,7 @@ function CopyLinkButton() {
   );
 }
 
-const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotDetailState) => {
+const View = ({ status, detail, retry }: ScreenshotDetailState) => {
   const [zoomedScreenshotId, setZoomedScreenshotId] = useState<string | null>(null);
 
   if (status === 'loading') {
@@ -211,24 +180,7 @@ const View = ({ status, detail, isImageError, onImageError, retry }: ScreenshotD
 
         <div className="grid w-full grid-cols-1 items-start gap-4 md:gap-6 lg:grid-cols-[minmax(0,1fr)_220px]">
           <section aria-label="스크린샷 크게 보기" className="min-w-0 bg-surface-100 p-3 md:p-5">
-            <div className="relative">
-              <DetailImage src={imageUrl} alt={imageAlt} onError={onImageError} />
-              {!isImageError && (
-                <Button
-                  type="button"
-                  variant="shadow"
-                  color="primary"
-                  size="sm"
-                  onClick={() => setZoomedScreenshotId(id)}
-                  className="absolute right-3 bottom-3 min-h-[44px] min-w-[44px] active:scale-[0.98] motion-reduce:transform-none"
-                  aria-haspopup="dialog"
-                >
-                  <Maximize2 size={16} className="shrink-0" aria-hidden="true" />
-                  <span className="hidden whitespace-nowrap sm:inline">확대</span>
-                  <span className="sr-only sm:hidden">확대</span>
-                </Button>
-              )}
-            </div>
+            <ScreenshotImage src={imageUrl} alt={imageAlt} variant="detail" onZoom={() => setZoomedScreenshotId(id)} />
           </section>
 
           <aside className="flex min-w-0 flex-col gap-5 self-start border-t border-dark-150 pt-5 lg:sticky lg:top-20">

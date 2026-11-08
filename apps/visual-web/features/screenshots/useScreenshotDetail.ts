@@ -49,8 +49,6 @@ export type ScreenshotDetailData = {
 export type ScreenshotDetailState = {
   status: 'loading' | 'not-found' | 'error' | 'loaded';
   detail: ScreenshotDetailData | null;
-  isImageError: boolean;
-  onImageError: () => void;
   retry: () => void;
 };
 
@@ -63,7 +61,6 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
     | { status: 'loaded'; detail: ScreenshotDetailData }
   >({ status: 'loading' });
   const [requestKey, setRequestKey] = useState(0);
-  const [failedImageId, setFailedImageId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -161,10 +158,7 @@ export function useScreenshotDetail(id: string): ScreenshotDetailState {
   return {
     status: queryState.status,
     detail: queryState.status === 'loaded' ? queryState.detail : null,
-    isImageError: failedImageId === id,
-    onImageError: () => setFailedImageId(id),
     retry: () => {
-      setFailedImageId(null);
       setRequestKey(key => key + 1);
     },
   };
