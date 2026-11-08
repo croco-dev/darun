@@ -109,7 +109,7 @@ describe.skipIf(!databaseUrl)('app memo actions with PostgreSQL and PostgREST', 
   });
 
   it('carries the actual apps memo embed into the editor after reload, edit and deletion', async () => {
-    const client = fixture.client as ReturnType<typeof createSupabaseClient>;
+    const client = database.client;
     const editorValue = async () => {
       const markup = renderToStaticMarkup(await AdminPage({ searchParams: Promise.resolve({}) }));
       return markup.match(/<textarea\b[^>]*>([\s\S]*?)<\/textarea>/)?.[1];
