@@ -99,7 +99,7 @@ export default function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next|.*\\.(?!md$)[^.]+$).*)',
+    '/((?!api|_next|monitoring/?$|.*\\.(?!md$)[^.]+$).*)',
     '/:locale(ko|en)?/products/:slug{/alternatives}?',
     '/ko/categories/:slug',
     '/en/categories/:slug',
