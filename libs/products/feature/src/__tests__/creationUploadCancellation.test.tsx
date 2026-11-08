@@ -4,6 +4,7 @@ import { notifications } from '@mantine/notifications';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { normalizeScreenshotImageAlt } from '../../../domain/src/usecases/ProductScreenshotMetadata';
 import { useNewProductForm } from '../NewProductForm/useNewProductForm';
 import { useNewProductScreenshotForm } from '../NewProductScreenshotForm/useNewProductScreenshotForm';
 
@@ -38,6 +39,7 @@ function deferred<T>() {
 
 function fixture(holdWrites = false) {
   const operations: string[] = [];
+  const savedScreenshotInputs: Record<string, unknown>[] = [];
   const completeWrites: (() => void)[] = [];
   const client = new ApolloClient({
     cache: new InMemoryCache(),
@@ -46,6 +48,10 @@ function fixture(holdWrites = false) {
         new Observable(observer => {
           operations.push(operation.operationName ?? '');
           const complete = () => {
+            if (operation.operationName === 'AddProductScreenshotOnNewProductScreenshotForm') {
+              normalizeScreenshotImageAlt(operation.variables.input.imageAlt);
+              savedScreenshotInputs.push(operation.variables.input);
+            }
             observer.next({
               data:
                 operation.operationName === 'GetProductScreenshotsOnDetailSection'
@@ -73,6 +79,7 @@ function fixture(holdWrites = false) {
   clients.push(client);
   return {
     operations,
+    savedScreenshotInputs,
     completeWrites,
     wrapper: ({ children }: { children: React.ReactNode }) => (
       <ApolloProvider client={client}>{children}</ApolloProvider>
@@ -209,4 +216,100 @@ describe.each(cases)('$name upload lifetime', c => {
     expect(f.operations.filter(operation => operation === c.operation)).toHaveLength(1);
     expect(navigate).toHaveBeenCalledOnce();
   });
+});
+
+function altFixture() {
+  upload.mockResolvedValue('https://fixture.invalid/screen.png');
+  const f = fixture();
+  const hook = renderHook(() => useNewProductScreenshotForm({ ...props, productSlug: 'sample' }), {
+    wrapper: f.wrapper,
+  });
+  return { ...hook, saved: f.savedScreenshotInputs };
+}
+
+const metadata = {
+  file,
+  title: '회원가입 화면',
+  platform: 'IOS' as const,
+  screenType: 'SIGN_UP' as const,
+};
+
+describe.each(['form', 'submit'] as const)('스크린샷 alt %s 사전 검증', entry => {
+  async function send(result: ReturnType<typeof altFixture>['result'], imageAlt: string) {
+    act(() => result.current.form.setValues({ ...metadata, imageAlt }));
+    await act(async () => {
+      if (entry === 'form') await result.current.form.onSubmit(result.current.submit)();
+      else await result.current.submit(result.current.form.getValues());
+    });
+  }
+
+  it.each(['', ' \t\n ', '가'.repeat(101), `  ${'a'.repeat(101)}  `])(
+    '거절된 alt는 파일 전송과 저장 없이 입력을 유지하고 수정 후 같은 파일로 저장한다: %j',
+    async invalid => {
+      const { result, saved } = altFixture();
+      await send(result, invalid);
+      expect(result.current.form.errors.imageAlt).toBeTruthy();
+      expect(upload).not.toHaveBeenCalled();
+      expect(saved).toEqual([]);
+      expect(navigate).not.toHaveBeenCalled();
+      expect(result.current.loading).toBe(false);
+      expect(result.current.form.getValues()).toEqual({
+        ...metadata,
+        imageAlt: invalid,
+      });
+
+      await send(result, '  수정한 설명  ');
+      expect(upload).toHaveBeenCalledOnce();
+      expect(upload.mock.calls[0][1]).toBe(file);
+      expect(saved).toEqual([
+        {
+          imageUrl: 'https://fixture.invalid/screen.png',
+          imageAlt: '수정한 설명',
+          title: metadata.title,
+          platform: 'IOS',
+          screenType: 'SIGN_UP',
+        },
+      ]);
+      expect(navigate).toHaveBeenCalledWith('/products/sample');
+    }
+  );
+
+  it.each([
+    ['가', '가'],
+    ['a'.repeat(100), 'a'.repeat(100)],
+    [` \t${'가'.repeat(100)}\n `, '가'.repeat(100)],
+  ])('trim 후 1~100자를 서버 검증까지 그대로 저장한다', async (input, expected) => {
+    const { result, saved } = altFixture();
+    await send(result, input);
+    expect(upload).toHaveBeenCalledOnce();
+    expect(saved[0]?.imageAlt).toBe(expected);
+    expect(navigate).toHaveBeenCalledWith('/products/sample');
+  });
+});
+
+it('alt가 유효해도 제목과 분류의 기존 필드 검증을 유지한다', async () => {
+  const { result, saved } = altFixture();
+  act(() =>
+    result.current.form.setValues({
+      ...metadata,
+      imageAlt: '화면',
+      title: 'a'.repeat(101),
+    })
+  );
+  await act(async () => {
+    await result.current.form.onSubmit(result.current.submit)();
+  });
+  expect(result.current.form.errors.title).toBeTruthy();
+  expect(upload).not.toHaveBeenCalled();
+  act(() => {
+    result.current.form.setFieldValue('title', metadata.title);
+    result.current.form.getInputProps('platform').onChange('invalid');
+    result.current.form.getInputProps('screenType').onChange('invalid');
+  });
+  await act(async () => {
+    await result.current.form.onSubmit(result.current.submit)();
+  });
+  expect(result.current.form.errors.platform).toBeTruthy();
+  expect(result.current.form.errors.screenType).toBeTruthy();
+  expect(saved).toEqual([]);
 });
