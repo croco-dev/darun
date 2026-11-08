@@ -430,7 +430,13 @@ export const ProductResearchSection = () => {
     setReview(stored?.review ?? createInitialWorkspaceReview());
     setTagsInput(null);
     setUploadedLogoUrl(stored?.uploadedLogoUrl ?? null);
-    setLogoSelection(stored?.review.logoUrl.trim() ? { kind: 'url', logoUrl: stored.review.logoUrl } : null);
+    if (stored?.review.logoUrl.trim()) {
+      setLogoSelection({ kind: 'url', logoUrl: stored.review.logoUrl });
+    } else if (stored?.logoFileName) {
+      setLogoSelection({ kind: 'missing-file', fileName: stored.logoFileName });
+    } else {
+      setLogoSelection(null);
+    }
     setLogoPreviewUrl(null);
     setLogoInputKey(key => key + 1);
     setOfficialUrlConfirmation(null);
@@ -473,7 +479,7 @@ export const ProductResearchSection = () => {
           jobId,
           review,
           prefilledJobId: prefilledJobRef.current,
-          logoFileName: logoSelection?.kind === 'file' ? logoSelection.fileName : null,
+          logoFileName: logoSelection && logoSelection.kind !== 'url' ? logoSelection.fileName : null,
           uploadedLogoUrl,
           materializedSlug,
         });
@@ -778,6 +784,7 @@ export const ProductResearchSection = () => {
     setLogoPreviewUrl(URL.createObjectURL(file));
     setLogoSelection({ kind: 'file', file, fileName: file.name });
     setUploadedLogoUrl(null);
+    setReview(previous => ({ ...previous, logoUrl: '' }));
   };
 
   const ensureUploadedLogo = useCallback(
@@ -1205,6 +1212,11 @@ export const ProductResearchSection = () => {
                       </div>
                     )}
                     {uploadedLogoUrl && <span className="text-xs text-dark-500">업로드 완료: {uploadedLogoUrl}</span>}
+                    {logoSelection?.kind === 'missing-file' && (
+                      <output className="block text-sm text-dark-600">
+                        선택했던 파일({logoSelection.fileName})은 복원할 수 없습니다. 로고 파일을 다시 선택해주세요.
+                      </output>
+                    )}
                   </div>
                 </AdminField>
                 <AdminField label="또는 로고 URL 직접 입력">
@@ -1230,6 +1242,7 @@ export const ProductResearchSection = () => {
                     onClick={() => {
                       setLogoSelection(null);
                       setUploadedLogoUrl(null);
+                      setReview(previous => ({ ...previous, logoUrl: '' }));
                       if (logoPreviewUrl) {
                         URL.revokeObjectURL(logoPreviewUrl);
                         setLogoPreviewUrl(null);

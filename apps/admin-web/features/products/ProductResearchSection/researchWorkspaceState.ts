@@ -196,7 +196,10 @@ export function parseTagsInput(value: string): string[] {
   return normalizeResearchTags(value.split(','));
 }
 
-export type WorkspaceImageSelection = { kind: 'file'; file: File; fileName: string } | { kind: 'url'; logoUrl: string };
+export type WorkspaceImageSelection =
+  | { kind: 'file'; file: File; fileName: string }
+  | { kind: 'missing-file'; fileName: string }
+  | { kind: 'url'; logoUrl: string };
 
 export function resolveLogoUrlForMaterialize(
   selection: WorkspaceImageSelection | null,
