@@ -1,8 +1,11 @@
-import { assertLocalPostgrestFixture } from '@/test-utils/postgrest-fixture';
+import {
+  assertLocalPostgrestFixture,
+  migrateTierPostgrestFixture,
+  postgrestFixtureFetch,
+} from '@/test-utils/postgrest-fixture';
 import { createClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { readFile } from 'node:fs/promises';
 import {
   APPS_SELECT,
   buildAppsSearchFilter,
@@ -25,21 +28,7 @@ describe.skipIf(!databaseUrl)('app search through the PostgREST parser and Postg
   let ownsTables = false;
   const client = createClient(restUrl ?? 'http://127.0.0.1', 'app-search-fixture-only', {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: {
-      fetch: (input, init) => {
-        // This fixture uses PostgREST directly, without Supabase's gateway or auth service.
-        const url = new URL(String(input));
-        url.pathname = url.pathname.replace(/^\/rest\/v1/, '');
-        const headers = new Headers(init?.headers);
-        headers.delete('authorization');
-        headers.delete('apikey');
-        return fetch(url, {
-          ...init,
-          headers,
-          signal: AbortSignal.timeout(5000),
-        });
-      },
-    },
+    global: { fetch: postgrestFixtureFetch },
   });
 
   beforeAll(async () => {
@@ -47,21 +36,7 @@ describe.skipIf(!databaseUrl)('app search through the PostgREST parser and Postg
       where table_schema = 'public'`;
     if (existing.count !== 0) throw new Error('App search tests require an empty dedicated database');
     ownsTables = true;
-    const journal = JSON.parse(await readFile(new URL('../../../drizzle/meta/_journal.json', import.meta.url), 'utf8'));
-    for (const { tag } of journal.entries) {
-      const migration = await readFile(new URL(`../../../drizzle/${tag}.sql`, import.meta.url), 'utf8');
-      await sql.unsafe(`${migration};\nCOMMIT;`);
-    }
-    await sql`notify pgrst, 'reload schema'`;
-    const deadline = Date.now() + 5000;
-    while (true) {
-      const response = await fetch(`${restUrl}/apps?select=id,tiers(tier)`, {
-        signal: AbortSignal.timeout(1000),
-      });
-      if (response.ok) break;
-      if (Date.now() >= deadline) throw new Error(`PostgREST fixture not ready: ${response.status}`);
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
+    await migrateTierPostgrestFixture(sql, restUrl!);
   });
 
   afterAll(async () => {
