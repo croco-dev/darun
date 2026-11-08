@@ -430,13 +430,13 @@ export const ProductResearchSection = () => {
     setReview(stored?.review ?? createInitialWorkspaceReview());
     setTagsInput(null);
     setUploadedLogoUrl(stored?.uploadedLogoUrl ?? null);
-    setLogoSelection(
-      stored?.review.logoUrl.trim()
-        ? { kind: 'url', logoUrl: stored.review.logoUrl }
-        : stored?.logoFileName
-          ? { kind: 'missing-file', fileName: stored.logoFileName }
-          : null
-    );
+    if (stored?.review.logoUrl.trim()) {
+      setLogoSelection({ kind: 'url', logoUrl: stored.review.logoUrl });
+    } else if (stored?.logoFileName) {
+      setLogoSelection({ kind: 'missing-file', fileName: stored.logoFileName });
+    } else {
+      setLogoSelection(null);
+    }
     setLogoPreviewUrl(null);
     setLogoInputKey(key => key + 1);
     setOfficialUrlConfirmation(null);
@@ -1213,9 +1213,9 @@ export const ProductResearchSection = () => {
                     )}
                     {uploadedLogoUrl && <span className="text-xs text-dark-500">업로드 완료: {uploadedLogoUrl}</span>}
                     {logoSelection?.kind === 'missing-file' && (
-                      <p role="status" className="text-sm text-dark-600">
+                      <output className="block text-sm text-dark-600">
                         선택했던 파일({logoSelection.fileName})은 복원할 수 없습니다. 로고 파일을 다시 선택해주세요.
-                      </p>
+                      </output>
                     )}
                   </div>
                 </AdminField>
