@@ -31,17 +31,20 @@ for (const width of [1280, 390]) {
     await expect(search).toHaveValue('figma');
     await expect(result).toHaveAttribute('href', '/ko/products/figma-e2e?from=search');
 
-    const suffix = '?query=%ED%95%9C%EA%B8%80%20%26%20notes&tag=ui&tag=ux&empty=#results';
+    const suffix =
+      '?query=%EA%B0%80%EB%82%98%EB%8B%A4%EB%9D%BC%EB%A7%88%EB%B0%94%EC%82%AC%20%26%20zzzzzzzzzzzzzzzz&tag=ui&tag=ux&empty=#results';
     await page.goto(`/ko/search/product${suffix}`);
-    await expect(search).toHaveValue('한글 & notes');
+    await expect(search).toHaveValue('가나다라마바사 & zzzzzzzzzzzzzzzz');
     await korean.focus();
     await korean.press('ArrowRight');
     await expect(page).toHaveURL(`/en/search/product${suffix}`);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(english).toHaveAttribute('aria-checked', 'true');
-    await expect(search).toHaveValue('한글 & notes');
-    await expect(page.getByRole('heading', { name: /한글 & notes/ })).toBeVisible();
-    await expect(page.getByText('No results found for ‘한글 & notes’.', { exact: true })).toBeVisible();
+    await expect(search).toHaveValue('가나다라마바사 & zzzzzzzzzzzzzzzz');
+    await expect(page.getByRole('heading', { name: /가나다라마바사 & zzzzzzzzzzzzzzzz/ })).toBeVisible();
+    await expect(
+      page.getByText('No results found for ‘가나다라마바사 & zzzzzzzzzzzzzzzz’.', { exact: true })
+    ).toBeVisible();
     expect(await page.evaluate(() => new URLSearchParams(location.search).getAll('tag'))).toEqual(['ui', 'ux']);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({
@@ -57,13 +60,15 @@ for (const width of [1280, 390]) {
     await page.goForward();
     await expect(page).toHaveURL(`/en/search/product${suffix}`);
     await expect(english).toHaveAttribute('aria-checked', 'true');
-    await expect(search).toHaveValue('한글 & notes');
+    await expect(search).toHaveValue('가나다라마바사 & zzzzzzzzzzzzzzzz');
     await korean.focus();
     await korean.press('Enter');
     await expect(page).toHaveURL(`/ko/search/product${suffix}`);
     await expect(korean).toHaveAttribute('aria-checked', 'true');
-    await expect(search).toHaveValue('한글 & notes');
-    await expect(page.getByText('‘한글 & notes’에 대한 검색 결과가 없습니다.', { exact: true })).toBeVisible();
+    await expect(search).toHaveValue('가나다라마바사 & zzzzzzzzzzzzzzzz');
+    await expect(
+      page.getByText('‘가나다라마바사 & zzzzzzzzzzzzzzzz’에 대한 검색 결과가 없습니다.', { exact: true })
+    ).toBeVisible();
 
     await page.goto('/ko/products/figma-e2e?from=search#detail-content');
     await expect(page.getByRole('heading', { name: 'Figma E2E', exact: true })).toBeVisible();
