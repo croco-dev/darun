@@ -4,19 +4,15 @@ import { ApolloProvider } from '@apollo/client/react';
 import { AllCompaniesOnAllCompanyListTableDocument } from '@darun/provider-graphql';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { AllCompanyListTable } from '../AllCompanyListTable/AllCompanyListTable';
 
-const originalTimeZone = process.env.TZ;
-afterEach(() => {
-  if (originalTimeZone === undefined) delete process.env.TZ;
-  else process.env.TZ = originalTimeZone;
-});
+afterEach(() => vi.unstubAllEnvs());
 
 it.each(['UTC', 'Asia/Seoul', 'America/Los_Angeles'])(
   '%s 관리자 목록에 개업일의 UTC 날짜와 미입력 상태를 표시한다',
   timeZone => {
-    process.env.TZ = timeZone;
+    vi.stubEnv('TZ', timeZone);
     const client = new ApolloClient({
       cache: new InMemoryCache(),
       link: ApolloLink.empty(),

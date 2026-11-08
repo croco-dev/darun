@@ -1,16 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { formatCalendarDate, formatDate } from '../lib/date';
 
-const originalTimeZone = process.env.TZ;
-afterEach(() => {
-  if (originalTimeZone === undefined) delete process.env.TZ;
-  else process.env.TZ = originalTimeZone;
-});
+afterEach(() => vi.unstubAllEnvs());
 
 describe.each(['UTC', 'Asia/Seoul', 'America/Los_Angeles'])('formatCalendarDate in %s', timeZone => {
-  beforeEach(() => {
-    process.env.TZ = timeZone;
-  });
+  beforeEach(() => vi.stubEnv('TZ', timeZone));
   it.each([
     ['2026-01-01', '2026. 01. 01.', 'Jan 1, 2026'],
     ['2024-02-29T00:00:00.000Z', '2024. 02. 29.', 'Feb 29, 2024'],
