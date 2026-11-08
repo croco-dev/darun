@@ -386,6 +386,16 @@ export class ProductQueryResolver {
     return this.getCompanyUseCase.execute({ id: product.ownedCompanyId });
   }
 
+  @Authorized([AuthRole.Admin])
+  @FieldResolver(() => [Product])
+  public async manualAlternatives(@Root() product: Product) {
+    const alternatives = await this.getAlternativeProductsUseCase.executeManual({ productId: product.id });
+    const products = await Promise.all(
+      alternatives.map(alternative => this.getProductUseCase.execute({ id: alternative.alternativeProductId }))
+    );
+    return products.filter((product): product is DomainProduct => product !== null);
+  }
+
   @FieldResolver(() => [Product])
   public async alternatives(@Root() product: ProductWithLocale) {
     const alternativeProducts = await this.getAlternativeProductsUseCase.execute({

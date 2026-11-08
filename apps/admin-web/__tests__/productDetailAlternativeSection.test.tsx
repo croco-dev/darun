@@ -91,12 +91,13 @@ describe('ProductDetailAlternativeSection', () => {
     expect(screen.queryByRole('button', { name: '대안 서비스 연결' })).toBeNull();
   });
 
-  it('renders empty state when alternatives array is empty', () => {
+  it('renders empty state when no manual alternatives are registered', () => {
     vi.mocked(useQuery).mockReturnValue({
       data: {
         tempProductBySlug: {
           id: 'product-a',
-          alternatives: [],
+          alternatives: [{ id: 'automatic', name: '자동 추천' }],
+          manualAlternatives: [],
         },
       },
       loading: false,
@@ -114,7 +115,8 @@ describe('ProductDetailAlternativeSection', () => {
       data: {
         tempProductBySlug: {
           id: 'product-a',
-          alternatives: [
+          alternatives: [{ id: 'automatic', name: '자동 추천' }],
+          manualAlternatives: [
             { id: 'alt-1', name: '쿠팡' },
             { id: 'alt-2', name: '11번가' },
           ],
@@ -130,6 +132,7 @@ describe('ProductDetailAlternativeSection', () => {
     expect(screen.getByText('현재 연결된 대안 서비스 (2개):')).toBeTruthy();
     expect(screen.getByText('쿠팡')).toBeTruthy();
     expect(screen.getByText('11번가')).toBeTruthy();
+    expect(screen.queryByText('자동 추천')).toBeNull();
 
     expect(screen.queryByTestId('edit-alternative-products')).toBeNull();
 

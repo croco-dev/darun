@@ -25,7 +25,7 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
     variables: { slug },
   });
 
-  const alternatives = data?.tempProductBySlug?.alternatives ?? [];
+  const alternatives = data?.tempProductBySlug?.manualAlternatives ?? [];
   const canEdit = !loading && !error && Boolean(data?.tempProductBySlug?.id);
 
   return (

@@ -316,6 +316,7 @@ type Product {
   id: ID!
   links: [Link!]!
   logoUrl: String!
+  manualAlternatives: [Product!]!
   name: String!
   ownedCompany: Company
   ownedCompanyId: String

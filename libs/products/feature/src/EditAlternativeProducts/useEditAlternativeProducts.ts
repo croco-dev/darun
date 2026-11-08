@@ -15,7 +15,7 @@ gql`
   query TempProductBySlugOnEditAlternativeProducts($slug: String!) {
     tempProductBySlug(slug: $slug) {
       id
-      alternatives {
+      manualAlternatives {
         id
         name
       }
@@ -33,7 +33,7 @@ gql`
     updateAlternativeProduct(input: $input, slug: $slug) {
       product {
         id
-        alternatives {
+        manualAlternatives {
           id
         }
       }
@@ -69,7 +69,7 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
   const currentAlternativeIds =
     selection?.slug === slug && selection.productId === product?.id
       ? selection.ids
-      : (product?.alternatives ?? []).map(item => item.id);
+      : (product?.manualAlternatives ?? []).map(item => item.id);
   const setAlternativeIds = (ids: string[]) => {
     if (!isReady || !product) return;
     setSelection({ slug, productId: product.id, ids });
@@ -82,7 +82,7 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
     onCompleted: ({ updateAlternativeProduct }) => {
       if (updateAlternativeProduct?.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
-        const rawAlternatives = updateAlternativeProduct.product.alternatives ?? [];
+        const rawAlternatives = updateAlternativeProduct.product.manualAlternatives ?? [];
         const alternativeIds = rawAlternatives
           .map(item => item.id)
           .filter((id): id is string => typeof id === 'string');
@@ -158,7 +158,7 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
   );
 
   const currentProductId = data?.tempProductBySlug?.id;
-  const currentAlternatives = data?.tempProductBySlug?.alternatives ?? [];
+  const currentAlternatives = data?.tempProductBySlug?.manualAlternatives ?? [];
   const allKnownProducts = [...currentAlternatives, ...searchedProducts];
   const uniqueProductsMap = new Map<string, string>();
   for (const p of allKnownProducts) {
