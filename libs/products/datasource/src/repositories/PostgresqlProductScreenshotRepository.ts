@@ -1,3 +1,4 @@
+import type { VisualSaveCursor } from '@darun/products-domain';
 import {
   ProductScreenshot,
   ProductScreenshotRepository,
@@ -448,7 +449,13 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
     userId: string;
     limit: number;
     offset: number;
-  }): Promise<{ screenshots: VisualScreenshotWithProduct[]; totalCount: number }> {
+    after?: VisualSaveCursor;
+  }): Promise<{
+    screenshots: (VisualScreenshotWithProduct & {
+      saveCursor: VisualSaveCursor;
+    })[];
+    totalCount: number;
+  }> {
     const baseConditions = [eq(visualSaves.userId, params.userId), isNotNull(visualSaves.screenshotId)];
     const [countRows, rows] = await Promise.all([
       this.db
@@ -456,16 +463,34 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
         .from(visualSaves)
         .where(and(...baseConditions)),
       this.db
-        .select(visualScreenshotColumns)
+        .select({
+          ...visualScreenshotColumns,
+          saveId: visualSaves.id,
+          savedAt: sql<string>`to_char(${visualSaves.createdAt}, 'YYYY-MM-DD"T"HH24:MI:SS.US')`,
+        })
         .from(visualSaves)
         .innerJoin(productScreenshots, eq(productScreenshots.id, visualSaves.screenshotId))
         .innerJoin(products, eq(products.id, productScreenshots.productId))
-        .where(and(...baseConditions, isNotNull(products.publishedAt)))
+        .where(
+          and(
+            ...baseConditions,
+            isNotNull(products.publishedAt),
+            params.after
+              ? sql`(${visualSaves.createdAt}, ${visualSaves.id}) < (${params.after.savedAt}::timestamp, ${params.after.saveId})`
+              : undefined
+          )
+        )
         .orderBy(sql`${visualSaves.createdAt} DESC`, sql`${visualSaves.id} DESC`)
         .limit(params.limit)
-        .offset(params.offset),
+        .offset(params.after ? 0 : params.offset),
     ]);
-    return { screenshots: rows.map(toVisualWithProduct), totalCount: countRows[0]?.value ?? 0 };
+    return {
+      screenshots: rows.map(row => ({
+        ...toVisualWithProduct(row),
+        saveCursor: { savedAt: row.savedAt, saveId: row.saveId },
+      })),
+      totalCount: countRows[0]?.value ?? 0,
+    };
   }
 
   /**

@@ -1,6 +1,7 @@
 import { Token } from 'typedi';
 import type { ProductFlow } from '../entities/ProductFlow';
 import type { ProductScreenshot } from '../entities/ProductScreenshot';
+import type { VisualSaveCursor } from './VisualSaveCursor';
 
 export type VisualFlowFilter = {
   query: string;
@@ -106,7 +107,11 @@ export interface ProductFlowRepository {
     userId: string;
     limit: number;
     offset: number;
-  }): Promise<{ flows: VisualFlowSummary[]; totalCount: number }>;
+    after?: VisualSaveCursor;
+  }): Promise<{
+    flows: (VisualFlowSummary & { saveCursor: VisualSaveCursor })[];
+    totalCount: number;
+  }>;
 }
 
 export const ProductFlowRepositoryToken = new Token<ProductFlowRepository>('ProductFlowRepository');

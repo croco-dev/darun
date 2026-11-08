@@ -6,6 +6,7 @@ import type {
   VisualScreenshotWithProduct,
 } from '../repositories/ProductScreenshotRepository';
 import { ProductScreenshotRepositoryToken } from '../repositories/ProductScreenshotRepository';
+import type { VisualSaveCursor } from '../repositories/VisualSaveCursor';
 import { assertVisualUlid } from '../utils/assertVisualUlid';
 
 export type VisualSaveStatus = { saved: boolean };
@@ -97,16 +98,25 @@ export class GetMyVisualSavedScreenshots {
     userId,
     first,
     page,
+    after,
   }: {
     userId: string;
     first: number;
     page: number;
-  }): Promise<{ screenshots: VisualScreenshotWithProduct[]; totalCount: number; hasNextPage: boolean }> {
+    after?: VisualSaveCursor;
+  }): Promise<{
+    screenshots: (VisualScreenshotWithProduct & {
+      saveCursor: VisualSaveCursor;
+    })[];
+    totalCount: number;
+    hasNextPage: boolean;
+  }> {
     const { limit, offset } = resolveSavesPage({ first, page });
     const { screenshots, totalCount } = await this.productScreenshotRepository.findManyVisualSavedScreenshotsByUser({
       userId,
       limit: limit + 1,
-      offset,
+      offset: after ? 0 : offset,
+      ...(after ? { after } : {}),
     });
     const hasNextPage = screenshots.length > limit;
     return { screenshots: hasNextPage ? screenshots.slice(0, limit) : screenshots, totalCount, hasNextPage };
@@ -128,16 +138,23 @@ export class GetMyVisualSavedFlows {
     userId,
     first,
     page,
+    after,
   }: {
     userId: string;
     first: number;
     page: number;
-  }): Promise<{ flows: VisualFlowSummary[]; totalCount: number; hasNextPage: boolean }> {
+    after?: VisualSaveCursor;
+  }): Promise<{
+    flows: (VisualFlowSummary & { saveCursor: VisualSaveCursor })[];
+    totalCount: number;
+    hasNextPage: boolean;
+  }> {
     const { limit, offset } = resolveSavesPage({ first, page });
     const { flows, totalCount } = await this.productFlowRepository.findManyVisualSavedFlowsByUser({
       userId,
       limit: limit + 1,
-      offset,
+      offset: after ? 0 : offset,
+      ...(after ? { after } : {}),
     });
     const hasNextPage = flows.length > limit;
     return { flows: hasNextPage ? flows.slice(0, limit) : flows, totalCount, hasNextPage };

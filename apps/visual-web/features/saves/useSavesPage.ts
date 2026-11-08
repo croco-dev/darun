@@ -92,6 +92,18 @@ function toFlowCard(node: SavedFlowNode): FlowCard | null {
   };
 }
 
+function appendSavedCards<T extends { id: string }>(previous: T[], incoming: T[]): T[] {
+  const ids = new Set(previous.map(card => card.id));
+  return [
+    ...previous,
+    ...incoming.filter(card => {
+      if (ids.has(card.id)) return false;
+      ids.add(card.id);
+      return true;
+    }),
+  ];
+}
+
 function isUnauthorized(error: unknown): boolean {
   if (error === null || typeof error !== 'object') {
     return false;
@@ -115,7 +127,7 @@ export function readSavesTabParam(searchParams: URLSearchParams): SavesTab {
 
 /**
  * M4 내 저장 페이지 상태. 로그인 필수 — 미인증 시 login-required.
- * 탭별 화면/플로 카드 목록, 저장 시각 내림차순(LATEST), page 오프셋 더보기.
+ * 탭별 화면/플로 카드 목록, 저장 시각 내림차순(LATEST), 저장 경계 커서 더보기.
  * M5: 탭 상태를 URL(?tab=)과 동기화.
  */
 export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageState {
@@ -142,8 +154,8 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
   const [flowCards, setFlowCards] = useState<FlowCard[]>([]);
   const [screenshotTotalCount, setScreenshotTotalCount] = useState(0);
   const [flowTotalCount, setFlowTotalCount] = useState(0);
-  const [screenshotPage, setScreenshotPage] = useState(0);
-  const [flowPage, setFlowPage] = useState(0);
+  const [screenshotCursor, setScreenshotCursor] = useState<string | null>(null);
+  const [flowCursor, setFlowCursor] = useState<string | null>(null);
   const [screenshotHasNext, setScreenshotHasNext] = useState(false);
   const [flowHasNext, setFlowHasNext] = useState(false);
   const [screenshotLoadingMore, setScreenshotLoadingMore] = useState(false);
@@ -157,8 +169,8 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
     setFlowCards([]);
     setScreenshotTotalCount(0);
     setFlowTotalCount(0);
-    setScreenshotPage(0);
-    setFlowPage(0);
+    setScreenshotCursor(null);
+    setFlowCursor(null);
     setScreenshotHasNext(false);
     setFlowHasNext(false);
     setScreenshotLoadingMore(false);
@@ -189,6 +201,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
             })
           );
           setScreenshotTotalCount(connection?.totalCount ?? 0);
+          setScreenshotCursor(connection?.pageInfo?.endCursor ?? null);
           setScreenshotHasNext(connection?.pageInfo?.hasNextPage ?? false);
         } else {
           const result = await apolloClient.query({
@@ -206,6 +219,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
             })
           );
           setFlowTotalCount(connection?.totalCount ?? 0);
+          setFlowCursor(connection?.pageInfo?.endCursor ?? null);
           setFlowHasNext(connection?.pageInfo?.hasNextPage ?? false);
         }
         setStatuses(previous => ({ ...previous, [target]: 'loaded' }));
@@ -223,8 +237,8 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
 
   const retry = useCallback(() => {
     setStatuses({ screenshots: 'loading', flows: 'loading' });
-    setScreenshotPage(0);
-    setFlowPage(0);
+    setScreenshotCursor(null);
+    setFlowCursor(null);
     setScreenshotLoadingMore(false);
     setFlowLoadingMore(false);
     setScreenshotLoadMoreError(false);
@@ -244,23 +258,24 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
     const setTabLoadingMore = tab === 'screenshots' ? setScreenshotLoadingMore : setFlowLoadingMore;
     const setTabLoadMoreError = tab === 'screenshots' ? setScreenshotLoadMoreError : setFlowLoadMoreError;
     const isTabLoadingMore = tab === 'screenshots' ? screenshotLoadingMore : flowLoadingMore;
-    if (isTabLoadingMore) {
+    if (isTabLoadingMore || !(tab === 'screenshots' ? screenshotHasNext : flowHasNext)) {
       return;
     }
-    const nextPage = (tab === 'screenshots' ? screenshotPage : flowPage) + 1;
+    const after = tab === 'screenshots' ? screenshotCursor : flowCursor;
+    if (!after) return;
     setTabLoadingMore(true);
     setTabLoadMoreError(false);
     const request =
       tab === 'screenshots'
         ? apolloClient.query({
             query: MyVisualSavedScreenshotsDocument,
-            variables: { first: VISUAL_SAVES_PAGE_SIZE, page: nextPage },
+            variables: { first: VISUAL_SAVES_PAGE_SIZE, after },
             fetchPolicy: 'no-cache',
             context: { queryDeduplication: false },
           })
         : apolloClient.query({
             query: MyVisualSavedFlowsDocument,
-            variables: { first: VISUAL_SAVES_PAGE_SIZE, page: nextPage },
+            variables: { first: VISUAL_SAVES_PAGE_SIZE, after },
             fetchPolicy: 'no-cache',
             context: { queryDeduplication: false },
           });
@@ -274,9 +289,9 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
             const card = edge?.node ? toScreenshotCard(edge.node) : null;
             return card ? [card] : [];
           });
-          setScreenshotCards(prev => [...prev, ...cards]);
+          setScreenshotCards(prev => appendSavedCards(prev, cards));
           setScreenshotHasNext(connection?.pageInfo?.hasNextPage ?? false);
-          setScreenshotPage(nextPage);
+          setScreenshotCursor(connection?.pageInfo?.endCursor ?? null);
         } else {
           const data = result.data as MyVisualSavedFlowsQuery | undefined;
           const connection = data?.myVisualSavedFlows;
@@ -284,9 +299,9 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
             const card = edge?.node ? toFlowCard(edge.node) : null;
             return card ? [card] : [];
           });
-          setFlowCards(prev => [...prev, ...cards]);
+          setFlowCards(prev => appendSavedCards(prev, cards));
           setFlowHasNext(connection?.pageInfo?.hasNextPage ?? false);
-          setFlowPage(nextPage);
+          setFlowCursor(connection?.pageInfo?.endCursor ?? null);
         }
       })
       .catch((e: unknown) => {
@@ -302,7 +317,16 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
         if (generation.current !== requestGeneration) return;
         setTabLoadingMore(false);
       });
-  }, [apolloClient, tab, screenshotPage, flowPage, screenshotLoadingMore, flowLoadingMore]);
+  }, [
+    apolloClient,
+    tab,
+    screenshotCursor,
+    flowCursor,
+    screenshotLoadingMore,
+    flowLoadingMore,
+    screenshotHasNext,
+    flowHasNext,
+  ]);
 
   const retryLoadMore = useCallback(() => {
     if (tab === 'screenshots') {

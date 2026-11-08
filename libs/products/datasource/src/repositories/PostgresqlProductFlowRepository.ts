@@ -1,3 +1,4 @@
+import type { VisualSaveCursor } from '@darun/products-domain';
 import {
   ProductFlow,
   ProductScreenshot,
@@ -536,7 +537,11 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
     userId: string;
     limit: number;
     offset: number;
-  }): Promise<{ flows: VisualFlowSummary[]; totalCount: number }> {
+    after?: VisualSaveCursor;
+  }): Promise<{
+    flows: (VisualFlowSummary & { saveCursor: VisualSaveCursor })[];
+    totalCount: number;
+  }> {
     const baseConditions = [eq(visualSaves.userId, params.userId), isNotNull(visualSaves.flowId)];
     const [countRows, rows] = await Promise.all([
       this.db
@@ -545,6 +550,8 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
         .where(and(...baseConditions)),
       this.db
         .select({
+          saveId: visualSaves.id,
+          savedAt: sql<string>`to_char(${visualSaves.createdAt}, 'YYYY-MM-DD"T"HH24:MI:SS.US')`,
           id: productFlows.id,
           title: productFlows.title,
           description: productFlows.description,
@@ -563,15 +570,30 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
         .from(visualSaves)
         .innerJoin(productFlows, eq(productFlows.id, visualSaves.flowId))
         .innerJoin(products, eq(products.id, productFlows.productId))
-        .where(and(...baseConditions, isNotNull(products.publishedAt)))
+        .where(
+          and(
+            ...baseConditions,
+            isNotNull(products.publishedAt),
+            params.after
+              ? sql`(${visualSaves.createdAt}, ${visualSaves.id}) < (${params.after.savedAt}::timestamp, ${params.after.saveId})`
+              : undefined
+          )
+        )
         .orderBy(sql`${visualSaves.createdAt} DESC`, sql`${visualSaves.id} DESC`)
         .limit(params.limit)
-        .offset(params.offset),
+        .offset(params.after ? 0 : params.offset),
     ]);
     return {
       flows: rows.flatMap(row => {
         const summary = toVisualSummary(row);
-        return summary ? [summary] : [];
+        return summary
+          ? [
+              {
+                ...summary,
+                saveCursor: { savedAt: row.savedAt, saveId: row.saveId },
+              },
+            ]
+          : [];
       }),
       totalCount: countRows[0]?.value ?? 0,
     };

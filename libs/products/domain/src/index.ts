@@ -1,4 +1,5 @@
 export { Product } from './entities/Product';
+export type { VisualSaveCursor } from './repositories/VisualSaveCursor';
 export { ProductFeature } from './entities/ProductFeature';
 export { ProductFeatureScreenshot } from './entities/ProductFeatureScreenshot';
 export { ProductLink } from './entities/ProductLink';

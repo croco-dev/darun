@@ -97,6 +97,165 @@ suite('계정 저장의 PostgreSQL 수렴', () => {
     await db.delete(visualSaves);
   });
 
+  describe.each(['screenshot', 'flow'] as const)('%s 이어읽기', kind => {
+    it('저장 시각의 마이크로초를 보존하고 다른 계정·종류의 저장을 섞지 않는다', async () => {
+      await client`insert into visual_saves (id, user_id, screenshot_id, flow_id, created_at) values
+        ('00000000000000000000000001', 'precision', ${screenshotId}, null, '2026-01-02 03:04:05.123456'),
+        ('00000000000000000000000002', 'precision', null, ${flowId}, '2026-01-02 03:04:05.123456'),
+        ('00000000000000000000000003', 'precision', ${otherScreenshotId}, null, '2026-01-02 03:04:05.123455'),
+        ('00000000000000000000000004', 'precision', null, ${otherFlowId}, '2026-01-02 03:04:05.123455'),
+        ('00000000000000000000000005', 'other', ${screenshotId}, null, '2026-01-01'),
+        ('00000000000000000000000006', 'other', null, ${flowId}, '2026-01-01')`;
+      if (kind === 'screenshot') {
+        const first = await shots.findManyVisualSavedScreenshotsByUser({
+          userId: 'precision',
+          limit: 1,
+          offset: 0,
+        });
+        expect(first.screenshots[0].saveCursor).toEqual({
+          savedAt: '2026-01-02T03:04:05.123456',
+          saveId: '00000000000000000000000001',
+        });
+        const next = await shots.findManyVisualSavedScreenshotsByUser({
+          userId: 'precision',
+          limit: 24,
+          offset: 0,
+          after: first.screenshots[0].saveCursor,
+        });
+        expect(next.screenshots.map(item => item.id)).toEqual([otherScreenshotId]);
+      } else {
+        const first = await flows.findManyVisualSavedFlowsByUser({
+          userId: 'precision',
+          limit: 1,
+          offset: 0,
+        });
+        expect(first.flows[0].saveCursor).toEqual({
+          savedAt: '2026-01-02T03:04:05.123456',
+          saveId: '00000000000000000000000002',
+        });
+        const next = await flows.findManyVisualSavedFlowsByUser({
+          userId: 'precision',
+          limit: 24,
+          offset: 0,
+          after: first.flows[0].saveCursor,
+        });
+        expect(next.flows.map(item => item.id)).toEqual([otherFlowId]);
+      }
+    });
+    it.each(['insert', 'delete', 'delete-boundary'] as const)(
+      '첫 24개 뒤 %s가 있어도 경계 뒤 여섯 항목을 빠짐없이 읽는다',
+      async change => {
+        const ids = Array.from({ length: 31 }, (_, i) => String(100 + i).padStart(26, '0'));
+        const saveIds = ids.map((_, i) => String(200 + i).padStart(26, '0'));
+        await db.insert(productScreenshots).values(
+          ids.map(id => ({
+            id,
+            productId,
+            imageUrl: 'https://example.com/a',
+            imageAlt: id,
+          }))
+        );
+        if (kind === 'flow') {
+          await db.insert(productFlows).values(
+            ids.map(id => ({
+              id,
+              productId,
+              title: id,
+              platform: 'WEB',
+              flowType: 'SEARCH',
+            }))
+          );
+          await db.insert(productFlowSteps).values(
+            ids.map(id => ({
+              flowId: id,
+              screenshotId: id,
+              position: 0,
+              caption: '',
+            }))
+          );
+        }
+        const peer = postgres(url!, {
+          max: 1,
+          connect_timeout: 5,
+          connection: { statement_timeout: 5000 },
+        });
+        const otherDb = drizzle(peer);
+        const read = (after?: { savedAt: string; saveId: string }) =>
+          kind === 'screenshot'
+            ? shots.findManyVisualSavedScreenshotsByUser({
+                userId: 'reader',
+                limit: 24,
+                offset: after ? 24 : 0,
+                ...(after ? { after } : {}),
+              })
+            : flows.findManyVisualSavedFlowsByUser({
+                userId: 'reader',
+                limit: 24,
+                offset: after ? 24 : 0,
+                ...(after ? { after } : {}),
+              });
+        const itemIds = (result: Awaited<ReturnType<typeof read>>) =>
+          ('screenshots' in result ? result.screenshots : result.flows).map(item => item.id);
+        try {
+          await otherDb.insert(visualSaves).values(
+            ids.slice(0, 30).map((id, i) => ({
+              id: saveIds[i],
+              userId: 'reader',
+              ...(kind === 'screenshot' ? { screenshotId: id } : { flowId: id }),
+              createdAt: new Date('2026-01-02T03:04:05.123Z'),
+            }))
+          );
+          expect(itemIds(await read())).toEqual(ids.slice(6, 30).reverse());
+          // The boundary belongs to the save, not to the screenshot/flow, and survives its deletion.
+          const boundary = {
+            savedAt: '2026-01-02T03:04:05.123000',
+            saveId: saveIds[6],
+          };
+          if (change === 'insert') {
+            await otherDb.insert(visualSaves).values({
+              id: saveIds[30],
+              userId: 'reader',
+              ...(kind === 'screenshot' ? { screenshotId: ids[30] } : { flowId: ids[30] }),
+              createdAt: new Date('2026-01-03T00:00:00Z'),
+            });
+          } else {
+            await otherDb.delete(visualSaves).where(eq(visualSaves.id, saveIds[change === 'delete' ? 29 : 6]));
+          }
+          expect(itemIds(await read(boundary))).toEqual(ids.slice(0, 6).reverse());
+        } finally {
+          await peer.end({ timeout: 5 });
+          await db.delete(productFlows).where(eq(productFlows.productId, productId));
+          await db.delete(productScreenshots).where(eq(productScreenshots.productId, productId));
+          await db.insert(productScreenshots).values(
+            [screenshotId, otherScreenshotId].map(id => ({
+              id,
+              productId,
+              imageUrl: 'https://example.com/save.png',
+              imageAlt: 'Save',
+            }))
+          );
+          await db.insert(productFlows).values(
+            [flowId, otherFlowId].map(id => ({
+              id,
+              productId,
+              title: 'Save',
+              platform: 'WEB',
+              flowType: 'SEARCH',
+            }))
+          );
+          await db.insert(productFlowSteps).values(
+            [flowId, otherFlowId].map(id => ({
+              flowId: id,
+              screenshotId,
+              position: 0,
+              caption: '',
+            }))
+          );
+        }
+      }
+    );
+  });
+
   describe.each(['screenshot', 'flow'] as const)('%s', kind => {
     const target = () => (kind === 'screenshot' ? { screenshotId } : { flowId });
     const set = (saved: boolean, userId = 'save-user') =>

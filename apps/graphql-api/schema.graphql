@@ -471,8 +471,8 @@ type Query {
   magazine(id: ID!): Magazine
   magazineBySlug(slug: String!): Magazine
   myVisualFlowSaves(first: Int, page: Int): [String!]!
-  myVisualSavedFlows(first: Int, page: Int): VisualFlowConnection!
-  myVisualSavedScreenshots(first: Int, page: Int): VisualScreenshotConnection!
+  myVisualSavedFlows(after: String, first: Int, page: Int): VisualFlowConnection!
+  myVisualSavedScreenshots(after: String, first: Int, page: Int): VisualScreenshotConnection!
   myVisualScreenshotSaves(first: Int, page: Int): [String!]!
   product(id: ID!, locale: String! = "ko"): Product
   productBySlug(locale: String! = "ko", slug: String!): Product
