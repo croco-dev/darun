@@ -10,6 +10,7 @@ import { useNavigate } from '@darun/utils-router';
 import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { getReusableCreationUploadUrl, type CompletedCreationUpload } from '../creationUpload';
 
 gql(`
   mutation CreateProductOnNewProductForm($input: CreateProductInput!) {
@@ -38,20 +39,8 @@ type NewProductFormProps = {
 };
 
 export function useNewProductForm({ children }: NewProductFormProps) {
-  const isSubmittingRef = useRef(false);
-  const mounted = useRef(true);
-  const activeUpload = useRef<AbortController | null>(null);
-  const completedUpload = useRef<{ file: File; folder: string; url: string } | null>(null);
+  const completedUpload = useRef<CompletedCreationUpload | null>(null);
   const selectedFile = useRef<File | undefined>(undefined);
-  const [isUploading, setIsUploading] = useState(false);
-  const cancelUpload = useCallback(() => {
-    const controller = activeUpload.current;
-    if (!controller) return;
-    activeUpload.current = null;
-    controller.abort();
-    isSubmittingRef.current = false;
-    setIsUploading(false);
-  }, []);
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
     onValuesChange: values => {
@@ -77,6 +66,9 @@ export function useNewProductForm({ children }: NewProductFormProps) {
   });
   const navigate = useNavigate();
   const client = useApolloClient();
+  const isSubmittingRef = useRef(false);
+  const mounted = useRef(true);
+  const activeUpload = useRef<AbortController | null>(null);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -86,6 +78,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     };
   }, []);
   const { upload } = useImageUpload();
+  const [isUploading, setIsUploading] = useState(false);
   const [createProduct, { loading: isCreating }] = useMutation(CreateProductOnNewProductFormDocument, {
     onCompleted: ({ createProduct }) => {
       if (mounted.current && createProduct?.product?.slug) {
@@ -106,6 +99,15 @@ export function useNewProductForm({ children }: NewProductFormProps) {
       });
     },
   });
+
+  const cancelUpload = useCallback(() => {
+    const controller = activeUpload.current;
+    if (!controller) return;
+    activeUpload.current = null;
+    controller.abort();
+    isSubmittingRef.current = false;
+    setIsUploading(false);
+  }, [setIsUploading]);
 
   const submit = async (values: FormValues) => {
     if (!mounted.current || isUploading || isCreating || isSubmittingRef.current) return;
@@ -132,10 +134,7 @@ export function useNewProductForm({ children }: NewProductFormProps) {
     const controller = new AbortController();
     activeUpload.current = controller;
     const folder = 'images/logos';
-    let url =
-      completedUpload.current?.file === values.file && completedUpload.current.folder === folder
-        ? completedUpload.current.url
-        : undefined;
+    let url = getReusableCreationUploadUrl(completedUpload.current, values.file, folder);
     try {
       if (!url) {
         setIsUploading(true);
