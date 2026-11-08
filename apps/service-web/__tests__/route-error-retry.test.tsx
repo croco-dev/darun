@@ -72,7 +72,7 @@ describe('route error recovery', () => {
     route.locale = locale;
     vi.spyOn(console, 'error').mockImplementation(() => {});
     let unrelatedRequests = 0;
-    const successfulReads: string[] = [];
+    const successfulReads: (string | undefined)[] = [];
     const requests: {
       variables: Record<string, unknown>;
       fail: () => void;
