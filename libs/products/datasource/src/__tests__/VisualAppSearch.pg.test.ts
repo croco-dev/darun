@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import type { Drizzle } from '@darun/provider-database';
 import { inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -26,7 +27,7 @@ const ids = fixtures.map(row => row.id);
 
 suite('Visual 앱 이름·slug 검색 (격리 PostgreSQL 필요)', () => {
   let sql: postgres.Sql;
-  let db: ReturnType<typeof drizzle>;
+  let db: Drizzle;
   let repo: PostgresqlProductRepository;
 
   beforeAll(async () => {
