@@ -13,7 +13,7 @@ import {
 import { ArrowDown, ArrowUp, Button, Check, ImageOff, Loader2, Plus, X } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminSelect } from '@darun/ui-admin';
 import { notifications } from '@mantine/notifications';
-import { useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 gql`
   query GetProductScreenshotsOnFlowEditor($slug: String!) {
@@ -350,6 +350,33 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
     );
   }
 
+  let screenshotListStatus: ReactNode = null;
+  if (screenshotsResult.loading) {
+    screenshotListStatus = <output className="block text-sm text-dark-500">스크린샷을 불러오는 중입니다.</output>;
+  } else if (screenshotsResult.error) {
+    screenshotListStatus = (
+      <AdminErrorState
+        title="스크린샷을 불러오지 못했습니다."
+        description="입력한 내용은 유지됩니다. 스크린샷을 다시 불러와 주세요."
+        error={screenshotsResult.error}
+        action={
+          <Button
+            type="button"
+            variant="contained"
+            color="primary"
+            onClick={() => void screenshotsResult.refetch().catch(() => undefined)}
+          >
+            스크린샷 다시 불러오기
+          </Button>
+        }
+      />
+    );
+  } else if (usableScreenshots.length === 0) {
+    screenshotListStatus = (
+      <output className="block text-sm text-dark-500">이 플랫폼에 등록된 스크린샷이 없습니다.</output>
+    );
+  }
+
   return (
     <fieldset disabled={saving} aria-busy={saving} className="flex min-w-0 flex-col gap-6">
       <div className="flex flex-col gap-4 rounded-lg border border-dark-200 bg-surface-100/30 p-4">
@@ -449,31 +476,7 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
             플로는 {MIN_STEPS}단계 이상으로 구성해 주세요.
           </p>
         )}
-        {screenshotsResult.loading ? (
-          <p role="status" className="text-sm text-dark-500">
-            스크린샷을 불러오는 중입니다.
-          </p>
-        ) : screenshotsResult.error ? (
-          <AdminErrorState
-            title="스크린샷을 불러오지 못했습니다."
-            description="입력한 내용은 유지됩니다. 스크린샷을 다시 불러와 주세요."
-            error={screenshotsResult.error}
-            action={
-              <Button
-                type="button"
-                variant="contained"
-                color="primary"
-                onClick={() => void screenshotsResult.refetch().catch(() => undefined)}
-              >
-                스크린샷 다시 불러오기
-              </Button>
-            }
-          />
-        ) : usableScreenshots.length === 0 ? (
-          <p role="status" className="text-sm text-dark-500">
-            이 플랫폼에 등록된 스크린샷이 없습니다.
-          </p>
-        ) : null}
+        {screenshotListStatus}
         {pickMode && !screenshotsResult.loading && !screenshotsResult.error && (
           <div className="grid grid-cols-2 gap-2 rounded-lg border border-dark-200 bg-surface-100/50 p-3 sm:grid-cols-3 md:grid-cols-4">
             {selectableScreenshots.map(shot => (
