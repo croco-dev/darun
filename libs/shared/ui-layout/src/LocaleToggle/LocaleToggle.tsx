@@ -12,7 +12,7 @@ export const LocaleToggle = () => {
 
   const toggle = () => {
     const nextLocale = locale === 'ko' ? 'en' : 'ko';
-    router.replace(pathname, { locale: nextLocale });
+    router.replace(`${pathname}${window.location.search}${window.location.hash}`, { locale: nextLocale });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
