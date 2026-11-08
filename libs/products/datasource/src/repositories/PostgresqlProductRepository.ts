@@ -23,6 +23,7 @@ import {
   isNotNull,
   lt,
   lte,
+  or,
   getTableColumns,
   sql,
 } from 'drizzle-orm';
@@ -364,10 +365,11 @@ export class PostgresqlProductRepository implements ProductRepository {
     query?: string;
     productSlug?: string;
   }) {
+    const pattern = query ? `%${query.replace(/[\\%_]/g, '\\$&')}%` : undefined;
     const filter = and(
       isNotNull(products.publishedAt),
       sql`exists (select 1 from ${productScreenshots} where ${productScreenshots.productId} = ${products.id})`,
-      query ? ilike(products.name, `%${query.replace(/[\\%_]/g, '\\$&')}%`) : undefined,
+      pattern ? or(ilike(products.name, pattern), ilike(products.slug, pattern)) : undefined,
       productSlug ? eq(products.slug, productSlug) : undefined
     );
     const [rows, totals] = await Promise.all([
