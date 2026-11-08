@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { Link } from '../../i18n/navigation';
 import { normalizeLocale } from '../../lib/seo/url';
 
-export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function ErrorPage({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   const params = useParams();
   const isKo = normalizeLocale(typeof params?.locale === 'string' ? params.locale : '') === 'ko';
 
@@ -42,7 +42,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
 
             <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
               <Button
-                onClick={() => reset()}
+                onClick={retry}
                 variant="shadow"
                 color="primary"
                 size="md"
