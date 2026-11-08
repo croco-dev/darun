@@ -10,20 +10,18 @@ interface TierSelectProps {
 }
 
 export function TierSelect({ appId, initialTier }: TierSelectProps) {
-  const [tier, setTier] = useState(String(initialTier));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   return (
     <div className="space-y-2">
       <Select
-        value={tier}
+        value={String(initialTier)}
         disabled={pending}
         onValueChange={async value => {
           setPending(true);
           setError('');
           try {
             await updateTier(appId, Number(value));
-            setTier(value);
           } catch {
             setError('티어를 저장하지 못했습니다. 이전 티어를 유지합니다. 다시 시도해 주세요.');
           } finally {
