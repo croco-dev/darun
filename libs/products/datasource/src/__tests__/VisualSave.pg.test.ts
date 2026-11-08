@@ -26,6 +26,33 @@ suite('계정 저장의 PostgreSQL 수렴', () => {
   let db: Drizzle;
   let shots: PostgresqlProductScreenshotRepository;
   let flows: PostgresqlProductFlowRepository;
+  async function seedTargets() {
+    await db.insert(productScreenshots).values(
+      [screenshotId, otherScreenshotId].map(id => ({
+        id,
+        productId,
+        imageUrl: 'https://example.com/save.png',
+        imageAlt: 'Save',
+      }))
+    );
+    await db.insert(productFlows).values(
+      [flowId, otherFlowId].map(id => ({
+        id,
+        productId,
+        title: 'Save',
+        platform: 'WEB',
+        flowType: 'SEARCH',
+      }))
+    );
+    await db.insert(productFlowSteps).values(
+      [flowId, otherFlowId].map(id => ({
+        flowId: id,
+        screenshotId,
+        position: 0,
+        caption: '',
+      }))
+    );
+  }
   beforeAll(async () => {
     const target = new URL(url!);
     if (
@@ -56,31 +83,7 @@ suite('계정 저장의 PostgreSQL 수렴', () => {
       logoUrl: '',
       publishedAt: new Date(),
     });
-    await db.insert(productScreenshots).values(
-      [screenshotId, otherScreenshotId].map(id => ({
-        id,
-        productId,
-        imageUrl: 'https://example.com/save.png',
-        imageAlt: 'Save',
-      }))
-    );
-    await db.insert(productFlows).values(
-      [flowId, otherFlowId].map(id => ({
-        id,
-        productId,
-        title: 'Save',
-        platform: 'WEB',
-        flowType: 'SEARCH',
-      }))
-    );
-    await db.insert(productFlowSteps).values(
-      [flowId, otherFlowId].map(id => ({
-        flowId: id,
-        screenshotId,
-        position: 0,
-        caption: '',
-      }))
-    );
+    await seedTargets();
   }, 30_000);
   afterAll(async () => {
     try {
@@ -226,31 +229,7 @@ suite('계정 저장의 PostgreSQL 수렴', () => {
           await peer.end({ timeout: 5 });
           await db.delete(productFlows).where(eq(productFlows.productId, productId));
           await db.delete(productScreenshots).where(eq(productScreenshots.productId, productId));
-          await db.insert(productScreenshots).values(
-            [screenshotId, otherScreenshotId].map(id => ({
-              id,
-              productId,
-              imageUrl: 'https://example.com/save.png',
-              imageAlt: 'Save',
-            }))
-          );
-          await db.insert(productFlows).values(
-            [flowId, otherFlowId].map(id => ({
-              id,
-              productId,
-              title: 'Save',
-              platform: 'WEB',
-              flowType: 'SEARCH',
-            }))
-          );
-          await db.insert(productFlowSteps).values(
-            [flowId, otherFlowId].map(id => ({
-              flowId: id,
-              screenshotId,
-              position: 0,
-              caption: '',
-            }))
-          );
+          await seedTargets();
         }
       }
     );

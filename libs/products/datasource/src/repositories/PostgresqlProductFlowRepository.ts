@@ -1,5 +1,5 @@
-import type { VisualSaveCursor } from '@darun/products-domain';
 import {
+  type VisualSaveCursor,
   ProductFlow,
   ProductScreenshot,
   ProductFlowRepositoryToken,
