@@ -163,11 +163,19 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
     [screenshotsResult.data]
   );
 
-  const screenshotById = useMemo(() => new Map(screenshots.map(shot => [shot.id, shot])), [screenshots]);
-
   // 편집 대상 플로를 한 번만 반영한다. 이후 서버 재조회가 로컬 편집 내용을 덮어쓰지 않는다.
   const serverFlow = flowResult.data?.adminProductFlow;
   const matchesProduct = serverFlow?.product.slug === slug;
+  const screenshotById = useMemo(() => {
+    const result = new Map<string, ScreenshotOption>();
+    if (matchesProduct) {
+      for (const step of serverFlow?.steps ?? []) {
+        if (step?.screenshot) result.set(step.screenshot.id, step.screenshot);
+      }
+    }
+    for (const shot of screenshots) result.set(shot.id, shot);
+    return result;
+  }, [matchesProduct, serverFlow, screenshots]);
   useEffect(() => {
     if (isEdit && !hydratedFromServer && serverFlow && matchesProduct) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- 서버 플로 데이터 초기 동기화에 필요
@@ -425,7 +433,12 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
             size="sm"
             onClick={() => setPickMode(current => !current)}
             className="flex items-center gap-1.5 active:scale-[0.98] motion-reduce:transform-none"
-            disabled={steps.length >= MAX_STEPS || selectableScreenshots.length === 0}
+            disabled={
+              screenshotsResult.loading ||
+              Boolean(screenshotsResult.error) ||
+              steps.length >= MAX_STEPS ||
+              selectableScreenshots.length === 0
+            }
           >
             <Plus size={16} className="shrink-0" aria-hidden="true" />
             단계 추가
@@ -436,7 +449,32 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
             플로는 {MIN_STEPS}단계 이상으로 구성해 주세요.
           </p>
         )}
-        {pickMode && (
+        {screenshotsResult.loading ? (
+          <p role="status" className="text-sm text-dark-500">
+            스크린샷을 불러오는 중입니다.
+          </p>
+        ) : screenshotsResult.error ? (
+          <AdminErrorState
+            title="스크린샷을 불러오지 못했습니다."
+            description="입력한 내용은 유지됩니다. 스크린샷을 다시 불러와 주세요."
+            error={screenshotsResult.error}
+            action={
+              <Button
+                type="button"
+                variant="contained"
+                color="primary"
+                onClick={() => void screenshotsResult.refetch().catch(() => undefined)}
+              >
+                스크린샷 다시 불러오기
+              </Button>
+            }
+          />
+        ) : usableScreenshots.length === 0 ? (
+          <p role="status" className="text-sm text-dark-500">
+            이 플랫폼에 등록된 스크린샷이 없습니다.
+          </p>
+        ) : null}
+        {pickMode && !screenshotsResult.loading && !screenshotsResult.error && (
           <div className="grid grid-cols-2 gap-2 rounded-lg border border-dark-200 bg-surface-100/50 p-3 sm:grid-cols-3 md:grid-cols-4">
             {selectableScreenshots.map(shot => (
               <button
