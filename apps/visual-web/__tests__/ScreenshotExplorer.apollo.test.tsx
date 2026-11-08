@@ -64,7 +64,7 @@ afterEach(async () => {
   vi.restoreAllMocks();
 });
 
-function mountFlowPagination() {
+async function mountFlowPagination() {
   window.history.replaceState(null, '', '/flows?q=A');
   const pending: Array<{
     query: string;
@@ -129,37 +129,45 @@ function mountFlowPagination() {
   });
   clients.push(client);
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  render(
-    <RouteFixture>
-      <ApolloProvider client={client}>
-        <FlowExplorer />
-      </ApolloProvider>
-    </RouteFixture>
+  await act(async () =>
+    render(
+      <RouteFixture>
+        <ApolloProvider client={client}>
+          <FlowExplorer />
+        </ApolloProvider>
+      </RouteFixture>
+    )
   );
   return pending;
 }
 
 async function switchFlowSearch(query: string) {
-  act(() => navigate(`/flows?q=${query}`));
-  await screen.findByText(`플로 ${query}-1`);
+  await act(async () => navigate(`/flows?q=${query}`));
+  expect(screen.getByText(`플로 ${query}-1`)).toBeTruthy();
 }
 
 it('이전 조건의 더보기 실패가 새 조건의 버튼과 오류를 바꾸지 않는다', async () => {
-  const pending = mountFlowPagination();
-  await screen.findByText('플로 A-1');
-  fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
-  expect(screen.getByRole<HTMLButtonElement>('button', { name: '불러오는 중...' }).disabled).toBe(true);
+  const pending = await mountFlowPagination();
+  expect(screen.getByText('플로 A-1')).toBeTruthy();
+  const previousMore = screen.getByRole<HTMLButtonElement>('button', { name: '더 보기' });
+  fireEvent.click(previousMore);
+  expect(previousMore.isConnected).toBe(true);
+  expect(previousMore.disabled).toBe(true);
+  expect(previousMore.textContent).toBe('불러오는 중...');
   await switchFlowSearch('B');
-  expect(screen.getByRole<HTMLButtonElement>('button', { name: '더 보기' }).disabled).toBe(false);
+  const currentMore = screen.getByRole<HTMLButtonElement>('button', { name: '더 보기' });
+  expect(currentMore.disabled).toBe(false);
   await act(async () => pending[0].fail());
   expect(screen.queryByRole('alert')).toBeNull();
-  expect(screen.getByRole<HTMLButtonElement>('button', { name: '더 보기' }).disabled).toBe(false);
+  expect(currentMore.isConnected).toBe(true);
+  expect(currentMore.disabled).toBe(false);
+  expect(currentMore.textContent).toBe('더 보기');
   expect(screen.queryByText('플로 A-1')).toBeNull();
 });
 
 it.each(['succeed', 'fail'] as const)('이전 조건의 %s 완료가 현재 더보기의 로딩을 끝내지 않는다', async outcome => {
-  const pending = mountFlowPagination();
-  await screen.findByText('플로 A-1');
+  const pending = await mountFlowPagination();
+  expect(screen.getByText('플로 A-1')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
   await switchFlowSearch('B');
   fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
@@ -175,8 +183,8 @@ it.each(['succeed', 'fail'] as const)('이전 조건의 %s 완료가 현재 더�
 });
 
 it('현재 조건의 오류는 표시하고 같은 커서로 재시도해 누적 결과를 보존한다', async () => {
-  const pending = mountFlowPagination();
-  await screen.findByText('플로 A-1');
+  const pending = await mountFlowPagination();
+  expect(screen.getByText('플로 A-1')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
   await act(async () => pending[0].fail());
   expect(screen.getByRole('alert').textContent).toContain('더 불러오지 못했어요');
