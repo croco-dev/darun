@@ -45,7 +45,7 @@ function setup(kind: 'tags' | 'alternatives') {
                     }
                   : {
                       updateAlternativeProduct: {
-                        product: { id: 'product-a', alternatives: [] },
+                        product: { id: 'product-a', manualAlternatives: [] },
                       },
                     },
             });
@@ -65,7 +65,7 @@ function setup(kind: 'tags' | 'alternatives') {
   const product = {
     id: 'product-a',
     tags: [{ id: 'tag-a', name: '핀테크' }],
-    alternatives: [{ id: 'alt-b', name: '다른 서비스 B' }],
+    manualAlternatives: [{ id: 'alt-b', name: '다른 서비스 B' }],
   };
   return { reads, writes, submit, save, product, client };
 }
@@ -99,7 +99,7 @@ describe.each(['tags', 'alternatives'] as const)('%s 편집 초기 조회', kind
       slug: 'fixture-a',
       input: kind === 'tags' ? { tagNames: [] } : { alternativeProductIds: [] },
     });
-    await act(async () => fixture.reads.shift()!.resolve({ ...fixture.product, tags: [], alternatives: [] }));
+    await act(async () => fixture.reads.shift()!.resolve({ ...fixture.product, tags: [], manualAlternatives: [] }));
   });
 
   it('기존 값이 있어도 재조회 중이거나 실패하면 저장을 차단하고 복구 후 기존 값을 저장한다', async () => {
@@ -143,10 +143,10 @@ describe.each(['tags', 'alternatives'] as const)('%s 편집 초기 조회', kind
 
   it('정상적으로 조회한 빈 목록은 저장할 수 있다', async () => {
     const fixture = setup(kind);
-    await act(async () => fixture.reads.shift()!.resolve({ ...fixture.product, tags: [], alternatives: [] }));
+    await act(async () => fixture.reads.shift()!.resolve({ ...fixture.product, tags: [], manualAlternatives: [] }));
     await waitFor(() => expect(fixture.save().disabled).toBe(false));
     fixture.submit();
     await waitFor(() => expect(fixture.writes).toHaveLength(1));
-    await act(async () => fixture.reads.shift()!.resolve({ ...fixture.product, tags: [], alternatives: [] }));
+    await act(async () => fixture.reads.shift()!.resolve({ ...fixture.product, tags: [], manualAlternatives: [] }));
   });
 });

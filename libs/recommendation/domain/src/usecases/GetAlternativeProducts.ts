@@ -17,8 +17,12 @@ export class GetAlternativeProducts {
     private readonly autoRecommender?: AutoRecommender
   ) {}
 
+  async executeManual({ productId }: { productId: string }) {
+    return this.alternativeProductRepository.findManyByProductId(productId);
+  }
+
   async execute({ productId }: { productId: string }) {
-    const manualRows = (await this.alternativeProductRepository.findManyByProductId(productId)).filter(
+    const manualRows = (await this.executeManual({ productId })).filter(
       alternative => alternative.alternativeProductId !== productId
     );
     const publishedProducts = await this.productRepository.findPublishedByIds(
