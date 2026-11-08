@@ -16,14 +16,16 @@ export function AdminSearchInput({ initialQuery }: AdminSearchInputProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [value, setValue] = useState(initialQuery);
-  const lastSubmittedQueryRef = useRef(initialQuery.trim());
+  const pendingQueryRef = useRef<string | null>(null);
 
   const currentQuery = searchParams.get('query') ?? '';
 
   useEffect(() => {
     const normalizedCurrentQuery = currentQuery.trim();
+    const pendingQuery = pendingQueryRef.current;
+    pendingQueryRef.current = null;
 
-    if (normalizedCurrentQuery === lastSubmittedQueryRef.current) {
+    if (normalizedCurrentQuery === pendingQuery) {
       return;
     }
 
@@ -39,7 +41,7 @@ export function AdminSearchInput({ initialQuery }: AdminSearchInputProps) {
     }
 
     const timeoutId = window.setTimeout(() => {
-      lastSubmittedQueryRef.current = normalizedValue;
+      pendingQueryRef.current = normalizedValue;
 
       const nextParams = new URLSearchParams(searchParams.toString());
 
