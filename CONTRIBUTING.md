@@ -229,6 +229,50 @@ Compose는 `INFRA_ENV=local` API에만 로컬 커서 키 기본값을 제공합�
 `pageInfo { hasNextPage endCursor }`를 조회합니다. API를 재시작한 후 같은 카테고리의
 `after`에 `endCursor`를 전달해 다음 상품이 조회되는지 확인합니다.
 
+### 로컬 상품의 검색 문서 동기화
+
+로컬 관리자에서 상품을 발행하거나 공개된 내용을 수정한 뒤, 호스트에서 다음 명령을 실행합니다.
+먼저 `pnpm local:up`과 `pnpm local:bootstrap`으로 로컬 DB를 준비해야 합니다.
+
+```bash
+INFRA_ENV=local \
+DATABASE_URL=postgresql://darun:darun@127.0.0.1:5432/darun \
+MONGODB_URI=mongodb://127.0.0.1:27017/darun \
+pnpm local:sync-search --limit 50
+```
+
+명령은 due search intent를 최대 50개 처리하고 종료합니다. `--limit`은 1~100이며 기본값은 50입니다.
+`--watch`를 명시하면 배치 종료 후 5초마다 다시 확인하며, Ctrl+C 또는 SIGTERM으로 종료합니다.
+기존 worker의 dispatch 예약·claim·lease·revision 검증을 사용하므로 중복 실행은 완료 작업을 다시 적용하지 않고,
+이전 revision이 새 검색 문서를 덮어쓰지 않습니다. 번역·LLM 작업과 AWS 큐는 실행하지 않습니다.
+
+`INFRA_ENV=local`, `DATABASE_URL`, `MONGODB_URI`를 모두 명시해야 하며 `.env` 파일은 읽지 않습니다.
+두 대상 모두 IP literal `127.0.0.1` 또는 `[::1]`의 `darun` DB만 허용합니다.
+DNS 호스트명·여러 호스트·SRV·query·fragment는 연결 전에 거절하고 Mongo는 단일 직접 연결을 사용합니다.
+접속 문자열과 자격 증명은 출력하지 않습니다.
+
+출력 JSON의 `processed`와 각 intent의 ID·revision·status·시도 횟수로 결과를 확인합니다.
+한 번 실행에서 처리한 intent가 `failed`이면 종료 코드는 1입니다. 실패는 기존 retry budget과 60초 대기 뒤
+다음 실행에서 재시도하며, 예산이 소진된 작업은 관리자에서 원인을 확인한 뒤 명시적으로 재시도합니다.
+`processed: 0`은 현재 처리할 due intent가 없다는 뜻이며 전체 동기화 완료를 뜻하지 않습니다.
+로컬 PostgreSQL에서 다음 읽기 전용 조회로 대기·실패·lease 상태를 확인할 수 있습니다.
+
+```sql
+SELECT id, product_id, source_revision, status, attempt_count, retry_after, lease_until
+FROM product_content_sync_intents
+WHERE kind = 'search'
+ORDER BY created_at;
+```
+
+Mongo의 `darun.searchableProducts`에서 같은 `productId`와 `sourceRevision`의 문서를 확인한 뒤 검색을 실행합니다.
+이 명령은 검색 문서 소비 경로만 제공합니다. 실제 `$search`에는 별도의 MongoDB Search process와
+`searchable_products_index`가 필요하며, 일반 Mongo CRUD 성공만으로 검색 준비가 끝났다고 판단하지 않습니다(#476).
+
+회귀 검사는 개발 DB와 분리된 빈 PostgreSQL·Mongo의 `darun` DB에만 실행합니다.
+`LOCAL_SEARCH_SYNC_TEST_DATABASE_URL`과 `LOCAL_SEARCH_SYNC_TEST_MONGODB_URI`를 지정하고
+`pnpm --filter graphql-api exec vitest run __tests__/localSearchSync.pg.test.ts`를 실행합니다.
+기존 테이블·컬렉션이 있으면 거절하며 자신이 만든 스키마·검색 컬렉션만 정리합니다.
+
 ### 로그 확인 및 서비스 종료
 
 - 컨테이너 로그 확인: `pnpm local:logs`

@@ -12,6 +12,7 @@
     "lint": "eslint \"**/*.{ts,tsx}\"",
     "local:bootstrap": "tsx scripts/bootstrap-local.ts",
     "local:reset": "tsx scripts/bootstrap-local.ts --reset",
+    "local:sync-search": "node scripts/local-search-sync.cjs",
     "migrate": "tsx scripts/migrate.ts",
     "predeploy:prod": "node scripts/predeploy-prod.mjs",
     "seed:categories": "tsx --tsconfig tsconfig.lambda.json scripts/seed-categories.ts",

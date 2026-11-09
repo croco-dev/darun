@@ -335,18 +335,6 @@ export class PostgresqlProductContentSync implements ProductContentSync {
     send = (intentId: string) => this.queue.sendIntent(intentId)
   ): Promise<{ recovered: number; queued: number }> {
     const now = new Date();
-    const exhausted = await this.db
-      .update(productContentSyncIntents)
-      .set({ status: 'failed', error: 'SEARCH_ATTEMPTS_EXHAUSTED', leaseToken: null, leaseUntil: null, updatedAt: now })
-      .where(
-        and(
-          eq(productContentSyncIntents.kind, 'search'),
-          eq(productContentSyncIntents.status, 'in_progress'),
-          sql`${productContentSyncIntents.attemptCount} >= ${JOB_MAX_ATTEMPTS}`,
-          or(isNull(productContentSyncIntents.leaseUntil), lte(productContentSyncIntents.leaseUntil, now))
-        )
-      )
-      .returning({ id: productContentSyncIntents.id });
     // A failed/stale-source translation remains recoverable without another canonical edit.
     const translations = await this.db
       .select({ intent: productContentSyncIntents, job: translationJobs })
@@ -361,6 +349,27 @@ export class PostgresqlProductContentSync implements ProductContentSync {
       )
       .limit(limit);
     for (const { job } of translations) await this.reconcileTranslation(job.id);
+    const search = await this.dispatchSearch(limit, send);
+    return { recovered: search.recovered + translations.length, queued: search.queued };
+  }
+
+  async dispatchSearch(
+    limit = 50,
+    send = (intentId: string) => this.queue.sendIntent(intentId)
+  ): Promise<{ recovered: number; queued: number }> {
+    const now = new Date();
+    const exhausted = await this.db
+      .update(productContentSyncIntents)
+      .set({ status: 'failed', error: 'SEARCH_ATTEMPTS_EXHAUSTED', leaseToken: null, leaseUntil: null, updatedAt: now })
+      .where(
+        and(
+          eq(productContentSyncIntents.kind, 'search'),
+          eq(productContentSyncIntents.status, 'in_progress'),
+          sql`${productContentSyncIntents.attemptCount} >= ${JOB_MAX_ATTEMPTS}`,
+          or(isNull(productContentSyncIntents.leaseUntil), lte(productContentSyncIntents.leaseUntil, now))
+        )
+      )
+      .returning({ id: productContentSyncIntents.id });
     const candidates = await this.db
       .select()
       .from(productContentSyncIntents)
@@ -404,7 +413,7 @@ export class PostgresqlProductContentSync implements ProductContentSync {
           .where(eq(productContentSyncIntents.id, intent.id));
       }
     }
-    return { recovered: candidates.length + translations.length + exhausted.length, queued };
+    return { recovered: candidates.length + exhausted.length, queued };
   }
 
   async executeSearch(intentId: string): Promise<void> {
