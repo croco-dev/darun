@@ -134,7 +134,7 @@ export default async function HomePage() {
         <div className="rounded-2xl border border-dark-200 bg-white p-6 shadow-card">
           <h3 className="text-sm font-bold text-dark-900 mb-3 flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${productsCount !== null ? 'bg-leaf-500' : 'bg-cherry-500'}`} />
-            시스템 상태 및 운영 가이드
+            <span>시스템 상태 및 운영 가이드</span>
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div className="p-3.5 rounded-xl bg-surface-100/60 border border-dark-150/70">
@@ -145,11 +145,11 @@ export default async function HomePage() {
             </div>
             <div className="p-3.5 rounded-xl bg-surface-100/60 border border-dark-150/70">
               <span className="text-dark-500 block mb-1">상품 수 조회</span>
-              <p role="status" className="font-medium text-dark-800">
+              <output className="block font-medium text-dark-800">
                 {productsCount !== null
                   ? `GraphQL 정상 연동 (${productsCount.toLocaleString()}개 서비스)`
                   : '상품 수를 확인하지 못했습니다.'}
-              </p>
+              </output>
               {productsCount === null && <DashboardRetryButton />}
             </div>
             <div className="p-3.5 rounded-xl bg-surface-100/60 border border-dark-150/70 flex items-center justify-between">
