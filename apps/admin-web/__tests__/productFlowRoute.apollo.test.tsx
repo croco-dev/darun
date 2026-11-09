@@ -155,10 +155,13 @@ it('uses the canonical product for screenshots, saving and returning, including 
   expect(navigate).toHaveBeenLastCalledWith('/products/beta');
 });
 
-it('shows a missing flow separately from a query failure and exposes no editable form', async () => {
+it.each(['beta', '한글 상품'])('returns from a missing flow to %s without exposing an editable form', async slug => {
   const { panel, requests } = setup({ missing: true });
-  render(panel('beta'));
+  render(panel(slug));
   await screen.findByText('플로를 찾을 수 없습니다.');
+  expect(screen.getByRole('link', { name: '상품으로 돌아가기' }).getAttribute('href')).toBe(
+    `/products/${encodeURIComponent(slug)}`
+  );
   expect(screen.queryByLabelText('제목')).toBeNull();
   expect(screen.queryByRole('button', { name: '다시 시도' })).toBeNull();
   expect(requests.filter(request => request.name === 'UpdateProductFlowOnEditor')).toEqual([]);

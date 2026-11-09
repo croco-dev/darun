@@ -328,7 +328,17 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
   }
 
   if (isEdit && !serverFlow) {
-    return <AdminEmptyState title="플로를 찾을 수 없습니다." description="삭제되었거나 존재하지 않는 플로입니다." />;
+    return (
+      <AdminEmptyState
+        title="플로를 찾을 수 없습니다."
+        description="삭제되었거나 존재하지 않는 플로입니다."
+        action={
+          <Button as="a" href={`/products/${encodeURIComponent(slug)}`} variant="contained" color="primary">
+            상품으로 돌아가기
+          </Button>
+        }
+      />
+    );
   }
 
   if (isEdit && serverFlow && !matchesProduct) {
