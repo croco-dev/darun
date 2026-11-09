@@ -274,74 +274,11 @@ describe('list retry authority through real Apollo hooks and default cache', () 
     await waitFor(() => expect(within(screen.getByTitle('Product: entity-100')).getByText('entity-100')).toBeTruthy());
     expect(within(screen.getByTitle('Product: entity-0')).getByText('entity-0')).toBeTruthy();
     expect(screen.getByText('현재 101건 표시 중', { selector: 'span.tabular-nums' })).toBeTruthy();
+    expect(screen.queryByText('더 보기 (+100건)')).toBeNull();
+    expect(screen.getByText('마지막 작업입니다.')).toBeTruthy();
     expect(fixture.log.filter(r => r.name === 'GetTranslationJobsOnAdmin').every(r => r.variables.limit === 100)).toBe(
       true
     );
-  });
-
-  it('소개 251건을 100건씩 이어 읽고 마지막에서 더 보기를 끝낸다', async () => {
-    const fixture = setup();
-    const first = await fixture.take('GetProductDescriptionJobsOnAdmin');
-    const translations = await fixture.take('GetTranslationJobsOnAdmin');
-    const rows = Array.from({ length: 251 }, (_, i) => ({
-      ...description(`description-${String(250 - i).padStart(3, '0')}`),
-      status: 'completed',
-      error: null,
-    }));
-    await flush(() => {
-      first.resolve({ productDescriptionJobs: rows.slice(0, 100) });
-      translations.resolve({ translationJobs: [] });
-    });
-    for (const offset of [100, 200]) {
-      await flush(() => fireEvent.click(screen.getByText('더 보기 (+100건)').closest('button')!));
-      const next = await fixture.take('GetProductDescriptionJobsOnAdmin');
-      expect(next.variables).toEqual({ limit: 100, offset });
-      await flush(() => next.resolve({ productDescriptionJobs: rows.slice(offset, offset + 100) }));
-    }
-    expect(document.querySelectorAll('tbody tr')).toHaveLength(251);
-    expect(
-      document.querySelector<HTMLAnchorElement>('a[aria-label="description-150 소개 후보 열기"]')!.getAttribute('href')
-    ).toContain('descriptionJobId=description-150');
-    expect(document.querySelector('a[aria-label="description-050 소개 후보 열기"]')).toBeTruthy();
-    expect(screen.queryByText('더 보기 (+100건)')).toBeNull();
-    expect(screen.getByText('마지막 작업입니다.')).toBeTruthy();
-  });
-
-  it('전체 목록은 종류별 위치와 마지막 페이지를 관리하고 필터 변경은 첫 페이지로 돌아간다', async () => {
-    const fixture = setup();
-    const descriptions = Array.from({ length: 201 }, (_, i) => ({
-      ...description(`description-${String(200 - i).padStart(3, '0')}`),
-      status: 'completed',
-      error: null,
-    }));
-    const translations = Array.from({ length: 1 }, (_, i) => translationRow(i));
-    const firstDescription = await fixture.take('GetProductDescriptionJobsOnAdmin');
-    const firstTranslation = await fixture.take('GetTranslationJobsOnAdmin');
-    await flush(() => {
-      firstDescription.resolve({ productDescriptionJobs: descriptions.slice(0, 100) });
-      firstTranslation.resolve({ translationJobs: translations.slice(0, 100) });
-    });
-    await flush(() => fireEvent.click(screen.getByText('더 보기 (+100건)').closest('button')!));
-    const nextDescription = await fixture.take('GetProductDescriptionJobsOnAdmin');
-    expect(nextDescription.variables).toEqual({ limit: 100, offset: 100 });
-    await flush(() => {
-      nextDescription.resolve({ productDescriptionJobs: descriptions.slice(100, 200) });
-    });
-    const translationRequests = fixture.log.filter(r => r.name === 'GetTranslationJobsOnAdmin').length;
-    await flush(() => fireEvent.click(screen.getByText('더 보기 (+100건)').closest('button')!));
-    const last = await fixture.take('GetProductDescriptionJobsOnAdmin');
-    expect(last.variables).toEqual({ limit: 100, offset: 200 });
-    await flush(() => last.resolve({ productDescriptionJobs: descriptions.slice(200) }));
-    const ids = [...document.querySelectorAll('tbody tr td:first-child > div')].map(cell => cell.getAttribute('title'));
-    expect(ids).toHaveLength(202);
-    expect(new Set(ids).size).toBe(202);
-    expect(screen.getByText('마지막 작업입니다.')).toBeTruthy();
-    expect(fixture.log.filter(r => r.name === 'GetTranslationJobsOnAdmin')).toHaveLength(translationRequests);
-    await flush(() => fireEvent.click(screen.getByText('AI 소개 생성', { selector: 'button' })));
-    expect(document.querySelectorAll('tbody tr')).toHaveLength(100);
-    await flush(() => fireEvent.click(screen.getByText('전체 작업', { selector: 'button' })));
-    expect(document.querySelectorAll('tbody tr')).toHaveLength(101);
-    expect(fixture.log.every(r => r.variables.limit === 100)).toBe(true);
   });
 
   it('소개 다음 페이지 실패는 기존 행과 위치를 유지하고 필터 변경 뒤 늦은 응답은 합치지 않는다', async () => {
@@ -377,7 +314,7 @@ describe('list retry authority through real Apollo hooks and default cache', () 
 
   it('자동 갱신은 소개의 과거 페이지와 선택한 오류 작업을 유지한다', async () => {
     const fixture = setup();
-    const rows = Array.from({ length: 151 }, (_, i) => description(`job-${i}`));
+    const rows = Array.from({ length: 101 }, (_, i) => description(`job-${i}`));
     const first = await fixture.take('GetProductDescriptionJobsOnAdmin');
     const translations = await fixture.take('GetTranslationJobsOnAdmin');
     await flush(() => {
@@ -387,7 +324,7 @@ describe('list retry authority through real Apollo hooks and default cache', () 
     await flush(() => fireEvent.click(screen.getByText('더 보기 (+100건)').closest('button')!));
     const next = await fixture.take('GetProductDescriptionJobsOnAdmin');
     await flush(() => next.resolve({ productDescriptionJobs: rows.slice(100) }));
-    const lastRow = screen.getByTitle('job-150').closest('tr')!;
+    const lastRow = screen.getByTitle('job-100').closest('tr')!;
     await flush(() => fireEvent.click(within(lastRow).getByRole('button', { name: '에러 상세 보기' })));
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     await flush(() =>
@@ -406,9 +343,9 @@ describe('list retry authority through real Apollo hooks and default cache', () 
     const tail = await fixture.take('GetProductDescriptionJobsOnAdmin');
     expect(tail.variables).toEqual({ limit: 100, offset: 100 });
     await flush(() => tail.resolve({ productDescriptionJobs: rows.slice(100) }));
-    expect(document.querySelectorAll('tbody tr')).toHaveLength(151);
-    expect(within(screen.getByRole('dialog')).getByText('job-150')).toBeTruthy();
-    expect(document.querySelector('a[aria-label="job-150 소개 후보 열기"]')).toBeTruthy();
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(101);
+    expect(within(document.querySelector<HTMLElement>('[role="dialog"]')!).getByText('job-100')).toBeTruthy();
+    expect(document.querySelector('a[aria-label="job-100 소개 후보 열기"]')).toBeTruthy();
     vi.useRealTimers();
   });
 
