@@ -70,40 +70,51 @@ export function normalizeResearchSources(
   rawSources: RawSearchSource[],
   inputHostname: string
 ): NormalizedResearchSource[] {
-  const seen = new Set<string>();
+  const sourceByUrl = new Map<string, NormalizedResearchSource>();
   const collected: NormalizedResearchSource[] = [];
-  let counter = 0;
 
-  for (const raw of rawSources) {
+  for (const raw of rawSources.slice(0, RESEARCH_LIMITS.maxSearchQueries * RESEARCH_LIMITS.resultsPerQuery)) {
     const canonical = canonicalizeUrl(raw.url);
     if (!canonical) {
       continue;
     }
-    if (seen.has(canonical)) {
-      continue;
+    let source = sourceByUrl.get(canonical);
+    if (!source) {
+      if (collected.length >= RESEARCH_LIMITS.maxUniqueSources) {
+        continue;
+      }
+      const hostname = hostnameOf(canonical);
+      if (!hostname) {
+        continue;
+      }
+      source = {
+        id: `s${collected.length + 1}`,
+        title: raw.title.trim().slice(0, 300),
+        url: canonical,
+        hostname,
+        snippet: '',
+        extraSnippets: [],
+        relationToInput: isSameHostOrSubdomain(hostname, inputHostname) ? 'INPUT_HOST_MATCH' : 'EXTERNAL',
+      };
+      sourceByUrl.set(canonical, source);
+      collected.push(source);
     }
-    seen.add(canonical);
 
-    const hostname = hostnameOf(canonical);
-    if (!hostname) {
-      continue;
+    for (const excerpt of [raw.description, ...(raw.extraSnippets ?? [])]) {
+      const snippet = excerpt.trim().slice(0, MAX_SOURCE_SNIPPET_CHARS);
+      const normalized = normalizeWhitespace(snippet);
+      if (
+        !normalized ||
+        [source.snippet, ...source.extraSnippets].some(existing => normalizeWhitespace(existing) === normalized)
+      ) {
+        continue;
+      }
+      if (!source.snippet) {
+        source.snippet = snippet;
+      } else if (source.extraSnippets.length < MAX_EXTRA_SNIPPETS_PER_SOURCE) {
+        source.extraSnippets.push(snippet);
+      }
     }
-
-    counter += 1;
-    collected.push({
-      id: `s${counter}`,
-      title: raw.title.trim().slice(0, 300),
-      url: canonical,
-      hostname,
-      snippet: raw.description.trim().slice(0, MAX_SOURCE_SNIPPET_CHARS),
-      extraSnippets: (raw.extraSnippets ?? [])
-        .map(snippet => snippet.trim())
-        .filter(snippet => snippet.length > 0)
-        .slice(0, MAX_EXTRA_SNIPPETS_PER_SOURCE)
-        .map(snippet => snippet.slice(0, MAX_SOURCE_SNIPPET_CHARS)),
-      relationToInput: isSameHostOrSubdomain(hostname, inputHostname) ? 'INPUT_HOST_MATCH' : 'EXTERNAL',
-    });
-    if (collected.length >= RESEARCH_LIMITS.maxUniqueSources) break;
   }
 
   return collected;

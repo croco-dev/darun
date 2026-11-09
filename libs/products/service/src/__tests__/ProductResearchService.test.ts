@@ -581,6 +581,67 @@ describe('ProductResearchService.executeResearch', () => {
     };
   }
 
+  it('후속 검색의 같은 출처 발췌를 실제 프롬프트와 검증된 초안에 함께 보존한다', async () => {
+    const fixture = stableFixture({ payload: llmPayload() });
+    const deps = executeDeps(fixture);
+    deps.searchClient.search.mockReset();
+    deps.searchClient.search
+      .mockResolvedValueOnce({
+        ok: true,
+        results: [{ title: 'Linear 공식', url: 'https://linear.app/', description: '' }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        results: [
+          {
+            title: 'Linear 후속',
+            url: 'https://linear.app/#features',
+            description: 'Linear는 이슈 트래킹 도구입니다',
+            extraSnippets: ['빠르게 이슈를 관리합니다', '빠르게 이슈를 관리합니다'],
+          },
+        ],
+      })
+      .mockResolvedValue({ ok: true, results: [] });
+
+    // @ts-expect-error focused dependency shape
+    const result = await new ProductResearchService().executeResearch('job-1', deps, 'lease-1');
+
+    expect(deps.searchClient.search).toHaveBeenCalledTimes(5);
+    expect(deps.llm.complete).toHaveBeenCalledTimes(1);
+    const calls = deps.llm.complete.mock.calls as unknown as Array<[string, string]>;
+    const prompt = JSON.parse(calls[0][1].split('\n반드시 JSON 객체 하나만 출력하십시오.')[0]);
+    expect(prompt.sources).toEqual([
+      {
+        id: 's1',
+        title: 'Linear 공식',
+        url: 'https://linear.app/',
+        hostname: 'linear.app',
+        snippet: 'Linear는 이슈 트래킹 도구입니다',
+        extraSnippets: ['빠르게 이슈를 관리합니다'],
+        relationToInput: 'INPUT_HOST_MATCH',
+      },
+    ]);
+    expect(result).toMatchObject({
+      sources: prompt.sources,
+      identity: {
+        name: {
+          value: 'Linear',
+          anchors: [{ sourceId: 's1', excerpt: 'Linear는 이슈' }],
+        },
+      },
+      features: [{ anchors: [{ sourceId: 's1', excerpt: '빠르게 이슈를 관리합니다' }] }],
+      sourceSnapshotHash: hashSourceSnapshot(prompt.sources),
+    });
+    expect(deps.jobRepository.completeJob).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        jobId: 'job-1',
+        leaseToken: 'lease-1',
+        result,
+      })
+    );
+    expect(deps.jobRepository.failJob).not.toHaveBeenCalled();
+  });
+
   const failurePairs = [
     ['실패 응답', '실패 응답'],
     ['실패 응답', '예외'],
