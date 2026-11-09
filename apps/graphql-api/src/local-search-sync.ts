@@ -26,13 +26,13 @@ export function localSearchOptions(args: string[], env: NodeJS.ProcessEnv) {
     }
     if (
       !protocols.includes(url.protocol) ||
-      !['127.0.0.1', '[::1]'].includes(url.hostname) ||
+      url.hostname !== '127.0.0.1' ||
       url.pathname !== '/darun' ||
       url.search ||
       url.hash ||
       (value?.split('@').length ?? 0) > 2
     )
-      throw new Error('127.0.0.1/[::1]의 darun DB만 허용합니다. query/fragment는 사용할 수 없습니다.');
+      throw new Error('127.0.0.1의 darun DB만 허용합니다. query/fragment는 사용할 수 없습니다.');
     return url.toString();
   }
   return {
@@ -60,6 +60,7 @@ export async function main() {
   try {
     await mongoose.connect(options.mongodbUri, {
       directConnection: true,
+      authSource: 'admin',
       serverSelectionTimeoutMS: 5_000,
       socketTimeoutMS: 10_000,
     });

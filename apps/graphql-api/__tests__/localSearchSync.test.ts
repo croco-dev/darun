@@ -16,13 +16,7 @@ describe('로컬 검색 명령의 입력 검증', () => {
       mongodbUri: local.MONGODB_URI,
     });
     expect(localSearchOptions(['--watch', '--limit', '100'], local)).toMatchObject({ watch: true, limit: 100 });
-    expect(
-      localSearchOptions(['--limit', '1'], {
-        ...local,
-        DATABASE_URL: 'postgres://[::1]:55499/darun',
-        MONGODB_URI: 'mongodb://[::1]:27099/darun',
-      })
-    ).toMatchObject({ limit: 1 });
+    expect(localSearchOptions(['--limit', '1'], local)).toMatchObject({ limit: 1 });
   });
 
   it.each([
@@ -37,6 +31,8 @@ describe('로컬 검색 명령의 입력 검증', () => {
     { MONGODB_URI: 'mongodb://127.0.0.1,example.com/darun' },
     { MONGODB_URI: 'mongodb://127.0.0.1/darun?replicaSet=remote' },
     { MONGODB_URI: 'mongodb://localhost/darun' },
+    { DATABASE_URL: 'postgres://[::1]:55499/darun' },
+    { MONGODB_URI: 'mongodb://[::1]:27099/darun' },
     { MONGODB_URI: 'mongodb://127.0.0.1/darun#remote' },
   ])('누락되거나 원격·모호한 연결 설정을 거절한다: %j', override => {
     const env = Object.keys(override).length ? { ...local, ...override } : { ...local, INFRA_ENV: undefined };

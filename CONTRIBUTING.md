@@ -237,7 +237,7 @@ Compose는 `INFRA_ENV=local` API에만 로컬 커서 키 기본값을 제공합�
 ```bash
 INFRA_ENV=local \
 DATABASE_URL=postgresql://darun:darun@127.0.0.1:5432/darun \
-MONGODB_URI=mongodb://127.0.0.1:27017/darun \
+MONGODB_URI=mongodb://darun:darun@127.0.0.1:27017/darun \
 pnpm local:sync-search --limit 50
 ```
 
@@ -247,8 +247,9 @@ pnpm local:sync-search --limit 50
 이전 revision이 새 검색 문서를 덮어쓰지 않습니다. 번역·LLM 작업과 AWS 큐는 실행하지 않습니다.
 
 `INFRA_ENV=local`, `DATABASE_URL`, `MONGODB_URI`를 모두 명시해야 하며 `.env` 파일은 읽지 않습니다.
-두 대상 모두 IP literal `127.0.0.1` 또는 `[::1]`의 `darun` DB만 허용합니다.
-DNS 호스트명·여러 호스트·SRV·query·fragment는 연결 전에 거절하고 Mongo는 단일 직접 연결을 사용합니다.
+두 대상 모두 IP literal `127.0.0.1`의 `darun` DB만 허용합니다.
+DNS 호스트명·IPv6·여러 호스트·SRV·query·fragment는 연결 전에 거절합니다.
+Mongo는 단일 직접 연결과 Compose의 `admin` 인증 DB를 사용합니다.
 접속 문자열과 자격 증명은 출력하지 않습니다.
 
 출력 JSON의 `processed`와 각 intent의 ID·revision·status·시도 횟수로 결과를 확인합니다.
@@ -271,6 +272,7 @@ Mongo의 `darun.searchableProducts`에서 같은 `productId`와 `sourceRevision`
 회귀 검사는 개발 DB와 분리된 빈 PostgreSQL·Mongo의 `darun` DB에만 실행합니다.
 `LOCAL_SEARCH_SYNC_TEST_DATABASE_URL`과 `LOCAL_SEARCH_SYNC_TEST_MONGODB_URI`를 지정하고
 `pnpm --filter graphql-api exec vitest run __tests__/localSearchSync.pg.test.ts`를 실행합니다.
+Mongo fixture도 Compose처럼 `admin`에 인증 사용자를 생성하고 URI에 해당 자격 증명을 지정합니다.
 기존 테이블·컬렉션이 있으면 거절하며 자신이 만든 스키마·검색 컬렉션만 정리합니다.
 
 ### 로그 확인 및 서비스 종료

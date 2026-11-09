@@ -41,7 +41,7 @@ const run = promisify(execFile);
     if (tables.length) throw new Error('새 격리 PostgreSQL darun DB만 사용할 수 있습니다.');
     ownsSchema = true;
     await migrate(db, { migrationsFolder: resolve('scripts/migrations') });
-    await mongoose.connect(options.mongodbUri, { directConnection: true });
+    await mongoose.connect(options.mongodbUri, { directConnection: true, authSource: 'admin' });
     if ((await mongoose.connection.db!.listCollections().toArray()).length)
       throw new Error('새 격리 Mongo darun DB만 사용할 수 있습니다.');
     ownsMongo = true;
@@ -110,6 +110,11 @@ const run = promisify(execFile);
     expect(
       await mongoose.connection.db!.collection('searchableProducts').findOne({ productId: first.id })
     ).toMatchObject({ name: '로컬 발행', summary: '로컬 요약' });
+    const rootCommand = await run('pnpm', ['--dir', '../..', 'local:sync-search', '--limit', '1'], {
+      env,
+      timeout: 30_000,
+    });
+    expect(rootCommand.stdout).toContain('"status":"completed"');
     expect(await db.select().from(translationJobs)).toEqual(jobsBefore);
     expect(
       await db.select().from(productContentSyncIntents).where(eq(productContentSyncIntents.kind, 'translation'))
