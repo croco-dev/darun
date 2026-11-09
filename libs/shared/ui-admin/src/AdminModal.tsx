@@ -1,7 +1,7 @@
 'use client';
 
 import { X, cn } from '@darun/ui';
-import { ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { ReactNode, useEffect, useEffectEvent, useId, useRef, useState } from 'react';
 
 export type AdminModalProps = {
   opened: boolean;
@@ -20,41 +20,38 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
   if (opened && !hasOpened) setHasOpened(true);
   const titleId = useId();
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
+  const handleKeyDown = useEffectEvent((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose();
+      return;
+    }
+
+    if (e.key === 'Tab' && modalContentRef.current) {
+      const focusableElements = modalContentRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+
+      if (focusableElements.length === 0) {
+        e.preventDefault();
         return;
       }
 
-      if (e.key === 'Tab' && modalContentRef.current) {
-        const focusableElements = modalContentRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        );
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
 
-        if (focusableElements.length === 0) {
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement || !modalContentRef.current.contains(document.activeElement)) {
           e.preventDefault();
-          return;
+          lastElement?.focus();
         }
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === firstElement || !modalContentRef.current.contains(document.activeElement)) {
-            e.preventDefault();
-            lastElement?.focus();
-          }
-        } else {
-          if (document.activeElement === lastElement || !modalContentRef.current.contains(document.activeElement)) {
-            e.preventDefault();
-            firstElement?.focus();
-          }
+      } else {
+        if (document.activeElement === lastElement || !modalContentRef.current.contains(document.activeElement)) {
+          e.preventDefault();
+          firstElement?.focus();
         }
       }
-    },
-    [onClose]
-  );
+    }
+  });
 
   useEffect(() => {
     if (!opened) return;
@@ -80,7 +77,7 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
       document.body.style.overflow = originalOverflow;
       previousActiveElementRef.current?.focus();
     };
-  }, [opened, handleKeyDown]);
+  }, [opened]);
 
   if (!hasOpened) {
     return null;
