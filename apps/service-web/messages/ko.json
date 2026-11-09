@@ -62,7 +62,13 @@
         "noResults": "‘{query}’에 대한 검색 결과가 없습니다.",
         "popularQueries": "검색 예시",
         "categories": "카테고리",
-        "trending": "인기 서비스"
+        "trending": "인기 서비스",
+        "loading": "불러오는 중입니다.",
+        "categoriesError": "카테고리를 불러오지 못했습니다.",
+        "trendingError": "인기 서비스를 불러오지 못했습니다.",
+        "categoriesEmpty": "표시할 카테고리가 없습니다.",
+        "trendingEmpty": "집계된 인기 서비스가 없습니다.",
+        "retry": "다시 시도"
       },
       "feature": {
         "title": "기능"

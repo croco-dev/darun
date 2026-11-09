@@ -1,14 +1,14 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useSuspenseQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
 import { ProductCard, getCategoryIcon } from '@darun/products-shell';
 import {
   CompactCategoriesForSearchProductListDocument,
   CompactTrendingPreviewForSearchProductListDocument,
 } from '@darun/provider-graphql';
-import { Search } from '@darun/ui';
+import { Button, Search } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -84,15 +84,15 @@ function EmptySearchResults({ query }: { query: string }) {
   const t = useTranslations('Search');
   const locale = useLocale();
   const popularQueries = POPULAR_QUERIES[locale] ?? POPULAR_QUERIES.ko;
-  const { data: categoriesData } = useSuspenseQuery(CompactCategoriesForSearchProductListDocument, {
+  const categoriesQuery = useQuery(CompactCategoriesForSearchProductListDocument, {
     variables: { first: 4, locale },
   });
-  const { data: trendingData } = useSuspenseQuery(CompactTrendingPreviewForSearchProductListDocument, {
+  const trendingQuery = useQuery(CompactTrendingPreviewForSearchProductListDocument, {
     variables: { first: 3, locale },
   });
 
-  const categories = categoriesData?.categories ?? [];
-  const trendingProducts = trendingData?.rankedProducts ?? [];
+  const categories = categoriesQuery.data?.categories ?? [];
+  const trendingProducts = trendingQuery.data?.rankedProducts ?? [];
 
   const trackEmptySearchClick = (queryText: string) => {
     track(AnalyticsEvents.EMPTY_SEARCH_STRIPE_CLICKED, { queryText });
@@ -159,23 +159,38 @@ function EmptySearchResults({ query }: { query: string }) {
             className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
             role="group"
             aria-label={t('list.empty.categories')}
+            aria-busy={categoriesQuery.loading}
           >
-            {categories.map(category => (
-              <Link
-                key={category.id}
-                href={`/${locale}/categories/${encodeURIComponent(category.slug)}`}
-                onClick={() => trackEmptySearchClick(category.slug)}
-                className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-              >
-                <span
-                  aria-hidden="true"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dark-150/70 bg-surface-100 text-lg leading-none shadow-2xs transition-colors group-hover:border-dark-300 group-hover:bg-white"
+            {categoriesQuery.loading ? (
+              <p role="status" className="col-span-full text-sm text-dark-600">
+                {t('list.empty.loading')}
+              </p>
+            ) : categoriesQuery.error ? (
+              <SuggestionError
+                message={t('list.empty.categoriesError')}
+                retry={() => void categoriesQuery.refetch().catch(() => {})}
+              />
+            ) : categories.length === 0 ? (
+              <p className="col-span-full text-sm text-dark-600">{t('list.empty.categoriesEmpty')}</p>
+            ) : null}
+            {!categoriesQuery.loading &&
+              !categoriesQuery.error &&
+              categories.map(category => (
+                <Link
+                  key={category.id}
+                  href={`/${locale}/categories/${encodeURIComponent(category.slug)}`}
+                  onClick={() => trackEmptySearchClick(category.slug)}
+                  className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
-                  {getCategoryIcon(category.slug)}
-                </span>
-                <span className="truncate">{locale === 'ko' ? category.labelKo : category.labelEn}</span>
-              </Link>
-            ))}
+                  <span
+                    aria-hidden="true"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dark-150/70 bg-surface-100 text-lg leading-none shadow-2xs transition-colors group-hover:border-dark-300 group-hover:bg-white"
+                  >
+                    {getCategoryIcon(category.slug)}
+                  </span>
+                  <span className="truncate">{locale === 'ko' ? category.labelKo : category.labelEn}</span>
+                </Link>
+              ))}
           </div>
         </div>
 
@@ -183,21 +198,53 @@ function EmptySearchResults({ query }: { query: string }) {
           <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">
             {t('list.empty.trending')}
           </p>
-          <div data-testid="search-empty-trending" className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-            {trendingProducts.map((product, index) => (
-              <div key={product.id} className="h-full min-w-0">
-                <ProductCard
-                  product={product}
-                  rank={index + 1}
-                  href={`/${locale}/products/${encodeURIComponent(product.slug)}`}
-                  source="search-empty"
-                  onClick={() => trackEmptySearchClick(product.slug)}
-                />
-              </div>
-            ))}
+          <div
+            data-testid="search-empty-trending"
+            aria-busy={trendingQuery.loading}
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3"
+          >
+            {trendingQuery.loading ? (
+              <p role="status" className="col-span-full text-sm text-dark-600">
+                {t('list.empty.loading')}
+              </p>
+            ) : trendingQuery.error ? (
+              <SuggestionError
+                message={t('list.empty.trendingError')}
+                retry={() => void trendingQuery.refetch().catch(() => {})}
+              />
+            ) : trendingProducts.length === 0 ? (
+              <p className="col-span-full text-sm text-dark-600">{t('list.empty.trendingEmpty')}</p>
+            ) : null}
+            {!trendingQuery.loading &&
+              !trendingQuery.error &&
+              trendingProducts.map((product, index) => (
+                <div key={product.id} className="h-full min-w-0">
+                  <ProductCard
+                    product={product}
+                    rank={index + 1}
+                    href={`/${locale}/products/${encodeURIComponent(product.slug)}`}
+                    source="search-empty"
+                    onClick={() => trackEmptySearchClick(product.slug)}
+                  />
+                </div>
+              ))}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SuggestionError({ message, retry }: { message: string; retry: () => void }) {
+  const t = useTranslations('Search');
+  return (
+    <div className="col-span-full flex flex-col items-start gap-2">
+      <p role="alert" className="text-sm text-dark-600">
+        {message}
+      </p>
+      <Button type="button" size="sm" onClick={retry}>
+        {t('list.empty.retry')}
+      </Button>
     </div>
   );
 }

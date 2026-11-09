@@ -153,13 +153,28 @@ describe('route error recovery', () => {
       await act(async () => requests[0].fail());
       const initialSuccessfulReads = [...successfulReads];
       const retryName = locale === 'ko' ? '다시 시도' : 'Try again';
+      const isMainSearch = target === 'SearchProductsOnSearchProductList';
+      const expectZeroResults = () => {
+        expect(screen.queryByTestId('error-search')).toBeNull();
+        expect(
+          screen.getByText(locale === 'ko' ? '‘notion’에 대한 검색 결과가 없습니다.' : 'No results found for ‘notion’.')
+        ).toBeTruthy();
+        expect(screen.getByTestId('search-empty-popular-queries')).toBeTruthy();
+      };
+      if (!isMainSearch) expectZeroResults();
       await act(async () => {
         const button = screen.getByRole('button', { name: retryName });
         fireEvent.click(button);
         fireEvent.click(button);
       });
       expect(requests).toHaveLength(2);
-      expect(screen.getByRole('button', { name: retryName }).getAttribute('disabled')).not.toBeNull();
+      if (isMainSearch) {
+        expect(screen.getByRole('button', { name: retryName }).getAttribute('disabled')).not.toBeNull();
+      } else {
+        expectZeroResults();
+        expect(screen.queryByRole('button', { name: retryName })).toBeNull();
+        expect(screen.getByRole('status').textContent).toBe(locale === 'ko' ? '불러오는 중입니다.' : 'Loading…');
+      }
       await act(async () => requests[1].fail());
       expect(screen.getByRole('button', { name: retryName })).toBeTruthy();
       await act(async () => fireEvent.click(screen.getByRole('button', { name: retryName })));
@@ -173,7 +188,7 @@ describe('route error recovery', () => {
       );
       await act(async () => requests[2].succeed());
       if (target === 'SearchProductsOnSearchProductList') expect(screen.getByText('Recovered Notion')).toBeTruthy();
-      else expect(screen.queryByTestId('error-search')).toBeNull();
+      else expectZeroResults();
       for (const name of initialSuccessfulReads) {
         expect(successfulReads.filter(operation => operation === name)).toHaveLength(1);
       }
