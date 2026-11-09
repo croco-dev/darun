@@ -197,28 +197,45 @@ it('현재 조건의 오류는 표시하고 같은 커서로 재시도해 누적
   expect(screen.queryByRole('button', { name: '더 보기' })).toBeNull();
 });
 
-function mount(route = '/', consumer: 'screenshots' | 'flows' | 'apps' = 'screenshots', controls?: ReactNode) {
+function mount(
+  route = '/',
+  consumer: 'screenshots' | 'flows' | 'apps' = 'screenshots',
+  controls?: ReactNode,
+  pendingSearch?: Array<() => void>
+) {
   window.history.replaceState(null, '', route);
-  const requests: Array<{ operation: string | undefined; variables: Record<string, unknown> }> = [];
+  const requests: Array<{
+    operation: string | undefined;
+    variables: Record<string, unknown>;
+  }> = [];
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: new ApolloLink(operation => {
-      requests.push({ operation: operation.operationName, variables: { ...operation.variables } });
+      requests.push({
+        operation: operation.operationName,
+        variables: { ...operation.variables },
+      });
       return new Observable(observer => {
         if (operation.operationName === 'SearchProductsOnVisualExplorer') {
-          observer.next({
-            data: {
-              searchProducts: [
-                {
-                  __typename: 'Product',
-                  id: 'synthetic-7',
-                  name: '합성 서비스',
-                  slug: 'synthetic-service',
-                  logoUrl: '',
-                },
-              ],
-            },
-          });
+          const completeSearch = () => {
+            observer.next({
+              data: {
+                searchProducts: [
+                  {
+                    __typename: 'Product',
+                    id: 'synthetic-7',
+                    name: '합성 서비스',
+                    slug: 'synthetic-service',
+                    logoUrl: '',
+                  },
+                ],
+              },
+            });
+            observer.complete();
+          };
+          if (pendingSearch) pendingSearch.push(completeSearch);
+          else completeSearch();
+          return;
         } else {
           const field =
             operation.operationName === 'VisualFlowsOnExplorer'
@@ -231,7 +248,12 @@ function mount(route = '/', consumer: 'screenshots' | 'flows' | 'apps' = 'screen
               [field]: {
                 totalCount: 0,
                 edges: [],
-                pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+                pageInfo: {
+                  hasNextPage: false,
+                  hasPreviousPage: false,
+                  startCursor: null,
+                  endCursor: null,
+                },
               },
             },
           });
@@ -405,6 +427,84 @@ const searchConsumers = [
     expected: { productSlug: 'fixture-app' },
   },
 ] as const;
+
+const suggestionConsumers = [...searchConsumers, { ...searchConsumers[0], path: '/?platform=IOS' }];
+
+function clickSearchInput(input: HTMLInputElement) {
+  act(() => {
+    fireEvent.mouseDown(input);
+    input.focus();
+    fireEvent.mouseUp(input);
+    fireEvent.click(input);
+  });
+}
+
+it.each(suggestionConsumers)(
+  '$consumer at $path: input clicks preserve debounce, results and refocus search',
+  async ({ consumer, path, label }) => {
+    const requests = mount(path, consumer, <button type="button">외부 영역</button>);
+    await screen.findByText('검색 결과가 없습니다.');
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const search = screen.getByLabelText<HTMLInputElement>(label);
+    clickSearchInput(search);
+    fireEvent.change(search, { target: { value: '합성' } });
+    await act(() => vi.advanceTimersByTimeAsync(150));
+    clickSearchInput(search);
+    expect(screen.getByText('검색 중...')).toBeTruthy();
+    await act(() => vi.advanceTimersByTimeAsync(150));
+    expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
+    const searches = () => requests.filter(request => request.operation === 'SearchProductsOnVisualExplorer');
+    expect(searches()).toHaveLength(1);
+    clickSearchInput(search);
+    expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
+    expect(searches()).toHaveLength(1);
+
+    const outside = screen.getByRole('button', { name: '외부 영역' });
+    act(() => outside.focus());
+    fireEvent.click(outside);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    clickSearchInput(search);
+    expect(screen.getByText('검색 중...')).toBeTruthy();
+    await act(() => vi.advanceTimersByTimeAsync(300));
+    expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(search.value).toBe('합성');
+  }
+);
+
+it.each(suggestionConsumers)(
+  '$consumer at $path: input clicks keep an in-flight response and selecting navigates once',
+  async ({ consumer, path, label }) => {
+    const pending: Array<() => void> = [];
+    mount(path, consumer, undefined, pending);
+    await screen.findByText('검색 결과가 없습니다.');
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const search = screen.getByLabelText<HTMLInputElement>(label);
+    clickSearchInput(search);
+    fireEvent.change(search, { target: { value: '합성' } });
+    await act(() => vi.advanceTimersByTimeAsync(300));
+    expect(pending).toHaveLength(1);
+    clickSearchInput(search);
+    await act(async () => pending[0]());
+    const option = screen.getByRole('option', { name: '합성 서비스' });
+    const push = vi.spyOn(window.history, 'pushState');
+    await act(async () => {
+      fireEvent.mouseDown(option);
+      fireEvent.mouseUp(option);
+      fireEvent.click(option);
+    });
+    expect(push).toHaveBeenCalledTimes(1);
+    if (consumer === 'apps') {
+      expect(window.location.pathname).toBe('/apps');
+      expect(new URLSearchParams(window.location.search).get('q')).toBe('합성 서비스');
+    } else {
+      expect(new URLSearchParams(window.location.search).get('product')).toBe('synthetic-service');
+      expect(screen.getByLabelText<HTMLInputElement>(label).value).toBe('');
+    }
+    expect(screen.queryByRole('listbox')).toBeNull();
+  }
+);
 
 it.each(searchConsumers)(
   '$consumer: a direct overlong URL makes no list request and recovers at 100 characters',

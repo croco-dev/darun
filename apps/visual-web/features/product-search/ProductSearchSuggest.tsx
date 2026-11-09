@@ -62,13 +62,17 @@ export function ProductSearchSuggest({
   // Close on outside click
   useEffect(() => {
     function handleClick(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node) &&
+        !inputRef.current?.contains(event.target as Node)
+      ) {
         callbacksRef.current.onClose();
       }
     }
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
-  }, []);
+  }, [inputRef]);
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
