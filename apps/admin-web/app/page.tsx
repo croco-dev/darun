@@ -3,6 +3,7 @@ import { Archive, ArrowRight, Building2, ExternalLink, Newspaper, Plus, Sliders,
 import { PageShell } from '@darun/ui-admin';
 import { getClient } from '@darun/utils-apollo-client/server';
 import { Link } from '@darun/utils-router';
+import { DashboardRetryButton } from '../features/dashboard/DashboardRetryButton';
 
 const productsCountQuery = gql`
   query ProductsCountOnAdminDashboard {
@@ -132,7 +133,7 @@ export default async function HomePage() {
         {/* System Status & Environment Info */}
         <div className="rounded-2xl border border-dark-200 bg-white p-6 shadow-card">
           <h3 className="text-sm font-bold text-dark-900 mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-leaf-500" />
+            <span className={`w-2 h-2 rounded-full ${productsCount !== null ? 'bg-leaf-500' : 'bg-cherry-500'}`} />
             시스템 상태 및 운영 가이드
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -143,12 +144,13 @@ export default async function HomePage() {
               </span>
             </div>
             <div className="p-3.5 rounded-xl bg-surface-100/60 border border-dark-150/70">
-              <span className="text-dark-500 block mb-1">데이터 동기화</span>
-              <span className="font-medium text-dark-800">
+              <span className="text-dark-500 block mb-1">상품 수 조회</span>
+              <p role="status" className="font-medium text-dark-800">
                 {productsCount !== null
                   ? `GraphQL 정상 연동 (${productsCount.toLocaleString()}개 서비스)`
-                  : 'GraphQL API 정상 연동 중'}
-              </span>
+                  : '상품 수를 확인하지 못했습니다.'}
+              </p>
+              {productsCount === null && <DashboardRetryButton />}
             </div>
             <div className="p-3.5 rounded-xl bg-surface-100/60 border border-dark-150/70 flex items-center justify-between">
               <div>
