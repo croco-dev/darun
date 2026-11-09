@@ -85,6 +85,8 @@ const completedJob = {
 const pendingJob = { ...completedJob, status: 'pending', result: null };
 
 type Scenario = {
+  categoryResponses?: unknown[];
+  categoryQueries?: unknown[];
   jobResponses: unknown[];
   jobQueries: string[];
   signInputs: unknown[];
@@ -96,6 +98,7 @@ type Scenario = {
 };
 
 function makeClient(scenario: Scenario) {
+  let categoryCall = 0;
   let jobCall = 0;
   let requestCall = 0;
   const link = new ApolloLink((operation: Operation) => {
@@ -129,7 +132,21 @@ function makeClient(scenario: Scenario) {
             },
           });
         } else if (name === 'CategoriesOnResearchWorkspace') {
-          observer.next({ data: { categories: [] } });
+          scenario.categoryQueries?.push(operation.variables);
+          const responses = scenario.categoryResponses ?? [[]];
+          const response = responses[Math.min(categoryCall++, responses.length - 1)];
+          void Promise.resolve(response).then(value => {
+            if (value instanceof GraphQLError) {
+              observer.next({ errors: [value] });
+            } else if (value instanceof Error) {
+              observer.error(value);
+              return;
+            } else {
+              observer.next({ data: { categories: value } });
+            }
+            observer.complete();
+          });
+          return;
         } else if (name === 'ProductResearchJobWorkspace') {
           const response = scenario.jobResponses[Math.min(jobCall, scenario.jobResponses.length - 1)];
           scenario.jobQueries.push(operation.variables.id);
@@ -593,6 +610,107 @@ afterEach(() => {
 function formInputs(): Array<Record<string, FormDataEntryValue>> {
   return testGlobal().researchUploadForms ?? [];
 }
+
+describe('research category query recovery with real Apollo', () => {
+  const options = [{ id: 'cat-work', slug: 'work', labelKo: '업무 도구', labelEn: 'Work' }];
+
+  it.each(['network', 'GraphQL'])('%s 실패 후 카테고리만 재조회하고 검토 초안과 선택을 보존한다', async kind => {
+    const stored = seedResearchWorkspace();
+    window.localStorage.setItem(
+      RESEARCH_WORKSPACE_STORAGE_KEY,
+      JSON.stringify({
+        ...stored,
+        review: {
+          ...stored.review,
+          categoryIds: ['cat-work'],
+          features: [{ name: '검토한 기능', summary: '유지할 기능 설명', emoji: '🔎' }],
+        },
+      })
+    );
+    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+    const recovery = Promise.withResolvers<typeof options>();
+    const scenario = newScenario();
+    scenario.jobResponses = [completedJob];
+    scenario.categoryQueries = [];
+    scenario.categoryResponses = [
+      kind === 'network' ? new Error('offline') : new GraphQLError('unavailable'),
+      recovery.promise,
+    ];
+    render(
+      <ApolloProvider client={makeClient(scenario)}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+    await screen.findByRole('button', { name: '카테고리 다시 시도' });
+    fireEvent.change(document.querySelector('[name="review-name"]')!, {
+      target: { value: '유지할 이름' },
+    });
+    fireEvent.change(document.querySelector('[name="review-tags"]')!, {
+      target: { value: '검토, 생산성' },
+    });
+    fireEvent.change(document.querySelector('[name="review-logo-file"]')!, {
+      target: {
+        files: [new File(['logo'], 'review-logo.png', { type: 'image/png' })],
+      },
+    });
+    const savedBefore = JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!);
+    expect(screen.getByRole('alert').textContent).toContain('카테고리');
+    fireEvent.click(screen.getByRole('button', { name: '카테고리 다시 시도' }));
+    await screen.findByText('카테고리를 불러오는 중입니다.');
+    expect(screen.queryByText('등록된 카테고리가 없습니다. 미분류로 등록할 수 있습니다.')).toBeNull();
+    await act(async () => {
+      recovery.resolve(options);
+    });
+    expect(
+      (
+        (await screen.findByRole('checkbox', {
+          name: /업무 도구/,
+        })) as HTMLInputElement
+      ).checked
+    ).toBe(true);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(JSON.parse(readSavedWorkspace(RESEARCH_WORKSPACE_STORAGE_KEY)!)).toEqual(savedBefore);
+    expect((document.querySelector('[name="review-logo-file"]') as HTMLInputElement).files?.[0].name).toBe(
+      'review-logo.png'
+    );
+    expect(scenario.categoryQueries).toEqual([
+      { first: 100, locale: 'ko' },
+      { first: 100, locale: 'ko' },
+    ]);
+    expect(scenario.jobQueries).toEqual(['job-1']);
+    expect(scenario.requestInputs).toEqual([]);
+    expect(scenario.retryInputs).toEqual([]);
+    expect(scenario.materializeVars).toEqual([]);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('지연된 정상 빈 목록을 로딩과 구분하고 미분류 등록을 허용한다', async () => {
+    seedResearchWorkspace();
+    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+    const categories = Promise.withResolvers<never[]>();
+    const scenario = newScenario();
+    scenario.jobResponses = [completedJob];
+    scenario.categoryResponses = [categories.promise];
+    render(
+      <ApolloProvider client={makeClient(scenario)}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+    await screen.findByText('카테고리를 불러오는 중입니다.');
+    expect(screen.queryByRole('alert')).toBeNull();
+    await act(async () => {
+      categories.resolve([]);
+    });
+    await screen.findByText('등록된 카테고리가 없습니다. 미분류로 등록할 수 있습니다.');
+    expect(screen.queryByText('카테고리를 불러오는 중입니다.')).toBeNull();
+    expect(screen.queryByRole('button', { name: '카테고리 다시 시도' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }));
+    await waitFor(() => expect(scenario.materializeVars).toHaveLength(1));
+    expect(scenario.materializeVars[0]).toMatchObject({
+      input: { categoryIds: [] },
+    });
+  });
+});
 
 it('두 편집 화면의 다른 필드 변경을 각각 복구할 수 있게 보관한다', async () => {
   seedResearchWorkspace();
