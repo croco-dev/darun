@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
@@ -62,6 +62,41 @@ maybeDescribe('W4 job lease recovery (isolated PG)', () => {
         .catch(() => {});
     }
     await sql?.end({ timeout: 5 });
+  });
+
+  it('같은 시각의 소개 작업 251건을 ID 내림차순으로 100건씩 빠짐없이 읽는다', async () => {
+    const prefix = unique('page-order');
+    const ids = Array.from({ length: 251 }, (_, index) => `${prefix}-${String(index).padStart(3, '0')}`);
+    try {
+      await db.insert(productDescriptionJobs).values(
+        ids.map(id => ({
+          id,
+          productId: 'page-fixture',
+          status: 'failed',
+          createdAt: new Date('2099-01-01T00:00:00Z'),
+        }))
+      );
+      const repository = new PostgresqlProductDescriptionJobRepository(db as never);
+      const expected = [...ids].reverse();
+      for (const status of [undefined, 'failed'] as const) {
+        const pages = [];
+        for (const offset of [0, 100, 200]) {
+          const page = await repository.findJobs({ status, limit: 100, offset });
+          pages.push(...page.filter(job => job.id.startsWith(prefix)));
+          expect(page.slice(0, Math.min(100, 251 - offset)).map(job => job.id)).toEqual(
+            expected.slice(offset, offset + 100)
+          );
+        }
+        expect(pages.map(job => job.id)).toEqual(expected);
+        expect(new Set(pages.map(job => job.id)).size).toBe(251);
+        expect(
+          (await repository.findJobs({ status, limit: 100, offset: 251 })).some(job => job.id.startsWith(prefix))
+        ).toBe(false);
+        expect((await repository.findJobs({ status, limit: 300 })).map(job => job.id)).toEqual(expected.slice(0, 100));
+      }
+    } finally {
+      await db.delete(productDescriptionJobs).where(inArray(productDescriptionJobs.id, ids));
+    }
   });
 
   it('concurrent generation and failed-retry request keys create one runnable job across connections', async () => {

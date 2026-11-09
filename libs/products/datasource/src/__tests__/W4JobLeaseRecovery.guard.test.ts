@@ -48,6 +48,6 @@ describe('lease PostgreSQL suite isolation at the Vitest process boundary', { ti
     const result = run(undefined, false);
     expect(result.error).toBeUndefined();
     expect(result.status, result.stdout + result.stderr).toBe(0);
-    expect(result.stdout).toContain('3 skipped');
+    expect(result.stdout).toContain('4 skipped');
   });
 });

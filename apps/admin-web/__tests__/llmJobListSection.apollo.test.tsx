@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { GetTranslationJobsOnAdminDocument } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import React, { useEffect, useState } from 'react';
@@ -206,6 +205,8 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
+  vi.restoreAllMocks();
   for (const client of clients.splice(0)) client.stop();
 });
 
@@ -273,58 +274,103 @@ describe('list retry authority through real Apollo hooks and default cache', () 
     await waitFor(() => expect(within(screen.getByTitle('Product: entity-100')).getByText('entity-100')).toBeTruthy());
     expect(within(screen.getByTitle('Product: entity-0')).getByText('entity-0')).toBeTruthy();
     expect(screen.getByText('현재 101건 표시 중', { selector: 'span.tabular-nums' })).toBeTruthy();
+    expect(screen.queryByText('더 보기 (+100건)')).toBeNull();
+    expect(screen.getByText('마지막 작업입니다.')).toBeTruthy();
     expect(fixture.log.filter(r => r.name === 'GetTranslationJobsOnAdmin').every(r => r.variables.limit === 100)).toBe(
       true
     );
   });
 
-  it('refreshes every page of the already loaded translation list', async () => {
-    const fixture = await firstTranslationPage(2);
-    // The append case proves this aggregate is reachable; start at its real Apollo cache state to isolate refresh.
+  it('소개 다음 페이지 실패는 기존 행과 위치를 유지하고 필터 변경 뒤 늦은 응답은 합치지 않는다', async () => {
+    const fixture = setup();
+    const first = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    const translations = await fixture.take('GetTranslationJobsOnAdmin');
+    const rows = Array.from({ length: 100 }, (_, i) => ({
+      ...description(`job-${i}`),
+      status: 'completed',
+      error: null,
+    }));
     await flush(() => {
-      fixture.client.writeQuery({
-        query: GetTranslationJobsOnAdminDocument,
-        variables: { limit: 100, offset: 0 },
-        data: {
-          translationJobs: Array.from({ length: 101 }, (_, i) => translationRow(i)),
-        },
-      });
+      first.resolve({ productDescriptionJobs: rows });
+      translations.resolve({ translationJobs: [] });
     });
-    await waitFor(() =>
-      expect(
-        screen.getByText('현재 101건 표시 중', {
-          selector: 'span.tabular-nums',
-        })
-      ).toBeTruthy()
-    );
     await flush(() =>
-      fireEvent.click(screen.getByText('새로고침', { selector: 'button, button > span' }).closest('button')!)
+      fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button > span' }).closest('button')!)
     );
-    const refreshedFirst = await fixture.take('GetTranslationJobsOnAdmin');
-    expect(refreshedFirst.variables).toEqual({ limit: 100, offset: 0 });
+    const failed = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    expect(failed.variables).toEqual({ limit: 100, offset: 100 });
+    await flush(() => failed.network());
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(100);
     await flush(() =>
-      refreshedFirst.resolve({
-        translationJobs: Array.from({ length: 100 }, (_, i) => translationRow(i)),
-      })
+      fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button > span' }).closest('button')!)
     );
-    const refreshedNext = await fixture.take('GetTranslationJobsOnAdmin');
-    expect(refreshedNext.variables).toEqual({ limit: 100, offset: 100 });
-    await flush(() => refreshedNext.resolve({ translationJobs: [translationRow(100)] }));
-    expect(screen.getByText('현재 101건 표시 중', { selector: 'span.tabular-nums' })).toBeTruthy();
-    expect(within(screen.getByTitle('Product: entity-0')).getByText('entity-0')).toBeTruthy();
-    expect(within(screen.getByTitle('Product: entity-100')).getByText('entity-100')).toBeTruthy();
-    expect(fixture.log.filter(r => r.name === 'GetTranslationJobsOnAdmin').every(r => r.variables.limit === 100)).toBe(
-      true
+    const old = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    expect(old.variables).toEqual(failed.variables);
+    await flush(() => fireEvent.click(screen.getByText('실패', { selector: 'button' })));
+    const filtered = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    const filteredTranslation = await fixture.take('GetTranslationJobsOnAdmin');
+    expect(filtered.variables).toEqual({
+      status: 'failed',
+      limit: 100,
+      offset: 0,
+    });
+    await flush(() => {
+      filtered.resolve({ productDescriptionJobs: [description('filtered')] });
+      filteredTranslation.resolve({ translationJobs: [] });
+    });
+    await flush(() => old.resolve({ productDescriptionJobs: [description('stale')] }));
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(document.querySelector('a[aria-label="stale 소개 후보 열기"]')).toBeNull();
+    expect(document.querySelector('a[aria-label="filtered 소개 후보 열기"]')).toBeTruthy();
+  });
+
+  it('자동 갱신은 소개의 과거 페이지와 선택한 오류 작업을 유지한다', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const fixture = setup();
+    const rows = Array.from({ length: 101 }, (_, i) => ({
+      ...description(`job-${i}`),
+      status: i === 0 ? 'pending' : i === 100 ? 'failed' : 'completed',
+      error: i === 100 ? '합성 소개 실패' : null,
+    }));
+    const first = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    const translations = await fixture.take('GetTranslationJobsOnAdmin');
+    await flush(() => {
+      first.resolve({ productDescriptionJobs: rows.slice(0, 100) });
+      translations.resolve({ translationJobs: [] });
+    });
+    await flush(() =>
+      fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button > span' }).closest('button')!)
     );
+    const next = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    expect(next.variables).toEqual({ limit: 100, offset: 100 });
+    await flush(() => next.resolve({ productDescriptionJobs: rows.slice(100) }));
+    const lastRow = screen.getByTitle('job-100').closest('tr')!;
+    await flush(() =>
+      fireEvent.click(lastRow.querySelector<HTMLButtonElement>('button[aria-label="에러 상세 보기"]')!)
+    );
+    await waitFor(() => expect(within(screen.getByTitle('job-0').closest('tr')!).getByText('대기 중')).toBeTruthy());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    const refresh = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    expect(refresh.variables).toEqual({ limit: 100, offset: 0 });
+    await flush(() => refresh.resolve({ productDescriptionJobs: rows.slice(0, 100) }));
+    const tail = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    expect(tail.variables).toEqual({ limit: 100, offset: 100 });
+    await flush(() => tail.resolve({ productDescriptionJobs: rows.slice(100) }));
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(101);
+    expect(within(document.querySelector<HTMLElement>('[role="dialog"]')!).getByText('job-100')).toBeTruthy();
+    expect(document.querySelector('a[aria-label="job-100 소개 후보 열기"]')).toBeTruthy();
+    vi.useRealTimers();
   });
 
   it('keeps the loaded rows after a failed next page and retries the same offset', async () => {
-    const fixture = await firstTranslationPage(2);
+    const fixture = await firstTranslationPage();
     await flush(() =>
       fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button, button > span' }).closest('button')!)
     );
     const failed = await fixture.take('GetTranslationJobsOnAdmin');
-    expect(failed.variables).toEqual({ limit: 100, offset: 2 });
+    expect(failed.variables).toEqual({ limit: 100, offset: 100 });
     await flush(() => failed.network());
     await waitFor(() =>
       expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: '목록 조회 실패' }))
@@ -334,15 +380,15 @@ describe('list retry authority through real Apollo hooks and default cache', () 
       fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button, button > span' }).closest('button')!)
     );
     const retry = await fixture.take('GetTranslationJobsOnAdmin');
-    expect(retry.variables).toEqual({ limit: 100, offset: 2 });
-    await flush(() => retry.resolve({ translationJobs: [translationRow(2)] }));
-    await waitFor(() => expect(within(screen.getByTitle('Product: entity-2')).getByText('entity-2')).toBeTruthy());
+    expect(retry.variables).toEqual({ limit: 100, offset: 100 });
+    await flush(() => retry.resolve({ translationJobs: [translationRow(100)] }));
+    await waitFor(() => expect(within(screen.getByTitle('Product: entity-100')).getByText('entity-100')).toBeTruthy());
     expect(within(screen.getByTitle('Product: entity-0')).getByText('entity-0')).toBeTruthy();
-    expect(screen.getByText('현재 3건 표시 중', { selector: 'span.tabular-nums' })).toBeTruthy();
+    expect(screen.getByText('현재 101건 표시 중', { selector: 'span.tabular-nums' })).toBeTruthy();
   });
 
   it('ignores the old next page after the status filter changes', async () => {
-    const fixture = await firstTranslationPage(2);
+    const fixture = await firstTranslationPage();
     await flush(() =>
       fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button, button > span' }).closest('button')!)
     );
