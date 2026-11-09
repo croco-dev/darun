@@ -140,7 +140,7 @@ describe('정상 0건 검색의 보조 조회 복구', () => {
       const healthy = delayed === categories ? trending : categories;
       await act(async () => requests.find(request => request.name === healthy)!.resolve(responses[healthy]));
       expect(container.textContent).toContain(healthy === categories ? '디자인' : 'Orbit');
-      expect(container.querySelector('[role="status"]')?.textContent).toContain('list.empty.loading');
+      expect(container.querySelector('output, [role="status"]')?.textContent).toContain('list.empty.loading');
       await act(async () => requests.find(request => request.name === delayed)!.resolve(responses[delayed]));
       expectStaticResults();
       expect(container.textContent).toContain('디자인');
@@ -198,6 +198,6 @@ describe('정상 0건 검색의 보조 조회 복구', () => {
     });
     expect(container.textContent).toContain('list.empty.categoriesEmpty');
     expect(container.textContent).toContain('list.empty.trendingEmpty');
-    expect(container.querySelector('button, [role="alert"], [role="status"]')).toBeNull();
+    expect(container.querySelector('button, [role="alert"], output, [role="status"]')).toBeNull();
   });
 });

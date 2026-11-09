@@ -161,18 +161,12 @@ function EmptySearchResults({ query }: { query: string }) {
             aria-label={t('list.empty.categories')}
             aria-busy={categoriesQuery.loading}
           >
-            {categoriesQuery.loading ? (
-              <p role="status" className="col-span-full text-sm text-dark-600">
-                {t('list.empty.loading')}
-              </p>
-            ) : categoriesQuery.error ? (
-              <SuggestionError
-                message={t('list.empty.categoriesError')}
-                retry={() => void categoriesQuery.refetch().catch(() => {})}
-              />
-            ) : categories.length === 0 ? (
-              <p className="col-span-full text-sm text-dark-600">{t('list.empty.categoriesEmpty')}</p>
-            ) : null}
+            <SuggestionStatus
+              loading={categoriesQuery.loading}
+              errorMessage={categoriesQuery.error ? t('list.empty.categoriesError') : undefined}
+              emptyMessage={categories.length === 0 ? t('list.empty.categoriesEmpty') : undefined}
+              retry={() => void categoriesQuery.refetch().catch(() => {})}
+            />
             {!categoriesQuery.loading &&
               !categoriesQuery.error &&
               categories.map(category => (
@@ -203,18 +197,12 @@ function EmptySearchResults({ query }: { query: string }) {
             aria-busy={trendingQuery.loading}
             className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3"
           >
-            {trendingQuery.loading ? (
-              <p role="status" className="col-span-full text-sm text-dark-600">
-                {t('list.empty.loading')}
-              </p>
-            ) : trendingQuery.error ? (
-              <SuggestionError
-                message={t('list.empty.trendingError')}
-                retry={() => void trendingQuery.refetch().catch(() => {})}
-              />
-            ) : trendingProducts.length === 0 ? (
-              <p className="col-span-full text-sm text-dark-600">{t('list.empty.trendingEmpty')}</p>
-            ) : null}
+            <SuggestionStatus
+              loading={trendingQuery.loading}
+              errorMessage={trendingQuery.error ? t('list.empty.trendingError') : undefined}
+              emptyMessage={trendingProducts.length === 0 ? t('list.empty.trendingEmpty') : undefined}
+              retry={() => void trendingQuery.refetch().catch(() => {})}
+            />
             {!trendingQuery.loading &&
               !trendingQuery.error &&
               trendingProducts.map((product, index) => (
@@ -235,12 +223,28 @@ function EmptySearchResults({ query }: { query: string }) {
   );
 }
 
-function SuggestionError({ message, retry }: { message: string; retry: () => void }) {
+function SuggestionStatus({
+  loading,
+  errorMessage,
+  emptyMessage,
+  retry,
+}: Readonly<{
+  loading: boolean;
+  errorMessage?: string;
+  emptyMessage?: string;
+  retry: () => void;
+}>) {
   const t = useTranslations('Search');
+  if (loading) {
+    return <output className="col-span-full text-sm text-dark-600">{t('list.empty.loading')}</output>;
+  }
+  if (!errorMessage) {
+    return emptyMessage ? <p className="col-span-full text-sm text-dark-600">{emptyMessage}</p> : null;
+  }
   return (
     <div className="col-span-full flex flex-col items-start gap-2">
       <p role="alert" className="text-sm text-dark-600">
-        {message}
+        {errorMessage}
       </p>
       <Button type="button" size="sm" onClick={retry}>
         {t('list.empty.retry')}
