@@ -1,7 +1,7 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useMutation } from '@apollo/client/react';
 import { getProductDescriptionRequestId, acknowledgeProductDescriptionRequest } from '@darun/products-feature';
 import {
   GetProductDescriptionJobsOnAdminDocument,
@@ -17,6 +17,7 @@ import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { formatAsKst, parseAsUtc } from '../../lib/datetime';
+import { useLlmJobPages } from './useLlmJobPages';
 
 gql`
   query GetTranslationJobsOnAdmin($status: String, $limit: Int, $offset: Int) {
@@ -198,52 +199,24 @@ export function LlmJobListSection() {
       retries.clear();
     };
   }, [pathname]);
-  // Description history still uses its existing growing-limit contract.
-  const [visibleLimit, setVisibleLimit] = useState(100);
-  const translationRequest = useRef(0);
-  const translationBusy = useRef(false);
-
-  useEffect(() => {
-    translationRequest.current += 1;
-    translationBusy.current = false;
-    return () => {
-      translationRequest.current += 1;
-    };
-  }, [pathname, jobTypeFilter, statusFilter]);
-
-  const queryVariables = {
+  const paginationScope = `${pathname}:${jobTypeFilter}:${statusFilter}`;
+  const translation = useLlmJobPages(GetTranslationJobsOnAdminDocument, 'translationJobs', {
+    scope: paginationScope,
     status: statusFilter === 'all' ? undefined : statusFilter,
-    limit: visibleLimit,
-    offset: 0,
-  };
-
-  const {
-    data: translationData,
-    loading: translationLoading,
-    error: translationError,
-    refetch: refetchTranslation,
-    fetchMore: fetchMoreTranslation,
-  } = useQuery(GetTranslationJobsOnAdminDocument, {
-    variables: { ...queryVariables, limit: 100 },
-    fetchPolicy: 'cache-and-network',
     skip: jobTypeFilter === 'description',
   });
-
-  const {
-    data: descriptionData,
-    loading: descriptionLoading,
-    error: descriptionError,
-    refetch: refetchDescription,
-  } = useQuery(GetProductDescriptionJobsOnAdminDocument, {
-    variables: queryVariables,
-    fetchPolicy: 'cache-and-network',
+  const description = useLlmJobPages(GetProductDescriptionJobsOnAdminDocument, 'productDescriptionJobs', {
+    scope: paginationScope,
+    status: statusFilter === 'all' ? undefined : statusFilter,
     skip: jobTypeFilter === 'translation',
   });
+  const translationLoading = translation.loading;
+  const descriptionLoading = description.loading;
 
   const [retryTranslation] = useMutation(RetryTranslationJobOnAdminDocument);
   const [retryDescription] = useMutation(RetryProductDescriptionJobOnAdminDocument);
 
-  const translationJobs: UnifiedLlmJob[] = (translationData?.translationJobs ?? []).map(j => ({
+  const translationJobs: UnifiedLlmJob[] = translation.rows.map(j => ({
     id: j.id,
     jobType: 'translation',
     jobTypeLabel: j.entityType === 'Product' ? '상품 영문 번역' : `${j.entityType} 번역`,
@@ -257,7 +230,7 @@ export function LlmJobListSection() {
     updatedAt: j.updatedAt,
   }));
 
-  const descriptionJobs: UnifiedLlmJob[] = (descriptionData?.productDescriptionJobs ?? []).map(j => ({
+  const descriptionJobs: UnifiedLlmJob[] = description.rows.map(j => ({
     id: j.id,
     jobType: 'description',
     jobTypeLabel: '상품 AI 소개 생성',
@@ -282,98 +255,45 @@ export function LlmJobListSection() {
     jobs = descriptionJobs;
   } else {
     jobs = [...translationJobs, ...descriptionJobs].sort(
-      (a, b) => (dayjs(b.createdAt).valueOf() || 0) - (dayjs(a.createdAt).valueOf() || 0)
+      (a, b) =>
+        (dayjs(b.createdAt).valueOf() || 0) - (dayjs(a.createdAt).valueOf() || 0) ||
+        b.id.localeCompare(a.id) ||
+        b.jobType.localeCompare(a.jobType)
     );
   }
 
   const isLoading =
     (translationLoading && translationJobs.length === 0) || (descriptionLoading && descriptionJobs.length === 0);
-  const queryError = translationError || descriptionError;
-
-  const readTranslationPage = useCallback(
-    async (offset: number, request: number) => {
-      let pageLength = 0;
-      await fetchMoreTranslation({
-        variables: { limit: 100, offset },
-        updateQuery(previous, { fetchMoreResult }) {
-          if (translationRequest.current !== request || !fetchMoreResult) return previous;
-          const page = fetchMoreResult.translationJobs;
-          pageLength = page.length;
-          const rows = [
-            ...(previous?.translationJobs ?? []).slice(0, offset),
-            ...page,
-            ...(page.length === 100 ? (previous?.translationJobs ?? []).slice(offset + 100) : []),
-          ];
-          return {
-            ...fetchMoreResult,
-            translationJobs: rows.filter((row, index) => rows.findIndex(j => j.id === row.id) === index),
-          };
-        },
-      });
-      return pageLength;
-    },
-    [fetchMoreTranslation]
-  );
-
-  const refreshTranslation = useCallback(async () => {
-    if (translationBusy.current) return;
-    const request = translationRequest.current;
-    const count = translationData?.translationJobs.length ?? 0;
-    translationBusy.current = true;
-    try {
-      if (count <= 100) await refetchTranslation?.();
-      else {
-        for (let offset = 0; offset < count && translationRequest.current === request; offset += 100) {
-          if ((await readTranslationPage(offset, request)) < 100) break;
-        }
-      }
-    } finally {
-      if (translationRequest.current === request) translationBusy.current = false;
-    }
-  }, [translationData?.translationJobs.length, refetchTranslation, readTranslationPage]);
+  const queryError = translation.error || description.error;
+  const hasMore = translation.hasMore || description.hasMore;
 
   const loadMore = async () => {
-    if (translationBusy.current) return;
-    if (jobTypeFilter !== 'translation') setVisibleLimit(limit => limit + 100);
-    if (jobTypeFilter === 'description') return;
-    const request = translationRequest.current;
-    translationBusy.current = true;
-    try {
-      await readTranslationPage(translationData?.translationJobs.length ?? 0, request);
-    } catch {
-      if (translationRequest.current === request)
-        notifications.show({
-          title: '목록 조회 실패',
-          message: '번역 작업을 더 불러오지 못했습니다. 다시 시도해 주세요.',
-          color: 'red',
-        });
-    } finally {
-      if (translationRequest.current === request) translationBusy.current = false;
-    }
+    await Promise.all(
+      [translation, description].map(async list => {
+        try {
+          await list.loadMore();
+        } catch {
+          notifications.show({
+            title: '목록 조회 실패',
+            message: '작업을 더 불러오지 못했습니다. 다시 시도해 주세요.',
+            color: 'red',
+          });
+        }
+      })
+    );
   };
 
   const refetchAll = useCallback(async () => {
-    const promises: Promise<unknown>[] = [];
-    if (jobTypeFilter !== 'description')
-      promises.push(
-        Promise.resolve(refreshTranslation()).catch(e => {
-          console.error('Failed to refetch LLM translation jobs', e);
-        })
-      );
-    if (jobTypeFilter !== 'translation')
-      promises.push(
-        Promise.resolve(refetchDescription?.()).catch(e => {
-          console.error('Failed to refetch LLM description jobs', e);
-        })
-      );
-    await Promise.all(promises);
-  }, [jobTypeFilter, refreshTranslation, refetchDescription]);
-
-  // Reset pagination when filters change so a stale large limit isn't reused.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 필터 변경 시 페이지네이션 초기화에 필요
-    setVisibleLimit(100);
-  }, [jobTypeFilter, statusFilter]);
+    await Promise.all(
+      [translation.refresh, description.refresh].map(async refresh => {
+        try {
+          await refresh();
+        } catch (error) {
+          console.error('Failed to refetch LLM jobs', error);
+        }
+      })
+    );
+  }, [translation.refresh, description.refresh]);
 
   // Auto-polling when active jobs exist
   const hasActiveJobs = jobs.some(j => j.status === 'pending' || j.status === 'in_progress');
@@ -782,21 +702,27 @@ export function LlmJobListSection() {
         </AdminPanel>
       )}
 
-      {/* Translation requests stay bounded while the displayed list grows. */}
+      {/* Each job type keeps an independent continuation position. */}
       {jobs.length > 0 && (
         <div className="flex items-center justify-center gap-3 pt-1">
           <span className="text-xs text-dark-500 tabular-nums">현재 {jobs.length.toLocaleString()}건 표시 중</span>
-          <Button
-            type="button"
-            variant="base"
-            color="secondary"
-            size="sm"
-            onClick={() => void loadMore()}
-            disabled={translationLoading || descriptionLoading}
-            className="active:scale-[0.98] motion-reduce:transform-none"
-          >
-            <span className="whitespace-nowrap">더 보기 (+100건)</span>
-          </Button>
+          {hasMore ? (
+            <Button
+              type="button"
+              variant="base"
+              color="secondary"
+              size="sm"
+              onClick={() => void loadMore()}
+              disabled={translationLoading || descriptionLoading}
+              className="active:scale-[0.98] motion-reduce:transform-none"
+            >
+              <span className="whitespace-nowrap">더 보기 (+100건)</span>
+            </Button>
+          ) : (
+            <span className="text-xs text-dark-500" role="status">
+              마지막 작업입니다.
+            </span>
+          )}
         </div>
       )}
 

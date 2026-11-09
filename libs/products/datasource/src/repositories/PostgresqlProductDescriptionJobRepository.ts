@@ -340,10 +340,13 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       const rows = options?.status
         ? await baseQuery
             .where(eq(productDescriptionJobs.status, options.status))
-            .orderBy(desc(productDescriptionJobs.createdAt))
+            .orderBy(desc(productDescriptionJobs.createdAt), desc(productDescriptionJobs.id))
             .limit(limit)
             .offset(offset)
-        : await baseQuery.orderBy(desc(productDescriptionJobs.createdAt)).limit(limit).offset(offset);
+        : await baseQuery
+            .orderBy(desc(productDescriptionJobs.createdAt), desc(productDescriptionJobs.id))
+            .limit(limit)
+            .offset(offset);
 
       return rows.map(row => this.toSummary(row));
     } catch (error) {
