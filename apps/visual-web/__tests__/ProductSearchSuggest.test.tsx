@@ -53,6 +53,26 @@ function pressEnter(input: HTMLInputElement, flags: KeyboardEventInit = {}) {
 
 afterEach(cleanup);
 
+it('keeps the input and popup inside the same click boundary', () => {
+  const { input, close, select } = mount();
+  fireEvent.mouseDown(input);
+  input.setSelectionRange(1, 1);
+  fireEvent.mouseUp(input);
+  fireEvent.click(input);
+  expect(input.selectionStart).toBe(1);
+  expect(close).not.toHaveBeenCalled();
+
+  const option = screen.getByRole('option', { name: '청구 서비스' });
+  fireEvent.mouseDown(option);
+  fireEvent.mouseUp(option);
+  fireEvent.click(option);
+  expect(select).toHaveBeenCalledExactlyOnceWith(suggestions[1]);
+  expect(close).not.toHaveBeenCalled();
+
+  fireEvent.click(document.body);
+  expect(close).toHaveBeenCalledTimes(1);
+});
+
 it.each([
   { isComposing: true, keyCode: 13 },
   { isComposing: false, keyCode: 229 },
