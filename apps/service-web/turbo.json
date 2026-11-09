@@ -19,6 +19,7 @@
     "test": {
       "inputs": [
         "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/libs/voting/domain/src/errors/VoteError.ts",
         "$TURBO_ROOT$/apps/visual-web/vercel.json",
         "$TURBO_ROOT$/scripts/vitest/sentry-initialization.test.mjs"
       ]

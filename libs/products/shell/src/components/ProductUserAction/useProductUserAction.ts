@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   ProductBySlugOnProductUserActionDocument,
@@ -122,8 +123,8 @@ export function useProductUserAction({ slug }: ProductUserActionProps) {
           : current
       );
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : '';
-      const duplicate = message.includes('duplicate-vote');
+      const codes = CombinedGraphQLErrors.is(err) ? err.errors.map(error => error.extensions?.code) : [];
+      const duplicate = codes.includes('voting/duplicate-vote');
       if (duplicate) saveVotedSlug(requestSlug);
       setState(current => {
         if (current.identity !== requestIdentity) return current;
@@ -131,7 +132,7 @@ export function useProductUserAction({ slug }: ProductUserActionProps) {
           ? locale === 'en'
             ? 'You have already voted for this product.'
             : '이미 투표한 서비스입니다.'
-          : message.includes('rate-limit-exceeded')
+          : codes.includes('voting/rate-limit-exceeded')
             ? locale === 'en'
               ? 'Too many vote attempts. Please try again in a minute.'
               : '단시간에 너무 많은 투표를 시도했습니다. 잠시 후 다시 시도해주세요.'
