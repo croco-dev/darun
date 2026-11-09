@@ -13,11 +13,7 @@ describe('Document placeholder fidelity', () => {
     // A random placeholder nonce may contain the same digits; the source number must stay protected.
     expect(encoded.encodedText).not.toMatch(/\b42\b/);
     expect(encoded.encodedText).not.toContain('&amp;');
-    const translated = decodeHtml(
-      encoded.encodedText.replace('한국어', 'Korean').replace('링크', 'Link'),
-      encoded.placeholders,
-      encoded.tokenOrder
-    );
+    const translated = decodeHtml(encoded.encodedText.replace('한국어', 'Korean').replace('링크', 'Link'), encoded);
     expect(translated).toBe(
       '<p data-note="a > b">Korean Darun 42 &amp; ⟦HTML_0000⟧ <a href="https://example.com/a?x=1&y=2">Link</a><!-- comment > --></p>'
     );
@@ -35,8 +31,7 @@ describe('Document placeholder fidelity', () => {
         .replace('중첩', 'Nested')
         .replace('강조', 'Emphasis')
         .replace('링크', 'Link'),
-      encoded.placeholders,
-      encoded.tokenOrder
+      encoded
     );
     expect(translated).toBe(
       '> Quote\n>\n> - List\n>   1. Nested **Emphasis** [Link](https://example.com/a "title > x")\n\n`literal 7` &copy;'
@@ -51,8 +46,7 @@ describe('Document placeholder fidelity', () => {
       const encoded = encodeHtml(source);
       const translated = decodeHtml(
         encoded.encodedText.replace('안내', 'Directions').replace('본문', 'Article'),
-        encoded.placeholders,
-        encoded.tokenOrder
+        encoded
       );
       expect(translated).toBe(
         '[Directions][안내] [Article][안내] ![대체][안내]\n\n[안내]: <https://example.com/docs?x=1&amp;y=2> "Guide"'
@@ -83,11 +77,10 @@ describe('Document placeholder fidelity', () => {
     const encoded = encodeHtml(source);
     const translated = decodeHtml(
       encoded.encodedText.replaceAll('안내', 'Guide').replaceAll('본문', 'Body').replaceAll('조건', 'Terms'),
-      encoded.placeholders,
-      encoded.tokenOrder
+      encoded
     );
     expect(translated).toBe(
-      '[Guide][안내] [Guide][안내] [Body][안내] [Guide &amp; Terms][안내 &amp; 조건] [Guide\\!][안내\\!] Darun 42 [Body](https://example.com/inline) <a href="https://example.com/html">Body</a> ![대체][] ![대체] `[안내][]`\n\n[안내]: https://example.com/a\n[안내 &amp; 조건]: https://example.com/b\n[안내\\!]: https://example.com/c\n[대체]: https://example.com/image.png\n\n```\n[안내][]\n```'
+      '[Guide][안내] [Guide][안내] [Body][안내] [Guide &amp; Terms][안내 &amp; 조건] [Guide\\!][안내\\!] Darun 42 [Body](https://example.com/inline) <a href="https://example.com/html">Body</a> ![대체][대체] ![대체][대체] `[안내][]`\n\n[안내]: https://example.com/a\n[안내 &amp; 조건]: https://example.com/b\n[안내\\!]: https://example.com/c\n[대체]: https://example.com/image.png\n\n```\n[안내][]\n```'
     );
     expect(() => assertDocumentStructure(source, translated)).not.toThrow();
   });
@@ -97,8 +90,7 @@ describe('Document placeholder fidelity', () => {
     const encoded = encodeHtml(source);
     const translated = decodeHtml(
       encoded.encodedText.replaceAll('안내', 'Directions').replaceAll('본문', 'Body'),
-      encoded.placeholders,
-      encoded.tokenOrder
+      encoded
     );
     expect(translated).toBe(
       '<code>[안내][]</code> `[안내] <code>` Body [Directions][안내]\n\n[안내]: https://example.com/a'
@@ -125,8 +117,7 @@ describe('Document placeholder fidelity', () => {
     for (const literal of ['안내', '중첩', '리터럴']) expect(encoded.encodedText).not.toContain(literal);
     const translated = decodeHtml(
       encoded.encodedText.replaceAll('본문', 'Body').replaceAll('더보기', 'More').replaceAll('안내', 'Guide'),
-      encoded.placeholders,
-      encoded.tokenOrder
+      encoded
     );
     expect(translated).toBe(expected);
     expect(() => assertDocumentStructure(source, translated)).not.toThrow();
@@ -144,11 +135,7 @@ describe('Document placeholder fidelity', () => {
   ])('%s는 Markdown이 해석한 실제 HTML 위치에서만 literal을 보호한다', (_kind, source, expected) => {
     const encoded = encodeHtml(source);
     expect(encoded.encodedText.includes('번역 대상')).toBe(expected.includes('Translation target'));
-    const translated = decodeHtml(
-      encoded.encodedText.replaceAll('번역 대상', 'Translation target'),
-      encoded.placeholders,
-      encoded.tokenOrder
-    );
+    const translated = decodeHtml(encoded.encodedText.replaceAll('번역 대상', 'Translation target'), encoded);
     expect(translated).toBe(expected);
     expect(() => assertDocumentStructure(source, translated)).not.toThrow();
   });
@@ -162,8 +149,7 @@ describe('Document placeholder fidelity', () => {
     for (const literal of ['고정', '하위', '값', '원문', '리터럴']) expect(encoded.encodedText).not.toContain(literal);
     const translated = decodeHtml(
       encoded.encodedText.replaceAll('본문', 'Article').replaceAll('안내', 'Directions'),
-      encoded.placeholders,
-      encoded.tokenOrder
+      encoded
     );
     expect(translated).toBe(
       '\\<code> **Article** [Directions][안내] \\</code> <code>  고정<span>하위</span>\r\n\t값 </code>\n\n\\<pre> [Directions][안내] Article \\</pre>\n\n<pre>  원문\n<span>리터럴</span> </pre>\n\n[안내]: <https://example.com/docs?x=1&amp;y=2> "Guide"'
@@ -178,8 +164,7 @@ describe('Document placeholder fidelity', () => {
       const encoded = encodeHtml(source);
       const translated = decodeHtml(
         encoded.encodedText.replaceAll('본문', 'Body').replaceAll('안내', 'Directions'),
-        encoded.placeholders,
-        encoded.tokenOrder
+        encoded
       );
       expect(translated).toBe(`${literal}\n\nBody [Directions][안내]\n\n[안내]: https://example.com/a`);
       expect(() => assertDocumentStructure(source, translated)).not.toThrow();
@@ -190,11 +175,7 @@ describe('Document placeholder fidelity', () => {
     const source = '<div>본문 \\<code>고정</code><script>실행금지</script><style>서식금지</style> 더보기</div>';
     const encoded = encodeHtml(source);
     for (const literal of ['고정', '실행금지', '서식금지']) expect(encoded.encodedText).not.toContain(literal);
-    const translated = decodeHtml(
-      encoded.encodedText.replaceAll('본문', 'Body').replaceAll('더보기', 'More'),
-      encoded.placeholders,
-      encoded.tokenOrder
-    );
+    const translated = decodeHtml(encoded.encodedText.replaceAll('본문', 'Body').replaceAll('더보기', 'More'), encoded);
     expect(translated).toBe('<div>Body \\<code>고정</code><script>실행금지</script><style>서식금지</style> More</div>');
     expect(() => assertDocumentStructure(source, translated)).not.toThrow();
   });
@@ -212,20 +193,16 @@ describe('Document placeholder fidelity', () => {
   it('동일 집합의 순서 변경, 중복, 누락과 알 수 없는 토큰을 거부한다', () => {
     const encoded = encodeHtml('<p>설명</p>');
     const [first, second] = encoded.tokenOrder;
-    expect(() => decodeHtml(`${second}Text${first}`, encoded.placeholders, encoded.tokenOrder)).toThrow(
-      /order mismatch/
-    );
-    expect(() => decodeHtml(`${first}Text${first}`, encoded.placeholders, encoded.tokenOrder)).toThrow();
-    expect(() => decodeHtml('Text', encoded.placeholders, encoded.tokenOrder)).toThrow(/count mismatch/);
-    expect(() => decodeHtml(`${encoded.encodedText}${first}`, encoded.placeholders, encoded.tokenOrder)).toThrow();
+    expect(() => decodeHtml(`${second}Text${first}`, encoded)).toThrow(/order mismatch/);
+    expect(() => decodeHtml(`${first}Text${first}`, encoded)).toThrow();
+    expect(() => decodeHtml('Text', encoded)).toThrow(/count mismatch/);
+    expect(() => decodeHtml(`${encoded.encodedText}${first}`, encoded)).toThrow();
   });
 
   it('번역이 새 Markdown/HTML 구조를 주입하면 거부한다', () => {
     expect(() => assertDocumentStructure('일반 문장', '# Heading')).toThrow(/Markdown structure/);
     const encoded = encodeHtml('<p>문장</p>');
-    expect(() =>
-      decodeHtml(encoded.encodedText + '<script>bad</script>', encoded.placeholders, encoded.tokenOrder)
-    ).toThrow(/introduced HTML/);
+    expect(() => decodeHtml(encoded.encodedText + '<script>bad</script>', encoded)).toThrow(/introduced HTML/);
   });
 
   it('문서의 들여쓰기 code block과 fence 본문은 placeholder로 숨겨져 원문 바이트로 복원한다', () => {
@@ -235,6 +212,6 @@ describe('Document placeholder fidelity', () => {
     expect(encoded.encodedText).toContain('한국어');
     expect(encoded.encodedText).not.toContain('들여쓰기 코드 블록');
     expect(encoded.encodedText).not.toContain('펜스 코드');
-    expect(decodeHtml(encoded.encodedText, encoded.placeholders, encoded.tokenOrder)).toBe(source);
+    expect(decodeHtml(encoded.encodedText, encoded)).toBe(source);
   });
 });

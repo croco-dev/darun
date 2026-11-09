@@ -35,6 +35,52 @@ const request = {
 };
 
 describe('Actual LlmTranslationProvider', () => {
+  it.each(['single', 'bundle'] as const)(
+    '%s의 이미지 alt는 Writer와 Reviewer를 거쳐 최종 번역에 반영된다',
+    async path => {
+      const source =
+        '<p>설명<img src="https://example.com/a.png" alt="편집 화면" title="고정"></p>\n\n![편집 화면][그림]\n\n[그림]: https://example.com/b.png';
+      const prompts: string[] = [];
+      const llm = client();
+      const completion = llm.completion.getMockImplementation()!;
+      llm.completion.mockImplementation(async (model, messages) => {
+        const prompt = messages[1].content as string;
+        prompts.push(prompt);
+        const response = await completion(model, messages);
+        return {
+          content: response.content.replaceAll('편집 화면', prompts.length === 1 ? 'Editor draft' : 'Document editor'),
+        };
+      });
+      const provider = new LlmTranslationProvider(llm as unknown as LlmClient);
+      const english =
+        path === 'single'
+          ? (
+              await provider.translateSingle({
+                entityType: 'Product',
+                entityId: 'p1',
+                field: 'description',
+                koreanText: source,
+                mode: 'product_copy',
+              })
+            ).translatedText
+          : (
+              await provider.translateProductBundle({
+                ...request,
+                description: source,
+              })
+            ).product.description;
+      expect(prompts).toHaveLength(2);
+      for (const prompt of prompts) {
+        expect(prompt).toContain('편집 화면');
+        expect(prompt).not.toContain('https://example.com/');
+        expect(prompt).not.toContain('고정');
+      }
+      expect(english).toBe(
+        '<p>Description<img src="https://example.com/a.png" alt="Document editor" title="고정"></p>\n\n![Document editor][그림]\n\n[그림]: https://example.com/b.png'
+      );
+    }
+  );
+
   it.each([
     ['    고정 코드\n\n설명  \n', '    고정 코드\n\nDescription  \n'],
     ['    고정 코드만  \n', '    고정 코드만  \n'],

@@ -394,7 +394,7 @@ function runDeterministicEvaluations() {
     // For HTML fixtures, verify HTML codec preservation
     if (fixture.isHtml) {
       const encoded = encodeHtml(fixture.koreanText);
-      const decoded = decodeHtml(encoded.encodedText, encoded.placeholders);
+      const decoded = decodeHtml(encoded.encodedText, encoded);
       if (decoded !== fixture.koreanText) {
         throw new Error(
           `[FAIL] ${fixture.id}: HTML codec roundtrip mismatch!\nExpected: ${fixture.koreanText}\nGot: ${decoded}`
@@ -406,7 +406,7 @@ function runDeterministicEvaluations() {
         const reversed = [...encoded.tokenOrder].reverse().join(' ');
         let acceptedReorder = false;
         try {
-          decodeHtml(reversed, encoded.placeholders, encoded.tokenOrder);
+          decodeHtml(reversed, encoded);
           acceptedReorder = true;
         } catch {
           acceptedReorder = false;

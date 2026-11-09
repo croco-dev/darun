@@ -437,6 +437,8 @@ parse5와 remark의 위치 정보로 HTML/Markdown 구문, quoted `>`, 중첩 �
 
 관리자 전용 `translationFreshness(entityType, entityId, fields)`는 각 원문 필드의 영어 번역을 `current`·`stale`·`missing`으로 표시합니다. row가 없으면 missing, hash 불일치와 legacy `sourceHash: null`은 stale이고 원문 없는 optional 필드는 current입니다. 의미가 같은 서식 편집이어도 원문 hash가 달라지면 공개 조회는 한국어 fallback이고 freshness는 stale입니다. Product는 기존 `requestProductTranslation`, ProductFeature와 Magazine는 기존 `requestTranslation`을 명시적으로 호출합니다. 실제 pending job의 worker가 현재 원문의 전체 요청 rows·새 provenance와 completed를 원자 저장한 뒤 current 영어 조회가 복구됩니다. Magazine 목록에서는 title/summary/content 번역 액션만 제공합니다. 번역 등록과 연결 job의 completed를 구분하고 전역 일괄 재예약이나 Magazine 본문 편집 화면은 추가하지 않습니다.
 
+HTML `img`의 `alt`와 Markdown 이미지의 설명도 별도 구간으로 Writer/Reviewer에 전달합니다. 이미지의 shortcut·collapsed 참조도 원래 definition 이름을 명시한 full 참조로 고정하므로 설명 번역이 목적지를 바꾸지 않으며, `sourceHash`는 변환 전 실제 원문에서 계산합니다. 복원할 때 새 따옴표·entity·괄호·줄바꿈을 해당 문법에 맞게 이스케이프하며, 이미지 URL·다른 속성·개수·참조 목적지는 유지합니다. 빈 장식용 alt와 code/pre 안 이미지 리터럴은 원문 그대로 보존합니다. 설명을 통째로 누락하거나 문서 구조를 바꾼 응답은 저장 전에 거절합니다. 기존 번역 row를 일괄 변경하거나 자동 재생성하지 않으므로 기존 영어를 갱신하려면 해당 번역을 명시적으로 요청합니다.
+
 격리 PostgreSQL 검증은 `127.0.0.1`의 `darun_translation_integrity` DB만 허용합니다. 환경변수가 없으면 suite는 명시적으로 SKIPPED입니다. 운영이나 기존 개발 volume을 사용하지 않습니다.
 
 ```bash
