@@ -41,7 +41,11 @@ function setup(descriptionCount: number, translationCount = 0) {
     createdAt: '2026-10-17T01:00:00Z',
     updatedAt: '2026-10-17T01:01:00Z',
   }));
-  const requests: { name: string | undefined; limit: unknown; offset: unknown }[] = [];
+  const requests: {
+    name: string | undefined;
+    limit: unknown;
+    offset: unknown;
+  }[] = [];
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     devtools: { enabled: false },
@@ -80,7 +84,7 @@ function setup(descriptionCount: number, translationCount = 0) {
       wrapper: ({ children }) => <ApolloProvider client={client}>{children}</ApolloProvider>,
     }
   );
-  return { ...hook, requests };
+  return { ...hook, requests, translations };
 }
 
 describe('실제 Apollo 기본 cache를 통한 작업 페이지 누적', () => {
@@ -107,6 +111,37 @@ describe('실제 Apollo 기본 cache를 통한 작업 페이지 누적', () => {
       { name: 'GetProductDescriptionJobsOnAdmin', limit: 100, offset: 0 },
       { name: 'GetProductDescriptionJobsOnAdmin', limit: 100, offset: 100 },
       { name: 'GetProductDescriptionJobsOnAdmin', limit: 100, offset: 200 },
+    ]);
+  });
+
+  it('번역의 열린 페이지를 모두 갱신하고 이전 마지막 행을 유지한다', async () => {
+    const { result, requests, translations } = setup(0, 101);
+    await waitFor(() => expect(result.current.translation.rows).toHaveLength(100));
+    await act(async () => {
+      await result.current.translation.loadMore();
+    });
+    await waitFor(() => expect(result.current.translation.rows).toHaveLength(101));
+    translations[0] = { ...translations[0]!, message: '첫 페이지 갱신' };
+    translations[100] = {
+      ...translations[100]!,
+      message: '마지막 페이지 갱신',
+    };
+    await act(async () => {
+      await result.current.translation.refresh();
+    });
+    await waitFor(() => expect(result.current.translation.rows[100]?.message).toBe('마지막 페이지 갱신'));
+    expect(result.current.translation.rows).toHaveLength(101);
+    expect(result.current.translation.rows[0]).toMatchObject({
+      id: 'translation-0',
+      message: '첫 페이지 갱신',
+    });
+    expect(result.current.translation.rows[100]?.id).toBe('translation-100');
+    expect(result.current.translation.hasMore).toBe(false);
+    expect(requests.filter(request => request.name === 'GetTranslationJobsOnAdmin')).toEqual([
+      { name: 'GetTranslationJobsOnAdmin', limit: 100, offset: 0 },
+      { name: 'GetTranslationJobsOnAdmin', limit: 100, offset: 100 },
+      { name: 'GetTranslationJobsOnAdmin', limit: 100, offset: 0 },
+      { name: 'GetTranslationJobsOnAdmin', limit: 100, offset: 100 },
     ]);
   });
 

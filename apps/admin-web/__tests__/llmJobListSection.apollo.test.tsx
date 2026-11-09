@@ -285,23 +285,35 @@ describe('list retry authority through real Apollo hooks and default cache', () 
     const fixture = setup();
     const first = await fixture.take('GetProductDescriptionJobsOnAdmin');
     const translations = await fixture.take('GetTranslationJobsOnAdmin');
-    const rows = Array.from({ length: 100 }, (_, i) => description(`job-${i}`));
+    const rows = Array.from({ length: 100 }, (_, i) => ({
+      ...description(`job-${i}`),
+      status: 'completed',
+      error: null,
+    }));
     await flush(() => {
       first.resolve({ productDescriptionJobs: rows });
       translations.resolve({ translationJobs: [] });
     });
-    await flush(() => fireEvent.click(screen.getByText('더 보기 (+100건)').closest('button')!));
+    await flush(() =>
+      fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button > span' }).closest('button')!)
+    );
     const failed = await fixture.take('GetProductDescriptionJobsOnAdmin');
     expect(failed.variables).toEqual({ limit: 100, offset: 100 });
     await flush(() => failed.network());
     expect(document.querySelectorAll('tbody tr')).toHaveLength(100);
-    await flush(() => fireEvent.click(screen.getByText('더 보기 (+100건)').closest('button')!));
+    await flush(() =>
+      fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button > span' }).closest('button')!)
+    );
     const old = await fixture.take('GetProductDescriptionJobsOnAdmin');
     expect(old.variables).toEqual(failed.variables);
     await flush(() => fireEvent.click(screen.getByText('실패', { selector: 'button' })));
     const filtered = await fixture.take('GetProductDescriptionJobsOnAdmin');
     const filteredTranslation = await fixture.take('GetTranslationJobsOnAdmin');
-    expect(filtered.variables).toEqual({ status: 'failed', limit: 100, offset: 0 });
+    expect(filtered.variables).toEqual({
+      status: 'failed',
+      limit: 100,
+      offset: 0,
+    });
     await flush(() => {
       filtered.resolve({ productDescriptionJobs: [description('filtered')] });
       filteredTranslation.resolve({ translationJobs: [] });
@@ -313,25 +325,28 @@ describe('list retry authority through real Apollo hooks and default cache', () 
   });
 
   it('자동 갱신은 소개의 과거 페이지와 선택한 오류 작업을 유지한다', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     const fixture = setup();
-    const rows = Array.from({ length: 101 }, (_, i) => description(`job-${i}`));
+    const rows = Array.from({ length: 101 }, (_, i) => ({
+      ...description(`job-${i}`),
+      status: i === 0 ? 'pending' : i === 100 ? 'failed' : 'completed',
+      error: i === 100 ? '합성 소개 실패' : null,
+    }));
     const first = await fixture.take('GetProductDescriptionJobsOnAdmin');
     const translations = await fixture.take('GetTranslationJobsOnAdmin');
     await flush(() => {
       first.resolve({ productDescriptionJobs: rows.slice(0, 100) });
       translations.resolve({ translationJobs: [] });
     });
-    await flush(() => fireEvent.click(screen.getByText('더 보기 (+100건)').closest('button')!));
+    await flush(() =>
+      fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button > span' }).closest('button')!)
+    );
     const next = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    expect(next.variables).toEqual({ limit: 100, offset: 100 });
     await flush(() => next.resolve({ productDescriptionJobs: rows.slice(100) }));
     const lastRow = screen.getByTitle('job-100').closest('tr')!;
-    await flush(() => fireEvent.click(within(lastRow).getByRole('button', { name: '에러 상세 보기' })));
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     await flush(() =>
-      fixture.client.cache.modify({
-        id: fixture.client.cache.identify({ __typename: 'ProductDescriptionJob', id: 'job-0' }),
-        fields: { status: () => 'pending' },
-      })
+      fireEvent.click(lastRow.querySelector<HTMLButtonElement>('button[aria-label="에러 상세 보기"]')!)
     );
     await waitFor(() => expect(within(screen.getByTitle('job-0').closest('tr')!).getByText('대기 중')).toBeTruthy());
     await act(async () => {
@@ -347,33 +362,6 @@ describe('list retry authority through real Apollo hooks and default cache', () 
     expect(within(document.querySelector<HTMLElement>('[role="dialog"]')!).getByText('job-100')).toBeTruthy();
     expect(document.querySelector('a[aria-label="job-100 소개 후보 열기"]')).toBeTruthy();
     vi.useRealTimers();
-  });
-
-  it('refreshes every page of the already loaded translation list', async () => {
-    const fixture = await firstTranslationPage();
-    await flush(() => fireEvent.click(screen.getByText('더 보기 (+100건)').closest('button')!));
-    const next = await fixture.take('GetTranslationJobsOnAdmin');
-    await flush(() => next.resolve({ translationJobs: [translationRow(100)] }));
-    expect(screen.getByText('현재 101건 표시 중', { selector: 'span.tabular-nums' })).toBeTruthy();
-    await flush(() =>
-      fireEvent.click(screen.getByText('새로고침', { selector: 'button, button > span' }).closest('button')!)
-    );
-    const refreshedFirst = await fixture.take('GetTranslationJobsOnAdmin');
-    expect(refreshedFirst.variables).toEqual({ limit: 100, offset: 0 });
-    await flush(() =>
-      refreshedFirst.resolve({
-        translationJobs: Array.from({ length: 100 }, (_, i) => translationRow(i)),
-      })
-    );
-    const refreshedNext = await fixture.take('GetTranslationJobsOnAdmin');
-    expect(refreshedNext.variables).toEqual({ limit: 100, offset: 100 });
-    await flush(() => refreshedNext.resolve({ translationJobs: [translationRow(100)] }));
-    expect(screen.getByText('현재 101건 표시 중', { selector: 'span.tabular-nums' })).toBeTruthy();
-    expect(within(screen.getByTitle('Product: entity-0')).getByText('entity-0')).toBeTruthy();
-    expect(within(screen.getByTitle('Product: entity-100')).getByText('entity-100')).toBeTruthy();
-    expect(fixture.log.filter(r => r.name === 'GetTranslationJobsOnAdmin').every(r => r.variables.limit === 100)).toBe(
-      true
-    );
   });
 
   it('keeps the loaded rows after a failed next page and retries the same offset', async () => {
