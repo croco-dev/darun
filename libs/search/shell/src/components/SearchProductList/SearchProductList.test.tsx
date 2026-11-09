@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
 
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
-import { ApolloProvider, useSuspenseQuery } from '@apollo/client/react';
+import { ApolloProvider, useQuery } from '@apollo/client/react';
 import { AnalyticsEvents, track } from '@darun/analytics-client';
+import {
+  CompactCategoriesForSearchProductListDocument,
+  CompactTrendingPreviewForSearchProductListDocument,
+} from '@darun/provider-graphql';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -83,7 +87,10 @@ vi.mock('./useSearchProductList', () => ({
 
 vi.mock('@apollo/client/react', async importOriginal => ({
   ...(await importOriginal<typeof import('@apollo/client/react')>()),
-  useSuspenseQuery: vi.fn(() => ({
+  useQuery: vi.fn(() => ({
+    loading: false,
+    error: undefined,
+    refetch: vi.fn(),
     data: {
       categories: [{ id: '1', slug: 'collaboration', labelKo: '협업툴', labelEn: 'Collaboration' }],
       rankedProducts: [{ id: '100', name: 'Product A', slug: 'product-a', voteCount: countState.value, tags: [] }],
@@ -106,7 +113,7 @@ describe('SearchProductList', () => {
     localStorage?.clear();
     mockPush.mockClear();
     mockNavigate.mockClear();
-    vi.mocked(useSuspenseQuery).mockClear();
+    vi.mocked(useQuery).mockClear();
   });
 
   afterEach(() => {
@@ -146,7 +153,7 @@ describe('SearchProductList', () => {
 
     const searchCard = container.querySelector('[data-source="search"]');
     expect(searchCard).not.toBeNull();
-    expect(useSuspenseQuery).not.toHaveBeenCalled();
+    expect(useQuery).not.toHaveBeenCalled();
   });
 
   it('renders popular queries and categories in empty search state', () => {
@@ -165,7 +172,12 @@ describe('SearchProductList', () => {
 
     expect(container.textContent).toContain('검색 결과가 없습니다');
     expect(container.querySelector('[data-testid="search-empty-popular-queries"]')).not.toBeNull();
-    expect(useSuspenseQuery).toHaveBeenCalledTimes(2);
+    expect(useQuery).toHaveBeenCalledWith(CompactCategoriesForSearchProductListDocument, {
+      variables: { first: 4, locale: 'ko' },
+    });
+    expect(useQuery).toHaveBeenCalledWith(CompactTrendingPreviewForSearchProductListDocument, {
+      variables: { first: 3, locale: 'ko' },
+    });
     expect(container.querySelector('[aria-label="추천 10"]')).not.toBeNull();
   });
 

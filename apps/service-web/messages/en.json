@@ -70,7 +70,13 @@
         "noResults": "No results found for ‘{query}’.",
         "popularQueries": "Search examples",
         "categories": "Categories",
-        "trending": "Trending services"
+        "trending": "Trending services",
+        "loading": "Loading…",
+        "categoriesError": "Could not load categories.",
+        "trendingError": "Could not load trending services.",
+        "categoriesEmpty": "No categories available.",
+        "trendingEmpty": "No trending services found.",
+        "retry": "Try again"
       },
       "feature": {
         "title": "Features"
