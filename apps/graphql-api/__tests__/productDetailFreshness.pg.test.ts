@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { ApolloServer } from '@apollo/server';
 import {
   PostgresqlProductFeatureRepository,
   PostgresqlProductFeatureScreenshotRepository,
@@ -11,6 +12,7 @@ import {
 import {
   CreateProduct,
   EditProduct,
+  GetAllProducts,
   GetProduct,
   GetProductFeatures,
   GetProductLinks,
@@ -38,15 +40,21 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
-import { GetProductDescriptionJobsOnAdminDocument } from '../../../libs/__generated__/graphql';
+import {
+  AllProductsOnProductListTableDocument,
+  type AllProductsOnProductListTableQuery,
+  type AllProductsOnProductListTableQueryVariables,
+  GetProductDescriptionJobsOnAdminDocument,
+} from '../../../libs/__generated__/graphql';
 import { ProductContentSyncRegistrarToken } from '../../../libs/products/datasource/src/repositories/productContentSync';
 import { ProductCoreMutationResolver } from '../../../libs/products/feature/src/ProductCoreMutationResolver';
 import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/src/ProductDescription.query.resolver';
 import { SearchRanker } from '../../../libs/search/domain/src/services/SearchRanker';
 import { SynonymExpander } from '../../../libs/search/domain/src/services/SynonymExpander';
+import { formatServerError } from '../../../libs/shared/utils-apollo-server/src/libs/createServer/formatError';
 import { registerProductContentSync } from '../src/adapters/PostgresqlProductContentSync';
 
-const { execute, graphql } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
+const { execute, graphql, print } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
 
 const url = process.env.PRODUCT_DETAIL_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
@@ -144,6 +152,103 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   afterAll(async () => {
     if (reader) await reader.end({ timeout: 5 });
     if (writer) await writer.end({ timeout: 5 });
+  });
+
+  describe('관리자 상품 목록의 양방향 페이지 경계', () => {
+    let server: ReturnType<typeof createServer>;
+    beforeEach(() => vi.stubEnv('CURSOR_SIGNATURE_SECRET', 'product-pagination-test-secret'));
+    beforeAll(async () => {
+      const unused = undefined!;
+      const resolver = new ProductQueryResolver(
+        unused,
+        unused,
+        new GetAllProducts(new PostgresqlProductRepository(db)),
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused
+      );
+      // This suite needs its own server; createServer caches the app's singleton.
+      server = new ApolloServer({
+        schema: buildSchemaSync({
+          resolvers: [ProductQueryResolver],
+          authChecker: createAuthChecker(),
+          container: { get: () => resolver },
+        }),
+        formatError: (formatted, error) => formatServerError(formatted, error, false),
+      });
+      await server.start();
+    });
+    afterAll(async () => {
+      if (server) await server.stop();
+    });
+    afterEach(async () => {
+      await writer`delete from products where slug like 'pagination-%'`;
+      vi.unstubAllEnvs();
+    });
+    const run = async (variables: AllProductsOnProductListTableQueryVariables) => {
+      const result = await server.executeOperation(
+        { query: print(AllProductsOnProductListTableDocument), variables },
+        { contextValue: { getRoles: async () => ['admin'] } }
+      );
+      if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+      expect(result.body.singleResult.errors).toBeUndefined();
+      return (result.body.singleResult.data as AllProductsOnProductListTableQuery).allProducts;
+    };
+    it.each([0, 1, 49, 50, 51, 100, 101])(
+      '%i개를 실제 목록 operation으로 누락·중복 없이 앞뒤로 조회한다',
+      async count => {
+        await writer`delete from products`;
+        const ids = Array.from({ length: count }, (_, index) => `page-${String(count - index).padStart(3, '0')}`);
+        if (count) {
+          await writer`insert into products ${writer(
+            [...ids].reverse().map(id => ({
+              id,
+              slug: `pagination-${id}`,
+              name: id,
+              summary: '',
+              logo_url: '',
+            }))
+          )}`;
+        }
+        let page = await run({ first: 50 });
+        expect(page.totalCount).toBe(count);
+        expect(page.pageInfo.hasPreviousPage).toBe(false);
+        const seen = page.edges.map(edge => edge.node.id);
+        const pages = [page];
+        while (page.pageInfo.hasNextPage) {
+          page = await run({ first: 50, after: page.pageInfo.endCursor });
+          expect(page.edges.length).toBeGreaterThan(0);
+          expect(page.edges.length).toBeLessThanOrEqual(50);
+          seen.push(...page.edges.map(edge => edge.node.id));
+          pages.push(page);
+        }
+        expect(seen).toEqual(ids);
+        for (let index = pages.length - 2; index >= 0; index--) {
+          page = await run({ last: 50, before: page.pageInfo.startCursor });
+          expect(page).toEqual(pages[index]);
+        }
+        expect(page.pageInfo.hasPreviousPage).toBe(false);
+        expect(page.edges.map(edge => edge.node.id)).toEqual(ids.slice(0, 50));
+        const last = await run({ last: 50 });
+        expect(last.edges.map(edge => edge.node.id)).toEqual(ids.slice(-50));
+        expect(last.pageInfo).toMatchObject({
+          hasNextPage: false,
+          hasPreviousPage: count > 50,
+        });
+      }
+    );
   });
 
   describe('상품 기본 정보의 문자 수 경계와 공개 GraphQL 오류', () => {

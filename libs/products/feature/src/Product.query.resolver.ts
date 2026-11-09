@@ -275,7 +275,7 @@ export class ProductQueryResolver {
     const { products, total } = await this.getAllProductsUseCase.execute({
       cursor: decoded,
       limit,
-      type: type as 'after' | 'before',
+      type,
     });
 
     return Connection.create({
@@ -285,6 +285,7 @@ export class ProductQueryResolver {
       previous: {
         cursor,
         limit,
+        type,
       },
     });
   }
