@@ -17,7 +17,7 @@ export class Connection {
       return {
         cursor: after,
         limit: first,
-        type: 'after',
+        type: 'after' as const,
       };
     }
 
@@ -29,7 +29,7 @@ export class Connection {
       return {
         cursor: before,
         limit: last,
-        type: 'before',
+        type: 'before' as const,
       };
     }
 
@@ -42,12 +42,17 @@ export class Connection {
     previous: {
       cursor?: string;
       limit: number;
+      type: 'after' | 'before';
     };
     totalCount: number;
   }) {
     const { nodes, cursorKeys, previous, totalCount } = args;
 
-    const edges = nodes.map(node => ({
+    // Callers fetch limit + 1 in the requested direction, retaining display order.
+    const hasMore = nodes.length > previous.limit;
+    const pageNodes = previous.type === 'after' ? nodes.slice(0, previous.limit) : nodes.slice(-previous.limit);
+
+    const edges = pageNodes.map(node => ({
       node,
       cursor: Cursor.encode(node, cursorKeys),
     }));
@@ -56,12 +61,8 @@ export class Connection {
       totalCount,
       edges,
       pageInfo: {
-        // Fencepost: exact only when the caller over-fetches by one (fetch
-        // limit + 1, expose limit). A full final page otherwise reports
-        // hasNextPage: true, so prefer the +1 pattern (see GetVisualScreenshots,
-        // GetPublishedProductsForSitemap) for new paginated queries.
-        hasNextPage: nodes.length === previous.limit,
-        hasPreviousPage: typeof previous.cursor !== 'undefined',
+        hasNextPage: previous.type === 'after' ? hasMore : typeof previous.cursor !== 'undefined',
+        hasPreviousPage: previous.type === 'before' ? hasMore : typeof previous.cursor !== 'undefined',
         startCursor: edges[0]?.cursor,
         endCursor: edges[edges.length - 1]?.cursor,
       },

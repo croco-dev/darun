@@ -23,9 +23,9 @@ export class GetAllProducts {
   }) {
     let products: Product[];
     if (type === 'after') {
-      products = await this.productRepository.findAllByAfterIdAndLimit(limit, cursor?.id);
+      products = await this.productRepository.findAllByAfterIdAndLimit(limit + 1, cursor?.id);
     } else {
-      products = await this.productRepository.findAllByBeforeIdAndLimit(limit, cursor?.id);
+      products = await this.productRepository.findAllByBeforeIdAndLimit(limit + 1, cursor?.id);
     }
     const total = await this.productRepository.countAll();
 
