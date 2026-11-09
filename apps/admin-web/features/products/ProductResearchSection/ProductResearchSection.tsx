@@ -302,8 +302,14 @@ export const ProductResearchSection = () => {
   );
   const [materialize] = useMutation<MaterializePayload, MaterializeVariables>(MATERIALIZE_RESEARCHED_PRODUCT);
   const [fetchJob] = useLazyQuery<ResearchJobPayload>(PRODUCT_RESEARCH_JOB, { fetchPolicy: 'network-only' });
-  const { data: categoryData } = useQuery<{ categories?: CategoryOption[] }>(CATEGORIES, {
+  const {
+    data: categoryData,
+    loading: categoriesLoading,
+    error: categoriesError,
+    refetch: refetchCategories,
+  } = useQuery<{ categories?: CategoryOption[] }>(CATEGORIES, {
     variables: { first: 100, locale: 'ko' },
+    notifyOnNetworkStatusChange: true,
   });
 
   const job = jobLookup.job?.id === jobId ? jobLookup.job : null;
@@ -1113,6 +1119,30 @@ export const ProductResearchSection = () => {
                 )}
 
                 <AdminField label="카테고리 (선택, 비워둘 수 있음)">
+                  {categoriesLoading ? (
+                    <p role="status" className="text-xs text-dark-500">
+                      카테고리를 불러오는 중입니다.
+                    </p>
+                  ) : categoriesError ? (
+                    <div role="alert" className="flex flex-col items-start gap-2 text-sm text-cherry-700">
+                      <p>카테고리를 불러오지 못했습니다. 입력과 선택은 유지됩니다.</p>
+                      <Button
+                        type="button"
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => {
+                          // 재조회 실패도 query의 오류 상태로 표시한다.
+                          void refetchCategories().catch(() => undefined);
+                        }}
+                      >
+                        카테고리 다시 시도
+                      </Button>
+                    </div>
+                  ) : categories.length === 0 ? (
+                    <p role="status" className="text-xs text-dark-500">
+                      등록된 카테고리가 없습니다. 미분류로 등록할 수 있습니다.
+                    </p>
+                  ) : null}
                   <div className="flex flex-wrap gap-2">
                     {categories.map(category => (
                       <label key={category.id} className="flex items-center gap-1 text-xs text-dark-700">
@@ -1125,9 +1155,6 @@ export const ProductResearchSection = () => {
                         {category.labelKo}
                       </label>
                     ))}
-                    {categories.length === 0 && (
-                      <span className="text-xs text-dark-500">카테고리를 불러오는 중이거나 비어 있습니다.</span>
-                    )}
                   </div>
                 </AdminField>
 
