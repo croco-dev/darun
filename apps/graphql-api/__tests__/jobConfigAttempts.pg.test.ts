@@ -15,7 +15,7 @@ import {
 import { LlmSettingService, TranslationJobService } from '@darun/translation-service';
 import { createServer as createApolloServer } from '@darun/utils-apollo-server';
 import type * as UtilsLlm from '@darun/utils-llm';
-import { LlmClient, LLM_DEFAULT_KEY_REJECTION_MESSAGE } from '@darun/utils-llm';
+import { LlmClient, LLM_DEFAULT_KEY_REJECTION_MESSAGE, RetryableError } from '@darun/utils-llm';
 import type { Context, SQSEvent, SQSHandler } from 'aws-lambda';
 import { eq } from 'drizzle-orm';
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
@@ -1078,6 +1078,154 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
     } finally {
       await server.stop();
     }
+  });
+
+  describe('소개 작업의 재시도 완료', () => {
+    const candidate = {
+      candidateHtml: '<p>재시도 후 검토된 소개</p>',
+      candidateDocument: { intro: { text: '검토된 소개', evidenceRefs: [] } },
+      evidenceHash: 'retry-evidence',
+      evidenceHashVersion: 'v2',
+      baseDescriptionHash: 'original-description',
+      writerModel: 'synthetic-writer',
+      reviewerModel: 'synthetic-reviewer',
+      writerPromptVersion: 'writer-v1',
+      reviewerPromptVersion: 'reviewer-v1',
+      rendererVersion: 'renderer-v1',
+    };
+
+    function serviceFor(generate: { execute: ReturnType<typeof vi.fn> }) {
+      return new ProductDescriptionJobService(
+        new GetProduct(new PostgresqlProductRepository(db as never)),
+        generate as unknown as GenerateProductDescriptionCandidate,
+        description,
+        { sendJob: async () => true } as never
+      );
+    }
+
+    it('같은 job의 503 후 성공은 후보와 error=null을 저장하고 단건·목록 GraphQL로 반환한다', async () => {
+      const job = await description.createJob({ productId: product.id });
+      const generate = {
+        execute: vi.fn().mockRejectedValueOnce(new RetryableError('synthetic 503', 503)).mockResolvedValue(candidate),
+      };
+      const service = serviceFor(generate);
+      await service.executeJob(job.id, product.id, {
+        leaseToken: 'first-attempt',
+      });
+      expect(await description.findJobById(job.id)).toMatchObject({
+        status: 'pending',
+        attemptCount: 1,
+        error: 'synthetic 503',
+        candidateHtml: null,
+      });
+      await db
+        .update(productDescriptionJobs)
+        .set({ runNotBefore: new Date(0) })
+        .where(eq(productDescriptionJobs.id, job.id));
+      await service.executeJob(job.id, product.id, {
+        leaseToken: 'second-attempt',
+      });
+      const saved = await description.findJobById(job.id);
+      expect(saved).toMatchObject({
+        id: job.id,
+        status: 'completed',
+        attemptCount: 2,
+        error: null,
+        ...candidate,
+        candidateDocument: JSON.stringify(candidate.candidateDocument),
+      });
+      const schema = buildSchemaSync({
+        resolvers: [ProductDescriptionQueryResolver],
+        container: Container,
+        authChecker: () => true,
+      });
+      const result = await graphql({
+        schema,
+        source: `query { productDescriptionJob(id: "${job.id}") { id status error message candidateHtml }
+          productDescriptionJobs(status: "completed", limit: 100) { id status error message } }`,
+      });
+      expect(result.errors).toBeUndefined();
+      const summary = {
+        id: job.id,
+        status: 'completed',
+        error: null,
+        message: 'AI 소개 생성이 완료되었습니다.',
+      };
+      expect(result.data?.productDescriptionJob).toEqual({
+        ...summary,
+        candidateHtml: candidate.candidateHtml,
+      });
+      expect(result.data?.productDescriptionJobs).toContainEqual(summary);
+      await service.executeJob(job.id, product.id);
+      expect(generate.execute).toHaveBeenCalledTimes(2);
+      expect(await description.findJobById(job.id)).toEqual(saved);
+    });
+
+    it('재시도 소진 오류와 수동 retry의 원래 실패 행은 새 작업이 성공해도 유지한다', async () => {
+      const job = await description.createJob({ productId: product.id });
+      const generate = {
+        execute: vi.fn().mockRejectedValue(new RetryableError('provider unavailable', 503)),
+      };
+      const service = serviceFor(generate);
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        await db
+          .update(productDescriptionJobs)
+          .set({ runNotBefore: new Date(0) })
+          .where(eq(productDescriptionJobs.id, job.id));
+        await service.executeJob(job.id, product.id, {
+          leaseToken: `attempt-${attempt}`,
+        });
+      }
+      const failed = await description.findJobById(job.id);
+      expect(failed).toMatchObject({
+        status: 'failed',
+        attemptCount: 3,
+        error: 'provider unavailable',
+      });
+      const retry = await service.retryProductDescriptionJob(job.id);
+      expect(retry).toMatchObject({ status: 'pending', retryOfJobId: job.id });
+      generate.execute.mockResolvedValue(candidate);
+      await service.executeJob(retry.id, product.id);
+      expect(await description.findJobById(retry.id)).toMatchObject({
+        status: 'completed',
+        error: null,
+        candidateHtml: candidate.candidateHtml,
+      });
+      expect(await description.findJobById(job.id)).toEqual(failed);
+    });
+
+    it.each(['다른 token', '만료', '완료 여유 부족', '이미 실패'] as const)(
+      '%s 상태로 바뀐 lease의 늦은 성공은 오류와 후보를 포함한 행 전체를 바꾸지 않는다',
+      async state => {
+        const job = await description.createJob({ productId: product.id });
+        let before: Awaited<ReturnType<typeof description.findJobById>>;
+        const service = serviceFor({
+          execute: vi.fn(async () => {
+            await db
+              .update(productDescriptionJobs)
+              .set({
+                error: 'preserved earlier failure',
+                candidateHtml: '<p>preserved candidate</p>',
+                ...(state === '다른 token' ? { leaseToken: 'new-owner' } : {}),
+                ...(state === '만료' ? { leaseUntil: new Date(0) } : {}),
+                ...(state === '완료 여유 부족' ? { leaseUntil: new Date(Date.now() + 1_000) } : {}),
+                ...(state === '이미 실패' ? { status: 'failed' } : {}),
+              })
+              .where(eq(productDescriptionJobs.id, job.id));
+            before = await description.findJobById(job.id);
+            return candidate;
+          }),
+        });
+        await service.executeJob(job.id, product.id, {
+          leaseToken: 'original-owner',
+        });
+        expect(before!).toMatchObject({
+          error: 'preserved earlier failure',
+          candidateHtml: '<p>preserved candidate</p>',
+        });
+        expect(await description.findJobById(job.id)).toEqual(before!);
+      }
+    );
   });
 
   it('actual GraphQL job queries and mutations retain scheduling values and new logical retry origins', async () => {
