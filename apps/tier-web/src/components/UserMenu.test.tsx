@@ -71,7 +71,7 @@ describe('account menu logout recovery', () => {
       });
       expect(logout).toHaveBeenCalledTimes(2);
       expect(trigger().disabled).toBe(true);
-      expect(container.querySelector('[role="status"]')?.textContent).toBe('로그아웃 중…');
+      expect(container.querySelector('output')?.textContent).toBe('로그아웃 중…');
       expect(container.querySelector('[role="alert"]')).toBeNull();
       await act(async () => finish({ error: '다시 시도해 주세요.' }));
       expect(trigger().disabled).toBe(false);

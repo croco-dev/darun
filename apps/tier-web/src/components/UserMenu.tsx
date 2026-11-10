@@ -77,7 +77,7 @@ export function UserMenu({ user, isAdmin }: UserMenuProps) {
               {initial}
             </span>
             {isLoggingOut ? (
-              <span role="status">로그아웃 중…</span>
+              <output>로그아웃 중…</output>
             ) : (
               <span className="hidden max-w-20 truncate text-sm sm:block">{userName}</span>
             )}

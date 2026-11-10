@@ -1,7 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET } from '../auth/callback/route';
-import { login, retryUserProfile, signup } from './actions';
+import { login, logout, retryUserProfile, signup } from './actions';
 
 const fixture = vi.hoisted(() => ({ cookies: new Map<string, string>() }));
 vi.mock('next/headers', () => ({
@@ -40,6 +40,9 @@ const session = { access_token: jwt, refresh_token: 'fixture-refresh', expires_i
 const rows = new Map<string, { id: string; email: string; is_admin: boolean }>();
 let databaseFails = false;
 let authFails = false;
+let logoutStatus = 204;
+let logoutNetworkFails = false;
+let logoutScope: string | null;
 let signupHasSession = false;
 let signupUser: typeof user | null;
 const requests: { path: string; method: string; body: Record<string, unknown>; headers: Headers }[] = [];
@@ -63,6 +66,9 @@ beforeEach(() => {
   requests.length = 0;
   databaseFails = false;
   authFails = false;
+  logoutStatus = 204;
+  logoutNetworkFails = false;
+  logoutScope = null;
   signupHasSession = false;
   signupUser = user;
   vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -72,6 +78,13 @@ beforeEach(() => {
     const headers = new Headers(init?.headers);
     requests.push({ path: url.pathname, method: init?.method ?? 'GET', body, headers });
     const json = (value: unknown, status = 200) => Response.json(value, { status });
+    if (url.pathname === '/auth/v1/logout') {
+      logoutScope = url.searchParams.get('scope');
+      if (logoutNetworkFails) throw new TypeError('fixture private network detail');
+      return logoutStatus === 204
+        ? new Response(null, { status: 204 })
+        : json({ msg: 'fixture private provider detail' }, logoutStatus);
+    }
     if (url.pathname.startsWith('/auth/')) {
       if (authFails) return json({ msg: 'fixture authentication failure', code: 'invalid_credentials' }, 400);
       if (url.pathname.endsWith('/signup')) return json(signupHasSession ? session : { user: signupUser });
@@ -183,5 +196,56 @@ describe('authentication and application profile recovery', () => {
     signupUser = { ...user, id: 'fake-duplicate-id', identities: [] };
     expect(await signup({}, form())).toHaveProperty('message');
     expect(requests.filter(request => request.path === '/rest/v1/users')).toHaveLength(0);
+  });
+});
+
+describe('logout through the real Supabase server client', () => {
+  const cookieName = 'sb-127-auth-token';
+
+  beforeEach(async () => {
+    await expect(login({}, form())).rejects.toThrow('redirect:/');
+    vi.mocked(revalidatePath).mockClear();
+    requests.length = 0;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each(['provider', 'network'])(
+    'keeps the session and page after a %s failure, then retries successfully',
+    async kind => {
+      logoutStatus = 500;
+      logoutNetworkFails = kind === 'network';
+      const before = fixture.cookies.get(cookieName);
+      expect(before).toBeTruthy();
+      const result = await logout();
+      expect(result.error).toBeTruthy();
+      expect(JSON.stringify(result)).not.toMatch(/fixture|private/);
+      expect(revalidatePath).not.toHaveBeenCalled();
+      expect(fixture.cookies.get(cookieName)).toBe(before);
+      expect(requests).toHaveLength(1);
+      expect(logoutScope).toBe('global');
+
+      logoutStatus = 204;
+      logoutNetworkFails = false;
+      await expect(logout()).rejects.toThrow('redirect:/auth/signin');
+      expect(revalidatePath).toHaveBeenCalledExactlyOnceWith('/', 'layout');
+      expect(fixture.cookies.get(cookieName)).toBe('');
+      expect(requests).toHaveLength(2);
+    }
+  );
+
+  it.each([204, 401, 403, 404])('keeps provider success semantics for HTTP %s', async responseStatus => {
+    logoutStatus = responseStatus;
+    await expect(logout()).rejects.toThrow('redirect:/auth/signin');
+    expect(fixture.cookies.get(cookieName)).toBe('');
+    expect(revalidatePath).toHaveBeenCalledExactlyOnceWith('/', 'layout');
+  });
+
+  it('allows an already absent session without a provider request', async () => {
+    fixture.cookies.clear();
+    await expect(logout()).rejects.toThrow('redirect:/auth/signin');
+    expect(requests).toHaveLength(0);
+    expect(revalidatePath).toHaveBeenCalledExactlyOnceWith('/', 'layout');
   });
 });
