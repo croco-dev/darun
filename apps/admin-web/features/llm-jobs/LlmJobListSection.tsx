@@ -551,7 +551,7 @@ export function LlmJobListSection() {
               <tbody>
                 {jobs.map((job, index) => {
                   const isRetrying = retryingKeys.has(`${job.jobType}:${job.id}`);
-                  const hasError = Boolean(job.error);
+                  const hasError = job.status !== 'completed' && Boolean(job.error);
 
                   return (
                     <tr

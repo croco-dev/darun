@@ -6,7 +6,7 @@ import {
   RetryProductDescriptionJobOnAdminDocument,
   RetryTranslationJobOnAdminDocument,
 } from '@darun/provider-graphql';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LlmJobListSection } from '../features/llm-jobs/LlmJobListSection';
@@ -114,6 +114,49 @@ describe('LlmJobListSection', () => {
 
     render(<LlmJobListSection />);
     expect(screen.getByText('등록된 LLM 작업이 없습니다.')).toBeDefined();
+  });
+
+  it.each(['completed', 'pending', 'failed'] as const)('%s 소개 작업은 완료 안내와 현재 실패를 구분한다', status => {
+    vi.mocked(useQuery).mockImplementation(
+      document =>
+        ({
+          data:
+            document === GetProductDescriptionJobsOnAdminDocument
+              ? {
+                  productDescriptionJobs: [
+                    {
+                      id: 'legacy-description',
+                      productId: 'product-legacy',
+                      productSlug: 'legacy-product',
+                      status,
+                      message: 'AI 소개 생성이 완료되었습니다.',
+                      error: '이전 공급자 503 오류',
+                      createdAt: '2026-09-17T06:00:00.000Z',
+                      updatedAt: '2026-09-17T06:01:00.000Z',
+                    },
+                  ],
+                }
+              : { translationJobs: [] },
+          loading: false,
+          error: undefined,
+          refetch: vi.fn(),
+        }) as unknown as ReturnType<typeof useQuery>
+    );
+
+    render(<LlmJobListSection />);
+    const row = within(screen.getByText('product-legacy').closest('tr')!);
+    if (status === 'completed') {
+      expect(row.getByText('AI 소개 생성이 완료되었습니다.')).toBeDefined();
+      expect(row.queryByRole('button', { name: '에러 상세 보기' })).toBeNull();
+      expect(row.queryByText('이전 공급자 503 오류')).toBeNull();
+      expect(row.getByRole('link', { name: 'legacy-description 소개 후보 열기' }).getAttribute('href')).toBe(
+        '/products/legacy-product?descriptionJobId=legacy-description'
+      );
+    } else {
+      expect(row.getByRole('button', { name: '이전 공급자 503 오류' })).toBeDefined();
+      fireEvent.click(row.getByRole('button', { name: '에러 상세 보기' }));
+      expect(screen.getByTestId('admin-modal').textContent).toContain('이전 공급자 503 오류');
+    }
   });
 
   it('번역 작업과 소개 생성 작업을 모두 올바르게 통합 렌더링한다', () => {

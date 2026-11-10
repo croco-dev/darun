@@ -149,6 +149,7 @@ export class ProductDescriptionJobService {
         }
       );
       await repository.completeJobLease(jobId, leaseToken, 'completed', {
+        error: null,
         message: 'AI 소개 생성이 완료되었습니다.',
         commitBefore: options?.deadline ? new Date(options.deadline.getTime() - JOB_COMMIT_MARGIN_MS) : undefined,
         candidateHtml: candidateResult.candidateHtml,

@@ -13,6 +13,7 @@ function fixture(status: ProductDescriptionJobEntity['status'] = 'pending') {
     createdAt: new Date(),
     updatedAt: new Date(),
     candidateHtml: '<p>Human candidate</p>',
+    error: 'Earlier provider failure',
     appliedAt: new Date('2026-09-01'),
   };
   const repository = {
@@ -178,6 +179,7 @@ describe('ProductDescriptionJobService durable attempts', () => {
         candidateHtml: '<p>Generated</p>',
         candidateDocument: JSON.stringify(f.candidate.candidateDocument),
         evidenceHashVersion: 'v2',
+        error: null,
       })
     );
   });
