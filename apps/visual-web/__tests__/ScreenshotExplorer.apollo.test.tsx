@@ -201,7 +201,8 @@ function mount(
   route = '/',
   consumer: 'screenshots' | 'flows' | 'apps' = 'screenshots',
   controls?: ReactNode,
-  pendingSearch?: Array<() => void>
+  pendingSearch?: Array<() => void>,
+  catalogApps?: Array<{ id: string; name: string; slug: string }>
 ) {
   window.history.replaceState(null, '', route);
   const requests: Array<{
@@ -243,11 +244,36 @@ function mount(
               : operation.operationName === 'VisualAppsOnCatalog'
                 ? 'visualApps'
                 : 'visualScreenshots';
+          const apps = (catalogApps ?? []).filter(app =>
+            operation.variables.productSlug
+              ? app.slug === operation.variables.productSlug
+              : !operation.variables.query || app.name.includes(String(operation.variables.query))
+          );
           observer.next({
             data: {
               [field]: {
-                totalCount: 0,
-                edges: [],
+                totalCount: apps.length,
+                edges: apps.map(app => ({
+                  cursor: app.id,
+                  node: {
+                    __typename: 'Product',
+                    ...app,
+                    summary: '',
+                    logoUrl: '',
+                    screenshotCount: 1,
+                    previewScreenshots: [
+                      {
+                        __typename: 'ProductScreenshot',
+                        id: `screen-${app.id}`,
+                        imageUrl: '/fixture.svg',
+                        imageAlt: app.name,
+                        title: app.name,
+                        platform: 'WEB',
+                        screenType: 'HOME',
+                      },
+                    ],
+                  },
+                })),
                 pageInfo: {
                   hasNextPage: false,
                   hasPreviousPage: false,
@@ -497,7 +523,8 @@ it.each(suggestionConsumers)(
     expect(push).toHaveBeenCalledTimes(1);
     if (consumer === 'apps') {
       expect(window.location.pathname).toBe('/apps');
-      expect(new URLSearchParams(window.location.search).get('q')).toBe('합성 서비스');
+      expect(new URLSearchParams(window.location.search).get('product')).toBe('synthetic-service');
+      expect(new URLSearchParams(window.location.search).has('q')).toBe(false);
     } else {
       expect(new URLSearchParams(window.location.search).get('product')).toBe('synthetic-service');
       expect(screen.getByLabelText<HTMLInputElement>(label).value).toBe('');
@@ -525,7 +552,16 @@ it.each(searchConsumers)(
     fireEvent.submit(screen.getByRole('search'));
     await screen.findByText('검색 결과가 없습니다.');
     expect(requests).toEqual([
-      { operation, variables: expect.objectContaining({ ...expected, query: valid, first: 24, after: null }) },
+      {
+        operation,
+        variables: expect.objectContaining({
+          ...expected,
+          ...(consumer === 'apps' ? { productSlug: null } : {}),
+          query: valid,
+          first: 24,
+          after: null,
+        }),
+      },
     ]);
     expect(new URLSearchParams(window.location.search).get('q')?.trim()).toBe(valid);
     expect(new URLSearchParams(window.location.search).has('after')).toBe(false);
@@ -582,4 +618,61 @@ it.each(searchConsumers)('$consumer: retry and pagination cannot run a rejected 
   fireEvent.click(screen.getByRole('button', { name: 'fixture load more' }));
   await act(async () => {});
   expect(requests).toEqual([]);
+});
+
+it('앱 선택은 이름이 같은 다른 상품을 제외하고 새로고침·직접 검색·초기화에서 첫 페이지를 사용한다', async () => {
+  const apps = [
+    { id: 'synthetic-7', name: '합성 서비스', slug: 'synthetic-service' },
+    { id: 'other-8', name: '합성 서비스', slug: 'another-service' },
+    { id: 'extended-9', name: '합성 서비스 Plus', slug: 'extended-service' },
+  ];
+  const requests = mount('/apps?q=이전검색&after=old-cursor', 'apps', undefined, undefined, apps);
+  await screen.findByText('검색 결과가 없습니다.');
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  const search = screen.getByLabelText<HTMLInputElement>('앱 검색');
+  fireEvent.change(search, { target: { value: '합성' } });
+  await act(() => vi.advanceTimersByTimeAsync(300));
+  await act(async () => fireEvent.mouseDown(screen.getByRole('option', { name: '합성 서비스' })));
+  vi.useRealTimers();
+  expect(window.location.search).toBe('?product=synthetic-service');
+  await screen.findByRole('link', { name: /합성 서비스\s*화면\s*1\s*개/ });
+  expect(screen.getAllByRole('link', { name: /화면\s*1\s*개/ }).map(link => link.getAttribute('href'))).toEqual([
+    '/apps/synthetic-service',
+  ]);
+  expect(requests.at(-1)).toEqual({
+    operation: 'VisualAppsOnCatalog',
+    variables: { first: 24, after: null, query: null, productSlug: 'synthetic-service' },
+  });
+
+  // Remount the real route/provider/hook from the selected URL, without prior local state.
+  const selectedUrl = `/apps${window.location.search}`;
+  cleanup();
+  const restored = mount(selectedUrl, 'apps', undefined, undefined, apps);
+  await screen.findByRole('link', { name: /합성 서비스\s*화면\s*1\s*개/ });
+  expect(restored).toEqual([
+    {
+      operation: 'VisualAppsOnCatalog',
+      variables: { first: 24, after: null, query: null, productSlug: 'synthetic-service' },
+    },
+  ]);
+
+  await act(async () => navigate(`${selectedUrl}&after=selected-cursor`));
+  fireEvent.change(screen.getByLabelText('앱 검색'), { target: { value: '  합성 서비스  ' } });
+  fireEvent.submit(screen.getByRole('search'));
+  await waitFor(() => expect(screen.getAllByRole('link', { name: /화면\s*1\s*개/ })).toHaveLength(3));
+  expect(window.location.search).toBe('?q=%ED%95%A9%EC%84%B1+%EC%84%9C%EB%B9%84%EC%8A%A4');
+  expect(restored.at(-1)).toEqual({
+    operation: 'VisualAppsOnCatalog',
+    variables: { first: 24, after: null, query: '합성 서비스', productSlug: null },
+  });
+
+  await act(async () => navigate(`${selectedUrl}&after=selected-cursor`));
+  fireEvent.click(screen.getByRole('button', { name: '초기화' }));
+  await waitFor(() => expect(screen.getAllByRole('link', { name: /화면\s*1\s*개/ })).toHaveLength(3));
+  expect(window.location.search).toBe('');
+  expect(screen.getByLabelText<HTMLInputElement>('앱 검색').value).toBe('');
+  expect(restored.at(-1)).toEqual({
+    operation: 'VisualAppsOnCatalog',
+    variables: { first: 24, after: null, query: null, productSlug: null },
+  });
 });

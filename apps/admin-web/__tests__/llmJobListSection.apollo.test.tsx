@@ -97,6 +97,7 @@ const clients: ApolloClient[] = [];
 function setup(translation = false) {
   const pending: Request[] = [];
   const log: Request[] = [];
+  const replies: { name: string; data: Record<string, unknown>; received: (request: Request) => void }[] = [];
   const link = new ApolloLink(
     operation =>
       new Observable(observer => {
@@ -115,8 +116,14 @@ function setup(translation = false) {
             observer.complete();
           },
         };
-        pending.push(request);
         log.push(request);
+        const replyIndex = replies.findIndex(reply => reply.name === request.name);
+        if (replyIndex < 0) pending.push(request);
+        else {
+          const reply = replies.splice(replyIndex, 1)[0]!;
+          request.resolve(reply.data);
+          reply.received(request);
+        }
       })
   );
   const client = new ApolloClient({
@@ -135,6 +142,11 @@ function setup(translation = false) {
     ...view,
     client,
     log,
+    // Paging success cases do not assert an intermediate network-loading render.
+    // Pending, failure, and stale-response cases keep manual delivery through take().
+    replyNext(name: string, data: Record<string, unknown>) {
+      return new Promise<Request>(received => replies.push({ name, data, received }));
+    },
     async take(name: string) {
       await waitFor(() => expect(pending.some(request => request.name === name)).toBe(true));
       return pending.splice(
@@ -222,7 +234,11 @@ describe('list retry authority through real Apollo hooks and default cache', () 
       descriptions.resolve({ productDescriptionJobs: [] });
     });
     await waitFor(() =>
-      expect(within(screen.getByTitle(`Product: entity-${count - 1}`)).getByText(`entity-${count - 1}`)).toBeTruthy()
+      expect(
+        within(document.querySelector<HTMLElement>(`div[title="Product: entity-${count - 1}"]`)!).getByText(
+          `entity-${count - 1}`
+        )
+      ).toBeTruthy()
     );
     await flush(() =>
       fireEvent.click(screen.getByText('영문 번역', { selector: 'button, button > span' }).closest('button')!)
@@ -265,14 +281,19 @@ describe('list retry authority through real Apollo hooks and default cache', () 
 
   it('loads translations beyond 100 with a bounded next-page request', async () => {
     const fixture = await firstTranslationPage();
+    const next = fixture.replyNext('GetTranslationJobsOnAdmin', { translationJobs: [translationRow(100)] });
     await flush(() =>
       fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button, button > span' }).closest('button')!)
     );
-    const next = await fixture.take('GetTranslationJobsOnAdmin');
-    expect(next.variables).toEqual({ limit: 100, offset: 100 });
-    await flush(() => next.resolve({ translationJobs: [translationRow(100)] }));
-    await waitFor(() => expect(within(screen.getByTitle('Product: entity-100')).getByText('entity-100')).toBeTruthy());
-    expect(within(screen.getByTitle('Product: entity-0')).getByText('entity-0')).toBeTruthy();
+    expect((await next).variables).toEqual({ limit: 100, offset: 100 });
+    await waitFor(() =>
+      expect(
+        within(document.querySelector<HTMLElement>('div[title="Product: entity-100"]')!).getByText('entity-100')
+      ).toBeTruthy()
+    );
+    expect(
+      within(document.querySelector<HTMLElement>('div[title="Product: entity-0"]')!).getByText('entity-0')
+    ).toBeTruthy();
     expect(screen.getByText('현재 101건 표시 중', { selector: 'span.tabular-nums' })).toBeTruthy();
     expect(screen.queryByText('더 보기 (+100건)')).toBeNull();
     expect(screen.getByText('마지막 작업입니다.')).toBeTruthy();
@@ -338,26 +359,38 @@ describe('list retry authority through real Apollo hooks and default cache', () 
       first.resolve({ productDescriptionJobs: rows.slice(0, 100) });
       translations.resolve({ translationJobs: [] });
     });
+    const next = fixture.replyNext('GetProductDescriptionJobsOnAdmin', { productDescriptionJobs: rows.slice(100) });
     await flush(() =>
       fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button > span' }).closest('button')!)
     );
-    const next = await fixture.take('GetProductDescriptionJobsOnAdmin');
-    expect(next.variables).toEqual({ limit: 100, offset: 100 });
-    await flush(() => next.resolve({ productDescriptionJobs: rows.slice(100) }));
-    const lastRow = screen.getByTitle('job-100').closest('tr')!;
+    expect((await next).variables).toEqual({ limit: 100, offset: 100 });
+    const lastRow = document.querySelector<HTMLElement>('div[title="job-100"]')!.closest('tr')!;
     await flush(() =>
       fireEvent.click(lastRow.querySelector<HTMLButtonElement>('button[aria-label="에러 상세 보기"]')!)
     );
-    await waitFor(() => expect(within(screen.getByTitle('job-0').closest('tr')!).getByText('대기 중')).toBeTruthy());
+    const firstRow = within(document.querySelector<HTMLElement>('div[title="job-0"]')!.closest('tr')!);
+    expect(firstRow.getByText('대기 중')).toBeTruthy();
+    const refreshed = rows.map((row, index) =>
+      index === 0
+        ? { ...row, status: 'completed', message: '새 소개 완료' }
+        : index === 100
+          ? { ...row, error: '갱신된 소개 실패' }
+          : row
+    );
+    const refresh = fixture.replyNext('GetProductDescriptionJobsOnAdmin', {
+      productDescriptionJobs: refreshed.slice(0, 100),
+    });
+    const tail = fixture.replyNext('GetProductDescriptionJobsOnAdmin', {
+      productDescriptionJobs: refreshed.slice(100),
+    });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(3000);
     });
-    const refresh = await fixture.take('GetProductDescriptionJobsOnAdmin');
-    expect(refresh.variables).toEqual({ limit: 100, offset: 0 });
-    await flush(() => refresh.resolve({ productDescriptionJobs: rows.slice(0, 100) }));
-    const tail = await fixture.take('GetProductDescriptionJobsOnAdmin');
-    expect(tail.variables).toEqual({ limit: 100, offset: 100 });
-    await flush(() => tail.resolve({ productDescriptionJobs: rows.slice(100) }));
+    expect((await refresh).variables).toEqual({ limit: 100, offset: 0 });
+    expect((await tail).variables).toEqual({ limit: 100, offset: 100 });
+    await waitFor(() => expect(firstRow.getByText('새 소개 완료')).toBeTruthy());
+    expect(firstRow.getByText('완료')).toBeTruthy();
+    expect(within(lastRow).getByText('갱신된 소개 실패')).toBeTruthy();
     expect(document.querySelectorAll('tbody tr')).toHaveLength(101);
     expect(within(document.querySelector<HTMLElement>('[role="dialog"]')!).getByText('job-100')).toBeTruthy();
     expect(document.querySelector('a[aria-label="job-100 소개 후보 열기"]')).toBeTruthy();

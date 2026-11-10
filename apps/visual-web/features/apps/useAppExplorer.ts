@@ -83,9 +83,6 @@ export function useAppExplorer(): AppExplorerState {
     if (trimmed.length > 0) {
       params.set('q', trimmed);
     }
-    if (product !== null) {
-      params.set('product', product);
-    }
     const queryString = params.toString();
     navigate(queryString.length > 0 ? `/apps?${queryString}` : '/apps');
   };
@@ -93,8 +90,7 @@ export function useAppExplorer(): AppExplorerState {
   const onSuggestionSelect = (selected: ProductSuggestion) => {
     clearSuggestions();
     setSearchInput('');
-    const trimmed = selected.name.trim();
-    navigate(trimmed.length > 0 ? `/apps?q=${encodeURIComponent(trimmed)}` : '/apps');
+    navigate(`/apps?product=${encodeURIComponent(selected.slug)}`);
   };
 
   const onSearchInputFocus = () => {
