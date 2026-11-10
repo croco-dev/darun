@@ -79,9 +79,16 @@ export async function retryUserProfile(): Promise<ActionState> {
   redirect('/');
 }
 
-export async function logout() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+export async function logout(): Promise<ActionState> {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      return { error: '로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
+    }
+  } catch {
+    return { error: '로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
+  }
   revalidatePath('/', 'layout');
   redirect('/auth/signin');
 }
