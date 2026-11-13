@@ -47,6 +47,7 @@ type Documents = {
     "\n  query CategoryBySlugOnMarkdown($slug: String!) {\n    categoryBySlug(slug: $slug) {\n      id\n      slug\n      labelKo\n      labelEn\n    }\n  }\n": typeof types.CategoryBySlugOnMarkdownDocument,
     "\n  query RankedProductsOnMarkdown($first: Int!, $locale: String!) {\n    rankedProducts(first: $first, locale: $locale) {\n      id\n      name\n      slug\n      summary\n      voteCount\n    }\n  }\n": typeof types.RankedProductsOnMarkdownDocument,
     "\n  query MagazineOnMarkdown($slug: String!) {\n    magazineBySlug(slug: $slug) {\n      id\n      title\n      slug\n      content\n      publishedAt\n      updatedAt\n      author {\n        name\n      }\n    }\n  }\n": typeof types.MagazineOnMarkdownDocument,
+    "\n  query PublishedMagazinesForMagazineIndexMarkdown {\n    publishedMagazines {\n      slug\n      title\n      summary\n    }\n  }\n": typeof types.PublishedMagazinesForMagazineIndexMarkdownDocument,
     "\n  query CategoryBySlugOnCategoryPageMetadata($slug: String!) {\n    categoryBySlug(slug: $slug) {\n      id\n      slug\n      labelKo\n      labelEn\n    }\n  }\n": typeof types.CategoryBySlugOnCategoryPageMetadataDocument,
     "\n  query PublishedProductsForSitemap($first: Int!, $after: String, $lowerBoundId: String, $upperBoundId: String) {\n    publishedProductsForSitemap(\n      first: $first\n      after: $after\n      lowerBoundId: $lowerBoundId\n      upperBoundId: $upperBoundId\n    ) {\n      id\n      slug\n      updatedAt\n      publishedAt\n      hasAlternatives\n    }\n  }\n": typeof types.PublishedProductsForSitemapDocument,
     "\n  query CategoriesForSitemap($first: Int!, $locale: String!) {\n    categories(first: $first, locale: $locale) {\n      id\n      slug\n    }\n  }\n": typeof types.CategoriesForSitemapDocument,
@@ -163,6 +164,7 @@ const documents: Documents = {
     "\n  query CategoryBySlugOnMarkdown($slug: String!) {\n    categoryBySlug(slug: $slug) {\n      id\n      slug\n      labelKo\n      labelEn\n    }\n  }\n": types.CategoryBySlugOnMarkdownDocument,
     "\n  query RankedProductsOnMarkdown($first: Int!, $locale: String!) {\n    rankedProducts(first: $first, locale: $locale) {\n      id\n      name\n      slug\n      summary\n      voteCount\n    }\n  }\n": types.RankedProductsOnMarkdownDocument,
     "\n  query MagazineOnMarkdown($slug: String!) {\n    magazineBySlug(slug: $slug) {\n      id\n      title\n      slug\n      content\n      publishedAt\n      updatedAt\n      author {\n        name\n      }\n    }\n  }\n": types.MagazineOnMarkdownDocument,
+    "\n  query PublishedMagazinesForMagazineIndexMarkdown {\n    publishedMagazines {\n      slug\n      title\n      summary\n    }\n  }\n": types.PublishedMagazinesForMagazineIndexMarkdownDocument,
     "\n  query CategoryBySlugOnCategoryPageMetadata($slug: String!) {\n    categoryBySlug(slug: $slug) {\n      id\n      slug\n      labelKo\n      labelEn\n    }\n  }\n": types.CategoryBySlugOnCategoryPageMetadataDocument,
     "\n  query PublishedProductsForSitemap($first: Int!, $after: String, $lowerBoundId: String, $upperBoundId: String) {\n    publishedProductsForSitemap(\n      first: $first\n      after: $after\n      lowerBoundId: $lowerBoundId\n      upperBoundId: $upperBoundId\n    ) {\n      id\n      slug\n      updatedAt\n      publishedAt\n      hasAlternatives\n    }\n  }\n": types.PublishedProductsForSitemapDocument,
     "\n  query CategoriesForSitemap($first: Int!, $locale: String!) {\n    categories(first: $first, locale: $locale) {\n      id\n      slug\n    }\n  }\n": types.CategoriesForSitemapDocument,
@@ -392,6 +394,10 @@ export function graphql(source: "\n  query RankedProductsOnMarkdown($first: Int!
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query MagazineOnMarkdown($slug: String!) {\n    magazineBySlug(slug: $slug) {\n      id\n      title\n      slug\n      content\n      publishedAt\n      updatedAt\n      author {\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  query MagazineOnMarkdown($slug: String!) {\n    magazineBySlug(slug: $slug) {\n      id\n      title\n      slug\n      content\n      publishedAt\n      updatedAt\n      author {\n        name\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query PublishedMagazinesForMagazineIndexMarkdown {\n    publishedMagazines {\n      slug\n      title\n      summary\n    }\n  }\n"): (typeof documents)["\n  query PublishedMagazinesForMagazineIndexMarkdown {\n    publishedMagazines {\n      slug\n      title\n      summary\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

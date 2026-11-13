@@ -6,7 +6,13 @@ import { getTranslations } from 'next-intl/server';
 import { graphql } from '../../../../../libs/__generated__/gql';
 import { Link } from '../../../i18n/navigation';
 import { NO_INDEX_ROBOTS } from '../../../lib/seo/indexability';
-import { absolutePublicUrl, normalizeLocale } from '../../../lib/seo/url';
+import {
+  absolutePublicUrl,
+  magazineArticlePath,
+  markdownSiblingUrl,
+  normalizeLocale,
+  publicPath,
+} from '../../../lib/seo/url';
 import { getClient } from '../../getServerClient';
 
 const publishedMagazinesQuery = graphql(`
@@ -31,7 +37,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: t('title'),
-    alternates: { canonical: absolutePublicUrl('ko', '/magazines') },
+    alternates: {
+      canonical: absolutePublicUrl('ko', '/magazines'),
+      types: { 'text/markdown': markdownSiblingUrl(locale, '/magazines') },
+    },
     robots: locale === 'en' ? NO_INDEX_ROBOTS : undefined,
   };
 }
@@ -39,7 +48,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function MagazineIndexPage({ params }: Props) {
   const locale = normalizeLocale((await params).locale);
   const t = await getTranslations({ locale, namespace: 'Magazine.index' });
-  const { data } = await getClient({ static: true }).query({ query: publishedMagazinesQuery });
+  const { data } = await getClient({ static: true }).query({
+    query: publishedMagazinesQuery,
+  });
   if (!data) throw new Error('Missing published magazine list');
 
   return (
@@ -47,7 +58,12 @@ export default async function MagazineIndexPage({ params }: Props) {
       <ContentArea as="main" className="flex flex-col gap-6 py-8 sm:gap-8 sm:py-12">
         <h1 className="text-2xl font-extrabold tracking-tight text-dark-900 sm:text-3xl">{t('title')}</h1>
         {data.publishedMagazines.length > 0 ? (
-          <MagazineArticleGrid articles={data.publishedMagazines} locale={locale} />
+          <MagazineArticleGrid
+            articles={data.publishedMagazines.map(({ slug, ...article }) => ({
+              ...article,
+              href: publicPath(locale, magazineArticlePath(slug)),
+            }))}
+          />
         ) : (
           <div className="flex flex-col items-center gap-4 rounded-card-lg border border-dashed border-dark-200 bg-white px-6 py-12 text-center">
             <p className="text-base font-semibold text-dark-900">{t('empty')}</p>

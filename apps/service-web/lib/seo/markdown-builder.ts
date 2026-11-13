@@ -1,5 +1,5 @@
 import { defaultTreeAdapter, DefaultTreeAdapterTypes, parseFragment } from 'parse5';
-import { absolutePublicUrl, magazineCanonicalUrl, PublicLocale } from './url';
+import { absolutePublicUrl, magazineArticlePath, magazineCanonicalUrl, PublicLocale } from './url';
 
 export function escapeMarkdown(text: string): string {
   return text
@@ -472,6 +472,42 @@ export function buildCompareMarkdown(params: {
     product2.description ? htmlToMarkdown(product2.description) : '',
   ];
 
+  return lines.join('\n');
+}
+
+export function buildMagazineIndexMarkdown({
+  locale,
+  title,
+  empty,
+  home,
+  search,
+  articles,
+}: {
+  locale: PublicLocale;
+  title: string;
+  empty: string;
+  home: string;
+  search: string;
+  articles: ReadonlyArray<{
+    slug: string;
+    title: string;
+    summary: string | null;
+  }>;
+}): string {
+  const lines = [`# ${markdownText(title)}`, '', `Canonical URL: ${absolutePublicUrl('ko', '/magazines')}`, ''];
+  if (articles.length === 0) {
+    lines.push(
+      markdownText(empty),
+      '',
+      `- [${markdownText(home)}](${absolutePublicUrl(locale, '/')})`,
+      `- [${markdownText(search)}](${absolutePublicUrl(locale, '/search/product')})`
+    );
+  }
+  for (const article of articles) {
+    const url = markdownDestination(absolutePublicUrl(locale, magazineArticlePath(article.slug)));
+    const summary = article.summary ? ` — ${markdownText(article.summary)}` : '';
+    lines.push(`- [${markdownText(article.title)}](${url})${summary}`);
+  }
   return lines.join('\n');
 }
 

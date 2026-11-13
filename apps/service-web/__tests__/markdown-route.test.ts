@@ -13,12 +13,20 @@ const { getClient, intlMiddleware } = vi.hoisted(() => ({ getClient: vi.fn(), in
 vi.mock('../app/getServerClient', () => ({ getClient }));
 vi.mock('next-intl/middleware', () => ({ default: () => intlMiddleware }));
 import { GET, HEAD } from '../app/api/markdown/[...path]/route';
+import en from '../messages/en.json';
+import ko from '../messages/ko.json';
 import middleware, { config } from '../middleware';
 import { contentHtml, contentMarkdown } from './markdown-content.fixture';
 
 const { buildSchema } = createRequire(import.meta.url)('graphql') as typeof import('graphql');
 const schema = buildSchema(readFileSync(new URL('../../graphql-api/schema.graphql', import.meta.url), 'utf8'));
 const matchMarkdownRoute = getRouteMatcher(getRouteRegex('/api/markdown/[...path]'));
+vi.mock('next-intl/server', () => ({
+  getTranslations: async ({ locale }: { locale: string }) => {
+    const copy = (locale === 'en' ? en : ko).Magazine.index;
+    return (key: keyof typeof copy) => copy[key];
+  },
+}));
 const magazineSlugs = [
   ['design', 'design'],
   ['v1.2', 'v1.2'],
@@ -63,8 +71,9 @@ function request(path: string[], sibling = false) {
   ] as const;
 }
 
-function magazineRequest(locale: string, segment: string, method: 'GET' | 'HEAD', sibling: boolean) {
-  const request = new NextRequest(`http://localhost/${locale}/magazines/${segment}${sibling ? '.md' : ''}`, {
+function magazineRequest(locale: string, segment: string | null, method: 'GET' | 'HEAD', sibling: boolean) {
+  const detail = segment === null ? '' : `/${segment}`;
+  const request = new NextRequest(`http://localhost/${locale}/magazines${detail}${sibling ? '.md' : ''}`, {
     method,
     headers: { Accept: sibling ? '*/*' : 'text/markdown' },
   });
@@ -152,7 +161,9 @@ describe('상품 문서 미들웨어', () => {
 });
 
 describe('공개 Markdown route의 실행 스키마 계약', () => {
+  let magazineListState: 'ready' | 'empty' | 'error';
   beforeEach(() => {
+    magazineListState = 'ready';
     failRelations = false;
     fieldReads.length = 0;
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -178,12 +189,63 @@ describe('공개 Markdown route의 실행 스키마 계약', () => {
                 content: `<p>본문: ${slug}</p>${contentHtml}`,
               };
             },
+            publishedMagazines: () => {
+              if (magazineListState === 'error') throw new Error('fixture list query failure');
+              if (magazineListState === 'empty') return [];
+              return [
+                {
+                  slug: 'review.md',
+                  title: 'Review [notes]',
+                  summary: '<img src="https://example.org/pixel.png">가 포함된 요약',
+                },
+              ];
+            },
           },
         }),
       })
     );
   });
   afterEach(() => vi.restoreAllMocks());
+
+  it.each(['ko', 'en'])('%s 목록의 Markdown 협상과 sibling에서 공개 글 링크를 제공한다', async locale => {
+    for (const sibling of [false, true]) {
+      const get = magazineRequest(locale, null, 'GET', sibling);
+      const head = magazineRequest(locale, null, 'HEAD', sibling);
+      const response = await GET(get.request, get.context);
+      const headResponse = await HEAD(head.request, head.context);
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Content-Type')).toBe('text/markdown; charset=utf-8');
+      expect(response.headers.get('Vary')).toBe('Accept');
+      expect(response.headers.get('Link')).toBe(
+        sibling ? '<https://www.darun.io/ko/magazines>; rel="canonical"' : null
+      );
+      expect(response.headers.get('X-Robots-Tag')).toBe(sibling || locale === 'en' ? 'noindex, follow' : null);
+      expect(headResponse.status).toBe(200);
+      expect([...headResponse.headers]).toEqual([...response.headers]);
+      expect(await headResponse.text()).toBe('');
+      const rendered = new MarkdownIt({ html: true }).render(await response.text());
+      expect(rendered).toContain(`href="https://www.darun.io/${locale}/magazines/review%2Emd"`);
+      expect(rendered).toContain('Review [notes]');
+      expect(rendered).toContain('&lt;img src=');
+      expect(rendered).not.toContain('<img');
+    }
+  });
+
+  it('빈 공개 목록은 200으로 안내한다', async () => {
+    magazineListState = 'empty';
+    const get = magazineRequest('en', null, 'GET', false);
+    const empty = await GET(get.request, get.context);
+    expect(empty.status).toBe(200);
+    const body = await empty.text();
+    expect(body).toContain('No articles have been published yet.');
+    expect(body).toContain('https://www.darun.io/en/search/product');
+  });
+
+  it('목록 조회 오류는 500으로 전달한다', async () => {
+    magazineListState = 'error';
+    const get = magazineRequest('en', null, 'GET', false);
+    expect((await GET(get.request, get.context)).status).toBe(500);
+  });
 
   it.each([
     ['ko', 'products', 'alpha'],

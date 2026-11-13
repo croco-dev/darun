@@ -5,12 +5,11 @@ import { ArticleCard } from '@darun/magazines-feature';
 type MagazineArticleGridProps = {
   articles: ReadonlyArray<{
     id: string;
-    slug: string;
+    href: string;
     title: string;
     summary: string | null;
     backgroundImageUrl: string;
   }>;
-  locale: string;
 };
 
 function getCoverUrl(value: string): string | undefined {
@@ -25,24 +24,20 @@ function getCoverUrl(value: string): string | undefined {
   }
 }
 
-export function MagazineArticleGrid({ articles, locale }: MagazineArticleGridProps) {
+export function MagazineArticleGrid({ articles }: MagazineArticleGridProps) {
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {articles.map(article => {
-        // A literal terminal ".md" selects the Markdown representation in middleware.
-        const slug = encodeURIComponent(article.slug).replace(/\.md$/, '%2Emd');
-        return (
-          <li key={article.id} className="min-w-0">
-            <ArticleCard
-              heading="h2"
-              href={`/${locale}/magazines/${slug}`}
-              title={article.title}
-              summary={article.summary ?? undefined}
-              thumbnailImageUri={getCoverUrl(article.backgroundImageUrl)}
-            />
-          </li>
-        );
-      })}
+      {articles.map(article => (
+        <li key={article.id} className="min-w-0">
+          <ArticleCard
+            heading="h2"
+            href={article.href}
+            title={article.title}
+            summary={article.summary ?? undefined}
+            thumbnailImageUri={getCoverUrl(article.backgroundImageUrl)}
+          />
+        </li>
+      ))}
     </ul>
   );
 }
