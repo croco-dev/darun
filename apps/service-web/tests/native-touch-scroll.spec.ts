@@ -96,12 +96,22 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
 
     const tags = page.locator('main h1').locator('..').locator('..').locator('.overflow-x-auto');
     await expectVerticalPan(page, tags);
-    const toc = page.getByRole('tablist');
+    const toc = page.getByRole('navigation', { name: '상세 섹션 목차' });
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
     await expectVerticalPan(page, toc);
-    await toc.getByRole('tab').first().focus();
+    await toc.getByRole('link').first().focus();
     await page.keyboard.press('End');
-    await expect(toc.getByRole('tab').last()).toBeFocused();
+    const lastLink = toc.getByRole('link').last();
+    await expect(lastLink).toBeFocused();
+    await expect
+      .poll(() =>
+        lastLink.evaluate(link => {
+          const { left, right, top, height } = link.getBoundingClientRect();
+          const x = (Math.max(left, 0) + Math.min(right, innerWidth)) / 2;
+          return link.contains(document.elementFromPoint(x, top + height / 2));
+        })
+      )
+      .toBe(true);
 
     await photos.focus();
     await expect(photos).toBeFocused();
