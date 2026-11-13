@@ -495,7 +495,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
     return createResponse(buildNotFoundMarkdown({ locale }), 404);
   } catch (error) {
     console.error('Error serving markdown representation:', error);
-    if (isNotFoundError(error)) {
+    if (!isMagazineIndex && isNotFoundError(error)) {
       return createResponse(buildNotFoundMarkdown({ locale }), 404);
     }
     return createResponse(buildErrorMarkdown(locale), 500, { noindex: true });

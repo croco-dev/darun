@@ -1,4 +1,4 @@
-import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client';
 import { SchemaLink } from '@apollo/client/link/schema';
 import MarkdownIt from 'markdown-it';
 import { getRouteMatcher } from 'next/dist/shared/lib/router/utils/route-matcher';
@@ -35,6 +35,7 @@ const magazineSlugs = [
   ['design#tools', 'design%23tools'],
   ['design?tools', 'design%3Ftools'],
   ['design/tools', 'design%2Ftools'],
+  ['review.md', 'review%2Emd'],
 ] as const;
 let failRelations = false;
 const fieldReads: string[] = [];
@@ -245,6 +246,22 @@ describe('공개 Markdown route의 실행 스키마 계약', () => {
     magazineListState = 'error';
     const get = magazineRequest('en', null, 'GET', false);
     expect((await GET(get.request, get.context)).status).toBe(500);
+  });
+
+  it('GraphQL 전송의 404는 공개 목록의 조회 오류로 전달한다', async () => {
+    getClient.mockReturnValue(
+      new ApolloClient({
+        cache: new InMemoryCache(),
+        link: new HttpLink({
+          uri: 'https://fixture.invalid/graphql',
+          fetch: async () => new Response('Missing GraphQL endpoint', { status: 404 }),
+        }),
+      })
+    );
+    const get = magazineRequest('en', null, 'GET', false);
+    const response = await GET(get.request, get.context);
+    expect(response.status).toBe(500);
+    expect(await response.text()).toContain('Something went wrong');
   });
 
   it.each([

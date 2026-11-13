@@ -68,7 +68,7 @@ export function magazineArticlePath(slug: string): string {
 }
 
 export function magazineCanonicalUrl(slug: string): string {
-  return absolutePublicUrl(DEFAULT_LOCALE, `/magazines/${encodeURIComponent(slug)}`);
+  return absolutePublicUrl(DEFAULT_LOCALE, magazineArticlePath(slug));
 }
 
 export function markdownSiblingUrl(locale: PublicLocale, pathname: string): string {
