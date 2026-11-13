@@ -6,6 +6,7 @@ type ArticleCardProps = {
   thumbnailImageUri?: string;
   category?: string;
   title: string;
+  heading?: 'h2' | 'h3';
   summary?: string;
   author?: string;
   date?: Date;
@@ -17,6 +18,7 @@ export const ArticleCard = ({
   thumbnailImageUri,
   category,
   title,
+  heading: Heading = 'h3',
   date,
   author,
   summary,
@@ -57,9 +59,9 @@ export const ArticleCard = ({
             </Chip>
           </div>
         )}
-        <h3 className="text-base font-extrabold leading-snug tracking-tight text-dark-900 break-words [word-break:keep-all] transition-colors duration-200 group-hover:text-dark-950 md:text-lg">
+        <Heading className="text-base font-extrabold leading-snug tracking-tight text-dark-900 break-words [word-break:keep-all] transition-colors duration-200 group-hover:text-dark-950 md:text-lg">
           {title}
-        </h3>
+        </Heading>
         {summary && (
           <p className="line-clamp-2 text-sm leading-relaxed text-dark-600 break-words [word-break:keep-all]">
             {summary}

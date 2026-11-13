@@ -213,6 +213,12 @@
     }
   },
   "Magazine": {
+    "index": {
+      "title": "매거진",
+      "empty": "아직 공개된 글이 없습니다.",
+      "home": "홈으로 이동",
+      "search": "서비스 검색"
+    },
     "content": {
       "label": "‘{title}’ 본문",
       "empty": "아직 본문이 없습니다."
