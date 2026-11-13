@@ -65,6 +65,16 @@ beforeEach(() => {
   sdk.listeners.clear();
   sdk.auth.currentUser = null;
   sdk.auth.signOut.mockReset().mockResolvedValue(undefined);
+  sdk.signInWithPopup.mockReset();
+});
+
+it('returns the successful popup account ID even when the current account differs', async () => {
+  const { service } = setup();
+  const result = deferred<ReturnType<typeof token>>();
+  sdk.auth.currentUser = user('other-account', result);
+  sdk.signInWithPopup.mockResolvedValue({ user: { uid: 'popup-account' } });
+
+  await expect(service.signInWithGoogle()).resolves.toBe('popup-account');
 });
 
 describe('FirebaseAuthService의 인증 결과 순서', () => {

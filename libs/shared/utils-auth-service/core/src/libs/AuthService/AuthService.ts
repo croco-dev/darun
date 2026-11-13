@@ -5,7 +5,7 @@ export interface AuthService {
   setAuthStorage(storage: AuthStorage): void;
   onIdTokenChanged(handler: (user?: AuthUser) => void, onError?: () => void): () => void;
   retryAuthState(): Promise<void>;
-  signInWithGoogle(): Promise<unknown>;
+  signInWithGoogle(): Promise<string>;
   getUser(): Promise<AuthUser | null>;
   signOut(): Promise<void>;
   setRedirectUrl(url: string): void;

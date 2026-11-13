@@ -14,6 +14,7 @@ vi.mock('@darun/provider-auth/client', () => ({
   useAuthState: () => ({ isLoading: false, isError: false }),
 }));
 vi.mock('@apollo/client/react', () => ({ useApolloClient: () => client }));
+vi.mock('@darun/utils-router', () => ({ useNavigate: () => vi.fn() }));
 const authService = {
   onIdTokenChanged: (observer: (user: { id: string } | null) => void) => {
     auth.observers.add(observer);

@@ -182,11 +182,12 @@ export class FirebaseAuthService implements AuthService {
     }
   }
 
-  public signInWithGoogle() {
+  public async signInWithGoogle() {
     const provider = new GoogleAuthProvider();
     provider.addScope('profile');
     provider.addScope('email');
 
-    return signInWithPopup(getAuth(), provider);
+    const { user } = await signInWithPopup(getAuth(), provider);
+    return user.uid;
   }
 }
