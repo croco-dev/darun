@@ -35,7 +35,7 @@ function mockPublishedList(publishedMagazines: () => unknown) {
 
 describe('public magazine index', () => {
   it.each(['ko', 'en'])('links to all published entries in %s without reading article bodies', async locale => {
-    const articles = ['design%2Bnotes', '비교', 'workflow', 'tools'].map((slug, index) => ({
+    const articles = ['design%2Bnotes', '비교', 'workflow.md', 'tools'].map((slug, index) => ({
       id: String(index),
       slug,
       title: `Published article ${index}`,
@@ -51,12 +51,39 @@ describe('public magazine index', () => {
 
     expect(html).toContain(`href="/${locale}/magazines/design%252Bnotes"`);
     expect(html).toContain(`href="/${locale}/magazines/%EB%B9%84%EA%B5%90"`);
+    expect(html).toContain(`href="/${locale}/magazines/workflow%2Emd"`);
     expect(html).toContain(`href="/${locale}/magazines/tools"`);
     expect(html).toContain('Published article 3');
     expect(html).toContain('Article summary');
     const metadata = await generateMetadata(props(locale));
     expect(metadata.alternates?.canonical).toBe('https://www.darun.io/ko/magazines');
     expect(metadata.robots).toEqual(locale === 'en' ? { index: false, follow: true } : undefined);
+  });
+
+  it('renders uploaded covers without sending readers to other image hosts', async () => {
+    const covers = [
+      'https://res.cloudinary.com/demo/image/upload/cover.png',
+      'https://res.cloudinary.com.example.org/tracker.png',
+      '//example.org/protocol-relative.png',
+      'https://res.cloudinary.com:8443/other-port.png',
+      'blob:https://res.cloudinary.com/cover',
+    ];
+    mockPublishedList(() =>
+      covers.map((backgroundImageUrl, index) => ({
+        id: String(index),
+        slug: `article-${index}`,
+        title: `Published article ${index}`,
+        summary: null,
+        backgroundImageUrl,
+      }))
+    );
+
+    const html = renderToStaticMarkup(await Page(props('ko')));
+    expect(html).toContain(`src="${covers[0]}"`);
+    for (const rejectedCover of covers.slice(1)) {
+      expect(html).not.toContain(rejectedCover);
+    }
+    expect(html).toContain('Published article 4');
   });
 
   it('shows an empty state only when the public query succeeds with an empty list', async () => {
