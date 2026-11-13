@@ -79,6 +79,9 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
     });
     await page.emulateMedia({ reducedMotion });
     await page.goto('/ko/products/figma-e2e');
+    const toc = page.getByRole('navigation', { name: '상세 섹션 목차' });
+    // Wait for the hydrated sticky navigation before taking touch coordinates.
+    await expect(toc.locator('a[aria-current="location"]')).toBeVisible();
     const photos = page.getByRole('region', { name: '스크린샷', exact: true });
     await expect(photos.getByRole('img')).toHaveCount(3);
     await expect(photos.getByRole('img').first()).toHaveJSProperty('complete', true);
@@ -96,7 +99,6 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
 
     const tags = page.locator('main h1').locator('..').locator('..').locator('.overflow-x-auto');
     await expectVerticalPan(page, tags);
-    const toc = page.getByRole('navigation', { name: '상세 섹션 목차' });
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
     await expectVerticalPan(page, toc);
     await toc.getByRole('link').first().focus();
