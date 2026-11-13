@@ -6,6 +6,7 @@ import { AdminModal, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@d
 import { useRouter, usePathname, useSearchParams } from '@darun/utils-router';
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback } from 'react';
+import { useRefreshTranslationFreshness } from '../../llm-jobs/useRefreshTranslationFreshness';
 
 type ProductDetailDescriptionSectionProps = {
   slug: string;
@@ -13,6 +14,8 @@ type ProductDetailDescriptionSectionProps = {
 
 export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescriptionSectionProps) => {
   const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
+  const refreshTranslation = useRefreshTranslationFreshness();
+  const refreshProductTranslation = (productId: string) => refreshTranslation({ productId });
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -31,12 +34,14 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
       <AdminPanel>
         <AdminSectionHeader
           title="설명"
+          className="flex-wrap [&>div]:max-w-full"
           rightSide={
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <GenerateProductDescriptionButton
                 slug={slug}
                 descriptionJobId={descriptionJobId}
                 onJobChange={onJobChange}
+                onSaved={refreshProductTranslation}
               />
               <Button
                 type="button"
@@ -59,7 +64,12 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
         </AdminSectionBody>
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="설명 수정">
-        <EditProductDescription slug={slug} onSubmit={closeEditModal} onCancel={closeEditModal} />
+        <EditProductDescription
+          slug={slug}
+          onSaved={refreshProductTranslation}
+          onSubmit={closeEditModal}
+          onCancel={closeEditModal}
+        />
       </AdminModal>
     </>
   );

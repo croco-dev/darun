@@ -27,6 +27,8 @@ type ProductFeatureTableProps = {
 export function useProductFeatureTable({ slug, editFeature, translationAction }: ProductFeatureTableProps) {
   const { data, loading, error, refetch } = useQuery(TempProductBySlugOnProductFeatureTableDocument, {
     variables: { slug },
+    // Keep mounted row actions while an edit refreshes the table.
+    notifyOnNetworkStatusChange: false,
   });
   return { features: data?.tempProductBySlug?.features, loading, error, editFeature, refetch, translationAction };
 }

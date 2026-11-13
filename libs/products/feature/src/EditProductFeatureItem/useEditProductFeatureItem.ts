@@ -33,6 +33,7 @@ gql`
 
 export type EditProductFeatureItemProps = {
   featureId: string;
+  onSaved?: (featureId: string) => void;
   onSubmit?: () => void;
   onCancel?: () => void;
 };
@@ -43,7 +44,7 @@ type FormValues = {
   summary?: string;
 };
 
-export function useEditProductFeatureItem({ featureId, onSubmit, onCancel }: EditProductFeatureItemProps) {
+export function useEditProductFeatureItem({ featureId, onSaved, onSubmit, onCancel }: EditProductFeatureItemProps) {
   const apolloClient = useApolloClient();
   const isMounted = useRef(false);
 
@@ -60,7 +61,11 @@ export function useEditProductFeatureItem({ featureId, onSubmit, onCancel }: Edi
   const [updateFeature, { loading: mutationLoading }] = useMutation(
     UpdateProductFeatureOnEditProductFeatureItemDocument,
     {
-      refetchQueries: [TempProductBySlugOnProductFeatureTableDocument],
+      refetchQueries: ({ data }) => {
+        const savedId = data?.updateProductFeature?.feature.id;
+        if (savedId) onSaved?.(savedId);
+        return [TempProductBySlugOnProductFeatureTableDocument];
+      },
       awaitRefetchQueries: true,
       onCompleted: () => {
         apolloClient.cache.evict({ fieldName: 'feature' });

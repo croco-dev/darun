@@ -37,11 +37,12 @@ type FormValues = {
 
 export type UseEditProductInfoProps = {
   slug: string;
+  onSaved?: (productId: string) => void;
   onSubmit?: () => void;
   onCancel?: () => void;
 };
 
-export function useEditProductInfo({ slug, onSubmit, onCancel }: UseEditProductInfoProps) {
+export function useEditProductInfo({ slug, onSaved, onSubmit, onCancel }: UseEditProductInfoProps) {
   const { data } = useQuery(TempProductBySlugOnEditProductInfoDocument, {
     variables: { slug },
   });
@@ -70,8 +71,12 @@ export function useEditProductInfo({ slug, onSubmit, onCancel }: UseEditProductI
   }, [data?.tempProductBySlug?.name, data?.tempProductBySlug?.summary]);
 
   const [editInformation, { loading }] = useMutation(EditProductOnEditProductInfoDocument, {
-    refetchQueries: [TempProductBySlugOnEditProductInfoDocument, TempProductBySlugOnProductInfoDocument],
     awaitRefetchQueries: true,
+    refetchQueries: ({ data }) => {
+      const productId = data?.editProduct?.product?.id;
+      if (productId) onSaved?.(productId);
+      return [TempProductBySlugOnEditProductInfoDocument, TempProductBySlugOnProductInfoDocument];
+    },
     onCompleted: ({ editProduct }) => {
       if (editProduct?.product?.id) {
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
