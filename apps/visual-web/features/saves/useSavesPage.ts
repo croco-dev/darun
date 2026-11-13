@@ -133,7 +133,10 @@ export function readSavesTabParam(searchParams: URLSearchParams): SavesTab {
 export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageState {
   const apolloClient = useApolloClient();
   const account = useVisualAccount();
-  const generation = useRef(0);
+  const generations = useRef<Record<SavesTab, number>>({
+    screenshots: 0,
+    flows: 0,
+  });
   const [dataAccount, setDataAccount] = useState<string | null | undefined>(undefined);
   const searchParams = useSearchParams();
   const navigate = useNavigate();
@@ -162,7 +165,6 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
   const [flowLoadingMore, setFlowLoadingMore] = useState(false);
   const [screenshotLoadMoreError, setScreenshotLoadMoreError] = useState(false);
   const [flowLoadMoreError, setFlowLoadMoreError] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
   if (account !== dataAccount) {
     setDataAccount(account);
     setScreenshotCards([]);
@@ -180,10 +182,10 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
     setStatuses({ screenshots: 'loading', flows: 'loading' });
   }
 
-  useEffect(() => {
-    const requestGeneration = ++generation.current;
-    if (!account) return;
-    const load = async (target: SavesTab) => {
+  const loadFirstPage = useCallback(
+    async (target: SavesTab) => {
+      const requestGeneration = ++generations.current[target];
+      setStatuses(previous => ({ ...previous, [target]: 'loading' }));
       try {
         if (target === 'screenshots') {
           const result = await apolloClient.query({
@@ -192,7 +194,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
             fetchPolicy: 'no-cache',
             context: { queryDeduplication: false },
           });
-          if (generation.current !== requestGeneration) return;
+          if (generations.current[target] !== requestGeneration) return;
           const connection = result.data?.myVisualSavedScreenshots;
           setScreenshotCards(
             (connection?.edges ?? []).flatMap(edge => {
@@ -210,7 +212,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
             fetchPolicy: 'no-cache',
             context: { queryDeduplication: false },
           });
-          if (generation.current !== requestGeneration) return;
+          if (generations.current[target] !== requestGeneration) return;
           const connection = result.data?.myVisualSavedFlows;
           setFlowCards(
             (connection?.edges ?? []).flatMap(edge => {
@@ -224,27 +226,30 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
         }
         setStatuses(previous => ({ ...previous, [target]: 'loaded' }));
       } catch (error) {
-        if (generation.current !== requestGeneration) return;
-        setStatuses(previous => ({ ...previous, [target]: isUnauthorized(error) ? 'login-required' : 'error' }));
+        if (generations.current[target] !== requestGeneration) return;
+        setStatuses(previous => ({
+          ...previous,
+          [target]: isUnauthorized(error) ? 'login-required' : 'error',
+        }));
       }
-    };
-    void load('screenshots');
-    void load('flows');
+    },
+    [apolloClient]
+  );
+
+  useEffect(() => {
+    if (!account) return;
+    const accountGenerations = generations.current;
+    void loadFirstPage('screenshots');
+    void loadFirstPage('flows');
     return () => {
-      generation.current += 1;
+      accountGenerations.screenshots += 1;
+      accountGenerations.flows += 1;
     };
-  }, [apolloClient, account, reloadKey]);
+  }, [account, loadFirstPage]);
 
   const retry = useCallback(() => {
-    setStatuses({ screenshots: 'loading', flows: 'loading' });
-    setScreenshotCursor(null);
-    setFlowCursor(null);
-    setScreenshotLoadingMore(false);
-    setFlowLoadingMore(false);
-    setScreenshotLoadMoreError(false);
-    setFlowLoadMoreError(false);
-    setReloadKey(key => key + 1);
-  }, []);
+    void loadFirstPage(tab);
+  }, [loadFirstPage, tab]);
 
   const onTabChange = useCallback(
     (next: SavesTab) => {
@@ -254,7 +259,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
   );
 
   const onLoadMore = useCallback(() => {
-    const requestGeneration = generation.current;
+    const requestGeneration = generations.current[tab];
     const setTabLoadingMore = tab === 'screenshots' ? setScreenshotLoadingMore : setFlowLoadingMore;
     const setTabLoadMoreError = tab === 'screenshots' ? setScreenshotLoadMoreError : setFlowLoadMoreError;
     const isTabLoadingMore = tab === 'screenshots' ? screenshotLoadingMore : flowLoadingMore;
@@ -281,7 +286,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
           });
     request
       .then(result => {
-        if (generation.current !== requestGeneration) return;
+        if (generations.current[tab] !== requestGeneration) return;
         if (tab === 'screenshots') {
           const data = result.data as MyVisualSavedScreenshotsQuery | undefined;
           const connection = data?.myVisualSavedScreenshots;
@@ -305,7 +310,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
         }
       })
       .catch((e: unknown) => {
-        if (generation.current !== requestGeneration) return;
+        if (generations.current[tab] !== requestGeneration) return;
         if (isUnauthorized(e)) {
           setStatuses(previous => ({ ...previous, [tab]: 'login-required' }));
           return;
@@ -314,7 +319,7 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
         setTabLoadMoreError(true);
       })
       .finally(() => {
-        if (generation.current !== requestGeneration) return;
+        if (generations.current[tab] !== requestGeneration) return;
         setTabLoadingMore(false);
       });
   }, [

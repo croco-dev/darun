@@ -280,9 +280,101 @@ describe('saved account state', () => {
     }
   );
 
+  it('retries only the failed tab while preserving the other tab’s in-flight page, cards, and cursor', async () => {
+    const requests: Array<{
+      name: string;
+      variables: Record<string, unknown>;
+      respond: (result: ApolloLink.Result) => void;
+    }> = [];
+    const apollo = new ApolloClient({
+      cache: new InMemoryCache(),
+      link: new ApolloLink(
+        operation =>
+          new Observable(observer => {
+            requests.push({
+              name: operation.operationName!,
+              variables: operation.variables,
+              respond: result => {
+                observer.next(result);
+                observer.complete();
+              },
+            });
+          })
+      ),
+    });
+    activeClient = apollo;
+    const screenshots = (start: number, end: number, cursor: string | null) => ({
+      data: {
+        myVisualSavedScreenshots: {
+          totalCount: 26,
+          edges: Array.from({ length: end - start }, (_, i) => ({
+            node: {
+              id: `screen-${start + i}`,
+              product: { id: 'product', name: 'Product', slug: 'product' },
+            },
+          })),
+          pageInfo: { endCursor: cursor, hasNextPage: cursor !== null },
+        },
+      },
+    });
+    const flows = () => requests.filter(request => request.name === 'MyVisualSavedFlows');
+    const screens = () => requests.filter(request => request.name === 'MyVisualSavedScreenshots');
+    const failure = { errors: [{ message: 'Flow list unavailable' }] };
+    try {
+      const current = await mount(() => useSavesPage());
+      const retryFlows = async () => {
+        await act(async () => current().onTabChange('flows'));
+        const state = current();
+        if (state.status !== 'error') throw new Error('expected flows to be retryable');
+        await act(async () => state.retry());
+        expect(current().status).toBe('loading');
+      };
+
+      await signIn('A');
+      await act(async () => {
+        screens()[0]!.respond(screenshots(0, 24, 'screen-23'));
+        flows()[0]!.respond(failure);
+      });
+      const firstPage = current();
+      if (firstPage.status !== 'loaded') throw new Error('expected first screen page');
+      await act(async () => firstPage.onLoadMore());
+      await retryFlows();
+
+      await act(async () => current().onTabChange('screenshots'));
+      expect(current()).toMatchObject({ status: 'loaded', loadingMore: true });
+      await act(async () => {
+        screens()[1]!.respond(screenshots(24, 25, 'screen-24'));
+        flows()[1]!.respond(failure);
+      });
+
+      await retryFlows();
+      await act(async () => current().onTabChange('screenshots'));
+      const retained = current();
+      if (retained.status !== 'loaded') throw new Error('expected retained screen pages');
+      expect(retained.screenshotCards.map(card => card.id)).toEqual(
+        Array.from({ length: 25 }, (_, i) => `screen-${i}`)
+      );
+      expect(retained.loadingMore).toBe(false);
+      await act(async () => retained.onLoadMore());
+      expect(screens().map(request => request.variables)).toEqual([
+        { first: 24, page: 0 },
+        { first: 24, after: 'screen-23' },
+        { first: 24, after: 'screen-24' },
+      ]);
+      expect(flows().map(request => request.variables)).toEqual(Array(3).fill({ first: 24, page: 0 }));
+      await act(async () => flows()[2]!.respond(connection('flows')));
+      await act(async () => current().onTabChange('flows'));
+      expect(current()).toMatchObject({ status: 'loaded', flowCards: [] });
+    } finally {
+      await act(async () => root?.unmount());
+      root = undefined;
+      apollo.stop();
+    }
+  });
+
   it('uses separate real Apollo requests across account switches, including status and pagination', async () => {
     let account = 'A';
-    const requests: Array<{ account: string; operation: string; page: number; respond: () => void }> = [];
+    const requests: Array<{ account: string; operation: string; after?: string; respond: () => void }> = [];
     const apollo = new ApolloClient({
       cache: new InMemoryCache(),
       link: new ApolloLink(
@@ -291,10 +383,11 @@ describe('saved account state', () => {
             const owner = account;
             const name = operation.operationName;
             if (!name) throw new Error('Expected a named save operation');
+            const after = operation.variables.after as string | undefined;
             requests.push({
               account: owner,
               operation: name,
-              page: operation.variables.after ? 1 : 0,
+              after,
               respond: () => {
                 const field =
                   name === 'VisualScreenshotSaveStatus'
@@ -310,10 +403,18 @@ describe('saved account state', () => {
                       ? { saved: owner === 'A' }
                       : {
                           totalCount: owner === 'A' ? 9 : 2,
-                          edges: [],
+                          edges: [
+                            {
+                              node: {
+                                id: `${owner}-${name}-${after ? 'next' : 'first'}`,
+                                product: { id: 'product' },
+                                coverScreenshot: { id: 'cover' },
+                              },
+                            },
+                          ],
                           pageInfo: {
                             hasNextPage: true,
-                            endCursor: `${owner}-${name}-boundary`,
+                            endCursor: `${owner}-${name}-${after ? 'second' : 'first'}-boundary`,
                           },
                         },
                   },
@@ -339,22 +440,59 @@ describe('saved account state', () => {
       await act(async () => requests.filter(request => request.account === 'A').forEach(request => request.respond()));
       expect(current().page.status).toBe('loading');
       expect(current().screenshot.saved).toBe(false);
+      await act(async () => current().page.onTabChange('flows'));
+      expect(current().page.status).toBe('loading');
+      expect(current().flow.saved).toBe(false);
       await act(async () => requests.filter(request => request.account === 'B').forEach(request => request.respond()));
-      expect(current().page).toMatchObject({ status: 'loaded', screenshotTotalCount: 2, flowTotalCount: 2 });
+      expect(current().page).toMatchObject({
+        status: 'loaded',
+        screenshotTotalCount: 2,
+        flowTotalCount: 2,
+        screenshotCards: [{ id: 'B-MyVisualSavedScreenshots-first' }],
+        flowCards: [{ id: 'B-MyVisualSavedFlows-first' }],
+      });
       expect(current().screenshot.saved).toBe(false);
       expect(current().flow.saved).toBe(false);
-      const bPage = current().page;
-      if (bPage.status !== 'loaded') throw new Error('expected loaded');
-      await act(async () => bPage.onLoadMore());
+      const loadMore = async () => {
+        const state = current().page;
+        if (state.status !== 'loaded') throw new Error('expected loaded');
+        await act(async () => state.onLoadMore());
+      };
+      await loadMore();
+      await act(async () => current().page.onTabChange('screenshots'));
+      await loadMore();
       account = 'C';
       await signIn('C');
       await act(async () => requests.filter(request => request.account === 'C').forEach(request => request.respond()));
-      const cPage = current().page;
-      if (cPage.status !== 'loaded') throw new Error('expected loaded');
-      await act(async () => cPage.onLoadMore());
-      expect(requests.filter(request => request.account === 'C' && request.page === 1)).toHaveLength(1);
-      await act(async () => requests.filter(request => request.page === 1).forEach(request => request.respond()));
-      expect(current().page).toMatchObject({ status: 'loaded', screenshotTotalCount: 2, loadingMore: false });
+      for (const [tab, operation, cards] of [
+        ['screenshots', 'MyVisualSavedScreenshots', 'screenshotCards'],
+        ['flows', 'MyVisualSavedFlows', 'flowCards'],
+      ] as const) {
+        await act(async () => current().page.onTabChange(tab));
+        await loadMore();
+        const oldPage = requests.find(
+          request => request.account === 'B' && request.operation === operation && request.after
+        );
+        const newPage = requests.find(
+          request => request.account === 'C' && request.operation === operation && request.after
+        );
+        if (!oldPage || !newPage) throw new Error('expected pending pages for both accounts');
+        expect(newPage.after).toBe(`C-${operation}-first-boundary`);
+        await act(async () => oldPage.respond());
+        expect(current().page).toMatchObject({
+          status: 'loaded',
+          loadingMore: true,
+          [cards]: [{ id: `C-${operation}-first` }],
+        });
+        await act(async () => newPage.respond());
+        expect(current().page).toMatchObject({
+          status: 'loaded',
+          loadingMore: false,
+          [cards]: [{ id: `C-${operation}-first` }, { id: `C-${operation}-next` }],
+        });
+        await loadMore();
+        expect(requests.at(-1)?.after).toBe(`C-${operation}-second-boundary`);
+      }
     } finally {
       await act(async () => root?.unmount());
       root = undefined;
