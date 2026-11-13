@@ -3,8 +3,8 @@
 import { cn } from '@darun/ui';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { notifications } from '@mantine/notifications';
-import { Editor } from '@tiptap/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type Editor, useEditorState } from '@tiptap/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { MenuItem, menuItemVariants } from './MenuItem';
 
 type MenuBarProps = {
@@ -61,7 +61,10 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
       return;
     }
 
-    const pending = { controller: new AbortController(), onImageUploadingChange };
+    const pending = {
+      controller: new AbortController(),
+      onImageUploadingChange,
+    };
     activeUpload.current = pending;
     try {
       setIsUploading(true);
@@ -102,51 +105,62 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
     }
   }, [disabled, editor, onImageUploadingChange, upload]);
 
-  const menuItems = useMemo(
-    () => [
-      {
-        label: 'B',
-        action: () => editor.chain().focus().toggleBold().run(),
-        active: editor.isActive('bold'),
-      },
-      {
-        label: 'I',
-        action: () => editor.chain().focus().toggleItalic().run(),
-        active: editor.isActive('italic'),
-      },
-      {
-        label: 'H1',
-        action: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-        active: editor.isActive('heading', { level: 1 }),
-      },
-      {
-        label: 'H2',
-        action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-        active: editor.isActive('heading', { level: 2 }),
-      },
-      {
-        label: 'H3',
-        action: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
-        active: editor.isActive('heading', { level: 3 }),
-      },
-      {
-        label: '❝ Quote',
-        action: () => editor.chain().focus().toggleBlockquote().run(),
-        active: editor.isActive('blockquote'),
-      },
-      {
-        label: '• List',
-        action: () => editor.chain().focus().toggleBulletList().run(),
-        active: editor.isActive('bulletList'),
-      },
-      {
-        label: '1. List',
-        action: () => editor.chain().focus().toggleOrderedList().run(),
-        active: editor.isActive('orderedList'),
-      },
-    ],
-    [editor]
-  );
+  // Read the current prop even before a replacement editor emits its first transaction.
+  const activeFormats = useEditorState({
+    editor,
+    selector: () => ({
+      bold: editor.isActive('bold'),
+      italic: editor.isActive('italic'),
+      heading1: editor.isActive('heading', { level: 1 }),
+      heading2: editor.isActive('heading', { level: 2 }),
+      heading3: editor.isActive('heading', { level: 3 }),
+      blockquote: editor.isActive('blockquote'),
+      bulletList: editor.isActive('bulletList'),
+      orderedList: editor.isActive('orderedList'),
+    }),
+  });
+  const menuItems = [
+    {
+      label: 'B',
+      action: () => editor.chain().focus().toggleBold().run(),
+      active: activeFormats.bold,
+    },
+    {
+      label: 'I',
+      action: () => editor.chain().focus().toggleItalic().run(),
+      active: activeFormats.italic,
+    },
+    {
+      label: 'H1',
+      action: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+      active: activeFormats.heading1,
+    },
+    {
+      label: 'H2',
+      action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+      active: activeFormats.heading2,
+    },
+    {
+      label: 'H3',
+      action: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+      active: activeFormats.heading3,
+    },
+    {
+      label: '❝ Quote',
+      action: () => editor.chain().focus().toggleBlockquote().run(),
+      active: activeFormats.blockquote,
+    },
+    {
+      label: '• List',
+      action: () => editor.chain().focus().toggleBulletList().run(),
+      active: activeFormats.bulletList,
+    },
+    {
+      label: '1. List',
+      action: () => editor.chain().focus().toggleOrderedList().run(),
+      active: activeFormats.orderedList,
+    },
+  ];
 
   return (
     <div className="flex flex-wrap gap-2" role="toolbar" aria-label="서식 도구 모음">
