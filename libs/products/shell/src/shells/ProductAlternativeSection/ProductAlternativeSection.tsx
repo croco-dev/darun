@@ -17,7 +17,11 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
 
   if (alternatives.length === 0) {
     return (
-      <section className="flex flex-col gap-5 scroll-mt-32" id="alternatives">
+      <section
+        className="flex flex-col gap-5 scroll-mt-[var(--product-section-offset,8rem)]"
+        id="alternatives"
+        tabIndex={-1}
+      >
         <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
         <div
           data-testid="alt-empty"
@@ -50,7 +54,11 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
   }
 
   return (
-    <section className="flex flex-col gap-5 scroll-mt-32" id="alternatives">
+    <section
+      className="flex flex-col gap-5 scroll-mt-[var(--product-section-offset,8rem)]"
+      id="alternatives"
+      tabIndex={-1}
+    >
       <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
       <AlternativeProductList slug={slug} />
       <div className="flex justify-center pt-2">

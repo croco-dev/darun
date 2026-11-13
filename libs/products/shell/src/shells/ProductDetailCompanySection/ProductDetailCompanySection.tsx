@@ -10,7 +10,11 @@ export const ProductDetailCompanySection = ({ slug }: ProductDetailCompanySectio
   const t = useTranslations('ProductDetail');
 
   return (
-    <section className="flex flex-col gap-4 scroll-mt-32 md:gap-5" id="company-info">
+    <section
+      className="flex flex-col gap-4 scroll-mt-[var(--product-section-offset,8rem)] md:gap-5"
+      id="company-info"
+      tabIndex={-1}
+    >
       <SectionHeader title={t('company.title')} subtitle={t('company.description')} />
       <ProductCompany slug={slug} />
     </section>
