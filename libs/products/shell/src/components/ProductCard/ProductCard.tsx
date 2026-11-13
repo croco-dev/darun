@@ -2,6 +2,7 @@
 
 import { ChevronRight } from '@darun/ui';
 import { Link } from '@darun/utils-router';
+import type { MouseEventHandler } from 'react';
 import { ProductItem, RankBadge } from '../../uis';
 import { ProductVoteCount } from '../ProductVoteCount';
 
@@ -25,15 +26,17 @@ type ProductCardProps = {
   source: 'trending' | 'search-empty' | 'related' | 'recent' | 'search' | 'category' | 'compare';
   layoutId?: string;
   onClick?: () => void;
+  onAuxClick?: MouseEventHandler<HTMLAnchorElement>;
 };
 
-export const ProductCard = ({ product, rank, href, source, layoutId, onClick }: ProductCardProps) => {
+export const ProductCard = ({ product, rank, href, source, layoutId, onClick, onAuxClick }: ProductCardProps) => {
   return (
     <div className="flex h-full min-w-0 flex-col gap-2">
       <Link
         href={href}
         className="group relative block h-full focus-visible:outline-none"
         onClick={onClick}
+        onAuxClick={onAuxClick}
         {...(layoutId ? { 'data-layout-id': layoutId } : {})}
         {...{ 'data-source': source }}
       >

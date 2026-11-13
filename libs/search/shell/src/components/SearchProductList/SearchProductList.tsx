@@ -12,12 +12,22 @@ import { Button, Search } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
+import type { MouseEvent } from 'react';
 import { SearchProduct, useSearchProductList } from './useSearchProductList';
 
 const POPULAR_QUERIES: Record<string, string[]> = {
   ko: ['프로덕트헌트', '노션', '피그마'],
   en: ['Product Hunt', 'Notion', 'Figma'],
 };
+
+function trackShortcutActivation(trackClick: () => void) {
+  return {
+    onClick: trackClick,
+    onAuxClick: (event: MouseEvent<HTMLAnchorElement>) => {
+      if (event.button === 1) trackClick();
+    },
+  };
+}
 
 const CATEGORIES_QUERY = gql`
   query CompactCategoriesForSearchProductList($first: Int!, $locale: String!) {
@@ -94,10 +104,6 @@ function EmptySearchResults({ query }: { query: string }) {
   const categories = categoriesQuery.data?.categories ?? [];
   const trendingProducts = trendingQuery.data?.rankedProducts ?? [];
 
-  const trackEmptySearchClick = (queryText: string) => {
-    track(AnalyticsEvents.EMPTY_SEARCH_STRIPE_CLICKED, { queryText });
-  };
-
   const getNoResultsMessage = () => {
     try {
       return t('list.empty.noResults', { query });
@@ -138,7 +144,9 @@ function EmptySearchResults({ query }: { query: string }) {
               <Link
                 key={popularQuery}
                 href={`/${locale}/search/product?query=${encodeURIComponent(popularQuery)}`}
-                onClick={() => trackEmptySearchClick(popularQuery)}
+                {...trackShortcutActivation(() =>
+                  track(AnalyticsEvents.EMPTY_SEARCH_STRIPE_CLICKED, { queryText: popularQuery })
+                )}
                 className="group inline-flex min-h-[36px] sm:min-h-0 shrink-0 items-center gap-1.5 rounded-full border border-dark-150 bg-white px-3.5 py-1.5 text-xs font-semibold text-dark-700 shadow-2xs transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
               >
                 <span aria-hidden="true" className="text-dark-400 transition-colors group-hover:text-dark-600">
@@ -173,7 +181,12 @@ function EmptySearchResults({ query }: { query: string }) {
                 <Link
                   key={category.id}
                   href={`/${locale}/categories/${encodeURIComponent(category.slug)}`}
-                  onClick={() => trackEmptySearchClick(category.slug)}
+                  {...trackShortcutActivation(() =>
+                    track(AnalyticsEvents.CATEGORY_CHIP_CLICKED, {
+                      categorySlug: category.slug,
+                      source: 'empty-grid',
+                    })
+                  )}
                   className="group flex items-center gap-2.5 rounded-xl border border-dark-150 bg-white p-3 text-left text-sm font-semibold text-dark-800 shadow-button transition-all duration-150 ease-out active:scale-[0.98] motion-reduce:transform-none hover:border-dark-300 hover:bg-surface-100 hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <span
@@ -210,9 +223,14 @@ function EmptySearchResults({ query }: { query: string }) {
                   <ProductCard
                     product={product}
                     rank={index + 1}
-                    href={`/${locale}/products/${encodeURIComponent(product.slug)}`}
+                    href={`/${locale}/products/${encodeURIComponent(product.slug)}?from=empty-stripe`}
                     source="search-empty"
-                    onClick={() => trackEmptySearchClick(product.slug)}
+                    {...trackShortcutActivation(() =>
+                      track(AnalyticsEvents.RANKED_PRODUCT_CLICKED, {
+                        productSlug: product.slug,
+                        source: 'search-empty-trending',
+                      })
+                    )}
                   />
                 </div>
               ))}
