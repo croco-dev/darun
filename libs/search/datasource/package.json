@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@darun/search-domain": "workspace:*",
-    "@typegoose/typegoose": "13.1.0",
+    "@typegoose/typegoose": "catalog:",
     "mongoose": "catalog:"
   },
   "peerDependencies": {

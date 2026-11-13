@@ -51,6 +51,9 @@ catalogs:
     '@testing-library/jest-dom':
       specifier: 6.9.1
       version: 6.9.1
+    '@typegoose/typegoose':
+      specifier: 13.5.0
+      version: 13.5.0
     '@types/react':
       specifier: 19.2.14
       version: 19.2.14
@@ -109,8 +112,8 @@ catalogs:
       specifier: 0.468.0
       version: 0.468.0
     mongoose:
-      specifier: 9.2.1
-      version: 9.2.1
+      specifier: 9.9.5
+      version: 9.9.5
     next-client-cookies:
       specifier: 2.1.0
       version: 2.1.0
@@ -510,8 +513,8 @@ importers:
         specifier: 'catalog:'
         version: 10.38.0
       '@typegoose/typegoose':
-        specifier: 13.1.0
-        version: 13.1.0(mongoose@9.2.1)
+        specifier: 'catalog:'
+        version: 13.5.0(mongoose@9.9.5)
       cloudinary:
         specifier: 'catalog:'
         version: 2.10.0
@@ -532,7 +535,7 @@ importers:
         version: 1.25.0(graphql@16.12.0)
       mongoose:
         specifier: 'catalog:'
-        version: 9.2.1
+        version: 9.9.5
       postgres:
         specifier: 3.4.8
         version: 3.4.8
@@ -1496,8 +1499,8 @@ importers:
         specifier: workspace:*
         version: link:../../shared/utils-llm
       '@typegoose/typegoose':
-        specifier: '*'
-        version: 13.1.0(mongoose@9.2.1)
+        specifier: 'catalog:'
+        version: 13.5.0(mongoose@9.9.5)
       dataloader:
         specifier: 2.2.2
         version: 2.2.2
@@ -1805,11 +1808,11 @@ importers:
         specifier: workspace:*
         version: link:../domain
       '@typegoose/typegoose':
-        specifier: 13.1.0
-        version: 13.1.0(mongoose@9.2.1)
+        specifier: 'catalog:'
+        version: 13.5.0(mongoose@9.9.5)
       mongoose:
         specifier: 'catalog:'
-        version: 9.2.1
+        version: 9.9.5
       reflect-metadata:
         specifier: 'catalog:'
         version: 0.2.2
@@ -2036,7 +2039,7 @@ importers:
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(postgres@3.4.8)
       mongoose:
         specifier: 'catalog:'
-        version: 9.2.1
+        version: 9.9.5
       typedi:
         specifier: 'catalog:'
         version: 0.10.0
@@ -5553,8 +5556,8 @@ packages:
   '@manypkg/get-packages@1.1.3':
     resolution: {integrity: sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A==}
 
-  '@mongodb-js/saslprep@1.4.6':
-    resolution: {integrity: sha512-y+x3H1xBZd38n10NZF/rEBlvDOOMQ6LKUTHqr8R9VkJ+mmQOYtJFxIlkkK8fZrtOiL6VixbOBWMbZGBdal3Z1g==}
+  '@mongodb-js/saslprep@1.6.3':
+    resolution: {integrity: sha512-aHGFvT95c82CoQ7hb6qXpz8Hcc5PJb3ZtQ+P01QDBbyQday0mjcrJPeNJOHCgWe0pGX0zKmKP+1mWi/I/BCX9Q==}
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     resolution: {integrity: sha512-oTXEIha4SsuXdTA4Iyskj0kpdx2yVXdhd75c2v3xGrHFfVMsbhTPZU/nMPL4sWKo4pBHm3aucLaqGlF696dTyQ==}
@@ -7642,11 +7645,11 @@ packages:
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
-  '@typegoose/typegoose@13.1.0':
-    resolution: {integrity: sha512-ZAD209rhEGHNJ3eBqeFl2guUXgKGgR6xTP6LNmxciN6GbdznqLLdX4nsm2wafQpd4bxb8v0vmHe4z4QvVIj8CQ==}
+  '@typegoose/typegoose@13.5.0':
+    resolution: {integrity: sha512-RnOq5DK3u/X2JrenVRttxu/UDTH3cruHT+oNuZXHBYjNRe3x7ftGM27vD0R+xFFlBzRYLpEH8NLPmaM4C2cPZQ==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
-      mongoose: ~9.1.4
+      mongoose: ~9.9.5
 
   '@types/aria-query@5.0.4':
     resolution: {integrity: sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw==}
@@ -10136,8 +10139,8 @@ packages:
   jws@4.0.0:
     resolution: {integrity: sha512-KDncfTmOZoOMTFG4mBlG0qUIOlc03fmzH+ru6RgYVZhPkyiy/92Owlt/8UEN+a4TXR1FQetfIpJE8ApdvdVxTg==}
 
-  kareem@3.2.0:
-    resolution: {integrity: sha512-VS8MWZz/cT+SqBCpVfNN4zoVz5VskR3N4+sTmUXme55e9avQHntpwpNq0yjnosISXqwJ3AQVjlbI4Dyzv//JtA==}
+  kareem@3.3.0:
+    resolution: {integrity: sha512-kpSuLD3/7RenBnjnJdOHXCKC8dTd1JzeOiJhN0necWWci6cC+qX+VuwPnMVgb+a4+KNJSfgqahpnfWaeDXCimw==}
     engines: {node: '>=18.0.0'}
 
   keyv@4.5.4:
@@ -10354,9 +10357,6 @@ packages:
 
   lodash.startcase@4.4.0:
     resolution: {integrity: sha512-+WKqsK294HMSc2jEbNgpHpd0JfIBhp7rEV4aqXWqFr6AlXov+SlcgB1Fv01y2kGe3Gc8nMW7VA0SrGuSkRfIEg==}
-
-  lodash@4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
 
   lodash@4.18.1:
     resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
@@ -10624,15 +10624,15 @@ packages:
     resolution: {integrity: sha512-h0AZ9A7IDVwwHyMxmdMXKy+9oNlF0zFoahHiX3vQ8e3KFcSP3VmsmfvtRSuLPxmyv2vjIDxqty8smTgie/SNRQ==}
     engines: {node: '>=20.19.0'}
 
-  mongodb@7.0.0:
-    resolution: {integrity: sha512-vG/A5cQrvGGvZm2mTnCSz1LUcbOPl83hfB6bxULKQ8oFZauyox/2xbZOoGNl+64m8VBrETkdGCDBdOsCr3F3jg==}
+  mongodb@7.5.0:
+    resolution: {integrity: sha512-5FnrEDLnvp6ycUOGLNLLU33BfCx2qmp2mJjGPDwKLruYsVzXVSK5fsGpoDXvsXJwBfBsD7ebMRdawbDxC2814g==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
       '@aws-sdk/credential-providers': ^3.806.0
       '@mongodb-js/zstd': ^7.0.0
       gcp-metadata: ^7.0.1
       kerberos: ^7.0.0
-      mongodb-client-encryption: '>=7.0.0 <7.1.0'
+      mongodb-client-encryption: ^7.2.0
       snappy: ^7.3.2
       socks: ^2.8.6
     peerDependenciesMeta:
@@ -10651,8 +10651,8 @@ packages:
       socks:
         optional: true
 
-  mongoose@9.2.1:
-    resolution: {integrity: sha512-fmNLwgct5km7iL1MqvTMncarR1E1TIw2lmc9A4UoDVdS7AQe95K+DnRK0qATkSUdwUC9V/5wlDcqnkQQjbSRkA==}
+  mongoose@9.9.5:
+    resolution: {integrity: sha512-t/kUoeDjlHmav7yCaq//YKU3wiIgUPaTj4GrluiTHUw4jQ77/CXtdMDSor4f1u3SKLhIK6NgCF+AzzUqU02Aag==}
     engines: {node: '>=20.19.0'}
 
   motion-dom@12.38.0:
@@ -15843,7 +15843,7 @@ snapshots:
       globby: 11.1.0
       read-yaml-file: 1.1.0
 
-  '@mongodb-js/saslprep@1.4.6':
+  '@mongodb-js/saslprep@1.6.3':
     dependencies:
       sparse-bitfield: 3.0.3
 
@@ -18017,13 +18017,13 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
-  '@typegoose/typegoose@13.1.0(mongoose@9.2.1)':
+  '@typegoose/typegoose@13.5.0(mongoose@9.9.5)':
     dependencies:
-      lodash: 4.17.21
+      lodash: 4.18.1
       loglevel: 1.9.2
-      mongoose: 9.2.1
+      mongoose: 9.9.5
       reflect-metadata: 0.2.2
-      semver: 7.7.4
+      semver: 7.8.5
       tslib: 2.8.1
 
   '@types/aria-query@5.0.4': {}
@@ -20945,7 +20945,7 @@ snapshots:
       jwa: 2.0.0
       safe-buffer: 5.2.1
 
-  kareem@3.2.0: {}
+  kareem@3.3.0: {}
 
   keyv@4.5.4:
     dependencies:
@@ -21110,8 +21110,6 @@ snapshots:
   lodash.sortby@4.7.0: {}
 
   lodash.startcase@4.4.0: {}
-
-  lodash@4.17.21: {}
 
   lodash@4.18.1: {}
 
@@ -21450,16 +21448,17 @@ snapshots:
       '@types/whatwg-url': 13.0.0
       whatwg-url: 14.1.1
 
-  mongodb@7.0.0:
+  mongodb@7.5.0:
     dependencies:
-      '@mongodb-js/saslprep': 1.4.6
+      '@mongodb-js/saslprep': 1.6.3
       bson: 7.2.0
       mongodb-connection-string-url: 7.0.1
 
-  mongoose@9.2.1:
+  mongoose@9.9.5:
     dependencies:
-      kareem: 3.2.0
-      mongodb: 7.0.0
+      '@standard-schema/spec': 1.1.0
+      kareem: 3.3.0
+      mongodb: 7.5.0
       mpath: 0.9.0
       mquery: 6.0.0
       ms: 2.1.3
