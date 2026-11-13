@@ -89,6 +89,8 @@ type Scenario = {
   categoryQueries?: unknown[];
   jobResponses: unknown[];
   jobQueries: string[];
+  productResponses?: unknown[];
+  productQueries?: string[];
   signInputs: unknown[];
   formInputs: Array<Record<string, FormDataEntryValue>>;
   materializeVars: unknown[];
@@ -100,6 +102,7 @@ type Scenario = {
 function makeClient(scenario: Scenario) {
   let categoryCall = 0;
   let jobCall = 0;
+  let productCall = 0;
   let requestCall = 0;
   const link = new ApolloLink((operation: Operation) => {
     return new Observable(observer => {
@@ -160,6 +163,19 @@ function makeClient(scenario: Scenario) {
             } else {
               observer.next({ data: { productResearchJob: value } });
             }
+            observer.complete();
+          });
+          return;
+        } else if (name === 'ProductBasicOnAdminDetailPage') {
+          const responses = scenario.productResponses ?? [null];
+          const response = responses[Math.min(productCall++, responses.length - 1)];
+          scenario.productQueries?.push(operation.variables.slug);
+          void Promise.resolve(response).then(value => {
+            if (value instanceof Error) {
+              observer.error(value);
+              return;
+            }
+            observer.next({ data: { tempProductBySlug: value } });
             observer.complete();
           });
           return;
@@ -3174,6 +3190,128 @@ describe('research registration action ownership with real Apollo', () => {
 });
 
 describe('materialized research explicit reentry recovery with real Apollo', () => {
+  it.each<Record<string, string>>([{}, { researchJobId: 'job-1' }])(
+    '저장한 완료 작업으로 돌아오면 등록한 서비스로 이동할 수 있다 (%j)',
+    async params => {
+      const stored = { ...seedResearchWorkspace(), materializedSlug: 'saved-product' };
+      window.localStorage.setItem(RESEARCH_WORKSPACE_STORAGE_KEY, JSON.stringify(stored));
+      testGlobal().researchSearchParams = params;
+      const scenario = newScenario();
+      scenario.jobResponses = [{ ...completedJob, materializedProductId: 'prod-saved' }];
+      scenario.productResponses = [{ id: 'prod-saved', slug: 'saved-product', name: '등록한 서비스' }];
+      scenario.productQueries = [];
+      render(
+        <ApolloProvider client={makeClient(scenario)}>
+          <ProductResearchSection />
+        </ApolloProvider>
+      );
+
+      expect((await screen.findByRole('link', { name: '등록한 서비스 상세로 이동' })).getAttribute('href')).toBe(
+        '/products/saved-product'
+      );
+      expect(screen.getByText('서비스 등록 완료')).toBeTruthy();
+      expect(screen.queryByRole('button', { name: '검토 내용으로 미발행 생성' })).toBeNull();
+      expect(scenario.jobQueries).toEqual(['job-1']);
+      expect(scenario.productQueries).toEqual(['saved-product']);
+      expect(scenario.materializeVars).toEqual([]);
+    }
+  );
+
+  it('조회 실패는 다시 시도할 수 있고 없는 상품과 재사용된 slug에는 상세 링크를 제공하지 않는다', async () => {
+    const stored = { ...seedResearchWorkspace(), materializedSlug: 'saved-product' };
+    window.localStorage.setItem(RESEARCH_WORKSPACE_STORAGE_KEY, JSON.stringify(stored));
+    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+    const scenario = newScenario();
+    scenario.jobResponses = [{ ...completedJob, materializedProductId: 'prod-saved' }];
+    scenario.productResponses = [
+      new Error('조회 연결 실패'),
+      null,
+      { id: 'prod-other', slug: 'saved-product', name: '다른 서비스' },
+      { id: 'prod-saved', slug: 'saved-product', name: '등록한 서비스' },
+    ];
+    render(
+      <ApolloProvider client={makeClient(scenario)}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+
+    await screen.findByText('등록한 서비스를 확인하지 못했습니다.');
+    fireEvent.click(screen.getByRole('button', { name: '등록 서비스 다시 확인' }));
+    await screen.findByText('저장된 주소에서 등록한 서비스를 찾을 수 없습니다.');
+    expect(screen.queryByRole('link', { name: '등록한 서비스 상세로 이동' })).toBeNull();
+    expect(screen.getByRole('textbox', { name: '서비스 이름' }).matches(':disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: '로고 선택 취소' }).matches(':disabled')).toBe(true);
+    expect(screen.getByRole('link', { name: '서비스 목록에서 찾기' }).getAttribute('href')).toBe('/products');
+    fireEvent.click(screen.getByRole('button', { name: '등록 서비스 다시 확인' }));
+    await waitFor(() => expect(scenario.jobQueries).toHaveLength(3));
+    expect(await screen.findByText('저장된 주소에서 등록한 서비스를 찾을 수 없습니다.')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: '등록한 서비스 상세로 이동' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '등록 서비스 다시 확인' }));
+    await screen.findByRole('link', { name: '등록한 서비스 상세로 이동' });
+    expect(screen.queryByRole('button', { name: '검토 내용으로 미발행 생성' })).toBeNull();
+    expect(scenario.materializeVars).toEqual([]);
+    expect(scenario.requestInputs).toEqual([]);
+  });
+
+  it('같은 화면에서 다른 완료 작업 URL로 이동하면 새 작업에 저장된 상품을 확인한다', async () => {
+    const stored = { ...seedResearchWorkspace(), materializedSlug: 'first-product' };
+    window.localStorage.setItem(RESEARCH_WORKSPACE_STORAGE_KEY, JSON.stringify(stored));
+    window.localStorage.setItem(
+      `${RESEARCH_WORKSPACE_STORAGE_KEY}:job-2`,
+      JSON.stringify({ ...stored, jobId: 'job-2', materializedSlug: 'second-product' })
+    );
+    testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+    const scenario = newScenario();
+    scenario.jobResponses = [
+      { ...completedJob, materializedProductId: 'prod-first' },
+      { ...completedJob, id: 'job-2', materializedProductId: 'prod-second' },
+    ];
+    scenario.productResponses = [
+      { id: 'prod-first', slug: 'first-product', name: '첫 서비스' },
+      { id: 'prod-second', slug: 'second-product', name: '두 번째 서비스' },
+    ];
+    scenario.productQueries = [];
+    const client = makeClient(scenario);
+    const workspace = (
+      <ApolloProvider client={client}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+    const view = render(workspace);
+    await screen.findByRole('link', { name: '등록한 서비스 상세로 이동' });
+
+    testGlobal().researchSearchParams = { researchJobId: 'job-2' };
+    view.rerender(React.cloneElement(workspace, {}, <ProductResearchSection />));
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: '등록한 서비스 상세로 이동' }).getAttribute('href')).toBe(
+        '/products/second-product'
+      )
+    );
+    expect(scenario.jobQueries).toEqual(['job-1', 'job-2']);
+    expect(scenario.productQueries).toEqual(['first-product', 'second-product']);
+  });
+
+  it('등록 서비스를 확인하는 동안 새 조사 입력 검증에 실패해도 상세 링크를 표시한다', async () => {
+    const stored = { ...seedResearchWorkspace(), materializedSlug: 'saved-product' };
+    window.localStorage.setItem(RESEARCH_WORKSPACE_STORAGE_KEY, JSON.stringify(stored));
+    const scenario = newScenario();
+    const product = Promise.withResolvers<{ id: string; slug: string; name: string }>();
+    scenario.jobResponses = [{ ...completedJob, materializedProductId: 'prod-saved' }];
+    scenario.productResponses = [product.promise];
+    scenario.productQueries = [];
+    render(
+      <ApolloProvider client={makeClient(scenario)}>
+        <ProductResearchSection />
+      </ApolloProvider>
+    );
+
+    await waitFor(() => expect(scenario.productQueries).toEqual(['saved-product']));
+    submitResearchRequest('invalid URL');
+    product.resolve({ id: 'prod-saved', slug: 'saved-product', name: '등록한 서비스' });
+    expect(await screen.findByRole('link', { name: '등록한 서비스 상세로 이동' })).toBeTruthy();
+    expect(scenario.requestInputs).toEqual([]);
+  });
+
   it('응답 유실 뒤 저장 slug나 제안 slug가 아니라 기존 Product의 현재 slug로 명시 복구한다', async () => {
     const { materializations, requests, retries, stored } = await renderMaterializedReentry();
     const submit = screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }) as HTMLButtonElement;

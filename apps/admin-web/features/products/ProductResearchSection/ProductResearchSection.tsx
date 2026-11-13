@@ -1,7 +1,7 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useLazyQuery, useMutation, useQuery } from '@apollo/client/react';
+import { useApolloClient, useLazyQuery, useMutation, useQuery } from '@apollo/client/react';
 import {
   PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH,
   PRODUCT_RESEARCH_MAX_TAGS,
@@ -9,6 +9,7 @@ import {
   normalizeResearchRequestUrl,
   normalizeResearchTags,
 } from '@darun/products-domain/research';
+import { ProductBasicOnAdminDetailPageDocument } from '@darun/provider-graphql';
 import { Button, LogoImage } from '@darun/ui';
 import {
   AdminActions,
@@ -20,7 +21,7 @@ import {
   AdminTextarea,
 } from '@darun/ui-admin';
 import { useImageUpload } from '@darun/utils-image-upload';
-import { useNavigate, useSearchParams } from '@darun/utils-router';
+import { Link, useNavigate, useSearchParams } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -243,6 +244,7 @@ function readStoredWorkspace(targetJobId?: string | null): ResearchWorkspacePers
 export const ProductResearchSection = () => {
   const navigate = useNavigate();
   const researchJobIdParam = useSearchParams().get('researchJobId');
+  const client = useApolloClient();
   const { upload } = useImageUpload();
   const [hydrated, setHydrated] = useState(false);
   const [restoreRequest, setRestoreRequest] = useState<ResearchWorkspaceDraft | null>(null);
@@ -271,6 +273,7 @@ export const ProductResearchSection = () => {
     job?: ResearchJobPayload['productResearchJob'];
     loading: boolean;
     error?: { message: string };
+    verifiedProductSlug?: string;
   }>({ loading: false });
   // 최신 action 세대의 실패만 표시한다. 대체된 이전 action의 후착 오류는 화면에 남지 않는다.
   const [actionError, setActionError] = useState<{ message: string } | null>(null);
@@ -329,7 +332,7 @@ export const ProductResearchSection = () => {
       : null;
   });
   const categories = useMemo(() => categoryData?.categories ?? [], [categoryData]);
-  const mutationError = actionError ?? jobLookup.error ?? null;
+  const mutationError = actionError ?? (materializedSlug ? null : jobLookup.error) ?? null;
 
   const stopPolling = useCallback(() => {
     if (pollTimer.current) {
@@ -351,15 +354,16 @@ export const ProductResearchSection = () => {
 
   // 모든 조회 경로가 같은 job/요청/조회 순서 fence를 통과해야 현재 화면을 바꿀 수 있다.
   const loadJob = useCallback(
-    async (targetJobId: string) => {
+    async (targetJobId: string, savedProductSlug?: string) => {
       if (jobIdRef.current !== targetJobId) return;
       const lookupSeq = ++jobLookupSeqRef.current;
       const requestSeq = requestSeqRef.current;
       const isCurrent = () =>
         jobIdRef.current === targetJobId &&
         jobLookupSeqRef.current === lookupSeq &&
-        requestSeqRef.current === requestSeq;
-      setJobLookup(previous => ({ ...previous, loading: true, error: undefined }));
+        // 완료 작업의 확인은 새 조사 제출이 실패해도 현재 작업에서 끝까지 진행한다.
+        (savedProductSlug !== undefined || requestSeqRef.current === requestSeq);
+      setJobLookup(previous => ({ ...previous, loading: true, error: undefined, verifiedProductSlug: undefined }));
       try {
         const response = await fetchJob({ variables: { id: targetJobId } });
         if (!isCurrent()) return;
@@ -369,7 +373,20 @@ export const ProductResearchSection = () => {
           setJobLookup(previous => ({ ...previous, loading: false }));
           return;
         }
-        setJobLookup({ job: payloadJob, loading: false });
+        let verifiedProductSlug: string | undefined;
+        if (savedProductSlug && payloadJob?.materializedProductId) {
+          const { data } = await client.query({
+            query: ProductBasicOnAdminDetailPageDocument,
+            variables: { slug: savedProductSlug },
+            fetchPolicy: 'no-cache',
+          });
+          if (!isCurrent()) return;
+          const product = data?.tempProductBySlug;
+          if (product?.id === payloadJob.materializedProductId && product.slug === savedProductSlug) {
+            verifiedProductSlug = product.slug;
+          }
+        }
+        setJobLookup({ job: payloadJob, loading: false, verifiedProductSlug });
         if (payloadJob === null || shouldStopResearchPolling(payloadJob.status)) {
           stopPollingForJob(targetJobId);
         }
@@ -384,7 +401,7 @@ export const ProductResearchSection = () => {
         }
       }
     },
-    [fetchJob, stopPollingForJob]
+    [client, fetchJob, stopPollingForJob]
   );
 
   const pollJob = useCallback(
@@ -450,21 +467,27 @@ export const ProductResearchSection = () => {
     prefilledJobRef.current =
       stored?.prefilledJobId === selectedJobId || stored?.review.name || stored?.review.slug ? selectedJobId : null;
     setActiveJobId(selectedJobId);
-    restoredJobIdRef.current = stored?.materializedSlug ? null : selectedJobId;
+    restoredJobIdRef.current = selectedJobId;
     setHydrated(true);
   }, [researchJobIdParam, restoreRequest, setActiveJobId, stopPolling]);
 
   useEffect(() => {
     const restoredJobId = restoredJobIdRef.current;
-    if (!hydrated || !restoredJobId) {
+    if (
+      !hydrated ||
+      !restoredJobId ||
+      jobId !== restoredJobId ||
+      activeDraft?.routeJobId !== researchJobIdParam ||
+      activeDraft?.restoreRequest !== restoreRequest
+    ) {
       return;
     }
     restoredJobIdRef.current = null;
     jobIdRef.current = restoredJobId;
-    void loadJob(restoredJobId).then(payloadJob => {
-      if (payloadJob && !shouldStopResearchPolling(payloadJob.status)) pollJob(restoredJobId);
+    void loadJob(restoredJobId, materializedSlug ?? undefined).then(payloadJob => {
+      if (!materializedSlug && payloadJob && !shouldStopResearchPolling(payloadJob.status)) pollJob(restoredJobId);
     });
-  }, [hydrated, activeDraft, jobId, researchJobIdParam, loadJob, pollJob]);
+  }, [hydrated, activeDraft, jobId, researchJobIdParam, restoreRequest, materializedSlug, loadJob, pollJob]);
 
   const saveDraft = useCallback(
     (pending: PendingResearchRequest | undefined, latestRequestId = requestId) => {
@@ -537,6 +560,7 @@ export const ProductResearchSection = () => {
     return () => {
       // 다른 route로 떠난 화면도 후착 등록·로고 후처리의 권한을 잃는다.
       requestSeqRef.current += 1;
+      jobLookupSeqRef.current += 1;
       if (pollTimer.current) {
         clearInterval(pollTimer.current);
         pollTimer.current = null;
@@ -824,7 +848,7 @@ export const ProductResearchSection = () => {
 
   const handleMaterialize = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (materializePendingRef.current) return;
+    if (materializedSlug || materializePendingRef.current) return;
     if (tagsError) {
       notifications.show({ message: tagsError, color: 'red' });
       return;
@@ -882,6 +906,7 @@ export const ProductResearchSection = () => {
           message: job.materializedProductId ? '기존 서비스로 이동합니다.' : '미발행 서비스가 생성되었습니다.',
           color: 'teal',
         });
+        setJobLookup(previous => ({ ...previous, verifiedProductSlug: slug }));
         setMaterializedSlug(slug);
         stopPolling();
         navigate(`/products/${encodeURIComponent(slug)}`);
@@ -1008,7 +1033,7 @@ export const ProductResearchSection = () => {
                   이전 요청과 별개로 새 조사
                 </Button>
               )}
-            {jobId && (
+            {jobId && !materializedSlug && (
               <Button
                 type="button"
                 variant="contained"
@@ -1019,7 +1044,7 @@ export const ProductResearchSection = () => {
                 {jobLoading ? '새로고침 중...' : isPolling ? '자동 확인 중...' : '결과 새로고침'}
               </Button>
             )}
-            {job?.status === 'failed' && (
+            {job?.status === 'failed' && !materializedSlug && (
               <Button type="button" variant="contained" color="secondary" disabled={isRetrying} onClick={handleRetry}>
                 {isRetrying ? '재조사 요청 중...' : '실패 작업 재조사'}
               </Button>
@@ -1035,14 +1060,50 @@ export const ProductResearchSection = () => {
           </p>
         )}
 
-        {jobMissing && (
+        {materializedSlug && (
+          <div className="flex flex-col items-start gap-2 rounded-lg border border-dark-200 p-3 text-sm">
+            <h3 className="font-semibold text-dark-900">서비스 등록 완료</h3>
+            {jobLoading ? (
+              <p role="status">등록한 서비스를 확인하는 중입니다.</p>
+            ) : jobLookup.verifiedProductSlug === materializedSlug ? (
+              <Link href={`/products/${encodeURIComponent(materializedSlug)}`} className="underline">
+                등록한 서비스 상세로 이동
+              </Link>
+            ) : (
+              <>
+                <p role="status">
+                  {jobLookup.error
+                    ? '등록한 서비스를 확인하지 못했습니다.'
+                    : '저장된 주소에서 등록한 서비스를 찾을 수 없습니다.'}
+                </p>
+                <AdminActions>
+                  {jobId && (
+                    <Button
+                      type="button"
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => void loadJob(jobId, materializedSlug)}
+                    >
+                      등록 서비스 다시 확인
+                    </Button>
+                  )}
+                  <Link href="/products" className="underline">
+                    서비스 목록에서 찾기
+                  </Link>
+                </AdminActions>
+              </>
+            )}
+          </div>
+        )}
+
+        {jobMissing && !materializedSlug && (
           <p role="status" className="text-xs text-amber-700">
             조사 작업을 찾을 수 없습니다. 자동 확인을 중단했습니다. 결과를 새로고침하거나 URL로 새 조사를 요청해주세요.
             아래 수동 등록도 계속 사용할 수 있습니다. 저장된 편집값은 유지됩니다.
           </p>
         )}
 
-        {job?.status === 'failed' && (
+        {job?.status === 'failed' && !materializedSlug && (
           <p className="text-xs text-cherry-700">
             조사가 실패했습니다. 기존 실패 작업은 그대로 두고 새 작업으로만 재조사합니다.
           </p>
@@ -1060,7 +1121,7 @@ export const ProductResearchSection = () => {
             </div>
 
             <form onSubmit={handleMaterialize} aria-busy={isMaterializing}>
-              <fieldset disabled={isMaterializing} className="flex min-w-0 flex-col gap-3">
+              <fieldset disabled={isMaterializing || Boolean(materializedSlug)} className="flex min-w-0 flex-col gap-3">
                 <AdminField label="서비스 이름">
                   <AdminInput
                     name="review-name"
@@ -1279,14 +1340,16 @@ export const ProductResearchSection = () => {
                   >
                     로고 선택 취소
                   </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    disabled={isMaterializing || job?.status !== 'completed' || featureSummaryErrors.some(Boolean)}
-                  >
-                    {isMaterializing ? '생성 중...' : '검토 내용으로 미발행 생성'}
-                  </Button>
+                  {!materializedSlug && (
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      color="primary"
+                      disabled={isMaterializing || job?.status !== 'completed' || featureSummaryErrors.some(Boolean)}
+                    >
+                      {isMaterializing ? '생성 중...' : '검토 내용으로 미발행 생성'}
+                    </Button>
+                  )}
                 </AdminActions>
                 <p className="text-xs text-dark-500">
                   생성된 서비스는 미발행 상태이며 자동 발행·색인·번역·Description이 실행되지 않습니다.
