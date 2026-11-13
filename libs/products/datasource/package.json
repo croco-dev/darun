@@ -17,7 +17,7 @@
   },
   "peerDependencies": {
     "@darun/provider-database": "workspace:*",
-    "@typegoose/typegoose": "*",
+    "@typegoose/typegoose": "catalog:",
     "drizzle-orm": "catalog:",
     "reflect-metadata": "catalog:",
     "typedi": "catalog:"

@@ -76,8 +76,9 @@ catalog:
   typedi: 0.10.0
 
   # DB / ORM
+  '@typegoose/typegoose': 13.5.0
   drizzle-orm: 0.45.2
-  mongoose: 9.2.1
+  mongoose: 9.9.5
 
   # Serverless / Backend tools
   serverless: 4.25.0

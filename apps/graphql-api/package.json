@@ -58,7 +58,7 @@
     "@sentry/aws-serverless": "catalog:",
     "@sentry/esbuild-plugin": "catalog:",
     "@sentry/profiling-node": "catalog:",
-    "@typegoose/typegoose": "13.1.0",
+    "@typegoose/typegoose": "catalog:",
     "cloudinary": "catalog:",
     "drizzle-kit": "0.31.10",
     "drizzle-orm": "catalog:",
