@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 const sdk = vi.hoisted(() => ({
   listeners: new Set<(user: User | null) => Promise<void>>(),
   auth: { currentUser: null as User | null, signOut: vi.fn() },
+  signInWithPopup: vi.fn(),
 }));
 vi.mock('firebase/app', () => ({
   getApps: () => [{}],
@@ -15,8 +16,10 @@ vi.mock('firebase/auth', () => ({
     sdk.listeners.add(listener);
     return () => sdk.listeners.delete(listener);
   },
-  GoogleAuthProvider: vi.fn(),
-  signInWithPopup: vi.fn(),
+  GoogleAuthProvider: class {
+    addScope() {}
+  },
+  signInWithPopup: sdk.signInWithPopup,
   connectAuthEmulator: vi.fn(),
 }));
 vi.mock('next-firebase-auth-edge', () => ({ getFirebaseAuth: () => ({}) }));

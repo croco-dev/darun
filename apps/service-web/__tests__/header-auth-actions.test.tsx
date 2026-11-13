@@ -27,8 +27,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function deferred() {
-  return Promise.withResolvers<void>();
+function deferred<T = void>() {
+  return Promise.withResolvers<T>();
 }
 
 async function mount(locale: 'ko' | 'en' = 'ko') {
@@ -42,7 +42,7 @@ async function mount(locale: 'ko' | 'en' = 'ko') {
       return vi.fn();
     }),
     retryAuthState: vi.fn(async () => onChange(undefined)),
-    signInWithGoogle: vi.fn(async (): Promise<void> => undefined),
+    signInWithGoogle: vi.fn(async () => 'member'),
     signOut: vi.fn(async (): Promise<void> => undefined),
     getUser: vi.fn(async () => null),
     setRedirectUrl: vi.fn(),
@@ -101,7 +101,7 @@ it.each(['ko', 'en'] as const)(
     const view = await mount(locale);
     expect(view.element.querySelector('button')).toBeNull();
     view.emit(false);
-    const login = deferred();
+    const login = deferred<string>();
     view.service.signInWithGoogle.mockReturnValueOnce(login.promise);
     await view.click();
     expect(view.button().disabled).toBe(true);
@@ -109,7 +109,7 @@ it.each(['ko', 'en'] as const)(
     expect(view.button().textContent).toBe(locale === 'ko' ? '로그인 중…' : 'Signing in…');
     await view.click();
     expect(view.service.signInWithGoogle).toHaveBeenCalledTimes(1);
-    await act(async () => login.resolve());
+    await act(async () => login.resolve('member'));
     // A fulfilled action alone must not invent an authenticated provider state.
     expect(view.button().textContent).toBe(locale === 'ko' ? '로그인' : 'Login');
     view.emit(true);
@@ -172,7 +172,7 @@ it.each(['auth/popup-closed-by-user', 'auth/cancelled-popup-request'])(
 it('같은 렌더의 action을 연속 실행해도 공급자를 한 번만 호출한다', async () => {
   const view = await mount();
   view.emit(false);
-  const pending = deferred();
+  const pending = deferred<string>();
   view.service.signInWithGoogle.mockReturnValueOnce(pending.promise);
   const login = view.actions().login;
   let first!: Promise<void>;
@@ -182,7 +182,7 @@ it('같은 렌더의 action을 연속 실행해도 공급자를 한 번만 호�
   });
   expect(view.service.signInWithGoogle).toHaveBeenCalledTimes(1);
   await act(async () => {
-    pending.resolve();
+    pending.resolve('member');
     await first;
   });
 });
@@ -190,7 +190,7 @@ it('같은 렌더의 action을 연속 실행해도 공급자를 한 번만 호�
 it('provider 상태 전환 전 action의 늦은 실패가 현재 action의 대기와 안내를 바꾸지 않는다', async () => {
   const view = await mount();
   view.emit(false);
-  const old = deferred();
+  const old = deferred<string>();
   view.service.signInWithGoogle.mockReturnValueOnce(old.promise);
   await view.click();
   view.emit(true);
@@ -208,7 +208,7 @@ it('provider 상태 전환 전 action의 늦은 실패가 현재 action의 대�
 it('unmount 이후 실패를 소비하고 재진입한 버튼에 남기지 않는다', async () => {
   const view = await mount();
   view.emit(false);
-  const pending = deferred();
+  const pending = deferred<string>();
   view.service.signInWithGoogle.mockReturnValueOnce(pending.promise);
   await view.click();
   view.unmount();

@@ -7,6 +7,7 @@ import { useAuthService } from '../AuthServiceProvider';
 
 export type AuthStateProviderProps = {
   children: ReactNode;
+  navigateToStoredRedirect?: boolean;
 };
 
 type AuthState = 'Uninitialized' | 'Pending' | 'Authorized' | 'UnAuthorized' | 'Error';
@@ -25,7 +26,7 @@ const AuthStateContext = createContext<{
   retry: () => {},
 });
 
-export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
+export const AuthStateProvider = ({ children, navigateToStoredRedirect = true }: AuthStateProviderProps) => {
   const authService = useAuthService();
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,14 +93,14 @@ export const AuthStateProvider = ({ children }: AuthStateProviderProps) => {
       }
 
       authService.clearRedirectUrl();
-      navigateRef.current(redirectUrl);
+      if (navigateToStoredRedirect) navigateRef.current(redirectUrl);
     }, onError);
 
     return () => {
       active = false;
       unsubscribe();
     };
-  }, [authService]);
+  }, [authService, navigateToStoredRedirect]);
 
   return (
     <AuthStateContext.Provider

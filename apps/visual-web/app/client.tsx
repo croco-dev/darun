@@ -10,7 +10,7 @@ export const ClientRootProvider = ({ children }: { children: ReactNode }) => {
   const cookies = useCookies();
   return (
     <ApolloProvider makeClient={() => container.apolloClient} cookies={cookies}>
-      <AuthProvider authService={container.authService} cookies={cookies}>
+      <AuthProvider authService={container.authService} cookies={cookies} navigateToStoredRedirect={false}>
         {children}
       </AuthProvider>
     </ApolloProvider>
