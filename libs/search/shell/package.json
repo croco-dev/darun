@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@apollo/client": "catalog:",
+    "@darun/analytics-client": "workspace:*",
     "@darun/products-shell": "workspace:*",
     "@darun/provider-graphql": "workspace:*",
     "@darun/search-feature": "workspace:*",
@@ -30,6 +31,7 @@
     "@darun/utils-tsconfig": "workspace:*",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "posthog-js": "1.370.1",
     "typescript": "catalog:"
   }
 }
