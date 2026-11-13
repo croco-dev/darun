@@ -250,12 +250,23 @@ it('refreshes the product after description save and again when a requested tran
   fireEvent.change(editor, { target: { value: '<p>Edited introduction</p>' } });
   save();
   await waitFor(() => expect(productStatuses().textContent).toContain('description: stale'));
-  fireEvent.click(within(productStatuses().parentElement!).getByRole('button', { name: '영어 번역 재시도' }));
-  await productSection().findByText(/job-a \/ pending/);
-  expect(productStatuses().textContent).toContain('description: stale');
-  expect(fixture.reads).toEqual(['product-a']);
-  fixture.finishRequestedTranslation();
-  await productSection().findByText(/job-a \/ completed/, undefined, { timeout: 3500 });
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  try {
+    await act(async () => {
+      fireEvent.click(within(productStatuses().parentElement!).getByRole('button', { name: '영어 번역 재시도' }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(productSection().getByText(/job-a \/ pending/)).toBeDefined();
+    expect(productStatuses().textContent).toContain('description: stale');
+    expect(fixture.reads).toEqual(['product-a']);
+    fixture.finishRequestedTranslation();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+  } finally {
+    vi.useRealTimers();
+  }
+  await productSection().findByText(/job-a \/ completed/);
   await waitFor(() => expect(productStatuses().textContent).toContain('description: current'));
   expect(fixture.reads).toEqual(['product-a', 'product-a']);
   expect(fixture.writes).toEqual(['EditProductOnEditProductDescription', 'RequestProductTranslationOnAdminRecovery']);
