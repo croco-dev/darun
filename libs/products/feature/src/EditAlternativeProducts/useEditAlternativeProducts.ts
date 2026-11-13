@@ -9,7 +9,7 @@ import {
 } from '@darun/provider-graphql';
 import { useThrottledCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { ChangeEvent, useCallback, useState } from 'react';
+import { ChangeEvent, useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 gql`
   query TempProductBySlugOnEditAlternativeProducts($slug: String!) {
@@ -49,6 +49,15 @@ export type UseEditAlternativeProductsProps = {
 
 export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEditAlternativeProductsProps) {
   const [searchedProducts, setSearchedProducts] = useState<Array<{ id: string; name: string }>>([]);
+  const currentSearch = useRef<symbol | null>(null);
+
+  useLayoutEffect(() => {
+    currentSearch.current = Symbol();
+    return () => {
+      // Invalidate searches before Apollo and the throttle run their passive cleanup.
+      currentSearch.current = null;
+    };
+  }, []);
 
   const {
     data,
@@ -119,8 +128,12 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
   };
 
   const search = useThrottledCallback(async (query: string) => {
+    if (currentSearch.current === null) return;
+    const request = Symbol();
+    currentSearch.current = request;
     try {
       const res = await searchProducts({ variables: { query } });
+      if (currentSearch.current !== request) return;
       const foundProducts = res.data?.searchProducts;
       if (foundProducts) {
         setSearchedProducts(prev => {
@@ -137,6 +150,7 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
         });
       }
     } catch (error) {
+      if (currentSearch.current !== request) return;
       console.error('Search failed:', error);
       notifications.show({
         message: '검색 중 오류가 발생했습니다.',
