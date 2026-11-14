@@ -58,9 +58,10 @@ const scenarios = [
   },
 ] as const;
 
-test.use({ isMobile: false, hasTouch: false, reducedMotion: 'reduce' });
+test.use({ isMobile: false, hasTouch: false });
 
 test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
     return ['localhost', '127.0.0.1'].includes(url.hostname) ? route.continue() : route.fulfill({ status: 204 });
