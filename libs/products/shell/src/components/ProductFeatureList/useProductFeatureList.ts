@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { useSuspenseQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client/react';
 import { ProductWithFeaturesOnProductFeatureListDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 
@@ -28,8 +28,8 @@ type ProductFeatureListProps = {
 
 export function useProductFeatureList({ slug }: ProductFeatureListProps) {
   const locale = useLocale();
-  const { data } = useSuspenseQuery(ProductWithFeaturesOnProductFeatureListDocument, {
+  const { data, loading, error, refetch } = useQuery(ProductWithFeaturesOnProductFeatureListDocument, {
     variables: { slug, locale },
   });
-  return { features: data?.productBySlug?.features ?? [] };
+  return { features: data?.productBySlug?.features ?? [], loading, error, refetch };
 }

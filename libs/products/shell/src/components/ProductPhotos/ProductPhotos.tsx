@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import Zoom from 'react-medium-image-zoom';
+import { ProductSectionContent } from '../ProductSectionContent';
 import { useProductPhotos } from './useProductPhotos';
 
 import 'react-medium-image-zoom/dist/styles.css';
@@ -46,7 +47,13 @@ const ProductPhotoItem = ({ photo }: { photo: { imageUrl: string; imageAlt: stri
   );
 };
 
-export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosViewProps) => {
+export const ProductPhotos = bind(useProductPhotos, ({ photos, loading, error, refetch }) => (
+  <ProductSectionContent loading={loading} error={error} refetch={refetch}>
+    <ProductPhotosContent photos={photos} />
+  </ProductSectionContent>
+));
+
+function ProductPhotosContent({ photos }: ProductPhotosViewProps) {
   const t = useTranslations('ProductDetail');
   const locale = useLocale();
 
@@ -95,4 +102,4 @@ export const ProductPhotos = bind(useProductPhotos, ({ photos }: ProductPhotosVi
       )}
     </div>
   );
-});
+}

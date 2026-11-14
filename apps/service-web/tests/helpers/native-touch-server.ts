@@ -53,15 +53,24 @@ createServer((request, response) => {
     response.writeHead(204).end();
     return;
   }
-  response.setHeader('Content-Type', 'application/json');
-  response.end(
-    JSON.stringify({
-      data: {
-        productBySlug: nativeTouchProduct,
-        searchProducts: [],
-        categories: [],
-        rankedProducts: [],
-      },
-    })
-  );
+  let body = '';
+  request.on('data', chunk => (body += chunk));
+  request.on('end', () => {
+    const { operationName, variables } = body ? JSON.parse(body) : {};
+    response.setHeader('Content-Type', 'application/json');
+    if (variables?.slug === 'unavailable-photos' && operationName === 'GetPhotosOnProductPhotos') {
+      response.end(JSON.stringify({ errors: [{ message: 'Fixture section unavailable' }] }));
+      return;
+    }
+    response.end(
+      JSON.stringify({
+        data: {
+          productBySlug: variables?.slug === 'missing-fixture-product' ? null : nativeTouchProduct,
+          searchProducts: [],
+          categories: [],
+          rankedProducts: [],
+        },
+      })
+    );
+  });
 }).listen(16470, '127.0.0.1');

@@ -4,13 +4,20 @@ import { Building2, Calendar, Compass, ShieldCheck, formatCalendarDate } from '@
 import { bind } from '@darun/utils-structure-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedCompanyAddress, getLocalizedCompanyType } from '../../utils/localization';
+import { ProductSectionContent } from '../ProductSectionContent';
 import { useProductCompany } from './useProductCompany';
 
 type ProductCompanyViewProps = {
   company: ReturnType<typeof useProductCompany>['company'];
 };
 
-export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompanyViewProps) => {
+export const ProductCompany = bind(useProductCompany, ({ company, loading, error, refetch }) => (
+  <ProductSectionContent loading={loading} error={error} refetch={refetch}>
+    <ProductCompanyContent company={company} />
+  </ProductSectionContent>
+));
+
+function ProductCompanyContent({ company }: ProductCompanyViewProps) {
   const t = useTranslations('ProductDetail');
   const locale = useLocale();
   const hasAnyInfo = Boolean(company?.name || company?.type || company?.address || company?.startAt);
@@ -81,4 +88,4 @@ export const ProductCompany = bind(useProductCompany, ({ company }: ProductCompa
       </div>
     </div>
   );
-});
+}

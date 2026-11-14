@@ -1,10 +1,13 @@
 'use client';
 
+import { useQuery } from '@apollo/client/react';
+import { ProductBySlugOnAlternativeProductListDocument } from '@darun/provider-graphql';
 import { Button, Layers, SectionHeader } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
+import type { ComponentProps } from 'react';
 import { AlternativeProductList } from '../../components';
-import { useAlternativeProductList } from '../../components/AlternativeProductList/useAlternativeProductList';
+import { ProductSectionContent } from '../../components/ProductSectionContent';
 
 type ProductAlternativeSectionProps = {
   slug: string;
@@ -13,45 +16,10 @@ type ProductAlternativeSectionProps = {
 export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionProps) => {
   const t = useTranslations('Alternative');
   const locale = useLocale();
-  const { alternatives } = useAlternativeProductList({ slug });
-
-  if (alternatives.length === 0) {
-    return (
-      <section
-        className="flex flex-col gap-5 scroll-mt-[var(--product-section-offset,8rem)]"
-        id="alternatives"
-        tabIndex={-1}
-      >
-        <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
-        <div
-          data-testid="alt-empty"
-          className="flex flex-col items-center justify-center rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-10 text-center"
-        >
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
-            <Layers size={18} className="stroke-[2] shrink-0" aria-hidden="true" />
-          </div>
-          <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">{t('empty.title')}</p>
-          <p className="mt-1 max-w-xs text-xs text-dark-500 break-words [word-break:keep-all]">
-            {t('empty.description')}
-          </p>
-          <Link
-            href={`/${locale}/search/product`}
-            className="mt-4 group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-          >
-            <Button
-              as="span"
-              variant="shadow"
-              color="primary"
-              size="sm"
-              className="h-10 px-4 active:scale-[0.98] motion-reduce:transform-none"
-            >
-              {t('empty.button')}
-            </Button>
-          </Link>
-        </div>
-      </section>
-    );
-  }
+  const { data, loading, error, refetch } = useQuery(ProductBySlugOnAlternativeProductListDocument, {
+    variables: { slug, locale },
+  });
+  const alternatives = data?.productBySlug?.alternatives ?? [];
 
   return (
     <section
@@ -60,7 +28,54 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
       tabIndex={-1}
     >
       <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
-      <AlternativeProductList slug={slug} />
+      <ProductSectionContent loading={loading} error={error} refetch={refetch}>
+        <ProductAlternativesContent slug={slug} locale={locale} alternatives={alternatives} />
+      </ProductSectionContent>
+    </section>
+  );
+};
+
+function ProductAlternativesContent({
+  slug,
+  locale,
+  alternatives,
+}: ComponentProps<typeof AlternativeProductList.ViewComponent>) {
+  const t = useTranslations('Alternative');
+
+  if (alternatives.length === 0) {
+    return (
+      <div
+        data-testid="alt-empty"
+        className="flex flex-col items-center justify-center rounded-card-lg border border-dashed border-dark-200 bg-surface-50/50 px-6 py-10 text-center"
+      >
+        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-dark-150/80 bg-surface-100 text-dark-400 shadow-2xs">
+          <Layers size={18} className="stroke-[2] shrink-0" aria-hidden="true" />
+        </div>
+        <p className="text-sm font-semibold text-dark-900 break-words [word-break:keep-all]">{t('empty.title')}</p>
+        <p className="mt-1 max-w-xs text-xs text-dark-500 break-words [word-break:keep-all]">
+          {t('empty.description')}
+        </p>
+        <Link
+          href={`/${locale}/search/product`}
+          className="mt-4 group inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+        >
+          <Button
+            as="span"
+            variant="shadow"
+            color="primary"
+            size="sm"
+            className="h-10 px-4 active:scale-[0.98] motion-reduce:transform-none"
+          >
+            {t('empty.button')}
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <AlternativeProductList.ViewComponent slug={slug} alternatives={alternatives} locale={locale} />
       <div className="flex justify-center pt-2">
         <Link
           href={`/${locale}/products/${encodeURIComponent(slug)}/alternatives`}
@@ -84,6 +99,6 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
           </Button>
         </Link>
       </div>
-    </section>
+    </>
   );
-};
+}

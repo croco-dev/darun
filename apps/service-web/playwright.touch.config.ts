@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
   testDir: './tests',
-  testMatch: 'native-touch-scroll.spec.ts',
+  testMatch: ['native-touch-scroll.spec.ts', 'product-section-retry.spec.ts'],
   forbidOnly: !!process.env.CI,
   workers: 1,
   reporter: [['list']],

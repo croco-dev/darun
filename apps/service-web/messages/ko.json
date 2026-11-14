@@ -76,6 +76,11 @@
     }
   },
   "ProductDetail": {
+    "sectionStatus": {
+      "loading": "불러오는 중입니다.",
+      "error": "이 영역을 불러오지 못했습니다.",
+      "retry": "다시 시도"
+    },
     "faq": {
       "title": "자주 묻는 질문",
       "description": "서비스 이용 및 기능에 관해 자주 묻는 질문입니다."

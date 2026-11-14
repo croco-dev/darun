@@ -32,7 +32,9 @@ describe('ProductFeatureList', () => {
 
   it('renders features empty state without crashing', () => {
     act(() => {
-      root?.render(<ProductFeatureList.ViewComponent features={[]} />);
+      root?.render(
+        <ProductFeatureList.ViewComponent features={[]} loading={false} error={undefined} refetch={vi.fn()} />
+      );
     });
     expect(container.textContent).toContain('등록된 상세 기능 정보가 아직 없습니다.');
   });
@@ -55,7 +57,9 @@ describe('ProductFeatureList', () => {
     ];
 
     act(() => {
-      root?.render(<ProductFeatureList.ViewComponent features={mockFeatures} />);
+      root?.render(
+        <ProductFeatureList.ViewComponent features={mockFeatures} loading={false} error={undefined} refetch={vi.fn()} />
+      );
     });
 
     expect(container.textContent).toContain('Feature A');
