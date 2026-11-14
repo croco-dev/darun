@@ -1,7 +1,8 @@
 import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
+import { useSuspenseQuery } from '@apollo/client/react';
 import { GetPhotosOnProductPhotosDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
+import { productSectionQueryOptions } from '../ProductSectionContent';
 
 void gql`
   query GetPhotosOnProductPhotos($slug: String!, $locale: String!) {
@@ -19,11 +20,11 @@ type ProductPhotosProps = { slug: string };
 
 export function useProductPhotos({ slug }: ProductPhotosProps) {
   const locale = useLocale();
-  const { data, loading, error, refetch } = useQuery(GetPhotosOnProductPhotosDocument, {
+  const { data, error, refetch } = useSuspenseQuery(GetPhotosOnProductPhotosDocument, {
+    ...productSectionQueryOptions,
     variables: { slug, locale },
   });
   return {
-    loading,
     error,
     refetch,
     photos:

@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { ProductDetailPage } from '@darun/pages-shell';
 import { getLocalizedTag } from '@darun/products-shell';
 import { notFound } from '@darun/utils-router';
@@ -42,10 +43,21 @@ type ProductBySlugData = {
 };
 
 const getProductBySlug = cache(async (slug: string, locale: string) => {
-  const { data } = await getClient().query<ProductBySlugData>({
+  const { data, error } = await getClient().query<ProductBySlugData>({
     query: productQuery,
     variables: { slug, locale },
+    errorPolicy: 'all',
   });
+
+  // The JSON-LD author is optional. A failure in a required field still belongs to the route error page.
+  if (
+    error &&
+    (!data?.productBySlug?.name ||
+      !CombinedGraphQLErrors.is(error) ||
+      !error.errors.every(({ path }) => path?.[0] === 'productBySlug' && path[1] === 'ownedCompany'))
+  ) {
+    throw error;
+  }
 
   return data?.productBySlug;
 });

@@ -1,13 +1,17 @@
 'use client';
 
-import { useQuery } from '@apollo/client/react';
+import { useSuspenseQuery } from '@apollo/client/react';
 import { ProductBySlugOnAlternativeProductListDocument } from '@darun/provider-graphql';
 import { Button, Layers, SectionHeader } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { useLocale, useTranslations } from 'next-intl';
-import type { ComponentProps } from 'react';
+import { Suspense, type ComponentProps } from 'react';
 import { AlternativeProductList } from '../../components';
-import { ProductSectionContent } from '../../components/ProductSectionContent';
+import {
+  ProductSectionContent,
+  ProductSectionLoading,
+  productSectionQueryOptions,
+} from '../../components/ProductSectionContent';
 
 type ProductAlternativeSectionProps = {
   slug: string;
@@ -15,12 +19,6 @@ type ProductAlternativeSectionProps = {
 
 export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionProps) => {
   const t = useTranslations('Alternative');
-  const locale = useLocale();
-  const { data, loading, error, refetch } = useQuery(ProductBySlugOnAlternativeProductListDocument, {
-    variables: { slug, locale },
-  });
-  const alternatives = data?.productBySlug?.alternatives ?? [];
-
   return (
     <section
       className="flex flex-col gap-5 scroll-mt-[var(--product-section-offset,8rem)]"
@@ -28,12 +26,26 @@ export const ProductAlternativeSection = ({ slug }: ProductAlternativeSectionPro
       tabIndex={-1}
     >
       <SectionHeader title={t('section.title')} subtitle={t('section.description')} />
-      <ProductSectionContent loading={loading} error={error} refetch={refetch}>
-        <ProductAlternativesContent slug={slug} locale={locale} alternatives={alternatives} />
-      </ProductSectionContent>
+      <Suspense fallback={<ProductSectionLoading />}>
+        <ProductAlternatives slug={slug} />
+      </Suspense>
     </section>
   );
 };
+
+function ProductAlternatives({ slug }: ProductAlternativeSectionProps) {
+  const locale = useLocale();
+  const { data, error, refetch } = useSuspenseQuery(ProductBySlugOnAlternativeProductListDocument, {
+    ...productSectionQueryOptions,
+    variables: { slug, locale },
+  });
+
+  return (
+    <ProductSectionContent error={error} refetch={refetch}>
+      <ProductAlternativesContent slug={slug} locale={locale} alternatives={data?.productBySlug?.alternatives ?? []} />
+    </ProductSectionContent>
+  );
+}
 
 function ProductAlternativesContent({
   slug,

@@ -58,15 +58,31 @@ createServer((request, response) => {
   request.on('end', () => {
     const { operationName, variables } = body ? JSON.parse(body) : {};
     response.setHeader('Content-Type', 'application/json');
-    if (variables?.slug === 'unavailable-photos' && operationName === 'GetPhotosOnProductPhotos') {
-      response.end(JSON.stringify({ errors: [{ message: 'Fixture section unavailable' }] }));
+    const failPhoto = variables?.slug === 'unavailable-photos' && operationName === 'GetPhotosOnProductPhotos';
+    const companyUnavailable = variables?.slug === 'unavailable-company';
+    const failBothCompanyReads =
+      companyUnavailable &&
+      (operationName === 'ProductBySlugOnProductCompany' ||
+        operationName === 'ProductBySlugOnProductDetailPageMetadata');
+    if (failPhoto || failBothCompanyReads) {
+      response.end(
+        JSON.stringify({
+          data: { productBySlug: failPhoto ? null : nativeTouchProduct },
+          errors: [
+            {
+              message: 'Fixture section unavailable',
+              path: failPhoto ? ['productBySlug'] : ['productBySlug', 'ownedCompany'],
+            },
+          ],
+        })
+      );
       return;
     }
     response.end(
       JSON.stringify({
         data: {
           productBySlug: variables?.slug === 'missing-fixture-product' ? null : nativeTouchProduct,
-          searchProducts: [],
+          searchProducts: variables?.query === 'section-retry-fixture' ? [nativeTouchProduct] : [],
           categories: [],
           rankedProducts: [],
         },

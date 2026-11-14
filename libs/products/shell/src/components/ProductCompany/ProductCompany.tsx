@@ -11,8 +11,8 @@ type ProductCompanyViewProps = {
   company: ReturnType<typeof useProductCompany>['company'];
 };
 
-export const ProductCompany = bind(useProductCompany, ({ company, loading, error, refetch }) => (
-  <ProductSectionContent loading={loading} error={error} refetch={refetch}>
+export const ProductCompany = bind(useProductCompany, ({ company, error, refetch }) => (
+  <ProductSectionContent error={error} refetch={refetch}>
     <ProductCompanyContent company={company} />
   </ProductSectionContent>
 ));

@@ -47,8 +47,8 @@ const ProductPhotoItem = ({ photo }: { photo: { imageUrl: string; imageAlt: stri
   );
 };
 
-export const ProductPhotos = bind(useProductPhotos, ({ photos, loading, error, refetch }) => (
-  <ProductSectionContent loading={loading} error={error} refetch={refetch}>
+export const ProductPhotos = bind(useProductPhotos, ({ photos, error, refetch }) => (
+  <ProductSectionContent error={error} refetch={refetch}>
     <ProductPhotosContent photos={photos} />
   </ProductSectionContent>
 ));

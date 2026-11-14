@@ -2,6 +2,17 @@ import { expect, test } from '@playwright/test';
 
 const scenarios = [
   {
+    locale: 'en',
+    viewport: { width: 390, height: 844 },
+    section: 'links',
+    operation: 'ProductOnProductLinks',
+    heading: 'Official links',
+    loading: 'Loading…',
+    error: 'Could not load this section.',
+    retry: 'Try again',
+    recovered: 'Fixture website',
+  },
+  {
     locale: 'ko',
     viewport: { width: 1280, height: 900 },
     section: 'screenshot',
@@ -82,7 +93,7 @@ for (const scenario of scenarios) {
       if (count === 1) await release.promise;
       if (count <= 2) {
         return route.fulfill({
-          json: { errors: [{ message: failure }] },
+          json: { data: { productBySlug: null }, errors: [{ message: failure, path: ['productBySlug'] }] },
           headers: { 'Access-Control-Allow-Origin': 'http://localhost:16471' },
         });
       }
@@ -111,17 +122,33 @@ for (const scenario of scenarios) {
           },
         ];
       }
+      if (scenario.section === 'links') {
+        payload.data.productBySlug.links = [
+          {
+            __typename: 'Link',
+            id: 'fixture-link',
+            title: scenario.recovered,
+            link: 'https://example.com/',
+            displayLink: '',
+            iconUrl: '',
+          },
+        ];
+      }
       return route.fulfill({ response, json: payload });
     });
 
-    const section = page.locator(`#${scenario.section}`);
+    const isLinks = scenario.section === 'links';
+    const section = isLinks
+      ? page.getByRole('group', { name: scenario.heading })
+      : page.locator(`#${scenario.section}`);
     const otherSection =
       scenario.section === 'features'
         ? page.locator('#screenshot').getByRole('img', { name: 'Touch preview 1', exact: true })
         : page.getByText('Touch feature');
-    await page.goto(`/${scenario.locale}/products/figma-e2e`, {
-      waitUntil: 'domcontentloaded',
-    });
+    await page.goto(`/${scenario.locale}/search/product?query=section-retry-fixture`);
+    // Navigate through the app so the injected browser response tests the client query after hydration.
+    // Direct-entry failures and server HTML are covered separately below.
+    await page.getByRole('link', { name: /Figma E2E/ }).click();
     try {
       await expect(page.getByRole('heading', { name: 'Figma E2E', level: 1 })).toBeVisible();
       await expect(page.getByText('Native scrolling with product photos and features.')).toBeVisible();
@@ -130,13 +157,12 @@ for (const scenario of scenarios) {
       const toc = page.getByRole('navigation', {
         name: scenario.locale === 'ko' ? '상세 섹션 목차' : 'Section table of contents',
       });
-      const sectionLink = toc.getByRole('link', {
-        name: scenario.heading,
-        exact: true,
-      });
-      await sectionLink.click();
-      await expect(section).toBeFocused();
-      await expect(page).toHaveURL(new RegExp(`#${scenario.section}$`));
+      await expect(toc).toBeVisible();
+      if (!isLinks) {
+        await toc.getByRole('link', { name: scenario.heading, exact: true }).click();
+        await expect(section).toBeFocused();
+        await expect(page).toHaveURL(new RegExp(`#${scenario.section}$`));
+      }
     } finally {
       release.resolve();
     }
@@ -160,7 +186,11 @@ for (const scenario of scenarios) {
     await expect(recovered).toBeVisible();
     await expect(alert).toHaveCount(0);
     await expect(otherSection).toBeVisible();
-    await expect(page).toHaveURL(new RegExp(`#${scenario.section}$`));
+    if (isLinks) {
+      await expect(page).toHaveURL(/\/products\/figma-e2e(?:\?.*)?$/);
+    } else {
+      await expect(page).toHaveURL(new RegExp(`#${scenario.section}$`));
+    }
     expect(requestVariables).toEqual(
       Array.from({ length: 3 }, () => ({
         slug: 'figma-e2e',
@@ -188,4 +218,21 @@ test('opening a product directly still shows its overview when photo reads fail'
   await expect(page.getByText('Native scrolling with product photos and features.')).toBeVisible();
   await expect(page.getByText('Touch feature')).toBeVisible();
   await expect(page.locator('#screenshot').getByRole('alert')).toHaveText('이 영역을 불러오지 못했습니다.');
+});
+
+test('company errors from both server metadata and the company section leave the product readable', async ({
+  page,
+}) => {
+  await page.goto('/en/products/unavailable-company');
+  await expect(page.getByRole('heading', { name: 'Figma E2E', level: 1 })).toBeVisible();
+  await expect(page.getByText('Native scrolling with product photos and features.')).toBeVisible();
+  await expect(page.locator('#company-info').getByRole('alert')).toHaveText('Could not load this section.');
+});
+
+test('healthy related content remains in the server response', async ({ request }) => {
+  const response = await request.get('/en/products/figma-e2e');
+  expect(response.ok()).toBe(true);
+  const html = await response.text();
+  expect(html).toMatch(/<img[^>]+alt="Touch preview 1"/);
+  expect(html).toMatch(/<h3[^>]*>Touch feature<\/h3>/);
 });

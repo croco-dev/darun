@@ -7,8 +7,8 @@ import { FeatureItem } from '../../uis';
 import { ProductSectionContent } from '../ProductSectionContent';
 import { useProductFeatureList } from './useProductFeatureList';
 
-export const ProductFeatureList = bind(useProductFeatureList, ({ features, loading, error, refetch }) => (
-  <ProductSectionContent loading={loading} error={error} refetch={refetch}>
+export const ProductFeatureList = bind(useProductFeatureList, ({ features, error, refetch }) => (
+  <ProductSectionContent error={error} refetch={refetch}>
     <ProductFeatureListContent features={features} />
   </ProductSectionContent>
 ));
