@@ -8,6 +8,7 @@ import { Collections } from '../features/collections/Collections';
 import * as store from '../features/collections/collectionStore';
 import { ProductSearchSuggest } from '../features/product-search/ProductSearchSuggest';
 import { useProductSearchSuggest } from '../features/product-search/useProductSearchSuggest';
+import { SavesExplorer } from '../features/saves/SavesExplorer';
 import { useSavesPage } from '../features/saves/useSavesPage';
 import { useVisualSaveButton } from '../features/saves/useVisualSaveButton';
 
@@ -41,7 +42,10 @@ const authService = {
     };
   },
 };
-vi.mock('@darun/provider-auth/client', () => ({ useAuthService: () => authService }));
+vi.mock('@darun/provider-auth/client', () => ({
+  useAuthService: () => authService,
+  useAuthState: () => ({ isError: false, isLoading: false }),
+}));
 vi.mock('@darun/utils-router', () => ({
   useSearchParams: () => useSyncExternalStore(subscribeRouter, readParams, readParams),
   useNavigate: () => navigate,
@@ -118,6 +122,62 @@ afterEach(async () => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
   vi.useRealTimers();
+});
+
+describe('saved list tabs', () => {
+  it('keeps the tab and panel connected through sign-in, loading, failure and retry', async () => {
+    const screens = deferred<ReturnType<typeof connection>>();
+    const flows = deferred<ReturnType<typeof connection>>();
+    mocks.query
+      .mockReturnValueOnce(screens.promise)
+      .mockReturnValueOnce(flows.promise)
+      .mockResolvedValueOnce(connection('flows'));
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(SavesExplorer)));
+    const [screenTab, flowTab] = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    const screenPanel = document.getElementById(screenTab.getAttribute('aria-controls') ?? '');
+    const flowPanel = document.getElementById(flowTab.getAttribute('aria-controls') ?? '');
+    expect(screenTab.tabIndex).toBe(0);
+    expect(flowTab.tabIndex).toBe(-1);
+    expect(screenPanel?.getAttribute('role')).toBe('tabpanel');
+    expect(screenPanel?.getAttribute('aria-labelledby')).toBe(screenTab.id);
+    expect(flowPanel?.getAttribute('aria-labelledby')).toBe(flowTab.id);
+    expect(flowPanel?.hidden).toBe(true);
+
+    await signIn(null);
+    expect(screenPanel?.textContent).toContain('Google로 로그인');
+    await signIn('A');
+    expect(screenPanel?.textContent).toContain('불러오는 중');
+    await act(async () => screenTab.focus());
+    await act(async () => screenTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })));
+    expect(document.activeElement).toBe(flowTab);
+    expect(screenTab.getAttribute('aria-selected')).toBe('true');
+    expect(mocks.params.has('tab')).toBe(false);
+    expect(mocks.query).toHaveBeenCalledTimes(2);
+
+    await act(async () => flowTab.click());
+    expect(mocks.params.get('tab')).toBe('flows');
+    expect(document.activeElement).toBe(flowTab);
+    expect(flowTab.getAttribute('aria-selected')).toBe('true');
+    expect(screenPanel?.hidden).toBe(true);
+    expect(flowPanel?.textContent).toContain('불러오는 중');
+
+    await act(async () => flows.reject(new Error('flow fixture failed')));
+    expect(document.activeElement).toBe(flowTab);
+    const retry = flowPanel?.querySelector('button');
+    expect(retry?.textContent).toBe('다시 시도');
+    await act(async () => retry?.click());
+    expect(flowPanel?.textContent).toContain('저장한 플로우가 없어요.');
+    expect(flowTab.textContent).toContain('(0)');
+    expect(document.activeElement).toBe(flowTab);
+    expect(mocks.query.mock.calls.map(([request]) => request.query)).toEqual([
+      MyVisualSavedScreenshotsDocument,
+      MyVisualSavedFlowsDocument,
+      MyVisualSavedFlowsDocument,
+    ]);
+  });
 });
 
 describe('saved account state', () => {
