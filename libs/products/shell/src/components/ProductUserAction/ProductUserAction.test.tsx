@@ -52,7 +52,9 @@ describe('ProductUserAction Toast Integration', () => {
       root = undefined;
     }
     document.body.replaceChildren();
+    window.history.replaceState(null, '', '/');
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('calls addToast with error when error state is present', () => {
@@ -119,6 +121,59 @@ describe('ProductUserAction Toast Integration', () => {
     expect(button.disabled).toBe(true);
     expect(button.getAttribute('aria-label')).toBe('추천 완료');
   });
+
+  it.each(['denied', 'unsupported'] as const)(
+    'shows copy failure (%s) and can retry the current link',
+    async failure => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      window.history.replaceState(null, '', '/en/products/test-product?source=search#features');
+      if (failure === 'denied') writeText.mockRejectedValueOnce(new DOMException('Denied', 'NotAllowedError'));
+      const clipboard = { writeText };
+      vi.stubGlobal('navigator', {
+        clipboard: failure === 'denied' ? clipboard : undefined,
+      });
+
+      act(() => {
+        root?.render(
+          <ProductUserAction.ViewComponent
+            voteCountUnavailable={false}
+            voteCountLoading={false}
+            retryVoteCount={vi.fn()}
+            voteCount={10}
+            upvoteProduct={vi.fn()}
+            voted={false}
+            loading={false}
+            error={null}
+            slug="test-product"
+            success={false}
+          />
+        );
+      });
+
+      const button = container.querySelector<HTMLButtonElement>('[data-testid="share-btn"]')!;
+      await act(async () => button.click());
+
+      expect(container.querySelector('[role="status"]')?.textContent).toBe('copyFailed');
+      expect(button.getAttribute('aria-label')).toBe('copyLink');
+      expect(mockAddToast).not.toHaveBeenCalled();
+
+      if (failure === 'unsupported') {
+        const status = container.querySelector('[role="status"]')!;
+        const previousMessage = status.firstChild;
+        await act(async () => button.click());
+        expect(status.textContent).toBe('copyFailed');
+        expect(status.firstChild).not.toBe(previousMessage);
+      }
+
+      vi.stubGlobal('navigator', { clipboard });
+      await act(async () => button.click());
+
+      expect(writeText).toHaveBeenLastCalledWith(window.location.href);
+      expect(container.querySelector('[role="status"]')?.textContent).toBe('');
+      expect(button.getAttribute('aria-label')).toBe('copied');
+      expect(mockAddToast).toHaveBeenCalledExactlyOnceWith('copySuccess', 'success');
+    }
+  );
 });
 
 describe('ToastProvider Accessibility', () => {

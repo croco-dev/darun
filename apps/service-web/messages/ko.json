@@ -130,7 +130,8 @@
       "voteFailed": "투표에 실패했습니다. 다시 시도해주세요.",
       "copyLink": "링크 복사",
       "copied": "복사됨",
-      "copySuccess": "링크가 복사되었습니다."
+      "copySuccess": "링크가 복사되었습니다.",
+      "copyFailed": "링크를 복사하지 못했어요. 주소창에서 직접 복사해 주세요."
     },
     "compareButton": {
       "add": "비교에 추가",

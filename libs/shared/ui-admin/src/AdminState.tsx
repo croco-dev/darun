@@ -2,7 +2,7 @@
 
 import { CombinedGraphQLErrors, ServerError, ServerParseError } from '@apollo/client/errors';
 import { cn } from '@darun/ui';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 type AdminStateProps = {
   title?: string;
@@ -253,23 +253,41 @@ export function AdminErrorState({
   action,
   className,
 }: AdminErrorStateProps) {
-  const [copied, setCopied] = useState(false);
   const parsed = error ? parseErrorInfo(error) : undefined;
   const finalDescription = description ?? parsed?.summary ?? '잠시 후 다시 시도해 주세요.';
   const technicalContent = details ?? parsed?.technicalDetails;
+  const copyText = typeof technicalContent === 'string' ? technicalContent : undefined;
+  const [copy, setCopy] = useState<{
+    text: string | undefined;
+    attempt: number;
+    status: 'idle' | 'pending' | 'copied' | 'failed';
+  }>({ text: copyText, attempt: 0, status: 'idle' });
 
-  const handleCopy = () => {
-    if (typeof technicalContent === 'string' && typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard
-        .writeText(technicalContent)
-        .then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        })
-        .catch(() => {
-          // ignore clipboard failure
-        });
+  if (copy.text !== copyText) {
+    setCopy({ text: copyText, attempt: copy.attempt, status: 'idle' });
+  }
+
+  useEffect(() => {
+    if (copy.status !== 'copied') return;
+    const timer = setTimeout(
+      () => setCopy(current => (current === copy ? { ...current, status: 'idle' } : current)),
+      2000
+    );
+    return () => clearTimeout(timer);
+  }, [copy]);
+
+  const handleCopy = async () => {
+    if (copyText === undefined || copy.status === 'pending') return;
+    const pending = { text: copyText, attempt: copy.attempt + 1, status: 'pending' } as const;
+    setCopy(pending);
+    let status: 'copied' | 'failed';
+    try {
+      await navigator.clipboard.writeText(copyText);
+      status = 'copied';
+    } catch {
+      status = 'failed';
     }
+    setCopy(current => (current === pending ? { ...pending, status } : current));
   };
 
   return (
@@ -307,15 +325,23 @@ export function AdminErrorState({
           </summary>
           <div className="mt-2 pt-2 border-t border-dark-200/60 flex flex-col gap-2">
             {typeof technicalContent === 'string' && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className="text-2xs px-2 py-0.5 rounded border border-dark-200 bg-white hover:bg-surface-200 text-dark-700 transition active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
-                >
-                  {copied ? '복사 완료!' : '오류 내용 복사'}
-                </button>
-              </div>
+              <>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    aria-disabled={copy.status === 'pending'}
+                    className="text-2xs px-2 py-0.5 rounded border border-dark-200 bg-white hover:bg-surface-200 text-dark-700 transition active:scale-95 motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
+                  >
+                    {copy.status === 'copied' ? '복사 완료!' : '오류 내용 복사'}
+                  </button>
+                </div>
+                <p role="status" className={copy.status === 'failed' ? 'text-cherry-700' : 'sr-only'}>
+                  {copy.status === 'failed' && (
+                    <span key={copy.attempt}>복사하지 못했어요. 아래 오류 텍스트를 선택해 직접 복사해 주세요.</span>
+                  )}
+                </p>
+              </>
             )}
             {typeof technicalContent === 'string' ? (
               <pre className="max-h-48 overflow-auto font-mono text-2xs text-dark-700 p-2 bg-white rounded border border-dark-150 whitespace-pre-wrap break-all">
