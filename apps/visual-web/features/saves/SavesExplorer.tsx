@@ -2,6 +2,7 @@
 
 import { Button, Layers } from '@darun/ui';
 import { Link } from '@darun/utils-router';
+import { useId, useRef, useState } from 'react';
 import { VISUAL_FLOW_TYPE_LABELS } from '../flows/flowClassifications';
 import type { FlowCard } from '../flows/useFlowExplorer';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
@@ -14,7 +15,7 @@ import {
   isVisualPlatformValue,
   isVisualScreenTypeValue,
 } from '../screenshots/visualClassifications';
-import { useSavesPage, type SavesTab } from './useSavesPage';
+import { useSavesPage, type SavesPageState, type SavesTab } from './useSavesPage';
 import { VisualLoginButton } from './VisualLoginButton';
 
 const TABS: Array<{ value: SavesTab; label: string }> = [
@@ -136,27 +137,81 @@ function SavesSkeletons() {
  */
 export function SavesExplorer() {
   const state = useSavesPage();
-  const tabs = (
-    <div role="tablist" aria-label="저장 목록" className="flex gap-2">
-      {TABS.map(tab => (
-        <button
-          key={tab.value}
-          role="tab"
-          aria-selected={state.tab === tab.value}
-          type="button"
-          onClick={() => state.onTabChange(tab.value)}
-          className="min-h-11 rounded-full border border-dark-150 px-4 py-2 text-sm font-semibold"
+  const id = useId();
+  const tabButtons = useRef<Partial<Record<SavesTab, HTMLButtonElement | null>>>({});
+  const [focusedTab, setFocusedTab] = useState<SavesTab | null>(null);
+
+  return (
+    <div className="flex w-full flex-col gap-6 md:gap-10">
+      {state.status === 'loaded' && (
+        <p className="text-sm text-dark-500">계정에 저장한 항목입니다. 이 브라우저의 컬렉션과는 별개입니다.</p>
+      )}
+      <div
+        role="tablist"
+        aria-label="저장 목록"
+        className={
+          state.status === 'login-required' || state.status === 'error' ? 'flex justify-center gap-2' : 'flex gap-2'
+        }
+        onBlur={event => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setFocusedTab(null);
+        }}
+      >
+        {TABS.map(({ value, label }, index) => {
+          const selected = state.tab === value;
+          return (
+            <button
+              key={value}
+              ref={button => {
+                tabButtons.current[value] = button;
+              }}
+              id={`${id}-${value}-tab`}
+              role="tab"
+              aria-selected={selected}
+              aria-controls={`${id}-${value}-panel`}
+              tabIndex={(focusedTab ?? state.tab) === value ? 0 : -1}
+              type="button"
+              onFocus={() => setFocusedTab(value)}
+              onClick={() => state.onTabChange(value)}
+              onKeyDown={event => {
+                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                event.preventDefault();
+                const offset = event.key === 'ArrowLeft' ? -1 : 1;
+                const next = TABS[(index + offset + TABS.length) % TABS.length];
+                tabButtons.current[next.value]?.focus();
+              }}
+              className="min-h-11 rounded-full border border-dark-150 bg-white px-4 py-2 text-sm font-semibold text-dark-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2 aria-selected:border-dark-900 aria-selected:bg-dark-900 aria-selected:font-bold aria-selected:text-white"
+            >
+              {label}
+              {state.status === 'loaded' && (
+                <span className="ml-1 tabular-nums">
+                  ({value === 'screenshots' ? state.screenshotTotalCount : state.flowTotalCount})
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {TABS.map(({ value }) => (
+        <div
+          key={value}
+          id={`${id}-${value}-panel`}
+          role="tabpanel"
+          aria-labelledby={`${id}-${value}-tab`}
+          tabIndex={0}
+          hidden={state.tab !== value}
+          className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-900/60"
         >
-          {tab.label}
-        </button>
+          {state.tab === value && <SavesPanelContent state={state} />}
+        </div>
       ))}
     </div>
   );
+}
 
+function SavesPanelContent({ state }: { state: SavesPageState }) {
   if (state.status === 'loading') {
     return (
       <div className="flex w-full flex-col gap-6 md:gap-10">
-        {tabs}
         <SavesSkeletons />
         <span className="sr-only">저장한 화면을 불러오는 중</span>
       </div>
@@ -165,8 +220,7 @@ export function SavesExplorer() {
 
   if (state.status === 'login-required') {
     return (
-      <div className="flex w-full flex-col items-center gap-3 py-16 text-center">
-        {tabs}
+      <div className="flex w-full flex-col items-center gap-3 pb-16 text-center">
         <p className="text-lg font-bold text-dark-900">저장은 로그인 후 이용할 수 있어요.</p>
         <p className="text-sm text-dark-500">로그인하면 저장한 화면과 플로우를 여기서 모아볼 수 있어요.</p>
         <VisualLoginButton redirectTo="/saves" />
@@ -176,8 +230,7 @@ export function SavesExplorer() {
 
   if (state.status === 'error') {
     return (
-      <div role="alert" className="flex w-full flex-col items-center gap-3 py-16 text-center">
-        {tabs}
+      <div role="alert" className="flex w-full flex-col items-center gap-3 pb-16 text-center">
         <p className="text-lg font-bold text-dark-900">저장 목록을 불러오지 못했어요.</p>
         <Button type="button" variant="shadow" size="sm" onClick={state.retry}>
           다시 시도
@@ -191,30 +244,7 @@ export function SavesExplorer() {
   const emptyLabel = state.tab === 'screenshots' ? '저장한 화면이 없어요.' : '저장한 플로우가 없어요.';
 
   return (
-    <div className="flex w-full flex-col gap-6 md:gap-10">
-      <p className="text-sm text-dark-500">계정에 저장한 항목입니다. 이 브라우저의 컬렉션과는 별개입니다.</p>
-      <div role="tablist" aria-label="저장 목록" className="flex gap-2">
-        {TABS.map(tab => (
-          <button
-            key={tab.value}
-            role="tab"
-            aria-selected={state.tab === tab.value}
-            type="button"
-            onClick={() => state.onTabChange(tab.value)}
-            className={
-              state.tab === tab.value
-                ? 'rounded-full bg-dark-900 px-4 py-2 text-sm font-bold text-white'
-                : 'rounded-full border border-dark-150 bg-white px-4 py-2 text-sm font-semibold text-dark-600'
-            }
-          >
-            {tab.label}
-            <span className="ml-1 tabular-nums">
-              ({tab.value === 'screenshots' ? state.screenshotTotalCount : state.flowTotalCount})
-            </span>
-          </button>
-        ))}
-      </div>
-
+    <div className="flex flex-col gap-6 md:gap-10">
       {totalCount === 0 ? (
         <div className="flex w-full flex-col items-center gap-2 py-16 text-center">
           <p className="text-base font-bold text-dark-900">{emptyLabel}</p>
