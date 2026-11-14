@@ -168,7 +168,7 @@ async function ProductStructuredData({
     ...(author && { author }),
   };
 
-  return <JsonLd data={webPageJsonLd} />;
+  return <JsonLd id="product-structured-data" data={webPageJsonLd} />;
 }
 
 async function ProductDetailPageWithJsonLd({ params }: Props) {

@@ -30,6 +30,7 @@ const nativeTouchProduct = {
       screenshots: screenshots.map(photo => ({
         ...photo,
         __typename: 'FeatureScreenshot',
+        imageAlt: photo.imageAlt.replace('Touch preview', 'Feature preview'),
       })),
     },
   ],
