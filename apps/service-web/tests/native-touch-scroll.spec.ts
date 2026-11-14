@@ -82,6 +82,8 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
     const toc = page.getByRole('navigation', { name: '상세 섹션 목차' });
     // Wait for the hydrated sticky navigation before taking touch coordinates.
     await expect(toc.locator('a[aria-current="location"]')).toBeVisible();
+    // The detail now streams each section. Wait for their layout to settle before hit testing.
+    await expect(page.getByRole('main').getByText('불러오는 중입니다.', { exact: true })).toHaveCount(0);
     const photos = page.getByRole('region', { name: '스크린샷', exact: true });
     await expect(photos.getByRole('img')).toHaveCount(3);
     await expect(photos.getByRole('img').first()).toHaveJSProperty('complete', true);
