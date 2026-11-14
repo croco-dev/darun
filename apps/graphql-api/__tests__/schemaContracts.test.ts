@@ -39,7 +39,7 @@ describe('stored SDL and generated consumer contracts', () => {
     );
   });
 
-  it('omits magazine content from the admin list response and returns it to the editor', async () => {
+  it('관리자 매거진 목록 응답에서 본문을 생략하고 편집 응답에 본문을 반환한다', async () => {
     const magazine = {
       id: 'magazine-id',
       revision: 1,
