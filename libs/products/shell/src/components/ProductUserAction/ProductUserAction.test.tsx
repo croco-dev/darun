@@ -153,12 +153,12 @@ describe('ProductUserAction Toast Integration', () => {
       const button = container.querySelector<HTMLButtonElement>('[data-testid="share-btn"]')!;
       await act(async () => button.click());
 
-      expect(container.querySelector('[role="status"]')?.textContent).toBe('copyFailed');
+      expect(container.querySelector('output')?.textContent).toBe('copyFailed');
       expect(button.getAttribute('aria-label')).toBe('copyLink');
       expect(mockAddToast).not.toHaveBeenCalled();
 
       if (failure === 'unsupported') {
-        const status = container.querySelector('[role="status"]')!;
+        const status = container.querySelector('output')!;
         const previousMessage = status.firstChild;
         await act(async () => button.click());
         expect(status.textContent).toBe('copyFailed');
@@ -169,7 +169,7 @@ describe('ProductUserAction Toast Integration', () => {
       await act(async () => button.click());
 
       expect(writeText).toHaveBeenLastCalledWith(window.location.href);
-      expect(container.querySelector('[role="status"]')?.textContent).toBe('');
+      expect(container.querySelector('output')?.textContent).toBe('');
       expect(button.getAttribute('aria-label')).toBe('copied');
       expect(mockAddToast).toHaveBeenCalledExactlyOnceWith('copySuccess', 'success');
     }

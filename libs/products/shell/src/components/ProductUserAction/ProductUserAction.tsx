@@ -146,12 +146,9 @@ export const ProductUserAction = bind(
             )}
           </div>
         </Button>
-        <p
-          role="status"
-          className={copyStatus === 'failed' ? 'basis-full max-w-xs text-sm text-cherry-700' : 'sr-only'}
-        >
+        <output className={copyStatus === 'failed' ? 'basis-full max-w-xs text-sm text-cherry-700' : 'sr-only'}>
           {copyStatus === 'failed' && <span key={copyAttempt}>{t('copyFailed')}</span>}
-        </p>
+        </output>
       </div>
     );
   }

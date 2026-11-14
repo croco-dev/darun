@@ -336,11 +336,11 @@ export function AdminErrorState({
                     {copy.status === 'copied' ? '복사 완료!' : '오류 내용 복사'}
                   </button>
                 </div>
-                <p role="status" className={copy.status === 'failed' ? 'text-cherry-700' : 'sr-only'}>
+                <output className={copy.status === 'failed' ? 'text-cherry-700' : 'sr-only'}>
                   {copy.status === 'failed' && (
                     <span key={copy.attempt}>복사하지 못했어요. 아래 오류 텍스트를 선택해 직접 복사해 주세요.</span>
                   )}
-                </p>
+                </output>
               </>
             )}
             {typeof technicalContent === 'string' ? (
