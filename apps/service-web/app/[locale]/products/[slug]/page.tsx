@@ -3,7 +3,7 @@ import { ProductDetailPage } from '@darun/pages-shell';
 import { getLocalizedTag } from '@darun/products-shell';
 import { notFound } from '@darun/utils-router';
 import { Metadata } from 'next';
-import { cache } from 'react';
+import { cache, Suspense } from 'react';
 import { JsonLd } from '../../../../lib/seo/json-ld';
 import { getOgLocale, getSiteName } from '../../../../lib/seo/metadata';
 import { absolutePublicUrl, buildAlternates, normalizeLocale } from '../../../../lib/seo/url';
@@ -19,6 +19,13 @@ const productQuery = gql`
       tags {
         name
       }
+    }
+  }
+`;
+
+const productAuthorQuery = gql`
+  query ProductAuthorOnProductDetailPage($slug: String!, $locale: String!) {
+    productBySlug(slug: $slug, locale: $locale) {
       ownedCompany {
         name
       }
@@ -37,7 +44,6 @@ type ProductBySlugData = {
     logoUrl?: string;
     description?: string;
     tags: { name: string }[];
-    ownedCompany?: { name: string };
   };
 };
 
@@ -119,18 +125,25 @@ const createOgImageUrl = ({ name, summary, logoUrl }: { name: string; summary?: 
   return url.toString();
 };
 
-async function ProductDetailPageWithJsonLd({ params }: Props) {
-  const resolvedParams = await params;
-  const currentLocale = normalizeLocale(resolvedParams.locale);
-
-  const product = await getProductBySlug(resolvedParams.slug, currentLocale);
-
-  if (!product?.name) {
-    return notFound();
-  }
-
-  const canonicalUrl = absolutePublicUrl(currentLocale, `/products/${encodeURIComponent(resolvedParams.slug)}`);
-  const titleSuffix = currentLocale === 'en' ? 'Darun: Compare Services in One Place' : '다른: 서비스 비교를 한 곳에서';
+async function ProductStructuredData({
+  product,
+  slug,
+  locale,
+  canonicalUrl,
+}: {
+  product: NonNullable<ProductBySlugData['productBySlug']>;
+  slug: string;
+  locale: ReturnType<typeof normalizeLocale>;
+  canonicalUrl: string;
+}) {
+  const { data, error } = await getClient().query<{ productBySlug?: { ownedCompany?: { name: string } } }>({
+    query: productAuthorQuery,
+    variables: { slug, locale },
+    errorPolicy: 'all',
+  });
+  const company = error ? undefined : data?.productBySlug?.ownedCompany;
+  const author = company ? { '@type': 'Organization', name: company.name } : undefined;
+  const titleSuffix = locale === 'en' ? 'Darun: Compare Services in One Place' : '다른: 서비스 비교를 한 곳에서';
   const pageTitle = `${product.name} - ${titleSuffix}`;
 
   const softwareAppJsonLd = {
@@ -139,14 +152,9 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
     name: product.name,
     description: product.summary || product.description || '',
     url: canonicalUrl,
-    applicationCategory: getLocalizedTag(product.tags?.[0]?.name ?? 'Software', currentLocale),
+    applicationCategory: getLocalizedTag(product.tags?.[0]?.name ?? 'Software', locale),
     ...(product.logoUrl && { image: product.logoUrl }),
-    ...(product.ownedCompany && {
-      author: {
-        '@type': 'Organization',
-        name: product.ownedCompany.name,
-      },
-    }),
+    ...(author && { author }),
   };
 
   const webPageJsonLd = {
@@ -157,14 +165,23 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
     url: canonicalUrl,
     mainEntity: softwareAppJsonLd,
     ...(product.logoUrl && { image: product.logoUrl }),
-    ...(product.ownedCompany && {
-      author: {
-        '@type': 'Organization',
-        name: product.ownedCompany.name,
-      },
-    }),
+    ...(author && { author }),
   };
 
+  return <JsonLd id="product-structured-data" data={webPageJsonLd} />;
+}
+
+async function ProductDetailPageWithJsonLd({ params }: Props) {
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
+  const currentLocale = normalizeLocale(resolvedParams.locale);
+  const product = await getProductBySlug(slug, currentLocale);
+
+  if (!product?.name) {
+    return notFound();
+  }
+
+  const canonicalUrl = absolutePublicUrl(currentLocale, `/products/${encodeURIComponent(slug)}`);
   const breadcrumbList = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -186,9 +203,11 @@ async function ProductDetailPageWithJsonLd({ params }: Props) {
 
   return (
     <>
-      <JsonLd data={webPageJsonLd} />
       <JsonLd data={breadcrumbList} />
       <ProductDetailPage params={resolvedParams} productName={product.name} />
+      <Suspense fallback={null}>
+        <ProductStructuredData product={product} slug={slug} locale={currentLocale} canonicalUrl={canonicalUrl} />
+      </Suspense>
     </>
   );
 }

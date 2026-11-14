@@ -84,6 +84,11 @@
     }
   },
   "ProductDetail": {
+    "sectionStatus": {
+      "loading": "Loading…",
+      "error": "Could not load this section.",
+      "retry": "Try again"
+    },
     "faq": {
       "title": "Frequently Asked Questions",
       "description": "Frequently asked questions regarding service features and usage."

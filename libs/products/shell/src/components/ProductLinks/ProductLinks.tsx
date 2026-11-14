@@ -6,9 +6,16 @@ import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { getLocalizedLinkTitle } from '../../utils/localization';
+import { ProductSectionContent } from '../ProductSectionContent';
 import { useProductLinks } from './useProductLinks';
 
-export const ProductLinks = bind(useProductLinks, ({ links }) => {
+export const ProductLinks = bind(useProductLinks, ({ links, error, refetch }) => (
+  <ProductSectionContent error={error} refetch={refetch}>
+    <ProductLinkButtons links={links} />
+  </ProductSectionContent>
+));
+
+function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 'links'>) {
   const locale = useLocale();
 
   if (!links || links.length === 0) {
@@ -112,4 +119,4 @@ export const ProductLinks = bind(useProductLinks, ({ links }) => {
       })}
     </>
   );
-});
+}

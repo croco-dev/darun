@@ -2,7 +2,9 @@
 
 import { SectionHeader } from '@darun/ui';
 import { useTranslations } from 'next-intl';
+import { Suspense } from 'react';
 import { ProductPhotos } from '../../components';
+import { ProductSectionLoading } from '../../components/ProductSectionContent';
 
 type ProductPhotoSectionProps = { slug: string };
 
@@ -16,7 +18,9 @@ export const ProductPhotoSection = ({ slug }: ProductPhotoSectionProps) => {
       tabIndex={-1}
     >
       <SectionHeader title={t('photo.title')} subtitle={t('photo.description')} />
-      <ProductPhotos slug={slug} />
+      <Suspense fallback={<ProductSectionLoading />}>
+        <ProductPhotos slug={slug} />
+      </Suspense>
     </section>
   );
 };

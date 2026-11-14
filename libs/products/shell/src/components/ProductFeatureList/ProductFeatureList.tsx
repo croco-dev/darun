@@ -4,9 +4,16 @@ import { Sparkles } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
 import { useTranslations } from 'next-intl';
 import { FeatureItem } from '../../uis';
+import { ProductSectionContent } from '../ProductSectionContent';
 import { useProductFeatureList } from './useProductFeatureList';
 
-export const ProductFeatureList = bind(useProductFeatureList, ({ features }) => {
+export const ProductFeatureList = bind(useProductFeatureList, ({ features, error, refetch }) => (
+  <ProductSectionContent error={error} refetch={refetch}>
+    <ProductFeatureListContent features={features} />
+  </ProductSectionContent>
+));
+
+function ProductFeatureListContent({ features }: Pick<ReturnType<typeof useProductFeatureList>, 'features'>) {
   const t = useTranslations('ProductDetail.feature');
 
   if (features.length === 0) {
@@ -40,4 +47,4 @@ export const ProductFeatureList = bind(useProductFeatureList, ({ features }) => 
       ))}
     </div>
   );
-});
+}
