@@ -33,6 +33,7 @@ vi.mock('@apollo/client/react', () => ({
 const client = { query: mocks.query, mutate: mocks.mutate };
 let activeClient: ApolloClient | typeof client = client;
 const authService = {
+  signOut: vi.fn<() => Promise<void>>(),
   onIdTokenChanged: (callback: (user: { id: string } | null) => void, onError?: () => void) => {
     mocks.observers.add(callback);
     if (onError) mocks.authErrors.add(onError);
@@ -78,9 +79,10 @@ async function mount<T>(hook: () => T) {
   });
   return () => value!;
 }
-async function signIn(id: string | null) {
+async function signIn(id: string | null, email = id ? `${id}@example.test` : '') {
+  const user = id ? { id, email, isAdmin: false } : null;
   await act(async () => {
-    mocks.observers.forEach(callback => callback(id ? { id } : null));
+    mocks.observers.forEach(callback => callback(user));
   });
 }
 function deferred<T>() {
@@ -119,6 +121,7 @@ afterEach(async () => {
   mocks.authErrors.clear();
   mocks.routerListeners.clear();
   activeClient = client;
+  authService.signOut.mockReset();
   vi.restoreAllMocks();
   vi.clearAllMocks();
   vi.useRealTimers();
@@ -181,6 +184,115 @@ describe('saved list tabs', () => {
 });
 
 describe('saved account state', () => {
+  it('keeps sign-out recovery available if Firebase clears the active account before reporting an error', async () => {
+    const firstAttempt = deferred<void>();
+    authService.signOut.mockReturnValueOnce(firstAttempt.promise).mockResolvedValueOnce(undefined);
+    mocks.query.mockImplementation(async ({ query }) =>
+      connection(query === MyVisualSavedFlowsDocument ? 'flows' : 'screenshots')
+    );
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(SavesExplorer)));
+    await signIn('A');
+    const logout = Array.from(host.querySelectorAll('button')).find(button => button.textContent === '로그아웃')!;
+    await act(async () => {
+      logout.focus();
+      logout.click();
+    });
+    await signIn(null);
+    expect(host.textContent).not.toContain('A@example.test');
+    expect(host.textContent).not.toContain('Google로 로그인');
+    await act(async () => firstAttempt.reject(new Error('unable to remove persisted account')));
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('로그아웃하지 못했어요');
+    expect(host.textContent).not.toContain('Google로 로그인');
+    expect(document.activeElement).toBe(logout);
+    expect(logout.textContent).toBe('로그아웃 다시 시도');
+    await act(async () => root!.render(null));
+    await act(async () => root!.render(createElement(SavesExplorer)));
+    await signIn(null);
+    const retry = Array.from(host.querySelectorAll('button')).find(
+      button => button.textContent === '로그아웃 다시 시도'
+    )!;
+    expect(retry).toBeDefined();
+    await act(async () => {
+      retry.focus();
+      retry.click();
+    });
+    expect(authService.signOut).toHaveBeenCalledTimes(2);
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+    expect(host.textContent).toContain('Google로 로그인');
+    expect(document.activeElement?.getAttribute('role')).toBe('tab');
+  });
+
+  it('shows the active account and waits for sign-out confirmation before switching saved lists', async () => {
+    const firstAttempt = deferred<void>();
+    const confirmation = deferred<void>();
+    authService.signOut.mockReturnValueOnce(firstAttempt.promise).mockReturnValueOnce(confirmation.promise);
+    let owner = '첫 번째';
+    mocks.query.mockImplementation(async ({ query }) => {
+      if (query === MyVisualSavedFlowsDocument) return connection('flows');
+      return {
+        data: {
+          myVisualSavedScreenshots: {
+            edges: [
+              {
+                node: {
+                  id: owner,
+                  title: `${owner} 계정 화면`,
+                  imageUrl: '/fixture.svg',
+                  product: { id: 'product' },
+                },
+              },
+            ],
+            totalCount: 1,
+            pageInfo: { hasNextPage: false },
+          },
+        },
+      };
+    });
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(SavesExplorer)));
+    await signIn('A');
+
+    const text = () => host.textContent;
+    const logout = () => Array.from(host.querySelectorAll('button')).find(button => button.textContent === '로그아웃');
+    expect(text()).toContain('A@example.test');
+    expect(text()).toContain('첫 번째 계정 화면');
+    const button = logout()!;
+    await act(async () => {
+      button.focus();
+      button.click();
+      button.click();
+    });
+    expect(authService.signOut).toHaveBeenCalledTimes(1);
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    await act(async () => firstAttempt.reject(new Error('sign-out failed')));
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('로그아웃하지 못했어요');
+    expect(text()).toContain('첫 번째 계정 화면');
+    expect(document.activeElement).toBe(logout());
+
+    await act(async () => logout()?.click());
+    expect(authService.signOut).toHaveBeenCalledTimes(2);
+    expect(text()).toContain('로그아웃 중');
+    expect(text()).not.toContain('Google로 로그인');
+    await signIn(null);
+    await act(async () => confirmation.resolve());
+    expect(text()).toContain('Google로 로그인');
+    expect(text()).not.toContain('A@example.test');
+    expect(text()).not.toContain('첫 번째 계정 화면');
+    expect(document.activeElement?.getAttribute('role')).toBe('tab');
+
+    owner = '두 번째';
+    await signIn('B');
+    expect(text()).toContain('B@example.test');
+    expect(text()).toContain('두 번째 계정 화면');
+    expect(text()).not.toContain('첫 번째 계정 화면');
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+  });
+
   it('ends account loading after a token failure so the login recovery control can render', async () => {
     const current = await mount(() => useSavesPage());
     expect(current().status).toBe('loading');

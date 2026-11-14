@@ -36,13 +36,14 @@ function emit(user: User | null) {
   sdk.auth.currentUser = user;
   return Promise.all([...sdk.listeners].map(listener => listener(user)));
 }
-function setup() {
+function setup(waitForSignOutConfirmation = false) {
   const service = new FirebaseAuthService({
     projectId: 'auth-test',
     apiKey: 'test',
     authDomain: 'localhost',
     clientEmail: '',
     privateKey: '',
+    waitForSignOutConfirmation,
   });
   const values = new Map<string, string>();
   const storage: AuthStorage = {
@@ -66,6 +67,7 @@ beforeEach(() => {
   sdk.auth.currentUser = null;
   sdk.auth.signOut.mockReset().mockResolvedValue(undefined);
   sdk.signInWithPopup.mockReset();
+  sdk.setCustomParameters.mockClear();
 });
 
 it('returns the successful popup account ID even when the current account differs', async () => {
@@ -75,6 +77,15 @@ it('returns the successful popup account ID even when the current account differ
   sdk.signInWithPopup.mockResolvedValue({ user: { uid: 'popup-account' } });
 
   await expect(service.signInWithGoogle()).resolves.toBe('popup-account');
+});
+
+it('requests an account chooser only when the caller opts in', async () => {
+  const { service } = setup();
+  sdk.signInWithPopup.mockResolvedValue({ user: { uid: 'popup-account' } });
+  await service.signInWithGoogle();
+  expect(sdk.setCustomParameters).not.toHaveBeenCalled();
+  await service.signInWithGoogle({ selectAccount: true });
+  expect(sdk.setCustomParameters).toHaveBeenCalledExactlyOnceWith({ prompt: 'select_account' });
 });
 
 describe('FirebaseAuthService의 인증 결과 순서', () => {
@@ -91,6 +102,7 @@ describe('FirebaseAuthService의 인증 결과 순서', () => {
     expect(values.size).toBe(0);
     expect(handler.mock.calls.filter(([value]) => value)).toEqual([]);
     expect(storage.set).not.toHaveBeenCalledWith(expect.objectContaining({ idToken: 'old-token' }));
+    sdk.auth.currentUser = null;
     signedOut.resolve();
     await logout;
   });
@@ -204,6 +216,82 @@ describe('FirebaseAuthService의 인증 결과 순서', () => {
     await pending;
     expect(values.get('idToken')).toBe('recovered');
   });
+
+  it('keeps the current account and does not clear its credentials while sign-out can still be rejected', async () => {
+    const { service, values, storage } = setup(true);
+    const read = deferred<ReturnType<typeof token>>();
+    const current = user('a', read);
+    read.resolve(token('account-a'));
+    await emit(current);
+    const rejected = deferred<void>();
+    sdk.auth.signOut.mockReturnValueOnce(rejected.promise);
+    const attempt = service.signOut();
+    const tokenDuringSignOut = values.get('idToken');
+    const clearedDuringSignOut = vi.mocked(storage.clear).mock.calls.length;
+    rejected.reject(new Error('storage denied'));
+    await expect(attempt).rejects.toThrow('storage denied');
+    expect(tokenDuringSignOut).toBe('account-a');
+    expect(clearedDuringSignOut).toBe(0);
+    const nextSubscriber = vi.fn();
+    service.onIdTokenChanged(nextSubscriber);
+    expect(nextSubscriber).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }));
+    expect(values.get('refreshToken')).toBe('refresh-a');
+
+    sdk.auth.signOut.mockImplementationOnce(async () => {
+      await emit(null);
+    });
+    await service.signOut();
+    expect(nextSubscriber).toHaveBeenLastCalledWith(undefined);
+    expect(storage.clear).toHaveBeenCalledTimes(1);
+    expect(values.size).toBe(0);
+  });
+
+  it('does not restore credentials if Firebase cleared the current user before rejecting sign-out', async () => {
+    const { service, values, handler } = setup(true);
+    const read = deferred<ReturnType<typeof token>>();
+    read.resolve(token('account-a'));
+    await emit(user('a', read));
+    sdk.auth.signOut.mockImplementationOnce(async () => {
+      sdk.auth.currentUser = null;
+      throw new Error('persistence failed after clearing currentUser');
+    });
+
+    await expect(service.signOut()).rejects.toThrow('persistence failed');
+    expect(handler).toHaveBeenLastCalledWith(undefined);
+    expect(values.has('idToken')).toBe(false);
+    expect(values.has('refreshToken')).toBe(false);
+  });
+
+  it('does not synthesize a signed-out event on rejection for apps using the default sign-out behavior', async () => {
+    const { service, handler } = setup();
+    const read = deferred<ReturnType<typeof token>>();
+    read.resolve(token('account-a'));
+    await emit(user('a', read));
+    sdk.auth.signOut.mockImplementationOnce(async () => {
+      sdk.auth.currentUser = null;
+      throw new Error('persistence failed');
+    });
+    await expect(service.signOut()).rejects.toThrow('persistence failed');
+    expect(handler).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: 'a' }));
+  });
+
+  it('reads a same-account token refresh deferred during a rejected sign-out', async () => {
+    const { service, values } = setup(true);
+    const read = deferred<ReturnType<typeof token>>();
+    const current = user('a', read);
+    read.resolve(token('old'));
+    await emit(current);
+    const failed = deferred<void>();
+    sdk.auth.signOut.mockReturnValueOnce(failed.promise);
+    const signOut = service.signOut();
+    vi.mocked(current.getIdTokenResult).mockResolvedValue(token('refreshed'));
+    await emit(current);
+    const tokenDuringSignOut = values.get('idToken');
+    failed.reject(new Error('sign-out failed'));
+    await expect(signOut).rejects.toThrow('sign-out failed');
+    expect(tokenDuringSignOut).toBe('old');
+    expect(values.get('idToken')).toBe('refreshed');
+  });
 });
 
 describe('초기 토큰 조회 오류와 복구', () => {
@@ -249,8 +337,8 @@ describe('초기 토큰 조회 오류와 복구', () => {
     const result = deferred<ReturnType<typeof token>>();
     const old = emit(user('old', result));
     if (mode === 'signed-out') {
+      sdk.auth.signOut.mockImplementationOnce(async () => emit(null));
       await service.signOut();
-      await emit(null);
     } else if (mode === 'new-account') {
       const next = deferred<ReturnType<typeof token>>();
       const pending = emit(user('new', next));
