@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { VisualFlowOnDetailDocument } from '@darun/provider-graphql';
 import { notFound } from '@darun/utils-router';
 import { Metadata } from 'next';
 import { cache, Suspense } from 'react';
@@ -6,35 +6,14 @@ import { FlowDetail } from '../../../features/flows';
 import { container } from '../../serverContainer';
 import { VisualLayout } from '../../VisualLayout';
 
-const flowQuery = gql`
-  query VisualFlowOnDetailPageMetadata($id: String!) {
-    visualFlow(id: $id) {
-      id
-      title
-      product {
-        name
-        slug
-      }
-    }
-  }
-`;
-
-type VisualFlowMetadataData = {
-  visualFlow?: {
-    id: string;
-    title: string;
-    product: { name: string; slug: string };
-  } | null;
-};
-
 type Props = {
   params: Promise<{ id: string }>;
 };
 
 const getFlow = cache(async (id: string) => {
   const client = container.serverApolloClient;
-  const { data } = await client.query<VisualFlowMetadataData>({
-    query: flowQuery,
+  const { data } = await client.query({
+    query: VisualFlowOnDetailDocument,
     variables: { id },
   });
 
@@ -86,7 +65,7 @@ export default async function Page({ params }: Props) {
   return (
     <VisualLayout>
       <Suspense fallback={<FlowDetailSkeleton />}>
-        <FlowDetail id={id} />
+        <FlowDetail key={id} id={id} initialDetail={flow} />
       </Suspense>
     </VisualLayout>
   );

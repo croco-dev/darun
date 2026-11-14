@@ -5,18 +5,19 @@ import { Link, notFound, useSearchParams } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
+import { RelatedDetailStatus } from '../detail/RelatedDetailStatus';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { VisualSaveButton } from '../saves/VisualSaveButton';
 import { ResponsiveScreenshotImage } from '../screenshots/ResponsiveScreenshotImage';
 import { ScreenshotImage } from '../screenshots/ScreenshotImage';
 import { VISUAL_PLATFORM_LABELS, VISUAL_FLOW_TYPE_LABELS } from './flowClassifications';
 import { stepSearch } from './stepSearch';
-import { FlowDetailState, useFlowDetail } from './useFlowDetail';
+import { FlowDetailState, InitialFlowDetail, useFlowDetail } from './useFlowDetail';
 
 const STEP_QUERY_KEY = 'step';
 const FLOW_ZOOM_HEADING_ID = 'flow-zoom-heading';
 
-const View = ({ status, detail, retry }: FlowDetailState) => {
+const View = ({ status, detail, retry, relatedStatus, retryRelated }: FlowDetailState) => {
   const searchParams = useSearchParams();
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
@@ -406,6 +407,7 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
           </a>
         </div>
 
+        <RelatedDetailStatus relatedStatus={relatedStatus} retryRelated={retryRelated} />
         {detail.relatedFlows.length > 0 && (
           <section aria-labelledby="flow-related-heading" className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
@@ -507,6 +509,12 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
   );
 };
 
-export const FlowDetail = bind((props: { id: string }) => ({ ...useFlowDetail(props.id) }), View, {
-  displayName: 'FlowDetail',
-});
+export const FlowDetail = bind(
+  (props: { id: string; initialDetail?: InitialFlowDetail }) => ({
+    ...useFlowDetail(props.id, props.initialDetail),
+  }),
+  View,
+  {
+    displayName: 'FlowDetail',
+  }
+);
