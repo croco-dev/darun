@@ -9,12 +9,14 @@ interface GenerateProductDescriptionButtonProps {
   slug: string;
   descriptionJobId?: string;
   onJobChange?: (id: string) => void;
+  onSaved?: (productId: string) => void;
 }
 
 export function GenerateProductDescriptionButton({
   slug,
   descriptionJobId,
   onJobChange,
+  onSaved,
 }: GenerateProductDescriptionButtonProps) {
   const {
     handleGenerate,
@@ -29,7 +31,7 @@ export function GenerateProductDescriptionButton({
     isReopening,
     handleReopenJob,
     staleApplyNotice,
-  } = useGenerateProductDescriptionButton(slug, descriptionJobId, onJobChange);
+  } = useGenerateProductDescriptionButton(slug, descriptionJobId, onJobChange, onSaved);
 
   const handleClick = () => {
     handleGenerate().catch(() => {});

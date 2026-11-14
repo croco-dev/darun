@@ -7,6 +7,7 @@ import { Link } from '@darun/utils-router';
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback, useState } from 'react';
 import { TranslationRecovery } from '../../llm-jobs/TranslationRecovery';
+import { useRefreshTranslationFreshness } from '../../llm-jobs/useRefreshTranslationFreshness';
 
 type ProductDetailFeatureSectionProps = {
   slug: string;
@@ -15,6 +16,7 @@ type ProductDetailFeatureSectionProps = {
 export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectionProps) => {
   const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
   const [featureId, setFeatureId] = useState<string | null>(null);
+  const refreshTranslation = useRefreshTranslationFreshness();
 
   const editFeature = useCallback(
     (id: string) => {
@@ -54,7 +56,12 @@ export const ProductDetailFeatureSection = ({ slug }: ProductDetailFeatureSectio
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="기능 정보 수정">
         {isEditModalOpened && featureId ? (
-          <EditProductFeatureItem featureId={featureId} onSubmit={closeEditModal} onCancel={closeEditModal} />
+          <EditProductFeatureItem
+            featureId={featureId}
+            onSaved={savedId => refreshTranslation({ productSlug: slug, featureId: savedId })}
+            onSubmit={closeEditModal}
+            onCancel={closeEditModal}
+          />
         ) : (
           <p className="text-sm text-dark-500 py-4 text-center break-words [word-break:keep-all]">
             선택된 기능 정보가 없습니다. 새로고침 후 다시 시도해 주세요.

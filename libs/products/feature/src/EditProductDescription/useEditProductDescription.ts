@@ -36,11 +36,12 @@ type FormValues = {
 
 export type UseEditProductDescriptionProps = {
   slug: string;
+  onSaved?: (productId: string) => void;
   onSubmit?: () => void;
   onCancel?: () => void;
 };
 
-export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditProductDescriptionProps) {
+export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }: UseEditProductDescriptionProps) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const imageUploadPending = useRef(false);
   const [imageUploading, setImageUploading] = useState(false);
@@ -94,16 +95,14 @@ export function useEditProductDescription({ slug, onSubmit, onCancel }: UseEditP
   }, [slug, description, getValues, acceptLatestDescription]);
 
   const [editDescription, { loading }] = useMutation(EditProductOnEditProductDescriptionDocument, {
-    refetchQueries: [
-      {
-        query: TempProductBySlugOnEditProductDescriptionDocument,
-        variables: { slug },
-      },
-      {
-        query: TempProductBySlugOnProductDescriptionDocument,
-        variables: { slug },
-      },
-    ],
+    refetchQueries: ({ data }) => {
+      const productId = data?.editProduct?.product?.id;
+      if (productId) onSaved?.(productId);
+      return [
+        { query: TempProductBySlugOnEditProductDescriptionDocument, variables: { slug } },
+        { query: TempProductBySlugOnProductDescriptionDocument, variables: { slug } },
+      ];
+    },
     awaitRefetchQueries: true,
   });
 

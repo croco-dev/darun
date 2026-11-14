@@ -5,6 +5,7 @@ import { Button, ExternalLink } from '@darun/ui';
 import { AdminModal, AdminPanel } from '@darun/ui-admin';
 import { useDisclosure } from '@mantine/hooks';
 import { ProductTranslationRecovery } from '../../llm-jobs/TranslationRecovery';
+import { useRefreshTranslationFreshness } from '../../llm-jobs/useRefreshTranslationFreshness';
 
 type ProductDetailInfoSectionProps = {
   slug: string;
@@ -12,6 +13,7 @@ type ProductDetailInfoSectionProps = {
 
 export const ProductDetailInfoSection = ({ slug }: ProductDetailInfoSectionProps) => {
   const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
+  const refreshTranslation = useRefreshTranslationFreshness();
 
   return (
     <>
@@ -52,7 +54,12 @@ export const ProductDetailInfoSection = ({ slug }: ProductDetailInfoSectionProps
         </div>
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="기본 정보 수정">
-        <EditProductInfo slug={slug} onSubmit={closeEditModal} onCancel={closeEditModal} />
+        <EditProductInfo
+          slug={slug}
+          onSaved={productId => refreshTranslation({ productId })}
+          onSubmit={closeEditModal}
+          onCancel={closeEditModal}
+        />
       </AdminModal>
     </>
   );

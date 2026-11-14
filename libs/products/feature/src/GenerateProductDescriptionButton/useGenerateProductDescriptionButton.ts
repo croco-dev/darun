@@ -82,7 +82,8 @@ export interface CandidateJobInfo {
 export function useGenerateProductDescriptionButton(
   slug: string,
   descriptionJobId?: string,
-  onJobChange?: (id: string) => void
+  onJobChange?: (id: string) => void,
+  onSaved?: (productId: string) => void
 ) {
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -284,6 +285,8 @@ export function useGenerateProductDescriptionButton(
       const result = await applyCandidateMutation({
         variables: { jobId: candidateJob.id },
       });
+      const applied = result.data?.applyProductDescriptionCandidate;
+      if (applied?.product.id && !applied.alreadyApplied) onSaved?.(applied.product.id);
       if (applyRequestRef.current !== applyRequest) return;
 
       const updatedJob = result.data?.applyProductDescriptionCandidate?.job;
