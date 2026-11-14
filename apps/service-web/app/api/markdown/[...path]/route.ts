@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { graphql } from '../../../../../../libs/__generated__/gql';
 import { getClient } from '../../../../app/getServerClient';
+import { collectMagazinePages } from '../../../../lib/magazines/collect-pages';
 import { appendVary } from '../../../../lib/seo/accept';
 import {
   buildCategoryMarkdown,
@@ -154,11 +155,19 @@ const MAGAZINE_QUERY = graphql(`
 `);
 
 const MAGAZINE_INDEX_QUERY = graphql(`
-  query PublishedMagazinesForMagazineIndexMarkdown {
-    publishedMagazines {
-      slug
-      title
-      summary
+  query PublishedMagazinesForMagazineIndexMarkdown($first: Int!, $after: String) {
+    publishedMagazines(first: $first, after: $after) {
+      edges {
+        node {
+          slug
+          title
+          summary
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
     }
   }
 `);
@@ -448,8 +457,15 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
     }
 
     if (isMagazineIndex) {
-      const { data } = await client.query({ query: MAGAZINE_INDEX_QUERY });
-      if (!data) throw new Error('Missing published magazine list');
+      const articles = await collectMagazinePages(async after => {
+        const { data } = await client.query({
+          query: MAGAZINE_INDEX_QUERY,
+          variables: { first: 100, after },
+          fetchPolicy: 'no-cache',
+        });
+        if (!data) throw new Error('Missing published magazine list');
+        return data.publishedMagazines;
+      });
 
       const t = await getTranslations({ locale, namespace: 'Magazine.index' });
       const body = buildMagazineIndexMarkdown({
@@ -458,7 +474,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
         empty: t('empty'),
         home: t('home'),
         search: t('search'),
-        articles: data.publishedMagazines,
+        articles,
       });
       return createResponse(body, 200, { noindex: locale === 'en' });
     }

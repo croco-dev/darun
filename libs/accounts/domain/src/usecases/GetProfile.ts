@@ -9,6 +9,10 @@ export class GetProfile {
     private readonly profileRepository: ProfileRepository
   ) {}
 
+  executeMany(userIds: readonly string[]) {
+    return this.profileRepository.findManyByUserIds(userIds);
+  }
+
   async execute({ userId }: { userId: string }) {
     return this.profileRepository.findByUserId(userId);
   }

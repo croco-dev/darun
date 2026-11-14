@@ -24,11 +24,25 @@ const { buildSchema } = createRequire(import.meta.url)('graphql') as typeof impo
 const schema = buildSchema(readFileSync(new URL('../../graphql-api/schema.graphql', import.meta.url), 'utf8'));
 const props = (locale: string) => ({ params: Promise.resolve({ locale }) });
 
-function mockPublishedList(publishedMagazines: () => unknown) {
+function mockPublishedList(publishedMagazines: (args: { first: number; after?: string }) => unknown) {
   getClient.mockReturnValue(
     new ApolloClient({
       cache: new InMemoryCache(),
-      link: new SchemaLink({ schema, validate: true, rootValue: { publishedMagazines } }),
+      link: new SchemaLink({
+        schema,
+        validate: true,
+        rootValue: {
+          publishedMagazines: (args: { first: number; after?: string }) => {
+            const result = publishedMagazines(args);
+            return Array.isArray(result)
+              ? {
+                  edges: result.map(node => ({ node })),
+                  pageInfo: { hasNextPage: false, endCursor: null },
+                }
+              : result;
+          },
+        },
+      }),
     })
   );
 }
@@ -96,5 +110,41 @@ describe('public magazine index', () => {
       throw new Error('List query unavailable');
     });
     await expect(Page(props('en'))).rejects.toThrow('List query unavailable');
+  });
+  it('한 번에 24개만 요청하고 불투명 커서로 다음 글과 최신 글 링크를 제공한다', async () => {
+    const requests: { first: number; after?: string }[] = [];
+    mockPublishedList(args => {
+      requests.push(args);
+      const next = args.after === 'opaque+/=&';
+      return {
+        edges: [
+          {
+            node: {
+              id: next ? 'last' : 'first',
+              slug: next ? 'last' : 'first',
+              title: next ? 'Last article' : 'First article',
+              summary: null,
+              backgroundImageUrl: '',
+            },
+          },
+        ],
+        pageInfo: { hasNextPage: !next, endCursor: next ? null : 'opaque+/=&' },
+      };
+    });
+    expect(renderToStaticMarkup(await Page(props('en')))).toContain('Older articles');
+    const html = renderToStaticMarkup(
+      await Page({
+        ...props('en'),
+        searchParams: Promise.resolve({ after: 'opaque+/=&' }),
+      })
+    );
+    expect(html).toContain('Last article');
+    expect(html).not.toContain('First article');
+    expect(html).toContain('Back to latest articles');
+    expect(html).not.toContain('Older articles');
+    expect(requests).toEqual([
+      { first: 24, after: null },
+      { first: 24, after: 'opaque+/=&' },
+    ]);
   });
 });

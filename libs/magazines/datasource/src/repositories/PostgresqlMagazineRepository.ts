@@ -1,6 +1,9 @@
 import { MagazineRepository } from '@darun/magazines-domain';
 import {
   Magazine,
+  validatePublishedMagazinePage,
+  type PublishedMagazineCursor,
+  type PublishedMagazinePage,
   MagazineRepositoryToken,
   magazineNotFound,
   magazineUpdateFailed,
@@ -9,7 +12,7 @@ import {
 } from '@darun/magazines-domain';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
-import { and, count, desc, eq, isNotNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNotNull, lt, or, sql, inArray } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { magazines } from '../entities/MagazineSchema';
 
@@ -130,13 +133,58 @@ export class PostgresqlMagazineRepository implements MagazineRepository {
     };
   }
 
-  async findAllPublished(): Promise<Magazine[]> {
-    return this.db
-      .select()
+  async findPublishedPage(first: number, after?: PublishedMagazineCursor): Promise<PublishedMagazinePage> {
+    validatePublishedMagazinePage(first, after);
+    const rows = await this.db
+      .select({
+        id: magazines.id,
+        revision: magazines.revision,
+        slug: magazines.slug,
+        title: magazines.title,
+        summary: magazines.summary,
+        backgroundImageUrl: magazines.backgroundImageUrl,
+        authorId: magazines.authorId,
+        publishedAt: magazines.publishedAt,
+        updatedAt: magazines.updatedAt,
+        // Preserve PostgreSQL microseconds at page boundaries; Date only retains milliseconds.
+        positionTime: sql<string>`to_char(${magazines.publishedAt}, 'YYYY-MM-DD"T"HH24:MI:SS.US')`,
+      })
       .from(magazines)
-      .where(isNotNull(magazines.publishedAt))
-      .orderBy(desc(magazines.publishedAt))
-      .then(rows => rows.map(item => this.mapper(item)));
+      .where(
+        and(
+          isNotNull(magazines.publishedAt),
+          after
+            ? or(
+                sql`${magazines.publishedAt} < ${after.publishedAt}::timestamp`,
+                and(sql`${magazines.publishedAt} = ${after.publishedAt}::timestamp`, lt(magazines.id, after.id))
+              )
+            : undefined
+        )
+      )
+      .orderBy(desc(magazines.publishedAt), desc(magazines.id))
+      .limit(first + 1);
+    return {
+      hasNextPage: rows.length > first,
+      items: rows.slice(0, first).map(({ positionTime, ...row }) => ({
+        magazine: {
+          ...row,
+          summary: row.summary ?? undefined,
+          publishedAt: row.publishedAt ?? undefined,
+          updatedAt: row.updatedAt ?? undefined,
+        },
+        position: { id: row.id, publishedAt: positionTime },
+      })),
+    };
+  }
+
+  async findPublishedContentsByIds(ids: readonly string[]): Promise<(string | null)[]> {
+    if (!ids.length) return [];
+    const rows = await this.db
+      .select({ id: magazines.id, content: magazines.content })
+      .from(magazines)
+      .where(and(inArray(magazines.id, [...ids]), isNotNull(magazines.publishedAt)));
+    const byId = new Map(rows.map(row => [row.id, row.content]));
+    return ids.map(id => byId.get(id) ?? null);
   }
 
   async insert(values: Magazine): Promise<Magazine | null> {

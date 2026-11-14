@@ -162,7 +162,7 @@ describe('상품 문서 미들웨어', () => {
 });
 
 describe('공개 Markdown route의 실행 스키마 계약', () => {
-  let magazineListState: 'ready' | 'empty' | 'error';
+  let magazineListState: 'ready' | 'empty' | 'error' | 'many' | 'middle-error';
   beforeEach(() => {
     magazineListState = 'ready';
     failRelations = false;
@@ -190,16 +190,43 @@ describe('공개 Markdown route의 실행 스키마 계약', () => {
                 content: `<p>본문: ${slug}</p>${contentHtml}`,
               };
             },
-            publishedMagazines: () => {
+            publishedMagazines: ({ first, after }: { first: number; after?: string }) => {
+              if (magazineListState === 'many' || magazineListState === 'middle-error') {
+                const start = Number(after ?? 0);
+                if (start === 100 && magazineListState === 'middle-error')
+                  throw new Error('middle magazine page failed');
+                return {
+                  edges: Array.from({ length: Math.min(first, 257 - start) }, (_, i) => ({
+                    node: {
+                      slug: `article-${start + i}`,
+                      title: `Article ${start + i}`,
+                      summary: null,
+                    },
+                  })),
+                  pageInfo: {
+                    hasNextPage: start + first < 257,
+                    endCursor: String(start + first),
+                  },
+                };
+              }
               if (magazineListState === 'error') throw new Error('fixture list query failure');
-              if (magazineListState === 'empty') return [];
-              return [
-                {
-                  slug: 'review.md',
-                  title: 'Review [notes]',
-                  summary: '<img src="https://example.org/pixel.png">가 포함된 요약',
-                },
-              ];
+              if (magazineListState === 'empty')
+                return {
+                  edges: [],
+                  pageInfo: { hasNextPage: false, endCursor: null },
+                };
+              return {
+                edges: [
+                  {
+                    node: {
+                      slug: 'review.md',
+                      title: 'Review [notes]',
+                      summary: '<img src="https://example.org/pixel.png">가 포함된 요약',
+                    },
+                  },
+                ],
+                pageInfo: { hasNextPage: false, endCursor: null },
+              };
             },
           },
         }),
@@ -207,6 +234,18 @@ describe('공개 Markdown route의 실행 스키마 계약', () => {
     );
   });
   afterEach(() => vi.restoreAllMocks());
+
+  it('Markdown 목록은 257개 글을 끝까지 읽고 중간 오류에는 500으로 실패한다', async () => {
+    magazineListState = 'many';
+    const request = magazineRequest('ko', null, 'GET', true);
+    const response = await GET(request.request, request.context);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('/ko/magazines/article-256');
+    magazineListState = 'middle-error';
+    const failed = await GET(request.request, request.context);
+    expect(failed.status).toBe(500);
+    expect(await failed.text()).not.toContain('/ko/magazines/article-0');
+  });
 
   it.each(['ko', 'en'])('%s 목록의 Markdown 협상과 sibling에서 공개 글 링크를 제공한다', async locale => {
     for (const sibling of [false, true]) {

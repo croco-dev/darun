@@ -34,7 +34,8 @@
     "@darun/utils-structure-react": "workspace:*",
     "@mantine/dropzone": "catalog:",
     "@mantine/form": "catalog:",
-    "@mantine/notifications": "catalog:"
+    "@mantine/notifications": "catalog:",
+    "dataloader": "2.2.2"
   },
   "devDependencies": {
     "@darun/eslint-config": "workspace:*",

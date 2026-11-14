@@ -6,6 +6,7 @@ import { GetProfile } from '../usecases/GetProfile';
 function createMockProfileRepository(): ProfileRepository {
   return {
     findByUserId: vi.fn(),
+    findManyByUserIds: vi.fn(),
   };
 }
 

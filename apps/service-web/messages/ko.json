@@ -223,7 +223,11 @@
       "title": "매거진",
       "empty": "아직 공개된 글이 없습니다.",
       "home": "홈으로 이동",
-      "search": "서비스 검색"
+      "search": "서비스 검색",
+      "emptyPage": "이 페이지에 표시할 글이 없습니다.",
+      "pagination": "매거진 목록 페이지",
+      "latest": "최신 글로 돌아가기",
+      "next": "다음 글 보기"
     },
     "content": {
       "label": "‘{title}’ 본문",

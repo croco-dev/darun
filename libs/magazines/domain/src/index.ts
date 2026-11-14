@@ -18,3 +18,10 @@ export { GetMagazineList } from './usecases/GetMagazineList';
 export { GetPublishedMagazine } from './usecases/GetPublishedMagazine';
 export { GetPublishedMagazineList } from './usecases/GetPublishedMagazineList';
 export { PublishMagazine } from './usecases/PublishMagazine';
+
+export { validatePublishedMagazinePage } from './repositories/PublishedMagazinePage';
+export type {
+  PublishedMagazineCursor,
+  PublishedMagazinePage,
+  MagazineSummary,
+} from './repositories/PublishedMagazinePage';
