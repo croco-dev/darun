@@ -58,7 +58,7 @@ const scenarios = [
   },
 ] as const;
 
-test.use({ isMobile: false, hasTouch: false });
+test.use({ isMobile: false, hasTouch: false, reducedMotion: 'reduce' });
 
 test.beforeEach(async ({ page }) => {
   await page.route('**/*', route => {
@@ -172,6 +172,8 @@ for (const scenario of scenarios) {
 
     const alert = section.getByRole('alert');
     const retry = section.getByRole('button', { name: scenario.retry });
+    // Let the notice become actionable before taking screenshots or beginning the next request.
+    await expect(retry).toBeEnabled();
     await expect(alert).toHaveText(scenario.error);
     await expect(page.getByRole('main').getByRole('alert')).toHaveCount(1);
     const settledRequests = new Map(requests);

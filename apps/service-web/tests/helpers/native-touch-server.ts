@@ -43,7 +43,6 @@ const nativeTouchProduct = {
 
 const companyRead = Promise.withResolvers<void>();
 const delayedCompany = { id: 'delayed-company', name: 'Delayed Company', type: '', address: '', startAt: null };
-const companyOperations = ['ProductAuthorOnProductDetailPage', 'ProductBySlugOnProductCompany'];
 
 // Both SSR and browser reads use this loopback-only fixture. No database or external API is involved.
 createServer((request, response) => {
@@ -66,10 +65,10 @@ createServer((request, response) => {
   let body = '';
   request.on('data', chunk => (body += chunk));
   request.on('end', async () => {
-    const { operationName, variables } = body ? JSON.parse(body) : {};
+    const { operationName, query, variables } = body ? JSON.parse(body) : {};
     response.setHeader('Content-Type', 'application/json');
     const failPhoto = variables?.slug === 'unavailable-photos' && operationName === 'GetPhotosOnProductPhotos';
-    const readsCompany = companyOperations.includes(operationName);
+    const readsCompany = typeof query === 'string' && /\bownedCompany\s*\{/.test(query);
     const companyUnavailable = variables?.slug === 'unavailable-company' && readsCompany;
     if (failPhoto || companyUnavailable) {
       response.end(
