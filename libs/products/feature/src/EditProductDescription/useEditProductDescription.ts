@@ -49,10 +49,17 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     imageUploadPending.current = uploading;
     setImageUploading(uploading);
   }, []);
-  const { data } = useQuery(TempProductBySlugOnEditProductDescriptionDocument, {
+  const {
+    data,
+    error: descriptionError,
+    loading: descriptionLoading,
+    refetch,
+  } = useQuery(TempProductBySlugOnEditProductDescriptionDocument, {
     variables: { slug },
   });
-  const description = data?.tempProductBySlug?.description ?? '';
+  const product = data?.tempProductBySlug;
+  const descriptionReady = Boolean(product && !descriptionError);
+  const description = product?.description ?? '';
   const sourceRef = useRef({ slug, description });
   const lastObservedSourceRef = useRef({ slug, description });
   const productSessionRef = useRef({ slug });
@@ -81,6 +88,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   }, [slug, description, setInitialValues, setValues, resetDirty]);
 
   useEffect(() => {
+    if (!descriptionReady) return;
     const lastObserved = lastObservedSourceRef.current;
     if (lastObserved.slug === slug && lastObserved.description === description) return;
     lastObservedSourceRef.current = { slug, description };
@@ -92,7 +100,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     } else {
       setHasServerChange(description !== sourceRef.current.description);
     }
-  }, [slug, description, getValues, acceptLatestDescription]);
+  }, [slug, description, descriptionReady, getValues, acceptLatestDescription]);
 
   const [editDescription, { loading }] = useMutation(EditProductOnEditProductDescriptionDocument, {
     refetchQueries: ({ data }) => {
@@ -107,37 +115,27 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   });
 
   const save = async (values: FormValues) => {
-    if (loading || imageUploadPending.current) {
+    if (!descriptionReady || loading || imageUploadPending.current) {
       return;
     }
-    const tableError = getEditorTableError(values.description ?? '');
+    const draft = values.description ?? '';
+    const tableError = getEditorTableError(draft);
     if (tableError) {
       setSaveError(tableError);
       return;
     }
     const hasContent = (() => {
-      const desc = values.description?.trim();
-      if (!desc) return false;
-      if (typeof DOMParser !== 'undefined') {
-        const doc = new DOMParser().parseFromString(desc, 'text/html');
-        return Boolean(doc.body.textContent?.trim() || doc.body.querySelector('img, video, iframe'));
-      }
-      return Boolean(desc);
+      if (!draft.trim()) return false;
+      if (typeof DOMParser === 'undefined') return true;
+      const doc = new DOMParser().parseFromString(draft, 'text/html');
+      return Boolean(doc.body.textContent?.trim() || doc.body.querySelector('img, video, iframe, table, hr'));
     })();
-
-    if (!hasContent) {
-      notifications.show({
-        message: '설명 내용을 입력해주세요.',
-        color: 'red',
-      });
-      return;
-    }
 
     setSaveError(null);
     const productSession = productSessionRef.current;
     try {
       const result = await editDescription({
-        variables: { slug, input: { description: values.description || '' } },
+        variables: { slug, input: { description: hasContent ? draft : '' } },
       });
       if (productSessionRef.current !== productSession) return;
       const product = result.data?.editProduct?.product;
@@ -166,6 +164,10 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
 
   return {
     saveError,
+    descriptionError,
+    descriptionLoading,
+    descriptionReady,
+    retryDescription: () => void refetch().catch(() => {}),
     form,
     submit,
     onCancel,
