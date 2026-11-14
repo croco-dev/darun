@@ -229,8 +229,10 @@ test('company errors in structured data and the company section leave the produc
   await expect(page.getByText('Native scrolling with product photos and features.')).toBeVisible();
   await expect(page.locator('#company-info').getByRole('alert')).toHaveText('Could not load this section.');
   const structuredData = page.locator('#product-structured-data');
-  await expect(structuredData).toContainText('"@type":"SoftwareApplication"');
-  await expect(structuredData).not.toContainText('"author"');
+  const data = JSON.parse((await structuredData.textContent()) ?? '{}');
+  expect(data.mainEntity['@type']).toBe('SoftwareApplication');
+  expect(data).not.toHaveProperty('author');
+  expect(data.mainEntity).not.toHaveProperty('author');
 });
 
 test('a slow company lookup does not block the product and still supplies the structured data author', async ({
@@ -249,7 +251,10 @@ test('a slow company lookup does not block the product and still supplies the st
   }
   await expect(company.getByText('Delayed Company')).toBeVisible();
   const structuredData = page.locator('#product-structured-data');
-  await expect(structuredData).toContainText('"author":{"@type":"Organization","name":"Delayed Company"}');
+  const data = JSON.parse((await structuredData.textContent()) ?? '{}');
+  const author = { '@type': 'Organization', name: 'Delayed Company' };
+  expect(data.author).toEqual(author);
+  expect(data.mainEntity.author).toEqual(author);
 });
 
 test('healthy related content remains in the server response', async ({ request }) => {
