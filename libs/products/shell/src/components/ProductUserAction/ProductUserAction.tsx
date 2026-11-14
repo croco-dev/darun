@@ -25,7 +25,8 @@ export const ProductUserAction = bind(
     const { addToast } = useToast();
     const locale = useLocale();
     const t = useTranslations('ProductDetail.action');
-    const [copied, setCopied] = useState(false);
+    const [copyStatus, setCopyStatus] = useState<'idle' | 'pending' | 'copied' | 'failed'>('idle');
+    const [copyAttempt, setCopyAttempt] = useState(0);
     const hasShownSuccessToastRef = useRef(false);
     const prevErrorRef = useRef<string | null>(null);
 
@@ -34,8 +35,13 @@ export const ProductUserAction = bind(
     useEffect(() => {
       hasShownSuccessToastRef.current = false;
       prevErrorRef.current = null;
-      setCopied(false);
+      setCopyStatus('idle');
     }, [slug]);
+    useEffect(() => {
+      if (copyStatus !== 'copied') return;
+      const timer = setTimeout(() => setCopyStatus('idle'), 2000);
+      return () => clearTimeout(timer);
+    }, [copyStatus]);
     useEffect(() => {
       if (error && error !== prevErrorRef.current) {
         addToast(error, 'error');
@@ -50,17 +56,20 @@ export const ProductUserAction = bind(
     }, [error, success, voted, loading, addToast, t]);
 
     const handleCopyLink = async () => {
-      if (typeof window === 'undefined') return;
+      if (copyStatus === 'pending') return;
+      setCopyAttempt(attempt => attempt + 1);
+      setCopyStatus('pending');
       try {
         await navigator.clipboard.writeText(window.location.href);
-        setCopied(true);
-        addToast(t('copySuccess'), 'success');
-        setTimeout(() => setCopied(false), 2000);
       } catch {
-        // clipboard unavailable
+        setCopyStatus('failed');
+        return;
       }
+      setCopyStatus('copied');
+      addToast(t('copySuccess'), 'success');
     };
 
+    const copied = copyStatus === 'copied';
     const copyLabel = copied ? t('copied') : t('copyLink');
 
     return (
@@ -114,12 +123,14 @@ export const ProductUserAction = bind(
         {voteCountUnavailable && <VoteCountRetry loading={voteCountLoading} retry={retryVoteCount} />}
         <CompareButton slug={slug} source="direct" />
         <Button
+          type="button"
           variant="shadow"
           color="secondary"
           size="md"
           onClick={handleCopyLink}
           data-testid="share-btn"
           aria-label={copyLabel}
+          aria-disabled={copyStatus === 'pending'}
           title={copyLabel}
           className="group flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center p-0 transition-all duration-150 active:scale-[0.98] border-dark-150 bg-white text-dark-800 shadow-button hover:border-dark-300 hover:bg-surface-100 hover:text-dark-950 hover:shadow-button-hover motion-reduce:transform-none motion-reduce:transition-none"
         >
@@ -135,6 +146,9 @@ export const ProductUserAction = bind(
             )}
           </div>
         </Button>
+        <output className={copyStatus === 'failed' ? 'basis-full max-w-xs text-sm text-cherry-700' : 'sr-only'}>
+          {copyStatus === 'failed' && <span key={copyAttempt}>{t('copyFailed')}</span>}
+        </output>
       </div>
     );
   }

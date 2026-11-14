@@ -1,11 +1,78 @@
-import { render, screen, cleanup } from '@testing-library/react';
-import { describe, it, expect, afterEach } from 'vitest';
-import { AdminEmptyState } from '../AdminState';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AdminEmptyState, AdminErrorState } from '../AdminState';
 import { GoogleButton } from '../GoogleButton';
 
 describe('AdminEmptyState and GoogleButton', () => {
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  describe('AdminErrorState', () => {
+    it.each(['denied', 'unsupported'] as const)(
+      'shows copy failure (%s) and can retry the same details',
+      async failure => {
+        const details = 'code: CONNECTION_FAILED\nrequestId: test-123';
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        if (failure === 'denied') writeText.mockRejectedValueOnce(new DOMException('Denied', 'NotAllowedError'));
+        const clipboard = { writeText };
+        vi.stubGlobal('navigator', {
+          clipboard: failure === 'denied' ? clipboard : {},
+        });
+
+        render(<AdminErrorState details={details} />);
+        fireEvent.click(screen.getByText('자세한 오류 정보 확인'));
+        const button = screen.getByRole('button', { name: '오류 내용 복사' });
+        await act(async () => {
+          fireEvent.click(button);
+        });
+
+        expect(screen.queryByRole('status')?.textContent).toContain('아래 오류 텍스트를 선택해 직접 복사');
+        expect(button.textContent).toBe('오류 내용 복사');
+        expect(button.closest('details')?.querySelector('pre')?.textContent).toBe(details);
+
+        if (failure === 'unsupported') {
+          const status = screen.getByRole('status');
+          const previousMessage = status.firstChild;
+          await act(async () => {
+            fireEvent.click(button);
+          });
+          expect(status.textContent).toContain('아래 오류 텍스트를 선택해 직접 복사');
+          expect(status.firstChild).not.toBe(previousMessage);
+        }
+
+        vi.stubGlobal('navigator', { clipboard });
+        await act(async () => {
+          fireEvent.click(button);
+        });
+
+        expect(writeText).toHaveBeenLastCalledWith(details);
+        expect(screen.getByRole('status').textContent).toBe('');
+        expect(button.textContent).toBe('복사 완료!');
+      }
+    );
+
+    it('copies newly displayed details while an older write finishes without changing their feedback', async () => {
+      const olderWrite = Promise.withResolvers<void>();
+      const writeText = vi.fn().mockResolvedValue(undefined).mockReturnValueOnce(olderWrite.promise);
+      vi.stubGlobal('navigator', { clipboard: { writeText } });
+      const { rerender } = render(<AdminErrorState details="첫 번째 오류" />);
+      fireEvent.click(screen.getByText('자세한 오류 정보 확인'));
+      const button = screen.getByRole('button', { name: '오류 내용 복사' });
+      fireEvent.click(button);
+
+      rerender(<AdminErrorState details="두 번째 오류" />);
+      await act(async () => {
+        fireEvent.click(button);
+      });
+      expect(writeText.mock.calls).toEqual([['첫 번째 오류'], ['두 번째 오류']]);
+      expect(button.textContent).toBe('복사 완료!');
+
+      await act(async () => olderWrite.reject(new Error('Older write rejected')));
+      expect(button.textContent).toBe('복사 완료!');
+      expect(screen.getByRole('status').textContent).toBe('');
+    });
   });
 
   describe('AdminEmptyState', () => {

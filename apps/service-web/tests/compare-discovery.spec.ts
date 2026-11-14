@@ -107,7 +107,8 @@ test.describe('Compare discovery journey', () => {
           sessionStorage.setItem('block-compare-write', '1');
         });
         await clear.press('Enter');
-        await expect(page.getByRole('status')).toContainText(
+        const compareStatus = add.locator('xpath=..').getByRole('status');
+        await expect(compareStatus).toContainText(
           locale === 'ko' ? '비교 목록을 저장하지 못했습니다' : 'Could not save your comparison'
         );
         expect(await page.evaluate(() => JSON.parse(localStorage.getItem('compare-products')!))).toEqual([
@@ -124,7 +125,7 @@ test.describe('Compare discovery journey', () => {
         await page.evaluate(() => sessionStorage.removeItem('block-compare-write'));
         if (locale === 'en') await clear.click();
         else await clear.press('Enter');
-        await expect(page.getByRole('status')).toContainText(
+        await expect(compareStatus).toContainText(
           locale === 'ko' ? '비교 선택을 모두 해제했습니다' : 'Comparison selection cleared'
         );
         await expect(add).toBeFocused();

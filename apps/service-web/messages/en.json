@@ -138,7 +138,8 @@
       "voteFailed": "Failed to vote. Please try again.",
       "copyLink": "Copy link",
       "copied": "Copied",
-      "copySuccess": "Link copied to clipboard."
+      "copySuccess": "Link copied to clipboard.",
+      "copyFailed": "Couldn’t copy the link. Copy it directly from the address bar."
     },
     "compareButton": {
       "add": "Add to compare",
