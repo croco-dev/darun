@@ -786,6 +786,196 @@ function deferCollectionWrites() {
 }
 
 describe('browser collection write boundaries', () => {
+  async function renderCollections(collections: store.NamedCollection[]) {
+    localStorage.setItem(KEY, JSON.stringify(collections));
+    window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root!.render(createElement(Collections)));
+  }
+
+  it.each([
+    ['First', 'Middle'],
+    ['Middle', 'Last'],
+    ['Last', 'Middle'],
+  ])('focuses the neighboring removal button after removing %s', async (removed, expected) => {
+    const items = ['First', 'Middle', 'Last'].map(title => ({
+      ...item,
+      id: title,
+      title,
+    }));
+    await renderCollections([{ id: 'c', name: 'Collection', createdAt: 1, items }]);
+    const removeButton = (title: string) =>
+      host.querySelector<HTMLButtonElement>(`button[aria-label="${title} 항목을 컬렉션에서 제거"]`)!;
+    const trigger = removeButton(removed);
+
+    trigger.focus();
+    await act(async () => trigger.click());
+
+    expect(trigger.isConnected).toBe(false);
+    expect(document.activeElement).toBe(removeButton(expected));
+    expect(host.querySelector('[role=status]')?.textContent).toContain(`${removed} 항목을 컬렉션에서 제거했습니다.`);
+  });
+
+  it('focuses the same collection heading when its final item is removed', async () => {
+    await renderCollections([
+      { id: 'c', name: 'Collection', createdAt: 1, items: [item] },
+      {
+        id: 'other',
+        name: 'Other collection',
+        createdAt: 2,
+        items: [{ ...item, id: 'other', title: 'Other' }],
+      },
+    ]);
+    const trigger = host.querySelector<HTMLButtonElement>('button[aria-label="Screen 항목을 컬렉션에서 제거"]')!;
+    trigger.focus();
+    await act(async () => trigger.click());
+
+    expect(trigger.isConnected).toBe(false);
+    expect(document.activeElement).toBe(host.querySelector('#collection-c'));
+    expect(host.querySelector('#collection-c')?.closest('section')?.textContent).toContain('저장한 항목이 없습니다.');
+  });
+
+  it.each(['body', 'main'])('restores focus after a pointer removal with focus on %s', async focusedElement => {
+    const retained = { ...item, id: 'retained', title: 'Retained' };
+    await renderCollections([{ id: 'c', name: 'Collection', createdAt: 1, items: [item, retained] }]);
+    const main = document.createElement('main');
+    main.tabIndex = -1;
+    host.before(main);
+    main.append(host);
+    if (focusedElement === 'main') main.focus();
+    expect(document.activeElement).toBe(focusedElement === 'main' ? main : document.body);
+
+    const trigger = host.querySelector<HTMLButtonElement>('button[aria-label="Screen 항목을 컬렉션에서 제거"]')!;
+    await act(async () => trigger.click());
+
+    expect(trigger.isConnected).toBe(false);
+    expect(document.activeElement).toBe(host.querySelector('button[aria-label="Retained 항목을 컬렉션에서 제거"]'));
+  });
+
+  it('focuses a newly added item when removal was waiting for the storage lock', async () => {
+    const added = { ...item, id: 'added', title: 'Added' };
+    const collection = { id: 'c', name: 'Collection', createdAt: 1, items: [item] };
+    await renderCollections([collection]);
+    const release = deferCollectionWrites();
+    const trigger = host.querySelector<HTMLButtonElement>('button[aria-label="Screen 항목을 컬렉션에서 제거"]')!;
+    trigger.focus();
+    await act(async () => trigger.click());
+
+    localStorage.setItem(KEY, JSON.stringify([{ ...collection, items: [item, added] }]));
+    await act(async () => release.resolve());
+
+    expect(trigger.isConnected).toBe(false);
+    const next = host.querySelector('button[aria-label="Added 항목을 컬렉션에서 제거"]');
+    expect(next).not.toBeNull();
+    expect(document.activeElement).toBe(next);
+  });
+
+  it('continues focus restoration when a second pending pointer removal removes the focused row', async () => {
+    const second = { ...item, id: 'second', title: 'Second' };
+    const third = { ...item, id: 'third', title: 'Third' };
+    await renderCollections([{ id: 'c', name: 'Collection', createdAt: 1, items: [item, second, third] }]);
+    const main = document.createElement('main');
+    main.tabIndex = -1;
+    host.before(main);
+    main.append(host);
+    main.focus();
+
+    const writes = [deferred<void>(), deferred<void>()];
+    let nextWrite = 0;
+    Object.defineProperty(navigator, 'locks', {
+      configurable: true,
+      value: {
+        request: async (_name: string, write: () => unknown) => {
+          await writes[nextWrite++].promise;
+          return write();
+        },
+      },
+    });
+    const button = (title: string) =>
+      host.querySelector<HTMLButtonElement>(`button[aria-label="${title} 항목을 컬렉션에서 제거"]`)!;
+    const firstRemoval = button('Screen');
+    const secondRemoval = button('Second');
+    await act(async () => {
+      firstRemoval.click();
+      secondRemoval.click();
+    });
+
+    await act(async () => writes[0].resolve());
+    expect(document.activeElement).toBe(secondRemoval);
+    await act(async () => writes[1].resolve());
+    expect(document.activeElement).toBe(button('Third'));
+  });
+
+  it('focuses the next collection heading after confirming deletion of a populated collection', async () => {
+    await renderCollections([
+      { id: 'previous', name: 'Previous collection', createdAt: 1, items: [] },
+      { id: 'c', name: 'Collection', createdAt: 2, items: [item] },
+      { id: 'next', name: 'Next collection', createdAt: 3, items: [] },
+    ]);
+    const section = host.querySelector('#collection-c')!.closest('section')!;
+    const buttonWithText = (text: string) =>
+      [...section.querySelectorAll('button')].find(button => button.textContent === text)!;
+    await act(async () => buttonWithText('컬렉션 삭제').click());
+    const confirm = buttonWithText('삭제 확인');
+    confirm.focus();
+    await act(async () => confirm.click());
+
+    expect(section.isConnected).toBe(false);
+    expect(document.activeElement).toBe(host.querySelector('#collection-next'));
+    expect(host.querySelector('[role=status]')?.textContent).toContain('Collection 컬렉션을 삭제했습니다.');
+  });
+
+  it('focuses the previous collection heading when deleting the last of two collections', async () => {
+    await renderCollections([
+      { id: 'first', name: 'First collection', createdAt: 1, items: [] },
+      { id: 'last', name: 'Last collection', createdAt: 2, items: [] },
+    ]);
+    const section = host.querySelector('#collection-last')!.closest('section')!;
+    const trigger = section.querySelector('button')!;
+    trigger.focus();
+    await act(async () => trigger.click());
+
+    expect(section.isConnected).toBe(false);
+    expect(document.activeElement).toBe(host.querySelector('#collection-first'));
+  });
+
+  it('focuses a newly created collection when deletion was waiting for the storage lock', async () => {
+    const collection = { id: 'c', name: 'Collection', createdAt: 1, items: [] };
+    await renderCollections([collection]);
+    const release = deferCollectionWrites();
+    const trigger = host.querySelector<HTMLElement>('#collection-c')!.closest('section')!.querySelector('button')!;
+    trigger.focus();
+    await act(async () => trigger.click());
+
+    localStorage.setItem(
+      KEY,
+      JSON.stringify([collection, { id: 'added', name: 'Added collection', createdAt: 2, items: [] }])
+    );
+    await act(async () => release.resolve());
+
+    expect(trigger.isConnected).toBe(false);
+    const next = host.querySelector('#collection-added');
+    expect(next).not.toBeNull();
+    expect(document.activeElement).toBe(next);
+  });
+
+  it('keeps the removal button and focus when removing an item fails', async () => {
+    await renderCollections([{ id: 'c', name: 'Collection', createdAt: 1, items: [item] }]);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    const trigger = host.querySelector<HTMLButtonElement>('button[aria-label="Screen 항목을 컬렉션에서 제거"]')!;
+    trigger.focus();
+    await act(async () => trigger.click());
+
+    expect(trigger.isConnected).toBe(true);
+    expect(document.activeElement).toBe(trigger);
+    expect(host.querySelector('[role=status]')?.textContent).toBe('');
+    expect(host.querySelector('[role=alert]')?.textContent).toContain('저장하지 못했습니다');
+  });
+
   it.each(['{broken', '', '{"version":99,"collections":[]}', '[{"id":"broken"}]'])(
     'preserves raw corrupt value across all mutations: %s',
     async raw => {
