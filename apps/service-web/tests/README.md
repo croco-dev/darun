@@ -20,31 +20,45 @@ pnpm --filter service-web e2e:install
 
 E2E는 일반 개발 환경과 별도 Compose 프로젝트·볼륨을 사용합니다. 같은 포트를 쓰는 개발 컨테이너가 실행 중이면 먼저 중지하세요. 기존 개발 볼륨을 삭제하지 않습니다.
 
-1. **전용 PostgreSQL·MongoDB·Firebase Auth Emulator 시작**:
+아래 명령은 실제 검색을 지원하는 [로컬 Compose 설정](../../../CONTRIBUTING.md#로컬-mongodb-search)을 사용합니다.
+이 절차를 실행하는 셸에서 다음 함수를 정의합니다.
+
+```bash
+darun_e2e() {
+  docker compose -p darun-e2e -f docker-compose.yml -f docker-compose.e2e.yml -f docker-compose.search.yml "$@"
+}
+```
+
+1. **전용 PostgreSQL·MongoDB Search·Firebase Auth Emulator 시작**:
    ```bash
-   docker compose -p darun-e2e -f docker-compose.yml -f docker-compose.e2e.yml up -d postgres mongo firebase-auth
+   darun_e2e up -d --wait --wait-timeout 180 postgres mongo firebase-auth
    ```
 2. **전용 PostgreSQL DB에 migration 적용** (재실행 가능):
    ```bash
    DATABASE_URL=postgresql://darun:darun@localhost:5432/darun_e2e pnpm --filter graphql-api migrate
    ```
-   `local:bootstrap`은 기존 개발 DB를 초기화하므로 E2E 준비에 사용하지 않습니다.
+   `local:bootstrap`은 개발용 `darun` DB를 대상으로 합니다. E2E에서는 `darun_e2e`에 migration을 적용합니다.
 3. **고정 fixture 생성·복원**:
    ```bash
    DATABASE_URL=postgresql://darun:darun@localhost:5432/darun_e2e \
-   MONGODB_URI='mongodb://darun:darun@localhost:27017/darun?authSource=admin' \
+   MONGODB_URI='mongodb://darun:darun@127.0.0.1:27017/darun?authSource=admin&directConnection=true' \
    pnpm --filter graphql-api seed:e2e
    ```
    시드는 PostgreSQL의 `darun_e2e`와 로컬 MongoDB의 `darun`만 허용합니다. MongoDB는 API가 사용하는 DB 이름을 유지하며 별도 Compose 볼륨으로 격리합니다. 연결 URL은 자동으로 `.env`에서 읽지 않습니다.
-4. **API와 웹 시작**:
+4. **검색 인덱스 준비 및 API와 웹 시작**:
    ```bash
-   docker compose -p darun-e2e -f docker-compose.yml -f docker-compose.e2e.yml up -d graphql-api service-web
+   darun_e2e exec -T mongo \
+     mongosh 'mongodb://darun:darun@127.0.0.1:27017/darun?authSource=admin&directConnection=true' \
+     --quiet --file /opt/darun/prepare-local-search.js &&
+     darun_e2e up -d graphql-api service-web
    ```
 5. **테스트 실행**:
+   API가 준비되면 `searchProducts(query: "figma") { slug }`에서 `figma-e2e`가 조회되는지 확인합니다.
+   새 시드는 인덱스에 반영되기까지 잠시 걸릴 수 있습니다. Playwright는 실행 중인 웹을 사용합니다.
    ```bash
    pnpm --filter service-web e2e
    ```
-   Playwright는 실행 중인 웹을 사용합니다. 전체 smoke의 검색 경로에는 `searchable_products_index`를 제공하는 MongoDB Search가 필요합니다. 현재 기본 `mongo:8` Compose에는 이 검색 엔진이 없으며, 검색 문서를 시드하는 것만으로 `$search`가 준비되지는 않습니다. 로컬 검색 환경 구성은 #476, PR CI의 격리 smoke job은 별도의 `docker-compose.smoke.yml`로 검색 엔진을 준비합니다.
+   테스트가 끝나면 `darun_e2e down`으로 종료합니다.
 
 ### 2. Standalone 모드
 Docker Compose를 사용하지 않고 로컬 호스트 환경에서 직접 독립 실행하는 방법입니다.

@@ -1,0 +1,25 @@
+# Opt-in MongoDB Search for local development. Keep the original mongo-data volume separate.
+services:
+  mongo:
+    image: mongodb/mongodb-atlas-local:8.0.17@sha256:c90dbd9a576b71065cd30c7af0822a673754012faa690acb995731eb28971572
+    hostname: mongo
+    environment: !override
+      MONGODB_INITDB_ROOT_USERNAME: darun
+      MONGODB_INITDB_ROOT_PASSWORD: darun
+    ports: !override ['127.0.0.1:27017:27017']
+    volumes:
+      - mongo-search-data:/data/db
+      - mongo-search-config:/data/configdb
+      - mongo-search-indexes:/data/mongot
+      - ./apps/graphql-api/scripts/prepare-local-search.js:/opt/darun/prepare-local-search.js:ro
+    healthcheck:
+      test: ['CMD', '/usr/local/bin/runner', 'healthcheck']
+      start_period: 60s
+  graphql-api:
+    environment:
+      MONGODB_URI: mongodb://darun:darun@mongo:27017/darun?authSource=admin&directConnection=true
+
+volumes:
+  mongo-search-data:
+  mongo-search-config:
+  mongo-search-indexes:

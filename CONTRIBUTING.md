@@ -229,10 +229,47 @@ Compose는 `INFRA_ENV=local` API에만 로컬 커서 키 기본값을 제공합�
 `pageInfo { hasNextPage endCursor }`를 조회합니다. API를 재시작한 후 같은 카테고리의
 `after`에 `endCursor`를 전달해 다음 상품이 조회되는지 확인합니다.
 
+### 로컬 MongoDB Search
+
+실제 `$search`를 실행하려면 기본 Compose 파일에 검색용 설정을 함께 적용합니다.
+Docker Engine 28.0.0 이상과 Compose 2.24.4 이상이 필요합니다. 검색 MongoDB는 호스트의 `127.0.0.1:27017`에서
+접속할 수 있으며, 기존 `mongo-data`와 분리된 볼륨에 문서와 인덱스를 저장합니다.
+같은 Compose 프로젝트에서 전환하면 MongoDB 컨테이너가 교체되며 기존 볼륨의 데이터는 보존됩니다.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.search.yml up -d --wait --wait-timeout 180 mongo &&
+  docker compose -f docker-compose.yml -f docker-compose.search.yml exec -T mongo \
+    mongosh 'mongodb://darun:darun@127.0.0.1:27017/darun?authSource=admin&directConnection=true' \
+    --quiet --file /opt/darun/prepare-local-search.js &&
+  docker compose -f docker-compose.yml -f docker-compose.search.yml up -d --wait --wait-timeout 180 &&
+  pnpm local:bootstrap
+```
+
+초기화는 `searchableProducts` 컬렉션과 `searchable_products_index`를 준비하고 실제 `$search`가
+실행될 때 성공합니다. 다시 실행해도 기존 문서와 인덱스를 유지합니다. 인덱스가 준비되지 않으면
+초기화 명령이 오류로 종료됩니다. 준비가 끝난 뒤 `searchProducts: []`는 일치하는 문서가 없다는 뜻입니다.
+새 문서가 검색에 표시되기까지는 인덱스 반영 시간이 걸릴 수 있습니다.
+
+로컬 관리자에서 테스트 상품을 발행하고 이름, 본문, 태그에 서로 다른 검색어를 넣은 뒤 아래의
+`pnpm local:sync-search`를 실행합니다. 각 검색어로 다음 GraphQL 요청을 보내 같은 상품의 `slug`가
+나오는지 확인합니다. 일치하지 않는 검색어에는 빈 배열이 반환됩니다. 고정 fixture를 사용하려면
+[서비스 웹의 격리 E2E 실행 절차](apps/service-web/tests/README.md#1-compose-모드-권장)를 사용합니다.
+
+```bash
+curl --fail-with-body http://127.0.0.1:4000/graphql \
+  -H 'Content-Type: application/json' \
+  --data '{"query":"query($query: String!) { searchProducts(query: $query) { slug } }","variables":{"query":"테스트 상품 검색어"}}'
+```
+
+검색 환경을 중지하려면 두 파일을 지정해 `docker compose -f docker-compose.yml -f docker-compose.search.yml down`을
+실행합니다. 이후 `pnpm local:up`으로 실행하면 기존 일반 MongoDB 볼륨을 다시 사용합니다.
+
 ### 로컬 상품의 검색 문서 동기화
 
 로컬 관리자에서 상품을 발행하거나 공개된 내용을 수정한 뒤, 호스트에서 다음 명령을 실행합니다.
-먼저 `pnpm local:up`과 `pnpm local:bootstrap`으로 로컬 DB를 준비해야 합니다.
+먼저 위의 MongoDB Search 절차를 완료합니다. 검색 문서 저장만 확인할 때는 일반 개발 환경의
+`pnpm local:up`과 `pnpm local:bootstrap`도 사용할 수 있습니다. 검색용 설정을 적용한 상태에서는
+같은 Compose 파일 조합을 계속 사용합니다.
 
 ```bash
 INFRA_ENV=local \
@@ -266,8 +303,7 @@ ORDER BY created_at;
 ```
 
 Mongo의 `darun.searchableProducts`에서 같은 `productId`와 `sourceRevision`의 문서를 확인한 뒤 검색을 실행합니다.
-이 명령은 검색 문서 소비 경로만 제공합니다. 실제 `$search`에는 별도의 MongoDB Search process와
-`searchable_products_index`가 필요하며, 일반 Mongo CRUD 성공만으로 검색 준비가 끝났다고 판단하지 않습니다(#476).
+실제 `$search`를 실행하려면 위의 MongoDB Search 설정과 인덱스 준비가 필요합니다.
 
 회귀 검사는 개발 DB와 분리된 빈 PostgreSQL·Mongo의 `darun` DB에만 실행합니다.
 `LOCAL_SEARCH_SYNC_TEST_DATABASE_URL`과 `LOCAL_SEARCH_SYNC_TEST_MONGODB_URI`를 지정하고
