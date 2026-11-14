@@ -221,6 +221,12 @@
     }
   },
   "Magazine": {
+    "index": {
+      "title": "Magazines",
+      "empty": "No articles have been published yet.",
+      "home": "Go to Home",
+      "search": "Search services"
+    },
     "content": {
       "label": "‘{title}’ article",
       "empty": "This article has no body yet."

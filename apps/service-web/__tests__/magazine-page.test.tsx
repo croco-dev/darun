@@ -22,7 +22,7 @@ import Page, { generateMetadata } from '../app/[locale]/magazines/[slug]/page';
 
 const { buildSchema } = createRequire(import.meta.url)('graphql') as typeof import('graphql');
 const schema = buildSchema(readFileSync(new URL('../../graphql-api/schema.graphql', import.meta.url), 'utf8'));
-const storedSlugs = ['stored', 'c%2B%2B', '한글', 'design/tools'];
+const storedSlugs = ['stored', 'c%2B%2B', '한글', 'design/tools', 'review.md'];
 const magazine = {
   title: 'An established title',
   summary: 'The original summary',
@@ -82,6 +82,7 @@ describe('magazine route and metadata', () => {
     ['c%2B%2B', 'c%252B%252B'],
     ['한글', '%ED%95%9C%EA%B8%80'],
     ['design/tools', 'design%2Ftools'],
+    ['review.md', 'review%2Emd'],
   ])('uses stored slug %s for the HTML body and metadata', async (slug, segment) => {
     const metadata = await generateMetadata(props(slug, 'en'));
     const canonical = `https://www.darun.io/ko/magazines/${segment}`;

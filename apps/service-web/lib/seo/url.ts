@@ -61,8 +61,14 @@ export function absolutePublicUrl(locale: PublicLocale, pathname: string): strin
   return `${PUBLIC_ORIGIN}${publicPath(locale, pathname)}`;
 }
 
+export function magazineArticlePath(slug: string): string {
+  // A literal terminal ".md" selects the Markdown representation in middleware.
+  const segment = encodeURIComponent(slug).replace(/\.md$/, '%2Emd');
+  return `/magazines/${segment}`;
+}
+
 export function magazineCanonicalUrl(slug: string): string {
-  return absolutePublicUrl(DEFAULT_LOCALE, `/magazines/${encodeURIComponent(slug)}`);
+  return absolutePublicUrl(DEFAULT_LOCALE, magazineArticlePath(slug));
 }
 
 export function markdownSiblingUrl(locale: PublicLocale, pathname: string): string {

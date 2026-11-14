@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { graphql } from '../../../../../../libs/__generated__/gql';
 import { getClient } from '../../../../app/getServerClient';
 import { appendVary } from '../../../../lib/seo/accept';
@@ -6,6 +7,7 @@ import {
   buildCategoryMarkdown,
   buildCompareMarkdown,
   buildHomeMarkdown,
+  buildMagazineIndexMarkdown,
   buildMagazineMarkdown,
   buildNotFoundMarkdown,
   buildProductAlternativesMarkdown,
@@ -151,6 +153,16 @@ const MAGAZINE_QUERY = graphql(`
   }
 `);
 
+const MAGAZINE_INDEX_QUERY = graphql(`
+  query PublishedMagazinesForMagazineIndexMarkdown {
+    publishedMagazines {
+      slug
+      title
+      summary
+    }
+  }
+`);
+
 type RouteParams = {
   params: Promise<{ path?: string[] }>;
 };
@@ -216,13 +228,16 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
   const rawLocale = path[0];
   const locale: PublicLocale = isPublicLocale(rawLocale ?? '') ? normalizeLocale(rawLocale) : 'ko';
   const subPath = isPublicLocale(rawLocale ?? '') ? path.slice(1) : path;
+  const isMagazineIndex = subPath[0] === 'magazines' && subPath.length === 1;
   const magazineSlug = subPath[0] === 'magazines' && subPath.length === 2 ? subPath[1] : undefined;
 
   const isSiblingMd = req.headers.get('x-darun-sibling-md') === '1';
   const canonicalPathname = isPublicLocale(rawLocale ?? '') ? `/${subPath.join('/')}` : `/${path.join('/')}`;
 
   const canonicalUrl =
-    magazineSlug === undefined ? absolutePublicUrl(locale, canonicalPathname) : magazineCanonicalUrl(magazineSlug);
+    magazineSlug === undefined
+      ? absolutePublicUrl(isMagazineIndex ? 'ko' : locale, canonicalPathname)
+      : magazineCanonicalUrl(magazineSlug);
 
   const client = getClient({ static: true });
 
@@ -432,6 +447,22 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
       return createResponse(body, 200, { noindex: true });
     }
 
+    if (isMagazineIndex) {
+      const { data } = await client.query({ query: MAGAZINE_INDEX_QUERY });
+      if (!data) throw new Error('Missing published magazine list');
+
+      const t = await getTranslations({ locale, namespace: 'Magazine.index' });
+      const body = buildMagazineIndexMarkdown({
+        locale,
+        title: t('title'),
+        empty: t('empty'),
+        home: t('home'),
+        search: t('search'),
+        articles: data.publishedMagazines,
+      });
+      return createResponse(body, 200, { noindex: locale === 'en' });
+    }
+
     // 7. Magazine: /magazines/:slug
     if (magazineSlug !== undefined) {
       if (!magazineSlug) return createResponse(buildNotFoundMarkdown({ locale }), 404);
@@ -464,7 +495,7 @@ async function handleMarkdownRequest(req: NextRequest, props: RouteParams, isHea
     return createResponse(buildNotFoundMarkdown({ locale }), 404);
   } catch (error) {
     console.error('Error serving markdown representation:', error);
-    if (isNotFoundError(error)) {
+    if (!isMagazineIndex && isNotFoundError(error)) {
       return createResponse(buildNotFoundMarkdown({ locale }), 404);
     }
     return createResponse(buildErrorMarkdown(locale), 500, { noindex: true });
