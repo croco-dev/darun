@@ -40,8 +40,17 @@ const nativeTouchProduct = {
   voteCount: 0,
 };
 
+const companyRead = Promise.withResolvers<void>();
+const delayedCompany = { id: 'delayed-company', name: 'Delayed Company', type: '', address: '', startAt: null };
+const companyOperations = ['ProductAuthorOnProductDetailPage', 'ProductBySlugOnProductCompany'];
+
 // Both SSR and browser reads use this loopback-only fixture. No database or external API is involved.
 createServer((request, response) => {
+  if (request.url === '/release-company' && request.method === 'POST') {
+    companyRead.resolve();
+    response.writeHead(204).end();
+    return;
+  }
   if (request.url?.split('?')[0] === '/monitoring') {
     request.resume();
     response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
@@ -55,16 +64,13 @@ createServer((request, response) => {
   }
   let body = '';
   request.on('data', chunk => (body += chunk));
-  request.on('end', () => {
+  request.on('end', async () => {
     const { operationName, variables } = body ? JSON.parse(body) : {};
     response.setHeader('Content-Type', 'application/json');
     const failPhoto = variables?.slug === 'unavailable-photos' && operationName === 'GetPhotosOnProductPhotos';
-    const companyUnavailable = variables?.slug === 'unavailable-company';
-    const failBothCompanyReads =
-      companyUnavailable &&
-      (operationName === 'ProductBySlugOnProductCompany' ||
-        operationName === 'ProductBySlugOnProductDetailPageMetadata');
-    if (failPhoto || failBothCompanyReads) {
+    const readsCompany = companyOperations.includes(operationName);
+    const companyUnavailable = variables?.slug === 'unavailable-company' && readsCompany;
+    if (failPhoto || companyUnavailable) {
       response.end(
         JSON.stringify({
           data: { productBySlug: failPhoto ? null : nativeTouchProduct },
@@ -78,10 +84,13 @@ createServer((request, response) => {
       );
       return;
     }
+    const companyDelayed = variables?.slug === 'delayed-company' && readsCompany;
+    if (companyDelayed) await companyRead.promise;
+    const product = companyDelayed ? { ...nativeTouchProduct, ownedCompany: delayedCompany } : nativeTouchProduct;
     response.end(
       JSON.stringify({
         data: {
-          productBySlug: variables?.slug === 'missing-fixture-product' ? null : nativeTouchProduct,
+          productBySlug: variables?.slug === 'missing-fixture-product' ? null : product,
           searchProducts: variables?.query === 'section-retry-fixture' ? [nativeTouchProduct] : [],
           categories: [],
           rankedProducts: [],

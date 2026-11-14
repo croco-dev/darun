@@ -223,19 +223,40 @@ test('opening a product directly still shows its overview when photo reads fail'
   await expect(page.locator('#screenshot').getByRole('alert')).toHaveText('이 영역을 불러오지 못했습니다.');
 });
 
-test('company errors from both server metadata and the company section leave the product readable', async ({
-  page,
-}) => {
+test('company errors in structured data and the company section leave the product readable', async ({ page }) => {
   await page.goto('/en/products/unavailable-company');
   await expect(page.getByRole('heading', { name: 'Figma E2E', level: 1 })).toBeVisible();
   await expect(page.getByText('Native scrolling with product photos and features.')).toBeVisible();
   await expect(page.locator('#company-info').getByRole('alert')).toHaveText('Could not load this section.');
+  const structuredData = page.locator('script[type="application/ld+json"]').filter({ hasText: '"@type":"ItemPage"' });
+  await expect(structuredData).toContainText('"@type":"SoftwareApplication"');
+  await expect(structuredData).not.toContainText('"author"');
+});
+
+test('a slow company lookup does not block the product and still supplies the structured data author', async ({
+  page,
+  request,
+}) => {
+  await page.goto('/en/products/delayed-company', { waitUntil: 'commit' });
+  const company = page.locator('#company-info');
+  try {
+    await expect(page.getByRole('heading', { name: 'Figma E2E', level: 1 })).toBeVisible();
+    await expect(page.getByText('Native scrolling with product photos and features.')).toBeVisible();
+    await expect(page.getByText('Touch feature')).toBeVisible();
+    await expect(company.getByRole('status')).toHaveText('Loading…');
+  } finally {
+    expect((await request.post('http://127.0.0.1:16470/release-company')).status()).toBe(204);
+  }
+  await expect(company.getByText('Delayed Company')).toBeVisible();
+  const structuredData = page.locator('script[type="application/ld+json"]').filter({ hasText: '"@type":"ItemPage"' });
+  await expect(structuredData).toContainText('"author":{"@type":"Organization","name":"Delayed Company"}');
 });
 
 test('healthy related content remains in the server response', async ({ request }) => {
   const response = await request.get('/en/products/figma-e2e');
   expect(response.ok()).toBe(true);
   const html = await response.text();
-  expect(html).toMatch(/<img[^>]+alt="Touch preview 1"/);
+  const photos = html.match(/<section\b[^>]*\bid="screenshot"[^>]*>[\s\S]*?<\/section>/)?.[0];
+  expect(photos).toMatch(/<img[^>]+alt="Touch preview 1"/);
   expect(html).toMatch(/<h3[^>]*>Touch feature<\/h3>/);
 });
