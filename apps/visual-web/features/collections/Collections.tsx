@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@darun/utils-router';
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import {
   NamedCollection,
   SavedItemKind,
@@ -17,13 +17,46 @@ const KIND_LABEL: Record<SavedItemKind, string> = {
   app: '앱',
 };
 
+type RemovalFocus = { owner: Element; findTarget: () => HTMLElement | null };
+type OnRemoved = (message: string, focus: RemovalFocus | undefined) => void;
+
+function captureRemovalFocus(
+  trigger: HTMLButtonElement,
+  removed: Element,
+  selector: string,
+  fallback?: HTMLElement | null
+): RemovalFocus | undefined {
+  const owner = document.activeElement;
+  // Pointer activation can leave focus on an ancestor instead of the button.
+  const list = removed.parentElement;
+  if (!owner?.contains(trigger) || !list) return;
+  const siblings = Array.from(list.children);
+  const previous = siblings.slice(0, siblings.indexOf(removed)).reverse();
+
+  return {
+    owner,
+    findTarget: () => {
+      // Find the next row in the committed DOM, including rows added while the write waited.
+      if (!list.isConnected) return fallback ?? null;
+      const predecessor = previous.find(row => row.parentElement === list);
+      let next = predecessor ? predecessor.nextElementSibling : list.firstElementChild;
+      while (next) {
+        const control = next !== removed && next.querySelector<HTMLElement>(selector);
+        if (control) return control;
+        next = next.nextElementSibling;
+      }
+      return predecessor?.querySelector<HTMLElement>(selector) ?? fallback ?? null;
+    },
+  };
+}
+
 function SavedCard({
   collectionId,
   item,
   onRemoved,
 }: {
   collectionId: string;
-  onRemoved: (message: string, trigger: HTMLButtonElement) => void;
+  onRemoved: OnRemoved;
   item: {
     kind: SavedItemKind;
     id: string;
@@ -36,10 +69,13 @@ function SavedCard({
   const [removing, setRemoving] = useState(false);
   const remove = async (trigger: HTMLButtonElement) => {
     if (removing) return;
+    const card = trigger.closest('li');
+    const heading = trigger.closest('section')?.querySelector('h2');
+    const focus = card ? captureRemovalFocus(trigger, card, '[data-remove-item]', heading) : undefined;
     setRemoving(true);
     try {
       if (await removeFromCollection(collectionId, item.kind, item.id))
-        onRemoved(`${item.title} 항목을 컬렉션에서 제거했습니다.`, trigger);
+        onRemoved(`${item.title} 항목을 컬렉션에서 제거했습니다.`, focus);
     } finally {
       setRemoving(false);
     }
@@ -63,6 +99,7 @@ function SavedCard({
       <div className="flex justify-end">
         <button
           type="button"
+          data-remove-item
           aria-disabled={removing}
           onClick={event => void remove(event.currentTarget)}
           aria-label={`${item.title} 항목을 컬렉션에서 제거`}
@@ -75,18 +112,14 @@ function SavedCard({
   );
 }
 
-function CollectionSection({
-  collection,
-  onRemoved,
-}: {
-  collection: NamedCollection;
-  onRemoved: (message: string, trigger: HTMLButtonElement) => void;
-}) {
+function CollectionSection({ collection, onRemoved }: { collection: NamedCollection; onRemoved: OnRemoved }) {
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
   const focusConfirmation = useRef(false);
   const remove = async (trigger: HTMLButtonElement, onlyIfEmpty: boolean) => {
     if (removing) return;
+    const section = trigger.closest('section');
+    const focus = section ? captureRemovalFocus(trigger, section, 'h2') : undefined;
     setRemoving(true);
     try {
       const result = await deleteCollection(collection.id, { onlyIfEmpty });
@@ -94,7 +127,7 @@ function CollectionSection({
         focusConfirmation.current = document.activeElement === trigger;
         setConfirming(true);
       }
-      if (result === 'deleted') onRemoved(`${collection.name} 컬렉션을 삭제했습니다.`, trigger);
+      if (result === 'deleted') onRemoved(`${collection.name} 컬렉션을 삭제했습니다.`, focus);
     } finally {
       setRemoving(false);
     }
@@ -102,7 +135,11 @@ function CollectionSection({
   return (
     <section aria-labelledby={`collection-${collection.id}`} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-dark-100 pt-4">
-        <h2 id={`collection-${collection.id}`} className="text-base font-bold tracking-tight text-dark-900">
+        <h2
+          id={`collection-${collection.id}`}
+          tabIndex={-1}
+          className="rounded-sm text-base font-bold tracking-tight text-dark-900 focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
           {collection.name}{' '}
           <span className="text-sm font-medium text-dark-600 tabular-nums">{collection.items.length}</span>
         </h2>
@@ -167,11 +204,21 @@ export function Collections() {
   const [draft, setDraft] = useState('');
   const [creating, setCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [announcement, setAnnouncement] = useState('');
-  const onRemoved = (message: string, trigger: HTMLButtonElement) => {
-    if (document.activeElement === trigger || document.activeElement === document.body) inputRef.current?.focus();
-    setAnnouncement(message);
+  const pendingFocus = useRef<RemovalFocus>(undefined);
+  const [announcement, setAnnouncement] = useState({ message: '' });
+  const onRemoved: OnRemoved = (message, focus) => {
+    pendingFocus.current = focus;
+    setAnnouncement({ message });
   };
+  useLayoutEffect(() => {
+    const focus = pendingFocus.current;
+    pendingFocus.current = undefined;
+    if (!focus) return;
+    const active = document.activeElement;
+    if (active !== focus.owner && active !== document.body) return;
+    const target = focus.findTarget();
+    (target?.isConnected ? target : inputRef.current)?.focus();
+  }, [announcement]);
   const total = collections.reduce((n, c) => n + c.items.length, 0);
 
   const create = async () => {
@@ -187,7 +234,7 @@ export function Collections() {
   return (
     <div className="flex w-full flex-col gap-5">
       <p role="status" aria-live="polite" className="sr-only">
-        {announcement}
+        {announcement.message}
       </p>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
