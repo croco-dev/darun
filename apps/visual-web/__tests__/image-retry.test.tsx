@@ -138,7 +138,7 @@ it('recovers the real screenshot detail without repeating GraphQL reads, view tr
                 },
               }
             : operation.operationName === 'VisualSiblingScreenshotsOnDetail'
-              ? { visualScreenshots: { totalCount: 1, edges: [] } }
+              ? { visualScreenshot: { id: 'a', flows: [] }, visualScreenshots: { totalCount: 1, edges: [] } }
               : { trackVisualScreenshotView: { tracked: true } };
         observer.next({ data });
         observer.complete();
@@ -154,8 +154,8 @@ it('recovers the real screenshot detail without repeating GraphQL reads, view tr
     const image = await screen.findByRole('img', { name: '상세 검색 화면' });
     expect(operations).toEqual([
       'VisualScreenshotOnDetail',
-      'TrackVisualScreenshotView',
       'VisualSiblingScreenshotsOnDetail',
+      'TrackVisualScreenshotView',
     ]);
     fireEvent.error(image);
     fireEvent.click(screen.getByRole('button', { name: '이미지 다시 시도' }));

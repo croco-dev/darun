@@ -5,11 +5,12 @@ import { Link, notFound } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
+import { RelatedDetailStatus } from '../detail/RelatedDetailStatus';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { VisualSaveButton } from '../saves/VisualSaveButton';
 import { ResponsiveScreenshotImage } from './ResponsiveScreenshotImage';
 import { ScreenshotImage } from './ScreenshotImage';
-import { ScreenshotDetailState, useScreenshotDetail } from './useScreenshotDetail';
+import { ScreenshotDetailState, InitialScreenshotDetail, useScreenshotDetail } from './useScreenshotDetail';
 import {
   UNCLASSIFIED_LABEL,
   VISUAL_PLATFORM_LABELS,
@@ -55,7 +56,7 @@ function CopyLinkButton() {
   );
 }
 
-const View = ({ status, detail, retry }: ScreenshotDetailState) => {
+const View = ({ status, detail, retry, relatedStatus, retryRelated }: ScreenshotDetailState) => {
   const [zoomedScreenshotId, setZoomedScreenshotId] = useState<string | null>(null);
 
   if (status === 'loading') {
@@ -209,6 +210,7 @@ const View = ({ status, detail, retry }: ScreenshotDetailState) => {
           </aside>
         </div>
 
+        <RelatedDetailStatus relatedStatus={relatedStatus} retryRelated={retryRelated} />
         {relatedScreenshots.length > 0 && (
           <section aria-labelledby="screenshot-related-heading" className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
@@ -321,6 +323,12 @@ const View = ({ status, detail, retry }: ScreenshotDetailState) => {
   );
 };
 
-export const ScreenshotDetail = bind((props: { id: string }) => ({ ...useScreenshotDetail(props.id) }), View, {
-  displayName: 'ScreenshotDetail',
-});
+export const ScreenshotDetail = bind(
+  (props: { id: string; initialDetail?: InitialScreenshotDetail }) => ({
+    ...useScreenshotDetail(props.id, props.initialDetail),
+  }),
+  View,
+  {
+    displayName: 'ScreenshotDetail',
+  }
+);

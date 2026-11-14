@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { VisualScreenshotOnDetailDocument } from '@darun/provider-graphql';
 import { notFound } from '@darun/utils-router';
 import { Metadata } from 'next';
 import { cache } from 'react';
@@ -6,39 +6,14 @@ import { ScreenshotDetail } from '../../../features/screenshots';
 import { container } from '../../serverContainer';
 import { VisualLayout } from '../../VisualLayout';
 
-const screenshotQuery = gql`
-  query VisualScreenshotOnDetailPageMetadata($id: String!) {
-    visualScreenshot(id: $id) {
-      id
-      title
-      imageUrl
-      imageAlt
-      product {
-        name
-        slug
-      }
-    }
-  }
-`;
-
-type VisualScreenshotMetadataData = {
-  visualScreenshot?: {
-    id: string;
-    title: string | null;
-    imageUrl: string;
-    imageAlt: string;
-    product: { name: string; slug: string };
-  } | null;
-};
-
 type Props = {
   params: Promise<{ id: string }>;
 };
 
 const getScreenshot = cache(async (id: string) => {
   const client = container.serverApolloClient;
-  const { data } = await client.query<VisualScreenshotMetadataData>({
-    query: screenshotQuery,
+  const { data } = await client.query({
+    query: VisualScreenshotOnDetailDocument,
     variables: { id },
   });
 
@@ -76,7 +51,7 @@ export default async function Page({ params }: Props) {
 
   return (
     <VisualLayout>
-      <ScreenshotDetail id={id} />
+      <ScreenshotDetail key={id} id={id} initialDetail={screenshot} />
     </VisualLayout>
   );
 }

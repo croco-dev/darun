@@ -4,10 +4,11 @@ import { Button, ImageOff, RefreshCw } from '@darun/ui';
 import { Link, notFound } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { SaveButton } from '../collections/SaveButton';
+import { RelatedDetailStatus } from '../detail/RelatedDetailStatus';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { ResponsiveScreenshotImage } from '../screenshots/ResponsiveScreenshotImage';
 import { AppDescription } from './AppDescription';
-import { AppDetailState, useAppDetail } from './useAppDetail';
+import { AppDetailState, InitialAppDetail, useAppDetail } from './useAppDetail';
 
 const DEFAULT_ICON = '/images/default-product-icon.svg';
 
@@ -25,7 +26,7 @@ function DetailSkeletons() {
 }
 
 const View = (props: AppDetailState & { slug: string }) => {
-  const { status, detail, retry } = props;
+  const { status, detail, retry, relatedStatus, retryRelated } = props;
 
   if (status === 'loading') {
     return <DetailSkeletons />;
@@ -92,9 +93,11 @@ const View = (props: AppDetailState & { slug: string }) => {
           <h1 className="min-w-0 break-words text-xl font-bold leading-tight tracking-tight text-dark-900 [overflow-wrap:anywhere] [word-break:keep-all] md:text-2xl">
             {detail.name}
           </h1>
-          <p className="text-xs text-dark-500 tabular-nums">
-            화면 {detail.screenshotTotalCount}개 · 플로 {detail.flowTotalCount}개
-          </p>
+          {relatedStatus === 'loaded' && (
+            <p className="text-xs text-dark-500 tabular-nums">
+              화면 {detail.screenshotTotalCount}개 · 플로 {detail.flowTotalCount}개
+            </p>
+          )}
         </div>
         <SaveButton
           item={{
@@ -108,93 +111,100 @@ const View = (props: AppDetailState & { slug: string }) => {
         />
       </header>
 
-      <section aria-labelledby="app-screenshots-heading" className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 id="app-screenshots-heading" className="text-lg font-bold text-dark-900">
-            화면 ({detail.screenshotTotalCount})
-          </h2>
-          <Link
-            href={screenshotsHref}
-            className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-          >
-            전체 보기 →
-          </Link>
-        </div>
-        {detail.screenshots.length === 0 ? (
-          <p className="rounded-2xl border border-dark-200 bg-surface-50 p-6 text-center text-sm text-dark-600">
-            등록된 화면이 없습니다.
-          </p>
-        ) : (
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-            {detail.screenshots.map(item => (
-              <li key={item.id} className="min-w-0">
-                <Link
-                  href={`/screenshots/${encodeURIComponent(item.id)}`}
-                  className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-                >
-                  <div className="aspect-[9/19.5] bg-surface-50">
-                    <ResponsiveScreenshotImage
-                      src={item.imageUrl}
-                      sizes="(min-width: 1280px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
-                      alt={item.imageAlt || item.title || `${detail.name} 스크린샷`}
-                      loading={VISUAL_CARD_IMAGE_LOADING}
-                      className="h-full w-full object-contain object-top"
-                    />
-                  </div>
-                  {item.title && <div className="truncate p-2.5 text-xs font-semibold text-dark-900">{item.title}</div>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <RelatedDetailStatus relatedStatus={relatedStatus} retryRelated={retryRelated} />
+      {relatedStatus === 'loaded' && (
+        <>
+          <section aria-labelledby="app-screenshots-heading" className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="app-screenshots-heading" className="text-lg font-bold text-dark-900">
+                화면 ({detail.screenshotTotalCount})
+              </h2>
+              <Link
+                href={screenshotsHref}
+                className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              >
+                전체 보기 →
+              </Link>
+            </div>
+            {detail.screenshots.length === 0 ? (
+              <p className="rounded-2xl border border-dark-200 bg-surface-50 p-6 text-center text-sm text-dark-600">
+                등록된 화면이 없습니다.
+              </p>
+            ) : (
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+                {detail.screenshots.map(item => (
+                  <li key={item.id} className="min-w-0">
+                    <Link
+                      href={`/screenshots/${encodeURIComponent(item.id)}`}
+                      className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                    >
+                      <div className="aspect-[9/19.5] bg-surface-50">
+                        <ResponsiveScreenshotImage
+                          src={item.imageUrl}
+                          sizes="(min-width: 1280px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
+                          alt={item.imageAlt || item.title || `${detail.name} 스크린샷`}
+                          loading={VISUAL_CARD_IMAGE_LOADING}
+                          className="h-full w-full object-contain object-top"
+                        />
+                      </div>
+                      {item.title && (
+                        <div className="truncate p-2.5 text-xs font-semibold text-dark-900">{item.title}</div>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
-      <section
-        aria-labelledby="app-flows-heading"
-        className="flex flex-col gap-4 border-t border-dark-100 pt-6 md:pt-8"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <h2 id="app-flows-heading" className="text-lg font-bold text-dark-900">
-            플로 모음 ({detail.flowTotalCount})
-          </h2>
-          <Link
-            href={flowsHref}
-            className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+          <section
+            aria-labelledby="app-flows-heading"
+            className="flex flex-col gap-4 border-t border-dark-100 pt-6 md:pt-8"
           >
-            전체 보기 →
-          </Link>
-        </div>
-        {detail.flows.length === 0 ? (
-          <p className="rounded-2xl border border-dark-200 bg-surface-50 p-6 text-center text-sm text-dark-600">
-            등록된 플로가 없습니다.
-          </p>
-        ) : (
-          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
-            {detail.flows.map(flow => (
-              <li key={flow.id} className="min-w-0">
-                <Link
-                  href={`/flows/${encodeURIComponent(flow.id)}`}
-                  className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
-                >
-                  <div className="aspect-[16/9] w-full overflow-hidden bg-surface-100">
-                    <ResponsiveScreenshotImage
-                      src={flow.coverImageUrl}
-                      sizes="(min-width: 640px) 50vw, 100vw"
-                      alt={flow.coverImageAlt || flow.title || `${detail.name} 플로 커버`}
-                      loading={VISUAL_CARD_IMAGE_LOADING}
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between gap-2 p-3.5">
-                    <span className="truncate text-sm font-bold text-dark-900">{flow.title}</span>
-                    <span className="shrink-0 text-xs text-dark-600 tabular-nums">{flow.stepCount}단계</span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="app-flows-heading" className="text-lg font-bold text-dark-900">
+                플로 모음 ({detail.flowTotalCount})
+              </h2>
+              <Link
+                href={flowsHref}
+                className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg text-sm font-semibold text-dark-600 transition-colors hover:text-dark-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+              >
+                전체 보기 →
+              </Link>
+            </div>
+            {detail.flows.length === 0 ? (
+              <p className="rounded-2xl border border-dark-200 bg-surface-50 p-6 text-center text-sm text-dark-600">
+                등록된 플로가 없습니다.
+              </p>
+            ) : (
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
+                {detail.flows.map(flow => (
+                  <li key={flow.id} className="min-w-0">
+                    <Link
+                      href={`/flows/${encodeURIComponent(flow.id)}`}
+                      className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
+                    >
+                      <div className="aspect-[16/9] w-full overflow-hidden bg-surface-100">
+                        <ResponsiveScreenshotImage
+                          src={flow.coverImageUrl}
+                          sizes="(min-width: 640px) 50vw, 100vw"
+                          alt={flow.coverImageAlt || flow.title || `${detail.name} 플로 커버`}
+                          loading={VISUAL_CARD_IMAGE_LOADING}
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-2 p-3.5">
+                        <span className="truncate text-sm font-bold text-dark-900">{flow.title}</span>
+                        <span className="shrink-0 text-xs text-dark-600 tabular-nums">{flow.stepCount}단계</span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
       {(detail.summary.trim().length > 0 || (detail.description !== null && detail.description.trim().length > 0)) && (
         <details className="border-t border-dark-100">
           <summary className="cursor-pointer py-4 text-sm font-semibold text-dark-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60">
@@ -213,14 +223,17 @@ const View = (props: AppDetailState & { slug: string }) => {
   );
 };
 
-const BoundAppDetail = bind<{ slug: string }, AppDetailState & { slug: string }>(
-  props => ({ ...useAppDetail(props.slug), slug: props.slug }),
+const BoundAppDetail = bind<{ slug: string; initialDetail?: InitialAppDetail }, AppDetailState & { slug: string }>(
+  props => ({
+    ...useAppDetail(props.slug, props.initialDetail),
+    slug: props.slug,
+  }),
   View,
   {
     displayName: 'AppDetail',
   }
 );
 
-export function AppDetail({ slug }: { slug: string }) {
-  return <BoundAppDetail slug={slug} />;
+export function AppDetail({ slug, initialDetail }: { slug: string; initialDetail?: InitialAppDetail }) {
+  return <BoundAppDetail key={slug} slug={slug} initialDetail={initialDetail} />;
 }

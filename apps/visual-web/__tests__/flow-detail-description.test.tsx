@@ -42,6 +42,8 @@ it('플로 썸네일만 작은 이미지 후보를 제공하고 주요 단계 �
         steps: [{ ...detail.steps[0], screenshot: { ...detail.steps[0].screenshot, imageUrl } }],
       }}
       retry={() => {}}
+      relatedStatus="loaded"
+      retryRelated={() => {}}
     />
   );
   const thumbnail = container.querySelector('nav[aria-label="단계 썸네일"] img');
@@ -58,7 +60,13 @@ it('플로 썸네일만 작은 이미지 후보를 제공하고 주요 단계 �
 function renderDescription(description: string) {
   const container = document.createElement('div');
   container.innerHTML = renderToStaticMarkup(
-    <FlowDetail.ViewComponent status="loaded" detail={{ ...detail, description }} retry={() => {}} />
+    <FlowDetail.ViewComponent
+      status="loaded"
+      detail={{ ...detail, description }}
+      retry={() => {}}
+      relatedStatus="loaded"
+      retryRelated={() => {}}
+    />
   );
   return container;
 }

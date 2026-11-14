@@ -16,6 +16,14 @@ gql`
         summary
         logoUrl
       }
+    }
+  }
+`;
+
+gql`
+  query VisualSiblingScreenshotsOnDetail($id: String!, $productSlug: String!, $first: Int!) {
+    visualScreenshot(id: $id) {
+      id
       flows {
         id
         title
@@ -27,11 +35,6 @@ gql`
         }
       }
     }
-  }
-`;
-
-gql`
-  query VisualSiblingScreenshotsOnDetail($productSlug: String!, $first: Int!) {
     visualScreenshots(first: $first, productSlug: $productSlug) {
       totalCount
       edges {

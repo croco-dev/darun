@@ -1,8 +1,8 @@
 'use client';
 
-import { useApolloClient } from '@apollo/client/react';
+import { useQuery } from '@apollo/client/react';
 import { AppCollectionsOnVisualAppsDocument, AppDetailOnVisualAppsDocument } from '@darun/provider-graphql';
-import { useEffect, useState } from 'react';
+import type { RelatedDetailState } from '../detail/RelatedDetailStatus';
 import { VISUAL_APP_DETAIL_COLLECTION_SIZE } from './documents';
 
 export type AppDetailCollectionScreenshot = {
@@ -33,105 +33,83 @@ export type AppDetailData = {
   flowTotalCount: number;
 };
 
-export type AppDetailState = {
+export type InitialAppDetail = NonNullable<
+  import('@darun/provider-graphql').AppDetailOnVisualAppsQuery['productBySlug']
+>;
+
+export type AppDetailState = RelatedDetailState & {
   status: 'loading' | 'not-found' | 'error' | 'loaded';
   detail: AppDetailData | null;
   retry: () => void;
 };
 
-export function useAppDetail(slug: string): AppDetailState {
-  const apolloClient = useApolloClient();
-  const [queryState, setQueryState] = useState<
-    { status: 'loading' } | { status: 'not-found' } | { status: 'error' } | { status: 'loaded'; detail: AppDetailData }
-  >({ status: 'loading' });
-  const [requestKey, setRequestKey] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 재시도 시 로딩 상태 리셋에 필요
-    setQueryState({ status: 'loading' });
-
-    Promise.all([
-      apolloClient.query({
-        query: AppDetailOnVisualAppsDocument,
-        variables: { slug },
-        fetchPolicy: 'no-cache',
-      }),
-      apolloClient.query({
-        query: AppCollectionsOnVisualAppsDocument,
-        variables: { productSlug: slug, first: VISUAL_APP_DETAIL_COLLECTION_SIZE },
-        fetchPolicy: 'no-cache',
-      }),
-    ])
-      .then(([detailResult, collectionsResult]) => {
-        if (!active) {
-          return;
-        }
-        const product = detailResult.data?.productBySlug ?? null;
-        if (product === null) {
-          setQueryState({ status: 'not-found' });
-          return;
-        }
-        const screenshots = (collectionsResult.data?.visualScreenshots.edges ?? []).flatMap(edge => {
-          const node = edge?.node;
-          if (!node?.id || !node.imageUrl) {
-            return [];
-          }
-          return [
-            {
-              id: node.id,
-              imageUrl: node.imageUrl,
-              imageAlt: node.imageAlt ?? '',
-              title: node.title ?? null,
-            },
-          ];
-        });
-        const flows = (collectionsResult.data?.visualFlows.edges ?? []).flatMap(edge => {
-          const node = edge?.node;
-          if (!node?.id || !node.coverScreenshot?.imageUrl) {
-            return [];
-          }
-          return [
-            {
-              id: node.id,
-              title: node.title ?? '',
-              stepCount: node.stepCount ?? 0,
-              coverImageUrl: node.coverScreenshot.imageUrl,
-              coverImageAlt: node.coverScreenshot.imageAlt ?? '',
-            },
-          ];
-        });
-        setQueryState({
-          status: 'loaded',
-          detail: {
-            id: product.id,
-            name: product.name,
-            slug: product.slug,
-            summary: product.summary ?? '',
-            description: product.description ?? null,
-            logoUrl: product.logoUrl ?? '',
-            screenshots,
-            screenshotTotalCount: collectionsResult.data?.visualScreenshots.totalCount ?? screenshots.length,
-            flows,
-            flowTotalCount: collectionsResult.data?.visualFlows.totalCount ?? flows.length,
-          },
-        });
-      })
-      .catch((e: unknown) => {
-        console.error('Failed to load app detail', e);
-        if (active) {
-          setQueryState({ status: 'error' });
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [apolloClient, slug, requestKey]);
-
+export function useAppDetail(slug: string, initialDetail?: InitialAppDetail): AppDetailState {
+  const initial = initialDetail?.slug === slug ? initialDetail : undefined;
+  const primary = useQuery(AppDetailOnVisualAppsDocument, {
+    variables: { slug },
+    skip: initial !== undefined,
+    fetchPolicy: 'no-cache',
+  });
+  const product = initial ?? primary.data?.productBySlug;
+  const related = useQuery(AppCollectionsOnVisualAppsDocument, {
+    variables: { productSlug: slug, first: VISUAL_APP_DETAIL_COLLECTION_SIZE },
+    skip: !product,
+    fetchPolicy: 'no-cache',
+    notifyOnNetworkStatusChange: true,
+  });
+  const status = product ? 'loaded' : primary.loading ? 'loading' : primary.error ? 'error' : 'not-found';
+  const relatedStatus = related.loading || !product ? 'loading' : related.error ? 'error' : 'loaded';
+  const screenshots = (related.data?.visualScreenshots.edges ?? []).flatMap(edge => {
+    const node = edge?.node;
+    if (!node?.id || !node.imageUrl) {
+      return [];
+    }
+    return [
+      {
+        id: node.id,
+        imageUrl: node.imageUrl,
+        imageAlt: node.imageAlt ?? '',
+        title: node.title ?? null,
+      },
+    ];
+  });
+  const flows = (related.data?.visualFlows.edges ?? []).flatMap(edge => {
+    const node = edge?.node;
+    if (!node?.id || !node.coverScreenshot?.imageUrl) {
+      return [];
+    }
+    return [
+      {
+        id: node.id,
+        title: node.title ?? '',
+        stepCount: node.stepCount ?? 0,
+        coverImageUrl: node.coverScreenshot.imageUrl,
+        coverImageAlt: node.coverScreenshot.imageAlt ?? '',
+      },
+    ];
+  });
   return {
-    status: queryState.status,
-    detail: queryState.status === 'loaded' ? queryState.detail : null,
-    retry: () => setRequestKey(key => key + 1),
+    status,
+    detail: product
+      ? {
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          summary: product.summary ?? '',
+          description: product.description ?? null,
+          logoUrl: product.logoUrl ?? '',
+          screenshots,
+          screenshotTotalCount: related.data?.visualScreenshots.totalCount ?? screenshots.length,
+          flows,
+          flowTotalCount: related.data?.visualFlows.totalCount ?? flows.length,
+        }
+      : null,
+    retry: () => {
+      void primary.refetch().catch(() => {});
+    },
+    relatedStatus,
+    retryRelated: () => {
+      void related.refetch().catch(() => {});
+    },
   };
 }

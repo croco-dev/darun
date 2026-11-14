@@ -8,6 +8,8 @@ vi.mock('../features/collections/SaveButton', () => ({ SaveButton: () => null })
 vi.mock('../features/apps/useAppDetail', () => ({
   useAppDetail: () => ({
     status: 'loaded',
+    relatedStatus: 'loaded',
+    retryRelated: () => {},
     detail: {
       id: 'sdk-app',
       slug: 'sdk-app',
