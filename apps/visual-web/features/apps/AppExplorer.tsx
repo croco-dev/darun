@@ -8,6 +8,7 @@ import { SaveButton } from '../collections/SaveButton';
 import { ExplorerShell } from '../explorer/ExplorerShell';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
+import { ResponsiveScreenshotImage } from '../screenshots/ResponsiveScreenshotImage';
 import { CatalogPagination } from './CatalogPagination';
 import { AppExplorerState, AppCard, useAppExplorer } from './useAppExplorer';
 
@@ -54,8 +55,9 @@ function AppCardGrid({ cards }: { cards: AppCard[] }) {
                     href={`/screenshots/${encodeURIComponent(screenshot.id)}`}
                     className="block overflow-hidden rounded-lg border border-dark-100 bg-surface-50 transition-colors hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
-                    <img
+                    <ResponsiveScreenshotImage
                       src={screenshot.imageUrl}
+                      sizes="(min-width: 1440px) 221px, (min-width: 768px) 17vw, 33vw"
                       alt={screenshot.imageAlt || screenshot.title || `${card.name} 화면`}
                       loading={VISUAL_CARD_IMAGE_LOADING}
                       className="aspect-[9/19.5] w-full object-contain object-top"

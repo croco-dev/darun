@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { VisualSaveButton } from '../saves/VisualSaveButton';
+import { ResponsiveScreenshotImage } from './ResponsiveScreenshotImage';
 import { ScreenshotImage } from './ScreenshotImage';
 import { ScreenshotDetailState, useScreenshotDetail } from './useScreenshotDetail';
 import {
@@ -229,8 +230,9 @@ const View = ({ status, detail, retry }: ScreenshotDetailState) => {
                     className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
                     <div className="flex aspect-[9/16] w-full items-start justify-center overflow-hidden bg-surface-100">
-                      <img
+                      <ResponsiveScreenshotImage
                         src={item.imageUrl}
+                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                         alt={item.imageAlt || item.title || `${product.name} 스크린샷`}
                         loading={VISUAL_CARD_IMAGE_LOADING}
                         className="max-h-full w-auto max-w-full object-contain"
@@ -267,8 +269,9 @@ const View = ({ status, detail, retry }: ScreenshotDetailState) => {
                     className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
                     <div className="aspect-[16/9] w-full overflow-hidden bg-surface-100">
-                      <img
+                      <ResponsiveScreenshotImage
                         src={flow.coverImageUrl}
+                        sizes="(min-width: 1440px) 680px, (min-width: 640px) 50vw, 100vw"
                         alt={flow.coverImageAlt || flow.title || `${product.name} 플로 커버`}
                         loading={VISUAL_CARD_IMAGE_LOADING}
                         className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"

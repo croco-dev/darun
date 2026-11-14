@@ -6,6 +6,7 @@ import { useId, useRef, useState } from 'react';
 import { VISUAL_FLOW_TYPE_LABELS } from '../flows/flowClassifications';
 import type { FlowCard } from '../flows/useFlowExplorer';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
+import { ResponsiveScreenshotImage } from '../screenshots/ResponsiveScreenshotImage';
 import type { ScreenshotCard } from '../screenshots/useScreenshotExplorer';
 import { VISUAL_PLATFORM_LABELS } from '../screenshots/visualClassifications';
 import {
@@ -33,8 +34,9 @@ function SavedScreenshotCardGrid({ cards }: { cards: ScreenshotCard[] }) {
             className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <div className="aspect-[4/3] w-full overflow-hidden bg-surface-100">
-              <img
+              <ResponsiveScreenshotImage
                 src={card.imageUrl}
+                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                 alt={
                   card.imageAlt ||
                   card.title ||
@@ -83,8 +85,9 @@ function SavedFlowCardGrid({ cards }: { cards: FlowCard[] }) {
             className="group block overflow-hidden rounded-2xl border border-dark-150 bg-white shadow-2xs transition hover:border-dark-300 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
           >
             <div className="aspect-[4/3] w-full overflow-hidden bg-surface-100">
-              <img
+              <ResponsiveScreenshotImage
                 src={card.coverImageUrl}
+                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                 alt={card.coverImageAlt || (card.title ? `${card.title} 플로 커버 이미지` : '플로 커버 이미지')}
                 loading={VISUAL_CARD_IMAGE_LOADING}
                 className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"

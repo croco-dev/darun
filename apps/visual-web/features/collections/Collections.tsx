@@ -2,6 +2,7 @@
 
 import { Link } from '@darun/utils-router';
 import { useRef, useState } from 'react';
+import { ResponsiveScreenshotImage } from '../screenshots/ResponsiveScreenshotImage';
 import {
   NamedCollection,
   SavedItemKind,
@@ -51,7 +52,13 @@ function SavedCard({
         className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
       >
         <div className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-lg bg-surface-50">
-          <img src={item.imageUrl} alt={item.title} loading="lazy" className="h-full w-full object-contain" />
+          <ResponsiveScreenshotImage
+            src={item.imageUrl}
+            sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+            alt={item.title}
+            loading="lazy"
+            className="h-full w-full object-contain"
+          />
         </div>
         <div className="flex min-w-0 flex-col gap-1 pt-3">
           <span className="truncate text-sm font-semibold text-dark-900">{item.title}</span>

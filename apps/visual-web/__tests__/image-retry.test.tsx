@@ -9,6 +9,43 @@ vi.mock('../features/saves/useVisualAccount', () => ({
 
 afterEach(cleanup);
 
+const cloudinaryScreen = 'https://res.cloudinary.com/demo/image/upload/v42/images/screen.png';
+
+it('카드의 폭별 이미지 요청이 실패하면 원본을 시도하고 원본도 실패하면 다시 시도할 수 있다', () => {
+  render(<ScreenshotImage src={cloudinaryScreen} alt="검색 화면" />);
+  const image = screen.getByRole('img', { name: '검색 화면' });
+  expect(image.getAttribute('srcset')).toContain(
+    '/image/upload/c_limit,w_256/f_auto/q_auto/v42/images/screen.png 256w'
+  );
+  expect(image.getAttribute('sizes')).toBe('50vw');
+  expect(image.getAttribute('src')).toBe(cloudinaryScreen);
+
+  fireEvent.error(image);
+  expect(image.getAttribute('srcset')).toBeNull();
+  expect(screen.queryByRole('button', { name: '이미지 다시 시도' })).toBeNull();
+
+  fireEvent.error(image);
+  fireEvent.click(screen.getByRole('button', { name: '이미지 다시 시도' }));
+  const retried = screen.getByRole('img', { name: '검색 화면' });
+  expect(retried.getAttribute('srcset')).toContain('256w');
+  fireEvent.load(retried);
+  expect(screen.queryByRole('button', { name: '이미지 다시 시도' })).toBeNull();
+});
+
+it.each([
+  'https://external.test/demo/image/upload/v42/images/screen.png',
+  'https://res.cloudinary.com.evil.test/demo/image/upload/v42/images/screen.png',
+  'https://res.cloudinary.com/demo/image/upload/s--signature--/v42/images/screen.png',
+  'https://res.cloudinary.com/demo/image/upload/c_crop,w_400/v42/images/screen.png',
+  'https://res.cloudinary.com/demo/image/upload/v42/images/screen.png?token=fixture',
+  'https://res.cloudinary.com/demo/image/upload/v42/images/screen.svg',
+])('지원하는 공개 원본 형태가 아닌 URL은 그대로 읽는다 (%s)', src => {
+  render(<ScreenshotImage src={src} alt="외부 화면" />);
+  const image = screen.getByRole('img', { name: '외부 화면' });
+  expect(image.getAttribute('src')).toBe(src);
+  expect(image.getAttribute('srcset')).toBeNull();
+});
+
 it('retries the same image URL after repeated failures without remounting the page', () => {
   render(<ScreenshotImage src="/screen-a.png" alt="검색 화면" />);
   const first = screen.getByRole('img', { name: '검색 화면' });

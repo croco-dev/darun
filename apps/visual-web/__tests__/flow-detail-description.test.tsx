@@ -31,6 +31,30 @@ const detail: FlowDetailData = {
   relatedFlowTotalCount: 0,
 };
 
+it('플로 썸네일만 작은 이미지 후보를 제공하고 주요 단계 화면은 원본을 유지한다', () => {
+  const imageUrl = 'https://res.cloudinary.com/demo/image/upload/v42/images/search.png';
+  const container = document.createElement('div');
+  container.innerHTML = renderToStaticMarkup(
+    <FlowDetail.ViewComponent
+      status="loaded"
+      detail={{
+        ...detail,
+        steps: [{ ...detail.steps[0], screenshot: { ...detail.steps[0].screenshot, imageUrl } }],
+      }}
+      retry={() => {}}
+    />
+  );
+  const thumbnail = container.querySelector('nav[aria-label="단계 썸네일"] img');
+  const activeImage = container.querySelector('figure img');
+  expect(thumbnail?.getAttribute('srcset')).toBe(
+    'https://res.cloudinary.com/demo/image/upload/c_limit,w_96/f_auto/q_auto/v42/images/search.png 96w, ' +
+      'https://res.cloudinary.com/demo/image/upload/c_limit,w_192/f_auto/q_auto/v42/images/search.png 192w'
+  );
+  expect(thumbnail?.getAttribute('src')).toBe(imageUrl);
+  expect(activeImage?.getAttribute('srcset')).toBeNull();
+  expect(activeImage?.getAttribute('src')).toBe(imageUrl);
+});
+
 function renderDescription(description: string) {
   const container = document.createElement('div');
   container.innerHTML = renderToStaticMarkup(
