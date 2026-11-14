@@ -1,4 +1,4 @@
-import { buildSchema, isObjectType, validate } from 'graphql';
+import { buildSchema, execute, isObjectType, validate } from 'graphql';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import * as consumers from '../../../libs/__generated__/graphql';
@@ -37,6 +37,41 @@ describe('stored SDL and generated consumer contracts', () => {
         'SignImageUploadDocument',
       ])
     );
+  });
+
+  it('관리자 매거진 목록 응답에서 본문을 생략하고 편집 응답에 본문을 반환한다', async () => {
+    const magazine = {
+      id: 'magazine-id',
+      revision: 1,
+      slug: 'sample-magazine',
+      title: 'Sample magazine',
+      summary: 'Sample summary',
+      content: '<p>Magazine body</p>',
+      backgroundImageUrl: '',
+      updatedAt: new Date('2026-10-23T12:00:00Z'),
+    };
+    const list = await execute({
+      schema,
+      document: consumers.TempAllMagazinesOnMagazinesListDocument,
+      variableValues: { page: 1 },
+      rootValue: { tempAllMagazines: { totalCount: 1, totalPages: 1, magazines: [magazine] } },
+    });
+    const editor = await execute({
+      schema,
+      document: consumers.MagazineOnAdminEditorDocument,
+      variableValues: { slug: magazine.slug },
+      rootValue: { tempMagazineBySlug: magazine },
+    });
+
+    expect(list.errors).toBeUndefined();
+    expect(list.data?.tempAllMagazines).toMatchObject({
+      totalCount: 1,
+      totalPages: 1,
+      magazines: [{ id: magazine.id, summary: magazine.summary }],
+    });
+    expect(list.data?.tempAllMagazines).not.toHaveProperty(['magazines', '0', 'content']);
+    expect(editor.errors).toBeUndefined();
+    expect(editor.data?.tempMagazineBySlug).toMatchObject({ content: magazine.content });
   });
 
   it.each(operations)('validates %s including its object and fragment references', (_name, document) => {
