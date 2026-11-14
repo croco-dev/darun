@@ -1,61 +1,24 @@
 import { expect, test } from '@playwright/test';
 
+const korean = {
+  locale: 'ko',
+  loading: '불러오는 중입니다.',
+  error: '이 영역을 불러오지 못했습니다.',
+  retry: '다시 시도',
+};
+const english = {
+  locale: 'en',
+  loading: 'Loading…',
+  error: 'Could not load this section.',
+  retry: 'Try again',
+};
+
 const scenarios = [
-  {
-    locale: 'en',
-    viewport: { width: 390, height: 844 },
-    section: 'links',
-    operation: 'ProductOnProductLinks',
-    heading: 'Official links',
-    loading: 'Loading…',
-    error: 'Could not load this section.',
-    retry: 'Try again',
-    recovered: 'Fixture website',
-  },
-  {
-    locale: 'ko',
-    viewport: { width: 1280, height: 900 },
-    section: 'screenshot',
-    operation: 'GetPhotosOnProductPhotos',
-    heading: '스크린샷',
-    loading: '불러오는 중입니다.',
-    error: '이 영역을 불러오지 못했습니다.',
-    retry: '다시 시도',
-    recovered: 'Touch preview 1',
-  },
-  {
-    locale: 'en',
-    viewport: { width: 390, height: 844 },
-    section: 'features',
-    operation: 'ProductWithFeaturesOnProductFeatureList',
-    heading: 'Features',
-    loading: 'Loading…',
-    error: 'Could not load this section.',
-    retry: 'Try again',
-    recovered: 'Touch feature',
-  },
-  {
-    locale: 'en',
-    viewport: { width: 390, height: 844 },
-    section: 'company-info',
-    operation: 'ProductBySlugOnProductCompany',
-    heading: 'Company Information',
-    loading: 'Loading…',
-    error: 'Could not load this section.',
-    retry: 'Try again',
-    recovered: 'Fixture Company',
-  },
-  {
-    locale: 'ko',
-    viewport: { width: 390, height: 844 },
-    section: 'alternatives',
-    operation: 'ProductBySlugOnAlternativeProductList',
-    heading: '다른 서비스',
-    loading: '불러오는 중입니다.',
-    error: '이 영역을 불러오지 못했습니다.',
-    retry: '다시 시도',
-    recovered: 'Fixture Alternative',
-  },
+  [english, 'links', 'ProductOnProductLinks', 'Official links', 'Fixture website'],
+  [korean, 'screenshot', 'GetPhotosOnProductPhotos', '스크린샷', 'Touch preview 1'],
+  [english, 'features', 'ProductWithFeaturesOnProductFeatureList', 'Features', 'Touch feature'],
+  [english, 'company-info', 'ProductBySlugOnProductCompany', 'Company Information', 'Fixture Company'],
+  [korean, 'alternatives', 'ProductBySlugOnAlternativeProductList', '다른 서비스', 'Fixture Alternative'],
 ] as const;
 
 test.use({ isMobile: false, hasTouch: false });
@@ -68,11 +31,13 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-for (const scenario of scenarios) {
+for (const [messages, sectionId, operation, heading, recoveredText] of scenarios) {
+  const scenario = { ...messages, section: sectionId, operation, heading, recovered: recoveredText };
+  const viewport = sectionId === 'screenshot' ? { width: 1280, height: 900 } : { width: 390, height: 844 };
   test(`${scenario.locale} ${scenario.section} can retry without replacing the product page`, async ({
     page,
   }, info) => {
-    await page.setViewportSize(scenario.viewport);
+    await page.setViewportSize(viewport);
     const requests = new Map<string, number>();
     const errors: string[] = [];
     const failure = 'Fixture section unavailable';
