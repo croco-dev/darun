@@ -8,6 +8,7 @@ import { SaveButton } from '../collections/SaveButton';
 import { ExplorerShell } from '../explorer/ExplorerShell';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { ProductSearchSuggest } from '../product-search/ProductSearchSuggest';
+import { ResponsiveScreenshotImage } from '../screenshots/ResponsiveScreenshotImage';
 import {
   VISUAL_PLATFORM_LABELS,
   VISUAL_PLATFORM_OPTIONS,
@@ -26,8 +27,9 @@ function FlowCardGrid({ cards }: { cards: FlowCard[] }) {
             className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-inset"
           >
             <div className="flex aspect-[4/3] w-full items-start justify-center overflow-hidden bg-surface-100">
-              <img
+              <ResponsiveScreenshotImage
                 src={card.coverImageUrl}
+                sizes="(min-width: 1440px) 676px, (min-width: 640px) 50vw, 100vw"
                 alt={card.coverImageAlt || (card.title ? `${card.title} 플로 커버 이미지` : '플로 커버 이미지')}
                 loading={VISUAL_CARD_IMAGE_LOADING}
                 className="h-full w-full object-contain object-top"

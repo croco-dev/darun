@@ -5,6 +5,7 @@ import { Link, notFound } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { SaveButton } from '../collections/SaveButton';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
+import { ResponsiveScreenshotImage } from '../screenshots/ResponsiveScreenshotImage';
 import { AppDescription } from './AppDescription';
 import { AppDetailState, useAppDetail } from './useAppDetail';
 
@@ -132,8 +133,9 @@ const View = (props: AppDetailState & { slug: string }) => {
                   className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <div className="aspect-[9/19.5] bg-surface-50">
-                    <img
+                    <ResponsiveScreenshotImage
                       src={item.imageUrl}
+                      sizes="(min-width: 1280px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
                       alt={item.imageAlt || item.title || `${detail.name} 스크린샷`}
                       loading={VISUAL_CARD_IMAGE_LOADING}
                       className="h-full w-full object-contain object-top"
@@ -175,8 +177,9 @@ const View = (props: AppDetailState & { slug: string }) => {
                   className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                 >
                   <div className="aspect-[16/9] w-full overflow-hidden bg-surface-100">
-                    <img
+                    <ResponsiveScreenshotImage
                       src={flow.coverImageUrl}
+                      sizes="(min-width: 640px) 50vw, 100vw"
                       alt={flow.coverImageAlt || flow.title || `${detail.name} 플로 커버`}
                       loading={VISUAL_CARD_IMAGE_LOADING}
                       className="h-full w-full object-contain"

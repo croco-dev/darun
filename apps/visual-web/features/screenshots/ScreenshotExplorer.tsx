@@ -37,6 +37,11 @@ function ScreenshotPreview({ card, showIdentity = false }: { card: ScreenshotCar
           alt={card.imageAlt || title}
           href={`/screenshots/${encodeURIComponent(card.id)}`}
           linkLabel={`${title} 화면 보기`}
+          cardSizes={
+            showIdentity
+              ? '(min-width: 1440px) 266px, (min-width: 1280px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw'
+              : '(min-width: 1440px) 215px, (min-width: 768px) 16vw, 33vw'
+          }
         />
         <div className="flex justify-end pt-1">
           <SaveButton

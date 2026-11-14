@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
 import { VisualSaveButton } from '../saves/VisualSaveButton';
+import { ResponsiveScreenshotImage } from '../screenshots/ResponsiveScreenshotImage';
 import { ScreenshotImage } from '../screenshots/ScreenshotImage';
 import { VISUAL_PLATFORM_LABELS, VISUAL_FLOW_TYPE_LABELS } from './flowClassifications';
 import { stepSearch } from './stepSearch';
@@ -303,8 +304,11 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                             >
                               {stepNumber}
                             </span>
-                            <img
+                            <ResponsiveScreenshotImage
+                              key={step.screenshot.imageUrl}
                               src={step.screenshot.imageUrl}
+                              sizes="96px"
+                              thumbnail
                               alt=""
                               aria-hidden="true"
                               loading="lazy"
@@ -423,8 +427,9 @@ const View = ({ status, detail, retry }: FlowDetailState) => {
                     className="group block overflow-hidden rounded-xl border border-dark-150 bg-white transition hover:border-dark-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60 focus-visible:ring-offset-2"
                   >
                     <div className="aspect-[16/9] w-full overflow-hidden bg-surface-100">
-                      <img
+                      <ResponsiveScreenshotImage
                         src={flow.coverImageUrl}
+                        sizes="(min-width: 1440px) 680px, (min-width: 640px) 50vw, 100vw"
                         alt={flow.coverImageAlt || flow.title || `${detail.product.name} 플로 커버`}
                         loading={VISUAL_CARD_IMAGE_LOADING}
                         className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
