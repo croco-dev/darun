@@ -63,13 +63,15 @@ function createAuthFixture() {
       return () => listeners.delete(listener);
     },
     retryAuthState: async () => listeners.forEach((_, listener) => listener(user)),
-    signInWithGoogle: () =>
-      new Promise<string>((resolve, reject) => {
-        popups.push({
-          succeed: () => resolve(user.id),
-          fail: code => reject(Object.assign(new Error('Popup did not complete'), { code })),
-        });
-      }),
+    signInWithGoogle: vi.fn(
+      () =>
+        new Promise<string>((resolve, reject) => {
+          popups.push({
+            succeed: () => resolve(user.id),
+            fail: code => reject(Object.assign(new Error('Popup did not complete'), { code })),
+          });
+        })
+    ),
     getUser: async () => null,
     signOut: async () => {},
     setRedirectUrl: redirectUrl => storage.set({ redirectUrl }),
@@ -137,6 +139,7 @@ describe('Visual Google login', () => {
       button().click();
     });
     expect(fixture.popups).toHaveLength(1);
+    expect(fixture.authService.signInWithGoogle).toHaveBeenCalledExactlyOnceWith({ selectAccount: true });
     expect(button().disabled).toBe(true);
     expect(button().getAttribute('aria-busy')).toBe('true');
 

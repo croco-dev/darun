@@ -5,6 +5,7 @@ const sdk = vi.hoisted(() => ({
   listeners: new Set<(user: User | null) => Promise<void>>(),
   auth: { currentUser: null as User | null, signOut: vi.fn() },
   signInWithPopup: vi.fn(),
+  setCustomParameters: vi.fn(),
 }));
 vi.mock('firebase/app', () => ({
   getApps: () => [{}],
@@ -18,6 +19,7 @@ vi.mock('firebase/auth', () => ({
   },
   GoogleAuthProvider: class {
     addScope() {}
+    setCustomParameters = sdk.setCustomParameters;
   },
   signInWithPopup: sdk.signInWithPopup,
   connectAuthEmulator: vi.fn(),

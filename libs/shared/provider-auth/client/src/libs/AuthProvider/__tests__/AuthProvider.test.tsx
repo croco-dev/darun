@@ -55,7 +55,7 @@ function Status() {
     </>
   );
 }
-function setup() {
+function setup(waitForSignOutConfirmation = false) {
   const values = new Map<string, string>();
   const cookies: Cookies = {
     get: ((key?: string) => (key ? values.get(key) : Object.fromEntries(values))) as Cookies['get'],
@@ -72,6 +72,7 @@ function setup() {
     authDomain: 'localhost',
     clientEmail: '',
     privateKey: '',
+    waitForSignOutConfirmation,
   });
   const headers: Record<string, string>[] = [];
   const client = new ApolloClient({
@@ -109,12 +110,34 @@ function setup() {
 beforeEach(() => {
   sdk.listeners.clear();
   sdk.auth.currentUser = null;
-  sdk.auth.signOut.mockReset().mockResolvedValue(undefined);
+  sdk.auth.signOut.mockReset().mockImplementation(async () => emit(null));
   navigation.navigate.mockReset();
 });
 afterEach(cleanup);
 
 describe('실제 인증 adapter와 provider·쿠키·Apollo 연결', () => {
+  it('keeps authorizing requests until Firebase confirms sign-out', async () => {
+    const { service, request } = setup(true);
+    const owner = authEvent('owner');
+    await act(async () => {
+      owner.resolve();
+      await emit(owner.user);
+    });
+    const failed = deferred<void>();
+    sdk.auth.signOut.mockReturnValueOnce(failed.promise);
+    const logout = service.signOut();
+    const authorizationWhilePending = await request();
+    failed.reject(new Error('sign-out rejected'));
+    await expect(logout).rejects.toThrow('sign-out rejected');
+    expect(authorizationWhilePending).toBe('Bearer token-owner');
+    expect(await request()).toBe('Bearer token-owner');
+    expect(screen.getByLabelText('인증 상태').textContent).toBe('signed-in');
+
+    await act(async () => service.signOut());
+    expect(await request()).toBeUndefined();
+    expect(screen.getByLabelText('인증 상태').textContent).toBe('signed-out');
+  });
+
   it('로그아웃 뒤 늦은 인증 결과가 상태·복귀 이동·요청 헤더를 복원하지 않는다', async () => {
     const { service, values, request } = setup();
     values.set('redirectUrl', '/return-after-login');
@@ -122,7 +145,6 @@ describe('실제 인증 adapter와 provider·쿠키·Apollo 연결', () => {
     const pending = emit(old.user);
     await act(async () => {
       await service.signOut();
-      await emit(null);
     });
     await act(async () => {
       old.resolve();
@@ -176,7 +198,6 @@ describe('실제 인증 adapter와 provider·쿠키·Apollo 연결', () => {
     expect(await request()).toBe('Bearer token-refreshed');
     await act(async () => {
       await service.signOut();
-      await emit(null);
     });
     expect(screen.getByLabelText('인증 상태').textContent).toBe('signed-out');
     expect(await request()).toBeUndefined();

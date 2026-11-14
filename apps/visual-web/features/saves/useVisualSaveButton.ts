@@ -47,13 +47,14 @@ export function useVisualSaveButton(params: {
   const [isToggling, setIsToggling] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [toggleError, setToggleError] = useState(false);
-  const account = useVisualAccount(() => {
+  const user = useVisualAccount(() => {
     if (needsLogin) {
       setNeedsLogin(false);
       setStatus('loading');
       setStatusAttempt(attempt => attempt + 1);
     }
   });
+  const account = user == null ? user : user.id;
   const [owner, setOwner] = useState({ account, kind, id, enabled });
   if (owner.account !== account || owner.kind !== kind || owner.id !== id || owner.enabled !== enabled) {
     setOwner({ account, kind, id, enabled });
