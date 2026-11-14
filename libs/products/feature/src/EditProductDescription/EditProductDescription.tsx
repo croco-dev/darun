@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@darun/ui';
-import { Editor, AdminActions } from '@darun/ui-admin';
+import { Editor, AdminActions, AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useEditProductDescription, type UseEditProductDescriptionProps } from './useEditProductDescription';
 
@@ -15,18 +15,38 @@ const EditProductDescriptionForm = bind(
     imageUploading,
     onImageUploadingChange,
     saveError,
+    descriptionError,
+    descriptionLoading,
+    descriptionReady,
+    retryDescription,
     hasServerChange,
     acceptLatestDescription,
     overwriteWithDraft,
   }) => (
     <form onSubmit={form.onSubmit(submit)} className="max-h-[75vh] overflow-y-auto">
       <div className="flex flex-col gap-2">
-        <Editor
-          {...form.getInputProps('description')}
-          disabled={loading}
-          editable={!loading}
-          onImageUploadingChange={onImageUploadingChange}
-        />
+        {descriptionReady ? (
+          <Editor
+            {...form.getInputProps('description')}
+            disabled={loading}
+            editable={!loading}
+            onImageUploadingChange={onImageUploadingChange}
+          />
+        ) : descriptionLoading ? (
+          <AdminLoadingState title="설명을 불러오는 중..." />
+        ) : descriptionError ? (
+          <AdminErrorState
+            title="설명을 불러오지 못했습니다."
+            error={descriptionError}
+            action={
+              <Button type="button" variant="contained" color="primary" onClick={retryDescription}>
+                다시 시도
+              </Button>
+            }
+          />
+        ) : (
+          <AdminEmptyState title="상품을 찾을 수 없습니다." />
+        )}
       </div>
       {imageUploading && (
         <p role="status" className="mt-3 text-sm text-dark-600">
@@ -43,7 +63,7 @@ const EditProductDescriptionForm = bind(
               variant="contained"
               color="secondary"
               onClick={acceptLatestDescription}
-              disabled={loading || imageUploading}
+              disabled={!descriptionReady || loading || imageUploading}
             >
               초안을 버리고 최신 본문 사용
             </Button>
@@ -52,7 +72,7 @@ const EditProductDescriptionForm = bind(
               variant="contained"
               color="primary"
               onClick={overwriteWithDraft}
-              disabled={loading || imageUploading}
+              disabled={!descriptionReady || loading || imageUploading}
             >
               초안으로 덮어쓰기
             </Button>
@@ -83,7 +103,7 @@ const EditProductDescriptionForm = bind(
           variant="contained"
           color="primary"
           className="active:scale-[0.98] motion-reduce:transform-none"
-          disabled={loading || imageUploading || hasServerChange}
+          disabled={!descriptionReady || loading || imageUploading || hasServerChange}
         >
           {loading ? '저장 중...' : '저장'}
         </Button>
