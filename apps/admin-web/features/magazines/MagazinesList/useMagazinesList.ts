@@ -16,7 +16,6 @@ gql`
         slug
         title
         summary
-        content
         backgroundImageUrl
         updatedAt
         publishedAt
