@@ -38,6 +38,7 @@ export default defineConfig({
         NEXT_PUBLIC_BASE_URL: 'http://localhost:16471',
         _SENTRY_TUNNEL_DESTINATION_OVERRIDE: 'http://127.0.0.1:16470/monitoring',
         NEXT_TELEMETRY_DISABLED: '1',
+        __NEXT_TEST_MODE: 'true',
         NODE_OPTIONS: `--import ${resolve(__dirname, 'tests/helpers/loopback-only.mjs')}`,
       },
     },

@@ -148,7 +148,10 @@ for (const scenario of scenarios) {
     await page.goto(`/${scenario.locale}/search/product?query=section-retry-fixture`);
     // Navigate through the app so the injected browser response tests the client query after hydration.
     // Direct-entry failures and server HTML are covered separately below.
-    await page.getByRole('link', { name: /Figma E2E/ }).click();
+    const resultLink = page.getByRole('link', { name: /Figma E2E/ });
+    // SSR can render the link before Next attaches its client navigation handler.
+    await page.waitForFunction(() => (window as Window & { __NEXT_HYDRATED?: boolean }).__NEXT_HYDRATED === true);
+    await resultLink.click();
     try {
       await expect(page.getByRole('heading', { name: 'Figma E2E', level: 1 })).toBeVisible();
       await expect(page.getByText('Native scrolling with product photos and features.')).toBeVisible();
